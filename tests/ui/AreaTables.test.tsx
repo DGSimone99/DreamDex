@@ -12,7 +12,7 @@ async function openTab(area: 'Difesa' | 'Offesa' | 'Ruoli', paste = 'Great Tusk\
   await user.click(screen.getByLabelText('Testo Showdown'));
   await user.paste(paste);
   await user.click(screen.getByRole('button', { name: 'Importa' }));
-  await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) }));
+  await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: new RegExp(`^${area} (punti )?[\\d/+−]+, .*apri il dettaglio`) }));
   return user;
 }
 
@@ -57,7 +57,8 @@ describe('tabelle complete nelle schede d\'area', () => {
 
   it('Ruoli (Ruoli e Bonus → Ruoli): il tipo di team e le fasce dei livelli, senza filtri', async () => {
     await openTab('Ruoli');
-    expect(view()).toHaveTextContent(/[Gg]iudicati come|giudicati come per un/);
+    // Il tipo di team come titolo, sulla sua targa
+    expect(view().querySelector('.rl-type')).toHaveTextContent(/\w+/);
     expect(within(view()).getByRole('region', { name: 'Essenziali' })).toBeInTheDocument();
     expect(within(view()).queryByRole('group', { name: 'Quali ruoli mostrare' })).toBeNull();
   });

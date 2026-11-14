@@ -145,8 +145,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
               aria-describedby={tab.describe ? `${id}-${tab.key}-desc` : undefined}
               onClick={() => setPicked(tab.key)} onKeyDown={e => onKey(e, i)}>
               <span>{tab.label}</span>{' '}
-              <b>{tab.value ?? 'n/d'}</b>
-              {/* Segni dopo il valore (Ruoli: quanti mancano), a parole nella descrizione della scheda */}
+              <b className={tab.valueTone ? `sub-val-${tab.valueTone}` : undefined}>{tab.value ?? 'n/d'}</b>
+              {/* Segni dopo il valore (Ruoli: il +N dei minori), a parole nella descrizione della scheda */}
               {tab.marks && <span className="sub-marks" aria-hidden="true">{tab.marks}</span>}
               {/* Posto per il "?": aprendo un'altra scheda la striscia non si sposta */}
               {tab.help && <span className="sub-help-room" aria-hidden="true" />}

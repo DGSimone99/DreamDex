@@ -913,7 +913,17 @@ for (const [w, h] of sizes) {
           const rlRows = rl ? rl.querySelectorAll('.rl-row').length : 0;
           const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-row')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
           const rlRowH = rl?.querySelector<HTMLElement>('.rl-row')?.getBoundingClientRect().height ?? 0;
-          const roles = rl ? ` roles: rows=${rlRows} bands=${rl.querySelectorAll('.rl-band').length} missing=${rl.querySelectorAll('.rl-row.bad, .rl-row.warn').length} rowH=${Math.round(rlRowH)} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} headH=${Math.round(rl.querySelector('.rl-head')?.getBoundingClientRect().height ?? 0)} nameCut=${[...rl.querySelectorAll<HTMLElement>('.rl-mon-name, .rl-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length}` : '';
+          // Allineamento tra le fasce: per fascia x sinistra di ogni colonna, x della pista "chi la copre", bordo destro dei punti
+          // (righe e somma del titolo); su ogni fascia devono essere uguali
+          const rlAlign = rl ? ` align=[${[...rl.querySelectorAll<HTMLElement>('.rl-band')].map(band => {
+            const rws = [...band.querySelectorAll<HTMLElement>('.rl-row')];
+            const cols = [...new Set(rws.map(r => Math.round(r.getBoundingClientRect().left)))].join('/');
+            const by = [...new Set(rws.map(r => Math.round(r.querySelector('.rl-by')!.getBoundingClientRect().left)))].join('/');
+            const pts = [...new Set(rws.map(r => Math.round(r.querySelector('.rl-pts')!.getBoundingClientRect().right)))].join('/');
+            const sum = Math.round(band.querySelector('.rl-band-head .rl-mark')?.getBoundingClientRect().left ?? 0);
+            return `${band.classList[1]}:cols=${cols} by=${by} pts=${pts} headMarkX=${sum}`;
+          }).join(' | ')}] rowHs=[${[...new Set([...rl.querySelectorAll<HTMLElement>('.rl-row')].map(r => Math.round(r.getBoundingClientRect().height)))].join(',')}] three=${rl.classList.contains('three') ? 1 : 0} bandsR=${Math.round(rlScroll?.getBoundingClientRect().right ?? 0)} headR=${Math.round(rl.querySelector('.rl-more')?.getBoundingClientRect().right ?? 0)}` : '';
+          const roles = rl ? ` roles: rows=${rlRows} bands=${rl.querySelectorAll('.rl-band').length} missing=${rl.querySelectorAll('.rl-row.bad, .rl-row.warn').length} rowH=${Math.round(rlRowH)} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} headH=${Math.round(rl.querySelector('.rl-head')?.getBoundingClientRect().height ?? 0)} nameCut=${[...rl.querySelectorAll<HTMLElement>('.rl-mon-name, .rl-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length}${rlAlign}` : '';
           // Legenda sulla riga dei problemi: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
           const lg = document.querySelector<HTMLElement>('.area-problems-row .area-legend');
           const lgRow = lg?.parentElement?.getBoundingClientRect();

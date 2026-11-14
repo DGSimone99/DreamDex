@@ -1,17 +1,15 @@
-import { useId, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import type { TeamRating } from '../../engine/rating';
-import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
 import type { Level } from '../../engine/roleLevels';
 import { useT } from '../../i18n/react';
 import { signed, type AreaContext, type T } from '../AreaDetail';
 import { Icon } from '../icons';
 import { holderReason, keyLabel, RoleMon } from './RoleParts';
-import { missingFirst, roleLines, rolePoints, rolesMalusOn, type RoleLine } from './rolesRows';
+import { missingFirst, points as pct, roleLines, rolePoints, rolesMalusOn, type RoleLine } from './rolesRows';
 
 /** Le tre fasce della sottoscheda, in quest'ordine; le voci che non contano stanno solo nella guida. */
 export const BANDS = ['essential', 'important', 'minor'] as const;
 type Band = (typeof BANDS)[number];
-const LEVEL_POINTS: Record<Band, number> = { essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS };
 
 /** Il segno di una fascia: ✓ se non manca niente, −N di malus, "N mancano" senza malus (meno di 6), +N / 0 dei minori. */
 interface BandSum { kind: 'ok' | 'malus' | 'missing' | 'bonus' | 'zero'; points: number; missing: number }
@@ -30,13 +28,16 @@ function SumMark({ sum, t }: { sum: BandSum; t: T }) {
 }
 
 /**
- * La sottoscheda Ruoli di Ruoli e Bonus, in una schermata senza filtri. In alto con che tipo di team si giudica, la
- * targhetta coi punti (Essenziali + Importanti + Minori = Ruoli) e il link alla pagina della guida coi ruoli che non
- * contano. Sotto tre fasce, Essenziali, Importanti e Minori (una fascia senza voci per questo tipo di team non c'è), ognuna
- * col suo titolo, la regola e la sua somma, e le voci su due colonne, prima quelle che mancano. Ogni voce: nome, chi la
+ * La sottoscheda Ruoli di Ruoli e Bonus, in una schermata senza filtri. In alto il tipo di team con cui si giudica (sulla
+ * sua targa, come nella carta del voto; "team incompleto" accanto se mancano membri), i punti dei Ruoli e il link alla
+ * pagina della guida coi ruoli che non contano. Sotto tre fasce, Essenziali, Importanti e Minori (una fascia senza voci per
+ * questo tipo di team non c'è), ognuna col suo titolo e il suo valore, e le voci su due colonne, prima quelle che mancano. Ogni voce: nome, chi la
  * copre (uno solo: icona e nome; di più: solo le icone) e i punti (✓ / −4 / −2 / +1 / 0).
  * Con meno di 6 membri un ruolo che manca non toglie punti (rolesArea): si scrive "manca", non il malus.
- * Mai scorrere: se su uno schermo basso le fasce su due colonne non stanno, le voci vanno su tre (useThreeColumns).
+ * Una griglia sola per tutte le fasce: colonne uguali, e dentro ogni voce le stesse piste (nome largo quanto il nome più
+ * lungo di tutte le fasce, chi la copre, punti a larghezza fissa), così nomi, icone e punti stanno in colonna dappertutto.
+ * Le righe si allungano fino a riempire il pannello (con un tetto), come la tabella dei ruoli in Panoramica.
+ * Mai scorrere: se su uno schermo basso le fasce su due colonne non stanno, le voci vanno su tre (useRolesLayout).
  */
 export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaContext }) {
   const t = useT();
@@ -50,25 +51,17 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
   const net = roles.bonuses.reduce((n, b) => n + b.points, 0) - roles.failures.reduce((n, f) => n + f.points, 0);
   const archetype = t(`archetype.${needs.archetype}`);
   const frame = useRef<HTMLDivElement>(null);
-  const three = useThreeColumns(frame, `${t('area.roles')}|${lines.map(l => `${l.key}${l.level}${l.missing}${l.by.length}`).join()}`);
+  const three = useRolesLayout(frame, `${t('area.roles')}|${lines.map(l => `${l.key}${l.level}${l.missing}${l.by.length}`).join()}`);
 
   return (
     <div ref={frame} className={`rl-frame rl-general${three ? ' three' : ''}`}>
       <header className="rl-head">
-        <p className="rl-judged" title={t(`archetype.${needs.archetype}.note`)}>
-          {roles.members.length < 6 ? t('analysis.judgedIncomplete', { archetype }) : t('rdetail.judged', { archetype })}
+        {/* Il tipo di team come titolo, sulla targa obliqua della carta del voto; poi i punti dei Ruoli */}
+        <p className="rl-title">
+          <span className="rl-type" title={t(`archetype.${needs.archetype}.note`)}><span>{archetype}</span></span>
+          {roles.members.length < 6 && <small className="rl-incomplete">{t('rdetail.incomplete')}</small>}
         </p>
-        {/* I punti dei Ruoli su una targhetta inclinata: le fasce sommate danno il totale */}
-        <p className="rl-sum" aria-label={t('rdetail.sum')}>
-          {bands.map((b, i) => (
-            <span key={b.level} className="rl-sum-part">
-              {i > 0 && <span className="rl-sum-op" aria-hidden="true">+</span>}
-              {t(`rdetail.group.${b.level}`)} <SumMark sum={b.sum} t={t} />
-            </span>
-          ))}
-          <span className="rl-sum-op" aria-hidden="true">=</span>
-          <b className={`rl-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}>{t('area.roles')} {signed(net)}</b>
-        </p>
+        <p className={`rl-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}>{t('area.roles')} <b>{signed(net)}</b></p>
         {ctx.guide && (
           <button type="button" className="rl-more" onClick={() => ctx.guide!('types')}>
             {t('rdetail.ignoredLink')} <span aria-hidden="true">›</span>
@@ -82,16 +75,18 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
   );
 }
 
-/** Una fascia: barra del titolo (nome, regola, somma) e le voci su due colonne. */
+/**
+ * Una fascia: il titolo (segno nel colore del livello, nome, valore della fascia) e le voci su due colonne.
+ * `--n2` / `--n3` = righe della fascia su due o tre colonne: lo spazio libero si divide in parti uguali per riga
+ * (flex-grow) fino al tetto.
+ */
 function RoleBand({ level, rows, sum, full, rating, ctx }: { level: Band; rows: RoleLine[]; sum: BandSum; full: boolean; rating: TeamRating; ctx: AreaContext }) {
   const t = useT();
   const id = useId();
-  const rule = level === 'minor' ? t('rdetail.rule.minor', { n: MINOR_POINTS }) : t('rdetail.rule.missing', { n: LEVEL_POINTS[level] });
   return (
-    <section className={`rl-band ${level}`} aria-labelledby={id}>
+    <section className={`rl-band ${level}`} aria-labelledby={id} style={{ '--n2': Math.ceil(rows.length / 2), '--n3': Math.ceil(rows.length / 3) } as CSSProperties}>
       <h4 className="rl-band-head">
         <span id={id} className="rl-band-title">{t(`rdetail.group.${level}`)}</span>
-        <small>{rule}</small>
         <SumMark sum={sum} t={t} />
       </h4>
       <ul className="rl-rows">
@@ -104,19 +99,23 @@ function RoleBand({ level, rows, sum, full, rating, ctx }: { level: Band; rows: 
 /** Lo stato di una riga per il colore: essenziale che manca rossa, importante gialla, minore scoperto spento. */
 const rowState = (level: Level, missing: boolean) => (!missing ? '' : level === 'essential' ? 'bad' : level === 'important' ? 'warn' : 'off');
 
-/** Una voce: nome, chi la copre, i punti. */
+/**
+ * Una voce: nome, chi la copre, i punti. Una voce che manca dice "Nessuno" anche se qualcuno la copre poco: chi la porta
+ * solo in parte sta nel tooltip della riga e nel testo nascosto ("in parte: Garchomp 11%, …").
+ */
 function RoleRow({ line, full, rating, ctx }: { line: RoleLine; full: boolean; rating: TeamRating; ctx: AreaContext }) {
   const t = useT();
   const pool = t(rating.meta ? 'rdetail.pool.meta' : 'rdetail.pool.tier');
   const { kind, points } = rolePoints(line, full);
   const state = rowState(line.level, line.missing);
   const one = line.by.length === 1;
+  const partly = line.missing && line.by.length > 0 ? t('rdetail.partly', { list: line.by.map(h => `${h.species} ${pct(h.value)}%`).join(', ') }) : undefined;
   return (
-    <li className={`rl-row${state ? ` ${state}` : ''}`}>
+    <li className={`rl-row${state ? ` ${state}` : ''}`} title={partly}>
       <span className="rl-name">{keyLabel(line.key, t)}</span>
       <span className="rl-by">
-        {line.by.length === 0
-          ? <span className="rl-nobody">{t('rdetail.nobody')}</span>
+        {line.missing || line.by.length === 0
+          ? <span className="rl-nobody">{t('rdetail.nobody')}{partly && <span className="visually-hidden">; {partly}</span>}</span>
           : line.by.map(h => <RoleMon key={h.slot} h={h} t={t} named={one} why={holderReason(line.key, h, rating.roles, ctx.team, pool, t)} />)}
       </span>
       <span className={`rl-pts ${kind}`} title={kind === 'malus' ? t('rdetail.missingTip', { n: -points }) : kind === 'missing' ? t('rdetail.noMalusYet') : undefined}>
@@ -131,23 +130,29 @@ function RoleRow({ line, full, rating, ctx }: { line: RoleLine; full: boolean; r
 }
 
 /**
- * Le voci stanno su due colonne; se così le fasce scorrerebbero (tante voci, schermo basso) su tre. Si prova sul posto
- * prima del disegno (si toglie la classe, si misura, si rimette), e si rifà quando cambia la misura della scheda o
- * arrivano i font. Senza ResizeObserver (test): due colonne.
+ * La misura delle voci, provata sul posto prima del disegno e rifatta quando cambia la misura della scheda o arrivano i
+ * font. Le voci stanno su due colonne; se così le fasce scorrerebbero (tante voci, schermo basso) su tre. In ogni caso la
+ * pista dei nomi (`--rl-name`) è larga quanto il nome più lungo di tutte le fasce, così le colonne si allineano tra le
+ * fasce. Senza ResizeObserver (test): due colonne, la larghezza di riserva del CSS.
  */
-function useThreeColumns(frame: RefObject<HTMLDivElement | null>, key: string): boolean {
+function useRolesLayout(frame: RefObject<HTMLDivElement | null>, key: string): boolean {
   const [three, setThree] = useState(false);
   useLayoutEffect(() => {
     const root = frame.current;
     if (!root || typeof ResizeObserver === 'undefined') return;
     let live = true;
+    // Il nome si stringe sul suo testo (justify-self: start): scrollWidth è la sua larghezza piena anche se la pista è stretta
+    const fitNames = () => {
+      const widest = Math.max(0, ...[...root.querySelectorAll<HTMLElement>('.rl-name')].map(n => n.scrollWidth));
+      if (widest > 0) root.style.setProperty('--rl-name', `${Math.ceil(widest) + 1}px`);
+    };
     const solve = () => {
       const list = root.querySelector<HTMLElement>('.rl-bands');
       if (!live || !list) return;
-      const had = root.classList.contains('three');
       root.classList.remove('three');
+      fitNames();
       const over = list.scrollHeight - list.clientHeight > 0;
-      root.classList.toggle('three', had);
+      if (over) { root.classList.add('three'); fitNames(); }
       setThree(over);
     };
     solve();

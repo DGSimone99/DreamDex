@@ -75,14 +75,26 @@ export function Medal({ entry, className = '', style, glyph }: { entry: Pick<Cat
   );
 }
 
-/**
- * Una riga della lista: la voce, il caso concreto e i punti. `roles`: la medaglia sola dei Ruoli (essenziali e importanti
- * che mancano fra i malus, minori coperti fra i bonus), che apre la sottoscheda Ruoli.
- */
-interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[]; roles?: boolean }
+/** Una riga della lista: la voce, il caso concreto e i punti. */
+interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[] }
 
-/** Le voci dei Ruoli nel catalogo: nella lista diventano una medaglia sola, "Ruoli" (nel catalogo restano tre). */
+/**
+ * Le voci dei Ruoli nel catalogo: nella scheda Bonus/Malus non ci sono (hanno i loro punti nella sottoscheda Ruoli, qui
+ * sembrerebbero contare due volte); il catalogo della guida le elenca ancora.
+ */
 const ROLE_KEYS = new Set<CatalogKey>(['essentialRole', 'importantRole', 'minorRole']);
+const notRole = (item: Redundancy) => !item.catalog || !ROLE_KEYS.has(item.catalog);
+
+/**
+ * I totali della scheda Bonus/Malus, senza i punti dei ruoli: bonus, malus (positivo) e netto. Li usano la scheda e il
+ * valore della sua sottoscheda grande ("Bonus/Malus +N").
+ */
+export function bonusMalusTotals(rating: Pick<TeamRating, 'bonus' | 'penalty'>): { bonus: number; malus: number; net: number } {
+  const sum = (items: Redundancy[]) => items.filter(notRole).reduce((n, i) => n + i.points, 0);
+  const bonus = sum(rating.bonus.items);
+  const malus = sum(rating.penalty.items);
+  return { bonus, malus, net: bonus - malus };
+}
 
 /** Il caso concreto senza il nome della voce davanti ("Core: X, Y, Z…" → "X, Y, Z…"). */
 function detailOf(item: Redundancy, name: string): string {
@@ -93,27 +105,14 @@ function detailOf(item: Redundancy, name: string): string {
   return at > 0 && text.slice(at + 2).toLowerCase() === name.toLowerCase() ? text.slice(0, at) : text;
 }
 
-function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: Redundancy[], t: T): ActiveRow[] {
-  // I core a tre stanno nel riquadro in alto col loro +3: non si ripetono fra le voci (contano nel netto e nelle barre)
-  const rows = catalog.filter(e => e.kind === kind && e.key !== 'coreTrio').flatMap(entry => {
+function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: Redundancy[]): ActiveRow[] {
+  // I core a tre stanno nel riquadro in alto col loro +3: non si ripetono fra le voci (contano nel netto e nelle barre);
+  // le voci dei ruoli non ci sono (stanno nella sottoscheda Ruoli)
+  return catalog.filter(e => e.kind === kind && e.key !== 'coreTrio' && !ROLE_KEYS.has(e.key)).flatMap(entry => {
     const own = items.filter(i => i.catalog === entry.key && i.points > 0);
     if (!own.length) return [];
     return [{ key: entry.key, entry, points: own.reduce((n, i) => n + i.points, 0), details: own.map(i => detailOf(i, entry.name)) }];
   });
-  // Le voci dei ruoli si fondono in una medaglia "Ruoli", al posto della prima: stessi punti, una frase corta per livello
-  const roleRows = rows.filter(r => ROLE_KEYS.has(r.entry.key));
-  if (!roleRows.length) return rows;
-  const count = (key: CatalogKey) => items.filter(i => i.catalog === key && i.points > 0).length;
-  const details = (['essentialRole', 'importantRole', 'minorRole'] as const).flatMap(key => {
-    const n = count(key);
-    return n ? [t(`catalogue.roles.${key}.${n === 1 ? 'one' : 'many'}`, { n })] : [];
-  });
-  const merged: ActiveRow = {
-    key: 'roles', roles: true, entry: { ...roleRows[0].entry, name: t('area.roles') },
-    points: roleRows.reduce((n, r) => n + r.points, 0), details,
-  };
-  const at = rows.indexOf(roleRows[0]);
-  return [...rows.slice(0, at), merged, ...rows.slice(at).filter(r => !ROLE_KEYS.has(r.entry.key))];
 }
 
 /** Il nome di un core per la scheda: i tre tipi parati, nell'ordine del giro ("Acqua / Lotta / Psico"). */
@@ -313,23 +312,9 @@ function useFitEntries(bm: RefObject<HTMLDivElement | null>, key: string, frozen
  * Una voce: medaglia, nome, caso concreto per intero (va a capo quanto serve) e punti. Solo nelle carte compatte (team con
  * tantissime voci su schermi bassi) il caso non si vede: un pulsante steso sulla carta lo apre e lo richiude.
  */
-function Entry({ row, index, open, compact, onToggle, onRoles, t }: { row: ActiveRow; index: number; open: boolean; compact: boolean; onToggle: () => void; onRoles?: () => void; t: T }) {
+function Entry({ row, index, open, compact, onToggle, t }: { row: ActiveRow; index: number; open: boolean; compact: boolean; onToggle: () => void; t: T }) {
   const { entry, points, details } = row;
   const pts = signed(entry.kind === 'malus' ? -points : points);
-  // La medaglia dei Ruoli: tutta la carta è un pulsante che apre la sottoscheda Ruoli (il caso è corto, sempre intero)
-  if (row.roles && onRoles) {
-    return (
-      <li className={`bm-row ${entry.kind} bm-roles`}>
-        <Medal entry={entry} style={{ '--i': index } as CSSProperties} />
-        <span className="bm-row-tx">
-          <b>{entry.name}</b>
-          <span className="bm-row-case">{details.join(' · ')} <span className="bm-row-go" aria-hidden="true">›</span></span>
-          <button type="button" className="bm-row-open" aria-label={t('catalogue.roles.open', { name: entry.name, points: pts, text: details.join(', ') })} onClick={onRoles} />
-        </span>
-        <span className="bm-row-pts">{pts}</span>
-      </li>
-    );
-  }
   const long = compact || open;
   return (
     <li className={`bm-row ${entry.kind}${open ? ' open' : ''}${long ? ' long' : ''}`}>
@@ -355,16 +340,17 @@ function Entry({ row, index, open, compact, onToggle, onRoles, t }: { row: Activ
  * La scheda Bonus/Malus. In alto: a sinistra la carta dei core a tre (sempre della stessa misura), a destra il netto sul
  * voto con bonus e malus in tutto (core compresi), le barre (solo se c'è posto) e il link al catalogo con tutte le voci
  * possibili (la guida della scheda). Sotto, due schede, Bonus e Malus (prima i bonus se ce ne sono), e le voci della scheda
- * scelta a tutta larghezza, ognuna con la sua medaglia; le voci dei ruoli sono una medaglia sola, "Ruoli", che apre la
- * sottoscheda Ruoli (`onRoles`).
+ * scelta a tutta larghezza, ognuna con la sua medaglia. I ruoli non ci sono, né fra le voci né nei totali
+ * (bonusMalusTotals): hanno i loro punti nella sottoscheda Ruoli.
  */
-export function BonusMalusView({ rating, lang, t, onCatalogue, onRoles }: { rating: TeamRating; lang: Lang; t: T; onCatalogue?: () => void; onRoles?: () => void }) {
+export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamRating; lang: Lang; t: T; onCatalogue?: () => void }) {
   const catalog = bonusMalusCatalog(lang);
   const groups = (['bonus', 'malus'] as const)
-    .map(kind => ({ kind, rows: activeRows(catalog, kind, kind === 'bonus' ? rating.bonus.items : rating.penalty.items, t) }));
+    .map(kind => ({ kind, rows: activeRows(catalog, kind, kind === 'bonus' ? rating.bonus.items : rating.penalty.items) }));
   const any = groups.some(g => g.rows.length > 0);
-  const net = rating.bonus.total - rating.penalty.total;
-  const nothing = rating.bonus.total === 0 && rating.penalty.total === 0;
+  const totals = bonusMalusTotals(rating);
+  const net = totals.net;
+  const nothing = totals.bonus === 0 && totals.malus === 0;
   const head = useId();
   const tabsId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -396,13 +382,13 @@ export function BonusMalusView({ rating, lang, t, onCatalogue, onRoles }: { rati
           <p className={`bm-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}><span>{signed(net)}</span></p>
           {nothing ? <p className="bm-parts">{t('catalogue.none')}</p> : (
             <p className="bm-parts">
-              <span>{t('catalogue.bonus')} <b className={rating.bonus.total ? 'good' : undefined}>{signed(rating.bonus.total)}</b></span>
-              <span>{t('catalogue.malus')} <b className={rating.penalty.total ? 'bad' : undefined}>{signed(-rating.penalty.total)}</b></span>
+              <span>{t('catalogue.bonus')} <b className={totals.bonus ? 'good' : undefined}>{signed(totals.bonus)}</b></span>
+              <span>{t('catalogue.malus')} <b className={totals.malus ? 'bad' : undefined}>{signed(-totals.malus)}</b></span>
             </p>
           )}
         </div>
         {/* Sempre nella pagina; senza posto le nasconde la classe no-bars (così si possono provare le due sistemazioni) */}
-        <Bars bonus={rating.bonus.total} malus={rating.penalty.total} t={t} />
+        <Bars bonus={totals.bonus} malus={totals.malus} t={t} />
         {onCatalogue && <button type="button" className="bm-more" onClick={onCatalogue}>{t('catalogue.all')} <span aria-hidden="true">›</span></button>}
       </section>
       <CoreColumn rating={rating} lang={lang} t={t} />
@@ -444,7 +430,7 @@ export function BonusMalusView({ rating, lang, t, onCatalogue, onRoles }: { rati
             ) : (
               <ul className="bm-list" style={{ '--cols': density.cols } as CSSProperties}>
                 {current.rows.map((row, i) => (
-                  <Entry key={row.key} row={row} index={i} open={open === row.key} compact={density.compact} t={t} onRoles={onRoles}
+                  <Entry key={row.key} row={row} index={i} open={open === row.key} compact={density.compact} t={t}
                     onToggle={() => setOpen(o => (o === row.key ? null : row.key))} />
                 ))}
               </ul>

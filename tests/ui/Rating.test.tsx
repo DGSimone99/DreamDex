@@ -16,7 +16,7 @@ describe('Riquadro Voto', () => {
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(band()).toHaveTextContent(/Voto [SABCD], \d+ su 100, \w+/);
-    const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ [\d/]+, .*apri il dettaglio.*/, ''));
+    const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ (punti )?[\d/+−]+, .*apri il dettaglio.*/, ''));
     expect(areas).toEqual(['Offesa', 'Difesa', 'Velocità', 'Ruoli']);
     expect(band()).not.toHaveTextContent('Sinergia');
   });
@@ -27,7 +27,8 @@ describe('Riquadro Voto', () => {
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(within(band()).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
     for (const area of ['Difesa', 'Offesa', 'Ruoli']) {
-      const button = within(band()).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) });
+      // Ruoli porta i suoi punti ("Ruoli punti −4, 3/10, …"), le aree il valore
+      const button = within(band()).getByRole('button', { name: new RegExp(`^${area} (punti )?[\\d/+−]+, .*apri il dettaglio`) });
       expect(button).not.toHaveAttribute('aria-haspopup');
       await user.click(button);
       const analysis = within(document.getElementById('panel-analysis')!);

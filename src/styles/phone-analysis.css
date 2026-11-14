@@ -86,7 +86,10 @@
   .def-general .def-gain small { font-size: 11px; }
 
   /* Ruoli: le voci di ogni fascia su una colonna sola; il link alla guida va a capo sotto */
-  .rl-rows { grid-template-columns: max-content minmax(0, 1fr) auto; }
+  .rl-general, .rl-general.three { --cols: 1; }
+  .rl-band { max-height: none; }
+  .rl-rows { grid-auto-rows: minmax(var(--rl-row-min), auto); }
+  .rl-frame.rl-general .rl-row.rl-row:nth-child(n)::before { content: none; }
   .rl-more { margin-left: 0; min-height: 44px; }
 
   /* ── Ruoli e Bonus/Malus: la lista intera, senza scorrimento interno ── */
