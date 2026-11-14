@@ -110,15 +110,20 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
 /* Il taglio segue il posto della sottoscheda: la prima (sul bordo sinistro) solo a destra, quelle in mezzo su entrambi i
-   lati (\__/), l'ultima di Ruoli e Bonus (sul bordo destro) solo a sinistra (\). Il lato tagliato a sinistra si allunga
+   lati (\__/), l'ultima di Ruoli e Bonus (sul bordo destro) solo a sinistra (sotto). Il lato tagliato a sinistra si allunga
    sotto la vicina (margine negativo pari al padding in più: il testo resta dov'era), così fra le due non resta vuoto */
 .area-subs [role='tab'][aria-selected='true']:not(:first-child) {
   position: relative; z-index: 1; margin-left: -12px; padding-left: 26px; margin-right: -12px; padding-right: 26px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 10px 100%);
 }
+/* Ruoli e Bonus: le due metà hanno lo stesso taglio largo (22px, come le schede principali) e parallelo, così si
+   incastrano: Bonus/Malus tagliata a destra (/), Ruoli tagliata a sinistra nello stesso verso e allungata sotto Bonus/Malus
+   fino a combaciare. Due colonne fisse (griglia): l'allungamento non sposta niente */
+.area-view-bonusMalus .area-subs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:first-child { clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
 .area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:last-child:not(:first-child) {
-  margin-right: 0; padding-right: 20px; padding-left: 32px;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 14px 100%);
+  margin-left: -26px; margin-right: 0; padding-left: 46px; padding-right: 20px;
+  clip-path: polygon(22px 0, 100% 0, 100% 100%, 0 100%);
 }
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
 /* Ingrandimento solo visivo (scale dal centro): la larghezza della scheda non cambia, quindi nulla si sposta */
