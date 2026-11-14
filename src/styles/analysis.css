@@ -116,15 +116,18 @@
   position: relative; z-index: 1; margin-left: -12px; padding-left: 26px; margin-right: -12px; padding-right: 26px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 10px 100%);
 }
-/* Ruoli e Bonus: le due metà col taglio largo delle schede principali (22px). Bonus/Malus aperta tagliata a destra (/),
-   Ruoli aperta tagliata a sinistra nello stesso verso (/), al posto del confine fra le due: allungata di 30px sopra
-   Bonus/Malus, così il taglio la copre e non resta vuoto (come le schede principali, a specchio). Due colonne fisse
-   (griglia): l'allungamento non sposta niente */
+/* Ruoli e Bonus: le due metà, aperte, si allungano sopra l'altra col taglio delle schede principali, a specchio:
+   Bonus/Malus tagliata a destra (/), Ruoli a sinistra (\). L'angolo in basso del taglio sta dove comincia l'altra scheda,
+   quello in alto 30px più in là: niente vuoto fra le due. Margine negativo pari al padding in più e due colonne fisse
+   (griglia): le scritte restano dove stavano */
 .area-view-bonusMalus .area-subs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:first-child { clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:first-child {
+  position: relative; z-index: 1; margin-right: -34px; padding-right: 54px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
+}
 .area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:last-child:not(:first-child) {
-  margin-left: -30px; margin-right: 0; padding-left: 50px; padding-right: 20px;
-  clip-path: polygon(22px 0, 100% 0, 100% 100%, 0 100%);
+  margin-left: -34px; margin-right: 0; padding-left: 54px; padding-right: 20px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 30px 100%);
 }
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
 /* Ingrandimento solo visivo (scale dal centro): la larghezza della scheda non cambia, quindi nulla si sposta */
