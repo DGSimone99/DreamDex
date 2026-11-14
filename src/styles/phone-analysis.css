@@ -90,8 +90,23 @@
   .rl-frame { height: auto; }
   .rl-scroll { overflow: visible; }
   .area-panel:has(> .bm) { overflow: visible; }
-  .bm, .bm-rest { flex: none; }
-  .bm-rest ul { overflow: visible; }
+  /* Bonus/Malus: prima il netto e le voci, poi i core uno sotto l'altro (il chiuso è una riga col triangolo piccolo) */
+  .bm, .bm.empty { flex: none; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "grade" "list" "cores"; gap: 18px; }
+  .bm-entries { overflow: visible; }
+  .bm-cores.dash-card { height: auto; }
+  .bm-tab { min-height: 44px; flex: 1; justify-content: center; }
+  .bm-list { grid-template-columns: minmax(0, 1fr); }
+  .bm-more { align-self: flex-start; min-height: 44px; margin-top: 4px; }
+  .bm-core-row { flex-direction: column; }
+  .bm-core { flex: none; max-width: none; flex-wrap: wrap; }
+  .bm-core.open .bm-core-body { flex: 1 1 200px; min-width: 0; }
+  .bm-core.shut { min-height: 56px; padding: 6px 14px; flex-direction: row; }
+  .bm-core + .bm-core { border-left: 0; border-top: 1px solid var(--line-soft); }
+  .bm-core.shut .sum-tri { --tri-w: 64px; --tri-badge: 14px; }
+  .bm-core.shut .bm-core-art { flex: 1; flex-direction: row; align-items: center; gap: 12px; opacity: 1; }
+  .bm-core.shut .bm-core-peek { display: block; flex: 1; min-width: 0; font: 700 14px/1.2 var(--display); font-style: italic; text-align: left; }
+  .bm-core.shut .bm-core-mini { position: static; align-self: center; font-size: 18px; }
+  .bm-core.shut .bm-core-body { display: none; }
 
   /* ── Panoramica: le card una sotto l'altra, nell'ordine di lettura del desktop ── */
   .dash { display: flex; flex-direction: column; min-height: 0; overflow: visible; }
