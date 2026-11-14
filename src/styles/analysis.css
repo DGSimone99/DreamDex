@@ -117,13 +117,13 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 10px 100%);
 }
 /* Ruoli e Bonus: le due metà col taglio largo delle schede principali (22px): Bonus/Malus tagliata a destra (/), Ruoli
-   tagliata a sinistra (\): l'angolo in basso dove comincerebbe la sua colonna, quello in alto 30px sopra Bonus/Malus, così il
+   tagliata a sinistra (\): l'angolo in basso tocca la fine di Bonus/Malus (oltre lo spazio fra le due), quello in alto 30px più in là, così il
    taglio la copre e non resta vuoto. Due colonne fisse
    (griglia): l'allungamento non sposta niente */
 .area-view-bonusMalus .area-subs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:first-child { clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
 .area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:last-child:not(:first-child) {
-  margin-left: -30px; margin-right: 0; padding-left: 50px; padding-right: 20px;
+  margin-left: -34px; margin-right: 0; padding-left: 54px; padding-right: 20px;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 30px 100%);
 }
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
