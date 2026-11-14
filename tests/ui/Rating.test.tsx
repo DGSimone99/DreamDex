@@ -235,48 +235,113 @@ const catalogRating = () => ({
   bonus: { total: 2, items: [{ text: 'Sole aiuta', points: 2, catalog: 'weatherHelp' }] },
 }) as unknown as TeamRating;
 
-async function openCatalog() {
+/** Un core a tre finto: tre membri col giro dei tipi parati. */
+const fakeCore = (members: [string, string, string], types: [string, string, string]) => ({
+  members, names: [[], [], []], strength: 3,
+  sides: members.map((from, i) => ({ from, to: members[(i + 1) % 3], type: types[i], types: [types[i]] })),
+});
+/** (Nei test i tipi restano in inglese: niente dati italiani.) Righe della Coverage tipi: per ogni tipo chi lo regge (qui basta il conto). */
+const holdRows = (held: Record<string, number>) => Object.entries(held).flatMap(([name, n]) => Array.from({ length: n }, (_, i) => ({ type: `${name}${i}`, heldBy: [name] })));
+/** Valutazione con due core: il secondo (Heatran, Landorus, Toxapex) regge più tipi del primo. */
+const coreRating = (cores = [fakeCore(['Pelipper', 'Ferrothorn', 'Great Tusk'], ['Fire', 'Water', 'Electric']), fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])]) => ({
+  ...fakeRating([], []),
+  bonus: { total: 3 * cores.length, items: cores.map(c => ({ text: `Core a tre: ${c.members.join(', ')} si parano le debolezze a giro`, points: 3, catalog: 'coreTrio' })) },
+  cores,
+  defense: { coverageTypes: { rows: [...holdRows({ Pelipper: 4, Heatran: 9 }), ...holdRows({ nobody: 5 })] } },
+}) as unknown as TeamRating;
+
+function renderBm(rating: TeamRating) {
   const user = userEvent.setup();
-  render(<LangProvider lang="it"><AreaView rating={catalogRating()} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-  return { user, dialog: screen.getByRole('region', { name: 'Bonus/Malus' }) };
+  render(<LangProvider lang="it"><AreaView rating={rating} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+  return { user, view: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
+const onGrade = () => screen.getByRole('region', { name: 'Sul voto' });
 
 describe('Bonus/Malus', () => {
-  it('una scheda sola col netto sul voto, e le barre di malus e bonus', async () => {
-    const { dialog } = await openCatalog();
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Sul voto −6']);
-    expect(within(dialog).getByText('−8')).toBeInTheDocument();
-    expect(within(dialog).getAllByText('+2').length).toBeGreaterThan(0);
+  it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
+    const { view } = renderBm(catalogRating());
+    expect(within(view).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Sul voto −6']);
+    expect(onGrade().querySelector('.bm-net')).toHaveTextContent('−6');
+    expect(onGrade().querySelector('.bm-net')).toHaveClass('bad');
+    expect(onGrade()).toHaveTextContent('Bonus +2');
+    expect(onGrade()).toHaveTextContent('Malus −8');
   });
 
-  it('cosa toglie: una carta per voce attiva coi suoi casi e i punti in tutto; niente regole a punti', async () => {
-    const { dialog } = await openCatalog();
-    const takes = within(dialog).getByRole('region', { name: 'Cosa toglie' });
-    const cards = within(takes).getAllByRole('listitem');
-    expect(cards).toHaveLength(2);
-    const hazard = cards.find(c => within(c).queryByText('Hazard ripetuto'))!;
-    expect(hazard).toHaveTextContent('−3');
-    expect(hazard).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
-    expect(cards.find(c => within(c).queryByText('Stesso tipo'))).toHaveTextContent('−5');
-    expect(dialog).not.toHaveTextContent('per ogni');
+  it('solo le voci attive, prima i bonus poi i malus, coi casi e i punti in tutto; niente voci a zero né regole a punti', () => {
+    renderBm(catalogRating());
+    const rows = within(onGrade()).getAllByRole('listitem');
+    expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Meteo che protegge', 'Stesso tipo', 'Hazard ripetuto']);
+    expect(rows[0]).toHaveTextContent('+2');
+    expect(rows[0]).toHaveClass('bonus');
+    expect(rows[2]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
+    expect(rows[2]).toHaveTextContent('−3');
+    expect(rows[2]).toHaveClass('malus');
+    expect(rows[1]).toHaveTextContent('−5');
+    expect(onGrade()).not.toHaveTextContent('Tipi vari');
+    expect(onGrade()).not.toHaveTextContent('per ogni');
+    expect(screen.queryByText('Cosa toglie')).toBeNull();
+    expect(screen.queryByText(/per ora a zero/)).toBeNull();
   });
 
-  it('cosa aggiunge: la sola voce attiva; le altre 15 voci come tessere spente con la frase breve; niente Tera', async () => {
-    const { dialog } = await openCatalog();
-    const adds = within(dialog).getByRole('region', { name: 'Cosa aggiunge' });
-    expect(within(adds).getAllByRole('listitem')).toHaveLength(1);
-    expect(within(adds).getByText('Meteo che protegge').closest('li')).toHaveTextContent('+2');
-    const rest = within(dialog).getByRole('region', { name: 'Le altre voci, per ora a zero' });
-    expect(within(rest).getAllByRole('listitem')).toHaveLength(15);
-    expect(within(rest).getByText('Core a tre').closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
+  it('netto verde se positivo; senza voci il netto è 0 grigio con "Né bonus né malus per ora"', () => {
+    const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating()} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+    expect(onGrade().querySelector('.bm-net')).toHaveTextContent('+6');
+    expect(onGrade().querySelector('.bm-net')).toHaveClass('good');
+    unmount();
+    renderBm(fakeRating([], []));
+    expect(onGrade().querySelector('.bm-net')).toHaveTextContent(/^0$/);
+    expect(onGrade().querySelector('.bm-net')).toHaveClass('zero');
+    expect(onGrade()).toHaveTextContent('Né bonus né malus per ora');
+    expect(within(onGrade()).queryByRole('list')).toBeNull();
+  });
+
+  it('"Tutte le voci possibili" apre il catalogo (la guida della scheda) sui bonus; all\'uscita il focus torna al link', async () => {
+    const { user } = renderBm(catalogRating());
+    const link = screen.getByRole('button', { name: /Tutte le voci possibili/ });
+    await user.click(link);
+    const dialog = screen.getByRole('dialog', { name: /Bonus\/Malus/ });
+    expect(within(dialog).getByRole('tab', { name: 'Tutti i bonus' })).toHaveAttribute('aria-selected', 'true');
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(within(panel).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(panel).getByText('Core a tre').closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
+    expect(within(panel).getByText('Core a tre').closest('li')).toHaveTextContent('+3 per ogni trio');
+    await user.click(within(dialog).getByRole('tab', { name: 'Tutti i malus' }));
+    expect(within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem')).toHaveLength(12);
     expect(dialog).not.toHaveTextContent('Tera');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(link).toHaveFocus();
   });
 
-  it('senza malus la colonna lo dice; niente tetti né "Totale massimo"', async () => {
-    const r = { ...catalogRating(), penalty: { total: 0, items: [] } } as unknown as TeamRating;
-    render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-    expect(screen.getByRole('region', { name: 'Cosa toglie' })).toHaveTextContent('Niente: nessun malus');
-    expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Totale massimo');
+  it('due core a tre: aperto quello che regge più tipi, l\'altro è un pulsante che lo apre', async () => {
+    const { user } = renderBm(coreRating());
+    const cores = screen.getByRole('region', { name: '2 core a tre' });
+    const strong = within(cores).getByRole('button', { name: 'Core Fire / Ground / Poison' });
+    const weak = within(cores).getByRole('button', { name: 'Core Fire / Water / Electric' });
+    expect(strong).toHaveAttribute('aria-expanded', 'true');
+    expect(weak).toHaveAttribute('aria-expanded', 'false');
+    expect(within(cores).getByText('Reggono 9 tipi su 18')).toBeInTheDocument();
+    expect(within(cores).getByText((_, el) => el?.tagName === 'SPAN' && el.textContent === 'Heatran para Landorus-Therian da Fire')).toBeInTheDocument();
+    await user.click(weak);
+    expect(weak).toHaveAttribute('aria-expanded', 'true');
+    expect(strong).toHaveAttribute('aria-expanded', 'false');
+    expect(weak.closest('li')).toHaveClass('open');
+    expect(within(cores).getByText('Reggono 4 tipi su 18')).toBeInTheDocument();
+    // Le medaglie del core nella lista: una per trio, coi soli nomi, prima quella del core che regge più tipi
+    const rows = within(onGrade()).getAllByRole('listitem');
+    expect(rows.map(row => row.textContent)).toEqual(['Core a treHeatran, Landorus-Therian, Toxapex+3', 'Core a trePelipper, Ferrothorn, Great Tusk+3']);
+  });
+
+  it('un core solo: aperto, senza pulsante; nessun core: una riga su come averne uno', () => {
+    const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating([fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])])} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+    const one = screen.getByRole('region', { name: 'Core a tre' });
+    expect(within(one).queryByRole('button')).toBeNull();
+    expect(within(one).getByRole('heading', { name: /Fire \/ Ground \/ Poison/ })).toBeInTheDocument();
+    unmount();
+    renderBm(catalogRating());
+    const none = screen.getByRole('region', { name: 'Core a tre' });
+    expect(none).toHaveTextContent('Nessun core a tre');
+    expect(none).toHaveTextContent('tre membri si coprono le debolezze a giro');
   });
 });
 

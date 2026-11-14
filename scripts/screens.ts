@@ -417,6 +417,13 @@ for (const [k, re] of [['types', OFFENSE_SUBS.types], ['meta', OFFENSE_SUBS.meta
   DEFENSE_STATES[`analysis-defense-${k}-eff`] = effOn(defenseState(SUBS[k]));
   DEFENSE_STATES[`analysis-defense-${k}-hover`] = effOn(defenseState(SUBS[k]), true);
 }
+const bonusState = (team: typeof SIX, then?: (p: Page) => Promise<boolean>): State => ({ hash: hash(team), run: async p => {
+  await tab(p, 'analysis');
+  await wait(300);
+  const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Bonus/);
+  await wait(900);
+  return ok && (!then || then(p));
+} });
 const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
   // Telefono: tocca il secondo candidato, la scheda sale sopra la lista
@@ -467,6 +474,15 @@ const STATES: Record<string, State> = {
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
   'analysis-bonus': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Bonus/); await wait(900); return ok; } },
+  // Bonus/Malus con altri team: SIX (due core a tre), LONE (nessun core, malus), RAIN; il secondo core aperto; il catalogo
+  'analysis-bonus-six': bonusState(SIX),
+  'analysis-bonus-lone': bonusState(LONE),
+  'analysis-bonus-rain': bonusState(RAIN),
+  'analysis-bonus-swap': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
+  // Telefono: la scheda portata in alto (le voci, poi i core) e il secondo core aperto
+  'analysis-bonus-six-scrolled': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm')?.scrollIntoView()); await wait(300); return true; }),
+  'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
+  'analysis-bonus-guide': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-more', /./); await wait(400); return ok; }),
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-one': { hash: hash(TEAM.slice(0, 2)), run: async p => { await tab(p, 'analysis'); return true; } },
@@ -892,7 +908,7 @@ for (const [w, h] of sizes) {
           const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
           const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
           const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} problems=${shownP}+${moreP} stripH=${Math.round(lgRow.height)}` : '';
-          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
+          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-list'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });

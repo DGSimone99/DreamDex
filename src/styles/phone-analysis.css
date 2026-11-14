@@ -90,8 +90,21 @@
   .rl-frame { height: auto; }
   .rl-scroll { overflow: visible; }
   .area-panel:has(> .bm) { overflow: visible; }
-  .bm, .bm-rest { flex: none; }
-  .bm-rest ul { overflow: visible; }
+  /* Bonus/Malus: prima il netto e le voci, poi i core uno sotto l'altro (il chiuso è una riga col triangolo piccolo) */
+  .bm { flex: none; grid-template-columns: minmax(0, 1fr); grid-template-areas: "grade" "cores"; gap: 22px; }
+  .bm-list { overflow: visible; padding-bottom: 0; mask-image: none; }
+  .bm-row-tx > span { -webkit-line-clamp: 3; }
+  .bm-more { align-self: flex-start; min-height: 44px; padding: 0; }
+  .bm-core-row { flex-direction: column; }
+  .bm .bm-hint { display: none; }
+  .bm-core { flex: none; max-width: none; flex-wrap: wrap; }
+  .bm-core.open .bm-core-body { flex: 1 1 200px; min-width: 0; }
+  .bm-core.shut { min-height: 56px; padding: 6px 14px; }
+  .bm-core.shut .sum-tri { --tri-w: 64px; --tri-badge: 14px; }
+  .bm-core.shut .bm-core-art { flex: 1; align-items: center; gap: 12px; opacity: 1; }
+  .bm-core.shut .bm-core-peek { display: block; flex: 1; min-width: 0; font: 700 14px/1.2 var(--display); font-style: italic; text-align: left; }
+  .bm-core.shut .bm-core-mini { position: static; align-self: center; font-size: 18px; }
+  .bm-core.shut .bm-core-body { display: none; }
 
   /* ── Panoramica: le card una sotto l'altra, nell'ordine di lettura del desktop ── */
   .dash { display: flex; flex-direction: column; min-height: 0; overflow: visible; }
