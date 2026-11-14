@@ -39,8 +39,8 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
  * che il membro prende dal colpo migliore della minaccia, verde se regge (sotto metà PS), giallo se solo a metà, rosso se
  * va KO; in fondo Regge conta chi la regge del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra;
  * sotto la tabella una sola riga col riepilogo; la legenda dei colori sta sulla riga dei problemi (DefenseMetaLegend).
- * In basso a sinistra la mossa della minaccia che fa più effetto sul membro quando non è neutra (×4, ×2, ½, ¼; 0 se nessuna
- * lo tocca); "Solo resistenze" (`ctx.effOnly`) spegne le caselle senza ½, ¼ o 0. Col puntatore la colonna si accende e
+ * In basso a sinistra l'efficacia della mossa della minaccia che fa più danno al membro (la stessa del %) quando non è
+ * neutra (×4, ×2, ×½, ×¼, 0); "Solo efficacia" (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende e
  * sotto lo sprite compare il nome.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {

@@ -168,27 +168,39 @@ const GHOST_HITTERS = new Set(['scrappy', 'mindseye']);
 /** Abilità che ignorano quelle del bersaglio (Levitate, Flash Fire...). */
 const MOLD_BREAKERS = new Set(['moldbreaker', 'teravolt', 'turboblaze']);
 
+/** Il moltiplicatore di tipo di una mossa d'attacco (col tipo già in battaglia) di `attacker` sul bersaglio. */
+function attackMultiplier(attacker: TeamSet, move: AttackMove, defTypes: readonly string[], defAbility: string): number {
+  const ability = toID(battleAbility(attacker));
+  const targetAbility = MOLD_BREAKERS.has(ability) ? '' : toID(defAbility);
+  const type: TypeName = ability === 'normalize' ? 'Normal' : move.type === 'Normal' && ATE_ABILITIES[ability] ? ATE_ABILITIES[ability] : move.type;
+  const typed = { ...move, type };
+  let mult = defTypes.reduce((m, defType) => {
+    if (defType === 'Ghost' && GHOST_HITTERS.has(ability) && (type === 'Normal' || type === 'Fighting')) return m;
+    return m * moveEffectiveness(typed, defType as TypeName);
+  }, 1);
+  const modifier = ABILITY_MODIFIERS[targetAbility]?.[type];
+  if (modifier !== undefined) mult *= modifier;
+  return mult;
+}
+
 /**
  * Il moltiplicatore di tipo migliore fra le mosse d'attacco di `attacker` contro un bersaglio coi tipi e l'abilità dati
  * (Freeze-Dry sull'Acqua, Pixilate & co., Scrappy sullo Spettro, le immunità di abilità come Levitate e Flash Fire).
- * Null se il set non ha mosse d'attacco. Serve all'etichetta ×2 / ×4 / ½ / 0 delle caselle in Analisi.
+ * Null se il set non ha mosse d'attacco. Serve all'etichetta ×2 / ×4 delle caselle dell'Offesa in Analisi.
  */
 export function bestAttackMultiplier(attacker: TeamSet, defTypes: readonly string[], defAbility = '', field?: Field): number | null {
   const moves = attackingMoves(attacker, field);
   if (!moves.length) return null;
-  const ability = toID(battleAbility(attacker));
-  const targetAbility = MOLD_BREAKERS.has(ability) ? '' : toID(defAbility);
-  let best = 0;
-  for (const move of moves) {
-    const type: TypeName = ability === 'normalize' ? 'Normal' : move.type === 'Normal' && ATE_ABILITIES[ability] ? ATE_ABILITIES[ability] : move.type;
-    const typed = { ...move, type };
-    let mult = defTypes.reduce((m, defType) => {
-      if (defType === 'Ghost' && GHOST_HITTERS.has(ability) && (type === 'Normal' || type === 'Fighting')) return m;
-      return m * moveEffectiveness(typed, defType as TypeName);
-    }, 1);
-    const modifier = ABILITY_MODIFIERS[targetAbility]?.[type];
-    if (modifier !== undefined) mult *= modifier;
-    best = Math.max(best, mult);
-  }
-  return best;
+  return Math.max(0, ...moves.map(move => attackMultiplier(attacker, move, defTypes, defAbility)));
+}
+
+/**
+ * Il moltiplicatore di tipo di una mossa precisa di `attacker` (quella che fa più danno, per l'etichetta delle caselle
+ * di Coverage meta della Difesa). Una mossa che non è fra le sue (Z, ...) prende il tipo dalla libreria. Null se non è d'attacco.
+ */
+export function moveAttackMultiplier(attacker: TeamSet, moveName: string, defTypes: readonly string[], defAbility = '', field?: Field): number | null {
+  const own = attackingMoves(attacker, field).find(m => toID(m.name) === toID(moveName));
+  const data = own ? null : getMove(moveName);
+  const move = own ?? (data && data.category !== 'Status' ? { name: data.name, type: data.type as TypeName } : null);
+  return move ? attackMultiplier(attacker, move, defTypes, defAbility) : null;
 }

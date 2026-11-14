@@ -20,8 +20,8 @@ const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * Coverage tipi della Difesa: un membro per riga (nello stesso punto delle altre schede), i 18 tipi in colonna. In ogni
  * casella il danno di un colpo forte di quel tipo sul lato peggiore (fisico o speciale), colorato per quanto vale
  * (OHKO rosso pieno, 2HKO rosso scuro = niente, 3HKO giallo = metà, 4 o più verde = pieno), con l'etichetta di efficacia
- * in basso a sinistra quando il tipo non è neutro (×4, ×2, ½, ¼, 0); il suggerimento dà i due lati. L'interruttore "Solo
- * resistenze" (`ctx.effOnly`) spegne le caselle senza ½, ¼ o 0. Col puntatore la colonna si accende e sotto l'icona compare il tipo.
+ * in basso a sinistra quando il tipo non è neutro (×4, ×2, ×½, ×¼, 0); il suggerimento dà i due lati. L'interruttore "Solo
+ * efficacia" (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende e sotto l'icona compare il tipo.
  * In fondo Regge (chi regge del tutto il lato peggiore); la Copertura del tipo sta nel suggerimento della sua pillola.
  * La legenda dei colori sta sulla riga dei problemi (DefenseTypesLegend); sotto la tabella solo le note del meteo.
  * I tipi che nessuno regge hanno il filo rosso sotto l'icona.

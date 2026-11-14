@@ -5,7 +5,7 @@ import { bestHit, FIRST_HIT_SHARE, hasZMove, FIRST_HIT_SHARE_RECOVERY, orbStatus
 import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
-import { bestAttackMultiplier, effectiveness, TYPES } from './types';
+import { bestAttackMultiplier, effectiveness, moveAttackMultiplier, TYPES } from './types';
 import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { REMOVAL_MOVES } from './roles';
@@ -413,8 +413,8 @@ export interface ThreatRow {
   level: number;
   heldBy: { species: string; move: string; pct: number; partial: boolean }[];
   /**
-   * Per ogni membro conosciuto (ordine di `members`): il moltiplicatore di tipo migliore fra le mosse d'attacco della
-   * minaccia sul membro (0 solo se nessuna lo tocca), per l'etichetta della casella.
+   * Per ogni membro conosciuto (ordine di `members`): il moltiplicatore di tipo della mossa della minaccia che gli fa più
+   * danno (la stessa del % nella casella), per l'etichetta della casella.
    */
   mults: number[];
 }
@@ -547,7 +547,13 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
       });
       const level = depthOf(heldBy.map(h => (h.partial ? 0.5 : 1)));
       total += weight * level;
-      const mults = known.map(member => bestAttackMultiplier(threat, battleSpecies(member)?.types ?? [], battleAbility(member)) ?? 1);
+      // L'efficacia della mossa che fa più danno al membro (la stessa del % nella casella); senza colpo nessuna mossa lo tocca
+      const mults = known.map((member, m) => {
+        const types = battleSpecies(member)?.types ?? [];
+        const move = memberHits[m][i]?.move;
+        if (!move) return bestAttackMultiplier(threat, types, battleAbility(member)) ?? 1;
+        return moveAttackMultiplier(threat, move, types, battleAbility(member)) ?? 1;
+      });
       return { species: threat.species, weight, level: Math.round(100 * level), heldBy, mults };
     });
     coverageMeta = { value: softScore(total), unanswered: threatRows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows: threatRows };

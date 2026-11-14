@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
+import { metaThreats } from '../../src/engine/attackers';
+import { battleSpecies } from '../../src/engine/dex';
+import { moveAttackMultiplier } from '../../src/engine/types';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -131,8 +134,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const ghold = within(within(table).getByRole('row', { name: /^Gholdengo/ })).getAllByRole('cell');
     expect(tusk[col('Water')].querySelector('.eff-tag')).toHaveTextContent('×2');
     expect(tusk[col('Water')]).toHaveTextContent('debole ×2');
-    expect(ghold[col('Grass')].querySelector('.eff-tag')).toHaveTextContent('½');
-    expect(ghold[col('Grass')]).toHaveTextContent('resiste ½');
+    expect(ghold[col('Grass')].querySelector('.eff-tag')).toHaveTextContent('×½');
+    expect(ghold[col('Grass')]).toHaveTextContent('resiste ×½');
     expect(ghold[col('Normal')].querySelector('.eff-tag')).toHaveTextContent(/^0$/);
     expect(ghold[col('Poison')]).toHaveTextContent('immune');
     expect(tusk[col('Normal')].querySelector('.eff-tag')).toBeNull();
@@ -170,10 +173,10 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 
-  it('"Solo resistenze" spegne le caselle senza ½, ¼ o 0 (restano al loro posto); vale anche per Coverage meta', async () => {
+  it('"Solo efficacia" spegne solo le caselle neutre (restano al loro posto); vale anche per Coverage meta', async () => {
     const user = userEvent.setup();
     const { table } = await openTypes();
-    const sw = screen.getByRole('switch', { name: 'Solo resistenze' });
+    const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
     expect(table.querySelector('.eff-dim')).toBeNull();
     await user.click(sw);
@@ -181,11 +184,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const cells = Array.from(table.querySelectorAll('tbody tr:not(.ct-sum) td'));
     cells.forEach(td => {
       const tag = td.querySelector('.eff-tag')?.textContent ?? '';
-      expect(td.classList.contains('eff-dim')).toBe(!['½', '¼', '0'].includes(tag));
+      expect(td.classList.contains('eff-dim')).toBe(!['×4', '×2', '×½', '×¼', '0'].includes(tag));
     });
     expect(cells.filter(td => !td.classList.contains('eff-dim')).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    expect(screen.getByRole('switch', { name: 'Solo resistenze' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('switch', { name: 'Solo efficacia' })).toHaveAttribute('aria-checked', 'true');
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
   });
 
@@ -196,6 +199,30 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     await user.hover(fire);
     expect(fire.querySelector('.col-name')).toHaveTextContent('Fire');
     expect(fire).toHaveClass('x-col');
+  });
+
+  it("Coverage meta: l'etichetta è l'efficacia della mossa che fa più danno al membro (la stessa del %)", async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    const threats = new Map(metaThreats(fixtureData).map(t => [t.set.species, t.set]));
+    const expected = [...rating.defense.coverageMeta!.rows].sort((a, b) => a.level - b.level || b.weight - a.weight).slice(0, 8);
+    const table = within(screen.getByRole('tabpanel')).getByRole('table');
+    let checked = 0;
+    team.forEach((set, m) => {
+      const cells = within(within(table).getAllByRole('row')[m + 1]).getAllByRole('cell');
+      expected.forEach((r, k) => {
+        const h = r.heldBy.find(x => x.species === set.species);
+        if (!h?.move) return;
+        const mult = moveAttackMultiplier(threats.get(r.species)!, h.move, battleSpecies(set)!.types, set.ability);
+        expect(r.mults[m]).toBe(mult);
+        const tag = cells[k].querySelector('.eff-tag');
+        if (mult === 1) expect(tag).toBeNull(); else expect(tag).not.toBeNull();
+        checked++;
+      });
+    });
+    expect(checked).toBeGreaterThan(0);
   });
 
   it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Regge', async () => {

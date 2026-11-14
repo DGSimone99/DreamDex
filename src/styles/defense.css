@@ -357,11 +357,11 @@
 .def-frame.def-meta-grid .dm-h .def-box { --bs: 1.2; }
 .def-meta-grid .ct-sum td { height: 24px; }
 
-/* Etichetta di efficacia in basso a sinistra della casella (×2 ×4 nell'Offesa; ×4 ×2 ½ ¼ 0 nella Difesa): testo piccolo e
+/* Etichetta di efficacia in basso a sinistra della casella (×2 ×4 nell'Offesa; ×4 ×2 ×½ ×¼ 0 nella Difesa): testo piccolo e
    quieto, diverso dal triangolino del setup in alto a destra */
 .def-frame .ct-table td.has-eff { position: relative; }
 .def-frame .ct-table .eff-tag { position: absolute; left: 3px; bottom: 2px; font: 600 11px/1 var(--ui); letter-spacing: 0; color: color-mix(in srgb, var(--text) 70%, transparent); pointer-events: none; }
-/* "Solo superefficaci" / "Solo resistenze": le altre caselle restano al loro posto ma quasi spente */
+/* "Solo superefficaci" / "Solo efficacia": le altre caselle restano al loro posto ma quasi spente */
 .def-frame .ct-table td { transition: opacity 0.16s ease-out, filter 0.16s ease-out; }
 .def-frame .ct-table td.eff-dim { opacity: 0.2; filter: saturate(0.1); }
 /* La colonna sotto il puntatore si accende appena; sotto l'intestazione il nome (sopra le righe, non sposta niente) */

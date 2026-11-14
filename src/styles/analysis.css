@@ -859,7 +859,7 @@
   .coach-sec { margin-bottom: 8px; font-size: 13px; }
 }
 
-/* Interruttore "Solo superefficaci" / "Solo resistenze" accanto alla legenda, sulla riga dei problemi */
+/* Interruttore "Solo superefficaci" / "Solo efficacia" accanto alla legenda, sulla riga dei problemi */
 .eff-switch { display: inline-flex; flex: none; align-items: center; gap: 6px; margin-left: 12px; padding: 2px 4px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 12px/1.2 var(--ui); white-space: nowrap; cursor: pointer; }
 .area-problems-row > .eff-switch:first-child { margin-left: auto; }
 .eff-switch:hover { color: var(--text); }
