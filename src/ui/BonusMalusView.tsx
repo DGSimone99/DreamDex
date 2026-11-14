@@ -14,7 +14,7 @@ type T = ReturnType<typeof useT>;
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 /** Famiglia di una voce: decide l'icona dentro la medaglia (una forma sola, l'icona cambia). */
-type Family = 'types' | 'roles' | 'hazards' | 'conditions' | 'members' | 'core';
+type Family = 'types' | 'roles' | 'hazards' | 'conditions' | 'members' | 'core' | 'check' | 'plus';
 const FAMILY: Record<CatalogKey, Family> = {
   sharedWeak: 'types', sameType: 'types', defenseHole: 'types', weakCovered: 'types', typeVariety: 'types',
   essentialRole: 'roles', importantRole: 'roles', minorRole: 'roles',
@@ -38,10 +38,13 @@ const ICONS: Record<Family, ReactElement> = {
   members: <><circle cx="32" cy="36" r="11" /><path d="M21 36h22" /><circle cx="32" cy="36" r="3" /></>,
   // Tre punti a triangolo: il core a tre
   core: <><circle cx="32" cy="25" r="4" /><circle cx="22" cy="44" r="4" /><circle cx="42" cy="44" r="4" /><path d="M30 29l-6 11M34 29l6 11M26 44h12" /></>,
+  // Gli stati vuoti: una spunta (nessun malus) e un più (bonus ancora da guadagnare)
+  check: <path d="M21 37l7 7 15-16" />,
+  plus: <path d="M32 26v20M22 36h20" />,
 };
 
 /** Medaglia esagonale con l'icona della famiglia; il malus è rosso e incrinato. Decorativa. */
-export function Medal({ entry, className = '', style }: { entry: Pick<CatalogEntry, 'key' | 'kind'>; className?: string; style?: CSSProperties }) {
+export function Medal({ entry, className = '', style, glyph }: { entry: Pick<CatalogEntry, 'key' | 'kind'>; className?: string; style?: CSSProperties; glyph?: Family }) {
   // Gradienti propri per ogni medaglia (gli id vanno dentro url(#…): senza i due punti di useId)
   const id = useId().replace(/[^\w-]/g, '');
   return (
@@ -66,8 +69,8 @@ export function Medal({ entry, className = '', style }: { entry: Pick<CatalogEnt
       <path className="bm-medal-hex" d="M32 3 59 18v36L32 69 5 54V18z" fill={`url(#${id}-face)`} stroke={`url(#${id}-rim)`} />
       <path className="bm-medal-inner" d="M32 10 53 22v28L32 62 11 50V22z" stroke={`url(#${id}-bevel)`} />
       <path className="bm-medal-shine" d="M32 5 57 19 32 31 7 19z" />
-      <g className="bm-medal-icon">{ICONS[FAMILY[entry.key]]}</g>
-      {entry.kind === 'malus' && <path className="bm-medal-crack" d="M40 8l-5 12 4 6-6 9 3 7-5 10" />}
+      <g className="bm-medal-icon">{ICONS[glyph ?? FAMILY[entry.key]]}</g>
+      {entry.kind === 'malus' && !glyph && <path className="bm-medal-crack" d="M40 8l-5 12 4 6-6 9 3 7-5 10" />}
     </svg>
   );
 }
@@ -173,11 +176,20 @@ function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T 
   const two = cores.length > 1;
   // La medaglia grande del core, appuntata sulla barra del titolo: accesa con almeno un core, spenta senza
   const icon = <Medal entry={{ key: 'coreTrio', kind: 'bonus' }} className={`bm-head-medal${cores.length ? '' : ' off'}`} />;
-  const meta = cores.length ? <>{cores.length} · <b className="good">+{cores.length * CORE_TRIO_POINTS}</b></> : undefined;
+  // Il conto nel titolo ("2 Core") e i punti dentro la stessa targhetta, attaccata alla medaglia
+  const title = cores.length === 0 ? t('catalogue.cores.title') : t(cores.length === 1 ? 'catalogue.cores.titleOne' : 'catalogue.cores.titleMany', { n: cores.length });
+  const extra = cores.length ? <>{' '}<b className="bm-plate-pts">+{cores.length * CORE_TRIO_POINTS}</b></> : undefined;
   return (
-    <DashCard title={t('catalogue.cores.title')} icon={icon} meta={meta} level="h4" className={`bm-cores${cores.length ? '' : ' none'}`}>
+    <DashCard title={title} titleExtra={extra} icon={icon} level="h4" className={`bm-cores${cores.length ? '' : ' none'}`}>
       {cores.length === 0 ? (
         <div className="bm-cores-none">
+          {/* Il posto del core che manca: un triangolo tratteggiato con tre piedistalli vuoti */}
+          <svg className="bm-cores-ghost" viewBox="0 0 150 128" aria-hidden="true" focusable="false">
+            <path d="M75 30 30 96h90z" />
+            {[[75, 26], [24, 98], [126, 98]].map(([x, y]) => (
+              <g key={`${x}-${y}`}><ellipse cx={x} cy={y + 12} rx="17" ry="5" /><circle cx={x} cy={y - 4} r="12" /></g>
+            ))}
+          </svg>
           <p><b>{t('catalogue.cores.none')}</b>{t('catalogue.cores.how')}</p>
         </div>
       ) : (
@@ -328,8 +340,7 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
   const [open, setOpen] = useState<string | null>(null);
   const key = `${lang}|${kind}|${current.rows.map(r => `${r.key}:${r.details.join('|')}`).join(',')}|${rating.cores?.length ?? 0}`;
   const { bars, density } = useFitEntries(root, key, open !== null, current.rows.length);
-  const hasCores = (rating.cores?.length ?? 0) > 0;
-  const label = (k: 'bonus' | 'malus') => (k === 'bonus' && hasCores ? t('catalogue.otherBonus') : t(`catalogue.${k}`));
+  const label = (k: 'bonus' | 'malus') => t(`catalogue.${k}`);
   const pick = (k: 'bonus' | 'malus') => { setPicked(k); setOpen(null); };
   // Frecce, Home e End fra le due schede
   const onKey = (e: KeyboardEvent, i: number) => {
@@ -368,16 +379,32 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
                 <button key={g.kind} ref={el => { tabRefs.current[i] = el; }} type="button" role="tab" id={`${tabsId}-${g.kind}`}
                   className={`bm-tab ${g.kind}${g.rows.length ? '' : ' none'}`} aria-selected={g.kind === kind} aria-controls={`${tabsId}-panel`}
                   tabIndex={g.kind === kind ? 0 : -1} onClick={() => pick(g.kind)} onKeyDown={e => onKey(e, i)}>
-                  <span>{label(g.kind)}</span>
+                  <span>{label(g.kind)}</span>{' '}
                   <i className="bm-tab-count">{g.rows.length}</i>
-                  <b>{signed(g.kind === 'malus' ? -total : total)}</b>
+                  {/* Vuota: solo lo zero del conto, non anche quello del totale */}
+                  {g.rows.length > 0 && <>{' '}<b>{signed(g.kind === 'malus' ? -total : total)}</b></>}
                 </button>
               );
             })}
           </div>
           <div className={`bm-entries${density.compact ? ' compact' : ''}`} role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${kind}`}>
             {current.rows.length === 0 ? (
-              <p className="bm-entries-none">{t(kind === 'bonus' ? 'catalogue.noBonus' : 'catalogue.noMalus')}</p>
+              kind === 'malus' ? (
+                // Nessun malus: una medaglia verde con la spunta, il risultato da festeggiare (senza esagerare)
+                <div className="bm-empty good">
+                  <Medal entry={{ key: 'coreTrio', kind: 'bonus' }} glyph="check" />
+                  <p><b>{t('catalogue.noMalus')}</b>{t('catalogue.noMalusLine')}</p>
+                </div>
+              ) : (
+                // Nessun bonus: una medaglia spenta col più, e dove vedere come guadagnarli
+                <div className="bm-empty">
+                  <Medal entry={{ key: 'coreTrio', kind: 'bonus' }} glyph="plus" className="off" />
+                  <p>
+                    <b>{t('catalogue.noBonus')}</b>{t('catalogue.noBonusLine')}
+                    {onCatalogue && <button type="button" className="bm-more" onClick={onCatalogue}>{t('catalogue.all')} <span aria-hidden="true">›</span></button>}
+                  </p>
+                </div>
+              )
             ) : (
               <ul className="bm-list" style={{ '--cols': density.cols } as CSSProperties}>
                 {current.rows.map((row, i) => (

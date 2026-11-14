@@ -198,7 +198,14 @@
 .bm-tab b { font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--tone); }
 .bm-tab.none b { color: var(--faint); }
 .bm-entries { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-left: 14px; }
-.bm .bm-entries-none { margin: 6px 0 0; font-size: 13px; color: var(--faint); }
+/* Una scheda senza voci: una medaglia grande e due righe (nessun malus: verde con la spunta; nessun bonus: spenta col più
+   e il link al catalogo) */
+.bm-empty { display: flex; align-items: center; gap: 18px; padding: 10px 4px 4px; }
+.bm-empty .bm-medal { width: 58px; height: 65px; }
+.bm .bm-empty p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.bm-empty b { display: block; margin-bottom: 2px; font: 700 17px/1.2 var(--display); font-style: italic; color: var(--text); }
+.bm-empty.good b { color: var(--good); }
+.bm-empty .bm-more { display: block; margin-top: 4px; }
 .bm-list { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); align-content: start; gap: 12px 26px; margin: 0; padding: 5px 0; list-style: none; }
 /* Una voce: la medaglia appuntata sul bordo sinistro, la carta lavata nel colore della voce che sfuma a destra, i punti
    su una targhetta inclinata a righe */
@@ -221,8 +228,11 @@
 .bm-row:has(.bm-row-toggle:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.15 var(--display); font-style: italic; }
 /* Il caso sempre intero: va a capo quanto serve */
-.bm-row-case { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
-.bm-entries.compact .bm-row { min-height: 34px; padding-left: 32px; }
+/* Carte della stessa misura: il caso tiene sempre il posto di due righe (una riga sola non accorcia la carta) */
+.bm-row-case { min-height: calc(2 * 1.35em); font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+/* Carte compatte: altezza fissa, il nome può andare su due righe invece di tagliarsi */
+.bm-entries.compact .bm-row { height: 42px; min-height: 0; padding-left: 32px; }
+.bm-entries.compact .bm-row-tx b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 13px; line-height: 1.12; }
 .bm-entries.compact .bm-row .bm-medal { left: -10px; width: 34px; height: 38px; }
 .bm-entries.compact .bm-row-tx { padding-top: 2px; padding-bottom: 2px; }
 .bm-entries.compact .bm-row:not(.open) .bm-row-case { display: none; }
@@ -250,7 +260,10 @@
   border-color: color-mix(in srgb, var(--good) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
 }
 .bm-cores.dash-card.none { background: var(--panel); border-color: var(--line-soft); }
-.bm-cores .dash-head { margin: 0; padding-left: 50px; }
+/* La targhetta del titolo parte da sotto la medaglia: medaglia e targhetta sono un pezzo solo */
+.bm-cores .dash-head { margin: 0; padding-left: 0; }
+.bm-cores .dash-plate { padding-left: 48px; }
+.bm-plate-pts { margin-left: 6px; font-weight: 800; color: var(--good); }
 .bm-cores .dash-meta b.good { color: var(--good); }
 /* La medaglia del core grande come quelle delle voci, appuntata a cavallo della barra del titolo */
 .bm-head-medal.bm-medal { position: absolute; left: -14px; top: -16px; z-index: 1; width: 54px; height: 61px; }
@@ -288,8 +301,12 @@
 .bm-core-lines img { flex: none; width: 16px; height: 16px; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
 .bm-core-chip { display: inline-block; margin-top: 10px; padding: 2px 8px; background: var(--field); border: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); cursor: help; }
-.bm-cores-none { flex: 1; display: grid; place-items: center; padding: 0 24px; text-align: center; }
-.bm-cores-none p { max-width: 520px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.bm-cores-none { flex: 1; display: flex; align-items: center; justify-content: center; gap: 22px; padding: 0 24px; }
+.bm-cores-none p { max-width: 420px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+/* Il core che manca: triangolo e piedistalli tratteggiati, appena visibili */
+.bm-cores-ghost { flex: none; width: 128px; height: 109px; overflow: visible; }
+.bm-cores-ghost path, .bm-cores-ghost circle { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.bm-cores-ghost ellipse { fill: color-mix(in srgb, var(--line) 45%, transparent); }
 .bm-cores-none b { display: block; margin-bottom: 2px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   .bm-core, .bm-core-body, .bm-core-mini { transition: none; }
@@ -310,6 +327,9 @@
   .bm-bars { margin-top: 10px; padding-top: 8px; gap: 6px; }
   .bm-cores.dash-card { --cores-h: 196px; }
   .bm-entries { padding-left: 12px; }
+  .bm-entries.compact .bm-row { height: 38px; }
+  .bm-entries.compact .bm-list { row-gap: 6px; }
+  .bm-entries.compact .bm-row-tx b { font-size: 12.5px; }
   .bm-list { gap: 10px 22px; }
   .bm-row { min-height: 44px; padding-left: 40px; }
   .bm-row .bm-medal { left: -12px; width: 44px; height: 50px; }
@@ -332,14 +352,19 @@
   .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }
   .bm-cores.dash-card { --cores-h: 136px; }
   .bm-head-medal.bm-medal { left: -11px; top: -12px; width: 44px; height: 50px; }
-  .bm-cores .dash-head { padding-left: 40px; }
+  .bm-cores .dash-plate { padding-left: 38px; }
+  .bm-cores-ghost { width: 92px; height: 78px; }
+  .bm-empty { padding-top: 4px; }
+  .bm-empty .bm-medal { width: 46px; height: 52px; }
   .bm-entries-wrap { gap: 4px; }
   .bm-tab { min-height: 26px; padding: 1px 12px; }
   .bm-list { gap: 6px 22px; padding-top: 3px; padding-bottom: 0; }
   .bm-row { min-height: 37px; padding-left: 34px; }
   .bm-row .bm-medal { left: -11px; width: 38px; height: 43px; }
   .bm-row-tx { padding: 2px 8px 2px 0; }
-  .bm-row-case { font-size: 12px; line-height: 1.3; }
+  .bm-row-case { min-height: calc(2 * 1.3em); font-size: 12px; line-height: 1.3; }
+  .bm-entries.compact .bm-row { height: 36px; }
+  .bm-entries.compact .bm-list { row-gap: 5px; }
   .bm-row-pts { font-size: 19px; }
 }
 

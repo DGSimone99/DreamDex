@@ -493,6 +493,9 @@ const STATES: Record<string, State> = {
   'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
   'analysis-bonus-rain-open': bonusState(RAIN, async p => { const ok = await clickText(p, 'button.bm-row-toggle', /./); await wait(400); return ok; }),
   'analysis-bonus-stress': bonusState(STRESS),
+  // Il team di 5 (senza malus): la scheda Malus vuota; e la scheda Bonus vuota di LONE
+  'analysis-bonus-nomalus': bonusState(TEAM, async p => { const ok = await clickText(p, '.bm-tab', /malus/i); await wait(400); return ok; }),
+  'analysis-bonus-lone-bonus': bonusState(LONE, async p => { const ok = await clickText(p, '.bm-tab', /bonus/i); await wait(400); return ok; }),
   'analysis-bonus-stress-malus': bonusState(STRESS, async p => { const ok = await clickText(p, '.bm-tab', /malus/i); await wait(400); return ok; }),
   'analysis-bonus-guide': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-more', /./); await wait(400); return ok; }),
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },

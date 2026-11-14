@@ -316,8 +316,18 @@ describe('Bonus/Malus', () => {
     const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
     expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
     await user.click(groupTab(/^Bonus/));
-    expect(screen.getByRole('tabpanel', { name: /^Bonus/ })).toHaveTextContent('Nessun altro bonus per ora');
+    const empty = screen.getByRole('tabpanel', { name: /^Bonus/ });
+    expect(empty).toHaveTextContent('Nessun bonus per ora');
+    // Il link al catalogo, per vedere come guadagnarli; la scheda vuota ha solo lo zero del conto
+    expect(within(empty).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
+    expect(groupTab(/^Bonus/)).toHaveAccessibleName('Bonus 0');
     expect(document.querySelector('.area-problems-row')).toBeNull();
+  });
+
+  it('nessun malus: la scheda Malus mostra la medaglia con la spunta e "Il team non perde punti"', async () => {
+    const { user } = renderBm({ ...catalogRating(), penalty: { total: 0, items: [] } } as unknown as TeamRating);
+    await user.click(groupTab(/^Malus/));
+    expect(screen.getByRole('tabpanel', { name: /^Malus/ })).toHaveTextContent('Nessun malusIl team non perde punti');
   });
 
   it('netto verde se positivo; senza voci il netto è 0 grigio con "Né bonus né malus per ora"', () => {
@@ -352,9 +362,8 @@ describe('Bonus/Malus', () => {
 
   it('due core a tre: aperto quello che regge più tipi, l\'altro è un pulsante che lo apre', async () => {
     const { user } = renderBm(coreRating());
-    const cores = screen.getByRole('region', { name: 'Core' });
-    // Nella barra del titolo quanti sono e quanto valgono, con la medaglia accesa
-    expect(cores).toHaveTextContent('2 · +6');
+    // Nel titolo quanti sono e quanto valgono, con la medaglia accesa
+    const cores = screen.getByRole('region', { name: '2 Core +6' });
     expect(cores.querySelector('.bm-head-medal')).not.toHaveClass('off');
     const strong = within(cores).getByRole('button', { name: 'Core Fire / Ground / Poison' });
     const weak = within(cores).getByRole('button', { name: 'Core Fire / Water / Electric' });
@@ -374,7 +383,7 @@ describe('Bonus/Malus', () => {
 
   it('un core solo: aperto, senza pulsante; nessun core: una riga su come averne uno', () => {
     const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating([fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])])} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-    const one = screen.getByRole('region', { name: 'Core' });
+    const one = screen.getByRole('region', { name: '1 Core +3' });
     expect(within(one).queryByRole('button')).toBeNull();
     expect(within(one).getByRole('heading', { name: /Fire \/ Ground \/ Poison/ })).toBeInTheDocument();
     unmount();
