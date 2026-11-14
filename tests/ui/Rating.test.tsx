@@ -256,8 +256,8 @@ function renderBm(rating: TeamRating) {
   return { user, view: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
 const onGrade = () => screen.getByRole('region', { name: 'Sul voto' });
-/** Le voci attive: a tutta larghezza sotto netto e core, una lista col nome "Sul voto". */
-const entries = () => screen.getByRole('list', { name: 'Sul voto' });
+/** Le voci attive sotto netto e core, divise: la lista dei bonus (o "Altri bonus" coi core) e quella dei malus. */
+const group = (name: RegExp) => screen.getByRole('list', { name });
 
 describe('Bonus/Malus', () => {
   it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
@@ -284,17 +284,21 @@ describe('Bonus/Malus', () => {
     expect(bonus.querySelector('b')).toHaveClass('zero');
   });
 
-  it('solo le voci attive, prima i bonus poi i malus, coi casi e i punti in tutto; niente voci a zero né regole a punti', () => {
+  it('solo le voci attive, divise in bonus e malus col loro totale, coi casi e i punti; niente voci a zero né regole a punti', () => {
     renderBm(catalogRating());
-    const rows = within(entries()).getAllByRole('listitem');
-    expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Meteo che protegge', 'Stesso tipo', 'Hazard ripetuto']);
-    expect(rows[0]).toHaveTextContent('+2');
-    expect(rows[0]).toHaveClass('bonus');
-    expect(rows[2]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
-    expect(rows[2]).toHaveTextContent('−3');
-    expect(rows[2]).toHaveClass('malus');
-    expect(rows[1]).toHaveTextContent('−5');
-    expect(entries()).not.toHaveTextContent('Tipi vari');
+    const bonus = within(group(/^Bonus \+2$/)).getAllByRole('listitem');
+    expect(bonus.map(row => row.querySelector('b')!.textContent)).toEqual(['Meteo che protegge']);
+    expect(bonus[0]).toHaveTextContent('+2');
+    expect(bonus[0]).toHaveClass('bonus');
+    const malus = within(group(/^Malus −8$/)).getAllByRole('listitem');
+    expect(malus.map(row => row.querySelector('b')!.textContent)).toEqual(['Stesso tipo', 'Hazard ripetuto']);
+    expect(malus[1]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
+    expect(malus[1]).toHaveTextContent('−3');
+    expect(malus[1]).toHaveClass('malus');
+    expect(malus[0]).toHaveTextContent('−5');
+    expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Tipi vari');
+    // Testi che stanno: nessun pulsante per aprirli (in jsdom niente misure: mai tagliati)
+    expect(screen.queryByRole('button', { name: /Mostra tutto il testo/ })).toBeNull();
     expect(onGrade()).not.toHaveTextContent('per ogni');
     expect(screen.queryByText('Cosa toglie')).toBeNull();
     expect(screen.queryByText(/per ora a zero/)).toBeNull();
@@ -309,7 +313,29 @@ describe('Bonus/Malus', () => {
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent(/^0$/);
     expect(onGrade().querySelector('.bm-net')).toHaveClass('zero');
     expect(onGrade()).toHaveTextContent('Né bonus né malus per ora');
-    expect(screen.queryByRole('list', { name: 'Sul voto' })).toBeNull();
+    expect(screen.queryByRole('list', { name: /bonus|malus/i })).toBeNull();
+  });
+
+  it('un caso tagliato (misurato) si apre per intero col clic e si richiude', async () => {
+    // Misura finta: il caso tagliato è alto 16px, intero 40px
+    const real = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      const box = real.call(this);
+      if (!this.classList.contains('bm-row-case')) return box;
+      return { x: 0, y: 0, top: 0, left: 0, right: box.right, bottom: 0, width: box.width, height: this.classList.contains('measuring') ? 40 : 16, toJSON: () => ({}) } as DOMRect;
+    };
+    try {
+      const { user } = renderBm(catalogRating());
+      const toggle = screen.getByRole('button', { name: 'Mostra tutto il testo: Hazard ripetuto' });
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(toggle.closest('li')).toHaveClass('open');
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    } finally {
+      Element.prototype.getBoundingClientRect = real;
+    }
   });
 
   it('"Tutte le voci possibili" apre il catalogo (la guida della scheda) sui bonus; all\'uscita il focus torna al link', async () => {
@@ -344,9 +370,9 @@ describe('Bonus/Malus', () => {
     expect(strong).toHaveAttribute('aria-expanded', 'false');
     expect(weak.closest('li')).toHaveClass('open');
     expect(within(cores).getByText('Reggono 4 tipi su 18')).toBeInTheDocument();
-    // Le medaglie del core nella lista: una per trio, coi soli nomi, prima quella del core che regge più tipi
-    const rows = within(entries()).getAllByRole('listitem');
-    expect(rows.map(row => row.textContent)).toEqual(['Core a treHeatran, Landorus-Therian, Toxapex+3', 'Core a trePelipper, Ferrothorn, Great Tusk+3']);
+    // I core stanno solo nel riquadro in alto: nessuna voce sotto (contano però nel netto e in "Bonus +6")
+    expect(screen.queryByRole('list', { name: /bonus/i })).toBeNull();
+    expect(onGrade()).toHaveTextContent('Bonus +6');
   });
 
   it('un core solo: aperto, senza pulsante; nessun core: una riga su come averne uno', () => {

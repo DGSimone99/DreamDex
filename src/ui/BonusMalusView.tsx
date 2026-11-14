@@ -83,18 +83,11 @@ function detailOf(item: Redundancy, name: string): string {
   return at > 0 && text.slice(at + 2).toLowerCase() === name.toLowerCase() ? text.slice(0, at) : text;
 }
 
-function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: Redundancy[], cores: Core[] = [], rank: (core: Core) => number = () => 0): ActiveRow[] {
-  return catalog.filter(e => e.kind === kind).flatMap(entry => {
+function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: Redundancy[]): ActiveRow[] {
+  // I core a tre stanno nel riquadro in alto col loro +3: non si ripetono fra le voci (contano nel netto e nelle barre)
+  return catalog.filter(e => e.kind === kind && e.key !== 'coreTrio').flatMap(entry => {
     const own = items.filter(i => i.catalog === entry.key && i.points > 0);
     if (!own.length) return [];
-    // Ogni trio è una medaglia a sé: si vede quale trio vale i suoi punti
-    // Ogni trio è una medaglia a sé, coi soli nomi dei tre (i core sono nello stesso ordine del bonus), nell'ordine
-    // della colonna dei core (prima quello che regge più tipi)
-    if (entry.key === 'coreTrio') {
-      return own.map((item, i) => ({ item, core: cores[i], i }))
-        .sort((a, b) => (a.core && b.core ? rank(a.core) - rank(b.core) : 0))
-        .map(({ item, core, i }) => ({ key: `${entry.key}:${i}`, entry, points: item.points, details: [core?.members.join(', ') ?? detailOf(item, entry.name)] }));
-    }
     return [{ key: entry.key, entry, points: own.reduce((n, i) => n + i.points, 0), details: own.map(i => detailOf(i, entry.name)) }];
   });
 }
@@ -223,15 +216,16 @@ function Bars({ bonus, malus, t }: { bonus: number; malus: number; t: T }) {
  * stanno più si nascondono; tornano quando lo spazio libero sotto le voci basta a riprenderle (misura prima del disegno,
  * niente sfarfallio). Senza ResizeObserver (test) restano.
  */
-function useRoomForBars(bm: RefObject<HTMLDivElement | null>, key: string): boolean {
+function useRoomForBars(bm: RefObject<HTMLDivElement | null>, key: string, frozen: boolean): boolean {
   const [shown, setShown] = useState(true);
   // Quanto in più chiedono le barre alla colonna di destra (misurato l'ultima volta che si vedevano)
   const need = useRef(0);
   useLayoutEffect(() => {
     const root = bm.current;
-    if (!root || typeof ResizeObserver === 'undefined') return;
+    // Con una voce aperta per intero le barre restano come sono (la zona delle voci può scorrere solo allora)
+    if (!root || frozen || typeof ResizeObserver === 'undefined') return;
     const check = () => {
-      const list = root.querySelector<HTMLElement>('.bm-list');
+      const list = root.querySelector<HTMLElement>('.bm-groups');
       const grade = root.querySelector<HTMLElement>('.bm-grade');
       const bars = root.querySelector<HTMLElement>('.bm-bars');
       if (!grade) return;
@@ -252,32 +246,103 @@ function useRoomForBars(bm: RefObject<HTMLDivElement | null>, key: string): bool
     const observer = new ResizeObserver(check);
     observer.observe(root);
     return () => observer.disconnect();
-  }, [bm, key, shown]);
+  }, [bm, key, shown, frozen]);
   return shown;
 }
 
 /**
- * La scheda Bonus/Malus. In alto: a sinistra i core a tre che il voto conta, disegnati a triangolo; a destra il netto sul
- * voto con bonus e malus in tutto, le barre (solo se c'è posto) e il link al catalogo con tutte le voci possibili (la
- * guida della scheda). Sotto, a tutta larghezza, le voci che valgono adesso in tre colonne, ognuna con la sua medaglia
- * (icona della famiglia; il malus rosso e incrinato), il caso concreto e i punti.
+ * Una voce: medaglia, nome, caso concreto (fino a due righe) e punti. Se il caso non sta nelle due righe (misurato, non
+ * indovinato) il testo diventa un pulsante che lo apre per intero, con la freccia; altrimenti è testo semplice.
+ */
+function Entry({ row, index, open, onToggle, t }: { row: ActiveRow; index: number; open: boolean; onToggle: () => void; t: T }) {
+  const { entry, points, details } = row;
+  const caseRef = useRef<HTMLSpanElement>(null);
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const el = caseRef.current;
+    // Aperta la voce non si misura (il testo è intero): resta un pulsante per richiuderla
+    if (!el || open) return;
+    // L'altezza tagliata contro quella intera (tolto il taglio per un attimo, prima del disegno): scrollHeight non basta,
+    // col taglio a righe Chrome lo riporta già tagliato
+    const measure = () => {
+      if (!el.isConnected) return;
+      const clamped = el.getBoundingClientRect().height;
+      el.classList.add('measuring');
+      const full = el.getBoundingClientRect().height;
+      el.classList.remove('measuring');
+      setCut(full - clamped > 1);
+    };
+    measure();
+    // Di nuovo quando arrivano i font (il testo cambia larghezza ma la casella tagliata no) e a ogni cambio di misura
+    let live = true;
+    document.fonts?.ready.then(() => { if (live) measure(); });
+    if (typeof ResizeObserver === 'undefined') return () => { live = false; };
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    if (el.parentElement) observer.observe(el.parentElement);
+    return () => { live = false; observer.disconnect(); };
+  }, [open, details.join('|')]);
+  return (
+    <li className={`bm-row ${entry.kind}${open ? ' open' : ''}${cut || open ? ' long' : ''}`}>
+      {/* Le medaglie entrano una dopo l'altra (--i: il ritardo) quando si apre la scheda */}
+      <Medal entry={entry} style={{ '--i': index } as CSSProperties} />
+      <span className="bm-row-tx">
+        <b>{entry.name}</b>
+        <span ref={caseRef} className="bm-row-case">
+          {details.map((detail, i) => <span key={i}>{i > 0 && ' · '}<Typed text={detail} /></span>)}
+        </span>
+        {/* Solo se il caso è davvero tagliato: un pulsante su tutta la carta lo apre per intero (e lo richiude) */}
+        {(cut || open) && (
+          <button type="button" className="bm-row-toggle" aria-expanded={open} aria-label={t('catalogue.showAll', { name: entry.name })} onClick={onToggle}>
+            <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+          </button>
+        )}
+      </span>
+      <span className="bm-row-pts">{signed(entry.kind === 'malus' ? -points : points)}</span>
+    </li>
+  );
+}
+
+/**
+ * La scheda Bonus/Malus. In alto: a sinistra i core a tre che il voto conta, disegnati a triangolo col loro +3; a destra
+ * il netto sul voto con bonus e malus in tutto (core compresi), le barre (solo se c'è posto) e il link al catalogo con
+ * tutte le voci possibili (la guida della scheda). Sotto, le altre voci divise: i bonus a sinistra, i malus a destra,
+ * ognuna con la sua medaglia; se un gruppo manca l'altro prende tutta la larghezza.
  */
 export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamRating; lang: Lang; t: T; onCatalogue?: () => void }) {
   const catalog = bonusMalusCatalog(lang);
-  const order = rankedCores(rating).map(r => r.core);
-  const rows = [...activeRows(catalog, 'bonus', rating.bonus.items, rating.cores, core => order.indexOf(core)), ...activeRows(catalog, 'malus', rating.penalty.items)];
+  const groups = (['bonus', 'malus'] as const)
+    .map(kind => ({ kind, rows: activeRows(catalog, kind, kind === 'bonus' ? rating.bonus.items : rating.penalty.items) }))
+    .filter(group => group.rows.length > 0);
   const net = rating.bonus.total - rating.penalty.total;
+  const nothing = rating.bonus.total === 0 && rating.penalty.total === 0;
   const head = useId();
+  const groupId = useId();
   const root = useRef<HTMLDivElement>(null);
-  const bars = useRoomForBars(root, `${lang}|${rows.map(r => `${r.key}:${r.details.join('|')}`).join(',')}|${rating.cores?.length ?? 0}`);
+  // Una voce aperta per intero alla volta (per chiave)
+  const [open, setOpen] = useState<string | null>(null);
+  const key = `${lang}|${groups.map(g => g.rows.map(r => `${r.key}:${r.details.join('|')}`).join(',')).join('/')}|${rating.cores?.length ?? 0}`;
+  const bars = useRoomForBars(root, key, open !== null);
+  const hasCores = (rating.cores?.length ?? 0) > 0;
+  // Colonne di carte per gruppo (sul desktop ne stanno tre in tutto): un gruppo da solo ne prende due (tre se ha molte
+  // voci); con due gruppi quello che ha almeno il doppio delle voci dell'altro ne prende due, così le righe si pareggiano
+  const count = (kind: 'bonus' | 'malus') => groups.find(g => g.kind === kind)?.rows.length ?? 0;
+  const cols = (kind: 'bonus' | 'malus') => {
+    const own = count(kind);
+    const other = count(kind === 'bonus' ? 'malus' : 'bonus');
+    if (!other) return own > 6 ? 3 : Math.min(2, own) || 1;
+    return own >= 2 * other && own > 1 ? 2 : 1;
+  };
+  // Il ritardo delle medaglie va per tutta la scheda: prima i bonus, poi i malus
+  const offset = (kind: 'bonus' | 'malus') => (kind === 'malus' ? groups.find(g => g.kind === 'bonus')?.rows.length ?? 0 : 0);
   return (
-    <div className={`bm${rows.length ? '' : ' empty'}`} ref={root}>
+    <div className={`bm${groups.length ? '' : ' empty'}${open ? ' expanded' : ''}`} ref={root}>
       <section className="bm-grade" aria-labelledby={head}>
         <div className="bm-sum">
           <h4 id={head} className="bm-label">{t('catalogue.onGrade')}</h4>
           {/* Il risultato della scheda su una sua targhetta inclinata, nel colore del segno */}
           <p className={`bm-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}><span>{signed(net)}</span></p>
-          {rows.length === 0 ? <p className="bm-parts">{t('catalogue.none')}</p> : (
+          {nothing ? <p className="bm-parts">{t('catalogue.none')}</p> : (
             <p className="bm-parts">
               <span>{t('catalogue.bonus')} <b className={rating.bonus.total ? 'good' : undefined}>{signed(rating.bonus.total)}</b></span>
               <span>{t('catalogue.malus')} <b className={rating.penalty.total ? 'bad' : undefined}>{signed(-rating.penalty.total)}</b></span>
@@ -288,20 +353,25 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
         {onCatalogue && <button type="button" className="bm-more" onClick={onCatalogue}>{t('catalogue.all')} <span aria-hidden="true">›</span></button>}
       </section>
       <CoreColumn rating={rating} lang={lang} t={t} />
-      {rows.length > 0 && (
-        <ul className="bm-list" aria-labelledby={head}>
-          {rows.map(({ key, entry, points, details }, i) => (
-            <li key={key} className={`bm-row ${entry.kind}`}>
-              {/* Le medaglie entrano una dopo l'altra (--i: il ritardo) quando si apre la scheda */}
-              <Medal entry={entry} style={{ '--i': i } as CSSProperties} />
-              <span className="bm-row-tx">
-                <b>{entry.name}</b>
-                <span title={details.join(' · ')}>{details.map((detail, i) => <span key={i}>{i > 0 && ' · '}{entry.key === 'coreTrio' ? detail : <Typed text={detail} />}</span>)}</span>
-              </span>
-              <span className="bm-row-pts">{signed(entry.kind === 'malus' ? -points : points)}</span>
-            </li>
-          ))}
-        </ul>
+      {groups.length > 0 && (
+        <div className={`bm-groups${groups.length === 1 ? ' single' : ''}`}>
+          {groups.map(({ kind, rows }) => {
+            const total = rows.reduce((n, r) => n + r.points, 0);
+            // Col core in alto, sotto ci sono solo gli "altri" bonus: il totale del gruppo non è quello del netto
+            const label = kind === 'bonus' && hasCores ? t('catalogue.otherBonus') : t(`catalogue.${kind}`);
+            return (
+              <section key={kind} className={`bm-group ${kind}`} style={{ flexGrow: cols(kind), '--cols': cols(kind) } as CSSProperties} aria-labelledby={`${groupId}-${kind}`}>
+                <h5 id={`${groupId}-${kind}`} className="bm-group-head">{label} <b>{signed(kind === 'malus' ? -total : total)}</b></h5>
+                <ul className="bm-list" aria-labelledby={`${groupId}-${kind}`}>
+                  {rows.map((row, i) => (
+                    <Entry key={row.key} row={row} index={offset(kind) + i} open={open === row.key} t={t}
+                      onToggle={() => setOpen(current => (current === row.key ? null : row.key))} />
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
       )}
     </div>
   );

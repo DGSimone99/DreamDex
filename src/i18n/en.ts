@@ -1241,6 +1241,8 @@ export const en = {
   'catalogue.onGrade': "On the grade",
   'catalogue.malus': "Malus",
   'catalogue.bonus': "Bonus",
+  'catalogue.otherBonus': "Other bonuses",
+  'catalogue.showAll': "Show the full text: {name}",
   'catalogue.none': "No bonus or malus yet",
   'catalogue.all': "All possible entries",
   'catalogue.allBonus': "All bonuses",

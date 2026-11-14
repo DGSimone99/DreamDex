@@ -182,10 +182,15 @@
 .bm-more:hover { text-decoration: underline; }
 
 /* Sotto, a tutta larghezza: le voci attive in tre colonne, riga per riga (se proprio non stanno, scorrono) */
-.bm-list {
-  grid-area: list; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: 12px 26px; margin: 0; padding: 5px 0 5px 14px; list-style: none;
-}
+/* Sotto: le voci divise, i bonus a sinistra e i malus a destra (largo in proporzione a quante voci ha il gruppo); se un
+   gruppo manca l'altro prende tutta la larghezza. Scorre solo con una voce aperta per intero che non sta */
+.bm-groups { grid-area: list; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; display: flex; align-items: flex-start; gap: 0 28px; padding-left: 14px; }
+.bm-group { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.bm .bm-group-head { margin: 0; font: 600 11px/1.2 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.bm-group-head b { margin-left: 4px; font: 800 13px/1 var(--display); font-style: italic; letter-spacing: 0; }
+.bm-group.bonus .bm-group-head b { color: var(--good); }
+.bm-group.malus .bm-group-head b { color: var(--bad); }
+.bm-list { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); align-content: start; gap: 12px 26px; margin: 0; padding: 5px 0; list-style: none; }
 /* Una voce: la medaglia appuntata sul bordo sinistro, la carta lavata nel colore della voce che sfuma a destra, i punti
    su una targhetta inclinata a righe */
 .bm-row {
@@ -197,8 +202,18 @@
 .bm-row.malus { --c: var(--bad); --bg: var(--bad-bg); }
 .bm-row .bm-medal { position: absolute; left: -14px; top: 50%; translate: 0 -50%; width: 54px; height: 61px; }
 .bm-row-tx { flex: 1; min-width: 0; align-self: center; display: grid; gap: 1px; padding: 6px 10px 6px 0; }
+/* Il caso troppo lungo: un pulsante steso su tutta la carta lo apre per intero, con la freccia in basso a destra */
+.bm-row.long .bm-row-tx { padding-right: 22px; }
+.bm-row-toggle { position: static; padding: 0; background: none; border: 0; color: var(--muted); font: 11px/1 var(--ui); cursor: pointer; }
+.bm-row-toggle::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.bm-row-toggle > span { position: absolute; right: 6px; bottom: 5px; }
+.bm-row.long:hover .bm-row-case, .bm-row.long:hover .bm-row-toggle { color: var(--text); }
+.bm-row-toggle:focus-visible { outline: none; }
+.bm-row:has(.bm-row-toggle:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.15 var(--display); font-style: italic; }
-.bm-row-tx > span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.bm-row-case { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.bm-row.open .bm-row-case { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.bm .bm-row-case.measuring { display: block !important; -webkit-line-clamp: unset !important; }
 .bm-row-pts {
   flex: none; display: grid; place-items: center; min-width: 62px; padding: 0 12px 0 22px; color: var(--c);
   background: var(--stripes), color-mix(in srgb, var(--c) 18%, var(--field));
@@ -273,7 +288,10 @@
   .bm .bm-hint { display: none; }
   .bm .bm-net { font-size: 48px; padding: 5px 26px 6px 12px; }
   .bm-bars { margin-top: 10px; padding-top: 8px; gap: 6px; }
-  .bm-list { gap: 10px 22px; padding-left: 12px; }
+  .bm-groups { padding-left: 12px; }
+  .bm-list { gap: 10px 22px; }
+  /* Il caso in una riga: quando non sta, la voce si apre col clic */
+  .bm-row:not(.open) .bm-row-case { -webkit-line-clamp: 1; }
   .bm-row { min-height: 44px; padding-left: 40px; }
   .bm-row .bm-medal { left: -12px; width: 44px; height: 50px; }
   .bm-row-tx { padding: 4px 8px 4px 0; }
@@ -290,11 +308,15 @@
   .bm-core-chip { margin-top: 4px; padding: 1px 6px; }
   .bm .bm-label { margin-bottom: 6px; }
   .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }
-  .bm-list { gap: 6px 22px; padding-top: 3px; padding-bottom: 3px; }
+  .bm-group { gap: 0; }
+  .bm-groups { margin-top: -2px; }
+  /* I nomi dei gruppi restano per i lettori di schermo: li distinguono colore e posto */
+  .bm .bm-group-head { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .bm-list { gap: 6px 22px; padding-top: 3px; padding-bottom: 0; }
   .bm-row { min-height: 37px; padding-left: 34px; }
   .bm-row .bm-medal { left: -11px; width: 38px; height: 43px; }
   .bm-row-tx { padding: 2px 8px 2px 0; }
-  .bm-row-tx > span { font-size: 12px; line-height: 1.3; }
+  .bm-row-case { font-size: 12px; line-height: 1.3; }
   .bm-row-pts { font-size: 19px; }
 }
 

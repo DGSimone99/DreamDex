@@ -1243,6 +1243,8 @@ export const it: Record<keyof typeof en, string> = {
   'catalogue.onGrade': "Sul voto",
   'catalogue.malus': "Malus",
   'catalogue.bonus': "Bonus",
+  'catalogue.otherBonus': "Altri bonus",
+  'catalogue.showAll': "Mostra tutto il testo: {name}",
   'catalogue.none': "Né bonus né malus per ora",
   'catalogue.all': "Tutte le voci possibili",
   'catalogue.allBonus': "Tutti i bonus",
