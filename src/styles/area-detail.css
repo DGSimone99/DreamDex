@@ -120,11 +120,16 @@
 .rating .bars dd { margin: 0; }
 
 /*
- * Bonus/Malus (BonusMalusView): a destra il netto sul voto e solo le voci attive, ognuna con la sua medaglia; a sinistra
- * i core a tre a triangolo (due a fisarmonica: uno aperto, l'altro solo triangolo). Se le voci sono tante scorre la lista.
+ * Bonus/Malus (BonusMalusView): in alto a sinistra i core a tre a triangolo (due a fisarmonica: uno aperto, l'altro solo
+ * triangolo), a destra il netto sul voto e le barre (solo se c'è posto); sotto, a tutta larghezza, le voci attive in tre
+ * colonne, ognuna con la sua medaglia.
  */
 .area-panel:has(> .bm) { display: flex; flex-direction: column; overflow: hidden; }
-.bm { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 400px); grid-template-areas: "cores grade"; gap: 28px; }
+.bm {
+  flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cores grade" "list list"; gap: 18px 28px;
+}
+.bm.empty { grid-template-rows: auto; grid-template-areas: "cores grade"; }
 .bm .bm-label { margin: 0 0 8px; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .bm p { margin: 0; }
 
@@ -138,38 +143,47 @@
 .bm-medal-icon { fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .bm-medal-crack { fill: none; stroke: var(--bad); stroke-width: 1.6; stroke-linejoin: round; }
 
-/* Colonna destra: netto, bonus e malus, voci attive, link al catalogo */
-.bm-grade { grid-area: grade; min-height: 0; display: flex; flex-direction: column; }
+/* In alto a destra: il netto grande a sinistra, l'etichetta e bonus/malus a destra; sotto le barre e il link */
+.bm-grade { grid-area: grade; align-self: start; min-width: 0; display: flex; flex-direction: column; }
+.bm-sum { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: end; column-gap: 16px; }
+.bm-sum .bm-net { grid-column: 1; grid-row: 1 / span 2; }
+.bm .bm-sum .bm-label { grid-column: 2; margin: 0 0 5px; }
 .bm .bm-net { font: 800 64px/0.9 var(--display); font-style: italic; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
 .bm-net.good { color: var(--good); }
 .bm-net.bad { color: var(--bad); }
 .bm-net.zero { color: var(--faint); }
-/* Il netto grande a sinistra, l'etichetta e bonus/malus a destra: resta posto alle voci */
-.bm-sum { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: end; column-gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line-soft); }
-.bm-sum .bm-net { grid-column: 1; grid-row: 1 / span 2; }
-.bm .bm-sum .bm-label { grid-column: 2; margin: 0 0 5px; }
 .bm .bm-parts { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13px; color: var(--muted); }
 .bm-parts b { font-weight: 700; }
 .bm-parts b.good { color: var(--good); }
 .bm-parts b.bad { color: var(--bad); }
-/* Se le voci non stanno, la lista scorre: il fondo sfuma (sul margine vuoto quando stanno tutte) */
+.bm-bars { display: grid; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.bm-bar { display: grid; grid-template-columns: 52px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font: 600 12px var(--ui); color: var(--muted); }
+.bm-track { height: 8px; background: var(--field); }
+.bm-track > span { display: block; height: 100%; min-width: 2px; }
+.bm-bar.malus .bm-track > span { background: var(--bad); }
+.bm-bar.bonus .bm-track > span { background: var(--good); }
+.bm-bar b { text-align: right; font: 800 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+.bm-bar.malus b { color: var(--bad); }
+.bm-bar.bonus b { color: var(--good); }
+.bm-bar b.zero { color: var(--faint); }
+.bm-more { align-self: flex-end; margin-top: 10px; padding: 0; background: none; border: 0; color: var(--accent); font: 600 13px var(--ui); cursor: pointer; }
+.bm-more:hover { text-decoration: underline; }
+
+/* Sotto, a tutta larghezza: le voci attive in tre colonne, riga per riga (se proprio non stanno, scorrono) */
 .bm-list {
-  flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
-  display: grid; align-content: start; gap: 8px; margin: 12px 0 0; padding: 0 2px 14px 0; list-style: none;
-  mask-image: linear-gradient(#000 calc(100% - 14px), transparent);
+  grid-area: list; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: 8px; margin: 0; padding: 0; list-style: none;
 }
-.bm-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.bm-row { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 14px 8px 10px; background: var(--raised); border: 1px solid var(--line-soft); }
 .bm-row-tx { flex: 1; min-width: 0; display: grid; gap: 1px; }
-.bm-row-tx b { font: 700 15px/1.15 var(--display); font-style: italic; }
+.bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.15 var(--display); font-style: italic; }
 .bm-row-tx > span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
 .bm-row-pts { flex: none; font: 800 22px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
 .bm-row.bonus .bm-row-pts { color: var(--good); }
 .bm-row.malus .bm-row-pts { color: var(--bad); }
-.bm-more { align-self: flex-end; margin-top: auto; padding: 8px 0 0; background: none; border: 0; color: var(--accent); font: 600 13px var(--ui); cursor: pointer; }
-.bm-more:hover { text-decoration: underline; }
 
-/* Colonna sinistra: i core a tre */
-.bm-cores { grid-area: cores; min-width: 0; display: flex; flex-direction: column; }
+/* In alto a sinistra: i core a tre */
+.bm-cores { grid-area: cores; align-self: start; min-width: 0; display: flex; flex-direction: column; }
 .bm .sum-tri { --tri-w: 150px; --tri-badge: 22px; }
 .bm-core-row { display: flex; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .bm-core {
@@ -203,30 +217,48 @@
 .bm-core-lines img { flex: none; width: 16px; height: 16px; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
 .bm-core-chip { display: inline-block; margin-top: 10px; padding: 2px 8px; background: var(--field); border: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); cursor: help; }
-.bm .bm-hint { margin-top: 8px; font-size: 12px; color: var(--faint); }
-.bm-cores-none { display: flex; align-items: center; gap: 14px; max-width: 520px; padding: 14px 16px; background: var(--raised); border: 1px solid var(--line-soft); }
+.bm .bm-hint { margin-top: 6px; font-size: 12px; color: var(--faint); }
+.bm-cores-none { display: flex; align-items: center; gap: 14px; max-width: 560px; padding: 14px 16px; background: var(--raised); border: 1px solid var(--line-soft); }
 .bm-cores-none p { font-size: 13px; line-height: 1.45; color: var(--muted); }
 .bm-cores-none b { display: block; margin-bottom: 2px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   .bm-core, .bm-core-body, .bm-core-mini { transition: none; }
 }
-@media (max-height: 799px), (max-width: 1279px) {
-  .bm { gap: 22px; grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); }
-  .bm .sum-tri { --tri-w: 124px; --tri-badge: 20px; }
-  .bm .bm-net { font-size: 52px; }
-  .bm-list { gap: 6px; margin-top: 8px; }
-  .bm-core { padding: 10px 14px; }
+@media (max-width: 1279px) {
+  .bm { column-gap: 22px; grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
 }
-/* Portatili bassi: netto più piccolo, medaglie più piccole */
+/* Schermi bassi: tutto più compatto (core, netto, carte delle voci) perché le voci stiano senza scorrere */
 @media (max-height: 799px) {
-  .bm .bm-sum .bm-net { font-size: 46px; }
-  .bm-sum { padding-bottom: 8px; }
-  .bm-medal { width: 30px; height: 34px; }
-  .bm-row-pts { font-size: 20px; }
+  .bm { row-gap: 12px; }
+  .bm .sum-tri { --tri-w: 112px; --tri-badge: 19px; }
+  .bm-core { padding: 9px 14px; }
+  .bm .bm-core-body h5 { margin-bottom: 5px; font-size: 16px; }
+  .bm-core-pts { font-size: 19px; }
+  .bm-core-lines { gap: 2px; font-size: 12.5px; }
+  .bm-core-chip { margin-top: 6px; }
+  .bm .bm-hint { display: none; }
+  .bm .bm-net { font-size: 48px; }
+  .bm-bars { margin-top: 10px; padding-top: 8px; gap: 6px; }
+  .bm-list { gap: 6px; }
+  .bm-row { padding: 5px 12px 5px 8px; gap: 10px; }
+  .bm-medal { width: 28px; height: 32px; }
+  .bm-row-tx b { font-size: 14px; }
+  .bm-row-pts { font-size: 19px; }
 }
 @media (max-height: 679px) {
-  .bm .bm-hint { display: none; }
-  .bm-core-chip { margin-top: 6px; }
+  .area-panel.ad-panel:has(> .bm) { padding-top: 10px; padding-bottom: 10px; }
+  .bm { row-gap: 10px; }
+  .bm .sum-tri { --tri-w: 96px; --tri-badge: 17px; }
+  .bm .bm-core-body h5 { margin-bottom: 3px; }
+  .bm-core-lines { gap: 0; line-height: 1.3; }
+  .bm-core { padding: 7px 12px; gap: 12px; }
+  .bm-core-chip { margin-top: 4px; padding: 1px 6px; }
+  .bm .bm-label { margin-bottom: 6px; }
+  .bm .bm-net { font-size: 42px; }
+  .bm-list { gap: 5px; }
+  .bm-row { padding: 3px 12px 3px 8px; }
+  .bm-row-tx > span { font-size: 12px; line-height: 1.3; }
+  .bm-medal { width: 26px; height: 30px; }
 }
 
 /* Il catalogo nella guida della scheda: tutte le voci con la medaglia, quando scattano e quanto valgono */

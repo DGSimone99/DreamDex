@@ -1,4 +1,4 @@
-import { useId, useState, type ReactElement } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
 import type { Lang } from '../i18n';
 import { typeName } from '../i18n/game';
 import type { Core } from '../engine/cores';
@@ -180,9 +180,68 @@ function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T 
 }
 
 /**
- * La scheda Bonus/Malus: a destra il netto sul voto e solo le voci che valgono adesso, ognuna con la sua medaglia (icona
- * della famiglia; il malus rosso e incrinato) e il caso concreto; sotto il link al catalogo con tutte le voci possibili
- * (la guida della scheda). A sinistra i core a tre che il voto conta, disegnati a triangolo.
+ * Le barre di quanto tolgono i malus e aggiungono i bonus, sulla stessa scala (la più lunga è la più grande delle due,
+ * almeno 10 punti: 1–2 punti restano corti). Decorative: i numeri sono già scritti sopra.
+ */
+function Bars({ bonus, malus, t }: { bonus: number; malus: number; t: T }) {
+  const scale = Math.max(10, malus, bonus);
+  return (
+    <div className="bm-bars" aria-hidden="true">
+      {([['malus', malus], ['bonus', bonus]] as const).map(([kind, total]) => (
+        <div key={kind} className={`bm-bar ${kind}`}>
+          <span>{t(`catalogue.${kind}`)}</span>
+          {/* A zero la barra resta vuota (niente tacca) */}
+          <span className="bm-track">{total > 0 && <span style={{ width: `${(100 * total) / scale}%` }} />}</span>
+          <b className={total === 0 ? 'zero' : undefined}>{signed(kind === 'malus' ? -total : total)}</b>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Le barre solo se c'è posto: con le barre la riga in alto può crescere e togliere spazio alle voci. Se le voci non
+ * stanno più si nascondono; tornano quando lo spazio libero sotto le voci basta a riprenderle (misura prima del disegno,
+ * niente sfarfallio). Senza ResizeObserver (test) restano.
+ */
+function useRoomForBars(bm: RefObject<HTMLDivElement | null>, key: string): boolean {
+  const [shown, setShown] = useState(true);
+  // Quanto in più chiedono le barre alla colonna di destra (misurato l'ultima volta che si vedevano)
+  const need = useRef(0);
+  useLayoutEffect(() => {
+    const root = bm.current;
+    if (!root || typeof ResizeObserver === 'undefined') return;
+    const check = () => {
+      const list = root.querySelector<HTMLElement>('.bm-list');
+      const grade = root.querySelector<HTMLElement>('.bm-grade');
+      const bars = root.querySelector<HTMLElement>('.bm-bars');
+      if (!grade) return;
+      // Telefono: la pagina scorre, la lista non ha un'altezza sua: le barre restano
+      const spare = list ? list.clientHeight - list.scrollHeight : root.clientHeight - root.scrollHeight;
+      const top = root.querySelector<HTMLElement>('.bm-cores');
+      if (bars) {
+        need.current = bars.getBoundingClientRect().height + parseFloat(getComputedStyle(bars).marginTop || '0');
+        if (spare < -1) setShown(false);
+      } else {
+        // Le barre allungano la riga in alto solo per quanto la colonna di destra supera quella dei core
+        const row = Math.max(grade.getBoundingClientRect().height, top?.getBoundingClientRect().height ?? 0);
+        const grow = Math.max(0, grade.getBoundingClientRect().height + need.current - row);
+        if (spare >= grow + 2) setShown(true);
+      }
+    };
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [bm, key, shown]);
+  return shown;
+}
+
+/**
+ * La scheda Bonus/Malus. In alto: a sinistra i core a tre che il voto conta, disegnati a triangolo; a destra il netto sul
+ * voto con bonus e malus in tutto, le barre (solo se c'è posto) e il link al catalogo con tutte le voci possibili (la
+ * guida della scheda). Sotto, a tutta larghezza, le voci che valgono adesso in tre colonne, ognuna con la sua medaglia
+ * (icona della famiglia; il malus rosso e incrinato), il caso concreto e i punti.
  */
 export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamRating; lang: Lang; t: T; onCatalogue?: () => void }) {
   const catalog = bonusMalusCatalog(lang);
@@ -190,10 +249,11 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
   const rows = [...activeRows(catalog, 'bonus', rating.bonus.items, rating.cores, core => order.indexOf(core)), ...activeRows(catalog, 'malus', rating.penalty.items)];
   const net = rating.bonus.total - rating.penalty.total;
   const head = useId();
+  const root = useRef<HTMLDivElement>(null);
+  const bars = useRoomForBars(root, `${lang}|${rows.map(r => `${r.key}:${r.details.join('|')}`).join(',')}|${rating.cores?.length ?? 0}`);
   return (
-    <div className="bm">
+    <div className={`bm${rows.length ? '' : ' empty'}`} ref={root}>
       <section className="bm-grade" aria-labelledby={head}>
-        {/* Sui portatili bassi il netto va a sinistra e l'etichetta con bonus e malus a destra: resta posto alle voci */}
         <div className="bm-sum">
           <h4 id={head} className="bm-label">{t('catalogue.onGrade')}</h4>
           <p className={`bm-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}>{signed(net)}</p>
@@ -204,23 +264,24 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
             </p>
           )}
         </div>
-        {rows.length > 0 && (
-            <ul className="bm-list">
-              {rows.map(({ key, entry, points, details }) => (
-                <li key={key} className={`bm-row ${entry.kind}`}>
-                  <Medal entry={entry} />
-                  <span className="bm-row-tx">
-                    <b>{entry.name}</b>
-                    <span title={details.join(' · ')}>{details.map((detail, i) => <span key={i}>{i > 0 && ' · '}{entry.key === 'coreTrio' ? detail : <Typed text={detail} />}</span>)}</span>
-                  </span>
-                  <span className="bm-row-pts">{signed(entry.kind === 'malus' ? -points : points)}</span>
-                </li>
-              ))}
-            </ul>
-        )}
+        {bars && <Bars bonus={rating.bonus.total} malus={rating.penalty.total} t={t} />}
         {onCatalogue && <button type="button" className="bm-more" onClick={onCatalogue}>{t('catalogue.all')} <span aria-hidden="true">›</span></button>}
       </section>
       <CoreColumn rating={rating} lang={lang} t={t} />
+      {rows.length > 0 && (
+        <ul className="bm-list" aria-labelledby={head}>
+          {rows.map(({ key, entry, points, details }) => (
+            <li key={key} className={`bm-row ${entry.kind}`}>
+              <Medal entry={entry} />
+              <span className="bm-row-tx">
+                <b>{entry.name}</b>
+                <span title={details.join(' · ')}>{details.map((detail, i) => <span key={i}>{i > 0 && ' · '}{entry.key === 'coreTrio' ? detail : <Typed text={detail} />}</span>)}</span>
+              </span>
+              <span className="bm-row-pts">{signed(entry.kind === 'malus' ? -points : points)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

@@ -256,6 +256,8 @@ function renderBm(rating: TeamRating) {
   return { user, view: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
 const onGrade = () => screen.getByRole('region', { name: 'Sul voto' });
+/** Le voci attive: a tutta larghezza sotto netto e core, una lista col nome "Sul voto". */
+const entries = () => screen.getByRole('list', { name: 'Sul voto' });
 
 describe('Bonus/Malus', () => {
   it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
@@ -267,9 +269,24 @@ describe('Bonus/Malus', () => {
     expect(onGrade()).toHaveTextContent('Malus −8');
   });
 
+  it('le barre di malus e bonus sulla stessa scala (almeno 10), vuota e grigia a zero; decorative', () => {
+    renderBm(catalogRating());
+    const bars = onGrade().querySelector<HTMLElement>('.bm-bars')!;
+    expect(bars).toHaveAttribute('aria-hidden', 'true');
+    expect(bars.querySelector<HTMLElement>('.bm-bar.malus .bm-track > span')!.style.width).toBe('80%');
+    expect(bars.querySelector<HTMLElement>('.bm-bar.bonus .bm-track > span')!.style.width).toBe('20%');
+  });
+
+  it('a zero la barra resta vuota e il valore è grigio', () => {
+    renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
+    const bonus = onGrade().querySelector<HTMLElement>('.bm-bar.bonus')!;
+    expect(bonus.querySelector('.bm-track > span')).toBeNull();
+    expect(bonus.querySelector('b')).toHaveClass('zero');
+  });
+
   it('solo le voci attive, prima i bonus poi i malus, coi casi e i punti in tutto; niente voci a zero né regole a punti', () => {
     renderBm(catalogRating());
-    const rows = within(onGrade()).getAllByRole('listitem');
+    const rows = within(entries()).getAllByRole('listitem');
     expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Meteo che protegge', 'Stesso tipo', 'Hazard ripetuto']);
     expect(rows[0]).toHaveTextContent('+2');
     expect(rows[0]).toHaveClass('bonus');
@@ -277,7 +294,7 @@ describe('Bonus/Malus', () => {
     expect(rows[2]).toHaveTextContent('−3');
     expect(rows[2]).toHaveClass('malus');
     expect(rows[1]).toHaveTextContent('−5');
-    expect(onGrade()).not.toHaveTextContent('Tipi vari');
+    expect(entries()).not.toHaveTextContent('Tipi vari');
     expect(onGrade()).not.toHaveTextContent('per ogni');
     expect(screen.queryByText('Cosa toglie')).toBeNull();
     expect(screen.queryByText(/per ora a zero/)).toBeNull();
@@ -292,7 +309,7 @@ describe('Bonus/Malus', () => {
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent(/^0$/);
     expect(onGrade().querySelector('.bm-net')).toHaveClass('zero');
     expect(onGrade()).toHaveTextContent('Né bonus né malus per ora');
-    expect(within(onGrade()).queryByRole('list')).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Sul voto' })).toBeNull();
   });
 
   it('"Tutte le voci possibili" apre il catalogo (la guida della scheda) sui bonus; all\'uscita il focus torna al link', async () => {
@@ -328,7 +345,7 @@ describe('Bonus/Malus', () => {
     expect(weak.closest('li')).toHaveClass('open');
     expect(within(cores).getByText('Reggono 4 tipi su 18')).toBeInTheDocument();
     // Le medaglie del core nella lista: una per trio, coi soli nomi, prima quella del core che regge più tipi
-    const rows = within(onGrade()).getAllByRole('listitem');
+    const rows = within(entries()).getAllByRole('listitem');
     expect(rows.map(row => row.textContent)).toEqual(['Core a treHeatran, Landorus-Therian, Toxapex+3', 'Core a trePelipper, Ferrothorn, Great Tusk+3']);
   });
 
