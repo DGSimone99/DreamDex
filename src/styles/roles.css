@@ -54,23 +54,23 @@
    Ogni fascia prende lo spazio libero in proporzione alle sue righe (--n), fino al tetto delle righe */
 .rl-bands { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .rl-band {
-  --n: var(--n2, 1); --lv: var(--faint); display: flex; flex-direction: column; flex: var(--n) 1 auto;
+  --n: var(--n2, 1); --lv: var(--faint); --lv-ink: var(--muted); display: flex; flex-direction: column; flex: var(--n) 1 auto;
   max-height: calc(var(--rl-head) + var(--n) * var(--rl-row-max));
 }
-.rl-band.essential { --lv: var(--accent-2); }
-.rl-band.important { --lv: var(--accent); }
+.rl-band.essential { --lv: var(--accent-2); --lv-ink: var(--accent-2-ink); }
+.rl-band.important { --lv: var(--accent); --lv-ink: var(--accent-ink); }
 .rl-general.three .rl-band { --n: var(--n3, 1); }
 
-/* Titolo della fascia, semplice: un segno corto e obliquo nel colore del livello, il nome, il valore della fascia; sotto
-   un filo neutro. Niente fondo dietro al testo */
+/* Titolo della fascia, semplice: un segno obliquo nel colore del livello, il nome nell'inchiostro del livello (magenta,
+   azzurro, grigio per i minori), il valore della fascia; sotto un filo appena tinto del livello. Niente fondo dietro al testo */
 .rl-band .rl-band-head {
   flex: none; display: flex; align-items: center; gap: 10px;
   height: var(--rl-head); margin: 0; padding: 0 var(--rl-pad);
   font: 400 12px/1.2 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid color-mix(in srgb, var(--lv) 30%, var(--line));
 }
-.rl-band-head::before { content: ''; flex: none; width: 5px; height: 15px; margin-right: 1px; background: var(--lv); transform: skewX(-14deg); }
-.rl-band-title { font: 800 17px/1 var(--display); font-style: italic; color: var(--text); white-space: nowrap; }
+.rl-band-head::before { content: ''; flex: none; width: 6px; height: 18px; margin-right: 1px; background: var(--lv); transform: skewX(-14deg); }
+.rl-band-title { font: 800 17px/1 var(--display); font-style: italic; color: var(--lv-ink); white-space: nowrap; }
 /* Il malus degli importanti nel titolo ha il giallo delle sue voci */
 .rl-band.important .rl-band-head .rl-mark.malus { color: var(--warn); }
 
@@ -81,7 +81,7 @@
 }
 .rl-row {
   position: relative; display: grid; grid-template-columns: min(var(--rl-name), 45%) minmax(0, 1fr) var(--rl-pts); column-gap: 14px; align-items: center;
-  min-width: 0; margin: 0; padding: 0 var(--rl-pad); border-bottom: 1px solid var(--line-soft);
+  min-width: 0; margin: 0; padding: 0 var(--rl-pad); border-bottom: 1px solid color-mix(in srgb, var(--lv) 16%, var(--line-soft));
   transition: background-color 0.12s var(--ease);
 }
 .rl-row::before { position: absolute; top: 0; bottom: -1px; left: calc(var(--rl-gap) / -2); width: 1px; background: var(--line-soft); pointer-events: none; }
@@ -98,7 +98,10 @@
 .rl-general.three .rl-mon:not(.named) { flex: 0 1 var(--rl-slot); min-width: 16px; }
 .rl-general.three .rl-mon:not(.named) .rl-box { width: 100%; min-width: 0; overflow: visible; }
 .rl-name { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; color: var(--text); }
-.rl-row.off .rl-name { font-weight: 400; color: var(--muted); }
+/* I minori più quieti: nome grigio e un filo più piccolo; scoperti più tenui ancora */
+.rl-band.minor .rl-name { font-size: 13px; color: var(--muted); }
+.rl-general.three .rl-band.minor .rl-name { font-size: 12.5px; }
+.rl-row.off .rl-name { font-weight: 400; color: var(--faint); }
 .rl-by { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; min-width: 0; }
 .rl-nobody { font-size: 13px; color: var(--faint); }
 .rl-row.bad .rl-nobody { color: var(--bad); }
@@ -118,7 +121,7 @@
 .rl-mon.weak .rl-box { opacity: 0.45; filter: grayscale(0.6); }
 .rl-mon.weak .rl-mon-name { color: var(--muted); }
 
-/* Guida: tessere dei livelli, tabella dei tipi di team, gettoni di come si ottiene un ruolo */
+/* Guida: tessere dei livelli, tabella dei tipi di team */
 .rl-guide-tiles .guide-tile-head .rl-tile-val { font: italic 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .rl-guide-tiles li.essential .rl-tile-val { color: var(--bad); }
 .rl-guide-tiles li.minor .rl-tile-val { color: var(--good); }
@@ -137,15 +140,6 @@
 .rl-types .rl-tag { padding: 0 6px; font-size: 11px; }
 .rl-dash { color: var(--faint); }
 
-.rl-how { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
-.rl-how li { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
-.rl-how-role { font-size: 13px; font-weight: 600; color: var(--text); }
-.rl-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.rl-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; line-height: 1.35; color: var(--muted); }
-.rl-chip b { padding: 0 5px; border-radius: 2px; background: var(--accent-2-soft); font: 700 12px/1.4 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
-.rl-chip.cond { padding-right: 8px; background: none; border-style: dashed; }
-.rl-chip.share { padding-right: 8px; background: none; border-color: transparent; color: var(--faint); font-style: italic; }
-
 /* Portatili bassi: righe più basse (prima di tutto il resto), poi testata e fasce più strette */
 @media (min-width: 1100px) and (max-height: 760px) {
   .rl-general { --rl-row-min: 32px; --rl-head: 27px; }
@@ -157,8 +151,4 @@
   .rl-general { --rl-row-min: 29px; --rl-head: 25px; }
   .rl-frame { gap: 6px; }
   .rl-box { height: 26px; }
-}
-
-@media (max-width: 1099px) {
-  .rl-how li { grid-template-columns: 120px minmax(0, 1fr); }
 }

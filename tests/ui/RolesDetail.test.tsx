@@ -154,9 +154,9 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     expect(panel.querySelector('.rl-net')).toHaveClass('zero');
   });
 
-  it('il link "Ruoli che non contano per questo team" apre la guida sulla pagina Ruoli per tipo di team', async () => {
+  it('il link "Tabella dei ruoli" apre la guida sulla pagina Ruoli per tipo di team', async () => {
     const { user, view } = await openRoles();
-    await user.click(within(view).getByRole('button', { name: /^Ruoli che non contano per questo team/ }));
+    await user.click(within(view).getByRole('button', { name: 'Tabella dei ruoli' }));
     const dialog = screen.getByRole('dialog', { name: /Ruoli e Bonus/ });
     expect(within(dialog).getByRole('tab', { name: 'Ruoli per tipo di team' })).toHaveAttribute('aria-selected', 'true');
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Non contano in nessun tipo di team/);
@@ -166,7 +166,7 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     const { view } = await openRoles('en');
     expect(tabNames(view)).toEqual(['Bonus/Malus', 'Roles']);
     expect(bandTitles(view)).toEqual(['Essential', 'Important', 'Minor']);
-    expect(within(view).getByRole('button', { name: /^Roles that don't count for this team/ })).toBeInTheDocument();
+    expect(within(view).getByRole('button', { name: 'Roles table' })).toBeInTheDocument();
     // In testa il tipo di team sulla sua targa (team incompleto accanto) e i punti dei Ruoli; niente regole nei titoli
     expect(view.querySelector('.rl-type')).toHaveTextContent('Balance');
     expect(view.querySelector('.rl-incomplete')).toHaveTextContent('incomplete team');
@@ -175,13 +175,13 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     expect(view).not.toHaveTextContent(/if missing|Judged as/);
   });
 
-  it('il ? della sottoscheda Ruoli: la guida di Bonus/Malus aperta su Ruoli, poi tipi di team e come si ottiene un ruolo', async () => {
+  it('il ? della sottoscheda Ruoli: la guida di Bonus/Malus aperta su Ruoli, poi Ruoli per tipo di team (niente pagine su come si ottiene un ruolo)', async () => {
     const { user, view } = await openRoles();
     await user.click(within(view).getByRole('button', { name: 'Come funziona Ruoli' }));
     const dialog = screen.getByRole('dialog', { name: /Ruoli e Bonus/ });
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual([
       'Bonus/Malus', 'Tutti i bonus', 'Tutti i malus',
-      'Ruoli', 'Ruoli per tipo di team', 'Come si ottiene: attacco e difesa', 'Come si ottiene: support', 'Come si ottiene: utility',
+      'Ruoli', 'Ruoli per tipo di team',
     ]);
     expect(within(dialog).getByRole('tab', { name: 'Ruoli' })).toHaveAttribute('aria-selected', 'true');
     // Le voci che non contano: nella guida, non più in un filtro
@@ -194,8 +194,6 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     expect([...hazard.querySelectorAll('td')].map(td => td.textContent)).toEqual(['Importante', 'Importante', 'Essenziale', 'Essenziale', 'Essenziale']);
     // Le voci che non contano mai stanno sotto la tabella
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Non contano in nessun tipo di team: .*Taunt/);
-    await user.click(within(dialog).getByRole('tab', { name: 'Come si ottiene: support' }));
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Magic Bounce0,5');
   });
 
   it('la riga Ruoli del voto: i punti dei Ruoli e le mancanze a segni (numero e triangolo), senza barra', async () => {

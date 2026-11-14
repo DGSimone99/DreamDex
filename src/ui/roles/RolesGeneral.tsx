@@ -29,8 +29,8 @@ function SumMark({ sum, t }: { sum: BandSum; t: T }) {
 
 /**
  * La sottoscheda Ruoli di Ruoli e Bonus, in una schermata senza filtri. In alto il tipo di team con cui si giudica (sulla
- * sua targa, come nella carta del voto; "team incompleto" accanto se mancano membri), i punti dei Ruoli e il link alla
- * pagina della guida coi ruoli che non contano. Sotto tre fasce, Essenziali, Importanti e Minori (una fascia senza voci per
+ * sua targa, come nella carta del voto; "team incompleto" accanto se mancano membri), i punti dei Ruoli e il link "Tabella dei
+ * ruoli" alla pagina della guida Ruoli per tipo di team. Sotto tre fasce, Essenziali, Importanti e Minori (una fascia senza voci per
  * questo tipo di team non c'è), ognuna col suo titolo e il suo valore, e le voci su due colonne, prima quelle che mancano. Ogni voce: nome, chi la
  * copre (uno solo: icona e nome; di più: solo le icone) e i punti (✓ / −4 / −2 / +1 / 0).
  * Con meno di 6 membri un ruolo che manca non toglie punti (rolesArea): si scrive "manca", non il malus.
@@ -64,7 +64,7 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
         <p className={`rl-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}>{t('area.roles')} <b>{signed(net)}</b></p>
         {ctx.guide && (
           <button type="button" className="rl-more" onClick={() => ctx.guide!('types')}>
-            {t('rdetail.ignoredLink')} <span aria-hidden="true">›</span>
+            {t('rdetail.rolesTableLink')} <span aria-hidden="true">›</span>
           </button>
         )}
       </header>

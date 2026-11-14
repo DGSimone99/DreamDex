@@ -10,11 +10,10 @@ import { RolesGuideSection, rolesGuidePages } from './RolesGuide';
  * importanti); +N, verde e più piccolo, è il bonus dei minori coperti, solo se c'è. Tutto a parole nella descrizione.
  * I Ruoli non hanno un peso nel voto, contano coi loro punti. Dentro una vista sola, le tre
  * fasce Essenziali, Importanti e Minori (RolesGeneral). La guida dei Ruoli sta sul suo "?": Come funziona, Ruoli per
- * tipo di team, Come si ottiene un ruolo.
+ * tipo di team.
  */
 export function rolesTab(rating: TeamRating, t: T, ctx: AreaContext): DetailTab {
   const archetype = rating.needs.archetype;
-  const meta = !!rating.meta;
   const counted = rating.roles.rows.filter(r => r.level === 'essential' || r.level === 'important');
   const missing = counted.filter(r => r.value < MISSING_BELOW);
   const covered = counted.length - missing.length;
@@ -28,7 +27,7 @@ export function rolesTab(rating: TeamRating, t: T, ctx: AreaContext): DetailTab 
       missing.length ? t('rating.rolesSubMissing', { n: missing.length }) : '',
       minor > 0 ? t('rating.rolesSubMinor', { n: minor }) : '',
     ].filter(Boolean).join(', '),
-    help: <RolesGuideSection section="general" archetype={archetype} meta={meta} typeRule={rating.needs.rules.typeRule} />,
-    guidePages: rolesGuidePages(archetype, meta, t, rating.needs.rules.typeRule),
+    help: <RolesGuideSection section="general" archetype={archetype} typeRule={rating.needs.rules.typeRule} />,
+    guidePages: rolesGuidePages(archetype, t, rating.needs.rules.typeRule),
   };
 }

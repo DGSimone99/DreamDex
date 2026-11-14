@@ -389,12 +389,6 @@ const ROLES_STATES: Record<string, State> = {
   'analysis-roles-guide-en': rolesGuide(undefined, { lang: 'en' }),
   'analysis-roles-guide-types': rolesGuide(/^(Ruoli per tipo|Roles per team)/),
   'analysis-roles-guide-types-en': rolesGuide(/^(Ruoli per tipo|Roles per team)/, { lang: 'en' }),
-  'analysis-roles-guide-earn-a': rolesGuide(/(attacco e difesa|attack and defense)/),
-  'analysis-roles-guide-earn-a-en': rolesGuide(/(attacco e difesa|attack and defense)/, { lang: 'en' }),
-  'analysis-roles-guide-earn-b': rolesGuide(/: support$/),
-  'analysis-roles-guide-earn-b-en': rolesGuide(/: support$/, { lang: 'en' }),
-  'analysis-roles-guide-earn-c': rolesGuide(/: utility$/),
-  'analysis-roles-guide-earn-c-en': rolesGuide(/: utility$/, { lang: 'en' }),
 };
 
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)

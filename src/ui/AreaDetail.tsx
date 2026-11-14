@@ -40,8 +40,8 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
    */
   effOnly?: boolean;
   /**
-   * Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo; Ruoli: "Ruoli
-   * che non contano per questo team" apre la pagina dei tipi di team).
+   * Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo; Ruoli: "Tabella
+   * dei ruoli" apre la pagina Ruoli per tipo di team).
    */
   guide?: (key: string) => void }
 
