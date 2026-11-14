@@ -143,7 +143,7 @@ export function RolesSection({ roles, density, onView }: { roles: DashboardData[
   const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
   return (
     <DashCard className="dash-roles" title={t('area.roles')} meta={<b>{roles.value}</b>}
-      onOpen={() => onView('roles')}>
+      onOpen={() => onView('roles')} openLabel={t('dash.openRoles')}>
       {density === 'roomy' ? <RoleTable roles={roles} titles={titles} /> : <RoleBands roles={roles} density={density} titles={titles} />}
     </DashCard>
   );

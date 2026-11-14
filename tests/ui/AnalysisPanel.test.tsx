@@ -11,7 +11,7 @@ import { renderIt } from '../helpers/italian';
 const row = (name: string) => screen.getAllByRole('listitem')
   .find(li => li.querySelector('.role, .who strong')?.textContent === name)!;
 
-/** Le minacce del meta, come nella vecchia Analisi (i ruoli sono nella scheda Ruoli: RolesDetail.test.tsx). */
+/** Le minacce del meta, come nella vecchia Analisi (i ruoli sono in Bonus/Malus, sottoscheda Ruoli: RolesDetail.test.tsx). */
 const AllTables = ({ team }: { team: TeamSet[] }) => {
   const analysis = analyzeTeam(team, fixtureData);
   return (

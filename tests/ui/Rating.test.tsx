@@ -21,7 +21,7 @@ describe('Riquadro Voto', () => {
     expect(band()).not.toHaveTextContent('Sinergia');
   });
 
-  it("Offesa, Difesa e Ruoli portano alla loro scheda; la Coverage offensiva non è una riga del voto", async () => {
+  it("Offesa e Difesa portano alla loro scheda, Ruoli a Bonus/Malus sulla sottoscheda Ruoli; la Coverage offensiva non è una riga del voto", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
@@ -30,7 +30,12 @@ describe('Riquadro Voto', () => {
       const button = within(band()).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) });
       expect(button).not.toHaveAttribute('aria-haspopup');
       await user.click(button);
-      expect(within(document.getElementById('panel-analysis')!).getByRole('region', { name: area })).toBeInTheDocument();
+      const analysis = within(document.getElementById('panel-analysis')!);
+      if (area !== 'Ruoli') { expect(analysis.getByRole('region', { name: area })).toBeInTheDocument(); continue; }
+      expect(analysis.getByRole('region', { name: 'Ruoli e Bonus' })).toBeInTheDocument();
+      expect(analysis.getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
+      expect(analysis.getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
+      expect(analysis.getByRole('group', { name: 'Quali ruoli mostrare' })).toBeInTheDocument();
     }
   });
 
@@ -221,6 +226,8 @@ Bold Nature
 /** Valutazione minima, solo con ciò che serve alla barra Bonus/Malus. */
 const fakeRating = (penalty: [string, number][], bonus: [string, number][], penaltyTotal?: number): TeamRating => ({
   teamType: 'balance', trickRoom: false, grade: 'B', overall: 70, label: 'Buono', archetype: 'balance', meta: false, areas: [],
+  // Bonus/Malus ha anche la sottoscheda Ruoli (coperti/totale e la guida del tipo di team)
+  roles: { covered: 0, total: 0, rows: [], failures: [], bonuses: [], members: [] }, needs: { archetype: 'balance', rules: {} },
   penalty: { total: penaltyTotal ?? penalty.reduce((n, [, p]) => n + p, 0), items: penalty.map(([text, points]) => ({ text, points })) },
   bonus: { total: bonus.reduce((n, [, p]) => n + p, 0), items: bonus.map(([text, points]) => ({ text, points })) },
 }) as unknown as TeamRating;
@@ -253,17 +260,19 @@ const coreRating = (cores = [fakeCore(['Pelipper', 'Ferrothorn', 'Great Tusk'], 
 function renderBm(rating: TeamRating) {
   const user = userEvent.setup();
   render(<LangProvider lang="it"><AreaView rating={rating} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-  return { user, view: screen.getByRole('region', { name: 'Bonus/Malus' }) };
+  return { user, view: screen.getByRole('region', { name: 'Ruoli e Bonus' }) };
 }
 const onGrade = () => screen.getByRole('region', { name: 'Sul voto' });
 /** Le schede Bonus e Malus sotto netto e core, e le voci della scheda scelta. */
-const groupTab = (name: RegExp) => screen.getByRole('tab', { name });
-const entries = () => within(screen.getByRole('tabpanel', { name: /^(Altri )?(bonus|malus)/i })).queryAllByRole('listitem');
+/** Dentro la sottoscheda aperta (la striscia di sopra ha anche lei una scheda "Bonus/Malus"). */
+const inner = () => within(document.querySelector<HTMLElement>('.area-panel')!);
+const groupTab = (name: RegExp) => inner().getByRole('tab', { name });
+const entries = () => within(inner().getByRole('tabpanel', { name: /^(Altri )?(bonus|malus)/i })).queryAllByRole('listitem');
 
 describe('Bonus/Malus', () => {
   it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
     const { view } = renderBm(catalogRating());
-    expect(within(view).getAllByRole('tab')[0].textContent).toBe('Generale −6');
+    expect(within(view).getAllByRole('tab')[0].textContent).toBe('Bonus/Malus −6');
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent('−6');
     expect(onGrade().querySelector('.bm-net')).toHaveClass('bad');
     expect(onGrade()).toHaveTextContent('Bonus +2');
@@ -307,7 +316,7 @@ describe('Bonus/Malus', () => {
     expect(screen.queryByRole('button', { name: /Mostra tutto il testo/ })).toBeNull();
     await user.keyboard('{Home}');
     expect(bonus).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tabpanel', { name: /^Bonus/ })).not.toHaveTextContent('Arcobaleno di tipi');
+    expect(inner().getByRole('tabpanel', { name: /^Bonus/ })).not.toHaveTextContent('Arcobaleno di tipi');
     expect(onGrade()).not.toHaveTextContent('per ogni');
     expect(screen.queryByText('Cosa toglie')).toBeNull();
   });
@@ -316,7 +325,7 @@ describe('Bonus/Malus', () => {
     const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
     expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
     await user.click(groupTab(/^Bonus/));
-    const empty = screen.getByRole('tabpanel', { name: /^Bonus/ });
+    const empty = inner().getByRole('tabpanel', { name: /^Bonus/ });
     expect(empty).toHaveTextContent('Nessun bonus per ora');
     // Il link al catalogo, per vedere come guadagnarli; la scheda vuota ha solo lo zero del conto
     expect(within(empty).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
@@ -327,7 +336,7 @@ describe('Bonus/Malus', () => {
   it('nessun malus: la scheda Malus mostra la medaglia con la spunta e "Il team non perde punti"', async () => {
     const { user } = renderBm({ ...catalogRating(), penalty: { total: 0, items: [] } } as unknown as TeamRating);
     await user.click(groupTab(/^Malus/));
-    expect(screen.getByRole('tabpanel', { name: /^Malus/ })).toHaveTextContent('Nessun malusIl team non perde punti');
+    expect(inner().getByRole('tabpanel', { name: /^Malus/ })).toHaveTextContent('Nessun malusIl team non perde punti');
   });
 
   it('netto verde se positivo; senza voci il netto è 0 grigio con "Né bonus né malus per ora"', () => {
@@ -339,14 +348,14 @@ describe('Bonus/Malus', () => {
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent(/^0$/);
     expect(onGrade().querySelector('.bm-net')).toHaveClass('zero');
     expect(onGrade()).toHaveTextContent('Né bonus né malus per ora');
-    expect(screen.queryByRole('tab', { name: /^(bonus|malus)/i })).toBeNull();
+    expect(inner().queryByRole('tab', { name: /^(bonus|malus)/i })).toBeNull();
   });
 
   it('"Tutte le voci possibili" apre il catalogo (la guida della scheda) sui bonus; all\'uscita il focus torna al link', async () => {
     const { user } = renderBm(catalogRating());
     const link = screen.getByRole('button', { name: /Tutte le voci possibili/ });
     await user.click(link);
-    const dialog = screen.getByRole('dialog', { name: /Bonus\/Malus/ });
+    const dialog = screen.getByRole('dialog', { name: /Ruoli e Bonus/ });
     expect(within(dialog).getByRole('tab', { name: 'Tutti i bonus' })).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
     expect(within(panel).getAllByRole('listitem')).toHaveLength(6);
@@ -377,7 +386,7 @@ describe('Bonus/Malus', () => {
     expect(weak.closest('li')).toHaveClass('open');
     expect(within(cores).getByText('Reggono 4 tipi su 18')).toBeInTheDocument();
     // I core stanno solo nel riquadro in alto: nessuna voce sotto (contano però nel netto e in "Bonus +6")
-    expect(screen.queryByRole('tab', { name: /bonus/i })).toBeNull();
+    expect(inner().queryByRole('tab', { name: /bonus/i })).toBeNull();
     expect(onGrade()).toHaveTextContent('Bonus +6');
   });
 
