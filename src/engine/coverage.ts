@@ -10,7 +10,7 @@ import { mostCommonSet, type TeamSet } from './sets';
 import { setupBoosts } from './setupBoosts';
 import { topThreats, usageOf } from './stats';
 import { softScore } from './scale';
-import { TYPES } from './types';
+import { bestAttackMultiplier, TYPES } from './types';
 
 /** Quanti Pokémon del meta, dal più usato, danno le combinazioni di tipi da coprire. */
 const TARGET_SCAN = 40;
@@ -152,8 +152,9 @@ export interface CoverageRow {
   /**
    * Solo nel meta, una casella per membro nell'ordine del team: danno % del colpo semplice (senza Tera, Z e setup;
    * -1 se il motore non conosce il membro) e dopo una danza (null senza mossa di potenziamento). Null nei tipi.
+   * `mult`: il moltiplicatore di tipo migliore fra le mosse d'attacco del membro sul bersaglio (null senza mosse o se sconosciuto).
    */
-  cells: { pct: number; setupPct: number | null }[] | null;
+  cells: { pct: number; setupPct: number | null; mult: number | null }[] | null;
 }
 
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
@@ -223,8 +224,12 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
       const coveredBy = team.flatMap((set, m) => (creditOf(hits[m][i].x, kind) > 0
         ? [{ species: battleSpecies(set)?.name ?? set.species, move: hits[m][i].move, pct: Math.floor(100 * hits[m][i].x), partial: hits[m][i].x < COVER_HIT }]
         : []));
+      const targetTypes = target.set.types ?? battleSpecies(target.set)?.types ?? [];
+      const targetAbility = battleAbility(target.set);
       const cells = kind === 'meta'
-        ? hits.map((h, m) => (known[m] ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup) } : { pct: -1, setupPct: null }))
+        ? hits.map((h, m) => (known[m]
+          ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: bestAttackMultiplier(team[m], targetTypes, targetAbility) }
+          : { pct: -1, setupPct: null, mult: null }))
         : null;
       return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
     }),

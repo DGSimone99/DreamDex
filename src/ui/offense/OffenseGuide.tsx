@@ -120,6 +120,7 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
           [swatch('ok-half', g('cov.half')), g('cov.half.rule')],
           [swatch('empty', g('cov.hole')), g('cov.hole.rule', { pct: pctOf(CREDIT_FLOOR) })],
           [g('cov.gap'), g('cov.gap.rule', { pct: pctOf(HOLE_HIT) })],
+          [g('eff'), g('eff.rule')],
         ]} />
 
         <h5>{g('cov.depth')}</h5>
@@ -138,6 +139,7 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
         [g('test.targets'), g('cov.targets.meta', { n: count })],
         [g('meta.hit'), g('cov.hit.rule.meta')],
         [g('meta.hole'), g('cov.hole.rule.meta')],
+        [g('eff'), g('eff.rule')],
       ]} />
 
       <h5>{g('cov.depth')}</h5>

@@ -5,7 +5,7 @@ import { bestHit, FIRST_HIT_SHARE, hasZMove, FIRST_HIT_SHARE_RECOVERY, orbStatus
 import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
-import { effectiveness, TYPES } from './types';
+import { bestAttackMultiplier, effectiveness, TYPES } from './types';
 import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { REMOVAL_MOVES } from './roles';
@@ -412,6 +412,11 @@ export interface ThreatRow {
   /** Quanto è retta: 0–100, coi crediti dei membri al 50, 30 e 20%. */
   level: number;
   heldBy: { species: string; move: string; pct: number; partial: boolean }[];
+  /**
+   * Per ogni membro conosciuto (ordine di `members`): il moltiplicatore di tipo migliore fra le mosse d'attacco della
+   * minaccia sul membro (0 solo se nessuna lo tocca), per l'etichetta della casella.
+   */
+  mults: number[];
 }
 
 /** Quanti colpi regge sul lato peggiore: KO, 2HKO, 3HKO, 4 o più. */
@@ -542,7 +547,8 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
       });
       const level = depthOf(heldBy.map(h => (h.partial ? 0.5 : 1)));
       total += weight * level;
-      return { species: threat.species, weight, level: Math.round(100 * level), heldBy };
+      const mults = known.map(member => bestAttackMultiplier(threat, battleSpecies(member)?.types ?? [], battleAbility(member)) ?? 1);
+      return { species: threat.species, weight, level: Math.round(100 * level), heldBy, mults };
     });
     coverageMeta = { value: softScore(total), unanswered: threatRows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows: threatRows };
   }

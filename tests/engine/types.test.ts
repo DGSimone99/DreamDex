@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TeamSet } from '../../src/engine/sets';
 import {
-  attackingMoves, coverageTable, defensiveMultiplier, effectiveness, superEffectiveMove, TYPES, weaknessTable,
+  attackingMoves, bestAttackMultiplier, coverageTable, defensiveMultiplier, effectiveness, superEffectiveMove, TYPES, weaknessTable,
 } from '../../src/engine/types';
 
 const set = (species: string, ability: string, moves: string[] = []): TeamSet =>
@@ -53,5 +53,23 @@ describe('types', () => {
     const table = coverageTable([tusk, gholdengo]);
     expect(table.filter(r => r.hitters.length === 0).map(r => r.type)).toEqual(['Water', 'Fighting', 'Bug']);
     expect(table.find(r => r.type === 'Flying')!.hitters).toContainEqual({ member: 'Great Tusk', move: 'Ice Spinner' });
+  });
+});
+
+describe('bestAttackMultiplier (etichetta di efficacia delle caselle)', () => {
+  it('il moltiplicatore migliore fra le mosse d\'attacco, con le immunità di abilità', () => {
+    const tusk = set('Great Tusk', 'Protosynthesis', ['Headlong Rush', 'Close Combat', 'Rapid Spin']);
+    expect(bestAttackMultiplier(tusk, ['Steel'])).toBe(2);
+    expect(bestAttackMultiplier(tusk, ['Fire', 'Steel'])).toBe(4);
+    // Levitate: il Terra non tocca (Mold Breaker la ignora)
+    expect(bestAttackMultiplier(set('Great Tusk', 'Protosynthesis', ['Headlong Rush']), ['Steel'], 'Levitate')).toBe(0);
+    expect(bestAttackMultiplier(set('Great Tusk', 'Mold Breaker', ['Headlong Rush']), ['Steel'], 'Levitate')).toBe(2);
+  });
+  it('Pixilate, Scrappy e Freeze-Dry; null senza mosse d\'attacco', () => {
+    expect(bestAttackMultiplier(set('Sylveon', 'Pixilate', ['Hyper Voice']), ['Dragon'])).toBe(2);
+    expect(bestAttackMultiplier(set('Kangaskhan', 'Scrappy', ['Return']), ['Ghost'])).toBe(1);
+    expect(bestAttackMultiplier(set('Kangaskhan', 'Early Bird', ['Return']), ['Ghost'])).toBe(0);
+    expect(bestAttackMultiplier(set('Lapras', 'Water Absorb', ['Freeze-Dry']), ['Water'])).toBe(2);
+    expect(bestAttackMultiplier(set('Blissey', 'Natural Cure', ['Soft-Boiled']), ['Water'])).toBeNull();
   });
 });

@@ -160,3 +160,35 @@ export function coverageTable(team: TeamSet[]): CoverageRow[] {
     }),
   }));
 }
+
+/** Abilità che cambiano il tipo delle mosse Normale (Pixilate & co.) o di tutte le mosse (Normalize). */
+const ATE_ABILITIES: Record<string, TypeName> = { pixilate: 'Fairy', aerilate: 'Flying', refrigerate: 'Ice', galvanize: 'Electric' };
+/** Abilità che colpiscono i Spettro con Normale e Lotta. */
+const GHOST_HITTERS = new Set(['scrappy', 'mindseye']);
+/** Abilità che ignorano quelle del bersaglio (Levitate, Flash Fire...). */
+const MOLD_BREAKERS = new Set(['moldbreaker', 'teravolt', 'turboblaze']);
+
+/**
+ * Il moltiplicatore di tipo migliore fra le mosse d'attacco di `attacker` contro un bersaglio coi tipi e l'abilità dati
+ * (Freeze-Dry sull'Acqua, Pixilate & co., Scrappy sullo Spettro, le immunità di abilità come Levitate e Flash Fire).
+ * Null se il set non ha mosse d'attacco. Serve all'etichetta ×2 / ×4 / ½ / 0 delle caselle in Analisi.
+ */
+export function bestAttackMultiplier(attacker: TeamSet, defTypes: readonly string[], defAbility = '', field?: Field): number | null {
+  const moves = attackingMoves(attacker, field);
+  if (!moves.length) return null;
+  const ability = toID(battleAbility(attacker));
+  const targetAbility = MOLD_BREAKERS.has(ability) ? '' : toID(defAbility);
+  let best = 0;
+  for (const move of moves) {
+    const type: TypeName = ability === 'normalize' ? 'Normal' : move.type === 'Normal' && ATE_ABILITIES[ability] ? ATE_ABILITIES[ability] : move.type;
+    const typed = { ...move, type };
+    let mult = defTypes.reduce((m, defType) => {
+      if (defType === 'Ghost' && GHOST_HITTERS.has(ability) && (type === 'Normal' || type === 'Fighting')) return m;
+      return m * moveEffectiveness(typed, defType as TypeName);
+    }, 1);
+    const modifier = ABILITY_MODIFIERS[targetAbility]?.[type];
+    if (modifier !== undefined) mult *= modifier;
+    best = Math.max(best, mult);
+  }
+  return best;
+}

@@ -124,12 +124,19 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       });
       expect(cells).toHaveLength(18);
     });
-    // Il moltiplicatore classico sotto il %: Great Tusk è debole all'Acqua; niente sui tipi neutri
-    const water = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Water');
-    const normal = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Normal');
-    const tusk = within(table).getByRole('row', { name: /^Great Tusk/ });
-    expect(within(tusk).getAllByRole('cell')[water].querySelector('.ct-mult')).toHaveTextContent('×2');
-    expect(within(tusk).getAllByRole('cell')[normal].querySelector('.ct-mult')).toBeNull();
+    // L'etichetta di efficacia in basso a sinistra (non più la seconda riga sotto il %): Great Tusk è debole all'Acqua;
+    // Gholdengo resiste all'Erba e non prende Normale né Veleno; niente sui tipi neutri. Ai lettori di schermo per esteso
+    const col = (type: string) => rating.defense.coverageTypes.rows.findIndex(r => r.type === type);
+    const tusk = within(within(table).getByRole('row', { name: /^Great Tusk/ })).getAllByRole('cell');
+    const ghold = within(within(table).getByRole('row', { name: /^Gholdengo/ })).getAllByRole('cell');
+    expect(tusk[col('Water')].querySelector('.eff-tag')).toHaveTextContent('×2');
+    expect(tusk[col('Water')]).toHaveTextContent('debole ×2');
+    expect(ghold[col('Grass')].querySelector('.eff-tag')).toHaveTextContent('½');
+    expect(ghold[col('Grass')]).toHaveTextContent('resiste ½');
+    expect(ghold[col('Normal')].querySelector('.eff-tag')).toHaveTextContent(/^0$/);
+    expect(ghold[col('Poison')]).toHaveTextContent('immune');
+    expect(tusk[col('Normal')].querySelector('.eff-tag')).toBeNull();
+    expect(table.querySelector('.ct-mult')).toBeNull();
     expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
@@ -163,6 +170,34 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 
+  it('"Solo resistenze" spegne le caselle senza ½, ¼ o 0 (restano al loro posto); vale anche per Coverage meta', async () => {
+    const user = userEvent.setup();
+    const { table } = await openTypes();
+    const sw = screen.getByRole('switch', { name: 'Solo resistenze' });
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    expect(table.querySelector('.eff-dim')).toBeNull();
+    await user.click(sw);
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    const cells = Array.from(table.querySelectorAll('tbody tr:not(.ct-sum) td'));
+    cells.forEach(td => {
+      const tag = td.querySelector('.eff-tag')?.textContent ?? '';
+      expect(td.classList.contains('eff-dim')).toBe(!['½', '¼', '0'].includes(tag));
+    });
+    expect(cells.filter(td => !td.classList.contains('eff-dim')).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    expect(screen.getByRole('switch', { name: 'Solo resistenze' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
+  });
+
+  it("col puntatore la colonna si accende e sotto l'icona compare il nome del tipo", async () => {
+    const user = userEvent.setup();
+    const { table } = await openTypes();
+    const fire = within(table).getByRole('columnheader', { name: /^Fire/ });
+    await user.hover(fire);
+    expect(fire.querySelector('.col-name')).toHaveTextContent('Fire');
+    expect(fire).toHaveClass('x-col');
+  });
+
   it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Regge', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
@@ -180,7 +215,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       expected.slice(0, 8).forEach((r, k) => {
         const h = r.heldBy.find(x => x.species === set.species);
         if (!h) {
-          expect(cells[k]).toHaveTextContent(/^KO$/);
+          expect(cells[k]).toHaveTextContent(/^KO/);
           expect(cells[k]).toHaveClass('hold-ohko');
         } else {
           expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));

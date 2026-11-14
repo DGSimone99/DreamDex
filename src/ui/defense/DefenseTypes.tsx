@@ -5,7 +5,8 @@ import type { TypeName } from '../../engine/types';
 import { weatherMitigations } from '../../engine/synergy';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
-import { formatMultiplier, mitigationNote } from '../AnalysisTables';
+import { mitigationNote } from '../AnalysisTables';
+import { ColName, EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
@@ -18,8 +19,9 @@ const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 /**
  * Coverage tipi della Difesa: un membro per riga (nello stesso punto delle altre schede), i 18 tipi in colonna. In ogni
  * casella il danno di un colpo forte di quel tipo sul lato peggiore (fisico o speciale), colorato per quanto vale
- * (OHKO rosso pieno, 2HKO rosso scuro = niente, 3HKO giallo = metà, 4 o più verde = pieno), col moltiplicatore classico
- * sotto il % quando non è neutro; il suggerimento dà i due lati.
+ * (OHKO rosso pieno, 2HKO rosso scuro = niente, 3HKO giallo = metà, 4 o più verde = pieno), con l'etichetta di efficacia
+ * in basso a sinistra quando il tipo non è neutro (×4, ×2, ½, ¼, 0); il suggerimento dà i due lati. L'interruttore "Solo
+ * resistenze" (`ctx.effOnly`) spegne le caselle senza ½, ¼ o 0. Col puntatore la colonna si accende e sotto l'icona compare il tipo.
  * In fondo Regge (chi regge del tutto il lato peggiore); la Copertura del tipo sta nel suggerimento della sua pillola.
  * La legenda dei colori sta sulla riga dei problemi (DefenseTypesLegend); sotto la tabella solo le note del meteo.
  * I tipi che nessuno regge hanno il filo rosso sotto l'icona.
@@ -55,8 +57,10 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               {rows.map((row, i) => {
                 const hole = weak.includes(row.type);
                 return (
-                  <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')} title={typeName(row.type as TypeName, lang)}>
+                  <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')} title={typeName(row.type as TypeName, lang)}
+                    onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <TypeIcons types={[row.type]} />
+                    {hover?.col === i && <ColName name={typeName(row.type as TypeName, lang)} />}
                     <span className="ct-flag" aria-hidden="true" />
                     <span className="visually-hidden">{typeName(row.type as TypeName, lang)}{hole && ` ${t('analysis.shortfallSerious')}`}</span>
                   </th>
@@ -73,15 +77,15 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                   <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
                   {rows.map((row, i) => {
                     const cell = typed?.cells[i];
-                    if (!cell) return <td key={row.type} className={colClass(i, 'rob-cell ht-cell hold-none')}>—</td>;
+                    if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}`)}>—</td>;
                     const band = HOLD_BANDS[cell.band];
-                    const mult = formatMultiplier(multipliers.get(row.type as TypeName)?.[member] ?? 1);
+                    const tag = effLabel(multipliers.get(row.type as TypeName)?.[member] ?? 1, 'defense');
                     return (
-                      <td key={row.type} className={colClass(i, `rob-cell ht-cell ${band.cls}`)} onMouseEnter={() => setHover({ row: member, col: i })}
+                      <td key={row.type} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}`)} onMouseEnter={() => setHover({ row: member, col: i })}
                         title={`${typeName(row.type as TypeName, lang)}: ${band.tag} · ${t('ddetail.sides', { p: cell.physical, s: cell.special })}`}>
                         <span className="hold-pct">{cell.pct}%</span>
                         <span className="visually-hidden"> {band.tag}</span>
-                        {mult && <small className="ct-mult" aria-hidden="true">{mult}</small>}
+                        <EffTag label={tag} side="defense" />
                       </td>
                     );
                   })}

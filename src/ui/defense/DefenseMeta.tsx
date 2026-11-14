@@ -6,6 +6,7 @@ import type { AreaContext } from '../AreaDetail';
 import { MetaCount, MetaFrame } from '../MetaFrame';
 import { PokemonIcon } from '../PokemonName';
 import { MemberMon } from './MemberMon';
+import { ColName, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 type Holder = Row['heldBy'][number];
@@ -38,11 +39,18 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
  * che il membro prende dal colpo migliore della minaccia, verde se regge (sotto metà PS), giallo se solo a metà, rosso se
  * va KO; in fondo Regge conta chi la regge del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra;
  * sotto la tabella una sola riga col riepilogo; la legenda dei colori sta sulla riga dei problemi (DefenseMetaLegend).
+ * In basso a sinistra la mossa della minaccia che fa più effetto sul membro quando non è neutra (×4, ×2, ½, ¼; 0 se nessuna
+ * lo tocca); "Solo resistenze" (`ctx.effOnly`) spegne le caselle senza ½, ¼ o 0. Col puntatore la colonna si accende e
+ * sotto lo sprite compare il nome.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
+  const hover = useColumnHover();
   const rows = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
   const names = ctx.team.map(set => battleSpecies(set)?.name ?? null);
+  // Il posto fra i membri conosciuti dal motore (l'ordine di `mults`)
+  let seen = 0;
+  const knownIndex = names.map(name => (name ? seen++ : -1));
   const count = (group: 'held' | 'partial' | 'none') => rows.filter(r => groupOf(r) === group).length;
   const summary = (
     <>
@@ -53,15 +61,25 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     </>
   );
 
-  const cell = (row: Row, c: Holder | 'ko' | null, m: number) => {
+  const cell = (row: Row, c: Holder | 'ko' | null, m: number, k: number) => {
     const key = `${row.species}-${m}`;
-    if (c === null) return <td key={key} className="rob-cell hold-none">—</td>;
-    if (c === 'ko') return <td key={key} className="rob-cell hold-ohko" title={`${row.species}: KO`}>KO</td>;
+    const dim = ctx.effOnly ? ' eff-dim' : '';
+    if (c === null) return <td key={key} className={hover.cls(k, `rob-cell hold-none${dim}`)} {...hover.enter(k)}>—</td>;
+    const tag = effLabel(row.mults?.[knownIndex[m]], 'defense');
+    const eff = effClass(tag, 'defense', ctx.effOnly);
+    if (c === 'ko') {
+      return (
+        <td key={key} className={hover.cls(k, `rob-cell hold-ohko${eff}`)} {...hover.enter(k)} title={`${row.species}: KO`}>
+          KO<EffTag label={tag} side="defense" />
+        </td>
+      );
+    }
     const cls = c.partial ? 'hold-3' : 'hold-4';
     const title = `${row.species}: ${c.move ? `${c.move} ` : ''}${c.pct}%`;
     return (
-      <td key={key} className={`rob-cell ${cls}`} title={title}>
+      <td key={key} className={hover.cls(k, `rob-cell ${cls}${eff}`)} {...hover.enter(k)} title={title}>
         {c.pct}%<span className="visually-hidden"> {title}</span>
+        <EffTag label={tag} side="defense" />
       </td>
     );
   };
@@ -71,7 +89,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     return (
       <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">
-          <table className="def-grid spaced ct-table">
+          <table className="def-grid spaced ct-table" {...hover.table}>
             <colgroup>
               <col className="def-col-mon" />
               {shown.map(r => <col key={r.species} />)}
@@ -79,9 +97,10 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             <thead>
               <tr>
                 <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
-                {shown.map(r => (
-                  <th key={r.species} scope="col" aria-label={r.species} title={r.species} className="dm-h">
+                {shown.map((r, k) => (
+                  <th key={r.species} scope="col" aria-label={r.species} title={r.species} className={hover.cls(k, 'dm-h')} {...hover.enter(k)}>
                     <span className="def-box"><PokemonIcon name={r.species} /></span>
+                    {hover.col === k && <ColName name={r.species} />}
                   </th>
                 ))}
               </tr>
@@ -90,7 +109,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
               {ctx.team.map((set, m) => (
                 <tr key={`${names[m] ?? set.species}-${m}`}>
                   <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
-                  {shown.map((r, k) => cell(r, cells[k][m], m))}
+                  {shown.map((r, k) => cell(r, cells[k][m], m, k))}
                 </tr>
               ))}
               <tr className="ct-sum ct-sum-first">
