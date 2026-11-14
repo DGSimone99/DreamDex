@@ -225,7 +225,8 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
         const hit = m.hits.find(h => h.label === type)!;
         const cell = cells[i];
         if (hit.credit === 0) {
-          expect(cell.textContent).toBe('');
+          // Vuota: al massimo l'etichetta ×2 / ×4 di una mossa superefficace che non arriva al 33%
+          expect(cell.textContent).toMatch(/^(×[24] superefficace ×[24])?$/);
         } else {
           expect(cell).toHaveTextContent(`${hit.pct}%`);
           expect(cell).toHaveClass(hit.credit >= 0.5 ? 'ok-full' : 'ok-half');
@@ -242,6 +243,29 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     const holes = rating.offense.types.holes;
     expect(holes.length).toBeGreaterThan(0);
     expect(heads.filter(h => h.textContent!.includes('scoperto'))).toHaveLength(holes.length);
+  });
+
+  it("×2 in basso a sinistra anche quando la mossa superefficace è debole e il danno migliore viene da un'altra", async () => {
+    const weakSe = [{ ...emptySet('Blissey'), ability: 'Natural Cure', moves: ['Seismic Toss', 'Ember'] }];
+    const rating = await open(weakSe, rateTeam(weakSe, fixtureData, 'it')!);
+    const cells = document.querySelectorAll('.ct-table tbody tr')[0].querySelectorAll('td');
+    const grass = TYPES.indexOf('Grass');
+    expect(rating.offense.members[0].hits[grass].move).toBe('Seismic Toss');
+    expect(cells[grass].querySelector('.eff-tag')).toHaveTextContent('×2');
+    expect(cells[grass]).toHaveTextContent('superefficace ×2');
+    // Sull'Acqua Ember non fa effetto e Seismic Toss è neutro: niente etichetta
+    expect(cells[TYPES.indexOf('Water')].querySelector('.eff-tag')).toBeNull();
+  });
+
+  it('"Solo superefficaci" spegne le altre caselle, che restano al loro posto', async () => {
+    const user = userEvent.setup();
+    await open();
+    const sw = screen.getByRole('switch', { name: 'Solo superefficaci' });
+    await user.click(sw);
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    const cells = [...document.querySelectorAll('.ct-table tbody tr:not(.ct-sum) td')];
+    expect(cells).toHaveLength(team.length * 18);
+    cells.forEach(td => expect(td.classList.contains('eff-dim')).toBe(!td.querySelector('.eff-tag')));
   });
 
   it('la legenda: Forte e Conta', async () => {
@@ -310,6 +334,23 @@ describe('Offesa: Coverage meta', () => {
     const cell = bodyRows()[first.m].querySelectorAll('td')[first.i % 8];
     expect(cell).toHaveClass('has-setup');
     expect(cell.querySelector('.wall-setup')!.textContent).toBe(`setup ${first.c.setupPct}%`);
+  });
+
+  it('×2 / ×4 dove il membro ha una mossa superefficace sul Pokémon; col puntatore sotto lo sprite il nome', async () => {
+    const { user, sorted } = await open();
+    const rows = bodyRows();
+    let tags = 0;
+    sorted.slice(0, 8).forEach((target, col) => {
+      team.forEach((_, m) => {
+        const mult = target.cells![m].mult;
+        const tag = rows[m].querySelectorAll('td')[col].querySelector('.eff-tag');
+        if (mult !== null && mult > 1) { tags++; expect(tag).toHaveTextContent(mult >= 4 ? '×4' : '×2'); } else expect(tag).toBeNull();
+      });
+    });
+    expect(tags).toBeGreaterThan(0);
+    const head = table().querySelector<HTMLElement>('thead th[aria-label]')!;
+    await user.hover(head);
+    expect(head.querySelector('.col-name')).toHaveTextContent(sorted[0].species);
   });
 
   it('Lo coprono conta chi lo manda KO in due colpi', async () => {

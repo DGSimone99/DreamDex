@@ -7,6 +7,7 @@ import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
 import { AreaGuide } from './AreaGuide';
+import { EffSwitch } from './effTag';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
@@ -41,7 +42,9 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // `open`: le tessere della scheda Generale aprono la sottoscheda e le passano il focus (il pannello che le ospitava sparisce)
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId });
+  // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
+  const [effOnly, setEffOnly] = useState<Partial<Record<AreaKey, boolean>>>({});
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area] });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
@@ -51,6 +54,10 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
   const [guide, setGuide] = useState<string | null>(null);
   const title = t(`area.${area}`);
+  // Con una sottoscheda sola (Velocità, Bonus/Malus) il "?" spiega l'area intera: porta il suo nome
+  const helpLabel = t('area.guide.button', { tab: tabs.length === 1 ? title : current.label });
+  // La Velocità non ha problemi del Coaching (difficile dire quando lo è): niente "Nessun problema", solo la legenda
+  const judged = area !== 'speed';
   // Problemi: prima quelli che i Suggerimenti risolvono, poi i gravi, poi l'ordine delle categorie; in riga quelli che stanno
   const sorted = [...problems].sort((a, b) => Number(b.fixes.length > 0) - Number(a.fixes.length > 0)
     || Number(b.severity === 'serious') - Number(a.severity === 'serious')
@@ -123,6 +130,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
 
   return (
     <section className="area-view" aria-label={title}>
+      {/* Titolo per i lettori di schermo: sotto "Analisi" (h2) l'area, poi i titoli delle parti (h4) */}
+      <h3 className="visually-hidden">{title}</h3>
       <div className="area-strip">
         <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
           {tabs.map((tab, i) => (
@@ -136,10 +145,16 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
             </button>
           ))}
         </div>
+        {/* L'interruttore dell'efficacia, a destra nella striscia, solo sulle sottoschede con l'etichetta nelle caselle */}
+        {current.effSide && (
+          <span className="strip-switch">
+            <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
+          </span>
+        )}
         {current.help && (
           <span className="area-help" style={helpPlace}>
-            <button ref={helpButton} type="button" className="help-button" aria-label={t('area.guide.button', { tab: current.label })}
-              title={t('area.guide.button', { tab: current.label })} onClick={() => setGuide(current.key)}>
+            <button ref={helpButton} type="button" className="help-button" aria-label={helpLabel}
+              title={helpLabel} onClick={() => setGuide(current.key)}>
               <Icon name="help" />
             </button>
           </span>
@@ -151,9 +166,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
           onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
-      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area.
+      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area (in Velocità
+          solo la legenda, a destra).
           A destra la legenda dei colori della scheda aperta (sempre intera: sono i problemi a finire nel "+N") */}
-      {problems.length === 0 ? (
+      {!judged ? (
+        <div className="area-problems-row is-plain">{legend}</div>
+      ) : problems.length === 0 ? (
         <div className="area-problems-row is-clear" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
           <span className="area-problems-label"><Icon name="check" />{t('area.problems.none')}</span>
           {legend}

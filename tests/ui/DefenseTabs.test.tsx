@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
+import { metaThreats } from '../../src/engine/attackers';
+import { battleSpecies } from '../../src/engine/dex';
+import { moveAttackMultiplier } from '../../src/engine/types';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -124,12 +127,19 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       });
       expect(cells).toHaveLength(18);
     });
-    // Il moltiplicatore classico sotto il %: Great Tusk è debole all'Acqua; niente sui tipi neutri
-    const water = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Water');
-    const normal = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Normal');
-    const tusk = within(table).getByRole('row', { name: /^Great Tusk/ });
-    expect(within(tusk).getAllByRole('cell')[water].querySelector('.ct-mult')).toHaveTextContent('×2');
-    expect(within(tusk).getAllByRole('cell')[normal].querySelector('.ct-mult')).toBeNull();
+    // L'etichetta di efficacia in basso a sinistra (non più la seconda riga sotto il %): Great Tusk è debole all'Acqua;
+    // Gholdengo resiste all'Erba e non prende Normale né Veleno; niente sui tipi neutri. Ai lettori di schermo per esteso
+    const col = (type: string) => rating.defense.coverageTypes.rows.findIndex(r => r.type === type);
+    const tusk = within(within(table).getByRole('row', { name: /^Great Tusk/ })).getAllByRole('cell');
+    const ghold = within(within(table).getByRole('row', { name: /^Gholdengo/ })).getAllByRole('cell');
+    expect(tusk[col('Water')].querySelector('.eff-tag')).toHaveTextContent('×2');
+    expect(tusk[col('Water')]).toHaveTextContent('debole ×2');
+    expect(ghold[col('Grass')].querySelector('.eff-tag')).toHaveTextContent('×½');
+    expect(ghold[col('Grass')]).toHaveTextContent('resiste ×½');
+    expect(ghold[col('Normal')].querySelector('.eff-tag')).toHaveTextContent(/^0$/);
+    expect(ghold[col('Poison')]).toHaveTextContent('immune');
+    expect(tusk[col('Normal')].querySelector('.eff-tag')).toBeNull();
+    expect(table.querySelector('.ct-mult')).toBeNull();
     expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
@@ -163,6 +173,68 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 
+  it('"Solo efficacia" spegne solo le caselle neutre (restano al loro posto); vale anche per Coverage meta', async () => {
+    const user = userEvent.setup();
+    const { table } = await openTypes();
+    const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    // Sta a destra nella striscia delle sottoschede, non nella tabella né sulla riga dei problemi; la tabella ha di nuovo "Pokémon"
+    expect(sw.closest('.area-strip')).not.toBeNull();
+    expect(table).not.toContainElement(sw);
+    expect(table.querySelector('thead th.def-mon-h')).toHaveTextContent(/^Pokémon$/);
+    expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
+    expect(table.querySelector('.eff-dim')).toBeNull();
+    await user.click(sw);
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    const cells = Array.from(table.querySelectorAll('tbody tr:not(.ct-sum) td'));
+    cells.forEach(td => {
+      const tag = td.querySelector('.eff-tag')?.textContent ?? '';
+      expect(td.classList.contains('eff-dim')).toBe(!['×4', '×2', '×½', '×¼', '0'].includes(tag));
+    });
+    expect(cells.filter(td => !td.classList.contains('eff-dim')).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
+    expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
+    expect(metaSwitch.closest('.area-strip')).not.toBeNull();
+    expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
+    // Sulle sottoschede senza etichette (Sostenibilità) l'interruttore non c'è
+    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
+  it("col puntatore la colonna si accende e sotto l'icona compare il nome del tipo", async () => {
+    const user = userEvent.setup();
+    const { table } = await openTypes();
+    const fire = within(table).getByRole('columnheader', { name: /^Fire/ });
+    await user.hover(fire);
+    expect(fire.querySelector('.col-name')).toHaveTextContent('Fire');
+    expect(fire).toHaveClass('x-col');
+  });
+
+  it("Coverage meta: l'etichetta è l'efficacia della mossa che fa più danno al membro (la stessa del %)", async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    const threats = new Map(metaThreats(fixtureData).map(t => [t.set.species, t.set]));
+    const expected = [...rating.defense.coverageMeta!.rows].sort((a, b) => a.level - b.level || b.weight - a.weight).slice(0, 8);
+    const table = within(screen.getByRole('tabpanel')).getByRole('table');
+    let checked = 0;
+    team.forEach((set, m) => {
+      const cells = within(within(table).getAllByRole('row')[m + 1]).getAllByRole('cell');
+      expected.forEach((r, k) => {
+        const h = r.heldBy.find(x => x.species === set.species);
+        if (!h?.move) return;
+        const mult = moveAttackMultiplier(threats.get(r.species)!, h.move, battleSpecies(set)!.types, set.ability);
+        expect(r.mults[m]).toBe(mult);
+        const tag = cells[k].querySelector('.eff-tag');
+        if (mult === 1) expect(tag).toBeNull(); else expect(tag).not.toBeNull();
+        checked++;
+      });
+    });
+    expect(checked).toBeGreaterThan(0);
+  });
+
   it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Regge', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
@@ -180,7 +252,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       expected.slice(0, 8).forEach((r, k) => {
         const h = r.heldBy.find(x => x.species === set.species);
         if (!h) {
-          expect(cells[k]).toHaveTextContent(/^KO$/);
+          expect(cells[k]).toHaveTextContent(/^KO/);
           expect(cells[k]).toHaveClass('hold-ohko');
         } else {
           expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));

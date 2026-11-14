@@ -4,6 +4,7 @@ import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
 import { BonusMalusView } from './BonusMalusView';
+import type { EffSide } from './effTag';
 import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
 import { defenseTabs } from './defense/defenseTabs';
@@ -17,6 +18,8 @@ export type T = ReturnType<typeof useT>;
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode;
   /** Legenda dei colori della scheda: sta a destra sulla riga dei problemi, così sotto la tabella resta più spazio alle righe. */
   legend?: ReactNode;
+  /** Le schede con l'etichetta di efficacia nelle caselle: a destra nella striscia l'interruttore "Solo superefficaci" / "Solo efficacia". */
+  effSide?: EffSide;
   /** Pagine in più della guida dopo quella della scheda (i Ruoli: tipi di team, come si ottiene un ruolo). */
   guidePages?: { key: string; label: string; content: ReactNode }[] }
 
@@ -25,7 +28,12 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   /** Squadra chiusa: più spazio, la scheda Generale della Difesa mostra più colonne. */
   roomy?: boolean;
   /** Formato scelto (la guida dell'Offesa mostra i bersagli del suo Pokédex, e Tera / mosse Z solo dove ci sono). */
-  formatId?: FormatId }
+  formatId?: FormatId;
+  /**
+   * Interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia", a destra nella striscia delle sottoschede)
+   * acceso: le caselle senza etichetta si spengono (restano al loro posto). Uno per area.
+   */
+  effOnly?: boolean }
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
@@ -60,5 +68,7 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
   return [{
     key: 'all', label: t('catalogue.onGrade'), value: signed(rating.bonus.total - rating.penalty.total),
     panel: <BonusMalusView rating={rating} lang={lang} t={t} />,
+    // Il "?" della scheda sta qui, nella striscia, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
+    help: t('help.view.bonusMalus').split(/\n/).map(line => <p key={line}>{line}</p>),
   }];
 }

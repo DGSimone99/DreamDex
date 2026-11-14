@@ -396,6 +396,27 @@ const ROLES_STATES: Record<string, State> = {
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
 interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
 const openFill = async (p: Page) => { await p.evaluate(() => (document.querySelector('[data-fill-toggle]') as HTMLElement | null)?.click()); await p.waitForSelector('.fill-panel', { timeout: 10000 }); };
+// Coverage tipi / meta di Offesa e Difesa con l'interruttore dell'efficacia acceso, e col puntatore su una colonna
+const effOn = (base: State, hover = false): State => ({ ...base, run: async p => {
+  const ok = await base.run!(p);
+  if (ok !== true) return ok;
+  if (!hover) {
+    if (!await clickText(p, 'button.eff-switch', /./)) return 'no eff switch';
+    await wait(300);
+    return true;
+  }
+  const head = await p.$('.ct-table thead th:nth-child(4)');
+  if (!head) return 'no column head';
+  await head.hover();
+  await wait(250);
+  return true;
+} });
+for (const [k, re] of [['types', OFFENSE_SUBS.types], ['meta', OFFENSE_SUBS.meta]] as const) {
+  OFFENSE_STATES[`analysis-offense-${k}-eff`] = effOn(offenseState(re));
+  OFFENSE_STATES[`analysis-offense-${k}-hover`] = effOn(offenseState(re), true);
+  DEFENSE_STATES[`analysis-defense-${k}-eff`] = effOn(defenseState(SUBS[k]));
+  DEFENSE_STATES[`analysis-defense-${k}-hover`] = effOn(defenseState(SUBS[k]), true);
+}
 const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
   // Telefono: tocca il secondo candidato, la scheda sale sopra la lista
@@ -482,7 +503,7 @@ const STATES: Record<string, State> = {
   'analysis-help': { run: async p => {
     if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
     await wait(300);
-    return clickText(p, '.analysis-help button', /./);
+    return clickText(p, '.area-help button', /./);
   } },
   // Stampa l'altezza della riga delle tappe mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
   'coaching-six': { hash: hash(SIX), run: async p => {

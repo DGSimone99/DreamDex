@@ -64,7 +64,7 @@ describe("dettaglio dell'Offesa a schede", () => {
     // Intestazione, due membri, Lo coprono
     expect(rows).toHaveLength(4);
     for (const row of rows.slice(1, 3)) {
-      for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?(setup \d+%)?$/);
+      for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?(setup \d+%)?(×[24] superefficace ×[24])?$/);
     }
     expect(rows[3]).toHaveTextContent(/^Lo coprono/);
   });

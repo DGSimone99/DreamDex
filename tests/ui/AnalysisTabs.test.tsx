@@ -52,16 +52,20 @@ describe('schede interne di Analisi', () => {
     expect(help).toHaveFocus();
   });
 
-  it("le schede Offesa, Difesa, Velocità e Ruoli non hanno il ? della vista (ce l'hanno le sottoschede)", async () => {
+  it("nessuna scheda ha un ? sopra la fila delle schede: ce l'hanno le sottoschede (con una sola, col nome dell'area)", async () => {
     const user = await setup();
-    await user.click(within(views()).getByRole('tab', { name: 'Ruoli' }));
-    expect(screen.queryByRole('button', { name: 'Come funziona Ruoli' })).toBeNull();
-    await user.click(within(views()).getByRole('tab', { name: 'Velocità' }));
-    expect(screen.queryByRole('button', { name: 'Come funziona Velocità' })).toBeNull();
-    await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
-    expect(screen.queryByRole('button', { name: 'Come funziona Difesa' })).toBeNull();
-    await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
-    expect(screen.queryByRole('button', { name: 'Come funziona Offesa' })).toBeNull();
+    for (const name of ['Ruoli', 'Velocità', 'Difesa', 'Offesa', 'Bonus/Malus']) {
+      await user.click(within(views()).getByRole('tab', { name }));
+      expect(document.querySelector('.analysis-tabs .help-button')).toBeNull();
+    }
+    expect(within(panel()).getByRole('button', { name: 'Come funziona Bonus/Malus' })).toBeInTheDocument();
+  });
+
+  it('voto e problemi delle schede si leggono come descrizione, il nome resta quello della scheda', async () => {
+    await setup();
+    const defense = within(views()).getByRole('tab', { name: 'Difesa' });
+    expect(defense).toHaveAccessibleDescription(/^Voto \d+$/);
+    expect(within(views()).getByRole('tab', { name: 'Bonus/Malus' })).toHaveAccessibleDescription(/^Sul voto [+−]?\d+$/);
   });
 
   it('ogni area ricorda la sua sottoscheda: Difesa → Sostenibilità → Offesa → Difesa riapre Sostenibilità', async () => {
