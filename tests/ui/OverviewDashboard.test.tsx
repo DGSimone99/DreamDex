@@ -174,7 +174,7 @@ describe('Cruscotto della Panoramica', () => {
     const { onView } = mount();
     await user.click(screen.getByRole('button', { name: /^Difesa/ }));
     await user.click(screen.getByRole('button', { name: /^Offesa/ }));
-    await user.click(screen.getByRole('button', { name: 'Apri i Ruoli in Bonus/Malus' }));
+    await user.click(screen.getByRole('button', { name: 'Apri i Ruoli nella scheda Ruoli e Bonus' }));
     await user.click(screen.getByRole('button', { name: 'Apri la scheda Velocità' }));
     expect(onView.mock.calls.map(c => c[0])).toEqual(['defense', 'strength', 'roles', 'speed']);
   });

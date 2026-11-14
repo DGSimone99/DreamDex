@@ -80,7 +80,8 @@ export const areaValue = (rating: TeamRating, area: DetailArea): number | string
  */
 function catalogueTabs(rating: TeamRating, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
   return [{
-    key: 'all', label: t('detail.tab.general'), value: signed(rating.bonus.total - rating.penalty.total),
+    // La scheda si chiama "Ruoli e Bonus": la sottoscheda dei bonus e malus porta il loro nome, Bonus/Malus
+    key: 'all', label: t('area.bonusMalus'), value: signed(rating.bonus.total - rating.penalty.total),
     panel: <BonusMalusView rating={rating} lang={lang} t={t} onCatalogue={ctx.guide && (() => ctx.guide!('bonus'))} />,
     // Il "?" della scheda sta qui, nella striscia, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
     help: t('help.view.bonusMalus').split(/\n/).map(line => <p key={line}>{line}</p>),

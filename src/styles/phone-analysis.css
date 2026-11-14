@@ -51,6 +51,10 @@
   .area-strip::-webkit-scrollbar { display: none; }
   .area-subs { width: max-content; min-width: 100%; overflow: visible; }
   .area-subs [role='tab'] { min-height: 44px; align-items: center; }
+  /* Ruoli e Bonus: le due metà restano affiancate (stanno anche a 390px), più basse e con un testo più piccolo */
+  .area-view-bonusMalus .area-subs { width: auto; }
+  .area-view-bonusMalus .area-subs [role='tab'] { padding: 0 12px; gap: 8px; font-size: 15px; }
+  .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 18px; }
 
   /* Problemi dell'area: tutti, su più righe (la pagina scorre) */
   .area-problems-row { height: auto; min-height: 25px; flex-wrap: wrap; align-items: flex-start; gap: 6px 12px; }

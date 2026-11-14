@@ -7,12 +7,13 @@ import { EeveePeek } from './EeveePeek';
 import { Icon } from './icons';
 
 /**
- * Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa e Velocità, con Bonus/Malus in fondo.
- * I Ruoli non hanno una scheda loro: stanno in Bonus/Malus, nella sottoscheda Ruoli.
+ * Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa e Velocità, con "Ruoli e Bonus" in
+ * fondo (la scheda bonusMalus: due sottoschede grandi, Bonus/Malus e Ruoli; i Ruoli non hanno un peso nel voto).
  */
 export const ANALYSIS_VIEWS: TabView[] = ['overview', 'coaching', 'strength', 'defense', 'speed', 'bonusMalus'];
 
-const viewLabelKey = (view: TabView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
+/** Il nome della scheda: le aree col nome dell'area, Bonus/Malus (che tiene anche i Ruoli) col suo, "Ruoli e Bonus". */
+export const viewLabelKey = (view: TabView) => (view === 'overview' || view === 'coaching' || view === 'bonusMalus' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
 
 /** Un "?" che apre un riquadro di aiuto: un titolo e il contenuto. `label`: il nome del pulsante, se diverso dal titolo. */
 export function HelpButton({ title, label = title, className, children }: { title: string; label?: string; className?: string; children: ReactNode }) {

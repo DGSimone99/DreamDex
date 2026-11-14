@@ -429,7 +429,7 @@ for (const [k, re] of [['types', OFFENSE_SUBS.types], ['meta', OFFENSE_SUBS.meta
 const bonusState = (team: typeof SIX, then?: (p: Page) => Promise<boolean>): State => ({ hash: hash(team), run: async p => {
   await tab(p, 'analysis');
   await wait(300);
-  const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Bonus/);
+  const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^(Ruoli e Bonus|Roles & Bonus)/);
   await wait(900);
   return ok && (!then || then(p));
 } });
@@ -482,7 +482,7 @@ const STATES: Record<string, State> = {
   'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
-  'analysis-bonus': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Bonus/); await wait(900); return ok; } },
+  'analysis-bonus': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^(Ruoli e Bonus|Roles & Bonus)/); await wait(900); return ok; } },
   // Bonus/Malus con altri team: SIX (due core a tre), LONE (nessun core, malus), RAIN; il secondo core aperto; il catalogo
   'analysis-bonus-six': bonusState(SIX),
   'analysis-bonus-lone': bonusState(LONE),

@@ -6,6 +6,7 @@ import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
+import { viewLabelKey } from './AnalysisTabs';
 import type { RolesFilter } from './roles/rolesTabs';
 import { AreaGuide } from './AreaGuide';
 import { EffSwitch } from './effTag';
@@ -59,10 +60,10 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const legend = current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
-  const title = t(`area.${area}`);
-  // Con una sottoscheda sola (Velocità) o sul Generale di Bonus/Malus il "?" spiega l'area intera: porta il suo nome
-  const sectionName = (tab: (typeof tabs)[number]) => (tabs.length === 1 || tab.key === 'all' ? title : tab.label);
-  const helpLabel = t('area.guide.button', { tab: sectionName(current) });
+  // Il nome della scheda di Analisi (Bonus/Malus si chiama "Ruoli e Bonus")
+  const title = t(viewLabelKey(area));
+  // Con una sottoscheda sola (Velocità) il "?" spiega l'area intera: porta il suo nome
+  const helpLabel = t('area.guide.button', { tab: tabs.length === 1 ? title : current.label });
   // La Velocità non ha problemi del Coaching (difficile dire quando lo è): niente "Nessun problema", solo la legenda
   const judged = area !== 'speed';
   // Problemi: prima quelli che i Suggerimenti risolvono, poi i gravi, poi l'ordine delle categorie; in riga quelli che stanno
@@ -131,12 +132,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
 
   const sections = tabs.filter(tab => tab.help).flatMap(tab => [{
     key: tab.key,
-    label: tab.key === 'general' ? t('area.guide.general') : tab.key === 'all' ? title : tab.label,
+    label: tab.key === 'general' ? t('area.guide.general') : tab.label,
     content: tab.help,
   }, ...(tab.guidePages ?? [])]);
 
   return (
-    <section className="area-view" aria-label={title}>
+    <section className={`area-view area-view-${area}`} aria-label={title}>
       {/* Titolo per i lettori di schermo: sotto "Analisi" (h2) l'area, poi i titoli delle parti (h4) */}
       <h3 className="visually-hidden">{title}</h3>
       <div className="area-strip">

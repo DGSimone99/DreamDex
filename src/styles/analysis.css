@@ -118,6 +118,29 @@
 .area-help { position: absolute; display: flex; }
 .area-help .help-button { width: 18px; height: 18px; color: var(--text); }
 .area-help .help-button .icon { width: 18px; height: 18px; }
+
+/* Ruoli e Bonus: due sottoschede grandi, metà striscia ciascuna (Bonus/Malus a sinistra, Ruoli a destra), nome e valore
+   in Kanit corsivo come le schede principali. Quella aperta è magenta a righe come la scheda principale aperta ("sei
+   qui"), col taglio inclinato verso l'altra metà; l'altra resta sul fondo della striscia. Il "?" sta dentro, dopo il valore */
+.area-view-bonusMalus .area-subs { gap: 4px; }
+.area-view-bonusMalus .area-subs [role='tab'] {
+  flex: 1 1 0; min-width: 0; justify-content: center; align-items: baseline; gap: 10px; padding: 10px 20px 9px;
+  border-bottom: 0; font: 600 18px/1 var(--display); font-style: italic; color: var(--muted);
+}
+.area-view-bonusMalus .area-subs [role='tab'] b { font: 800 22px/1 var(--display); font-style: italic; color: var(--accent-2-ink); }
+.area-view-bonusMalus .area-subs [role='tab']:hover:not([aria-selected='true']) { color: var(--text); background: color-mix(in srgb, var(--accent-2) 10%, transparent); }
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] {
+  color: var(--on-accent-2); background: var(--stripes), var(--accent-2);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+}
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:last-child { clip-path: polygon(0 0, 100% 0, 100% 100%, 18px 100%); }
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] b { color: var(--on-accent-2); }
+/* Niente ingrandimento: le sottoschede sono già grandi */
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > span:first-child,
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > b { transform: none; font-weight: inherit; }
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 700; }
+.area-view-bonusMalus .area-help .help-button { color: var(--on-accent-2); }
+.area-view-bonusMalus .area-subs [role='tab']:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
 /* Altezza fissa: con o senza problemi il pannello sotto parte dallo stesso punto in ogni area */
 .area-problems-row { display: flex; align-items: center; gap: 12px; padding: 0 2px; flex: none; height: 25px; }
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave */
@@ -168,7 +191,8 @@
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
 .analysis-tabs { border-bottom: 0; }
 /* Panoramica e Coaching (la lettura del team) separate dalle aree del voto da uno stacco con un filo sottile */
-.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(5, minmax(0, 1fr)); gap: 4px; width: 100%; }
+/* Sei schede: due di lettura e quattro aree (Offesa, Difesa, Velocità, Ruoli e Bonus) che riempiono tutta la riga */
+.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(4, minmax(0, 1fr)); gap: 4px; width: 100%; }
 .analysis-tabs [role='tablist']::before { content: ''; grid-column: 3; grid-row: 1; justify-self: center; width: 1px; margin: 6px 0; background: var(--line); }
 .analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: 8px; width: 100%; padding: 8px 14px; border: 1px solid var(--line-soft); background: var(--panel); }
 .analysis-tabs [role='tab'][aria-selected='true'] {
@@ -197,8 +221,8 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
   animation: tab-stretch 0.24s var(--ease) both;
 }
-/* Coaching e Bonus/Malus chiudono un gruppo (prima dello stacco, in fondo alla riga): il lato destro resta dritto e la
-   scheda si allunga a sinistra, col taglio inclinato sopra la scheda vicina (Panoramica, Ruoli) */
+/* Coaching e Ruoli e Bonus chiudono un gruppo (prima dello stacco, in fondo alla riga): il lato destro resta dritto e la
+   scheda si allunga a sinistra, col taglio inclinato sopra la scheda vicina (Panoramica, Velocità) */
 .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
   margin-right: 0; margin-left: -30px;
   padding-right: 14px; padding-left: 44px;
@@ -877,6 +901,8 @@
 @media (min-width: 1100px) and (max-height: 700px) {
   .area-view { gap: 6px; }
   .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 5px; }
+  .area-view-bonusMalus .area-subs [role='tab'] { padding-top: 7px; padding-bottom: 6px; font-size: 16px; }
+  .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 19px; }
   .area-problems-row { height: 22px; }
   .area-panel.ad-panel { padding-bottom: 10px; }
 }

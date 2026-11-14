@@ -51,9 +51,9 @@ describe('Ruoli in Bonus/Malus: sottoscheda Ruoli col filtro dei livelli', () =>
     const { view } = await openRoles();
     // La scheda aperta in Analisi è Bonus/Malus (i Ruoli non hanno più una scheda loro)
     const views = within(document.getElementById('panel-analysis')!).getByRole('tablist', { name: "Sezioni dell'Analisi" });
-    expect(within(views).getByRole('tab', { name: 'Bonus/Malus' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(views).getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
     expect(within(views).queryByRole('tab', { name: 'Ruoli' })).toBeNull();
-    expect(tabNames(view)).toEqual(['Generale', 'Ruoli']);
+    expect(tabNames(view)).toEqual(['Bonus/Malus', 'Ruoli']);
     const tabs = within(view).getAllByRole('tab');
     expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
     // La sottoscheda Ruoli porta i Ruoli coperti sul totale, come la riga del voto
@@ -73,8 +73,8 @@ describe('Ruoli in Bonus/Malus: sottoscheda Ruoli col filtro dei livelli', () =>
     renderIt(<AnalysisPanel team={team} analysis={analyzeTeam(team, fixtureData)} rating={rateTeam(team, fixtureData, 'it')} data={fixtureData} view="roles" onView={onView} />);
     expect(onView).toHaveBeenCalledWith('bonusMalus');
     const views = screen.getByRole('tablist', { name: "Sezioni dell'Analisi" });
-    expect(within(views).getByRole('tab', { name: 'Bonus/Malus' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: /^Ruoli/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(views).getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('group', { name: 'Quali ruoli mostrare' })).toBeInTheDocument();
   });
 
@@ -88,9 +88,9 @@ describe('Ruoli in Bonus/Malus: sottoscheda Ruoli col filtro dei livelli', () =>
     expect(within(view).queryByRole('region', { name: 'Ruoli che mancano' })).toBeNull();
     expect(within(view.querySelector<HTMLElement>('.area-panel')!).getByRole('table')).toBeInTheDocument();
     // Generale e di nuovo Ruoli: il filtro resta Minori
-    await user.click(within(view).getByRole('tab', { name: /^Generale/ }));
+    await user.click(within(view).getByRole('tab', { name: /^Bonus\/Malus/ }));
     expect(within(view).queryByRole('group', { name: 'Quali ruoli mostrare' })).toBeNull();
-    await user.click(within(view).getByRole('tab', { name: /^Ruoli/ }));
+    await user.click(within(view).getByRole('tab', { name: /^Ruoli \d/ }));
     expect(within(view).getByRole('button', { name: /^Minori/ })).toHaveAttribute('aria-pressed', 'true');
     await user.click(within(view).getByRole('button', { name: 'Tutti' }));
     expect(within(view).getByRole('region', { name: 'Ruoli che mancano' })).toBeInTheDocument();
@@ -136,14 +136,14 @@ describe('Ruoli in Bonus/Malus: sottoscheda Ruoli col filtro dei livelli', () =>
 
   it('in inglese', async () => {
     const { view } = await openRoles('en');
-    expect(tabNames(view)).toEqual(['General', 'Roles']);
+    expect(tabNames(view)).toEqual(['Bonus/Malus', 'Roles']);
     expect(filterNames(view)).toEqual(['All', 'Essential', 'Important', 'Minor', "Don't count"]);
   });
 
   it('il ? della sottoscheda Ruoli: la guida di Bonus/Malus aperta su Ruoli, poi tipi di team e come si ottiene un ruolo', async () => {
     const { user, view } = await openRoles();
     await user.click(within(view).getByRole('button', { name: 'Come funziona Ruoli' }));
-    const dialog = screen.getByRole('dialog', { name: /Bonus\/Malus/ });
+    const dialog = screen.getByRole('dialog', { name: /Ruoli e Bonus/ });
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual([
       'Bonus/Malus', 'Tutti i bonus', 'Tutti i malus',
       'Ruoli', 'Ruoli per tipo di team', 'Come si ottiene: attacco e difesa', 'Come si ottiene: support', 'Come si ottiene: utility',
