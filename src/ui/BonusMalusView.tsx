@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
 import type { Lang } from '../i18n';
 import { typeName } from '../i18n/game';
 import type { Core } from '../engine/cores';
@@ -40,12 +40,31 @@ const ICONS: Record<Family, ReactElement> = {
 };
 
 /** Medaglia esagonale con l'icona della famiglia; il malus è rosso e incrinato. Decorativa. */
-export function Medal({ entry, className = '' }: { entry: Pick<CatalogEntry, 'key' | 'kind'>; className?: string }) {
+export function Medal({ entry, className = '', style }: { entry: Pick<CatalogEntry, 'key' | 'kind'>; className?: string; style?: CSSProperties }) {
+  // Gradienti propri per ogni medaglia (gli id vanno dentro url(#…): senza i due punti di useId)
+  const id = useId().replace(/[^\w-]/g, '');
   return (
-    <svg className={`bm-medal ${entry.kind}${className ? ` ${className}` : ''}`} viewBox="0 0 64 72" aria-hidden="true" focusable="false">
-      <path className="bm-medal-hex" d="M32 3 59 18v36L32 69 5 54V18z" />
-      <path className="bm-medal-inner" d="M32 11 52 22v28L32 61 12 50V22z" />
-      <path className="bm-medal-shine" d="M32 3 59 18 32 33 5 18z" />
+    <svg className={`bm-medal ${entry.kind}${className ? ` ${className}` : ''}`} style={style} viewBox="0 0 64 72" aria-hidden="true" focusable="false">
+      <defs>
+        {/* Bordo di metallo: chiaro in alto, scuro in basso, nel colore della voce */}
+        <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="bm-stop-light" />
+          <stop offset="0.5" className="bm-stop-tone" />
+          <stop offset="1" className="bm-stop-dark" />
+        </linearGradient>
+        {/* Smusso interno: al contrario del bordo (la faccia sembra incassata) */}
+        <linearGradient id={`${id}-bevel`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="bm-stop-dark" />
+          <stop offset="1" className="bm-stop-light" />
+        </linearGradient>
+        <radialGradient id={`${id}-face`} cx="0.5" cy="0.32" r="0.75">
+          <stop offset="0" className="bm-stop-face" />
+          <stop offset="1" className="bm-stop-bg" />
+        </radialGradient>
+      </defs>
+      <path className="bm-medal-hex" d="M32 3 59 18v36L32 69 5 54V18z" fill={`url(#${id}-face)`} stroke={`url(#${id}-rim)`} />
+      <path className="bm-medal-inner" d="M32 10 53 22v28L32 62 11 50V22z" stroke={`url(#${id}-bevel)`} />
+      <path className="bm-medal-shine" d="M32 5 57 19 32 31 7 19z" />
       <g className="bm-medal-icon">{ICONS[FAMILY[entry.key]]}</g>
       {entry.kind === 'malus' && <path className="bm-medal-crack" d="M40 8l-5 12 4 6-6 9 3 7-5 10" />}
     </svg>
@@ -256,7 +275,8 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
       <section className="bm-grade" aria-labelledby={head}>
         <div className="bm-sum">
           <h4 id={head} className="bm-label">{t('catalogue.onGrade')}</h4>
-          <p className={`bm-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}>{signed(net)}</p>
+          {/* Il risultato della scheda su una sua targhetta inclinata, nel colore del segno */}
+          <p className={`bm-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}><span>{signed(net)}</span></p>
           {rows.length === 0 ? <p className="bm-parts">{t('catalogue.none')}</p> : (
             <p className="bm-parts">
               <span>{t('catalogue.bonus')} <b className={rating.bonus.total ? 'good' : undefined}>{signed(rating.bonus.total)}</b></span>
@@ -270,9 +290,10 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
       <CoreColumn rating={rating} lang={lang} t={t} />
       {rows.length > 0 && (
         <ul className="bm-list" aria-labelledby={head}>
-          {rows.map(({ key, entry, points, details }) => (
+          {rows.map(({ key, entry, points, details }, i) => (
             <li key={key} className={`bm-row ${entry.kind}`}>
-              <Medal entry={entry} />
+              {/* Le medaglie entrano una dopo l'altra (--i: il ritardo) quando si apre la scheda */}
+              <Medal entry={entry} style={{ '--i': i } as CSSProperties} />
               <span className="bm-row-tx">
                 <b>{entry.name}</b>
                 <span title={details.join(' · ')}>{details.map((detail, i) => <span key={i}>{i > 0 && ' · '}{entry.key === 'coreTrio' ? detail : <Typed text={detail} />}</span>)}</span>

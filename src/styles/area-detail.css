@@ -134,13 +134,20 @@
 .bm p { margin: 0; }
 
 /* Medaglia: esagono col bordo del colore, esagono interno, riflesso in alto e l'icona della famiglia a tratto */
-.bm-medal { --c: var(--good); --bg: var(--good-bg); flex: none; width: 34px; height: 38px; overflow: visible; }
+/* Medaglia di metallo: bordo chiaro in alto e scuro in basso, smusso interno al contrario, faccia con un po' di luce in
+   alto e un'ombra morbida sotto (niente ombre dure) */
+.bm-medal { --c: var(--good); --bg: var(--good-bg); flex: none; width: 34px; height: 38px; overflow: visible; filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45)); }
 .bm-medal.malus { --c: var(--bad); --bg: var(--bad-bg); }
 .bm-medal.off { --c: var(--faint); --bg: var(--raised); }
-.bm-medal-hex { fill: var(--bg); stroke: var(--c); stroke-width: 3; stroke-linejoin: round; }
-.bm-medal-inner { fill: none; stroke: var(--c); stroke-width: 1; opacity: 0.45; }
-.bm-medal-shine { fill: color-mix(in srgb, var(--text) 8%, transparent); }
-.bm-medal-icon { fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.bm-stop-light { stop-color: color-mix(in srgb, var(--c) 50%, #fff); }
+.bm-stop-tone { stop-color: var(--c); }
+.bm-stop-dark { stop-color: color-mix(in srgb, var(--c) 40%, #000); }
+.bm-stop-face { stop-color: color-mix(in srgb, var(--c) 26%, var(--bg)); }
+.bm-stop-bg { stop-color: var(--bg); }
+.bm-medal-hex { stroke-width: 3.6; stroke-linejoin: round; }
+.bm-medal-inner { fill: none; stroke-width: 1.6; stroke-linejoin: round; opacity: 0.85; }
+.bm-medal-shine { fill: rgb(255 255 255 / 0.09); }
+.bm-medal-icon { fill: none; stroke: color-mix(in srgb, var(--c) 85%, #fff); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .bm-medal-crack { fill: none; stroke: var(--bad); stroke-width: 1.6; stroke-linejoin: round; }
 
 /* In alto a destra: il netto grande a sinistra, l'etichetta e bonus/malus a destra; sotto le barre e il link */
@@ -148,10 +155,15 @@
 .bm-sum { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: end; column-gap: 16px; }
 .bm-sum .bm-net { grid-column: 1; grid-row: 1 / span 2; }
 .bm .bm-sum .bm-label { grid-column: 2; margin: 0 0 5px; }
-.bm .bm-net { font: 800 64px/0.9 var(--display); font-style: italic; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
-.bm-net.good { color: var(--good); }
-.bm-net.bad { color: var(--bad); }
-.bm-net.zero { color: var(--faint); }
+/* Il netto sulla sua targhetta inclinata a righe, nel colore del segno: è il risultato della scheda */
+.bm .bm-net {
+  --tone: var(--faint); justify-self: start; padding: 6px 30px 8px 14px; color: var(--tone);
+  background: var(--stripes), color-mix(in srgb, var(--tone) 15%, var(--band));
+  clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+  font: 800 64px/0.9 var(--display); font-style: italic; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+}
+.bm-net.good { --tone: var(--good); }
+.bm-net.bad { --tone: var(--bad); }
 .bm .bm-parts { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13px; color: var(--muted); }
 .bm-parts b { font-weight: 700; }
 .bm-parts b.good { color: var(--good); }
@@ -172,15 +184,33 @@
 /* Sotto, a tutta larghezza: le voci attive in tre colonne, riga per riga (se proprio non stanno, scorrono) */
 .bm-list {
   grid-area: list; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: 8px; margin: 0; padding: 0; list-style: none;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: 12px 26px; margin: 0; padding: 5px 0 5px 14px; list-style: none;
 }
-.bm-row { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 14px 8px 10px; background: var(--raised); border: 1px solid var(--line-soft); }
-.bm-row-tx { flex: 1; min-width: 0; display: grid; gap: 1px; }
+/* Una voce: la medaglia appuntata sul bordo sinistro, la carta lavata nel colore della voce che sfuma a destra, i punti
+   su una targhetta inclinata a righe */
+.bm-row {
+  --c: var(--good); --bg: var(--good-bg);
+  position: relative; display: flex; align-items: stretch; min-width: 0; min-height: 54px; padding-left: 50px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 90%, var(--raised)) 0%, var(--raised) 72%);
+  border: 1px solid color-mix(in srgb, var(--c) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
+}
+.bm-row.malus { --c: var(--bad); --bg: var(--bad-bg); }
+.bm-row .bm-medal { position: absolute; left: -14px; top: 50%; translate: 0 -50%; width: 54px; height: 61px; }
+.bm-row-tx { flex: 1; min-width: 0; align-self: center; display: grid; gap: 1px; padding: 6px 10px 6px 0; }
 .bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.15 var(--display); font-style: italic; }
 .bm-row-tx > span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
-.bm-row-pts { flex: none; font: 800 22px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
-.bm-row.bonus .bm-row-pts { color: var(--good); }
-.bm-row.malus .bm-row-pts { color: var(--bad); }
+.bm-row-pts {
+  flex: none; display: grid; place-items: center; min-width: 62px; padding: 0 12px 0 22px; color: var(--c);
+  background: var(--stripes), color-mix(in srgb, var(--c) 18%, var(--field));
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+  font: 800 24px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums;
+}
+/* Quando si apre la scheda le medaglie entrano una dopo l'altra: partono già visibili (niente vuoto), solo un piccolo
+   ingrandimento e la luce che sale */
+@keyframes bm-pop { from { opacity: 0.35; transform: scale(0.88); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .bm-row .bm-medal { animation: bm-pop 420ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+}
 
 /* In alto a sinistra: i core a tre */
 .bm-cores { grid-area: cores; align-self: start; min-width: 0; display: flex; flex-direction: column; }
@@ -188,13 +218,16 @@
 .bm-core-row { display: flex; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .bm-core {
   position: relative; display: flex; align-items: center; gap: 16px; min-width: 0; overflow: hidden;
-  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 14px 16px; background: var(--raised); border: 1px solid var(--line-soft);
+  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 14px 16px;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 80%, var(--raised)) 0%, var(--raised) 58%);
+  border: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
   transition: flex-grow 250ms var(--ease);
 }
 .bm-core-row:not(.two) .bm-core { max-width: 680px; }
 .bm-core.shut { flex-grow: 0; }
 .bm-core::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--good); }
 .bm-core.shut::before { background: color-mix(in srgb, var(--good) 40%, transparent); }
+.bm-core.shut { background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 45%, var(--raised)) 0%, var(--raised) 70%); }
 .bm-core-art { flex: none; display: flex; padding: 0; background: none; border: 0; color: inherit; font: inherit; }
 .bm-core.shut .bm-core-art { cursor: pointer; opacity: 0.85; }
 /* Tutta la carta chiusa si clicca */
@@ -218,7 +251,8 @@
 .bm-core-lines b { color: var(--text); font-weight: 600; }
 .bm-core-chip { display: inline-block; margin-top: 10px; padding: 2px 8px; background: var(--field); border: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); cursor: help; }
 .bm .bm-hint { margin-top: 6px; font-size: 12px; color: var(--faint); }
-.bm-cores-none { display: flex; align-items: center; gap: 14px; max-width: 560px; padding: 14px 16px; background: var(--raised); border: 1px solid var(--line-soft); }
+.bm-cores-none { display: flex; align-items: center; gap: 14px; max-width: 560px; padding: 14px 16px; background: var(--raised); border: 1px solid var(--line-soft); box-shadow: 0 6px 14px rgb(0 0 0 / 0.22); }
+.bm-cores-none .bm-medal { width: 40px; height: 45px; }
 .bm-cores-none p { font-size: 13px; line-height: 1.45; color: var(--muted); }
 .bm-cores-none b { display: block; margin-bottom: 2px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--text); }
 @media (prefers-reduced-motion: reduce) {
@@ -237,13 +271,14 @@
   .bm-core-lines { gap: 2px; font-size: 12.5px; }
   .bm-core-chip { margin-top: 6px; }
   .bm .bm-hint { display: none; }
-  .bm .bm-net { font-size: 48px; }
+  .bm .bm-net { font-size: 48px; padding: 5px 26px 6px 12px; }
   .bm-bars { margin-top: 10px; padding-top: 8px; gap: 6px; }
-  .bm-list { gap: 6px; }
-  .bm-row { padding: 5px 12px 5px 8px; gap: 10px; }
-  .bm-medal { width: 28px; height: 32px; }
+  .bm-list { gap: 10px 22px; padding-left: 12px; }
+  .bm-row { min-height: 44px; padding-left: 40px; }
+  .bm-row .bm-medal { left: -12px; width: 44px; height: 50px; }
+  .bm-row-tx { padding: 4px 8px 4px 0; }
   .bm-row-tx b { font-size: 14px; }
-  .bm-row-pts { font-size: 19px; }
+  .bm-row-pts { min-width: 54px; font-size: 20px; }
 }
 @media (max-height: 679px) {
   .area-panel.ad-panel:has(> .bm) { padding-top: 10px; padding-bottom: 10px; }
@@ -254,11 +289,13 @@
   .bm-core { padding: 7px 12px; gap: 12px; }
   .bm-core-chip { margin-top: 4px; padding: 1px 6px; }
   .bm .bm-label { margin-bottom: 6px; }
-  .bm .bm-net { font-size: 42px; }
-  .bm-list { gap: 5px; }
-  .bm-row { padding: 3px 12px 3px 8px; }
+  .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }
+  .bm-list { gap: 6px 22px; padding-top: 3px; padding-bottom: 3px; }
+  .bm-row { min-height: 37px; padding-left: 34px; }
+  .bm-row .bm-medal { left: -11px; width: 38px; height: 43px; }
+  .bm-row-tx { padding: 2px 8px 2px 0; }
   .bm-row-tx > span { font-size: 12px; line-height: 1.3; }
-  .bm-medal { width: 26px; height: 30px; }
+  .bm-row-pts { font-size: 19px; }
 }
 
 /* Il catalogo nella guida della scheda: tutte le voci con la medaglia, quando scattano e quanto valgono */
