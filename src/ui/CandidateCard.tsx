@@ -44,8 +44,11 @@ export function CandidateCard(props: CandidateProps) {
   const popped = hover || focused;
   // Sulla carta, dopo 0,7 s fermi: la carta del set proposto (strumento, abilità, statistiche, mosse). Su tutta la carta:
   // la sprite non prende il mouse (è decorativa, i clic vanno alla carta)
+  // Non sul candidato scelto (il suo dettaglio è già aperto) e si chiude al clic, che lo sceglie
   const memberTip = useMemberTip(700);
   const tipHandlers = memberTip.bind(item.set);
+  const { close: closeTip } = memberTip;
+  useEffect(() => { if (selected) closeTip(); }, [selected, closeTip]);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
@@ -54,7 +57,8 @@ export function CandidateCard(props: CandidateProps) {
     <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => { pointer.current = e.pointerType; }}
       // Uscendo dalla carta si chiude anche la carta del set
-      onMouseEnter={e => { enter(); tipHandlers.onMouseEnter(e); }} onMouseLeave={() => { leave(); memberTip.close(); }}
+      onMouseEnter={e => { enter(); if (!selected) tipHandlers.onMouseEnter(e); }}
+      onPointerDown={closeTip} onMouseLeave={() => { leave(); memberTip.close(); }}
       onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="card-face">
@@ -72,7 +76,7 @@ export function CandidateCard(props: CandidateProps) {
         </span>
       </div>
       {popped && <span className="card-sprite popped" aria-hidden="true">{sprite(true)}</span>}
-      {memberTip.tip}
+      {!selected && memberTip.tip}
     </li>
   );
 }
