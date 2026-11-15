@@ -72,10 +72,9 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick }:
               onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
               {...(onPick && n > 0 ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(b); } } } : {})}
               aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
-              {/* Tre posti fissi: l'etichetta, il numero, il "+N" del setup (vuoto se non c'è): colonne allineate riga per riga */}
+              {/* L'etichetta a sinistra; il numero e il "+N" del setup (piccolo, in alto, come un esponente) insieme contro il bordo destro */}
               <em aria-hidden="true">{TAG[b]}</em>
-              <b>{n}</b>
-              {extra > 0 && <small className="kob-setup" aria-hidden="true">+{extra}</small>}
+              <span className="kob-num"><b>{n}</b>{extra > 0 && <small className="kob-setup" aria-hidden="true">+{extra}</small>}</span>
             </span>
           </span>
         );
