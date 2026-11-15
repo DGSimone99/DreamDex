@@ -8,7 +8,7 @@ function Rung({ mon, tone, tag }: { mon: SpeedNeighbour; tone: 'faster' | 'slowe
   const t = useT();
   return (
     <div className={`stip-rung ${tone}`}>
-      <span className="stip-mon"><Sprite species={mon.species} size={32} /></span>
+      <span className="stip-mon"><Sprite species={mon.species} size={40} /></span>
       <span className="stip-name">{mon.species}</span>
       {mon.scarf && <span className="stip-item">{t('stip.scarf')}</span>}
       {mon.booster && <span className="stip-item">{t('stip.booster')}</span>}
@@ -36,7 +36,7 @@ export function SpeedTip({ lane, vsMeta }: { lane: SpeedLane; vsMeta: boolean })
       <div className="stip-ladder">
         {near && [...near.faster].reverse().map(mon => <Rung key={`f-${mon.species}-${mon.speed}`} mon={mon} tone="faster" />)}
         <div className="stip-rung self">
-          <span className="stip-mon"><Sprite species={lane.species} size={32} /></span>
+          <span className="stip-mon"><Sprite species={lane.species} size={40} /></span>
           <span className="stip-name">{lane.species}</span>
           <b className="stip-speed">{lane.speed}</b>
         </div>

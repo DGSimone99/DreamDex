@@ -43,7 +43,7 @@ function RoleTip({ chip }: { chip: RoleChip }) {
       </div>
       {chip.covered
         ? <div className="role-tip-mons">{chip.owners.map(name => (
-          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={44} /></span><span>{name}</span></span>
+          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={56} /></span><span>{name}</span></span>
         ))}</div>
         : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
     </>

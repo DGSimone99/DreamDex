@@ -173,53 +173,53 @@
 
 /* ===== Velocità (SpeedTip): una scala verticale; in alto chi ti supera (rosso), al centro il membro in azzurro, sotto chi
    superi (verde), ognuno con la velocità effettiva; Sciarpa e Booster come piccole lastre inclinate */
-.ftip.speed { width: 300px; }
-.stip-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px 8px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--accent) 32%, transparent), color-mix(in srgb, var(--accent) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
-.stip-bolt { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--on-accent); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 50%, transparent); }
+.ftip.speed { width: 340px; }
+.stip-head { display: flex; align-items: center; gap: 9px; padding: 9px 14px 9px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--accent) 32%, transparent), color-mix(in srgb, var(--accent) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.stip-bolt { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--on-accent); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 50%, transparent); }
 .stip-bolt .icon { width: 15px; height: 15px; }
-.stip-head b { font: 700 italic 15px/1 var(--display); }
-.stip-own { margin-left: auto; font: 700 italic 20px/1 var(--display); color: var(--accent-ink); }
+.stip-head b { font: 700 italic 17px/1 var(--display); }
+.stip-own { margin-left: auto; font: 700 italic 23px/1 var(--display); color: var(--accent-ink); }
 .stip-ladder { display: flex; flex-direction: column; padding: 6px 0; }
-.stip-rung { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; align-items: center; gap: 0 8px; padding: 2px 12px 2px 8px; }
+.stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 9px; padding: 3px 14px 3px 8px; font-size: 13px; }
 .stip-rung .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 .stip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stip-speed { grid-column: 4; font: 700 italic 14px/1 var(--display); text-align: right; min-width: 34px; }
+.stip-speed { grid-column: 4; font: 700 italic 16px/1 var(--display); text-align: right; min-width: 38px; }
 .stip-rung.faster .stip-speed { color: var(--bad); }
 .stip-rung.slower .stip-speed { color: var(--good); }
 .stip-rung.tie .stip-speed { color: var(--warn); }
 .stip-rung.self { margin: 3px 0; padding-block: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 4%, transparent)); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
-.stip-rung.self .stip-name { font: 600 13px/1.1 var(--display); }
-.stip-rung.self .stip-speed { color: var(--accent-ink); font-size: 16px; }
-.stip-item { grid-column: 3; padding: 1px 8px 1px 6px; font: 700 10px/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.stip-rung.self .stip-name { font: 600 14px/1.1 var(--display); }
+.stip-rung.self .stip-speed { color: var(--accent-ink); font-size: 18px; }
+.stip-item { grid-column: 3; padding: 1px 8px 1px 6px; font: 700 11px/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .stip-item.tie { color: var(--warn); }
 .stip-empty { margin: 0; padding: 8px 12px; color: var(--muted); }
 
 /* ===== Core (CoreTip): testata verde come i core, una riga per lato: chi para sul piedistallo, il tipo nel suo colore,
    il badge dei colpi (quanto lo regge, colori della Difesa) e a destra chi protegge */
-.ftip.core { width: 380px; }
-.core-tip-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding: 8px 12px 8px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--good) 30%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--good) 45%, var(--line)); }
-.core-tip-tag { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--good); }
-.core-tip-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic 14px/1.1 var(--display); }
-.core-tip-side { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; align-items: center; gap: 0 10px; padding: 6px 12px 6px 8px; border-bottom: 1px solid var(--line-soft); }
+.ftip.core { width: 430px; }
+.core-tip-head { display: flex; align-items: baseline; gap: 9px; min-width: 0; padding: 10px 14px 10px 12px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--good) 30%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--good) 45%, var(--line)); }
+.core-tip-tag { font: 700 12px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--good); }
+.core-tip-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic 16px/1.1 var(--display); }
+.core-tip-side { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto auto; align-items: center; gap: 0 12px; padding: 8px 14px 8px 8px; border-bottom: 1px solid var(--line-soft); }
 .core-tip-side:last-of-type { border-bottom: 0; }
 .core-tip-side .ctip-plinth .sprite { margin: -6px 0; }
 .core-tip-what { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.core-tip-what b { font: 600 13px/1.1 var(--display); }
-.core-tip-type { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
-.core-tip-type img { width: 14px; height: 14px; border-radius: 50%; }
+.core-tip-what b { font: 600 15px/1.1 var(--display); }
+.core-tip-type { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
+.core-tip-type img { width: 17px; height: 17px; border-radius: 50%; }
 .core-tip-for { display: flex; align-items: center; gap: 2px; color: var(--faint); }
-.core-tip-for small { display: inline; font-size: 11px; }
+.core-tip-for small { display: inline; font-size: 12px; }
 .core-tip-for .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 
 /* ===== Ruoli (RoleTip): il nome del ruolo col livello, poi solo le sprite di chi lo copre sul piedistallo verde (niente
    percentuali); se manca, una riga rossa (grigia se è un minore) */
-.ftip.role { width: auto; min-width: 200px; max-width: 380px; }
-.role-tip-head { display: flex; align-items: center; gap: 7px; padding: 7px 12px 7px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
-.role-tip-head .icon { width: 14px; height: 14px; color: var(--tc); }
-.role-tip-head b { font: 700 italic 14px/1.1 var(--display); }
-.role-tip-head small { display: inline; margin-left: auto; padding-left: 10px; font: 700 10px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
-.role-tip-mons { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 10px 12px 8px; }
-.role-tip-mon { display: flex; flex-direction: column; align-items: center; gap: 2px; font: 600 11.5px/1.1 var(--display); }
+.ftip.role { width: auto; min-width: 250px; max-width: 460px; }
+.role-tip-head { display: flex; align-items: center; gap: 8px; padding: 9px 14px 9px 12px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
+.role-tip-head .icon { width: 17px; height: 17px; color: var(--tc); }
+.role-tip-head b { font: 700 italic 17px/1.1 var(--display); }
+.role-tip-head small { display: inline; margin-left: auto; padding-left: 12px; font: 700 11px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.role-tip-mons { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 12px 14px 10px; }
+.role-tip-mon { display: flex; flex-direction: column; align-items: center; gap: 3px; font: 600 13px/1.1 var(--display); }
 .role-tip-mon .sprite { margin: -6px 0 -4px; }
-.role-tip-none { margin: 0; padding: 10px 12px; font: 600 12.5px/1.2 var(--display); color: var(--bad); }
+.role-tip-none { margin: 0; padding: 12px 14px; font: 600 14px/1.2 var(--display); color: var(--bad); }
 .role-tip-none.soft { color: var(--muted); }

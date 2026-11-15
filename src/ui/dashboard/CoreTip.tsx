@@ -27,7 +27,7 @@ export function CoreTip({ core, taken }: { core: Core; taken: Record<string, Rec
         const band = pct === undefined ? null : holdBand(pct / 100);
         return (
           <div key={side.from} className="core-tip-side">
-            <span className="ctip-plinth good"><Sprite species={side.from} size={40} /></span>
+            <span className="ctip-plinth good"><Sprite species={side.from} size={50} /></span>
             <span className="core-tip-what">
               <b>{side.from}</b>
               <span className="core-tip-type" style={{ '--mc': typeColor(side.type) } as CSSProperties}>
@@ -37,7 +37,7 @@ export function CoreTip({ core, taken }: { core: Core; taken: Record<string, Rec
             {band && <span className={`ftip-ko def ${band}`}>{HOLD_BANDS[band].tag}</span>}
             <span className="core-tip-for">
               <small>{t('coreTip.for')}</small>
-              <Sprite species={side.to} size={30} />
+              <Sprite species={side.to} size={36} />
             </span>
           </div>
         );
