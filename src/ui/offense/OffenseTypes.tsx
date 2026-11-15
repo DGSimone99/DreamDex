@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
-import { bestAttackMultiplier, teamField, TYPES } from '../../engine/types';
+import { moveAttackMultiplier, teamField, TYPES } from '../../engine/types';
 import { EffTag, effClass, effLabel } from '../effTag';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
@@ -22,9 +22,8 @@ const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVE
  * Il pacchetto dei tipi dell'Offesa: stessa griglia della Difesa (un membro per riga, 18 tipi in colonna) con, per ogni tipo,
  * il danno del colpo migliore del membro sul Pokémon medio (verde = oltre il 66%, vale almeno metà; giallo = oltre il 33%,
  * conta; vuota = non conta). Il filo sotto l'icona è rosso sui tipi che nessuno manda KO in due colpi (scoperti); in fondo la riga
- * Copertura. Chi il motore ha scartato resta con le caselle vuote. In basso a sinistra ×2 (o ×4) se il membro ha almeno una
- * mossa superefficace sul tipo, anche se il danno migliore viene da un'altra; "Solo superefficaci" (`ctx.effOnly`) spegne le
- * altre caselle. Col puntatore la colonna si accende e sotto l'icona compare il tipo; sulla casella il tooltip DreamDex con la
+ * Copertura. Chi il motore ha scartato resta con le caselle vuote. In basso a sinistra ×2 (o ×4) se è superefficace la mossa
+ * che fa il danno della casella; "Solo superefficaci" (`ctx.effOnly`) spegne le altre caselle. Col puntatore la colonna si accende e sotto l'icona compare il tipo; sulla casella il tooltip DreamDex con la
  * mossa e quanti colpi servono. Le colonne dei tipi scoperti hanno un velo rosso. Sotto Copertura la riga "Il migliore": la
  * sprite di chi colpisce più forte ogni tipo. In alto a destra la legenda dei colori.
  */
@@ -88,8 +87,9 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                   <th scope="row" onMouseEnter={() => { setHover({ row: slot, col: -1 }); tip.close(); }}><MemberMon name={name} set={set} stats="offense" /></th>
                   {TYPES.map((type, i) => {
                     if (slots[slot] === null) return <td key={type} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })}>—</td>;
-                    const tag = effLabel(bestAttackMultiplier(set, [type], '', field), 'offense');
+                    // ×2 / ×4 solo se è superefficace la mossa che fa il danno della casella (Pixilate & co. compresi)
                     const found = member?.hits.find(h => h.label === type);
+                    const tag = effLabel(found?.move ? moveAttackMultiplier(set, found.move, [type], '', field) : null, 'offense');
                     const hit = found && found.credit > 0 ? found : undefined;
                     const strong = !!hit && hit.credit >= 0.5;
                     // Il 100%: un verde a parte, più acceso (come i pezzi OHKO della Generale)
@@ -139,7 +139,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       </div>
       {open?.member && openHit && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(open.type)} className="tht">
-          <TypeHitTip species={open.member.species} type={open.type} hit={openHit} setupMove={open.member.setupMove} onceName={onceName(open.member)} />
+          <TypeHitTip species={open.member.species} set={team[open.slot]} type={open.type} hit={openHit} setupMove={open.member.setupMove} onceName={onceName(open.member)} />
         </FloatTip>
       )}
       <div className="rob-legend ht-foot">{focus

@@ -203,17 +203,22 @@
 
 /* Il tooltip di una casella di Coverage tipi: testata col tipo e il badge dei colpi; il membro con la mossa migliore;
    le righe in più col setup o Tera/Z solo se salgono di fascia */
-.ftip.tht { width: 300px; }
+.ftip.tht { width: 380px; }
 .ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
 .tht-body { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
-.tht-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tht-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .tht-name { font: 600 13px/1.2 var(--display); }
-.tht-move { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.tht-mult { font: 700 italic 12px/1 var(--display); color: var(--good); }
+.tht-move { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tht-mult { font: 700 italic 12px/1 var(--display); color: var(--faint); }
+.tht-mult.se { color: var(--good); }
+.tht-mult.nve { color: var(--bad); }
+.tht-pct { margin-left: auto; font: 700 italic 15px/1 var(--display); font-variant-numeric: tabular-nums; }
+.tht-pct small { display: inline; font-size: 0.65em; }
 .tht-none { color: var(--muted); }
-.tht-extra { display: flex; align-items: center; gap: 6px; margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); font-weight: 600; color: var(--muted); }
-.tht-extra .ftip-ko { margin-left: auto; }
+.tht-extra { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); }
+.tht-extra-h { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--muted); }
+.tht-extra-h .ftip-ko { margin-left: auto; }
 
 /* Le tabelle Coverage: freccia, niente cursore del testo; "?" sulle caselle col tooltip */
 .def-frame .ct-table { cursor: default; }
@@ -273,3 +278,5 @@
 /* Nelle legende delle tabelle i triangoli restano triangoli (non quadratini) */
 .area-legend .area-legend-swatch i.kob-tri, .area-legend .wall-legend-setup i.kob-tri { width: 0; height: 0; background: none; border-radius: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
 .area-legend .area-legend-swatch i.kob-tri.team, .area-legend .wall-legend-setup i.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
+/* L'effetto della danza o del meteo accanto al nome della riga: piccolo e spento ("Att ×2", "Fuoco ×1,5") */
+.tht-eff { display: inline; margin-left: 2px; font: 600 11px/1 var(--display); color: var(--faint); white-space: nowrap; }

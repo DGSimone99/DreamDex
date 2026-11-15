@@ -11,7 +11,7 @@ import { mostCommonSet, type TeamSet } from './sets';
 import { setupBoosts } from './setupBoosts';
 import { topThreats, usageOf } from './stats';
 import { softScore } from './scale';
-import { bestAttackMultiplier, TYPES } from './types';
+import { moveAttackMultiplier, TYPES } from './types';
 
 /** Quanti Pokémon del meta, dal più usato, danno le combinazioni di tipi da coprire. */
 const TARGET_SCAN = 40;
@@ -155,16 +155,17 @@ export interface CoverageRow {
   /**
    * Solo nel meta, una casella per membro nell'ordine del team: danno % del colpo semplice (senza Tera, Z e setup;
    * -1 se il motore non conosce il membro) e dopo una danza (null senza mossa di potenziamento). Null nei tipi.
-   * `mult`: il moltiplicatore di tipo migliore fra le mosse d'attacco del membro sul bersaglio (null senza mosse o se sconosciuto).
+   * `mult`: il moltiplicatore di tipo della mossa che fa il danno della casella (Pixilate & co. compresi; null senza mosse o se sconosciuto).
    * `move`: la mossa del colpo semplice migliore (null se nessuna lo colpisce o se sconosciuto).
    * `teamPct` / `teamVia`: il colpo migliore col meteo o il campo di un compagno (o una mossa meteo del membro), e da chi
-   * arriva; null se il team non ne porta o non fa di più. Solo da mostrare: non entra nel credito.
+   * arriva; null se il team non ne porta o non fa di più. `teamMove`: la mossa di quel colpo. `comboPct` / `comboMove`: dopo la
+   * danza e col meteo del team insieme. Solo da mostrare: non entra nel credito.
    */
-  cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null; teamPct: number | null; teamVia: FieldSource[] | null }[] | null;
+  cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null; teamPct: number | null; teamVia: FieldSource[] | null; teamMove: string | null; comboPct: number | null; comboMove: string | null }[] | null;
 }
 
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
-interface CoverHit { x: number; move: string; plain: number; setup: number | null; team: number | null; teamVia: FieldSource[] | null }
+interface CoverHit { x: number; move: string; plain: number; setup: number | null; team: number | null; teamVia: FieldSource[] | null; teamMove: string | null; combo: number | null; comboMove: string | null }
 const hitsCache = new Map<string, CoverHit[]>();
 const HITS_LIMIT = 5000;
 function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind, team: TeamSet[] = [set]): CoverHit[] {
@@ -193,11 +194,20 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
     // Col meteo o il campo del team: la combinazione che fa di più, solo se fa di più del colpo semplice
     let team: number | null = null;
     let teamVia: FieldSource[] | null = null;
-    for (const combo of teamFieldCombos(conditions, sources)) {
-      const hit = Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions: combo.conditions })?.expected ?? 0);
-      if (hit > x && hit > (team ?? 0)) { team = hit; teamVia = sources.filter(s => combo.added.includes(s.condition)); }
+    let teamMove: string | null = null;
+    let combo: number | null = null;
+    let comboMove: string | null = null;
+    for (const c of teamFieldCombos(conditions, sources)) {
+      const found = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions });
+      const hit = Math.min(1, found?.expected ?? 0);
+      if (hit > x && hit > (team ?? 0)) { team = hit; teamVia = sources.filter(s => c.added.includes(s.condition)); teamMove = found?.move ?? null; }
+      // Danza e meteo del team insieme
+      if (setup) {
+        const both = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, boosts: setup.boosts });
+        if ((both?.expected ?? 0) > (combo ?? 0)) { combo = Math.min(1, both!.expected); comboMove = both!.move ?? null; }
+      }
     }
-    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced, team, teamVia };
+    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced, team, teamVia, teamMove, combo, comboMove };
   });
   hitsCache.set(key, hits);
   return hits;
@@ -243,9 +253,10 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
       const targetAbility = battleAbility(target.set);
       const cells = kind === 'meta'
         ? hits.map((h, m) => (known[m]
-          ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: bestAttackMultiplier(team[m], targetTypes, targetAbility), move: h[i].move || null,
-            teamPct: h[i].team === null ? null : pctOf(h[i].team), teamVia: h[i].teamVia }
-          : { pct: -1, setupPct: null, mult: null, move: null, teamPct: null, teamVia: null }))
+          ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: h[i].move ? moveAttackMultiplier(team[m], h[i].move, targetTypes, targetAbility) : null, move: h[i].move || null,
+            teamPct: h[i].team === null ? null : pctOf(h[i].team), teamVia: h[i].teamVia, teamMove: h[i].teamMove,
+            comboPct: h[i].combo === null ? null : pctOf(h[i].combo), comboMove: h[i].comboMove }
+          : { pct: -1, setupPct: null, mult: null, move: null, teamPct: null, teamVia: null, teamMove: null, comboPct: null, comboMove: null }))
         : null;
       return { label: target.label, species: target.set.species, set: target.set, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
     }),

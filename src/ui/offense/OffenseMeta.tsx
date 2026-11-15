@@ -43,8 +43,8 @@ const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * lo manda KO in due colpi. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra, al posto di "Pokémon";
  * in alto a destra la legenda dei colori e il riepilogo. Sulla casella il tooltip DreamDex (minaccia, colpi, mossa, setup);
  * sulla sprite in testata la carta del Pokémon col suo set più usato.
- * In basso a sinistra ×2 (o ×4) se il membro ha almeno una mossa superefficace sul Pokémon, anche se il danno migliore viene
- * da un'altra (il triangolino del setup sta in alto a destra); "Solo superefficaci" (`ctx.effOnly`) spegne le altre caselle.
+ * In alto a sinistra ×2 (o ×4) se è superefficace la mossa che fa il danno della casella (il triangolino del setup sta in
+ * alto a destra, quello del meteo del team in basso a destra); "Solo superefficaci" (`ctx.effOnly`) spegne le altre caselle.
  * Col puntatore la colonna si accende.
  */
 export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
@@ -111,7 +111,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     const types = battleSpecies(row.set)?.types ?? [];
     return (
       <FloatTip rect={tip.anchor.rect} tone={typeColor((types[0] as string | undefined) ?? '')} className="tht">
-        <TypeHitTip species={member.species} target={species} hit={{ move: c.move, plainPct: c.pct, setupPct: c.setupPct, oncePct: null, teamPct: c.teamPct, teamVia: c.teamVia }} setupMove={member.setupMove} onceName={onceName(member)} />
+        <TypeHitTip species={member.species} set={ctx.team[m]} target={species} hit={{ move: c.move, plainPct: c.pct, setupPct: c.setupPct, oncePct: null, teamPct: c.teamPct, teamVia: c.teamVia, teamMove: c.teamMove, comboPct: c.comboPct, comboMove: c.comboMove }} setupMove={member.setupMove} onceName={onceName(member)} />
       </FloatTip>
     );
   };

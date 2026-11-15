@@ -476,7 +476,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(lifted).toBeGreaterThan(0);
   });
 
-  it('sulla casella il tooltip DreamDex: tipo, badge dei colpi, membro e mossa (niente %), nessun tooltip del browser', async () => {
+  it('sulla casella il tooltip DreamDex: tipo, badge dei colpi, membro, mossa e danno %; nessun tooltip del browser', async () => {
     const user = userEvent.setup();
     const rating = await open();
     const cell = document.querySelector<HTMLElement>('.ct-table tbody tr td.ok-full')!;
@@ -486,7 +486,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
     expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
-    expect(tip.textContent).not.toContain('%');
+    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
     expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-name')!.textContent);
     // Uscendo dalla casella (anche verso il nome del membro, dentro la tabella) il tooltip si chiude
     await user.hover(document.querySelector<HTMLElement>('.ct-table tbody th')!);
@@ -529,15 +529,14 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(heads.filter(h => h.textContent!.includes('scoperto'))).toHaveLength(holes.length);
   });
 
-  it("×2 in basso a sinistra anche quando la mossa superefficace è debole e il danno migliore viene da un'altra", async () => {
+  it("×2 solo se è superefficace la mossa che fa il danno della casella (non un'altra mossa del set)", async () => {
     const weakSe = [{ ...emptySet('Blissey'), ability: 'Natural Cure', moves: ['Seismic Toss', 'Ember'] }];
     const rating = await open(weakSe, rateTeam(weakSe, fixtureData, 'it')!);
     const cells = document.querySelectorAll('.ct-table tbody tr')[0].querySelectorAll('td');
     const grass = TYPES.indexOf('Grass');
+    // Su Erba il danno viene da Seismic Toss (neutro): Ember superefficace non basta per l'etichetta
     expect(rating.offense.members[0].hits[grass].move).toBe('Seismic Toss');
-    expect(cells[grass].querySelector('.eff-tag')).toHaveTextContent('×2');
-    expect(cells[grass]).toHaveTextContent('superefficace ×2');
-    // Sull'Acqua Ember non fa effetto e Seismic Toss è neutro: niente etichetta
+    expect(cells[grass].querySelector('.eff-tag')).toBeNull();
     expect(cells[TYPES.indexOf('Water')].querySelector('.eff-tag')).toBeNull();
   });
 
@@ -656,14 +655,14 @@ describe('Offesa: Coverage meta', () => {
     expect(head.querySelector('.col-name')).toBeNull();
   });
 
-  it('sulla casella il tooltip DreamDex: la minaccia col badge dei colpi, il membro e la sua mossa', async () => {
+  it('sulla casella il tooltip DreamDex: la minaccia col badge dei colpi, il membro, la sua mossa e il danno %', async () => {
     const { user, sorted } = await open();
     const cell = bodyRows()[0].querySelectorAll<HTMLElement>('td')[0];
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
     expect(tip.querySelector('.ftip-head')).toHaveTextContent(sorted[0].species);
     expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
-    expect(tip.textContent).not.toContain('%');
+    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
     await user.unhover(cell);
   });
 
