@@ -11,6 +11,7 @@ import { mostCommonSet, type TeamSet } from './sets';
 import { setupBoosts } from './setupBoosts';
 import { topThreats, usageOf } from './stats';
 import { softScore } from './scale';
+import { FIELD_SHARE, MOVE_FIELD_SHARE, SETUP_SHARE } from './offense';
 import { moveAttackMultiplier, TYPES } from './types';
 
 /** Quanti Pokémon del meta, dal più usato, danno le combinazioni di tipi da coprire. */
@@ -146,10 +147,14 @@ export interface CoverageRow {
   label: string;
   species: string;
   weight: number;
-  /** Quanto è coperto: 0, 70, 90 o 100% (1°, 2° e 3° membro che lo manda KO in due colpi). */
+  /**
+   * Quanto è coperto (0–100). Nel meta: i danni di chi lo manda KO in due colpi (0 sotto il 50%) coi pesi 70/20/10;
+   * nei tipi: 0, 70, 90 o 100 (1°, 2° e 3° membro che lo copre).
+   */
   level: number;
   /** `partial`: superefficace ma solo da 3HKO (fra il 33% e il 50%): copre a metà (mai nel meta). */
-  coveredBy: { species: string; move: string; pct: number; partial: boolean }[];
+  /** `credit`: quanto conta il colpo nella profondità (nel meta il danno stesso, al massimo 1; nei tipi 1 o 0,5). */
+  coveredBy: { species: string; move: string; pct: number; partial: boolean; credit: number }[];
   /** Il set del bersaglio (nel meta: il set più usato della minaccia), per la carta del Pokémon. */
   set: TeamSet;
   /**
@@ -159,7 +164,8 @@ export interface CoverageRow {
    * `move`: la mossa del colpo semplice migliore (null se nessuna lo colpisce o se sconosciuto).
    * `teamPct` / `teamVia`: il colpo migliore col meteo o il campo di un compagno (o una mossa meteo del membro), e da chi
    * arriva; null se il team non ne porta o non fa di più. `teamMove`: la mossa di quel colpo. `comboPct` / `comboMove`: dopo la
-   * danza e col meteo del team insieme. Solo da mostrare: non entra nel credito.
+   * danza e col meteo del team insieme. Nel credito entrano come nei tipi: setup un terzo, meteo del compagno metà (un quarto
+   * se arriva solo da una mossa).
    */
   cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null; teamPct: number | null; teamVia: FieldSource[] | null; teamMove: string | null; comboPct: number | null; comboMove: string | null }[] | null;
 }
@@ -169,7 +175,7 @@ interface CoverHit { x: number; move: string; plain: number; setup: number | nul
 const hitsCache = new Map<string, CoverHit[]>();
 const HITS_LIMIT = 5000;
 function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind, team: TeamSet[] = [set]): CoverHit[] {
-  // Nel meta anche il colpo col meteo e i campi del team (solo da mostrare): chi li porta entra nella chiave
+  // Nel meta anche il colpo col meteo e i campi del team (entrano nel credito): chi li porta entra nella chiave
   const sources = kind === 'meta' ? teamFieldSources(set, team) : [];
   const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${kind}|${!!data.stats}|${sources.map(s => `${s.condition}:${s.species}:${s.via}`).join(',')}`;
   let hits = hitsCache.get(key);
@@ -181,7 +187,7 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
   const zOk = hasZMove(set);
   const superEffectiveOnly = kind !== 'meta';
-  // La danza si mostra solo nella tabella del meta: non entra nel credito
+  // La danza c'è solo nel meta (la tabella la mostra, il credito ne prende un terzo)
   const setup = kind === 'meta' ? setupBoosts(set) : null;
   hits = targets.map(target => {
     const base = bestHit(set, target.set, { superEffectiveOnly, conditions });
@@ -207,14 +213,36 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
         if ((both?.expected ?? 0) > (combo ?? 0)) { combo = Math.min(1, both!.expected); comboMove = both!.move ?? null; }
       }
     }
-    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced, team, teamVia, teamMove, combo, comboMove };
+    // Nel credito del meta, come nei tipi (2026-11-15, prima solo da mostrare): il meteo o il campo del compagno vale metà
+    // del colpo (un quarto se arriva solo da una mossa), poi un terzo di quello che aggiunge la danza
+    let counted = x;
+    if (kind === 'meta') {
+      const shareOf = (added: FieldCondition[]) => (sources.some(s => added.includes(s.condition) && getMove(s.via)) ? MOVE_FIELD_SHARE : FIELD_SHARE);
+      const withTeam = (boosts?: NonNullable<typeof setup>['boosts']) => {
+        const off = boosts ? Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts })?.expected ?? 0) : x;
+        let best = off;
+        for (const c of teamFieldCombos(conditions, sources)) {
+          const hit = Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, ...(boosts && { boosts }) })?.expected ?? 0);
+          const share = shareOf(c.added);
+          best = Math.max(best, (1 - share) * off + share * hit);
+        }
+        return best;
+      };
+      const field = withTeam();
+      const dancedField = setup ? Math.max(field, withTeam(setup.boosts)) : field;
+      counted = Math.min(1, field + SETUP_SHARE * (dancedField - field));
+    }
+    return { x: Math.min(1, counted + ONE_USE_COVER * (boosted - x)), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced, team, teamVia, teamMove, combo, comboMove };
   });
   hitsCache.set(key, hits);
   return hits;
 }
 
-/** Quanto copre un colpo: pieno da 2HKO; a metà da 3HKO solo nei tipi (nel meta un 3HKO neutro lo fa quasi chiunque). */
-const creditOf = (x: number, kind: CoverageKind) => (x >= COVER_HIT ? 1 : kind === 'types' && x >= HOLE_HIT ? 0.5 : 0);
+/**
+ * Quanto copre un colpo. Nel meta il danno stesso dal KO in due colpi, 0 sotto (come il pacchetto dei tipi dell'Offesa;
+ * 2026-11-15, era 1 da 2HKO). Nei tipi pieno da 2HKO, a metà da 3HKO.
+ */
+const creditOf = (x: number, kind: CoverageKind) => (kind === 'meta' ? (x >= COVER_HIT ? Math.min(1, x) : 0) : x >= COVER_HIT ? 1 : kind === 'types' && x >= HOLE_HIT ? 0.5 : 0);
 /** Profondità: i crediti dei membri dal più alto, al 70, 20 e 10%. */
 /** Meteo e terreni che il set porta con la sua abilità: per lui sono sempre attivi. */
 export function ownConditions(set: TeamSet): FieldCondition[] {
@@ -247,7 +275,7 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
     perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + creditOf(h[i].x, kind) * target.weight, 0))),
     rows: targets.map((target, i) => {
       const coveredBy = team.flatMap((set, m) => (creditOf(hits[m][i].x, kind) > 0
-        ? [{ species: battleSpecies(set)?.name ?? set.species, move: hits[m][i].move, pct: Math.floor(100 * hits[m][i].x), partial: hits[m][i].x < COVER_HIT }]
+        ? [{ species: battleSpecies(set)?.name ?? set.species, move: hits[m][i].move, pct: Math.floor(100 * hits[m][i].x), partial: hits[m][i].x < COVER_HIT, credit: creditOf(hits[m][i].x, kind) }]
         : []));
       const targetTypes = target.set.types ?? battleSpecies(target.set)?.types ?? [];
       const targetAbility = battleAbility(target.set);

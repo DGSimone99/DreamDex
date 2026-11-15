@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
+import { STRONG_CREDIT } from '../../engine/offense';
 import { moveAttackMultiplier, teamField, TYPES } from '../../engine/types';
 import { EffTag, effClass, effLabel } from '../effTag';
 import { useLang, useT } from '../../i18n/react';
@@ -21,7 +22,7 @@ const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVE
 
 /**
  * Il pacchetto dei tipi dell'Offesa: stessa griglia della Difesa (un membro per riga, 18 tipi in colonna) con, per ogni tipo,
- * il danno del colpo migliore del membro sul Pokémon medio (verde = oltre il 66%, vale almeno metà; giallo = oltre il 33%,
+ * il danno del colpo migliore del membro sul Pokémon medio (verde = dal 66%; giallo = dal 50%, KO in due colpi,
  * conta; vuota = non conta). Il filo sotto l'icona è rosso sui tipi che nessuno manda KO in due colpi (scoperti); in fondo la riga
  * Copertura. Chi il motore ha scartato resta con le caselle vuote. In basso a sinistra ×2 (o ×4) se è superefficace la mossa
  * che fa il danno della casella; "Solo superefficaci" (`ctx.effOnly`) spegne le altre caselle. Col puntatore la colonna si accende e sotto l'icona compare il tipo; sulla casella il tooltip DreamDex con la
@@ -94,7 +95,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                     const found = member?.hits.find(h => h.label === type);
                     const tag = effLabel(found?.move ? moveAttackMultiplier(set, found.move, [type], '', field) : null, 'offense');
                     const hit = found && found.credit > 0 ? found : undefined;
-                    const strong = !!hit && hit.credit >= 0.5;
+                    const strong = !!hit && hit.credit >= STRONG_CREDIT;
                     // Il 100%: un verde a parte, più acceso (come i pezzi OHKO della Generale)
                     const ohko = !!hit && hit.pct >= 100;
                     // Il triangolo del setup, come nella Generale: solo se la danza fa salire di fascia (fino al 2HKO o all'OHKO)

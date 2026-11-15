@@ -25,17 +25,17 @@ describe('coachTeam', () => {
     const { weak } = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes;
     expect(weak).toEqual(['Fire', 'Water', 'Ground', 'Ghost']);
     expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual(weak.map(type => `defense:${type}`));
-    // 4 gravi e 6 minori in difesa, una riga di ruoli, 3 tipi coperti poco (sotto 40); Pivot e Rimozione Strumenti sono voci minori:
+    // 4 gravi e 6 minori in difesa, una riga di ruoli, 2 tipi coperti poco (sotto 60); Pivot e Rimozione Strumenti sono voci minori:
     // nessun problema "Ruoli importanti mancanti"
-    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(14);
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(13);
   });
 
   it('punti di forza', () => {
-    // Nessun tipo retto da due membri; 15 tipi coperti in attacco dal livello 40
+    // Nessun tipo retto da due membri; 16 tipi coperti in attacco dal livello 60
     expect(coaching.strengths).toEqual([
       // Solo le voci essenziali dell'archetipo (balance: Sweeper o Wallbreaker, i muri, Recupero e Hazard); fisico, speciale e rimozione sono importanti
       'Ruoli coperti: Sweeper o Wallbreaker, Muro Fisico, Recupero',
-      'Copre 15/18 tipi in attacco',
+      'Copre 16/18 tipi in attacco',
     ]);
   });
 
@@ -47,7 +47,7 @@ describe('coachTeam', () => {
     expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).strengths[0]).toBe('Regge bene Electric, Rock');
   });
 
-  it("punti di forza: \"copre n/18\" conta i tipi del pacchetto dell'Offesa dal livello 40, da 15 in su", () => {
+  it("punti di forza: \"copre n/18\" conta i tipi del pacchetto dell'Offesa dal livello 60, da 15 in su", () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
     for (const members of [[tusk, gholdengo], team]) {
       const covered = rateTeam(members, fixtureData, 'it')!.offense.types.rows.filter(r => r.level >= COVERED_LEVEL).length;
@@ -75,8 +75,8 @@ describe('coachTeam', () => {
       // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali); Pivot e Rimozione Strumenti sono minori,
       // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
-      // Il pacchetto dei tipi dell'Offesa: un problema per tipo sotto 40, nell'ordine dei tipi (due membri arrivano al massimo a 80)
-      ...['Water', 'Bug', 'Dragon'].map(type => `Coperto poco in attacco contro ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
+      // Il pacchetto dei tipi dell'Offesa: un problema per tipo sotto 60, nell'ordine dei tipi (due membri arrivano al massimo a 90)
+      ...['Bug', 'Dragon'].map(type => `Coperto poco in attacco contro ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
     ]);
     const rows = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes.rows;
     const minorTypes = coaching.problems.filter(p => p.category === 'defense' && p.severity === 'minor').map(p => p.subjects![0]);
@@ -257,11 +257,11 @@ describe('chiavi dei problemi e minacce del meta', () => {
     expect(problems.some(p => p.category === 'meta' || p.category === 'metaHit')).toBe(false);
   });
 
-  it("coverage: un problema per tipo del pacchetto dei tipi dell'Offesa (livello sotto 40)", () => {
+  it("coverage: un problema per tipo del pacchetto dei tipi dell'Offesa (livello sotto 60)", () => {
     const { problems } = coachTeam(team, DEFAULT_FORMAT, fixtureData);
     const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
     const coverage = teamOffense(team, data).types;
-    expect(COVERED_LEVEL).toBe(40);
+    expect(COVERED_LEVEL).toBe(60);
     const weights = analyzeTeam(team, data).typeWeights as Record<string, number>;
     const open = coverage.rows.filter(r => r.level < COVERED_LEVEL);
     const found = problems.filter(p => p.category === 'coverage');

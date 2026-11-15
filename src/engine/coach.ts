@@ -32,11 +32,11 @@ export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
 /**
- * Un tipo del pacchetto dell'Offesa è coperto dal livello 40: un membro all'87% circa, o due al 67% circa (il KO di uno solo fa 50)
- * (era 50 fino al 2026-11-08: solo metà dei team veri arrivava a 15 tipi coperti, scelta dell'utente).
+ * Un tipo del pacchetto dell'Offesa è coperto dal livello 60: un membro all'87% circa, o due al 67% circa (il KO di uno solo fa 70).
+ * Era 40 col credito dal 33% e i pesi 50/30/20: stesso significato coi crediti uguali al danno e il 70/20/10 (2026-11-15).
  * Sotto è un problema; scoperto (grave se il tipo pesa) se nessuno lo manda KO in due colpi (HOLE_HIT, 50%).
  */
-export const COVERED_LEVEL = 40;
+export const COVERED_LEVEL = 60;
 /**
  * Un tipo della Coverage tipi della Difesa è retto quando almeno un membro lo regge bene: il livello del 1° posto della
  * profondità (DEFENSE_DEPTH, oggi 70; era 50 col 50/30/20, stesso significato). Sotto è un problema minore;

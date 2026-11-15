@@ -47,7 +47,7 @@ describe('Offesa: navigazione e guida', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent('Pokémon medio');
     // La regola del credito (soglie semplici) e il setup che conta solo in parte
-    expect(panel).toHaveTextContent("Oltre il 33%: conta un po'");
+    expect(panel).toHaveTextContent('Dal 50% (KO in due colpi): conta quanto il danno');
     expect(panel).toHaveTextContent('Un tipo che nessuno manda KO in due colpi (al 50%) è scoperto');
     expect(panel).toHaveTextContent('quindi conta solo in parte');
     // Le difese medie dei 18 bersagli stanno qui, sotto il Colpo (chiuse sotto una freccina)
@@ -496,7 +496,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(document.querySelector('.ct-table tr.x-row')).not.toBeNull();
   });
 
-  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66% (credito da metà), gialla oltre il 33%, vuota sotto', async () => {
+  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66%, gialla dal 50% (KO in due colpi), vuota sotto', async () => {
     const rating = await open();
     const rows = document.querySelectorAll('.ct-table tbody tr');
     const slots = offenseSlots(team, rating.offense.members);
@@ -507,14 +507,14 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
         const hit = m.hits.find(h => h.label === type)!;
         const cell = cells[i];
         if (hit.credit === 0) {
-          // Vuota: al massimo l'etichetta ×2 / ×4 di una mossa superefficace che non arriva al 33%
+          // Vuota: al massimo l'etichetta ×2 / ×4 di una mossa superefficace che non arriva al 50%
           expect(cell.textContent).toMatch(/^(×[24] superefficace ×[24])?$/);
         } else {
           expect(cell).toHaveTextContent(`${hit.pct}%`);
-          expect(cell).toHaveClass(hit.credit >= 0.5 ? 'ok-full' : 'ok-half');
+          expect(cell).toHaveClass(hit.credit >= 2 / 3 ? 'ok-full' : 'ok-half');
           // Il 100% ha il suo verde (OHKO); poi forte e medio
           expect(cell.classList.contains('ok-ohko')).toBe(hit.pct >= 100);
-          expect(cell).toHaveTextContent(hit.pct >= 100 ? 'OHKO' : hit.credit >= 0.5 ? 'forte' : 'medio');
+          expect(cell).toHaveTextContent(hit.pct >= 100 ? 'OHKO' : hit.credit >= 2 / 3 ? 'forte' : 'medio');
         }
       });
     });
