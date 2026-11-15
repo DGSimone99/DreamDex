@@ -204,6 +204,13 @@
 /* Il tooltip di una casella di Coverage tipi: testata col tipo e il badge dei colpi; il membro con la mossa migliore;
    le righe in più col setup o Tera/Z solo se salgono di fascia */
 .ftip.tht { width: 380px; }
+/* Il tooltip del tipo in testata a Coverage tipi: PS, Dif e DifSp del Pokémon medio, tre caselle affiancate */
+.ftip.tst { width: 250px; }
+.tst-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tst-stats span { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px 8px; border-right: 1px solid var(--line-soft); }
+.tst-stats span:last-child { border-right: 0; }
+.tst-stats small { font: 700 11px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.tst-stats b { font: 700 italic 22px/1 var(--display); font-variant-numeric: tabular-nums; }
 .ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
 .tht-body { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
