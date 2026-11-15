@@ -36,20 +36,20 @@ describe('stepValue (misura dei Ruoli)', () => {
 });
 
 describe('il credito', () => {
-  it('solo il danno sopra il 33%, pieno con l\'OHKO', () => {
-    expect(CREDIT_FLOOR).toBeCloseTo(1 / 3, 10);
+  it('il danno stesso dal KO in due colpi (50%), 0 sotto, pieno con l\'OHKO', () => {
+    expect(CREDIT_FLOOR).toBe(0.5);
     expect(offenseCredit(0.3)).toBe(0);
-    expect(offenseCredit(1 / 3)).toBe(0);
-    expect(offenseCredit(0.5)).toBeCloseTo(0.25, 5);
-    expect(offenseCredit(2 / 3)).toBeCloseTo(0.5, 5);
+    expect(offenseCredit(0.49)).toBe(0);
+    expect(offenseCredit(0.5)).toBe(0.5);
+    expect(offenseCredit(0.8)).toBe(0.8);
     expect(offenseCredit(1)).toBe(1);
     expect(offenseCredit(1.4)).toBe(1);
   });
 
-  it('le quote: setup un terzo, Tera/Z un quarto, profondità 50/30/20, tipi 70 e meta 30; i Ruoli tengono il setup a tre quarti', () => {
+  it('le quote: setup un terzo, Tera/Z un quarto, profondità 70/20/10, tipi 50 e meta 50; i Ruoli tengono il setup a tre quarti', () => {
     expect(SETUP_SHARE).toBeCloseTo(1 / 3, 10);
     expect(ONE_USE_SHARE).toBe(0.25);
-    expect(OFFENSE_DEPTH).toEqual([0.5, 0.3, 0.2]);
+    expect(OFFENSE_DEPTH).toEqual([0.7, 0.2, 0.1]);
     expect(OFFENSE_SHARES).toEqual({ types: 0.5, meta: 0.5 });
     expect(ROLES_SETUP_SHARE).toBe(0.75);
   });
@@ -198,9 +198,9 @@ describe('memberOffense', () => {
 });
 
 describe('teamOffense: il pacchetto dei tipi', () => {
-  it('profondità 50/30/20 per bersaglio, poi la media: un solo membro vale metà dei suoi crediti', () => {
+  it('profondità 70/20/10 per bersaglio, poi la media: un solo membro vale il 70% dei suoi crediti', () => {
     const team = teamOffense([chomp], noStats);
-    expect(team.types.value).toBe(Math.round(100 * 0.5 * meanCredit(team.members[0])));
+    expect(team.types.value).toBe(Math.round(100 * 0.7 * meanCredit(team.members[0])));
   });
 
   it('con tre membri contano tutti e tre, il migliore per primo', () => {
@@ -231,7 +231,7 @@ describe('teamOffense: il pacchetto dei tipi', () => {
     expect(team.types.rows).toHaveLength(18);
     const electric = team.types.rows.find(r => r.label === 'Electric')!;
     expect(electric.best.map(b => [b.species, b.move])).toEqual([['Garchomp', 'Earthquake']]);
-    expect(electric.level).toBe(Math.round(100 * 0.5 * electric.best[0].credit));
+    expect(electric.level).toBe(Math.round(100 * 0.7 * electric.best[0].credit));
     // Il Volante, immune a Earthquake: lo colpisce Stone Edge
     expect(team.members[0].hits.find(h => h.label === 'Flying')!.move).toBe('Stone Edge');
     team.types.rows.forEach((row, i) => expect(team.types.holes.includes(row.label)).toBe(!team.members.some(m => m.hits[i].pct >= 100 * HOLE_HIT)));
@@ -279,12 +279,13 @@ describe('i Ruoli', () => {
 });
 
 describe('correzioni della revisione finale', () => {
-  it('scoperto: nessuno lo manda KO in due colpi (sotto il 50%), anche se qualcuno conta', () => {
+  it('scoperto: nessuno lo manda KO in due colpi (sotto il 50%), e sotto il 50% il colpo non conta', () => {
     expect(HOLE_HIT).toBe(0.5);
-    // Toxapex con Surf fa il 33,5% al Terra medio: conta poco, ma il Terra resta scoperto
+    // Toxapex con Surf fa il 33,5% al Terra medio: non conta, e il Terra resta scoperto
     const pex = set('Toxapex', '', 'Regenerator', ['Surf'], 'Bold', { hp: 252, def: 252 });
     const team = teamOffense([pex], noStats);
-    expect(team.types.rows.find(r => r.label === 'Ground')!.best.length).toBeGreaterThan(0);
+    expect(team.members[0].hits.find(h => h.label === 'Ground')!.pct).toBeGreaterThan(30);
+    expect(team.types.rows.find(r => r.label === 'Ground')!.best).toEqual([]);
     expect(team.types.holes).toContain('Ground');
     // Garchomp con Earthquake manda KO in due colpi l'Elettro medio: non è scoperto
     expect(teamOffense([pex, chomp], noStats).types.holes).not.toContain('Electric');
@@ -294,14 +295,14 @@ describe('correzioni della revisione finale', () => {
 describe('quanto porta ogni membro (la Generale)', () => {
   const pex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Surf', 'Recover'], 'Bold', { hp: 252, def: 252 });
 
-  it('tipi del membro: quanti ne manda KO, quanti colpisce forte (oltre 66%) e quanti contano (oltre 33%), senza doppioni', () => {
+  it('tipi del membro: quanti ne manda KO, quanti colpisce forte (dal 66%) e quanti contano (dal 50%), senza doppioni', () => {
     const team = teamOffense([chomp, tusk], noStats);
     team.members.forEach((m, i) => {
       const share = team.shares[i];
       expect(share.species).toBe(m.species);
       expect(share.types.ohko).toBe(m.hits.filter(h => h.credit >= 1).length);
-      expect(share.types.strong).toBe(m.hits.filter(h => h.credit >= 0.5 && h.credit < 1).length);
-      expect(share.types.counts).toBe(m.hits.filter(h => h.credit > 0 && h.credit < 0.5).length);
+      expect(share.types.strong).toBe(m.hits.filter(h => h.credit >= 2 / 3 && h.credit < 1).length);
+      expect(share.types.counts).toBe(m.hits.filter(h => h.credit > 0 && h.credit < 2 / 3).length);
     });
   });
 

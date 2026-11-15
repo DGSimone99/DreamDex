@@ -14,7 +14,7 @@ import { TypeIcons } from '../typeIcons';
 export type OffenseSection = 'general' | 'types' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
-/** Profondità del pacchetto dei tipi (50/30/20) e della Coverage meta (70/20/10): quelle del motore, in percentuale. */
+/** Profondità del pacchetto dei tipi e della Coverage meta (oggi tutte e due 70/20/10): quelle del motore, in percentuale. */
 const scaleOf = (d: number[]) => ({ one: d[0], two: d[0] + d[1], three: d[0] + d[1] + d[2] });
 const depthOf = (meta: boolean) => (meta ? depthWeights('meta') : OFFENSE_DEPTH).map(w => Math.round(100 * w));
 
@@ -138,6 +138,9 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
       <Rows compact rows={[
         [g('test.targets'), g('cov.targets.meta', { n: count })],
         [g('meta.hit'), g('cov.hit.rule.meta')],
+        // Meteo del compagno e setup contano come nei tipi
+        [g('power.weather'), g('power.weather.rule')],
+        [g('power.setup'), g('rules.setup')],
         [g('meta.hole'), g('cov.hole.rule.meta')],
         [g('eff'), g('eff.rule')],
       ]} />

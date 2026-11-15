@@ -39,7 +39,8 @@ export const heldByOf = (rows: { type: string; heldBy: string[] }[]): HeldBy => 
 
 /**
  * `held`: se c'è, un tipo parato conta solo se chi para lo regge davvero coi danni (2026-11-10, controllo 2: prima bastava
- * la tabella dei tipi e il trio lo avevano quasi tutti i team, torneo 88% con due trii, ladder 67%; così 40% e 20%).
+ * la tabella dei tipi e il trio lo avevano quasi tutti i team, torneo 88% con due trii, ladder 67%; così 40% e 20%),
+ * e un trio deve reggere insieme almeno CORE_MIN_HELD tipi.
  */
 function makeSide(team: TeamSet[], from: number, to: number, held?: HeldBy): Side {
   const types = parries(team[from], team[to]).filter(t => !held || !!held.get(t)?.has(battleName(team[from])));
@@ -56,6 +57,13 @@ function makeSide(team: TeamSet[], from: number, to: number, held?: HeldBy): Sid
 }
 
 interface Candidate { order: number[]; sides: Side[]; strength: number }
+
+/**
+ * Un trio è un core solo se, insieme, i tre reggono davvero almeno 6 dei 18 tipi d'attacco (con `held`; 2026-11-15).
+ * Esclude i core che si parano a giro un tipo a testa ma da soli non reggono quasi niente: su 428 team da torneo ne
+ * toglie 4, a 9 tipi ne toglieva 44 e su 1485 partite di ladder sbagliava più che indovinare.
+ */
+export const CORE_MIN_HELD = 6;
 
 const strengthOf = (sides: Side[]) => sides.reduce((sum, s) => sum + s.weight, 0);
 
@@ -91,7 +99,9 @@ export function teamCores(team: TeamSet[], max = 2, held?: HeldBy): Core[] {
           const strength = strengthOf(sides);
           if (!best || strength > best.strength) best = { order, sides, strength };
         }
-        if (best) trios.push(best);
+        // Con `held`: i tipi che almeno uno dei tre regge davvero, almeno CORE_MIN_HELD
+        const heldTypes = held ? TYPES.filter(t => [i, j, k].some(m => held.get(t)?.has(battleName(team[m])))).length : TYPES.length;
+        if (best && heldTypes >= CORE_MIN_HELD) trios.push(best);
       }
     }
   }

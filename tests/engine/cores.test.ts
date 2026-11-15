@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parries, teamCores } from '../../src/engine/cores';
+import { CORE_MIN_HELD, parries, teamCores } from '../../src/engine/cores';
 import { defensiveMultiplier } from '../../src/engine/types';
 import { emptySet } from '../../src/engine/sets';
 import type { TeamSet } from '../../src/engine/sets';
@@ -41,6 +41,19 @@ describe('teamCores', () => {
     }
     expect(core.sides.find((s) => s.from === 'Iron Valiant' && s.to === 'Garchomp')?.type).toBe('Dragon');
   });
+  it('con chi regge davvero: il trio vale solo se insieme reggono almeno 6 tipi', () => {
+    expect(CORE_MIN_HELD).toBe(6);
+    const trio = [garchomp, scizor, valiant];
+    // Ogni lato del giro è retto davvero, ma in tutto i tre reggono solo 4 tipi: niente trio
+    const held = new Map<string, Set<string>>([
+      ['Fire', new Set(['Garchomp'])], ['Ice', new Set(['Scizor'])], ['Fairy', new Set(['Scizor'])], ['Dragon', new Set(['Scizor', 'Iron Valiant'])],
+    ]);
+    expect(teamCores(trio, 2, held).some(c => c.members.length === 3)).toBe(false);
+    // Con altri due tipi retti arriva a 6: il trio c'è
+    held.set('Poison', new Set(['Scizor'])).set('Grass', new Set(['Scizor']));
+    expect(teamCores(trio, 2, held)[0].members).toEqual(['Garchomp', 'Scizor', 'Iron Valiant']);
+  });
+
   it('il trio assorbe le coppie, nessun membro in due core', () => {
     const cores = teamCores(team, 5);
     const all = cores.flatMap((c) => c.members);
