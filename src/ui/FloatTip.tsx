@@ -39,11 +39,11 @@ export function useFloatAnchor<K>(delay = OPEN_DELAY) {
  * partenza o sopra se sotto non c'è posto, tenuto dentro la finestra; la punta indica il centro del riquadro.
  * `tone`: il colore dell'alone e della testata (es. il colore del tipo). Solo visivo (aria-hidden): lo stesso
  * contenuto in parole sta già sull'elemento di partenza (aria-label).
- * `side`: di lato (a destra, a sinistra se a destra non c'è posto), centrato in altezza sul riquadro e tenuto dentro la
+ * `side`: di lato (a destra, a sinistra se a destra non c'è posto; con `'left'` prima a sinistra), centrato in altezza sul riquadro e tenuto dentro la
  * finestra: per gli elementi alti, come le barre della Velocità. Anche senza `side`, se non c'è posto né sotto né sopra
  * si apre di lato.
  */
-export function FloatTip({ rect, tone, className = '', side = false, children }: { rect: DOMRect; tone: string; className?: string; side?: boolean; children: ReactNode }) {
+export function FloatTip({ rect, tone, className = '', side = false, children }: { rect: DOMRect; tone: string; className?: string; side?: boolean | 'left'; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<{ left: number; top: number; arrow: number; at: 'below' | 'above' | 'right' | 'left' } | null>(null);
   useLayoutEffect(() => {
@@ -55,7 +55,10 @@ export function FloatTip({ rect, tone, className = '', side = false, children }:
     const fitsBelow = rect.bottom + GAP + height <= vh - EDGE;
     const fitsAbove = rect.top - GAP - height >= EDGE;
     if (side || (!fitsBelow && !fitsAbove)) {
-      const right = rect.right + GAP + width <= vw - EDGE;
+      const fitsRight = rect.right + GAP + width <= vw - EDGE;
+      const fitsLeft = rect.left - GAP - width >= EDGE;
+      // Il lato preferito se c'è posto, altrimenti l'altro
+      const right = side === 'left' ? !fitsLeft && fitsRight : fitsRight;
       const left = right ? rect.right + GAP : Math.max(EDGE, rect.left - GAP - width);
       const middle = rect.top + rect.height / 2;
       const top = Math.max(EDGE, Math.min(middle - height / 2, vh - height - EDGE));
