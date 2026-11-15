@@ -15,9 +15,16 @@
 /* La punta: un quadrato ruotato sul bordo, alla x della casella */
 .ftip::before { content: ""; position: absolute; top: -7px; left: calc(var(--arrow) - 6px); width: 12px; height: 12px; transform: rotate(45deg);
   background: color-mix(in srgb, var(--tc) 30%, var(--panel)); border-left: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); border-top: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
-.ftip.above::before { top: auto; bottom: -7px; transform: rotate(225deg); background: color-mix(in srgb, var(--field) 40%, var(--panel)); }
+.ftip.at-above::before { top: auto; bottom: -7px; transform: rotate(225deg); background: color-mix(in srgb, var(--field) 40%, var(--panel)); }
+/* Di lato: la punta sul bordo sinistro (tooltip a destra) o destro (a sinistra), all'altezza del centro del riquadro */
+.ftip.at-right::before { top: calc(var(--arrow) - 6px); left: -7px; transform: rotate(-45deg); }
+.ftip.at-left::before { top: calc(var(--arrow) - 6px); left: auto; right: -7px; transform: rotate(135deg); }
 @keyframes ftip-in { from { opacity: 0; transform: translateY(3px); } }
-.ftip.above { animation-name: ftip-in-up; }
+.ftip.at-right { animation-name: ftip-in-right; }
+.ftip.at-left { animation-name: ftip-in-left; }
+@keyframes ftip-in-right { from { opacity: 0; transform: translateX(-3px); } }
+@keyframes ftip-in-left { from { opacity: 0; transform: translateX(3px); } }
+.ftip.at-above { animation-name: ftip-in-up; }
 @keyframes ftip-in-up { from { opacity: 0; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .ftip { animation: none; } }
 

@@ -127,12 +127,10 @@ function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; 
 /** Una riga della tabella: il ruolo e un pallino sotto ogni membro che lo copre. */
 function RoleTableRow({ chip, members }: { chip: RoleChip; members: string[] }) {
   const { label, detail } = useRoleText(chip);
-  const tip = useRoleTip(chip);
   return (
-    // Sulla riga il tooltip DreamDex del ruolo (al posto dei tooltip del browser su riga e caselle)
-    <tr className={`dash-role-row ${stateOf(chip)}${chip.level === 'minor' ? ' is-minor' : ''}`} {...tip.bind}>
+    // Col team ridotto la tabella dice già chi copre ogni ruolo (pallini sotto le sprite): niente tooltip, solo la riga che si accende
+    <tr className={`dash-role-row ${stateOf(chip)}${chip.level === 'minor' ? ' is-minor' : ''}`}>
       <th scope="row">
-        {tip.node}
         <Icon name={chip.covered ? 'check' : 'close'} />
         <span>{label}<span className="visually-hidden">, {detail}</span></span>
       </th>
