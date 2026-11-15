@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { getMove } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
 import { gameName, typeName } from '../../i18n/game';
@@ -49,7 +49,7 @@ const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };
  * badge il tooltip DreamDex elenca i bersagli (tipi o minacce), poi in righe a parte quelli in più dopo la danza o con
  * Tera/Z. `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18" / "minacce su 37".
  */
-export function KoBadges({ bands, who, of, setupMove, onceName }: { bands: KoBands; who: string; of: string; setupMove?: string | null; onceName?: string | null }) {
+export function KoBadges({ bands, who, of, total, setupMove, onceName }: { bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null }) {
   const t = useT();
   const lang = useLang();
   const tip = useFloatAnchor<KoBand>();
@@ -63,7 +63,8 @@ export function KoBadges({ bands, who, of, setupMove, onceName }: { bands: KoBan
         return (
           // Una tessera a larghezza fissa (le colonne restano allineate riga per riga): il numero e, nel suo posto, il "+N"
           // del setup col triangolo nell'angolo come nelle tabelle dell'Offesa; l'etichetta OHKO / 2HKO sta nella testata
-          <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}`}
+          // --k: quanto è piena (il numero sui bersagli in tutto): il verde si fa più intenso con il conto
+          <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}`} style={{ '--k': total ? Math.min(1, n / total) : 0 } as CSSProperties}
             onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
             aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
             <b>{n}</b>

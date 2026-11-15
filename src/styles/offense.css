@@ -78,8 +78,14 @@
 .off-general .og-points { padding: 2px 7px; border-radius: 2px; background: var(--accent-2-soft); color: var(--accent-2-ink); font: italic 700 13px/1 var(--display); font-variant-numeric: tabular-nums; cursor: help; }
 .off-general.roomy .def-members td { padding-top: 8px; padding-bottom: 8px; }
 /* Team Coverage: la riga del team come una fascia a sé, con la riga sopra per tutta la larghezza */
-.off-general tfoot .og-total > *, .def-general tfoot .og-total > * { padding-top: 12px; padding-bottom: 12px; border-top: 1px solid var(--accent-2-soft); border-bottom: 0; background: color-mix(in srgb, var(--accent-2) 6%, transparent); }
-.off-general tfoot .og-total th, .def-general tfoot .og-total th { padding-left: 12px; font: italic 700 14px/1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-2-ink); text-align: left; white-space: nowrap; }
+.off-general tfoot .og-total > *, .def-general tfoot .og-total > * { padding-top: 12px; padding-bottom: 12px; border-top: 1px solid color-mix(in srgb, var(--accent-2) 45%, var(--line)); border-bottom: 0;
+  /* Fisso alla finestra: righe e sfumatura continuano da una casella all'altra, senza giunte */
+  background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--accent-2) 14%, transparent), color-mix(in srgb, var(--accent-2) 4%, transparent) 70%);
+  background-attachment: fixed; }
+.off-general tfoot .og-total th, .def-general tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
+/* "Team Coverage" su una lastra inclinata magenta, come i titoli delle sezioni: il totale della tabella, inconfondibile */
+.og-plate { display: inline-block; padding: 5px 18px 5px 12px; font: italic 700 13px/1 var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--on-accent-2, #22000f);
+  background: var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-2) 35%, transparent); }
 /* Schermi bassi: la riga Team Coverage della Difesa più bassa, così la tabella coi totali sta senza scorrere */
 @media (max-height: 640px) {
   .def-general tfoot .og-total > * { padding-top: 4px; padding-bottom: 4px; }
@@ -101,8 +107,11 @@
 .kob > b { text-align: right; font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
 .kob-setup { padding-left: 3px; font: 700 10.5px/1 var(--display); color: var(--muted); text-align: left; white-space: nowrap; }
 .kob.has-setup::after { content: ""; position: absolute; top: 0; right: 5px; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
-.kob.ohko { color: var(--good); border-color: color-mix(in srgb, var(--good) 80%, transparent); background: color-mix(in srgb, var(--good) 18%, transparent); }
-.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 42%, transparent); background: color-mix(in srgb, var(--good) 5%, transparent); }
+.kob { --k: 0; }
+/* Il verde si fa più intenso col conto (--k = bersagli colpiti sul totale): a colpo d'occhio chi porta l'Offesa */
+.kob.ohko { color: var(--good); border-color: color-mix(in srgb, var(--good) calc(45% + 50% * var(--k)), transparent); background: color-mix(in srgb, var(--good) calc(6% + 46% * var(--k)), transparent); }
+.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) calc(25% + 40% * var(--k)), transparent); background: color-mix(in srgb, var(--good) calc(2% + 22% * var(--k)), transparent); }
+.kob.ohko > b { color: color-mix(in srgb, var(--good) calc(100% - 55% * var(--k)), white); }
 .kob.zero { color: var(--faint); border-color: transparent; background: none; opacity: 0.55; }
 .kob:hover { background: color-mix(in srgb, var(--good) 30%, transparent); }
 .kob.zero:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }

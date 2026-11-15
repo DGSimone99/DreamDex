@@ -102,8 +102,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {m && s
                     ? <>
-                      {meta && <td><KoBadges bands={koBands(metaTargets(offense, slot))} who={name} of={ofMeta} setupMove={m.setupMove} /></td>}
-                      <td><KoBadges bands={koBands(typeTargets(m))} who={name} of={ofTypes} setupMove={m.setupMove} onceName={onceName(m)} /></td>
+                      {meta && <td><KoBadges bands={koBands(metaTargets(offense, slot))} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} /></td>}
+                      <td><KoBadges bands={koBands(typeTargets(m))} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} /></td>
                       <td>
                         <span className="og-stack og-own" title={m.coverMeta === null ? t('odetail.gen.ownTitleNoMeta', { n: m.total }) : t('odetail.gen.ownTitle', { types: m.value, meta: m.coverMeta, n: m.total })}><Bar value={m.total} total /></span>
                         {roomy && <span className="og-detail">{t('odetail.gen.points')} <b className="og-points" title={t('odetail.gen.pointsTitle', { n: s.points })}>+{s.points}</b></span>}
@@ -118,9 +118,9 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
           </tbody>
           <tfoot>
             <tr className="og-total">
-              <th scope="row">{teamName}</th>
-              {meta && <td><span className="kob-team"><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} /><Uncovered targets={teamMeta} of={ofMeta} /></span></td>}
-              <td><span className="kob-team"><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} /><Uncovered targets={teamTypes} of={ofTypes} /></span></td>
+              <th scope="row"><span className="og-plate">{teamName}</span></th>
+              {meta && <td><span className="kob-team"><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} /><Uncovered targets={teamMeta} of={ofMeta} /></span></td>}
+              <td><span className="kob-team"><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} /><Uncovered targets={teamTypes} of={ofTypes} /></span></td>
               <td><Bar value={offense.value} total /></td>
             </tr>
           </tfoot>

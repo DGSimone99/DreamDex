@@ -123,7 +123,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           {/* In fondo la squadra intera, come la riga Team Coverage dell'Offesa: i voti delle sottoschede e la Difesa */}
           <tfoot>
             <tr className="og-total">
-              <th scope="row">{t('odetail.gen.total')}</th>
+              <th scope="row"><span className="og-plate">{t('odetail.gen.total')}</span></th>
               <td><Bar value={defense.coverageTypes.value} total /></td>
               {meta && <td><Bar value={defense.coverageMeta?.value ?? 0} total /></td>}
               <td><Bar value={defense.sustain} total /></td>
