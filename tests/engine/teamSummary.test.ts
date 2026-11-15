@@ -65,7 +65,8 @@ describe('teamSummary', () => {
     const team = swap(1, { ...emptySet('Barraskewda'), ability: 'Swift Swim', moves: ['Liquidation'] });
     team[0] = { ...emptySet('Pelipper'), ability: 'Drizzle', moves: ['Surf'] };
     const rain = build(team).summary.conditions.filter(c => c.key === 'rain');
-    expect(rain).toEqual([{ member: 'Pelipper', key: 'rain', label: 'Pioggia', users: [{ name: 'Barraskewda', via: 'Swift Swim' }] }]);
+    // via e item: chi la porta e con cosa (per il tooltip della riga)
+    expect(rain).toEqual([{ member: 'Pelipper', key: 'rain', label: 'Pioggia', users: [{ name: 'Barraskewda', via: 'Swift Swim' }], via: 'Drizzle', item: '' }]);
   });
 
   it('condizioni: Trick Room con un membro lento tra gli utenti', () => {

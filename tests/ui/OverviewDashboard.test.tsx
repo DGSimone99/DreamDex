@@ -415,7 +415,9 @@ describe('Riassunto', () => {
     expect(within(attack).getAllByRole('button').map(b => b.getAttribute('aria-label'))).toEqual(['Garchomp, Offesa 92', 'Zapdos, Offesa 86']);
     expect(within(hold).getAllByRole('button').map(b => b.getAttribute('aria-label'))).toEqual(['Toxapex, Difesa 88']);
     // Nell'ordine del documento: attaccanti, poi muri
-    expect([...region().querySelectorAll('.sum-mon')].map(b => b.getAttribute('title'))).toEqual(['Garchomp', 'Zapdos', 'Toxapex']);
+    expect([...region().querySelectorAll('.sum-mon')].map(b => b.getAttribute('aria-label')!.split(',')[0])).toEqual(['Garchomp', 'Zapdos', 'Toxapex']);
+    // Niente tooltip del browser: al passaggio la carta del Pokémon (tooltip DreamDex), quando il set è nel team
+    expect(region().querySelector('.sum-mon[title]')).toBeNull();
     expect(region().querySelectorAll('.sum-hero .sprite')).toHaveLength(3);
   });
 
@@ -437,16 +439,33 @@ describe('Riassunto', () => {
   it('Meteo e campo: chi lo porta, la condizione e chi ne approfitta; clic a Ruoli', async () => {
     const user = userEvent.setup();
     italianNames();
-    const { onView } = mount({ summary: summaryOf({ conditions: [{ member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [{ name: 'Barraskewda', via: 'Swift Swim' }, { name: 'Zapdos' }] }] }) });
+    const { onView } = mount({ summary: summaryOf({ conditions: [{ member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [{ name: 'Barraskewda', via: 'Swift Swim' }, { name: 'Zapdos' }], via: 'Drizzle', item: 'Damp Rock' }] }) });
     const row = within(section('Meteo e campo')).getByRole('button');
     expect(row).toHaveTextContent('Pelipper');
     expect(row.querySelector('.sum-tag')).toHaveTextContent('Pioggia');
     const users = [...row.querySelectorAll<HTMLElement>('.sum-user')];
-    // Nel tooltip anche l'abilità o la mossa con cui la sfrutta, nella lingua dell'interfaccia
-    expect(users.map(u => u.getAttribute('title'))).toEqual(['Barraskewda · Nuotovelox', 'Zapdos']);
+    // Niente tooltip del browser sulle sprite: al loro posto il tooltip DreamDex della riga
+    expect(users.map(u => u.getAttribute('title'))).toEqual([null, null]);
     expect(users[0].querySelector('.sprite')).not.toBeNull();
-    // I nomi letti anche dai lettori di schermo
+    // I nomi letti anche dai lettori di schermo, con l'abilità o la mossa con cui la sfrutta, nella lingua dell'interfaccia
     expect(row).toHaveAccessibleName(/Pelipper.*Pioggia.*Barraskewda · Nuotovelox.*Zapdos/);
+    // Passando sulla riga: la condizione, quanto dura, chi la porta, gli effetti per tutti e chi ne approfitta
+    await user.hover(row);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cond'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveAttribute('aria-hidden', 'true');
+    expect(tip.querySelector('.ctip-head')).toHaveClass('k-rain');
+    expect(tip.querySelector('.ctip-name')).toHaveTextContent('Pioggia');
+    expect(tip.querySelector('.ctip-sub')).toHaveTextContent(/^8 turni grazie a (Rocciaumida|Damp Rock)$/);
+    expect(tip.querySelector('.ctip-setter')).toHaveTextContent(/^(Piovischio|Drizzle)$/);
+    const plates = [...tip.querySelectorAll('.ctip-plate')];
+    expect(plates.map(p => p.className)).toEqual(['ctip-plate good', 'ctip-plate bad']);
+    expect(plates[0]).toHaveTextContent(/Mosse Acqua\s*per tutti\s*50%/);
+    const rows = [...tip.querySelectorAll('.ctip-user')];
+    expect(rows[0]).toHaveTextContent(/Barraskewda\s*Nuotovelox\s*Velocità ×2/);
+    // Senza abilità né mossa: chi si potenzia (qui un utente senza via)
+    expect(rows[1]).toHaveTextContent('Zapdos');
+    await user.unhover(row);
+    expect(document.querySelector('.ftip')).toBeNull();
     await user.click(row);
     expect(onView).toHaveBeenCalledWith('roles');
   });
@@ -760,8 +779,8 @@ describe('Cruscotto: misure', () => {
   it('Riassunto: le righe di una sezione che non stanno vanno nel "+N" (al singolare per una)', () => {
     stubSumFit(() => 1);
     mount({ summary: summaryOf({ conditions: [
-      { member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [] },
-      { member: 'Indeedee', label: 'Campo Psichico', key: 'psychicterrain', users: [] },
+      { member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [], via: 'Drizzle', item: '' },
+      { member: 'Indeedee', label: 'Campo Psichico', key: 'psychicterrain', users: [], via: 'Psychic Surge', item: '' },
     ] }) });
     const weather = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Meteo e campo' }).closest<HTMLElement>('.sum-sec')!;
     expect(within(weather).getAllByRole('button')).toHaveLength(1);
