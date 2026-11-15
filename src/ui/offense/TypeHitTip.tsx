@@ -56,3 +56,4 @@ export function TypeHitTip({ species, type, hit, setupMove, onceName }: { specie
     </>
   );
 }
+

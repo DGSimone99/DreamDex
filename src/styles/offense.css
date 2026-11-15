@@ -226,3 +226,6 @@
 /* Il triangolo del setup nell'angolo in alto a destra della casella, come sui pezzi della Generale: la danza fa salire di fascia */
 .off-frame .ct-table td.has-setup { position: relative; }
 .off-frame .ct-table td.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-top-right-radius: 2px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
+/* Coverage tipi dell'Offesa: il numero in Kanit corsivo come gli altri numeri dell'app, il "%" piccolo */
+.off-frame .ct-table td.ct-cell.ok-full, .off-frame .ct-table td.ct-cell.ok-half { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; }
+.ct-num i { display: inline; margin-left: 1px; font-size: 0.6em; font-weight: 600; font-style: italic; opacity: 0.85; }

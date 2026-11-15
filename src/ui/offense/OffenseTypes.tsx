@@ -99,7 +99,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                       <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && koBandOf(found.plainPct) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
                         onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.close(); }}>
                         {hit && <>
-                          {hit.pct}%
+                          <span className="ct-num">{hit.pct}<i>%</i></span>
                           <span className="visually-hidden"> {t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>
                         </>}
                         <EffTag label={tag} side="offense" />
