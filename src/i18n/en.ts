@@ -1064,7 +1064,7 @@ export const en = {
   'ddetail.holdTypes': "Holds types",
   'ddetail.holdMeta': "Holds meta",
   'ddetail.heldBy': "Holds",
-  'ddetail.holdLegend': "Strong hit, worse side:",
+  'ddetail.attackerTip': "The attacker of this type: hits come with these stats",
   'eff.se': "super effective {m}",
   'eff.weak': "weak {m}",
   'eff.resist': "resists {m}",

@@ -1066,7 +1066,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.holdTypes': "Regge i tipi",
   'ddetail.holdMeta': "Regge il meta",
   'ddetail.heldBy': "Regge",
-  'ddetail.holdLegend': "Colpo forte del lato peggiore:",
+  'ddetail.attackerTip': "L'attaccante di questo tipo: i colpi arrivano con queste statistiche",
   'eff.se': "superefficace {m}",
   'eff.weak': "debole {m}",
   'eff.resist': "resiste {m}",

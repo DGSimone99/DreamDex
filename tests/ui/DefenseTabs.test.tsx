@@ -1,11 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { metaThreats } from '../../src/engine/attackers';
 import { battleSpecies } from '../../src/engine/dex';
+import { holdBand } from '../../src/engine/defense';
+
+const HOLD = { ohko: 'OHKO', two: '2HKO', three: '3HKO', four: '4HKO+' } as const;
 import { moveAttackMultiplier } from '../../src/engine/types';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
@@ -120,10 +123,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       const row = within(table).getAllByRole('row')[m + 1];
       const cells = within(row).getAllByRole('cell');
       typed[m].cells.forEach((cell, i) => {
-        expect(cells[i].querySelector('.hold-pct')!.textContent).toBe(`${cell.pct}%`);
+        // Il numero come nell'Offesa (corsivo, "%" piccolo); soglia e due lati per i lettori di schermo; niente title del browser
+        expect(cells[i].querySelector('.ct-num')!.textContent).toBe(`${cell.pct}%`);
         expect(cells[i]).toHaveClass(CLS[cell.band]);
-        expect(cells[i].querySelector('.visually-hidden')!.textContent!.trim()).toBe(TAG[cell.band]);
-        expect(cells[i].getAttribute('title')).toContain(`fisico ${cell.physical}% · speciale ${cell.special}%`);
+        expect(cells[i].querySelector('.visually-hidden')!.textContent!.trim()).toBe(`${TAG[cell.band]} · fisico ${cell.physical}% · speciale ${cell.special}%`);
+        expect(cells[i].getAttribute('title')).toBeNull();
       });
       expect(cells).toHaveLength(18);
     });
@@ -143,19 +147,41 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
-  it('in fondo Regge del motore, con la Copertura del tipo nel suggerimento; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
+  it('in fondo, come nell\'Offesa: Copertura di ogni tipo e Il migliore (chi lo regge meglio); i buchi segnati in testata', async () => {
     const { rating, table } = await openTypes();
     const rows = rating.defense.coverageTypes.rows;
-    const held = within(table).getByRole('row', { name: /^Regge/ });
-    const pills = within(held).getAllByRole('cell').slice(0, 18).map(c => c.querySelector('.ct-pill')!);
-    expect(pills.map(p => p.firstChild!.textContent)).toEqual(rows.map(r => `${r.heldBy.length}`));
-    // La Copertura non ha più una riga: sta nel title della pillola e nel testo nascosto
-    expect(pills.map(p => p.getAttribute('title'))).toEqual(rows.map(r => `Copertura ${r.level}%`));
-    expect(pills.map(p => p.textContent)).toEqual(rows.map(r => `${r.heldBy.length} · Copertura ${r.level}%`));
-    expect(within(table).queryByRole('row', { name: /^Copertura/ })).toBeNull();
+    const level = within(table).getByRole('row', { name: /^Copertura/ });
+    expect(within(level).getAllByRole('cell').map(c => c.textContent)).toEqual(rows.map(r => `${r.level}%`));
+    const best = within(table).getByRole('row', { name: /^Il migliore/ });
+    const typed = rating.defense.typed;
+    within(best).getAllByRole('cell').forEach((cell, i) => {
+      // Il danno più basso fra chi lo regge davvero (3HKO o meglio); nessuno: il trattino
+      const holders = typed.map((m, k) => ({ k, c: m.cells[i] })).filter(x => x.c.band === 'three' || x.c.band === 'four');
+      if (!holders.length) expect(cell.querySelector('.ct-best-mon')).toBeNull();
+      else expect(cell).toHaveTextContent(typed[holders.reduce((a, b) => (b.c.pct < a.c.pct ? b : a)).k].species);
+    });
+    expect(within(table).queryByRole('row', { name: /^Regge/ })).toBeNull();
     expect(within(table).queryByRole('row', { name: /^Deboli/ })).toBeNull();
     expect(within(table).queryByRole('row', { name: /^Resistono/ })).toBeNull();
     expect(table.querySelectorAll('thead th.sev-serious')).toHaveLength(rating.defense.coverageTypes.weak.length);
+  });
+
+  it('tooltip DreamDex: sulla casella i due lati del colpo, sul tipo in testata Att e AttSp dell\'attaccante', async () => {
+    const { rating, table } = await openTypes();
+    const user = userEvent.setup();
+    const tipOf = (cls: string) => vi.waitFor(() => { const el = document.querySelector<HTMLElement>(`body > .ftip.${cls}`); if (!el) throw new Error('no tip'); return el; });
+    const cell = within(within(table).getAllByRole('row')[1]).getAllByRole('cell')[0];
+    await user.hover(cell);
+    const hit = await tipOf('dht');
+    const c = rating.defense.typed[0].cells[0];
+    expect(hit).toHaveTextContent(rating.defense.typed[0].species);
+    expect(hit).toHaveTextContent(`Fisica${HOLD[holdBand(c.physical / 100)]}${c.physical}%`);
+    expect(hit).toHaveTextContent(`Speciale${HOLD[holdBand(c.special / 100)]}${c.special}%`);
+    await user.unhover(cell);
+    const head = within(table).getAllByRole('columnheader')[1];
+    expect(head).toHaveTextContent(/Att \d+, AttSp \d+/);
+    await user.hover(head);
+    expect((await tipOf('tst')).querySelectorAll('.tst-stats span')).toHaveLength(2);
   });
 
   it('un buco: un team fragile ha tipi che nessuno regge, segnati in testata', async () => {
