@@ -56,7 +56,8 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
   fitKey: string;
   /** Il testo del "+N" (tooltip e lettori di schermo), dalle righe nascoste. */
   more: (n: number, hidden: T[]) => string;
-  render: (row: T) => ReactNode;
+  /** La riga e la sua posizione fra quelle mostrate (la prima può essere disegnata diversa dalle altre). */
+  render: (row: T, index: number) => ReactNode;
   className?: string;
 }) {
   // La lista è alta quanto il suo contenuto: si guarda anche la card, che cresce col team ridotto
@@ -70,7 +71,7 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
         ? <p className="sum-none">{empty}</p>
         : (
           <ul ref={fit.ref} className="sum-lines sum-fit">
-            {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} data-fit>{render(row)}</li>)}
+            {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} data-fit>{render(row, i)}</li>)}
           </ul>
         )}
       {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
@@ -132,15 +133,16 @@ function useSynergyView() {
 /**
  * Una riga delle Sinergie. Il core da 3 è il triangolo; il resto due sprite unite da un anello "catena" nel colore del
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
- * la frase (o il giro del triangolo letto in parole).
+ * la frase (o il giro del triangolo letto in parole). `compact`: col team aperto, dalla seconda in poi, una versione
+ * più piccola (triangolo o sprite ridotti, solo etichetta e titolo; la frase resta nel tooltip e nella descrizione).
  */
-function SynergyRow({ syn, view, rich, small, onClick }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void }) {
+function SynergyRow({ syn, view, rich, small, compact, onClick }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; compact: boolean; onClick: () => void }) {
   const desc = useId();
   return (
-    <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}`} style={{ '--c': view.color } as CSSProperties}
-      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick}>
+    <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}${compact ? ' compact' : ''}`} style={{ '--c': view.color } as CSSProperties}
+      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick} title={compact && !view.trio ? view.text : undefined}>
       {view.trio && syn.core
-        ? <CoreTriangle core={syn.core} size={rich ? 'roomy' : 'normal'} descId={desc} />
+        ? <CoreTriangle core={syn.core} size={compact ? 'compact' : rich ? 'roomy' : 'normal'} descId={desc} />
         : (
           <>
             <span className="sum-pair" aria-hidden="true">
@@ -287,9 +289,10 @@ export function SummarySection({ summary, members, density, rich = false, onView
             const view = synergyView(syn);
             return `${view.tag} ${view.title}: ${syn.core ? view.mons.join(', ') : view.text}`;
           }).join('; ')}`}
-          render={syn => {
+          render={(syn, i) => {
             const view = synergyView(syn);
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} onClick={() => onView(syn.core ? 'defense' : 'roles')} />;
+            // Col team aperto la prima sinergia resta grande, le altre in piccolo: ne entrano di più
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} compact={!rich && i > 0} onClick={() => onView(syn.core ? 'defense' : 'roles')} />;
           }} />
       </div>
     </DashCard>

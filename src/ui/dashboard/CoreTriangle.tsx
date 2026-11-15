@@ -66,15 +66,16 @@ export function CoreArt({ core, sprite = 40 }: { core: Core; sprite?: number }) 
  * B a C, C ad A) con l'icona tonda del tipo parato su ogni lato; a destra l'etichetta, il nome dei tipi e le tre righe
  * "Nome para Tipo". Il disegno è decorativo: il giro letto in parole è in `descId` (per l'aria-describedby della riga).
  */
-export function CoreTriangle({ core, size, descId }: { core: Core; size: 'normal' | 'roomy'; descId?: string }) {
+export function CoreTriangle({ core, size, descId }: { core: Core; size: 'normal' | 'roomy' | 'compact'; descId?: string }) {
   const t = useT();
   const lang = useLang();
   return (
     <span className={`sum-tri-row ${size}`}>
-      <CoreArt core={core} sprite={size === 'roomy' ? 52 : 40} />
+      <CoreArt core={core} sprite={size === 'roomy' ? 52 : size === 'compact' ? 24 : 40} />
       <span className="sum-syn-body">
         <span className="sum-syn-head"><em className="sum-syn-tag">{t('sum.link.core')}</em><strong className="sum-syn-title" title={coreTitle(core, lang)}>{coreTitle(core, lang)}</strong></span>
-        <span className="sum-cover" aria-hidden="true">
+        {/* In piccolo niente righe "Nome para Tipo": il titolo dice già i tipi, il giro resta in descId */}
+        {size !== 'compact' && <span className="sum-cover" aria-hidden="true">
           {core.sides.map(side => {
             const line = t('sum.parry', { name: side.from, type: typeName(side.type, lang) });
             return (
@@ -85,7 +86,7 @@ export function CoreTriangle({ core, size, descId }: { core: Core; size: 'normal
               </span>
             );
           })}
-        </span>
+        </span>}
         {descId && (
           <span id={descId} className="visually-hidden">
             {core.sides.map(side => t('sum.parryTo', { name: side.from, type: typeName(side.type, lang), to: side.to })).join(', ')}
