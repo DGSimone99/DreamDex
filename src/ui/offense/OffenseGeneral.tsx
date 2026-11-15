@@ -9,7 +9,7 @@ import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { KoBadges, koBands, Target, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
 import { linkTeamCard } from '../teamLink';
-import { useEffect, type CSSProperties } from 'react';
+import { useEffect } from 'react';
 
 /** Le etichette delle tessere, una volta sola nella testata e allineate sopra di loro: OHKO e 2HKO. */
 const KoSub = () => <span className="kob-sub" aria-hidden="true"><i>OHKO</i><i>2HKO</i></span>;
@@ -90,12 +90,12 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
     <div className={`def-frame off-frame def-general off-general${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid def-members">
-          <colgroup><col className="def-col-mon" />{meta && <col />}<col /><col /></colgroup>
+          <colgroup><col className="def-col-mon" /><col />{meta && <col />}<col /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              {meta && <th scope="col">{t('kob.headMeta', { n: nMeta })}<KoSub /></th>}
               <th scope="col">{t('kob.headTypes')}<KoSub /></th>
+              {meta && <th scope="col">{t('kob.headMeta', { n: nMeta })}<KoSub /></th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>
@@ -107,20 +107,20 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
               const s = index === null ? null : shares[index];
               return (
                 // Passando sulla riga si accende anche la carta del membro nel team in alto
-                <tr key={`${name}-${slot}`} style={{ '--i': slot } as CSSProperties} onMouseEnter={() => linkTeamCard(slot)} onMouseLeave={() => linkTeamCard(null)}>
+                <tr key={`${name}-${slot}`} onMouseEnter={() => linkTeamCard(slot)} onMouseLeave={() => linkTeamCard(null)}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {m && s
                     ? <>
-                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
-                        onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} /></td>}
                       <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} /></td>
+                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
+                        onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} /></td>}
                       <td>
                         <span className="og-stack og-own" title={m.coverMeta === null ? t('odetail.gen.ownTitleNoMeta', { n: m.total }) : t('odetail.gen.ownTitle', { types: m.value, meta: m.coverMeta, n: m.total })}><Bar value={m.total} total /></span>
                         {roomy && <span className="og-detail">{t('odetail.gen.points')} <b className="og-points" title={t('odetail.gen.pointsTitle', { n: s.points })}>+{s.points}</b></span>}
                       </td>
                     </>
-                    : <>{meta && <td>—</td>}<td>—</td><td>—</td></>}
+                    : <><td>—</td>{meta && <td>—</td>}<td>—</td></>}
                 </tr>
               );
             })}
@@ -130,8 +130,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
           <tfoot>
             <tr className="og-total">
               <th scope="row"><span className="og-plate">{teamName}</span></th>
-              {meta && <td><span className="kob-team"><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} /><Uncovered targets={teamMeta} of={ofMeta} /></span></td>}
               <td><span className="kob-team"><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} /><Uncovered targets={teamTypes} of={ofTypes} /></span></td>
+              {meta && <td><span className="kob-team"><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} /><Uncovered targets={teamMeta} of={ofMeta} /></span></td>}
               <td><Bar value={offense.value} total /></td>
             </tr>
           </tfoot>

@@ -157,7 +157,7 @@ describe('Offesa: Generale', () => {
   /** Il primo elenco del tooltip (il colpo semplice), non quelli delle righe in più. */
   const mainList = (tip: HTMLElement) => [...tip.querySelectorAll('.kot-list')].find(l => !l.closest('.kot-extra'));
 
-  it('le colonne: Pokémon, Meta · N minacce (solo col meta), Tipi · 18, Offesa; i punti dei membri sommati fanno il voto', () => {
+  it('le colonne: Pokémon, Tipi · 18, Meta · N minacce (solo col meta), Offesa; i punti dei membri sommati fanno il voto', () => {
     const rating = withMeta();
     const { unmount } = view(team, rating);
     const n = rating.offense.coverageMeta!.rows.length;
@@ -165,8 +165,8 @@ describe('Offesa: Generale', () => {
     let heads = screen.getAllByRole('columnheader').map(h => h.textContent!);
     expect(heads).toHaveLength(4);
     expect(heads[0]).toBe('Pokémon');
-    expect(heads[1].startsWith(`Meta · ${n} minacce`)).toBe(true);
-    expect(heads[2].startsWith('Tipi · 18')).toBe(true);
+    expect(heads[1].startsWith('Tipi · 18')).toBe(true);
+    expect(heads[2].startsWith(`Meta · ${n} minacce`)).toBe(true);
     expect(heads[3]).toBe('Offesa');
     expect(memberRows().map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
@@ -198,8 +198,8 @@ describe('Offesa: Generale', () => {
       const m = rating.offense.members[i];
       const cells = row.querySelectorAll('td');
       expect(cells).toHaveLength(3);
-      expectBadges(cells[0], metaHits(rating, slot));
-      expectBadges(cells[1], typeHits(rating, i));
+      expectBadges(cells[0], typeHits(rating, i));
+      expectBadges(cells[1], metaHits(rating, slot));
       // Niente più barre né tooltip del browser nelle caselle Meta e Tipi
       for (const c of [cells[0], cells[1]]) {
         expect(c.querySelector('.def-bar')).toBeNull();
@@ -249,7 +249,7 @@ describe('Offesa: Generale', () => {
     const rating = rateTeam(t, gen9, 'it')!;
     renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
     expect(rating.offense.members[0].setupMove).toBe('Swords Dance');
-    const types = memberRows()[0].querySelectorAll('td')[rating.offense.coverageMeta ? 1 : 0];
+    const types = memberRows()[0].querySelectorAll('td')[0];
     const c = expectBadges(types, typeHits(rating, 0));
     // Kingambit con Danza Spada manda KO qualche tipo in più: il test ha senso solo se succede
     expect(c.setupOhko + c.setupTwo).toBeGreaterThan(0);
@@ -270,7 +270,7 @@ describe('Offesa: Generale', () => {
     const types = count(typeHits(rating, 0));
     const band = types.ohko > 0 ? 'ohko' : 'two';
     expect(types[band]).toBeGreaterThan(0);
-    const badge = cells[1].querySelector(`.kob.${band}`)!;
+    const badge = cells[0].querySelector(`.kob.${band}`)!;
     await user.hover(badge);
     let tip = await tipOf();
     expect(tip).toHaveAttribute('aria-hidden', 'true');
@@ -285,7 +285,7 @@ describe('Offesa: Generale', () => {
     const meta = count(metaHits(rating, 0));
     const mBand = meta.ohko > 0 ? 'ohko' : 'two';
     expect(meta[mBand]).toBeGreaterThan(0);
-    await user.hover(cells[0].querySelector(`.kob.${mBand}`)!);
+    await user.hover(cells[1].querySelector(`.kob.${mBand}`)!);
     tip = await tipOf();
     expect(tip.querySelector('.kot-head')).toHaveTextContent(`minacce su ${rating.offense.coverageMeta!.rows.length}`);
     expect(mainList(tip)).toHaveClass('mons');
@@ -300,7 +300,7 @@ describe('Offesa: Generale', () => {
     expect(foot.querySelector('th')).toHaveTextContent('Team Coverage');
     const cells = foot.querySelectorAll('td');
     expect(cells).toHaveLength(3);
-    const per = [best([metaHits(rating, 0), metaHits(rating, 1)]), best([typeHits(rating, 0), typeHits(rating, 1)])];
+    const per = [best([typeHits(rating, 0), typeHits(rating, 1)]), best([metaHits(rating, 0), metaHits(rating, 1)])];
     for (const [k, hits] of per.entries()) {
       expectBadges(cells[k], hits);
       const open = hits.filter(h => h.plain < 50).length;

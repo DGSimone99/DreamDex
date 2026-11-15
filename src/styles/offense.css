@@ -154,10 +154,6 @@
 /* Tessere cliccabili: aprono il dettaglio */
 .kob.pick { cursor: pointer; }
 .kob.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Un'entrata sola, all'apertura della scheda: le tessere si riempiono una riga dopo l'altra dall'alto */
-@keyframes kob-in { from { opacity: 0; transform: translateY(4px); } }
-.off-general tbody tr .kob { animation: kob-in 0.42s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 60ms + 80ms); }
-@media (prefers-reduced-motion: reduce) { .off-general tbody tr .kob { animation: none; } }
 /* Coverage tipi / meta aperte da una tessera: accese la riga del membro e le caselle di quella fascia, il resto spento */
 .ct-table tr.kf-off > * { opacity: 0.45; }
 .ct-table td.kf-dim { opacity: 0.3; }

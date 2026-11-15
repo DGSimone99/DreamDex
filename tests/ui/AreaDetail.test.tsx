@@ -39,8 +39,8 @@ describe("dettaglio dell'Offesa a schede", () => {
     // Sotto Meta e Tipi possono esserci le etichette OHKO / 2HKO: si guarda come iniziano
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
-    expect(headers[1]).toMatch(/^Meta · \d+ minacce/);
-    expect(headers[2]).toMatch(/^Tipi · 18/);
+    expect(headers[1]).toMatch(/^Tipi · 18/);
+    expect(headers[2]).toMatch(/^Meta · \d+ minacce/);
     expect(headers[3]).toBe('Offesa');
     const rows = [...table.querySelectorAll('tbody tr:not(.og-fill)')] as HTMLElement[];
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
@@ -106,8 +106,8 @@ describe("dettaglio dell'Offesa a schede", () => {
     const headers = within(dialog).getAllByRole('columnheader').map(h => h.textContent);
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
-    expect(headers[1]).toMatch(/^Meta · \d+ threats/);
-    expect(headers[2]).toMatch(/^Types · 18/);
+    expect(headers[1]).toMatch(/^Types · 18/);
+    expect(headers[2]).toMatch(/^Meta · \d+ threats/);
     expect(headers[3]).toBe('Offense');
     const foot = document.querySelector('.def-members tfoot tr')!;
     // "✓ all" in English, or the red uncovered badge
