@@ -197,7 +197,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Difesa|Defense)/)) return 'no defense row';
     await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
@@ -211,7 +211,7 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^Offe(sa|nse)/)) return 'no offense row';
     await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
@@ -256,7 +256,7 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Velocit|Speed)/)) return 'no speed row';
     await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
@@ -355,8 +355,8 @@ const DEFENSE_STATES: Record<string, State> = {
   } },
 };
 
-// Ruoli (Bonus/Malus → Ruoli, dalla riga del voto): Tutti e un filtro per livello (SIX), col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
-const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
+// Ruoli (Ruoli e Bonus → Ruoli, dalla riga del voto): una vista sola, con SIX, col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
+const rolesState = (opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
   hash: hash(opts.team ?? SIX),
   lang: opts.lang,
   run: async p => {
@@ -365,15 +365,12 @@ const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: bo
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Ruoli|Roles)/)) return 'no roles row';
-    await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
-    await wait(500);
+    await wait(800);
     return true;
   },
 });
-const ROLES_SUBS: Record<string, RegExp | null> = { general: null, essential: /^(Essenziali|Essential)/, important: /^(Importanti|Important)/, minor: /^(Minori|Minor)/, ignored: /^(Non contano|Don)/ };
 const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'en' } = {}): State => ({ hash: hash(opts.team ?? SIX), lang: opts.lang, run: async p => {
-  const ok = await rolesState(null, opts).run!(p);
+  const ok = await rolesState(opts).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
   await wait(400);
@@ -382,24 +379,16 @@ const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'e
   return true;
 } });
 const ROLES_STATES: Record<string, State> = {
-  ...Object.fromEntries(Object.entries(ROLES_SUBS).flatMap(([k, re]) => [
-    [`analysis-roles-${k}`, rolesState(re)],
-    [`analysis-roles-${k}-five`, rolesState(re, { team: TEAM })],
-    [`analysis-roles-${k}-missing`, rolesState(re, { team: LONE })],
-    [`analysis-roles-${k}-collapsed`, rolesState(re, { collapsed: true })],
-  ])),
-  'analysis-roles-general-en': rolesState(null, { lang: 'en' }),
-  'analysis-roles-general-long': rolesState(null, { team: LONG }),
+  'analysis-roles-general': rolesState(),
+  'analysis-roles-general-five': rolesState({ team: TEAM }),
+  'analysis-roles-general-collapsed': rolesState({ collapsed: true }),
+  'analysis-roles-general-en': rolesState({ lang: 'en' }),
+  'analysis-roles-general-long': rolesState({ team: LONG }),
+  'analysis-roles-missing': rolesState({ team: LONE }),
   'analysis-roles-guide': rolesGuide(),
   'analysis-roles-guide-en': rolesGuide(undefined, { lang: 'en' }),
   'analysis-roles-guide-types': rolesGuide(/^(Ruoli per tipo|Roles per team)/),
   'analysis-roles-guide-types-en': rolesGuide(/^(Ruoli per tipo|Roles per team)/, { lang: 'en' }),
-  'analysis-roles-guide-earn-a': rolesGuide(/(attacco e difesa|attack and defense)/),
-  'analysis-roles-guide-earn-a-en': rolesGuide(/(attacco e difesa|attack and defense)/, { lang: 'en' }),
-  'analysis-roles-guide-earn-b': rolesGuide(/: support$/),
-  'analysis-roles-guide-earn-b-en': rolesGuide(/: support$/, { lang: 'en' }),
-  'analysis-roles-guide-earn-c': rolesGuide(/: utility$/),
-  'analysis-roles-guide-earn-c-en': rolesGuide(/: utility$/, { lang: 'en' }),
 };
 
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
@@ -913,17 +902,32 @@ for (const [w, h] of sizes) {
           const pages = gs ? [...gs.querySelectorAll<HTMLElement>(':scope > .help-panel')].map(sec => { const last = sec.lastElementChild?.getBoundingClientRect(); return last ? Math.round(last.bottom - sec.getBoundingClientRect().top + (parseFloat(getComputedStyle(sec).paddingBottom) || 0)) : 0; }) : [];
           const guide = gp ? ` guideScroll=${Math.max(gp.scrollHeight - gp.clientHeight, gs ? gs.scrollHeight - gs.clientHeight : 0)} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}${gs ? ` guidePages=[${pages.join(',')}]/${gs.clientHeight}` : ''}` : '';
           const rl = el.querySelector<HTMLElement>('.rl-frame');
-          const rlScroll = rl?.querySelector<HTMLElement>('.rl-scroll');
-          const rlRows = rl ? rl.querySelectorAll('.rl-covered > li, .rl-table tbody tr:not(.rl-fam)').length : 0;
-          const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-covered > li, .rl-missing > li')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
-          const roles = rl ? ` roles: rows=${rlRows} cols=${rl.querySelector('.rl-covered.two') ? 2 : 1} missing=${rl.querySelectorAll('.rl-missing > li').length} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} parts=[${[...rl.children].map(c => Math.round(c.getBoundingClientRect().height)).join(',')}] reasonCut=${[...rl.querySelectorAll<HTMLElement>('.rl-reason')].filter(e => e.scrollWidth - e.clientWidth > 1).length}` : '';
-          // Legenda sulla riga dei problemi: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
-          const lg = document.querySelector<HTMLElement>('.area-problems-row .area-legend');
+          // Ruoli: righe, bande, mancanti, quanto scorrono le fasce (deve essere 0), spazio sotto l'ultima riga, nomi tagliati
+          const rlScroll = rl?.querySelector<HTMLElement>('.rl-bands');
+          const rlRows = rl ? rl.querySelectorAll('.rl-row').length : 0;
+          const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-row')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
+          const rlRowH = rl?.querySelector<HTMLElement>('.rl-row')?.getBoundingClientRect().height ?? 0;
+          // Allineamento tra le fasce: per fascia x sinistra di ogni colonna, x della pista "chi la copre", bordo destro dei punti
+          // (righe e somma del titolo); su ogni fascia devono essere uguali
+          const rlAlign = rl ? ` align=[${[...rl.querySelectorAll<HTMLElement>('.rl-band')].map(band => {
+            const rws = [...band.querySelectorAll<HTMLElement>('.rl-row')];
+            const cols = [...new Set(rws.map(r => Math.round(r.getBoundingClientRect().left)))].join('/');
+            const by = [...new Set(rws.map(r => Math.round(r.querySelector('.rl-by')!.getBoundingClientRect().left)))].join('/');
+            const pts = [...new Set(rws.map(r => Math.round(r.querySelector('.rl-pts')!.getBoundingClientRect().right)))].join('/');
+            const sum = Math.round(band.querySelector('.rl-band-head .rl-mark')?.getBoundingClientRect().left ?? 0);
+            return `${band.classList[1]}:cols=${cols} by=${by} pts=${pts} headMarkX=${sum}`;
+          }).join(' | ')}] rowHs=[${[...new Set([...rl.querySelectorAll<HTMLElement>('.rl-row')].map(r => Math.round(r.getBoundingClientRect().height)))].join(',')}] three=${rl.classList.contains('three') ? 1 : 0} bandsR=${Math.round(rlScroll?.getBoundingClientRect().right ?? 0)} headR=${Math.round(rl.querySelector('.rl-more')?.getBoundingClientRect().right ?? 0)}` : '';
+          const roles = rl ? ` roles: rows=${rlRows} bands=${rl.querySelectorAll('.rl-band').length} missing=${rl.querySelectorAll('.rl-row.bad, .rl-row.warn').length} rowH=${Math.round(rlRowH)} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} headH=${Math.round(rl.querySelector('.rl-head')?.getBoundingClientRect().height ?? 0)} nameCut=${[...rl.querySelectorAll<HTMLElement>('.rl-mon-name, .rl-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length}${rlAlign}` : '';
+          // Legenda nella riga in fondo alla tabella: larghezza, quanto sborda dalla riga (0 = intera; footCut = la riga intera
+          // sborda) e problemi mostrati / nel "+N" della striscia in fondo; panelTop = dove parte il pannello (uguale in ogni area)
+          const lg = document.querySelector<HTMLElement>('.area-panel .area-legend');
           const lgRow = lg?.parentElement?.getBoundingClientRect();
           const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
           const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
-          const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} problems=${shownP}+${moreP} stripH=${Math.round(lgRow.height)}` : '';
-          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
+          const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} footCut=${lg.parentElement!.scrollWidth - lg.parentElement!.clientWidth} footGap=${Math.round(el.getBoundingClientRect().bottom - lgRow.bottom)} problems=${shownP}+${moreP} footH=${Math.round(lgRow.height)}` : '';
+          const pr = document.querySelector<HTMLElement>('.area-problems-row');
+          const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} problemsRow=${Math.round(pr.getBoundingClientRect().height)} problemsShown=${document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length}+${document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} problemsCut=${Math.max(0, Math.round(pr.getBoundingClientRect().bottom - (pr.parentElement?.getBoundingClientRect().bottom ?? 0)))}` : '';
+          return `${guide}${prAt}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
@@ -1049,9 +1053,11 @@ for (const [w, h] of sizes) {
       const bar = tt.parentElement!;
       return `${help} teamType=w${Math.round(tt.getBoundingClientRect().width)} room${Math.round(room - longest)} barOver=${bar.scrollWidth - bar.clientWidth}`;
     });
+    // fixStrip: x, larghezza, altezza e fondo della striscia in fondo (Da sistemare o problemi dell'area), uguale ovunque
+    const fixStrip = await page.evaluate(() => { const r = document.querySelector('.fix-row')?.getBoundingClientRect(); return r ? ` fixStrip=x${Math.round(r.left)},w${Math.round(r.width)},h${Math.round(r.height)},bottom${Math.round(r.bottom)}` : ''; });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${fixStrip}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
     await page.close();
   }
 }

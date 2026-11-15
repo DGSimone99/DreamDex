@@ -23,7 +23,7 @@ describe('analisi in inglese', () => {
     // I consigli si calcolano solo con l'Analisi aperta
     await user.click(screen.getByRole('tab', { name: /^Analysis/ }));
     const fix = await within(analysis).findByRole('region', { name: 'To fix' }, { timeout: 5000 });
-    expect(within(fix).getByRole('button', { name: 'Go to Coaching' })).toBeInTheDocument();
+    expect(within(fix).getByRole('button', { name: /^Go to Coaching/ })).toBeInTheDocument();
     expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent('In progress');
     // I problemi stanno nel Coaching, nella mappa per area, con i titoli in inglese
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));

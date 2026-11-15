@@ -62,7 +62,7 @@ export function HelpButton({ title, label = title, className, children }: { titl
 
 /** Le schede interne: tablist orizzontale (frecce, Home/End). Il "?" di Bonus/Malus sta nella sua striscia (AreaView). */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
-/** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica non ne ha). */
+/** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica e Ruoli e Bonus non ne hanno). */
 /** Il numero sulla scheda: tutti i problemi, quanti gravi e quanti minori (per il suggerimento al passaggio del mouse). */
 export interface TabBadge { n: number; serious: number; minor: number }
 const badgeTitle = ({ serious, minor }: TabBadge, t: ReturnType<typeof useT>) => [
@@ -117,7 +117,7 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
       {/* Voto e problemi delle schede per i lettori di schermo: descrizione, così il nome della scheda resta il suo nome */}
       {ANALYSIS_VIEWS.filter(item => scores[item] != null || badges[item]).map(item => (
         <span key={item} id={`analysis-view-${item}-desc`} hidden>
-          {[scores[item] != null ? t(item === 'bonusMalus' ? 'analysis.tabNet' : 'analysis.tabScore', { value: scores[item]! }) : null,
+          {[scores[item] != null ? t('analysis.tabScore', { value: scores[item]! }) : null,
             badges[item] ? `${t(badges[item]!.n === 1 ? 'analysis.tabProblemsOne' : 'analysis.tabProblemsMany', { n: badges[item]!.n })} (${badgeTitle(badges[item]!, t)})` : null,
           ].filter(Boolean).join(', ')}
         </span>

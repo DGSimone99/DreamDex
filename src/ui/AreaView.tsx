@@ -7,8 +7,9 @@ import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
 import { viewLabelKey } from './AnalysisTabs';
-import type { RolesFilter } from './roles/rolesTabs';
 import { AreaGuide } from './AreaGuide';
+import type { CoachStep } from '../engine/coachSteps';
+import { solvable } from './dashboard/FixRow';
 import { EffSwitch } from './effTag';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
@@ -19,9 +20,11 @@ const HELP_SIZE = 18;
 
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
- * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
+ * aperta (a destra l'interruttore dell'efficacia), subito sotto il dettaglio di quella scelta a tutta larghezza (la legenda
+ * dei colori, dove c'è, sta nella riga in fondo alla tabella) e in fondo la striscia coi problemi dell'area, che porta al
+ * Coaching solo quando il Coaching ha una proposta per almeno uno di loro.
  */
-export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId }: {
+export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, steps = null }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
@@ -34,6 +37,10 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   onPick?: (key: string) => void;
   /** Formato scelto, per la guida dell'Offesa. */
   formatId?: FormatId;
+  /** Apre il Coaching (la striscia dei problemi in fondo); senza, la striscia non è un pulsante. */
+  onCoaching?: () => void;
+  /** Le tappe del Coaching (null: si stanno calcolando, o non ci sono): la striscia porta lì solo se una risolve un problema. */
+  steps?: CoachStep[] | null;
 }) {
   const t = useT();
   const lang = useLang();
@@ -51,21 +58,16 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
   const opener = useRef<HTMLElement | null>(null);
   const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
-  // Bonus/Malus → Ruoli: il filtro dei livelli resta passando fra Generale e Ruoli
-  const [rolesFilter, setRolesFilter] = useState<RolesFilter>('all');
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide, rolesFilter, onRolesFilter: setRolesFilter });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
-  const legend = current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
   // Il nome della scheda di Analisi (Bonus/Malus si chiama "Ruoli e Bonus")
   const title = t(viewLabelKey(area));
   // Con una sottoscheda sola (Velocità) il "?" spiega l'area intera: porta il suo nome
   const helpLabel = t('area.guide.button', { tab: tabs.length === 1 ? title : current.label });
-  // La Velocità non ha problemi del Coaching (difficile dire quando lo è): niente "Nessun problema", solo la legenda
-  const judged = area !== 'speed';
   // Problemi: prima quelli che i Suggerimenti risolvono, poi i gravi, poi l'ordine delle categorie; in riga quelli che stanno
   const sorted = [...problems].sort((a, b) => Number(b.fixes.length > 0) - Number(a.fixes.length > 0)
     || Number(b.severity === 'serious') - Number(a.severity === 'serious')
@@ -73,6 +75,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const listRef = useRef<HTMLUListElement>(null);
   const fit = useFitCount(listRef, sorted.length, `${lang}|${sorted.map(p => p.text).join('|')}`);
   const hidden = sorted.slice(fit);
+  const serious = problems.some(p => p.severity === 'serious');
+  const count = t(problems.length === 1 ? 'area.problems.one' : 'area.problems.many', { n: problems.length });
+  // La striscia porta al Coaching solo se lì c'è una proposta per almeno uno dei problemi: senza problemi, coi problemi
+  // che nessuna tappa risolve o mentre le tappe si calcolano è ferma (i problemi restano scritti)
+  const computing = problems.length > 0 && !!onCoaching && steps === null;
+  const link = problems.length > 0 && !!onCoaching && !!steps && solvable(problems, steps).length > 0;
 
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede sulla scheda aperta, a destra
   const [helpPlace, setHelpPlace] = useState({ left: 0, top: 0 });
@@ -145,14 +153,18 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
           {tabs.map((tab, i) => (
             <button key={tab.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`${id}-${tab.key}`}
               aria-selected={tab === current} aria-controls={`${id}-panel`} tabIndex={tab === current ? 0 : -1}
+              aria-describedby={tab.describe ? `${id}-${tab.key}-desc` : undefined}
               onClick={() => setPicked(tab.key)} onKeyDown={e => onKey(e, i)}>
               <span>{tab.label}</span>{' '}
-              <b>{tab.value ?? 'n/d'}</b>
+              <b className={tab.valueTone ? `sub-val-${tab.valueTone}` : undefined}>{tab.value ?? 'n/d'}</b>
+              {/* Segni dopo il valore (Ruoli: il +N dei minori), a parole nella descrizione della scheda */}
+              {tab.marks && <span className="sub-marks" aria-hidden="true">{tab.marks}</span>}
               {/* Posto per il "?": aprendo un'altra scheda la striscia non si sposta */}
               {tab.help && <span className="sub-help-room" aria-hidden="true" />}
             </button>
           ))}
         </div>
+        {tabs.filter(tab => tab.describe).map(tab => <span key={tab.key} id={`${id}-${tab.key}-desc`} hidden>{tab.describe}</span>)}
         {/* L'interruttore dell'efficacia, a destra nella striscia, solo sulle sottoschede con l'etichetta nelle caselle */}
         {current.effSide && (
           <span className="strip-switch">
@@ -174,40 +186,49 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
           onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
-      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area (in Velocità
-          solo la legenda, a destra).
-          A destra la legenda dei colori della scheda aperta (sempre intera: sono i problemi a finire nel "+N") */}
-      {/* Bonus/Malus: niente riga dei problemi (i malus sono già la scheda): il posto va alle voci */}
-      {area === 'bonusMalus' ? null : !judged ? (
-        <div className="area-problems-row is-plain">{legend}</div>
-      ) : problems.length === 0 ? (
-        <div className="area-problems-row is-clear" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
-          <span className="area-problems-label"><Icon name="check" />{t('area.problems.none')}</span>
-          {legend}
-        </div>
-      ) : (
-        <div className={`area-problems-row${problems.some(p => p.severity === 'serious') ? ' serious' : ''}`}>
-          {/* Un'etichetta dice che cos'è la riga: i problemi dell'area, quanti */}
-          <span className="area-problems-label" aria-hidden="true">
-            <Icon name="warning" />{t(problems.length === 1 ? 'area.problems.one' : 'area.problems.many', { n: problems.length })}
-          </span>
-          {/* Sempre una riga: quelli che non stanno finiscono nel "+N" (title e testo nascosto con tutti) */}
-          <ul ref={listRef} className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
-            {sorted.slice(0, fit).map(problem => (
-              <li key={problem.text} className={problem.severity}><Typed text={problem.text} /></li>
-            ))}
-            {hidden.length > 0 && (
-              <li className="area-problems-more" title={hidden.map(p => p.text).join('\n')}>
-                <span aria-hidden="true">+{hidden.length}</span>
-                <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(p => p.text).join('; ')}</span>
-              </li>
-            )}
-          </ul>
-          {legend}
-        </div>
-      )}
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
         {current.panel}
+      </div>
+      {/* In fondo i problemi dell'area, la stessa striscia della Panoramica (stesso posto, stessa misura): c'è sempre. Senza
+          problemi (anche in Velocità, dove il Coaching non ne dà) solo "Nessun problema in quest'area", ferma; coi problemi
+          scritti, tutta la striscia porta al Coaching solo se lì c'è una proposta per almeno uno: il clic sta sulla striscia, il
+          pulsante vero è "Vai al Coaching" (tastiera e lettori). Senza proposte la striscia è ferma e senza pulsante; mentre le
+          tappe si calcolano il pulsante tiene il suo posto, invisibile, così i problemi in riga non cambiano */}
+      <div className={`area-problems-row fix-row${problems.length === 0 ? ' is-clear' : serious ? ' serious' : ''}${link ? ' is-link' : ''}`}
+        onClick={link ? onCoaching : undefined}>
+        {problems.length === 0 ? (
+          <span className="area-problems-label" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
+            <Icon name="check" />{t('area.problems.none')}
+          </span>
+        ) : (
+          <>
+            {/* Un'etichetta dice che cos'è la striscia: i problemi dell'area, quanti */}
+            <span className="area-problems-label" aria-hidden="true">
+              <Icon name="warning" />{count}
+            </span>
+            {/* Sempre una riga: quelli che non stanno finiscono nel "+N" (title e testo nascosto con tutti) */}
+            <ul ref={listRef} className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
+              {sorted.slice(0, fit).map(problem => (
+                <li key={problem.text} className={problem.severity}><Typed text={problem.text} /></li>
+              ))}
+              {hidden.length > 0 && (
+                <li className="area-problems-more" title={hidden.map(p => p.text).join('\n')}>
+                  <span aria-hidden="true">+{hidden.length}</span>
+                  <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(p => p.text).join('; ')}</span>
+                </li>
+              )}
+            </ul>
+          </>
+        )}
+        {link && (
+          // Il clic arriva alla striscia (anche da tastiera: Invio e Spazio fanno un clic); il nome dice dove porta e cosa c'è
+          <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: `${count} ${t('area.problems.inArea', { area: title })}` })}>
+            {t('overview.fix.go')}<span aria-hidden="true"> ›</span>
+          </button>
+        )}
+        {computing && (
+          <span className="fix-go dash-link fix-go-wait" aria-hidden="true">{t('overview.fix.go')} ›</span>
+        )}
       </div>
     </section>
   );

@@ -12,7 +12,7 @@ async function openTab(area: 'Difesa' | 'Offesa' | 'Ruoli', paste = 'Great Tusk\
   await user.click(screen.getByLabelText('Testo Showdown'));
   await user.paste(paste);
   await user.click(screen.getByRole('button', { name: 'Importa' }));
-  await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) }));
+  await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: new RegExp(`^${area} (punti )?[\\d/+−]+, .*apri il dettaglio`) }));
   return user;
 }
 
@@ -26,21 +26,25 @@ describe('tabelle complete nelle schede d\'area', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(4);
   });
 
-  it('le legende dei colori stanno a destra sulla riga dei problemi, non sotto la tabella; le schede senza legenda non ne hanno', async () => {
+  it('le legende dei colori stanno a sinistra nella riga in fondo alla tabella, dentro il pannello; le schede senza legenda non ne hanno', async () => {
     const user = await openTab('Difesa');
-    const legend = () => view().querySelector('.area-problems-row > .area-legend');
-    expect(legend()).toBeNull(); // Generale
+    const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
+    expect(view().querySelector('.area-legend')).toBeNull(); // Generale
+    expect(view().querySelector('.area-tools-row')).toBeNull();
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     expect(legend()).toHaveTextContent('Colpo forte del lato peggiore:OHKO2HKO3HKO4HKO+');
-    expect(view().querySelector('.area-panel .hold-chip')).toBeNull();
+    // La riga in fondo viene dopo la tabella
+    const table = within(view()).getByRole('table');
+    expect(table.compareDocumentPosition(legend()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(within(view()).getByRole('tab', { name: /^Sostenibilit/ }));
+    expect(view().querySelector('.area-legend')).toBeNull();
   });
 
-  it('Offesa: la legenda di Coverage tipi sulla riga dei problemi', async () => {
+  it('Offesa: la legenda di Coverage tipi nella riga in fondo alla tabella', async () => {
     const user = await openTab('Offesa');
-    const legend = () => view().querySelector('.area-problems-row > .area-legend');
+    const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     expect(legend()).toHaveTextContent('Forte (oltre 66%)Conta (oltre 33%)');
-    expect(view().querySelector('.area-panel .area-legend-swatch')).toBeNull();
   });
 
   it('Difesa: la nota del meteo sotto la tabella', async () => {
@@ -55,10 +59,11 @@ describe('tabelle complete nelle schede d\'area', () => {
     expect(within(view()).getAllByRole('table')).toHaveLength(1);
   });
 
-  it('Ruoli (Bonus/Malus → Ruoli): con Tutti il tipo di team, cosa manca e i ruoli coperti; i livelli nei filtri', async () => {
+  it('Ruoli (Ruoli e Bonus → Ruoli): il tipo di team e le fasce dei livelli, senza filtri', async () => {
     await openTab('Ruoli');
-    expect(within(view()).getByRole('region', { name: 'Ruoli che mancano' })).toBeInTheDocument();
-    expect(view()).toHaveTextContent(/[Gg]iudicati come|giudicati come per un/);
-    expect(within(view()).getByRole('button', { name: /^Essenziali/ })).toBeInTheDocument();
+    // Il tipo di team come titolo, sulla sua targa
+    expect(view().querySelector('.rl-type')).toHaveTextContent(/\w+/);
+    expect(within(view()).getByRole('region', { name: 'Essenziali' })).toBeInTheDocument();
+    expect(within(view()).queryByRole('group', { name: 'Quali ruoli mostrare' })).toBeNull();
   });
 });

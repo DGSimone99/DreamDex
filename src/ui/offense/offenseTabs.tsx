@@ -2,8 +2,8 @@ import type { ReactElement } from 'react';
 import type { TeamRating } from '../../engine/rating';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 import { OffenseGeneral } from './OffenseGeneral';
-import { OffenseMeta, OffenseMetaLegend } from './OffenseMeta';
-import { OffenseTypes, OffenseTypesLegend } from './OffenseTypes';
+import { OffenseMeta } from './OffenseMeta';
+import { OffenseTypes } from './OffenseTypes';
 import { OffenseGuideSection, type OffenseSection } from './OffenseGuide';
 
 /** Le schede dell'Offesa, nell'ordine della Difesa: Generale, Coverage tipi (il pacchetto dei tipi), Coverage meta. */
@@ -14,11 +14,11 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
   const value = rating.areas.find(a => a.key === 'strength')?.value ?? null;
   const guide = (section: OffenseSection) => <OffenseGuideSection section={section} offense={offense} meta={meta} formatId={ctx.formatId} />;
 
-  const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement; legend?: ReactElement; effSide?: 'offense' }[] = [
+  const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement; effSide?: 'offense' }[] = [
     { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
-    { key: 'types', label: t('detail.coverageTypes'), value: offense.types.value, panel: <OffenseTypes offense={offense} ctx={ctx} />, legend: <OffenseTypesLegend />, effSide: 'offense' },
+    { key: 'types', label: t('detail.coverageTypes'), value: offense.types.value, panel: <OffenseTypes offense={offense} ctx={ctx} />, effSide: 'offense' },
     // La Coverage del meta c'è solo col meta: senza, una scheda in meno
-    ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: coverageMeta.value, panel: <OffenseMeta offense={offense} ctx={ctx} />, legend: <OffenseMetaLegend />, effSide: 'offense' as const }] : []),
+    ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: coverageMeta.value, panel: <OffenseMeta offense={offense} ctx={ctx} />, effSide: 'offense' as const }] : []),
   ];
   return tabs.map(tab => ({ ...tab, help: guide(tab.key) }));
 }

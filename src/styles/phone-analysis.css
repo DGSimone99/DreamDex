@@ -35,7 +35,7 @@
   /* Lo stacco fra Coaching e le aree: un po' di spazio in più */
   .analysis-tabs #analysis-view-strength { margin-left: 10px; }
   .analysis-tabs [role='tab'][aria-selected='true'],
-  .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
+  .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) {
     width: auto;
     margin: 0;
     padding: 0 30px 0 14px;
@@ -56,14 +56,19 @@
   .area-view-bonusMalus .area-subs [role='tab'] { padding: 0 12px; gap: 8px; font-size: 15px; }
   .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 18px; }
 
-  /* Problemi dell'area: tutti, su più righe (la pagina scorre) */
-  .area-problems-row { height: auto; min-height: 25px; flex-wrap: wrap; align-items: flex-start; gap: 6px 12px; }
-  .area-problems { flex: 1 1 100%; order: 2; flex-wrap: wrap; overflow: visible; }
-  .area-problems > li { flex: 0 1 auto; white-space: normal; }
-  .area-legend { flex: 1 1 100%; min-width: 0; margin-left: 0; flex-wrap: wrap; white-space: normal; }
   /* L'interruttore Solo superefficaci / Solo efficacia: la striscia scorre col dito, lui va sotto le sottoschede, alto quanto un dito */
   .strip-switch { position: sticky; left: 0; display: flex; width: max-content; padding: 0 6px; }
   .strip-switch .eff-switch { min-height: 44px; }
+  .area-view-bonusMalus > .area-panel { margin-top: 0; }
+  /* La riga in fondo alla tabella: legenda e riepilogo vanno a capo */
+  .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
+  .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
+  /* Problemi dell'area in fondo: tutti, su più righe (la pagina scorre); "Vai al Coaching" alto quanto un dito */
+  .fix-row { height: auto; min-height: 44px; }
+  .area-problems-row.fix-row { height: auto; min-height: 44px; overflow: visible; flex-wrap: wrap; gap: 6px 12px; }
+  .area-problems { flex: 1 1 100%; order: 2; flex-wrap: wrap; overflow: visible; }
+  .area-problems > li { flex: 0 1 auto; white-space: normal; }
+  .area-problems-row .fix-go { order: 1; }
 
   /* ── Cornice dei membri (Difesa, Offesa, Velocità): righe ad altezza fissa, niente misura sull'altezza ── */
   .def-frame, .def-frame.roomy { --def-row: 50px; --def-mon: 190px; height: auto; container-type: inline-size; }
@@ -85,15 +90,16 @@
   .def-general .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
   .def-general .def-gain small { font-size: 11px; }
 
-  /* Ruoli, Generale: i coperti su una colonna sola */
-  .rl-covered.two, .rl-covered.three { grid-template-columns: max-content minmax(0, 1fr); }
-  /* Ruoli per livello: l'intestazione resta sotto la barra in alto mentre la pagina scorre */
-  .rl-table thead th { top: var(--top-h); }
+  /* Ruoli: le voci di ogni fascia su una colonna sola; il link alla guida va a capo sotto */
+  .rl-general, .rl-general.three { --cols: 1; }
+  .rl-band { max-height: none; }
+  .rl-rows { grid-auto-rows: minmax(var(--rl-row-min), auto); }
+  .rl-frame.rl-general .rl-row.rl-row:nth-child(n)::before { content: none; }
+  .rl-more { margin-left: 0; min-height: 44px; }
 
   /* ── Ruoli e Bonus/Malus: la lista intera, senza scorrimento interno ── */
   .rl-frame { height: auto; }
-  .rl-filter button { min-height: 44px; }
-  .rl-scroll { overflow: visible; }
+  .rl-bands { overflow: visible; }
   .area-panel:has(> .bm) { overflow: visible; }
   /* Bonus/Malus: prima il netto e le voci, poi i core uno sotto l'altro (il chiuso è una riga col triangolo piccolo) */
   .bm, .bm.empty { flex: none; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "grade" "list" "cores"; gap: 18px; }
@@ -162,18 +168,6 @@
   .def-general.roomy .def-members tr > :nth-last-child(-n + 2) { display: none; }
   .def-general.roomy .def-members :is(.def-col-hit, .def-col-rec) { width: 0; }
 
-  /* Ruoli per livello: ogni ruolo come una scheda (nome e valore, sotto chi lo copre e perché) */
-  .rl-table, .rl-table tbody { display: block; }
-  .rl-table colgroup, .rl-table thead { display: none; }
-  .rl-table tbody tr:not(.rl-fam) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; height: auto; padding: 6px 0 8px; border-bottom: 1px solid var(--line-soft); }
-  .rl-table tbody tr:not(.rl-fam) > * { border-bottom: 0; }
-  .rl-table tbody tr:not(.rl-fam) > th[scope='row'] { grid-column: 1; white-space: normal; }
-  .rl-table tbody tr:not(.rl-fam) > td:nth-child(2) { grid-column: 2; }
-  .rl-table tbody tr:not(.rl-fam) > td:nth-child(n + 3) { grid-column: 1 / -1; padding-left: 13px; }
-  .rl-table .rl-reason { white-space: normal; overflow: visible; }
-  .rl-table tr.rl-fam { display: block; }
-  .rl-table tr.rl-fam th { display: block; }
-
   .coach-map { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -210,7 +204,7 @@
   /* Tablet: le sette schede stanno quasi tutte; si stringono un poco e riempiono la riga */
   .analysis-tabs [role='tablist'] { min-width: 100%; }
   .analysis-tabs [role='tab'] { flex: 1 0 auto; justify-content: center; padding-inline: 10px; }
-  .analysis-tabs [role='tab'][aria-selected='true'], .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) { padding: 0 24px 0 10px; }
+  .analysis-tabs [role='tab'][aria-selected='true'], .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) { padding: 0 24px 0 10px; }
   .analysis-tabs [role='tab'][aria-selected='true']#analysis-view-bonusMalus { padding-right: 72px; }
 
   /* Panoramica: Riassunto e Copertura a tutta larghezza, sotto Ruoli e Velocità affiancati */

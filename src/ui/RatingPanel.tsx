@@ -11,6 +11,7 @@ import { useT } from '../i18n/react';
 import { ANALYSIS_VIEWS } from './AnalysisTabs';
 import type { TabView } from './analysisView';
 import { EeveeMoment } from './EeveeMoment';
+import { bonusMalusTotals } from './BonusMalusView';
 
 const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
 
@@ -95,10 +96,12 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
               </button>
             );
           })}
-          {/* Ruoli: una lista, non un'area col peso; senza barra, coperti/totale e quanti mancano fra quelli che tolgono punti
-              (essenziali e importanti), a segni: un minore scoperto non è un difetto, quindi non si conta */}
+          {/* Ruoli: una lista, non un'area col peso; senza barra, i punti dei Ruoli (+N / −N / 0, quelli della sottoscheda
+              Ruoli) e quanti mancano fra quelli che tolgono punti (essenziali e importanti), a segni: un minore scoperto non
+              è un difetto, quindi non si conta. Coperti/totale restano sulla sottoscheda Ruoli e nella frase per lo screen reader */}
           {rating.roles.total > 0 && (() => {
             const { covered, total } = rating.roles;
+            const points = rating.roles.bonuses.reduce((n, b) => n + b.points, 0) - rating.roles.failures.reduce((n, f) => n + f.points, 0);
             const holes = (level: string) => rating.roles.rows.filter(r => r.level === level && r.value < MISSING_BELOW).length;
             const essential = holes('essential');
             const important = holes('important');
@@ -110,18 +113,18 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
               important > 0 && <span key="i" className="grade-roles-miss warn" title={t('rating.rolesMissingImportant', { n: important })}>{important}<Icon name="warning" /></span>,
             ];
             return (
-              <button type="button" className="grade-area grade-roles"
-                aria-label={t('rating.openArea', { area: t('area.roles'), value: state ? `${covered}/${total}, ${state}` : `${covered}/${total}` })}
+              <button type="button" className={`grade-area grade-roles${points > 0 ? ' pos' : points < 0 ? ' neg' : ''}`}
+                aria-label={t('rating.openArea', { area: t('area.roles'), value: [t('rating.rolesPoints', { value: signed(points) }), `${covered}/${total}`, state].filter(Boolean).join(', ') })}
                 onClick={() => onOpen?.('roles')}>
                 <span>{t('area.roles')}</span>
-                <span className="grade-roles-val"><b>{covered}/{total}</b>{missing > 0 ? marks : state && <> · <em className="good">{state}</em></>}</span>
+                <span className="grade-roles-val"><b>{signed(points)}</b>{missing > 0 ? marks : state && <> · <em className="good">{state}</em></>}</span>
                 <Icon name="next" />
               </button>
             );
           })()}
-          {/* Ultima riga: netto di bonus e malus, senza barra */}
+          {/* Ultima riga: netto di bonus e malus senza i ruoli (come la scheda Bonus/Malus), senza barra */}
           {(() => {
-            const net = rating.bonus.total - rating.penalty.total;
+            const { net } = bonusMalusTotals(rating);
             const value = net === 0 ? '±0' : signed(net);
             return (
               <button type="button" className={`grade-area grade-bm${net > 0 ? ' pos' : net < 0 ? ' neg' : ''}`}
