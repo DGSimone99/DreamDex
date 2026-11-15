@@ -223,6 +223,14 @@
 /* Sotto la tabella, in fondo al pannello, una riga sola e bassa: a sinistra la legenda dei colori, poi i conteggi di
    Coverage meta (a destra) o le note del meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) */
 .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: 20px; padding-top: 0; }
+/* Tutte le legende delle tabelle allo stesso posto: subito sotto la tabella, nello spazio libero del pannello, larghe
+   quanto la cornice; non tolgono altezza alle righe (come "con setup" nella Generale dell'Offesa) */
+.def-frame { position: relative; }
+.ad-panel .def-frame > .rob-legend { position: absolute; left: 0; right: 0; bottom: 0; transform: translateY(100%); margin: 0; padding: 2px 0 0; height: auto; line-height: 1.1; font-size: 11.5px; }
+/* Schermi bassi: sotto la tabella non c'è posto, la legenda resta nella sua riga bassa dentro la cornice */
+@media (max-height: 700px) {
+  .ad-panel .def-frame > .rob-legend { position: static; transform: none; margin: auto 0 0; padding: 0; height: 20px; font-size: 12px; }
+}
 .ad-panel .rob-legend.ht-foot { flex-wrap: nowrap; gap: 12px; white-space: nowrap; }
 .ad-panel .ht-notes { flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; font-size: 12px; cursor: help; }
 .ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; font-size: 13px; color: var(--muted); }

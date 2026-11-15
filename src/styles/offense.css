@@ -97,7 +97,7 @@
 @media (max-height: 700px) {
   .ad-panel .rob-legend.og-legend { display: none; }
 }
-.ad-panel .rob-legend.og-legend { position: absolute; left: 0; bottom: 0; transform: translateY(100%); flex-wrap: nowrap; gap: 20px; height: auto; margin: 0; padding: 4px 0 0; line-height: 1.1; white-space: nowrap; font-size: 11.5px; }
+.ad-panel .rob-legend.og-legend { flex-wrap: nowrap; gap: 20px; white-space: nowrap; }
 .og-legend span { display: inline-flex; align-items: center; gap: 6px; }
 /* Schermi bassi: la riga Team Coverage della Difesa più bassa, così la tabella coi totali sta senza scorrere */
 @media (max-height: 640px) {
