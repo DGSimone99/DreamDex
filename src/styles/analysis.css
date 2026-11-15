@@ -592,13 +592,18 @@
 .sum-tri-badge img { display: block; width: 100%; height: 100%; border-radius: 50%; }
 /* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
 .sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: 2px; }
-/* Le sinergie che non stanno col team aperto: in fondo a destra "+N" sopra due frecce verso il basso; il clic riduce il team */
-.sum-syn-sec:has(.sum-more-below) { position: relative; }
-.sum-more-below { position: absolute; right: 2px; bottom: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 6px 2px; font: 700 italic 13px/1 var(--display); color: var(--accent-ink); background: none; border: 0; border-radius: 4px; cursor: pointer; }
-.sum-more-below .icon { width: 18px; height: 18px; }
-.sum-more-below:hover { background: var(--accent-wash); }
+/* Le sinergie che non stanno col team aperto: tutta la parte bassa del Riassunto è il pulsante, da bordo a bordo (sotto e
+   ai lati della card), con un tratto sopra e un gradiente scuro sempre visibile che sale dal bordo basso; al centro "+N"
+   sopra due frecce verso il basso. Il clic riduce il team. La card tiene 12px in più sotto, così il fondo pieno sta sul
+   margine e il gradiente sfuma solo il bordo dell'ultima riga. Al passaggio si accendono il tratto e le frecce */
+.dash-summary { position: relative; }
+.dash-summary:has(.sum-more-below) { padding-bottom: 22px; }
+.sum-syn-sec:has(.sum-more-below) { position: static; }
+.sum-more-below { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; padding: 0 0 2px; font: 700 italic 11px/1 var(--display); color: var(--accent-ink); background: linear-gradient(to top, var(--field) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); border: 0; border-top: 1px solid var(--line); border-radius: 0; cursor: pointer; }
+.sum-more-below .icon { width: 14px; height: 14px; margin-top: -2px; }
+.sum-more-below:hover { border-top-color: var(--accent); color: var(--accent); }
 .sum-more-below:hover .icon { animation: sum-more-nudge 0.6s ease-in-out infinite alternate; }
-.sum-more-below:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sum-more-below:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @keyframes sum-more-nudge { to { transform: translateY(2px); } }
 @media (prefers-reduced-motion: reduce) { .sum-more-below:hover .icon { animation: none; } }
 .sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
