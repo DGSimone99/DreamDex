@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -105,23 +105,70 @@ describe('Offesa: la velocità nella riga del membro è quella reale', () => {
 });
 
 describe('Offesa: Generale', () => {
-  const view = (t: TeamSet[] = team, rating = withMeta()) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
+  const view = (t: TeamSet[] = team, rating = withMeta(), roomy = false) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} roomy={roomy} />);
+  /** Le righe dei membri, senza la riga che riempie lo spazio in fondo. */
+  const memberRows = () => [...document.querySelectorAll<HTMLElement>('.def-members tbody tr:not(.og-fill)')];
 
-  it('Generale: le colonne, la riga Team Coverage coi voti del team, e i punti dei membri sommati fanno il voto', () => {
+  // I conti attesi, rifatti qui dai dati del motore: OHKO dal 100%, 2HKO dal 50%; col setup chi sale di fascia
+  type Rating = ReturnType<typeof withMeta>;
+  type Hit = { plain: number; setup: number | null };
+  type Band = 'ohko' | 'two';
+  const bandOf = (p: number): Band | null => (p >= 100 ? 'ohko' : p >= 50 ? 'two' : null);
+  const rank = (b: Band | null) => (b === 'ohko' ? 2 : b === 'two' ? 1 : 0);
+  const count = (hits: Hit[]) => {
+    const out = { ohko: 0, two: 0, setupOhko: 0, setupTwo: 0 };
+    for (const h of hits) {
+      const base = bandOf(h.plain);
+      if (base) out[base]++;
+      const up = h.setup === null ? null : bandOf(h.setup);
+      if (up && rank(up) > rank(base)) out[up === 'ohko' ? 'setupOhko' : 'setupTwo']++;
+    }
+    return out;
+  };
+  const typeHits = (rating: Rating, i: number): Hit[] => rating.offense.members[i].hits.map(h => ({ plain: h.plainPct, setup: h.setupPct }));
+  const metaHits = (rating: Rating, slot: number): Hit[] =>
+    rating.offense.coverageMeta!.rows.map(r => ({ plain: Math.max(0, r.cells![slot].pct), setup: r.cells![slot].setupPct }));
+  /** Il team su ogni bersaglio: il membro migliore (col setup il meglio fra semplice e setup). */
+  const best = (per: Hit[][]): Hit[] => per[0].map((_, k) => {
+    const plain = Math.max(...per.map(l => l[k].plain));
+    const setups = per.map(l => l[k].setup).filter((x): x is number => x !== null);
+    return { plain, setup: setups.length ? Math.max(plain, ...setups) : null };
+  });
+  /** I due badge di una casella: numero, spento a zero, "+N" del setup e aria-label. */
+  const expectBadges = (cell: Element, hits: Hit[]) => {
+    const c = count(hits);
+    for (const [b, n, extra, tag] of [['ohko', c.ohko, c.setupOhko, 'OHKO'], ['two', c.two, c.setupTwo, '2HKO']] as const) {
+      const badge = cell.querySelector(`.kob.${b}`)!;
+      expect(badge, `${tag} in ${cell.textContent}`).not.toBeNull();
+      expect(badge.querySelector('em')).toHaveTextContent(tag);
+      expect(badge.querySelector('b')).toHaveTextContent(new RegExp(`^${n}$`));
+      expect(badge.classList.contains('zero')).toBe(n === 0);
+      if (extra > 0) {
+        expect(badge.querySelector('.kob-setup')).toHaveTextContent(`+${extra}`);
+        expect(badge).toHaveAttribute('aria-label', `${tag} ${n}, altri ${extra} col setup`);
+      } else {
+        expect(badge.querySelector('.kob-setup')).toBeNull();
+        expect(badge).toHaveAttribute('aria-label', `${tag} ${n}`);
+      }
+    }
+    return c;
+  };
+  const tipOf = async () => vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.kot'); if (!el) throw new Error('no tip'); return el; });
+  /** Il primo elenco del tooltip (il colpo semplice), non quelli delle righe in più. */
+  const mainList = (tip: HTMLElement) => [...tip.querySelectorAll('.kot-list')].find(l => !l.closest('.kot-extra'));
+
+  it('le colonne: Pokémon, Meta · N minacce (solo col meta), Tipi · 18, Offesa; i punti dei membri sommati fanno il voto', () => {
     const rating = withMeta();
     const { unmount } = view(team, rating);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Coverage tipi', 'Coverage meta', 'Offesa']);
-    const total = document.querySelector('.def-members tfoot tr')!;
-    expect(within(total as HTMLElement).getByRole('rowheader')).toHaveTextContent('Team Coverage');
-    expect([...total.querySelectorAll('td')].map(c => c.textContent)).toEqual([`${rating.offense.types.value}`, `${rating.offense.coverageMeta!.value}%`, `${rating.offense.value}`]);
-    // I punti dei membri sommati fanno l'Offesa del team
+    const n = rating.offense.coverageMeta!.rows.length;
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', `Meta · ${n} minacce`, 'Tipi · 18', 'Offesa']);
+    expect(memberRows().map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
     unmount();
-    const plain = noMeta();
-    view(team, plain);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Coverage tipi', 'Offesa']);
-    expect([...document.querySelectorAll('.def-members tfoot td')].map(c => c.textContent)).toEqual([`${plain.offense.types.value}`, `${plain.offense.value}`]);
-    expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    view(team, noMeta());
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi · 18', 'Offesa']);
+    expect(document.querySelector('.def-members tfoot th')).toHaveTextContent('Team Coverage');
+    expect(document.querySelectorAll('.def-members tfoot td')).toHaveLength(2);
   });
 
   it('niente tessere sotto la tabella', () => {
@@ -130,67 +177,158 @@ describe('Offesa: Generale', () => {
     expect(screen.queryByRole('button', { name: /^(Coverage tipi|Coverage meta)/ })).toBeNull();
   });
 
-  it('membro che il motore non conosce: la riga resta con "—"', () => {
-    const t = [team[0], { ...emptySet('Notamon'), moves: ['Tackle'] }];
-    view(t);
-    const rows = document.querySelectorAll('.def-members tbody tr');
-    expect(rows).toHaveLength(2);
-    expect(within(rows[1] as HTMLElement).getAllByText('—').length).toBeGreaterThan(0);
-  });
-
-  it('un solo membro', () => {
-    view([team[0]]);
-    expect(document.querySelectorAll('.def-members tbody tr')).toHaveLength(1);
-    expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
-  });
-
-  it('squadra aperta: tre barre col numero (voto tipi, voto meta, voto del membro), niente dettagli; il titolo dice il conto', () => {
+  it('ogni membro: badge OHKO e 2HKO sul meta e sui 18 tipi, col conto dei bersagli dal colpo semplice (spenti a zero); poi la sua barra Offesa col titolo', () => {
     const rating = withMeta();
-    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
-    const rows = document.querySelectorAll('.def-members tbody tr');
-    rating.offense.members.forEach((m, i) => {
-      const cells = rows[i].querySelectorAll('td');
-      expect(cells[0]).toHaveTextContent(new RegExp(`^${m.value}$`));
-      expect(cells[1]).toHaveTextContent(new RegExp(`^${m.coverMeta}%$`));
+    view(team, rating);
+    const rows = memberRows();
+    expect(rows).toHaveLength(2);
+    const slots = offenseSlots(team, rating.offense.members);
+    rows.forEach((row, slot) => {
+      const i = slots[slot]!;
+      const m = rating.offense.members[i];
+      const cells = row.querySelectorAll('td');
+      expect(cells).toHaveLength(3);
+      expectBadges(cells[0], metaHits(rating, slot));
+      expectBadges(cells[1], typeHits(rating, i));
+      // Niente più barre né tooltip del browser nelle caselle Meta e Tipi
+      for (const c of [cells[0], cells[1]]) {
+        expect(c.querySelector('.def-bar')).toBeNull();
+        expect(c.querySelector('[title]')).toBeNull();
+      }
       expect(cells[2]).toHaveTextContent(new RegExp(`^${m.total}$`));
-      cells.forEach(c => expect(c.querySelector('.def-bar')).not.toBeNull());
       expect(cells[2].querySelector('.og-own')!.getAttribute('title')).toBe(`Offesa del membro da solo: ${m.total} (soprattutto contro i tipi, un po' contro il meta)`);
     });
+    // A squadra aperta niente dettagli sotto la barra
     expect(document.querySelector('.og-detail')).toBeNull();
   });
 
-  it('squadra chiusa: sotto le barre i tipi per fascia, i Pokémon del meta mandati KO e i punti che porta al team', () => {
-    const rating = withMeta();
-    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} roomy />);
-    const rows = document.querySelectorAll('.def-members tbody tr');
-    rating.offense.members.forEach((m, i) => {
-      const cells = rows[i].querySelectorAll('td');
-      const s = rating.offense.shares[i];
-      expect(cells[0].querySelector('.og-detail')).toHaveTextContent(`OHKO ${s.types.ohko}Forti ${s.types.strong}Contano ${s.types.counts}`);
-      expect(cells[1].querySelector('.og-detail')).toHaveTextContent(`${s.meta!.covered}/${s.meta!.total}`);
-      expect(cells[2].querySelector('.og-points')!.textContent).toBe(`+${s.points}`);
+  it('senza meta: solo i badge dei tipi e la barra Offesa', () => {
+    const rating = noMeta();
+    view(team, rating);
+    memberRows().forEach((row, i) => {
+      const cells = row.querySelectorAll('td');
+      expect(cells).toHaveLength(2);
+      expectBadges(cells[0], typeHits(rating, i));
+      expect(cells[1]).toHaveTextContent(new RegExp(`^${rating.offense.members[i].total}$`));
     });
   });
 
-  it('la riga in fondo si chiama Team Coverage e ha i voti del team', () => {
-    const rating = withMeta();
-    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
-    const foot = document.querySelector('.def-members tfoot tr')!;
-    expect(foot.querySelector('th')).toHaveTextContent('Team Coverage');
-    expect([...foot.querySelectorAll('td')].map(c => c.textContent)).toEqual([String(rating.offense.types.value), `${rating.offense.coverageMeta!.value}%`, String(rating.offense.value)]);
-  });
-
-  it('il titolo dei punti dice che setup e Tera sono già dentro', () => {
+  it('col setup che fa salire di fascia, il badge ha "+N" e il tooltip la riga "Dopo <mossa>, in più"', async () => {
+    const user = userEvent.setup();
     const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
     const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
     const rating = rateTeam(t, gen9, 'it')!;
-    renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} roomy />);
-    const m = rating.offense.members[0];
-    expect(m.setupGain).toBeGreaterThan(0);
-    const cell = document.querySelector('.def-members tbody tr td:last-child .og-points')!;
-    expect(cell.getAttribute('title')).toContain(`+${rating.offense.shares[0].points}`);
-    expect(cell.getAttribute('title')).toContain(gameName('move', 'Swords Dance', 'it'));
-    if (m.oneUseGain > 0) expect(cell.getAttribute('title')).toContain(`Tera ${typeName('Dark', 'it')}`);
+    renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
+    expect(rating.offense.members[0].setupMove).toBe('Swords Dance');
+    const types = memberRows()[0].querySelectorAll('td')[rating.offense.coverageMeta ? 1 : 0];
+    const c = expectBadges(types, typeHits(rating, 0));
+    // Kingambit con Danza Spada manda KO qualche tipo in più: il test ha senso solo se succede
+    expect(c.setupOhko + c.setupTwo).toBeGreaterThan(0);
+    const band = c.setupOhko > 0 ? 'ohko' : 'two';
+    await user.hover(types.querySelector(`.kob.${band}`)!);
+    const tip = await tipOf();
+    const move = gameName('move', 'Swords Dance', 'it');
+    const extra = [...tip.querySelectorAll('.kot-extra')].find(e => e.textContent!.includes(move))!;
+    expect(extra.querySelector('.kot-extra-h')).toHaveTextContent(`Dopo ${move}, in più`);
+    expect(extra.querySelectorAll('.kot-type')).toHaveLength(band === 'ohko' ? c.setupOhko : c.setupTwo);
+  });
+
+  it('passando su un badge si apre il tooltip DreamDex coi bersagli: i tipi con icona e nome, le minacce con la sprite', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    view(team, rating);
+    const cells = memberRows()[0].querySelectorAll('td');
+    const types = count(typeHits(rating, 0));
+    const band = types.ohko > 0 ? 'ohko' : 'two';
+    expect(types[band]).toBeGreaterThan(0);
+    const badge = cells[1].querySelector(`.kob.${band}`)!;
+    await user.hover(badge);
+    let tip = await tipOf();
+    expect(tip).toHaveAttribute('aria-hidden', 'true');
+    expect(tip.querySelector('.kot-head')).toHaveTextContent('Great Tusk');
+    expect(tip.querySelector('.kot-head')).toHaveTextContent('tipi su 18');
+    const list = mainList(tip)!;
+    expect(list.querySelectorAll('.kot-type')).toHaveLength(types[band]);
+    expect(list.querySelector('.kot-type img')).not.toBeNull();
+    await user.unhover(badge);
+    expect(document.querySelector('.ftip')).toBeNull();
+    // Il meta: le minacce come sprite
+    const meta = count(metaHits(rating, 0));
+    const mBand = meta.ohko > 0 ? 'ohko' : 'two';
+    expect(meta[mBand]).toBeGreaterThan(0);
+    await user.hover(cells[0].querySelector(`.kob.${mBand}`)!);
+    tip = await tipOf();
+    expect(tip.querySelector('.kot-head')).toHaveTextContent(`minacce su ${rating.offense.coverageMeta!.rows.length}`);
+    expect(mainList(tip)).toHaveClass('mons');
+    expect(mainList(tip)!.querySelectorAll('.kot-mon')).toHaveLength(meta[mBand]);
+  });
+
+  it('la riga Team Coverage: per ogni bersaglio il membro migliore, poi "✓ tutti" o "Scoperti N" in rosso col tooltip; in fondo la barra del team', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    view(team, rating);
+    const foot = document.querySelector('.def-members tfoot tr.og-total')!;
+    expect(foot.querySelector('th')).toHaveTextContent('Team Coverage');
+    const cells = foot.querySelectorAll('td');
+    expect(cells).toHaveLength(3);
+    const per = [best([metaHits(rating, 0), metaHits(rating, 1)]), best([typeHits(rating, 0), typeHits(rating, 1)])];
+    for (const [k, hits] of per.entries()) {
+      expectBadges(cells[k], hits);
+      const open = hits.filter(h => h.plain < 50).length;
+      if (open === 0) {
+        expect(cells[k].querySelector('.kob-ok')).toHaveTextContent('✓ tutti');
+        expect(cells[k].querySelector('.kob.bad')).toBeNull();
+      } else {
+        const bad = cells[k].querySelector('.kob.bad')!;
+        expect(bad).toHaveTextContent(`Scoperti${open}`);
+        expect(cells[k].querySelector('.kob-ok')).toBeNull();
+        await user.hover(bad);
+        const tip = await tipOf();
+        expect(tip.querySelector('.kot-head')).toHaveTextContent('Nessuno li manda KO in due colpi');
+        expect(mainList(tip)!.children).toHaveLength(open);
+        await user.unhover(bad);
+      }
+    }
+    expect(cells[2]).toHaveTextContent(new RegExp(`^${rating.offense.value}$`));
+    expect(cells[2].querySelector('.def-bar')).not.toBeNull();
+  });
+
+  it('membro che il motore non conosce: la riga resta con "—" e senza badge', () => {
+    const t = [team[0], { ...emptySet('Notamon'), moves: ['Tackle'] }];
+    view(t);
+    const rows = memberRows();
+    expect(rows).toHaveLength(2);
+    expect([...rows[1].querySelectorAll('td')].map(c => c.textContent)).toEqual(['—', '—', '—']);
+    expect(rows[1].querySelector('.kob')).toBeNull();
+  });
+
+  it('un solo membro: la riga del team ha i suoi stessi badge, e la riga vuota tiene il team in fondo', () => {
+    const rating = withMeta();
+    view([team[0]], rating);
+    expect(memberRows()).toHaveLength(1);
+    const fill = document.querySelector('.def-members tbody tr.og-fill')!;
+    expect(fill).toHaveAttribute('aria-hidden', 'true');
+    expect(fill.querySelector('td')).toHaveAttribute('colspan', '4');
+    expect(document.querySelector('.def-members tbody')!.lastElementChild).toBe(fill);
+    const labels = (cell: Element) => [...cell.querySelectorAll('.kob.ohko, .kob.two')].map(b => b.getAttribute('aria-label'));
+    const row = memberRows()[0].querySelectorAll('td');
+    const foot = document.querySelectorAll('.def-members tfoot td');
+    expect(labels(foot[0])).toEqual(labels(row[0]));
+    expect(labels(foot[1])).toEqual(labels(row[1]));
+    expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
+  });
+
+  it('squadra chiusa: accanto alla barra i punti che porta al team; niente tipi per fascia né Pokémon del meta mandati KO', () => {
+    const rating = withMeta();
+    view(team, rating, true);
+    memberRows().forEach((row, i) => {
+      const cells = row.querySelectorAll('td');
+      expect(cells[2].querySelector('.og-points')!.textContent).toBe(`+${rating.offense.shares[i].points}`);
+      expect(cells[0].querySelector('.kob.ohko')).not.toBeNull();
+    });
+    expect(document.querySelector('.og-bands')).toBeNull();
+    expect(document.querySelector('.og-meta')).toBeNull();
+    expect(document.querySelectorAll('.og-detail')).toHaveLength(2);
   });
 });
 

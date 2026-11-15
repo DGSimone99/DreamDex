@@ -32,17 +32,21 @@ describe("dettaglio dell'Offesa a schede", () => {
     // Solo la tabella dei membri: niente tessere sotto
     expect(within(panel).queryAllByRole('button')).toHaveLength(0);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Coverage tipi', 'Coverage meta', 'Offesa']);
-    const rows = [...table.querySelectorAll('tbody tr')] as HTMLElement[];
+    const headers = within(table).getAllByRole('columnheader').map(h => h.textContent);
+    expect(headers[0]).toBe('Pokémon');
+    expect(headers[1]).toMatch(/^Meta · \d+ minacce$/);
+    expect(headers.slice(2)).toEqual(['Tipi · 18', 'Offesa']);
+    const rows = [...table.querySelectorAll('tbody tr:not(.og-fill)')] as HTMLElement[];
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // Tre barre col numero: voto tipi, voto meta, voto del membro (i dettagli solo a squadra chiusa)
-      for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%?$/);
-      expect(cells[1]).toHaveTextContent(/%$/);
+      // Meta e Tipi: i badge OHKO e 2HKO col numero (e "+N" del setup); poi la barra col voto del membro
+      expect(cells).toHaveLength(3);
+      for (const cell of cells.slice(0, 2)) expect(cell).toHaveTextContent(/^OHKO\d+(\+\d+)?2HKO\d+(\+\d+)?$/);
+      expect(cells[2]).toHaveTextContent(/^\d+$/);
     }
-    // La riga Totale coi voti del team
-    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Team Coverage\d+\d+%\d+$/);
+    // La riga Team Coverage: i badge del team, "✓ tutti" o "Scoperti N", e il voto del team
+    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Team Coverage(OHKO\d+(\+\d+)?2HKO\d+(\+\d+)?(✓ tutti|Scoperti\d+)){2}\d+$/);
   });
 
   it('Coverage tipi: i 18 tipi, i buchi e quanto li colpisce ogni membro', async () => {
@@ -80,7 +84,10 @@ describe("dettaglio dell'Offesa a schede", () => {
   it('in inglese', async () => {
     const { dialog } = await openOffense('en');
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Meta coverage']);
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Type coverage', 'Meta coverage', 'Offense']);
+    const headers = within(dialog).getAllByRole('columnheader').map(h => h.textContent);
+    expect(headers[1]).toMatch(/^Meta · \d+ threats$/);
+    expect([headers[0], ...headers.slice(2)]).toEqual(['Pokémon', 'Types · 18', 'Offense']);
+    expect(document.querySelector('.def-members tfoot tr')).toHaveTextContent(/(✓ all|Uncovered\d+)/);
   });
 });
 

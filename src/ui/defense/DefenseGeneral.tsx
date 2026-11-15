@@ -117,6 +117,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 {roomy && <WorstAndRecovery hit={worstHit(i)} parts={m.sustainParts} />}
               </tr>
             ))}
+            {/* Riempie lo spazio che resta: la riga Team Coverage sta sempre in fondo, con 1 o con 6 membri */}
+            <tr className="og-fill" aria-hidden="true"><td colSpan={4 + (meta ? 1 : 0) + (roomy ? 2 : 0)} /></tr>
           </tbody>
           {/* In fondo la squadra intera, come la riga Team Coverage dell'Offesa: i voti delle sottoschede e la Difesa */}
           <tfoot>

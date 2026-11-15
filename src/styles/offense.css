@@ -84,3 +84,27 @@
 @media (max-height: 640px) {
   .def-general tfoot .og-total > * { padding-top: 4px; padding-bottom: 4px; }
 }
+
+/* Generale di Offesa e Difesa: la tabella riempie la cornice e una riga vuota prende lo spazio che resta, così la riga
+   Team Coverage sta sempre in fondo, allo stesso posto con 1 o con 6 membri */
+.def-general > .ad-scroll { flex: 1 1 auto; min-height: 0; }
+.def-general .def-members { height: 100%; }
+.def-general .def-members tr.og-fill { height: auto; }
+.def-general .def-members tr.og-fill td { padding: 0; border: 0; }
+
+/* Badge dei colpi (KoBadges): OHKO verde pieno, 2HKO bordo verde, a zero spenti; il setup come piccolo triangolo +N */
+.kob-row { display: inline-flex; align-items: center; gap: 6px; }
+.kob { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px 3px 8px; border: 1px solid; cursor: help;
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
+.kob em { font: 700 10px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
+.kob > b { min-width: 16px; text-align: right; font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
+.kob.ohko { color: var(--good); border-color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+.kob.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
+.kob.zero { opacity: 0.32; }
+.kob:hover { background: color-mix(in srgb, currentColor 26%, transparent); }
+.kob-setup { display: inline-flex; align-items: center; gap: 2px; margin-left: -2px; font: 700 11px/1 var(--display); color: var(--muted); }
+.kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
+.kob-team { display: inline-flex; align-items: center; gap: 10px; }
+.kob-ok { font: 600 12.5px/1 var(--display); color: var(--good); white-space: nowrap; }
+.off-general .og-total .kob > b { font-size: 19px; }
