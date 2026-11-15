@@ -533,9 +533,10 @@
 .dash.rich .sum-sec-more { top: 11px; }
 .sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
 /* Righe del Riassunto (meteo, trappole, sinergie) al passaggio: una luce azzurra sfumata su ogni lato, senza bordi né
-   forme; le sprite si alzano di 2px, nel core frecce e cerchi dei tipi si accendono */
+   forme, che finisce dentro la riga (closest-side: la lista taglia ciò che esce); le sprite si alzano di 2px, nel core
+   frecce e cerchi dei tipi si accendono */
 .sum-line, .sum-syn { position: relative; isolation: isolate; }
-.sum-line::before, .sum-syn::before { content: ""; position: absolute; inset: 1px 0; z-index: -1; background: radial-gradient(ellipse 65% 85% at 55% 50%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 100%); opacity: 0; transition: opacity 0.18s var(--ease); }
+.sum-line::before, .sum-syn::before { content: ""; position: absolute; inset: 1px 0; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 24%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
 .sum-line:hover, .sum-syn:hover { background: none; }
 .sum-line:hover::before, .sum-syn:hover::before { opacity: 1; }
 .sum-line:hover .sum-plinth .sprite, .sum-syn:hover .sum-pair-mon .sprite, .sum-syn:hover .sum-tri-v .sprite { transform: translateY(-2px); }
