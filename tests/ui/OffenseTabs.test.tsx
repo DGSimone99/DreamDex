@@ -569,15 +569,15 @@ describe('Offesa: Coverage meta', () => {
   };
   const table = () => within(screen.getByRole('tabpanel')).getByRole('table');
   const heads = () => [...table().querySelectorAll('thead th[aria-label]')].map(th => th.getAttribute('aria-label'));
-  const bodyRows = () => [...table().querySelectorAll('tbody tr')] as HTMLElement[];
+  const bodyRows = () => [...table().querySelectorAll('tbody tr:not(.og-fill)')] as HTMLElement[];
 
-  it('una riga per membro, 8 bersagli per pagina dal meno coperto, e la riga Lo coprono', async () => {
+  it('una riga per membro, 8 bersagli per pagina dal meno coperto, e in fondo la riga Team Coverage con Lo coprono', async () => {
     const { user, sorted } = await open();
     expect(heads()).toEqual(sorted.slice(0, 8).map(r => r.species));
     const rows = bodyRows();
-    expect(rows).toHaveLength(team.length + 1);
-    expect(rows.slice(0, team.length).map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    expect(within(rows[rows.length - 1]).getByRole('rowheader')).toHaveTextContent('Lo coprono');
+    expect(rows).toHaveLength(team.length);
+    expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    expect(within(document.querySelector<HTMLElement>('tfoot tr.cm-total')!).getByRole('rowheader')).toHaveTextContent(/^Team CoverageLo coprono/);
     // Le pagine "‹ 1/N ›" nella casella in alto a sinistra, al posto di "Pokémon"
     const corner = table().querySelector<HTMLElement>('thead th.def-mon-h')!;
     expect(within(corner).getByRole('navigation', { name: 'Pagine dei bersagli' })).toHaveTextContent(`1/${Math.ceil(sorted.length / 8)}`);
@@ -668,21 +668,17 @@ describe('Offesa: Coverage meta', () => {
 
   it('Lo coprono conta chi lo manda KO in due colpi', async () => {
     const { sorted } = await open();
-    const rows = bodyRows();
-    const counts = [...rows[rows.length - 1].querySelectorAll('td')].map(td => Number(td.textContent));
+    const counts = [...document.querySelectorAll('tfoot tr.cm-total td')].map(td => Number(td.querySelector('.ct-pill')!.firstChild!.textContent));
     expect(counts).toEqual(sorted.slice(0, 8).map(r => r.cells!.filter(c => c.pct >= 50).length));
   });
 
-  it('i conteggi in alto: coperti, solo 3HKO, scoperti', async () => {
-    const { rating } = await open();
-    const rows = rating.offense.coverageMeta!.rows;
-    const covered = rows.filter(r => r.level > 0).length;
-    const only3 = rows.filter(r => r.level === 0 && r.cells!.some(c => c.pct >= 34)).length;
-    const summary = document.querySelector('.cm-summary')!;
-    expect(summary).toHaveTextContent(`${rows.length} bersagli`);
-    expect(summary).toHaveTextContent(`${covered} coperti`);
-    expect(summary).toHaveTextContent(`${only3} solo 3HKO`);
-    expect(summary).toHaveTextContent(`${rows.length - covered - only3} scoperti`);
+  it('la riga Team Coverage in fondo: la linguetta e le pastiglie di Lo coprono, niente barra né conteggi', async () => {
+    await open();
+    const row = document.querySelector('tfoot tr.cm-total')!;
+    expect(row.querySelector('.og-plate')).toHaveTextContent('Team Coverage');
+    expect(row.querySelectorAll('td .ct-pill').length).toBeGreaterThan(0);
+    expect(document.querySelector('.cm-summary')).toBeNull();
+    expect(document.querySelector('.def-walls .kob-row')).toBeNull();
     expect(screen.getByRole('tabpanel')).not.toHaveTextContent(/un quarto/);
   });
 
@@ -694,7 +690,7 @@ describe('Offesa: Coverage meta', () => {
     for (let p = 0; p < Math.floor(ghost / 8); p++) await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
     const rows = bodyRows();
     expect(rows[0].querySelectorAll('td')[ghost % 8].querySelector('.wall-pct')!.textContent).toBe('0%');
-    expect(rows[rows.length - 1].querySelectorAll('td')[ghost % 8]).toHaveTextContent('0');
+    expect(document.querySelectorAll('tfoot tr.cm-total td')[ghost % 8]).toHaveTextContent('0');
   });
 
   it('un membro che il motore non conosce resta con "—"', async () => {
@@ -709,7 +705,6 @@ describe('Offesa: Coverage meta', () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
     await user.click(screen.getByRole('tab', { name: /^Meta coverage/ }));
-    expect(within(table()).getByRole('rowheader', { name: 'Covered by' })).toBeInTheDocument();
-    expect(document.querySelector('.cm-summary')).toHaveTextContent(/3HKO only/);
+    expect(within(table()).getByRole('rowheader', { name: /^Team Coverage\s*Covered by/ })).toBeInTheDocument();
   });
 });

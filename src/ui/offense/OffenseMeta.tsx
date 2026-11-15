@@ -41,7 +41,7 @@ const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * 8 per pagina dal meno coperto (a pari livello il più usato). In ogni casella il danno % del colpo semplice (senza
  * Tera, Z e setup) colorato per soglia, con "setup N%" quando la danza cambia soglia; in fondo "Lo coprono" conta chi
  * lo manda KO in due colpi. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra, al posto di "Pokémon";
- * in alto a destra la legenda dei colori e il riepilogo. Sulla casella il tooltip DreamDex (minaccia, colpi, mossa, setup);
+ * in alto a destra la legenda dei colori, in fondo la riga Team Coverage (Lo coprono, la barra del team cliccabile). Sulla casella il tooltip DreamDex (minaccia, colpi, mossa, setup);
  * sulla sprite in testata la carta del Pokémon col suo set più usato.
  * In alto a sinistra ×2 (o ×4) se è superefficace la mossa che fa il danno della casella (il triangolino del setup sta in
  * alto a destra, quello del meteo del team in basso a destra); "Solo superefficaci" (`ctx.effOnly`) spegne le altre caselle.
@@ -118,7 +118,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     );
   };
 
-  const body = (shown: Row[], pager: ReactNode, counts: ReactNode) => (
+  const body = (shown: Row[], pager: ReactNode) => (
     <div className={`def-frame off-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid spaced ct-table" onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }}>
@@ -151,21 +151,29 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                 </tr>
               );
             })}
-            <tr className="ct-sum ct-sum-first">
-              <th scope="row" onMouseEnter={hover.table.onMouseLeave}>{t('odetail.cm.coveredBy')}</th>
+            {/* Riempie lo spazio che resta: la riga Team Coverage sta sempre in fondo, come nella Generale */}
+            <tr className="og-fill" aria-hidden="true"><td colSpan={shown.length + 1} /></tr>
+          </tbody>
+          {/* In fondo la riga Team Coverage, come nella Generale e allo stesso posto: nelle colonne quanti membri le coprono */}
+          <tfoot>
+            <tr className="og-total cm-total">
+              <th scope="row" onMouseEnter={hover.table.onMouseLeave}>
+                <span className="og-plate">{t('odetail.gen.total')}</span>
+                <span className="visually-hidden">{t('odetail.cm.coveredBy')}</span>
+              </th>
               {shown.map((r, k) => {
                 const n = (r.cells ?? []).filter(c => c.pct >= 50).length;
-                return <td key={r.species} className={hover.cls(k)} {...hover.enter(k)}><span className={`ct-pill ${coverTone(n)}`}>{n}</span></td>;
+                return <td key={r.species} className={hover.cls(k)} {...hover.enter(k)}><span className={`ct-pill ${coverTone(n)}`}>{n}<span className="visually-hidden"> {t('odetail.cm.coveredBy')}</span></span></td>;
               })}
             </tr>
-          </tbody>
+          </tfoot>
         </table>
       </div>
       {tipCell(shown)}
       {card.tip}
       <div className="rob-legend cm-foot">{focus
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
-        : <span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>}{counts}</div>
+        : <span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>}</div>
     </div>
   );
 
@@ -180,10 +188,9 @@ function OffenseMetaLegend() {
     <>
       <span className="cm-ko small">KO</span>
       {KO_ORDER.filter(b => b !== 'ohko').map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
-      <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
       <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
       <span className="wall-legend-setup"><i className="kob-tri team" />{t('kob.legendTeam')}</span>
-      <span className="wall-legend-setup"><span className="cm-hp-bar legend"><i className="good" style={{ width: '60%' }} /></span>{t('odetail.wall.legendHp')}</span>
+
     </>
   );
 }
