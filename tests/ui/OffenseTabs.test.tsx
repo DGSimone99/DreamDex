@@ -677,7 +677,7 @@ describe('Offesa: Coverage meta', () => {
     const { rating } = await open();
     const rows = rating.offense.coverageMeta!.rows;
     const best = rows.map(r => Math.max(0, ...r.cells!.map(c => c.pct)));
-    const bar = document.querySelector('.cm-total .kob-row')!;
+    const bar = document.querySelector('.cm-teambar .kob-row')!;
     const n = (sel: string) => Number(bar.querySelector(`${sel} .kob-num b`)?.textContent ?? 0);
     expect(n('.kob.ohko')).toBe(best.filter(p => p >= 100).length);
     expect(n('.kob.two')).toBe(best.filter(p => p >= 50 && p < 100).length);
@@ -715,7 +715,7 @@ describe('Offesa: Coverage meta', () => {
     await user.click(screen.getByRole('tab', { name: /^Meta coverage/ }));
     expect(within(table()).getByRole('rowheader', { name: /^Team Coverage\s*Covered by/ })).toBeInTheDocument();
     // La barra del team in fondo: gli scoperti in inglese nel nome accessibile
-    const rest = document.querySelector('.cm-total .kob.rest');
+    const rest = document.querySelector('.cm-teambar .kob.rest');
     if (rest) expect(rest.getAttribute('aria-label')).toMatch(/^Uncovered [0-9]+$/);
   });
 });
