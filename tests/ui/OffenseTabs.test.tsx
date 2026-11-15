@@ -241,6 +241,25 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.kf-note')).toBeNull();
   });
 
+  it('clic sul pezzo grigio: Coverage tipi coi tipi che il membro non manda KO in due colpi accesi; un clic in qualunque punto li spegne', async () => {
+    const user = userEvent.setup();
+    const rating = noMeta();
+    view(team, rating);
+    const slots = offenseSlots(team, rating.offense.members);
+    const slot = slots.findIndex(i => i !== null && typeHits(rating, i).some(h => h.plain < 50));
+    const n = typeHits(rating, slots[slot]!).filter(h => h.plain < 50).length;
+    const rest = memberRows()[slot].querySelectorAll('td')[0].querySelector<HTMLElement>('.kob.rest')!;
+    expect(rest).toHaveAttribute('role', 'button');
+    await user.click(rest);
+    expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(document.querySelectorAll('td.kf-hit')).toHaveLength(n);
+    expect(document.querySelector('.kf-note')).toHaveTextContent(/non manda KO in due colpi/);
+    // Un clic qualunque (qui sulla testata della tabella) spegne l'evidenziazione
+    await user.click(document.querySelector<HTMLElement>('.ct-table thead th')!);
+    expect(document.querySelector('td.kf-hit')).toBeNull();
+    expect(document.querySelector('.kf-note')).toBeNull();
+  });
+
   it('senza meta: solo i badge dei tipi e la barra Offesa', () => {
     const rating = noMeta();
     view(team, rating);
@@ -452,7 +471,9 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
     expect(tip.textContent).not.toContain('%');
     expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-name')!.textContent);
-    await user.unhover(cell);
+    // Uscendo dalla casella (anche verso il nome del membro, dentro la tabella) il tooltip si chiude
+    await user.hover(document.querySelector<HTMLElement>('.ct-table tbody th')!);
+    expect(document.querySelector('body > .ftip.tht')).toBeNull();
   });
 
   it('ogni casella è il danno del membro: verde da 66% (credito da metà), gialla oltre il 33%, vuota sotto', async () => {

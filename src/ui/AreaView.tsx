@@ -55,6 +55,13 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   const openFocus = (key: string, next: KoFocus) => { focusKey.current = key; setPickedRaw(key); setFocus(next); };
+  // Un clic in qualunque punto spegne l'evidenziazione (anche fuori da "Mostra tutti"); il clic che l'ha accesa è già passato
+  useEffect(() => {
+    if (!focus) return;
+    const clear = () => setFocus(null);
+    const timer = window.setTimeout(() => document.addEventListener('click', clear, { once: true }), 0);
+    return () => { window.clearTimeout(timer); document.removeEventListener('click', clear); };
+  }, [focus]);
   // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
   const [effOnly, setEffOnly] = useState<Partial<Record<AreaKey, boolean>>>({});
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)

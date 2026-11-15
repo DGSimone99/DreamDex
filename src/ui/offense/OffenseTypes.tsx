@@ -11,7 +11,7 @@ import { MemberMon } from '../defense/MemberMon';
 import { TypeIcons } from '../typeIcons';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
-import { FocusNote, koBandOf } from './KoBadges';
+import { FocusNote, inBand, koBandOf } from './KoBadges';
 import { TypeHitTip } from './TypeHitTip';
 import { offenseSlots } from './slots';
 
@@ -96,8 +96,8 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                     const rank = (pct: number | null | undefined) => { const b = pct == null ? null : koBandOf(pct); return b === 'ohko' ? 2 : b === 'two' ? 1 : 0; };
                     const lifted = !!found && found.setupPct !== null && rank(found.setupPct) > rank(found.plainPct);
                     return (
-                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && koBandOf(found.plainPct) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
-                        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.close(); }}>
+                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
+                        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.close(); }} onMouseLeave={tip.close}>
                         {hit && <>
                           <span className="ct-num">{hit.pct}<i>%</i></span>
                           <span className="visually-hidden"> {t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>

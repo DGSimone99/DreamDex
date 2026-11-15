@@ -57,7 +57,7 @@ const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };
 export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, alarm = false }: {
   bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
   /** Clic su un pezzo OHKO / 2HKO: apre il dettaglio su quei bersagli. */
-  onPick?: (band: KoBand) => void;
+  onPick?: (band: KoBand | 'rest') => void;
   alarm?: boolean;
 }) {
   const t = useT();
@@ -86,8 +86,9 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
         );
       })}
       {rest > 0 && (
-        <span className={`kob rest${restBad ? ' bad' : ''}`} style={{ flexGrow: rest }}
+        <span className={`kob rest${restBad ? ' bad' : ''}${onPick ? ' pick' : ''}`} style={{ flexGrow: rest }}
           onMouseEnter={e => tip.open('rest', e.currentTarget)} onMouseLeave={tip.close}
+          {...(onPick ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick('rest'); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick('rest'); } } } : {})}
           aria-label={`${restBad ? t('kob.uncovered') : t('kob.restAria')} ${rest}`}>
           <span className="kob-num"><b>{rest}</b></span>
         </span>
@@ -122,16 +123,18 @@ function Extra({ icon, label, children }: { icon?: ReactNode; label: string; chi
 
 /** Fascia di un danno % (null sotto il 2HKO): la stessa delle tessere della Generale. */
 export const koBandOf = bandOf;
+/** Il danno % sta nella fascia evidenziata? 'rest' = non KO in due colpi. */
+export const inBand = (pct: number, band: KoBand | 'rest') => (band === 'rest' ? bandOf(pct) === null : bandOf(pct) === band);
 
 /**
  * Nella riga bassa di Coverage tipi / meta, al posto della legenda mentre una tessera della Generale tiene acceso un
  * dettaglio: chi e quale fascia sono evidenziati, e "Mostra tutti" per spegnerlo.
  */
-export function FocusNote({ name, band, onClear }: { name: string; band: KoBand; onClear?: () => void }) {
+export function FocusNote({ name, band, onClear }: { name: string; band: KoBand | 'rest'; onClear?: () => void }) {
   const t = useT();
   return (
     <span className="kf-note">
-      <span>{t('kob.focus', { name, band: t(band === 'ohko' ? 'kob.bandOhko' : 'kob.bandTwo') })}</span>
+      <span>{band === 'rest' ? t('kob.focusRest', { name }) : t('kob.focus', { name, band: t(band === 'ohko' ? 'kob.bandOhko' : 'kob.bandTwo') })}</span>
       {onClear && <button type="button" className="kf-clear" onClick={onClear}>{t('kob.focusClear')}</button>}
     </span>
   );

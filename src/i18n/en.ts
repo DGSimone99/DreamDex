@@ -823,6 +823,7 @@ export const en = {
   'kob.ofTypes': "types out of 18",
   'kob.headMeta': "Meta",
   'kob.headTypes': "Types",
+  'kob.focusRest': "Highlighted: the targets {name} doesn't KO in two hits",
   'kob.focus': "Highlighted: the targets {name} KOs in {band}",
   'kob.focusClear': "Show all",
   'kob.bandOhko': "one hit (OHKO)",

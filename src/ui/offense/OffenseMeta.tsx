@@ -7,7 +7,7 @@ import { MemberMon } from '../defense/MemberMon';
 import { MetaCount, MetaFrame } from '../MetaFrame';
 import { PokemonIcon } from '../PokemonName';
 import { ColName, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
-import { FocusNote, koBandOf } from './KoBadges';
+import { FocusNote, inBand, koBandOf } from './KoBadges';
 
 type Row = NonNullable<TeamOffense['coverageMeta']>['rows'][number];
 type Bucket = 'ohko' | 'two' | 'three' | 'none';
@@ -35,7 +35,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   // Aperta da una tessera della Generale: la riga del membro e le minacce di quella fascia accese, e prima nell'ordine
   // (così stanno nella prima pagina); il resto spento
   const focus = ctx.focus?.kind === 'meta' ? ctx.focus : null;
-  const lit = (row: Row) => !!focus && koBandOf(Math.max(0, row.cells?.[focus.slot]?.pct ?? 0)) === focus.band;
+  const lit = (row: Row) => !!focus && inBand(Math.max(0, row.cells?.[focus.slot]?.pct ?? 0), focus.band);
   const sorted = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
   const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))] : sorted;
   const covered = rows.filter(r => r.level > 0).length;
