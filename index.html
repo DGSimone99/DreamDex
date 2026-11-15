@@ -11,16 +11,26 @@
       #boot { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 28px;
         background: #101219; color: #f2f4ff; font: 500 15px system-ui, sans-serif; transition: opacity 0.25s ease-out; }
       #boot.gone { opacity: 0; pointer-events: none; }
-      #boot .boot-logo svg { display: block; width: min(320px, 70vw); height: auto; }
+      /* Il font della scritta "DreamDex" anche per la scritta di caricamento, caricato subito con la pagina */
+      @font-face { font-family: 'Kanit Boot'; font-style: italic; font-weight: 800; font-display: block;
+        src: url('./node_modules/@fontsource/kanit/files/kanit-latin-800-italic.woff2') format('woff2'); }
+      /* overflow visibile: mentre gira il simbolo esce di qualche pixel dal riquadro e altrimenti si taglia */
+      #boot .boot-logo svg { display: block; width: min(320px, 70vw); height: auto; overflow: visible; }
       #boot .boot-eevee { width: min(220px, 50vw); }
       #boot .boot-eevee svg { display: block; width: 100%; height: auto; transform-origin: 50% 100%; animation: boot-breathe 2.6s ease-in-out infinite; }
       /* Il simbolo gira a scatti (un giro, una pausa) come una Poké Ball che dondola: la scritta resta ferma */
       #boot .boot-mark { transform-box: view-box; transform-origin: 62px 60px; animation: boot-spin 1.5s cubic-bezier(0.65, 0, 0.3, 1) infinite; }
-      #boot .boot-text { margin: 0; color: #aeb3cc; letter-spacing: 0.02em; }
+      /* La scritta: maiuscola, nel corsivo del logo; le lettere saltano una alla volta mentre il simbolo è fermo (stesso giro di 1.5s) */
+      #boot .boot-text { margin: 0; padding-top: 8px; color: #c9cde2; font: italic 800 22px 'Kanit Boot', 'Kanit', system-ui, sans-serif;
+        letter-spacing: 0.14em; text-transform: uppercase; }
+      #boot .boot-text span { display: inline-block; animation: boot-hop 1.5s ease-in-out infinite; animation-delay: calc(0.85s + var(--i) * 45ms); }
+      /* Se l'avvio non riesce il messaggio torna nel testo normale e tutto si ferma */
+      #boot.failed .boot-text { padding-top: 0; color: #aeb3cc; font: 500 15px system-ui, sans-serif; letter-spacing: 0.02em; text-transform: none; }
       #boot.failed .boot-eevee svg, #boot.failed .boot-mark { animation: none; }
       @keyframes boot-spin { 0% { transform: rotate(0); } 60%, 100% { transform: rotate(360deg); } }
       @keyframes boot-breathe { 50% { transform: scale(1.015, 1.045); } }
-      @media (prefers-reduced-motion: reduce) { #boot, #boot .boot-eevee svg, #boot .boot-mark { transition: none; animation: none; } }
+      @keyframes boot-hop { 0% { transform: translateY(0); } 11% { transform: translateY(-7px); } 22%, 100% { transform: translateY(0); } }
+      @media (prefers-reduced-motion: reduce) { #boot, #boot .boot-eevee svg, #boot .boot-mark, #boot .boot-text span { transition: none; animation: none; } }
     </style>
   </head>
   <body>
@@ -32,6 +42,17 @@
     <script>
       // Lingua scelta l'ultima volta (la stessa chiave di src/storage.ts), prima che parta l'app
       try { if (JSON.parse(localStorage.getItem('dreamdex.lang')) === 'en') { document.documentElement.lang = 'en'; document.querySelector('#boot .boot-text').textContent = 'Loading…'; } } catch (e) {}
+      // Una lettera per pezzo, così ognuna salta per conto suo (chi usa un lettore di schermo sente la parola intera)
+      (function () {
+        var p = document.querySelector('#boot .boot-text'), word = p.textContent;
+        p.setAttribute('aria-label', word);
+        p.textContent = '';
+        Array.from(word).forEach(function (c, i) {
+          var s = document.createElement('span');
+          s.textContent = c; s.style.setProperty('--i', i); s.setAttribute('aria-hidden', 'true');
+          p.appendChild(s);
+        });
+      })();
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
