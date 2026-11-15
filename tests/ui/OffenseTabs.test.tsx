@@ -189,7 +189,7 @@ describe('Offesa: Generale', () => {
     expect(screen.queryByRole('button', { name: /^(Coverage tipi|Coverage meta)/ })).toBeNull();
   });
 
-  it('ogni membro: badge OHKO e 2HKO sul meta e sui 18 tipi, col conto dei bersagli dal colpo semplice (spenti a zero); poi la sua barra Offesa col titolo', () => {
+  it('ogni membro: badge OHKO e 2HKO sul meta e sui 18 tipi, col conto dei bersagli dal colpo semplice (spenti a zero); poi quanto porta al team col titolo', () => {
     const rating = withMeta();
     view(team, rating);
     const rows = memberRows();
@@ -207,8 +207,9 @@ describe('Offesa: Generale', () => {
         expect(c.querySelector('.def-bar')).toBeNull();
         expect(c.querySelector('[title]')).toBeNull();
       }
-      expect(cells[2]).toHaveTextContent(new RegExp(`^${m.total}$`));
-      expect(cells[2].querySelector('.og-own')!.getAttribute('title')).toBe(`Offesa del membro da solo: ${m.total} (soprattutto contro i tipi, un po' contro il meta)`);
+      // Quanto porta al team, col voto da solo e le sue due metà nel title
+      expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
+      expect(cells[2].querySelector('.og-share')!.getAttribute('title')).toBe(`Porta +${rating.offense.shares[i].points} all'Offesa del team (${rating.offense.value}). Da solo farebbe ${m.total}: tipi ${m.value}, meta ${m.coverMeta}`);
     });
     // A squadra aperta niente dettagli sotto la barra
     expect(document.querySelector('.og-detail')).toBeNull();
@@ -240,7 +241,7 @@ describe('Offesa: Generale', () => {
       const cells = row.querySelectorAll('td');
       expect(cells).toHaveLength(2);
       expectBadges(cells[0], typeHits(rating, i));
-      expect(cells[1]).toHaveTextContent(new RegExp(`^${rating.offense.members[i].total}$`));
+      expect(cells[1]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
     });
   });
 
@@ -351,12 +352,12 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
 
-  it('squadra chiusa: accanto alla barra i punti che porta al team; niente tipi per fascia né Pokémon del meta mandati KO', () => {
+  it('squadra chiusa: sotto la barra il voto da solo; niente tipi per fascia né Pokémon del meta mandati KO', () => {
     const rating = withMeta();
     view(team, rating, true);
     memberRows().forEach((row, i) => {
       const cells = row.querySelectorAll('td');
-      expect(cells[2].querySelector('.og-points')!.textContent).toBe(`+${rating.offense.shares[i].points}`);
+      expect(cells[2].querySelector('.og-alone')!.textContent).toBe(`${rating.offense.members[i].total}`);
       expect(cells[0].querySelector('.kob.ohko')).not.toBeNull();
     });
     expect(document.querySelector('.og-bands')).toBeNull();

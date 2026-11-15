@@ -54,7 +54,7 @@ describe("dettaglio dell'Offesa a schede", () => {
         expect(labels[0]).toMatch(/^OHKO \d+(, altri \d+ col setup)?(, il migliore della colonna)?$/);
         expect(labels[1]).toMatch(/^2HKO \d+(, altri \d+ col setup)?(, il migliore della colonna)?$/);
       }
-      expect(cells[2]).toHaveTextContent(/^\d+$/);
+      expect(cells[2]).toHaveTextContent(/^\+\d+$/);
     }
     // La riga Team Coverage: i badge del team, "✓ tutti" o "Scoperti N" (in rosso), e il voto del team
     const foot = table.querySelector('tfoot tr')!;
