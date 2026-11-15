@@ -24,6 +24,10 @@ export interface DetailTab { key: string; label: string; value: number | string 
   /** Il colore del valore (i Ruoli: rosso se manca un essenziale, giallo se mancano importanti). */
   valueTone?: 'bad' | 'warn';
   describe?: string;
+  /** La sezione della guida che apre il "?" quando la scheda la condivide con un'altra (l'Offesa: una guida per le due Coverage). */
+  guideKey?: string;
+  /** Il nome della sezione nella guida, se non è quello della scheda. */
+  guideLabel?: string;
   /** Pagine in più della guida dopo quella della scheda (i Ruoli: tipi di team, come si ottiene un ruolo). */
   guidePages?: { key: string; label: string; content: ReactNode }[] }
 

@@ -43,9 +43,11 @@ describe('Offesa: navigazione e guida', () => {
     const help = screen.getByRole('button', { name: 'Come funziona Coverage tipi' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Coverage tipi' })).toHaveAttribute('aria-selected', 'true');
+    // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in fondo
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Coverage']);
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent('Pokémon medio');
+    expect(panel).toHaveTextContent(/Bersagli.*Coverage tipi.*Coverage meta/);
     // La regola del credito nella riga del Colpo; quello che conta meno in una riga sola; niente righe della legenda
     expect(panel).toHaveTextContent('vale quanto il suo danno se lo manda KO in due colpi, sotto il 50% non conta');
     expect(panel).toHaveTextContent('Contano meno');
@@ -63,7 +65,11 @@ describe('Offesa: navigazione e guida', () => {
     renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
     expect(screen.queryByRole('button', { name: 'Come funziona Generale' })).toBeNull();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    expect(screen.getByRole('button', { name: 'Come funziona Coverage meta' })).toBeInTheDocument();
+    // Il "?" di Coverage meta apre la stessa pagina di Coverage tipi
+    await user.click(screen.getByRole('button', { name: 'Come funziona Coverage meta' }));
+    const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
+    expect(within(dialog).getByRole('tab', { name: 'Coverage' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Contano meno');
   });
 
   it('il Wallbreaking e la Potenza non compaiono più, né nelle schede né nella guida', async () => {

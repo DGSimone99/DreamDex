@@ -150,9 +150,10 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
     buttons.current[next]?.focus();
   };
 
-  const sections = tabs.filter(tab => tab.help).flatMap(tab => [{
+  // Una scheda con `guideKey` apre la sezione di un'altra: la sua non si ripete
+  const sections = tabs.filter(tab => tab.help && !tab.guideKey).flatMap(tab => [{
     key: tab.key,
-    label: tab.key === 'general' ? t('area.guide.general') : tab.label,
+    label: tab.guideLabel ?? (tab.key === 'general' ? t('area.guide.general') : tab.label),
     content: tab.help,
   }, ...(tab.guidePages ?? [])]);
 
@@ -180,7 +181,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         {current.help && (
           <span className="area-help" style={helpPlace}>
             <button ref={helpButton} type="button" className="help-button" aria-label={helpLabel}
-              title={helpLabel} onClick={() => openGuide(current.key)}>
+              title={helpLabel} onClick={() => openGuide(current.guideKey ?? current.key)}>
               <Icon name="help" />
             </button>
           </span>
