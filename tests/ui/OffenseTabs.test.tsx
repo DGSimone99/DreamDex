@@ -672,21 +672,13 @@ describe('Offesa: Coverage meta', () => {
     expect(counts).toEqual(sorted.slice(0, 8).map(r => r.cells!.filter(c => c.pct >= 50).length));
   });
 
-  it('la riga Team Coverage: la barra del team (OHKO, 2HKO, scoperti in rosso) sulle minacce; un clic su un pezzo le accende', async () => {
-    const user = userEvent.setup();
-    const { rating } = await open();
-    const rows = rating.offense.coverageMeta!.rows;
-    const best = rows.map(r => Math.max(0, ...r.cells!.map(c => c.pct)));
-    const bar = document.querySelector('.cm-teambar .kob-row')!;
-    const n = (sel: string) => Number(bar.querySelector(`${sel} .kob-num b`)?.textContent ?? 0);
-    expect(n('.kob.ohko')).toBe(best.filter(p => p >= 100).length);
-    expect(n('.kob.two')).toBe(best.filter(p => p >= 50 && p < 100).length);
-    expect(n('.kob.rest')).toBe(best.filter(p => p < 50).length);
-    if (n('.kob.rest')) expect(bar.querySelector('.kob.rest')).toHaveClass('bad');
-    const piece = bar.querySelector<HTMLElement>('.kob.ohko, .kob.two')!;
-    await user.click(piece);
-    expect(document.querySelector('.kf-note')).toHaveTextContent(/il team manda KO/);
-    expect(document.querySelectorAll('td.kf-hit').length).toBeGreaterThan(0);
+  it('la riga Team Coverage in fondo: la linguetta e le pastiglie di Lo coprono, niente barra né conteggi', async () => {
+    await open();
+    const row = document.querySelector('tfoot tr.cm-total')!;
+    expect(row.querySelector('.og-plate')).toHaveTextContent('Team Coverage');
+    expect(row.querySelectorAll('td .ct-pill').length).toBeGreaterThan(0);
+    expect(document.querySelector('.cm-summary')).toBeNull();
+    expect(document.querySelector('.def-walls .kob-row')).toBeNull();
     expect(screen.getByRole('tabpanel')).not.toHaveTextContent(/un quarto/);
   });
 
@@ -714,8 +706,5 @@ describe('Offesa: Coverage meta', () => {
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
     await user.click(screen.getByRole('tab', { name: /^Meta coverage/ }));
     expect(within(table()).getByRole('rowheader', { name: /^Team Coverage\s*Covered by/ })).toBeInTheDocument();
-    // La barra del team in fondo: gli scoperti in inglese nel nome accessibile
-    const rest = document.querySelector('.cm-teambar .kob.rest');
-    if (rest) expect(rest.getAttribute('aria-label')).toMatch(/^Uncovered [0-9]+$/);
   });
 });

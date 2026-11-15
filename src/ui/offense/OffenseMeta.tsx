@@ -13,7 +13,7 @@ import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { MetaCount, MetaFrame } from '../MetaFrame';
 import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
-import { FocusNote, inBand, KoBadges, koBands, koBandOf, type KoTarget } from './KoBadges';
+import { FocusNote, inBand, koBandOf } from './KoBadges';
 
 type Row = NonNullable<TeamOffense['coverageMeta']>['rows'][number];
 type Bucket = 'ohko' | 'two' | 'three' | 'none';
@@ -61,9 +61,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   // Aperta da una tessera della Generale: la riga del membro e le minacce di quella fascia accese, e prima nell'ordine
   // (così stanno nella prima pagina); il resto spento
   const focus = ctx.focus?.kind === 'meta' ? ctx.focus : null;
-  // Il danno sul bersaglio di un membro, o del team (slot -1: il migliore fra i membri)
-  const pctOf = (row: Row, slot: number) => (slot < 0 ? Math.max(0, ...(row.cells ?? []).map(c => c.pct)) : Math.max(0, row.cells?.[slot]?.pct ?? 0));
-  const lit = (row: Row) => !!focus && inBand(pctOf(row, focus.slot), focus.band);
+  const lit = (row: Row) => !!focus && inBand(Math.max(0, row.cells?.[focus.slot]?.pct ?? 0), focus.band);
   const sorted = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
   const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))] : sorted;
   const covered = rows.filter(r => r.level > 0).length;
@@ -90,7 +88,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
     const bothUp = !up && !teamUp && c.comboPct !== null && rank(c.comboPct) > rank(c.pct);
     return (
-      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? ((focus.slot < 0 ? lit(row) && (focus.band === 'rest' || inBand(c.pct, focus.band)) : m === focus.slot && lit(row)) ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { hover.enter(k0).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); }} onMouseLeave={tip.close}>
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
         {k === 'ohko'
@@ -120,15 +118,6 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     );
   };
 
-  // Il team su ogni minaccia del meta: il membro migliore (colpo semplice e col setup), per la barra della riga Team Coverage
-  const teamTargets: KoTarget[] = rows.map(row => {
-    const known = (row.cells ?? []).filter(c => c.pct >= 0);
-    const plain = Math.max(0, ...known.map(c => c.pct));
-    const setups = known.map(c => c.setupPct).filter((x): x is number => x !== null);
-    return { label: row.species, kind: 'mon', plain, setup: setups.length ? Math.max(plain, ...setups) : null, once: null };
-  });
-  const teamBands = koBands(teamTargets);
-
   const body = (shown: Row[], pager: ReactNode) => (
     <div className={`def-frame off-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
@@ -156,7 +145,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
             {ctx.team.map((set, m) => {
               const name = battleSpecies(set)?.name ?? set.species;
               return (
-                <tr key={`${name}-${m}`} className={focus && focus.slot >= 0 ? (m === focus.slot ? 'kf-row' : 'kf-off') : undefined}>
+                <tr key={`${name}-${m}`} className={focus ? (m === focus.slot ? 'kf-row' : 'kf-off') : undefined}>
                   <th scope="row" onMouseEnter={() => { hover.table.onMouseLeave(); tip.close(); }}><MemberMon name={name} set={set} stats="offense" /></th>
                   {shown.map((r, k) => cell(r, m, k))}
                 </tr>
@@ -180,16 +169,10 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           </tfoot>
         </table>
       </div>
-      {/* La barra del team (OHKO, 2HKO, scoperti in rosso) nell'angolo in basso a sinistra, opposta alla legenda: un clic
-          su un pezzo accende quelle minacce */}
-      <div className="cm-teambar">
-        <KoBadges bands={teamBands} who={t('odetail.gen.total')} of={t('kob.ofMeta', { n: rows.length })} total={rows.length} alarm
-          onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot: -1, band }))} />
-      </div>
       {tipCell(shown)}
       {card.tip}
       <div className="rob-legend cm-foot">{focus
-        ? <FocusNote name={focus.slot < 0 ? t('kob.theTeam') : battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+        ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>}</div>
     </div>
   );

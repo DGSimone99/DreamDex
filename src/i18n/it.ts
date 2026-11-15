@@ -826,7 +826,6 @@ export const it: Record<keyof typeof en, string> = {
   'kob.headMeta': "Meta",
   'kob.headTypes': "Tipi",
   'kob.focusRest': "Evidenziati: i bersagli che {name} non manda KO in due colpi",
-  'kob.theTeam': "il team",
   'kob.focus': "Evidenziati: i bersagli che {name} manda KO in {band}",
   'kob.focusClear': "Mostra tutti",
   'kob.bandOhko': "un colpo (OHKO)",

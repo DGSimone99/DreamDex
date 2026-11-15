@@ -282,7 +282,7 @@
 .tht-eff { display: inline; margin-left: 2px; font: 600 11px/1 var(--display); color: var(--faint); white-space: nowrap; }
 /* Coverage meta: la riga Team Coverage in fondo al pannello, allo stesso posto e alta come quella della Generale (la
    tabella riempie la cornice, la riga di riempimento prende lo spazio): la linguetta e nelle colonne le pastiglie di quanti
-   lo coprono. La barra del team sta fuori, nell'angolo in basso a sinistra sotto la tabella (opposta alla legenda) */
+   lo coprono (i numeri del team sono già nella Generale e nel titolo della sottoscheda) */
 .cm-matrix > .ad-scroll { flex: 1 1 auto; min-height: 0; }
 .cm-matrix .ct-table { height: 100%; }
 .cm-matrix .ct-table tr.og-fill { height: auto; }
@@ -291,15 +291,9 @@
 .cm-matrix tfoot .og-total th, .cm-matrix tfoot .og-total td { vertical-align: middle; }
 .cm-matrix tfoot .og-total td { text-align: center; }
 .cm-total td .ct-pill { display: inline-flex; align-items: center; justify-content: center; height: 22px; }
-.cm-teambar { position: absolute; left: 0; bottom: 0; width: 270px; transform: translateY(calc(100% + 2px)); }
-.cm-teambar .kob-row { width: 100%; min-width: 0; }
-.cm-teambar .kob-row > .kob { height: 20px; min-width: 52px; padding: 0 9px 0 8px; }
-.cm-teambar .kob-row > .kob.rest { min-width: 28px; }
-.cm-teambar .kob > em { font-size: 8.5px; }
-.cm-teambar .kob-num > b { font-size: 13px; }
 .ct-best-mon { cursor: help; }
 /* Il testo per i lettori di schermo resta fuori dal flusso anche dentro la riga Team Coverage */
 .cm-total th > .visually-hidden { position: absolute !important; }
 @media (min-width: 1100px) and (max-height: 640px) { .cm-matrix tfoot .og-total { height: 32px; } }
 /* Schermi bassi: sotto la tabella non c'è posto, la barra del team sta dentro la riga Team Coverage, sotto la linguetta */
-@media (min-width: 1100px) and (max-height: 640px) { .cm-teambar { bottom: 6px; width: 250px; transform: none; } .cm-teambar .kob-row > .kob { height: 18px; } }
+@media (min-width: 1100px) and (max-height: 640px) { 
