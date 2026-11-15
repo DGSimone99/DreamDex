@@ -98,9 +98,14 @@ describe('dettaglio della Difesa a schede', () => {
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Regge i tipi', 'Regge il meta', 'Sostenibilità', 'Difesa']);
-    const rows = within(table).getAllByRole('row').slice(1);
+    const all = within(table).getAllByRole('row');
+    const rows = all.slice(1, -1);
     expect(rows.map(r => within(r).getByRole('rowheader').querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%?( \(\+\d+\))?$/);
+    // In fondo la riga Team Coverage coi voti della squadra, come nell'Offesa
+    const total = all[all.length - 1];
+    expect(within(total).getByRole('rowheader')).toHaveTextContent('Team Coverage');
+    for (const cell of within(total).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+$/);
   });
 
   it('Coverage tipi: la regola (attaccante forte, 4HKO pieno, 3HKO a metà) sta nella guida, non sulla pagina', async () => {
