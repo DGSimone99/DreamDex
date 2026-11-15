@@ -408,6 +408,8 @@ const HOLD_FULL = 0.5;
 
 export interface ThreatRow {
   species: string;
+  /** Il set della minaccia (il più usato): per la carta del Pokémon sulla sprite in testata e il tipo della sua mossa. */
+  set: TeamSet;
   weight: number;
   /** Quanto è retta: 0–100, coi crediti dei membri al 50, 30 e 20%. */
   level: number;
@@ -554,7 +556,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
         if (!move) return bestAttackMultiplier(threat, types, battleAbility(member)) ?? 1;
         return moveAttackMultiplier(threat, move, types, battleAbility(member)) ?? 1;
       });
-      return { species: threat.species, weight, level: Math.round(100 * level), heldBy, mults };
+      return { species: threat.species, set: threat, weight, level: Math.round(100 * level), heldBy, mults };
     });
     coverageMeta = { value: softScore(total), unanswered: threatRows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows: threatRows };
   }

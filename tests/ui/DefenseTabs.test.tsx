@@ -262,7 +262,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Regge', async () => {
+  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Team Coverage', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
@@ -284,12 +284,15 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
         } else {
           expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));
           expect(cells[k]).toHaveClass(h.partial ? 'hold-3' : 'hold-4');
-          expect(cells[k].getAttribute('title')).toBe(`${r.species}: ${h.move} ${h.pct}%`);
+          // Il colpo per i lettori di schermo (a vista sta nel tooltip DreamDex), la barra dei PS che restano
+          expect(cells[k].querySelector('.visually-hidden')!.textContent!.trim()).toBe(`${r.species}: ${h.move} ${h.pct}%`);
+          expect(cells[k].querySelector('.cm-hp')).not.toBeNull();
         }
       });
     });
-    const held = within(table).getByRole('row', { name: /^Regge/ });
-    expect(within(held).getAllByRole('cell').map(c => c.textContent)).toEqual(expected.slice(0, 8).map(r => `${r.heldBy.filter(h => !h.partial).length}`));
+    // In fondo la riga Team Coverage, come nell'Offesa: quanti la reggono del tutto
+    const held = within(table).getByRole('row', { name: /^Team Coverage/ });
+    expect(within(held).getAllByRole('cell').map(c => c.querySelector('.ct-pill')!.firstChild!.textContent)).toEqual(expected.slice(0, 8).map(r => `${r.heldBy.filter(h => !h.partial).length}`));
     expect(panel.queryAllByRole('listitem')).toHaveLength(0);
     // Le pagine compatte "‹ 1/N ›" stanno nella casella in alto a sinistra della tabella, al posto di "Pokémon";
     // "successive" mostra le 8 dopo, "precedente" torna alla prima. Sotto la tabella una riga sola: legenda e conteggi
@@ -302,9 +305,9 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(within(pages).getByRole('button', { name: 'Minacce precedenti' })).toBeDisabled();
     expect(within(pages).getAllByRole('button')).toHaveLength(2);
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
-    expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toHaveTextContent(`${rows.length} minacce`);
-    // La legenda dei colori a sinistra nella stessa riga in fondo, i conteggi a destra
-    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('Danno subito');
+    // Come nell'Offesa: la legenda corta (KO, < 50%, 50–99%), niente conteggi
+    expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('KO< 50%50–99%');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));

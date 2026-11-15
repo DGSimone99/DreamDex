@@ -400,3 +400,12 @@
 .area-legend-swatch i.hold-4 { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .ftip.dht { width: 300px; }
 .dht-side { min-width: 64px; font: 600 12px/1 var(--ui); color: var(--muted); }
+
+/* Coverage meta della Difesa con la grafica dell'Offesa: numeri grandi in corsivo, barra dei PS che restano, timbro KO su
+   fondo chiaro (come le caselle KO dell'Offesa), efficacia in alto a sinistra per non coprire la barra */
+.def-meta-grid .rob-cell.dm-cell { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; cursor: help; }
+.def-meta-grid .wall-pct { display: block; }
+.def-meta-grid .rob-cell.dm-cell.hold-ohko { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); border-color: var(--bad); }
+.def-meta-grid .ct-table .eff-tag { top: 3px; bottom: auto; }
+@container (max-height: 330px) { .def-meta-grid .ct-table .eff-tag { top: auto; bottom: 2px; } }
+.def-meta-grid .dm-h { line-height: 1; }

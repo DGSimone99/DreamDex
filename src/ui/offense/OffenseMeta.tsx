@@ -23,7 +23,7 @@ const bucket = (pct: number): Bucket => (pct >= 100 ? 'ohko' : pct >= 50 ? 'two'
 const TAG: Record<Bucket, string> = { ohko: 'OHKO', two: '2HKO', three: '3HKO', none: '' };
 const KO_ORDER: Bucket[] = ['ohko', 'two', 'three'];
 /** I PS che restano al bersaglio dopo il colpo, coi colori del gioco: verde oltre metà, giallo fino a 1/5, rosso sotto. */
-function HpLeft({ pct }: { pct: number }) {
+export function HpLeft({ pct }: { pct: number }) {
   const left = Math.max(0, 100 - pct);
   const tone = left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
   return (
