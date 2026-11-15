@@ -16,7 +16,7 @@
    Le righe crescono fino a --rl-row-max per riempire il pannello; sugli schermi bassi restano a --rl-row-min. */
 .rl-general {
   --cols: 2; --rl-gap: 32px; --rl-pad: 12px; --rl-name: 11em; --rl-pts: 46px; --rl-slot: 40px;
-  --rl-head: 30px; --rl-row-min: 38px; --rl-row-max: 46px;
+  --rl-head: 30px; --rl-row-min: 36px; --rl-row-max: 46px;
 }
 .rl-general.three { --cols: 3; --rl-gap: 20px; --rl-pad: 6px; --rl-pts: 34px; --rl-slot: 30px; }
 
