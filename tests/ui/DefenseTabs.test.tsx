@@ -202,12 +202,13 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(screen.queryByRole('switch')).toBeNull();
   });
 
-  it("col puntatore la colonna si accende e sotto l'icona compare il nome del tipo", async () => {
+  it("col puntatore la colonna si accende; niente nome del tipo sotto l'icona né tooltip del browser", async () => {
     const user = userEvent.setup();
     const { table } = await openTypes();
     const fire = within(table).getByRole('columnheader', { name: /^Fire/ });
     await user.hover(fire);
-    expect(fire.querySelector('.col-name')).toHaveTextContent('Fire');
+    expect(fire.querySelector('.col-name')).toBeNull();
+    expect(fire).not.toHaveAttribute('title');
     expect(fire).toHaveClass('x-col');
   });
 

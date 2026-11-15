@@ -3,7 +3,7 @@ import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { bestAttackMultiplier, teamField, TYPES } from '../../engine/types';
-import { ColName, EffTag, effClass, effLabel } from '../effTag';
+import { EffTag, effClass, effLabel } from '../effTag';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
@@ -72,7 +72,6 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                   <th key={type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
                     onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <TypeIcons types={[type]} />
-                    {hover?.col === i && <ColName name={typeName(type, lang)} />}
                     <span className="ct-flag" aria-hidden="true" />
                     <span className="visually-hidden">{typeName(type, lang)}{hole && ` ${t('odetail.types.hole')}`}</span>
                   </th>

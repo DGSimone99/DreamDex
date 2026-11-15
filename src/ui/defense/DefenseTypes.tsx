@@ -6,7 +6,7 @@ import { weatherMitigations } from '../../engine/synergy';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
 import { mitigationNote } from '../AnalysisTables';
-import { ColName, EffTag, effClass, effLabel } from '../effTag';
+import { EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
@@ -60,7 +60,6 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                   <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
                     onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <TypeIcons types={[row.type]} />
-                    {hover?.col === i && <ColName name={typeName(row.type as TypeName, lang)} />}
                     <span className="ct-flag" aria-hidden="true" />
                     <span className="visually-hidden">{typeName(row.type as TypeName, lang)}{hole && ` ${t('analysis.shortfallSerious')}`}</span>
                   </th>
