@@ -42,12 +42,18 @@ const ROLES_WEIGHTS = { power: 0.5, wallbreaking: 0.35 };
  */
 export const OFFENSE_SHARES = { types: 0.5, meta: 0.5 };
 /**
- * Il credito di un colpo parte da qui: conta solo il danno sopra il 33% (chi non manda KO nemmeno in tre colpi non è una
- * risposta), pieno con l'OHKO. 50% vale 0,25, 66% vale 0,5. Così i team tipici restano dove stavano senza riferimenti.
+ * Il credito di un colpo è il suo danno vero (quota dei PS, al massimo 1), ma solo dal KO in due colpi: sotto il 50% vale 0.
+ * 50% vale 0,5, 80% vale 0,8, l'OHKO 1. Uguale nella Coverage del meta (2026-11-15, era: dal 33% in linea fino all'OHKO,
+ * 50% valeva 0,25): su 535 team National Dex OU separa meglio i team da torneo dai medi e dai brutti.
  */
-export const CREDIT_FLOOR = 1 / 3;
-/** Per ogni tipo, il 1°, 2° e 3° membro che lo colpisce meglio valgono 50, 30 e 20% (come la Difesa). */
-export const OFFENSE_DEPTH = [0.5, 0.3, 0.2];
+export const CREDIT_FLOOR = 0.5;
+/**
+ * Per ogni tipo, il 1°, 2° e 3° membro che lo colpisce meglio valgono 70, 20 e 10%, come nella Coverage del meta
+ * (2026-11-15, era 50/30/20): una regola sola per le due schede, e più team da torneo arrivano alla S.
+ */
+export const OFFENSE_DEPTH = [0.7, 0.2, 0.1];
+/** Un colpo è forte dai due terzi dei PS (le caselle verdi piene della Coverage tipi); sotto, dal 50%, conta come medio. */
+export const STRONG_CREDIT = 2 / 3;
 /** Un tipo è scoperto se nessun membro lo manda KO in due colpi (danno sotto il 50%): un problema grave del Coaching. */
 export const HOLE_HIT = TWO_HIT;
 /**
@@ -65,9 +71,9 @@ export const RANK_WEIGHTS = [1, 1, 1, 1, 1, 1].map(w => w / 6);
 /** Tera e mosse Z si usano una volta a partita: nel voto entra un quarto di quello che aggiungono. */
 export const ONE_USE_SHARE = 0.25;
 
-/** Il credito di un colpo da x (quota dei PS del bersaglio): 0 fino al 33%, poi in linea fino a 1 con l'OHKO. */
+/** Il credito di un colpo da x (quota dei PS del bersaglio): 0 sotto il 50%, poi il danno stesso fino a 1 con l'OHKO. */
 export function offenseCredit(x: number): number {
-  return Math.max(0, Math.min(1, (x - CREDIT_FLOOR) / (1 - CREDIT_FLOOR)));
+  return x >= CREDIT_FLOOR ? Math.min(1, x) : 0;
 }
 
 /** Il colpo di un membro su uno dei 18 Pokémon medi: danno (con un terzo del setup e un quarto di Tera/Z) e credito. */
@@ -116,7 +122,7 @@ export interface MemberOffense {
   total: number;
 }
 
-/** Un tipo del pacchetto: il livello del team (0–100) e i migliori tre membri che lo colpiscono oltre il 33%. */
+/** Un tipo del pacchetto: il livello del team (0–100) e i migliori tre membri che lo mandano KO in due colpi (dal 50%). */
 export interface TypeRow {
   label: string;
   level: number;
@@ -151,7 +157,7 @@ export interface TeamOffense {
 /** Il membro nella Generale: i tipi per fascia (senza doppioni), i bersagli del meta mandati KO in due colpi, i punti che porta. */
 export interface MemberShare {
   species: string;
-  /** Su 18: KO in un colpo, forti (oltre il 66%, senza KO), contano (oltre il 33%, sotto il 66%). */
+  /** Su 18: KO in un colpo, forti (dal 66%, senza KO), contano (dal 50%, sotto il 66%). */
   types: { ohko: number; strong: number; counts: number };
   /** null senza meta. */
   meta: { covered: number; total: number } | null;
@@ -425,7 +431,7 @@ export function offenseReference(data: EngineData): OffenseReference {
 
 /**
  * Offesa di un membro: per ognuno dei 18 Pokémon medi il danno del colpo migliore (un terzo del setup, un quarto di
- * Tera/Z, il meteo di un compagno a metà), poi il credito (solo il danno sopra il 33%, pieno con l'OHKO) e la media.
+ * Tera/Z, il meteo di un compagno a metà), poi il credito (il danno stesso dal 50%, 0 sotto) e la media.
  * Null se la libreria non conosce il Pokémon.
  */
 export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): MemberOffense | null {
@@ -498,14 +504,14 @@ export function rankWeighted(values: number[]): number {
   return Math.round(sorted.reduce((acc, v, i) => acc + v * weights[i], 0) / total);
 }
 
-/** Per ogni bersaglio, i crediti dei membri dal più alto, coi pesi 50/30/20. */
+/** Per ogni bersaglio, i crediti dei membri dal più alto, coi pesi 70/20/10. */
 const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (OFFENSE_DEPTH[i] ?? 0) * c, 0);
 /** Il pacchetto: per ogni bersaglio la profondità dei crediti dei membri, poi la media ×100 (0 senza membri). */
 const packOf = (lists: number[][], targets: number) =>
   lists.length ? Math.round(100 * mean(Array.from({ length: targets }, (_, i) => depthOf(lists.map(c => c[i]))))) : 0;
 
 /**
- * Offesa del team: il pacchetto dei tipi (per ognuno dei 18 Pokémon medi i crediti dei membri con la profondità 50/30/20,
+ * Offesa del team: il pacchetto dei tipi (per ognuno dei 18 Pokémon medi i crediti dei membri con la profondità 70/20/10,
  * poi la media) 50% e la Coverage del meta 50%; senza meta il pacchetto vale tutto. Un membro che non attacca non porta
  * crediti ma non abbassa il team.
  */
@@ -545,8 +551,8 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
 }
 
 /**
- * Cosa copre e quanto porta ogni membro. Tipi: per ogni bersaglio la sua parte della profondità 50/30/20, poi la media.
- * Meta: lo stesso coi bersagli del meta (credito pieno a chi lo manda KO in due colpi), pesati per uso.
+ * Cosa copre e quanto porta ogni membro. Tipi: per ogni bersaglio la sua parte della profondità 70/20/10, poi la media.
+ * Meta: lo stesso coi bersagli del meta (il credito di chi lo manda KO in due colpi è il suo danno), pesati per uso.
  * I punti sommati fanno l'Offesa del team.
  */
 function memberShares(members: MemberOffense[], targets: number, metaRows: CoverageRow[] | null, value: number): MemberShare[] {
@@ -554,7 +560,7 @@ function memberShares(members: MemberOffense[], targets: number, metaRows: Cover
   for (let i = 0; i < targets; i++) depthShares(members.map(m => m.hits[i].credit), OFFENSE_DEPTH).forEach((x, k) => { typePart[k] += (100 * x) / targets; });
   const metaPart = members.map(() => 0);
   for (const row of metaRows ?? []) {
-    const credits = members.map(m => (row.coveredBy.some(c => c.species === m.species) ? 1 : 0));
+    const credits = members.map(m => row.coveredBy.find(c => c.species === m.species)?.credit ?? 0);
     depthShares(credits, META_DEPTH).forEach((x, k) => { metaPart[k] += 100 * row.weight * x; });
   }
   const raw = members.map((_, k) => (metaRows ? OFFENSE_SHARES.types * typePart[k] + OFFENSE_SHARES.meta * metaPart[k] : typePart[k]));
@@ -563,8 +569,8 @@ function memberShares(members: MemberOffense[], targets: number, metaRows: Cover
     species: m.species,
     types: {
       ohko: m.hits.filter(h => h.credit >= 1).length,
-      strong: m.hits.filter(h => h.credit >= 0.5 && h.credit < 1).length,
-      counts: m.hits.filter(h => h.credit > 0 && h.credit < 0.5).length,
+      strong: m.hits.filter(h => h.credit >= STRONG_CREDIT && h.credit < 1).length,
+      counts: m.hits.filter(h => h.credit > 0 && h.credit < STRONG_CREDIT).length,
     },
     meta: metaRows && { covered: metaRows.filter(r => r.coveredBy.some(c => c.species === m.species)).length, total: metaRows.length },
     points: points[k],

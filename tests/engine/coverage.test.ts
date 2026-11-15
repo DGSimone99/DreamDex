@@ -147,16 +147,31 @@ describe('Coverage meta: colpo migliore di qualunque tipo, solo 2HKO', () => {
     const i = targets.findIndex((_, k) => any(tusk, k) >= 0.5 && superOnly(tusk, k) < 0.5);
     expect(i).toBeGreaterThanOrEqual(0);
     const row = teamCoverage([tusk], fixtureData, 'meta').rows[i];
-    expect(row.level).toBe(70);
-    expect(row.coveredBy).toEqual([expect.objectContaining({ species: 'Great Tusk', partial: false })]);
+    // Il credito è il danno stesso (dal 50%), col peso del 1° posto (70%)
+    expect(row.coveredBy).toEqual([expect.objectContaining({ species: 'Great Tusk', partial: false, credit: any(tusk, i) })]);
+    expect(row.level).toBe(Math.round(70 * any(tusk, i)));
   });
 
   it('un 3HKO non vale niente nel meta (nei tipi resta a metà)', () => {
-    const i = targets.findIndex((_, k) => any(gliscor, k) >= 1 / 3 && any(gliscor, k) < 0.5);
+    // Senza Swords Dance (il setup ora entra per un terzo): conta solo il colpo semplice
+    const plain = { ...gliscor, moves: ['Earthquake', 'Facade', 'Knock Off', 'Protect'] };
+    const i = targets.findIndex((_, k) => any(plain, k) >= 1 / 3 && any(plain, k) < 0.5);
     expect(i).toBeGreaterThanOrEqual(0);
-    const row = teamCoverage([gliscor], fixtureData, 'meta').rows[i];
+    const row = teamCoverage([plain], fixtureData, 'meta').rows[i];
     expect(row.level).toBe(0);
     expect(row.coveredBy).toEqual([]);
+  });
+
+  it('il setup entra nel credito del meta per un terzo, come nei tipi', () => {
+    const rows = teamCoverage([gliscor], fixtureData, 'meta').rows;
+    const lifted = rows.filter(r => r.cells![0].setupPct! > r.cells![0].pct && r.coveredBy.length);
+    expect(lifted.length).toBeGreaterThan(0);
+    for (const row of lifted) {
+      const [cell] = row.cells!;
+      // Il danno che conta sta fra il colpo semplice e un terzo della danza (arrotondamenti in basso)
+      expect(row.coveredBy[0].pct).toBeGreaterThan(cell.pct);
+      expect(row.coveredBy[0].pct).toBeLessThanOrEqual(Math.ceil(cell.pct + (cell.setupPct! - cell.pct) / 3) + 1);
+    }
   });
 
   it('per ogni bersaglio una casella per membro: danno del colpo semplice e, con il setup, dopo una danza', () => {
