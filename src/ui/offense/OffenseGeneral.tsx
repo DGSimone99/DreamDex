@@ -95,7 +95,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               <th scope="col">{t('kob.headTypes')}<KoSub /></th>
-              {meta && <th scope="col">{t('kob.headMeta', { n: nMeta })}<KoSub /></th>}
+              {meta && <th scope="col">{t('kob.headMeta')}<KoSub /></th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>

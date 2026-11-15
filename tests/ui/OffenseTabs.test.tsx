@@ -157,7 +157,7 @@ describe('Offesa: Generale', () => {
   /** Il primo elenco del tooltip (il colpo semplice), non quelli delle righe in più. */
   const mainList = (tip: HTMLElement) => [...tip.querySelectorAll('.kot-list')].find(l => !l.closest('.kot-extra'));
 
-  it('le colonne: Pokémon, Tipi · 18, Meta · N minacce (solo col meta), Offesa; i punti dei membri sommati fanno il voto', () => {
+  it('le colonne: Pokémon, Tipi, Meta (solo col meta), Offesa, coi titoli sulla stessa riga; i punti dei membri sommati fanno il voto', () => {
     const rating = withMeta();
     const { unmount } = view(team, rating);
     const n = rating.offense.coverageMeta!.rows.length;
@@ -165,8 +165,8 @@ describe('Offesa: Generale', () => {
     let heads = screen.getAllByRole('columnheader').map(h => h.textContent!);
     expect(heads).toHaveLength(4);
     expect(heads[0]).toBe('Pokémon');
-    expect(heads[1].startsWith('Tipi · 18')).toBe(true);
-    expect(heads[2].startsWith(`Meta · ${n} minacce`)).toBe(true);
+    expect(heads[1].startsWith('Tipi')).toBe(true);
+    expect(heads[2].startsWith('Meta')).toBe(true);
     expect(heads[3]).toBe('Offesa');
     expect(memberRows().map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
@@ -175,7 +175,7 @@ describe('Offesa: Generale', () => {
     heads = screen.getAllByRole('columnheader').map(h => h.textContent!);
     expect(heads).toHaveLength(3);
     expect(heads[0]).toBe('Pokémon');
-    expect(heads[1].startsWith('Tipi · 18')).toBe(true);
+    expect(heads[1].startsWith('Tipi')).toBe(true);
     expect(heads[2]).toBe('Offesa');
     expect(document.querySelector('.def-members tfoot th')).toHaveTextContent('Team Coverage');
     expect(document.querySelectorAll('.def-members tfoot td')).toHaveLength(2);
