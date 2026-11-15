@@ -3,6 +3,7 @@ import { MAX_STEPS, type CoachStep } from '../../engine/coachSteps';
 import { t as translate, type Lang } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
+import { Icon } from '../icons';
 
 /** Nomi delle minacce scritti nella frase; gli altri diventano "e altri N" (tutti nel tooltip). */
 export const THREAT_NAMES = 3;
@@ -49,29 +50,56 @@ export function fixItems(problems: CoachProblem[], lang: Lang): { shown: string[
 }
 
 /**
- * In fondo alla Panoramica: cosa il Coaching sa sistemare, coi nomi, e il passaggio al Coaching. Non c'è finché i consigli
- * si calcolano (`steps` null) né quando nessun problema ha una proposta.
+ * In fondo alla Panoramica: cosa il Coaching sa sistemare, coi nomi, e il passaggio al Coaching (tutta la striscia porta lì,
+ * come quella in fondo alle aree, che sta nello stesso posto). C'è sempre: mentre i consigli si calcolano (`steps` null)
+ * uno scheletro alto uguale; senza nessun problema "Nessun problema da sistemare", ferma (niente link); coi problemi ma
+ * senza proposte una frase quieta che porta comunque al Coaching (lì i problemi ci sono). Così la pagina non salta.
  */
 export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; steps: CoachStep[] | null; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const lang = useLang();
   const { shown, hidden, more } = fixItems(steps ? solvable(problems, steps) : [], lang);
-  if (shown.length === 0) return null;
+  if (!steps) {
+    return (
+      <div className="fix-row is-skeleton fill-skeleton" aria-hidden="true">
+        <span className="fix-bone" style={{ width: 84 }} />
+        <span className="fix-bone" style={{ width: 280 }} />
+        <span className="fix-bone" style={{ width: 96, marginLeft: 'auto' }} />
+      </div>
+    );
+  }
+  const count = shown.length + more;
+  // Senza proposte: verde se non c'è proprio nessun problema, altrimenti una frase quieta (i problemi restano nel Coaching)
+  const tone = count > 0 ? '' : problems.length === 0 ? ' is-clear' : ' is-plain';
+  const status = count > 0 ? t(count === 1 ? 'area.problems.one' : 'area.problems.many', { n: count })
+    : problems.length === 0 ? t('overview.fix.none') : t('overview.fix.noProposals');
+  const link = problems.length > 0;
   return (
-    <section className="fix-row" aria-label={t('overview.fix.title')}>
-      <span className="fix-label" aria-hidden="true">{t('overview.fix.title')}</span>
-      <span className="fix-items" title={[...shown, ...hidden].join(' · ')}>
-        {shown.join(' · ')}
-      </span>
-      {more > 0 && (
-        <span className="fix-more" title={hidden.join(' · ')}>
-          <span aria-hidden="true">{t('overview.fix.more', { n: more })}</span>
-          <span className="visually-hidden">{hidden.join(' · ')}</span>
-        </span>
+    // Il clic sta sulla striscia; il pulsante vero è "Vai al Coaching" (tastiera e lettori: Invio e Spazio fanno un clic)
+    <section className={`fix-row${link ? ' is-link' : ''}${tone}`} aria-label={t('overview.fix.title')} onClick={link ? () => onView('coaching') : undefined}>
+      {count > 0 ? (
+        <>
+          <span className="fix-label" aria-hidden="true">{t('overview.fix.title')}</span>
+          <span className="fix-items" title={[...shown, ...hidden].join(' · ')}>
+            {shown.join(' · ')}
+          </span>
+          {more > 0 && (
+            <span className="fix-more" title={hidden.join(' · ')}>
+              <span aria-hidden="true">{t('overview.fix.more', { n: more })}</span>
+              <span className="visually-hidden">{hidden.join(' · ')}</span>
+            </span>
+          )}
+        </>
+      ) : problems.length === 0 ? (
+        <span className="fix-label"><Icon name="check" /> {status}</span>
+      ) : (
+        <span className="fix-note">{status}</span>
       )}
-      <button type="button" className="fix-go dash-link" onClick={() => onView('coaching')}>
-        {t('overview.fix.go')}<span aria-hidden="true"> ›</span>
-      </button>
+      {link && (
+        <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: status })}>
+          {t('overview.fix.go')}<span aria-hidden="true"> ›</span>
+        </button>
+      )}
     </section>
   );
 }

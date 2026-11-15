@@ -178,8 +178,9 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes();
     const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
-    // Sta a destra nella striscia delle sottoschede, non nella tabella né sulla riga dei problemi; la tabella ha di nuovo "Pokémon"
-    expect(sw.closest('.area-strip')).not.toBeNull();
+    // Sta a destra sulla riga degli strumenti sopra il pannello, non nella tabella né nella striscia dei problemi; la tabella ha di nuovo "Pokémon"
+    expect(sw.closest('.area-tools-row')).not.toBeNull();
+    expect(sw.closest('.area-strip')).toBeNull();
     expect(table).not.toContainElement(sw);
     expect(table.querySelector('thead th.def-mon-h')).toHaveTextContent(/^Pokémon$/);
     expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
@@ -195,7 +196,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
-    expect(metaSwitch.closest('.area-strip')).not.toBeNull();
+    expect(metaSwitch.closest('.area-tools-row')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
     // Sulle sottoschede senza etichette (Sostenibilità) l'interruttore non c'è
     await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));

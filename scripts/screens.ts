@@ -197,7 +197,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Difesa|Defense)/)) return 'no defense row';
     await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
@@ -211,7 +211,7 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^Offe(sa|nse)/)) return 'no offense row';
     await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
@@ -256,7 +256,7 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Velocit|Speed)/)) return 'no speed row';
     await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
@@ -918,13 +918,16 @@ for (const [w, h] of sizes) {
             return `${band.classList[1]}:cols=${cols} by=${by} pts=${pts} headMarkX=${sum}`;
           }).join(' | ')}] rowHs=[${[...new Set([...rl.querySelectorAll<HTMLElement>('.rl-row')].map(r => Math.round(r.getBoundingClientRect().height)))].join(',')}] three=${rl.classList.contains('three') ? 1 : 0} bandsR=${Math.round(rlScroll?.getBoundingClientRect().right ?? 0)} headR=${Math.round(rl.querySelector('.rl-more')?.getBoundingClientRect().right ?? 0)}` : '';
           const roles = rl ? ` roles: rows=${rlRows} bands=${rl.querySelectorAll('.rl-band').length} missing=${rl.querySelectorAll('.rl-row.bad, .rl-row.warn').length} rowH=${Math.round(rlRowH)} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} headH=${Math.round(rl.querySelector('.rl-head')?.getBoundingClientRect().height ?? 0)} nameCut=${[...rl.querySelectorAll<HTMLElement>('.rl-mon-name, .rl-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length}${rlAlign}` : '';
-          // Legenda sulla riga dei problemi: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
-          const lg = document.querySelector<HTMLElement>('.area-problems-row .area-legend');
+          // Legenda sulla riga degli strumenti: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
+          // della striscia in fondo; panelTop = dove parte il pannello (uguale in ogni area)
+          const lg = document.querySelector<HTMLElement>('.area-tools-row .area-legend');
           const lgRow = lg?.parentElement?.getBoundingClientRect();
           const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
           const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
           const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} problems=${shownP}+${moreP} stripH=${Math.round(lgRow.height)}` : '';
-          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
+          const pr = document.querySelector<HTMLElement>('.area-problems-row');
+          const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} problemsRow=${Math.round(pr.getBoundingClientRect().height)} problemsShown=${document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length}+${document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} problemsCut=${Math.max(0, Math.round(pr.getBoundingClientRect().bottom - (pr.parentElement?.getBoundingClientRect().bottom ?? 0)))}` : '';
+          return `${guide}${prAt}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });

@@ -316,7 +316,9 @@
 }
 /* Schermi bassi: tutto più compatto (core, netto, carte delle voci) perché le voci stiano senza scorrere */
 @media (max-height: 799px) {
-  .bm { row-gap: 12px; }
+  /* (8px fra le parti e 6px sopra le voci: la striscia dei problemi in fondo all'area prende il suo posto) */
+  .bm { row-gap: 8px; }
+  .bm-entries-wrap { gap: 6px; }
   .bm .sum-tri { --tri-w: 112px; --tri-badge: 19px; }
   .bm-core { padding: 8px 14px 8px 16px; }
   .bm .bm-core-body h5 { margin-bottom: 5px; font-size: 16px; }

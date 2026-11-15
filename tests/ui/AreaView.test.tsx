@@ -45,29 +45,62 @@ describe('vista di un\'area sulla pagina', () => {
     expect(screen.getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
   });
 
-  it('sottoschede in orizzontale; i problemi in una riga sotto la striscia, fuori dal pannello', () => {
-    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[{ severity: 'serious', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' }]} />);
+  it('sottoschede in orizzontale; i problemi in una striscia sotto il pannello, fuori da lui', () => {
+    const { container } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[{ severity: 'serious', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' }]} />);
     expect(screen.getByRole('tablist')).toHaveAttribute('aria-orientation', 'horizontal');
     const line = screen.getByRole('list', { name: /Problemi/ });
     expect(within(line).getByText('Debole a Fuoco').closest('li')).toHaveClass('serious');
     expect(within(screen.getByRole('tabpanel')).queryByText('Debole a Fuoco')).toBeNull();
+    // Ordine: striscia delle sottoschede, riga degli strumenti, pannello, problemi
+    const order = [...container.querySelector('.area-view')!.children].map(el => el.className.split(' ')[0]).filter(c => c.startsWith('area-'));
+    expect(order).toEqual(['area-strip', 'area-tools-row', 'area-panel', 'area-problems-row']);
+    expect(line.closest('.area-problems-row')).toHaveClass('serious');
   });
 
-  it('senza problemi la riga resta, con "Nessun problema in quest’area"; in Velocità (niente problemi del Coaching) solo la legenda', () => {
-    const { container, unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const row = container.querySelector('.area-problems-row')!;
-    expect(row).toHaveClass('is-clear');
-    expect(within(row as HTMLElement).getByText("Nessun problema in quest'area")).toBeInTheDocument();
-    expect(screen.getByRole('note', { name: /^Problemi in / })).toHaveTextContent("Nessun problema in quest'area");
-    expect(screen.queryByRole('list', { name: /Problemi/ })).toBeNull();
-    unmount();
-    const speed = renderIt(<AreaView rating={withMeta()} area="speed" team={team} analysis={analysis} problems={[]} />);
-    const speedRow = speed.container.querySelector('.area-problems-row')!;
-    expect(speedRow).toHaveClass('is-plain');
-    expect(screen.queryByText("Nessun problema in quest'area")).toBeNull();
-    expect(screen.queryByRole('note', { name: /^Problemi in / })).toBeNull();
-    // Una sottoscheda sola: il "?" porta il nome dell'area
-    expect(screen.getByRole('button', { name: 'Come funziona Velocità' })).toBeInTheDocument();
+  it('la riga degli strumenti e la striscia dei problemi ci sono in ogni area, anche in Ruoli e Bonus', () => {
+    for (const area of ['defense', 'strength', 'speed', 'bonusMalus'] as const) {
+      const { container, unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} />);
+      expect(container.querySelectorAll('.area-tools-row')).toHaveLength(1);
+      expect(container.querySelectorAll('.area-problems-row')).toHaveLength(1);
+      unmount();
+    }
+  });
+
+  it('tutta la striscia dei problemi porta al Coaching; il pulsante dice cosa contiene', async () => {
+    const user = userEvent.setup();
+    const onCoaching = vi.fn();
+    const { container } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching}
+      problems={[{ severity: 'minor', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' }]} />);
+    const go = screen.getByRole('button', { name: 'Vai al Coaching: 1 problema in Difesa' });
+    await user.click(go);
+    expect(onCoaching).toHaveBeenCalledTimes(1);
+    // Anche un clic sul testo del problema
+    await user.click(screen.getByText('Debole a Fuoco'));
+    expect(onCoaching).toHaveBeenCalledTimes(2);
+    // Da tastiera
+    go.focus();
+    await user.keyboard('{Enter}');
+    expect(onCoaching).toHaveBeenCalledTimes(3);
+    expect(container.querySelector('.area-problems-row')).toHaveClass('is-link');
+  });
+
+  it('senza problemi la striscia resta, ferma, con "Nessun problema in quest’area" (anche in Velocità): niente link al Coaching', async () => {
+    const user = userEvent.setup();
+    const onCoaching = vi.fn();
+    for (const area of ['defense', 'speed'] as const) {
+      const { container, unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} onCoaching={onCoaching} />);
+      const row = container.querySelector<HTMLElement>('.area-problems-row')!;
+      expect(row).toHaveClass('is-clear');
+      expect(row).not.toHaveClass('is-link');
+      expect(screen.getByRole('note', { name: /^Problemi in / })).toHaveTextContent("Nessun problema in quest'area");
+      expect(screen.queryByRole('list', { name: /Problemi/ })).toBeNull();
+      expect(within(row).queryByRole('button')).toBeNull();
+      await user.click(within(row).getByText("Nessun problema in quest'area"));
+      expect(onCoaching).not.toHaveBeenCalled();
+      // Una sottoscheda sola: il "?" porta il nome dell'area
+      if (area === 'speed') expect(screen.getByRole('button', { name: 'Come funziona Velocità' })).toBeInTheDocument();
+      unmount();
+    }
   });
 
   it('i problemi stanno in una riga: prima i risolvibili, poi i gravi; quelli che non stanno nel "+N" (title e testo nascosto)', () => {

@@ -16,7 +16,7 @@ import { speedTabs } from './speed/speedTabs';
 export type T = ReturnType<typeof useT>;
 
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode;
-  /** Legenda dei colori della scheda: sta a destra sulla riga dei problemi, così sotto la tabella resta più spazio alle righe. */
+  /** Legenda dei colori della scheda: sta a sinistra sulla riga degli strumenti, così sotto la tabella resta più spazio alle righe. */
   legend?: ReactNode;
   /** Le schede con l'etichetta di efficacia nelle caselle: a destra nella striscia l'interruttore "Solo superefficaci" / "Solo efficacia". */
   effSide?: EffSide;

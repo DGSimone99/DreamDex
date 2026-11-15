@@ -21,10 +21,10 @@ import { PokemonList } from './PokemonName';
 import { Sprite } from './Sprite';
 
 /**
- * I problemi del coaching che riguardano ogni area (regole e condizioni restano solo nella Panoramica). Bonus/Malus non
- * mostra una riga di problemi: i malus sono già la scheda, e i ruoli che mancano si vedono nella sottoscheda Ruoli.
+ * I problemi del coaching che riguardano ogni area, nella striscia in fondo (regole, condizioni e minacce del meta restano
+ * nella Panoramica e nel Coaching). Ruoli e Bonus prende i ruoli che mancano e i malus del Coaching (le ripetizioni).
  */
-const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], speed: [], bonusMalus: ['redundancy'] };
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], speed: [], bonusMalus: ['roles', 'redundancy'] };
 export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? []).filter(p => AREA_PROBLEMS[area].includes(p.category));
 
 /**
@@ -78,7 +78,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   if (area && rating) {
     body = (
       <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed} formatId={data.formatId}
-        picked={(area === target.tab ? target.sub : undefined) ?? subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))} />
+        picked={(area === target.tab ? target.sub : undefined) ?? subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))}
+        onCoaching={() => openView('coaching')} />
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree

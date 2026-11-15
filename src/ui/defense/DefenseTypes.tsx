@@ -23,7 +23,7 @@ const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * in basso a sinistra quando il tipo non è neutro (×4, ×2, ×½, ×¼, 0); il suggerimento dà i due lati. L'interruttore "Solo
  * efficacia" (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende e sotto l'icona compare il tipo.
  * In fondo Regge (chi regge del tutto il lato peggiore); la Copertura del tipo sta nel suggerimento della sua pillola.
- * La legenda dei colori sta sulla riga dei problemi (DefenseTypesLegend); sotto la tabella solo le note del meteo.
+ * La legenda dei colori sta sulla riga degli strumenti (DefenseTypesLegend); sotto la tabella solo le note del meteo.
  * I tipi che nessuno regge hanno il filo rosso sotto l'icona.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
@@ -119,7 +119,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   );
 }
 
-/** La legenda dei colori di Coverage tipi della Difesa, sulla riga dei problemi: le quattro soglie del colpo. */
+/** La legenda dei colori di Coverage tipi della Difesa, sulla riga degli strumenti: le quattro soglie del colpo. */
 export function DefenseTypesLegend() {
   const t = useT();
   return (

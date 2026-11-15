@@ -56,14 +56,17 @@
   .area-view-bonusMalus .area-subs [role='tab'] { padding: 0 12px; gap: 8px; font-size: 15px; }
   .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 18px; }
 
-  /* Problemi dell'area: tutti, su più righe (la pagina scorre) */
-  .area-problems-row { height: auto; min-height: 25px; flex-wrap: wrap; align-items: flex-start; gap: 6px 12px; }
+  /* Riga degli strumenti: la legenda va a capo, l'interruttore alto quanto un dito (a destra, o sotto se non ci sta) */
+  .area-tools-row { height: auto; min-height: 25px; flex-wrap: wrap; gap: 4px 12px; }
+  .area-tools-row:empty { display: none; }
+  .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
+  .tools-switch .eff-switch { min-height: 44px; }
+  /* Problemi dell'area in fondo: tutti, su più righe (la pagina scorre); "Vai al Coaching" alto quanto un dito */
+  .fix-row { height: auto; min-height: 44px; }
+  .area-problems-row.fix-row { height: auto; min-height: 44px; overflow: visible; flex-wrap: wrap; gap: 6px 12px; }
   .area-problems { flex: 1 1 100%; order: 2; flex-wrap: wrap; overflow: visible; }
   .area-problems > li { flex: 0 1 auto; white-space: normal; }
-  .area-legend { flex: 1 1 100%; min-width: 0; margin-left: 0; flex-wrap: wrap; white-space: normal; }
-  /* L'interruttore Solo superefficaci / Solo efficacia: la striscia scorre col dito, lui va sotto le sottoschede, alto quanto un dito */
-  .strip-switch { position: sticky; left: 0; display: flex; width: max-content; padding: 0 6px; }
-  .strip-switch .eff-switch { min-height: 44px; }
+  .area-problems-row .fix-go { order: 1; }
 
   /* ── Cornice dei membri (Difesa, Offesa, Velocità): righe ad altezza fissa, niente misura sull'altezza ── */
   .def-frame, .def-frame.roomy { --def-row: 50px; --def-mon: 190px; height: auto; container-type: inline-size; }
