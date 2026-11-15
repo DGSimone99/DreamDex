@@ -295,5 +295,3 @@
 /* Il testo per i lettori di schermo resta fuori dal flusso anche dentro la riga Team Coverage */
 .cm-total th > .visually-hidden { position: absolute !important; }
 @media (min-width: 1100px) and (max-height: 640px) { .cm-matrix tfoot .og-total { height: 32px; } }
-/* Schermi bassi: sotto la tabella non c'è posto, la barra del team sta dentro la riga Team Coverage, sotto la linguetta */
-@media (min-width: 1100px) and (max-height: 640px) { 
