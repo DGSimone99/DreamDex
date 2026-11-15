@@ -19,7 +19,7 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
   const guide = (section: OffenseSection) => <OffenseGuideSection section={section} offense={offense} meta={meta} formatId={ctx.formatId} />;
 
   const tabs: { key: OffenseSection; label: string; value: number | string | null; panel: ReactElement; effSide?: 'offense' }[] = [
-    { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} roleValues={Object.fromEntries(rating.roles.members.map(m => [m.species, m.values]))} /> },
+    { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
     { key: 'types', label: t('detail.coverageTypes'), value: `${typesKo}/${offense.types.rows.length}`, panel: <OffenseTypes offense={offense} ctx={ctx} />, effSide: 'offense' },
     // La Coverage del meta c'è solo col meta: senza, una scheda in meno
     ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: `${metaKo}/${coverageMeta.rows.length}`, panel: <OffenseMeta offense={offense} ctx={ctx} />, effSide: 'offense' as const }] : []),

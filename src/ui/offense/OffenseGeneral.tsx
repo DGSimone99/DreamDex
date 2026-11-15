@@ -1,8 +1,4 @@
-import { cardRoles } from '../../engine/archetype';
 import { battleSpecies } from '../../engine/dex';
-import { formatRules } from '../../engine/formatRules';
-import type { SubRoleValues } from '../../engine/subRoles';
-import { roleLabel } from '../../engine/roles';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
@@ -67,7 +63,7 @@ function Uncovered({ targets, of }: { targets: KoTarget[]; of: string }) {
  * parte; il 3HKO non conta), passando su un badge i bersagli nel tooltip; poi il voto del membro da solo. In fondo,
  * sempre allo stesso posto, la riga Team Coverage: per ogni bersaglio il membro migliore, gli scoperti in rosso.
  */
-export function OffenseGeneral({ offense, meta, ctx, roleValues = {} }: { offense: TeamOffense; meta: boolean; ctx: AreaContext; roleValues?: Record<string, SubRoleValues> }) {
+export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
   const lang = useLang();
   const roomy = !!ctx.roomy;
@@ -88,12 +84,7 @@ export function OffenseGeneral({ offense, meta, ctx, roleValues = {} }: { offens
   // Le fasce di ogni membro, una volta sola
   const metaBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(metaTargets(offense, slot))));
   const typeBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(typeTargets(members[slots[slot]!]))));
-  // Il ruolo principale della carta del team (stessi valori dei Ruoli del voto), sotto il nome
-  const rules = formatRules(ctx.formatId ?? 'ou');
-  const roleOf = (set: (typeof ctx.team)[number], name: string) => {
-    const role = cardRoles(set, rules, roleValues[name])[0];
-    return role === undefined ? undefined : role === 'weather' ? t('card.weather') : roleLabel(role, lang);
-  };
+
 
   return (
     <div className={`def-frame off-frame def-general off-general${roomy ? ' roomy' : ''}`}>
@@ -117,7 +108,7 @@ export function OffenseGeneral({ offense, meta, ctx, roleValues = {} }: { offens
               return (
                 // Passando sulla riga si accende anche la carta del membro nel team in alto
                 <tr key={`${name}-${slot}`} style={{ '--i': slot } as CSSProperties} onMouseEnter={() => linkTeamCard(slot)} onMouseLeave={() => linkTeamCard(null)}>
-                  <th scope="row"><MemberMon name={name} set={set} stats="offense" role={roleOf(set, name)} /></th>
+                  <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {m && s
                     ? <>
                       {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
