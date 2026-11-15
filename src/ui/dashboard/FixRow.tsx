@@ -52,8 +52,9 @@ export function fixItems(problems: CoachProblem[], lang: Lang): { shown: string[
 /**
  * In fondo alla Panoramica: cosa il Coaching sa sistemare, coi nomi, e il passaggio al Coaching (tutta la striscia porta lì,
  * come quella in fondo alle aree, che sta nello stesso posto). C'è sempre: mentre i consigli si calcolano (`steps` null)
- * uno scheletro alto uguale; senza nessun problema "Nessun problema da sistemare", ferma (niente link); coi problemi ma
- * senza proposte una frase quieta che porta comunque al Coaching (lì i problemi ci sono). Così la pagina non salta.
+ * uno scheletro alto uguale; quando il Coaching non ha nessuna proposta (nessun problema, o problemi che nessuna tappa
+ * risolve) "Nessun problema da sistemare", verde e ferma (niente link: lì non ci sarebbe niente da fare). Porta al
+ * Coaching solo con almeno una proposta. Così la pagina non salta.
  */
 export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; steps: CoachStep[] | null; onView: (v: AnalysisView) => void }) {
   const t = useT();
@@ -69,15 +70,13 @@ export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; 
     );
   }
   const count = shown.length + more;
-  // Senza proposte: verde se non c'è proprio nessun problema, altrimenti una frase quieta (i problemi restano nel Coaching)
-  const tone = count > 0 ? '' : problems.length === 0 ? ' is-clear' : ' is-plain';
-  const status = count > 0 ? t(count === 1 ? 'area.problems.one' : 'area.problems.many', { n: count })
-    : problems.length === 0 ? t('overview.fix.none') : t('overview.fix.noProposals');
-  const link = problems.length > 0;
+  // Senza proposte la striscia è verde e ferma, anche se restano problemi che il Coaching non sa risolvere
+  const link = count > 0;
+  const status = link ? t(count === 1 ? 'area.problems.one' : 'area.problems.many', { n: count }) : t('overview.fix.none');
   return (
     // Il clic sta sulla striscia; il pulsante vero è "Vai al Coaching" (tastiera e lettori: Invio e Spazio fanno un clic)
-    <section className={`fix-row${link ? ' is-link' : ''}${tone}`} aria-label={t('overview.fix.title')} onClick={link ? () => onView('coaching') : undefined}>
-      {count > 0 ? (
+    <section className={`fix-row${link ? ' is-link' : ' is-clear'}`} aria-label={t('overview.fix.title')} onClick={link ? () => onView('coaching') : undefined}>
+      {link ? (
         <>
           <span className="fix-label" aria-hidden="true">{t('overview.fix.title')}</span>
           <span className="fix-items" title={[...shown, ...hidden].join(' · ')}>
@@ -90,10 +89,8 @@ export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; 
             </span>
           )}
         </>
-      ) : problems.length === 0 ? (
-        <span className="fix-label"><Icon name="check" /> {status}</span>
       ) : (
-        <span className="fix-note">{status}</span>
+        <span className="fix-label"><Icon name="check" /> {status}</span>
       )}
       {link && (
         <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: status })}>

@@ -23,7 +23,7 @@ const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * 8 per pagina dal meno coperto (a pari livello il più usato). In ogni casella il danno % del colpo semplice (senza
  * Tera, Z e setup) colorato per soglia, con "setup N%" quando la danza cambia soglia; in fondo "Lo coprono" conta chi
  * lo manda KO in due colpi. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra, al posto di "Pokémon";
- * sotto la tabella una sola riga col riepilogo; la legenda dei colori sta sulla riga degli strumenti (OffenseMetaLegend).
+ * sotto la tabella, in fondo al pannello, una sola riga bassa: a sinistra la legenda dei colori, a destra il riepilogo.
  * In basso a sinistra ×2 (o ×4) se il membro ha almeno una mossa superefficace sul Pokémon, anche se il danno migliore viene
  * da un'altra (il triangolino del setup sta in alto a destra); "Solo superefficaci" (`ctx.effOnly`) spegne le altre caselle.
  * Col puntatore la colonna si accende e sotto lo sprite compare il nome.
@@ -99,7 +99,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           </tbody>
         </table>
       </div>
-      <div className="rob-legend cm-foot">{counts}</div>
+      <div className="rob-legend cm-foot"><span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>{counts}</div>
     </div>
   );
 
@@ -107,8 +107,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     labels={{ pages: t('odetail.cm.pages'), prev: t('odetail.cm.prev'), next: t('odetail.cm.next'), page: (from, to) => t('odetail.cm.page', { from, to }) }} />;
 }
 
-/** La legenda dei colori di Coverage meta dell'Offesa, sulla riga degli strumenti: le soglie e il segno del setup. */
-export function OffenseMetaLegend() {
+/** La legenda dei colori di Coverage meta dell'Offesa, nella riga in fondo alla tabella: le soglie e il segno del setup. */
+function OffenseMetaLegend() {
   const t = useT();
   return (
     <>

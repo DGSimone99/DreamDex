@@ -56,11 +56,13 @@
   .area-view-bonusMalus .area-subs [role='tab'] { padding: 0 12px; gap: 8px; font-size: 15px; }
   .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 18px; }
 
-  /* Riga degli strumenti: la legenda va a capo, l'interruttore alto quanto un dito (a destra, o sotto se non ci sta) */
-  .area-tools-row { height: auto; min-height: 25px; flex-wrap: wrap; gap: 4px 12px; }
-  .area-tools-row:empty { display: none; }
+  /* L'interruttore Solo superefficaci / Solo efficacia: la striscia scorre col dito, lui va sotto le sottoschede, alto quanto un dito */
+  .strip-switch { position: sticky; left: 0; display: flex; width: max-content; padding: 0 6px; }
+  .strip-switch .eff-switch { min-height: 44px; }
+  .area-view-bonusMalus > .area-panel { margin-top: 0; }
+  /* La riga in fondo alla tabella: legenda e riepilogo vanno a capo */
+  .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
   .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
-  .tools-switch .eff-switch { min-height: 44px; }
   /* Problemi dell'area in fondo: tutti, su più righe (la pagina scorre); "Vai al Coaching" alto quanto un dito */
   .fix-row { height: auto; min-height: 44px; }
   .area-problems-row.fix-row { height: auto; min-height: 44px; overflow: visible; flex-wrap: wrap; gap: 6px 12px; }

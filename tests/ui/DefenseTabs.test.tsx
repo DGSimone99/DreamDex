@@ -178,9 +178,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes();
     const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
-    // Sta a destra sulla riga degli strumenti sopra il pannello, non nella tabella né nella striscia dei problemi; la tabella ha di nuovo "Pokémon"
-    expect(sw.closest('.area-tools-row')).not.toBeNull();
-    expect(sw.closest('.area-strip')).toBeNull();
+    // Sta a destra nella striscia delle sottoschede, non nella tabella né nella striscia dei problemi; la tabella ha di nuovo "Pokémon"
+    expect(sw.closest('.area-strip .strip-switch')).not.toBeNull();
     expect(table).not.toContainElement(sw);
     expect(table.querySelector('thead th.def-mon-h')).toHaveTextContent(/^Pokémon$/);
     expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
@@ -196,7 +195,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
-    expect(metaSwitch.closest('.area-tools-row')).not.toBeNull();
+    expect(metaSwitch.closest('.area-strip .strip-switch')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
     // Sulle sottoschede senza etichette (Sostenibilità) l'interruttore non c'è
     await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
@@ -277,8 +276,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(within(pages).getAllByRole('button')).toHaveLength(2);
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toHaveTextContent(`${rows.length} minacce`);
-    // La legenda dei colori non sta più sotto la tabella
-    expect(document.querySelector('.def-frame > .rob-legend')).not.toHaveTextContent('Danno subito');
+    // La legenda dei colori a sinistra nella stessa riga in fondo, i conteggi a destra
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('Danno subito');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));

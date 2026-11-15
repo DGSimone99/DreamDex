@@ -23,7 +23,7 @@ const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * in basso a sinistra quando il tipo non è neutro (×4, ×2, ×½, ×¼, 0); il suggerimento dà i due lati. L'interruttore "Solo
  * efficacia" (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende e sotto l'icona compare il tipo.
  * In fondo Regge (chi regge del tutto il lato peggiore); la Copertura del tipo sta nel suggerimento della sua pillola.
- * La legenda dei colori sta sulla riga degli strumenti (DefenseTypesLegend); sotto la tabella solo le note del meteo.
+ * Sotto la tabella una riga bassa in fondo al pannello: a sinistra la legenda dei colori, poi le note del meteo.
  * I tipi che nessuno regge hanno il filo rosso sotto l'icona.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
@@ -43,7 +43,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   });
   /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
-  // Le note del meteo stanno sulla riga della legenda; se non ci entrano si tagliano coi puntini e il testo intero è nel suggerimento
+  // Le note del meteo stanno sulla riga della legenda, dopo di lei; se non ci entrano si tagliano coi puntini e il testo intero è nel suggerimento
   const notes = weatherMitigations(team).map(m => mitigationNote(m, lang));
 
   return (
@@ -108,19 +108,20 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           </tbody>
         </table>
       </div>
-      {notes.length > 0 && (
-        <div className="rob-legend ht-foot">
+      <div className="rob-legend ht-foot">
+        <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>
+        {notes.length > 0 && (
           <span className="ht-notes note" title={notes.join('\n')}>
             <Typed text={notes.join(' · ')} />
           </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
-/** La legenda dei colori di Coverage tipi della Difesa, sulla riga degli strumenti: le quattro soglie del colpo. */
-export function DefenseTypesLegend() {
+/** La legenda dei colori di Coverage tipi della Difesa, nella riga in fondo alla tabella: le quattro soglie del colpo. */
+function DefenseTypesLegend() {
   const t = useT();
   return (
     <>

@@ -155,15 +155,11 @@
 .area-subs [role='tab'] b.sub-val-bad { color: var(--bad); }
 .area-subs [role='tab'] b.sub-val-warn { color: var(--warn); }
 .sub-plus { font: 700 italic 0.72em/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-/* Riga degli strumenti sopra il pannello, in ogni area e alta uguale (anche vuota): il pannello parte dallo stesso punto
-   ovunque. La legenda a sinistra, l'interruttore dell'efficacia a destra */
-.area-tools-row { display: flex; align-items: center; gap: 12px; padding: 0 2px; flex: none; height: 25px; min-width: 0; }
-.tools-switch { display: flex; flex: none; align-items: center; margin-left: auto; }
-/* Ruoli e Bonus ha le sottoschede grandi (8px più alte, 5px sugli schermi bassi): la sua riga (vuota) è più bassa di
-   tanto, così il pannello parte alla stessa altezza delle altre aree */
-.area-view-bonusMalus .area-tools-row { height: 17px; }
+/* Il pannello parte subito sotto la striscia, alla stessa altezza in ogni area: Ruoli e Bonus ha le sottoschede grandi
+   (8px più alte, 5px sugli schermi bassi) e il suo pannello sale di tanto */
+.area-view-bonusMalus > .area-panel { margin-top: -8px; }
 /* Problemi dell'area in fondo: la stessa striscia della Panoramica (.fix-row, stessa x, larghezza, altezza e fondo) col
-   colore del caso: giallo, rosso se ce n'è almeno uno grave, verde senza problemi, neutro dove il Coaching non guarda */
+   colore del caso: giallo, rosso se ce n'è almeno uno grave, verde senza problemi */
 .area-problems-row.fix-row { --tone: var(--warn); --tone-bg: var(--warn-bg); font-size: 12.5px; }
 .area-problems-row.serious { --tone: var(--bad); --tone-bg: var(--bad-bg); }
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave, verde con la spunta senza problemi */
@@ -180,7 +176,8 @@
 .area-problems li { position: relative; padding-left: 12px; }
 .area-problems li::before { content: '\25CF'; position: absolute; left: 0; color: var(--warn); }
 .area-problems li.serious::before { color: var(--bad); }
-/* La legenda dei colori della scheda aperta, a sinistra sulla riga degli strumenti: sempre intera */
+/* La legenda dei colori della sottoscheda, a sinistra nella riga bassa in fondo alla tabella (dentro il pannello, nello
+   spazio che la tabella lascia già sotto le righe): quieta e sempre intera */
 .area-legend { display: inline-flex; flex: none; align-items: center; gap: 5px; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .area-legend .hold-chip { padding: 1px 6px; font-size: 11px; line-height: 16px; }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
@@ -205,7 +202,6 @@
   font-size: 13px;
 }
 .fix-row.is-clear { --tone: var(--good); --tone-bg: var(--good-bg); }
-.fix-row.is-plain { --tone: var(--line); --tone-bg: var(--raised); }
 .fix-row.is-link { cursor: pointer; transition: border-color 0.15s ease-out; }
 .fix-row.is-link:hover { border-color: color-mix(in srgb, var(--tone) 60%, var(--line)); border-left-color: var(--tone); }
 .fix-row.is-link:hover .fix-go { background: var(--accent-wash); }
@@ -218,7 +214,8 @@
 .fix-label { flex: none; font: 600 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--bad); }
 .fix-row.is-clear .fix-label { color: var(--good); }
 .fix-label .icon { width: 13px; height: 13px; vertical-align: -2px; }
-.fix-note { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+/* Le tappe si calcolano: "Vai al Coaching" tiene il suo posto, invisibile (la striscia è ferma e i problemi non si spostano) */
+.fix-go-wait { visibility: hidden; }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fix-more { flex: none; padding: 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--raised); }
 .fix-go { flex: none; margin-left: auto; padding-top: 0; padding-bottom: 0; line-height: 20px; }
@@ -934,8 +931,9 @@
   .coach-sec { margin-bottom: 8px; font-size: 13px; }
 }
 
-/* Interruttore "Solo superefficaci" / "Solo efficacia": a destra sulla riga degli strumenti (.tools-switch). Neutro e
-   ciano, mai magenta */
+/* Interruttore "Solo superefficaci" / "Solo efficacia": a destra nella striscia delle sottoschede, centrato in altezza
+   (assoluto: la striscia non cambia altezza fra le sottoschede che lo hanno e quelle che no). Neutro e ciano, mai magenta */
+.strip-switch { position: absolute; top: 3px; right: 10px; bottom: 0; display: flex; align-items: center; }
 .eff-switch { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 2px 4px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 12px/1.2 var(--ui); white-space: nowrap; cursor: pointer; }
 .eff-switch:hover { color: var(--text); }
 .eff-switch-track { position: relative; flex: none; width: 26px; height: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--raised); transition: background 0.15s ease-out, border-color 0.15s ease-out; }
@@ -945,16 +943,16 @@
 .eff-switch.on .eff-switch-knob { transform: translateX(12px); background: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .eff-switch-track, .eff-switch-knob { transition: none; } }
 
-/* Portatili bassi (1366×657, 1280×620): striscia, riga degli strumenti, striscia dei problemi in fondo (anche quella della
+/* Portatili bassi (1366×657, 1280×620): striscia, striscia dei problemi in fondo (anche quella della
    Panoramica, così restano nello stesso posto) e margini del pannello più stretti, così ogni sottoscheda delle aree ci sta
    intera senza scorrere (a 1440×900 e 1536×730 non cambia niente). Le tabelle e i Ruoli hanno le loro regole per gli
    schermi bassi in fondo a defense.css e roles.css */
 @media (min-width: 1100px) and (max-height: 700px) {
-  .area-view { gap: 4px; }
+  .area-view { gap: 6px; }
   .fix-row { height: 24px; }
   .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 5px; }
   .area-view-bonusMalus .area-subs [role='tab'] { padding-top: 7px; padding-bottom: 6px; font-size: 16px; }
   .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 19px; }
-  .area-tools-row { height: 22px; }
-  .area-panel.ad-panel { padding-bottom: 6px; }
+  .area-view-bonusMalus > .area-panel { margin-top: -5px; }
+  .area-panel.ad-panel { padding-bottom: 10px; }
 }

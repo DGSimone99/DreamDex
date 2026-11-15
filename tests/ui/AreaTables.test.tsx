@@ -26,21 +26,25 @@ describe('tabelle complete nelle schede d\'area', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(4);
   });
 
-  it('le legende dei colori stanno a sinistra sulla riga degli strumenti, non sotto la tabella; le schede senza legenda non ne hanno', async () => {
+  it('le legende dei colori stanno a sinistra nella riga in fondo alla tabella, dentro il pannello; le schede senza legenda non ne hanno', async () => {
     const user = await openTab('Difesa');
-    const legend = () => view().querySelector('.area-tools-row > .area-legend');
-    expect(legend()).toBeNull(); // Generale
+    const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
+    expect(view().querySelector('.area-legend')).toBeNull(); // Generale
+    expect(view().querySelector('.area-tools-row')).toBeNull();
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     expect(legend()).toHaveTextContent('Colpo forte del lato peggiore:OHKO2HKO3HKO4HKO+');
-    expect(view().querySelector('.area-panel .hold-chip')).toBeNull();
+    // La riga in fondo viene dopo la tabella
+    const table = within(view()).getByRole('table');
+    expect(table.compareDocumentPosition(legend()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(within(view()).getByRole('tab', { name: /^Sostenibilit/ }));
+    expect(view().querySelector('.area-legend')).toBeNull();
   });
 
-  it('Offesa: la legenda di Coverage tipi sulla riga degli strumenti', async () => {
+  it('Offesa: la legenda di Coverage tipi nella riga in fondo alla tabella', async () => {
     const user = await openTab('Offesa');
-    const legend = () => view().querySelector('.area-tools-row > .area-legend');
+    const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     expect(legend()).toHaveTextContent('Forte (oltre 66%)Conta (oltre 33%)');
-    expect(view().querySelector('.area-panel .area-legend-swatch')).toBeNull();
   });
 
   it('Difesa: la nota del meteo sotto la tabella', async () => {

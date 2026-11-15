@@ -322,7 +322,7 @@ describe('Bonus/Malus', () => {
     expect(screen.queryByText('Cosa toglie')).toBeNull();
   });
 
-  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; riga degli strumenti e striscia dei problemi come nelle altre aree', async () => {
+  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; striscia dei problemi come nelle altre aree', async () => {
     const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
     expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
     await user.click(groupTab(/^Bonus/));
@@ -331,7 +331,7 @@ describe('Bonus/Malus', () => {
     // Il link al catalogo, per vedere come guadagnarli; la scheda vuota ha solo lo zero del conto
     expect(within(empty).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
     expect(groupTab(/^Bonus/)).toHaveAccessibleName('Bonus 0');
-    expect(document.querySelector('.area-tools-row')).not.toBeNull();
+    expect(document.querySelector('.area-tools-row')).toBeNull();
     expect(document.querySelector('.area-problems-row.is-clear')).toHaveTextContent("Nessun problema in quest'area");
   });
 

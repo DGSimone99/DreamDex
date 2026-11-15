@@ -8,6 +8,8 @@ import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
 import { viewLabelKey } from './AnalysisTabs';
 import { AreaGuide } from './AreaGuide';
+import type { CoachStep } from '../engine/coachSteps';
+import { solvable } from './dashboard/FixRow';
 import { EffSwitch } from './effTag';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
@@ -18,10 +20,11 @@ const HELP_SIZE = 18;
 
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
- * aperta, una riga sottile degli strumenti (legenda a sinistra, interruttore dell'efficacia a destra), il dettaglio di
- * quella scelta a tutta larghezza e in fondo la striscia coi problemi dell'area, che porta al Coaching.
+ * aperta (a destra l'interruttore dell'efficacia), subito sotto il dettaglio di quella scelta a tutta larghezza (la legenda
+ * dei colori, dove c'è, sta nella riga in fondo alla tabella) e in fondo la striscia coi problemi dell'area, che porta al
+ * Coaching solo quando il Coaching ha una proposta per almeno uno di loro.
  */
-export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching }: {
+export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, steps = null }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
@@ -36,6 +39,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   formatId?: FormatId;
   /** Apre il Coaching (la striscia dei problemi in fondo); senza, la striscia non è un pulsante. */
   onCoaching?: () => void;
+  /** Le tappe del Coaching (null: si stanno calcolando, o non ci sono): la striscia porta lì solo se una risolve un problema. */
+  steps?: CoachStep[] | null;
 }) {
   const t = useT();
   const lang = useLang();
@@ -57,7 +62,6 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
-  const legend = current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
   // Il nome della scheda di Analisi (Bonus/Malus si chiama "Ruoli e Bonus")
@@ -73,8 +77,10 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const hidden = sorted.slice(fit);
   const serious = problems.some(p => p.severity === 'serious');
   const count = t(problems.length === 1 ? 'area.problems.one' : 'area.problems.many', { n: problems.length });
-  // Solo coi problemi la striscia porta al Coaching (senza, è una frase ferma)
-  const link = problems.length > 0 && !!onCoaching;
+  // La striscia porta al Coaching solo se lì c'è una proposta per almeno uno dei problemi: senza problemi, coi problemi
+  // che nessuna tappa risolve o mentre le tappe si calcolano è ferma (i problemi restano scritti)
+  const computing = problems.length > 0 && !!onCoaching && steps === null;
+  const link = problems.length > 0 && !!onCoaching && !!steps && solvable(problems, steps).length > 0;
 
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede sulla scheda aperta, a destra
   const [helpPlace, setHelpPlace] = useState({ left: 0, top: 0 });
@@ -159,6 +165,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
           ))}
         </div>
         {tabs.filter(tab => tab.describe).map(tab => <span key={tab.key} id={`${id}-${tab.key}-desc`} hidden>{tab.describe}</span>)}
+        {/* L'interruttore dell'efficacia, a destra nella striscia, solo sulle sottoschede con l'etichetta nelle caselle */}
+        {current.effSide && (
+          <span className="strip-switch">
+            <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
+          </span>
+        )}
         {current.help && (
           <span className="area-help" style={helpPlace}>
             <button ref={helpButton} type="button" className="help-button" aria-label={helpLabel}
@@ -174,23 +186,14 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
           onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
-      {/* La riga degli strumenti c'è sempre, in ogni area (anche vuota in Ruoli e Bonus), alta uguale: il pannello sotto parte
-          alla stessa altezza ovunque. A sinistra la legenda dei colori della scheda aperta, a destra l'interruttore
-          dell'efficacia (solo sulle sottoschede con l'etichetta nelle caselle) */}
-      <div className="area-tools-row">
-        {legend}
-        {current.effSide && (
-          <span className="tools-switch">
-            <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
-          </span>
-        )}
-      </div>
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
         {current.panel}
       </div>
       {/* In fondo i problemi dell'area, la stessa striscia della Panoramica (stesso posto, stessa misura): c'è sempre. Senza
           problemi (anche in Velocità, dove il Coaching non ne dà) solo "Nessun problema in quest'area", ferma; coi problemi
-          tutta la striscia porta al Coaching: il clic sta sulla striscia, il pulsante vero è "Vai al Coaching" (tastiera e lettori) */}
+          scritti, tutta la striscia porta al Coaching solo se lì c'è una proposta per almeno uno: il clic sta sulla striscia, il
+          pulsante vero è "Vai al Coaching" (tastiera e lettori). Senza proposte la striscia è ferma e senza pulsante; mentre le
+          tappe si calcolano il pulsante tiene il suo posto, invisibile, così i problemi in riga non cambiano */}
       <div className={`area-problems-row fix-row${problems.length === 0 ? ' is-clear' : serious ? ' serious' : ''}${link ? ' is-link' : ''}`}
         onClick={link ? onCoaching : undefined}>
         {problems.length === 0 ? (
@@ -222,6 +225,9 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
           <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: `${count} ${t('area.problems.inArea', { area: title })}` })}>
             {t('overview.fix.go')}<span aria-hidden="true"> ›</span>
           </button>
+        )}
+        {computing && (
+          <span className="fix-go dash-link fix-go-wait" aria-hidden="true">{t('overview.fix.go')} ›</span>
         )}
       </div>
     </section>

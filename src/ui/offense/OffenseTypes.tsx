@@ -21,7 +21,7 @@ const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVE
  * Copertura. Chi il motore ha scartato resta con le caselle vuote. In basso a sinistra ×2 (o ×4) se il membro ha almeno una
  * mossa superefficace sul tipo, anche se il danno migliore viene da un'altra; "Solo superefficaci" (`ctx.effOnly`) spegne le
  * altre caselle. Col puntatore la colonna si accende e sotto l'icona compare il tipo.
- * La legenda dei colori sta sulla riga degli strumenti (OffenseTypesLegend).
+ * Sotto la tabella, in fondo al pannello, una riga bassa con la legenda dei colori.
  */
 export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
   const t = useT();
@@ -94,12 +94,13 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
           </tbody>
         </table>
       </div>
+      <div className="rob-legend ht-foot"><span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span></div>
     </div>
   );
 }
 
-/** La legenda dei colori della scheda dei tipi dell'Offesa, sulla riga degli strumenti: forte, conta. */
-export function OffenseTypesLegend() {
+/** La legenda dei colori della scheda dei tipi dell'Offesa, nella riga in fondo alla tabella: forte, conta. */
+function OffenseTypesLegend() {
   const t = useT();
   return (
     <>

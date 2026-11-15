@@ -15,14 +15,14 @@
    --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede.
    --def-top è lo spazio tenuto sotto le righe dei membri, uguale in tutte le schede e in tutte le aree (Difesa, Offesa,
    Velocità), così le righe hanno la stessa altezza ovunque: lo misura la scheda con più roba sotto, una riga di riepilogo
-   (Regge, Lo coprono) e una riga bassa dopo la tabella (i conteggi di Coverage meta, le note del meteo). Le legende dei
-   colori stanno sulla riga dei problemi, fuori dalla cornice */
+   (Regge, Lo coprono) e una riga bassa dopo la tabella (la legenda dei colori, i conteggi di Coverage meta, le note del
+   meteo) */
 .def-frame { --def-top: 50px; --def-gap: 6px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
   display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
 .def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
 .def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); overflow: visible; }
-/* La lista parte subito sotto la riga dei problemi: meno margine in alto nel pannello */
+/* La lista parte subito sotto la striscia delle sottoschede: meno margine in alto nel pannello */
 .area-panel:has(> .def-frame) { padding-top: 6px; }
 /* L etichetta "Pokémon" sopra la colonna dei nomi, uguale in ogni tabella */
 .ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
@@ -218,10 +218,10 @@
 .cm-pages .icon { width: 14px; height: 14px; }
 .cm-at { min-width: 4.5ch; text-align: center; font: 600 13px/1 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
 .ad-panel .rob-legend.cm-foot { flex-wrap: nowrap; justify-content: space-between; gap: 12px; white-space: nowrap; }
-/* Sotto la tabella una riga sola e bassa (la legenda sta sulla riga dei problemi): i conteggi di Coverage meta, le note del
-   meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) */
+/* Sotto la tabella, in fondo al pannello, una riga sola e bassa: a sinistra la legenda dei colori, poi i conteggi di
+   Coverage meta (a destra) o le note del meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) */
 .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: 20px; padding-top: 0; }
-.ad-panel .rob-legend.ht-foot { flex-wrap: nowrap; white-space: nowrap; }
+.ad-panel .rob-legend.ht-foot { flex-wrap: nowrap; gap: 12px; white-space: nowrap; }
 .ad-panel .ht-notes { flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; font-size: 12px; cursor: help; }
 .ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; font-size: 13px; color: var(--muted); }
 .cm-summary .ct-pill { font-size: 12px; }
@@ -370,14 +370,10 @@
 .ct-table .col-name { position: absolute; top: 100%; left: 50%; z-index: 3; transform: translateX(-50%); margin-top: 1px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--ground); font: 600 11px/1.3 var(--ui); color: var(--text); white-space: nowrap; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .def-frame .ct-table td { transition: none; } }
 
-/* Portatili bassi (1366×657): righe delle tabelle fino a 26px (la striscia dei problemi in fondo prende il suo posto) */
-@media (min-width: 1100px) and (max-height: 700px) {
-  .area-view .def-frame { --def-row-min: 26px; }
-}
-/* I portatili più bassi (1280×620): righe delle tabelle a 24px (lo sprite piccolo ci sta), righe più vicine, testata più
-   bassa, meno margine sopra e la riga dei conteggi più bassa */
+/* I portatili più bassi (1280×620): righe delle tabelle fino a 24px (lo sprite piccolo ci sta), meno margine sopra e la
+   riga in fondo più bassa */
 @media (min-width: 1100px) and (max-height: 640px) {
-  .area-view .def-frame { --def-row-min: 24px; --def-sp: 2px; --def-head: 40px; --def-gap: 4px; }
-  .area-panel:has(> .def-frame) { padding-top: 0; }
-  .ad-panel .rob-legend.cm-foot { height: 16px; }
+  .area-view .def-frame { --def-row-min: 24px; }
+  .area-panel:has(> .def-frame) { padding-top: 3px; }
+  .ad-panel .rob-legend.cm-foot { height: 18px; }
 }

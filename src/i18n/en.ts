@@ -158,7 +158,6 @@ export const en = {
   'overview.fix.metaHitMore': "Uncovered on offense vs {list} and {n} more from the meta",
   'overview.fix.go': "Go to Coaching",
   'overview.fix.none': "Nothing to fix",
-  'overview.fix.noProposals': "No Coaching proposals for now",
   'overview.fix.more': "+{n}",
   'coach.verdict.incomplete': "Incomplete team",
   'coach.verdict.solid': "Solid team",

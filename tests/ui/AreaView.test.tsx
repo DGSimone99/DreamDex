@@ -6,6 +6,7 @@ import { rateTeam } from '../../src/engine/rating';
 import { emptySet } from '../../src/engine/sets';
 import { AreaGuide } from '../../src/ui/AreaGuide';
 import { AreaView } from '../../src/ui/AreaView';
+import type { CoachStep } from '../../src/engine/coachSteps';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -51,26 +52,27 @@ describe('vista di un\'area sulla pagina', () => {
     const line = screen.getByRole('list', { name: /Problemi/ });
     expect(within(line).getByText('Debole a Fuoco').closest('li')).toHaveClass('serious');
     expect(within(screen.getByRole('tabpanel')).queryByText('Debole a Fuoco')).toBeNull();
-    // Ordine: striscia delle sottoschede, riga degli strumenti, pannello, problemi
+    // Ordine: striscia delle sottoschede, subito il pannello, in fondo i problemi
     const order = [...container.querySelector('.area-view')!.children].map(el => el.className.split(' ')[0]).filter(c => c.startsWith('area-'));
-    expect(order).toEqual(['area-strip', 'area-tools-row', 'area-panel', 'area-problems-row']);
+    expect(order).toEqual(['area-strip', 'area-panel', 'area-problems-row']);
     expect(line.closest('.area-problems-row')).toHaveClass('serious');
   });
 
-  it('la riga degli strumenti e la striscia dei problemi ci sono in ogni area, anche in Ruoli e Bonus', () => {
+  it('la striscia dei problemi c\'è in ogni area, anche in Ruoli e Bonus; niente riga degli strumenti sopra il pannello', () => {
     for (const area of ['defense', 'strength', 'speed', 'bonusMalus'] as const) {
       const { container, unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} />);
-      expect(container.querySelectorAll('.area-tools-row')).toHaveLength(1);
+      expect(container.querySelector('.area-tools-row')).toBeNull();
       expect(container.querySelectorAll('.area-problems-row')).toHaveLength(1);
       unmount();
     }
   });
 
-  it('tutta la striscia dei problemi porta al Coaching; il pulsante dice cosa contiene', async () => {
+  it('con una proposta del Coaching tutta la striscia dei problemi porta lì; il pulsante dice cosa contiene', async () => {
     const user = userEvent.setup();
     const onCoaching = vi.fn();
+    const fire = { severity: 'minor' as const, category: 'defense' as const, text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' };
     const { container } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching}
-      problems={[{ severity: 'minor', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' }]} />);
+      problems={[fire]} steps={[{ problem: fire, swap: null, move: null, group: [], alsoSolves: [] } as unknown as CoachStep]} />);
     const go = screen.getByRole('button', { name: 'Vai al Coaching: 1 problema in Difesa' });
     await user.click(go);
     expect(onCoaching).toHaveBeenCalledTimes(1);
@@ -82,6 +84,26 @@ describe('vista di un\'area sulla pagina', () => {
     await user.keyboard('{Enter}');
     expect(onCoaching).toHaveBeenCalledTimes(3);
     expect(container.querySelector('.area-problems-row')).toHaveClass('is-link');
+  });
+
+  it('problemi che nessuna proposta del Coaching risolve, o tappe ancora da calcolare: i problemi restano scritti, la striscia è ferma', async () => {
+    const user = userEvent.setup();
+    const onCoaching = vi.fn();
+    const fire = { severity: 'serious' as const, category: 'defense' as const, text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' };
+    const other = { ...fire, key: 'defense:Water', text: 'Debole a Acqua' };
+    for (const steps of [[], [{ problem: other, swap: null, move: null, group: [], alsoSolves: [] } as unknown as CoachStep], null]) {
+      const { container, unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching} problems={[fire]} steps={steps} />);
+      const row = container.querySelector<HTMLElement>('.area-problems-row')!;
+      expect(row).not.toHaveClass('is-link');
+      expect(within(row).getByText('Debole a Fuoco')).toBeInTheDocument();
+      expect(within(row).queryByRole('button')).toBeNull();
+      // Mentre le tappe si calcolano "Vai al Coaching" tiene il posto, invisibile e fuori dai lettori: niente salti
+      if (steps === null) expect(row.querySelector('.fix-go-wait')).toHaveAttribute('aria-hidden', 'true');
+      else expect(row.querySelector('.fix-go-wait')).toBeNull();
+      await user.click(within(row).getByText('Debole a Fuoco'));
+      expect(onCoaching).not.toHaveBeenCalled();
+      unmount();
+    }
   });
 
   it('senza problemi la striscia resta, ferma, con "Nessun problema in quest’area" (anche in Velocità): niente link al Coaching', async () => {

@@ -296,15 +296,17 @@ describe('Panoramica: Da sistemare', () => {
     expect(onView).not.toHaveBeenCalled();
   });
 
-  it('problemi senza proposta: la striscia resta con una frase quieta e porta al Coaching (lì i problemi ci sono)', async () => {
+  it('problemi senza proposta: la stessa striscia verde e ferma "Nessun problema da sistemare", niente link al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
     render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={[]} onView={onView} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
-    expect(row).toHaveClass('is-plain');
-    expect(row).toHaveTextContent('Nessuna proposta del Coaching per ora');
-    await user.click(within(row).getByText('Nessuna proposta del Coaching per ora'));
-    expect(onView).toHaveBeenCalledWith('coaching');
+    expect(row).toHaveClass('is-clear');
+    expect(row).not.toHaveClass('is-link');
+    expect(row).toHaveTextContent('Nessun problema da sistemare');
+    expect(within(row).queryByRole('button')).toBeNull();
+    await user.click(within(row).getByText('Nessun problema da sistemare'));
+    expect(onView).not.toHaveBeenCalled();
   });
 
   it('con proposte: tutta la striscia porta al Coaching, il pulsante dice quanti', async () => {

@@ -160,7 +160,6 @@ export const it: Record<keyof typeof en, string> = {
   'overview.fix.metaHitMore': "Scoperti in attacco contro {list} e altri {n} del meta",
   'overview.fix.go': "Vai al Coaching",
   'overview.fix.none': "Nessun problema da sistemare",
-  'overview.fix.noProposals': "Nessuna proposta del Coaching per ora",
   'overview.fix.more': "+{n}",
   'coach.verdict.incomplete': "Team incompleto",
   'coach.verdict.solid': "Team solido",

@@ -79,7 +79,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     body = (
       <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed} formatId={data.formatId}
         picked={(area === target.tab ? target.sub : undefined) ?? subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))}
-        onCoaching={() => openView('coaching')} />
+        onCoaching={() => openView('coaching')} steps={advice?.steps ?? null} />
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree

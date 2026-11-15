@@ -918,13 +918,13 @@ for (const [w, h] of sizes) {
             return `${band.classList[1]}:cols=${cols} by=${by} pts=${pts} headMarkX=${sum}`;
           }).join(' | ')}] rowHs=[${[...new Set([...rl.querySelectorAll<HTMLElement>('.rl-row')].map(r => Math.round(r.getBoundingClientRect().height)))].join(',')}] three=${rl.classList.contains('three') ? 1 : 0} bandsR=${Math.round(rlScroll?.getBoundingClientRect().right ?? 0)} headR=${Math.round(rl.querySelector('.rl-more')?.getBoundingClientRect().right ?? 0)}` : '';
           const roles = rl ? ` roles: rows=${rlRows} bands=${rl.querySelectorAll('.rl-band').length} missing=${rl.querySelectorAll('.rl-row.bad, .rl-row.warn').length} rowH=${Math.round(rlRowH)} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} headH=${Math.round(rl.querySelector('.rl-head')?.getBoundingClientRect().height ?? 0)} nameCut=${[...rl.querySelectorAll<HTMLElement>('.rl-mon-name, .rl-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length}${rlAlign}` : '';
-          // Legenda sulla riga degli strumenti: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
-          // della striscia in fondo; panelTop = dove parte il pannello (uguale in ogni area)
-          const lg = document.querySelector<HTMLElement>('.area-tools-row .area-legend');
+          // Legenda nella riga in fondo alla tabella: larghezza, quanto sborda dalla riga (0 = intera; footCut = la riga intera
+          // sborda) e problemi mostrati / nel "+N" della striscia in fondo; panelTop = dove parte il pannello (uguale in ogni area)
+          const lg = document.querySelector<HTMLElement>('.area-panel .area-legend');
           const lgRow = lg?.parentElement?.getBoundingClientRect();
           const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
           const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
-          const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} problems=${shownP}+${moreP} stripH=${Math.round(lgRow.height)}` : '';
+          const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} footCut=${lg.parentElement!.scrollWidth - lg.parentElement!.clientWidth} footGap=${Math.round(el.getBoundingClientRect().bottom - lgRow.bottom)} problems=${shownP}+${moreP} footH=${Math.round(lgRow.height)}` : '';
           const pr = document.querySelector<HTMLElement>('.area-problems-row');
           const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} problemsRow=${Math.round(pr.getBoundingClientRect().height)} problemsShown=${document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length}+${document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} problemsCut=${Math.max(0, Math.round(pr.getBoundingClientRect().bottom - (pr.parentElement?.getBoundingClientRect().bottom ?? 0)))}` : '';
           return `${guide}${prAt}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
@@ -1053,9 +1053,11 @@ for (const [w, h] of sizes) {
       const bar = tt.parentElement!;
       return `${help} teamType=w${Math.round(tt.getBoundingClientRect().width)} room${Math.round(room - longest)} barOver=${bar.scrollWidth - bar.clientWidth}`;
     });
+    // fixStrip: x, larghezza, altezza e fondo della striscia in fondo (Da sistemare o problemi dell'area), uguale ovunque
+    const fixStrip = await page.evaluate(() => { const r = document.querySelector('.fix-row')?.getBoundingClientRect(); return r ? ` fixStrip=x${Math.round(r.left)},w${Math.round(r.width)},h${Math.round(r.height)},bottom${Math.round(r.bottom)}` : ''; });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${fixStrip}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
     await page.close();
   }
 }
