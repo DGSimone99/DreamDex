@@ -4,6 +4,7 @@ import type { TargetHit } from '../../engine/offense';
 import { battleMoveType, moveAttackMultiplier, type TypeName } from '../../engine/types';
 import type { TeamSet } from '../../engine/sets';
 import { setupBoosts } from '../../engine/setupBoosts';
+import { moveEffects } from './moveEffects';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { MoveLine } from '../dashboard/CoverageTip';
@@ -16,12 +17,6 @@ const bandOf = (pct: number): HoldBand => holdBand(pct / 100);
 const RANK: Record<HoldBand, number> = { ohko: 3, two: 2, three: 1, four: 0 };
 const multLabel = (m: number) => (m >= 4 ? '×4' : m > 1 ? '×2' : m === 0 ? '×0' : m <= 0.25 ? '×¼' : m < 1 ? '×½' : '×1');
 const multTone = (m: number) => (m > 1 ? 'se' : m < 1 ? 'nve' : 'neutral');
-
-/** Quanto alza il danno ogni meteo o campo, e su che tipo di mosse (gli altri non alzano il danno di chi attacca). */
-const FIELD_BOOST: Record<string, { type: TypeName; mult: number }> = {
-  sun: { type: 'Fire', mult: 1.5 }, rain: { type: 'Water', mult: 1.5 },
-  electricterrain: { type: 'Electric', mult: 1.3 }, psychicterrain: { type: 'Psychic', mult: 1.3 }, grassyterrain: { type: 'Grass', mult: 1.3 },
-};
 
 /** Il colpo di un membro su un bersaglio, quanto serve al tooltip (Coverage tipi: un `TargetHit`; Coverage meta: la casella). */
 export type CellHit = Pick<TargetHit, 'move' | 'plainPct' | 'setupPct' | 'oncePct' | 'teamPct' | 'teamVia' | 'teamMove' | 'comboPct' | 'comboMove'>;
@@ -53,15 +48,16 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
   const lang = useLang();
   const band = bandOf(hit.plainPct);
   const defTypes = type ? [type] : (battleSpecies({ species: target ?? '', item: '' })?.types ?? []);
-  const num = (x: number) => x.toLocaleString(lang === 'it' ? 'it-IT' : 'en-US', { maximumFractionDigits: 2 });
-  // L'effetto, piccolo accanto al nome: "Att ×2" per la danza (gli stadi di Attacco / Attacco Speciale), "Fuoco ×1,5" per il meteo
-  const boosts = setupBoosts(set)?.boosts ?? {};
-  const setupEffect = (['atk', 'spa'] as const).filter(k => (boosts[k] ?? 0) > 0).map(k => `${t(`stat.${k}`)} ×${num((2 + boosts[k]!) / 2)}`).join(' · ');
-  const teamEffect = (hit.teamVia ?? []).map(v => FIELD_BOOST[v.condition]).filter(Boolean).map(b => `${typeName(b.type, lang)} ×${num(b.mult)}`).join(' · ');
+  // L'effetto di danza e meteo/campo sulla mossa di ogni riga (Att ×2 solo per una mossa fisica, Fuoco ×1,5 solo per il Fuoco...)
+  const boosts = setupBoosts(set)?.boosts ?? null;
+  const teamConds = (hit.teamVia ?? []).map(v => v.condition as string);
+  const effectOf = (kind: 'setup' | 'once' | 'team' | 'combo', move: string | null) => (kind === 'setup' ? moveEffects(set, move, { boosts }, t, lang)
+    : kind === 'team' ? moveEffects(set, move, { conditions: teamConds }, t, lang)
+      : kind === 'combo' ? moveEffects(set, move, { boosts, conditions: teamConds }, t, lang) : '');
   const extra = (pct: number | null, label: string | null, kind: 'setup' | 'once' | 'team' | 'combo', move: string | null, always = false) => {
     if (pct === null || !label) return null;
     const up = bandOf(pct);
-    const effect = kind === 'setup' ? setupEffect : kind === 'team' ? teamEffect : kind === 'combo' ? [setupEffect, teamEffect].filter(Boolean).join(' · ') : '';
+    const effect = effectOf(kind, move);
     return RANK[up] > RANK[band] || always ? { label, effect, band: up, kind, move, pct } : null;
   };
   // Col meteo o il campo del team: "Sole · Ninetales" (più condizioni insieme col "+"); se cambia la mossa migliore la riga
@@ -75,7 +71,8 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
     extra(hit.setupPct, setupName, 'setup', hit.move),
     extra(hit.teamPct, teamLabel, 'team', hit.teamMove ?? hit.move, teamMoveChanged),
     // Danza e meteo del team insieme: solo se arrivano più in alto di ognuno dei due da solo
-    comboUp ? extra(hit.comboPct, `${setupName} + ${teamLabel}`, 'combo', hit.comboMove ?? hit.move) : null,
+    // Nella riga mista solo i nomi ("Danzaspada + Sole"): chi porta il meteo è già scritto nella riga del meteo
+    comboUp ? extra(hit.comboPct, `${setupName} + ${(hit.teamVia ?? []).map(v => t(`conditionName.${v.condition}`)).join(' + ')}`, 'combo', hit.comboMove ?? hit.move) : null,
     extra(hit.oncePct, onceName, 'once', hit.move),
   ].filter((x): x is { label: string; effect: string; band: HoldBand; kind: 'setup' | 'once' | 'team' | 'combo'; move: string | null; pct: number } => !!x);
   return (
