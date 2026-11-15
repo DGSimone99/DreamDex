@@ -85,8 +85,10 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     const up = c.setupPct !== null && rank(c.setupPct) > rank(c.pct);
     // Il triangolo azzurro: il meteo o il campo di un compagno lo fa salire di fascia
     const teamUp = c.teamPct !== null && rank(c.teamPct) > rank(c.pct);
+    // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
+    const bothUp = !up && !teamUp && c.comboPct !== null && rank(c.comboPct) > rank(c.pct);
     return (
-      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up ? ' has-setup' : ''}${teamUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { hover.enter(k0).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); }} onMouseLeave={tip.close}>
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
         {k === 'ohko'
