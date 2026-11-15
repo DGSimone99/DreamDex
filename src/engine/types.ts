@@ -168,6 +168,15 @@ const GHOST_HITTERS = new Set(['scrappy', 'mindseye']);
 /** Abilità che ignorano quelle del bersaglio (Levitate, Flash Fire...). */
 const MOLD_BREAKERS = new Set(['moldbreaker', 'teravolt', 'turboblaze']);
 
+/** Il tipo con cui una mossa di `attacker` colpisce davvero: Pixilate & co. fanno Folletto/Volante/Ghiaccio/Elettro le Normale. */
+export function battleMoveType(attacker: TeamSet, moveName: string): TypeName | null {
+  const own = attackingMoves(attacker).find(m => toID(m.name) === toID(moveName));
+  const base = own?.type ?? (getMove(moveName)?.type as TypeName | undefined);
+  if (!base) return null;
+  const ability = toID(battleAbility(attacker));
+  return ability === 'normalize' ? 'Normal' : base === 'Normal' && ATE_ABILITIES[ability] ? ATE_ABILITIES[ability] : base;
+}
+
 /** Il moltiplicatore di tipo di una mossa d'attacco (col tipo già in battaglia) di `attacker` sul bersaglio. */
 function attackMultiplier(attacker: TeamSet, move: AttackMove, defTypes: readonly string[], defAbility: string): number {
   const ability = toID(battleAbility(attacker));

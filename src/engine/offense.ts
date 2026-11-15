@@ -1,4 +1,5 @@
 import { usesMeta } from './analysis';
+import { teamFieldSources, type FieldSource } from './partner';
 import { coverageTargets, META_DEPTH, teamCoverage, type CoverageRow } from './coverage';
 import { bestHit, hasZMove, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
 import type { EngineData } from './data';
@@ -83,6 +84,14 @@ export interface TargetHit {
   plainPct: number;
   setupPct: number | null;
   oncePct: number | null;
+  /** Il colpo intero col meteo o il campo del team (null se non fa di più) e chi lo porta: solo da mostrare. */
+  teamPct: number | null;
+  teamVia: FieldSource[] | null;
+  /** La mossa del colpo col meteo o il campo del team. */
+  teamMove: string | null;
+  /** Dopo la danza e col meteo/campo del team insieme (null se manca l'uno o l'altro): danno % e mossa. */
+  comboPct: number | null;
+  comboMove: string | null;
 }
 
 export interface MemberOffense {
@@ -235,7 +244,11 @@ export function fieldCombos(own: FieldCondition[], all: FieldCondition[]): Field
 }
 
 /** Per ognuno dei 18 bersagli del pacchetto: danno senza niente, dopo una danza e con Tera/Z (al massimo 1), e la mossa migliore. */
-interface PerTarget { plain: number[]; danced: number[] | null; once: number[] | null; moves: (string | null)[] }
+interface PerTarget { plain: number[]; danced: number[] | null; once: number[] | null; moves: (string | null)[];
+  /** Il colpo intero col meteo o il campo del team che fa di più (null se non ce n'è) e quali condizioni lo danno. */
+  team: (number | null)[]; teamConditions: (FieldCondition[] | null)[]; teamMoves: (string | null)[];
+  /** Setup e meteo/campo del team insieme: il colpo intero e la mossa (null senza setup o senza meteo del team). */
+  combo: (number | null)[] | null; comboMoves: (string | null)[] | null }
 
 /**
  * Misure grezze del set. Pacchetto (`power`): danno contro i 18 Pokémon medi dei tipi, bersaglio per bersaglio.
@@ -280,6 +293,7 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
     const expected: number[] = [];
     const steps: number[] = [];
     let move: string | null = null;
+    let teamHit: { expected: number; conditions: FieldCondition[]; move: string | null } | null = null;
     // Multiscale, Tera Shell, Air Balloon del bersaglio: un quarto, metà se si cura (damage.ts)
     const firstHit = firstHitShare(target);
     for (const variant of oneUse ? oneUseVariants : [{ tera: false, z: false }]) {
@@ -296,6 +310,7 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
       for (const conditions of combos) {
         const hit = bestHit(set, target, { ...base, conditions });
         if ((hit?.expected ?? 0) > (on?.expected ?? 0)) on = hit;
+        if ((hit?.expected ?? 0) > Math.max(off?.expected ?? 0, teamHit?.expected ?? 0)) teamHit = { expected: hit!.expected, conditions: conditions.filter(c => !own.includes(c)), move: hit!.move ?? null };
         const value = mix(hit, conditions.some(c => moveOnly.has(c)) ? MOVE_FIELD_SHARE : FIELD_SHARE);
         if (value.expected > pick.expected) pick = value;
       }
@@ -305,7 +320,7 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
       steps.push(pick.step);
     }
     const best = expected.indexOf(Math.max(...expected));
-    return { expected: expected[best] ?? 0, step: steps[best] ?? 0, move };
+    return { expected: expected[best] ?? 0, step: steps[best] ?? 0, move, team: teamHit };
   };
 
   const targets = measure === 'power' ? coverageTargets(data, 'types') : coverageTargets(data);
@@ -314,7 +329,8 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
   // Bersaglio per bersaglio: senza niente, dopo una danza, con Tera/Z (mai sotto il danno senza)
   const plainHits = targets.map(target => against(target.set));
   const plain = plainHits.map(h => h.expected);
-  const danced = setup ? targets.map(target => against(target.set, setup.boosts).expected) : null;
+  const dancedHits = setup ? targets.map(target => against(target.set, setup.boosts)) : null;
+  const danced = dancedHits ? dancedHits.map(h => h.expected) : null;
   const once = withOneUse ? targets.map((target, i) => Math.max(plain[i], against(target.set, undefined, true).expected)) : null;
   const weighted = (xs: number[]) => targets.reduce((acc, target, i) => acc + target.weight * xs[i], 0);
   // Quale mossa è più spesso la migliore (per le schede)
@@ -337,7 +353,12 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
     setupExpected: danced ? weighted(danced) : null,
     steps: plainWalls.map(r => r.step), hits: plainWalls.map(r => r.expected),
     setupSteps: boosted?.map(r => r.step) ?? null, setupHits: boosted?.map(r => r.expected) ?? null,
-    perTarget: measure === 'power' ? { plain, danced, once, moves: plainHits.map(h => h.move) } : null,
+    perTarget: measure === 'power' ? {
+      plain, danced, once, moves: plainHits.map(h => h.move),
+      team: plainHits.map(h => (h.team ? Math.min(1, h.team.expected) : null)), teamConditions: plainHits.map(h => h.team?.conditions ?? null), teamMoves: plainHits.map(h => h.team?.move ?? null),
+      combo: dancedHits ? dancedHits.map(h => (h.team ? Math.min(1, h.team.expected) : null)) : null,
+      comboMoves: dancedHits ? dancedHits.map(h => h.team?.move ?? null) : null,
+    } : null,
   };
 }
 
@@ -417,6 +438,7 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const setupGain = value - meanScore(creditsOf(p, 0, ONE_USE_SHARE));
   const oneUseGain = value - meanScore(creditsOf(p, SETUP_SHARE, 0));
   const labels = coverageTargets(data, 'types').map(t => t.label);
+  const sources = teamFieldSources(set, team);
   const coverMeta = usesMeta(data) ? teamCoverage([set], data, 'meta').perMember[0] : null;
   return {
     species: raw.species, bestMove: raw.bestMove, setupMove: raw.setupMove,
@@ -427,6 +449,11 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
       plainPct: Math.floor(100 * Math.min(1, p.plain[i])),
       setupPct: p.danced ? Math.floor(100 * Math.min(1, p.danced[i])) : null,
       oncePct: p.once ? Math.floor(100 * Math.min(1, p.once[i])) : null,
+      teamPct: p.team[i] === null ? null : Math.floor(100 * p.team[i]!),
+      teamVia: p.teamConditions[i] ? sources.filter(s => p.teamConditions[i]!.includes(s.condition)) : null,
+      teamMove: p.teamMoves[i],
+      comboPct: p.combo?.[i] == null ? null : Math.floor(100 * p.combo[i]!),
+      comboMove: p.comboMoves?.[i] ?? null,
     })),
     coverMeta,
     total: coverMeta === null ? value : Math.round(OFFENSE_SHARES.types * value + OFFENSE_SHARES.meta * coverMeta),

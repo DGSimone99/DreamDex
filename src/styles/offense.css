@@ -189,3 +189,94 @@
 .kf-note { display: inline-flex; align-items: center; gap: 10px; color: var(--accent-ink); font-weight: 600; }
 .kf-clear { padding: 2px 10px; font: 600 12px/1.2 var(--ui); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 3px; cursor: pointer; }
 .kf-clear:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }
+
+/* Coverage tipi dell'Offesa: le colonne dei tipi scoperti (nessuno li manda KO in due colpi) sotto un velo rosso leggero,
+   dall'icona alla riga del migliore */
+.ct-table th.ct-hole, .ct-table td.ct-hole { background-image: linear-gradient(color-mix(in srgb, var(--bad) 10%, transparent), color-mix(in srgb, var(--bad) 10%, transparent)); }
+/* La riga "Il migliore": la sprite di chi colpisce più forte ogni tipo, piccola, centrata; "—" spento dove nessuno conta.
+   Solo se la cornice ha posto (sugli schermi bassi resta la Copertura) */
+.ct-table tr.ct-best { height: 34px; }
+.ct-best-mon { display: inline-flex; justify-content: center; align-items: center; height: 26px; vertical-align: middle; }
+.ct-best-mon .sprite { flex: none; image-rendering: pixelated; }
+.ct-best-none { color: var(--faint); }
+@container (max-height: 330px) { .ct-table tr.ct-best { display: none; } }
+
+/* Il tooltip di una casella di Coverage tipi: testata col tipo e il badge dei colpi; il membro con la mossa migliore;
+   le righe in più col setup o Tera/Z solo se salgono di fascia */
+.ftip.tht { width: 380px; }
+.ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
+.tht-body { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
+.tht-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tht-name { font: 600 13px/1.2 var(--display); }
+.tht-move { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tht-mult { font: 700 italic 12px/1 var(--display); color: var(--faint); }
+.tht-mult.se { color: var(--good); }
+.tht-mult.nve { color: var(--bad); }
+.tht-pct { margin-left: auto; font: 700 italic 15px/1 var(--display); font-variant-numeric: tabular-nums; }
+.tht-pct small { display: inline; font-size: 0.65em; }
+.tht-none { color: var(--muted); }
+.tht-extra { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); }
+.tht-extra-h { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--muted); }
+.tht-extra-h .ftip-ko { margin-left: auto; }
+
+/* Le tabelle Coverage: freccia, niente cursore del testo; "?" sulle caselle col tooltip */
+.def-frame .ct-table { cursor: default; }
+.off-frame .ct-table td.ok-full, .off-frame .ct-table td.ok-half { cursor: help; }
+/* Coverage tipi dell'Offesa: Copertura e Il migliore staccate dalle righe dei membri, con più aria */
+.off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: 6px; padding-bottom: 6px; }
+.off-frame.def-types .ct-table tr.ct-best { height: 32px; }
+.off-frame.def-types .ct-table tr.ct-best > * { padding-top: 2px; }
+@media (min-width: 1100px) and (max-height: 640px) { .off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: 4px; padding-bottom: 4px; } }
+/* Il triangolo del setup nell'angolo in alto a destra della casella, come sui pezzi della Generale: la danza fa salire di fascia */
+.off-frame .ct-table td.has-setup { position: relative; }
+.off-frame .ct-table td.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-top-right-radius: 2px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
+/* Coverage tipi dell'Offesa: il numero in Kanit corsivo come gli altri numeri dell'app, il "%" piccolo */
+.off-frame .ct-table td.ct-cell.ok-full, .off-frame .ct-table td.ct-cell.ok-half { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; }
+.ct-num i { display: inline; margin-left: 1px; font-size: 0.6em; font-weight: 600; font-style: italic; opacity: 0.85; }
+/* Il 100% (OHKO): verde pieno e acceso col bordo pieno e il numero verso il bianco, come i pezzi OHKO della Generale */
+.def-frame .ct-cell.ok-ohko, .area-legend-swatch i.ok-ohko { background: color-mix(in srgb, var(--good) 55%, var(--panel)); border-color: var(--good); }
+.off-frame .ct-table td.ct-cell.ok-ohko { color: color-mix(in srgb, var(--good) 25%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
+/* Coverage meta dell'Offesa, la stessa veste di Coverage tipi: numeri in Kanit corsivo col % piccolo, freccia col "?"
+   sulle caselle (tooltip), più aria intorno a Lo coprono, l'OHKO col suo verde acceso */
+.off-frame.def-walls .rob-cell { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; cursor: help; }
+.off-frame.def-walls .rob-cell.ko-ohko { background: color-mix(in srgb, var(--good) 55%, var(--panel)); border-color: var(--good); color: color-mix(in srgb, var(--good) 25%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
+.off-frame.def-walls .ct-table tr.ct-sum-first > * { padding-top: 6px; padding-bottom: 6px; }
+.off-frame.def-walls .wall-h .def-box { cursor: help; }
+.off-frame.def-walls .rob-cell.ko-none { font-weight: 600; }
+/* Coverage meta: sotto il danno la barra dei PS che restano al bersaglio (stile gioco: etichetta "PS" gialla, colori
+   verde oltre metà, giallo fino a 1/5, rosso sotto); in un colpo il timbro rosso "KO" al posto del numero */
+.cm-hp { display: flex; align-items: center; gap: 3px; width: 72%; margin: 6px auto 0; }
+/* L'etichetta "PS" del gioco, disegnata dal CSS (non è testo della casella) */
+.cm-hp::before { content: "PS"; font: 800 8px/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
+.cm-hp-bar { position: relative; flex: 1; height: 5px; border-radius: 3px; background: #15171f; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12); overflow: hidden; }
+.cm-hp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--good); }
+.cm-hp-bar i.warn { background: var(--warn); }
+.cm-hp-bar i.bad { background: var(--bad); }
+.cm-hp-bar.legend { flex: none; display: inline-block; width: 30px; }
+.cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic 16px/1 var(--display); letter-spacing: 0.06em; color: #fff; background: var(--bad);
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--bad) 60%, transparent)); }
+.cm-ko.small { padding: 2px 7px; font-size: 10px; filter: none; }
+/* Righe basse: niente barra, resta il numero */
+@container (max-height: 330px) { .cm-hp { display: none; } }
+/* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
+.off-frame.def-walls .wall-h { line-height: 1; }
+.cm-head-mon { cursor: help; }
+.cm-flag { display: block; width: 34px; height: 3px; margin: 3px auto 0; border-radius: 2px; background: var(--good); }
+.cm-flag.warn { background: var(--warn); }
+.cm-flag.bad { background: var(--bad); }
+/* Coverage meta: il ×2 in alto a sinistra, così non tocca la barra dei PS (righe basse senza barra: resta in basso) */
+.off-frame.def-walls .ct-table .eff-tag { top: 3px; bottom: auto; }
+@container (max-height: 330px) { .off-frame.def-walls .ct-table .eff-tag { top: auto; bottom: 2px; } }
+/* KO in un colpo: casella scura col bordo verde (niente verde pieno), così il timbro rosa risalta senza cozzare */
+.off-frame.def-walls .rob-cell.ko-ohko { background: color-mix(in srgb, var(--good) 10%, var(--panel)); border-color: var(--good); box-shadow: none; }
+/* Il meteo o il campo di un compagno che fa salire di fascia: triangolo azzurro nell'angolo in basso a destra (quello del
+   setup, verde, sta in alto); lo stesso segno nel tooltip e nella legenda */
+.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
+.off-frame .ct-table td.has-team { position: relative; }
+.off-frame .ct-table td.has-team::before { content: ""; position: absolute; right: 0; bottom: 0; width: 9px; height: 9px; border-bottom-right-radius: 2px; background: var(--accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+/* Nelle legende delle tabelle i triangoli restano triangoli (non quadratini) */
+.area-legend .area-legend-swatch i.kob-tri, .area-legend .wall-legend-setup i.kob-tri { width: 0; height: 0; background: none; border-radius: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
+.area-legend .area-legend-swatch i.kob-tri.team, .area-legend .wall-legend-setup i.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
+/* L'effetto della danza o del meteo accanto al nome della riga: piccolo e spento ("Att ×2", "Fuoco ×1,5") */
+.tht-eff { display: inline; margin-left: 2px; font: 600 11px/1 var(--display); color: var(--faint); white-space: nowrap; }

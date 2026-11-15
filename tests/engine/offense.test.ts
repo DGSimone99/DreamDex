@@ -116,6 +116,22 @@ describe('memberOffense', () => {
     expect(damage(memberOffense(fire, [fire, sunnyDay, torkoal], noStats)!)).toBe(byAbility);
   });
 
+  it('il colpo intero col meteo del team si tiene a parte (teamPct) con chi lo porta, solo dove fa di più; il voto non cambia', () => {
+    const fire = set('Arcanine', 'Leftovers', 'Intimidate', ['Flamethrower'], 'Bold', { hp: 252, def: 252 });
+    const torkoal = set('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume'], 'Bold', { hp: 252, def: 252 });
+    const alone = memberOffense(fire, [fire], noStats)!;
+    const withSun = memberOffense(fire, [fire, torkoal], noStats)!;
+    expect(alone.hits.every(h => h.teamPct === null && h.teamVia === null)).toBe(true);
+    const boosted = withSun.hits.filter(h => h.teamPct !== null);
+    expect(boosted.length).toBeGreaterThan(0);
+    for (const h of boosted) {
+      expect(h.teamPct!).toBeGreaterThanOrEqual(h.plainPct);
+      expect(h.teamVia).toEqual([{ condition: 'sun', species: 'Torkoal', via: 'Drought' }]);
+    }
+    // Chi porta il sole con la sua abilità lo ha già sempre: niente di "dal team"
+    expect(memberOffense(torkoal, [fire, torkoal], noStats)!.hits.every(h => h.teamPct === null)).toBe(true);
+  });
+
   it('il sole non abbassa mai il danno', () => {
     const water = set('Kingdra', 'Choice Specs', 'Sniper', ['Hydro Pump', 'Draco Meteor'], 'Modest', { spa: 252, spe: 252 });
     const torkoal = set('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume'], 'Bold', { hp: 252, def: 252 });
