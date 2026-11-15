@@ -398,6 +398,17 @@
 /* Minori: più tenui; mancanti tratteggiati (non sono problemi) */
 .dash-role.minor .dash-role-tag { color: var(--muted); }
 .dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
+/* Al passaggio (si apre il tooltip del ruolo): una luce sfumata senza bordi dietro il chip, verde se coperto, rossa se
+   manca, grigia se è un minore che manca; il bordo del chip si accende appena */
+.dash-role:not(.more) { position: relative; isolation: isolate; cursor: default; }
+.dash-role:not(.more)::before { content: ""; position: absolute; inset: -5px -8px; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.18s var(--ease);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--rc, var(--good)) 30%, transparent), transparent); }
+.dash-role.bad { --rc: var(--bad); }
+.dash-role.soft { --rc: var(--faint); }
+.dash-role:not(.more):hover::before { opacity: 1; }
+.dash-role:not(.more):hover .dash-role-tag { border-color: color-mix(in srgb, var(--rc, var(--good)) 70%, transparent); }
+.dash-role-row { cursor: default; }
+.dash-role-row:hover > * { background: color-mix(in srgb, var(--accent) 7%, transparent); }
 .dash-role.more { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--faint); }
 /* Stretto: etichette e chip più fitti */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }

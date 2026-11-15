@@ -8,7 +8,7 @@ import { ratingThreats, type TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
 import { rolesValue } from './rolesArea';
 import type { TeamSet } from './sets';
-import { poolMedian } from './speed';
+import { poolMedian, speedTier, type SpeedRival } from './speed';
 import type { SpeedCondition } from './speedArea';
 import { t, type Lang } from '../i18n';
 
@@ -27,7 +27,10 @@ export interface TypeCell {
 }
 /** soft: una mancanza che non toglie punti (voce minore, o team con meno di 6 membri). */
 export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | 'minor'; covered: boolean; owners: string[]; soft: boolean }
-export interface SpeedLane { species: string; speed: number; share: number; above: boolean }
+/** Un rivale vicino per velocità: specie, velocità effettiva e cosa la alza (Sciarpa o Booster), per il tooltip della barra. */
+export interface SpeedNeighbour { species: string; speed: number; scarf: boolean; booster: boolean }
+/** `near`: i rivali del meta (o del tier) appena più veloci e appena più lenti, dal più vicino, e quelli a pari velocità. */
+export interface SpeedLane { species: string; speed: number; share: number; above: boolean; near: { faster: SpeedNeighbour[]; slower: SpeedNeighbour[]; ties: SpeedNeighbour[] } | null }
 export interface ThreatPod { species: string; usage: number }
 export interface DashboardData {
   coverage: { cells: TypeCell[]; defense: string; offense: string };
@@ -81,7 +84,15 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
 
   // Velocità: corsie dal più veloce
   const lanes: SpeedLane[] = rating.speed.members
-    .map(m => ({ species: m.species, speed: m.speed, share: m.raw, above: m.raw > 0.5 }))
+    .map(m => {
+      const set = team.find(s => battleName(s) === m.species);
+      const tier = set ? speedTier(set, data) : null;
+      const near = (rivals: SpeedRival[]) => rivals.map(r => ({ species: r.species, speed: r.value, scarf: r.item === 'Choice Scarf', booster: !!r.booster }));
+      return {
+        species: m.species, speed: m.speed, share: m.raw, above: m.raw > 0.5,
+        near: tier ? { faster: near(tier.faster), slower: near(tier.slower), ties: near(tier.ties.slice(0, 3)) } : null,
+      };
+    })
     .sort((a, b) => b.speed - a.speed);
 
   const available = !tile('meta').unavailable;

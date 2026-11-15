@@ -42,6 +42,8 @@ export interface TeamSummary {
   conditions: ConditionRow[];
   hazards: HazardRow[];
   cores: Core[];
+  /** Per membro e tipo, il danno subito (0–100, il colpo peggiore fra fisico e speciale) come nella Coverage tipi della Difesa: il tooltip del core dice quanto regge chi para. */
+  typedTaken: Record<string, Record<string, number>>;
   links: TeamLink[];
 }
 
@@ -89,6 +91,8 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
     hazards,
     // Gli stessi trii del bonus del voto: chi para deve reggere davvero il colpo
     cores: teamCores(team, 2, heldByOf(rating.defense.coverageTypes.rows)),
+    typedTaken: Object.fromEntries(rating.defense.typed.map(m => [m.species,
+      Object.fromEntries(rating.defense.coverageTypes.rows.map((row, i) => [row.type, m.cells[i]?.pct ?? 0]))])),
     links: teamLinks(team, attackers),
   };
 }
