@@ -26,6 +26,9 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
         defenseNote: type === 'Ground' ? 'Scoperto' : 'Coperto da Corviknight, Toxapex',
         offenseNote: type === 'Normal' ? 'Nessuno lo colpisce forte' : 'Colpito forte da Great Tusk, Dragapult',
         resist: type === 'Ground' ? 0 : 2,
+        offenseLevel: type === 'Normal' ? 0 : 90, defenseLevel: type === 'Ground' ? 10 : 85,
+        hits: type === 'Normal' ? [] : [{ species: 'Great Tusk', move: 'Headlong Rush', pct: 86 }, { species: 'Dragapult', move: 'Shadow Ball', pct: 45 }],
+        members: [{ species: 'Corviknight', mult: type === 'Ground' ? 0 : 1, pct: 30 }, { species: 'Toxapex', mult: type === 'Ground' ? 2 : 0.5, pct: 100 }],
       })),
       defense: '17/18', offense: '17/18',
     },
@@ -146,6 +149,32 @@ describe('Cruscotto della Panoramica', () => {
     expect(within(table).getByRole('rowheader', { name: 'Offesa' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('offesa 17/18 · difesa 17/18');
     expect(screen.queryByText('Chi')).toBeNull();
+  });
+
+  it('Copertura: passando su una casella il tooltip DreamDex (nel body, solo a vista): in Offesa i colpi a podio, in Difesa i membri per moltiplicatore', async () => {
+    mount();
+    const user = userEvent.setup();
+    const table = screen.getByRole('table', { name: 'Copertura' });
+    // Nessun tooltip del browser sulle caselle: il dettaglio a parole resta nel nome
+    expect(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ })).not.toHaveAttribute('title');
+    await user.hover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
+    const off = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.offense'); if (!el) throw new Error('no tip'); return el; });
+    expect(off).toHaveAttribute('aria-hidden', 'true');
+    expect(off.querySelector('.ftip-head')).toHaveTextContent(/^(Fuoco|Fire)\s*90%$/);
+    const hits = off.querySelectorAll('.ftip-hit');
+    expect(hits).toHaveLength(2);
+    expect(hits[0]).toHaveTextContent('Great Tusk');
+    expect(hits[0].querySelector('.ftip-ko')).toHaveTextContent('2HKO');
+    expect(hits[0].querySelector('.ftip-pct')).toHaveTextContent('86%');
+    expect(hits[1].querySelector('.ftip-ko')).toHaveTextContent('3HKO');
+    await user.unhover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
+    expect(document.querySelector('.ftip')).toBeNull();
+
+    await user.hover(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa:/ }));
+    const def = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.defense'); if (!el) throw new Error('no tip'); return el; });
+    const groups = [...def.querySelectorAll('.ftip-group')].map(g => g.querySelector('.ftip-group-label')!.textContent);
+    expect(groups).toEqual(['Immuni ×0', 'Deboli ×2']);
+    expect(def.querySelector('.ftip-group:last-of-type .ftip-ko')).toHaveTextContent('OHKO');
   });
 
   it('Copertura in inglese: righe Defense e Offense, anche in testata', () => {
@@ -486,7 +515,7 @@ describe('Riassunto', () => {
     expect(section('Sinergie')).not.toHaveTextContent('Giro di U-turn');
   });
 
-  it('Sinergie: col triangolo la coppia non compare; poi i legami nel loro ordine, senza pivot; clic: core a Difesa, legami a Ruoli', async () => {
+  it('Sinergie: col triangolo la coppia non compare; poi i legami nel loro ordine, senza pivot; clic: core a Bonus/Malus (dove il core si vede col suo +3), legami a Ruoli', async () => {
     italianNames();
     const user = userEvent.setup();
     const { onView } = mount({ summary: summaryOf({ cores: [pair, trio], links: [pivotLink, wishLink] }) });
@@ -494,7 +523,7 @@ describe('Riassunto', () => {
     expect(rows.map(r => r.querySelector('.sum-syn-title')!.textContent)).toEqual(['Drago / Acciaio / Folletto', 'Cure al team']);
     expect(rows[1].querySelector('.sum-syn-tag')).toHaveTextContent('Desiderio');
     for (const row of rows) await user.click(row);
-    expect(onView.mock.calls.map(c => c[0])).toEqual(['defense', 'roles']);
+    expect(onView.mock.calls.map(c => c[0])).toEqual(['bonusMalus', 'roles']);
   });
 
   it('Sinergie vuote: una frase attenuata', () => {

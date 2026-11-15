@@ -298,7 +298,7 @@
 .bm-core-pts { margin-left: auto; font: 800 22px/1 var(--display); color: var(--good); }
 .bm-core-lines { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
 .bm-core-lines li { display: flex; align-items: center; gap: 7px; }
-.bm-core-lines img { flex: none; width: 16px; height: 16px; }
+.bm-core-lines img { flex: none; width: 16px; height: 16px; border-radius: 50%; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
 .bm-core-chip { display: inline-block; margin-top: 10px; padding: 2px 8px; background: var(--field); border: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); cursor: help; }
 .bm-cores-none { flex: 1; display: flex; align-items: center; justify-content: center; gap: 22px; padding: 0 24px; }
