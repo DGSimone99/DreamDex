@@ -193,3 +193,20 @@
 .stip-item { grid-column: 3; padding: 1px 8px 1px 6px; font: 700 10px/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .stip-item.tie { color: var(--warn); }
 .stip-empty { margin: 0; padding: 8px 12px; color: var(--muted); }
+
+/* ===== Core (CoreTip): testata verde come i core, una riga per lato: chi para sul piedistallo, il tipo nel suo colore,
+   il badge dei colpi (quanto lo regge, colori della Difesa) e a destra chi protegge */
+.ftip.core { width: 380px; }
+.core-tip-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding: 8px 12px 8px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--good) 30%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--good) 45%, var(--line)); }
+.core-tip-tag { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--good); }
+.core-tip-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic 14px/1.1 var(--display); }
+.core-tip-side { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; align-items: center; gap: 0 10px; padding: 6px 12px 6px 8px; border-bottom: 1px solid var(--line-soft); }
+.core-tip-side:last-of-type { border-bottom: 0; }
+.core-tip-side .ctip-plinth .sprite { margin: -6px 0; }
+.core-tip-what { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.core-tip-what b { font: 600 13px/1.1 var(--display); }
+.core-tip-type { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
+.core-tip-type img { width: 14px; height: 14px; border-radius: 50%; }
+.core-tip-for { display: flex; align-items: center; gap: 2px; color: var(--faint); }
+.core-tip-for small { display: inline; font-size: 11px; }
+.core-tip-for .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }

@@ -14,6 +14,7 @@ import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Sprite, typeColor } from '../Sprite';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
+import { CoreTip } from './CoreTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
@@ -149,11 +150,11 @@ function useSynergyView() {
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
  * la frase (o il giro del triangolo letto in parole).
  */
-function SynergyRow({ syn, view, rich, small, onClick }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void }) {
+function SynergyRow({ syn, view, rich, small, onClick, hover }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void } }) {
   const desc = useId();
   return (
     <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}`} style={{ '--c': view.color } as CSSProperties}
-      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick}>
+      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick} {...hover}>
       {view.trio && syn.core
         ? <CoreTriangle core={syn.core} size={rich ? 'roomy' : 'normal'} descId={desc} />
         : (
@@ -198,6 +199,7 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
   const count = (key: 'sum.moreMons' | 'sum.moreField' | 'sum.moreHazards' | 'sum.moreSyn', n: number) => t(`${key}${n === 1 ? 'One' : 'Many'}`, { n });
   const synergyView = useSynergyView();
   const condTip = useFloatAnchor<ConditionRow>();
+  const coreTip = useFloatAnchor<Core>();
   const monTip = useFloatAnchor<{ name: string; side: 'atk' | 'def'; score?: number }>();
   const setOf = (name: string) => team.find(set => battleName(set) === name);
   // Solo i core da 3; quelli da 2 solo se il team non ne ha da 3. Poi i legami, senza i pivot
@@ -317,13 +319,21 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
           onMore={onShowAll}
           render={syn => {
             const view = synergyView(syn);
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
+            // Sul core a tre: il tooltip con quanto regge chi para ogni tipo e chi protegge
+            const hover = syn.core && syn.core.members.length === 3
+              ? { onMouseEnter: (e: { currentTarget: Element }) => coreTip.open(syn.core!, e.currentTarget), onMouseLeave: coreTip.close } : undefined;
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }} />
       </div>
       {monTip.anchor && setOf(monTip.anchor.key.name) && (
         <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">
           <MemberCard set={setOf(monTip.anchor.key.name)!} why={monTip.anchor.key.score === undefined ? undefined
             : t(monTip.anchor.key.side === 'atk' ? 'mcard.whyAtk' : 'mcard.whyDef', { n: monTip.anchor.key.score })} />
+        </FloatTip>
+      )}
+      {coreTip.anchor && (
+        <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
+          <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />
         </FloatTip>
       )}
       {condTip.anchor && (

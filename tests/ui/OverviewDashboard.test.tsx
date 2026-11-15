@@ -66,6 +66,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
 function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
   return {
     archetype: 'hyperOffense', typeRule: 'recoverySpeed', styles: [],
+    typedTaken: { Toxapex: { Fire: 24, Ground: 100 }, Corviknight: { Grass: 20 }, Garchomp: { Electric: 0 } },
     attackers: ['Garchomp', 'Zapdos'], walls: ['Toxapex'],
     offenseOf: { Garchomp: 92, Zapdos: 86 },
     defenseOf: { Toxapex: 88 },
