@@ -2,8 +2,10 @@ import { useId, type CSSProperties, type ReactNode } from 'react';
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
-import type { TeamSummary } from '../../engine/teamSummary';
-import type { TypeName } from '../../engine/types';
+import type { ConditionRow, TeamSummary } from '../../engine/teamSummary';
+import type { TeamSet } from '../../engine/sets';
+import { battleName, battleSpecies } from '../../engine/dex';
+import { MemberCard } from '../MemberCard';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
@@ -11,7 +13,9 @@ import { TeamTypeHelp } from '../CoachPanel';
 import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Sprite, typeColor } from '../Sprite';
+import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
+import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
@@ -19,11 +23,6 @@ import { useFit } from './useFit';
  * Colore di una condizione (meteo, campo, Trick Room, schermi, Ventoincoda) e degli stili di team: il colore del tipo
  * che le corrisponde, lo stesso delle icone di tipo. Chiavi: id della condizione, dello stile o della mossa.
  */
-const CONDITION_TYPE: Record<string, TypeName> = {
-  sun: 'Fire', rain: 'Water', sand: 'Rock', snow: 'Ice',
-  electricterrain: 'Electric', psychicterrain: 'Psychic', grassyterrain: 'Grass', mistyterrain: 'Fairy',
-  trickroom: 'Psychic', reflect: 'Psychic', lightscreen: 'Psychic', auroraveil: 'Ice', tailwind: 'Flying',
-};
 const conditionColor = (key: string) => typeColor(CONDITION_TYPE[key] ?? '');
 
 /** Il "+N": a vista solo il numero, per intero nel tooltip e ai lettori di schermo. */
@@ -181,8 +180,10 @@ function SynergyRow({ syn, view, rich, small, onClick }: { syn: Synergy; view: S
  * Il Riassunto della Panoramica, ritratto del team: in alto (eroe) il tipo di team e chi lo rende tale, sotto chi porta
  * meteo e campo, chi piazza le trappole e, in fondo, le Sinergie (core difensivi e legami), che prendono lo spazio che resta.
  */
-export function SummarySection({ summary, members, density, rich = false, onView, onShowAll }: {
+export function SummarySection({ summary, members, team = [], density, rich = false, onView, onShowAll }: {
   summary: TeamSummary; members: number;
+  /** I set del team: la carta del Pokémon al passaggio su chi rende il team tale. */
+  team?: TeamSet[];
   /** Sprite e righe cambiano misura con la densità: le parti a misura si rimisurano. */
   density: Density;
   /** Team ridotto e cruscotto alto (RICH_FROM): sprite più grandi, sezioni distribuite su tutta l'altezza. */
@@ -196,6 +197,9 @@ export function SummarySection({ summary, members, density, rich = false, onView
   const { archetype, styles, attackers, walls, offenseOf, defenseOf, conditions, hazards, cores, links } = summary;
   const count = (key: 'sum.moreMons' | 'sum.moreField' | 'sum.moreHazards' | 'sum.moreSyn', n: number) => t(`${key}${n === 1 ? 'One' : 'Many'}`, { n });
   const synergyView = useSynergyView();
+  const condTip = useFloatAnchor<ConditionRow>();
+  const monTip = useFloatAnchor<{ name: string; side: 'atk' | 'def'; score?: number }>();
+  const setOf = (name: string) => team.find(set => battleName(set) === name);
   // Solo i core da 3; quelli da 2 solo se il team non ne ha da 3. Poi i legami, senza i pivot
   const trios = cores.filter(core => core.members.length === 3);
   const synergies: Synergy[] = [
@@ -217,7 +221,9 @@ export function SummarySection({ summary, members, density, rich = false, onView
   const hiddenMakers = makers.length - shown.length;
   const maker = (m: (typeof makers)[number], i: number, first = false) => (
     <span key={`${m.name}#${i}`} data-fit className={`sum-maker ${m.side}${first ? ' first' : ''}`}>
-      <button type="button" className="sum-mon" title={m.name} onClick={() => onView(m.side === 'atk' ? 'strength' : 'defense')}
+      {/* Al passaggio (o col fuoco) la carta del Pokémon nel tooltip DreamDex, al posto del tooltip del browser */}
+      <button type="button" className="sum-mon" onClick={() => onView(m.side === 'atk' ? 'strength' : 'defense')}
+        onMouseEnter={e => monTip.open(m, e.currentTarget)} onMouseLeave={monTip.close} onFocus={e => monTip.open(m, e.currentTarget)} onBlur={monTip.close}
         aria-label={m.score === undefined ? m.name : t(m.side === 'atk' ? 'sum.offenseOf' : 'sum.defenseOf', { name: m.name, n: m.score })}>
         <Plinth name={m.name} size={big} />
         {m.score !== undefined && <span className="sum-score" aria-hidden="true"><Icon name={m.side === 'atk' ? 'sword' : 'shield'} />{m.score}</span>}
@@ -268,7 +274,10 @@ export function SummarySection({ summary, members, density, rich = false, onView
           fitKey={keyOf(conditions.map(c => `${c.member}:${c.key}:${c.users.map(u => u.name).join('+')}`))}
           more={n => count('sum.moreField', n)}
           render={row => (
-            <button type="button" className="sum-line" onClick={() => onView('roles')}>
+            // Al passaggio (o col fuoco) il tooltip della condizione: effetti e chi ne approfitta
+            <button type="button" className="sum-line" onClick={() => onView('roles')}
+              onMouseEnter={e => condTip.open(row, e.currentTarget)} onMouseLeave={condTip.close}
+              onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close}>
               <Plinth name={row.member} size={small} />
               <span className="sum-name">{row.member}</span>
               <Tag color={conditionColor(row.key)}>{row.label}</Tag>
@@ -279,7 +288,7 @@ export function SummarySection({ summary, members, density, rich = false, onView
                     {row.users.map((user, i) => {
                       // Con l'abilità o la mossa con cui la sfrutta: "Barraskewda · Nuotovelox"
                       const label = user.via ? `${user.name} · ${viaName(user.via, lang)}` : user.name;
-                      return <span key={`${user.name}#${i}`} className="sum-user" title={label}><Sprite species={user.name} size={mini} /><span className="visually-hidden">{label}</span></span>;
+                      return <span key={`${user.name}#${i}`} className="sum-user"><Sprite species={user.name} size={mini} /><span className="visually-hidden">{label}</span></span>;
                     })}
                   </span>
                 </>
@@ -311,6 +320,17 @@ export function SummarySection({ summary, members, density, rich = false, onView
             return <SynergyRow syn={syn} view={view} rich={rich} small={small} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }} />
       </div>
+      {monTip.anchor && setOf(monTip.anchor.key.name) && (
+        <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">
+          <MemberCard set={setOf(monTip.anchor.key.name)!} why={monTip.anchor.key.score === undefined ? undefined
+            : t(monTip.anchor.key.side === 'atk' ? 'mcard.whyAtk' : 'mcard.whyDef', { n: monTip.anchor.key.score })} />
+        </FloatTip>
+      )}
+      {condTip.anchor && (
+        <FloatTip rect={condTip.anchor.rect} tone={conditionColor(condTip.anchor.key.key)} className="cond">
+          <ConditionTip row={condTip.anchor.key} />
+        </FloatTip>
+      )}
     </DashCard>
   );
 }

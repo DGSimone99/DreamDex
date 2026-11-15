@@ -80,3 +80,89 @@
 .ftip-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ftip-mon-pct { font: 700 italic 14px/1 var(--display); text-align: right; }
 .ftip-mon .ftip-ko { text-align: center; }
+
+/* ===== Carta del Pokémon (MemberCard): testata nei due colori dei tipi a strisce con la sprite grande che esce dal bordo,
+   lastra azzurra col perché; strumento, abilità, natura ed EV su due colonne; statistiche a esagono come la schermata
+   riassunto di Spada e Scudo e le mosse come lastre inclinate nel colore del loro tipo */
+.ftip.member { width: 440px; overflow: visible; }
+.mcard-head { position: relative; display: grid; grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; gap: 0 10px; min-height: 80px; padding: 12px 12px 10px 6px;
+  background: var(--stripes), linear-gradient(115deg, color-mix(in srgb, var(--t1) 50%, transparent) 0 52%, color-mix(in srgb, var(--t2) 42%, transparent) 52% 100%);
+  border-bottom: 1px solid color-mix(in srgb, var(--t1) 50%, var(--line)); }
+.mcard-head::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 40%, rgb(0 0 0 / 0.35)); }
+.mcard-head > * { position: relative; z-index: 1; }
+.mcard-mon { grid-row: 1 / 3; align-self: end; display: flex; justify-content: center; }
+.mcard-mon .sprite { display: block; margin: -30px 0 -16px; image-rendering: pixelated; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45)); }
+.mcard-name { display: flex; align-items: center; gap: 8px; min-width: 0; font: 700 italic 20px/1.1 var(--display); text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.mcard-name img { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
+.mcard-why { justify-self: start; margin-top: 6px; padding: 3px 12px 3px 9px; font: 700 italic 12px/1.2 var(--display); color: var(--on-accent); background: var(--accent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+.mcard-kit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: baseline; gap: 6px 8px; padding: 10px 12px 9px; border-bottom: 1px solid var(--line-soft); }
+.mcard-kit small { display: inline; font: 700 10px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.mcard-kit span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.mcard-kit em { font-style: normal; font-weight: 400; color: var(--muted); }
+.mcard-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); align-items: center; gap: 6px; padding: 10px 10px 12px 2px; }
+.mcard-hex { width: 200px; height: 134px; overflow: visible; }
+.mcard-hex .hx-ring { fill: color-mix(in srgb, var(--raised) 45%, transparent); stroke: var(--line); stroke-width: 1; }
+.mcard-hex .hx-ring.soft { fill: none; stroke: var(--line-soft); }
+.mcard-hex .hx-axis { stroke: var(--line-soft); stroke-width: 1; }
+.mcard-hex .hx-val { fill: color-mix(in srgb, var(--accent) 28%, transparent); stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.mcard-hex .hx-l { font: 700 9px var(--display); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--faint); }
+.mcard-hex .hx-v { font: 700 italic 12.5px var(--display); fill: var(--text); }
+.mcard-hex .hx-v.up { fill: var(--good); }
+.mcard-hex .hx-v.down { fill: var(--bad); }
+.mcard-moves { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.mcard-move { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 5px 12px 5px 8px; clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mc) 34%, transparent), color-mix(in srgb, var(--mc) 6%, transparent) 85%); }
+.mcard-move img { width: 16px; height: 16px; flex: none; border-radius: 50%; }
+.mcard-move b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 12.5px/1.1 var(--display); }
+.mcard-cat { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 700 11px/1 var(--display); color: var(--muted); }
+.mcard-cat .icon { width: 11px; height: 11px; }
+.mcard-none { color: var(--faint); }
+
+/* ===== Meteo e campo (ConditionTip): testata nel colore della condizione con una texture sua, effetti come lastre
+   inclinate, chi ne approfitta col piedistallo verde. L'unico movimento: la pioggia che scende (spento con riduci animazioni) */
+.ftip.cond { width: 400px; }
+.ctip-head { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; padding: 10px 14px 10px 10px; overflow: hidden;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--tc) 46%, transparent), color-mix(in srgb, var(--tc) 10%, transparent) 75%);
+  border-bottom: 1px solid color-mix(in srgb, var(--tc) 55%, var(--line)); }
+.ctip-head::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
+.ctip-head > * { position: relative; }
+.ctip-head.k-rain::before { inset: -40px 0 0; opacity: 0.5;
+  background: repeating-linear-gradient(105deg, transparent 0 9px, rgb(207 224 255 / 0.45) 9px 10px, transparent 10px 23px);
+  mask: linear-gradient(90deg, transparent, #000 35%); animation: ctip-rain 1.6s linear infinite; }
+@keyframes ctip-rain { to { transform: translate(-11px, 40px); } }
+.ctip-head.k-sun::before { background: radial-gradient(60% 140% at 85% 0%, rgb(255 214 120 / 0.45), transparent 70%); }
+.ctip-head.k-sand::before { opacity: 0.55; background: radial-gradient(circle, rgb(240 214 150 / 0.55) 1px, transparent 1.5px) 0 0 / 9px 7px, radial-gradient(circle, rgb(240 214 150 / 0.35) 1px, transparent 1.5px) 4px 3px / 11px 9px; mask: linear-gradient(90deg, transparent, #000 40%); }
+.ctip-head.k-snow::before { opacity: 0.6; background: radial-gradient(circle, rgb(255 255 255 / 0.7) 1.2px, transparent 1.8px) 0 0 / 16px 14px, radial-gradient(circle, rgb(255 255 255 / 0.45) 1px, transparent 1.5px) 7px 6px / 13px 12px; mask: linear-gradient(90deg, transparent, #000 40%); }
+.ctip-head.k-electricterrain::before, .ctip-head.k-psychicterrain::before, .ctip-head.k-grassyterrain::before, .ctip-head.k-mistyterrain::before {
+  background: radial-gradient(70% 160% at 80% 120%, color-mix(in srgb, var(--tc) 55%, transparent), transparent 70%); }
+@media (prefers-reduced-motion: reduce) { .ctip-head.k-rain::before { animation: none; } }
+.ctip-ico { grid-row: 1 / 3; width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.35), 0 4px 12px rgb(0 0 0 / 0.4); }
+.ctip-name { font: 700 italic 19px/1 var(--display); }
+.ctip-sub { grid-column: 2; font-size: 11.5px; color: color-mix(in srgb, var(--tc) 30%, var(--text)); }
+.ctip-setter { grid-row: 1 / 3; grid-column: 3; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ctip-plinth { position: relative; display: flex; justify-content: center; }
+.ctip-plinth::before { content: ""; position: absolute; left: 50%; bottom: 2px; width: 72%; height: 8px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgb(255 255 255 / 0.35), transparent 70%); }
+.ctip-plinth.good::before { background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 40%, transparent), transparent 70%); }
+.ctip-plinth .sprite { position: relative; display: block; image-rendering: pixelated; }
+.ctip-setter .sprite { margin: -12px 0 -8px; }
+/* Abilità: lastra inclinata; mossa: nome nel colore del tipo, alone leggero */
+.ctip-ab { display: inline-flex; align-items: center; padding: 2px 10px 2px 8px; font: 600 11.5px/1.2 var(--display); color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+.ctip-mv { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
+.ctip-mv img { width: 14px; height: 14px; border-radius: 50%; }
+.ctip-arrow { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.ctip-fx { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px; padding: 10px 10px 8px; }
+.ctip-plate { --c: var(--faint); display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, transparent), color-mix(in srgb, var(--c) 4%, transparent)); }
+.ctip-plate.good { --c: var(--good); }
+.ctip-plate.bad { --c: var(--bad); }
+.ctip-plate img { width: 20px; height: 20px; flex: none; border-radius: 50%; }
+.ctip-plate span { flex: 1; min-width: 0; font-size: 11px; line-height: 1.15; color: var(--muted); }
+.ctip-plate span b { display: block; font: 600 12.5px/1.2 var(--display); color: var(--text); }
+.ctip-plate strong { display: flex; align-items: center; gap: 2px; font: 700 italic 18px/1 var(--display); color: var(--c); white-space: nowrap; }
+.ctip-user { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 0 8px; padding: 6px 12px 6px 8px; border-top: 1px solid var(--line-soft); }
+.ctip-user .sprite { margin: -6px 0; }
+.ctip-who { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ctip-who b { font: 600 13px/1.1 var(--display); }
+.ctip-via { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.ctip-eff { display: inline-flex; align-items: center; gap: 3px; padding: 4px 12px 4px 9px; font: 700 italic 13px/1 var(--display); color: var(--good); white-space: nowrap;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--good) 20%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }

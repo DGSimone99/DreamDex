@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { DashboardData } from '../engine/overviewDashboard';
 import type { TeamSummary } from '../engine/teamSummary';
+import type { TeamSet } from '../engine/sets';
 import type { AnalysisView } from './analysisView';
 import { CoverageSection } from './dashboard/CoverageSection';
 import { RolesSection } from './dashboard/RolesSection';
@@ -30,11 +31,13 @@ export function densityFor(height: number): Density {
 }
 
 /** La Panoramica come cruscotto che riempie lo spazio: il Riassunto in colonna a sinistra; a destra la Copertura, sotto Ruoli | Velocità. */
-export function OverviewDashboard({ data, summary, members, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
+export function OverviewDashboard({ data, summary, members, team = [], onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
   data: DashboardData;
   summary: TeamSummary;
   /** Quanti Pokémon ha il team: con uno solo la riga Tipo non c'è. */
   members: number;
+  /** I set del team: la carta del Pokémon nei tooltip del Riassunto. */
+  team?: TeamSet[];
   onView: (v: AnalysisView, sub?: string) => void;
   /** Team ridotto: sempre la densità ampia. */
   teamCollapsed?: boolean;
@@ -66,7 +69,7 @@ export function OverviewDashboard({ data, summary, members, onView, onCollapseTe
   const rich = density === 'roomy' && (!!forced || height >= RICH_FROM);
   return (
     <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}`} data-density={density}>
-      <SummarySection summary={summary} members={members} density={density} rich={rich} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
+      <SummarySection summary={summary} members={members} team={team} density={density} rich={rich} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       <CoverageSection coverage={data.coverage} onView={onView} />
       <RolesSection roles={data.roles} density={density} onView={onView} />
       <SpeedSection speed={data.speed} density={density} onView={onView} />

@@ -1,0 +1,113 @@
+import type { CSSProperties, ReactNode } from 'react';
+import { battleName, battleSpecies, dex, getMove } from '../engine/dex';
+import type { StatID, TeamSet } from '../engine/sets';
+import { statLines } from '../engine/statCalc';
+import { anyGameName, gameName, natureName, statShort } from '../i18n/game';
+import { useLang, useT } from '../i18n/react';
+import { Icon } from './icons';
+import { Sprite, typeColor } from './Sprite';
+import { typeIconUrl } from './typeIcons';
+
+/** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
+const HEX_ORDER: StatID[] = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
+/** La statistica che riempie l'esagono fino al bordo. */
+const HEX_FULL = 420;
+const CX = 70;
+const CY = 66;
+const R = 48;
+const at = (i: number, r: number) => {
+  const a = (-90 + 60 * i) * Math.PI / 180;
+  return [CX + r * Math.cos(a), CY + r * Math.sin(a)] as const;
+};
+const ring = (f: number) => HEX_ORDER.map((_, i) => at(i, R * f).map(n => n.toFixed(1)).join(',')).join(' ');
+
+/** Le statistiche finali a esagono; quella che la natura alza in verde, quella che abbassa in rosso. */
+function StatHex({ set }: { set: TeamSet }) {
+  const lang = useLang();
+  const lines = statLines(set);
+  const byId = new Map(lines.map(l => [l.stat, l]));
+  const value = HEX_ORDER.map((stat, i) => at(i, R * Math.min(1, (byId.get(stat)?.value ?? 0) / HEX_FULL)).map(n => n.toFixed(1)).join(',')).join(' ');
+  return (
+    <svg className="mcard-hex" viewBox="-40 -6 220 146" aria-hidden="true">
+      <polygon className="hx-ring" points={ring(1)} />
+      <polygon className="hx-ring soft" points={ring(2 / 3)} />
+      <polygon className="hx-ring soft" points={ring(1 / 3)} />
+      {HEX_ORDER.map((stat, i) => { const [x, y] = at(i, R); return <line key={stat} className="hx-axis" x1={CX} y1={CY} x2={x} y2={y} />; })}
+      <polygon className="hx-val" points={value} />
+      {HEX_ORDER.map((stat, i) => {
+        const [x, y] = at(i, R + 13);
+        const anchor = Math.abs(x - CX) < 5 ? 'middle' : x > CX ? 'start' : 'end';
+        const line = byId.get(stat);
+        const mood = line?.nature ?? '';
+        return (
+          <g key={stat}>
+            <text x={x} y={y - 3} textAnchor={anchor} className="hx-l">{statShort(stat, lang)}</text>
+            <text x={x} y={y + 9} textAnchor={anchor} className={`hx-v ${mood}`}>{line?.value ?? '—'}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** Una mossa come lastra inclinata nel colore del suo tipo: icona, nome, categoria e potenza (o "stato"). */
+function MovePlate({ name }: { name: string }) {
+  const lang = useLang();
+  const t = useT();
+  const move = getMove(name);
+  const type = move?.type ?? 'Normal';
+  const category = move?.category === 'Physical' ? 'physical' : move?.category === 'Special' ? 'special' : null;
+  return (
+    <div className="mcard-move" style={{ '--mc': typeColor(type) } as CSSProperties}>
+      <img src={typeIconUrl(type)} alt="" draggable={false} />
+      <b>{gameName('move', move?.name ?? name, lang)}</b>
+      <span className="mcard-cat">{category ? <><Icon name={category} />{move?.basePower || ''}</> : t('mcard.status')}</span>
+    </div>
+  );
+}
+
+/** EV in breve: le statistiche con EV dalla più carica, "252 Att · 252 Vel · 4 PS". */
+const evLine = (set: TeamSet, lang: ReturnType<typeof useLang>) =>
+  (Object.entries(set.evs) as [StatID, number][]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([s, v]) => `${v} ${statShort(s, lang)}`).join(' · ');
+
+/**
+ * La carta di un Pokémon del team, per i tooltip DreamDex: testata nei colori dei suoi tipi con la sprite grande, il
+ * nome e (`why`) una lastra col perché è lì; strumento, abilità, natura ed EV; le statistiche a esagono e le quattro
+ * mosse. Solo a vista: chi la apre ha già il nome in parole.
+ */
+export function MemberCard({ set, why }: { set: TeamSet; why?: ReactNode }) {
+  const t = useT();
+  const lang = useLang();
+  const species = battleSpecies(set);
+  const types = (species?.types ?? []) as string[];
+  const nature = set.nature ? dex.natures.get(set.nature) : null;
+  const evs = evLine(set, lang);
+  const moves = set.moves.filter(Boolean);
+  return (
+    <>
+      <div className="mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+        <span className="mcard-mon"><Sprite species={battleName(set)} size={96} /></span>
+        <span className="mcard-name">
+          {battleName(set)}
+          {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}
+        </span>
+        {why && <span className="mcard-why">{why}</span>}
+      </div>
+      <div className="mcard-kit">
+        <small>{t('mcard.item')}</small><span>{set.item ? anyGameName(set.item, lang) : '—'}</span>
+        <small>{t('mcard.nature')}</small>
+        <span>{set.nature ? natureName(set.nature, lang) : '—'}{nature?.plus && nature.minus && (
+          <em> +{statShort(nature.plus as StatID, lang)} −{statShort(nature.minus as StatID, lang)}</em>
+        )}</span>
+        <small>{t('mcard.ability')}</small><span>{set.ability ? anyGameName(set.ability, lang) : '—'}</span>
+        <small>EV</small><span><em>{evs || '—'}</em></span>
+      </div>
+      <div className="mcard-body">
+        <StatHex set={set} />
+        <div className="mcard-moves">
+          {moves.length ? moves.map((move, i) => <MovePlate key={`${move}#${i}`} name={move} />) : <span className="mcard-none">{t('mcard.noMoves')}</span>}
+        </div>
+      </div>
+    </>
+  );
+}
