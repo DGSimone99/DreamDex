@@ -66,12 +66,14 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick }:
         const extra = bands.setup[b].length;
         return (
           // Una tessera a larghezza fissa (le colonne restano allineate riga per riga): il numero e, nel suo posto, il "+N"
-          // del setup col triangolo nell'angolo come nelle tabelle dell'Offesa; l'etichetta OHKO / 2HKO sta nella testata.
+          // del setup col triangolo nell'angolo; l'etichetta OHKO / 2HKO piccola a sinistra, dentro la tessera.
           <span key={b} className="kob-cell">
             <span className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}${onPick && n > 0 ? ' pick' : ''}`} style={{ '--k': total ? Math.min(1, n / total) : 0 } as CSSProperties}
               onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
               {...(onPick && n > 0 ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(b); } } } : {})}
               aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
+              {/* Tre posti fissi: l'etichetta, il numero, il "+N" del setup (vuoto se non c'è): colonne allineate riga per riga */}
+              <em aria-hidden="true">{TAG[b]}</em>
               <b>{n}</b>
               {extra > 0 && <small className="kob-setup" aria-hidden="true">+{extra}</small>}
             </span>

@@ -11,9 +11,6 @@ import { offenseSlots } from './slots';
 import { linkTeamCard } from '../teamLink';
 import { useEffect } from 'react';
 
-/** Le etichette delle tessere, una volta sola nella testata e allineate sopra di loro: OHKO e 2HKO. */
-const KoSub = () => <span className="kob-sub" aria-hidden="true"><i>OHKO</i><i>2HKO</i></span>;
-
 /** I 18 tipi di un membro come bersagli: colpo semplice, dopo una danza, con Tera/Z. */
 const typeTargets = (m: MemberOffense): KoTarget[] =>
   m.hits.map(h => ({ label: h.label, kind: 'type', plain: h.plainPct, setup: h.setupPct, once: h.oncePct }));
@@ -94,8 +91,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('kob.headTypes')}<KoSub /></th>
-              {meta && <th scope="col">{t('kob.headMeta')}<KoSub /></th>}
+              <th scope="col">{t('kob.headTypes')}</th>
+              {meta && <th scope="col">{t('kob.headMeta')}</th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>
