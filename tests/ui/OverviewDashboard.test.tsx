@@ -271,8 +271,9 @@ describe('Cruscotto della Panoramica', () => {
     // Niente chip nell'ampio
     expect(roles.querySelector('.dash-role')).toBeNull();
     // Chi copre il ruolo è nel tooltip della riga, il membro in quello della casella
-    expect(rows[1]).toHaveAttribute('title', 'Controllo Hazard: Great Tusk, Corviknight, Toxapex');
-    expect(rows[1].querySelectorAll('td')[1]).toHaveAttribute('title', 'Controllo Hazard: Corviknight');
+    // Niente tooltip del browser su riga e caselle: al passaggio il tooltip DreamDex del ruolo
+    expect(rows[1]).not.toHaveAttribute('title');
+    expect(rows[1].querySelectorAll('td')[1]).not.toHaveAttribute('title');
   });
 
   it('Ruoli: tre fasce una sotto l\'altra, Essenziali, Importanti, Minori, con l\'etichetta a sinistra', () => {
@@ -361,13 +362,20 @@ describe('Cruscotto della Panoramica', () => {
     }
   });
 
-  it('normale: chip senza icone dei membri; chi copre il ruolo resta nel nome accessibile e nel tooltip', () => {
+  it('normale: chip senza icone dei membri; chi copre il ruolo nel nome accessibile e, al passaggio, le sue sprite nel tooltip DreamDex', async () => {
     mount();
+    const user = userEvent.setup();
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     for (const chip of roles.querySelectorAll('.dash-role:not(.more)')) expect([...chip.children].map(x => x.className)).toEqual(['dash-role-tag']);
     const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
     expect(removal).toHaveTextContent(/^Controllo Hazard, coperto da Great Tusk, Corviknight, Toxapex$/);
-    expect(removal).toHaveAttribute('title', 'Controllo Hazard: Great Tusk, Corviknight, Toxapex');
+    expect(removal).not.toHaveAttribute('title');
+    await user.hover(removal);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.role'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip.querySelector('.role-tip-head')).toHaveTextContent(/Controllo Hazard\s*Essenziale/);
+    // Solo le sprite coi nomi, niente percentuali
+    expect([...tip.querySelectorAll('.role-tip-mon')].map(m => m.textContent)).toEqual(['Great Tusk', 'Corviknight', 'Toxapex']);
+    expect(tip).not.toHaveTextContent('%');
   });
 
   it('ogni corsia della Velocità ha il nome del Pokémon per i lettori di schermo', () => {

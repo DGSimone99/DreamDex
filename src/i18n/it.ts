@@ -809,6 +809,7 @@ export const it: Record<keyof typeof en, string> = {
   'coreTip.holds': "para {type}",
   'coreTip.for': "per",
   'coreTip.foot': "Quanto regge chi para: il colpo più forte del Pokémon medio di quel tipo",
+  'roleTip.nobody': "Nessuno lo copre",
   'tip.immune': "Immuni",
   'tip.resist': "Resistono",
   'tip.neutral': "Neutri",

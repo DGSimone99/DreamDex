@@ -807,6 +807,7 @@ export const en = {
   'coreTip.holds': "takes {type}",
   'coreTip.for': "for",
   'coreTip.foot': "How well it takes it: the strongest hit of the average Pokémon of that type",
+  'roleTip.nobody': "Nobody covers it",
   'tip.immune': "Immune",
   'tip.resist': "Resist",
   'tip.neutral': "Neutral",

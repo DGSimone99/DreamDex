@@ -5,6 +5,7 @@ import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
+import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
@@ -23,14 +24,51 @@ function useRoleText(chip: RoleChip) {
   const lang = useLang();
   const label = needLabel(chip.need, lang);
   const detail = chip.covered ? t('dash.roleCoveredBy', { names: chip.owners.join(', ') }) : t('dash.roleMissing');
-  return { label, detail, title: `${label}: ${chip.covered ? chip.owners.join(', ') : detail}` };
+  return { label, detail };
 }
 
-/** Stretto e normale: un chip col solo segno e nome, su una riga (chi lo copre è nel tooltip). */
-function RoleChipItem({ chip }: { chip: RoleChip }) {
-  const { label, detail, title } = useRoleText(chip);
+/**
+ * Il tooltip DreamDex di un ruolo: il nome col suo livello e solo le sprite di chi lo copre (niente percentuali);
+ * se manca, "Nessuno lo copre" in rosso (in grigio se è un minore).
+ */
+function RoleTip({ chip }: { chip: RoleChip }) {
+  const t = useT();
+  const lang = useLang();
   return (
-    <li data-fit className={`dash-role ${stateOf(chip)}${chip.level === 'minor' ? ' minor' : ''}`} title={title}>
+    <>
+      <div className={`role-tip-head ${stateOf(chip)}`}>
+        <Icon name={chip.covered ? 'check' : 'close'} />
+        <b>{needLabel(chip.need, lang)}</b>
+        <small>{t(`rdetail.level.${chip.level}`)}</small>
+      </div>
+      {chip.covered
+        ? <div className="role-tip-mons">{chip.owners.map(name => (
+          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={44} /></span><span>{name}</span></span>
+        ))}</div>
+        : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
+    </>
+  );
+}
+
+/** I gestori del tooltip di un ruolo e il tooltip da rendere (uno per chip o riga). */
+function useRoleTip(chip: RoleChip) {
+  const tip = useFloatAnchor<RoleChip>();
+  const bind = { onMouseEnter: (e: { currentTarget: Element }) => tip.open(chip, e.currentTarget), onMouseLeave: tip.close };
+  const node = tip.anchor && (
+    <FloatTip rect={tip.anchor.rect} tone={chip.covered ? 'var(--good)' : chip.soft ? 'var(--faint)' : 'var(--bad)'} className="role">
+      <RoleTip chip={chip} />
+    </FloatTip>
+  );
+  return { bind, node };
+}
+
+/** Stretto e normale: un chip col solo segno e nome, su una riga (chi lo copre è nel tooltip DreamDex). */
+function RoleChipItem({ chip }: { chip: RoleChip }) {
+  const { label, detail } = useRoleText(chip);
+  const tip = useRoleTip(chip);
+  return (
+    <li data-fit className={`dash-role ${stateOf(chip)}${chip.level === 'minor' ? ' minor' : ''}`} {...tip.bind}>
+      {tip.node}
       <span className="dash-role-tag">
         <Icon name={chip.covered ? 'check' : 'close'} />
         <span className="dash-role-name">{label}<span className="visually-hidden">, {detail}</span></span>
@@ -88,15 +126,18 @@ function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; 
 
 /** Una riga della tabella: il ruolo e un pallino sotto ogni membro che lo copre. */
 function RoleTableRow({ chip, members }: { chip: RoleChip; members: string[] }) {
-  const { label, detail, title } = useRoleText(chip);
+  const { label, detail } = useRoleText(chip);
+  const tip = useRoleTip(chip);
   return (
-    <tr className={`dash-role-row ${stateOf(chip)}${chip.level === 'minor' ? ' is-minor' : ''}`} title={title}>
+    // Sulla riga il tooltip DreamDex del ruolo (al posto dei tooltip del browser su riga e caselle)
+    <tr className={`dash-role-row ${stateOf(chip)}${chip.level === 'minor' ? ' is-minor' : ''}`} {...tip.bind}>
       <th scope="row">
+        {tip.node}
         <Icon name={chip.covered ? 'check' : 'close'} />
         <span>{label}<span className="visually-hidden">, {detail}</span></span>
       </th>
       {members.map((member, i) => (
-        <td key={`${member}-${i}`} title={`${label}: ${member}`}>
+        <td key={`${member}-${i}`}>
           {chip.owners.includes(member) && <span className="dash-dot" aria-hidden="true" />}
         </td>
       ))}

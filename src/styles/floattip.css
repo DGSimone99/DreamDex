@@ -210,3 +210,16 @@
 .core-tip-for { display: flex; align-items: center; gap: 2px; color: var(--faint); }
 .core-tip-for small { display: inline; font-size: 11px; }
 .core-tip-for .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
+
+/* ===== Ruoli (RoleTip): il nome del ruolo col livello, poi solo le sprite di chi lo copre sul piedistallo verde (niente
+   percentuali); se manca, una riga rossa (grigia se è un minore) */
+.ftip.role { width: auto; min-width: 200px; max-width: 380px; }
+.role-tip-head { display: flex; align-items: center; gap: 7px; padding: 7px 12px 7px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
+.role-tip-head .icon { width: 14px; height: 14px; color: var(--tc); }
+.role-tip-head b { font: 700 italic 14px/1.1 var(--display); }
+.role-tip-head small { display: inline; margin-left: auto; padding-left: 10px; font: 700 10px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.role-tip-mons { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 10px 12px 8px; }
+.role-tip-mon { display: flex; flex-direction: column; align-items: center; gap: 2px; font: 600 11.5px/1.1 var(--display); }
+.role-tip-mon .sprite { margin: -6px 0 -4px; }
+.role-tip-none { margin: 0; padding: 10px 12px; font: 600 12.5px/1.2 var(--display); color: var(--bad); }
+.role-tip-none.soft { color: var(--muted); }
