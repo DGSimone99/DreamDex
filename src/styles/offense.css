@@ -95,15 +95,15 @@
 .off-general tfoot .og-total th, .def-general tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
 .og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 11.5px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-accent-2, #22000f);
   background: var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-/* "▴ con setup" sotto la tabella, nello spazio libero del pannello: non toglie altezza alle righe, così la tabella è
-   identica a quella della Difesa (Team Coverage allo stesso posto) */
-.def-frame.off-general { position: relative; }
-/* Schermi bassi: niente legenda (i tooltip delle tessere spiegano lo stesso), le righe si riprendono il suo spazio */
-@media (max-height: 700px) {
-  .ad-panel .rob-legend.og-legend { display: none; }
-}
-.ad-panel .rob-legend.og-legend { flex-wrap: nowrap; gap: 20px; white-space: nowrap; }
 .og-legend span { display: inline-flex; align-items: center; gap: 6px; }
+/* Schermi bassi: le barre dei colpi più basse (22px), così sei membri e la riga del team stanno nella cornice */
+@media (min-width: 1100px) and (max-height: 640px) {
+  .kob-row > .kob { height: 22px; }
+  .kob-num > b { font-size: 15px; }
+  .off-general tfoot .og-total > * { padding-top: 7px; padding-bottom: 3px; }
+}
+/* Le pastiglie delle mosse (squadra chiusa) solo se la cornice ha posto per sei righe con le pastiglie */
+@container (max-height: 500px) { .off-general .mcs, .off-general .mc-none { display: none; } }
 /* Schermi bassi: la riga Team Coverage della Difesa più bassa, così la tabella coi totali sta senza scorrere */
 @media (max-height: 640px) {
   .def-general tfoot .og-total > * { padding-top: 4px; padding-bottom: 4px; }
