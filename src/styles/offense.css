@@ -117,7 +117,10 @@
 .kob-row { display: inline-flex; align-items: center; gap: 6px; }
 .kob { --kw: 86px; position: relative; box-sizing: border-box; display: inline-grid; grid-template-columns: 31px minmax(0, 1fr) 24px; align-items: center; width: var(--kw); height: 26px; padding: 0 2px 0 9px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
-.kob > em { grid-column: 1; font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; opacity: 0.8; }
+.kob > em { grid-column: 1; align-self: stretch; display: flex; align-items: center; margin-right: 2px; border-right: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; opacity: 0.75; }
+/* Un filo di luce sul bordo alto: le tessere meno piatte (dentro la forma tagliata, come una lastra) */
+.kob:not(.zero):not(.labeled) { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob > b { grid-column: 2; text-align: right; font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
 .kob-setup { grid-column: 3; padding-left: 3px; font: 700 10.5px/1 var(--display); color: var(--muted); text-align: left; white-space: nowrap; }
 /* Il triangolo del setup nell'angolo in alto a destra, col lato destro sulla stessa diagonale della tessera (5px su 26) */
@@ -127,7 +130,8 @@
 .kob.ohko { color: var(--good); border-color: color-mix(in srgb, var(--good) calc(45% + 50% * var(--k)), transparent); background: color-mix(in srgb, var(--good) calc(6% + 46% * var(--k)), transparent); }
 .kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) calc(25% + 40% * var(--k)), transparent); background: color-mix(in srgb, var(--good) calc(2% + 22% * var(--k)), transparent); }
 .kob.ohko > b { color: color-mix(in srgb, var(--good) calc(100% - 55% * var(--k)), white); }
-.kob.zero { color: var(--faint); border-color: transparent; background: none; opacity: 0.55; }
+/* A zero: solo un bordo tenue nella stessa forma tagliata, così la griglia delle colonne regge anche dove non c'è niente */
+.kob.zero { color: var(--faint); border-color: color-mix(in srgb, var(--faint) 22%, transparent); background: none; opacity: 0.6; }
 .kob:hover { background: color-mix(in srgb, var(--good) 30%, transparent); }
 .kob.zero:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }
 /* Con l'etichetta (nella testata del tooltip e "Scoperti" nella riga del team): larghezza libera */
