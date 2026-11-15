@@ -1,3 +1,6 @@
+import { metaThreats } from '../engine/attackers';
+import { battleName } from '../engine/dex';
+import { useMemberTip } from './MemberCard';
 import { useLayoutEffect, useState } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
@@ -113,6 +116,10 @@ function MetaPanelBody({ team, rating, data, coaching, expanded = false }: { tea
   const threats = data ? ratingThreats(judged, data) : [];
   const open = threats.filter(t => t.handledBy.length === 0);
   const score = threats.length ? judged?.defense.coverageMeta?.value ?? null : null;
+  // Sulla sprite di una minaccia: la carta del suo set più usato nel meta (quello che il voto usa per i calcoli)
+  const memberTip = useMemberTip();
+  const threatSets = data ? metaThreats(data) : [];
+  const setOfThreat = (name: string) => threatSets.find(x => battleName(x.set) === name)?.set;
   const threatSummary = score === null
     ? tr('analysis.threatsNoData')
     : open.length === 0 ? tr('analysis.threatsAll') : tr('analysis.threatsOpen', { n: open.length });
@@ -134,7 +141,9 @@ function MetaPanelBody({ team, rating, data, coaching, expanded = false }: { tea
             const fixes = coaching?.threatFixes[t.name] ?? [];
             return (
               <li key={t.name} className={t.handledBy.length ? '' : 'bad'}>
-                <Sprite species={t.name} size={40} />
+                <span className="mon-tip" {...(setOfThreat(t.name) ? memberTip.bind(setOfThreat(t.name)!, tr('mcard.threat', { pct: formatPercent(lang, t.usage) })) : {})}>
+                  <Sprite species={t.name} size={40} />
+                </span>
                 <span className="who">
                   <strong>{t.name}</strong> <span className="usage">{formatPercent(lang, t.usage)}</span>
                 </span>
@@ -150,6 +159,7 @@ function MetaPanelBody({ team, rating, data, coaching, expanded = false }: { tea
           })}
         </ul>
       </details>}
+      {memberTip.tip}
     </>
   );
 }

@@ -17,6 +17,7 @@ import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { Sprite } from './Sprite';
+import { useMemberTip } from './MemberCard';
 import { streamFill } from './useRanking';
 
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
@@ -58,6 +59,8 @@ const evsText = (set: TeamSet, lang: Lang) =>
 export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: Props) {
   const t = useT();
   const lang = useLang();
+  // Passando su un Pokémon di una proposta o di un team da torneo: la sua carta (set, statistiche, mosse)
+  const memberTip = useMemberTip();
   const ids = useId();
   const [tab, setTab] = useState<Tab>('proposals');
   const [pickState, setPick] = useState<{ archetype: Archetype | null; style: FillStyle | null }>({ archetype: null, style: null });
@@ -365,8 +368,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                     const changed = mine && proposal.changed.includes(j);
                     const favorite = !mine && isUserFavorite(set, data.userLists);
                     const title = changed ? changeText(team[j], set) : setTitle(set);
+                    const why = changed ? t('mcard.changed') : mine ? t('mcard.yours') : t('mcard.new');
                     return (
-                      <span key={`${set.species}#${j}`} title={title}
+                      <span key={`${set.species}#${j}`} {...memberTip.bind(set, why, changed ? team[j] : undefined)}
                         className={`fill-mon ${mine ? 'is-mine' : 'is-new'}${changed ? ' is-changed' : ''}${favorite ? ' is-favorite' : ''}`}>
                         <span className="fill-mon-sprite">
                           <Sprite species={set.species} item={set.item} size={48} />
@@ -474,7 +478,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                       const name = battleName(set);
                       const favorite = isUserFavorite(set, data.userLists);
                       return (
-                        <span key={`${name}#${j}`} className={`fill-card-mon${shared.includes(j) ? ' is-shared' : ''}`} title={setTitle(set)}
+                        <span key={`${name}#${j}`} className={`fill-card-mon${shared.includes(j) ? ' is-shared' : ''}`} {...memberTip.bind(set)}
                           role="img" aria-label={favorite ? t('fill.favorite', { name }) : name}>
                           <Sprite species={set.species} item={set.item} size={48} />
                           {favorite && <span className="fill-mon-mark is-fav"><Icon name="heart" /></span>}
@@ -494,6 +498,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           </ul>
         </>}
       </div>
+      {memberTip.tip}
     </div>
   );
 }
