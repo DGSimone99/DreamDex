@@ -26,7 +26,7 @@ function Head({ type, value }: { type: string; value: number }) {
 }
 
 /** La mossa: icona tonda e nome nel colore del suo tipo (alone leggero), poi categoria (fisico/speciale) e potenza. */
-function MoveLine({ name }: { name: string }) {
+export function MoveLine({ name }: { name: string }) {
   const lang = useLang();
   const t = useT();
   const move = getMove(name);

@@ -189,3 +189,28 @@
 .kf-note { display: inline-flex; align-items: center; gap: 10px; color: var(--accent-ink); font-weight: 600; }
 .kf-clear { padding: 2px 10px; font: 600 12px/1.2 var(--ui); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 3px; cursor: pointer; }
 .kf-clear:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }
+
+/* Coverage tipi dell'Offesa: le colonne dei tipi scoperti (nessuno li manda KO in due colpi) sotto un velo rosso leggero,
+   dall'icona alla riga del migliore */
+.ct-table th.ct-hole, .ct-table td.ct-hole { background-image: linear-gradient(color-mix(in srgb, var(--bad) 10%, transparent), color-mix(in srgb, var(--bad) 10%, transparent)); }
+/* La riga "Il migliore": la sprite di chi colpisce più forte ogni tipo, piccola, centrata; "—" spento dove nessuno conta.
+   Solo se la cornice ha posto (sugli schermi bassi resta la Copertura) */
+.ct-table tr.ct-best { height: 34px; }
+.ct-best-mon { display: inline-flex; justify-content: center; }
+.ct-best-mon .sprite { margin: -6px 0 -4px; image-rendering: pixelated; }
+.ct-best-none { color: var(--faint); }
+@container (max-height: 330px) { .ct-table tr.ct-best { display: none; } }
+
+/* Il tooltip di una casella di Coverage tipi: testata col tipo e il badge dei colpi; il membro con la mossa migliore;
+   le righe in più col setup o Tera/Z solo se salgono di fascia */
+.ftip.tht { width: 300px; }
+.ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
+.tht-body { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
+.tht-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tht-name { font: 600 13px/1.2 var(--display); }
+.tht-move { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.tht-mult { font: 700 italic 12px/1 var(--display); color: var(--good); }
+.tht-none { color: var(--muted); }
+.tht-extra { display: flex; align-items: center; gap: 6px; margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); font-weight: 600; color: var(--muted); }
+.tht-extra .ftip-ko { margin-left: auto; }

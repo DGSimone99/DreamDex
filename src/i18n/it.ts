@@ -1025,6 +1025,8 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.weakLink': "Anello debole",
   'ddetail.worstHit': "Colpo peggiore",
   'ddetail.recoveryCol': "Recupero",
+  'odetail.types.best': "Il migliore",
+  'tht.noMove': "Nessuna mossa lo colpisce",
   'odetail.types.hole': "scoperto",
   'odetail.types.covers': "forte",
   'odetail.types.half': "conta",

@@ -400,16 +400,38 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     return rating;
   };
 
-  it('una tabella membri × 18 tipi con la riga Copertura', async () => {
-    await open();
+  it('una tabella membri × 18 tipi con la riga Copertura e la riga Il migliore (chi colpisce più forte ogni tipo)', async () => {
+    const rating = await open();
     expect(screen.getAllByRole('table')).toHaveLength(1);
     expect(screen.getAllByRole('columnheader')).toHaveLength(19);
     const rows = screen.getAllByRole('row');
-    const last = rows[rows.length - 1];
-    expect(within(last).getByRole('rowheader')).toHaveTextContent('Copertura');
-    const cells = within(last).getAllByRole('cell');
+    const sum = rows[rows.length - 2];
+    expect(within(sum).getByRole('rowheader')).toHaveTextContent('Copertura');
+    const cells = within(sum).getAllByRole('cell');
     expect(cells).toHaveLength(18);
     cells.forEach(c => expect(c.textContent).toMatch(/\d+%/));
+    const bestRow = rows[rows.length - 1];
+    expect(within(bestRow).getByRole('rowheader')).toHaveTextContent('Il migliore');
+    const slots = offenseSlots(team, rating.offense.members);
+    within(bestRow).getAllByRole('cell').forEach((cell, i) => {
+      const pcts = team.map((_, slot) => rating.offense.members[slots[slot]!].hits.find(h => h.label === TYPES[i])!.plainPct);
+      const top = Math.max(...pcts);
+      if (top <= 33) expect(cell.querySelector('.ct-best-mon')).toBeNull();
+      else expect(cell).toHaveTextContent(rating.offense.members[slots[pcts.indexOf(top)]!].species);
+    });
+  });
+
+  it('sulla casella il tooltip DreamDex: tipo, badge dei colpi, membro e mossa (niente %), nessun tooltip del browser', async () => {
+    const user = userEvent.setup();
+    const rating = await open();
+    const cell = document.querySelector<HTMLElement>('.ct-table tbody tr td.ok-full')!;
+    expect(cell).not.toHaveAttribute('title');
+    await user.hover(cell);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
+    expect(tip.textContent).not.toContain('%');
+    expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-name')!.textContent);
+    await user.unhover(cell);
   });
 
   it('ogni casella è il danno del membro: verde da 66% (credito da metà), gialla oltre il 33%, vuota sotto', async () => {

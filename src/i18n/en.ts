@@ -1023,6 +1023,8 @@ export const en = {
   'ddetail.weakLink': "Weak link",
   'ddetail.worstHit': "Worst hit",
   'ddetail.recoveryCol': "Recovery",
+  'odetail.types.best': "Best hitter",
+  'tht.noMove': "No move hits it",
   'odetail.types.hole': "uncovered",
   'odetail.types.covers': "strong",
   'odetail.types.half': "counts",

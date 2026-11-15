@@ -76,9 +76,10 @@ describe("dettaglio dell'Offesa a schede", () => {
     const typesPanel = within(dialog).getByRole('tabpanel');
     // Le spiegazioni stanno nella guida, non sulla pagina
     expect(typesPanel.querySelector('.ad-how')).toBeNull();
-    // Ora una tabella membri × 18 tipi: intestazione, un membro per riga, riga Copertura
+    // Ora una tabella membri × 18 tipi: intestazione, un membro per riga, riga Copertura e riga Il migliore
     expect(within(typesPanel).getAllByRole('columnheader')).toHaveLength(19);
-    expect(within(typesPanel).getAllByRole('row').at(-1)).toHaveTextContent(/^Copertura/);
+    expect(within(typesPanel).getAllByRole('row').at(-2)).toHaveTextContent(/^Copertura/);
+    expect(within(typesPanel).getAllByRole('row').at(-1)).toHaveTextContent(/^Il migliore/);
   });
 
   it('Coverage meta: una tabella membri × bersagli, con la riga Lo coprono', async () => {
