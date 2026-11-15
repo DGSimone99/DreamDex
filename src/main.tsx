@@ -49,6 +49,7 @@ function bootFailed(error: unknown) {
   if (!boot || !text) return;
   boot.classList.add('failed');
   boot.setAttribute('role', 'alert');
+  text.removeAttribute('aria-label'); // index.html ci mette la parola "Caricamento…" (divisa in lettere)
   text.textContent = document.documentElement.lang === 'en'
     ? 'DreamDex could not start. Reload the page.'
     : 'DreamDex non è partito. Ricarica la pagina.';
