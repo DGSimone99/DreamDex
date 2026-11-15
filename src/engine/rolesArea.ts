@@ -19,6 +19,29 @@ export const IMPORTANT_POINTS = 2;
 /** Bonus di ogni voce minore coperta, senza tetto (le minori per tipo: HO 3, BO 4, Balance 5, Semi-stall 5, Stall 2). */
 export const MINOR_POINTS = 1;
 
+/**
+ * Il conteggio dei Ruoli, uguale ovunque (Panoramica, Coaching, sottoscheda Ruoli, carta del voto): coperti sul totale
+ * delle sole essenziali e importanti (le minori non sono un difetto se mancano) e i punti dei Ruoli sul voto (bonus dei
+ * minori meno i malus delle mancanze), es. "8/8 +2".
+ */
+export function rolesTally(roles: TeamRoles) {
+  const counted = roles.rows.filter(r => r.level === 'essential' || r.level === 'important');
+  const missingEssential = counted.filter(r => r.level === 'essential' && r.value < MISSING_BELOW).length;
+  const missingImportant = counted.filter(r => r.level === 'important' && r.value < MISSING_BELOW).length;
+  const missing = missingEssential + missingImportant;
+  const points = roles.bonuses.reduce((n, b) => n + b.points, 0) - roles.failures.reduce((n, f) => n + f.points, 0);
+  return { covered: counted.length - missing, total: counted.length, missing, missingEssential, missingImportant, points };
+}
+
+/** I punti col segno (− tipografico), vuoto se 0: la coda del conteggio ("8/8 +2"). */
+export const rolesPointsLabel = (points: number): string => (points > 0 ? `+${points}` : points < 0 ? `−${-points}` : '');
+
+/** Il conteggio in testo: "8/8 +2", "6/8 −6", "8/8". */
+export const rolesValue = (roles: TeamRoles): string => {
+  const { covered, total, points } = rolesTally(roles);
+  return [`${covered}/${total}`, rolesPointsLabel(points)].filter(Boolean).join(' ');
+};
+
 export interface RoleRow {
   key: LevelKey;
   level: Level;

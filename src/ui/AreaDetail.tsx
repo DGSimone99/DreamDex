@@ -3,6 +3,7 @@ import type { TeamAnalysis } from '../engine/analysis';
 import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
+import { rolesValue as rolesValueOf } from '../engine/rolesArea';
 import { BonusMalusView, bonusMalusTotals, CatalogueList } from './BonusMalusView';
 import type { EffSide } from './effTag';
 import { useT } from '../i18n/react';
@@ -67,8 +68,8 @@ export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ct
     : speedTabs(rating.speed, !!rating.meta, t, ctx);
 }
 
-/** I Ruoli non hanno un valore 0–100: voci coperte sul totale ("7/9"). */
-export const rolesValue = (rating: TeamRating): string => `${rating.roles.covered}/${rating.roles.total}`;
+/** I Ruoli non hanno un valore 0–100: essenziali e importanti coperte sul totale e i punti ("8/8 +2"), come ovunque. */
+export const rolesValue = (rating: TeamRating): string => rolesValueOf(rating.roles);
 
 /**
  * Bonus e malus: la sottoscheda Generale col netto sul voto, le voci che valgono adesso e i core a tre (BonusMalusView). Il

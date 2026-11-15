@@ -6,6 +6,7 @@ import { ownersOf } from './needs';
 import { summarizeTeam } from './overviewSummary';
 import { ratingThreats, type TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
+import { rolesValue } from './rolesArea';
 import type { TeamSet } from './sets';
 import { poolMedian } from './speed';
 import type { SpeedCondition } from './speedArea';
@@ -67,8 +68,8 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
   const threats = ratingThreats(rating, data);
   return {
     coverage: { cells, defense: tile('defense').value, offense: tile('strength').value },
-    // Ruoli: voci coperte sul totale (essenziali, importanti e minori), come nel pannello del voto
-    roles: { chips, members: team.map(set => battleName(set)), value: `${rating.roles.covered}/${rating.roles.total}` },
+    // Ruoli: lo stesso conteggio di ovunque (essenziali e importanti coperte sul totale, poi i punti: "8/8 +2")
+    roles: { chips, members: team.map(set => battleName(set)), value: rolesValue(rating.roles) },
     speed: {
       lanes, median: poolMedian(data), vsMeta: usesMeta(data),
       control: rating.speed.sources.map(s => ({ condition: s.condition, move: s.move, by: s.by })),
