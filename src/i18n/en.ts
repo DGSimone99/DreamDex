@@ -744,6 +744,7 @@ export const en = {
   'sum.moreHazardsMany': "{n} more hazard setters",
   'sum.moreSynOne': "One more synergy",
   'sum.moreSynMany': "{n} more synergies",
+  'sum.showMore': "Collapse the team to see: {label}",
   'sum.noSynergies': "No synergies: everyone works alone",
   'sum.link.core': "Core",
   'sum.link.pivot': "Pivot",

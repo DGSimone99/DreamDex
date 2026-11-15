@@ -746,6 +746,7 @@ export const it: Record<keyof typeof en, string> = {
   'sum.moreHazardsMany': "Altri {n} che piazzano trappole",
   'sum.moreSynOne': "Un'altra sinergia",
   'sum.moreSynMany': "Altre {n} sinergie",
+  'sum.showMore': "Riduci il team per vedere: {label}",
   'sum.noSynergies': "Nessuna sinergia: ognuno lavora da solo",
   'sum.link.core': "Core",
   'sum.link.pivot': "Pivot",

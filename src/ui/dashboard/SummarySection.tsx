@@ -48,7 +48,7 @@ const Tag = ({ color, children }: { color: string; children: ReactNode }) => (
  * finiscono nel "+N" (useFit), mai tagliate a metà; il "+N" sta accanto al titolo, così non toglie una riga alle altre.
  * Senza righe, la parola `empty` attenuata.
  */
-function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, className = '' }: {
+function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, className = '' }: {
   title: string; empty: string;
   rows: T[];
   rowKey: (row: T) => string;
@@ -56,10 +56,15 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
   fitKey: string;
   /** Il testo del "+N" (tooltip e lettori di schermo), dalle righe nascoste. */
   more: (n: number, hidden: T[]) => string;
-  /** La riga e la sua posizione fra quelle mostrate (la prima può essere disegnata diversa dalle altre). */
-  render: (row: T, index: number) => ReactNode;
+  render: (row: T) => ReactNode;
+  /**
+   * Se c'è: le righe nascoste non vanno nel "+N" accanto al titolo ma in un pulsante in fondo (+N sopra due frecce
+   * verso il basso) che riduce il team, così la card si allunga e le mostra.
+   */
+  onMore?: () => void;
   className?: string;
 }) {
+  const t = useT();
   // La lista è alta quanto il suo contenuto: si guarda anche la card, che cresce col team ridotto
   const fit = useFit<HTMLUListElement>(fitKey, rows.length, { min: 1, outer: '.dash-summary' });
   const shown = Math.min(fit.shown, rows.length);
@@ -71,11 +76,21 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
         ? <p className="sum-none">{empty}</p>
         : (
           <ul ref={fit.ref} className="sum-lines sum-fit">
-            {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} data-fit>{render(row, i)}</li>)}
+            {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} data-fit>{render(row)}</li>)}
           </ul>
         )}
       {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
-      {hidden > 0 && <span className="sum-sec-more"><More n={hidden} label={more(hidden, rows.slice(shown))} /></span>}
+      {hidden > 0 && (onMore
+        ? (
+          <button type="button" className="sum-more-below" onClick={onMore} title={more(hidden, rows.slice(shown))}
+            aria-label={t('sum.showMore', { label: more(hidden, rows.slice(shown)) })}>
+            <span aria-hidden="true">+{hidden}</span>
+            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6.5 6.5 12 12l5.5-5.5M6.5 12.5 12 18l5.5-5.5" />
+            </svg>
+          </button>
+        )
+        : <span className="sum-sec-more"><More n={hidden} label={more(hidden, rows.slice(shown))} /></span>)}
     </div>
   );
 }
@@ -133,16 +148,15 @@ function useSynergyView() {
 /**
  * Una riga delle Sinergie. Il core da 3 è il triangolo; il resto due sprite unite da un anello "catena" nel colore del
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
- * la frase (o il giro del triangolo letto in parole). `compact`: col team aperto, dalla seconda in poi, una versione
- * più piccola (triangolo o sprite ridotti, solo etichetta e titolo; la frase resta nel tooltip e nella descrizione).
+ * la frase (o il giro del triangolo letto in parole).
  */
-function SynergyRow({ syn, view, rich, small, compact, onClick }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; compact: boolean; onClick: () => void }) {
+function SynergyRow({ syn, view, rich, small, onClick }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void }) {
   const desc = useId();
   return (
-    <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}${compact ? ' compact' : ''}`} style={{ '--c': view.color } as CSSProperties}
-      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick} title={compact && !view.trio ? view.text : undefined}>
+    <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}`} style={{ '--c': view.color } as CSSProperties}
+      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick}>
       {view.trio && syn.core
-        ? <CoreTriangle core={syn.core} size={compact ? 'compact' : rich ? 'roomy' : 'normal'} descId={desc} />
+        ? <CoreTriangle core={syn.core} size={rich ? 'roomy' : 'normal'} descId={desc} />
         : (
           <>
             <span className="sum-pair" aria-hidden="true">
@@ -167,13 +181,15 @@ function SynergyRow({ syn, view, rich, small, compact, onClick }: { syn: Synergy
  * Il Riassunto della Panoramica, ritratto del team: in alto (eroe) il tipo di team e chi lo rende tale, sotto chi porta
  * meteo e campo, chi piazza le trappole e, in fondo, le Sinergie (core difensivi e legami), che prendono lo spazio che resta.
  */
-export function SummarySection({ summary, members, density, rich = false, onView }: {
+export function SummarySection({ summary, members, density, rich = false, onView, onShowAll }: {
   summary: TeamSummary; members: number;
   /** Sprite e righe cambiano misura con la densità: le parti a misura si rimisurano. */
   density: Density;
   /** Team ridotto e cruscotto alto (RICH_FROM): sprite più grandi, sezioni distribuite su tutta l'altezza. */
   rich?: boolean;
   onView: (v: AnalysisView) => void;
+  /** Riduce il team: le sinergie che non stanno col team aperto si vedono nella card più alta. */
+  onShowAll?: () => void;
 }) {
   const t = useT();
   const lang = useLang();
@@ -289,10 +305,10 @@ export function SummarySection({ summary, members, density, rich = false, onView
             const view = synergyView(syn);
             return `${view.tag} ${view.title}: ${syn.core ? view.mons.join(', ') : view.text}`;
           }).join('; ')}`}
-          render={(syn, i) => {
+          onMore={onShowAll}
+          render={syn => {
             const view = synergyView(syn);
-            // Col team aperto la prima sinergia resta grande, le altre in piccolo: ne entrano di più
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} compact={!rich && i > 0} onClick={() => onView(syn.core ? 'defense' : 'roles')} />;
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} onClick={() => onView(syn.core ? 'defense' : 'roles')} />;
           }} />
       </div>
     </DashCard>

@@ -592,14 +592,15 @@
 .sum-tri-badge img { display: block; width: 100%; height: 100%; border-radius: 50%; }
 /* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
 .sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: 2px; }
-/* Le sinergie dopo la prima, col team aperto: in piccolo, una riga sola (triangolo o coppia ridotti, etichetta e titolo) */
-.sum-syn.compact { min-height: 0; padding-block: 2px; }
-.sum-syn.compact .sum-tri { --tri-w: 64px; --tri-badge: 14px; }
-.sum-syn.compact .sum-tri-edges line { stroke-width: 2.5; }
-.sum-syn.compact .sum-pair { --sum-small: 28px; }
-.sum-syn.compact .sum-pair-mon .sprite { width: 28px; height: 28px; }
-.sum-syn.compact .sum-syn-text { display: none; }
-.sum-syn.compact .sum-syn-title { font-size: 12px; }
+/* Le sinergie che non stanno col team aperto: in fondo a destra "+N" sopra due frecce verso il basso; il clic riduce il team */
+.sum-syn-sec:has(.sum-more-below) { position: relative; }
+.sum-more-below { position: absolute; right: 2px; bottom: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 6px 2px; font: 700 italic 13px/1 var(--display); color: var(--accent-ink); background: none; border: 0; border-radius: 4px; cursor: pointer; }
+.sum-more-below .icon { width: 18px; height: 18px; }
+.sum-more-below:hover { background: var(--accent-wash); }
+.sum-more-below:hover .icon { animation: sum-more-nudge 0.6s ease-in-out infinite alternate; }
+.sum-more-below:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@keyframes sum-more-nudge { to { transform: translateY(2px); } }
+@media (prefers-reduced-motion: reduce) { .sum-more-below:hover .icon { animation: none; } }
 .sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
 .sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
 .sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

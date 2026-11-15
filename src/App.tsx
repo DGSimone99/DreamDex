@@ -427,7 +427,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
             onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
-            teamCollapsed={collapsed} />
+            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
           <MetaPanel team={team} analysis={analysis} rating={rating} data={rated} coaching={coaching} />
