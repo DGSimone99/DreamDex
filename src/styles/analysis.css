@@ -497,8 +497,9 @@
 .sum-mon { width: calc(var(--sum-big) + 2px); display: flex; flex-direction: column; align-items: center; padding: 0; color: inherit; background: none; border: 0; border-radius: 3px; }
 .sum-mon { position: relative; isolation: isolate; }
 .sum-mon:hover { background: none; }
-/* Al passaggio: sotto la sprite una luce sfumata nel colore del lato, senza bordi, che sale dal basso; la sprite si alza */
-.sum-mon::before { content: ""; position: absolute; inset: -4px -6px 0; z-index: -1; background: radial-gradient(ellipse 60% 75% at 50% 85%, color-mix(in srgb, var(--c) 30%, transparent), transparent 100%); opacity: 0; transition: opacity 0.18s var(--ease); }
+/* Al passaggio: dietro la sprite una luce sfumata nel colore del lato, senza bordi; closest-side la fa finire dentro il
+   riquadro, così il ritaglio della riga (sotto) non la taglia mai; la sprite si alza */
+.sum-mon::before { content: ""; position: absolute; inset: -4px -6px 0; z-index: -1; background: radial-gradient(closest-side at 50% 62%, color-mix(in srgb, var(--c) 32%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
 .sum-mon:hover::before { opacity: 1; }
 .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: transform 0.18s var(--ease); }
 .sum-mon:hover .sprite { transform: translateY(-2px); }
