@@ -77,26 +77,28 @@
 /* Quanto porta al team: la pillola nel colore dell'Offesa */
 .off-general .og-points { padding: 2px 7px; border-radius: 2px; background: var(--accent-2-soft); color: var(--accent-2-ink); font: italic 700 13px/1 var(--display); font-variant-numeric: tabular-nums; cursor: help; }
 .off-general.roomy .def-members td { padding-top: 8px; padding-bottom: 8px; }
-/* Team Coverage: una linea magenta sottile attraversa tutta la tabella e "TEAM COVERAGE" è una linguetta a cavallo della
-   linea (come le etichette delle card); la riga del team ha un fondo appena più chiaro che sfuma verso il basso, senza
-   righe. Così la fascia non finisce "nel nulla": è la linea della tabella che fa da bordo */
-.off-general tfoot .og-total > *, .def-general tfoot .og-total > * { position: relative; padding-top: 12px; padding-bottom: 8px; border-top: 1px solid var(--accent-2); border-bottom: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 8%, transparent), transparent 85%); }
+/* Team Coverage: una linea magenta sottile sopra la riga del team e un fondo magenta appena accennato, entrambi sfumati ai
+   lati (la prima e l'ultima casella sfumano verso l'esterno: niente bordi netti); "TEAM COVERAGE" è una linguetta a
+   cavallo della linea. La riga è bassa: lo spazio va alle righe dei Pokémon */
+.off-general tfoot .og-total > *, .def-general tfoot .og-total > * { --tc-bg: color-mix(in srgb, var(--accent-2) 7%, transparent); position: relative; padding-top: 10px; padding-bottom: 5px; border-top: 0; border-bottom: 0;
+  background: linear-gradient(var(--accent-2), var(--accent-2)) top / 100% 1px no-repeat, var(--tc-bg); }
+.off-general tfoot .og-total > :first-child, .def-general tfoot .og-total > :first-child {
+  background: linear-gradient(90deg, transparent, var(--accent-2) 90px) top / 100% 1px no-repeat, linear-gradient(90deg, transparent, var(--tc-bg) 90px); }
+.off-general tfoot .og-total > :last-child, .def-general tfoot .og-total > :last-child {
+  background: linear-gradient(90deg, var(--accent-2) calc(100% - 90px), transparent) top / 100% 1px no-repeat, linear-gradient(90deg, var(--tc-bg) calc(100% - 90px), transparent); }
 .off-general tfoot .og-total th, .def-general tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
 .og-plate { position: absolute; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 11.5px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-accent-2, #22000f);
   background: var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 /* La legenda della Generale dell'Offesa, nella riga bassa sotto la tabella come nelle altre schede: le righe dei membri
    tengono conto della sua altezza (--def-tail), così la tabella non le finisce sotto */
-.def-frame.off-general { --def-tail: 32px; }
+.def-frame.off-general { --def-tail: 18px; }
 /* Schermi bassi: niente legenda (i tooltip delle tessere spiegano lo stesso), le righe si riprendono il suo spazio */
 @media (max-height: 700px) {
   .def-frame.off-general { --def-tail: 4px; }
   .ad-panel .rob-legend.og-legend { display: none; }
 }
-.ad-panel .rob-legend.og-legend { flex: none; flex-wrap: nowrap; gap: 20px; height: 20px; padding-top: 0; white-space: nowrap; }
+.ad-panel .rob-legend.og-legend { flex: none; flex-wrap: nowrap; gap: 20px; height: 14px; padding-top: 0; white-space: nowrap; font-size: 11.5px; }
 .og-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.og-legend .og-lg-k { display: inline-block; width: 42px; height: 9px; background: linear-gradient(90deg, color-mix(in srgb, var(--good) 8%, transparent), color-mix(in srgb, var(--good) 52%, transparent)); clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); }
-.og-legend .og-lg-click { margin-left: auto; color: var(--faint); }
 /* Schermi bassi: la riga Team Coverage della Difesa più bassa, così la tabella coi totali sta senza scorrere */
 @media (max-height: 640px) {
   .def-general tfoot .og-total > * { padding-top: 4px; padding-bottom: 4px; }
@@ -141,12 +143,13 @@
 
 /* Le tabelle dei membri (Generale di tutte le aree): la riga sotto il mouse si accende appena, senza spostare niente */
 .def-frame .def-members tbody tr:not(.og-fill) > * { transition: background-color 0.15s var(--ease); }
-.def-frame .def-members tbody tr:not(.og-fill):hover > * { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.def-frame .def-members tbody tr:not(.og-fill) { --row-hl: color-mix(in srgb, var(--accent) 7%, transparent); }
+.def-frame .def-members tbody tr:not(.og-fill):hover > * { background: var(--row-hl); }
+/* La luce della riga sfuma ai lati: la prima casella entra da sinistra, l'ultima esce a destra */
+.def-frame .def-members tbody tr:not(.og-fill):hover > :first-child { background: linear-gradient(90deg, transparent, var(--row-hl) 90px); }
+.def-frame .def-members tbody tr:not(.og-fill):hover > :last-child { background: linear-gradient(90deg, var(--row-hl) calc(100% - 90px), transparent); }
 
-/* La stella del migliore di ogni colonna: fuori dalla tessera (tagliata in diagonale), in alto a sinistra, oro tenue */
 .kob-cell { position: relative; display: inline-flex; }
-.kob-star { position: absolute; left: -3px; top: -6px; z-index: 1; width: 11px; height: 11px; background: #ffd76a; filter: drop-shadow(0 0 3px rgb(255 215 106 / 0.7));
-  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); pointer-events: none; }
 /* Tessere cliccabili: aprono il dettaglio */
 .kob.pick { cursor: pointer; }
 .kob.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

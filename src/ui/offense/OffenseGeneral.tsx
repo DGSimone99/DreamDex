@@ -85,16 +85,9 @@ export function OffenseGeneral({ offense, meta, ctx, roleValues = {} }: { offens
   const teamName = t('odetail.gen.total');
   // Uscendo dalla scheda nessuna carta resta accesa
   useEffect(() => () => linkTeamCard(null), []);
-  // Le fasce di ogni membro, una volta sola: servono alle tessere e alla stella del migliore di ogni colonna
+  // Le fasce di ogni membro, una volta sola
   const metaBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(metaTargets(offense, slot))));
   const typeBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(typeTargets(members[slots[slot]!]))));
-  const bestOf = (all: (ReturnType<typeof koBands> | null)[]) => {
-    const top = (b: 'ohko' | 'two') => Math.max(0, ...all.map(x => x?.plain[b].length ?? 0));
-    const [ohko, two] = [top('ohko'), top('two')];
-    return (x: ReturnType<typeof koBands> | null) => ({ ohko: !!x && ohko > 0 && x.plain.ohko.length === ohko, two: !!x && two > 0 && x.plain.two.length === two });
-  };
-  const bestMeta = bestOf(metaBands);
-  const bestTypes = bestOf(typeBands);
   // Il ruolo principale della carta del team (stessi valori dei Ruoli del voto), sotto il nome
   const rules = formatRules(ctx.formatId ?? 'ou');
   const roleOf = (set: (typeof ctx.team)[number], name: string) => {
@@ -127,9 +120,9 @@ export function OffenseGeneral({ offense, meta, ctx, roleValues = {} }: { offens
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" role={roleOf(set, name)} /></th>
                   {m && s
                     ? <>
-                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} best={bestMeta(metaBands[slot])}
+                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} /></td>}
-                      <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} best={bestTypes(typeBands[slot])}
+                      <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} /></td>
                       <td>
                         <span className="og-stack og-own" title={m.coverMeta === null ? t('odetail.gen.ownTitleNoMeta', { n: m.total }) : t('odetail.gen.ownTitle', { types: m.value, meta: m.coverMeta, n: m.total })}><Bar value={m.total} total /></span>
@@ -153,12 +146,8 @@ export function OffenseGeneral({ offense, meta, ctx, roleValues = {} }: { offens
           </tfoot>
         </table>
       </div>
-      {/* La legenda nella riga bassa, come nelle altre schede: il triangolo del setup, l'intensità del verde, il clic */}
-      <div className="rob-legend og-legend" aria-hidden="true">
-        <span><i className="kob-tri" />{t('kob.legendSetup')}</span>
-        <span><i className="og-lg-k" />{t('kob.legendIntensity')}</span>
-        <span className="og-lg-click">{t('kob.legendClick')}</span>
-      </div>
+      {/* Nella riga bassa solo il segno del setup (il resto lo dicono i tooltip delle tessere) */}
+      <div className="rob-legend og-legend" aria-hidden="true"><span><i className="kob-tri" />{t('kob.legendSetupShort')}</span></div>
     </div>
   );
 }
