@@ -3,13 +3,15 @@ import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { STRONG_CREDIT } from '../../engine/offense';
+import { typeAverage } from '../../engine/coverage';
+import { DEFAULT_FORMAT } from '../../engine/format';
 import { moveAttackMultiplier, teamField, TYPES } from '../../engine/types';
 import { EffTag, effClass, effLabel } from '../effTag';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
-import { TypeIcons } from '../typeIcons';
+import { TypeIcons, typeIconUrl } from '../typeIcons';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
 import { useMemberTip } from '../MemberCard';
@@ -17,7 +19,7 @@ import { FocusNote, inBand, koBandOf } from './KoBadges';
 import { TypeHitTip } from './TypeHitTip';
 import { offenseSlots } from './slots';
 
-/** Colore della riga Copertura: rosso a 0, giallo sotto il livello coperto (50), verde da lì. */
+/** Colore della riga Copertura: rosso a 0, giallo sotto il livello coperto (COVERED_LEVEL, 60), verde da lì. */
 const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVEL ? 'warn' : 'good');
 
 /**
@@ -49,16 +51,21 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     ? m.oneUse.kind === 'tera' ? t('detail.withTera', { type: typeName(m.oneUse.name, lang) }) : t('detail.withZ', { item: gameName('item', m.oneUse.name, lang) })
     : null);
   const memberAt = (slot: number) => (slots[slot] === null ? null : offense.members[slots[slot]!]);
-  // Chi colpisce più forte ogni tipo (colpo semplice); niente sotto il 33%, dove il colpo non conta
+  // Chi colpisce più forte ogni tipo (colpo semplice); niente sotto il 50%, dove il colpo non conta
   const best = TYPES.map(type => {
     let top: { slot: number; pct: number } | null = null;
     team.forEach((_, slot) => {
       const pct = memberAt(slot)?.hits.find(h => h.label === type)?.plainPct ?? 0;
-      if (pct > (top?.pct ?? 33)) top = { slot, pct };
+      if (pct > (top?.pct ?? 49)) top = { slot, pct };
     });
     return top as { slot: number; pct: number } | null;
   });
-  const open = tip.anchor ? { ...tip.anchor.key, member: memberAt(tip.anchor.key.slot) } : null;
+  // slot -1: il tooltip del tipo in testata (le statistiche medie del bersaglio)
+  const open = tip.anchor && tip.anchor.key.slot >= 0 ? { ...tip.anchor.key, member: memberAt(tip.anchor.key.slot) } : null;
+  const headType = tip.anchor && tip.anchor.key.slot < 0 ? tip.anchor.key.type : null;
+  const formatId = ctx.formatId ?? DEFAULT_FORMAT.formatId;
+  const averageOf = (type: string) => typeAverage(type as (typeof TYPES)[number], { stats: null, sets: null, formatId });
+  const statsLabel = (a: { hp: number; def: number; spd: number }) => `${t('stat.hp')} ${a.hp}, ${t('stat.def')} ${a.def}, ${t('stat.spd')} ${a.spd}`;
   const openHit = open?.member?.hits.find(h => h.label === open.type);
 
   return (
@@ -73,10 +80,10 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                 const hole = holes.includes(type);
                 return (
                   <th key={type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
-                    onMouseEnter={() => setHover({ row: -1, col: i })}>
+                    onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, type }, e.currentTarget); }} onMouseLeave={tip.close}>
                     <TypeIcons types={[type]} />
                     <span className="ct-flag" aria-hidden="true" />
-                    <span className="visually-hidden">{typeName(type, lang)}{hole && ` ${t('odetail.types.hole')}`}</span>
+                    <span className="visually-hidden">{typeName(type, lang)}{hole && ` ${t('odetail.types.hole')}`}{` · ${statsLabel(averageOf(type))}`}</span>
                   </th>
                 );
               })}
@@ -144,6 +151,11 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
         </table>
       </div>
       {card.tip}
+      {headType && tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(headType)} className="tst">
+          <TypeTargetTip type={headType} stats={averageOf(headType)} />
+        </FloatTip>
+      )}
       {open?.member && openHit && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(open.type)} className="tht">
           <TypeHitTip species={open.member.species} set={team[open.slot]} type={open.type} hit={openHit} setupMove={open.member.setupMove} onceName={onceName(open.member)} />
@@ -153,6 +165,28 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
     </div>
+  );
+}
+
+/**
+ * Il tooltip del tipo in testata: le statistiche base medie del Pokémon medio di quel tipo nel Pokédex del formato,
+ * il bersaglio su cui si misurano i colpi della colonna (prima stavano nella guida, sotto una freccina).
+ */
+function TypeTargetTip({ type, stats }: { type: string; stats: { hp: number; def: number; spd: number } }) {
+  const t = useT();
+  const lang = useLang();
+  const cells: [string, number][] = [[t('stat.hp'), stats.hp], [t('stat.def'), stats.def], [t('stat.spd'), stats.spd]];
+  return (
+    <>
+      <div className="ftip-head">
+        <img src={typeIconUrl(type)} alt="" draggable={false} />
+        <b>{typeName(type as (typeof TYPES)[number], lang)}</b>
+      </div>
+      <div className="tst-stats">
+        {cells.map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}
+      </div>
+      <p className="ftip-foot">{t('guide.off.targets.tip')}</p>
+    </>
   );
 }
 

@@ -43,42 +43,41 @@ describe('Offesa: navigazione e guida', () => {
     const help = screen.getByRole('button', { name: 'Come funziona Coverage tipi' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Coverage tipi' })).toHaveAttribute('aria-selected', 'true');
+    // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in fondo
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Coverage']);
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent('Pokémon medio');
-    // La regola del credito (soglie semplici) e il setup che conta solo in parte
-    expect(panel).toHaveTextContent('Dal 50% (KO in due colpi): conta quanto il danno');
-    expect(panel).toHaveTextContent('Un tipo che nessuno manda KO in due colpi (al 50%) è scoperto');
-    expect(panel).toHaveTextContent('quindi conta solo in parte');
-    // Le difese medie dei 18 bersagli stanno qui, sotto il Colpo (chiuse sotto una freccina)
-    expect(within(panel).getByText('Statistiche medie dei 18 bersagli').closest('details')).not.toHaveAttribute('open');
+    expect(panel).toHaveTextContent(/Bersagli.*Coverage tipi.*Coverage meta/);
+    // La regola del credito nella riga del Colpo; quello che conta meno in una riga sola; niente righe della legenda
+    expect(panel).toHaveTextContent('vale quanto il suo danno se lo manda KO in due colpi, sotto il 50% non conta');
+    expect(panel).toHaveTextContent('Contano meno');
+    expect(panel).toHaveTextContent('Il meteo che il membro porta da sé conta pieno.');
+    for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie']) expect(panel).not.toHaveTextContent(gone);
+    // La Generale non ha più la sua sezione nella guida
+    expect(within(dialog).queryByRole('tab', { name: 'Generale' })).toBeNull();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
   });
 
-  it('la guida Generale dice i pesi: tipi 50 e meta 50; senza meta tipi 100 e niente Coverage meta', async () => {
+  it('la Generale non ha il "?": le sue due parti si spiegano da sole', async () => {
     const user = userEvent.setup();
-    const { unmount } = renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
+    renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
+    expect(screen.queryByRole('button', { name: 'Come funziona Generale' })).toBeNull();
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    // Il "?" di Coverage meta apre la stessa pagina di Coverage tipi
+    await user.click(screen.getByRole('button', { name: 'Come funziona Coverage meta' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Coverage meta' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage tipi.*50/);
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage meta.*50/);
-    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Potenza');
-    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Statistiche medie');
-    unmount();
-    renderIt(<AreaView rating={noMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
-    expect(within(screen.getByRole('dialog')).queryByRole('tab', { name: 'Coverage meta' })).toBeNull();
-    expect(within(screen.getByRole('dialog')).getByRole('tabpanel')).toHaveTextContent(/Coverage tipi.*100/);
+    expect(within(dialog).getByRole('tab', { name: 'Coverage' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Contano meno');
   });
 
   it('il Wallbreaking e la Potenza non compaiono più, né nelle schede né nella guida', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
     expect(document.body.textContent).not.toMatch(/Wallbreaking|Muri sfondati|Potenza/);
-    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
+    await user.click(screen.getByRole('button', { name: 'Come funziona Coverage tipi' }));
     expect(document.body.textContent).not.toMatch(/Wallbreaking|muri/i);
   });
 
@@ -86,7 +85,9 @@ describe('Offesa: navigazione e guida', () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
     expect(names()).toEqual(['General', 'Type coverage', 'Meta coverage']);
-    await user.click(screen.getByRole('button', { name: 'How General works' }));
+    expect(screen.queryByRole('button', { name: 'How General works' })).toBeNull();
+    await user.click(screen.getByRole('tab', { name: /^Type coverage/ }));
+    await user.click(screen.getByRole('button', { name: 'How Type coverage works' }));
     expect(screen.getByRole('dialog', { name: 'Guide: Offense' })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/Wallbreaking|Power/);
   });
@@ -452,9 +453,22 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     within(bestRow).getAllByRole('cell').forEach((cell, i) => {
       const pcts = team.map((_, slot) => rating.offense.members[slots[slot]!].hits.find(h => h.label === TYPES[i])!.plainPct);
       const top = Math.max(...pcts);
-      if (top <= 33) expect(cell.querySelector('.ct-best-mon')).toBeNull();
+      if (top < 50) expect(cell.querySelector('.ct-best-mon')).toBeNull();
       else expect(cell).toHaveTextContent(rating.offense.members[slots[pcts.indexOf(top)]!].species);
     });
+  });
+
+  it('sul tipo in testata il tooltip con PS, Dif e DifSp medi del bersaglio (anche a parole per i lettori di schermo)', async () => {
+    await open();
+    const user = userEvent.setup();
+    const water = screen.getAllByRole('columnheader')[1 + TYPES.indexOf('Water')];
+    expect(water).toHaveTextContent(/PS \d+, Dif \d+, DifSp \d+/);
+    await user.hover(water);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tst'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveTextContent(typeName('Water', 'it'));
+    expect(tip.querySelectorAll('.tst-stats span')).toHaveLength(3);
+    await user.unhover(water);
+    expect(document.querySelector('.ftip.tst')).toBeNull();
   });
 
   it('il triangolo del setup sulla casella solo se la danza fa salire di fascia (fino al 2HKO o all’OHKO)', async () => {
