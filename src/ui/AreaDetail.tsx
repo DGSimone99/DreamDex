@@ -42,7 +42,19 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
    * Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo; Ruoli: "Tabella
    * dei ruoli" apre la pagina Ruoli per tipo di team).
    */
-  guide?: (key: string) => void }
+  guide?: (key: string) => void;
+  /**
+   * Il dettaglio aperto da una tessera della Generale dell'Offesa: nella sottoscheda (Coverage tipi o meta) la riga del
+   * membro e i bersagli che manda KO in quella fascia restano accesi, il resto si spegne. Null: niente evidenziato.
+   */
+  focus?: KoFocus | null;
+  /** Apre la sottoscheda `key` col dettaglio `focus` (le tessere della Generale). */
+  openFocus?: (key: string, focus: KoFocus) => void;
+  /** Spegne il dettaglio evidenziato. */
+  clearFocus?: () => void }
+
+/** Il dettaglio di una tessera: che tabella, quale membro (posto nel team) e quale fascia (KO in un colpo o in due). */
+export interface KoFocus { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' }
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola

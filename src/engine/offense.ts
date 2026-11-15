@@ -79,6 +79,10 @@ export interface TargetHit {
   pct: number;
   /** 0–1. */
   credit: number;
+  /** Danno % del colpo semplice (senza setup né Tera/Z), dopo una danza (null senza setup) e con Tera/Z (null senza): per la Generale. */
+  plainPct: number;
+  setupPct: number | null;
+  oncePct: number | null;
 }
 
 export interface MemberOffense {
@@ -418,7 +422,12 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
     species: raw.species, bestMove: raw.bestMove, setupMove: raw.setupMove,
     oneUse: raw.oneUse && { kind: raw.oneUse.kind, name: raw.oneUse.name },
     value, setupGain, oneUseGain,
-    hits: labels.map((label, i) => ({ label, move: p.moves[i], pct: Math.floor(100 * damage[i]), credit: credits[i] })),
+    hits: labels.map((label, i) => ({
+      label, move: p.moves[i], pct: Math.floor(100 * damage[i]), credit: credits[i],
+      plainPct: Math.floor(100 * Math.min(1, p.plain[i])),
+      setupPct: p.danced ? Math.floor(100 * Math.min(1, p.danced[i])) : null,
+      oncePct: p.once ? Math.floor(100 * Math.min(1, p.once[i])) : null,
+    })),
     coverMeta,
     total: coverMeta === null ? value : Math.round(OFFENSE_SHARES.types * value + OFFENSE_SHARES.meta * coverMeta),
   };

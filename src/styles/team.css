@@ -496,3 +496,6 @@
 .saved-list .saved-load:hover { background: var(--raised); border-color: var(--accent); }
 .saved-list .saved-delete { flex: none; width: 34px; height: 34px; padding: 0; justify-content: center; background: none; border-color: transparent; color: var(--muted); }
 .saved-list .saved-delete:hover { border-color: var(--bad); color: var(--bad); }
+
+/* Legame con le tabelle di Analisi: la carta del membro sotto il mouse nella tabella si accende (bordo e luce azzurri) */
+.slot-card.is-linked { box-shadow: 0 0 0 2px var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent); transition: box-shadow 0.15s var(--ease); }
