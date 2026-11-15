@@ -9,6 +9,7 @@ import { typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { TypeIcons } from '../typeIcons';
+import { FocusNote, koBandOf } from './KoBadges';
 import { offenseSlots } from './slots';
 
 /** Colore della riga Copertura: rosso a 0, giallo sotto il livello coperto (50), verde da lì. */
@@ -24,6 +25,8 @@ const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVE
  * Sotto la tabella, in fondo al pannello, una riga bassa con la legenda dei colori.
  */
 export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
+  // Aperta da una tessera della Generale: la riga del membro e i tipi di quella fascia accesi, il resto spento
+  const focus = ctx.focus?.kind === 'types' ? ctx.focus : null;
   const t = useT();
   const lang = useLang();
   const { team } = ctx;
@@ -62,16 +65,16 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
               const name = battleSpecies(set)?.name ?? set.species;
               const member = slots[slot] === null ? null : offense.members[slots[slot]!];
               return (
-                <tr key={`${name}-${slot}`} className={hover?.row === slot ? 'x-row' : undefined}>
+                <tr key={`${name}-${slot}`} className={[hover?.row === slot && 'x-row', focus && (slot === focus.slot ? 'kf-row' : 'kf-off')].filter(Boolean).join(' ') || undefined}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {TYPES.map((type, i) => {
-                    if (slots[slot] === null) return <td key={type} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })}>—</td>;
+                    if (slots[slot] === null) return <td key={type} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })}>—</td>;
                     const tag = effLabel(bestAttackMultiplier(set, [type], '', field), 'offense');
                     const found = member?.hits.find(h => h.label === type);
                     const hit = found && found.credit > 0 ? found : undefined;
                     const strong = !!hit && hit.credit >= 0.5;
                     return (
-                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${effClass(tag, 'offense', ctx.effOnly)}`)}
+                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && koBandOf(found.plainPct) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
                         title={hit ? `${member!.species}: ${hit.move ?? ''} ${hit.pct}%` : undefined} onMouseEnter={() => setHover({ row: slot, col: i })}>
                         {hit && <>
                           {hit.pct}%
@@ -94,7 +97,9 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
           </tbody>
         </table>
       </div>
-      <div className="rob-legend ht-foot"><span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span></div>
+      <div className="rob-legend ht-foot">{focus
+        ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+        : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
     </div>
   );
 }

@@ -343,7 +343,8 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
     const headers = screen.getAllByRole('columnheader').map(h => h.textContent);
     expect(headers).toEqual(['Pokémon', 'Regge i tipi', 'Regge il meta', 'Sostenibilità', 'Difesa', 'Colpo peggiore', 'Recupero']);
-    const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
+    // La riga vuota in fondo (og-fill) tiene la riga del team in basso: non è un membro
+    const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {
       expect(row.querySelector('.def-hit .hold-chip')).toHaveTextContent(/\d+%/);

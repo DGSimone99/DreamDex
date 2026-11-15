@@ -7,6 +7,7 @@ import { MemberMon } from '../defense/MemberMon';
 import { MetaCount, MetaFrame } from '../MetaFrame';
 import { PokemonIcon } from '../PokemonName';
 import { ColName, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
+import { FocusNote, koBandOf } from './KoBadges';
 
 type Row = NonNullable<TeamOffense['coverageMeta']>['rows'][number];
 type Bucket = 'ohko' | 'two' | 'three' | 'none';
@@ -31,7 +32,12 @@ const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
   const t = useT();
   const hover = useColumnHover();
-  const rows = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
+  // Aperta da una tessera della Generale: la riga del membro e le minacce di quella fascia accese, e prima nell'ordine
+  // (così stanno nella prima pagina); il resto spento
+  const focus = ctx.focus?.kind === 'meta' ? ctx.focus : null;
+  const lit = (row: Row) => !!focus && koBandOf(Math.max(0, row.cells?.[focus.slot]?.pct ?? 0)) === focus.band;
+  const sorted = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
+  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))] : sorted;
   const covered = rows.filter(r => r.level > 0).length;
   const only3 = rows.filter(r => r.level === 0 && (r.cells ?? []).some(c => c.pct >= 34)).length;
   const summary = (
@@ -45,13 +51,13 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
 
   const cell = (row: Row, m: number, k0: number) => {
     const c = row.cells?.[m];
-    if (!c || c.pct < 0) return <td key={row.species} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
+    if (!c || c.pct < 0) return <td key={row.species} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
     const tag = effLabel(c.mult, 'offense');
     const k = bucket(c.pct);
     const up = c.setupPct !== null && bucket(c.setupPct) !== k;
     const setupText = up ? `setup ${c.setupPct}%` : '';
     return (
-      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}`)} {...hover.enter(k0)} title={[TAG[k], setupText].filter(Boolean).join(' · ') || undefined}>
+      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)} {...hover.enter(k0)} title={[TAG[k], setupText].filter(Boolean).join(' · ') || undefined}>
         <span className="wall-pct">{c.pct}%</span>
         {TAG[k] && <span className="visually-hidden"> {TAG[k]}</span>}
         {up && <small className="wall-setup">{setupText}</small>}
@@ -83,7 +89,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
             {ctx.team.map((set, m) => {
               const name = battleSpecies(set)?.name ?? set.species;
               return (
-                <tr key={`${name}-${m}`}>
+                <tr key={`${name}-${m}`} className={focus ? (m === focus.slot ? 'kf-row' : 'kf-off') : undefined}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {shown.map((r, k) => cell(r, m, k))}
                 </tr>
@@ -99,7 +105,9 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           </tbody>
         </table>
       </div>
-      <div className="rob-legend cm-foot"><span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>{counts}</div>
+      <div className="rob-legend cm-foot">{focus
+        ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+        : <span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>}{counts}</div>
     </div>
   );
 

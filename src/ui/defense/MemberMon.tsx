@@ -6,6 +6,7 @@ import type { TeamSet } from '../../engine/sets';
 import { useT } from '../../i18n/react';
 import { Icon } from '../icons';
 import { PokemonIcon } from '../PokemonName';
+import { useMemberTip } from '../MemberCard';
 import { TypeIcons } from '../typeIcons';
 
 /** Il set del team per una specie della Difesa (che usa il nome in battaglia, es. le Mega). */
@@ -40,12 +41,17 @@ export function MemberMon({ name, set, stats = false, children }: { name: string
       </span>
     );
   };
+  // Su sprite e nome, dopo un attimo: la carta del Pokémon di lato alla colonna dei membri (non copre i nomi né le righe), se il set c'è
+  const memberTip = useMemberTip(400, 'th, td', true);
+  const tip = set ? memberTip.bind(set) : {};
   return (
     <span className="ad-mon def-mon">
-      <span className="def-box"><PokemonIcon name={name} /></span>
+      <span className="def-mon-hit" {...tip}>
+        <span className="def-box"><PokemonIcon name={name} /></span>
+      </span>
       <span className="def-mon-text">
         <span className="def-mon-line">
-          <span className="def-mon-name">{name}</span>
+          <span className="def-mon-name" {...tip}>{name}</span>
           {species && <TypeIcons types={species.types} className="def-mon-types" />}
           {children && <span className="def-mon-tag line">{children}</span>}
         </span>
@@ -53,6 +59,7 @@ export function MemberMon({ name, set, stats = false, children }: { name: string
           ? <>{stat('atk', 'physical')}{stat('spa', 'special')}{realSpeed(set!)}</>
           : stats === 'speed' ? realSpeed(set!) : <>{stat('hp', 'heart')}{stat('def', 'physical')}{stat('spd', 'special')}</>}{children && <span className="def-mon-tag">{children}</span>}</span>}
       </span>
+      {set && memberTip.tip}
     </span>
   );
 }

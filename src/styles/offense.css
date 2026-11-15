@@ -74,13 +74,118 @@
 .off-general .og-band i.ok-ohko { background: var(--good); border-color: var(--good); }
 .off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 35%, var(--panel)); border-color: var(--good); }
 .off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); border-color: var(--warn); }
-/* Quanto porta al team: la pillola nel colore dell'Offesa */
-.off-general .og-points { padding: 2px 7px; border-radius: 2px; background: var(--accent-2-soft); color: var(--accent-2-ink); font: italic 700 13px/1 var(--display); font-variant-numeric: tabular-nums; cursor: help; }
-.off-general.roomy .def-members td { padding-top: 8px; padding-bottom: 8px; }
-/* Team Coverage: la riga del team come una fascia a sé, con la riga sopra per tutta la larghezza */
-.off-general tfoot .og-total > *, .def-general tfoot .og-total > * { padding-top: 12px; padding-bottom: 12px; border-top: 1px solid var(--accent-2-soft); border-bottom: 0; background: color-mix(in srgb, var(--accent-2) 6%, transparent); }
-.off-general tfoot .og-total th, .def-general tfoot .og-total th { padding-left: 12px; font: italic 700 14px/1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-2-ink); text-align: left; white-space: nowrap; }
+/* Quanto porta al team: barra e "+N" in azzurro (non è un voto, non ha soglie). La barra della colonna Offesa arriva
+   fino al bordo, col numero contro il bordo destro (anche nella riga del team) */
+.off-general .def-members td:last-child .def-cell { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 4.5ch; }
+.off-general .og-share-num { color: var(--accent); }
+.off-general .og-share-bar .og-share-team { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.off-general .og-share-bar .og-share-own { right: auto; background: var(--accent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.off-general .og-share-bar .og-share-own:first-child, .off-general .og-share-bar .og-share-own[style^="left: 0%"] { clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.off-general.roomy .def-members td { padding-top: 6px; padding-bottom: 6px; }
+/* Team Coverage: un velo magenta solo, largo quanto la tabella, che sfuma su tutti i lati (in alto una linea sottile che
+   sfuma anch'essa ai lati); "TEAM COVERAGE" è una linguetta a cavallo della linea. Disegnati sotto la prima casella
+   (100cqw = la larghezza della cornice, cioè della tabella) così le caselle non hanno fondi propri e niente si spezza */
+.off-general tfoot .og-total > *, .def-general tfoot .og-total > * { position: relative; padding-top: 10px; padding-bottom: 5px; border-top: 0; border-bottom: 0; background: none; }
+.off-general tfoot .og-total > * > *, .def-general tfoot .og-total > * > * { position: relative; z-index: 1; }
+.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before,
+.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after { content: ""; position: absolute; left: 0; width: 100cqw; pointer-events: none; z-index: 0;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 9%, transparent), transparent); }
+.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after { top: 0; height: 1px; background: color-mix(in srgb, var(--accent-2) 80%, transparent); }
+.off-general tfoot .og-total th, .def-general tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
+.og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 11.5px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-accent-2, #22000f);
+  background: var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.og-legend span { display: inline-flex; align-items: center; gap: 6px; }
+/* Schermi bassi: le barre dei colpi più basse (22px), così sei membri e la riga del team stanno nella cornice */
+@media (min-width: 1100px) and (max-height: 640px) {
+  .kob-row > .kob { height: 22px; }
+  .kob-num > b { font-size: 15px; }
+  .off-general tfoot .og-total > * { padding-top: 7px; padding-bottom: 3px; }
+}
+/* Le pastiglie delle mosse (squadra chiusa) solo se la cornice ha posto per sei righe con le pastiglie */
+@container (max-height: 500px) { .off-general .mcs, .off-general .mc-none { display: none; } }
 /* Schermi bassi: la riga Team Coverage della Difesa più bassa, così la tabella coi totali sta senza scorrere */
 @media (max-height: 640px) {
   .def-general tfoot .og-total > * { padding-top: 4px; padding-bottom: 4px; }
 }
+
+/* Generale di Offesa e Difesa: la tabella riempie la cornice e una riga vuota prende lo spazio che resta, così la riga
+   Team Coverage sta sempre in fondo, allo stesso posto con 1 o con 6 membri */
+.def-general > .ad-scroll { flex: 1 1 auto; min-height: 0; }
+.def-general .def-members { height: 100%; }
+.def-general .def-members tr.og-fill { height: auto; }
+.def-general .def-members tr.og-fill td { padding: 0; border: 0; }
+
+/* La barra dei colpi (KoBadges): larga quanto la colonna meno un respiro (le due colonne non si toccano), a pezzi lunghi
+   quanto il loro conto: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga
+   del team in rosso: gli scoperti). Ogni pezzo ha un minimo per etichetta e numero; il setup è il triangolo nell'angolo */
+.kob-row { display: flex; align-items: center; gap: 3px; width: calc(100% - 36px); min-width: 150px; }
+.kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
+.kob-row > .kob { flex: 1 0 0; min-width: 64px; }
+.kob > em { font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; color: var(--muted); opacity: 0.8; }
+/* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
+.kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+.kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
+.kob-num > b { font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
+/* Il triangolo del setup nell'angolo in alto a destra, col lato destro sulla stessa diagonale del pezzo (5px su 26) */
+.kob.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; background: var(--good); clip-path: polygon(0 0, 100% 0, calc(100% - 1.7px) 100%); }
+.kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
+.kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
+.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); background: color-mix(in srgb, var(--good) 12%, transparent); }
+.kob.ohko:hover { background: color-mix(in srgb, var(--good) 55%, transparent); }
+.kob.two:hover { background: color-mix(in srgb, var(--good) 26%, transparent); }
+/* Un pezzo a zero c'è solo quando il setup ci porta qualcuno: spento, col triangolo */
+.kob.zero { color: var(--faint); border-color: color-mix(in srgb, var(--faint) 22%, transparent); background: none; box-shadow: none; opacity: 0.6; }
+/* Quelli che non manda KO in due colpi: grigio, solo il numero, più piccolo */
+.kob-row > .kob.rest { min-width: 34px; padding-left: 6px; color: var(--faint); background: var(--line-soft); }
+.kob.rest .kob-num > b { font-size: 13px; opacity: 0.85; }
+.kob.rest:hover { background: color-mix(in srgb, var(--faint) 22%, transparent); }
+/* Nella riga del team: gli scoperti in rosso */
+.kob.rest.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
+.kob.rest.bad .kob-num > b { font-size: 15px; opacity: 1; }
+.kob.rest.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
+/* Con l'etichetta (nella testata del tooltip): larghezza libera */
+.kob.labeled { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 3px 11px 3px 8px; }
+.kob.labeled em { font: 700 10px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
+.kob.labeled > b { min-width: 0; font: 700 italic 15px/1 var(--display); }
+.kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
+
+
+/* A squadra chiusa, sotto la barra dei colpi: quanto lavora ogni mossa d'attacco, una pastiglia per mossa nel colore del
+   suo tipo (icona e numero dei bersagli); passandoci sopra si allarga col nome, e il tooltip elenca i bersagli.
+   A 0 spenta. Sempre una riga: le pastiglie hanno tutte la stessa forma */
+.mcs { display: flex; gap: 6px; width: calc(100% - 36px); min-width: 150px; margin-top: 4px; overflow: hidden; }
+.mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 11.5px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
+  background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
+.mc:hover { background: color-mix(in srgb, var(--c) 32%, transparent); }
+.mc img { flex: none; width: 13px; height: 13px; border-radius: 50%; }
+.mc b { flex: none; font: 700 italic 12.5px/1 var(--display); font-variant-numeric: tabular-nums; }
+/* Il nome nascosto, si apre passando sopra */
+.mc-name { max-width: 0; margin-right: -5px; overflow: hidden; opacity: 0; transition: max-width 0.2s var(--ease), opacity 0.15s var(--ease), margin 0.2s var(--ease); }
+.mc:hover .mc-name, .mc:focus-visible .mc-name { max-width: 160px; margin-right: 0; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .mc-name { transition: none; } }
+.mc.z { color: var(--faint); background: none; }
+.mc.z:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }
+.mc.z img { opacity: 0.5; }
+.mc-none { display: block; margin-top: 4px; font: 500 12px var(--display); color: var(--faint); }
+
+/* Le tabelle dei membri (Generale di tutte le aree): la riga sotto il mouse si accende appena, senza spostare niente */
+.def-frame .def-members tbody tr:not(.og-fill) > * { transition: background-color 0.15s var(--ease); }
+.def-frame .def-members tbody tr:not(.og-fill) { --row-hl: color-mix(in srgb, var(--accent) 7%, transparent); }
+.def-frame .def-members tbody tr:not(.og-fill):hover > * { background: var(--row-hl); }
+/* La luce della riga sfuma ai lati: la prima casella entra da sinistra, l'ultima esce a destra */
+.def-frame .def-members tbody tr:not(.og-fill):hover > :first-child { background: linear-gradient(90deg, transparent, var(--row-hl) 90px); }
+.def-frame .def-members tbody tr:not(.og-fill):hover > :last-child { background: linear-gradient(90deg, var(--row-hl) calc(100% - 90px), transparent); }
+
+/* Tessere cliccabili: aprono il dettaglio */
+.kob.pick { cursor: pointer; }
+.kob.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Coverage tipi / meta aperte da una tessera: accese la riga del membro e le caselle di quella fascia, il resto spento */
+.ct-table tr.kf-off > * { opacity: 0.45; }
+.ct-table td.kf-dim { opacity: 0.3; }
+.ct-table tr.kf-row td.kf-dim { opacity: 0.45; }
+.ct-table td.kf-hit { opacity: 1; box-shadow: inset 0 0 0 2px var(--accent), 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent); }
+.kf-note { display: inline-flex; align-items: center; gap: 10px; color: var(--accent-ink); font-weight: 600; }
+.kf-clear { padding: 2px 10px; font: 600 12px/1.2 var(--ui); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 3px; cursor: pointer; }
+.kf-clear:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }

@@ -17,9 +17,11 @@
    Velocità), così le righe hanno la stessa altezza ovunque: lo misura la scheda con più roba sotto, una riga di riepilogo
    (Regge, Lo coprono) e una riga bassa dopo la tabella (la legenda dei colori, i conteggi di Coverage meta, le note del
    meteo) */
-.def-frame { --def-top: 50px; --def-gap: 6px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
-  --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
-  display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
+/* --def-legend: la riga sopra la tabella per la legenda (in alto a destra), tenuta in ogni scheda anche senza legenda,
+   così la tabella parte alla stessa altezza ovunque */
+.def-frame { --def-top: 50px; --def-gap: 6px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-legend: 20px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
+  --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-legend) - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
+  display: flex; flex-direction: column; height: 100%; min-height: 0; padding-top: var(--def-legend); container-type: size; }
 .def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
 .def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); overflow: visible; }
 /* La lista parte subito sotto la striscia delle sottoschede: meno margine in alto nel pannello */
@@ -36,6 +38,7 @@
 /* Il membro come icona del box (MemberMon): nitida da piccola, ingrandita a gradini con l altezza delle righe.
    Le soglie sono sull altezza della cornice, la stessa a squadra aperta e chiusa (sotto le righe resta solo --def-tail):
    righe ≥ 40px → ×1,4 · ≥ 58 → ×1,7 · ≥ 66 → ×2 · ≥ 90 → ×2,5 · ≥ 110 → ×3 */
+.def-mon-hit { display: inline-flex; flex: none; }
 .def-box { --bs: 1; display: inline-grid; place-items: center; flex: none; width: calc(40px * var(--bs)); height: calc(30px * var(--bs)); }
 .def-box .mon-icon { transform: scale(var(--bs)); image-rendering: pixelated; }
 .def-frame .def-box { --bs: 0.8; }
@@ -57,8 +60,10 @@
 .def-cell.with-gain { display: grid; width: 100%; grid-template-columns: minmax(0, 150px) 3ch 5.5ch; }
 .def-gain { margin-left: -6px; white-space: nowrap; }
 .def-frame .def-gain small { margin-left: 0; }
-.def-bar { position: relative; display: block; width: 100%; height: 8px; background: var(--line-soft); }
-.def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.def-bar { position: relative; display: block; width: 100%; height: 8px; background: var(--line-soft);
+  /* Estremi inclinati come le tessere e le schede (vale per tutte le barre delle Generale) */
+  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .def-bar.warn i { background: var(--warn); }
 .def-bar.bad i { background: var(--bad); }
 /* Il guadagno del setup: a righe nel colore della barra, staccato con una riga scura (come nella Velocità) */
@@ -217,12 +222,15 @@
 .cm-pages button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .cm-pages .icon { width: 14px; height: 14px; }
 .cm-at { min-width: 4.5ch; text-align: center; font: 600 13px/1 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
-.ad-panel .rob-legend.cm-foot { flex-wrap: nowrap; justify-content: space-between; gap: 12px; white-space: nowrap; }
-/* Sotto la tabella, in fondo al pannello, una riga sola e bassa: a sinistra la legenda dei colori, poi i conteggi di
-   Coverage meta (a destra) o le note del meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) */
-.ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: 20px; padding-top: 0; }
-.ad-panel .rob-legend.ht-foot { flex-wrap: nowrap; gap: 12px; white-space: nowrap; }
-.ad-panel .ht-notes { flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; font-size: 12px; cursor: help; }
+/* Tutte le legende delle tabelle allo stesso posto: in alto a destra, nella riga sopra la tabella (--def-legend), così si
+   leggono prima dei dati. Una riga sola: a destra la chiave dei colori, prima (verso il centro) i conteggi di Coverage meta,
+   le note del meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) o la nota del focus */
+.def-frame { position: relative; }
+.ad-panel .def-frame > .rob-legend { position: absolute; top: 0; left: 0; right: 0; height: var(--def-legend); margin: 0; padding: 0;
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 18px; white-space: nowrap; line-height: 1.1; font-size: 11.5px; }
+.ad-panel .def-frame > .rob-legend > .area-legend { order: 2; }
+.ad-panel .def-frame > .rob-legend .cm-summary { margin: 0; }
+.ad-panel .ht-notes { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; font-size: 12px; cursor: help; }
 .ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; font-size: 13px; color: var(--muted); }
 .cm-summary .ct-pill { font-size: 12px; }
 .ct-pill.zero { background: var(--raised); color: var(--faint); }
@@ -373,7 +381,7 @@
 /* I portatili più bassi (1280×620): righe delle tabelle fino a 24px (lo sprite piccolo ci sta), meno margine sopra e la
    riga in fondo più bassa */
 @media (min-width: 1100px) and (max-height: 640px) {
-  .area-view .def-frame { --def-row-min: 24px; }
+  .area-view .def-frame { --def-row-min: 24px; --def-sp: 2px; --def-legend: 16px; }
+  .ad-panel .def-frame > .rob-legend { font-size: 11px; }
   .area-panel:has(> .def-frame) { padding-top: 3px; }
-  .ad-panel .rob-legend.cm-foot { height: 18px; }
 }

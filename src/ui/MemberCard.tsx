@@ -120,16 +120,17 @@ export function MemberCard({ set, why, was }: { set: TeamSet; why?: ReactNode; w
  * La carta del Pokémon come tooltip DreamDex dove serve (Completa team, carte del team, candidati, Coaching, minacce):
  * `bind(set, why)` dà i gestori da mettere sull'elemento (mouse e fuoco), `tip` è il tooltip da rendere una volta.
  * `delay`: quanto aspetta prima di aprirsi (più lungo dove il mouse passa spesso); `near`: il selettore dell'antenato
- * sotto cui aprirsi (la carta del team: sotto la carta intera, non sotto la sprite).
+ * sotto cui aprirsi (la carta del team: sotto la carta intera, non sotto la sprite); `side`: di lato (le tabelle di
+ * Analisi, così la carta non copre le righe sotto).
  */
-export function useMemberTip(delay?: number, near?: string) {
+export function useMemberTip(delay?: number, near?: string, side?: boolean | 'left') {
   const anchor = useFloatAnchor<{ set: TeamSet; why?: ReactNode; was?: TeamSet }>(delay);
   const show = (set: TeamSet, why?: ReactNode, was?: TeamSet) => (e: MouseEvent<Element> | FocusEvent<Element>) =>
     anchor.open({ set, why, was }, (near && e.currentTarget.closest(near)) || e.currentTarget);
   const bind = (set: TeamSet, why?: ReactNode, was?: TeamSet) => ({ onMouseEnter: show(set, why, was), onMouseLeave: anchor.close, onFocus: show(set, why, was), onBlur: anchor.close });
   const current = anchor.anchor;
   const tip = current && (
-    <FloatTip rect={current.rect} tone={typeColor((battleSpecies(current.key.set)?.types[0] as string | undefined) ?? '')} className="member">
+    <FloatTip rect={current.rect} tone={typeColor((battleSpecies(current.key.set)?.types[0] as string | undefined) ?? '')} className="member" side={side}>
       <MemberCard set={current.key.set} why={current.key.why} was={current.key.was} />
     </FloatTip>
   );

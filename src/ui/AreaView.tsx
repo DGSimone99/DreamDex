@@ -5,7 +5,7 @@ import type { TeamRating } from '../engine/rating';
 import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
-import { areaTabs, type AreaKey } from './AreaDetail';
+import { areaTabs, type AreaKey, type KoFocus } from './AreaDetail';
 import { viewLabelKey } from './AnalysisTabs';
 import { AreaGuide } from './AreaGuide';
 import type { CoachStep } from '../engine/coachSteps';
@@ -47,10 +47,14 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const id = useId();
   const [own, setOwn] = useState<string | null>(null);
   const picked = remembered !== undefined ? remembered : own;
-  const setPicked = (key: string) => (onPick ? onPick(key) : setOwn(key));
+  const setPickedRaw = (key: string) => (onPick ? onPick(key) : setOwn(key));
+  // Il dettaglio evidenziato da una tessera della Generale: si spegne appena si sceglie un'altra sottoscheda
+  const [focus, setFocus] = useState<KoFocus | null>(null);
+  const setPicked = (key: string) => { setFocus(null); setPickedRaw(key); };
   // `open`: le tessere della scheda Generale aprono la sottoscheda e le passano il focus (il pannello che le ospitava sparisce)
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
+  const openFocus = (key: string, next: KoFocus) => { focusKey.current = key; setPickedRaw(key); setFocus(next); };
   // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
   const [effOnly, setEffOnly] = useState<Partial<Record<AreaKey, boolean>>>({});
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
@@ -58,7 +62,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
   const opener = useRef<HTMLElement | null>(null);
   const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null) });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];

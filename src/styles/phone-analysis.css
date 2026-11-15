@@ -61,6 +61,10 @@
   .strip-switch .eff-switch { min-height: 44px; }
   .area-view-bonusMalus > .area-panel { margin-top: 0; }
   /* La riga in fondo alla tabella: legenda e riepilogo vanno a capo */
+  /* Sul telefono la legenda torna sotto la tabella, nel flusso, e va a capo */
+  .def-frame { padding-top: 0; }
+  .ad-panel .def-frame > .rob-legend { position: static; height: auto; margin-top: 8px; justify-content: flex-start; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
+  .ad-panel .def-frame > .rob-legend > .area-legend { order: 0; }
   .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
   .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
   /* Problemi dell'area in fondo: tutti, su più righe (la pagina scorre); "Vai al Coaching" alto quanto un dito */
