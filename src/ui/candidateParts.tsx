@@ -124,6 +124,8 @@ export function reasonsOf(item: Item, n: number, usage: number | null, format: F
   if (gain && gain.gain > 0) {
     const best = gain.areaGains?.[0];
     if (best) return { pros: false, items: [plain(`${best.label} +${best.change}`)] };
+    // Poi i Ruoli e Bonus/Malus, separati come nel voto
+    if ((gain.roles ?? 0) > 0) return { pros: false, items: [plain(`${t(lang, 'area.roles')} +${gain.roles}`)] };
     if ((gain.extras ?? 0) > 0) return { pros: false, items: [plain(`${t(lang, 'detail.extras')} +${gain.extras}`)] };
   }
   return { pros: false, items: [plain(t(lang, 'suggest.noDifference'))] };

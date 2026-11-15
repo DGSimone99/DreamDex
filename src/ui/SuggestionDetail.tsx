@@ -5,7 +5,7 @@ import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
 import { cardRoles, type Archetype } from '../engine/archetype';
 import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
-import { areaDrops, extrasDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
+import { areaDrops, extrasDelta, rolesDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
@@ -94,6 +94,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).map(drop => `${drop.label} ${delta(drop.change)}`));
   // Problemi risolti o nuovi e meteo: la parte del voto che le aree non spiegano, con la sua pillola
   const extras = before && after ? extrasDelta(before, after) : 0;
+  // I punti dei Ruoli a parte, come nella carta del voto (Bonus/Malus non li conta)
+  const rolesChange = before && after ? rolesDelta(before, after) : 0;
   // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso
   const showLoses = replacing || loses.length > 0;
 
@@ -181,6 +183,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                   </div>
                 );
               })}
+              {rolesChange !== 0 && (
+                <div className="extras">
+                  <dt>{tr('area.roles')}</dt>
+                  <dd className={`change${rolesChange < 0 ? ' worse' : ''}`}>{delta(rolesChange)}</dd>
+                </div>
+              )}
               {extras !== 0 && (
                 <div className="extras">
                   <dt>{tr('detail.extras')}</dt>
