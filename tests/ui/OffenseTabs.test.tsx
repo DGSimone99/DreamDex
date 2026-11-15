@@ -143,11 +143,13 @@ describe('Offesa: Generale', () => {
       expect(badge.querySelector('b')).toHaveTextContent(new RegExp(`^${n}$`));
       expect(badge.classList.contains('zero')).toBe(n === 0);
       if (extra > 0) {
-        expect(badge.querySelector('.kob-setup')).toHaveTextContent(`+${extra}`);
+        // Nella tessera solo il triangolo del setup; quanti in più lo dice il tooltip (e il nome accessibile)
+        expect(badge).toHaveClass('has-setup');
+        expect(badge).not.toHaveTextContent('+');
         // Il migliore della colonna aggiunge ", il migliore della colonna" (la stella)
         expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}, altri ${extra} col setup(, il migliore della colonna)?$`));
       } else {
-        expect(badge.querySelector('.kob-setup')).toBeNull();
+        expect(badge).not.toHaveClass('has-setup');
         expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}(, il migliore della colonna)?$`));
       }
     }
@@ -242,7 +244,7 @@ describe('Offesa: Generale', () => {
     });
   });
 
-  it('col setup che fa salire di fascia, il badge ha "+N" e il tooltip la riga "Dopo <mossa>, in più"', async () => {
+  it('col setup che fa salire di fascia, il badge ha il triangolo e il tooltip la riga "<mossa> +N"', async () => {
     const user = userEvent.setup();
     const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
     const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
@@ -258,8 +260,9 @@ describe('Offesa: Generale', () => {
     const tip = await tipOf();
     const move = gameName('move', 'Swords Dance', 'it');
     const extra = [...tip.querySelectorAll('.kot-extra')].find(e => e.textContent!.includes(move))!;
-    expect(extra.querySelector('.kot-extra-h')).toHaveTextContent(`Dopo ${move}, in più`);
-    expect(extra.querySelectorAll('.kot-type')).toHaveLength(band === 'ohko' ? c.setupOhko : c.setupTwo);
+    const more = band === 'ohko' ? c.setupOhko : c.setupTwo;
+    expect(extra.querySelector('.kot-extra-h')!.textContent).toBe(`${move} +${more}`);
+    expect(extra.querySelectorAll('.kot-type')).toHaveLength(more);
   });
 
   it('passando su un badge si apre il tooltip DreamDex coi bersagli: i tipi con icona e nome, le minacce con la sprite', async () => {

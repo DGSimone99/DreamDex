@@ -46,7 +46,7 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // Meta e Tipi: i badge OHKO e 2HKO col numero (e "+N" del setup); poi la barra col voto del membro
+      // Meta e Tipi: i badge OHKO e 2HKO col numero (e il triangolo del setup); poi la barra col voto del membro
       expect(cells).toHaveLength(3);
       for (const cell of cells.slice(0, 2)) {
         const labels = [...cell.querySelectorAll('.kob.ohko, .kob.two')].map(b => b.getAttribute('aria-label'));

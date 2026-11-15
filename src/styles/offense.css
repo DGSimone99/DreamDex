@@ -115,17 +115,16 @@
    a zero solo il numero spento; il setup nel suo posto a destra ("+N") col triangolo verde nell'angolo come nelle tabelle.
    Le etichette OHKO / 2HKO piccole a sinistra dentro la tessera, nel loro posto fisso (colonne allineate) */
 .kob-row { display: inline-flex; align-items: center; gap: 6px; }
-.kob { --kw: 86px; position: relative; box-sizing: border-box; display: inline-grid; grid-template-columns: 33px minmax(0, 1fr); align-items: center; width: var(--kw); height: 26px; padding: 0 5px 0 9px; border: 1px solid transparent; cursor: help;
+.kob { --kw: 76px; position: relative; box-sizing: border-box; display: inline-grid; grid-template-columns: 33px minmax(0, 1fr); align-items: center; width: var(--kw); height: 26px; padding: 0 13px 0 9px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
 .kob > em { grid-column: 1; font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; color: var(--muted); opacity: 0.8; }
 /* Un filo di luce sul bordo alto: le tessere meno piatte (dentro la forma tagliata, come una lastra) */
 .kob:not(.zero):not(.labeled) { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
-/* Numero e "+N" in due posti fissi: il numero allineato a destra sempre nello stesso punto, poi uno spazio stretto per il
-   "+N" in alto (come un esponente), vuoto senza setup: i numeri fanno colonna riga per riga */
-.kob-num { grid-column: 2; display: grid; grid-template-columns: minmax(0, 1fr) 17px; align-items: center; }
+/* Il numero allineato a destra, sempre nello stesso punto: i numeri fanno colonna riga per riga; il setup è solo il
+   triangolo nell'angolo */
+.kob-num { grid-column: 2; display: flex; justify-content: flex-end; align-items: center; }
 .kob-num > b { grid-column: 1; text-align: right; }
 .kob-num > b { font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
-.kob-setup { grid-column: 2; align-self: start; margin-top: 4px; padding-left: 1px; font: 700 9px/1 var(--display); color: var(--muted); white-space: nowrap; }
 /* Il triangolo del setup nell'angolo in alto a destra, col lato destro sulla stessa diagonale della tessera (5px su 26) */
 .kob.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; background: var(--good); clip-path: polygon(0 0, 100% 0, calc(100% - 1.7px) 100%); }
 .kob { --k: 0; }

@@ -72,9 +72,9 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick }:
               onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
               {...(onPick && n > 0 ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(b); } } } : {})}
               aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
-              {/* L'etichetta a sinistra; il numero e il "+N" del setup (piccolo, in alto, come un esponente) insieme contro il bordo destro */}
+              {/* L'etichetta a sinistra, il numero a destra sempre nello stesso punto; il setup è solo il triangolo nell'angolo (il tooltip dice quanti) */}
               <em aria-hidden="true">{TAG[b]}</em>
-              <span className="kob-num"><b>{n}</b>{extra > 0 && <small className="kob-setup" aria-hidden="true">+{extra}</small>}</span>
+              <span className="kob-num"><b>{n}</b></span>
             </span>
           </span>
         );
@@ -83,8 +83,9 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick }:
         <FloatTip rect={tip.anchor!.rect} tone="var(--good)" className="kot">
           <div className="kot-head"><b>{who}</b><span className={`kob labeled ${band}`}><em>{TAG[band]}</em><b>{bands.plain[band].length}</b></span><small>{of}</small></div>
           {bands.plain[band].length ? list(bands.plain[band]) : <p className="kot-none">{t('kob.none')}</p>}
-          {bands.setup[band].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={setupMove ? t('kob.afterSetup', { move: gameName('move', getMove(setupMove)?.name ?? setupMove, lang) }) : t('kob.afterSetupAny')}>{list(bands.setup[band])}</Extra>}
-          {bands.once[band].length > 0 && onceName && <Extra label={onceName}>{list(bands.once[band])}</Extra>}
+          {/* In più col setup o con Tera/Z: solo il nome e quanti, "Danzaspada +15" */}
+          {bands.setup[band].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={`${setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')} +${bands.setup[band].length}`}>{list(bands.setup[band])}</Extra>}
+          {bands.once[band].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[band].length}`}>{list(bands.once[band])}</Extra>}
         </FloatTip>
       )}
     </span>
