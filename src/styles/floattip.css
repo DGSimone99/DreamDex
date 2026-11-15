@@ -1,0 +1,82 @@
+/* Tooltip DreamDex (FloatTip): pannello nel body, alone nel colore --tc (es. il tipo), fondo sfumato e ombra profonda per
+   staccarlo dallo sfondo; testata a strisce con l'icona tonda, punta verso la casella di partenza. Solo a vista: il
+   testo per gli screen reader sta sulla casella. */
+.ftip {
+  position: fixed; z-index: 1000; width: 360px; max-width: calc(100vw - 16px); pointer-events: none;
+  color: var(--text); font-size: 12px; line-height: 1.3;
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tc) 16%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--raised) 55%, var(--panel)), color-mix(in srgb, var(--field) 40%, var(--panel)));
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line));
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5), 0 0 26px -4px color-mix(in srgb, var(--tc) 45%, transparent), 0 18px 40px rgb(0 0 0 / 0.65);
+  animation: ftip-in 0.16s var(--ease);
+}
+.ftip.offense { width: 510px; }
+/* La punta: un quadrato ruotato sul bordo, alla x della casella */
+.ftip::before { content: ""; position: absolute; top: -7px; left: calc(var(--arrow) - 6px); width: 12px; height: 12px; transform: rotate(45deg);
+  background: color-mix(in srgb, var(--tc) 30%, var(--panel)); border-left: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); border-top: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
+.ftip.above::before { top: auto; bottom: -7px; transform: rotate(225deg); background: color-mix(in srgb, var(--field) 40%, var(--panel)); }
+@keyframes ftip-in { from { opacity: 0; transform: translateY(3px); } }
+.ftip.above { animation-name: ftip-in-up; }
+@keyframes ftip-in-up { from { opacity: 0; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .ftip { animation: none; } }
+
+.ftip-head { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 10px 7px 8px;
+  background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 38%, transparent), color-mix(in srgb, var(--tc) 8%, transparent));
+  border-bottom: 1px solid color-mix(in srgb, var(--tc) 50%, var(--line)); }
+.ftip-head img { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 70%, transparent); }
+.ftip-head b { font: 700 italic 15px/1 var(--display); }
+.ftip-val { margin-left: auto; font: 700 italic 17px/1 var(--display); color: var(--good); }
+.ftip-val small { display: inline; font-size: 11px; }
+.ftip-foot { margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); font-size: 11px; color: var(--faint); }
+.ftip-empty { margin: 0; padding: 12px 10px; color: var(--muted); }
+
+/* Badge dei colpi: in Offesa verde (prima arriva il KO, meglio è; 3HKO giallo, 4HKO+ grigio); in Difesa i colori della
+   scheda Difesa (rosso: ti manda KO presto, verde: lo reggi) */
+.ftip-ko { display: inline-block; padding: 2px 6px 1px; font: 700 10px/1.3 var(--display); letter-spacing: 0.04em; border: 1px solid; white-space: nowrap; }
+.ftip-ko.off.ohko { color: var(--good); border-color: var(--good); background: var(--good-bg); }
+.ftip-ko.off.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+.ftip-ko.off.three { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+.ftip-ko.off.four { color: var(--faint); border-color: var(--line); }
+.ftip-ko.def { color: var(--text); }
+.ftip-ko.def.ohko { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 46%, var(--panel)); }
+.ftip-ko.def.two { border-color: color-mix(in srgb, var(--bad) 55%, transparent); background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
+.ftip-ko.def.three { border-color: color-mix(in srgb, var(--warn) 65%, transparent); background: color-mix(in srgb, var(--warn) 26%, var(--panel)); }
+.ftip-ko.def.four { border-color: color-mix(in srgb, var(--good) 70%, transparent); background: color-mix(in srgb, var(--good) 30%, var(--panel)); }
+
+/* Offesa: podio, una colonna per colpo; il badge a nastro inclinato in alto a destra sulla sprite */
+.ftip-podium { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+.ftip-hit { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; text-align: center; border-right: 1px solid var(--line-soft); }
+.ftip-hit:last-child { border-right: 0; }
+.ftip-hit .ftip-ko { position: absolute; top: 8px; right: 8px; transform: skewX(-12deg); }
+.ftip-plinth { position: relative; display: flex; }
+.ftip-plinth::before { content: ""; position: absolute; left: 50%; bottom: 4px; width: 70%; height: 10px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
+.ftip-plinth .sprite { position: relative; display: block; margin: -8px 0 -6px; image-rendering: pixelated; }
+.ftip-pct { font: 700 italic 24px/1 var(--display); color: var(--good); }
+.ftip-pct.three { color: var(--warn); }
+.ftip-pct.four { color: var(--muted); }
+.ftip-pct { white-space: nowrap; }
+.ftip-pct small { display: inline; font-size: 12px; }
+.ftip-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+/* La mossa: icona tonda e nome nel colore del suo tipo, schiarito per leggersi sul fondo scuro, con un alone leggerissimo;
+   poi simbolo della categoria e potenza in Faint */
+.ftip-move { max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
+.ftip-move img { flex: none; width: 15px; height: 15px; border-radius: 50%; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--mc) 35%, transparent)); }
+.ftip-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
+.ftip-move-cat { flex: none; display: inline-flex; align-items: center; gap: 3px; font: 700 11px/1 var(--display); color: var(--faint); }
+.ftip-move-cat .icon { width: 11px; height: 11px; }
+
+/* Difesa: gruppi per moltiplicatore; per membro sprite, nome, danno % e badge */
+.ftip-group { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: start; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line-soft); }
+.ftip-group:last-of-type { border-bottom: 0; }
+.ftip-group-label { padding-top: 9px; font: 700 11px/1.2 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
+.ftip-group-label small { font-size: 11px; letter-spacing: 0; text-transform: none; }
+.ftip-group-label.good { color: var(--good); }
+.ftip-group-label.faint { color: var(--faint); }
+.ftip-group-label.bad { color: var(--bad); }
+.ftip-group-mons { display: flex; flex-direction: column; gap: 1px; }
+.ftip-mon { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 46px; align-items: center; gap: 6px; }
+.ftip-mon .sprite { display: block; margin: -4px -4px -4px -6px; image-rendering: pixelated; }
+.ftip-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ftip-mon-pct { font: 700 italic 14px/1 var(--display); text-align: right; }
+.ftip-mon .ftip-ko { text-align: center; }

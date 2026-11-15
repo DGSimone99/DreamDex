@@ -13,8 +13,18 @@ import type { SpeedCondition } from './speedArea';
 import { t, type Lang } from '../i18n';
 
 export type CellState = 'ok' | 'minor' | 'bad';
-/** resist: quanti membri reggono del tutto il tipo (Coverage tipi della Difesa). */
-export interface TypeCell { type: string; defense: CellState; offense: CellState; defenseNote: string; offenseNote: string; resist: number }
+/**
+ * resist: quanti membri reggono del tutto il tipo (Coverage tipi della Difesa). Per il tooltip della casella:
+ * offenseLevel e hits (i migliori colpi del team sul Pokémon di prova del tipo, come nella scheda Offesa), defenseLevel e
+ * members (per membro in ordine di team il moltiplicatore del tipo e il danno % del colpo più forte, fisico o speciale,
+ * come nella Coverage tipi della Difesa; null se il motore non conosce il membro).
+ */
+export interface TypeCell {
+  type: string; defense: CellState; offense: CellState; defenseNote: string; offenseNote: string; resist: number;
+  offenseLevel: number; defenseLevel: number;
+  hits: { species: string; move: string | null; pct: number }[];
+  members: { species: string; mult: number; pct: number | null }[];
+}
 /** soft: una mancanza che non toglie punti (voce minore, o team con meno di 6 membri). */
 export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | 'minor'; covered: boolean; owners: string[]; soft: boolean }
 export interface SpeedLane { species: string; speed: number; share: number; above: boolean }
@@ -35,6 +45,8 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
 
   // Copertura: una cella per tipo, coi conti del voto (Coverage tipi della Difesa, pacchetto dell'Offesa) come il coach
   const offense = rating.offense.types;
+  const weakness = new Map(analysis.weakness.map(row => [row.type as string, row.multipliers]));
+  const typeIndex = (type: string) => rating.defense.coverageTypes.rows.findIndex(r => r.type === type);
   const cells: TypeCell[] = rating.defense.coverageTypes.rows.map(row => {
     const severity = holdSeverity(rating, row.type);
     const off = offense.rows.find(r => r.label === row.type);
@@ -47,6 +59,14 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
       defenseNote: row.heldBy.length ? t(lang, 'dash.heldBy', { list: row.heldBy.join(', ') }) : t(lang, 'dash.heldNone'),
       offenseNote: hole || !hitters.length ? t(lang, 'dash.offenseNone') : t(lang, 'dash.offenseBy', { list: hitters.join(', ') }),
       resist: row.heldBy.length,
+      offenseLevel: off?.level ?? 0,
+      defenseLevel: row.level,
+      hits: (off?.best ?? []).map(b => ({ species: b.species, move: b.move, pct: b.pct })),
+      members: team.map((set, m) => {
+        const species = battleName(set);
+        const typed = rating.defense.typed.find(x => x.species === species);
+        return { species, mult: weakness.get(row.type)?.[m] ?? 1, pct: typed?.cells[typeIndex(row.type)]?.pct ?? null };
+      }),
     };
   });
 
