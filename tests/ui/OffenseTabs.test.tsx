@@ -474,9 +474,12 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     // Uscendo dalla casella (anche verso il nome del membro, dentro la tabella) il tooltip si chiude
     await user.hover(document.querySelector<HTMLElement>('.ct-table tbody th')!);
     expect(document.querySelector('body > .ftip.tht')).toBeNull();
+    // ...e la colonna si spegne: resta accesa solo la riga del membro
+    expect(document.querySelector('.ct-table .x-col')).toBeNull();
+    expect(document.querySelector('.ct-table tr.x-row')).not.toBeNull();
   });
 
-  it('ogni casella è il danno del membro: verde da 66% (credito da metà), gialla oltre il 33%, vuota sotto', async () => {
+  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66% (credito da metà), gialla oltre il 33%, vuota sotto', async () => {
     const rating = await open();
     const rows = document.querySelectorAll('.ct-table tbody tr');
     const slots = offenseSlots(team, rating.offense.members);
@@ -492,7 +495,9 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
         } else {
           expect(cell).toHaveTextContent(`${hit.pct}%`);
           expect(cell).toHaveClass(hit.credit >= 0.5 ? 'ok-full' : 'ok-half');
-          expect(cell).toHaveTextContent(hit.credit >= 0.5 ? 'forte' : 'conta');
+          // Il 100% ha il suo verde (OHKO); poi forte e medio
+          expect(cell.classList.contains('ok-ohko')).toBe(hit.pct >= 100);
+          expect(cell).toHaveTextContent(hit.pct >= 100 ? 'OHKO' : hit.credit >= 0.5 ? 'forte' : 'medio');
         }
       });
     });
@@ -532,8 +537,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
 
   it('la legenda: Forte e Conta', async () => {
     await open();
-    expect(document.body.textContent).toContain('Forte (oltre 66%)');
-    expect(document.body.textContent).toContain('Conta (oltre 33%)');
+    expect(document.querySelector('.area-legend')).toHaveTextContent('OHKOForteMedio');
   });
 });
 

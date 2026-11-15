@@ -73,7 +73,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               const typed = s === null ? null : defense.typed[s];
               return (
                 <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
-                  <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
+                  <th scope="row" onMouseEnter={() => setHover({ row: member, col: -1 })}><MemberMon name={battleName(set)} set={set} stats /></th>
                   {rows.map((row, i) => {
                     const cell = typed?.cells[i];
                     if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}`)}>—</td>;
@@ -92,11 +92,11 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               );
             })}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row">{t('ddetail.heldBy')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)}>{t('ddetail.heldBy')}</th>
               {rows.map((row, i) => {
                 const level = `${t('ddetail.level')} ${row.level}%`;
                 return (
-                  <td key={row.type} className={colClass(i)}>
+                  <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <span className={`ct-pill ${countTone(row.heldBy.length)}`} title={level}>
                       {row.heldBy.length}<span className="visually-hidden"> · {level}</span>
                     </span>

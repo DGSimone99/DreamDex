@@ -85,22 +85,24 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
               const member = slots[slot] === null ? null : offense.members[slots[slot]!];
               return (
                 <tr key={`${name}-${slot}`} className={[hover?.row === slot && 'x-row', focus && (slot === focus.slot ? 'kf-row' : 'kf-off')].filter(Boolean).join(' ') || undefined}>
-                  <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
+                  <th scope="row" onMouseEnter={() => { setHover({ row: slot, col: -1 }); tip.close(); }}><MemberMon name={name} set={set} stats="offense" /></th>
                   {TYPES.map((type, i) => {
                     if (slots[slot] === null) return <td key={type} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })}>—</td>;
                     const tag = effLabel(bestAttackMultiplier(set, [type], '', field), 'offense');
                     const found = member?.hits.find(h => h.label === type);
                     const hit = found && found.credit > 0 ? found : undefined;
                     const strong = !!hit && hit.credit >= 0.5;
+                    // Il 100%: un verde a parte, più acceso (come i pezzi OHKO della Generale)
+                    const ohko = !!hit && hit.pct >= 100;
                     // Il triangolo del setup, come nella Generale: solo se la danza fa salire di fascia (fino al 2HKO o all'OHKO)
                     const rank = (pct: number | null | undefined) => { const b = pct == null ? null : koBandOf(pct); return b === 'ohko' ? 2 : b === 'two' ? 1 : 0; };
                     const lifted = !!found && found.setupPct !== null && rank(found.setupPct) > rank(found.plainPct);
                     return (
-                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
+                      <td key={type} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
                         onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.close(); }} onMouseLeave={tip.close}>
                         {hit && <>
                           <span className="ct-num">{hit.pct}<i>%</i></span>
-                          <span className="visually-hidden"> {t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>
+                          <span className="visually-hidden"> {ohko ? 'OHKO' : t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>
                         </>}
                         <EffTag label={tag} side="offense" />
                       </td>
@@ -110,19 +112,19 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
               );
             })}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row">{t('detail.level')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)}>{t('detail.level')}</th>
               {TYPES.map((type, i) => {
                 const level = byType.get(type)?.level ?? 0;
-                return <td key={type} className={colClass(i)}><span className={`ct-pill ${coverTone(level)}`}>{level}%</span></td>;
+                return <td key={type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}><span className={`ct-pill ${coverTone(level)}`}>{level}%</span></td>;
               })}
             </tr>
             <tr className="ct-sum ct-best">
-              <th scope="row">{t('odetail.types.best')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)}>{t('odetail.types.best')}</th>
               {TYPES.map((type, i) => {
                 const top = best[i];
                 const who = top === null ? null : battleSpecies(team[top.slot])?.name ?? team[top.slot].species;
                 return (
-                  <td key={type} className={colClass(i)}>
+                  <td key={type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}>
                     {who
                       ? <span className="ct-best-mon"><Sprite species={who} size={34} /><span className="visually-hidden">{who}</span></span>
                       : <span className="ct-best-none" aria-label={t('odetail.types.hole')}>—</span>}
@@ -145,11 +147,12 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   );
 }
 
-/** La legenda dei colori della scheda dei tipi dell'Offesa, in alto a destra: forte, conta. */
+/** La legenda dei colori della scheda dei tipi dell'Offesa, in alto a destra: OHKO, forte, medio. */
 function OffenseTypesLegend() {
   const t = useT();
   return (
     <>
+      <span className="area-legend-swatch"><i className="ok-full ok-ohko" />OHKO</span>
       <span className="area-legend-swatch"><i className="ok-full" />{t('odetail.types.legendFull')}</span>
       <span className="area-legend-swatch"><i className="ok-half" />{t('odetail.types.legendHalf')}</span>
     </>

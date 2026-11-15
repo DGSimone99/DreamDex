@@ -229,3 +229,6 @@
 /* Coverage tipi dell'Offesa: il numero in Kanit corsivo come gli altri numeri dell'app, il "%" piccolo */
 .off-frame .ct-table td.ct-cell.ok-full, .off-frame .ct-table td.ct-cell.ok-half { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; }
 .ct-num i { display: inline; margin-left: 1px; font-size: 0.6em; font-weight: 600; font-style: italic; opacity: 0.85; }
+/* Il 100% (OHKO): verde pieno e acceso col bordo pieno e il numero verso il bianco, come i pezzi OHKO della Generale */
+.def-frame .ct-cell.ok-ohko, .area-legend-swatch i.ok-ohko { background: color-mix(in srgb, var(--good) 55%, var(--panel)); border-color: var(--good); }
+.off-frame .ct-table td.ct-cell.ok-ohko { color: color-mix(in srgb, var(--good) 25%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
