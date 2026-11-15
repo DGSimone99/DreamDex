@@ -169,12 +169,6 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
           ))}
         </div>
         {tabs.filter(tab => tab.describe).map(tab => <span key={tab.key} id={`${id}-${tab.key}-desc`} hidden>{tab.describe}</span>)}
-        {/* L'interruttore dell'efficacia, a destra nella striscia, solo sulle sottoschede con l'etichetta nelle caselle */}
-        {current.effSide && (
-          <span className="strip-switch">
-            <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
-          </span>
-        )}
         {current.help && (
           <span className="area-help" style={helpPlace}>
             <button ref={helpButton} type="button" className="help-button" aria-label={helpLabel}
@@ -191,6 +185,13 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
           onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
+        {/* L'interruttore dell'efficacia, in alto a sinistra sulla riga della legenda, solo sulle sottoschede con l'etichetta
+            nelle caselle */}
+        {current.effSide && (
+          <span className="panel-switch">
+            <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
+          </span>
+        )}
         {current.panel}
       </div>
       {/* In fondo i problemi dell'area, la stessa striscia della Panoramica (stesso posto, stessa misura): c'è sempre. Senza

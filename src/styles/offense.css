@@ -196,8 +196,8 @@
 /* La riga "Il migliore": la sprite di chi colpisce più forte ogni tipo, piccola, centrata; "—" spento dove nessuno conta.
    Solo se la cornice ha posto (sugli schermi bassi resta la Copertura) */
 .ct-table tr.ct-best { height: 34px; }
-.ct-best-mon { display: inline-flex; justify-content: center; }
-.ct-best-mon .sprite { margin: -6px 0 -4px; image-rendering: pixelated; }
+.ct-best-mon { display: inline-flex; justify-content: center; align-items: center; height: 26px; vertical-align: middle; }
+.ct-best-mon .sprite { flex: none; image-rendering: pixelated; }
 .ct-best-none { color: var(--faint); }
 @container (max-height: 330px) { .ct-table tr.ct-best { display: none; } }
 
@@ -214,3 +214,15 @@
 .tht-none { color: var(--muted); }
 .tht-extra { display: flex; align-items: center; gap: 6px; margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); font-weight: 600; color: var(--muted); }
 .tht-extra .ftip-ko { margin-left: auto; }
+
+/* Le tabelle Coverage: freccia, niente cursore del testo; "?" sulle caselle col tooltip */
+.def-frame .ct-table { cursor: default; }
+.off-frame .ct-table td.ok-full, .off-frame .ct-table td.ok-half { cursor: help; }
+/* Coverage tipi dell'Offesa: Copertura e Il migliore staccate dalle righe dei membri, con più aria */
+.off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: 6px; padding-bottom: 6px; }
+.off-frame.def-types .ct-table tr.ct-best { height: 32px; }
+.off-frame.def-types .ct-table tr.ct-best > * { padding-top: 2px; }
+@media (min-width: 1100px) and (max-height: 640px) { .off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: 4px; padding-bottom: 4px; } }
+/* Il triangolo del setup nell'angolo in alto a destra della casella, come sui pezzi della Generale: la danza fa salire di fascia */
+.off-frame .ct-table td.has-setup { position: relative; }
+.off-frame .ct-table td.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-top-right-radius: 2px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }

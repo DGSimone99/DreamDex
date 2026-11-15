@@ -69,7 +69,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
               {TYPES.map((type, i) => {
                 const hole = holes.includes(type);
                 return (
-                  <th key={type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')} title={typeName(type, lang)}
+                  <th key={type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
                     onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <TypeIcons types={[type]} />
                     {hover?.col === i && <ColName name={typeName(type, lang)} />}
@@ -93,8 +93,11 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                     const found = member?.hits.find(h => h.label === type);
                     const hit = found && found.credit > 0 ? found : undefined;
                     const strong = !!hit && hit.credit >= 0.5;
+                    // Il triangolo del setup, come nella Generale: solo se la danza fa salire di fascia (fino al 2HKO o all'OHKO)
+                    const rank = (pct: number | null | undefined) => { const b = pct == null ? null : koBandOf(pct); return b === 'ohko' ? 2 : b === 'two' ? 1 : 0; };
+                    const lifted = !!found && found.setupPct !== null && rank(found.setupPct) > rank(found.plainPct);
                     return (
-                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && koBandOf(found.plainPct) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
+                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && koBandOf(found.plainPct) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
                         onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.close(); }}>
                         {hit && <>
                           {hit.pct}%

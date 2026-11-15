@@ -421,11 +421,32 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     });
   });
 
+  it('il triangolo del setup sulla casella solo se la danza fa salire di fascia (fino al 2HKO o all’OHKO)', async () => {
+    const rating = await open();
+    const rows = document.querySelectorAll('.ct-table tbody tr');
+    const slots = offenseSlots(team, rating.offense.members);
+    const rank = (pct: number | null) => (pct === null ? 0 : pct >= 100 ? 2 : pct >= 50 ? 1 : 0);
+    let lifted = 0;
+    team.forEach((_, slot) => {
+      const m = rating.offense.members[slots[slot]!];
+      const cells = rows[slot].querySelectorAll('td');
+      TYPES.forEach((type, i) => {
+        const hit = m.hits.find(h => h.label === type)!;
+        const up = rank(hit.setupPct) > rank(hit.plainPct);
+        if (up) lifted++;
+        expect(cells[i].classList.contains('has-setup')).toBe(up);
+      });
+    });
+    expect(lifted).toBeGreaterThan(0);
+  });
+
   it('sulla casella il tooltip DreamDex: tipo, badge dei colpi, membro e mossa (niente %), nessun tooltip del browser', async () => {
     const user = userEvent.setup();
     const rating = await open();
     const cell = document.querySelector<HTMLElement>('.ct-table tbody tr td.ok-full')!;
     expect(cell).not.toHaveAttribute('title');
+    // Nemmeno in testata: il nome del tipo compare sotto l'icona col puntatore
+    document.querySelectorAll('.ct-table thead th').forEach(th => expect(th).not.toHaveAttribute('title'));
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
     expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);

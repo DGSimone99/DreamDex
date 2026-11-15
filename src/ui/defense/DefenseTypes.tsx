@@ -57,7 +57,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               {rows.map((row, i) => {
                 const hole = weak.includes(row.type);
                 return (
-                  <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')} title={typeName(row.type as TypeName, lang)}
+                  <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
                     onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <TypeIcons types={[row.type]} />
                     {hover?.col === i && <ColName name={typeName(row.type as TypeName, lang)} />}
