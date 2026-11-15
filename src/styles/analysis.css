@@ -487,7 +487,7 @@
 .sum-type .help-button { flex: none; }
 
 /* Chi rende il team tale: una riga di sprite (attaccanti, poi muri dopo una linea sottile); chi non sta va nel "+N" */
-.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: 8px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 2px; overflow: hidden; }
+.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: 8px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 2px; clip-path: inset(-12px -6px 0 -6px); }
 .sum-type + .sum-crew { margin-top: 10px; }
 .sum-side { display: contents; }
 .sum-maker { flex: none; height: var(--crew-h); display: flex; align-items: flex-end; }
@@ -497,9 +497,8 @@
 .sum-mon { width: calc(var(--sum-big) + 2px); display: flex; flex-direction: column; align-items: center; padding: 0; color: inherit; background: none; border: 0; border-radius: 3px; }
 .sum-mon { position: relative; isolation: isolate; }
 .sum-mon:hover { background: none; }
-/* Al passaggio: sotto la sprite una lastra inclinata nel colore del lato che sale dal basso, la sprite si alza e il
-   piedistallo si accende */
-.sum-mon::before { content: ""; position: absolute; inset: 0 -2px; z-index: -1; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); background: linear-gradient(0deg, color-mix(in srgb, var(--c) 26%, transparent), transparent 85%); opacity: 0; transition: opacity 0.18s var(--ease); }
+/* Al passaggio: sotto la sprite una luce sfumata nel colore del lato, senza bordi, che sale dal basso; la sprite si alza */
+.sum-mon::before { content: ""; position: absolute; inset: -4px -6px 0; z-index: -1; background: radial-gradient(ellipse 60% 75% at 50% 85%, color-mix(in srgb, var(--c) 30%, transparent), transparent 100%); opacity: 0; transition: opacity 0.18s var(--ease); }
 .sum-mon:hover::before { opacity: 1; }
 .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: transform 0.18s var(--ease); }
 .sum-mon:hover .sprite { transform: translateY(-2px); }
@@ -532,10 +531,10 @@
 .sum-sec-more { position: absolute; right: 4px; top: 7px; line-height: 1.2; }
 .dash.rich .sum-sec-more { top: 11px; }
 .sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
-/* Righe del Riassunto (meteo, trappole, sinergie) al passaggio: una lastra inclinata con la luce azzurra da destra, come
-   le barre dei titoli; le sprite si alzano di 2px, nel core frecce e cerchi dei tipi si accendono */
+/* Righe del Riassunto (meteo, trappole, sinergie) al passaggio: una luce azzurra sfumata su ogni lato, senza bordi né
+   forme; le sprite si alzano di 2px, nel core frecce e cerchi dei tipi si accendono */
 .sum-line, .sum-syn { position: relative; isolation: isolate; }
-.sum-line::before, .sum-syn::before { content: ""; position: absolute; inset: 1px 0; z-index: -1; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); background: linear-gradient(270deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 6%, transparent) 70%, transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
+.sum-line::before, .sum-syn::before { content: ""; position: absolute; inset: 1px 0; z-index: -1; background: radial-gradient(ellipse 65% 85% at 55% 50%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 100%); opacity: 0; transition: opacity 0.18s var(--ease); }
 .sum-line:hover, .sum-syn:hover { background: none; }
 .sum-line:hover::before, .sum-syn:hover::before { opacity: 1; }
 .sum-line:hover .sum-plinth .sprite, .sum-syn:hover .sum-pair-mon .sprite, .sum-syn:hover .sum-tri-v .sprite { transform: translateY(-2px); }
