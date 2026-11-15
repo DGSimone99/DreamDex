@@ -119,7 +119,8 @@
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
 .kob > b { text-align: right; font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
 .kob-setup { padding-left: 3px; font: 700 10.5px/1 var(--display); color: var(--muted); text-align: left; white-space: nowrap; }
-.kob.has-setup::after { content: ""; position: absolute; top: 0; right: 5px; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
+/* Il triangolo del setup nell'angolo in alto a destra, col lato destro sulla stessa diagonale della tessera (5px su 26) */
+.kob.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; background: var(--good); clip-path: polygon(0 0, 100% 0, calc(100% - 1.7px) 100%); }
 .kob { --k: 0; }
 /* Il verde si fa più intenso col conto (--k = bersagli colpiti sul totale): a colpo d'occhio chi porta l'Offesa */
 .kob.ohko { color: var(--good); border-color: color-mix(in srgb, var(--good) calc(45% + 50% * var(--k)), transparent); background: color-mix(in srgb, var(--good) calc(6% + 46% * var(--k)), transparent); }

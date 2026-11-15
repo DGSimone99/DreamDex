@@ -36,6 +36,7 @@
 /* Il membro come icona del box (MemberMon): nitida da piccola, ingrandita a gradini con l altezza delle righe.
    Le soglie sono sull altezza della cornice, la stessa a squadra aperta e chiusa (sotto le righe resta solo --def-tail):
    righe ≥ 40px → ×1,4 · ≥ 58 → ×1,7 · ≥ 66 → ×2 · ≥ 90 → ×2,5 · ≥ 110 → ×3 */
+.def-mon-hit { display: inline-flex; flex: none; }
 .def-box { --bs: 1; display: inline-grid; place-items: center; flex: none; width: calc(40px * var(--bs)); height: calc(30px * var(--bs)); }
 .def-box .mon-icon { transform: scale(var(--bs)); image-rendering: pixelated; }
 .def-frame .def-box { --bs: 0.8; }
