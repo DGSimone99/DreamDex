@@ -1,5 +1,5 @@
 import { holdBand, type HoldBand } from '../../engine/defense';
-import { getMove } from '../../engine/dex';
+import { battleSpecies, getMove } from '../../engine/dex';
 import type { TargetHit } from '../../engine/offense';
 import { effectiveness, type TypeName } from '../../engine/types';
 import { gameName, typeName } from '../../i18n/game';
@@ -14,17 +14,22 @@ const bandOf = (pct: number): HoldBand => holdBand(pct / 100);
 const RANK: Record<HoldBand, number> = { ohko: 3, two: 2, three: 1, four: 0 };
 const multLabel = (m: number) => (m >= 4 ? '×4' : m > 1 ? '×2' : m === 0 ? '×0' : m <= 0.25 ? '×¼' : m < 1 ? '×½' : null);
 
+/** Il colpo di un membro su un bersaglio, quanto serve al tooltip (Coverage tipi: un `TargetHit`; Coverage meta: la casella). */
+export type CellHit = Pick<TargetHit, 'move' | 'plainPct' | 'setupPct' | 'oncePct'>;
+
 /**
- * Il tooltip di una casella di Coverage tipi dell'Offesa: il tipo bersaglio in testata col badge dei colpi (niente %);
+ * Il tooltip di una casella di Coverage tipi o Coverage meta dell'Offesa: il bersaglio in testata (icona e nome del tipo,
+ * o sprite e nome della minaccia) col badge dei colpi (niente %);
  * il membro con la sua mossa migliore (nel colore del tipo, categoria, potenza, efficacia); in righe a parte quanti colpi
  * dopo la danza o con Tera/Z, solo se salgono di fascia.
  */
-export function TypeHitTip({ species, type, hit, setupMove, onceName }: { species: string; type: string; hit: TargetHit; setupMove: string | null; onceName: string | null }) {
+export function TypeHitTip({ species, type, target, hit, setupMove, onceName }: { species: string; type?: string; target?: string; hit: CellHit; setupMove: string | null; onceName: string | null }) {
   const t = useT();
   const lang = useLang();
   const band = bandOf(hit.plainPct);
   const move = hit.move ? getMove(hit.move) : null;
-  const mult = move ? multLabel(effectiveness(move.type as TypeName, [type])) : null;
+  const defTypes = type ? [type] : (battleSpecies({ species: target ?? '', item: '' })?.types ?? []);
+  const mult = move ? multLabel(effectiveness(move.type as TypeName, defTypes)) : null;
   const extra = (pct: number | null, label: string | null) => {
     if (pct === null || !label) return null;
     const up = bandOf(pct);
@@ -36,9 +41,9 @@ export function TypeHitTip({ species, type, hit, setupMove, onceName }: { specie
   ].filter((x): x is { label: string; band: HoldBand } => !!x);
   return (
     <>
-      <div className="ftip-head">
-        <img src={typeIconUrl(type)} alt="" draggable={false} />
-        <b>{typeName(type as TypeName, lang)}</b>
+      <div className={`ftip-head${target ? ' tht-target' : ''}`}>
+        {type ? <img src={typeIconUrl(type)} alt="" draggable={false} /> : <Sprite species={target ?? ''} size={40} />}
+        <b>{type ? typeName(type as TypeName, lang) : target}</b>
         <span className={`ftip-ko off ${band} tht-band`}>{HOLD_BANDS[band].tag}</span>
       </div>
       <div className="tht-body">

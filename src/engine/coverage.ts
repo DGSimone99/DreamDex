@@ -149,12 +149,15 @@ export interface CoverageRow {
   level: number;
   /** `partial`: superefficace ma solo da 3HKO (fra il 33% e il 50%): copre a metà (mai nel meta). */
   coveredBy: { species: string; move: string; pct: number; partial: boolean }[];
+  /** Il set del bersaglio (nel meta: il set più usato della minaccia), per la carta del Pokémon. */
+  set: TeamSet;
   /**
    * Solo nel meta, una casella per membro nell'ordine del team: danno % del colpo semplice (senza Tera, Z e setup;
    * -1 se il motore non conosce il membro) e dopo una danza (null senza mossa di potenziamento). Null nei tipi.
    * `mult`: il moltiplicatore di tipo migliore fra le mosse d'attacco del membro sul bersaglio (null senza mosse o se sconosciuto).
+   * `move`: la mossa del colpo semplice migliore (null se nessuna lo colpisce o se sconosciuto).
    */
-  cells: { pct: number; setupPct: number | null; mult: number | null }[] | null;
+  cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null }[] | null;
 }
 
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
@@ -228,10 +231,10 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
       const targetAbility = battleAbility(target.set);
       const cells = kind === 'meta'
         ? hits.map((h, m) => (known[m]
-          ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: bestAttackMultiplier(team[m], targetTypes, targetAbility) }
-          : { pct: -1, setupPct: null, mult: null }))
+          ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: bestAttackMultiplier(team[m], targetTypes, targetAbility), move: h[i].move || null }
+          : { pct: -1, setupPct: null, mult: null, move: null }))
         : null;
-      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
+      return { label: target.label, species: target.set.species, set: target.set, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
     }),
   };
 }
