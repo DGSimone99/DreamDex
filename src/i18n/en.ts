@@ -824,6 +824,7 @@ export const en = {
   'kob.headMeta': "Meta",
   'kob.headTypes': "Types",
   'kob.focusRest': "Highlighted: the targets {name} doesn't KO in two hits",
+  'kob.theTeam': "the team",
   'kob.focus': "Highlighted: the targets {name} KOs in {band}",
   'kob.focusClear': "Show all",
   'kob.bandOhko': "one hit (OHKO)",

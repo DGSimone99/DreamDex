@@ -92,7 +92,7 @@ describe("dettaglio dell'Offesa a schede", () => {
     for (const row of rows.slice(1, 3)) {
       for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^(KO)?\d+%( (OHKO|2HKO|3HKO))?( ?setup \d+%)?(×[24] superefficace ×[24])?$/);
     }
-    expect(rows[3]).toHaveTextContent(/^Lo coprono/);
+    expect(rows[3]).toHaveTextContent(/^Team CoverageLo coprono/);
   });
 
   it('frecce fra le schede; nessuna finestra', async () => {

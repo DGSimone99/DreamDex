@@ -11,6 +11,7 @@ import { MemberMon } from '../defense/MemberMon';
 import { TypeIcons } from '../typeIcons';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
+import { useMemberTip } from '../MemberCard';
 import { FocusNote, inBand, koBandOf } from './KoBadges';
 import { TypeHitTip } from './TypeHitTip';
 import { offenseSlots } from './slots';
@@ -41,6 +42,8 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const field = teamField(team);
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col', holes.includes(TYPES[col]) && 'ct-hole'].filter(Boolean).join(' ') || undefined;
   const tip = useFloatAnchor<{ slot: number; type: string }>();
+  // Sulla sprite del migliore la carta del Pokémon col suo set
+  const card = useMemberTip(400, undefined, true);
   const onceName = (m: MemberOffense) => (m.oneUse
     ? m.oneUse.kind === 'tera' ? t('detail.withTera', { type: typeName(m.oneUse.name, lang) }) : t('detail.withZ', { item: gameName('item', m.oneUse.name, lang) })
     : null);
@@ -130,7 +133,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                 return (
                   <td key={type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}>
                     {who
-                      ? <span className="ct-best-mon"><Sprite species={who} size={34} /><span className="visually-hidden">{who}</span></span>
+                      ? <span className="ct-best-mon" {...card.bind(team[top!.slot])}><Sprite species={who} size={34} /><span className="visually-hidden">{who}</span></span>
                       : <span className="ct-best-none" aria-label={t('odetail.types.hole')}>—</span>}
                   </td>
                 );
@@ -139,6 +142,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
           </tbody>
         </table>
       </div>
+      {card.tip}
       {open?.member && openHit && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(open.type)} className="tht">
           <TypeHitTip species={open.member.species} set={team[open.slot]} type={open.type} hit={openHit} setupMove={open.member.setupMove} onceName={onceName(open.member)} />
