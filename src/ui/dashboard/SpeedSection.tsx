@@ -5,7 +5,9 @@ import { gameName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import type { Density } from '../OverviewDashboard';
+import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
+import { SpeedTip } from './SpeedTip';
 import { MoveName } from '../TypeText';
 import { DashCard } from './DashCard';
 
@@ -17,6 +19,9 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
   const t = useT();
   const lang = useLang();
   const { lanes, median, vsMeta } = speed;
+  // Barra o sprite di un membro: la scala dei rivali vicini (più veloci sopra, più lenti sotto) nel tooltip DreamDex
+  const tip = useFloatAnchor<number>();
+  const hover = (i: number) => ({ onMouseEnter: (e: { currentTarget: Element }) => tip.open(i, e.currentTarget), onMouseLeave: tip.close });
   // Scala: il più veloce (o la media) con un po' d'aria sopra per il numero
   const top = Math.max(1, median ?? 0, ...lanes.map(l => l.speed)) * 1.12;
   const pct = (n: number) => `${(n / top) * 100}%`;
@@ -46,18 +51,22 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
             </span>
           )}
           {lanes.map((lane, i) => (
-            <span key={`${lane.species}-${i}`} className="dash-lane"
-              title={t(vsMeta ? 'dash.laneMeta' : 'dash.laneTier', { species: lane.species, speed: lane.speed, pct: formatPercent(lang, lane.share, 0) })}>
+            <span key={`${lane.species}-${i}`} className="dash-lane" {...hover(i)}>
               <span className="visually-hidden">{lane.species}</span>
               <span className={`dash-bar${lane.above ? ' above' : ''}`} style={{ height: pct(lane.speed) }}><small>{lane.speed}</small></span>
             </span>
           ))}
         </div>
         <div className="dash-sprites" aria-hidden="true">
-          {lanes.map((lane, i) => <span key={`${lane.species}-${i}`} className="dash-lane-sprite"><Sprite species={lane.species} size={SPRITE[density]} /></span>)}
+          {lanes.map((lane, i) => <span key={`${lane.species}-${i}`} className="dash-lane-sprite" {...hover(i)}><Sprite species={lane.species} size={SPRITE[density]} /></span>)}
         </div>
       </div>
       {density !== 'tight' && control}
+      {tip.anchor && lanes[tip.anchor.key] && (
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="speed">
+          <SpeedTip lane={lanes[tip.anchor.key]} vsMeta={vsMeta} />
+        </FloatTip>
+      )}
     </DashCard>
   );
 }
