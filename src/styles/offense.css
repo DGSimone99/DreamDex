@@ -78,5 +78,9 @@
 .off-general .og-points { padding: 2px 7px; border-radius: 2px; background: var(--accent-2-soft); color: var(--accent-2-ink); font: italic 700 13px/1 var(--display); font-variant-numeric: tabular-nums; cursor: help; }
 .off-general.roomy .def-members td { padding-top: 8px; padding-bottom: 8px; }
 /* Team Coverage: la riga del team come una fascia a sé, con la riga sopra per tutta la larghezza */
-.off-general tfoot .og-total > * { padding-top: 12px; padding-bottom: 12px; border-top: 1px solid var(--accent-2-soft); border-bottom: 0; background: color-mix(in srgb, var(--accent-2) 6%, transparent); }
-.off-general tfoot .og-total th { padding-left: 12px; font: italic 700 14px/1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-2-ink); text-align: left; white-space: nowrap; }
+.off-general tfoot .og-total > *, .def-general tfoot .og-total > * { padding-top: 12px; padding-bottom: 12px; border-top: 1px solid var(--accent-2-soft); border-bottom: 0; background: color-mix(in srgb, var(--accent-2) 6%, transparent); }
+.off-general tfoot .og-total th, .def-general tfoot .og-total th { padding-left: 12px; font: italic 700 14px/1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-2-ink); text-align: left; white-space: nowrap; }
+/* Schermi bassi: la riga Team Coverage della Difesa più bassa, così la tabella coi totali sta senza scorrere */
+@media (max-height: 640px) {
+  .def-general tfoot .og-total > * { padding-top: 4px; padding-bottom: 4px; }
+}

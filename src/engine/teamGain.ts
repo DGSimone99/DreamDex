@@ -29,7 +29,9 @@ export interface TeamGain {
    * problemi e bonus: dicono cosa porta un candidato che migliora il voto senza una ragione da mostrare.
    */
   areaGains?: { label: string; change: number }[];
+  /** Quanto cambia Bonus/Malus senza i ruoli, e quanto cambiano i punti dei Ruoli: due righe separate come nel voto. */
   extras?: number;
+  roles?: number;
   /** Come cambia il voto tipo per tipo (Offesa e Difesa): le righe "Forte contro / Resiste a" restano solo se il voto è d'accordo. */
   typeShift?: TypeShift;
 }
@@ -59,9 +61,26 @@ export function typeShiftOf(before: TeamRating, after: TeamRating): TypeShift {
 export type ScoredArea = 'defense' | 'strength' | 'roles' | 'speed';
 const SCORED_AREAS: ScoredArea[] = ['defense', 'strength', 'roles', 'speed'];
 
-/** Quanto cambiano insieme penalità e bonus (problemi risolti o nuovi, meteo, Tera): la parte del voto che le aree non spiegano. */
-export const extrasDelta = (before: TeamRating, after: TeamRating): number =>
-  (after.bonus.total - after.penalty.total) - (before.bonus.total - before.penalty.total);
+/** Le voci dei ruoli fra bonus e malus del voto: hanno i loro punti nei Ruoli, non in Bonus/Malus. */
+const ROLE_CATALOG = new Set(['essentialRole', 'importantRole', 'minorRole']);
+const notRole = (item: { catalog?: string }) => !item.catalog || !ROLE_CATALOG.has(item.catalog);
+
+/** Il netto di Bonus/Malus senza i ruoli, come la scheda Bonus/Malus e la carta del voto. */
+const bonusMalusNet = (rating: TeamRating) =>
+  rating.bonus.items.filter(notRole).reduce((n, i) => n + i.points, 0) - rating.penalty.items.filter(notRole).reduce((n, i) => n + i.points, 0);
+
+/** I punti dei Ruoli: i minori coperti meno le mancanze di essenziali e importanti (la sottoscheda Ruoli). */
+export const rolesNet = (rating: TeamRating) =>
+  rating.roles.bonuses.reduce((a, i) => a + i.points, 0) - rating.roles.failures.reduce((a, i) => a + i.points, 0);
+
+/**
+ * Quanto cambiano bonus e malus (problemi risolti o nuovi, meteo, Tera) SENZA i ruoli: la parte del voto che le aree non
+ * spiegano, come la scheda Bonus/Malus. I punti dei ruoli sono a parte (rolesDelta).
+ */
+export const extrasDelta = (before: TeamRating, after: TeamRating): number => bonusMalusNet(after) - bonusMalusNet(before);
+
+/** Quanto cambiano i punti dei Ruoli col cambio. */
+export const rolesDelta = (before: TeamRating, after: TeamRating): number => rolesNet(after) - rolesNet(before);
 
 /** Le aree che calano col cambio, dalla più grande; le aree che non contano o senza valore non si contano. */
 export function areaDrops(before: TeamRating, after: TeamRating): { key: string; label: string; change: number }[] {
@@ -98,9 +117,7 @@ export function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Rec
     points[key] = Math.round((now - was) * (after.weights[key] ?? 0) * 10) / 10;
   }
   // I Ruoli non sono più un'area del voto: i loro punti sono i malus e i bonus dei ruoli (mancanze e minori coperti)
-  const rolesNet = (rating: TeamRating) =>
-    rating.roles.bonuses.reduce((a, i) => a + i.points, 0) - rating.roles.failures.reduce((a, i) => a + i.points, 0);
-  points.roles = rolesNet(after) - rolesNet(before);
+  points.roles = rolesDelta(before, after);
   return points;
 }
 
@@ -141,6 +158,7 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         areaPoints: areaPointsOf(before, rating),
         areaGains: areaGains(before, rating),
         extras: extrasDelta(before, rating),
+        roles: rolesDelta(before, rating),
         typeShift: typeShiftOf(before, rating),
       },
     };
