@@ -241,6 +241,23 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.kf-note')).toBeNull();
   });
 
+  it('clic su un pezzo dei Meta: Coverage meta acceso; le frecce delle pagine non spengono l’evidenziazione, un altro clic sì', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    view(team, rating);
+    const tile = memberRows()[0].querySelectorAll('td')[1].querySelector<HTMLElement>('.kob.rest, .kob.two, .kob.ohko')!;
+    await user.click(tile);
+    expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
+    expect(document.querySelector('.kf-note')).not.toBeNull();
+    const next = screen.getByRole('button', { name: 'Bersagli successivi' });
+    if (!(next as HTMLButtonElement).disabled) {
+      await user.click(next);
+      expect(document.querySelector('.kf-note')).not.toBeNull();
+    }
+    await user.click(document.querySelector<HTMLElement>('.def-frame')!);
+    expect(document.querySelector('.kf-note')).toBeNull();
+  });
+
   it('clic sul pezzo grigio: Coverage tipi coi tipi che il membro non manda KO in due colpi accesi; un clic in qualunque punto li spegne', async () => {
     const user = userEvent.setup();
     const rating = noMeta();

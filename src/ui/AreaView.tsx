@@ -55,11 +55,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   const openFocus = (key: string, next: KoFocus) => { focusKey.current = key; setPickedRaw(key); setFocus(next); };
-  // Un clic in qualunque punto spegne l'evidenziazione (anche fuori da "Mostra tutti"); il clic che l'ha accesa è già passato
+  // Un clic in qualunque punto spegne l'evidenziazione (anche fuori da "Mostra tutti"); il clic che l'ha accesa è già passato.
+  // Le frecce delle pagine di Coverage meta no: si sfogliano i bersagli accesi
   useEffect(() => {
     if (!focus) return;
-    const clear = () => setFocus(null);
-    const timer = window.setTimeout(() => document.addEventListener('click', clear, { once: true }), 0);
+    const clear = (e: MouseEvent) => { if (!(e.target as Element | null)?.closest?.('.cm-pages')) setFocus(null); };
+    const timer = window.setTimeout(() => document.addEventListener('click', clear), 0);
     return () => { window.clearTimeout(timer); document.removeEventListener('click', clear); };
   }, [focus]);
   // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
