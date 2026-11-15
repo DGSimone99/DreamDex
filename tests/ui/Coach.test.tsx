@@ -401,11 +401,18 @@ describe('CoachingView', () => {
       expect(handlers.onApplyFix).toHaveBeenLastCalledWith(step.swap);
     });
 
-    it('il pulsante principale dice nel title chi esce (lo sprite spento è sotto il pulsante)', () => {
-      const { li } = strip({});
+    it('il pulsante principale: chi esce nel nome; al passaggio la carta di chi entra col perché (niente title del browser)', async () => {
+      const { li, step } = strip({});
+      const user = userEvent.setup();
       const main = within(li.querySelector<HTMLElement>('.coach-prop.is-main')!).getByRole('button', { name: /^Al posto di Great Tusk/ });
-      expect(main.getAttribute('title')).toContain('Great Tusk');
-      expect(main.getAttribute('title')).toContain('Rotom-Wash');
+      expect(main).not.toHaveAttribute('title');
+      await user.hover(main);
+      const card = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.member'); if (!el) throw new Error('no card'); return el; });
+      // La carta è quella del set che entra (qui il set del finto cambio)
+      expect(card.querySelector('.mcard-name')).toHaveTextContent(step.swap!.set.species);
+      expect(card.querySelector('.mcard-why')).toHaveTextContent(/^Al posto di Great Tusk · \+\d+$/);
+      await user.unhover(main);
+      expect(document.querySelector('.ftip')).toBeNull();
     });
 
     it('clic nella colonna "risolve anche" applica la proposta principale; il pulsante "oppure" solo la mossa', async () => {

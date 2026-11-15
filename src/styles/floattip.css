@@ -117,6 +117,10 @@
 .mcard-cat { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 700 11px/1 var(--display); color: var(--muted); }
 .mcard-cat .icon { width: 11px; height: 11px; }
 .mcard-none { color: var(--faint); }
+/* Le parti cambiate rispetto al set di prima: in azzurro, la mossa nuova con un bordo azzurro sottile e un punto */
+.mcard-kit span.is-changed, .mcard-kit span.is-changed em { color: var(--accent-ink); }
+.mcard-move.is-changed { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); }
+.mcard-move.is-changed b::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; vertical-align: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 
 /* ===== Meteo e campo (ConditionTip): testata nel colore della condizione con una texture sua, effetti come lastre
    inclinate, chi ne approfitta col piedistallo verde. L'unico movimento: la pioggia che scende (spento con riduci animazioni) */

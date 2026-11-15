@@ -74,6 +74,7 @@
 
 .mon-rows li { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.3fr); gap: 10px; align-items: center; margin: 0; padding: 2px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
 .mon-rows .sprite { image-rendering: pixelated; }
+.mon-rows .mon-tip { display: flex; }
 .mon-rows .who strong { font: 700 16px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .mon-rows .usage { color: var(--muted); font-size: 13px; }
 .mon-rows .status { display: flex; gap: 8px; align-items: baseline; color: var(--muted); }

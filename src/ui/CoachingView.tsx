@@ -11,6 +11,7 @@ import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
 import { PokemonIcon } from './PokemonName';
+import { useMemberTip } from './MemberCard';
 import { Sprite } from './Sprite';
 import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
@@ -49,8 +50,10 @@ const previewHandlers = (solves: string[], onPreview: OnPreview) => ({
  * Una proposta: il pulsante che applica il cambio (`children`) e, accanto, l'icona piccola che apre le alternative
  * (scheda Pokémon o editor). Puntatore o fuoco: anteprima nella mappa. `describedBy`: la riga "risolve anche".
  */
-function Proposal({ className, label, title, describedBy, solves, onApply, onAlternatives, alternativesFor, onPreview, or, extra, children }: {
-  className: string; label: string; title?: string; describedBy: string; solves: string[]; onApply: () => void; onAlternatives: () => void; alternativesFor: string;
+function Proposal({ className, label, title, describedBy, solves, onApply, onAlternatives, alternativesFor, onPreview, or, extra, hover, children }: {
+  className: string; label: string; title?: string;
+  /** Gestori del tooltip (la carta di chi entra) sul pulsante: la luce della barra copre i figli, che non prendono il mouse. */
+  hover?: ReturnType<ReturnType<typeof useMemberTip>['bind']>; describedBy: string; solves: string[]; onApply: () => void; onAlternatives: () => void; alternativesFor: string;
   onPreview: OnPreview; or?: string;
   /** Dopo il pulsante, dentro la stessa barra: l'alternativa "oppure" e il +N della barra. */
   extra?: ReactNode; children: ReactNode;
@@ -59,7 +62,7 @@ function Proposal({ className, label, title, describedBy, solves, onApply, onAlt
   const alternatives = tr('coach.steps.alternativesAria', { name: alternativesFor });
   return (
     <div className={`coach-prop ${className}`} data-or={or} {...previewHandlers(solves, onPreview)}>
-      <button type="button" className="coach-fix" aria-label={label} aria-describedby={describedBy} title={title} onClick={onApply}>{children}</button>
+      <button type="button" className="coach-fix" aria-label={label} aria-describedby={describedBy} title={title} onClick={onApply} {...hover}>{children}</button>
       {extra}
       <button type="button" className="coach-alt" aria-label={alternatives} title={tr('coach.steps.alternatives')} onClick={onAlternatives}>
         <Icon name="search" />
@@ -79,12 +82,16 @@ function SwapProposal({ fix, alsoId, solves, onApply, onFix, onPreview, side, sh
 }) {
   const tr = useT();
   const gain = gainText(fix.gain);
+  // Sulla barra del cambio: la carta di chi entra (set, statistiche, mosse) col perché, "Al posto di X · +N"
+  const memberTip = useMemberTip(400);
+  const why = fix.kind === 'swap' ? tr('mcard.inFor', { member: fix.member ?? '', gain }) : tr('mcard.added', { gain });
   const label = fix.kind === 'add'
     ? tr('coach.fixAddAria', { species: fix.species, gain })
     : tr('coach.fixSwapAria', { member: fix.member ?? '', species: fix.species, gain });
   return (
-    // Il pulsante copre la striscia: il suo title dice chi esce (lo sprite spento da solo non lo dice)
-    <Proposal className="is-main" label={label} title={fix.kind === 'swap' ? `${tr('coach.steps.swap', { member: fix.member ?? '' })} → ${fix.species}` : `${tr('coach.steps.add')} ${fix.species}`}
+    // Il pulsante copre la striscia: chi esce lo dicono il suo nome per gli screen reader e la carta di chi entra (niente
+    // title del browser, che si accavallerebbe alla carta)
+    <Proposal className="is-main" label={label} hover={memberTip.bind(fix.set, why)}
       describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onFix(fix)}
       alternativesFor={fix.species} onPreview={onPreview}
       extra={side && <>{side}<span className="coach-gain coach-strip-gain" aria-hidden="true">{gainText(shownGain ?? fix.gain)}</span></>}>
@@ -97,6 +104,7 @@ function SwapProposal({ fix, alsoId, solves, onApply, onFix, onPreview, side, sh
       <span className="coach-strip-in"><Sprite species={fix.species} size={64} /></span>
       <span className="coach-fix-main"><strong>{fix.species}</strong></span>
       {!side && <span className="coach-gain coach-strip-gain">{gain}</span>}
+      {memberTip.tip}
     </Proposal>
   );
 }
