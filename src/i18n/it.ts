@@ -748,7 +748,7 @@ export const it: Record<keyof typeof en, string> = {
   'sum.moreSynMany': "Altre {n} sinergie",
   'tip.noHits': "Nessuno lo colpisce: nel team non c'è una mossa che lo danneggi",
   'tip.offFoot': "Danno sul Pokémon medio di tipo {type}",
-  'tip.defFoot': "Danno subito da un forte attaccante di tipo {type} con una mossa da 100 di potenza (la peggiore fra fisica e speciale)",
+  'tip.defFoot': "Danno subito dal Pokémon medio di tipo {type} con una mossa da 100 di potenza",
   'tip.immune': "Immuni",
   'tip.resist': "Resistono",
   'tip.neutral': "Neutri",

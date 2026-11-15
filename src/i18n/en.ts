@@ -746,7 +746,7 @@ export const en = {
   'sum.moreSynMany': "{n} more synergies",
   'tip.noHits': "Nobody hits it: no move on the team damages it",
   'tip.offFoot': "Damage on the average {type} Pokémon",
-  'tip.defFoot': "Damage taken from a strong {type} attacker using a 100-power move (the worse of physical and special)",
+  'tip.defFoot': "Damage taken from the average {type} Pokémon using a 100-power move",
   'tip.immune': "Immune",
   'tip.resist': "Resist",
   'tip.neutral': "Neutral",
