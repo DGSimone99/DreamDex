@@ -58,7 +58,7 @@ function WorstAndRecovery({ hit, parts }: { hit: { type: string; pct: number; ba
 
 /**
  * La scheda Generale della Difesa: i membri con una colonna per voce (Regge i tipi, Regge il meta, Sostenibilità) e la
- * Difesa del membro coi pesi della squadra.
+ * Difesa del membro coi pesi della squadra. In fondo la riga Team Coverage, come nell'Offesa: i voti della squadra.
  * Le righe stanno nella cornice comune (`def-frame`): i membri restano nello stesso punto di Coverage tipi.
  * Con la squadra chiusa (`ctx.roomy`) le righe si allungano e compaiono il colpo peggiore e il recupero.
  */
@@ -118,6 +118,17 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               </tr>
             ))}
           </tbody>
+          {/* In fondo la squadra intera, come la riga Team Coverage dell'Offesa: i voti delle sottoschede e la Difesa */}
+          <tfoot>
+            <tr className="og-total">
+              <th scope="row">{t('odetail.gen.total')}</th>
+              <td><Bar value={defense.coverageTypes.value} total /></td>
+              {meta && <td><Bar value={defense.coverageMeta?.value ?? 0} total /></td>}
+              <td><Bar value={defense.sustain} total /></td>
+              <td><Bar value={defense.value} total reserve={setupColumn} /></td>
+              {roomy && <><td /><td /></>}
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
