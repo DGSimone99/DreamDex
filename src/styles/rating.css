@@ -86,8 +86,7 @@
 .grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 24px 10px; }
 .grade-badge button.grade-area.grade-bm.pos b { color: var(--good); }
 .grade-badge button.grade-area.grade-bm.neg b { color: var(--bad); }
-/* Ruoli: coperti/totale e quanti mancano al posto di barra e numero (stessa altezza delle altre righe) */
-/* L'etichetta corta ("Ruoli") lascia al valore tutto il resto della riga: "5/14 · 4 mancano" entra nella carta del voto */
+/* Ruoli: coperti/totale (essenziali e importanti) e i punti al posto di barra e numero (stessa altezza delle altre righe) */
 .grade-badge button.grade-area.grade-roles { grid-template-columns: auto minmax(0, 1fr) 10px; column-gap: 4px; }
 .grade-roles-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* Le righe non allargano la carta: una colonna sola, larga quanto la carta */
@@ -96,11 +95,11 @@
 .grade-roles-val em.bad { color: var(--bad); }
 .grade-roles-val em.good { color: var(--good); }
 .grade-roles-val em.soft { color: var(--muted); }
-/* Le mancanze dei Ruoli a segni: il numero e il triangolo, rosso per gli essenziali e giallo per gli importanti */
-.grade-roles-miss { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-weight: 700; }
-.grade-roles-miss svg { width: 13px; height: 13px; }
-.grade-roles-miss.bad { color: var(--bad); }
-.grade-roles-miss.warn { color: var(--warn); }
+/* Il conteggio prima dei punti: grigio, giallo se manca un importante, rosso se manca un essenziale */
+.grade-roles-count { margin-right: 6px; color: var(--muted); }
+.grade-roles-val em.grade-roles-count.warn { color: var(--warn); }
+.grade-badge button.grade-area.grade-roles.pos b { color: var(--good); }
+.grade-badge button.grade-area.grade-roles.neg b { color: var(--bad); }
 /* Regole infrante: la lettera diventa grigia (lists.css) e sotto il giudizio si scrive perché, con chi nel tooltip;
    la scritta va a capo se il nome del formato è lungo */
 .grade-badge .grade-rules { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: flex-start; gap: 4px; margin-top: 6px; padding: 1px 7px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 12px/1.5 var(--display); letter-spacing: 0.01em; text-wrap: balance; }

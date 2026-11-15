@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { rolesValue } from '../../src/engine/rolesArea';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
@@ -651,9 +652,9 @@ describe('CoachingView', () => {
       const group = screen.getByRole('group', { name });
       expect(group.querySelector('.dash-meta')).toHaveTextContent(String(Math.round(r.areas.find(a => a.key === key)!.value!)));
     }
-    // I Ruoli non hanno un voto: coperti sul totale, senza barretta
+    // I Ruoli non hanno un voto: lo stesso conteggio di ovunque ("8/8 +2"), senza barretta
     const roles = screen.getByRole('group', { name: 'Ruoli' });
-    expect(roles.querySelector('.dash-meta')).toHaveTextContent(`${r.roles.covered}/${r.roles.total}`);
+    expect(roles.querySelector('.dash-meta')).toHaveTextContent(rolesValue(r.roles));
     expect(roles.querySelector('.coach-tile-bar')).toBeNull();
     // Regole: nessun voto, al suo posto quanti problemi ha
     const rules = screen.getByRole('group', { name: 'Regole' });

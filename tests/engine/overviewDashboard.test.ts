@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { rolesValue } from '../../src/engine/rolesArea';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { COVERED_LEVEL, findProblems, holdSeverity } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -54,7 +55,7 @@ describe('dashboardData', () => {
     expect(dash.roles.chips.some(c => c.level === 'minor')).toBe(true);
     // Il numero della carta: voci coperte sul totale, come il pannello del voto
     const rating = rateTeam(team, fixtureData)!;
-    expect(dash.roles.value).toBe(`${rating.roles.covered}/${rating.roles.total}`);
+    expect(dash.roles.value).toBe(rolesValue(rating.roles));
     // Le colonne della tabella: i membri in ordine, scritti come chi copre i ruoli
     expect(dash.roles.members).toHaveLength(team.length);
     for (const chip of dash.roles.chips) for (const owner of chip.owners) expect(dash.roles.members).toContain(owner);

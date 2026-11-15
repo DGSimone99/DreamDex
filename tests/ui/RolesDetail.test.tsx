@@ -30,7 +30,7 @@ async function importRolesTeam(lang: 'it' | 'en' = 'it') {
 
 async function openRoles(lang: 'it' | 'en' = 'it') {
   const { user, rating } = await importRolesTeam(lang);
-  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Ruoli punti (0|[+−]\d+), \d+\/\d+.*, apri il dettaglio/ : /^Roles points (0|[+−]\d+), \d+\/\d+.*, open details/ });
+  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Ruoli \d+\/\d+, .*punti (0|[+−]\d+), apri il dettaglio/ : /^Roles \d+\/\d+, .*points (0|[+−]\d+), open details/ });
   await user.click(bar);
   // La scheda Ruoli di Analisi, sulla pagina
   const view = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
@@ -91,23 +91,25 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     const counted = rating.roles.rows.filter(r => r.level === 'essential' || r.level === 'important');
     const missing = counted.filter(r => r.value < MISSING_BELOW);
     expect(missing.length).toBeGreaterThan(0);
-    const minor = rating.roles.bonuses.reduce((n, b) => n + b.points, 0);
+    const points = rating.roles.bonuses.reduce((n, b) => n + b.points, 0) - rating.roles.failures.reduce((n, f) => n + f.points, 0);
+    const label = points > 0 ? `+${points}` : `−${-points}`;
     const tab = screen.getByRole('tab', { name: /^Ruoli \d/ });
     const value = tab.querySelector('b')!;
     expect(value).toHaveTextContent(`${counted.length - missing.length}/${counted.length}`);
     expect(value).toHaveClass(missing.some(r => r.level === 'essential') ? 'sub-val-bad' : 'sub-val-warn');
     // Niente triangoli: X sotto Y dice già che manca qualcosa
     expect(tab.querySelector('.icon, svg')).toBeNull();
-    if (minor > 0) expect(tab.querySelector('.sub-plus')).toHaveTextContent(`+${minor}`); else expect(tab.querySelector('.sub-plus')).toBeNull();
+    // I punti dei Ruoli sul voto (minori meno mancanze), come nella carta del voto, in Panoramica e nel Coaching
+    if (points !== 0) expect(tab.querySelector('.sub-plus')).toHaveTextContent(label); else expect(tab.querySelector('.sub-plus')).toBeNull();
     expect(tab).toHaveAccessibleDescription([
       `${counted.length - missing.length} di ${counted.length} ruoli essenziali e importanti coperti`, `${missing.length} mancanti`,
-      ...(minor > 0 ? [`ruoli minori +${minor}`] : []),
+      ...(points !== 0 ? [`punti ${label}`] : []),
     ].join(', '));
     // Il nome della scheda resta il suo: il +N non ci entra
     expect(tab).toHaveAccessibleName(/^Ruoli \d+\/\d+$/);
   });
 
-  it('la sottoscheda Ruoli: mancano solo importanti, X/Y giallo; il +N dei minori verde accanto', () => {
+  it('la sottoscheda Ruoli: mancano solo importanti, X/Y giallo; accanto i punti dei Ruoli (minori meno mancanze), rossi se sotto 0', () => {
     const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
       covered: 2, total: 3,
@@ -124,8 +126,9 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     const tab = screen.getByRole('tab', { name: /^Ruoli \d/ });
     expect(tab.querySelector('b')).toHaveTextContent('1/2');
     expect(tab.querySelector('b')).toHaveClass('sub-val-warn');
-    expect(tab.querySelector('.sub-plus')).toHaveTextContent(`+${MINOR_POINTS}`);
-    expect(tab).toHaveAccessibleDescription(`1 di 2 ruoli essenziali e importanti coperti, 1 mancanti, ruoli minori +${MINOR_POINTS}`);
+    expect(tab.querySelector('.sub-plus')).toHaveTextContent(`−${IMPORTANT_POINTS - MINOR_POINTS}`);
+    expect(tab.querySelector('.sub-plus')).toHaveClass('neg');
+    expect(tab).toHaveAccessibleDescription(`1 di 2 ruoli essenziali e importanti coperti, 1 mancanti, punti −${IMPORTANT_POINTS - MINOR_POINTS}`);
   });
 
   it('niente che manca: niente segni sulla sottoscheda, la targhetta con la spunta', () => {
@@ -196,25 +199,23 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Non contano in nessun tipo di team: .*Taunt/);
   });
 
-  it('la riga Ruoli del voto: i punti dei Ruoli e le mancanze a segni (numero e triangolo), senza barra', async () => {
+  it('la riga Ruoli del voto: lo stesso conteggio della sottoscheda (essenziali e importanti coperte, poi i punti), senza barra', async () => {
     const { bar } = await openRoles();
     expect(bar).toHaveClass('grade-roles');
     expect(bar.querySelector('.meter')).toBeNull();
-    expect(bar).toHaveTextContent(/^Ruoli(0|[+−]\d+)(\d+)+$/);
-    expect(bar.querySelector('.grade-roles-miss svg')).not.toBeNull();
+    expect(bar).toHaveTextContent(/^Ruoli\d+\/\d+(0|[+−]\d+)$/);
+    expect(bar.querySelector('.grade-roles-miss')).toBeNull();
     // A parole nel nome del pulsante
     expect(bar).toHaveAccessibleName(/(\d+ mancano|1 manca)/);
   });
 
-  it('la riga Ruoli del voto: triangolo rosso per gli essenziali che mancano, giallo per gli importanti', () => {
+  it('la riga Ruoli del voto: X/Y rosso se manca un essenziale, giallo se solo importanti', () => {
     const rating = rateTeam(importShowdown(ROLES_TEAM).sets, fixtureData)!;
     renderIt(<GradeBadge rating={rating} />);
     const missing = (level: string) => rating.roles.rows.filter(r => r.level === level && r.value < MISSING_BELOW).length;
-    const bad = document.querySelector('.grade-roles-miss.bad');
-    const warn = document.querySelector('.grade-roles-miss.warn');
+    const count = document.querySelector('.grade-roles-count');
     expect(missing('essential') + missing('important')).toBeGreaterThan(0);
-    if (missing('essential')) expect(bad).toHaveTextContent(String(missing('essential'))); else expect(bad).toBeNull();
-    if (missing('important')) expect(warn).toHaveTextContent(String(missing('important'))); else expect(warn).toBeNull();
+    expect(count).toHaveClass(missing('essential') ? 'bad' : 'warn');
   });
 });
 
@@ -483,9 +484,9 @@ describe('Bonus/Malus senza i ruoli', () => {
     const bm = screen.getByRole('button', { name: /^Apri Bonus\/Malus/ });
     expect(bm.querySelector('b')).toHaveTextContent('−4');
     expect(bm).toHaveAccessibleName('Apri Bonus/Malus: −4, senza i ruoli');
-    const row = screen.getByRole('button', { name: /^Ruoli punti/ });
+    const row = screen.getByRole('button', { name: /^Ruoli \d+\/\d+/ });
     expect(row.querySelector('.grade-roles-val b')).toHaveTextContent(roles > 0 ? `+${roles}` : roles < 0 ? `−${-roles}` : '0');
-    expect(row).toHaveAccessibleName(new RegExp(`, ${rating.roles.covered}/${rating.roles.total}`));
+    expect(row).toHaveAccessibleName(new RegExp(`punti ${roles > 0 ? `\+${roles}` : roles < 0 ? `−${-roles}` : '0'}, apri il dettaglio$`));
     expect(document.querySelector('.overall')).toHaveTextContent(`${rating.overall} / 100`);
   });
 });

@@ -155,6 +155,7 @@
 .area-subs [role='tab'] b.sub-val-bad { color: var(--bad); }
 .area-subs [role='tab'] b.sub-val-warn { color: var(--warn); }
 .sub-plus { font: 700 italic 0.72em/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.sub-plus.neg { color: var(--bad); }
 /* Il pannello parte subito sotto la striscia, alla stessa altezza in ogni area: Ruoli e Bonus ha le sottoschede grandi
    (8px più alte, 5px sugli schermi bassi) e il suo pannello sale di tanto */
 .area-view-bonusMalus > .area-panel { margin-top: -8px; }
@@ -329,10 +330,21 @@
 .dash-meta b.bad { color: var(--bad); }
 .dash-links { flex: none; display: flex; gap: 2px; margin-left: auto; }
 .dash-link { gap: 2px; padding: 2px 6px; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
-.dash-link:hover { background: var(--accent-wash); border-color: transparent; }
-.dash-link .icon { width: 14px; height: 14px; }
+/* Al passaggio: una luce azzurra sfumata senza bordi (come le righe del Riassunto), il testo si accende con un alone
+   leggero e la freccia scivola di 2px verso destra */
+.dash-link { position: relative; isolation: isolate; }
+.dash-link::before { content: ""; position: absolute; inset: -2px -4px; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 26%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
+.dash-link:hover { background: none; border-color: transparent; color: color-mix(in srgb, var(--accent-ink) 70%, white); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); }
+.dash-link:hover::before { opacity: 1; }
+.dash-link .icon { width: 14px; height: 14px; transition: transform 0.18s var(--ease); }
+.dash-link:hover .icon { transform: translateX(2px); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent)); }
+@media (prefers-reduced-motion: reduce) { .dash-link .icon { transition: none; } }
 /* Barra del titolo cliccabile: la freccia è il pulsante e copre tutta la barra; la barra si schiarisce al passaggio */
 .dash-head.is-link { position: relative; cursor: pointer; }
+/* Barra del titolo tutta cliccabile: il link resta non posizionato, così il suo ::after copre tutta la barra (la luce
+   del link qui non serve, si accende la barra) */
+.dash-head.is-link .dash-link { position: static; isolation: auto; }
+.dash-head.is-link .dash-link::before { display: none; }
 .dash-head.is-link .dash-link::after { content: ''; position: absolute; inset: 0; }
 /* Al passaggio una luce azzurra da destra (dove c'è la freccia) che svanisce verso il titolo */
 .dash-head.is-link:hover { background: linear-gradient(270deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent 75%), var(--stripes), var(--band); }
@@ -486,7 +498,7 @@
 .sum-type .help-button { flex: none; }
 
 /* Chi rende il team tale: una riga di sprite (attaccanti, poi muri dopo una linea sottile); chi non sta va nel "+N" */
-.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: 8px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 2px; overflow: hidden; }
+.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: 8px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 2px; clip-path: inset(-12px -6px 0 -6px); }
 .sum-type + .sum-crew { margin-top: 10px; }
 .sum-side { display: contents; }
 .sum-maker { flex: none; height: var(--crew-h); display: flex; align-items: flex-end; }
@@ -494,7 +506,14 @@
 .sum-maker.atk { --c: var(--accent-ink); --glow: color-mix(in srgb, var(--accent) 45%, transparent); }
 .sum-maker.def { --c: var(--good); --glow: color-mix(in srgb, var(--good) 42%, transparent); }
 .sum-mon { width: calc(var(--sum-big) + 2px); display: flex; flex-direction: column; align-items: center; padding: 0; color: inherit; background: none; border: 0; border-radius: 3px; }
-.sum-mon:hover { background: color-mix(in srgb, var(--c) 10%, transparent); }
+.sum-mon { position: relative; isolation: isolate; }
+.sum-mon:hover { background: none; }
+/* Al passaggio: dietro la sprite una luce sfumata nel colore del lato, senza bordi; closest-side la fa finire dentro il
+   riquadro, così il ritaglio della riga (sotto) non la taglia mai; la sprite si alza */
+.sum-mon::before { content: ""; position: absolute; inset: -4px -6px 0; z-index: -1; background: radial-gradient(closest-side at 50% 62%, color-mix(in srgb, var(--c) 32%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
+.sum-mon:hover::before { opacity: 1; }
+.sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: transform 0.18s var(--ease); }
+.sum-mon:hover .sprite { transform: translateY(-2px); }
 .sum-mon .sprite { margin-bottom: calc(var(--sum-big) * -0.12); }
 .sum-score { position: relative; display: flex; align-items: center; gap: 3px; font: 700 11px/1.2 var(--display); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--c); }
 .sum-score .icon { width: 10px; height: 10px; }
@@ -524,7 +543,19 @@
 .sum-sec-more { position: absolute; right: 4px; top: 7px; line-height: 1.2; }
 .dash.rich .sum-sec-more { top: 11px; }
 .sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
-.sum-line:hover { background: var(--accent-wash); }
+/* Righe del Riassunto (meteo, trappole, sinergie) al passaggio: una luce azzurra sfumata su ogni lato, senza bordi né
+   forme, che finisce dentro la riga (closest-side: la lista taglia ciò che esce); le sprite si alzano di 2px, nel core
+   frecce e cerchi dei tipi si accendono */
+.sum-line, .sum-syn { position: relative; isolation: isolate; }
+.sum-line::before, .sum-syn::before { content: ""; position: absolute; inset: 1px 0; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 24%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
+.sum-line:hover, .sum-syn:hover { background: none; }
+.sum-line:hover::before, .sum-syn:hover::before { opacity: 1; }
+.sum-line:hover .sum-plinth .sprite, .sum-syn:hover .sum-pair-mon .sprite, .sum-syn:hover .sum-tri-v .sprite { transform: translateY(-2px); }
+.sum-syn:hover .sum-tri-edges line { stroke: color-mix(in srgb, var(--good) 70%, white); }
+.sum-syn:hover .sum-tri-edges marker path { fill: color-mix(in srgb, var(--good) 70%, white); }
+.sum-tri-badge { transition: box-shadow 0.18s var(--ease); }
+.sum-syn:hover .sum-tri-badge { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 35%, transparent), 0 0 8px color-mix(in srgb, var(--good) 55%, transparent); }
+@media (prefers-reduced-motion: reduce) { .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: none; } }
 .sum-line .sum-plinth { width: var(--sum-small); }
 .sum-line .sum-plinth .sprite { margin: calc(var(--sum-small) * -0.12) 0 calc(var(--sum-small) * -0.15); }
 .sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; }
@@ -558,7 +589,6 @@
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit] { flex: 1 0 auto; max-height: 88px; }
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit]:has(.sum-syn.trio) { max-height: 196px; }
 .sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
-.sum-syn:hover { background: var(--accent-wash); }
 /* Due sprite unite da un anello "catena" nel colore del legame; con una sola sprite la colonna resta larga uguale */
 .sum-pair { flex: none; min-width: calc(var(--sum-small) * 1.56 + var(--link-w) - 6px); display: flex; align-items: center; justify-content: center; }
 .sum-pair-ring { display: flex; align-items: center; }
@@ -586,14 +616,29 @@
 .sum-tri-v { position: absolute; display: flex; transform: translate(-50%, -50%); }
 .sum-tri-v::before { content: ""; position: absolute; left: 50%; bottom: 8%; width: 74%; height: 18%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
 .sum-tri-v .sprite { position: relative; display: block; width: calc(var(--tri-w) * 0.345); height: auto; image-rendering: pixelated; }
-.sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; }
-.sum-tri-badge img { width: calc(var(--tri-badge) - 7px); height: calc(var(--tri-badge) - 7px); }
+/* L'icona tonda del tipo riempie tutto il cerchio dentro l'anello verde (niente fondo che si vede attorno) */
+.sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; overflow: hidden; }
+.sum-tri-badge img { display: block; width: 100%; height: 100%; border-radius: 50%; }
 /* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
 .sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: 2px; }
+/* Le sinergie che non stanno col team aperto: tutta la parte bassa del Riassunto è il pulsante, da bordo a bordo (sotto e
+   ai lati della card), con un tratto sopra e un gradiente scuro sempre visibile che sale dal bordo basso; al centro "+N"
+   sopra due frecce verso il basso. Il clic riduce il team. La card tiene 12px in più sotto, così il fondo pieno sta sul
+   margine e il gradiente sfuma solo il bordo dell'ultima riga. Al passaggio si accendono il tratto e le frecce */
+.dash-summary { position: relative; }
+.dash-summary:has(.sum-more-below) { padding-bottom: 22px; }
+.sum-syn-sec:has(.sum-more-below) { position: static; }
+.sum-more-below { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; padding: 0 0 2px; font: 700 italic 11px/1 var(--display); color: var(--accent-ink); background: linear-gradient(to top, var(--field) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); border: 0; border-top: 1px solid var(--line); border-radius: 0; cursor: pointer; }
+.sum-more-below .icon { width: 14px; height: 14px; margin-top: -2px; }
+.sum-more-below:hover { border-top-color: var(--accent); color: var(--accent); }
+.sum-more-below:hover .icon { animation: sum-more-nudge 0.6s ease-in-out infinite alternate; }
+.sum-more-below:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@keyframes sum-more-nudge { to { transform: translateY(2px); } }
+@media (prefers-reduced-motion: reduce) { .sum-more-below:hover .icon { animation: none; } }
 .sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
 .sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
 .sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.sum-cover img { flex: none; width: 14px; height: 14px; }
+.sum-cover img { flex: none; width: 14px; height: 14px; border-radius: 50%; }
 .sum-cover b { font-weight: 600; color: var(--text); }
 .dash.rich .sum-cover { gap: 6px; }
 .dash.rich .sum-cover > span { font-size: 12px; }

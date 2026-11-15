@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useEditing } from './editing';
 import { GRADES, type TeamRating } from '../engine/rating';
 import type { Archetype } from '../engine/archetype';
-import { MISSING_BELOW } from '../engine/needs';
+import { rolesTally } from '../engine/rolesArea';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
 import { type DetailArea, signed } from './AreaDetail';
@@ -96,28 +96,19 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
               </button>
             );
           })}
-          {/* Ruoli: una lista, non un'area col peso; senza barra, i punti dei Ruoli (+N / −N / 0, quelli della sottoscheda
-              Ruoli) e quanti mancano fra quelli che tolgono punti (essenziali e importanti), a segni: un minore scoperto non
-              è un difetto, quindi non si conta. Coperti/totale restano sulla sottoscheda Ruoli e nella frase per lo screen reader */}
+          {/* Ruoli: una lista, non un'area col peso; senza barra, lo stesso conteggio di Panoramica, Coaching e sottoscheda
+              (rolesTally): essenziali e importanti coperte sul totale, nel colore del livello peggiore che manca, poi i punti
+              dei Ruoli sul voto (+N / −N / 0). Un minore scoperto non è un difetto, quindi non entra nel totale */}
           {rating.roles.total > 0 && (() => {
-            const { covered, total } = rating.roles;
-            const points = rating.roles.bonuses.reduce((n, b) => n + b.points, 0) - rating.roles.failures.reduce((n, f) => n + f.points, 0);
-            const holes = (level: string) => rating.roles.rows.filter(r => r.level === level && r.value < MISSING_BELOW).length;
-            const essential = holes('essential');
-            const important = holes('important');
-            const missing = essential + important;
-            const state = missing > 1 ? t('rating.rolesMissing', { n: missing }) : missing === 1 ? t('rating.rolesMissingOne') : covered === total ? t('rating.rolesAll') : '';
-            // Le mancanze a segni: il numero col triangolo rosso (essenziali) o giallo (importanti), quello degli avvisi
-            const marks = [
-              essential > 0 && <span key="e" className="grade-roles-miss bad" title={t('rating.rolesMissingEssential', { n: essential })}>{essential}<Icon name="warning" /></span>,
-              important > 0 && <span key="i" className="grade-roles-miss warn" title={t('rating.rolesMissingImportant', { n: important })}>{important}<Icon name="warning" /></span>,
-            ];
+            const { covered, total, missing, missingEssential, points } = rolesTally(rating.roles);
+            const state = missing > 1 ? t('rating.rolesMissing', { n: missing }) : missing === 1 ? t('rating.rolesMissingOne') : '';
+            const tone = missingEssential > 0 ? 'bad' : missing > 0 ? 'warn' : '';
             return (
               <button type="button" className={`grade-area grade-roles${points > 0 ? ' pos' : points < 0 ? ' neg' : ''}`}
-                aria-label={t('rating.openArea', { area: t('area.roles'), value: [t('rating.rolesPoints', { value: signed(points) }), `${covered}/${total}`, state].filter(Boolean).join(', ') })}
+                aria-label={t('rating.openArea', { area: t('area.roles'), value: [`${covered}/${total}`, state, t('rating.rolesPoints', { value: signed(points) })].filter(Boolean).join(', ') })}
                 onClick={() => onOpen?.('roles')}>
                 <span>{t('area.roles')}</span>
-                <span className="grade-roles-val"><b>{signed(points)}</b>{missing > 0 ? marks : state && <> · <em className="good">{state}</em></>}</span>
+                <span className="grade-roles-val"><em className={`grade-roles-count ${tone}`}>{covered}/{total}</em><b>{signed(points)}</b></span>
                 <Icon name="next" />
               </button>
             );

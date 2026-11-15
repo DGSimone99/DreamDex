@@ -12,11 +12,13 @@ import { OverviewDashboard } from './OverviewDashboard';
 import { FixRow } from './dashboard/FixRow';
 
 /** La Panoramica: il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio, in fondo la riga Da sistemare; il giudizio in cima solo con un membro. */
-export function AnalysisOverview({ team, analysis, rating, coaching, advice = null, data, onView, onAdd, teamCollapsed = false }: {
+export function AnalysisOverview({ team, analysis, rating, coaching, advice = null, data, onView, onAdd, onCollapseTeam, teamCollapsed = false }: {
   /** I consigli del Coaching (null finché si calcolano): la riga Da sistemare mostra solo ciò che risolvono. */
   advice?: CoachAdvice | null;
   /** Team ridotto: il cruscotto usa la densità ampia. */
   teamCollapsed?: boolean;
+  /** Riduce il team (le sinergie che non stanno nel Riassunto). */
+  onCollapseTeam?: () => void;
   onAdd?: () => void;
   team: TeamSet[];
   analysis: TeamAnalysis;
@@ -42,7 +44,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
     <div className="overview">
       {/* Con un membro solo l'invito ad aggiungerne un altro; dopo, prima com'è fatto il team e in fondo cosa sistemare */}
       {team.length < 2 && coaching && <div className="overview-headline"><strong>{coaching.verdict}</strong></div>}
-      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} onView={onView} teamCollapsed={teamCollapsed} />}
+      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
       {team.length >= 2 && problems && <FixRow problems={problems} steps={advice?.steps ?? null} onView={onView} />}
     </div>
   );
