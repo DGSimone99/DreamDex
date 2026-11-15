@@ -115,40 +115,40 @@
 .def-general .def-members tr.og-fill { height: auto; }
 .def-general .def-members tr.og-fill td { padding: 0; border: 0; }
 
-/* Tessere dei colpi (KoBadges): larghezza fissa così le colonne restano allineate; OHKO piena verde, 2HKO col bordo verde,
-   a zero solo il numero spento; il setup nel suo posto a destra ("+N") col triangolo verde nell'angolo come nelle tabelle.
-   Le etichette OHKO / 2HKO piccole a sinistra dentro la tessera, nel loro posto fisso (colonne allineate) */
-.kob-row { display: inline-flex; align-items: center; gap: 6px; }
-.kob { --kw: 76px; position: relative; box-sizing: border-box; display: inline-grid; grid-template-columns: 33px minmax(0, 1fr); align-items: center; width: var(--kw); height: 26px; padding: 0 13px 0 9px; border: 1px solid transparent; cursor: help;
+/* La barra dei colpi (KoBadges): larga quanto la colonna meno un respiro (le due colonne non si toccano), a pezzi lunghi
+   quanto il loro conto: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga
+   del team in rosso: gli scoperti). Ogni pezzo ha un minimo per etichetta e numero; il setup è il triangolo nell'angolo */
+.kob-row { display: flex; align-items: center; gap: 3px; width: calc(100% - 36px); min-width: 150px; }
+.kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
-.kob > em { grid-column: 1; font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; color: var(--muted); opacity: 0.8; }
-/* Un filo di luce sul bordo alto: le tessere meno piatte (dentro la forma tagliata, come una lastra) */
-.kob:not(.zero):not(.labeled) { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
-/* Il numero allineato a destra, sempre nello stesso punto: i numeri fanno colonna riga per riga; il setup è solo il
-   triangolo nell'angolo */
-.kob-num { grid-column: 2; display: flex; justify-content: flex-end; align-items: center; }
-.kob-num > b { grid-column: 1; text-align: right; }
+.kob-row > .kob { flex: 1 0 0; min-width: 64px; }
+.kob > em { font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; color: var(--muted); opacity: 0.8; }
+/* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
+.kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+.kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
 .kob-num > b { font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
-/* Il triangolo del setup nell'angolo in alto a destra, col lato destro sulla stessa diagonale della tessera (5px su 26) */
+/* Il triangolo del setup nell'angolo in alto a destra, col lato destro sulla stessa diagonale del pezzo (5px su 26) */
 .kob.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; background: var(--good); clip-path: polygon(0 0, 100% 0, calc(100% - 1.7px) 100%); }
-.kob { --k: 0; }
-/* Il verde si fa più intenso col conto (--k = bersagli colpiti sul totale): a colpo d'occhio chi porta l'Offesa */
-.kob.ohko { color: var(--good); border-color: color-mix(in srgb, var(--good) calc(45% + 50% * var(--k)), transparent); background: color-mix(in srgb, var(--good) calc(6% + 46% * var(--k)), transparent); }
-.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) calc(25% + 40% * var(--k)), transparent); background: color-mix(in srgb, var(--good) calc(2% + 22% * var(--k)), transparent); }
-.kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) calc(100% - 55% * var(--k)), white); }
-/* A zero: solo un bordo tenue nella stessa forma tagliata, così la griglia delle colonne regge anche dove non c'è niente */
-.kob.zero { color: var(--faint); border-color: color-mix(in srgb, var(--faint) 22%, transparent); background: none; opacity: 0.6; }
-.kob:hover { background: color-mix(in srgb, var(--good) 30%, transparent); }
-.kob.zero:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }
-/* Con l'etichetta (nella testata del tooltip e "Scoperti" nella riga del team): larghezza libera */
+.kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
+.kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
+.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); background: color-mix(in srgb, var(--good) 12%, transparent); }
+.kob.ohko:hover { background: color-mix(in srgb, var(--good) 55%, transparent); }
+.kob.two:hover { background: color-mix(in srgb, var(--good) 26%, transparent); }
+/* Un pezzo a zero c'è solo quando il setup ci porta qualcuno: spento, col triangolo */
+.kob.zero { color: var(--faint); border-color: color-mix(in srgb, var(--faint) 22%, transparent); background: none; box-shadow: none; opacity: 0.6; }
+/* Quelli che non manda KO in due colpi: grigio, solo il numero, più piccolo */
+.kob-row > .kob.rest { min-width: 34px; padding-left: 6px; color: var(--faint); background: var(--line-soft); }
+.kob.rest .kob-num > b { font-size: 13px; opacity: 0.85; }
+.kob.rest:hover { background: color-mix(in srgb, var(--faint) 22%, transparent); }
+/* Nella riga del team: gli scoperti in rosso */
+.kob.rest.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
+.kob.rest.bad .kob-num > b { font-size: 15px; opacity: 1; }
+.kob.rest.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
+/* Con l'etichetta (nella testata del tooltip): larghezza libera */
 .kob.labeled { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 3px 11px 3px 8px; }
 .kob.labeled em { font: 700 10px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
 .kob.labeled > b { min-width: 0; font: 700 italic 15px/1 var(--display); }
-.kob.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
-.kob.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
-.kob-team { display: inline-flex; align-items: center; gap: 10px; }
-.kob-ok { font: 600 12.5px/1 var(--display); color: var(--good); white-space: nowrap; }
 
 
 /* Le tabelle dei membri (Generale di tutte le aree): la riga sotto il mouse si accende appena, senza spostare niente */
@@ -159,7 +159,6 @@
 .def-frame .def-members tbody tr:not(.og-fill):hover > :first-child { background: linear-gradient(90deg, transparent, var(--row-hl) 90px); }
 .def-frame .def-members tbody tr:not(.og-fill):hover > :last-child { background: linear-gradient(90deg, var(--row-hl) calc(100% - 90px), transparent); }
 
-.kob-cell { position: relative; display: inline-flex; }
 /* Tessere cliccabili: aprono il dettaglio */
 .kob.pick { cursor: pointer; }
 .kob.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

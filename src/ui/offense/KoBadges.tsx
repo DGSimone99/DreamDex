@@ -15,16 +15,19 @@ const bandOf = (pct: number): KoBand | null => (pct >= 100 ? 'ohko' : pct >= 50 
 export interface KoTarget { label: string; kind: 'type' | 'mon'; plain: number; setup: number | null; once: number | null }
 
 /** Le fasce di un membro: i bersagli del colpo semplice e quelli che entrano solo col setup o con Tera/Z. */
-export interface KoBands { plain: Record<KoBand, KoTarget[]>; setup: Record<KoBand, KoTarget[]>; once: Record<KoBand, KoTarget[]> }
+export interface KoBands { plain: Record<KoBand, KoTarget[]>; setup: Record<KoBand, KoTarget[]>; once: Record<KoBand, KoTarget[]>;
+  /** Quelli che il colpo semplice non manda KO in due colpi. */
+  rest: KoTarget[] }
 
 /** Per fascia: il colpo semplice; col setup (o Tera/Z) quelli che salgono a quella fascia da una più bassa. */
 export function koBands(targets: KoTarget[]): KoBands {
   const empty = (): Record<KoBand, KoTarget[]> => ({ ohko: [], two: [] });
-  const out: KoBands = { plain: empty(), setup: empty(), once: empty() };
+  const out: KoBands = { plain: empty(), setup: empty(), once: empty(), rest: [] };
   const rank = (b: KoBand | null) => (b === 'ohko' ? 2 : b === 'two' ? 1 : 0);
   for (const target of targets) {
     const base = bandOf(target.plain);
     if (base) out.plain[base].push(target);
+    else out.rest.push(target);
     for (const key of ['setup', 'once'] as const) {
       const value = target[key];
       const up = value === null ? null : bandOf(value);
@@ -45,47 +48,63 @@ export function Target({ target }: { target: KoTarget }) {
 const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };
 
 /**
- * I badge OHKO e 2HKO di una casella col loro numero (a zero spenti); col setup un piccolo "▴+N" accanto. Passando su un
- * badge il tooltip DreamDex elenca i bersagli (tipi o minacce), poi in righe a parte quelli in più dopo la danza o con
- * Tera/Z. `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18" / "minacce su 37".
+ * Una barra a pezzi larga quanto la colonna: OHKO (verde pieno), 2HKO (verde col bordo) e in fondo, grigio, quelli che il
+ * colpo semplice non manda KO in due colpi; ogni pezzo lungo quanto il suo conto (un minimo per il numero), un pezzo a zero
+ * non c'è (salvo che il setup ci porti qualcuno: allora resta, spento, col triangolo). `alarm` (la riga del team): il
+ * pezzo che resta è in rosso, sono gli scoperti. Passando su un pezzo il tooltip DreamDex elenca i bersagli, poi in righe a
+ * parte quelli in più dopo la danza o con Tera/Z. `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18".
  */
-export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick }: {
+export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, alarm = false }: {
   bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
-  /** Clic su una tessera: apre il dettaglio su quei bersagli. */
+  /** Clic su un pezzo OHKO / 2HKO: apre il dettaglio su quei bersagli. */
   onPick?: (band: KoBand) => void;
+  alarm?: boolean;
 }) {
   const t = useT();
   const lang = useLang();
-  const tip = useFloatAnchor<KoBand>();
-  const band = tip.anchor?.key;
+  const tip = useFloatAnchor<KoBand | 'rest'>();
+  const key = tip.anchor?.key;
   const list = (items: KoTarget[]) => <div className={`kot-list${items[0]?.kind === 'mon' ? ' mons' : ''}`}>{items.map(x => <Target key={x.label} target={x} />)}</div>;
+  const rest = bands.rest.length;
+  const restBad = alarm && rest > 0;
   return (
     <span className="kob-row">
       {(['ohko', 'two'] as const).map(b => {
         const n = bands.plain[b].length;
         const extra = bands.setup[b].length;
+        if (n === 0 && extra === 0) return null;
         return (
-          // Una tessera a larghezza fissa (le colonne restano allineate riga per riga): il numero e, nel suo posto, il "+N"
-          // del setup col triangolo nell'angolo; l'etichetta OHKO / 2HKO piccola a sinistra, dentro la tessera.
-          <span key={b} className="kob-cell">
-            <span className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}${onPick && n > 0 ? ' pick' : ''}`} style={{ '--k': total ? Math.min(1, n / total) : 0 } as CSSProperties}
-              onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
-              {...(onPick && n > 0 ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(b); } } } : {})}
-              aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
-              {/* L'etichetta a sinistra, il numero a destra sempre nello stesso punto; il setup è solo il triangolo nell'angolo (il tooltip dice quanti) */}
-              <em aria-hidden="true">{TAG[b]}</em>
-              <span className="kob-num"><b>{n}</b></span>
-            </span>
+          <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}${onPick && n > 0 ? ' pick' : ''}`}
+            style={{ '--k': total ? Math.min(1, n / total) : 0, flexGrow: Math.max(n, 1) } as CSSProperties}
+            onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
+            {...(onPick && n > 0 ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(b); } } } : {})}
+            aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
+            {/* L'etichetta a sinistra, il numero a destra; il setup è solo il triangolo nell'angolo (il tooltip dice quanti) */}
+            <em aria-hidden="true">{TAG[b]}</em>
+            <span className="kob-num"><b>{n}</b></span>
           </span>
         );
       })}
-      {band && (
+      {rest > 0 && (
+        <span className={`kob rest${restBad ? ' bad' : ''}`} style={{ flexGrow: rest }}
+          onMouseEnter={e => tip.open('rest', e.currentTarget)} onMouseLeave={tip.close}
+          aria-label={`${restBad ? t('kob.uncovered') : t('kob.restAria')} ${rest}`}>
+          <span className="kob-num"><b>{rest}</b></span>
+        </span>
+      )}
+      {key === 'rest' && (
+        <FloatTip rect={tip.anchor!.rect} tone={restBad ? 'var(--bad)' : 'var(--faint)'} className="kot">
+          <div className="kot-head"><b>{restBad ? t('kob.uncoveredTitle') : t('kob.restTitle', { name: who })}</b><small>{of}</small></div>
+          {list(bands.rest)}
+        </FloatTip>
+      )}
+      {key && key !== 'rest' && (
         <FloatTip rect={tip.anchor!.rect} tone="var(--good)" className="kot">
-          <div className="kot-head"><b>{who}</b><span className={`kob labeled ${band}`}><em>{TAG[band]}</em><b>{bands.plain[band].length}</b></span><small>{of}</small></div>
-          {bands.plain[band].length ? list(bands.plain[band]) : <p className="kot-none">{t('kob.none')}</p>}
+          <div className="kot-head"><b>{who}</b><span className={`kob labeled ${key}`}><em>{TAG[key]}</em><b>{bands.plain[key].length}</b></span><small>{of}</small></div>
+          {bands.plain[key].length ? list(bands.plain[key]) : <p className="kot-none">{t('kob.none')}</p>}
           {/* In più col setup o con Tera/Z: solo il nome e quanti, "Danzaspada +15" */}
-          {bands.setup[band].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={`${setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')} +${bands.setup[band].length}`}>{list(bands.setup[band])}</Extra>}
-          {bands.once[band].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[band].length}`}>{list(bands.once[band])}</Extra>}
+          {bands.setup[key].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={`${setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')} +${bands.setup[key].length}`}>{list(bands.setup[key])}</Extra>}
+          {bands.once[key].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[key].length}`}>{list(bands.once[key])}</Extra>}
         </FloatTip>
       )}
     </span>

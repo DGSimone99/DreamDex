@@ -49,21 +49,23 @@ describe("dettaglio dell'Offesa a schede", () => {
       // Meta e Tipi: i badge OHKO e 2HKO col numero (e il triangolo del setup); poi la barra col voto del membro
       expect(cells).toHaveLength(3);
       for (const cell of cells.slice(0, 2)) {
-        const labels = [...cell.querySelectorAll('.kob.ohko, .kob.two')].map(b => b.getAttribute('aria-label'));
-        expect(labels).toHaveLength(2);
-        expect(labels[0]).toMatch(/^OHKO \d+(, altri \d+ col setup)?(, il migliore della colonna)?$/);
-        expect(labels[1]).toMatch(/^2HKO \d+(, altri \d+ col setup)?(, il migliore della colonna)?$/);
+        // I pezzi a zero non ci sono
+        for (const label of [...cell.querySelectorAll('.kob.ohko, .kob.two, .kob.rest')].map(b => b.getAttribute('aria-label'))) {
+          expect(label).toMatch(/^(OHKO|2HKO) \d+(, altri \d+ col setup)?$|^non KO in due colpi \d+$/);
+        }
       }
       expect(cells[2]).toHaveTextContent(/^\+\d+$/);
     }
-    // La riga Team Coverage: i badge del team, "✓ tutti" o "Scoperti N" (in rosso), e il voto del team
+    // La riga Team Coverage: la barra del team (gli scoperti in rosso in fondo) e il voto del team
     const foot = table.querySelector('tfoot tr')!;
     expect(foot.querySelector('th')).toHaveTextContent('Team Coverage');
     const footCells = foot.querySelectorAll('td');
     expect(footCells).toHaveLength(3);
     for (const cell of [footCells[0], footCells[1]]) {
-      expect(cell.querySelectorAll('.kob.ohko, .kob.two')).toHaveLength(2);
-      expect(cell.querySelector('.kob-ok, .kob.bad')).not.toBeNull();
+      expect(cell.querySelectorAll('.kob.ohko, .kob.two').length).toBeGreaterThan(0);
+      // Niente "✓ tutti": gli scoperti, se ci sono, in rosso in fondo alla barra
+      expect(cell).not.toHaveTextContent('tutti');
+      expect(cell.querySelector('.kob.rest:not(.bad)')).toBeNull();
     }
     expect(footCells[2]).toHaveTextContent(/^\d+$/);
   });
@@ -110,8 +112,10 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(headers[2]).toMatch(/^Meta(OHKO|$)/);
     expect(headers[3]).toBe('Offense');
     const foot = document.querySelector('.def-members tfoot tr')!;
-    // "✓ all" in English, or the red uncovered badge
-    if (!foot.querySelector('.kob.bad')) expect(foot).toHaveTextContent('✓ all');
+    // Gli scoperti in inglese nel nome accessibile
+    const bad = foot.querySelector('.kob.rest.bad');
+    if (bad) expect(bad.getAttribute('aria-label')).toMatch(/^Uncovered \d+$/);
+    expect(foot).not.toHaveTextContent('✓');
   });
 });
 

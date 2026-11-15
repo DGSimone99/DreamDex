@@ -139,6 +139,8 @@ describe('Offesa: Generale', () => {
     const c = count(hits);
     for (const [b, n, extra, tag] of [['ohko', c.ohko, c.setupOhko, 'OHKO'], ['two', c.two, c.setupTwo, '2HKO']] as const) {
       const badge = cell.querySelector(`.kob.${b}`)!;
+      // Un pezzo a zero non c'è, salvo che il setup ci porti qualcuno
+      if (n === 0 && extra === 0) { expect(badge, `${tag} in ${cell.textContent}`).toBeNull(); continue; }
       expect(badge, `${tag} in ${cell.textContent}`).not.toBeNull();
       expect(badge.querySelector('b')).toHaveTextContent(new RegExp(`^${n}$`));
       expect(badge.classList.contains('zero')).toBe(n === 0);
@@ -153,6 +155,11 @@ describe('Offesa: Generale', () => {
         expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}(, il migliore della colonna)?$`));
       }
     }
+    // In fondo, grigio, quelli che non manda KO in due colpi (niente pezzo se non ce ne sono)
+    const rest = hits.filter(h => h.plain < 50).length;
+    const restEl = cell.querySelector('.kob.rest');
+    if (rest === 0) expect(restEl).toBeNull();
+    else expect(restEl!.querySelector('b')).toHaveTextContent(new RegExp(`^${rest}$`));
     return c;
   };
   const tipOf = async () => vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.kot'); if (!el) throw new Error('no tip'); return el; });
@@ -296,7 +303,7 @@ describe('Offesa: Generale', () => {
     expect(mainList(tip)!.querySelectorAll('.kot-mon')).toHaveLength(meta[mBand]);
   });
 
-  it('la riga Team Coverage: per ogni bersaglio il membro migliore, poi "✓ tutti" o "Scoperti N" in rosso col tooltip; in fondo la barra del team', async () => {
+  it('la riga Team Coverage: per ogni bersaglio il membro migliore, in fondo gli scoperti in rosso col tooltip (niente se non ce ne sono); in fondo la barra del team', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     view(team, rating);
@@ -308,13 +315,12 @@ describe('Offesa: Generale', () => {
     for (const [k, hits] of per.entries()) {
       expectBadges(cells[k], hits);
       const open = hits.filter(h => h.plain < 50).length;
+      expect(cells[k]).not.toHaveTextContent('tutti');
       if (open === 0) {
-        expect(cells[k].querySelector('.kob-ok')).toHaveTextContent('✓ tutti');
         expect(cells[k].querySelector('.kob.bad')).toBeNull();
       } else {
-        const bad = cells[k].querySelector('.kob.bad')!;
+        const bad = cells[k].querySelector('.kob.rest.bad')!;
         expect(bad.querySelector('b')).toHaveTextContent(new RegExp(`^${open}$`));
-        expect(cells[k].querySelector('.kob-ok')).toBeNull();
         await user.hover(bad);
         const tip = await tipOf();
         expect(tip.querySelector('.kot-head')).toHaveTextContent('Nessuno li manda KO in due colpi');

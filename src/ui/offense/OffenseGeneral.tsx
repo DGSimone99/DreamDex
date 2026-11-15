@@ -5,8 +5,7 @@ import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
-import { KoBadges, koBands, Target, type KoTarget } from './KoBadges';
+import { KoBadges, koBands, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
 import { linkTeamCard } from '../teamLink';
 import { useEffect } from 'react';
@@ -46,27 +45,6 @@ function Share({ points, from, team }: { points: number; from: number; team: num
         <i className="og-share-own" style={{ left: `${clamp(from)}%`, width: `${clamp(Math.min(points, 100 - from))}%` }} />
       </span>
       <span className="def-num total og-share-num">+{points}</span>
-    </span>
-  );
-}
-
-/** "Scoperti N" in rosso nella riga del team: i bersagli che nessuno manda KO in due colpi, col tooltip che li elenca. */
-function Uncovered({ targets, of }: { targets: KoTarget[]; of: string }) {
-  const t = useT();
-  const tip = useFloatAnchor<true>();
-  const open = targets.filter(x => x.plain < 50);
-  if (!open.length) return <span className="kob-ok">{t('kob.allCovered')}</span>;
-  return (
-    <span className="kob labeled bad" onMouseEnter={e => tip.open(true, e.currentTarget)} onMouseLeave={tip.close}>
-      <em>{t('kob.uncovered')}</em><b>{open.length}</b>
-      {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--bad)" className="kot">
-          <div className="kot-head"><b>{t('kob.uncoveredTitle')}</b><small>{of}</small></div>
-          <div className={`kot-list${open[0].kind === 'mon' ? ' mons' : ''}`}>
-            {open.map(x => <Target key={x.label} target={x} />)}
-          </div>
-        </FloatTip>
-      )}
     </span>
   );
 }
@@ -151,8 +129,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
           <tfoot>
             <tr className="og-total">
               <th scope="row"><span className="og-plate">{teamName}</span></th>
-              <td><span className="kob-team"><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} /><Uncovered targets={teamTypes} of={ofTypes} /></span></td>
-              {meta && <td><span className="kob-team"><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} /><Uncovered targets={teamMeta} of={ofMeta} /></span></td>}
+              <td><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm /></td>
+              {meta && <td><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm /></td>}
               <td><Bar value={offense.value} total /></td>
             </tr>
           </tfoot>
