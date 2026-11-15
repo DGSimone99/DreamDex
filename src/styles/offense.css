@@ -81,7 +81,7 @@
 .off-general .og-share-bar .og-share-team { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .off-general .og-share-bar .og-share-own { right: auto; background: var(--accent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .off-general .og-share-bar .og-share-own:first-child, .off-general .og-share-bar .og-share-own[style^="left: 0%"] { clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-.off-general.roomy .def-members td { padding-top: 8px; padding-bottom: 8px; }
+.off-general.roomy .def-members td { padding-top: 6px; padding-bottom: 6px; }
 /* Team Coverage: un velo magenta solo, largo quanto la tabella, che sfuma su tutti i lati (in alto una linea sottile che
    sfuma anch'essa ai lati); "TEAM COVERAGE" è una linguetta a cavallo della linea. Disegnati sotto la prima casella
    (100cqw = la larghezza della cornice, cioè della tabella) così le caselle non hanno fondi propri e niente si spezza */
@@ -151,6 +151,24 @@
 .kob.labeled > b { min-width: 0; font: 700 italic 15px/1 var(--display); }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
 
+
+/* A squadra chiusa, sotto la barra dei colpi: quanto lavora ogni mossa d'attacco, una pastiglia per mossa nel colore del
+   suo tipo (icona e numero dei bersagli); passandoci sopra si allarga col nome, e il tooltip elenca i bersagli.
+   A 0 spenta. Sempre una riga: le pastiglie hanno tutte la stessa forma */
+.mcs { display: flex; gap: 6px; width: calc(100% - 36px); min-width: 150px; margin-top: 4px; overflow: hidden; }
+.mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 11.5px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
+  background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
+.mc:hover { background: color-mix(in srgb, var(--c) 32%, transparent); }
+.mc img { flex: none; width: 13px; height: 13px; border-radius: 50%; }
+.mc b { flex: none; font: 700 italic 12.5px/1 var(--display); font-variant-numeric: tabular-nums; }
+/* Il nome nascosto, si apre passando sopra */
+.mc-name { max-width: 0; margin-right: -5px; overflow: hidden; opacity: 0; transition: max-width 0.2s var(--ease), opacity 0.15s var(--ease), margin 0.2s var(--ease); }
+.mc:hover .mc-name, .mc:focus-visible .mc-name { max-width: 160px; margin-right: 0; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .mc-name { transition: none; } }
+.mc.z { color: var(--faint); background: none; }
+.mc.z:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }
+.mc.z img { opacity: 0.5; }
+.mc-none { display: block; margin-top: 4px; font: 500 12px var(--display); color: var(--faint); }
 
 /* Le tabelle dei membri (Generale di tutte le aree): la riga sotto il mouse si accende appena, senza spostare niente */
 .def-frame .def-members tbody tr:not(.og-fill) > * { transition: background-color 0.15s var(--ease); }

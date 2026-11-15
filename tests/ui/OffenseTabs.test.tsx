@@ -358,14 +358,34 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
 
-  it('squadra chiusa: niente sotto la barra; niente tipi per fascia né Pokémon del meta mandati KO', () => {
+  it('squadra chiusa: sotto le barre quanto lavora ogni mossa d’attacco (i numeri sommati fanno i pezzi verdi); niente tipi per fascia né Pokémon del meta mandati KO', async () => {
+    const user = userEvent.setup();
     const rating = withMeta();
     view(team, rating, true);
-    memberRows().forEach((row, i) => {
+    const slots = offenseSlots(team, rating.offense.members);
+    memberRows().forEach((row, slot) => {
+      const i = slots[slot]!;
       const cells = row.querySelectorAll('td');
       expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
       expect(cells[0].querySelector('.kob.ohko')).not.toBeNull();
+      for (const [k, hits] of [[0, typeHits(rating, i)], [1, metaHits(rating, slot)]] as const) {
+        const chips = [...cells[k].querySelectorAll('.mcs .mc')];
+        expect(chips.length).toBeGreaterThan(0);
+        const sum = chips.reduce((acc, c) => acc + Number(c.querySelector('b')!.textContent), 0);
+        expect(sum).toBe(count(hits).ohko + count(hits).two);
+        // Dalla più utile; il nome c'è (si apre passandoci sopra)
+        const ns = chips.map(c => Number(c.querySelector('b')!.textContent));
+        expect(ns).toEqual([...ns].sort((a, b) => b - a));
+        for (const c of chips) expect(c.querySelector('.mc-name')!.textContent).not.toBe('');
+      }
     });
+    // Il tooltip di una mossa elenca i bersagli su cui è la migliore
+    const chip = memberRows()[0].querySelectorAll('td')[0].querySelector<HTMLElement>('.mcs .mc:not(.z)')!;
+    await user.hover(chip);
+    const tip = await tipOf();
+    expect(tip.querySelector('.kot-head')).toHaveTextContent(chip.querySelector('.mc-name')!.textContent!);
+    expect(mainList(tip)!.children).toHaveLength(Number(chip.querySelector('b')!.textContent));
+    await user.unhover(chip);
     expect(document.querySelector('.og-bands')).toBeNull();
     expect(document.querySelector('.og-meta')).toBeNull();
     expect(document.querySelector('.og-detail')).toBeNull();

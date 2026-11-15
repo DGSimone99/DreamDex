@@ -7,6 +7,7 @@ import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { KoBadges, koBands, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
+import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect } from 'react';
 
@@ -76,6 +77,14 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   useEffect(() => () => linkTeamCard(null), []);
   // Dove comincia il pezzo di ogni membro nella barra del team: i punti delle righe sopra
   const shareFrom = ctx.team.map((_, slot) => ctx.team.slice(0, slot).reduce((sum, __, k) => sum + (slots[k] === null ? 0 : shares[slots[k]!].points), 0));
+  // A squadra chiusa, sotto le barre: quanto lavora ogni mossa d'attacco (la mossa migliore su ogni bersaglio KO in due colpi)
+  const metaRows = offense.coverageMeta?.rows ?? [];
+  const typeMoves = (m: MemberOffense, slot: number) => moveShares(ctx.team[slot].moves, typeTargets(m), x => m.hits.find(h => h.label === x.label)?.move);
+  const metaMoves = (slot: number) => {
+    const who = battleSpecies(ctx.team[slot])?.name ?? ctx.team[slot].species;
+    const best = new Map(metaRows.map(row => [row.species, row.coveredBy.find(c => c.species === who && !c.partial)?.move]));
+    return moveShares(ctx.team[slot].moves, metaTargets(offense, slot), x => best.get(x.label));
+  };
   // Le fasce di ogni membro, una volta sola
   const metaBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(metaTargets(offense, slot))));
   const typeBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(typeTargets(members[slots[slot]!]))));
@@ -107,9 +116,11 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                   {m && s
                     ? <>
                       <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
-                        onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} /></td>
+                        onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} />
+                        {roomy && <MoveChips shares={typeMoves(m, slot)} of={ofTypes} />}</td>
                       {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
-                        onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} /></td>}
+                        onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} />
+                        {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} />}</td>}
                       <td>
                         {/* Quanto porta al team: i punti dei membri sommati fanno l'Offesa del team */}
                         <span className="og-stack og-share" title={t('odetail.gen.shareTitle', { n: s.points })}><Share points={s.points} from={shareFrom[slot]} team={offense.value} /></span>
