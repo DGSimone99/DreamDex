@@ -44,8 +44,12 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
     },
     speed: {
       lanes: [
-        { species: 'Dragapult', speed: 421, share: 0.9, above: true },
-        { species: 'Toxapex', speed: 167, share: 0.1, above: false },
+        { species: 'Dragapult', speed: 421, share: 0.9, above: true, near: {
+          faster: [{ species: 'Iron Bundle', speed: 446, scarf: false, booster: true }, { species: 'Weavile', speed: 548, scarf: true, booster: false }],
+          slower: [{ species: 'Iron Valiant', speed: 361, scarf: false, booster: false }],
+          ties: [],
+        } },
+        { species: 'Toxapex', speed: 167, share: 0.1, above: false, near: null },
       ],
       median: 300, vsMeta: true, value: '1/2',
       control: [{ condition: 'slow', move: 'Thunder Wave', by: ['Toxapex'] }],
