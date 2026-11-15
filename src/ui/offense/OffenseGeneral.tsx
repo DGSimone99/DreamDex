@@ -9,6 +9,9 @@ import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { KoBadges, koBands, Target, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
 
+/** Le etichette delle tessere, una volta sola nella testata e allineate sopra di loro: OHKO e 2HKO. */
+const KoSub = () => <span className="kob-sub" aria-hidden="true"><i>OHKO</i><i>2HKO</i></span>;
+
 /** I 18 tipi di un membro come bersagli: colpo semplice, dopo una danza, con Tera/Z. */
 const typeTargets = (m: MemberOffense): KoTarget[] =>
   m.hits.map(h => ({ label: h.label, kind: 'type', plain: h.plainPct, setup: h.setupPct, once: h.oncePct }));
@@ -38,7 +41,7 @@ function Uncovered({ targets, of }: { targets: KoTarget[]; of: string }) {
   const open = targets.filter(x => x.plain < 50);
   if (!open.length) return <span className="kob-ok">{t('kob.allCovered')}</span>;
   return (
-    <span className="kob bad" onMouseEnter={e => tip.open(true, e.currentTarget)} onMouseLeave={tip.close}>
+    <span className="kob labeled bad" onMouseEnter={e => tip.open(true, e.currentTarget)} onMouseLeave={tip.close}>
       <em>{t('kob.uncovered')}</em><b>{open.length}</b>
       {tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone="var(--bad)" className="kot">
@@ -83,8 +86,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              {meta && <th scope="col">{t('kob.headMeta', { n: nMeta })}</th>}
-              <th scope="col">{t('kob.headTypes')}</th>
+              {meta && <th scope="col">{t('kob.headMeta', { n: nMeta })}<KoSub /></th>}
+              <th scope="col">{t('kob.headTypes')}<KoSub /></th>
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>
@@ -103,7 +106,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                       <td><KoBadges bands={koBands(typeTargets(m))} who={name} of={ofTypes} setupMove={m.setupMove} onceName={onceName(m)} /></td>
                       <td>
                         <span className="og-stack og-own" title={m.coverMeta === null ? t('odetail.gen.ownTitleNoMeta', { n: m.total }) : t('odetail.gen.ownTitle', { types: m.value, meta: m.coverMeta, n: m.total })}><Bar value={m.total} total /></span>
-                        {roomy && <span className="og-detail">{t('odetail.gen.points')} <b className="og-points">+{s.points}</b></span>}
+                        {roomy && <span className="og-detail">{t('odetail.gen.points')} <b className="og-points" title={t('odetail.gen.pointsTitle', { n: s.points })}>+{s.points}</b></span>}
                       </td>
                     </>
                     : <>{meta && <td>—</td>}<td>—</td><td>—</td></>}

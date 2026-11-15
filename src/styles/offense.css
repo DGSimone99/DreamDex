@@ -92,19 +92,33 @@
 .def-general .def-members tr.og-fill { height: auto; }
 .def-general .def-members tr.og-fill td { padding: 0; border: 0; }
 
-/* Badge dei colpi (KoBadges): OHKO verde pieno, 2HKO bordo verde, a zero spenti; il setup come piccolo triangolo +N */
+/* Tessere dei colpi (KoBadges): larghezza fissa così le colonne restano allineate; OHKO piena verde, 2HKO col bordo verde,
+   a zero solo il numero spento; il setup nel suo posto a destra ("+N") col triangolo verde nell'angolo come nelle tabelle.
+   Le etichette OHKO / 2HKO una volta sola nella testata (.kob-sub), sopra le tessere */
 .kob-row { display: inline-flex; align-items: center; gap: 6px; }
-.kob { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px 3px 8px; border: 1px solid; cursor: help;
+.kob { --kw: 62px; position: relative; box-sizing: border-box; display: inline-grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; width: var(--kw); height: 26px; padding: 0 2px 0 8px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
-.kob em { font: 700 10px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
-.kob > b { min-width: 16px; text-align: right; font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
-.kob.ohko { color: var(--good); border-color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
-.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+.kob > b { text-align: right; font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
+.kob-setup { padding-left: 3px; font: 700 10.5px/1 var(--display); color: var(--muted); text-align: left; white-space: nowrap; }
+.kob.has-setup::after { content: ""; position: absolute; top: 0; right: 5px; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
+.kob.ohko { color: var(--good); border-color: color-mix(in srgb, var(--good) 80%, transparent); background: color-mix(in srgb, var(--good) 18%, transparent); }
+.kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 42%, transparent); background: color-mix(in srgb, var(--good) 5%, transparent); }
+.kob.zero { color: var(--faint); border-color: transparent; background: none; opacity: 0.55; }
+.kob:hover { background: color-mix(in srgb, var(--good) 30%, transparent); }
+.kob.zero:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }
+/* Con l'etichetta (nella testata del tooltip e "Scoperti" nella riga del team): larghezza libera */
+.kob.labeled { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 3px 11px 3px 8px; }
+.kob.labeled em { font: 700 10px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
+.kob.labeled > b { min-width: 0; }
 .kob.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
-.kob.zero { opacity: 0.32; }
-.kob:hover { background: color-mix(in srgb, currentColor 26%, transparent); }
-.kob-setup { display: inline-flex; align-items: center; gap: 2px; margin-left: -2px; font: 700 11px/1 var(--display); color: var(--muted); }
+.kob.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
+.kob-sub { display: flex; gap: 6px; margin-top: 4px; }
+.kob-sub i { width: 62px; padding-left: 8px; font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.06em; color: color-mix(in srgb, var(--good) 75%, var(--faint)); }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
 .kob-team { display: inline-flex; align-items: center; gap: 10px; }
 .kob-ok { font: 600 12.5px/1 var(--display); color: var(--good); white-space: nowrap; }
 .off-general .og-total .kob > b { font-size: 19px; }
+
+/* Le tabelle dei membri (Generale di tutte le aree): la riga sotto il mouse si accende appena, senza spostare niente */
+.def-frame .def-members tbody tr:not(.og-fill) > * { transition: background-color 0.15s var(--ease); }
+.def-frame .def-members tbody tr:not(.og-fill):hover > * { background: color-mix(in srgb, var(--accent) 6%, transparent); }

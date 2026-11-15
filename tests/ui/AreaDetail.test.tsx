@@ -33,20 +33,36 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(panel).queryAllByRole('button')).toHaveLength(0);
     const table = within(panel).getByRole('table');
     const headers = within(table).getAllByRole('columnheader').map(h => h.textContent);
+    // Sotto Meta e Tipi possono esserci le etichette OHKO / 2HKO: si guarda come iniziano
+    expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
-    expect(headers[1]).toMatch(/^Meta · \d+ minacce$/);
-    expect(headers.slice(2)).toEqual(['Tipi · 18', 'Offesa']);
+    expect(headers[1]).toMatch(/^Meta · \d+ minacce/);
+    expect(headers[2]).toMatch(/^Tipi · 18/);
+    expect(headers[3]).toBe('Offesa');
     const rows = [...table.querySelectorAll('tbody tr:not(.og-fill)')] as HTMLElement[];
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
       // Meta e Tipi: i badge OHKO e 2HKO col numero (e "+N" del setup); poi la barra col voto del membro
       expect(cells).toHaveLength(3);
-      for (const cell of cells.slice(0, 2)) expect(cell).toHaveTextContent(/^OHKO\d+(\+\d+)?2HKO\d+(\+\d+)?$/);
+      for (const cell of cells.slice(0, 2)) {
+        const labels = [...cell.querySelectorAll('.kob.ohko, .kob.two')].map(b => b.getAttribute('aria-label'));
+        expect(labels).toHaveLength(2);
+        expect(labels[0]).toMatch(/^OHKO \d+(, altri \d+ col setup)?$/);
+        expect(labels[1]).toMatch(/^2HKO \d+(, altri \d+ col setup)?$/);
+      }
       expect(cells[2]).toHaveTextContent(/^\d+$/);
     }
-    // La riga Team Coverage: i badge del team, "✓ tutti" o "Scoperti N", e il voto del team
-    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Team Coverage(OHKO\d+(\+\d+)?2HKO\d+(\+\d+)?(✓ tutti|Scoperti\d+)){2}\d+$/);
+    // La riga Team Coverage: i badge del team, "✓ tutti" o "Scoperti N" (in rosso), e il voto del team
+    const foot = table.querySelector('tfoot tr')!;
+    expect(foot.querySelector('th')).toHaveTextContent('Team Coverage');
+    const footCells = foot.querySelectorAll('td');
+    expect(footCells).toHaveLength(3);
+    for (const cell of [footCells[0], footCells[1]]) {
+      expect(cell.querySelectorAll('.kob.ohko, .kob.two')).toHaveLength(2);
+      expect(cell.querySelector('.kob-ok, .kob.bad')).not.toBeNull();
+    }
+    expect(footCells[2]).toHaveTextContent(/^\d+$/);
   });
 
   it('Coverage tipi: i 18 tipi, i buchi e quanto li colpisce ogni membro', async () => {
@@ -85,9 +101,14 @@ describe("dettaglio dell'Offesa a schede", () => {
     const { dialog } = await openOffense('en');
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Meta coverage']);
     const headers = within(dialog).getAllByRole('columnheader').map(h => h.textContent);
-    expect(headers[1]).toMatch(/^Meta · \d+ threats$/);
-    expect([headers[0], ...headers.slice(2)]).toEqual(['Pokémon', 'Types · 18', 'Offense']);
-    expect(document.querySelector('.def-members tfoot tr')).toHaveTextContent(/(✓ all|Uncovered\d+)/);
+    expect(headers).toHaveLength(4);
+    expect(headers[0]).toBe('Pokémon');
+    expect(headers[1]).toMatch(/^Meta · \d+ threats/);
+    expect(headers[2]).toMatch(/^Types · 18/);
+    expect(headers[3]).toBe('Offense');
+    const foot = document.querySelector('.def-members tfoot tr')!;
+    // "✓ all" in English, or the red uncovered badge
+    if (!foot.querySelector('.kob.bad')) expect(foot).toHaveTextContent('✓ all');
   });
 });
 

@@ -140,7 +140,6 @@ describe('Offesa: Generale', () => {
     for (const [b, n, extra, tag] of [['ohko', c.ohko, c.setupOhko, 'OHKO'], ['two', c.two, c.setupTwo, '2HKO']] as const) {
       const badge = cell.querySelector(`.kob.${b}`)!;
       expect(badge, `${tag} in ${cell.textContent}`).not.toBeNull();
-      expect(badge.querySelector('em')).toHaveTextContent(tag);
       expect(badge.querySelector('b')).toHaveTextContent(new RegExp(`^${n}$`));
       expect(badge.classList.contains('zero')).toBe(n === 0);
       if (extra > 0) {
@@ -161,12 +160,22 @@ describe('Offesa: Generale', () => {
     const rating = withMeta();
     const { unmount } = view(team, rating);
     const n = rating.offense.coverageMeta!.rows.length;
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', `Meta · ${n} minacce`, 'Tipi · 18', 'Offesa']);
+    // Le testate di Meta e Tipi possono avere sotto le etichette OHKO / 2HKO: si guarda come iniziano
+    let heads = screen.getAllByRole('columnheader').map(h => h.textContent!);
+    expect(heads).toHaveLength(4);
+    expect(heads[0]).toBe('Pokémon');
+    expect(heads[1].startsWith(`Meta · ${n} minacce`)).toBe(true);
+    expect(heads[2].startsWith('Tipi · 18')).toBe(true);
+    expect(heads[3]).toBe('Offesa');
     expect(memberRows().map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
     unmount();
     view(team, noMeta());
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi · 18', 'Offesa']);
+    heads = screen.getAllByRole('columnheader').map(h => h.textContent!);
+    expect(heads).toHaveLength(3);
+    expect(heads[0]).toBe('Pokémon');
+    expect(heads[1].startsWith('Tipi · 18')).toBe(true);
+    expect(heads[2]).toBe('Offesa');
     expect(document.querySelector('.def-members tfoot th')).toHaveTextContent('Team Coverage');
     expect(document.querySelectorAll('.def-members tfoot td')).toHaveLength(2);
   });
@@ -280,7 +289,7 @@ describe('Offesa: Generale', () => {
         expect(cells[k].querySelector('.kob.bad')).toBeNull();
       } else {
         const bad = cells[k].querySelector('.kob.bad')!;
-        expect(bad).toHaveTextContent(`Scoperti${open}`);
+        expect(bad.querySelector('b')).toHaveTextContent(new RegExp(`^${open}$`));
         expect(cells[k].querySelector('.kob-ok')).toBeNull();
         await user.hover(bad);
         const tip = await tipOf();

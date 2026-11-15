@@ -61,17 +61,19 @@ export function KoBadges({ bands, who, of, setupMove, onceName }: { bands: KoBan
         const n = bands.plain[b].length;
         const extra = bands.setup[b].length;
         return (
-          <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}`}
+          // Una tessera a larghezza fissa (le colonne restano allineate riga per riga): il numero e, nel suo posto, il "+N"
+          // del setup col triangolo nell'angolo come nelle tabelle dell'Offesa; l'etichetta OHKO / 2HKO sta nella testata
+          <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}`}
             onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
             aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
-            <em>{TAG[b]}</em><b>{n}</b>
-            {extra > 0 && <small className="kob-setup" aria-hidden="true"><i className="kob-tri" aria-hidden="true" />+{extra}</small>}
+            <b>{n}</b>
+            {extra > 0 && <small className="kob-setup" aria-hidden="true">+{extra}</small>}
           </span>
         );
       })}
       {band && (
         <FloatTip rect={tip.anchor!.rect} tone="var(--good)" className="kot">
-          <div className="kot-head"><b>{who}</b><span className={`kob ${band}`}><em>{TAG[band]}</em><b>{bands.plain[band].length}</b></span><small>{of}</small></div>
+          <div className="kot-head"><b>{who}</b><span className={`kob labeled ${band}`}><em>{TAG[band]}</em><b>{bands.plain[band].length}</b></span><small>{of}</small></div>
           {bands.plain[band].length ? list(bands.plain[band]) : <p className="kot-none">{t('kob.none')}</p>}
           {bands.setup[band].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={setupMove ? t('kob.afterSetup', { move: gameName('move', getMove(setupMove)?.name ?? setupMove, lang) }) : t('kob.afterSetupAny')}>{list(bands.setup[band])}</Extra>}
           {bands.once[band].length > 0 && onceName && <Extra label={onceName}>{list(bands.once[band])}</Extra>}
