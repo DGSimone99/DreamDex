@@ -16,7 +16,7 @@ describe('Riquadro Voto', () => {
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(band()).toHaveTextContent(/Voto [SABCD], \d+ su 100, \w+/);
-    const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ [\d/]+, .*apri il dettaglio.*/, ''));
+    const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ (punti )?[\d/+−]+, .*apri il dettaglio.*/, ''));
     expect(areas).toEqual(['Offesa', 'Difesa', 'Velocità', 'Ruoli']);
     expect(band()).not.toHaveTextContent('Sinergia');
   });
@@ -27,7 +27,8 @@ describe('Riquadro Voto', () => {
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(within(band()).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
     for (const area of ['Difesa', 'Offesa', 'Ruoli']) {
-      const button = within(band()).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) });
+      // Ruoli porta i suoi punti ("Ruoli punti −4, 3/10, …"), le aree il valore
+      const button = within(band()).getByRole('button', { name: new RegExp(`^${area} (punti )?[\\d/+−]+, .*apri il dettaglio`) });
       expect(button).not.toHaveAttribute('aria-haspopup');
       await user.click(button);
       const analysis = within(document.getElementById('panel-analysis')!);
@@ -35,7 +36,7 @@ describe('Riquadro Voto', () => {
       expect(analysis.getByRole('region', { name: 'Ruoli e Bonus' })).toBeInTheDocument();
       expect(analysis.getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
       expect(analysis.getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
-      expect(analysis.getByRole('group', { name: 'Quali ruoli mostrare' })).toBeInTheDocument();
+      expect(analysis.getByRole('region', { name: 'Essenziali' })).toBeInTheDocument();
     }
   });
 
@@ -321,7 +322,7 @@ describe('Bonus/Malus', () => {
     expect(screen.queryByText('Cosa toglie')).toBeNull();
   });
 
-  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; niente riga dei problemi', async () => {
+  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; striscia dei problemi come nelle altre aree', async () => {
     const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
     expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
     await user.click(groupTab(/^Bonus/));
@@ -330,7 +331,8 @@ describe('Bonus/Malus', () => {
     // Il link al catalogo, per vedere come guadagnarli; la scheda vuota ha solo lo zero del conto
     expect(within(empty).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
     expect(groupTab(/^Bonus/)).toHaveAccessibleName('Bonus 0');
-    expect(document.querySelector('.area-problems-row')).toBeNull();
+    expect(document.querySelector('.area-tools-row')).toBeNull();
+    expect(document.querySelector('.area-problems-row.is-clear')).toHaveTextContent("Nessun problema in quest'area");
   });
 
   it('nessun malus: la scheda Malus mostra la medaglia con la spunta e "Il team non perde punti"', async () => {

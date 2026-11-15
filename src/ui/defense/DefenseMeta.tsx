@@ -38,7 +38,7 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
  * le minacce del meta in colonna, 8 per pagina dalla meno coperta (a pari livello la più usata). In ogni casella il danno
  * che il membro prende dal colpo migliore della minaccia, verde se regge (sotto metà PS), giallo se solo a metà, rosso se
  * va KO; in fondo Regge conta chi la regge del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra;
- * sotto la tabella una sola riga col riepilogo; la legenda dei colori sta sulla riga dei problemi (DefenseMetaLegend).
+ * sotto la tabella, in fondo al pannello, una sola riga bassa: a sinistra la legenda dei colori, a destra il riepilogo.
  * In basso a sinistra l'efficacia della mossa della minaccia che fa più danno al membro (la stessa del %) quando non è
  * neutra (×4, ×2, ×½, ×¼, 0); "Solo efficacia" (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende e
  * sotto lo sprite compare il nome.
@@ -122,7 +122,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             </tbody>
           </table>
         </div>
-        <div className="rob-legend cm-foot">{counts}</div>
+        <div className="rob-legend cm-foot"><span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span>{counts}</div>
       </div>
     );
   };
@@ -131,8 +131,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
 }
 
-/** La legenda dei colori di Coverage meta della Difesa, sulla riga dei problemi: regge, a metà, KO. */
-export function DefenseMetaLegend() {
+/** La legenda dei colori di Coverage meta della Difesa, nella riga in fondo alla tabella: regge, a metà, KO. */
+function DefenseMetaLegend() {
   const t = useT();
   return (
     <>

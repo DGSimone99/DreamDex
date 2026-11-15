@@ -75,8 +75,26 @@ export function Medal({ entry, className = '', style, glyph }: { entry: Pick<Cat
   );
 }
 
-/** Una riga della lista: la voce, il caso concreto e i punti (il core a tre ha una riga per trio). */
+/** Una riga della lista: la voce, il caso concreto e i punti. */
 interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[] }
+
+/**
+ * Le voci dei Ruoli nel catalogo: nella scheda Bonus/Malus non ci sono (hanno i loro punti nella sottoscheda Ruoli, qui
+ * sembrerebbero contare due volte); il catalogo della guida le elenca ancora.
+ */
+const ROLE_KEYS = new Set<CatalogKey>(['essentialRole', 'importantRole', 'minorRole']);
+const notRole = (item: Redundancy) => !item.catalog || !ROLE_KEYS.has(item.catalog);
+
+/**
+ * I totali della scheda Bonus/Malus, senza i punti dei ruoli: bonus, malus (positivo) e netto. Li usano la scheda e il
+ * valore della sua sottoscheda grande ("Bonus/Malus +N").
+ */
+export function bonusMalusTotals(rating: Pick<TeamRating, 'bonus' | 'penalty'>): { bonus: number; malus: number; net: number } {
+  const sum = (items: Redundancy[]) => items.filter(notRole).reduce((n, i) => n + i.points, 0);
+  const bonus = sum(rating.bonus.items);
+  const malus = sum(rating.penalty.items);
+  return { bonus, malus, net: bonus - malus };
+}
 
 /** Il caso concreto senza il nome della voce davanti ("Core: X, Y, Z…" → "X, Y, Z…"). */
 function detailOf(item: Redundancy, name: string): string {
@@ -88,8 +106,9 @@ function detailOf(item: Redundancy, name: string): string {
 }
 
 function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: Redundancy[]): ActiveRow[] {
-  // I core a tre stanno nel riquadro in alto col loro +3: non si ripetono fra le voci (contano nel netto e nelle barre)
-  return catalog.filter(e => e.kind === kind && e.key !== 'coreTrio').flatMap(entry => {
+  // I core a tre stanno nel riquadro in alto col loro +3: non si ripetono fra le voci (contano nel netto e nelle barre);
+  // le voci dei ruoli non ci sono (stanno nella sottoscheda Ruoli)
+  return catalog.filter(e => e.kind === kind && e.key !== 'coreTrio' && !ROLE_KEYS.has(e.key)).flatMap(entry => {
     const own = items.filter(i => i.catalog === entry.key && i.points > 0);
     if (!own.length) return [];
     return [{ key: entry.key, entry, points: own.reduce((n, i) => n + i.points, 0), details: own.map(i => detailOf(i, entry.name)) }];
@@ -295,6 +314,7 @@ function useFitEntries(bm: RefObject<HTMLDivElement | null>, key: string, frozen
  */
 function Entry({ row, index, open, compact, onToggle, t }: { row: ActiveRow; index: number; open: boolean; compact: boolean; onToggle: () => void; t: T }) {
   const { entry, points, details } = row;
+  const pts = signed(entry.kind === 'malus' ? -points : points);
   const long = compact || open;
   return (
     <li className={`bm-row ${entry.kind}${open ? ' open' : ''}${long ? ' long' : ''}`}>
@@ -311,7 +331,7 @@ function Entry({ row, index, open, compact, onToggle, t }: { row: ActiveRow; ind
           </button>
         )}
       </span>
-      <span className="bm-row-pts">{signed(entry.kind === 'malus' ? -points : points)}</span>
+      <span className="bm-row-pts">{pts}</span>
     </li>
   );
 }
@@ -320,15 +340,17 @@ function Entry({ row, index, open, compact, onToggle, t }: { row: ActiveRow; ind
  * La scheda Bonus/Malus. In alto: a sinistra la carta dei core a tre (sempre della stessa misura), a destra il netto sul
  * voto con bonus e malus in tutto (core compresi), le barre (solo se c'è posto) e il link al catalogo con tutte le voci
  * possibili (la guida della scheda). Sotto, due schede, Bonus e Malus (prima i bonus se ce ne sono), e le voci della scheda
- * scelta a tutta larghezza, ognuna con la sua medaglia.
+ * scelta a tutta larghezza, ognuna con la sua medaglia. I ruoli non ci sono, né fra le voci né nei totali
+ * (bonusMalusTotals): hanno i loro punti nella sottoscheda Ruoli.
  */
 export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamRating; lang: Lang; t: T; onCatalogue?: () => void }) {
   const catalog = bonusMalusCatalog(lang);
   const groups = (['bonus', 'malus'] as const)
     .map(kind => ({ kind, rows: activeRows(catalog, kind, kind === 'bonus' ? rating.bonus.items : rating.penalty.items) }));
   const any = groups.some(g => g.rows.length > 0);
-  const net = rating.bonus.total - rating.penalty.total;
-  const nothing = rating.bonus.total === 0 && rating.penalty.total === 0;
+  const totals = bonusMalusTotals(rating);
+  const net = totals.net;
+  const nothing = totals.bonus === 0 && totals.malus === 0;
   const head = useId();
   const tabsId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -360,13 +382,13 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
           <p className={`bm-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}><span>{signed(net)}</span></p>
           {nothing ? <p className="bm-parts">{t('catalogue.none')}</p> : (
             <p className="bm-parts">
-              <span>{t('catalogue.bonus')} <b className={rating.bonus.total ? 'good' : undefined}>{signed(rating.bonus.total)}</b></span>
-              <span>{t('catalogue.malus')} <b className={rating.penalty.total ? 'bad' : undefined}>{signed(-rating.penalty.total)}</b></span>
+              <span>{t('catalogue.bonus')} <b className={totals.bonus ? 'good' : undefined}>{signed(totals.bonus)}</b></span>
+              <span>{t('catalogue.malus')} <b className={totals.malus ? 'bad' : undefined}>{signed(-totals.malus)}</b></span>
             </p>
           )}
         </div>
         {/* Sempre nella pagina; senza posto le nasconde la classe no-bars (così si possono provare le due sistemazioni) */}
-        <Bars bonus={rating.bonus.total} malus={rating.penalty.total} t={t} />
+        <Bars bonus={totals.bonus} malus={totals.malus} t={t} />
         {onCatalogue && <button type="button" className="bm-more" onClick={onCatalogue}>{t('catalogue.all')} <span aria-hidden="true">›</span></button>}
       </section>
       <CoreColumn rating={rating} lang={lang} t={t} />

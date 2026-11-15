@@ -67,7 +67,10 @@ describe('schede interne di Analisi', () => {
     await setup();
     const defense = within(views()).getByRole('tab', { name: 'Difesa' });
     expect(defense).toHaveAccessibleDescription(/^Voto \d+$/);
-    expect(within(views()).getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAccessibleDescription(/^Sul voto [+−]?\d+$/);
+    // Ruoli e Bonus non porta più un numero: niente valore sulla scheda né nella descrizione
+    const roles = within(views()).getByRole('tab', { name: 'Ruoli e Bonus' });
+    expect(roles.querySelector('.tab-score')).toBeNull();
+    expect(roles).not.toHaveAccessibleDescription(/Sul voto|Voto/);
   });
 
   it('ogni area ricorda la sua sottoscheda: Difesa → Sostenibilità → Offesa → Difesa riapre Sostenibilità', async () => {

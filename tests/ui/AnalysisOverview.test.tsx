@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import type { CoachProblem } from '../../src/engine/coach';
@@ -264,7 +264,7 @@ describe('Panoramica: Da sistemare', () => {
     expect(row).toHaveTextContent(/Scopert[oi] in difesa contro/);
     // Le minacce del meta in una frase sola, coi nomi
     expect((row.textContent!.match(/del meta/g) ?? []).length).toBeLessThanOrEqual(1);
-    await user.click(within(row).getByRole('button', { name: 'Vai al Coaching' }));
+    await user.click(within(row).getByRole('button', { name: /^Vai al Coaching/ }));
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -283,14 +283,49 @@ describe('Panoramica: Da sistemare', () => {
     expect(panel().querySelector('.overview-headline')).toBeNull();
   });
 
-  it('senza problemi niente Da sistemare', () => {
-    const { container } = render(<LangProvider lang="it"><FixRow problems={[]} steps={[]} onView={() => {}} /></LangProvider>);
-    expect(container).toBeEmptyDOMElement();
+  it('senza problemi la striscia resta, verde e ferma: "Nessun problema da sistemare", niente link al Coaching', async () => {
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    render(<LangProvider lang="it"><FixRow problems={[]} steps={[]} onView={onView} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('is-clear');
+    expect(row).not.toHaveClass('is-link');
+    expect(row).toHaveTextContent('Nessun problema da sistemare');
+    expect(within(row).queryByRole('button')).toBeNull();
+    await user.click(within(row).getByText('Nessun problema da sistemare'));
+    expect(onView).not.toHaveBeenCalled();
   });
 
-  it('consigli ancora da calcolare (steps null): niente riga', () => {
+  it('problemi senza proposta: la stessa striscia verde e ferma "Nessun problema da sistemare", niente link al Coaching', async () => {
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={[]} onView={onView} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('is-clear');
+    expect(row).not.toHaveClass('is-link');
+    expect(row).toHaveTextContent('Nessun problema da sistemare');
+    expect(within(row).queryByRole('button')).toBeNull();
+    await user.click(within(row).getByText('Nessun problema da sistemare'));
+    expect(onView).not.toHaveBeenCalled();
+  });
+
+  it('con proposte: tutta la striscia porta al Coaching, il pulsante dice quanti', async () => {
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    const p = problem({ text: 'Debole a Fuoco', severity: 'serious' });
+    render(<LangProvider lang="it"><FixRow problems={[p]} steps={[{ problem: p, group: [], alsoSolves: [] } as unknown as CoachStep]} onView={onView} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('is-link');
+    await user.click(within(row).getByText('Debole a Fuoco'));
+    expect(onView).toHaveBeenCalledWith('coaching');
+    expect(within(row).getByRole('button', { name: 'Vai al Coaching: 1 problema' })).toBeInTheDocument();
+  });
+
+  it('consigli ancora da calcolare (steps null): uno scheletro nello stesso posto', () => {
     const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={null} onView={() => {}} /></LangProvider>);
-    expect(container).toBeEmptyDOMElement();
+    const bones = container.querySelector('.fix-row.is-skeleton');
+    expect(bones).toHaveAttribute('aria-hidden', 'true');
+    expect(bones).toHaveTextContent('');
   });
 
   it('solvable: solo i problemi che una tappa del Coaching risolve (il suo, il gruppo e gli altri che copre)', () => {
