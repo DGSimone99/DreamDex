@@ -415,7 +415,9 @@ describe('Riassunto', () => {
     expect(within(attack).getAllByRole('button').map(b => b.getAttribute('aria-label'))).toEqual(['Garchomp, Offesa 92', 'Zapdos, Offesa 86']);
     expect(within(hold).getAllByRole('button').map(b => b.getAttribute('aria-label'))).toEqual(['Toxapex, Difesa 88']);
     // Nell'ordine del documento: attaccanti, poi muri
-    expect([...region().querySelectorAll('.sum-mon')].map(b => b.getAttribute('title'))).toEqual(['Garchomp', 'Zapdos', 'Toxapex']);
+    expect([...region().querySelectorAll('.sum-mon')].map(b => b.getAttribute('aria-label')!.split(',')[0])).toEqual(['Garchomp', 'Zapdos', 'Toxapex']);
+    // Niente tooltip del browser: al passaggio la carta del Pokémon (tooltip DreamDex), quando il set è nel team
+    expect(region().querySelector('.sum-mon[title]')).toBeNull();
     expect(region().querySelectorAll('.sum-hero .sprite')).toHaveLength(3);
   });
 

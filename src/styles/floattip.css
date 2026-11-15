@@ -81,6 +81,43 @@
 .ftip-mon-pct { font: 700 italic 14px/1 var(--display); text-align: right; }
 .ftip-mon .ftip-ko { text-align: center; }
 
+/* ===== Carta del Pokémon (MemberCard): testata nei due colori dei tipi a strisce con la sprite grande che esce dal bordo,
+   lastra azzurra col perché; strumento, abilità, natura ed EV su due colonne; statistiche a esagono come la schermata
+   riassunto di Spada e Scudo e le mosse come lastre inclinate nel colore del loro tipo */
+.ftip.member { width: 440px; overflow: visible; }
+.mcard-head { position: relative; display: grid; grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; gap: 0 10px; min-height: 80px; padding: 12px 12px 10px 6px;
+  background: var(--stripes), linear-gradient(115deg, color-mix(in srgb, var(--t1) 50%, transparent) 0 52%, color-mix(in srgb, var(--t2) 42%, transparent) 52% 100%);
+  border-bottom: 1px solid color-mix(in srgb, var(--t1) 50%, var(--line)); }
+.mcard-head::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 40%, rgb(0 0 0 / 0.35)); }
+.mcard-head > * { position: relative; z-index: 1; }
+.mcard-mon { grid-row: 1 / 3; align-self: end; display: flex; justify-content: center; }
+.mcard-mon .sprite { display: block; margin: -30px 0 -16px; image-rendering: pixelated; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45)); }
+.mcard-name { display: flex; align-items: center; gap: 8px; min-width: 0; font: 700 italic 20px/1.1 var(--display); text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.mcard-name img { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
+.mcard-why { justify-self: start; margin-top: 6px; padding: 3px 12px 3px 9px; font: 700 italic 12px/1.2 var(--display); color: var(--on-accent); background: var(--accent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+.mcard-kit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: baseline; gap: 6px 8px; padding: 10px 12px 9px; border-bottom: 1px solid var(--line-soft); }
+.mcard-kit small { display: inline; font: 700 10px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.mcard-kit span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.mcard-kit em { font-style: normal; font-weight: 400; color: var(--muted); }
+.mcard-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); align-items: center; gap: 6px; padding: 10px 10px 12px 2px; }
+.mcard-hex { width: 200px; height: 134px; overflow: visible; }
+.mcard-hex .hx-ring { fill: color-mix(in srgb, var(--raised) 45%, transparent); stroke: var(--line); stroke-width: 1; }
+.mcard-hex .hx-ring.soft { fill: none; stroke: var(--line-soft); }
+.mcard-hex .hx-axis { stroke: var(--line-soft); stroke-width: 1; }
+.mcard-hex .hx-val { fill: color-mix(in srgb, var(--accent) 28%, transparent); stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.mcard-hex .hx-l { font: 700 9px var(--display); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--faint); }
+.mcard-hex .hx-v { font: 700 italic 12.5px var(--display); fill: var(--text); }
+.mcard-hex .hx-v.up { fill: var(--good); }
+.mcard-hex .hx-v.down { fill: var(--bad); }
+.mcard-moves { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.mcard-move { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 5px 12px 5px 8px; clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mc) 34%, transparent), color-mix(in srgb, var(--mc) 6%, transparent) 85%); }
+.mcard-move img { width: 16px; height: 16px; flex: none; border-radius: 50%; }
+.mcard-move b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 12.5px/1.1 var(--display); }
+.mcard-cat { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 700 11px/1 var(--display); color: var(--muted); }
+.mcard-cat .icon { width: 11px; height: 11px; }
+.mcard-none { color: var(--faint); }
+
 /* ===== Meteo e campo (ConditionTip): testata nel colore della condizione con una texture sua, effetti come lastre
    inclinate, chi ne approfitta col piedistallo verde. L'unico movimento: la pioggia che scende (spento con riduci animazioni) */
 .ftip.cond { width: 400px; }
