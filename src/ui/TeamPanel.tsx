@@ -30,6 +30,7 @@ import { AlertMark, type Alert } from './AlertMark';
 import { lockedStatusMoves } from '../engine/lockedMoves';
 import { duplicateSpecies, missingFormeItem } from '../engine/legalTeam';
 import { EV_TOTAL, evTotal } from '../engine/statCalc';
+import { useMemberTip } from './MemberCard';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { gainText } from './CoachingView';
 import { SMALL, useBackClose } from './useBackClose';
@@ -159,8 +160,10 @@ interface SlotActions {
   proposalDone: (applied: boolean) => void;
 }
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions }: {
+const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
   index: number;
+  /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
+  collapsed?: boolean;
   /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
   total: number;
   /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
@@ -268,6 +271,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     stable.onPaste({ ...result.sets[0], favorite: set.favorite }, review.skill.length || review.info.length ? review : undefined);
   };
   const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
+  const memberTip = useMemberTip(500, '.slot-card');
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
   const shownRoles = cardRoles(set, rules, subRoles);
@@ -319,7 +323,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       <div
         className="slot-card"
         draggable
-        title={tr('team.dragTitle')}
+        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
+        title={collapsed ? undefined : tr('team.dragTitle')}
+        {...(collapsed && !open ? memberTip.bind(set, roles[0]) : {})}
         // Clic su tutta la carta (il pulsante della carta lo prende da tastiera e dai lettori di schermo)
         onClick={e => {
           // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
@@ -362,7 +368,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
             </span>
           )}
         </span>
-        <span className="sprite-wrap">
+        {/* Sulla sprite, a carta chiusa: dopo mezzo secondo la carta del Pokémon sotto la carta del team (il set intero senza aprirlo) */}
+        <span className="sprite-wrap" {...(open || collapsed ? {} : memberTip.bind(set, roles[0]))}>
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
         {index === 0 && (
@@ -526,6 +533,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           </Hint>
         </>} />
       </div>
+      {!open && memberTip.tip}
     </div>
   );
 });
@@ -780,6 +788,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             repeated={repeated.includes(i)}
             open={openIndex === i}
             actions={actions}
+            collapsed={collapsed}
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (

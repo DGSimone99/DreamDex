@@ -3,6 +3,7 @@ import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
+import { useMemberTip } from './MemberCard';
 import { TypeIcons } from './typeIcons';
 import { CandidateMarks, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
@@ -41,6 +42,10 @@ export function CandidateCard(props: CandidateProps) {
   };
   const leave = () => { stop(); setHover(false); };
   const popped = hover || focused;
+  // Sulla carta, dopo 0,7 s fermi: la carta del set proposto (strumento, abilità, statistiche, mosse). Su tutta la carta:
+  // la sprite non prende il mouse (è decorativa, i clic vanno alla carta)
+  const memberTip = useMemberTip(700);
+  const tipHandlers = memberTip.bind(item.set);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
@@ -48,7 +53,8 @@ export function CandidateCard(props: CandidateProps) {
     // Bordo inferiore nel colore del tipo primario
     <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => { pointer.current = e.pointerType; }}
-      onMouseEnter={enter} onMouseLeave={leave}
+      // Uscendo dalla carta si chiude anche la carta del set
+      onMouseEnter={e => { enter(); tipHandlers.onMouseEnter(e); }} onMouseLeave={() => { leave(); memberTip.close(); }}
       onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="card-face">
@@ -66,6 +72,7 @@ export function CandidateCard(props: CandidateProps) {
         </span>
       </div>
       {popped && <span className="card-sprite popped" aria-hidden="true">{sprite(true)}</span>}
+      {memberTip.tip}
     </li>
   );
 }

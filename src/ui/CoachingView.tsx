@@ -11,6 +11,7 @@ import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
 import { PokemonIcon } from './PokemonName';
+import { useMemberTip } from './MemberCard';
 import { Sprite } from './Sprite';
 import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
@@ -79,12 +80,16 @@ function SwapProposal({ fix, alsoId, solves, onApply, onFix, onPreview, side, sh
 }) {
   const tr = useT();
   const gain = gainText(fix.gain);
+  // Su sprite e nome di chi entra: la sua carta (set, statistiche, mosse) col perché, "Al posto di X · +N"
+  const memberTip = useMemberTip();
+  const why = fix.kind === 'swap' ? tr('mcard.inFor', { member: fix.member ?? '', gain }) : tr('mcard.added', { gain });
   const label = fix.kind === 'add'
     ? tr('coach.fixAddAria', { species: fix.species, gain })
     : tr('coach.fixSwapAria', { member: fix.member ?? '', species: fix.species, gain });
   return (
-    // Il pulsante copre la striscia: il suo title dice chi esce (lo sprite spento da solo non lo dice)
-    <Proposal className="is-main" label={label} title={fix.kind === 'swap' ? `${tr('coach.steps.swap', { member: fix.member ?? '' })} → ${fix.species}` : `${tr('coach.steps.add')} ${fix.species}`}
+    // Il pulsante copre la striscia: chi esce lo dicono il suo nome per gli screen reader e la carta di chi entra (niente
+    // title del browser, che si accavallerebbe alla carta)
+    <Proposal className="is-main" label={label}
       describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onFix(fix)}
       alternativesFor={fix.species} onPreview={onPreview}
       extra={side && <>{side}<span className="coach-gain coach-strip-gain" aria-hidden="true">{gainText(shownGain ?? fix.gain)}</span></>}>
@@ -94,9 +99,13 @@ function SwapProposal({ fix, alsoId, solves, onApply, onFix, onPreview, side, sh
           <span className="coach-strip-arrow"><Icon name="swap" /></span>
         </>
       ) : <><span className="coach-strip-add">{tr('coach.steps.add')}</span>{' '}</>}
-      <span className="coach-strip-in"><Sprite species={fix.species} size={64} /></span>
-      <span className="coach-fix-main"><strong>{fix.species}</strong></span>
+      {/* Sprite e nome di chi entra: sopra lo strato cliccabile della barra, così solo qui si apre la sua carta (il clic applica comunque) */}
+      <span className="coach-fix-who" {...memberTip.bind(fix.set, why)}>
+        <span className="coach-strip-in"><Sprite species={fix.species} size={64} /></span>
+        <span className="coach-fix-main"><strong>{fix.species}</strong></span>
+      </span>
       {!side && <span className="coach-gain coach-strip-gain">{gain}</span>}
+      {memberTip.tip}
     </Proposal>
   );
 }

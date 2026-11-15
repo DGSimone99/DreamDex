@@ -74,6 +74,7 @@
 
 .mon-rows li { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.3fr); gap: 10px; align-items: center; margin: 0; padding: 2px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
 .mon-rows .sprite { image-rendering: pixelated; }
+.mon-rows .mon-tip { display: flex; }
 .mon-rows .who strong { font: 700 16px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .mon-rows .usage { color: var(--muted); font-size: 13px; }
 .mon-rows .status { display: flex; gap: 8px; align-items: baseline; color: var(--muted); }
@@ -691,15 +692,15 @@
 /* Il nome di chi entra resta intero: a stringersi (coi puntini sulle mosse) è il riquadro "oppure" */
 .coach-prop.is-main:has(.is-side) > .coach-fix { flex: none; }
 /* Le colonne restano quelle di ogni striscia (sprite e nomi in linea, la barra finisce allo stesso punto): "oppure" subito dopo il nome, il +N in fondo */
-.coach-prop.is-main:has(.is-side) > .coach-fix > .coach-fix-main { flex: 0 1 auto; min-width: 0; }
-.coach-prop.is-main:has(.is-side) > .coach-fix > .coach-fix-main strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coach-prop.is-main:has(.is-side) > .coach-fix .coach-fix-main { flex: 0 1 auto; min-width: 0; }
+.coach-prop.is-main:has(.is-side) > .coach-fix .coach-fix-main strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .coach-prop.is-side { position: relative; z-index: 1; flex: 0 1 auto; min-width: 0; align-self: stretch; display: flex; align-items: center; gap: 6px; margin: 6px 0 6px 10px; padding: 0 6px; border: 1px dashed color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 4px; }
 .coach-prop.is-side[data-or]::before { content: attr(data-or); flex: none; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
 .coach-prop.is-side .coach-fix { gap: 8px; min-width: 0; }
 .coach-prop.is-main > .coach-strip-gain { position: relative; z-index: 0; flex: none; margin-left: auto; min-width: 3.2ch; padding: 0 4px; text-align: right; font: 800 22px/1 var(--display); font-style: italic; color: var(--good); background: none; }
 /* Il blocco sotto il puntatore si illumina, l'altro si spegne un po' */
 .coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix > :not(.coach-fix-main) { opacity: 0.45; }
-.coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix > .coach-fix-main { opacity: 0.6; }
+.coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix .coach-fix-main { opacity: 0.6; }
 .coach-strip.is-alt-hot .coach-prop.is-side { border-style: solid; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
 .coach-strip.is-main-hot .coach-prop.is-side { opacity: 0.6; }
 @media (prefers-reduced-motion: no-preference) {
@@ -744,6 +745,8 @@
 .coach-fix { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; height: 100%; padding: 0; text-align: left; color: var(--text); background: none; border: 0; font: inherit; }
 .coach-fix:hover { background: none; }
 .coach-prop.is-main .coach-fix::after { content: ''; position: absolute; inset: 0; z-index: 0; }
+/* Sprite e nome di chi entra sopra lo strato cliccabile: solo lì si apre la carta del Pokémon (il clic va comunque al pulsante) */
+.coach-fix-who { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
 .coach-prop.is-main .coach-fix:focus-visible { outline: none; }
 .coach-strip:has(.is-main .coach-fix:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .coach-strip-out { flex: none; display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; }
@@ -761,6 +764,9 @@
 .coach-fix-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .coach-fix-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 19px/1.2 var(--display); font-style: italic; color: var(--accent-ink); }
 .coach-prop.is-main > .coach-fix > .coach-fix-main { flex: 1; }
+/* Col gruppo sprite + nome (carta solo lì) lo spazio libero va prima del +N, non dentro il gruppo */
+.coach-prop.is-main > .coach-fix > .coach-fix-who + .coach-strip-gain { margin-left: auto; }
+.coach-prop.is-main > .coach-fix > .coach-fix-who .coach-fix-main { flex: 0 1 auto; }
 .coach-strip:hover .is-main .coach-fix-main strong { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
 /* Il voto in più: grande e verde nella proposta principale, piccola etichetta nella mossa "oppure" */
 .coach-gain { flex: none; display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 3px; font: 700 13px/20px var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: var(--good-bg); }
