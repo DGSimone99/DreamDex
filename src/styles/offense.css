@@ -74,12 +74,13 @@
 .off-general .og-band i.ok-ohko { background: var(--good); border-color: var(--good); }
 .off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 35%, var(--panel)); border-color: var(--good); }
 .off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); border-color: var(--warn); }
-/* Quanto porta al team: barra e "+N" in azzurro (non è un voto, non ha soglie); da solo, a squadra chiusa, sotto */
+/* Quanto porta al team: barra e "+N" in azzurro (non è un voto, non ha soglie). La barra della colonna Offesa arriva
+   fino al bordo, col numero contro il bordo destro (anche nella riga del team) */
+.off-general .def-members td:last-child .def-cell { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 4.5ch; }
 .off-general .og-share-num { color: var(--accent); }
 .off-general .og-share-bar .og-share-team { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .off-general .og-share-bar .og-share-own { right: auto; background: var(--accent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .off-general .og-share-bar .og-share-own:first-child, .off-general .og-share-bar .og-share-own[style^="left: 0%"] { clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-.off-general .og-alone { color: var(--text); font: italic 700 13px/1 var(--display); font-variant-numeric: tabular-nums; }
 .off-general.roomy .def-members td { padding-top: 8px; padding-bottom: 8px; }
 /* Team Coverage: un velo magenta solo, largo quanto la tabella, che sfuma su tutti i lati (in alto una linea sottile che
    sfuma anch'essa ai lati); "TEAM COVERAGE" è una linguetta a cavallo della linea. Disegnati sotto la prima casella

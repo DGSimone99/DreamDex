@@ -214,9 +214,9 @@ describe('Offesa: Generale', () => {
         expect(c.querySelector('.def-bar')).toBeNull();
         expect(c.querySelector('[title]')).toBeNull();
       }
-      // Quanto porta al team, col voto da solo e le sue due metà nel title
+      // Quanto porta al team, col title del browser
       expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
-      expect(cells[2].querySelector('.og-share')!.getAttribute('title')).toBe(`Porta +${rating.offense.shares[i].points} all'Offesa del team (${rating.offense.value}). Da solo farebbe ${m.total}: tipi ${m.value}, meta ${m.coverMeta}`);
+      expect(cells[2].querySelector('.og-share')!.getAttribute('title')).toBe(`Porta +${rating.offense.shares[i].points} all'Offesa del team`);
     });
     // A squadra aperta niente dettagli sotto la barra
     expect(document.querySelector('.og-detail')).toBeNull();
@@ -358,17 +358,17 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
 
-  it('squadra chiusa: sotto la barra il voto da solo; niente tipi per fascia né Pokémon del meta mandati KO', () => {
+  it('squadra chiusa: niente sotto la barra; niente tipi per fascia né Pokémon del meta mandati KO', () => {
     const rating = withMeta();
     view(team, rating, true);
     memberRows().forEach((row, i) => {
       const cells = row.querySelectorAll('td');
-      expect(cells[2].querySelector('.og-alone')!.textContent).toBe(`${rating.offense.members[i].total}`);
+      expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
       expect(cells[0].querySelector('.kob.ohko')).not.toBeNull();
     });
     expect(document.querySelector('.og-bands')).toBeNull();
     expect(document.querySelector('.og-meta')).toBeNull();
-    expect(document.querySelectorAll('.og-detail')).toHaveLength(2);
+    expect(document.querySelector('.og-detail')).toBeNull();
   });
 });
 

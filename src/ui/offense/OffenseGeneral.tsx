@@ -53,7 +53,7 @@ function Share({ points, from, team }: { points: number; from: number; team: num
  * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`). Per ogni membro: quante minacce del meta
  * e quanti dei 18 tipi manda KO in un colpo e in due (badge OHKO e 2HKO, col colpo semplice; il setup come "▴+N" a
  * parte; il 3HKO non conta), passando su un badge i bersagli nel tooltip; poi quanto porta all'Offesa del team ("+18",
- * la barra è la sua fetta; il voto da solo nel title). In fondo,
+ * la barra è la sua fetta). In fondo,
  * sempre allo stesso posto, la riga Team Coverage: per ogni bersaglio il membro migliore, gli scoperti in rosso.
  */
 export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
@@ -72,9 +72,6 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const teamTypes = teamTargets(known.map(i => typeTargets(members[i])));
   const teamMeta = teamTargets(ctx.team.map((_, slot) => slot).filter(slot => slots[slot] !== null).map(slot => metaTargets(offense, slot)));
   const teamName = t('odetail.gen.total');
-  const shareTitle = (m: MemberOffense, points: number) => (m.coverMeta === null
-    ? t('odetail.gen.shareTitleNoMeta', { n: points, team: offense.value, own: m.total })
-    : t('odetail.gen.shareTitle', { n: points, team: offense.value, own: m.total, types: m.value, meta: m.coverMeta }));
   // Uscendo dalla scheda nessuna carta resta accesa
   useEffect(() => () => linkTeamCard(null), []);
   // Dove comincia il pezzo di ogni membro nella barra del team: i punti delle righe sopra
@@ -114,9 +111,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                       {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} /></td>}
                       <td>
-                        {/* Quanto porta al team: i punti dei membri sommati fanno l'Offesa del team; il voto da solo nel title */}
-                        <span className="og-stack og-share" title={shareTitle(m, s.points)}><Share points={s.points} from={shareFrom[slot]} team={offense.value} /></span>
-                        {roomy && <span className="og-detail">{t('odetail.gen.alone')} <b className="og-alone">{m.total}</b></span>}
+                        {/* Quanto porta al team: i punti dei membri sommati fanno l'Offesa del team */}
+                        <span className="og-stack og-share" title={t('odetail.gen.shareTitle', { n: s.points })}><Share points={s.points} from={shareFrom[slot]} team={offense.value} /></span>
                       </td>
                     </>
                     : <><td>—</td>{meta && <td>—</td>}<td>—</td></>}
