@@ -239,3 +239,37 @@
 .off-frame.def-walls .ct-table tr.ct-sum-first > * { padding-top: 6px; padding-bottom: 6px; }
 .off-frame.def-walls .wall-h .def-box { cursor: help; }
 .off-frame.def-walls .rob-cell.ko-none { font-weight: 600; }
+/* Coverage meta: sotto il danno la barra dei PS che restano al bersaglio (stile gioco: etichetta "PS" gialla, colori
+   verde oltre metà, giallo fino a 1/5, rosso sotto); in un colpo il timbro rosso "KO" al posto del numero */
+.cm-hp { display: flex; align-items: center; gap: 3px; width: 72%; margin: 6px auto 0; }
+/* L'etichetta "PS" del gioco, disegnata dal CSS (non è testo della casella) */
+.cm-hp::before { content: "PS"; font: 800 8px/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
+.cm-hp-bar { position: relative; flex: 1; height: 5px; border-radius: 3px; background: #15171f; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12); overflow: hidden; }
+.cm-hp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--good); }
+.cm-hp-bar i.warn { background: var(--warn); }
+.cm-hp-bar i.bad { background: var(--bad); }
+.cm-hp-bar.legend { flex: none; display: inline-block; width: 30px; }
+.cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic 16px/1 var(--display); letter-spacing: 0.06em; color: #fff; background: var(--bad);
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--bad) 60%, transparent)); }
+.cm-ko.small { padding: 2px 7px; font-size: 10px; filter: none; }
+/* Righe basse: niente barra, resta il numero */
+@container (max-height: 330px) { .cm-hp { display: none; } }
+/* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
+.off-frame.def-walls .wall-h { line-height: 1; }
+.cm-head-mon { cursor: help; }
+.cm-flag { display: block; width: 34px; height: 3px; margin: 3px auto 0; border-radius: 2px; background: var(--good); }
+.cm-flag.warn { background: var(--warn); }
+.cm-flag.bad { background: var(--bad); }
+/* Coverage meta: il ×2 in alto a sinistra, così non tocca la barra dei PS (righe basse senza barra: resta in basso) */
+.off-frame.def-walls .ct-table .eff-tag { top: 3px; bottom: auto; }
+@container (max-height: 330px) { .off-frame.def-walls .ct-table .eff-tag { top: auto; bottom: 2px; } }
+/* KO in un colpo: casella scura col bordo verde (niente verde pieno), così il timbro rosa risalta senza cozzare */
+.off-frame.def-walls .rob-cell.ko-ohko { background: color-mix(in srgb, var(--good) 10%, var(--panel)); border-color: var(--good); box-shadow: none; }
+/* Il meteo o il campo di un compagno che fa salire di fascia: triangolo azzurro nell'angolo in basso a destra (quello del
+   setup, verde, sta in alto); lo stesso segno nel tooltip e nella legenda */
+.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
+.off-frame .ct-table td.has-team { position: relative; }
+.off-frame .ct-table td.has-team::before { content: ""; position: absolute; right: 0; bottom: 0; width: 9px; height: 9px; border-bottom-right-radius: 2px; background: var(--accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+/* Nelle legende delle tabelle i triangoli restano triangoli (non quadratini) */
+.area-legend .area-legend-swatch i.kob-tri, .area-legend .wall-legend-setup i.kob-tri { width: 0; height: 0; background: none; border-radius: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
+.area-legend .area-legend-swatch i.kob-tri.team, .area-legend .wall-legend-setup i.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }

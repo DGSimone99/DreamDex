@@ -6,6 +6,7 @@ import { battleAbility, battleSpecies, dex, getMove, isSelectable, toID } from '
 import { DEFAULT_FORMAT, type Format } from './format';
 import { pokedexOf, speciesInPokedex, teraAllowed } from './formats';
 import { enables } from './synergy';
+import { teamFieldCombos, teamFieldSources, type FieldSource } from './partner';
 import { mostCommonSet, type TeamSet } from './sets';
 import { setupBoosts } from './setupBoosts';
 import { topThreats, usageOf } from './stats';
@@ -156,16 +157,20 @@ export interface CoverageRow {
    * -1 se il motore non conosce il membro) e dopo una danza (null senza mossa di potenziamento). Null nei tipi.
    * `mult`: il moltiplicatore di tipo migliore fra le mosse d'attacco del membro sul bersaglio (null senza mosse o se sconosciuto).
    * `move`: la mossa del colpo semplice migliore (null se nessuna lo colpisce o se sconosciuto).
+   * `teamPct` / `teamVia`: il colpo migliore col meteo o il campo di un compagno (o una mossa meteo del membro), e da chi
+   * arriva; null se il team non ne porta o non fa di più. Solo da mostrare: non entra nel credito.
    */
-  cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null }[] | null;
+  cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null; teamPct: number | null; teamVia: FieldSource[] | null }[] | null;
 }
 
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
-interface CoverHit { x: number; move: string; plain: number; setup: number | null }
+interface CoverHit { x: number; move: string; plain: number; setup: number | null; team: number | null; teamVia: FieldSource[] | null }
 const hitsCache = new Map<string, CoverHit[]>();
 const HITS_LIMIT = 5000;
-function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind): CoverHit[] {
-  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${kind}|${!!data.stats}`;
+function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind, team: TeamSet[] = [set]): CoverHit[] {
+  // Nel meta anche il colpo col meteo e i campi del team (solo da mostrare): chi li porta entra nella chiave
+  const sources = kind === 'meta' ? teamFieldSources(set, team) : [];
+  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${kind}|${!!data.stats}|${sources.map(s => `${s.condition}:${s.species}:${s.via}`).join(',')}`;
   let hits = hitsCache.get(key);
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
@@ -185,7 +190,14 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
     const boosted = Math.max(x, ...once.map(hit => Math.min(1, hit.expected)));
     // Tera e mossa Z una volta a partita: un quarto di quello che aggiungono
     const danced = setup ? Math.max(x, Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts: setup.boosts })?.expected ?? 0)) : null;
-    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced };
+    // Col meteo o il campo del team: la combinazione che fa di più, solo se fa di più del colpo semplice
+    let team: number | null = null;
+    let teamVia: FieldSource[] | null = null;
+    for (const combo of teamFieldCombos(conditions, sources)) {
+      const hit = Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions: combo.conditions })?.expected ?? 0);
+      if (hit > x && hit > (team ?? 0)) { team = hit; teamVia = sources.filter(s => combo.added.includes(s.condition)); }
+    }
+    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced, team, teamVia };
   });
   hitsCache.set(key, hits);
   return hits;
@@ -207,7 +219,7 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
   // Senza meta la Coverage "meta" è quella di tipi (bersagli, regola e memoria dei calcoli): una sola misura per tipo
   const kind: CoverageKind = asked === 'meta' && usesMeta(data) ? 'meta' : 'types';
   const targets = coverageTargets(data, kind);
-  const hits = team.map(set => hitsOf(set, data, targets, kind));
+  const hits = team.map(set => hitsOf(set, data, targets, kind, team));
   let value = 0;
   const holes: string[] = [];
   // Nel meta è un buco chi nessuno manda KO in due colpi; nei tipi chi nessuno porta al 33% super efficace
@@ -231,8 +243,9 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
       const targetAbility = battleAbility(target.set);
       const cells = kind === 'meta'
         ? hits.map((h, m) => (known[m]
-          ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: bestAttackMultiplier(team[m], targetTypes, targetAbility), move: h[i].move || null }
-          : { pct: -1, setupPct: null, mult: null, move: null }))
+          ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: bestAttackMultiplier(team[m], targetTypes, targetAbility), move: h[i].move || null,
+            teamPct: h[i].team === null ? null : pctOf(h[i].team), teamVia: h[i].teamVia }
+          : { pct: -1, setupPct: null, mult: null, move: null, teamPct: null, teamVia: null }))
         : null;
       return { label: target.label, species: target.set.species, set: target.set, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
     }),

@@ -6,12 +6,12 @@ import { gameName, typeName } from '../../i18n/game';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useMemberTip } from '../MemberCard';
 import { typeColor } from '../Sprite';
+import { PokemonIcon } from '../PokemonName';
 import { offenseSlots } from './slots';
 import { TypeHitTip } from './TypeHitTip';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { MetaCount, MetaFrame } from '../MetaFrame';
-import { PokemonIcon } from '../PokemonName';
 import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 import { FocusNote, inBand, koBandOf } from './KoBadges';
 
@@ -22,6 +22,17 @@ type Bucket = 'ohko' | 'two' | 'three' | 'none';
 const bucket = (pct: number): Bucket => (pct >= 100 ? 'ohko' : pct >= 50 ? 'two' : pct >= 34 ? 'three' : 'none');
 const TAG: Record<Bucket, string> = { ohko: 'OHKO', two: '2HKO', three: '3HKO', none: '' };
 const KO_ORDER: Bucket[] = ['ohko', 'two', 'three'];
+/** I PS che restano al bersaglio dopo il colpo, coi colori del gioco: verde oltre metà, giallo fino a 1/5, rosso sotto. */
+function HpLeft({ pct }: { pct: number }) {
+  const left = Math.max(0, 100 - pct);
+  const tone = left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
+  return (
+    <span className="cm-hp" aria-hidden="true">
+      <span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span>
+    </span>
+  );
+}
+
 /** Quanti membri lo mandano KO in due colpi: 0 rosso, 1 giallo, da 2 verde. */
 const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 
@@ -72,10 +83,16 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     // Il triangolo del setup, come in Coverage tipi e nella Generale: solo se la danza fa salire di fascia fino al 2HKO o all'OHKO
     const rank = (pct: number | null) => (pct === null ? 0 : pct >= 100 ? 2 : pct >= 50 ? 1 : 0);
     const up = c.setupPct !== null && rank(c.setupPct) > rank(c.pct);
+    // Il triangolo azzurro: il meteo o il campo di un compagno lo fa salire di fascia
+    const teamUp = c.teamPct !== null && rank(c.teamPct) > rank(c.pct);
     return (
-      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up ? ' has-setup' : ''}${teamUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { hover.enter(k0).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); }} onMouseLeave={tip.close}>
-        <span className="wall-pct ct-num">{c.pct}<i>%</i></span>
+        {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
+        {k === 'ohko'
+          ? <span className="cm-ko" aria-hidden="true">KO</span>
+          : <><span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} /></>}
+        {k === 'ohko' && <span className="visually-hidden">{c.pct}%</span>}
         {TAG[k] && <span className="visually-hidden"> {TAG[k]}</span>}
         {up && <span className="visually-hidden"> setup {c.setupPct}%</span>}
         <EffTag label={tag} side="offense" />
@@ -94,7 +111,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     const types = battleSpecies(row.set)?.types ?? [];
     return (
       <FloatTip rect={tip.anchor.rect} tone={typeColor((types[0] as string | undefined) ?? '')} className="tht">
-        <TypeHitTip species={member.species} target={species} hit={{ move: c.move, plainPct: c.pct, setupPct: c.setupPct, oncePct: null }} setupMove={member.setupMove} onceName={onceName(member)} />
+        <TypeHitTip species={member.species} target={species} hit={{ move: c.move, plainPct: c.pct, setupPct: c.setupPct, oncePct: null, teamPct: c.teamPct, teamVia: c.teamVia }} setupMove={member.setupMove} onceName={onceName(member)} />
       </FloatTip>
     );
   };
@@ -110,12 +127,16 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           <thead>
             <tr>
               <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
-              {shown.map((r, k) => (
-                <th key={r.species} scope="col" aria-label={r.species} className={hover.cls(k, 'wall-h')} {...hover.enter(k)}>
-                  {/* Sulla sprite la carta del Pokémon col suo set più usato */}
-                  <span className="def-box" {...card.bind(r.set)}><PokemonIcon name={r.species} /></span>
-                </th>
-              ))}
+              {shown.map((r, k) => {
+                const n = (r.cells ?? []).filter(c => c.pct >= 50).length;
+                return (
+                  <th key={r.species} scope="col" aria-label={r.species} className={hover.cls(k, 'wall-h')} {...hover.enter(k)}>
+                    {/* Sulla sprite la carta del Pokémon col suo set più usato; sotto un filo col colore di Lo coprono */}
+                    <span className="def-box cm-head-mon" {...card.bind(r.set)}><PokemonIcon name={r.species} /></span>
+                    <span className={`cm-flag ${coverTone(n)}`} aria-hidden="true" />
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -155,9 +176,12 @@ function OffenseMetaLegend() {
   const t = useT();
   return (
     <>
-      {KO_ORDER.map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
+      <span className="cm-ko small">KO</span>
+      {KO_ORDER.filter(b => b !== 'ohko').map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
       <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
       <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
+      <span className="wall-legend-setup"><i className="kob-tri team" />{t('kob.legendTeam')}</span>
+      <span className="wall-legend-setup"><span className="cm-hp-bar legend"><i className="good" style={{ width: '60%' }} /></span>{t('odetail.wall.legendHp')}</span>
     </>
   );
 }

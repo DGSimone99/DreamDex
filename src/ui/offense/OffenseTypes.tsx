@@ -97,8 +97,10 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                     // Il triangolo del setup, come nella Generale: solo se la danza fa salire di fascia (fino al 2HKO o all'OHKO)
                     const rank = (pct: number | null | undefined) => { const b = pct == null ? null : koBandOf(pct); return b === 'ohko' ? 2 : b === 'two' ? 1 : 0; };
                     const lifted = !!found && found.setupPct !== null && rank(found.setupPct) > rank(found.plainPct);
+                    // Il triangolo azzurro: il meteo o il campo di un compagno lo fa salire di fascia
+                    const teamUp = !!found && found.teamPct !== null && rank(found.teamPct) > rank(found.plainPct);
                     return (
-                      <td key={type} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
+                      <td key={type} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : ''}${lifted ? ' has-setup' : ''}${teamUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
                         onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.close(); }} onMouseLeave={tip.close}>
                         {hit && <>
                           <span className="ct-num">{hit.pct}<i>%</i></span>
@@ -155,6 +157,8 @@ function OffenseTypesLegend() {
       <span className="area-legend-swatch"><i className="ok-full ok-ohko" />OHKO</span>
       <span className="area-legend-swatch"><i className="ok-full" />{t('odetail.types.legendFull')}</span>
       <span className="area-legend-swatch"><i className="ok-half" />{t('odetail.types.legendHalf')}</span>
+      <span className="area-legend-swatch"><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
+      <span className="area-legend-swatch"><i className="kob-tri team" />{t('kob.legendTeam')}</span>
     </>
   );
 }

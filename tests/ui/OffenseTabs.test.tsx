@@ -600,9 +600,19 @@ describe('Offesa: Coverage meta', () => {
       team.forEach((_, m) => {
         const cell = rows[m].querySelectorAll('td')[col];
         const { pct } = target.cells![m];
-        expect(cell.querySelector('.wall-pct')!.textContent).toBe(`${pct}%`);
         expect(cell).toHaveClass(`ko-${ko(pct)}`);
-        if (ko(pct) !== 'none') expect(cell.querySelector('.visually-hidden')!.textContent!.trim()).toBe({ ohko: 'OHKO', two: '2HKO', three: '3HKO' }[ko(pct) as 'ohko']);
+        if (ko(pct) === 'ohko') {
+          // In un colpo: il timbro KO al posto del numero (il % e la fascia a parole per chi legge lo schermo), niente barra
+          expect(cell.querySelector('.cm-ko')!.textContent).toBe('KO');
+          expect(cell.querySelector('.wall-pct')).toBeNull();
+          expect(cell.querySelector('.cm-hp')).toBeNull();
+          expect(cell).toHaveTextContent(`${pct}% OHKO`);
+        } else {
+          expect(cell.querySelector('.wall-pct')!.textContent).toBe(`${pct}%`);
+          // Sotto il danno la barra dei PS che restano
+          expect((cell.querySelector<HTMLElement>('.cm-hp-bar i')!).style.width).toBe(`${100 - pct}%`);
+          if (ko(pct) !== 'none') expect(cell.querySelector('.visually-hidden')!.textContent!.trim()).toBe({ two: '2HKO', three: '3HKO' }[ko(pct) as 'two']);
+        }
       });
     });
   });
@@ -640,7 +650,7 @@ describe('Offesa: Coverage meta', () => {
     expect(tags).toBeGreaterThan(0);
     const head = table().querySelector<HTMLElement>('thead th[aria-label]')!;
     expect(head).not.toHaveAttribute('title');
-    await user.hover(head.querySelector<HTMLElement>('.def-box')!);
+    await user.hover(head.querySelector<HTMLElement>('.cm-head-mon')!);
     const card = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.member'); if (!el) throw new Error('no card'); return el; });
     expect(card).toHaveTextContent(sorted[0].species);
     expect(head.querySelector('.col-name')).toBeNull();
