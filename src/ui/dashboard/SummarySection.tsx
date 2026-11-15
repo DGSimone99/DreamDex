@@ -308,7 +308,7 @@ export function SummarySection({ summary, members, density, rich = false, onView
           onMore={onShowAll}
           render={syn => {
             const view = synergyView(syn);
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} onClick={() => onView(syn.core ? 'defense' : 'roles')} />;
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }} />
       </div>
     </DashCard>

@@ -486,7 +486,7 @@ describe('Riassunto', () => {
     expect(section('Sinergie')).not.toHaveTextContent('Giro di U-turn');
   });
 
-  it('Sinergie: col triangolo la coppia non compare; poi i legami nel loro ordine, senza pivot; clic: core a Difesa, legami a Ruoli', async () => {
+  it('Sinergie: col triangolo la coppia non compare; poi i legami nel loro ordine, senza pivot; clic: core a Bonus/Malus (dove il core si vede col suo +3), legami a Ruoli', async () => {
     italianNames();
     const user = userEvent.setup();
     const { onView } = mount({ summary: summaryOf({ cores: [pair, trio], links: [pivotLink, wishLink] }) });
@@ -494,7 +494,7 @@ describe('Riassunto', () => {
     expect(rows.map(r => r.querySelector('.sum-syn-title')!.textContent)).toEqual(['Drago / Acciaio / Folletto', 'Cure al team']);
     expect(rows[1].querySelector('.sum-syn-tag')).toHaveTextContent('Desiderio');
     for (const row of rows) await user.click(row);
-    expect(onView.mock.calls.map(c => c[0])).toEqual(['defense', 'roles']);
+    expect(onView.mock.calls.map(c => c[0])).toEqual(['bonusMalus', 'roles']);
   });
 
   it('Sinergie vuote: una frase attenuata', () => {

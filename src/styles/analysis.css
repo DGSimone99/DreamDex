@@ -495,7 +495,14 @@
 .sum-maker.atk { --c: var(--accent-ink); --glow: color-mix(in srgb, var(--accent) 45%, transparent); }
 .sum-maker.def { --c: var(--good); --glow: color-mix(in srgb, var(--good) 42%, transparent); }
 .sum-mon { width: calc(var(--sum-big) + 2px); display: flex; flex-direction: column; align-items: center; padding: 0; color: inherit; background: none; border: 0; border-radius: 3px; }
-.sum-mon:hover { background: color-mix(in srgb, var(--c) 10%, transparent); }
+.sum-mon { position: relative; isolation: isolate; }
+.sum-mon:hover { background: none; }
+/* Al passaggio: sotto la sprite una lastra inclinata nel colore del lato che sale dal basso, la sprite si alza e il
+   piedistallo si accende */
+.sum-mon::before { content: ""; position: absolute; inset: 0 -2px; z-index: -1; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); background: linear-gradient(0deg, color-mix(in srgb, var(--c) 26%, transparent), transparent 85%); opacity: 0; transition: opacity 0.18s var(--ease); }
+.sum-mon:hover::before { opacity: 1; }
+.sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: transform 0.18s var(--ease); }
+.sum-mon:hover .sprite { transform: translateY(-2px); }
 .sum-mon .sprite { margin-bottom: calc(var(--sum-big) * -0.12); }
 .sum-score { position: relative; display: flex; align-items: center; gap: 3px; font: 700 11px/1.2 var(--display); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--c); }
 .sum-score .icon { width: 10px; height: 10px; }
@@ -525,7 +532,18 @@
 .sum-sec-more { position: absolute; right: 4px; top: 7px; line-height: 1.2; }
 .dash.rich .sum-sec-more { top: 11px; }
 .sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
-.sum-line:hover { background: var(--accent-wash); }
+/* Righe del Riassunto (meteo, trappole, sinergie) al passaggio: una lastra inclinata con la luce azzurra da destra, come
+   le barre dei titoli; le sprite si alzano di 2px, nel core frecce e cerchi dei tipi si accendono */
+.sum-line, .sum-syn { position: relative; isolation: isolate; }
+.sum-line::before, .sum-syn::before { content: ""; position: absolute; inset: 1px 0; z-index: -1; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); background: linear-gradient(270deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 6%, transparent) 70%, transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
+.sum-line:hover, .sum-syn:hover { background: none; }
+.sum-line:hover::before, .sum-syn:hover::before { opacity: 1; }
+.sum-line:hover .sum-plinth .sprite, .sum-syn:hover .sum-pair-mon .sprite, .sum-syn:hover .sum-tri-v .sprite { transform: translateY(-2px); }
+.sum-syn:hover .sum-tri-edges line { stroke: color-mix(in srgb, var(--good) 70%, white); }
+.sum-syn:hover .sum-tri-edges marker path { fill: color-mix(in srgb, var(--good) 70%, white); }
+.sum-tri-badge { transition: box-shadow 0.18s var(--ease); }
+.sum-syn:hover .sum-tri-badge { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 35%, transparent), 0 0 8px color-mix(in srgb, var(--good) 55%, transparent); }
+@media (prefers-reduced-motion: reduce) { .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: none; } }
 .sum-line .sum-plinth { width: var(--sum-small); }
 .sum-line .sum-plinth .sprite { margin: calc(var(--sum-small) * -0.12) 0 calc(var(--sum-small) * -0.15); }
 .sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; }
@@ -559,7 +577,6 @@
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit] { flex: 1 0 auto; max-height: 88px; }
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit]:has(.sum-syn.trio) { max-height: 196px; }
 .sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
-.sum-syn:hover { background: var(--accent-wash); }
 /* Due sprite unite da un anello "catena" nel colore del legame; con una sola sprite la colonna resta larga uguale */
 .sum-pair { flex: none; min-width: calc(var(--sum-small) * 1.56 + var(--link-w) - 6px); display: flex; align-items: center; justify-content: center; }
 .sum-pair-ring { display: flex; align-items: center; }
