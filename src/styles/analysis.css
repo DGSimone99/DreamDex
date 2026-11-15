@@ -330,10 +330,21 @@
 .dash-meta b.bad { color: var(--bad); }
 .dash-links { flex: none; display: flex; gap: 2px; margin-left: auto; }
 .dash-link { gap: 2px; padding: 2px 6px; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
-.dash-link:hover { background: var(--accent-wash); border-color: transparent; }
-.dash-link .icon { width: 14px; height: 14px; }
+/* Al passaggio: una luce azzurra sfumata senza bordi (come le righe del Riassunto), il testo si accende con un alone
+   leggero e la freccia scivola di 2px verso destra */
+.dash-link { position: relative; isolation: isolate; }
+.dash-link::before { content: ""; position: absolute; inset: -2px -4px; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 26%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
+.dash-link:hover { background: none; border-color: transparent; color: color-mix(in srgb, var(--accent-ink) 70%, white); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); }
+.dash-link:hover::before { opacity: 1; }
+.dash-link .icon { width: 14px; height: 14px; transition: transform 0.18s var(--ease); }
+.dash-link:hover .icon { transform: translateX(2px); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent)); }
+@media (prefers-reduced-motion: reduce) { .dash-link .icon { transition: none; } }
 /* Barra del titolo cliccabile: la freccia è il pulsante e copre tutta la barra; la barra si schiarisce al passaggio */
 .dash-head.is-link { position: relative; cursor: pointer; }
+/* Barra del titolo tutta cliccabile: il link resta non posizionato, così il suo ::after copre tutta la barra (la luce
+   del link qui non serve, si accende la barra) */
+.dash-head.is-link .dash-link { position: static; isolation: auto; }
+.dash-head.is-link .dash-link::before { display: none; }
 .dash-head.is-link .dash-link::after { content: ''; position: absolute; inset: 0; }
 /* Al passaggio una luce azzurra da destra (dove c'è la freccia) che svanisce verso il titolo */
 .dash-head.is-link:hover { background: linear-gradient(270deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent 75%), var(--stripes), var(--band); }
