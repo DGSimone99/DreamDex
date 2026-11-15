@@ -179,7 +179,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
     // Sta a destra nella striscia delle sottoschede, non nella tabella né nella striscia dei problemi; la tabella ha di nuovo "Pokémon"
-    expect(sw.closest('.area-strip .strip-switch')).not.toBeNull();
+    expect(sw.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(table).not.toContainElement(sw);
     expect(table.querySelector('thead th.def-mon-h')).toHaveTextContent(/^Pokémon$/);
     expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
@@ -195,19 +195,20 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
-    expect(metaSwitch.closest('.area-strip .strip-switch')).not.toBeNull();
+    expect(metaSwitch.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
     // Sulle sottoschede senza etichette (Sostenibilità) l'interruttore non c'è
     await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
     expect(screen.queryByRole('switch')).toBeNull();
   });
 
-  it("col puntatore la colonna si accende e sotto l'icona compare il nome del tipo", async () => {
+  it("col puntatore la colonna si accende; niente nome del tipo sotto l'icona né tooltip del browser", async () => {
     const user = userEvent.setup();
     const { table } = await openTypes();
     const fire = within(table).getByRole('columnheader', { name: /^Fire/ });
     await user.hover(fire);
-    expect(fire.querySelector('.col-name')).toHaveTextContent('Fire');
+    expect(fire.querySelector('.col-name')).toBeNull();
+    expect(fire).not.toHaveAttribute('title');
     expect(fire).toHaveClass('x-col');
   });
 

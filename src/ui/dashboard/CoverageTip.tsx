@@ -26,11 +26,12 @@ function Head({ type, value }: { type: string; value: number }) {
 }
 
 /** La mossa: icona tonda e nome nel colore del suo tipo (alone leggero), poi categoria (fisico/speciale) e potenza. */
-function MoveLine({ name }: { name: string }) {
+export function MoveLine({ name, type: shown }: { name: string; type?: string | null }) {
   const lang = useLang();
   const t = useT();
   const move = getMove(name);
-  const type = move?.type ?? 'Normal';
+  // `shown`: il tipo con cui colpisce davvero (Pixilate & co.), se diverso da quello scritto sulla mossa
+  const type = shown ?? move?.type ?? 'Normal';
   const category = move?.category === 'Special' ? 'special' : move?.category === 'Physical' ? 'physical' : null;
   return (
     <span className="ftip-move" style={{ '--mc': typeColor(type) } as CSSProperties}>

@@ -241,6 +241,42 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.kf-note')).toBeNull();
   });
 
+  it('clic su un pezzo dei Meta: Coverage meta acceso; le frecce delle pagine non spengono l’evidenziazione, un altro clic sì', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    view(team, rating);
+    const tile = memberRows()[0].querySelectorAll('td')[1].querySelector<HTMLElement>('.kob.rest, .kob.two, .kob.ohko')!;
+    await user.click(tile);
+    expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
+    expect(document.querySelector('.kf-note')).not.toBeNull();
+    const next = screen.getByRole('button', { name: 'Bersagli successivi' });
+    if (!(next as HTMLButtonElement).disabled) {
+      await user.click(next);
+      expect(document.querySelector('.kf-note')).not.toBeNull();
+    }
+    await user.click(document.querySelector<HTMLElement>('.def-frame')!);
+    expect(document.querySelector('.kf-note')).toBeNull();
+  });
+
+  it('clic sul pezzo grigio: Coverage tipi coi tipi che il membro non manda KO in due colpi accesi; un clic in qualunque punto li spegne', async () => {
+    const user = userEvent.setup();
+    const rating = noMeta();
+    view(team, rating);
+    const slots = offenseSlots(team, rating.offense.members);
+    const slot = slots.findIndex(i => i !== null && typeHits(rating, i).some(h => h.plain < 50));
+    const n = typeHits(rating, slots[slot]!).filter(h => h.plain < 50).length;
+    const rest = memberRows()[slot].querySelectorAll('td')[0].querySelector<HTMLElement>('.kob.rest')!;
+    expect(rest).toHaveAttribute('role', 'button');
+    await user.click(rest);
+    expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(document.querySelectorAll('td.kf-hit')).toHaveLength(n);
+    expect(document.querySelector('.kf-note')).toHaveTextContent(/non manda KO in due colpi/);
+    // Un clic qualunque (qui sulla testata della tabella) spegne l'evidenziazione
+    await user.click(document.querySelector<HTMLElement>('.ct-table thead th')!);
+    expect(document.querySelector('td.kf-hit')).toBeNull();
+    expect(document.querySelector('.kf-note')).toBeNull();
+  });
+
   it('senza meta: solo i badge dei tipi e la barra Offesa', () => {
     const rating = noMeta();
     view(team, rating);
@@ -400,19 +436,67 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     return rating;
   };
 
-  it('una tabella membri × 18 tipi con la riga Copertura', async () => {
-    await open();
+  it('una tabella membri × 18 tipi con la riga Copertura e la riga Il migliore (chi colpisce più forte ogni tipo)', async () => {
+    const rating = await open();
     expect(screen.getAllByRole('table')).toHaveLength(1);
     expect(screen.getAllByRole('columnheader')).toHaveLength(19);
     const rows = screen.getAllByRole('row');
-    const last = rows[rows.length - 1];
-    expect(within(last).getByRole('rowheader')).toHaveTextContent('Copertura');
-    const cells = within(last).getAllByRole('cell');
+    const sum = rows[rows.length - 2];
+    expect(within(sum).getByRole('rowheader')).toHaveTextContent('Copertura');
+    const cells = within(sum).getAllByRole('cell');
     expect(cells).toHaveLength(18);
     cells.forEach(c => expect(c.textContent).toMatch(/\d+%/));
+    const bestRow = rows[rows.length - 1];
+    expect(within(bestRow).getByRole('rowheader')).toHaveTextContent('Il migliore');
+    const slots = offenseSlots(team, rating.offense.members);
+    within(bestRow).getAllByRole('cell').forEach((cell, i) => {
+      const pcts = team.map((_, slot) => rating.offense.members[slots[slot]!].hits.find(h => h.label === TYPES[i])!.plainPct);
+      const top = Math.max(...pcts);
+      if (top <= 33) expect(cell.querySelector('.ct-best-mon')).toBeNull();
+      else expect(cell).toHaveTextContent(rating.offense.members[slots[pcts.indexOf(top)]!].species);
+    });
   });
 
-  it('ogni casella è il danno del membro: verde da 66% (credito da metà), gialla oltre il 33%, vuota sotto', async () => {
+  it('il triangolo del setup sulla casella solo se la danza fa salire di fascia (fino al 2HKO o all’OHKO)', async () => {
+    const rating = await open();
+    const rows = document.querySelectorAll('.ct-table tbody tr');
+    const slots = offenseSlots(team, rating.offense.members);
+    const rank = (pct: number | null) => (pct === null ? 0 : pct >= 100 ? 2 : pct >= 50 ? 1 : 0);
+    let lifted = 0;
+    team.forEach((_, slot) => {
+      const m = rating.offense.members[slots[slot]!];
+      const cells = rows[slot].querySelectorAll('td');
+      TYPES.forEach((type, i) => {
+        const hit = m.hits.find(h => h.label === type)!;
+        const up = rank(hit.setupPct) > rank(hit.plainPct);
+        if (up) lifted++;
+        expect(cells[i].classList.contains('has-setup')).toBe(up);
+      });
+    });
+    expect(lifted).toBeGreaterThan(0);
+  });
+
+  it('sulla casella il tooltip DreamDex: tipo, badge dei colpi, membro, mossa e danno %; nessun tooltip del browser', async () => {
+    const user = userEvent.setup();
+    const rating = await open();
+    const cell = document.querySelector<HTMLElement>('.ct-table tbody tr td.ok-full')!;
+    expect(cell).not.toHaveAttribute('title');
+    // Nemmeno in testata: il nome del tipo compare sotto l'icona col puntatore
+    document.querySelectorAll('.ct-table thead th').forEach(th => expect(th).not.toHaveAttribute('title'));
+    await user.hover(cell);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
+    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
+    expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-name')!.textContent);
+    // Uscendo dalla casella (anche verso il nome del membro, dentro la tabella) il tooltip si chiude
+    await user.hover(document.querySelector<HTMLElement>('.ct-table tbody th')!);
+    expect(document.querySelector('body > .ftip.tht')).toBeNull();
+    // ...e la colonna si spegne: resta accesa solo la riga del membro
+    expect(document.querySelector('.ct-table .x-col')).toBeNull();
+    expect(document.querySelector('.ct-table tr.x-row')).not.toBeNull();
+  });
+
+  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66% (credito da metà), gialla oltre il 33%, vuota sotto', async () => {
     const rating = await open();
     const rows = document.querySelectorAll('.ct-table tbody tr');
     const slots = offenseSlots(team, rating.offense.members);
@@ -428,7 +512,9 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
         } else {
           expect(cell).toHaveTextContent(`${hit.pct}%`);
           expect(cell).toHaveClass(hit.credit >= 0.5 ? 'ok-full' : 'ok-half');
-          expect(cell).toHaveTextContent(hit.credit >= 0.5 ? 'forte' : 'conta');
+          // Il 100% ha il suo verde (OHKO); poi forte e medio
+          expect(cell.classList.contains('ok-ohko')).toBe(hit.pct >= 100);
+          expect(cell).toHaveTextContent(hit.pct >= 100 ? 'OHKO' : hit.credit >= 0.5 ? 'forte' : 'medio');
         }
       });
     });
@@ -443,15 +529,14 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(heads.filter(h => h.textContent!.includes('scoperto'))).toHaveLength(holes.length);
   });
 
-  it("×2 in basso a sinistra anche quando la mossa superefficace è debole e il danno migliore viene da un'altra", async () => {
+  it("×2 solo se è superefficace la mossa che fa il danno della casella (non un'altra mossa del set)", async () => {
     const weakSe = [{ ...emptySet('Blissey'), ability: 'Natural Cure', moves: ['Seismic Toss', 'Ember'] }];
     const rating = await open(weakSe, rateTeam(weakSe, fixtureData, 'it')!);
     const cells = document.querySelectorAll('.ct-table tbody tr')[0].querySelectorAll('td');
     const grass = TYPES.indexOf('Grass');
+    // Su Erba il danno viene da Seismic Toss (neutro): Ember superefficace non basta per l'etichetta
     expect(rating.offense.members[0].hits[grass].move).toBe('Seismic Toss');
-    expect(cells[grass].querySelector('.eff-tag')).toHaveTextContent('×2');
-    expect(cells[grass]).toHaveTextContent('superefficace ×2');
-    // Sull'Acqua Ember non fa effetto e Seismic Toss è neutro: niente etichetta
+    expect(cells[grass].querySelector('.eff-tag')).toBeNull();
     expect(cells[TYPES.indexOf('Water')].querySelector('.eff-tag')).toBeNull();
   });
 
@@ -468,8 +553,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
 
   it('la legenda: Forte e Conta', async () => {
     await open();
-    expect(document.body.textContent).toContain('Forte (oltre 66%)');
-    expect(document.body.textContent).toContain('Conta (oltre 33%)');
+    expect(document.querySelector('.area-legend')).toHaveTextContent('OHKOForteMedio');
   });
 });
 
@@ -515,26 +599,43 @@ describe('Offesa: Coverage meta', () => {
       team.forEach((_, m) => {
         const cell = rows[m].querySelectorAll('td')[col];
         const { pct } = target.cells![m];
-        expect(cell.querySelector('.wall-pct')!.textContent).toBe(`${pct}%`);
         expect(cell).toHaveClass(`ko-${ko(pct)}`);
-        if (ko(pct) !== 'none') expect(cell.querySelector('.visually-hidden')!.textContent!.trim()).toBe({ ohko: 'OHKO', two: '2HKO', three: '3HKO' }[ko(pct) as 'ohko']);
+        if (ko(pct) === 'ohko') {
+          // In un colpo: il timbro KO al posto del numero (il % e la fascia a parole per chi legge lo schermo), niente barra
+          expect(cell.querySelector('.cm-ko')!.textContent).toBe('KO');
+          expect(cell.querySelector('.wall-pct')).toBeNull();
+          expect(cell.querySelector('.cm-hp')).toBeNull();
+          expect(cell).toHaveTextContent(`${pct}% OHKO`);
+        } else {
+          expect(cell.querySelector('.wall-pct')!.textContent).toBe(`${pct}%`);
+          // Sotto il danno la barra dei PS che restano
+          expect((cell.querySelector<HTMLElement>('.cm-hp-bar i')!).style.width).toBe(`${100 - pct}%`);
+          if (ko(pct) !== 'none') expect(cell.querySelector('.visually-hidden')!.textContent!.trim()).toBe({ two: '2HKO', three: '3HKO' }[ko(pct) as 'two']);
+        }
       });
     });
   });
 
-  it('con il setup che cambia soglia la casella lo dice ("setup N%")', async () => {
-    const { user, sorted } = await open();
-    const jumps = sorted.flatMap((target, i) => target.cells!.map((c, m) => ({ i, m, c }))
-      .filter(({ c }) => c.setupPct !== null && ko(c.setupPct) !== ko(c.pct)));
-    expect(jumps.length).toBeGreaterThan(0);
-    const first = jumps[0];
-    for (let p = 0; p < Math.floor(first.i / 8); p++) await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
-    const cell = bodyRows()[first.m].querySelectorAll('td')[first.i % 8];
-    expect(cell).toHaveClass('has-setup');
-    expect(cell.querySelector('.wall-setup')!.textContent).toBe(`setup ${first.c.setupPct}%`);
+  it('triangolo del setup solo se la danza fa salire fino al 2HKO o all’OHKO (detto a parole nel testo nascosto); niente tooltip del browser', async () => {
+    const { sorted } = await open();
+    const rank = (pct: number | null) => (pct === null ? 0 : pct >= 100 ? 2 : pct >= 50 ? 1 : 0);
+    const rows = bodyRows();
+    let lifted = 0;
+    sorted.slice(0, 8).forEach((target, col) => {
+      team.forEach((_, m) => {
+        const c = target.cells![m];
+        const cell = rows[m].querySelectorAll('td')[col];
+        const up = c.setupPct !== null && rank(c.setupPct) > rank(c.pct);
+        if (up) lifted++;
+        expect(cell.classList.contains('has-setup')).toBe(up);
+        if (up) expect(cell).toHaveTextContent(`setup ${c.setupPct}%`);
+        expect(cell).not.toHaveAttribute('title');
+      });
+    });
+    expect(lifted).toBeGreaterThan(0);
   });
 
-  it('×2 / ×4 dove il membro ha una mossa superefficace sul Pokémon; col puntatore sotto lo sprite il nome', async () => {
+  it('×2 / ×4 dove il membro ha una mossa superefficace sul Pokémon; sulla sprite in testata la carta del Pokémon', async () => {
     const { user, sorted } = await open();
     const rows = bodyRows();
     let tags = 0;
@@ -547,8 +648,22 @@ describe('Offesa: Coverage meta', () => {
     });
     expect(tags).toBeGreaterThan(0);
     const head = table().querySelector<HTMLElement>('thead th[aria-label]')!;
-    await user.hover(head);
-    expect(head.querySelector('.col-name')).toHaveTextContent(sorted[0].species);
+    expect(head).not.toHaveAttribute('title');
+    await user.hover(head.querySelector<HTMLElement>('.cm-head-mon')!);
+    const card = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.member'); if (!el) throw new Error('no card'); return el; });
+    expect(card).toHaveTextContent(sorted[0].species);
+    expect(head.querySelector('.col-name')).toBeNull();
+  });
+
+  it('sulla casella il tooltip DreamDex: la minaccia col badge dei colpi, il membro, la sua mossa e il danno %', async () => {
+    const { user, sorted } = await open();
+    const cell = bodyRows()[0].querySelectorAll<HTMLElement>('td')[0];
+    await user.hover(cell);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip.querySelector('.ftip-head')).toHaveTextContent(sorted[0].species);
+    expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
+    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
+    await user.unhover(cell);
   });
 
   it('Lo coprono conta chi lo manda KO in due colpi', async () => {

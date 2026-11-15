@@ -57,8 +57,9 @@
   .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 18px; }
 
   /* L'interruttore Solo superefficaci / Solo efficacia: la striscia scorre col dito, lui va sotto le sottoschede, alto quanto un dito */
-  .strip-switch { position: sticky; left: 0; display: flex; width: max-content; padding: 0 6px; }
-  .strip-switch .eff-switch { min-height: 44px; }
+  .panel-switch { position: static; height: auto; margin-bottom: 6px; }
+  .panel-switch .eff-switch { min-height: 44px; }
+  .area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 0; }
   .area-view-bonusMalus > .area-panel { margin-top: 0; }
   /* La riga in fondo alla tabella: legenda e riepilogo vanno a capo */
   /* Sul telefono la legenda torna sotto la tabella, nel flusso, e va a capo */

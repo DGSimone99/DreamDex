@@ -6,7 +6,7 @@ import { weatherMitigations } from '../../engine/synergy';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
 import { mitigationNote } from '../AnalysisTables';
-import { ColName, EffTag, effClass, effLabel } from '../effTag';
+import { EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
@@ -57,10 +57,9 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               {rows.map((row, i) => {
                 const hole = weak.includes(row.type);
                 return (
-                  <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')} title={typeName(row.type as TypeName, lang)}
+                  <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
                     onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <TypeIcons types={[row.type]} />
-                    {hover?.col === i && <ColName name={typeName(row.type as TypeName, lang)} />}
                     <span className="ct-flag" aria-hidden="true" />
                     <span className="visually-hidden">{typeName(row.type as TypeName, lang)}{hole && ` ${t('analysis.shortfallSerious')}`}</span>
                   </th>
@@ -74,7 +73,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               const typed = s === null ? null : defense.typed[s];
               return (
                 <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
-                  <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
+                  <th scope="row" onMouseEnter={() => setHover({ row: member, col: -1 })}><MemberMon name={battleName(set)} set={set} stats /></th>
                   {rows.map((row, i) => {
                     const cell = typed?.cells[i];
                     if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}`)}>—</td>;
@@ -93,11 +92,11 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               );
             })}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row">{t('ddetail.heldBy')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)}>{t('ddetail.heldBy')}</th>
               {rows.map((row, i) => {
                 const level = `${t('ddetail.level')} ${row.level}%`;
                 return (
-                  <td key={row.type} className={colClass(i)}>
+                  <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}>
                     <span className={`ct-pill ${countTone(row.heldBy.length)}`} title={level}>
                       {row.heldBy.length}<span className="visually-hidden"> · {level}</span>
                     </span>

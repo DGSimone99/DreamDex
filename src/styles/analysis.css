@@ -995,7 +995,12 @@
 
 /* Interruttore "Solo superefficaci" / "Solo efficacia": a destra nella striscia delle sottoschede, centrato in altezza
    (assoluto: la striscia non cambia altezza fra le sottoschede che lo hanno e quelle che no). Neutro e ciano, mai magenta */
-.strip-switch { position: absolute; top: 3px; right: 10px; bottom: 0; display: flex; align-items: center; }
+/* L'interruttore dell'efficacia: in alto a sinistra nel pannello, sulla riga della legenda (alta --def-legend, sopra la
+   tabella); la legenda a destra gli lascia il posto */
+.area-panel:has(> .panel-switch) { position: relative; }
+.panel-switch { position: absolute; z-index: 2; top: 6px; left: 22px; display: flex; align-items: center; height: 20px; }
+.area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 180px; }
+@media (min-width: 1100px) and (max-height: 640px) { .panel-switch { top: 3px; height: 16px; } }
 .eff-switch { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 2px 4px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 12px/1.2 var(--ui); white-space: nowrap; cursor: pointer; }
 .eff-switch:hover { color: var(--text); }
 .eff-switch-track { position: relative; flex: none; width: 26px; height: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--raised); transition: background 0.15s ease-out, border-color 0.15s ease-out; }

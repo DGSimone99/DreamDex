@@ -54,7 +54,8 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   clearFocus?: () => void }
 
 /** Il dettaglio di una tessera: che tabella, quale membro (posto nel team) e quale fascia (KO in un colpo o in due). */
-export interface KoFocus { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' }
+/** `band`: OHKO, 2HKO o 'rest' (quelli che il membro non manda KO in due colpi). */
+export interface KoFocus { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' | 'rest' }
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola

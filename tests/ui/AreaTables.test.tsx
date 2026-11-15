@@ -44,7 +44,7 @@ describe('tabelle complete nelle schede d\'area', () => {
     const user = await openTab('Offesa');
     const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(legend()).toHaveTextContent('Forte (oltre 66%)Conta (oltre 33%)');
+    expect(legend()).toHaveTextContent('OHKOForteMedio');
   });
 
   it('Difesa: la nota del meteo sotto la tabella', async () => {
