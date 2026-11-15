@@ -329,6 +329,7 @@
 .def-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .def-mon-types img { display: block; width: 15px; height: 15px; }
 .def-mon-types { display: inline-flex; gap: 2px; flex: none; }
+.def-mon-role { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 500; line-height: 1.2; color: var(--faint); }
 .def-mon-stats { display: flex; gap: 10px; font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; }
 .def-mon-stats > span { display: inline-flex; align-items: center; gap: 3px; cursor: help; }
 .def-mon-stats .icon { width: 11px; height: 11px; color: var(--faint); }
@@ -339,6 +340,7 @@
 /* Righe troppo basse per due righe di testo (sotto ~35px, es. 1366 a squadra aperta): niente statistiche sotto il nome,
    così le righe restano alte quanto nelle altre schede. Soglia sull altezza della cornice (righe = (h − 202) / 6 − 3) */
 @container (max-height: 440px) { .def-frame .def-mon-stats { display: none; } }
+@container (max-height: 360px) { .def-frame .def-mon-role { display: none; } }
 .def-mon-stats .def-weak { padding: 0 5px; font-size: 11px; line-height: 1.5; }
 /* "Anello debole": accanto alle statistiche quando ci sono, accanto al nome quando le righe sono troppo basse */
 .def-mon-tag { display: inline-flex; }

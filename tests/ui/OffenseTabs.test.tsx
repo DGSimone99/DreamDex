@@ -144,10 +144,11 @@ describe('Offesa: Generale', () => {
       expect(badge.classList.contains('zero')).toBe(n === 0);
       if (extra > 0) {
         expect(badge.querySelector('.kob-setup')).toHaveTextContent(`+${extra}`);
-        expect(badge).toHaveAttribute('aria-label', `${tag} ${n}, altri ${extra} col setup`);
+        // Il migliore della colonna aggiunge ", il migliore della colonna" (la stella)
+        expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}, altri ${extra} col setup(, il migliore della colonna)?$`));
       } else {
         expect(badge.querySelector('.kob-setup')).toBeNull();
-        expect(badge).toHaveAttribute('aria-label', `${tag} ${n}`);
+        expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}(, il migliore della colonna)?$`));
       }
     }
     return c;
@@ -209,6 +210,25 @@ describe('Offesa: Generale', () => {
     });
     // A squadra aperta niente dettagli sotto la barra
     expect(document.querySelector('.og-detail')).toBeNull();
+  });
+
+  it('clic su una tessera dei Tipi: si apre Coverage tipi con la riga del membro e i tipi di quella fascia accesi; "Mostra tutti" li spegne', async () => {
+    const user = userEvent.setup();
+    const rating = noMeta();
+    view(team, rating);
+    const slots = offenseSlots(team, rating.offense.members);
+    const slot = slots.findIndex(i => i !== null && count(typeHits(rating, i)).two > 0);
+    const n = count(typeHits(rating, slots[slot]!)).two;
+    const tile = memberRows()[slot].querySelectorAll('td')[0].querySelector<HTMLElement>('.kob.two')!;
+    expect(tile).toHaveAttribute('role', 'button');
+    await user.click(tile);
+    expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(document.querySelectorAll('td.kf-hit')).toHaveLength(n);
+    expect(document.querySelector('tr.kf-row')).not.toBeNull();
+    expect(document.querySelector('.kf-note')).toHaveTextContent(/due colpi \(2HKO\)/);
+    await user.click(screen.getByRole('button', { name: 'Mostra tutti' }));
+    expect(document.querySelector('td.kf-hit')).toBeNull();
+    expect(document.querySelector('.kf-note')).toBeNull();
   });
 
   it('senza meta: solo i badge dei tipi e la barra Offesa', () => {
@@ -319,7 +339,8 @@ describe('Offesa: Generale', () => {
     expect(fill).toHaveAttribute('aria-hidden', 'true');
     expect(fill.querySelector('td')).toHaveAttribute('colspan', '4');
     expect(document.querySelector('.def-members tbody')!.lastElementChild).toBe(fill);
-    const labels = (cell: Element) => [...cell.querySelectorAll('.kob.ohko, .kob.two')].map(b => b.getAttribute('aria-label'));
+    // Senza la parte della stella: il membro unico è il migliore della colonna, il team non ha stelle
+    const labels = (cell: Element) => [...cell.querySelectorAll('.kob.ohko, .kob.two')].map(b => b.getAttribute('aria-label')!.replace(', il migliore della colonna', ''));
     const row = memberRows()[0].querySelectorAll('td');
     const foot = document.querySelectorAll('.def-members tfoot td');
     expect(labels(foot[0])).toEqual(labels(row[0]));

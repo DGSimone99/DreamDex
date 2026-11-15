@@ -26,11 +26,14 @@ describe("dettaglio dell'Offesa a schede", () => {
   it('tre schede col loro valore (niente Wallbreaking né Potenza); si parte da Generale con le sottostatistiche e i membri', async () => {
     const { dialog } = await openOffense('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Coverage meta']);
+    // Coverage tipi e meta portano "N/18" e "N/M" (quanti il team manda KO in due colpi), la Generale il voto
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Coverage meta']);
+    expect(tabs[1].textContent).toMatch(/\d+\/18$/);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
     // Solo la tabella dei membri: niente tessere sotto
-    expect(within(panel).queryAllByRole('button')).toHaveLength(0);
+    // Gli unici pulsanti sono le tessere OHKO/2HKO (aprono il dettaglio): nessun altro controllo nella tabella
+    expect(within(panel).queryAllByRole('button').filter(b => !b.classList.contains('kob'))).toHaveLength(0);
     const table = within(panel).getByRole('table');
     const headers = within(table).getAllByRole('columnheader').map(h => h.textContent);
     // Sotto Meta e Tipi possono esserci le etichette OHKO / 2HKO: si guarda come iniziano
@@ -48,8 +51,8 @@ describe("dettaglio dell'Offesa a schede", () => {
       for (const cell of cells.slice(0, 2)) {
         const labels = [...cell.querySelectorAll('.kob.ohko, .kob.two')].map(b => b.getAttribute('aria-label'));
         expect(labels).toHaveLength(2);
-        expect(labels[0]).toMatch(/^OHKO \d+(, altri \d+ col setup)?$/);
-        expect(labels[1]).toMatch(/^2HKO \d+(, altri \d+ col setup)?$/);
+        expect(labels[0]).toMatch(/^OHKO \d+(, altri \d+ col setup)?(, il migliore della colonna)?$/);
+        expect(labels[1]).toMatch(/^2HKO \d+(, altri \d+ col setup)?(, il migliore della colonna)?$/);
       }
       expect(cells[2]).toHaveTextContent(/^\d+$/);
     }
@@ -99,7 +102,7 @@ describe("dettaglio dell'Offesa a schede", () => {
 
   it('in inglese', async () => {
     const { dialog } = await openOffense('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Meta coverage']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['General', 'Type coverage', 'Meta coverage']);
     const headers = within(dialog).getAllByRole('columnheader').map(h => h.textContent);
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');

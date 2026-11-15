@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import { getMove } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
 import { gameName, typeName } from '../../i18n/game';
@@ -49,7 +49,13 @@ const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };
  * badge il tooltip DreamDex elenca i bersagli (tipi o minacce), poi in righe a parte quelli in più dopo la danza o con
  * Tera/Z. `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18" / "minacce su 37".
  */
-export function KoBadges({ bands, who, of, total, setupMove, onceName }: { bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null }) {
+export function KoBadges({ bands, who, of, total, setupMove, onceName, best, onPick }: {
+  bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
+  /** Le fasce in cui il membro è il migliore della colonna: una piccola stella sulla tessera. */
+  best?: Partial<Record<KoBand, boolean>>;
+  /** Clic su una tessera: apre il dettaglio su quei bersagli. */
+  onPick?: (band: KoBand) => void;
+}) {
   const t = useT();
   const lang = useLang();
   const tip = useFloatAnchor<KoBand>();
@@ -62,13 +68,17 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName }: { bands
         const extra = bands.setup[b].length;
         return (
           // Una tessera a larghezza fissa (le colonne restano allineate riga per riga): il numero e, nel suo posto, il "+N"
-          // del setup col triangolo nell'angolo come nelle tabelle dell'Offesa; l'etichetta OHKO / 2HKO sta nella testata
-          // --k: quanto è piena (il numero sui bersagli in tutto): il verde si fa più intenso con il conto
-          <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}`} style={{ '--k': total ? Math.min(1, n / total) : 0 } as CSSProperties}
-            onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
-            aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
-            <b>{n}</b>
-            {extra > 0 && <small className="kob-setup" aria-hidden="true">+{extra}</small>}
+          // del setup col triangolo nell'angolo come nelle tabelle dell'Offesa; l'etichetta OHKO / 2HKO sta nella testata.
+          // La stella (il migliore della colonna) sta fuori dalla tessera, che è tagliata in diagonale
+          <span key={b} className="kob-cell">
+            {best?.[b] && n > 0 && <span className="kob-star" aria-hidden="true" />}
+            <span className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}${onPick && n > 0 ? ' pick' : ''}`} style={{ '--k': total ? Math.min(1, n / total) : 0 } as CSSProperties}
+              onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
+              {...(onPick && n > 0 ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(b); } } } : {})}
+              aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}${best?.[b] && n > 0 ? `, ${t('kob.bestAria')}` : ''}`}>
+              <b>{n}</b>
+              {extra > 0 && <small className="kob-setup" aria-hidden="true">+{extra}</small>}
+            </span>
           </span>
         );
       })}
@@ -90,5 +100,22 @@ function Extra({ icon, label, children }: { icon?: ReactNode; label: string; chi
       <span className="kot-extra-h">{icon}{label}</span>
       {children}
     </div>
+  );
+}
+
+/** Fascia di un danno % (null sotto il 2HKO): la stessa delle tessere della Generale. */
+export const koBandOf = bandOf;
+
+/**
+ * Nella riga bassa di Coverage tipi / meta, al posto della legenda mentre una tessera della Generale tiene acceso un
+ * dettaglio: chi e quale fascia sono evidenziati, e "Mostra tutti" per spegnerlo.
+ */
+export function FocusNote({ name, band, onClear }: { name: string; band: KoBand; onClear?: () => void }) {
+  const t = useT();
+  return (
+    <span className="kf-note">
+      <span>{t('kob.focus', { name, band: t(band === 'ohko' ? 'kob.bandOhko' : 'kob.bandTwo') })}</span>
+      {onClear && <button type="button" className="kf-clear" onClick={onClear}>{t('kob.focusClear')}</button>}
+    </span>
   );
 }
