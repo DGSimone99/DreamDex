@@ -306,6 +306,16 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
+  // Generale col puntatore sul "+N" di un membro (Toxapex) e sulla Difesa del team: il tooltip coi pezzi
+  ...Object.fromEntries([['member', '.def-general tbody tr:nth-child(3) .def-cell.dsh'], ['team', '.def-general tfoot .def-cell.dsh']].map(([k, sel]) => [`analysis-defense-general-share-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const el = await p.$(sel);
+    if (!el) return 'no share';
+    await el.hover();
+    await wait(500);
+    return true;
+  } } as State])),
   // Generale a squadra chiusa col puntatore su una pastiglia dei colpi peggiori: Tipi (0) e Meta (1)
   ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null, { collapsed: true }).run!(p);
