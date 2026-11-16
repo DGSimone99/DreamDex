@@ -316,6 +316,17 @@ const DEFENSE_STATES: Record<string, State> = {
     await wait(500);
     return true;
   } } as State])),
+  // Generale: clic sul pezzo 2HKO di Toxapex in Tipi (0) e su quello OHKO in Meta (1): si apre la sottoscheda coi bersagli accesi
+  ...Object.fromEntries([[0, '.hb-2'], [1, '.hb-ohko']].map(([k, cls]) => [`analysis-defense-general-pick-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const cells = await p.$$('.def-general tbody tr:nth-child(3) td');
+    const piece = await cells[k as number]?.$(`.kob${cls}`);
+    if (!piece) return 'no piece';
+    await piece.click();
+    await wait(600);
+    return true;
+  } } as State])),
   // Generale a squadra chiusa col puntatore su una pastiglia dei colpi peggiori: Tipi (0) e Meta (1)
   ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null, { collapsed: true }).run!(p);

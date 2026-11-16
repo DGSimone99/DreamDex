@@ -142,6 +142,8 @@
 .sus-table thead .sus-h { vertical-align: bottom; text-align: left; padding: 0 12px 6px; }
 .sus-table thead .sus-c { text-align: center; }
 .sus-table thead .sus-r { text-align: right; padding-right: 0; }
+/* «Perde» sopra le sue due colonne: centrata e bassa come le altre righe di gruppo, così i membri partono alla stessa altezza delle altre schede */
+.sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 2px; text-align: center; line-height: 1; }
 .sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--muted); line-height: 1; }
 .sus-table td { padding: 0 12px; border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }
@@ -315,7 +317,9 @@
   .sus-table .sus-col-val { width: 92px; }
   .sus-table thead .sus-r { font-size: 11px; letter-spacing: 0; }
   /* Intestazioni delle perdite su due righe se non ci stanno ("Strumenti e mosse"), invece di tagliarle */
-  .sus-table thead .sus-sub th { white-space: normal; text-wrap: balance; line-height: 1.15; vertical-align: bottom; }
+  /* «Perde» sopra le sue due colonne: centrata e bassa come le altre righe di gruppo, così i membri partono alla stessa altezza delle altre schede */
+.sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 2px; text-align: center; line-height: 1; }
+.sus-table thead .sus-sub th { white-space: normal; text-wrap: balance; line-height: 1.15; vertical-align: bottom; }
   .sus-net-wrap { gap: 8px; }
   .sus-net-num { min-width: 40px; font-size: 13px; }
 }
@@ -410,14 +414,16 @@
 
 /* Generale della Difesa: Tipi e Meta sono barre a pezzi come nell'Offesa (HoldBars), più larghe; Sostenibilità e
    Difesa restano barre semplici, più strette */
-.hb-line { width: calc(100% - 28px); }
+.kob-line.hb-line { width: calc(100% - 10px); gap: 8px; }
 .kob.hb { cursor: help; }
 /* Un pezzo non è mai più stretto di etichetta e numero */
-.kob-row > .kob.hb { padding: 0 9px 0 8px; }
 .kob.hb > em { text-transform: uppercase; }
-/* Nelle righe solo il numero (la legenda in alto dice i colori); l'etichetta resta nel tooltip */
-.kob-row > .kob.hb > em { display: none; }
-.kob-row > .kob.hb { min-width: 34px; justify-content: flex-end; }
+/* Nelle righe etichetta (3HKO+, 2HKO, OHKO) e numero come nei pezzi dell'Offesa, un filo più compatti: tre pezzi con
+   l'etichetta e il conto stanno nella colonna anche a 1280px */
+.kob-row > .kob.hb { min-width: 53px; padding: 0 7px 0 6px; gap: 3px; }
+.kob-row > .kob.hb > em { font-size: 8.5px; letter-spacing: 0.02em; white-space: nowrap; }
+.kob-row > .kob.hb .kob-num > b { font-size: 15px; }
+.kob-line.hb-line .kob-count { min-width: 42px; }
 .area-legend-swatch i.hb-sw.hb-held { background: color-mix(in srgb, var(--good) 34%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .area-legend-swatch i.hb-sw.hb-2 { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
 .area-legend-swatch i.hb-sw.hb-ohko { background: color-mix(in srgb, var(--bad) 36%, var(--panel)); border-color: var(--bad); }
@@ -454,7 +460,6 @@
 .def-sus .def-members { height: 100%; }
 .def-sus .def-members tr.og-fill { height: auto; }
 .def-sus .def-members tr.og-fill td { padding: 0; border: 0; }
-.sus-table .ct-pill.sus-team { font-size: 15px; padding: 3px 9px; }
 
 /* Colonna Difesa della Generale: il pezzo del membro in due parti, quello che regge (colore dell'Offesa) e la
    Sostenibilità, verde a righe se aggiunge, rossa a righe se toglie (la parte che si mangia) */

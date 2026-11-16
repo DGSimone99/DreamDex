@@ -384,3 +384,36 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(document.querySelector('.mcs.wh')).toBeNull();
   });
 });
+
+describe('Difesa Generale: clic sui pezzi delle barre', () => {
+  it('ogni pezzo ha la sua etichetta (3HKO+, 2HKO, OHKO); clic su un pezzo di Tipi: Coverage tipi con la riga del membro e quei tipi accesi, "Mostra tutti" li spegne', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
+    const pieces = Array.from(row.querySelectorAll('td')[0].querySelectorAll<HTMLElement>('.kob.hb'));
+    for (const p of pieces) expect(p.querySelector('em')).toHaveTextContent(/^(3HKO\+|2HKO|OHKO)$/);
+    const piece = pieces[0];
+    const n = Number(piece.querySelector('.kob-num')!.textContent);
+    expect(piece).toHaveAttribute('role', 'button');
+    await user.click(piece);
+    expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(document.querySelectorAll('td.kf-hit')).toHaveLength(n);
+    expect(document.querySelector('tr.kf-row')).not.toBeNull();
+    expect(document.querySelector('.kf-note')).toHaveTextContent(/Evidenziati/);
+    await user.click(screen.getByRole('button', { name: 'Mostra tutti' }));
+    expect(document.querySelector('td.kf-hit')).toBeNull();
+  });
+
+  it('clic su un pezzo di Meta: Coverage meta con le minacce di quel pezzo accese', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
+    const piece = row.querySelectorAll('td')[1].querySelector<HTMLElement>('.kob.hb')!;
+    const n = Number(piece.querySelector('.kob-num')!.textContent);
+    await user.click(piece);
+    expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
+    // Le minacce accese vengono per prime: nella prima pagina (8 per pagina) ce ne sono quante ne stanno
+    expect(document.querySelectorAll('td.kf-hit')).toHaveLength(Math.min(n, 8));
+    expect(document.querySelector('.kf-note')).not.toBeNull();
+  });
+});

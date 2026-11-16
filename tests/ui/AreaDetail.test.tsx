@@ -169,10 +169,10 @@ describe('dettaglio della Difesa a schede', () => {
     await user.click(within(dialog).getByRole('tab', { name: /^Sostenibilità/ }));
     const panel = within(dialog).getByRole('tabpanel');
     expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Perde', 'Recupera', 'Netto', 'Sostenibilità', 'Stealth Rock', 'Strumenti e mosse']);
-    // I membri (la riga del team in fondo ha la sua testata: a parte)
-    const rows = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('rowheader').length && !r.classList.contains('og-total'));
+    // Solo i membri: niente riga del team (il valore del team sta sull'etichetta della scheda)
+    const rows = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('rowheader').length);
     expect(rows).toHaveLength(2);
-    expect(panel.querySelector('tfoot .og-total .sus-team')).toHaveTextContent(/^([+−]\d+|0)$/);
+    expect(panel.querySelector('tfoot, .og-total')).toBeNull();
     for (const row of rows) {
       // Stealth Rock e strumenti a parte (un valore negativo o un trattino), poi il recupero, il netto e il valore
       const cells = within(row).getAllByRole('cell');

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import { dummyStats, holdBand, type HoldBand } from '../../engine/defense';
 import type { FormatId } from '../../engine/format';
 import { TYPES } from '../../engine/types';
@@ -22,10 +22,14 @@ export interface HoldTarget { label: string; kind: 'type' | 'mon'; band: HoldBan
 /** Le fasce dalla migliore. */
 const ORDER: HoldBand[] = ['four', 'three', 'two', 'ohko'];
 /** I tre pezzi da sinistra: quelli che regge (4HKO+ e 3HKO insieme), poi 2HKO e OHKO. */
-type Piece = 'held' | 'two' | 'ohko';
+export type HoldPiece = 'held' | 'two' | 'ohko';
+type Piece = HoldPiece;
 const PIECES: Piece[] = ['held', 'two', 'ohko'];
 const PIECE_CLS: Record<Piece, string> = { held: 'hb-held', two: 'hb-2', ohko: 'hb-ohko' };
-const pieceOf = (b: HoldBand): Piece => (b === 'four' || b === 'three' ? 'held' : b);
+/** Il pezzo della barra di una fascia: 3HKO e 4HKO+ insieme ("3HKO+"), poi 2HKO e OHKO. */
+export const pieceOf = (b: HoldBand): Piece => (b === 'four' || b === 'three' ? 'held' : b);
+/** L'etichetta del pezzo, nella barra e nel tooltip. */
+export const PIECE_TAG: Record<Piece, string> = { held: '3HKO+', two: '2HKO', ohko: 'OHKO' };
 
 /** I 18 tipi per un membro: la fascia del lato peggiore (fisico o speciale). */
 export const typeHolds = (cells: { band: HoldBand }[]): HoldTarget[] =>
@@ -50,13 +54,17 @@ export const teamHolds = (per: HoldTarget[][]): HoldTarget[] =>
  * DreamDex elenca i bersagli. A destra il conto "12/18": quanti ne regge (meno di metà PS). `alarm` (la riga del team):
  * il conto è verde solo se li regge tutti, rosso se no.
  */
-export function HoldBars({ targets, who, of, alarm = false }: { targets: HoldTarget[]; who: string; of: string; alarm?: boolean }) {
+export function HoldBars({ targets, who, of, alarm = false, onPick }: {
+  targets: HoldTarget[]; who: string; of: string; alarm?: boolean;
+  /** Clic su un pezzo: apre Coverage tipi o meta con quei bersagli accesi (come nell'Offesa). */
+  onPick?: (piece: Piece) => void;
+}) {
   const t = useT();
   const tip = useFloatAnchor<Piece>();
   const key = tip.anchor?.key;
   const total = targets.length;
   const by = (p: Piece) => targets.filter(x => pieceOf(x.band) === p);
-  const tag = (p: Piece) => (p === 'held' ? t('hold.held') : HOLD_BANDS[p].tag);
+  const tag = (p: Piece) => PIECE_TAG[p];
   const n = by('held').length;
   const ratio = total ? n / total : 0;
   const countTone = alarm ? (n < total ? ' bad' : ' full') : n === 0 ? ' zero' : n === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
@@ -68,8 +76,9 @@ export function HoldBars({ targets, who, of, alarm = false }: { targets: HoldTar
           const items = by(p);
           if (!items.length) return null;
           return (
-            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}`} style={{ flexGrow: items.length }}
+            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={{ flexGrow: items.length }}
               onMouseEnter={e => tip.open(p, e.currentTarget)} onMouseLeave={tip.close}
+              {...(onPick ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(p); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(p); } } } : {})}
               aria-label={`${tag(p)} ${items.length}`}>
               <em aria-hidden="true">{tag(p)}</em>
               <span className="kob-num"><b>{items.length}</b></span>

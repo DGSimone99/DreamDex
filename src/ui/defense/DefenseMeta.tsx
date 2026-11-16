@@ -1,6 +1,8 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { battleName, battleSpecies } from '../../engine/dex';
-import type { TeamDefense } from '../../engine/defense';
+import { holdBand, type TeamDefense } from '../../engine/defense';
+import { pieceOf, type HoldPiece } from './HoldBars';
+import { FocusNote } from '../offense/KoBadges';
 import { battleMoveType } from '../../engine/types';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
@@ -53,8 +55,17 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const hover = useColumnHover();
   const tip = useFloatAnchor<{ species: string; m: number }>();
   const card = useMemberTip(400, undefined, true);
-  const rows = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
   const names = ctx.team.map(set => battleSpecies(set)?.name ?? null);
+  // Aperta da un pezzo della barra in Generale: la riga del membro e le minacce di quel pezzo accese, e prima nell'ordine
+  // (così stanno nella prima pagina); il resto spento
+  const focus = ctx.focus?.kind === 'dmeta' ? ctx.focus : null;
+  const pieceAt = (row: Row, m: number): HoldPiece | null => {
+    const c = cellsOf(row, names)[m];
+    return c === null ? null : c === 'ko' ? 'ohko' : pieceOf(holdBand(c.pct / 100));
+  };
+  const lit = (row: Row) => !!focus && pieceAt(row, focus.slot) === focus.band;
+  const sorted = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
+  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))] : sorted;
   // Il posto fra i membri conosciuti dal motore (l'ordine di `mults`)
   let seen = 0;
   const knownIndex = names.map(name => (name ? seen++ : -1));
@@ -62,10 +73,11 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
 
   const cell = (row: Row, c: Holder | 'ko' | null, m: number, k: number) => {
     const key = `${row.species}-${m}`;
-    const dim = ctx.effOnly ? ' eff-dim' : '';
+    const kf = focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : '';
+    const dim = (ctx.effOnly ? ' eff-dim' : '') + (focus ? ' kf-dim' : '');
     if (c === null) return <td key={key} className={hover.cls(k, `rob-cell hold-none${dim}`)} {...hover.enter(k)}>—</td>;
     const tag = effLabel(row.mults?.[knownIndex[m]], 'defense');
-    const eff = effClass(tag, 'defense', ctx.effOnly);
+    const eff = effClass(tag, 'defense', ctx.effOnly) + kf;
     const enter = (e: MouseEvent<HTMLElement>) => { hover.enter(k).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); };
     if (c === 'ko') {
       return (
@@ -126,7 +138,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             </thead>
             <tbody>
               {ctx.team.map((set, m) => (
-                <tr key={`${names[m] ?? set.species}-${m}`}>
+                <tr key={`${names[m] ?? set.species}-${m}`} className={focus ? (m === focus.slot ? 'kf-row' : 'kf-off') : undefined}>
                   <th scope="row" onMouseEnter={() => { hover.table.onMouseLeave(); tip.close(); }}><MemberMon name={battleName(set)} set={set} stats /></th>
                   {shown.map((r, k) => cell(r, cells[k][m], m, k))}
                 </tr>
@@ -152,7 +164,9 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         </div>
         {tipCell(shown)}
         {card.tip}
-        <div className="rob-legend cm-foot"><span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span></div>
+        <div className="rob-legend cm-foot">{focus
+          ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
+          : <span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span>}</div>
       </div>
     );
   };

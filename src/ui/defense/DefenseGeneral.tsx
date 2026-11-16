@@ -7,7 +7,7 @@ import { gameName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
-import { HoldBars, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
+import { HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
 import { Ask, MetaTargets } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies, getMove, toID } from '../../engine/dex';
@@ -179,6 +179,10 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
   // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta
   const slotOf = (i: number) => ctx.team.findIndex(set => battleName(set) === members[i].species);
+  // Clic su un pezzo di Tipi o Meta: apre la sottoscheda con la riga del membro e quei bersagli accesi, come nell'Offesa
+  const pick = (key: string, kind: 'dtypes' | 'dmeta', i: number) => (ctx.openFocus
+    ? (band: HoldPiece) => ctx.openFocus!(key, { kind, slot: slotOf(i), band })
+    : undefined);
   const multipliers = new Map(ctx.analysis.weakness.map(row => [row.type, row.multipliers]));
   const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band, cell: c })))
     .map(h => ({ ...h, color: typeColor(h.label),
@@ -213,8 +217,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team (sommati fanno la Difesa del team): quello che regge e la Sostenibilità */}
                   <span className="og-share" aria-label={t('ddetail.shareTitle', { n: signed(shares[i].points) })}>
@@ -240,11 +244,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           </tfoot>
         </table>
       </div>
-      {/* I colori dei pezzi di Tipi e Meta (nei pezzi c'è solo il numero, la colonna è stretta) */}
+      {/* I colori della Sostenibilità nella colonna Difesa (i pezzi di Tipi e Meta hanno la loro etichetta) */}
       <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">
-        <span className="area-legend-swatch"><i className="hb-sw hb-held" />{t('hold.held')}</span>
-        <span className="area-legend-swatch"><i className="hb-sw hb-2" />2HKO</span>
-        <span className="area-legend-swatch"><i className="hb-sw hb-ohko" />OHKO</span>
         <span className="area-legend-swatch"><i className="dsh-leg gain" />{t('ddetail.legendRecovery')}</span>
         <span className="area-legend-swatch"><i className="dsh-leg loss" />{t('ddetail.legendLoss')}</span>
       </span></div>
