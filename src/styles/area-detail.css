@@ -299,6 +299,9 @@
 .bm-core.shut .bm-core-body { position: absolute; top: 10px; left: calc(var(--tri-w, 150px) + 48px); width: 300px; visibility: hidden; opacity: 0; transition: none; }
 .bm .bm-core-body h5 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; font: 700 18px/1.15 var(--display); font-style: italic; }
 .bm-core-pts { margin-left: auto; font: 800 22px/1 var(--display); color: var(--good); }
+/* Con due core: "Reggono N/18" prima dei punti, piccolo e quieto (il dettaglio nelle icone sotto e nel loro tooltip) */
+.bm-core-held { margin-left: auto; font: 600 12px/1 var(--ui); font-style: normal; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bm-core-held + .bm-core-pts { margin-left: 0; }
 .bm-core-lines { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
 .bm-core-lines li { display: flex; align-items: center; gap: 7px; margin: 0; }
 .bm-core-lines img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }

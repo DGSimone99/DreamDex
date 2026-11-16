@@ -179,7 +179,8 @@ function CoreCard({ core, open, rows, toggle, small, onOpen, lang, t }: {
           tabIndex={open ? -1 : 0} onClick={onOpen}>{art}</button>
       ) : <span className="bm-core-art">{art}</span>}
       <div className="bm-core-body" inert={!open}>
-        <h5>{title}<span className="bm-core-pts">+{CORE_TRIO_POINTS}</span></h5>
+        {/* Con due core il conto dei tipi retti si legge accanto ai punti (con uno solo sta sopra la colonna dei tipi) */}
+        <h5>{title}{small && rows.length > 0 && <span className="bm-core-held" aria-hidden="true">{t('catalogue.cores.heldShort', { n: heldCount(core, rows), total: rows.length })}</span>}<span className="bm-core-pts">+{CORE_TRIO_POINTS}</span></h5>
         <ul className="bm-core-lines">
           {core.sides.map(side => {
             const line = t('catalogue.cores.parry', { name: side.from, to: side.to, type: typeName(side.type, lang) });
