@@ -102,43 +102,34 @@ function DefShare({ share, from, team, tip }: { share: DefenseShare; from: numbe
  * Rock con l'icona Roccia, lo strumento o la mossa che costa PS). Il nome intero nel suggerimento.
  */
 function SustainChips({ parts, set }: { parts: SustainParts; set: TeamSet | undefined }) {
-  const t = useT();
   const lang = useLang();
   const pct = (x: number) => `${Math.round(100 * x)}%`;
   const isItem = (name: string) => !!set && toID(name) === toID(set.item);
-  // Una fonte: l'icona (tipo della mossa, strumento, Grassy Terrain; un pallino per l'abilità) e il nome nella lingua
+  // Una fonte: l'icona (tipo della mossa, strumento, Grassy Terrain e sabbia col loro tipo; un pallino per l'abilità) e il nome nella lingua
   const source = (src: string): { icon: ReactNode; name: string } => {
     if (src === 'Grassy Terrain') return { icon: <img src={typeIconUrl('Grass')} alt="" draggable={false} />, name: src };
+    if (src === 'Sandstorm') return { icon: <img src={typeIconUrl('Rock')} alt="" draggable={false} />, name: src };
     const move = getMove(src);
     if (move) return { icon: <img src={typeIconUrl(move.type)} alt="" draggable={false} />, name: gameName('move', move.name, lang) };
     if (isItem(src)) return { icon: <ItemIcon item={src} size={16} />, name: gameName('item', src, lang) };
     return { icon: <i className="dsc-ab" aria-hidden="true" />, name: src };
   };
-  const gains = parts.sources.map(source);
-  const gainNames = gains.map(g => g.name).join(' + ');
-  // Stealth Rock c'è quasi sempre: non qui (è nel tooltip e nella sottoscheda); le altre perdite con l'icona della loro fonte
-  const lossFrom = parts.itemLossFrom ?? '';
-  const lossMove = getMove(lossFrom.split(' + ').find(x => getMove(x)) ?? '');
-  const lossIcon = set && lossFrom.includes(set.item) ? <ItemIcon item={set.item} size={16} />
-    : lossMove ? <img src={typeIconUrl(lossMove.type)} alt="" draggable={false} /> : null;
-  if (!gains.length && !(parts.itemLoss > 0)) return null;
+  // Stealth Rock c'è quasi sempre: non qui (è nel tooltip e nella sottoscheda)
+  const chips = [
+    ...parts.gains.map(g => ({ ...source(g.source), value: `+${pct(g.heal)}`, loss: false })),
+    ...parts.losses.map(l => ({ ...source(l.source), value: `−${pct(l.loss)}`, loss: true })),
+  ];
+  if (!chips.length) return null;
   return (
     <span className="mcs dscs">
-      {/* Una pastiglia per fonte del recupero (icona e nome), poi quanto recupera in tutto */}
-      {gains.map((g, k) => (
-        <span key={k} className="mc dsc" style={{ '--c': 'var(--good)' } as CSSProperties}>
-          <span className="dsc-ic">{g.icon}</span>
-          <span className="dsc-name">{g.name}</span>
+      {/* Una pastiglia per fonte: icona, nome e quanto cura (verde) o quanto toglie (rosso) */}
+      {chips.map((c, k) => (
+        <span key={k} className={`mc dsc${c.loss ? ' loss' : ''}`} style={{ '--c': c.loss ? 'var(--bad)' : 'var(--good)' } as CSSProperties}>
+          <span className="dsc-ic">{c.icon}</span>
+          <span className="dsc-name">{c.name}</span>
+          <b>{c.value}</b>
         </span>
       ))}
-      {gains.length > 0 && <b className="dsc-total" title={gainNames}>+{pct(parts.recovery)}</b>}
-      {parts.itemLoss > 0 && (
-        <span className="mc dsc loss" style={{ '--c': 'var(--bad)' } as CSSProperties} title={`${lossFrom || t('ddetail.sus.orb')} −${pct(parts.itemLoss)}`}>
-          {lossIcon && <span className="dsc-ic">{lossIcon}</span>}
-          <span className="dsc-name">{lossFrom ? lossFrom.split(' + ').map(x => (getMove(x) ? gameName('move', getMove(x)!.name, lang) : x === set?.item ? gameName('item', x, lang) : x)).join(' + ') : t('ddetail.sus.orb')}</span>
-          <b>−{pct(parts.itemLoss)}</b>
-        </span>
-      )}
     </span>
   );
 }

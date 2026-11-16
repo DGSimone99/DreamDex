@@ -104,6 +104,9 @@ export interface SustainParts {
   /** Quanto toglie lo strumento (Life Orb, Flame Orb, Toxic Orb…) e quale. */
   itemLoss: number;
   itemLossFrom: string | null;
+  /** Fonte per fonte (solo da mostrare): quanto cura ognuna (già ridotto se il recupero conta meno) e quanto toglie ognuna delle perdite che non sono Stealth Rock. */
+  gains: { source: string; heal: number }[];
+  losses: { source: string; loss: number }[];
 }
 
 /** Il primo membro del team con una mossa che toglie gli hazard, come "Defog (Corviknight)"; senza, chi ha Magic Bounce (li rimbalza). */
@@ -167,7 +170,14 @@ export function sustainParts(set: TeamSet, holdShare: number, remover: string | 
   const total = gross + fieldHeal;
   // Contraccolpo e mosse che tolgono metà dei PS (nella stessa colonna degli strumenti)
   const moveLoss = selfDamage(set, ability);
+  const cut = halved ? 0.5 : 1;
+  const gains = [best ? { source: best, heal: moveHeal(best) } : null, abilityHeal ? { source: battleAbility(set), heal: abilityHeal } : null,
+    itemHeal ? { source: set.item, heal: itemHeal } : null, fieldHeal ? { source: 'Grassy Terrain', heal: fieldHeal } : null]
+    .filter((x): x is { source: string; heal: number } => !!x).map(g => ({ ...g, heal: g.heal * cut }));
+  const losses = [itemLoss ? { source: set.item, loss: itemLoss } : null, fieldLoss ? { source: 'Sandstorm', loss: fieldLoss } : null,
+    moveLoss ? { source: selfDamageMove(set, ability) ?? '', loss: moveLoss } : null].filter((x): x is { source: string; loss: number } => !!x);
   return {
+    gains, losses,
     sources: fieldHeal ? [...sources, 'Grassy Terrain'] : sources, recovery: halved ? total / 2 : total, halved, rocks, rocksHalvedBy,
     itemLoss: itemLoss + fieldLoss + moveLoss,
     itemLossFrom: [itemLoss ? set.item : null, fieldLoss ? 'Sandstorm' : null, moveLoss ? selfDamageMove(set, ability) : null].filter(Boolean).join(' + ') || null,
