@@ -411,7 +411,7 @@
 /* Generale della Difesa: Tipi e Meta sono barre a pezzi come nell'Offesa (HoldBars), più larghe; Sostenibilità e
    Difesa restano barre semplici, più strette */
 /* L'ultima colonna ha Sostenibilità e Difesa affiancate, larghe uguali (testate comprese) */
-.dg-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; width: calc(100% - 28px); align-items: start; }
+.dg-pair { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 16px; width: calc(100% - 28px); align-items: start; }
 .dg-pair > * { min-width: 0; }
 .dg-pair-h .dg-pair > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Le barre semplici si stringono con la colonna (il numero resta intero) */
@@ -456,3 +456,18 @@
 .mc .wh-mon img { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
 /* Come nell'Offesa: le pastiglie e il recupero solo se la cornice ha posto per sei righe con loro */
 @container (max-height: 500px) { .def-general .mcs.wh, .def-general .dg-rec { display: none; } }
+
+/* La Sostenibilità nella Generale: barra corta e sottile con lo zero al centro (come la colonna Netto della sua scheda),
+   verde a destra se recupera, rossa a sinistra se perde; il numero con segno */
+.dg-sus { display: grid; grid-template-columns: minmax(0, 1fr) 4ch; align-items: center; gap: 8px; width: 100%; }
+.dg-sus-track { position: relative; height: 6px; background: var(--line-soft); }
+.dg-sus-track::after { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--faint); }
+.dg-sus-track i { position: absolute; top: 0; bottom: 0; background: var(--good); }
+.dg-sus-track i.warn { background: var(--warn); }
+.dg-sus-track i.bad { background: var(--bad); }
+.dg-sus .def-num { text-align: right; white-space: nowrap; }
+.dg-sus .def-num.zero { color: var(--faint); }
+.dg-sus .def-num.good { color: var(--good); }
+.dg-sus .def-num.warn { color: var(--warn); }
+.dg-sus .def-num.bad { color: var(--bad); }
+.dg-loss { color: color-mix(in srgb, var(--bad) 80%, var(--text)); }

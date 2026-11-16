@@ -186,6 +186,14 @@ export function firstHitShare(set: TeamSet, team: TeamSet[] = [set]): number {
   return sustain >= FIRST_HIT_SUSTAIN ? FIRST_HIT_SHARE_RECOVERY : FIRST_HIT_SHARE;
 }
 
+/**
+ * La Sostenibilità di un membro, con segno (−100..100): il netto (recupero meno perdite per turno) su SUSTAIN_FULL.
+ * Sopra zero come prima (softScore); sotto zero lineare: chi perde metà PS a ogni entrata (Stealth Rock ×4) arriva a −100.
+ * 2026-11-16: prima si fermava a 0, così le perdite contavano solo contro un recupero; ora abbassano la Difesa anche senza
+ * (543 team NatDex OU: voto −0,4 in media, al massimo −2, 12 lettere su 543, distacco torneo-medi uguale).
+ */
+export const signedSustain = (net: number): number => (net >= 0 ? softScore(net / SUSTAIN_FULL) : -Math.round(100 * Math.min(1, -net / SUSTAIN_FULL)));
+
 /** Recupero meno perdite per turno (in quota dei PS); `holdShare` come in `sustainParts`. */
 export function sustainability(set: TeamSet, holdShare: number, remover: string | null = null, conditions: FieldCondition[] = []): number {
   const parts = sustainParts(set, holdShare, remover, conditions);
@@ -227,6 +235,7 @@ export interface MemberDefense {
   hold: number;
   /** Quota (0–100, pesata per uso) delle minacce del meta che regge: sotto metà PS pieno, sotto il KO a metà. Null senza meta. */
   metaHold: number | null;
+  /** Sostenibilità con segno, −100..100 (`signedSustain`): sotto zero se perde più di quanto recupera. */
   sustain: number;
   sustainParts: SustainParts;
   value: number;
@@ -376,7 +385,7 @@ export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): 
   if (!species) return null;
   const { plain, held } = typedHits(set, data, team);
   const parts = sustainParts(set, holdShare(held), hazardRemover(team), teamConditions(team));
-  const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.itemLoss) / SUSTAIN_FULL);
+  const sustain = signedSustain(parts.recovery - parts.rocks - parts.itemLoss);
   // Le minacce del meta: chi regge il colpo migliore vero, pesato per uso
   const threats = metaThreats(data);
   const threatHits = threats.length ? threatHitsOf(set, data, team) : [];
@@ -390,9 +399,9 @@ export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const valueOf = (hits: number[]) => {
     // Dai numeri mostrati nelle colonne, così il conto si rifà a mano
     const hold = Math.round(100 * holdShare(hits));
-    return Math.round(metaHold === null
+    return Math.max(0, Math.round(metaHold === null
       ? DEFENSE_SHARES_NO_META.types * hold + DEFENSE_SHARES_NO_META.sustain * sustain
-      : DEFENSE_SHARES.types * hold + DEFENSE_SHARES.meta * metaHold + DEFENSE_SHARES.sustain * sustain);
+      : DEFENSE_SHARES.types * hold + DEFENSE_SHARES.meta * metaHold + DEFENSE_SHARES.sustain * sustain));
   };
   const value = valueOf(held);
   const setup = defensiveSetup(set);
@@ -442,8 +451,9 @@ export interface TypeHoldRow {
 }
 
 export interface TeamDefense {
-  /** Coverage tipi 40 + Coverage meta 30 + Sostenibilità 30 (senza meta 70 + 30). */
+  /** Coverage tipi 40 + Coverage meta 40 + Sostenibilità 20 (senza meta 80 + 20). */
   value: number;
+  /** Sostenibilità del team, con segno (media pesata per posizione di quelle dei membri). */
   sustain: number;
   /** `weak`: i tipi dove nessuno ha credito sul lato peggiore. */
   coverageTypes: { value: number; weak: string[]; rows: TypeHoldRow[] };
@@ -567,8 +577,8 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
     coverageMeta = { value: softScore(total), unanswered: threatRows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows: threatRows };
   }
 
-  const value = !known.length ? 0 : coverageMeta
+  const value = !known.length ? 0 : Math.max(0, coverageMeta
     ? Math.round(DEFENSE_SHARES.types * typeValue + DEFENSE_SHARES.meta * coverageMeta.value + DEFENSE_SHARES.sustain * sustain)
-    : Math.round(DEFENSE_SHARES_NO_META.types * typeValue + DEFENSE_SHARES_NO_META.sustain * sustain);
+    : Math.round(DEFENSE_SHARES_NO_META.types * typeValue + DEFENSE_SHARES_NO_META.sustain * sustain));
   return { value, sustain, coverageTypes: { value: typeValue, weak, rows }, coverageMeta, members, typed };
 }

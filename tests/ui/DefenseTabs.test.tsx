@@ -334,7 +334,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
   });
 
-  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Sostenibilità e Difesa barre col colore della soglia', () => {
+  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Sostenibilità con segno, Difesa barra col colore della soglia', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     const tone = (v: number) => (v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad');
@@ -348,9 +348,11 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
       // I pezzi contano tutti i 18 tipi
       const sum = Array.from(lines[0].querySelectorAll('.kob-row > .kob.hb')).reduce((acc, el) => acc + Number(el.querySelector('.kob-num')!.textContent), 0);
       expect(sum).toBe(18);
-      const bars = rows[i].querySelectorAll('.def-bar');
-      expect(bars[0]).toHaveClass(tone(m.sustain));
-      expect(bars[1]).toHaveClass(tone(m.value));
+      // La Sostenibilità ha segno: il numero "+47" / "−6" / "0", verde-giallo-rosso sopra zero, rosso sotto
+      const sus = rows[i].querySelector('.dg-sus .def-num')!;
+      expect(sus).toHaveTextContent(m.sustain > 0 ? `+${m.sustain}` : m.sustain < 0 ? `−${-m.sustain}` : '0');
+      expect(sus).toHaveClass(m.sustain > 0 ? tone(m.sustain) : m.sustain < 0 ? 'bad' : 'zero');
+      expect(rows[i].querySelector('.def-bar')).toHaveClass(tone(m.value));
     });
     // Niente più anello debole
     expect(document.querySelector('.def-weak')).toBeNull();
@@ -361,8 +363,8 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     const weak = { ...rating, defense: { ...rating.defense, members: rating.defense.members.map((m, i) => (i === 1 ? { ...m, value: 30 } : { ...m, value: 85 })) } };
     renderIt(<AreaView rating={weak} area="defense" team={team} analysis={analysis} problems={[]} />);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
-    expect(rows[1].querySelectorAll('.def-bar')[1]).toHaveClass('bad');
-    expect(rows[0].querySelectorAll('.def-bar')[1]).toHaveClass('good');
+    expect(rows[1].querySelector('.def-bar')).toHaveClass('bad');
+    expect(rows[0].querySelector('.def-bar')).toHaveClass('good');
   });
 
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori e sotto Sostenibilità il recupero, senza colonne in più; altrimenti no', () => {

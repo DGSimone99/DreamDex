@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { holdBand, type TeamDefense } from '../../engine/defense';
+import { holdBand, type SustainParts, type TeamDefense } from '../../engine/defense';
 import { useLang, useT } from '../../i18n/react';
 import { gameName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
@@ -37,6 +37,26 @@ export function Bar({ value, total, unit = '', gain, reserve = false, extra = 0,
   );
 }
 
+/** Un numero con segno: "+47", "−25", "0" (il meno tipografico). */
+export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
+
+/**
+ * La Sostenibilità (−100..100) come la colonna Netto della sua sottoscheda: una barra corta con lo zero al centro, verde
+ * verso destra se recupera, rossa verso sinistra se perde; accanto il numero con segno.
+ */
+export function SustainBar({ value, total }: { value: number; total?: boolean }) {
+  const half = `${Math.min(50, Math.abs(value) / 2)}%`;
+  const cls = value > 0 ? tone(value) : value < 0 ? 'bad' : 'zero';
+  return (
+    <span className={`dg-sus${total ? ' total' : ''}`}>
+      <span className="dg-sus-track" aria-hidden="true">
+        {value !== 0 && <i className={cls} style={value > 0 ? { left: '50%', width: half } : { right: '50%', width: half }} />}
+      </span>
+      <span className={`def-num ${cls}${total ? ' total' : ''}`}>{signed(value)}</span>
+    </span>
+  );
+}
+
 /**
  * La scheda Generale della Difesa: i membri con una colonna per voce (Regge i tipi, Regge il meta, Sostenibilità) e la
  * Difesa del membro coi pesi della squadra. In fondo la riga Team Coverage, come nell'Offesa: i voti della squadra.
@@ -44,6 +64,23 @@ export function Bar({ value, total, unit = '', gain, reserve = false, extra = 0,
  * Con la squadra chiusa (`ctx.roomy`) le righe si allungano: sotto Tipi e Meta i tre colpi peggiori, sotto Sostenibilità
  * come recupera.
  */
+/** Sotto la Sostenibilità (squadra chiusa): il recupero, poi le perdite in rosso ("Stealth Rock −25%"). */
+function SustainNote({ parts }: { parts: SustainParts }) {
+  const t = useT();
+  const pct = (x: number) => `${Math.round(100 * x)}%`;
+  const losses = [parts.rocks > 0 ? `${t('ddetail.sus.rocks')} −${pct(parts.rocks)}` : null, parts.itemLoss > 0 ? `${parts.itemLossFrom ?? t('ddetail.sus.orb')} −${pct(parts.itemLoss)}` : null]
+    .filter((x): x is string => !!x);
+  const gain = parts.sources.length ? parts.sources.join(' + ') : null;
+  const full = [gain ?? (losses.length ? null : t('ddetail.noRecovery')), ...losses].filter(Boolean).join(' · ');
+  return (
+    <span className="dg-rec" title={full}>
+      {gain ?? (losses.length ? null : t('ddetail.noRecovery'))}
+      {parts.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}
+      {losses.map((l, k) => <span key={k} className="dg-loss">{(gain || k > 0) && ' · '}{l}</span>)}
+    </span>
+  );
+}
+
 export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
   const lang = useLang();
@@ -103,10 +140,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 <td>
                   <span className="dg-pair">
                     <span>
-                      <Bar value={m.sustain} />
-                      {/* Squadra chiusa: come recupera, sotto la barra */}
-                      {roomy && <span className="dg-rec" title={m.sustainParts.sources.join(' + ') || t('ddetail.noRecovery')}>{m.sustainParts.sources.length ? m.sustainParts.sources.join(' + ') : t('ddetail.noRecovery')}
-                        {m.sustainParts.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}</span>}
+                      <SustainBar value={m.sustain} />
+                      {/* Squadra chiusa: come recupera e cosa perde, sotto la barra */}
+                      {roomy && <SustainNote parts={m.sustainParts} />}
                     </span>
                     {/* Quanto aggiunge il setup difensivo (tre quarti del guadagno entrano nel voto) */}
                     <Bar value={m.value} total reserve={setupColumn}
@@ -124,7 +160,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <th scope="row"><span className="og-plate">{t('odetail.gen.total')}</span></th>
               <td><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></td>
               {meta && <td><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></td>}
-              <td><span className="dg-pair"><Bar value={defense.sustain} total /><Bar value={defense.value} total reserve={setupColumn} /></span></td>
+              <td><span className="dg-pair"><SustainBar value={defense.sustain} total /><Bar value={defense.value} total reserve={setupColumn} /></span></td>
             </tr>
           </tfoot>
         </table>

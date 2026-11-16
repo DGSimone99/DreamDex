@@ -178,7 +178,8 @@ describe('dettaglio della Difesa a schede', () => {
       expect(cells[1]).toHaveTextContent(/^(−\d+%|—)$/);
       expect(cells[2]).toHaveTextContent(/^(\+\d+%.*|—)$/);
       expect(cells[3]).toHaveTextContent(/^[+−]?\d+%$/);
-      expect(cells[4]).toHaveTextContent(/^\d+$/);
+      // La Sostenibilità ha segno: "+90", "−6", "0"
+      expect(cells[4]).toHaveTextContent(/^([+−]\d+|0)$/);
     }
   });
 

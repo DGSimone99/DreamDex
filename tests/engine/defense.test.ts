@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bestHit } from '../../src/engine/damage';
-import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, signedSustain, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
@@ -300,5 +300,25 @@ describe("Tera Shell nella Difesa e nell'Offesa", () => {
     const off = bestHit(ghold, { ...tera, species: 'Terapagos-Terastal', ability: 'Pressure' })!.expected;
     expect(on).toBeLessThan(off);
     expect(on).toBeGreaterThan(0.7 * off);
+  });
+});
+
+describe('Sostenibilità con segno', () => {
+  it('sopra zero come prima, sotto zero lineare fino a −100 (metà PS persi a ogni entrata)', () => {
+    expect(signedSustain(0)).toBe(0);
+    expect(signedSustain(0.5)).toBe(softScore(1));
+    expect(signedSustain(-0.125)).toBe(-25);
+    expect(signedSustain(-0.5)).toBe(-100);
+    expect(signedSustain(-0.9)).toBe(-100);
+  });
+
+  it('un membro senza recupero che prende Stealth Rock ha Sostenibilità negativa e meno Difesa di uno uguale con Heavy-Duty Boots', () => {
+    const data = fixtureData;
+    const volc: TeamSet = { species: 'Volcarona', item: 'Leftovers', ability: 'Flame Body', moves: ['Fiery Dance', 'Bug Buzz', 'Quiver Dance', 'Giga Drain'], nature: 'Timid', evs: { spa: 252, spe: 252, hp: 4 } } as TeamSet;
+    const exposed = memberDefense({ ...volc, item: 'Choice Specs' }, [{ ...volc, item: 'Choice Specs' }], data)!;
+    const boots = memberDefense({ ...volc, item: 'Heavy-Duty Boots' }, [{ ...volc, item: 'Heavy-Duty Boots' }], data)!;
+    expect(exposed.sustain).toBeLessThan(0);
+    expect(boots.sustain).toBeGreaterThanOrEqual(0);
+    expect(exposed.value).toBeLessThan(boots.value);
   });
 });
