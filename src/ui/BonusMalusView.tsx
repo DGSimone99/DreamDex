@@ -163,9 +163,12 @@ export function CatalogueList({ lang, kind }: { lang: Lang; kind: CatalogEntry['
   );
 }
 
-/** Un core della colonna di sinistra: aperto ha tutto, chiuso solo il triangolo coi suoi punti (con due core è un pulsante). */
-function CoreCard({ core, open, rows, toggle, onOpen, lang, t }: {
-  core: Core; open: boolean; rows: HoldRow[]; toggle: boolean; onOpen: () => void; lang: Lang; t: T;
+/**
+ * Un core della carta: aperto ha tutto, chiuso solo il triangolo, il suo nome e i suoi punti. Con due core affiancati
+ * sono aperti tutti e due; solo se la carta è troppo stretta per due vanno a fisarmonica (allora ognuno è un pulsante).
+ */
+function CoreCard({ core, open, rows, toggle, small, onOpen, lang, t }: {
+  core: Core; open: boolean; rows: HoldRow[]; toggle: boolean; small: boolean; onOpen: () => void; lang: Lang; t: T;
 }) {
   const title = coreTypes(core, lang);
   const art = <><CoreArt core={core} sprite={48} /><span className="bm-core-peek" aria-hidden="true">{title}</span><span className="bm-core-mini" aria-hidden="true">+{CORE_TRIO_POINTS}</span></>;
@@ -189,16 +192,57 @@ function CoreCard({ core, open, rows, toggle, onOpen, lang, t }: {
           })}
         </ul>
         {/* Con due core i tipi retti stanno qui, piccoli; con uno solo nella colonna a destra */}
-        {toggle && rows.length > 0 && <HeldTypes core={core} rows={rows} big={false} lang={lang} t={t} />}
+        {small && rows.length > 0 && <HeldTypes core={core} rows={rows} big={false} lang={lang} t={t} />}
       </div>
     </li>
   );
 }
 
 /**
+ * Due core affiancati, tutti e due aperti, se la carta è larga abbastanza (la misura minima per due la dice il CSS in
+ * --pair-min, perché cambia coi triangoli più piccoli degli schermi bassi) e se affiancati il testo sta nell'altezza della
+ * carta (nomi lunghi che vanno a capo su uno schermo basso); altrimenti a fisarmonica. `key`: i core del team (con
+ * altri core si riprova). Senza ResizeObserver (test): a fisarmonica.
+ */
+function usePairFits(row: RefObject<HTMLUListElement | null>, two: boolean, key: string): boolean {
+  const [wide, setWide] = useState(false);
+  const [tall, setTall] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const el = row.current;
+    if (!el || !two || typeof ResizeObserver === 'undefined') { setWide(false); return; }
+    let last = -1;
+    const check = () => {
+      const need = parseFloat(getComputedStyle(el).getPropertyValue('--pair-min')) || Infinity;
+      const width = Math.round(el.getBoundingClientRect().width);
+      // Cambiata la misura della carta: si riprova anche ad affiancarli
+      if (width !== last && last >= 0) setTall(null);
+      last = width;
+      setWide(width >= need);
+    };
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [row, two]);
+  const pair = two && wide && tall !== key;
+  // Affiancati: se un testo esce dal fondo del suo core, per questi core si torna alla fisarmonica
+  useLayoutEffect(() => {
+    const el = row.current;
+    if (!el || !pair) return;
+    const over = [...el.querySelectorAll<HTMLElement>('.bm-core')].some(core => {
+      const body = core.querySelector<HTMLElement>('.bm-core-body');
+      return !!body && body.getBoundingClientRect().bottom > core.getBoundingClientRect().bottom + 0.5;
+    });
+    if (over) setTall(key);
+  });
+  return pair;
+}
+
+/**
  * I core a tre in una carta come quelle della Panoramica, sempre della stessa misura (0, 1 o 2 core: la pagina non salta
  * cambiando team). Nella barra del titolo la medaglia del core (accesa con almeno un core, spenta senza) e a destra
- * quanti sono e quanto valgono. Due core a fisarmonica (aperto quello che regge più tipi), uno aperto, nessuno: due righe
+ * quanti sono e quanto valgono. Due core affiancati, aperti tutti e due (prima quello che regge più tipi; a fisarmonica
+ * solo se la carta è troppo stretta per due), uno aperto, nessuno: due righe
  * su come averne uno, al centro.
  */
 function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T }) {
@@ -212,6 +256,8 @@ function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T 
   const found = cores.findIndex(core => keyOf(core) === picked);
   const openIndex = found >= 0 ? found : 0;
   const two = cores.length > 1;
+  const row = useRef<HTMLUListElement>(null);
+  const pair = usePairFits(row, two, cores.map(keyOf).join('|'));
   // La medaglia grande del core, appuntata sulla barra del titolo: accesa con almeno un core, spenta senza
   const icon = <Medal entry={{ key: 'coreTrio', kind: 'bonus' }} className={`bm-head-medal${cores.length ? '' : ' off'}`} />;
   // Il conto nel titolo ("2 Core") e i punti dentro la stessa targhetta, attaccata alla medaglia
@@ -231,9 +277,9 @@ function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T 
           <p><b>{t('catalogue.cores.none')}</b>{t('catalogue.cores.how')}</p>
         </div>
       ) : (
-        <ul className={`bm-core-row${two ? ' two' : ''}`}>
+        <ul ref={row} className={`bm-core-row${two ? ' two' : ''}${pair ? ' pair' : ''}`}>
           {cores.map((core, i) => (
-            <CoreCard key={keyOf(core)} core={core} open={i === openIndex} rows={rows} toggle={two}
+            <CoreCard key={keyOf(core)} core={core} open={pair || i === openIndex} rows={rows} toggle={two && !pair} small={two}
               onOpen={() => setPicked(keyOf(core))} lang={lang} t={t} />
           ))}
           {/* Un core solo: a destra, dove con due starebbe il secondo, i tipi che regge (grandi, col conto sopra) */}
@@ -364,8 +410,8 @@ function Entry({ row, index, open, compact, onToggle, t }: { row: ActiveRow; ind
 
 /**
  * La scheda Bonus/Malus. In alto: a sinistra la carta dei core a tre (sempre della stessa misura), a destra il netto sul
- * voto con bonus e malus in tutto (core compresi), le barre (solo se c'è posto) e il link al catalogo con tutte le voci
- * possibili (la guida della scheda). Sotto, due schede, Bonus e Malus (prima i bonus se ce ne sono), e le voci della scheda
+ * voto con bonus e malus in tutto (core compresi) e le barre in fondo (solo se c'è posto); il link al catalogo con tutte le
+ * voci possibili (la guida della scheda) in alto a destra. Sotto, due schede, Bonus e Malus (prima i bonus se ce ne sono), e le voci della scheda
  * scelta a tutta larghezza, ognuna con la sua medaglia. I ruoli non ci sono, né fra le voci né nei totali
  * (bonusMalusTotals): hanno i loro punti nella sottoscheda Ruoli.
  */
@@ -402,8 +448,12 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
   return (
     <div className={`bm${any ? '' : ' empty'}${open ? ' expanded' : ''}${bars ? '' : ' no-bars'}`} ref={root}>
       <section className="bm-grade" aria-labelledby={head}>
-        <div className="bm-sum">
+        {/* In testa "Sul voto" e, in alto a destra come il link della sottoscheda Ruoli, il catalogo di tutte le voci */}
+        <div className="bm-grade-head">
           <h4 id={head} className="bm-label">{t('catalogue.onGrade')}</h4>
+          {onCatalogue && <button type="button" className="bm-more" onClick={onCatalogue}>{t('catalogue.all')} <span aria-hidden="true">›</span></button>}
+        </div>
+        <div className="bm-sum">
           {/* Il risultato della scheda su una sua targhetta inclinata, nel colore del segno */}
           <p className={`bm-net ${net > 0 ? 'good' : net < 0 ? 'bad' : 'zero'}`}><span>{signed(net)}</span></p>
           {nothing ? <p className="bm-parts">{t('catalogue.none')}</p> : (
@@ -415,7 +465,6 @@ export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamR
         </div>
         {/* Sempre nella pagina; senza posto le nasconde la classe no-bars (così si possono provare le due sistemazioni) */}
         <Bars bonus={totals.bonus} malus={totals.malus} t={t} />
-        {onCatalogue && <button type="button" className="bm-more" onClick={onCatalogue}>{t('catalogue.all')} <span aria-hidden="true">›</span></button>}
       </section>
       <CoreColumn rating={rating} lang={lang} t={t} />
       {any && (
