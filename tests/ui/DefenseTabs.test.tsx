@@ -272,7 +272,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const expected = [...rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
     const names = () => panel.getAllByRole('columnheader').slice(1).map(h => h.getAttribute('aria-label'));
     expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
-    // Ogni casella: il danno di chi regge (verde sotto metà PS, giallo a metà), KO rosso per chi non c'è in heldBy
+    // Ogni casella: il danno coi colori di Coverage tipi (4HKO+ sotto un terzo, 3HKO sotto la metà, 2HKO), KO rosso per chi non c'è in heldBy
     const table = panel.getByRole('table');
     team.forEach((set, m) => {
       const cells = within(within(table).getAllByRole('row')[m + 1]).getAllByRole('cell');
@@ -283,7 +283,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
           expect(cells[k]).toHaveClass('hold-ohko');
         } else {
           expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));
-          expect(cells[k]).toHaveClass(h.partial ? 'hold-3' : 'hold-4');
+          expect(cells[k]).toHaveClass({ four: 'hold-4', three: 'hold-3', two: 'hold-2', ohko: 'hold-ohko' }[h.band]);
+          expect(h.band).toBe(h.pct >= 50 ? 'two' : h.pct >= 34 ? 'three' : h.pct < 33 ? 'four' : h.band);
           // Il colpo per i lettori di schermo (a vista sta nel tooltip DreamDex), la barra dei PS che restano
           expect(cells[k].querySelector('.visually-hidden')!.textContent!.trim()).toBe(`${r.species}: ${h.move} ${h.pct}%`);
           expect(cells[k].querySelector('.cm-hp')).not.toBeNull();
@@ -305,9 +306,9 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(within(pages).getByRole('button', { name: 'Minacce precedenti' })).toBeDisabled();
     expect(within(pages).getAllByRole('button')).toHaveLength(2);
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
-    // Come nell'Offesa: la legenda corta (KO, < 50%, 50–99%), niente conteggi
+    // La legenda corta (KO e le tre fasce col loro %, come Coverage tipi), niente conteggi
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
-    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('KO< 50%50–99%');
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('KO< 33%33–49%50–99%');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));
@@ -325,7 +326,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
 
   it('sottoschede nell\'ordine Generale, Coverage tipi, Sostenibilità, Coverage meta (niente Robustezza)', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità', 'Coverage meta']);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Sostenibilità']);
     expect(document.body.textContent).not.toMatch(/Robustezza/);
   });
 
@@ -382,5 +383,38 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     unmount();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     expect(document.querySelector('.mcs.wh')).toBeNull();
+  });
+});
+
+describe('Difesa Generale: clic sui pezzi delle barre', () => {
+  it('ogni pezzo ha la sua etichetta (3HKO+, 2HKO, OHKO); clic su un pezzo di Tipi: Coverage tipi con la riga del membro e quei tipi accesi, "Mostra tutti" li spegne', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
+    const pieces = Array.from(row.querySelectorAll('td')[0].querySelectorAll<HTMLElement>('.kob.hb'));
+    for (const p of pieces) expect(p.querySelector('em')).toHaveTextContent(/^(3HKO\+|2HKO|OHKO)$/);
+    const piece = pieces[0];
+    const n = Number(piece.querySelector('.kob-num')!.textContent);
+    expect(piece).toHaveAttribute('role', 'button');
+    await user.click(piece);
+    expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(document.querySelectorAll('td.kf-hit')).toHaveLength(n);
+    expect(document.querySelector('tr.kf-row')).not.toBeNull();
+    expect(document.querySelector('.kf-note')).toHaveTextContent(/Evidenziati/);
+    await user.click(screen.getByRole('button', { name: 'Mostra tutti' }));
+    expect(document.querySelector('td.kf-hit')).toBeNull();
+  });
+
+  it('clic su un pezzo di Meta: Coverage meta con le minacce di quel pezzo accese', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
+    const piece = row.querySelectorAll('td')[1].querySelector<HTMLElement>('.kob.hb')!;
+    const n = Number(piece.querySelector('.kob-num')!.textContent);
+    await user.click(piece);
+    expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
+    // Le minacce accese vengono per prime: nella prima pagina (8 per pagina) ce ne sono quante ne stanno
+    expect(document.querySelectorAll('td.kf-hit')).toHaveLength(Math.min(n, 8));
+    expect(document.querySelector('.kf-note')).not.toBeNull();
   });
 });
