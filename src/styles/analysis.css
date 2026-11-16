@@ -121,8 +121,6 @@
 .area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 500; }
 .sub-help-room { display: inline-block; width: 30px; }
 .area-help { position: absolute; z-index: 2; display: flex; }
-.area-help .help-button { width: 18px; height: 18px; color: var(--text); }
-.area-help .help-button .icon { width: 18px; height: 18px; }
 
 /* Ruoli e Bonus: due sottoschede grandi, metà striscia ciascuna (Bonus/Malus a sinistra, Ruoli a destra), nome e valore
    in Kanit corsivo come le schede principali. Colori e segno della sottoscheda aperta sono quelli delle altre aree (sopra);

@@ -16,8 +16,8 @@ import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
 import { FloatTip, useFloatAnchor } from './FloatTip';
 
-/** Lato del "?" sulla scheda aperta (px). */
-const HELP_SIZE = 18;
+/** Lato del "?" sulla scheda aperta (px): il pulsante d'aiuto (.help-button). */
+const HELP_SIZE = 20;
 
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda

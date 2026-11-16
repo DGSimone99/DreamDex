@@ -5,7 +5,9 @@ import { TYPES } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { TypeIcons } from '../typeIcons';
 
 /*
@@ -13,14 +15,14 @@ import { TypeIcons } from '../typeIcons';
  * (Coverage meta). Nella guida accanto ai Bersagli e nella Generale accanto alle testate Tipi e Meta.
  */
 
-/** Un "?" accanto al testo: passandoci sopra (o col fuoco) il tooltip DreamDex con il dettaglio dei bersagli. */
+/** Un "?" accanto al testo (la variante in riga del pulsante d'aiuto, stessa icona): passandoci sopra (o col fuoco) il tooltip DreamDex con il dettaglio dei bersagli. */
 export function Ask({ label, children }: { label: string; children: ReactNode }) {
   const tip = useFloatAnchor<true>();
   return (
     <>
       <button type="button" className="guide-ask" aria-label={label}
         onMouseEnter={e => tip.open(true, e.currentTarget)} onMouseLeave={tip.close}
-        onFocus={e => tip.open(true, e.currentTarget)} onBlur={tip.close}>?</button>
+        onFocus={e => tip.open(true, e.currentTarget)} onBlur={tip.close}><Icon name="help" /></button>
       {tip.anchor && <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="gat">{children}</FloatTip>}
     </>
   );
@@ -56,7 +58,7 @@ export function MetaTargets({ species }: { species: string[] }) {
   return (
     <>
       <div className="ftip-head"><b>{t('guide.off.targets.metaTitle', { n: species.length })}</b></div>
-      <div className="gat-mons">{species.map(name => <span key={name} title={name}><Sprite species={name} size={40} /></span>)}</div>
+      <div className="gat-mons">{species.map(name => <span key={name} title={name}><Sprite species={name} size={SPRITE_TIP_ROW} /></span>)}</div>
     </>
   );
 }
