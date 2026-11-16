@@ -104,8 +104,8 @@ const poolCache = new WeakMap<EngineData, Map<string, TeamSet[]>>();
 export function stylePool(team: TeamSet[], style: FillStyle, format: Format, data: EngineData): TeamSet[] {
   let cache = poolCache.get(data);
   if (!cache) poolCache.set(data, (cache = new Map()));
-  // Un pool per formato e stile; le specie del team si tolgono alla lettura
-  const key = `${format.formatId}:${format.genLimit}:${format.ignoreBans}:${style}`;
+  // Un pool per formato (col gioco e le sue opzioni) e stile; le specie del team si tolgono alla lettura
+  const key = `${format.formatId}:${format.genLimit}:${format.ignoreBans}:${format.game ?? ''}:${format.allPokedex}:${format.legendaries}:${style}`;
   let pool = cache.get(key);
   if (!pool) {
     // Solo Pokémon completamente evoluti; i più forti per statistiche base prima (ne serve una manciata)

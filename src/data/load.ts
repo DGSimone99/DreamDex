@@ -6,6 +6,7 @@ import { normalizeTeams } from '../engine/tournamentTeams';
 import type { PresetsData, SetsData } from '../engine/sets';
 import type { FallbackStats, SpeciesStats, StatsData, StatsMeta } from '../engine/stats';
 import type { GameNames } from '../i18n/game';
+import { GAME_IDS, type GameDexFile, type GameId } from '../engine/games';
 
 type Loaders = Record<string, () => Promise<unknown>>;
 
@@ -77,4 +78,19 @@ export async function loadItalianNames(loaders: Loaders = files): Promise<GameNa
   } catch {
     return null;
   }
+}
+
+/** Pokédex dei giochi (`data/_games/<gioco>.json`), o null se non ce n'è nessuno. */
+export async function loadGameDex(loaders: Loaders = files): Promise<Partial<Record<GameId, GameDexFile>> | null> {
+  const loaded: Partial<Record<GameId, GameDexFile>> = {};
+  for (const game of GAME_IDS) {
+    const loader = loaders[`/data/_games/${game}.json`];
+    if (!loader) continue;
+    try {
+      loaded[game] = (await loader()) as GameDexFile;
+    } catch {
+      // File corrotto: il gioco resta senza dati
+    }
+  }
+  return Object.keys(loaded).length ? loaded : null;
 }

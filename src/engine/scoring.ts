@@ -3,7 +3,8 @@ import { typeName } from '../i18n/game';
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { isUserBanned } from './lists';
-import { battleName, getSpecies, isCosmeticForme, isDefined, isMega, toID, withinGen } from './dex';
+import { battleName, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, toID, withinGen } from './dex';
+import { gameOf, obtainableIn } from './games';
 import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
@@ -81,8 +82,16 @@ export function uniqueFormes<T extends { species: string; set: TeamSet }>(entrie
 }
 
 export function candidatePool(team: TeamSet[], format: Format, data: EngineData): string[] {
-  if (!data.stats) return [];
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
+  // Nel gioco i candidati sono tutti i Pokémon che si possono avere (completamente evoluti), non quelli delle statistiche;
+  // con l'uso minimo infinito (scoreSets: solo i set dati) nessun candidato, come senza gioco
+  if (gameOf(format)) {
+    if (!Number.isFinite(format.minUsage)) return [];
+    return dex.species.all()
+      .filter(s => s.exists && !s.nfe && isTeambuildable(s) && !isCosmeticForme(s) && isLegalIn(s, format) && obtainableIn(s, format) && !teamNumbers.has(s.num))
+      .map(s => s.name);
+  }
+  if (!data.stats) return [];
   return Object.entries(data.stats.pokemon)
     .filter(([, entry]) => entry.usage >= format.minUsage)
     .map(([name]) => getSpecies(name))

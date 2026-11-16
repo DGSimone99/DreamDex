@@ -179,16 +179,16 @@ function referenceSet(data: EngineData, speciesName: string, genLimit: number): 
     ?? findByName(data.fallback ?? undefined, speciesName)
     ?? baseFormeSet(data.fallback, speciesName);
   const base = found && withAbility(withoutStone(found, stones, data), data);
-  if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit);
+  if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit, data.game ?? null);
   const legal = makeLegal(base, data, genLimit);
   // Se le mosse illegali non hanno sostituti dalle statistiche, si completa con quelle generate
   if (legal.moves.length >= Math.min(4, base.moves.length)) return legal;
-  const extra = generatedSet(legal.species, genLimit).moves.filter(m => !legal.moves.includes(m));
+  const extra = generatedSet(legal.species, genLimit, data.game ?? null).moves.filter(m => !legal.moves.includes(m));
   return { ...legal, moves: [...legal.moves, ...extra].slice(0, 4) };
 }
 
 function makeLegal(set: TeamSet, data: EngineData, genLimit: number): TeamSet {
-  const moves = legalMoves(set.species, genLimit);
+  const moves = legalMoves(set.species, genLimit, data.game ?? null);
   const abilities = legalAbilities(set.species, genLimit);
   const entry = statsEntry(data.stats, set.species);
   let result = set;

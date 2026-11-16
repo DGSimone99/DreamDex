@@ -1,8 +1,20 @@
 import type { Species } from '@pkmn/dex';
 import { battleSpecies, dex, getMove, getSpecies, toID } from './dex';
 import type { TeamSet } from './sets';
+import type { GameId } from './games';
 
-/** Per ogni specie: mossa → prima generazione in cui è imparabile (senza ereditarietà). */
+/**
+ * Valore della tabella: prima generazione in cui la mossa si impara (4 bit bassi) + 16 × maschera delle generazioni in cui
+ * si impara giocando (livello, MT, tutore, uovo; bit g-1). Gli eventi contano solo per la prima generazione.
+ */
+const firstGen = (value: number) => value & 15;
+const playMask = (value: number) => value >> 4;
+const merge = (a: number | undefined, b: number) => (a === undefined ? b : Math.min(firstGen(a), firstGen(b)) + 16 * (playMask(a) | playMask(b)));
+
+/** Generazione di ogni gioco (per le mosse imparabili nel gioco). */
+const GAME_GEN: Record<GameId, number> = { sv: 9 };
+
+/** Per ogni specie: mossa → valore codificato (vedi sopra), senza ereditarietà. */
 let raw: Map<string, Map<string, number>> | null = null;
 const resolved = new Map<string, Map<string, number>>();
 
@@ -16,7 +28,7 @@ export async function initLearnsets(): Promise<void> {
 
 export const learnsetsReady = (): boolean => raw !== null;
 
-/** Mosse con la generazione minima, ereditando da forma base e pre-evoluzioni. */
+/** Mosse col valore codificato, ereditando da forma base e pre-evoluzioni. */
 function inherited(species: Species): Map<string, number> | null {
   if (!raw) return null;
   const cached = resolved.get(species.id);
@@ -25,7 +37,7 @@ function inherited(species: Species): Map<string, number> | null {
   const visit = (s: Species | null, seen: Set<string>) => {
     if (!s || seen.has(s.id)) return;
     seen.add(s.id);
-    for (const [move, gen] of raw!.get(s.id) ?? []) result.set(move, Math.min(gen, result.get(move) ?? Infinity));
+    for (const [move, value] of raw!.get(s.id) ?? []) result.set(move, merge(result.get(move), value));
     if (s.changesFrom) visit(getSpecies(String(s.changesFrom)), seen);
     else if (s.baseSpecies !== s.name && !raw!.has(s.id)) visit(getSpecies(s.baseSpecies), seen);
     if (s.prevo) visit(getSpecies(s.prevo), seen);
@@ -45,16 +57,23 @@ function sketchable(genLimit: number): Set<string> | null {
     .map(m => m.id));
 }
 
-/** Mosse imparabili fino alla generazione indicata (id), o null se mancano i dati. */
-export function legalMoves(speciesName: string, genLimit: number): Set<string> | null {
+/**
+ * Mosse imparabili fino alla generazione indicata (id), o null se mancano i dati. Con un gioco: solo quelle che nel gioco
+ * si imparano giocando (livello, MT, tutore, uovo, anche dalle pre-evoluzioni) e che lì esistono.
+ */
+export function legalMoves(speciesName: string, genLimit: number, game: GameId | null = null): Set<string> | null {
   const species = getSpecies(speciesName);
-  if (species?.id === 'smeargle') return sketchable(genLimit);
+  if (species?.id === 'smeargle') {
+    const all = sketchable(genLimit);
+    return all && game ? new Set([...all].filter(id => !getMove(id)?.isNonstandard)) : all;
+  }
   const moves = species ? inherited(species) : null;
   if (!moves) return null;
+  const bit = game ? 1 << (GAME_GEN[game] - 1) : 0;
   const legal = new Set<string>();
-  for (const [id, gen] of moves) {
+  for (const [id, value] of moves) {
     const move = getMove(id);
-    if (gen <= genLimit && (!move || move.gen <= genLimit)) legal.add(id);
+    if (game ? playMask(value) & bit && !move?.isNonstandard : firstGen(value) <= genLimit && (!move || move.gen <= genLimit)) legal.add(id);
   }
   return legal;
 }

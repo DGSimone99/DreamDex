@@ -5,6 +5,7 @@ import { battleSpecies, getSpecies, toID } from './dex';
 import { isLearnable, legalAbilities, legalMoves } from './learnsets';
 import { rateTeam } from './rating';
 import { presetsForSet, type TeamSet } from './sets';
+import type { GameId } from './games';
 
 /** Modifiche al massimo per membro: il set resta riconoscibile. */
 export const MAX_TUNES = 2;
@@ -15,10 +16,13 @@ export const CORE_MOVE_SHARE = 0.95;
 
 export const family = (move: string) => (toID(move).startsWith('hiddenpower') ? 'hiddenpower' : toID(move));
 
-/** Le mosse quasi obbligatorie del Pokémon (quota d'uso almeno CORE_MOVE_SHARE), solo se legali (tranne con Custom Skillset). */
-export function coreMoves(set: TeamSet, data: EngineData, genLimit: number): string[] {
+/**
+ * Le mosse quasi obbligatorie del Pokémon (quota d'uso almeno CORE_MOVE_SHARE), solo se legali (tranne con Custom Skillset).
+ * `game` solo da chi propone i set nel gioco: il Coaching (moveFixes) non lo passa, così resta uguale con e senza gioco.
+ */
+export function coreMoves(set: TeamSet, data: EngineData, genLimit: number, game: GameId | null = null): string[] {
   if (!data.stats) return [];
-  const legal = set.customSkillset ? null : legalMoves(set.species, genLimit);
+  const legal = set.customSkillset ? null : legalMoves(set.species, genLimit, game);
   return commonChoices(data, set).moves
     .filter(c => (c.share ?? 0) >= CORE_MOVE_SHARE && (!legal || isLearnable(legal, c.name)))
     .map(c => c.name);
@@ -26,7 +30,7 @@ export function coreMoves(set: TeamSet, data: EngineData, genLimit: number): str
 
 /** Il set con le mosse quasi obbligatorie che gli mancano, ognuna al posto della mossa meno usata (o in uno slot vuoto). */
 export function withCoreMoves(set: TeamSet, data: EngineData, genLimit = 9): TeamSet {
-  const core = coreMoves(set, data, genLimit);
+  const core = coreMoves(set, data, genLimit, data.game ?? null);
   const missing = core.filter(move => !set.moves.some(m => family(m) === family(move)));
   if (!missing.length) return set;
   const share = new Map(commonChoices(data, set).moves.map(c => [family(c.name), c.share ?? 0]));
@@ -55,7 +59,7 @@ export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLim
   if (!data.stats) return current;
   const common = commonChoices(data, current);
   const custom = !!current.customSkillset;
-  const legal = custom ? null : legalMoves(current.species, genLimit);
+  const legal = custom ? null : legalMoves(current.species, genLimit, data.game ?? null);
   const moves = common.moves.map(c => c.name).filter(move => !legal || isLearnable(legal, move)).slice(0, TUNE_MOVES);
   // Con la megapietra l'abilità è quella della Mega: non si tocca
   const forme = battleSpecies(current);
@@ -64,7 +68,7 @@ export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLim
   const abilities = locked ? [] : common.abilities.map(c => c.name).filter(name => !allowed || allowed.includes(name));
   const grade = (set: TeamSet) => rateTeam(team.map((s, j) => (j === index ? set : s)), data, 'en')?.overall ?? -Infinity;
   // Le mosse quasi obbligatorie non si toccano, anche se il voto preferirebbe altro (Surging Strikes col sole del team)
-  const core = coreMoves(current, data, genLimit).map(family);
+  const core = coreMoves(current, data, genLimit, data.game ?? null).map(family);
   let score = grade(current);
   for (let step = 0; step < MAX_TUNES; step++) {
     let best: TeamSet | null = null;
