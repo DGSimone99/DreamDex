@@ -1,27 +1,19 @@
-import { metaThreats } from '../engine/attackers';
-import { battleName } from '../engine/dex';
-import { useMemberTip } from './MemberCard';
 import { useLayoutEffect, useState } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import type { EngineData } from '../engine/data';
 import type { MoveFix } from '../engine/moveFixes';
-import { rateTeam, ratingThreats, type TeamRating } from '../engine/rating';
+import { ratingThreats, type TeamRating } from '../engine/rating';
 import { usageOf } from '../engine/stats';
 import type { TeamSet } from '../engine/sets';
-import { formatPercent } from '../i18n';
-import { useLang, useT } from '../i18n/react';
+import { useT } from '../i18n/react';
 import { AnalysisOverview } from './AnalysisOverview';
 import { AnalysisTabs } from './AnalysisTabs';
 import { resolveView, type AnalysisView, type TabView } from './analysisView';
 import type { AreaKey } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
-import { Icon } from './icons';
-import { MetaUsePanel } from './MetaUsePanel';
-import { PokemonList } from './PokemonName';
-import { Sprite } from './Sprite';
 
 /**
  * I problemi del coaching che riguardano ogni area, nella striscia in fondo (regole, condizioni e minacce del meta restano
@@ -103,73 +95,6 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
       <AnalysisTabs view={tabView} onView={openView} panelId="analysis-view" areasDisabled={!rating} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
         scores={Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value]))} />
       <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${tabView}`} className="analysis-view">{body}</div>
-    </section>
-  );
-}
-
-/** Uso nel meta dei membri e minacce del meta; senza meta, niente. */
-function MetaPanelBody({ team, rating, data, coaching, expanded = false }: { team: TeamSet[]; analysis: TeamAnalysis; rating?: TeamRating | null; data?: EngineData; coaching?: Coaching; expanded?: boolean }) {
-  const tr = useT();
-  const lang = useLang();
-  // Le minacce come le giudica il voto (Coverage meta della Difesa), come il coach e la Panoramica
-  const judged = rating !== undefined ? rating : data ? rateTeam(team, data, lang) : null;
-  const threats = data ? ratingThreats(judged, data) : [];
-  const open = threats.filter(t => t.handledBy.length === 0);
-  const score = threats.length ? judged?.defense.coverageMeta?.value ?? null : null;
-  // Sulla sprite di una minaccia: la carta del suo set più usato nel meta (quello che il voto usa per i calcoli)
-  const memberTip = useMemberTip();
-  const threatSets = data ? metaThreats(data) : [];
-  const setOfThreat = (name: string) => threatSets.find(x => battleName(x.set) === name)?.set;
-  const threatSummary = score === null
-    ? tr('analysis.threatsNoData')
-    : open.length === 0 ? tr('analysis.threatsAll') : tr('analysis.threatsOpen', { n: open.length });
-  return (
-    <>
-      {/* Senza meta niente uso nel formato né minacce */}
-      {data && !data.ignoreMeta && team.length > 0 && <MetaUsePanel team={team} data={data} open={expanded} />}
-
-      {!data?.ignoreMeta && <details className="block" open={expanded}>
-        <summary><span>{tr('analysis.threats')}</span><span>{threatSummary}</span></summary>
-        {score !== null && (
-          <p className="note">
-            {tr('analysis.threatScore', { n: threats.length })} <strong>{Math.round(score)}%</strong>
-            <meter min={0} max={100} value={score} />
-          </p>
-        )}
-        <ul className="mon-rows">
-          {threats.map(t => {
-            const fixes = coaching?.threatFixes[t.name] ?? [];
-            return (
-              <li key={t.name} className={t.handledBy.length ? '' : 'bad'}>
-                <span className="mon-tip" {...(setOfThreat(t.name) ? memberTip.bind(setOfThreat(t.name)!, tr('mcard.threat', { pct: formatPercent(lang, t.usage) })) : {})}>
-                  <Sprite species={t.name} size={40} />
-                </span>
-                <span className="who">
-                  <strong>{t.name}</strong> <span className="usage">{formatPercent(lang, t.usage)}</span>
-                </span>
-                <span className="status">
-                  <Icon name={t.handledBy.length ? 'check' : 'close'} />
-                  <span>
-                    {t.handledBy.length ? <span className="handled">{tr('analysis.handledBy')} <PokemonList names={t.handledBy} /></span> : tr('analysis.noCheck')}
-                    {fixes.length > 0 && <small className="fixes">{tr('analysis.consider')} <PokemonList names={fixes} separator={` ${tr('analysis.or')} `} /></small>}
-                  </span>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </details>}
-      {memberTip.tip}
-    </>
-  );
-}
-
-/** Scheda Meta: uso nel meta a sinistra, minacce a destra. */
-export function MetaPanel(props: { team: TeamSet[]; analysis: TeamAnalysis; rating?: TeamRating | null; data?: EngineData; coaching?: Coaching }) {
-  const tr = useT();
-  return (
-    <section aria-label={tr('tabs.meta')} className="meta-panel">
-      <MetaPanelBody {...props} expanded />
     </section>
   );
 }

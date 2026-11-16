@@ -1,0 +1,81 @@
+/* Scheda Meta: a sinistra il tuo team e la griglia dei più usati (carte della lista Pokémon, suggestions.css), a destra
+   la scheda del Pokémon scelto. Solo informativa: niente magenta, la scelta è ciano come nella lista */
+.meta-tab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 330px); gap: 22px; align-items: start; }
+.meta-main { min-width: 0; }
+.meta-plate { display: inline-block; flex: none; margin: 0; padding: 3px 22px 3px 10px; font: 700 14px/1.25 var(--display); font-style: italic;
+  letter-spacing: 0.01em; color: var(--on-plate); background: var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+
+/* Il tuo team: una targhetta per membro, sempre con posizione e uso; cliccabile (apre la sua scheda) */
+.meta-team { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; }
+.meta-member { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 2px 10px 2px 2px; border: 0; border-left: 2px solid var(--accent);
+  border-radius: 0; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; transition: background 0.15s; }
+.meta-member .sprite, .meta-member .sprite.missing { width: 40px; height: 40px; }
+@media (hover: hover) { .meta-member:not(:disabled):hover { background: var(--raised); } }
+.meta-member[aria-pressed='true'] { background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.meta-member:disabled { cursor: default; border-left-color: var(--line); color: var(--muted); }
+.meta-member small { font-size: 12px; }
+.meta-member-nums { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.meta-member-nums b { font: 700 13px/1.15 var(--display); font-style: italic; color: var(--accent-ink); }
+.meta-member-nums span { font: 700 12.5px/1.15 var(--display); font-style: italic; }
+.meta-average { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+.meta-board-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.meta-board-head > span { color: var(--muted); font-size: 12.5px; text-align: right; }
+
+/* La griglia: 6 carte per riga (4 se lo spazio è stretto). Margine come la lista: la carta sollevata non si taglia */
+.meta-grid { container: meta-grid / inline-size; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 10px 2px 12px; list-style: none; }
+.meta-card { --tile-h: 170px; --reasons: 1; }
+.meta-card .who { gap: 1px; }
+.meta-use { display: flex; align-items: center; gap: 6px; min-width: 0; font: 500 12px/16px var(--ui); color: var(--muted); }
+.meta-use b { flex: none; font: 700 12.5px/16px var(--display); font-style: italic; color: var(--text); font-variant-numeric: tabular-nums; }
+.meta-use i { flex: 1; height: 4px; border-radius: 2px; background: var(--field); overflow: hidden; }
+.meta-use i::before { content: ''; display: block; width: var(--w); height: 100%; border-radius: 2px; background: var(--accent); }
+/* "Tuo" sul bordo alto della targhetta del nome, a sinistra (a destra può esserci la forma: MEGA, THERIAN…) */
+.meta-mine { position: absolute; z-index: 1; top: -10px; left: 8px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 3px; background: var(--ground); color: var(--accent-ink); font: 700 11px/1.3 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; }
+/* Sulle tue carte con una forma (Landorus THERIAN, Urshifu RAPID STRIKE) la forma lascia posto a "Tuo" e si accorcia coi puntini */
+.meta-card { --mine-w: 56px; }
+.meta-mine { max-width: var(--mine-w); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta-card.mine .pick-name .forme { max-width: calc(100% - 16px - var(--mine-w) - 6px); }
+/* Podio: oro, argento, bronzo sulla targhetta della posizione e sulla cornice; restano al loro posto */
+.meta-card.medal-1 { --medal: #ffc93c; --on-medal: #2a1d00; }
+.meta-card.medal-2 { --medal: #cfd6e6; --on-medal: #161a26; }
+.meta-card.medal-3 { --medal: #e08a4f; --on-medal: #2a1000; }
+.meta-card[class*='medal-'] .card-face { --frame-c: var(--medal); }
+.meta-card[class*='medal-'] .tag { --tag-bg: var(--medal); color: var(--on-medal); }
+.meta-card[class*='medal-'].selected .card-face { --frame-c: var(--accent); }
+
+@media (max-width: 1279px) { .meta-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1099px) { .meta-tab { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .meta-card { --tile-h: 150px; } }
+
+/* La scheda del Pokémon scelto: testa sul colore del primo tipo, poi strumento e abilità, mosse, compagni */
+.meta-profile { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 12px 14px 14px; background: var(--band); border: 1px solid var(--line-soft); }
+.meta-profile .meta-plate { align-self: flex-start; }
+.meta-hero { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--t1) 30%, var(--panel)), var(--panel) 72%); border-bottom: 3px solid var(--t1); }
+.meta-hero .sprite { width: 96px; height: 96px; image-rendering: pixelated; }
+.meta-hero-id { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.meta-hero-id strong { max-width: 100%; font: 800 18px/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; }
+.meta-hero-id .forme { display: inline-block; padding: 1px 5px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink);
+  font: 700 11px/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; vertical-align: 3px; }
+.meta-hero-use b { font: 800 26px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+.meta-hero-use small { color: var(--muted); font-size: 13px; }
+.meta-hero-types { display: flex; flex-wrap: wrap; gap: 4px; }
+.meta-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 12px; margin: 0; font-size: 14px; }
+.meta-kv dt { color: var(--muted); }
+.meta-kv dd { margin: 0; font-weight: 500; }
+.meta-kv small, .meta-moves small { color: var(--faint); font-size: 12px; font-weight: 400; }
+.meta-sub h4 { margin: 0 0 6px; color: var(--muted); font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; }
+.meta-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.meta-moves li { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; padding: 3px 8px; background: var(--raised); border-left: 3px solid var(--mc); font-size: 13px; }
+.meta-moves li span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.meta-mates { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.meta-mates li > * { display: grid; place-items: center; width: 44px; height: 42px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
+.meta-mates button { cursor: pointer; color: inherit; }
+@media (hover: hover) { .meta-mates button:hover { border-color: var(--accent); background: var(--accent-wash); } }
+.meta-mates .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
+.meta-mates span[title] { opacity: 0.7; }
+/* Le regole generali (small a blocco, li delle liste) non valgono qui */
+.meta-profile small { display: inline; }
+.meta-mates li { display: block; flex: none; width: auto; margin: 0; padding: 0; border: 0; }
