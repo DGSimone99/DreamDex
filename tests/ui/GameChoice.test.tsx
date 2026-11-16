@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
@@ -90,8 +90,11 @@ describe('scelta del gioco', () => {
     // Senza gioco a team vuoto le schede mostrano l'uso nel meta
     expect(await screen.findAllByText(/%/)).not.toHaveLength(0);
     await chooseGame(user, 'sv');
-    await screen.findByRole('heading', { name: /Great Tusk|Gholdengo/ }).catch(() => null);
-    expect(document.querySelector('.card .result strong')).toBeNull();
+    // Al posto dell'uso, il voto che il Pokémon mette da solo: "+N" sulla scheda e nel dettaglio
+    await waitFor(() => expect(document.querySelector('.card .result strong')?.textContent).toMatch(/^\+\d+$/));
+    const first = document.querySelector('.card .result strong')!.textContent;
+    expect(document.querySelector('.detail-score strong')?.textContent).toBe(first);
+    expect(document.querySelector('.card .result')?.textContent).not.toMatch(/%/);
     expect(screen.queryByText(/uso nel meta/i)).toBeNull();
   });
 });

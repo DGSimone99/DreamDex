@@ -233,6 +233,8 @@ export function primeGains(results: [string, GainValue][]): void {
 export function computeGains(jobs: GainJob[], data: EngineData, lang: Lang, archetype: Archetype | undefined): GainValue[] {
   const evaluators = new Map<string, ReturnType<typeof swapEvaluator>>();
   return jobs.map(job => {
+    // Team vuoto: il voto del Pokémon da solo (aloneGains)
+    if (job.team.length === 0 && job.replaceIndex === null) return aloneGain(job.set, data, lang);
     const teamKey = JSON.stringify(job.team);
     let evaluator = evaluators.get(teamKey);
     if (!evaluator) evaluators.set(teamKey, (evaluator = swapEvaluator(job.team, data, lang, archetype)));
@@ -263,6 +265,34 @@ export function withCandidate(team: TeamSet[], set: TeamSet, replaceIndex: numbe
  * o sostituzione dell'unico membro) non c'è un voto da confrontare: restano come sono, senza `teamGain`.
  * `sort`: dal voto più alto (a parità, dal punteggio più alto); senza, si mantiene l'ordine (Sostituto simile).
  */
+/** Il voto del team col solo Pokémon, come "+N" da zero (il primo Pokémon "mette" N punti). */
+function aloneGain(set: TeamSet, data: EngineData, lang: Lang): TeamGain | null {
+  const rating = rateTeam([set], data, lang);
+  return rating ? { grade: rating.grade, overall: rating.overall, gain: rating.overall } : null;
+}
+
+/**
+ * A team vuoto, il voto che ogni candidato darebbe da solo (per la scelta del primo Pokémon nel gioco). Stessa cache e
+ * stessa raccolta dei voti della classifica, così si dividono fra i calcoli in parallelo; l'ordine resta quello dato.
+ */
+export function aloneGains<T extends { set: TeamSet }>(items: T[], data: EngineData, lang: Lang): (T & { teamGain?: TeamGain })[] {
+  const prefix = `alone|${dataKey(data)}|${lang}|`;
+  return items.map(item => {
+    const key = prefix + JSON.stringify(item.set);
+    let value: GainValue | undefined = evaluations.get(key);
+    if (value === undefined && !evaluations.has(key)) {
+      if (recording) {
+        recording.push({ key, team: [], replaceIndex: null, set: item.set });
+        return item;
+      }
+      evaluationMisses += 1;
+      value = aloneGain(item.set, data, lang);
+      storeGain(key, value);
+    }
+    return value && value !== 'excluded' ? { ...item, teamGain: value } : item;
+  });
+}
+
 export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
   items: T[], team: TeamSet[], replaceIndex: number | null, data: EngineData, lang: Lang, sort = true, archetype?: Archetype, report?: SwapReport,
 ): (T & { teamGain?: TeamGain })[] {

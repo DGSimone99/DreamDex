@@ -139,6 +139,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             {/* Solo "B 78 → A 86": che è il voto del team lo dice il posto; per i lettori di schermo resta la parola */}
             <span><span className="visually-hidden">{tr('detail.gradeLabel')} </span>{tr('detail.gradeChange', { from: `${before.grade} ${before.overall}`, to: `${result.grade} ${result.overall}` })}</span>
           </div>
+        ) : result && team.length === 0 ? (
+          // Primo Pokémon (nel gioco): il voto che mette da solo, "+36" e la sua lettera
+          <div className="detail-score">
+            <strong>{delta(result.gain) || '±0'}</strong>
+            <span><span className="visually-hidden">{tr('detail.gradeLabel')} </span>{`${result.grade} ${result.overall}`}</span>
+          </div>
         ) : usage !== null && (
           <div className="detail-score">
             <strong>{formatPercent(lang, usage)}</strong>

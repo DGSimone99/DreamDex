@@ -11,7 +11,7 @@ import { GAMES, gameOf, obtainableIn, pokedexRank } from './games';
 import { isUserBanned } from './lists';
 import { defaultSet } from './sets';
 import type { TeamSet } from './sets';
-import { bestSwaps, rankByTeamGain, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from './teamGain';
+import { aloneGains, bestSwaps, rankByTeamGain, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from './teamGain';
 
 /** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. */
 export const MAX = 50;
@@ -51,7 +51,8 @@ export interface RankingResult {
 export function startersFirst(items: RankedCandidate[], team: TeamSet[], format: Format, data: EngineData, lang: Lang,
   rank: (list: (Suggestion | Replacement)[]) => RankedCandidate[]): RankedCandidate[] {
   const game = gameOf(format);
-  if (!game) return items;
+  // Senza statistiche (dati del formato in arrivo) la lista è vuota: niente starter da soli con set inventati
+  if (!game || !data.stats) return items;
   const numbers = new Set(team.map(set => getSpecies(set.species)?.num));
   const starters = GAMES[game].starters.map(getSpecies)
     .filter(s => !!s && !numbers.has(s.num) && obtainableIn(s, format))
@@ -86,9 +87,11 @@ export function rankCandidates(params: RankingParams, data: EngineData): Ranking
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
     // Nel gioco, a team vuoto: tutti gli ottenibili (evoluzioni finali) in ordine di Pokédex, senza voti né uso nel meta
     const game = gameOf(format);
+    // (come senza gioco, aspetta le statistiche del formato: prima i set sarebbero inventati e i voti provvisori)
     if (game && team.length === 0) {
+      if (!data.stats) return [];
       const order = (item: Suggestion) => { const s = getSpecies(battleName(item.set)); return s ? pokedexRank(s, game) : Infinity; };
-      return suggest(team, format, data, Infinity, lang).sort((a, b) => order(a) - order(b));
+      return aloneGains(suggest(team, format, data, Infinity, lang).sort((a, b) => order(a) - order(b)), data, lang);
     }
     const additions = data.stats ? rankedAdditions(team, format, data, POOL, lang, archetype, report).slice(0, MAX) : [];
     return startersFirst(additions, team, format, data, lang, rank);
