@@ -119,9 +119,12 @@
 .og-legend span:where(:not(.area-legend)) { display: inline-flex; align-items: center; gap: var(--legend-pair); }
 /* Schermi bassi: le barre dei colpi più basse (22px), così sei membri e la riga del team stanno nella cornice */
 @media (min-width: 1100px) and (max-height: 640px) {
-  .kob-row > .kob { height: 22px; }
-  .kob-num > b { font-size: 15px; }
-  .kob-count-num > b { font-size: 16px; }
+  /* .def-frame davanti: queste regole vengono prima di quelle di base nel file e senza non valevano */
+  .def-frame .kob-row > .kob { height: 22px; }
+  .def-frame .kob-num > b { font-size: 15px; }
+  .def-frame .kob-count-num > b { font-size: 16px; }
+  /* Il conto e la sua lineetta stanno nei 22px della barra: la riga non si allunga e la tabella non scorre */
+  .def-frame .kob-count { gap: 2px; }
   .off-general tfoot .og-total > * { padding-top: 7px; padding-bottom: 3px; }
 }
 /* Le pastiglie delle mosse (squadra chiusa) solo se la cornice ha posto per sei righe con le pastiglie */
