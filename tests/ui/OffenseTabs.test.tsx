@@ -48,7 +48,7 @@ describe('Offesa: navigazione e guida', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/^CoverageBersagli.*Coverage tipi.*Pokémon medio.*Coverage meta.*Il test.*Colpo/);
     // La regola del credito nella riga del Colpo; quello che vale meno in una riga sola; niente ×2·×4 né righe della legenda
-    expect(panel).toHaveTextContent('vale quanto il suo danno se lo manda KO in due colpi, sotto il 50% non conta');
+    expect(panel).toHaveTextContent('Per ogni membro, il suo colpo migliore contro ogni bersaglio che fa almeno il 50%');
     expect(panel).toHaveTextContent('Valgono meno');
     expect(panel).toHaveTextContent('I colpi che non sono sempre pronti: Band, Specs e Gorilla Tactics, setup,');
     expect(panel).toHaveTextContent('Il meteo che il membro porta da sé conta pieno.');
