@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { EngineData } from '../../src/engine/data';
 import { illegalParts, initLearnsets, legalAbilities, legalMoves } from '../../src/engine/learnsets';
 import { defaultSet, emptySet, presetsForSet, type TeamSet } from '../../src/engine/sets';
-import { bestPreset, bestPresets } from '../../src/engine/bestPreset';
+import { bestPreset, bestPresets, coreMoves } from '../../src/engine/bestPreset';
 import type { SpeciesStats } from '../../src/engine/stats';
 
 beforeAll(async () => { await initLearnsets(); });
@@ -164,5 +164,24 @@ describe('mosse del gioco', () => {
     expect(defaultSet({ stats, sets: {}, formatId: 'gen9ag' }, 'Garchomp', 9).moves).toContain('Aqua Tail');
     expect(defaultSet({ stats, sets: {}, formatId: 'gen9ag', game: 'sv' }, 'Garchomp', 9).moves)
       .toEqual(['Earthquake', 'Stealth Rock', 'Swords Dance', 'Dragon Claw']);
+  });
+});
+
+describe('Coaching intatto col gioco', () => {
+  const entry: SpeciesStats = {
+    usage: 0.1, count: 100, items: {}, teraTypes: {}, spreads: {}, teammates: {}, checks: {}, abilities: { roughskin: 1 },
+    moves: { aquatail: 0.95, earthquake: 0.9, stealthrock: 0.8, swordsdance: 0.7 },
+  };
+  const stats = { meta: { month: 'm', cutoff: 1, battles: 1 }, pokemon: { Garchomp: entry } };
+  const member = set('Garchomp', 'Rough Skin', ['Earthquake']);
+
+  it('le mosse quasi obbligatorie del Coaching non leggono il gioco dai dati', () => {
+    const plain = coreMoves(member, { stats, sets: {}, formatId: 'gen9ag', ignoreMeta: true }, 9);
+    expect(plain).toContain('Aqua Tail');
+    expect(coreMoves(member, { stats, sets: {}, formatId: 'gen9ag', ignoreMeta: true, game: 'sv' }, 9)).toEqual(plain);
+  });
+
+  it('chi propone i set nel gioco le filtra col gioco', () => {
+    expect(coreMoves(member, { stats, sets: {} }, 9, 'sv')).not.toContain('Aqua Tail');
   });
 });

@@ -5,7 +5,9 @@ import { exclusiveOf, gameOf, gameReady, initGames, isLegendary, obtainableIn, w
 import { candidatePool, scoreSets } from '../../src/engine/scoring';
 import { emptySet } from '../../src/engine/sets';
 import { EMPTY_FILTERS, searchPool } from '../../src/engine/filters';
-import { fixtureData } from '../fixtures/data';
+import { fixtureData, gholdengo, tusk } from '../fixtures/data';
+import { rateTeam } from '../../src/engine/rating';
+import { moveFixes } from '../../src/engine/moveFixes';
 import { sanitizeFormat } from '../../src/storage';
 
 describe('gioco nel formato', () => {
@@ -81,5 +83,16 @@ describe('ottenibili nel gioco', () => {
   it('senza gioco i candidati restano quelli delle statistiche', () => {
     const plain = { ...DEFAULT_FORMAT, formatId: 'gen9ag' as const, meta: false };
     expect(candidatePool([], plain, fixtureData)).not.toContain('Meowscarada');
+  });
+});
+
+describe('valutazione intatta col gioco', () => {
+  it('stesso team: stesso voto e stessi cambi di mossa del Coaching, con o senza gioco', () => {
+    const team = [tusk, gholdengo];
+    const plainData = { ...fixtureData, formatId: 'gen9ag' as const, ignoreMeta: true };
+    const gameData = { ...plainData, game: 'sv' as const };
+    const plainFormat = { ...DEFAULT_FORMAT, formatId: 'gen9ag' as const, meta: false };
+    expect(rateTeam(team, gameData)).toEqual(rateTeam(team, plainData));
+    expect(moveFixes(team, withGame(DEFAULT_FORMAT, 'sv'), gameData, [], 'it')).toEqual(moveFixes(team, plainFormat, plainData, [], 'it'));
   });
 });
