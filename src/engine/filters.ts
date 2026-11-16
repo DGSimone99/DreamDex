@@ -1,6 +1,7 @@
 import type { Lang } from '../i18n';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, toID, withinGen } from './dex';
+import { obtainableIn } from './games';
 import { isBannedIn, speciesInPokedex, tierIn } from './formats';
 import type { Format } from './format';
 import { formatRules, type FormatRules } from './formatRules';
@@ -158,7 +159,7 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
   const query = toID(f.query);
   const candidates = dex.species.all()
-    .filter(s => isTeambuildable(s) && speciesInPokedex(s, format) && !isCosmeticForme(s) && withinGen(s, format) && !teamNumbers.has(s.num))
+    .filter(s => isTeambuildable(s) && speciesInPokedex(s, format) && obtainableIn(s, format) && !isCosmeticForme(s) && withinGen(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
     .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name, format.genLimit) }))
     .filter(c => matchesFilters(c, f, data, format));

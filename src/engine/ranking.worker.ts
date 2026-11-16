@@ -5,7 +5,8 @@
  * italiani arrivano dall'app. Le parti dei dati arrivano una volta sola (per numero) e i team uguali diventano lo
  * stesso oggetto: così le cache del motore (che guardano l'identità) valgono da una richiesta all'altra.
  */
-import { loadBans, loadTiers } from '../data/load';
+import { loadBans, loadGameDex, loadTiers } from '../data/load';
+import { initGames } from './games';
 import { initGameNames, type GameNames } from '../i18n/game';
 import { rankCandidates, type RankingParams } from './candidateRanking';
 import type { EngineData } from './data';
@@ -19,7 +20,7 @@ import { coachAdvice } from './coach';
 import { improveSets } from './bestPreset';
 import { fillProposals } from './fillProposals';
 
-const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans)]);
+const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans), loadGameDex().then(initGames)]);
 // I learnset (tanta memoria) servono solo a fare i set dei candidati, cioè a chi decide i voti e fa la lista: chi
 // calcola solo voti non li carica (il voto non li usa: voti identici con e senza, controllato su 784 voti)
 // Il primo calcolo ("lead", quello che fa la lista) li carica subito, così la prima lista non li aspetta
