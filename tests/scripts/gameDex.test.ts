@@ -6,8 +6,9 @@ const dexNumbers = [['species_id', 'pokedex_id', 'pokedex_number'], ['906', '31'
 const species = [['id', 'identifier'], ['906', 'sprigatito'], ['122', 'mr-mime'], ['23', 'ekans'], ['1', 'bulbasaur']];
 
 describe('Pokédex del gioco', () => {
-  it('specie dei Pokédex scelti, con gli id di @pkmn', () => {
-    expect(buildGameDex(dexNumbers, species, [31, 32, 33])).toEqual(['ekans', 'mrmime', 'sprigatito']);
+  it('specie dei Pokédex scelti, con gli id di @pkmn, in ordine regionale (Pokédex dopo Pokédex, senza doppioni)', () => {
+    expect(buildGameDex(dexNumbers, species, [31, 32, 33])).toEqual(['sprigatito', 'mrmime', 'ekans']);
+    expect(buildGameDex(dexNumbers, species, [32, 31])).toEqual(['ekans', 'sprigatito', 'mrmime']);
   });
 
   it('un nome che @pkmn non conosce è un errore', () => {

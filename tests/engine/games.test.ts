@@ -80,6 +80,11 @@ describe('ottenibili nel gioco', () => {
     expect(scored.map(s => s.species)).toEqual(['Meowscarada']);
   });
 
+  it("nel gioco il filtro dell'uso nel meta non toglie nessuno", () => {
+    const common = { ...EMPTY_FILTERS, usage: 'common' as const };
+    expect(searchPool([], sv(), fixtureData, common).map(s => s.species)).toContain('Meowscarada');
+  });
+
   it('senza gioco i candidati restano quelli delle statistiche', () => {
     const plain = { ...DEFAULT_FORMAT, formatId: 'gen9ag' as const, meta: false };
     expect(candidatePool([], plain, fixtureData)).not.toContain('Meowscarada');

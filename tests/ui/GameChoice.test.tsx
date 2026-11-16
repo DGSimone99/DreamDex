@@ -82,4 +82,16 @@ describe('scelta del gioco', () => {
     await chooseGame(user, 'none');
     expect(chosen('format-tier')).toBe('ubers');
   });
+
+  it('a team vuoto nel gioco niente uso nel meta sulle schede né nel dettaglio', async () => {
+    initGames({ sv: { dex: ['greattusk', 'gholdengo'] } });
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    // Senza gioco a team vuoto le schede mostrano l'uso nel meta
+    expect(await screen.findAllByText(/%/)).not.toHaveLength(0);
+    await chooseGame(user, 'sv');
+    await screen.findByRole('heading', { name: /Great Tusk|Gholdengo/ }).catch(() => null);
+    expect(document.querySelector('.card .result strong')).toBeNull();
+    expect(screen.queryByText(/uso nel meta/i)).toBeNull();
+  });
 });

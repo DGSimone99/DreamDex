@@ -5,9 +5,9 @@ import type { EngineData } from './data';
 import { searchCandidates, searchPool, type CandidateFilters } from './filters';
 import type { Format } from './format';
 import { improveReplacements, keepersFirst, type Replacement } from './replace';
-import { scoreSets, type Suggestion } from './scoring';
+import { scoreSets, suggest, type Suggestion } from './scoring';
 import { battleName, getSpecies } from './dex';
-import { GAMES, gameOf, obtainableIn } from './games';
+import { GAMES, gameOf, obtainableIn, pokedexRank } from './games';
 import { isUserBanned } from './lists';
 import { defaultSet } from './sets';
 import type { TeamSet } from './sets';
@@ -84,6 +84,12 @@ export function rankCandidates(params: RankingParams, data: EngineData): Ranking
         : rankedReplacements(team, replaceIndex, format, data, POOL, lang, archetype, report).slice(0, MAX));
     }
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
+    // Nel gioco, a team vuoto: tutti gli ottenibili (evoluzioni finali) in ordine di Pokédex, senza voti né uso nel meta
+    const game = gameOf(format);
+    if (game && team.length === 0) {
+      const order = (item: Suggestion) => { const s = getSpecies(battleName(item.set)); return s ? pokedexRank(s, game) : Infinity; };
+      return suggest(team, format, data, Infinity, lang).sort((a, b) => order(a) - order(b));
+    }
     const additions = data.stats ? rankedAdditions(team, format, data, POOL, lang, archetype, report).slice(0, MAX) : [];
     return startersFirst(additions, team, format, data, lang, rank);
   })();

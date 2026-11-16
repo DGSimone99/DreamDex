@@ -270,7 +270,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     ?? (pickedIndex >= page * perPage && pickedIndex < (page + 1) * perPage ? items[pickedIndex] : undefined)
     ?? pageItems[0];
   const selectedRank = selected ? items.indexOf(selected) + 1 : 0;
-  const usageOf = (species: string) => statsEntry(data.stats, species)?.usage ?? null;
+  // Nel gioco l'uso nel meta competitivo non dice niente: le schede a team vuoto non lo mostrano
+  const usageOf = (species: string) => (format.game ? null : statsEntry(data.stats, species)?.usage ?? null);
   const act = (item: Item) => {
     if (item.replaces !== undefined) onReplaceWith(item.replaces, item.set);
     else if (replacing) onReplaceWith(replaceIndex, item.set);
@@ -366,7 +367,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
         </select>
       </label>
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} />
     </>
   );
 

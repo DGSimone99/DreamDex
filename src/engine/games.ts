@@ -6,7 +6,7 @@ import type { Format } from './format';
 export type GameId = 'sv';
 export const GAME_IDS: GameId[] = ['sv'];
 
-/** Pokédex del gioco preparato da fetch-data (`data/_games/<gioco>.json`): id delle specie dei Pokédex regionali. */
+/** Pokédex del gioco preparato da fetch-data (`data/_games/<gioco>.json`): id delle specie dei Pokédex regionali, in ordine regionale. */
 export interface GameDexFile { dex: string[] }
 
 type Locked = Pick<Format, 'formatId' | 'meta' | 'genLimit' | 'ignoreBans' | 'allowMultipleMegas'>;
@@ -51,13 +51,18 @@ export const GAMES: Record<GameId, GameInfo> = {
 };
 
 const dexes = new Map<GameId, Set<string>>();
+/** Posizione di ogni specie nel Pokédex regionale del gioco (l'ordine del file). */
+const orders = new Map<GameId, Map<string, number>>();
 
 /** Carica i Pokédex dei giochi (`loadGameDex`); senza, la scelta del gioco resta spenta. */
 export function initGames(loaded: Partial<Record<GameId, GameDexFile>> | null): void {
   dexes.clear();
+  orders.clear();
   for (const game of GAME_IDS) {
     const file = loaded?.[game];
-    if (file?.dex?.length) dexes.set(game, new Set(file.dex));
+    if (!file?.dex?.length) continue;
+    dexes.set(game, new Set(file.dex));
+    orders.set(game, new Map(file.dex.map((id, i) => [id, i])));
   }
 }
 
@@ -98,4 +103,13 @@ export function obtainableIn(species: Species, format: Format): boolean {
 export function exclusiveOf(species: Species, format: Format): 'scarlet' | 'violet' | null {
   const game = gameOf(format);
   return game ? GAMES[game].exclusives[species.id] ?? null : null;
+}
+
+/**
+ * Ordine del Pokédex nel gioco: prima chi sta nel Pokédex regionale (per posizione), poi gli altri (Tutto il Pokédex) per
+ * numero nazionale. Le forme seguono la loro specie.
+ */
+export function pokedexRank(species: Species, game: GameId): number {
+  const index = orders.get(game)?.get(toID(species.baseSpecies));
+  return index !== undefined ? index : 100000 + species.num;
 }

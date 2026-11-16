@@ -1,7 +1,7 @@
 import type { Lang } from '../i18n';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, toID, withinGen } from './dex';
-import { obtainableIn } from './games';
+import { gameOf, obtainableIn } from './games';
 import { isBannedIn, speciesInPokedex, tierIn } from './formats';
 import type { Format } from './format';
 import { formatRules, type FormatRules } from './formatRules';
@@ -131,7 +131,8 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
     const tags = getSpecies(candidate.species)?.tags ?? [];
     if (!included(f.legendary, tags.some(tag => ['Sub-Legendary', 'Restricted Legendary', 'Mythical'].includes(tag)))) return false;
   }
-  if (f.usage !== 'all') {
+  // Nel gioco l'uso nel meta competitivo non conta (il filtro non si vede, ma può essere rimasto acceso)
+  if (f.usage !== 'all' && !gameOf(format)) {
     const usage = usageOf(data.stats, battleName(set));
     if (f.usage === 'common' && usage < COMMON_USAGE) return false;
     if (f.usage === 'niche' && usage >= NICHE_USAGE) return false;
