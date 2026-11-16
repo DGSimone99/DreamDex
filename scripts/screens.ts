@@ -235,11 +235,14 @@ OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.type
 OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/), lang: 'en' };
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
 // La pagina Coverage tipi con la freccina del Colpo aperta: le difese medie dei 18 bersagli (il modale non cambia altezza)
+// La guida dal "?" di Coverage tipi, col puntatore sul "?" dei bersagli: il tooltip con le medie dei 18 tipi
 OFFENSE_STATES['analysis-offense-guide-types-open'] = { hash: hash(SIX), run: async p => {
-  const ok = await offenseGuide(OFFENSE_SUBS.general, /^(Coverage tipi|Type coverage)/).run!(p);
+  const ok = await offenseGuide(OFFENSE_SUBS.types).run!(p);
   if (ok !== true) return ok;
-  if (!await clickText(p, '.guide-more > summary', /./)) return 'no targets toggle';
-  await wait(300);
+  const ask = await p.$('.guide-ask');
+  if (!ask) return 'no targets ?';
+  await ask.hover();
+  await wait(500);
   return true;
 } };
 OFFENSE_STATES['analysis-offense-guide-types-open-en'] = { ...OFFENSE_STATES['analysis-offense-guide-types-open'], lang: 'en' } as State;

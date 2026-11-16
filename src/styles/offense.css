@@ -59,6 +59,19 @@
 .guide-targets th, .guide-targets td { padding: 2px 10px 2px 0; border-bottom: 1px solid var(--line-soft); text-align: right; }
 .guide-targets thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
 .guide-targets th:first-child { padding-right: 18px; text-align: left; }
+/* Il "?" accanto ai bersagli della guida: un tondino che apre il tooltip col dettaglio (medie dei 18 tipi, minacce del meta) */
+.guide-ask { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 4px; padding: 0; vertical-align: 1px; border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font: 700 11px/1 var(--display); cursor: help; }
+.guide-ask:hover, .guide-ask:focus-visible { background: color-mix(in srgb, var(--accent) 28%, transparent); outline: none; }
+.ftip.gat { width: auto; max-width: min(560px, calc(100vw - 16px)); }
+.gat-cols { display: flex; gap: 18px; padding: 8px 12px 10px; }
+.gat-table { border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.gat-table th, .gat-table td { padding: 2px 0 2px 12px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
+.gat-table thead th { font: 700 10.5px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding-bottom: 5px; }
+.gat-table tbody th { padding-left: 0; text-align: left; font-weight: 600; }
+.gat-table tbody th img { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+.gat-table tbody tr:last-child > * { border-bottom: 0; }
+.gat-mons { display: grid; grid-template-columns: repeat(8, 40px); gap: 2px 4px; padding: 8px 12px 10px; }
 .guide-targets tbody th { font-weight: 600; color: var(--text); white-space: nowrap; }
 .guide-targets tbody th .type-icons { margin-right: 6px; vertical-align: middle; }
 .guide-targets td { min-width: 4ch; color: var(--text); }

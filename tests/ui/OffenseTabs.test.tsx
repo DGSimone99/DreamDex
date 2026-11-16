@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
@@ -43,16 +43,27 @@ describe('Offesa: navigazione e guida', () => {
     const help = screen.getByRole('button', { name: 'Come funziona Coverage tipi' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in fondo
+    // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in alto
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Coverage']);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent('Pokémon medio');
-    expect(panel).toHaveTextContent(/Bersagli.*Coverage tipi.*Coverage meta/);
-    // La regola del credito nella riga del Colpo; quello che conta meno in una riga sola; niente righe della legenda
+    expect(panel).toHaveTextContent(/^CoverageBersagli.*Coverage tipi.*Pokémon medio.*Coverage meta.*Il test.*Colpo/);
+    // La regola del credito nella riga del Colpo; quello che vale meno in una riga sola; niente ×2·×4 né righe della legenda
     expect(panel).toHaveTextContent('vale quanto il suo danno se lo manda KO in due colpi, sotto il 50% non conta');
-    expect(panel).toHaveTextContent('Contano meno');
+    expect(panel).toHaveTextContent('Valgono meno');
+    expect(panel).toHaveTextContent('I colpi che non sono sempre pronti: Band, Specs e Gorilla Tactics, setup,');
     expect(panel).toHaveTextContent('Il meteo che il membro porta da sé conta pieno.');
-    for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie']) expect(panel).not.toHaveTextContent(gone);
+    for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie', '×2 · ×4']) expect(panel).not.toHaveTextContent(gone);
+    // Il "?" dei tipi: le medie dei 18 tipi nel tooltip; quello del meta: le sprite delle minacce
+    await user.hover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
+    await waitFor(() => expect(document.querySelector('.ftip.gat .gat-table')).not.toBeNull());
+    const avg = document.querySelector('.ftip.gat')!;
+    expect(avg.querySelectorAll('tbody tr')).toHaveLength(18);
+    await user.unhover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
+    const metaAsk = within(panel).getByRole('button', { name: /^I \d+ Pokémon più usati$/ });
+    await user.hover(metaAsk);
+    await waitFor(() => expect(document.querySelector('.ftip.gat .gat-mons')).not.toBeNull());
+    expect(document.querySelectorAll('.ftip.gat .gat-mons > span').length).toBe(withMeta().offense.coverageMeta!.rows.length);
+    await user.unhover(metaAsk);
     // La Generale non ha più la sua sezione nella guida
     expect(within(dialog).queryByRole('tab', { name: 'Generale' })).toBeNull();
     await user.keyboard('{Escape}');
@@ -69,7 +80,7 @@ describe('Offesa: navigazione e guida', () => {
     await user.click(screen.getByRole('button', { name: 'Come funziona Coverage meta' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
     expect(within(dialog).getByRole('tab', { name: 'Coverage' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Contano meno');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Valgono meno');
   });
 
   it('il Wallbreaking e la Potenza non compaiono più, né nelle schede né nella guida', async () => {

@@ -2,10 +2,16 @@ import type { ReactNode } from 'react';
 import type { TeamOffense } from '../../engine/offense';
 import { OFFENSE_DEPTH } from '../../engine/offense';
 import { depthWeights } from '../../engine/coverage';
+import { typeAverage } from '../../engine/coverage';
 import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { pokedexOf, teraAllowed } from '../../engine/formats';
-import { useT } from '../../i18n/react';
+import { TYPES } from '../../engine/types';
+import { typeName } from '../../i18n/game';
+import { useLang, useT } from '../../i18n/react';
+import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { Rows } from '../guideParts';
+import { Sprite } from '../Sprite';
+import { TypeIcons } from '../typeIcons';
 
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
@@ -25,9 +31,58 @@ function Bar({ label, weights, rank, from, to }: { label: string; weights: numbe
   );
 }
 
+/** Un "?" accanto al testo: passandoci sopra (o col fuoco) il tooltip DreamDex con il dettaglio dei bersagli. */
+function Ask({ label, children }: { label: string; children: ReactNode }) {
+  const tip = useFloatAnchor<true>();
+  return (
+    <>
+      <button type="button" className="guide-ask" aria-label={label}
+        onMouseEnter={e => tip.open(true, e.currentTarget)} onMouseLeave={tip.close}
+        onFocus={e => tip.open(true, e.currentTarget)} onBlur={tip.close}>?</button>
+      {tip.anchor && <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="gat">{children}</FloatTip>}
+    </>
+  );
+}
+
+/** Il Pokémon medio dei 18 tipi: PS, Difesa e Difesa Speciale base nel Pokédex del formato, in due colonne. */
+function TypeAverages({ formatId }: { formatId: FormatId }) {
+  const t = useT();
+  const lang = useLang();
+  return (
+    <>
+      <div className="ftip-head"><b>{t('guide.off.targets.typesTitle')}</b></div>
+      <div className="gat-cols">
+        {[TYPES.slice(0, 9), TYPES.slice(9)].map((part, col) => (
+          <table key={col} className="gat-table">
+            <thead><tr><th scope="col" /><th scope="col">{t('stat.hp')}</th><th scope="col">{t('stat.def')}</th><th scope="col">{t('stat.spd')}</th></tr></thead>
+            <tbody>
+              {part.map(type => {
+                const a = typeAverage(type, { stats: null, sets: null, formatId });
+                return <tr key={type}><th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th><td>{a.hp}</td><td>{a.def}</td><td>{a.spd}</td></tr>;
+              })}
+            </tbody>
+          </table>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** Le minacce del meta usate come bersagli: le sprite, dalla più usata. */
+function MetaTargets({ species }: { species: string[] }) {
+  const t = useT();
+  return (
+    <>
+      <div className="ftip-head"><b>{t('guide.off.targets.metaTitle', { n: species.length })}</b></div>
+      <div className="gat-mons">{species.map(name => <span key={name} title={name}><Sprite species={name} size={40} /></span>)}</div>
+    </>
+  );
+}
+
 /**
- * La guida all'Offesa: una pagina per le due Coverage, che hanno le stesse regole (colpo, cosa conta meno, pesi);
- * in fondo i bersagli, l'unica differenza. Schematica e generica (niente valori del team).
+ * La guida all'Offesa: una pagina per le due Coverage. In alto i bersagli, l'unica differenza fra le due (col "?" il
+ * dettaglio: le medie dei 18 tipi, le minacce del meta); poi le regole comuni (colpo, cosa vale meno, pesi).
+ * Schematica e generica (niente valori del team).
  */
 export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { offense: TeamOffense; formatId?: FormatId }) {
   const t = useT();
@@ -39,28 +94,27 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
   const tera = teraAllowed(format);
   const z = pokedexOf(format) === 'natdex';
   const oneUse = tera && z ? g('less.oneuse') : tera ? g('less.tera') : z ? g('less.z') : null;
-  const less = [g('less.locked'), g('less.field'), g('less.setup'), ...(oneUse ? [oneUse] : [])].join(', ');
-  const count = offense.coverageMeta?.rows.length ?? 0;
+  const less = [g('less.locked'), g('less.setup'), g('less.field'), ...(oneUse ? [oneUse] : [])].join(', ');
+  const metaSpecies = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => b.weight - a.weight).map(r => r.species);
   // I pesi sono gli stessi nelle due schede (70/20/10): la barra è una
   const depth = depthOf(false);
   return (
     <>
+      <h5>{g('test.targets')}</h5>
+      <Rows compact rows={[
+        [t('detail.coverageTypes'), <>{g('targets.types')} <Ask label={g('targets.typesTitle')}><TypeAverages formatId={formatId} /></Ask></>],
+        ...(offense.coverageMeta ? [[t('detail.coverageMeta'), <>{g('cov.targets.meta', { n: metaSpecies.length })} <Ask label={g('targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></>] as [ReactNode, ReactNode]] : []),
+      ]} />
+
       <h5>{g('test')}</h5>
       <Rows compact rows={[
         [g('power.hit'), g('power.hit.rule')],
-        [g('less'), `${less.charAt(0).toUpperCase()}${less.slice(1)}. ${g('less.own')}`],
-        [g('eff'), g('eff.rule')],
+        [g('less'), g('less.rule', { list: less })],
       ]} />
 
       <h5>{g('cov.depth')}</h5>
       <Bar label={g('cov.depth')} weights={depth} rank={n => g('cov.rank', { n })} />
       {lines([g('cov.scale', scaleOf(depth))])}
-
-      <h5>{g('test.targets')}</h5>
-      <Rows compact rows={[
-        [t('detail.coverageTypes'), g('targets.types')],
-        ...(offense.coverageMeta ? [[t('detail.coverageMeta'), g('cov.targets.meta', { n: count })] as [ReactNode, string]] : []),
-      ]} />
     </>
   );
 }
