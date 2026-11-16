@@ -193,18 +193,6 @@
 .kob.labeled { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 3px 11px 3px 8px; }
 .kob.labeled em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
 .kob.labeled > b { min-width: 0; font: 700 italic 15px/1 var(--display); }
-/* Variante B (non attiva: classe ko-labels-out sul pannello dell'area, solo per confrontarla): niente parola nei pezzi,
-   il significato dal colore e dalla chiave in alto a destra (più tooltip e nome per i lettori di schermo); il numero più grande */
-.og-legend .og-ko-key { display: none; }
-.ko-labels-out .og-legend .og-ko-key { display: inline-flex; align-items: center; gap: 12px; }
-.ko-labels-out .og-legend { gap: 16px; }
-.area-legend-swatch i.kob-sw.ohko { background: color-mix(in srgb, var(--good) 42%, var(--panel)); border-color: var(--good); }
-.area-legend-swatch i.kob-sw.two { background: color-mix(in srgb, var(--good) 12%, var(--panel)); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
-.ko-labels-out .kob-row > .kob > em { display: none; }
-.ko-labels-out .kob-row > .kob:not(.rest), .ko-labels-out .kob-row > .kob.hb, .ko-labels-out .kob-row > .kob.hb.hb-held { min-width: 40px; }
-.ko-labels-out .kob-row > .kob .kob-num > b { font-size: 19px; }
-.ko-labels-out .kob-row > .kob.rest .kob-num > b { font-size: 15px; }
-.ko-labels-out .kob-row > .kob.hb .kob-num > b { font-size: 18px; }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
 
 

@@ -167,12 +167,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
         </table>
       </div>
       {/* Nella riga bassa solo il segno del setup (il resto lo dicono i tooltip delle tessere) */}
-      {/* La chiave dei pezzi (OHKO, 2HKO) c'è solo nella variante senza etichette nei pezzi (.ko-labels-out, non attiva) */}
       <div className="rob-legend og-legend" aria-hidden="true">
-        <span className="area-legend og-ko-key">
-          <span className="area-legend-swatch"><i className="kob-sw ohko" />OHKO</span>
-          <span className="area-legend-swatch"><i className="kob-sw two" />2HKO</span>
-        </span>
         <span><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
       </div>
     </div>

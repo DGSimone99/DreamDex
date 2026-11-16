@@ -249,13 +249,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
         </table>
       </div>
       {/* I colori della Sostenibilità nella colonna Difesa (i pezzi di Tipi e Meta hanno la loro etichetta) */}
-      {/* La chiave dei pezzi (3HKO+, 2HKO, OHKO) c'è solo nella variante senza etichette nei pezzi (.ko-labels-out, non attiva) */}
       <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">
-        <span className="og-ko-key">
-          <span className="area-legend-swatch"><i className="hb-sw hb-held" />3HKO+</span>
-          <span className="area-legend-swatch"><i className="hb-sw hb-2" />2HKO</span>
-          <span className="area-legend-swatch"><i className="hb-sw hb-ohko" />OHKO</span>
-        </span>
         <span className="area-legend-swatch"><i className="dsh-leg gain" />{t('ddetail.legendRecovery')}</span>
         <span className="area-legend-swatch"><i className="dsh-leg loss" />{t('ddetail.legendLoss')}</span>
       </span></div>
