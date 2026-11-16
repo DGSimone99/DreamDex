@@ -16,9 +16,9 @@ describe('analisi in inglese', () => {
     for (const title of ['Overview', 'Coaching', 'Defense', 'Offense', 'Roles', 'Speed']) {
       expect(within(analysis).getAllByText(title).length).toBeGreaterThan(0);
     }
-    // Uso nel meta e minacce stanno nella scheda Meta
+    // La scheda Meta: il tuo team e i Pokémon del meta
     const meta = screen.getByRole('region', { name: 'Meta' });
-    for (const title of ['Meta usage', 'Meta threats']) expect(within(meta).getAllByText(title).length).toBeGreaterThan(0);
+    for (const title of ['Your team', 'Meta Pokémon']) expect(within(meta).getAllByText(title).length).toBeGreaterThan(0);
     // In fondo alla Panoramica la riga dei problemi; nel Voto il tipo di team, ancora da riconoscere
     // I consigli si calcolano solo con l'Analisi aperta
     await user.click(screen.getByRole('tab', { name: /^Analysis/ }));

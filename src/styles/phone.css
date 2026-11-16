@@ -389,13 +389,6 @@
   .editor-actions { margin-left: 0; flex-wrap: wrap; }
 }
 
-/* ── Meta sul telefono: chi regge la minaccia va sotto il nome, su tutta la riga ── */
-@media (max-width: 599px) {
-  #panel-meta .mon-rows li { grid-template-columns: 40px minmax(0, 1fr); row-gap: 0; padding: 6px 0; }
-  #panel-meta .mon-rows .status { grid-column: 2; }
-  #panel-meta .mon-rows .who strong { font-size: 15px; }
-}
-
 /* ── Liste sul telefono e sul tablet: prima le tue liste, poi il Pokédex da cui sceglierle ── */
 @media (max-width: 1099px) {
   .lists-main { display: flex; flex-direction: column; }

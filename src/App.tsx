@@ -10,7 +10,8 @@ import { battleName } from './engine/dex';
 import { UndoToast, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
 import type { TeamSet } from './engine/sets';
-import { AnalysisPanel, MetaPanel } from './ui/AnalysisPanel';
+import { AnalysisPanel } from './ui/AnalysisPanel';
+import { MetaTab } from './ui/meta/MetaTab';
 import { GradeBadge } from './ui/RatingPanel';
 import { blockedReason } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
@@ -430,7 +431,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
-          <MetaPanel team={team} analysis={analysis} rating={rating} data={rated} coaching={coaching} />
+          <MetaTab team={team} data={rated} />
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}

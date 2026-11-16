@@ -1,0 +1,57 @@
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it } from 'vitest';
+import { MetaTab } from '../../src/ui/meta/MetaTab';
+import { fixtureData, gholdengo, tusk } from '../fixtures/data';
+import { renderIt } from '../helpers/italian';
+
+const grid = () => screen.getByRole('list', { name: 'Pokémon del meta' });
+
+describe('scheda Meta', () => {
+  it('griglia in ordine di uso con posizione, podio e i tuoi', () => {
+    renderIt(<MetaTab team={[tusk]} data={fixtureData} />);
+    const cards = within(grid()).getAllByRole('listitem');
+    // 8 validi nelle statistiche della fixture (Pikachu sotto la soglia, il nome finto scartato)
+    expect(cards).toHaveLength(8);
+    expect(cards[0]).toHaveTextContent('#1');
+    expect(cards[0]).toHaveTextContent('Great Tusk');
+    expect(cards[0]).toHaveTextContent('30,0%');
+    expect(cards[0]).toHaveClass('medal-1');
+    expect(cards[2]).toHaveClass('medal-3');
+    expect(cards[3].className).not.toMatch(/medal/);
+    expect(cards[0]).toHaveTextContent('Tuo');
+    expect(cards[1]).not.toHaveTextContent('Tuo');
+    expect(screen.getByText('i 8 più usati · uso = % di team che lo portano')).toBeInTheDocument();
+  });
+
+  it('il #1 è scelto all\'apertura; un clic sceglie un\'altra carta', async () => {
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    expect(screen.getByRole('button', { name: /^1\.\s*Great Tusk$/ })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ }));
+    expect(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /^1\.\s*Great Tusk$/ })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('un clic su tutta la carta (non solo sul nome) la sceglie', async () => {
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    await user.click(within(grid()).getAllByRole('listitem')[2]);
+    expect(screen.getByRole('button', { name: /^3\.\s*Kingambit$/ })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('riga del team: posizione e uso sempre visibili, assente non cliccabile, uso medio', () => {
+    renderIt(<MetaTab team={[tusk, gholdengo, { ...tusk, species: 'Magikarp', item: '' }]} data={fixtureData} />);
+    const row = screen.getByRole('group', { name: 'Il tuo team' });
+    expect(row).toHaveTextContent('#1');
+    expect(row).toHaveTextContent('30,0%');
+    expect(within(row).getByRole('button', { name: /Magikarp/ })).toBeDisabled();
+    expect(row).toHaveTextContent('Uso medio 27,5%');
+  });
+
+  it('team vuoto: niente riga del team, la griglia c\'è', () => {
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    expect(screen.queryByRole('group', { name: 'Il tuo team' })).toBeNull();
+    expect(grid()).toBeInTheDocument();
+  });
+});
