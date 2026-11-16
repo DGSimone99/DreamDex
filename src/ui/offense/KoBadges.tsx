@@ -70,7 +70,10 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
   const restBad = alarm && rest > 0;
   // Quanti bersagli manda KO in due colpi o meglio (colpo semplice): "11/18", da leggere al volo
   const hit = bands.plain.ohko.length + bands.plain.two.length;
-  const countTone = alarm ? (rest > 0 ? ' bad' : ' good') : hit === 0 ? ' zero' : '';
+  // Il colore dice quanto copre: pieno verde, da due terzi verde, da un terzo giallo, sotto rosso (zero spento); nella riga
+  // del team basta uno scoperto per il rosso
+  const ratio = total ? hit / total : 0;
+  const countTone = alarm ? (rest > 0 ? ' bad' : ' full') : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   return (
     <span className="kob-line">
     <span className="kob-row">
@@ -114,7 +117,10 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
         </FloatTip>
       )}
     </span>
-    <span className={`kob-count${countTone}`} aria-label={t('kob.countAria', { n: hit, total })}><b aria-hidden="true">{hit}</b><small aria-hidden="true">/{total}</small></span>
+    {/* Una targhetta inclinata come i pezzi della barra, riempita da sinistra quanto copre */}
+    <span className={`kob-count${countTone}`} style={{ '--r': ratio } as CSSProperties} aria-label={t('kob.countAria', { n: hit, total })}>
+      <b aria-hidden="true">{hit}</b><small aria-hidden="true">/{total}</small>
+    </span>
     </span>
   );
 }
