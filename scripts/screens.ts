@@ -960,7 +960,9 @@ for (const [w, h] of sizes) {
       const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
         .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
       // Riassunto: nome del tipo, riga dell'eroe e righe delle sezioni tagliati in larghezza (anche in EN)
-      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-crew, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).map(e => e.className).length : 0;
+      // (la riga degli sprite si misura dai suoi figli: la luce del passaggio dell'ultimo sprite sborda apposta di 6px)
+      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length
+        + [...box.querySelectorAll<HTMLElement>('.sum-crew')].filter(e => { const r = e.getBoundingClientRect(); return [...e.children].some(c => c.getBoundingClientRect().right - r.right > 1); }).length : 0;
       const sumRows = box ? [...box.querySelectorAll<HTMLElement>('.sum-hero, .sum-sec')].map(li => Math.round(li.getBoundingClientRect().height)) : [];
       // Parti del Riassunto sotto il fondo della sua card (nascoste) e voci a misura mostrate ma tagliate (fuori dalla riga)
       const sumCard = box?.querySelector('.dash-summary');
