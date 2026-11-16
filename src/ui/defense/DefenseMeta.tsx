@@ -1,22 +1,26 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { battleName, battleSpecies } from '../../engine/dex';
 import type { TeamDefense } from '../../engine/defense';
+import { battleMoveType } from '../../engine/types';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
-import { MetaCount, MetaFrame } from '../MetaFrame';
+import { MoveLine } from '../dashboard/CoverageTip';
+import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { useMemberTip } from '../MemberCard';
+import { MetaFrame } from '../MetaFrame';
+import { HpLeft } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
+import { Sprite, typeColor } from '../Sprite';
 import { MemberMon } from './MemberMon';
-import { ColName, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
+import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 type Holder = Row['heldBy'][number];
 
-/** Gruppo di una minaccia: nessuno la regge, solo a metà (chi regge va KO in due colpi), retta. */
-const groupOf = (row: Row) => (row.heldBy.length === 0 ? 'none' : row.heldBy.some(h => !h.partial) ? 'held' : 'partial');
 /** Quanti membri la reggono del tutto: 0 rosso, 1 giallo, da 2 verde (come "Lo coprono" dell'Offesa). */
 const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
-/** Le tre soglie della casella, coi colori di Coverage tipi: regge (sotto metà PS), a metà (KO in due colpi), KO. */
-const LEGEND = [{ cls: 'hold-4', tag: '< 50%' }, { cls: 'hold-3', tag: '50–99%' }, { cls: 'hold-ohko', tag: 'KO' }] as const;
+/** Le due soglie con un numero, coi colori di Coverage tipi: regge (sotto metà PS), a metà (KO in due colpi); KO a parte. */
+const LEGEND = [{ cls: 'hold-4', tag: '< 50%' }, { cls: 'hold-3', tag: '50–99%' }] as const;
 
 /**
  * Per ogni posto del team, cosa prende dal colpo migliore della minaccia: `null` se il motore non conosce il membro,
@@ -34,32 +38,27 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
 }
 
 /**
- * Coverage meta della Difesa, a tabella come quella dell'Offesa: i membri in riga (nello stesso punto delle altre schede),
- * le minacce del meta in colonna, 8 per pagina dalla meno coperta (a pari livello la più usata). In ogni casella il danno
- * che il membro prende dal colpo migliore della minaccia, verde se regge (sotto metà PS), giallo se solo a metà, rosso se
- * va KO; in fondo Regge conta chi la regge del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra;
- * sotto la tabella, in fondo al pannello, una sola riga bassa: a sinistra la legenda dei colori, a destra il riepilogo.
- * In basso a sinistra l'efficacia della mossa della minaccia che fa più danno al membro (la stessa del %) quando non è
- * neutra (×4, ×2, ×½, ×¼, 0); "Solo efficacia" (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende e
- * sotto lo sprite compare il nome.
+ * Coverage meta della Difesa, con la grafica di quella dell'Offesa: i membri in riga (nello stesso punto delle altre
+ * schede), le minacce del meta in colonna, 8 per pagina dalla meno coperta (a pari livello la più usata). In ogni casella
+ * il danno che il membro prende dal colpo migliore della minaccia (corsivo, "%" piccolo) con la barra dei PS che gli
+ * restano, verde se regge (sotto metà PS), giallo se solo a metà; il timbro KO se va KO in un colpo. Sulla casella il
+ * tooltip DreamDex (minaccia, membro, mossa, efficacia, danno); sulla sprite in testata la carta del Pokémon col suo set
+ * più usato e sotto un filo col colore di quanti la reggono. In fondo la riga Team Coverage, come nell'Offesa: nelle
+ * colonne quanti membri la reggono del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra; in basso
+ * la legenda corta. In basso a sinistra l'efficacia della mossa della minaccia quando non è neutra; "Solo efficacia"
+ * (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
   const hover = useColumnHover();
+  const tip = useFloatAnchor<{ species: string; m: number }>();
+  const card = useMemberTip(400, undefined, true);
   const rows = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
   const names = ctx.team.map(set => battleSpecies(set)?.name ?? null);
   // Il posto fra i membri conosciuti dal motore (l'ordine di `mults`)
   let seen = 0;
   const knownIndex = names.map(name => (name ? seen++ : -1));
-  const count = (group: 'held' | 'partial' | 'none') => rows.filter(r => groupOf(r) === group).length;
-  const summary = (
-    <>
-      <span>{t('ddetail.cm.threats', { n: rows.length })}</span>
-      <MetaCount n={count('held')} tone="good" label={t('ddetail.cm.held')} />
-      <MetaCount n={count('partial')} tone="warn" label={t('ddetail.cm.partial')} />
-      <MetaCount n={count('none')} tone="bad" label={t('ddetail.cm.none')} />
-    </>
-  );
+  const held = (row: Row) => row.heldBy.filter(h => !h.partial).length;
 
   const cell = (row: Row, c: Holder | 'ko' | null, m: number, k: number) => {
     const key = `${row.species}-${m}`;
@@ -67,29 +66,48 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     if (c === null) return <td key={key} className={hover.cls(k, `rob-cell hold-none${dim}`)} {...hover.enter(k)}>—</td>;
     const tag = effLabel(row.mults?.[knownIndex[m]], 'defense');
     const eff = effClass(tag, 'defense', ctx.effOnly);
+    const enter = (e: MouseEvent<HTMLElement>) => { hover.enter(k).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); };
     if (c === 'ko') {
       return (
-        <td key={key} className={hover.cls(k, `rob-cell hold-ohko${eff}`)} {...hover.enter(k)} title={`${row.species}: KO`}>
-          KO<EffTag label={tag} side="defense" />
+        <td key={key} className={hover.cls(k, `rob-cell hold-ohko dm-cell${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close}>
+          <span className="cm-ko" aria-hidden="true">KO</span>
+          <span className="visually-hidden">{row.species}: KO</span>
+          <EffTag label={tag} side="defense" />
         </td>
       );
     }
-    const cls = c.partial ? 'hold-3' : 'hold-4';
-    const title = `${row.species}: ${c.move ? `${c.move} ` : ''}${c.pct}%`;
     return (
-      <td key={key} className={hover.cls(k, `rob-cell ${cls}${eff}`)} {...hover.enter(k)} title={title}>
-        {c.pct}%<span className="visually-hidden"> {title}</span>
+      <td key={key} className={hover.cls(k, `rob-cell dm-cell ${c.partial ? 'hold-3' : 'hold-4'}${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close}>
+        <span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} />
+        <span className="visually-hidden"> {row.species}: {c.move ? `${c.move} ` : ''}{c.pct}%</span>
         <EffTag label={tag} side="defense" />
       </td>
     );
   };
 
-  const body = (shown: Row[], pager: ReactNode, counts: ReactNode) => {
+  // Il tooltip della casella sotto il puntatore: la minaccia, il membro e il colpo che gli arriva
+  const tipCell = (shown: Row[]) => {
+    if (!tip.anchor) return null;
+    const { species, m } = tip.anchor.key;
+    const row = shown.find(r => r.species === species);
+    const name = names[m];
+    if (!row || !name) return null;
+    const c = cellsOf(row, names)[m];
+    if (c === null) return null;
+    const types = battleSpecies(row.set)?.types ?? [];
+    return (
+      <FloatTip rect={tip.anchor.rect} tone={typeColor((types[0] as string | undefined) ?? '')} className="tht">
+        <ThreatHitTip row={row} name={name} hit={c} mult={effLabel(row.mults?.[knownIndex[m]], 'defense')} koMove={row.hits?.[knownIndex[m]]?.move} />
+      </FloatTip>
+    );
+  };
+
+  const body = (shown: Row[], pager: ReactNode) => {
     const cells = shown.map(r => cellsOf(r, names));
     return (
       <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">
-          <table className="def-grid spaced ct-table" {...hover.table}>
+          <table className="def-grid spaced ct-table" onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }}>
             <colgroup>
               <col className="def-col-mon" />
               {shown.map(r => <col key={r.species} />)}
@@ -98,9 +116,10 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
               <tr>
                 <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
                 {shown.map((r, k) => (
-                  <th key={r.species} scope="col" aria-label={r.species} title={r.species} className={hover.cls(k, 'dm-h')} {...hover.enter(k)}>
-                    <span className="def-box"><PokemonIcon name={r.species} /></span>
-                    {hover.col === k && <ColName name={r.species} />}
+                  <th key={r.species} scope="col" aria-label={r.species} className={hover.cls(k, 'dm-h')} {...hover.enter(k)}>
+                    {/* Sulla sprite la carta del Pokémon col suo set più usato; sotto un filo col colore di quanti la reggono */}
+                    <span className="def-box cm-head-mon" {...card.bind(r.set)}><PokemonIcon name={r.species} /></span>
+                    <span className={`cm-flag ${countTone(held(r))}`} aria-hidden="true" />
                   </th>
                 ))}
               </tr>
@@ -108,35 +127,77 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             <tbody>
               {ctx.team.map((set, m) => (
                 <tr key={`${names[m] ?? set.species}-${m}`}>
-                  <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
+                  <th scope="row" onMouseEnter={() => { hover.table.onMouseLeave(); tip.close(); }}><MemberMon name={battleName(set)} set={set} stats /></th>
                   {shown.map((r, k) => cell(r, cells[k][m], m, k))}
                 </tr>
               ))}
-              <tr className="ct-sum ct-sum-first">
-                <th scope="row">{t('ddetail.heldBy')}</th>
-                {shown.map(r => {
-                  const n = r.heldBy.filter(h => !h.partial).length;
-                  return <td key={r.species}><span className={`ct-pill ${countTone(n)}`}>{n}</span></td>;
-                })}
-              </tr>
+              {/* Riempie lo spazio che resta: la riga Team Coverage sta sempre in fondo, come nell'Offesa */}
+              <tr className="og-fill" aria-hidden="true"><td colSpan={shown.length + 1} /></tr>
             </tbody>
+            {/* In fondo la riga Team Coverage, come nell'Offesa e allo stesso posto: nelle colonne quanti membri la reggono */}
+            <tfoot>
+              <tr className="og-total cm-total">
+                <th scope="row" onMouseEnter={hover.table.onMouseLeave}>
+                  <span className="og-plate">{t('odetail.gen.total')}</span>
+                  <span className="visually-hidden">{t('ddetail.heldBy')}</span>
+                </th>
+                {shown.map((r, k) => (
+                  <td key={r.species} className={hover.cls(k)} {...hover.enter(k)}>
+                    <span className={`ct-pill ${countTone(held(r))}`}>{held(r)}<span className="visually-hidden"> {t('ddetail.heldBy')}</span></span>
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
           </table>
         </div>
-        <div className="rob-legend cm-foot"><span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span>{counts}</div>
+        {tipCell(shown)}
+        {card.tip}
+        <div className="rob-legend cm-foot"><span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span></div>
       </div>
     );
   };
 
-  return <MetaFrame rows={rows} summary={summary} body={body}
+  return <MetaFrame rows={rows} summary={null} body={body}
     labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
 }
 
-/** La legenda dei colori di Coverage meta della Difesa, nella riga in fondo alla tabella: regge, a metà, KO. */
-function DefenseMetaLegend() {
+/** La legenda di Coverage meta della Difesa, come quella dell'Offesa: il timbro KO, poi regge e a metà. */
+/**
+ * Il tooltip di un colpo di una minaccia su un membro (casella di Coverage meta, pastiglia della Generale): la minaccia
+ * col badge dei colpi, il membro, la mossa della minaccia con l'efficacia e il danno; "KO" se lo manda KO in un colpo.
+ */
+export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name: string; hit: { move: string; pct: number; partial: boolean } | 'ko'; mult: string | null; koMove?: string }) {
   const t = useT();
+  // La mossa del colpo: quella della casella, o (KO in un colpo) quella che il motore ha trovato per il membro
+  const move = hit === 'ko' ? koMove : hit.move;
+  const band = hit === 'ko' ? 'ohko' : hit.partial ? 'two' : 'three';
+  const tag = hit === 'ko' ? 'KO' : hit.partial ? '2HKO' : '3HKO+';
   return (
     <>
-      <span title={t('ddetail.cm.damage')}>{t('ddetail.cm.damageShort')}</span>
+      <div className="ftip-head tht-target">
+        <Sprite species={row.species} size={40} />
+        <b>{row.species}</b>
+        <span className={`ftip-ko def ${band} tht-band`}>{tag}</span>
+      </div>
+      <div className="tht-body">
+        <Sprite species={name} size={48} />
+        <span className="tht-text">
+          <span className="tht-name">{name}</span>
+          <span className="tht-move">
+            {move ? <MoveLine name={move} type={battleMoveType(row.set, move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}
+            {mult && <span className="tht-mult">{mult}</span>}
+            {hit !== 'ko' && <b className="tht-pct">{hit.pct}<small>%</small></b>}
+          </span>
+        </span>
+      </div>
+    </>
+  );
+}
+
+function DefenseMetaLegend() {
+  return (
+    <>
+      <span className="cm-ko small">KO</span>
       {LEGEND.map(l => <span key={l.cls} className={`hold-chip ${l.cls}`}>{l.tag}</span>)}
     </>
   );

@@ -22,17 +22,18 @@ describe('tabelle complete nelle schede d\'area', () => {
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(view()).getByRole('table');
     expect(within(table).getAllByRole('columnheader')).toHaveLength(19); // angolo e 18 tipi
-    // Testata, 2 membri, poi Regge (la Copertura sta nel suggerimento della pillola)
-    expect(within(table).getAllByRole('row')).toHaveLength(4);
+    // Testata, 2 membri, poi Copertura e Il migliore (come nell'Offesa)
+    expect(within(table).getAllByRole('row')).toHaveLength(5);
   });
 
-  it('le legende dei colori stanno a sinistra nella riga in fondo alla tabella, dentro il pannello; le schede senza legenda non ne hanno', async () => {
+  it('le legende dei colori stanno nella riga della legenda, dentro il pannello; le schede senza legenda non ne hanno', async () => {
     const user = await openTab('Difesa');
     const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
-    expect(view().querySelector('.area-legend')).toBeNull(); // Generale
+    // Generale: la legenda dei pezzi di Tipi e Meta
+    expect(view().querySelector('.area-legend')).toHaveTextContent('Regge2HKOOHKO');
     expect(view().querySelector('.area-tools-row')).toBeNull();
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(legend()).toHaveTextContent('Colpo forte del lato peggiore:OHKO2HKO3HKO4HKO+');
+    expect(legend()).toHaveTextContent('OHKO2HKO3HKO4HKO+');
     // La riga in fondo viene dopo la tabella
     const table = within(view()).getByRole('table');
     expect(table.compareDocumentPosition(legend()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

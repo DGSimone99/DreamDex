@@ -408,6 +408,8 @@ const HOLD_FULL = 0.5;
 
 export interface ThreatRow {
   species: string;
+  /** Il set della minaccia (il più usato): per la carta del Pokémon sulla sprite in testata e il tipo della sua mossa. */
+  set: TeamSet;
   weight: number;
   /** Quanto è retta: 0–100, coi crediti dei membri al 50, 30 e 20%. */
   level: number;
@@ -417,6 +419,11 @@ export interface ThreatRow {
    * danno (la stessa del % nella casella), per l'etichetta della casella.
    */
   mults: number[];
+  /**
+   * Per ogni membro conosciuto (ordine di `members`): la mossa della minaccia che gli fa più danno e il danno % (anche
+   * oltre 100, quando lo manda KO in un colpo). Solo per i tooltip: il voto usa `heldBy`.
+   */
+  hits?: { move: string; pct: number }[];
 }
 
 /** Quanti colpi regge sul lato peggiore: KO, 2HKO, 3HKO, 4 o più. */
@@ -554,7 +561,8 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
         if (!move) return bestAttackMultiplier(threat, types, battleAbility(member)) ?? 1;
         return moveAttackMultiplier(threat, move, types, battleAbility(member)) ?? 1;
       });
-      return { species: threat.species, weight, level: Math.round(100 * level), heldBy, mults };
+      const hits = known.map((_, m) => ({ move: memberHits[m][i]?.move ?? '', pct: Math.floor(100 * (memberHits[m][i]?.expected ?? 0)) }));
+      return { species: threat.species, set: threat, weight, level: Math.round(100 * level), heldBy, mults, hits };
     });
     coverageMeta = { value: softScore(total), unanswered: threatRows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows: threatRows };
   }
