@@ -1082,7 +1082,7 @@ export const en = {
   'guide.def.meta.tag': "×4 · ×2 · ×½ · ×¼ · 0",
   'guide.def.meta.tag.rule': "Bottom left in the cell: how effective the threat's move that hurts the member most is (the same move as the %): ×4, ×2, ×½, ×¼, 0; nothing when it's neutral. \"Effectiveness only\" dims the neutral cells.",
   'ddetail.sides': "physical {p}% · special {s}%",
-  'guide.def.what.sustain': "How much it recovers each turn with moves, abilities or items, minus what it loses",
+  'guide.def.what.sustain': "How much it recovers each turn with moves, abilities or items, minus what it loses: below zero if it loses more than it recovers",
   'guide.def.sus.k.sunMoves': "Moonlight, Synthesis, Morning Sun",
   'guide.def.sus.k.sunMoves.rule': "Moves like Synthesis, Moonlight and similar heal more or less depending on the weather.",
   'guide.def.sus.k.recoil': "Recoil",
