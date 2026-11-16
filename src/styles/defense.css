@@ -421,20 +421,23 @@
 /* Un pezzo non è mai più stretto di etichetta e numero */
 .kob.hb > em { text-transform: uppercase; }
 /* Nelle righe etichetta (3HKO+, 2HKO, OHKO) e numero come nei pezzi dell'Offesa, un filo più compatti: tre pezzi con
-   l'etichetta e il conto stanno nella colonna anche a 1280px */
-.kob-row > .kob.hb { min-width: 53px; padding: 0 7px 0 6px; gap: 3px; }
-.kob-row > .kob.hb > em { font-size: 8.5px; letter-spacing: 0.02em; white-space: nowrap; }
+   l'etichetta (11px, come nell'Offesa) e il conto stanno nella colonna anche a 1280px; se la riga è più stretta le
+   etichette spariscono tutte insieme */
+.kob-row > .kob.hb { min-width: 62px; padding: 0 7px 0 6px; gap: 4px; }
+.kob-row > .kob.hb.hb-held { min-width: 68px; }
+.kob-row > .kob.hb > em { letter-spacing: 0.02em; }
 .kob-row > .kob.hb .kob-num > b { font-size: 15px; }
+@container kobrow (max-width: 198px) { .kob-row > .kob.hb, .kob-row > .kob.hb.hb-held { min-width: 36px; } .kob-row > .kob.hb > em { display: none; } }
 .kob-line.hb-line .kob-count { min-width: 42px; }
 .area-legend-swatch i.hb-sw.hb-held { background: color-mix(in srgb, var(--good) 34%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .area-legend-swatch i.hb-sw.hb-2 { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
 .area-legend-swatch i.hb-sw.hb-ohko { background: color-mix(in srgb, var(--bad) 36%, var(--panel)); border-color: var(--bad); }
 .kob.hb-held { color: var(--good); background: color-mix(in srgb, var(--good) 34%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob.hb-held .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
-.kob.hb-2 { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+.kob.hb-2 { --kob-ink: color-mix(in srgb, var(--bad) 35%, var(--text)); color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
 .kob.hb-ohko { color: var(--bad); background: color-mix(in srgb, var(--bad) 36%, transparent); }
 .kob.hb-ohko .kob-num > b { color: color-mix(in srgb, var(--bad) 55%, white); }
-.kob.hb-held:hover { background: color-mix(in srgb, var(--good) 48%, transparent); }
+.kob.hb-held:hover { background: color-mix(in srgb, var(--good) 42%, transparent); }
 .kob.hb-2:hover { background: color-mix(in srgb, var(--bad) 22%, transparent); }
 .kob.hb-ohko:hover { background: color-mix(in srgb, var(--bad) 50%, transparent); }
 .hb-say { display: flex; align-items: center; gap: 7px; margin: 0 0 6px; font-size: 12px; color: var(--muted); }

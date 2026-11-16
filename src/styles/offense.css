@@ -89,6 +89,9 @@
 .off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); border-color: var(--warn); }
 /* Quanto porta al team: barra e "+N" in azzurro (non è un voto, non ha soglie). La barra della colonna Offesa arriva
    fino al bordo, col numero contro il bordo destro (anche nella riga del team) */
+/* La colonna di quanto porta (Offesa / Difesa) più stretta delle barre a pezzi: Tipi e Meta hanno il posto per le etichette */
+:is(.off-general, .def-general) .def-members col:last-child { width: 176px; }
+@media (min-width: 1500px) { :is(.off-general, .def-general) .def-members col:last-child { width: 210px; } }
 :is(.off-general, .def-general) .def-members td:last-child .def-cell { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 4.5ch; }
 .def-general .og-share { display: block; }
 :is(.off-general, .def-general) .og-share-num { color: var(--accent); }
@@ -135,11 +138,13 @@
 /* La barra dei colpi (KoBadges): larga quanto la colonna meno un respiro (le due colonne non si toccano), a pezzi lunghi
    quanto il loro conto: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga
    del team in rosso: gli scoperti). Ogni pezzo ha un minimo per etichetta e numero; il setup è il triangolo nell'angolo */
-.kob-line { display: flex; align-items: center; gap: 10px; width: calc(100% - 28px); min-width: 200px; }
-.kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 150px; }
+.kob-line { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-width: 0; }
+/* La riga dei pezzi è un contenitore: se non c'è posto per tutte le etichette, spariscono tutte insieme (restano numero,
+   colore, tooltip e nome per i lettori di schermo) */
+.kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 0; container: kobrow / inline-size; }
 /* Il conto a destra della barra, "11/18": staccato dai pezzi (niente fondo né inclinazione), il numero grande in corsivo
    col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); il colore dice quanto copre */
-.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 52px; color: var(--c); cursor: default; }
+.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 46px; color: var(--c); cursor: default; }
 .kob-count-num { display: inline-flex; align-items: baseline; justify-content: flex-start; gap: 1px; font-variant-numeric: tabular-nums; }
 .kob-count-num > b { font: 800 italic 19px/1 var(--display); }
 .kob-count-num > small { font: 700 italic 11px/1 var(--display); color: var(--faint); }
@@ -152,8 +157,10 @@
 .kob-count.zero { --c: var(--faint); }
 .kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
-.kob-row > .kob { flex: 1 0 0; min-width: 64px; }
-.kob > em { font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; color: var(--muted); opacity: 0.8; }
+.kob-row > .kob { flex: 1 0 0; min-width: 74px; padding: 0 9px 0 8px; gap: 4px; }
+/* L'etichetta (OHKO, 2HKO) leggibile: 11px piena, chiara sul fondo del pezzo (almeno 4,5:1) */
+.kob > em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.02em; white-space: nowrap; color: var(--kob-ink, var(--text)); }
+@container kobrow (max-width: 187px) { .kob-row > .kob:not(.rest) { min-width: 40px; } .kob-row > .kob > em { display: none; } }
 /* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
 .kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
@@ -163,22 +170,36 @@
 .kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
 .kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
 .kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); background: color-mix(in srgb, var(--good) 12%, transparent); }
-.kob.ohko:hover { background: color-mix(in srgb, var(--good) 55%, transparent); }
+.kob.two { --kob-ink: color-mix(in srgb, var(--good) 35%, var(--text)); }
+.kob.ohko:hover { background: color-mix(in srgb, var(--good) 46%, transparent); border-color: color-mix(in srgb, var(--good) 80%, transparent); }
 .kob.two:hover { background: color-mix(in srgb, var(--good) 26%, transparent); }
 /* Un pezzo a zero c'è solo quando il setup ci porta qualcuno: spento, col triangolo */
-.kob.zero { color: var(--faint); border-color: color-mix(in srgb, var(--faint) 22%, transparent); background: none; box-shadow: none; opacity: 0.6; }
+.kob.zero { --kob-ink: var(--faint); color: var(--faint); border-color: color-mix(in srgb, var(--faint) 30%, transparent); border-style: dashed; background: none; box-shadow: none; }
+.kob.zero .kob-num > b { color: var(--faint); }
 /* Quelli che non manda KO in due colpi: grigio, solo il numero, più piccolo */
 .kob-row > .kob.rest { min-width: 34px; padding-left: 6px; color: var(--faint); background: var(--line-soft); }
-.kob.rest .kob-num > b { font-size: 13px; opacity: 0.85; }
+.kob.rest .kob-num > b { font-size: 13px; color: var(--muted); }
 .kob.rest:hover { background: color-mix(in srgb, var(--faint) 22%, transparent); }
 /* Nella riga del team: gli scoperti in rosso */
 .kob.rest.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
-.kob.rest.bad .kob-num > b { font-size: 15px; opacity: 1; }
+.kob.rest.bad .kob-num > b { font-size: 15px; color: var(--bad); }
 .kob.rest.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
 /* Con l'etichetta (nella testata del tooltip): larghezza libera */
 .kob.labeled { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 3px 11px 3px 8px; }
-.kob.labeled em { font: 700 10px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
+.kob.labeled em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
 .kob.labeled > b { min-width: 0; font: 700 italic 15px/1 var(--display); }
+/* Variante B (non attiva: classe ko-labels-out sul pannello dell'area, solo per confrontarla): niente parola nei pezzi,
+   il significato dal colore e dalla chiave in alto a destra (più tooltip e nome per i lettori di schermo); il numero più grande */
+.og-legend .og-ko-key { display: none; }
+.ko-labels-out .og-legend .og-ko-key { display: inline-flex; align-items: center; gap: 12px; }
+.ko-labels-out .og-legend { gap: 16px; }
+.area-legend-swatch i.kob-sw.ohko { background: color-mix(in srgb, var(--good) 42%, var(--panel)); border-color: var(--good); }
+.area-legend-swatch i.kob-sw.two { background: color-mix(in srgb, var(--good) 12%, var(--panel)); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
+.ko-labels-out .kob-row > .kob > em { display: none; }
+.ko-labels-out .kob-row > .kob:not(.rest), .ko-labels-out .kob-row > .kob.hb, .ko-labels-out .kob-row > .kob.hb.hb-held { min-width: 40px; }
+.ko-labels-out .kob-row > .kob .kob-num > b { font-size: 19px; }
+.ko-labels-out .kob-row > .kob.rest .kob-num > b { font-size: 15px; }
+.ko-labels-out .kob-row > .kob.hb .kob-num > b { font-size: 18px; }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
 
 
