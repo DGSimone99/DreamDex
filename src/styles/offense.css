@@ -90,22 +90,23 @@
 /* Quanto porta al team: barra e "+N" in azzurro (non è un voto, non ha soglie). La barra della colonna Offesa arriva
    fino al bordo, col numero contro il bordo destro (anche nella riga del team) */
 .off-general .def-members td:last-child .def-cell { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 4.5ch; }
-.off-general .og-share-num { color: var(--accent); }
-.off-general .og-share-bar .og-share-team { background: color-mix(in srgb, var(--accent) 16%, transparent); }
-.off-general .og-share-bar .og-share-own { right: auto; background: var(--accent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-.off-general .og-share-bar .og-share-own:first-child, .off-general .og-share-bar .og-share-own[style^="left: 0%"] { clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+:is(.off-general, .def-general) .og-share-num { color: var(--accent); }
+.def-general .og-share-num.neg { color: var(--bad); }
+:is(.off-general, .def-general) .og-share-bar .og-share-team { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+:is(.off-general, .def-general) .og-share-bar .og-share-own { right: auto; background: var(--accent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+:is(.off-general, .def-general) .og-share-bar .og-share-own:first-child, :is(.off-general, .def-general) .og-share-bar .og-share-own[style^="left: 0%"] { clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .off-general.roomy .def-members tbody td { padding-top: 6px; padding-bottom: 6px; }
 /* Team Coverage: un velo magenta solo, largo quanto la tabella, che sfuma su tutti i lati (in alto una linea sottile che
    sfuma anch'essa ai lati); "TEAM COVERAGE" è una linguetta a cavallo della linea. Disegnati sotto la prima casella
    (100cqw = la larghezza della cornice, cioè della tabella) così le caselle non hanno fondi propri e niente si spezza */
-.off-general tfoot .og-total > *, .def-general tfoot .og-total > *, .cm-matrix tfoot .og-total > * { position: relative; padding-top: 10px; padding-bottom: 5px; border-top: 0; border-bottom: 0; background: none; }
-.off-general tfoot .og-total > * > *, .def-general tfoot .og-total > * > *, .cm-matrix tfoot .og-total > * > * { position: relative; z-index: 1; }
-.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before,
-.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after { content: ""; position: absolute; left: 0; width: 100cqw; pointer-events: none; z-index: 0;
+.off-general tfoot .og-total > *, .def-general tfoot .og-total > *, .cm-matrix tfoot .og-total > *, .def-sus tfoot .og-total > * { position: relative; padding-top: 10px; padding-bottom: 5px; border-top: 0; border-bottom: 0; background: none; }
+.off-general tfoot .og-total > * > *, .def-general tfoot .og-total > * > *, .cm-matrix tfoot .og-total > * > *, .def-sus tfoot .og-total > * > * { position: relative; z-index: 1; }
+.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before,
+.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { content: ""; position: absolute; left: 0; width: 100cqw; pointer-events: none; z-index: 0;
   -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
-.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 9%, transparent), transparent); }
-.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after { top: 0; height: 1px; background: color-mix(in srgb, var(--accent-2) 80%, transparent); }
-.off-general tfoot .og-total th, .def-general tfoot .og-total th, .cm-matrix tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
+.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 9%, transparent), transparent); }
+.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { top: 0; height: 1px; background: color-mix(in srgb, var(--accent-2) 80%, transparent); }
+.off-general tfoot .og-total th, .def-general tfoot .og-total th, .cm-matrix tfoot .og-total th, .def-sus tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
 .og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 11.5px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-accent-2, #22000f);
   background: var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 .og-legend span { display: inline-flex; align-items: center; gap: 6px; }

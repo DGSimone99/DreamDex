@@ -169,7 +169,7 @@ export interface MemberShare {
  * Quanto porta ogni membro su un bersaglio con la profondità: il 1° prende il primo peso, il 2° il secondo…; a pari credito
  * i membri si dividono i pesi dei loro posti (due set uguali portano uguale). Il totale è la profondità del bersaglio.
  */
-function depthShares(credits: number[], depth: number[]): number[] {
+export function depthShares(credits: number[], depth: number[]): number[] {
   const order = credits.map((c, k) => ({ c, k })).sort((a, b) => b.c - a.c);
   const out = credits.map(() => 0);
   for (let i = 0; i < order.length;) {
