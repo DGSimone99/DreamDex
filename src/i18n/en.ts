@@ -109,6 +109,8 @@ export const en = {
   'format.gen9ubers': "Gen 9 Ubers",
   'format.gen9uu': "Gen 9 UU",
   'format.gen9ag': "Gen 9 Anything Goes",
+  'game.sv': "Scarlet and Violet",
+  'game.none': "No game",
   'format.ou': "National Dex OU",
   'format.ubers': "National Dex Ubers",
   'format.uu': "National Dex UU",

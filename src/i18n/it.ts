@@ -111,6 +111,8 @@ export const it: Record<keyof typeof en, string> = {
   'format.gen9ubers': "Gen 9 Ubers",
   'format.gen9uu': "Gen 9 UU",
   'format.gen9ag': "Gen 9 Anything Goes",
+  'game.sv': "Scarlatto e Violetto",
+  'game.none': "Nessun gioco",
   'format.ou': "National Dex OU",
   'format.ubers': "National Dex Ubers",
   'format.uu': "National Dex UU",
