@@ -247,3 +247,13 @@
 .kot-none { margin: 0; padding: 10px 12px; color: var(--muted); }
 .kot-extra { border-top: 1px solid var(--line-soft); }
 .kot-extra-h { display: flex; align-items: center; gap: 6px; padding: 8px 12px 0; font: 700 11px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+
+/* Le sinergie in più del Riassunto (il "+N" verde): una riga per sinergia, sprite unite dalla catena, etichetta, titolo, frase */
+.ftip.syn-more { width: 400px; }
+.syn-more-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.syn-more-list > li { --link-w: 16px; display: flex; align-items: center; gap: 10px; }
+.syn-more-list > li + li { padding-top: 8px; border-top: 1px solid var(--line-soft); }
+.syn-more-mons { flex: none; min-width: 84px; display: flex; align-items: center; justify-content: center; }
+.syn-more-mon { display: flex; align-items: center; }
+.syn-more-mon .sprite { display: block; image-rendering: pixelated; }
+.syn-more-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }

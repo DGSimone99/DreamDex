@@ -632,6 +632,18 @@ const STATES: Record<string, State> = {
     await wait(800);
     return true;
   } },
+  // Il "+N" verde delle Sinergie col puntatore sopra (team aperto: il pulsante in fondo; chiuso: accanto al titolo)
+  ...Object.fromEntries([false, true].map(collapsed => [`analysis-rain-syn-more${collapsed ? '-collapsed' : ''}`, { hash: hash(RAIN), run: async (p: Page) => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(800);
+    const more = await p.$('.sum-syn-sec .tipped');
+    if (!more) return 'no more';
+    await more.hover();
+    await wait(600);
+    return true;
+  } } as State])),
   'analysis-rain-en': { hash: hash(RAIN), lang: 'en', run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain-collapsed-en': { hash: hash(RAIN), lang: 'en', run: async p => {
     await tab(p, 'analysis');
