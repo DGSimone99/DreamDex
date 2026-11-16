@@ -1084,7 +1084,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.def.meta.tag': "×4 · ×2 · ×½ · ×¼ · 0",
   'guide.def.meta.tag.rule': "In basso a sinistra nella casella: quanto è efficace la mossa della minaccia che fa più danno al membro (la stessa del %): ×4, ×2, ×½, ×¼, 0; niente se è neutra. «Solo efficacia» spegne le caselle neutre.",
   'ddetail.sides': "fisico {p}% · speciale {s}%",
-  'guide.def.what.sustain': "Quanto recupera ogni turno con mosse, abilità o strumenti, meno quello che perde",
+  'guide.def.what.sustain': "Quanto recupera ogni turno con mosse, abilità o strumenti, meno quello che perde: sotto zero se perde più di quanto recupera",
   'guide.def.sus.k.sunMoves': "Moonlight, Synthesis, Morning Sun",
   'guide.def.sus.k.sunMoves.rule': "Le mosse come Synthesis, Moonlight e simili variano di efficacia in base al meteo.",
   'guide.def.sus.k.recoil': "Contraccolpo",

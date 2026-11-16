@@ -2,6 +2,7 @@ import type { TeamDefense } from '../../engine/defense';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
+import { signed } from './DefenseGeneral';
 
 const pct = (x: number) => `${Math.round(100 * x)}%`;
 /** Metà barra del netto: un netto di ±50% (SUSTAIN_FULL) arriva al bordo. */
@@ -68,7 +69,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
                       <b className={`sus-net-num ${net > 0 ? 'good' : net < 0 ? 'bad' : ''}`}>{net > 0 ? '+' : net < 0 ? '−' : ''}{pct(Math.abs(net))}</b>
                     </div>
                   </td>
-                  <td className="sus-val"><span className={`ct-pill ${tone(m.sustain)}`}>{m.sustain}</span></td>
+                  <td className="sus-val"><span className={`ct-pill ${m.sustain < 0 ? 'bad' : tone(m.sustain)}`}>{signed(m.sustain)}</span></td>
                 </tr>
               );
             })}
