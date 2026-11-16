@@ -15,21 +15,34 @@ const EDGE = 8;
 export function useFloatAnchor<K>(delay = OPEN_DELAY) {
   const [anchor, setAnchor] = useState<{ key: K; rect: DOMRect } | null>(null);
   const timer = useRef<number | undefined>(undefined);
+  /** L'elemento che ha aperto il tooltip: se sparisce dalla pagina (la lista cambia sotto il mouse) il tooltip si chiude. */
+  const source = useRef<Element | null>(null);
   const open = useCallback((key: K, el: Element) => {
     window.clearTimeout(timer.current);
+    source.current = el;
     const rect = el.getBoundingClientRect();
-    timer.current = window.setTimeout(() => setAnchor({ key, rect }), delay);
+    timer.current = window.setTimeout(() => { if (el.isConnected) setAnchor({ key, rect }); }, delay);
   }, [delay]);
-  const close = useCallback(() => { window.clearTimeout(timer.current); setAnchor(null); }, []);
+  const close = useCallback(() => { window.clearTimeout(timer.current); source.current = null; setAnchor(null); }, []);
   useEffect(() => () => window.clearTimeout(timer.current), []);
-  // Scorrere o ridimensionare sposterebbe la casella sotto il tooltip: si chiude
+  // Scorrere o ridimensionare sposterebbe la casella sotto il tooltip: si chiude. Se la casella esce dalla pagina
+  // mentre il mouse ci sta sopra, il browser non manda l'uscita del mouse: si controlla a ogni cambio della pagina
+  // e a ogni movimento del mouse.
   useEffect(() => {
     if (!anchor) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const check = () => { if (!source.current?.isConnected) close(); };
+    const watch = new MutationObserver(check);
+    watch.observe(document.body, { childList: true, subtree: true });
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
     window.addEventListener('keydown', onKey);
-    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); window.removeEventListener('keydown', onKey); };
+    window.addEventListener('pointermove', check, true);
+    return () => {
+      watch.disconnect();
+      window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', onKey); window.removeEventListener('pointermove', check, true);
+    };
   }, [anchor, close]);
   return { anchor, open, close };
 }
