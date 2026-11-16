@@ -447,7 +447,7 @@
 .mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }
 .mc .wh-mon img { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
 /* Come nell'Offesa: le pastiglie e il recupero solo se la cornice ha posto per sei righe con loro */
-@container (max-height: 500px) { .def-general .mcs.wh { display: none; } }
+@container (max-height: 500px) { .def-general .mcs.wh, .def-general .mcs.dscs { display: none; } }
 
 /* Sostenibilità: come la Generale, la riga del team sempre in fondo (riga vuota che prende lo spazio) */
 .def-sus > .ad-scroll { flex: 1 1 auto; min-height: 0; }
@@ -477,3 +477,16 @@
 .area-legend-swatch i.dsh-leg.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); border-color: transparent; }
 .area-legend-swatch i.dsh-leg.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); border-color: transparent; }
 .ftip.dsh-tip { width: 320px; }
+
+/* Squadra chiusa, sotto la barra Difesa: le pastiglie della Sostenibilità (come le mosse dell'Offesa), recupero nel colore
+   della mossa o in verde, perdite in rosso col loro % */
+.mcs.dscs { width: calc(100% - 4.5ch - 10px); flex-wrap: wrap; row-gap: 4px; align-items: center; overflow: visible; }
+.mc.dsc { cursor: default; }
+.mc.dsc .item-icon { flex: none; }
+.mc.dsc.loss { color: color-mix(in srgb, var(--bad) 70%, var(--text)); }
+.mc.dsc.loss b { color: color-mix(in srgb, var(--bad) 80%, white); }
+.dsc-ab { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.dsc-ic { display: inline-flex; align-items: center; }
+.mc.dsc b { color: color-mix(in srgb, var(--good) 75%, white); }
+.dsc-name { white-space: nowrap; }
+.dsc-total { font: 700 italic 12.5px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }

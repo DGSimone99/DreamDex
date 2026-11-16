@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { holdBand, type SustainParts, type TeamDefense } from '../../engine/defense';
 import { defenseShares, type DefenseShare } from '../../engine/defenseShares';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
@@ -10,7 +10,10 @@ import { TYPES } from '../../engine/types';
 import { HoldBars, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
 import { Ask, MetaTargets } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
-import { battleName, battleSpecies } from '../../engine/dex';
+import { battleName, battleSpecies, getMove, toID } from '../../engine/dex';
+import type { TeamSet } from '../../engine/sets';
+import { ItemIcon } from '../ItemIcon';
+import { typeIconUrl } from '../typeIcons';
 import type { TypeName } from '../../engine/types';
 import { typeColor } from '../Sprite';
 import { effLabel } from '../effTag';
@@ -89,6 +92,53 @@ function DefShare({ share, from, team, tip }: { share: DefenseShare; from: numbe
       </span>
       <span className={`def-num total og-share-num${share.points < 0 ? ' neg' : ''}`}>{signed(share.points)}</span>
       {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="dsh-tip">{tip}</FloatTip>}
+    </span>
+  );
+}
+
+/**
+ * A squadra chiusa, sotto la barra Difesa: la Sostenibilità come le mosse dell'Offesa. In verde da dove recupera (la
+ * mossa con l'icona del suo tipo, lo strumento con la sua icona, l'abilità), in rosso le perdite col loro % (Stealth
+ * Rock con l'icona Roccia, lo strumento o la mossa che costa PS). Il nome intero nel suggerimento.
+ */
+function SustainChips({ parts, set }: { parts: SustainParts; set: TeamSet | undefined }) {
+  const t = useT();
+  const lang = useLang();
+  const pct = (x: number) => `${Math.round(100 * x)}%`;
+  const isItem = (name: string) => !!set && toID(name) === toID(set.item);
+  // Una fonte: l'icona (tipo della mossa, strumento, Grassy Terrain; un pallino per l'abilità) e il nome nella lingua
+  const source = (src: string): { icon: ReactNode; name: string } => {
+    if (src === 'Grassy Terrain') return { icon: <img src={typeIconUrl('Grass')} alt="" draggable={false} />, name: src };
+    const move = getMove(src);
+    if (move) return { icon: <img src={typeIconUrl(move.type)} alt="" draggable={false} />, name: gameName('move', move.name, lang) };
+    if (isItem(src)) return { icon: <ItemIcon item={src} size={16} />, name: gameName('item', src, lang) };
+    return { icon: <i className="dsc-ab" aria-hidden="true" />, name: src };
+  };
+  const gains = parts.sources.map(source);
+  const gainNames = gains.map(g => g.name).join(' + ');
+  // Stealth Rock c'è quasi sempre: non qui (è nel tooltip e nella sottoscheda); le altre perdite con l'icona della loro fonte
+  const lossFrom = parts.itemLossFrom ?? '';
+  const lossMove = getMove(lossFrom.split(' + ').find(x => getMove(x)) ?? '');
+  const lossIcon = set && lossFrom.includes(set.item) ? <ItemIcon item={set.item} size={16} />
+    : lossMove ? <img src={typeIconUrl(lossMove.type)} alt="" draggable={false} /> : null;
+  if (!gains.length && !(parts.itemLoss > 0)) return null;
+  return (
+    <span className="mcs dscs">
+      {/* Una pastiglia per fonte del recupero (icona e nome), poi quanto recupera in tutto */}
+      {gains.map((g, k) => (
+        <span key={k} className="mc dsc" style={{ '--c': 'var(--good)' } as CSSProperties}>
+          <span className="dsc-ic">{g.icon}</span>
+          <span className="dsc-name">{g.name}</span>
+        </span>
+      ))}
+      {gains.length > 0 && <b className="dsc-total" title={gainNames}>+{pct(parts.recovery)}</b>}
+      {parts.itemLoss > 0 && (
+        <span className="mc dsc loss" style={{ '--c': 'var(--bad)' } as CSSProperties} title={`${lossFrom || t('ddetail.sus.orb')} −${pct(parts.itemLoss)}`}>
+          {lossIcon && <span className="dsc-ic">{lossIcon}</span>}
+          <span className="dsc-name">{lossFrom ? lossFrom.split(' + ').map(x => (getMove(x) ? gameName('move', getMove(x)!.name, lang) : x === set?.item ? gameName('item', x, lang) : x)).join(' + ') : t('ddetail.sus.orb')}</span>
+          <b>−{pct(parts.itemLoss)}</b>
+        </span>
+      )}
     </span>
   );
 }
@@ -180,6 +230,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                     <DefShare share={shares[i]} from={shareFrom[i]} team={defense.value}
                       tip={<ShareTip who={m.species} share={shares[i]} sustain={m.sustain} line={sustainLine(m.sustainParts, rocksLabel, itemLabel)} meta={!!defense.coverageMeta} />} />
                   </span>
+                  {roomy && <SustainChips parts={m.sustainParts} set={setOf(ctx.team, m.species)} />}
                 </td>
               </tr>
             ))}
