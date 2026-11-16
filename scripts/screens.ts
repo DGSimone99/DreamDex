@@ -276,6 +276,16 @@ const SPEED_STATES: Record<string, State> = {
     await wait(400);
     return true;
   } },
+  // Il tooltip della barra: la scala dei vicini (Great Tusk ha la Booster: l'icona accanto al nome)
+  'analysis-speed-hover': { hash: hash(SPEED_SIX), run: async p => {
+    const ok = await speedState(null).run!(p);
+    if (ok !== true) return ok;
+    const bar = await p.$('button.sp-bar-btn');
+    if (!bar) return 'no bar';
+    await bar.hover();
+    await wait(500);
+    return true;
+  } },
 };
 const speedGuide = (format?: Partial<typeof FORMAT>): State => ({ hash: format ? hashWith(SPEED_SIX, format) : hash(SPEED_SIX), run: async p => {
   const ok = await speedState(null, { format }).run!(p);

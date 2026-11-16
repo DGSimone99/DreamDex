@@ -30,7 +30,20 @@ export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | '
 /** Un rivale vicino per velocità: specie, velocità effettiva e cosa la alza (Sciarpa o Booster), per il tooltip della barra. */
 export interface SpeedNeighbour { species: string; speed: number; scarf: boolean; booster: boolean }
 /** `near`: i rivali del meta (o del tier) appena più veloci e appena più lenti, dal più vicino, e quelli a pari velocità. */
-export interface SpeedLane { species: string; speed: number; share: number; above: boolean; near: { faster: SpeedNeighbour[]; slower: SpeedNeighbour[]; ties: SpeedNeighbour[] } | null }
+export interface SpeedLane { species: string; speed: number; share: number; above: boolean; near: { faster: SpeedNeighbour[]; slower: SpeedNeighbour[]; ties: SpeedNeighbour[] } | null;
+  /** Lo strumento del membro se gli alza la Velocità (Choice Scarf o Booster Energy): l'icona accanto al nome nel tooltip. */
+  item?: string }
+
+/** I vicini per il tooltip della barra: chi è appena sopra, appena sotto e a pari velocità (al massimo 3 pari). */
+export function laneNear(near: { faster: SpeedRival[]; slower: SpeedRival[]; ties: SpeedRival[] }): NonNullable<SpeedLane['near']> {
+  const list = (rivals: SpeedRival[]) => rivals.map(r => ({ species: r.species, speed: r.value, scarf: r.scarf || r.item === 'Choice Scarf', booster: !!r.booster }));
+  return { faster: list(near.faster), slower: list(near.slower), ties: list(near.ties.slice(0, 3)) };
+}
+
+/** Lo strumento da mostrare accanto al membro: solo quelli che alzano la Velocità. */
+export function speedItem(set: TeamSet): string | undefined {
+  return set.item === 'Choice Scarf' || set.item === 'Booster Energy' ? set.item : undefined;
+}
 export interface ThreatPod { species: string; usage: number }
 export interface DashboardData {
   coverage: { cells: TypeCell[]; defense: string; offense: string };
@@ -87,10 +100,9 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
     .map(m => {
       const set = team.find(s => battleName(s) === m.species);
       const tier = set ? speedTier(set, data) : null;
-      const near = (rivals: SpeedRival[]) => rivals.map(r => ({ species: r.species, speed: r.value, scarf: r.item === 'Choice Scarf', booster: !!r.booster }));
       return {
         species: m.species, speed: m.speed, share: m.raw, above: m.raw > 0.5,
-        near: tier ? { faster: near(tier.faster), slower: near(tier.slower), ties: near(tier.ties.slice(0, 3)) } : null,
+        near: tier ? laneNear(tier) : null, item: set ? speedItem(set) : undefined,
       };
     })
     .sort((a, b) => b.speed - a.speed);
