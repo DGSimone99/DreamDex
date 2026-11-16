@@ -1,11 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { metaThreats } from '../../src/engine/attackers';
 import { battleSpecies } from '../../src/engine/dex';
+import { holdBand } from '../../src/engine/defense';
+
+const HOLD = { ohko: 'OHKO', two: '2HKO', three: '3HKO', four: '4HKO+' } as const;
 import { moveAttackMultiplier } from '../../src/engine/types';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
@@ -120,10 +123,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       const row = within(table).getAllByRole('row')[m + 1];
       const cells = within(row).getAllByRole('cell');
       typed[m].cells.forEach((cell, i) => {
-        expect(cells[i].querySelector('.hold-pct')!.textContent).toBe(`${cell.pct}%`);
+        // Il numero come nell'Offesa (corsivo, "%" piccolo); soglia e due lati per i lettori di schermo; niente title del browser
+        expect(cells[i].querySelector('.ct-num')!.textContent).toBe(`${cell.pct}%`);
         expect(cells[i]).toHaveClass(CLS[cell.band]);
-        expect(cells[i].querySelector('.visually-hidden')!.textContent!.trim()).toBe(TAG[cell.band]);
-        expect(cells[i].getAttribute('title')).toContain(`fisico ${cell.physical}% · speciale ${cell.special}%`);
+        expect(cells[i].querySelector('.visually-hidden')!.textContent!.trim()).toBe(`${TAG[cell.band]} · fisico ${cell.physical}% · speciale ${cell.special}%`);
+        expect(cells[i].getAttribute('title')).toBeNull();
       });
       expect(cells).toHaveLength(18);
     });
@@ -143,19 +147,41 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
-  it('in fondo Regge del motore, con la Copertura del tipo nel suggerimento; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
+  it('in fondo, come nell\'Offesa: Copertura di ogni tipo e Il migliore (chi lo regge meglio); i buchi segnati in testata', async () => {
     const { rating, table } = await openTypes();
     const rows = rating.defense.coverageTypes.rows;
-    const held = within(table).getByRole('row', { name: /^Regge/ });
-    const pills = within(held).getAllByRole('cell').slice(0, 18).map(c => c.querySelector('.ct-pill')!);
-    expect(pills.map(p => p.firstChild!.textContent)).toEqual(rows.map(r => `${r.heldBy.length}`));
-    // La Copertura non ha più una riga: sta nel title della pillola e nel testo nascosto
-    expect(pills.map(p => p.getAttribute('title'))).toEqual(rows.map(r => `Copertura ${r.level}%`));
-    expect(pills.map(p => p.textContent)).toEqual(rows.map(r => `${r.heldBy.length} · Copertura ${r.level}%`));
-    expect(within(table).queryByRole('row', { name: /^Copertura/ })).toBeNull();
+    const level = within(table).getByRole('row', { name: /^Copertura/ });
+    expect(within(level).getAllByRole('cell').map(c => c.textContent)).toEqual(rows.map(r => `${r.level}%`));
+    const best = within(table).getByRole('row', { name: /^Il migliore/ });
+    const typed = rating.defense.typed;
+    within(best).getAllByRole('cell').forEach((cell, i) => {
+      // Il danno più basso fra chi lo regge davvero (3HKO o meglio); nessuno: il trattino
+      const holders = typed.map((m, k) => ({ k, c: m.cells[i] })).filter(x => x.c.band === 'three' || x.c.band === 'four');
+      if (!holders.length) expect(cell.querySelector('.ct-best-mon')).toBeNull();
+      else expect(cell).toHaveTextContent(typed[holders.reduce((a, b) => (b.c.pct < a.c.pct ? b : a)).k].species);
+    });
+    expect(within(table).queryByRole('row', { name: /^Regge/ })).toBeNull();
     expect(within(table).queryByRole('row', { name: /^Deboli/ })).toBeNull();
     expect(within(table).queryByRole('row', { name: /^Resistono/ })).toBeNull();
     expect(table.querySelectorAll('thead th.sev-serious')).toHaveLength(rating.defense.coverageTypes.weak.length);
+  });
+
+  it('tooltip DreamDex: sulla casella i due lati del colpo, sul tipo in testata Att e AttSp dell\'attaccante', async () => {
+    const { rating, table } = await openTypes();
+    const user = userEvent.setup();
+    const tipOf = (cls: string) => vi.waitFor(() => { const el = document.querySelector<HTMLElement>(`body > .ftip.${cls}`); if (!el) throw new Error('no tip'); return el; });
+    const cell = within(within(table).getAllByRole('row')[1]).getAllByRole('cell')[0];
+    await user.hover(cell);
+    const hit = await tipOf('dht');
+    const c = rating.defense.typed[0].cells[0];
+    expect(hit).toHaveTextContent(rating.defense.typed[0].species);
+    expect(hit).toHaveTextContent(`Fisica${HOLD[holdBand(c.physical / 100)]}${c.physical}%`);
+    expect(hit).toHaveTextContent(`Speciale${HOLD[holdBand(c.special / 100)]}${c.special}%`);
+    await user.unhover(cell);
+    const head = within(table).getAllByRole('columnheader')[1];
+    expect(head).toHaveTextContent(/Att \d+, AttSp \d+/);
+    await user.hover(head);
+    expect((await tipOf('tst')).querySelectorAll('.tst-stats span')).toHaveLength(2);
   });
 
   it('un buco: un team fragile ha tipi che nessuno regge, segnati in testata', async () => {
@@ -236,7 +262,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Regge', async () => {
+  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Team Coverage', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
@@ -258,12 +284,15 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
         } else {
           expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));
           expect(cells[k]).toHaveClass(h.partial ? 'hold-3' : 'hold-4');
-          expect(cells[k].getAttribute('title')).toBe(`${r.species}: ${h.move} ${h.pct}%`);
+          // Il colpo per i lettori di schermo (a vista sta nel tooltip DreamDex), la barra dei PS che restano
+          expect(cells[k].querySelector('.visually-hidden')!.textContent!.trim()).toBe(`${r.species}: ${h.move} ${h.pct}%`);
+          expect(cells[k].querySelector('.cm-hp')).not.toBeNull();
         }
       });
     });
-    const held = within(table).getByRole('row', { name: /^Regge/ });
-    expect(within(held).getAllByRole('cell').map(c => c.textContent)).toEqual(expected.slice(0, 8).map(r => `${r.heldBy.filter(h => !h.partial).length}`));
+    // In fondo la riga Team Coverage, come nell'Offesa: quanti la reggono del tutto
+    const held = within(table).getByRole('row', { name: /^Team Coverage/ });
+    expect(within(held).getAllByRole('cell').map(c => c.querySelector('.ct-pill')!.firstChild!.textContent)).toEqual(expected.slice(0, 8).map(r => `${r.heldBy.filter(h => !h.partial).length}`));
     expect(panel.queryAllByRole('listitem')).toHaveLength(0);
     // Le pagine compatte "‹ 1/N ›" stanno nella casella in alto a sinistra della tabella, al posto di "Pokémon";
     // "successive" mostra le 8 dopo, "precedente" torna alla prima. Sotto la tabella una riga sola: legenda e conteggi
@@ -276,9 +305,9 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(within(pages).getByRole('button', { name: 'Minacce precedenti' })).toBeDisabled();
     expect(within(pages).getAllByRole('button')).toHaveLength(2);
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
-    expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toHaveTextContent(`${rows.length} minacce`);
-    // La legenda dei colori a sinistra nella stessa riga in fondo, i conteggi a destra
-    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('Danno subito');
+    // Come nell'Offesa: la legenda corta (KO, < 50%, 50–99%), niente conteggi
+    expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('KO< 50%50–99%');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));
@@ -305,55 +334,56 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
   });
 
-  it('le barre hanno la classe della soglia e l\'anello debole è solo sul più basso, solo sotto 50', () => {
+  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Sostenibilità e Difesa barre col colore della soglia', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     const tone = (v: number) => (v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad');
-    const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
+    const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     rating.defense.members.forEach((m, i) => {
+      const lines = rows[i].querySelectorAll('.hb-line');
+      expect(lines).toHaveLength(2);
+      // Il conto dei tipi: quelli dove il lato peggiore toglie meno di metà PS
+      const held = rating.defense.typed[i].cells.filter(c => c.band === 'three' || c.band === 'four').length;
+      expect(lines[0].querySelector('.kob-count-num')).toHaveTextContent(`${held}/18`);
+      // I pezzi contano tutti i 18 tipi
+      const sum = Array.from(lines[0].querySelectorAll('.kob-row > .kob.hb')).reduce((acc, el) => acc + Number(el.querySelector('.kob-num')!.textContent), 0);
+      expect(sum).toBe(18);
       const bars = rows[i].querySelectorAll('.def-bar');
-      expect(bars[0]).toHaveClass(tone(m.hold));
-      expect(bars[1]).toHaveClass(tone(m.metaHold!));
-      expect(bars[3]).toHaveClass(tone(m.value));
+      expect(bars[0]).toHaveClass(tone(m.sustain));
+      expect(bars[1]).toHaveClass(tone(m.value));
     });
-    const values = rating.defense.members.map(m => m.value);
-    const lowest = values.indexOf(Math.min(...values));
-    // L'etichetta c'è due volte nel DOM per riga (accanto al nome e alle statistiche): conta le righe
-    const marked = rows.filter(r => r.querySelector('.def-weak'));
-    if (values[lowest] < 50) {
-      expect(marked).toEqual([rows[lowest]]);
-      expect(rows[lowest]).toHaveTextContent('Anello debole');
-    } else {
-      expect(marked).toHaveLength(0);
-    }
+    // Niente più anello debole
+    expect(document.querySelector('.def-weak')).toBeNull();
   });
 
-  it('una Difesa bassa dà la barra rossa e l\'anello debole', () => {
+  it('una Difesa bassa dà la barra rossa', () => {
     const rating = withMeta();
     const weak = { ...rating, defense: { ...rating.defense, members: rating.defense.members.map((m, i) => (i === 1 ? { ...m, value: 30 } : { ...m, value: 85 })) } };
     renderIt(<AreaView rating={weak} area="defense" team={team} analysis={analysis} problems={[]} />);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
-    expect(rows[1].querySelectorAll('.def-bar')[3]).toHaveClass('bad');
-    expect(rows[0].querySelectorAll('.def-bar')[3]).toHaveClass('good');
-    // L'etichetta c'è due volte nel DOM (accanto al nome e accanto alle statistiche, il CSS ne mostra una), sempre in un membro solo
-    expect(rows.filter(r => r.querySelector('.def-weak'))).toHaveLength(1);
-    expect(rows[1].querySelector('.def-weak')).toBeTruthy();
+    expect(rows[1].querySelectorAll('.def-bar')[1]).toHaveClass('bad');
+    expect(rows[0].querySelectorAll('.def-bar')[1]).toHaveClass('good');
   });
 
-  it('a squadra chiusa compaiono Colpo peggiore (il tipo che fa più male) e Recupero, con un % per ogni riga; altrimenti no', () => {
+  it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori e sotto Sostenibilità il recupero, senza colonne in più; altrimenti no', () => {
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    const headers = screen.getAllByRole('columnheader').map(h => h.textContent);
-    expect(headers).toEqual(['Pokémon', 'Regge i tipi', 'Regge il meta', 'Sostenibilità', 'Difesa', 'Colpo peggiore', 'Recupero']);
-    // La riga vuota in fondo (og-fill) tiene la riga del team in basso: non è un membro
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'SostenibilitàDifesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {
-      expect(row.querySelector('.def-hit .hold-chip')).toHaveTextContent(/\d+%/);
-      expect(row.querySelector('.def-hit .type-icons')).not.toBeNull();
+      const lists = row.querySelectorAll('.mcs.wh');
+      expect(lists).toHaveLength(2);
+      expect(lists[0].querySelectorAll('.mc')).toHaveLength(3);
+      // Ogni pastiglia: il nome (si apre passando sopra) e il danno, KO o %
+      for (const pill of lists[0].querySelectorAll('.mc')) {
+        expect(pill.querySelector('.mc-name')!.textContent).not.toBe('');
+        expect(pill.querySelector('b')).toHaveTextContent(/^(KO|\d+%)$/);
+      }
+      expect(row.querySelector('.dg-rec')).toBeTruthy();
     });
     unmount();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).not.toContain('Colpo peggiore');
-    expect(document.querySelector('.def-hit')).toBeNull();
+    expect(document.querySelector('.mcs.wh')).toBeNull();
+    expect(document.querySelector('.dg-rec')).toBeNull();
   });
 });

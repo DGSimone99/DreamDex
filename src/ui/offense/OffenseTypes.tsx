@@ -11,7 +11,8 @@ import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
-import { TypeIcons, typeIconUrl } from '../typeIcons';
+import { TypeIcons } from '../typeIcons';
+import { TypeStatsTip } from '../TypeStatsTip';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
 import { useMemberTip } from '../MemberCard';
@@ -153,7 +154,8 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       {card.tip}
       {headType && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(headType)} className="tst">
-          <TypeTargetTip type={headType} stats={averageOf(headType)} />
+          <TypeStatsTip type={headType} foot={t('guide.off.targets.tip')}
+            stats={[[t('stat.hp'), averageOf(headType).hp], [t('stat.def'), averageOf(headType).def], [t('stat.spd'), averageOf(headType).spd]]} />
         </FloatTip>
       )}
       {open?.member && openHit && tip.anchor && (
@@ -165,28 +167,6 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
     </div>
-  );
-}
-
-/**
- * Il tooltip del tipo in testata: le statistiche base medie del Pokémon medio di quel tipo nel Pokédex del formato,
- * il bersaglio su cui si misurano i colpi della colonna (prima stavano nella guida, sotto una freccina).
- */
-function TypeTargetTip({ type, stats }: { type: string; stats: { hp: number; def: number; spd: number } }) {
-  const t = useT();
-  const lang = useLang();
-  const cells: [string, number][] = [[t('stat.hp'), stats.hp], [t('stat.def'), stats.def], [t('stat.spd'), stats.spd]];
-  return (
-    <>
-      <div className="ftip-head">
-        <img src={typeIconUrl(type)} alt="" draggable={false} />
-        <b>{typeName(type as (typeof TYPES)[number], lang)}</b>
-      </div>
-      <div className="tst-stats">
-        {cells.map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}
-      </div>
-      <p className="ftip-foot">{t('guide.off.targets.tip')}</p>
-    </>
   );
 }
 
