@@ -834,6 +834,8 @@ export const en = {
   'kob.setupWord': "Setup",
   'ddetail.shareTitle': "Brings {n} to the team's Defense",
   'ddetail.sus.teamNote': "Members' average, worth 20% of Defense",
+  'ddetail.legendRecovery': "Recovery",
+  'ddetail.legendLoss': "Losses",
   'hold.held': "Holds",
   'hold.say.four': "They take less than a quarter of its HP",
   'hold.say.three': "They take less than half its HP",

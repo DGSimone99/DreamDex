@@ -17,13 +17,23 @@ function roundSigned(raw: number[], total: number): number[] {
   return out;
 }
 
+/** Quanto porta un membro alla Difesa del team, e da dove: i tre pezzi sommati fanno `points`. */
+export interface DefenseShare {
+  points: number;
+  /** Dalla Coverage tipi e dalla Coverage meta (meta 0 senza meta). */
+  types: number;
+  meta: number;
+  /** Dalla Sostenibilità: sotto zero se perde più di quanto recupera. */
+  sustain: number;
+}
+
 /**
  * Quanto porta ogni membro alla Difesa del team (ordine di `defense.members`), come il "+N" dell'Offesa: i punti sommati
  * fanno la Difesa del team. Coverage tipi e meta: per ogni colpo (36 di tipo, le minacce pesate per uso) la parte del
  * membro nella profondità 70/20/10, riportata al valore della sottoscheda; Sostenibilità: la sua quota della media
  * (sotto zero se perde, allora toglie). Poi i pesi della Difesa (40/40/20, senza meta 80/20).
  */
-export function defenseShares(defense: TeamDefense): number[] {
+export function defenseShares(defense: TeamDefense): DefenseShare[] {
   const n = defense.members.length;
   if (!n) return [];
   const columns = 2 * (defense.typed[0]?.cells.length ?? 0);
@@ -48,11 +58,15 @@ export function defenseShares(defense: TeamDefense): number[] {
     const sum = part.reduce((a, b) => a + b, 0);
     return part.map(x => (sum > 0 ? (x / sum) * value : value / n));
   };
-  const types = scaled(typePart, defense.coverageTypes.value);
-  const meta = defense.coverageMeta ? scaled(metaPart, defense.coverageMeta.value) : null;
-  const sustain = defense.members.map(m => m.sustain / n);
-  const raw = defense.members.map((_, k) => (meta
-    ? DEFENSE_SHARES.types * types[k] + DEFENSE_SHARES.meta * meta[k] + DEFENSE_SHARES.sustain * sustain[k]
-    : DEFENSE_SHARES_NO_META.types * types[k] + DEFENSE_SHARES_NO_META.sustain * sustain[k]));
-  return roundSigned(raw, defense.value);
+  const shares = defense.coverageMeta ? DEFENSE_SHARES : { ...DEFENSE_SHARES_NO_META, meta: 0 };
+  const types = scaled(typePart, defense.coverageTypes.value).map(x => shares.types * x);
+  const meta = defense.coverageMeta ? scaled(metaPart, defense.coverageMeta.value).map(x => shares.meta * x) : types.map(() => 0);
+  const sustain = defense.members.map(m => (shares.sustain * m.sustain) / n);
+  const points = roundSigned(defense.members.map((_, k) => types[k] + meta[k] + sustain[k]), defense.value);
+  // I pezzi arrotondati: la Sostenibilità e i tipi per conto loro, il meta quello che resta (così sommano a `points`)
+  return points.map((p, k) => {
+    const sus = Math.round(sustain[k]);
+    const ty = Math.round(types[k]);
+    return { points: p, types: ty, meta: p - sus - ty, sustain: sus };
+  });
 }

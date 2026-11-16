@@ -836,6 +836,8 @@ export const it: Record<keyof typeof en, string> = {
   'kob.setupWord': "Setup",
   'ddetail.shareTitle': "Porta {n} alla Difesa del team",
   'ddetail.sus.teamNote': "Media dei membri, conta per il 20% della Difesa",
+  'ddetail.legendRecovery': "Recupero",
+  'ddetail.legendLoss': "Perdite",
   'hold.held': "Regge",
   'hold.say.four': "Gli tolgono meno di un quarto dei PS",
   'hold.say.three': "Gli tolgono meno di metà PS",

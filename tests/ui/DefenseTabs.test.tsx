@@ -334,12 +334,11 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
   });
 
-  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Sostenibilità con segno, Difesa come quanto porta ogni membro', () => {
+  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Difesa come quanto porta ogni membro (Sostenibilità dentro)', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const tone = (v: number) => (v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad');
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
-    rating.defense.members.forEach((m, i) => {
+    rating.defense.members.forEach((_, i) => {
       const lines = rows[i].querySelectorAll('.hb-line');
       expect(lines).toHaveLength(2);
       // Il conto dei tipi: quelli dove il lato peggiore toglie meno di metà PS
@@ -348,10 +347,6 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
       // I pezzi contano tutti i 18 tipi
       const sum = Array.from(lines[0].querySelectorAll('.kob-row > .kob.hb')).reduce((acc, el) => acc + Number(el.querySelector('.kob-num')!.textContent), 0);
       expect(sum).toBe(18);
-      // La Sostenibilità ha segno: il numero "+47" / "−6" / "0", verde-giallo-rosso sopra zero, rosso sotto
-      const sus = rows[i].querySelector('.dg-sus .def-num')!;
-      expect(sus).toHaveTextContent(m.sustain > 0 ? `+${m.sustain}` : m.sustain < 0 ? `−${-m.sustain}` : '0');
-      expect(sus).toHaveClass(m.sustain > 0 ? tone(m.sustain) : m.sustain < 0 ? 'bad' : 'zero');
     });
     // Nella colonna Difesa quanto porta ogni membro ("+12"): sommati fanno la Difesa del team
     const points = rows.map(r => Number(r.querySelector('.og-share-num')!.textContent!.replace('−', '-')));
@@ -368,13 +363,13 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(bars[bars.length - 1]).toHaveClass(tone(rating.defense.value));
   });
 
-  it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori e sotto Sostenibilità recupero e perdite, senza colonne in più; altrimenti niente pastiglie', () => {
+  it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori senza colonne in più; altrimenti niente pastiglie', () => {
     const rating = withMeta();
     const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'SostenibilitàDifesa']);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'Difesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
-    rows.forEach((row, i) => {
+    rows.forEach(row => {
       const lists = row.querySelectorAll('.mcs.wh');
       expect(lists).toHaveLength(2);
       expect(lists[0].querySelectorAll('.mc')).toHaveLength(3);
@@ -383,14 +378,9 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
         expect(pill.querySelector('.mc-name')!.textContent).not.toBe('');
         expect(pill.querySelector('b')).toHaveTextContent(/^(KO|\d+%)$/);
       }
-      // Da dove recupera (o le perdite che non sono Stealth Rock), solo se c'è qualcosa da dire
-      const p = rating.defense.members[i].sustainParts;
-      expect(!!row.querySelector('.dg-rec')).toBe(p.sources.length > 0 || p.itemLoss > 0);
     });
     unmount();
-    // A squadra aperta niente pastiglie; il recupero resta accanto al numero
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     expect(document.querySelector('.mcs.wh')).toBeNull();
-    expect(document.querySelector('.dg-rec .dg-loss')).toBeNull();
   });
 });

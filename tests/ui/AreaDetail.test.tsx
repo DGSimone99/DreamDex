@@ -133,7 +133,7 @@ describe('dettaglio della Difesa a schede', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'SostenibilitàDifesa']);
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'Difesa']);
     const all = within(table).getAllByRole('row');
     const rows = all.slice(1, -1);
     expect(rows.map(r => within(r).getByRole('rowheader').querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
@@ -142,15 +142,15 @@ describe('dettaglio della Difesa a schede', () => {
       const cells = within(row).getAllByRole('cell');
       expect(cells[0]).toHaveTextContent(/\d+\/18$/);
       expect(cells[1]).toHaveTextContent(/\d+\/\d+$/);
-      // Nell'ultima colonna Sostenibilità e Difesa affiancate: due numeri (la Difesa col "+N" del setup se c'è)
-      expect(cells[2].querySelectorAll('.def-num')).toHaveLength(2);
+      // Nell'ultima colonna quanto porta il membro alla Difesa del team ("+12")
+      expect(cells[2]).toHaveTextContent(/^[+−]\d+$/);
     }
     // In fondo la riga Team Coverage: le barre a pezzi del team, poi i voti
     const total = all[all.length - 1];
     expect(within(total).getByRole('rowheader')).toHaveTextContent('Team Coverage');
     const totals = within(total).getAllByRole('cell');
     expect(totals[0]).toHaveTextContent(/\d+\/18$/);
-    expect(totals[2].querySelectorAll('.def-num')).toHaveLength(2);
+    expect(totals[2]).toHaveTextContent(/^\d+$/);
   });
 
   it('Coverage tipi: la regola (attaccante forte, 4HKO pieno, 3HKO a metà) sta nella guida, non sulla pagina', async () => {
@@ -212,7 +212,7 @@ describe('dettaglio della Difesa a schede', () => {
     await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
     expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Coverage' })).toBeInTheDocument();
     await user.click(within(dialog).getByRole('tab', { name: /^General/ }));
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Types?', 'Meta?', 'SustainabilityDefense']);
+    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Types?', 'Meta?', 'Defense']);
   });
 });
 

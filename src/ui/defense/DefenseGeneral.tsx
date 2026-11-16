@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { holdBand, type SustainParts, type TeamDefense } from '../../engine/defense';
-import { defenseShares } from '../../engine/defenseShares';
+import { defenseShares, type DefenseShare } from '../../engine/defenseShares';
+import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useLang, useT } from '../../i18n/react';
 import { gameName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
@@ -41,60 +42,72 @@ export function Bar({ value, total, unit = '', gain, reserve = false, extra = 0,
 /** Un numero con segno: "+47", "−25", "0" (il meno tipografico). */
 export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
-/**
- * La Sostenibilità (−100..100) nella Generale: solo il numero con segno (verde-giallo-rosso sopra zero, rosso sotto), e
- * accanto, se c'è, da dove recupera; a squadra chiusa anche le perdite che non sono Stealth Rock.
- */
-export function SustainNum({ value, parts, roomy = false, total = false }: { value: number; parts?: SustainParts; roomy?: boolean; total?: boolean }) {
-  const cls = value > 0 ? tone(value) : value < 0 ? 'bad' : 'zero';
-  return (
-    <span className={`dg-sus${total ? ' total' : ''}`}>
-      <span className={`def-num total ${cls}`}>{signed(value)}</span>
-      {parts && <SustainNote parts={parts} roomy={roomy} />}
-    </span>
-  );
+/** Le perdite e il recupero di un membro in una riga: "Recover + Leftovers · Stealth Rock −6%". */
+function sustainLine(parts: SustainParts, rocksLabel: string, itemLabel: string): string {
+  const pct = (x: number) => `${Math.round(100 * x)}%`;
+  return [parts.sources.join(' + '), parts.rocks > 0 ? `${rocksLabel} −${pct(parts.rocks)}` : '', parts.itemLoss > 0 ? `${parts.itemLossFrom ?? itemLabel} −${pct(parts.itemLoss)}` : '']
+    .filter(Boolean).join(' · ');
 }
 
 /**
- * La scheda Generale della Difesa: i membri con una colonna per voce (Regge i tipi, Regge il meta, Sostenibilità) e la
- * Difesa del membro coi pesi della squadra. In fondo la riga Team Coverage, come nell'Offesa: i voti della squadra.
- * Le righe stanno nella cornice comune (`def-frame`): i membri restano nello stesso punto di Coverage tipi.
- * Con la squadra chiusa (`ctx.roomy`) le righe si allungano: sotto Tipi e Meta i tre colpi peggiori, sotto Sostenibilità
- * come recupera.
+ * Il tooltip di quanto porta un membro (o il team) alla Difesa: i tre pezzi, Coverage tipi, Coverage meta e
+ * Sostenibilità, con sotto la Sostenibilità il suo valore e da dove viene.
  */
+function ShareTip({ who, share, sustain, line, meta, total = false }: { who: string; share: DefenseShare; sustain: number; line: string; meta: boolean; total?: boolean }) {
+  const t = useT();
+  return (
+    <>
+      <div className="ftip-head"><b>{who}</b><span className={`dsh-total${share.points < 0 ? ' neg' : ''}`}>{total ? share.points : signed(share.points)}</span></div>
+      <div className="dsh-rows">
+        <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageTypes')}<b>{signed(share.types)}</b></span>
+        {meta && <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageMeta')}<b>{signed(share.meta)}</b></span>}
+        <span className="dsh-row"><i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />{t('ddetail.sustain')} <small>{signed(sustain)}</small><b>{signed(share.sustain)}</b></span>
+        {line && <span className="dsh-line">{line}</span>}
+      </div>
+    </>
+  );
+}
+
 /**
  * Quanto porta un membro alla Difesa del team, come nell'Offesa: in tenue la Difesa del team divisa nei pezzi dei membri,
- * uno dopo l'altro nell'ordine delle righe, il pezzo del membro acceso al suo posto; il numero sono i suoi punti (sotto
- * zero, in rosso, se toglie: la sua Sostenibilità è negativa e pesa più di quello che regge).
+ * uno dopo l'altro nell'ordine delle righe; il pezzo del membro acceso al suo posto, in due parti: quello che regge (tipi
+ * e meta, nel colore dell'Offesa) e la Sostenibilità, verde se aggiunge, rossa se toglie (la parte che si mangia). Il
+ * numero sono i suoi punti; passandoci sopra il tooltip coi pezzi.
  */
-function DefShare({ points, from, team }: { points: number; from: number; team: number }) {
+function DefShare({ share, from, team, tip }: { share: DefenseShare; from: number; team: number; tip: ReactNode }) {
+  const float = useFloatAnchor<true>();
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
+  const cover = Math.max(0, share.types + share.meta);
+  const lit = share.sustain >= 0 ? cover : Math.max(0, cover + share.sustain);
+  const side = share.sustain >= 0 ? share.sustain : Math.min(cover, -share.sustain);
   return (
-    <span className="def-cell">
+    <span className="def-cell dsh" onMouseEnter={e => float.open(true, e.currentTarget)} onMouseLeave={float.close}>
       <span className="def-bar og-share-bar" aria-hidden="true">
         <i className="og-share-team" style={{ width: `${clamp(team)}%` }} />
-        {points > 0 && <i className="og-share-own" style={{ left: `${clamp(from)}%`, width: `${clamp(Math.min(points, 100 - from))}%` }} />}
+        {lit > 0 && <i className="og-share-own" style={{ left: `${clamp(from)}%`, width: `${clamp(Math.min(lit, 100 - from))}%` }} />}
+        {side > 0 && <i className={`dsh-sus ${share.sustain >= 0 ? 'gain' : 'loss'}`} style={{ left: `${clamp(from + lit)}%`, width: `${clamp(Math.min(side, 100 - from - lit))}%` }} />}
       </span>
-      <span className={`def-num total og-share-num${points < 0 ? ' neg' : ''}`}>{points < 0 ? `−${-points}` : `+${points}`}</span>
+      <span className={`def-num total og-share-num${share.points < 0 ? ' neg' : ''}`}>{signed(share.points)}</span>
+      {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="dsh-tip">{tip}</FloatTip>}
     </span>
   );
 }
 
-/** Sotto la Sostenibilità (squadra chiusa): il recupero, poi le perdite in rosso ("Life Orb −10%"), senza Stealth Rock. */
-function SustainNote({ parts, roomy }: { parts: SustainParts; roomy: boolean }) {
-  const t = useT();
-  const pct = (x: number) => `${Math.round(100 * x)}%`;
-  // Stealth Rock c'è quasi sempre: qui solo le altre perdite (strumenti, contraccolpo, sabbia), il dettaglio è nella sottoscheda
-  const losses = [roomy && parts.itemLoss > 0 ? `${parts.itemLossFrom ?? t('ddetail.sus.orb')} −${pct(parts.itemLoss)}` : null]
-    .filter((x): x is string => !!x);
-  const gain = parts.sources.length ? parts.sources.join(' + ') : null;
-  if (!gain && !losses.length) return null;
-  const full = [gain, ...losses].filter(Boolean).join(' · ');
+/** La Difesa del team in fondo: la barra in due parti, quello che regge (tipi e meta) e la Sostenibilità (verde o rossa). */
+function TeamDefense({ value, sustainPoints, tip }: { value: number; sustainPoints: number; tip: ReactNode }) {
+  const float = useFloatAnchor<true>();
+  const clamp = (n: number) => Math.max(0, Math.min(100, n));
+  const cover = clamp(value - sustainPoints);
+  const lit = sustainPoints >= 0 ? cover : clamp(cover + sustainPoints);
+  const side = Math.abs(sustainPoints);
   return (
-    <span className="dg-rec" title={full}>
-      {gain}
-      {parts.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}
-      {losses.map((l, k) => <span key={k} className="dg-loss">{(gain || k > 0) && ' · '}{l}</span>)}
+    <span className="def-cell dsh" onMouseEnter={e => float.open(true, e.currentTarget)} onMouseLeave={float.close}>
+      <span className={`def-bar total ${tone(value)}`} aria-hidden="true">
+        <i style={{ width: `${lit}%` }} />
+        {side > 0 && <i className={`dsh-sus ${sustainPoints >= 0 ? 'gain' : 'loss'}`} style={{ left: `${lit}%`, width: `${clamp(Math.min(side, 100 - lit))}%` }} />}
+      </span>
+      <span className={`def-num ${tone(value)} total`}>{value}</span>
+      {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="dsh-tip">{tip}</FloatTip>}
     </span>
   );
 }
@@ -106,7 +119,12 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const roomy = !!ctx.roomy;
   // Quanto porta ogni membro alla Difesa del team, e dove comincia il suo pezzo nella barra (i punti delle righe sopra)
   const shares = defenseShares(defense);
-  const shareFrom = shares.map((_, i) => Math.max(0, shares.slice(0, i).reduce((a, b) => a + Math.max(0, b), 0)));
+  // Il pezzo di un membro occupa quello che regge (la parte rossa di chi perde resta dentro)
+  const span = (x: DefenseShare) => Math.max(0, x.types + x.meta, x.points);
+  const shareFrom = shares.map((_, i) => shares.slice(0, i).reduce((a, b) => a + span(b), 0));
+  const teamShare = shares.reduce<DefenseShare>((a, b) => ({ points: a.points + b.points, types: a.types + b.types, meta: a.meta + b.meta, sustain: a.sustain + b.sustain }), { points: 0, types: 0, meta: 0, sustain: 0 });
+  const rocksLabel = t('ddetail.sus.rocks');
+  const itemLabel = t('ddetail.sus.orb');
 
   // Le barre a pezzi di Tipi e Meta: le fasce di ogni membro, e del team (il membro che regge meglio ogni bersaglio)
   const metaRows = defense.coverageMeta?.rows ?? [];
@@ -144,7 +162,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               <th scope="col">{t('kob.headTypes')}<Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
               {meta && <th scope="col">{t('kob.headMeta')}<Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
-              <th scope="col" className="dg-pair-h"><span className="dg-pair"><span>{t('ddetail.sustain')}</span><span>{t('area.defense')}</span></span></th>
+              <th scope="col">{t('area.defense')}</th>
             </tr>
           </thead>
           <tbody>
@@ -157,13 +175,10 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
                 {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
-                  <span className="dg-pair">
-                    <span>
-                      {/* Il numero e da dove recupera (a squadra chiusa anche le altre perdite) */}
-                      <SustainNum value={m.sustain} parts={m.sustainParts} roomy={roomy} />
-                    </span>
-                    {/* Quanto porta alla Difesa del team: i punti dei membri sommati fanno la Difesa del team */}
-                    <span className="og-share" title={t('ddetail.shareTitle', { n: shares[i] < 0 ? `−${-shares[i]}` : `+${shares[i]}` })}><DefShare points={shares[i]} from={shareFrom[i]} team={defense.value} /></span>
+                  {/* Quanto porta alla Difesa del team (sommati fanno la Difesa del team): quello che regge e la Sostenibilità */}
+                  <span className="og-share" aria-label={t('ddetail.shareTitle', { n: signed(shares[i].points) })}>
+                    <DefShare share={shares[i]} from={shareFrom[i]} team={defense.value}
+                      tip={<ShareTip who={m.species} share={shares[i]} sustain={m.sustain} line={sustainLine(m.sustainParts, rocksLabel, itemLabel)} meta={!!defense.coverageMeta} />} />
                   </span>
                 </td>
               </tr>
@@ -177,7 +192,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <th scope="row"><span className="og-plate">{t('odetail.gen.total')}</span></th>
               <td><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></td>
               {meta && <td><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></td>}
-              <td><span className="dg-pair"><SustainNum value={defense.sustain} total /><Bar value={defense.value} total /></span></td>
+              <td><TeamDefense value={defense.value} sustainPoints={teamShare.sustain}
+                tip={<ShareTip who={teamName} share={teamShare} sustain={defense.sustain} line={t('ddetail.sus.teamNote')} meta={!!defense.coverageMeta} total />} /></td>
             </tr>
           </tfoot>
         </table>
@@ -187,6 +203,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
         <span className="area-legend-swatch"><i className="hb-sw hb-held" />{t('hold.held')}</span>
         <span className="area-legend-swatch"><i className="hb-sw hb-2" />2HKO</span>
         <span className="area-legend-swatch"><i className="hb-sw hb-ohko" />OHKO</span>
+        <span className="area-legend-swatch"><i className="dsh-leg gain" />{t('ddetail.legendRecovery')}</span>
+        <span className="area-legend-swatch"><i className="dsh-leg loss" />{t('ddetail.legendLoss')}</span>
       </span></div>
     </div>
   );
