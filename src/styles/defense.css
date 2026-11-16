@@ -27,7 +27,7 @@
 /* La lista parte subito sotto la striscia delle sottoschede: meno margine in alto nel pannello */
 .area-panel:has(> .def-frame) { padding-top: 6px; }
 /* L etichetta "Pokémon" sopra la colonna dei nomi, uguale in ogni tabella */
-.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .def-frame .def-grid { width: 100%; border-collapse: separate; border-spacing: 0 var(--def-sp); table-layout: fixed; font-variant-numeric: tabular-nums; }
 /* Griglie a caselle: lo spazio anche in orizzontale, rientrato perché la prima colonna parta nello stesso punto */
 .def-frame .def-grid.spaced { width: calc(100% + 2 * var(--def-sp)); margin: 0 calc(-1 * var(--def-sp)); border-spacing: var(--def-sp); }
@@ -50,7 +50,7 @@
 
 /* Tabella dei membri con le barre */
 .def-members { table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
-.def-members thead th { padding: 0 8px 6px; vertical-align: bottom; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
+.def-members thead th { padding: 0 8px 6px; vertical-align: bottom; text-align: left; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .def-members thead th:first-child { padding-left: 0; }
 .def-members td, .def-members th[scope='row'] { padding: 0 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
 .def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
@@ -107,7 +107,7 @@
 /* Robustezza nella cornice comune: due righe di testata (gruppo, icone) alte quanto la testata delle altre schede */
 .def-frame thead tr.rob-grp { height: 16px; }
 .def-frame thead tr.rob-atk { height: calc(var(--def-head) - 16px - var(--def-sp)); }
-.rob-grp th { padding: 0 0 2px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; border-bottom: 2px solid var(--line); white-space: nowrap; }
+.rob-grp th { padding: 0 0 2px; text-align: center; border-bottom: 2px solid var(--line); white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .rob-grp th.def-mon-h, .rob-grp .rob-side-h { border-bottom: 0; vertical-align: bottom; }
 .rob-grp th:not(.def-mon-h) { line-height: 1; }
 .rob-grp .rob-side-h { text-align: center; overflow: visible; max-width: none; text-overflow: clip; }
@@ -124,7 +124,7 @@
 .def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .rob-side { padding: 0; text-align: center; }
 .rob-side .ct-pill { min-width: 40px; font-size: 13px; }
-.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: auto 0 0; padding-top: 8px; font-size: 12px; color: var(--muted); }
+.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--legend-gap); margin: auto 0 0; padding-top: 8px; font-size: var(--legend-size); color: var(--legend-ink); }
 @container (max-width: 1100px) {
   .def-frame .rob-atk .def-box { --bs: 0.65; }
   .rob-matrix .rob-col-side { width: 52px; }
@@ -139,7 +139,7 @@
 /* Recupera prende lo spazio che resta (si stringe per prima sugli schermi piccoli): Perde resta larga, le sue testate su una riga */
 .sus-table .sus-col-net { width: 170px; }
 .sus-table .sus-col-val { width: 120px; }
-.sus-table thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.sus-table thead th { white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .sus-table thead .sus-h { vertical-align: bottom; text-align: left; padding: 0 12px 6px; }
 .sus-table thead .sus-c { text-align: center; }
 .sus-table thead .sus-r { text-align: right; padding-right: 0; }
@@ -147,7 +147,7 @@
 .sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 2px; text-align: center; line-height: 1; }
 /* «Perde» sopra le sue due colonne: centrata e bassa come le altre righe di gruppo, così i membri partono alla stessa altezza delle altre schede */
 .sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 2px; text-align: center; line-height: 1; }
-.sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--muted); line-height: 1; }
+.sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .sus-table td { padding: 0 12px; border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }
 .sus-table td.sus-loss + td.sus-loss { border-right: 1px solid var(--line); }
@@ -203,7 +203,7 @@
 .ct-table thead th.x-col img { transform: scale(1.15); }
 /* Riepilogo: righe basse, etichette come le righe della Panoramica */
 .ct-table tr.ct-sum { height: 24px; }
-.ct-table tr.ct-sum th { padding: 0 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
+.ct-table tr.ct-sum th { padding: 0 8px 0 0; text-align: left; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .ct-table tr.ct-sum td { padding: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
 .ct-table tr.ct-sum td.bad { color: var(--bad); }
 /* A squadra aperta la Sicurezza è l unico riepilogo: staccata di qualche px dalle caselle */
@@ -233,11 +233,11 @@
    le note del meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) o la nota del focus */
 .def-frame { position: relative; }
 .ad-panel .def-frame > .rob-legend { position: absolute; top: 0; left: 0; right: 0; height: var(--def-legend); margin: 0; padding: 0;
-  display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 18px; white-space: nowrap; line-height: 1.1; font-size: 11.5px; }
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: var(--legend-gap); white-space: nowrap; line-height: 1.1; }
 .ad-panel .def-frame > .rob-legend > .area-legend { order: 2; }
 .ad-panel .def-frame > .rob-legend .cm-summary { margin: 0; }
-.ad-panel .ht-notes { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; font-size: 12px; cursor: help; }
-.ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; font-size: 13px; color: var(--muted); }
+.ad-panel .ht-notes { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; cursor: help; }
+.ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; }
 .cm-summary .ct-pill { font-size: 12px; }
 .ct-pill.zero { background: var(--raised); color: var(--faint); }
 /* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */
@@ -254,7 +254,7 @@
    l esempio svolto in fila. I colori seguono il segno (verde aggiunge, rosso toglie) e la griglia (caselle ×½ ×2 ×4) */
 .guide-two { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; }
 .guide-two > div { padding: 8px 10px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
-.guide-two :is(h5, h6), .area-guide .guide-two h5 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-two :is(h5, h6), .area-guide .guide-two h5 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }
 .guide-keys { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .guide-keys li { display: grid; justify-items: center; gap: 2px; padding: 5px 4px 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
 .guide-keys span { font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--muted); }
@@ -272,7 +272,7 @@
 .guide-mults .x4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
 .guide-arrow { color: var(--faint); }
 .guide-res { display: grid; gap: 1px; padding: 0 12px 0 0; margin-right: 4px; border-right: 1px solid var(--line-soft); }
-.guide-res small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); }
+.guide-res small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--faint); }
 .guide-res b { color: var(--text); font-variant-numeric: tabular-nums; }
 .guide-verdict { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bad); }
 .guide-verdict b.ct-pill { font-size: 13px; text-transform: none; letter-spacing: 0; }
@@ -293,7 +293,7 @@
 .guide-holds b { font: italic 700 18px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .guide-holds small { font-size: 12px; color: var(--muted); }
 .guide-weights { padding: 8px 10px 6px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
-.guide-weights h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-weights h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }
 .guide-weights ol { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
 .guide-weights li { flex-basis: 0; display: grid; justify-items: center; gap: 2px; min-width: 0; padding: 6px 2px; background: color-mix(in srgb, var(--accent-2) 30%, var(--panel)); }
 .guide-weights li:nth-child(2) { background: color-mix(in srgb, var(--accent-2) 24%, var(--panel)); }
@@ -389,7 +389,6 @@
    riga in fondo più bassa */
 @media (min-width: 1100px) and (max-height: 640px) {
   .area-view .def-frame { --def-row-min: 24px; --def-sp: 2px; --def-legend: 16px; }
-  .ad-panel .def-frame > .rob-legend { font-size: 11px; }
   .area-panel:has(> .def-frame) { padding-top: 3px; }
 }
 

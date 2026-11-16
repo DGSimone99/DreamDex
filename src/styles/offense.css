@@ -8,7 +8,7 @@
 .def-frame .ct-cell.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .def-frame .ct-cell.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
 .def-frame .ct-table td.ct-cell.ok-full, .def-frame .ct-table td.ct-cell.ok-half { font-size: clamp(11px, calc(var(--def-row) * 0.2), 16px); }
-.area-legend-swatch { display: inline-flex; align-items: center; gap: 5px; }
+.area-legend-swatch { display: inline-flex; align-items: center; gap: var(--legend-pair); }
 /* Le stesse caselle in piccolo: legenda in fondo alla tabella e termini della guida (Copre, A metà, Buco = casella vuota) */
 .area-legend-swatch i, .guide-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--raised); }
 .area-legend-swatch i.ok-full, .guide-swatch.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
@@ -57,7 +57,7 @@
 .guide-targets-cols { display: flex; flex-wrap: wrap; gap: 0 32px; align-items: flex-start; }
 .guide-targets { margin: 6px 0 2px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 .guide-targets th, .guide-targets td { padding: 2px 10px 2px 0; border-bottom: 1px solid var(--line-soft); text-align: right; }
-.guide-targets thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-targets thead th { font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .guide-targets th:first-child { padding-right: 18px; text-align: left; }
 /* Il "?" accanto ai bersagli (guida e testate della Generale): la variante in riga del pulsante d'aiuto, stessa icona e stessi
    colori in piccolo (16px), con un alone ciano al passaggio; il fuoco col solito anello */
@@ -111,12 +111,12 @@
 .off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before,
 .off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { content: ""; position: absolute; left: 0; width: 100cqw; pointer-events: none; z-index: 0;
   -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
-.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 9%, transparent), transparent); }
-.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { top: 0; height: 1px; background: color-mix(in srgb, var(--accent-2) 80%, transparent); }
+.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--text) 5%, transparent), transparent); }
+.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { top: 0; height: 1px; background: var(--plate); }
 .off-general tfoot .og-total th, .def-general tfoot .og-total th, .cm-matrix tfoot .og-total th, .def-sus tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
-.og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 11.5px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-accent-2, #22000f);
-  background: var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-.og-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-plate);
+  background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.og-legend span:where(:not(.area-legend)) { display: inline-flex; align-items: center; gap: var(--legend-pair); }
 /* Schermi bassi: le barre dei colpi più basse (22px), così sei membri e la riga del team stanno nella cornice */
 @media (min-width: 1100px) and (max-height: 640px) {
   .kob-row > .kob { height: 22px; }

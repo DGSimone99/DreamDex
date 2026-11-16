@@ -129,7 +129,7 @@
 .rl-guide-tiles li.ignored .rl-tile-val { color: var(--faint); }
 
 .rl-types { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
-.rl-types thead th { padding: 0 4px 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); text-align: center; white-space: nowrap; }
+.rl-types thead th { padding: 0 4px 5px; text-align: center; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .rl-types thead th:first-child { width: 190px; text-align: left; padding-left: 0; }
 .rl-types thead th.now { color: var(--text); }
 .rl-types tr.rl-fam th { padding: 6px 0 2px; font: 700 11px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); text-align: left; }

@@ -23,7 +23,7 @@
 
 .analysis table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .analysis th, .analysis td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
-.analysis thead th { font-weight: 600; color: var(--muted); font-size: 11px; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.analysis thead th { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .analysis tbody th { text-align: left; font-weight: 600; }
 .analysis tr.serious { background: var(--bad-bg); }
 .analysis tr.minor { background: color-mix(in srgb, var(--accent) 18%, transparent); }
@@ -84,7 +84,7 @@
 .area-strip { position: relative; margin-top: -12px; flex: none; }
 .area-subs { display: flex; gap: 2px; background: var(--accent-2-wash); border-top: 3px solid var(--accent-2); overflow-x: auto; }
 .area-subs [role='tab'] { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 8px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 500; font-style: normal; line-height: 1.2; white-space: nowrap; }
-.area-subs [role='tab'] b { font: 700 15px/1 var(--display); color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
+.area-subs [role='tab'] b { font: 700 15px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .area-subs [role='tab']:hover { color: var(--text); }
 /* La striscia scorre (overflow): il contorno del fuoco va dentro la scheda, o verrebbe tagliato */
 .area-subs [role='tab']:focus-visible { outline-offset: -3px; }
@@ -136,7 +136,7 @@
 .area-problems li.serious::before { color: var(--bad); }
 /* La legenda dei colori della sottoscheda, a sinistra nella riga bassa in fondo alla tabella (dentro il pannello, nello
    spazio che la tabella lascia già sotto le righe): quieta e sempre intera */
-.area-legend { display: inline-flex; flex: none; align-items: center; gap: 5px; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.area-legend { display: inline-flex; flex: none; align-items: center; gap: var(--legend-item); white-space: nowrap; font-size: var(--legend-size); color: var(--legend-ink); }
 .area-legend .hold-chip { padding: 1px 6px; font-size: 11px; line-height: 16px; }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
 /* Ogni scheda tiene il posto per il "?": aprendone un'altra le schede non si spostano */
@@ -324,7 +324,7 @@
 .dash.roomy .dash-type { width: var(--ti-head); height: var(--ti-head); }
 .dash-matrix thead td, .dash-matrix th[scope='row'] { width: 64px; }
 .dash-matrix thead th { padding: 0 0 2px; }
-.dash-matrix th[scope='row'] { padding: 0 4px 0 0; font: 600 11px/1 var(--ui); text-align: right; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.dash-matrix th[scope='row'] { padding: 0 4px 0 0; text-align: right; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .dash-type { display: block; width: var(--ti-tip); height: var(--ti-tip); margin: 0 auto; border-radius: 50%; }
 .dash .dash-cell { height: 22px; padding: 0; text-align: center; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: color-mix(in srgb, var(--faint) 40%, var(--raised)); cursor: help; }
 .dash-cell .icon { width: 12px; height: 12px; vertical-align: middle; stroke-width: 2.5; }
@@ -344,7 +344,7 @@
 /* Ogni fascia: l'etichetta in una colonna stretta, i ruoli in fila che vanno a capo */
 .dash-role-band { flex: none; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 4px 0; border-top: 1px solid var(--line-soft); }
 .dash-role-band:first-child { border-top: 0; }
-.dash-level-name { align-self: center; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.dash-level-name { align-self: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1.2; }
 .dash-role-list { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 4px 8px; margin: 0; padding: 4px 0; list-style: none; }
 .dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
 /* Le fasce tagliano quello che sborda: l'anello del fuoco (si arriva coi tasti freccia) sta dentro il ruolo */
@@ -383,7 +383,7 @@
 .dash-role-grid thead th { padding: 0 0 2px; font-weight: 400; text-align: center; vertical-align: bottom; }
 /* Lo sprite si stringe con la sua colonna: le sei colonne stanno sempre tutte */
 .dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
-.dash-role-sep th { height: 22px; padding: 4px 0 2px; text-align: left; vertical-align: bottom; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--line); }
+.dash-role-sep th { height: 22px; padding: 4px 0 2px; text-align: left; vertical-align: bottom; border-bottom: 1px solid var(--line); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1.2; }
 .dash-role-row th, .dash-role-row td { height: 24px; padding: 0; border-bottom: 1px solid var(--line-soft); }
 .dash-role-row th { width: 1%; padding-right: 8px; text-align: left; font-weight: 500; white-space: nowrap; color: var(--text); }
 .dash-role-row th > * { vertical-align: middle; }

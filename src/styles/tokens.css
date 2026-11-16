@@ -59,6 +59,18 @@
   --tip-body: 13px;
   --tip-small: 11px;
   --tip-num: 22px;
+  /* Testate delle tabelle dell'Analisi (colonne, righe di gruppo, etichette di riga come Regge / Colpisce): uno stile
+     solo, maiuscolo 11px in Faint con la stessa spaziatura */
+  --col-head: 600 11px/1.2 var(--ui);
+  --col-head-track: 0.05em;
+  --col-head-ink: var(--faint);
+  /* Legende delle tabelle e delle barre (in alto a destra): 12px in Muted; 16px fra i gruppi della riga (conteggi, note,
+     chiave dei colori), 12px fra una voce e l'altra della chiave, 5px fra il quadratino e la sua parola */
+  --legend-size: 12px;
+  --legend-ink: var(--muted);
+  --legend-gap: 16px;
+  --legend-item: 12px;
+  --legend-pair: 5px;
 }
 /*
  * Contrasto (WCAG), su --panel / --raised / --ground:
