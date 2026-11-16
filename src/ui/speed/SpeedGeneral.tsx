@@ -78,7 +78,7 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('sdetail.bar')}</th>
+              <th scope="col">{t('area.speed')}</th>
             </tr>
           </thead>
           <tbody>
@@ -122,6 +122,11 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
           </tfoot>
         </table>
       </div>
+      {/* In alto a destra, come nelle altre aree: cosa sono i pezzi a righe della barra */}
+      <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">
+        <span className="area-legend-swatch"><i className="sp-leg own" />{t('sdetail.legendOwn')}</span>
+        <span className="area-legend-swatch"><i className="sp-leg team" />{t('guide.speed.gains.control')}</span>
+      </span></div>
       {shown && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="speed" side="left">
           <SpeedTip lane={shown} vsMeta={meta} extra={gains(members[slots[tip.anchor.key]!])} />

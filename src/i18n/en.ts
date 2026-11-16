@@ -1200,7 +1200,7 @@ export const en = {
   'sdetail.cond.trickroom': "Trick Room",
   'sdetail.cond.tailwind': "Tailwind",
   'sdetail.cond.slow': "Slowing",
-  'sdetail.bar': "How many rivals it outspeeds: alone · with its own means · with the team",
+  'sdetail.legendOwn': "Boost and priority",
   'sdetail.bar.open': "Speed of {name}: open the rivals",
   'sdetail.gen.total': "Team Speed",
   'sdetail.mark.scarf': "Scarf",

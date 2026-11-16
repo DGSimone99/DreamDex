@@ -1202,7 +1202,7 @@ export const it: Record<keyof typeof en, string> = {
   'sdetail.cond.trickroom': "Trick Room",
   'sdetail.cond.tailwind': "Tailwind",
   'sdetail.cond.slow': "Rallentare",
-  'sdetail.bar': "Quanti rivali supera: da solo · coi suoi mezzi · col team",
+  'sdetail.legendOwn': "Boost e priorità",
   'sdetail.bar.open': "Velocità di {name}: apri i rivali",
   'sdetail.gen.total': "Velocità del team",
   'sdetail.mark.scarf': "Scarf",
