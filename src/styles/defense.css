@@ -410,13 +410,6 @@
 
 /* Generale della Difesa: Tipi e Meta sono barre a pezzi come nell'Offesa (HoldBars), più larghe; Sostenibilità e
    Difesa restano barre semplici, più strette */
-/* L'ultima colonna ha Sostenibilità e Difesa affiancate, larghe uguali (testate comprese) */
-.dg-pair { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 16px; width: calc(100% - 28px); align-items: start; }
-.dg-pair > * { min-width: 0; }
-.dg-pair-h .dg-pair > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Le barre semplici si stringono con la colonna (il numero resta intero) */
-.def-general:not(.roomy) .def-cell { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 3ch; }
-.def-general:not(.roomy) .def-cell.with-gain { grid-template-columns: minmax(0, 1fr) 3ch 5.5ch; }
 .hb-line { width: calc(100% - 28px); }
 .kob.hb { cursor: help; }
 /* Un pezzo non è mai più stretto di etichetta e numero */
@@ -451,23 +444,48 @@
 .mc b small { font-size: 9.5px; font-style: normal; opacity: 0.75; margin-left: 1px; }
 .wh-mon { display: inline-flex; width: 18px; height: 16px; align-items: center; justify-content: center; overflow: visible; }
 .wh-mon > * { width: 26px !important; height: 26px !important; flex: none; }
-.dg-rec { display: block; margin-top: 4px; width: 100%; font: 500 11.5px/1.3 var(--display); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }
 .mc .wh-mon img { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
 /* Come nell'Offesa: le pastiglie e il recupero solo se la cornice ha posto per sei righe con loro */
-@container (max-height: 500px) { .def-general .mcs.wh, .def-general .dg-rec { display: none; } }
+@container (max-height: 500px) { .def-general .mcs.wh, .def-general .mcs.dscs { display: none; } }
 
-/* La Sostenibilità nella Generale: barra corta e sottile con lo zero al centro (come la colonna Netto della sua scheda),
-   verde a destra se recupera, rossa a sinistra se perde; il numero con segno */
-.dg-sus { display: grid; grid-template-columns: minmax(0, 1fr) 4ch; align-items: center; gap: 8px; width: 100%; }
-.dg-sus-track { position: relative; height: 6px; background: var(--line-soft); }
-.dg-sus-track::after { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--faint); }
-.dg-sus-track i { position: absolute; top: 0; bottom: 0; background: var(--good); }
-.dg-sus-track i.warn { background: var(--warn); }
-.dg-sus-track i.bad { background: var(--bad); }
-.dg-sus .def-num { text-align: right; white-space: nowrap; }
-.dg-sus .def-num.zero { color: var(--faint); }
-.dg-sus .def-num.good { color: var(--good); }
-.dg-sus .def-num.warn { color: var(--warn); }
-.dg-sus .def-num.bad { color: var(--bad); }
-.dg-loss { color: color-mix(in srgb, var(--bad) 80%, var(--text)); }
+/* Sostenibilità: come la Generale, la riga del team sempre in fondo (riga vuota che prende lo spazio) */
+.def-sus > .ad-scroll { flex: 1 1 auto; min-height: 0; }
+.def-sus .def-members { height: 100%; }
+.def-sus .def-members tr.og-fill { height: auto; }
+.def-sus .def-members tr.og-fill td { padding: 0; border: 0; }
+.sus-table .ct-pill.sus-team { font-size: 15px; padding: 3px 9px; }
+
+/* Colonna Difesa della Generale: il pezzo del membro in due parti, quello che regge (colore dell'Offesa) e la
+   Sostenibilità, verde a righe se aggiunge, rossa a righe se toglie (la parte che si mangia) */
+.og-share-bar .dsh-sus, .def-bar .dsh-sus { position: absolute; top: 0; bottom: 0; }
+.dsh-sus.gain { background: repeating-linear-gradient(135deg, var(--good) 0 3px, color-mix(in srgb, var(--good) 55%, transparent) 3px 6px); }
+.dsh-sus.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 3px, color-mix(in srgb, var(--bad) 45%, transparent) 3px 6px); }
+.def-cell.dsh { cursor: help; }
+.dsh-tip .ftip-head { display: flex; align-items: baseline; gap: 10px; }
+.dsh-total { margin-left: auto; font: 800 italic 18px/1 var(--display); color: var(--accent); }
+.dsh-total.neg { color: var(--bad); }
+.dsh-rows { display: grid; gap: 7px; padding: 9px 12px 11px; }
+.dsh-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.dsh-row small { color: var(--faint); font-size: 11px; }
+.dsh-row b { margin-left: auto; font: 700 italic 14px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.dsh-sw { flex: none; width: 10px; height: 10px; }
+.dsh-sw.cover { background: var(--accent); }
+.dsh-sw.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); }
+.dsh-sw.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); }
+.dsh-line { padding-left: 18px; font-size: 11.5px; color: var(--faint); }
+.area-legend-swatch i.dsh-leg.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); border-color: transparent; }
+.area-legend-swatch i.dsh-leg.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); border-color: transparent; }
+.ftip.dsh-tip { width: 320px; }
+
+/* Squadra chiusa, sotto la barra Difesa: le pastiglie della Sostenibilità (come le mosse dell'Offesa), recupero nel colore
+   della mossa o in verde, perdite in rosso col loro % */
+.mcs.dscs { width: 100%; flex-wrap: wrap; row-gap: 4px; align-items: center; overflow: visible; }
+.mc.dsc { cursor: default; }
+.mc.dsc .item-icon { flex: none; }
+.mc.dsc.loss { color: color-mix(in srgb, var(--bad) 70%, var(--text)); }
+.mc.dsc.loss b { color: color-mix(in srgb, var(--bad) 80%, white); }
+.dsc-ab { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.dsc-ic { display: inline-flex; align-items: center; }
+.mc.dsc b { color: color-mix(in srgb, var(--good) 75%, white); }
+.dsc-name { white-space: nowrap; }
