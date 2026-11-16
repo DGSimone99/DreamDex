@@ -1,9 +1,10 @@
-import { screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { MetaTab } from '../../src/ui/meta/MetaTab';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
+import { LangProvider } from '../../src/i18n/react';
 
 const grid = () => screen.getByRole('list', { name: 'Pokémon del meta' });
 
@@ -53,5 +54,35 @@ describe('scheda Meta', () => {
     renderIt(<MetaTab team={[]} data={fixtureData} />);
     expect(screen.queryByRole('group', { name: 'Il tuo team' })).toBeNull();
     expect(grid()).toBeInTheDocument();
+  });
+
+  it('la scheda mostra il set più usato del Pokémon scelto', () => {
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    const card = screen.getByRole('complementary', { name: 'Scheda' });
+    expect(card).toHaveTextContent('Great Tusk');
+    expect(card).toHaveTextContent('#1');
+    expect(card).toHaveTextContent('30,0%');
+    expect(card).toHaveTextContent('Strumento');
+    expect(card).toHaveTextContent('Booster Energy');
+    expect(card).toHaveTextContent('Protosynthesis');
+    expect(card).toHaveTextContent('Mosse più usate');
+    expect(card).toHaveTextContent('Headlong Rush');
+    expect(card).toHaveTextContent('Spesso con');
+  });
+
+  it('clic su una targhetta del team o su un compagno apre la sua scheda', async () => {
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[tusk, gholdengo]} data={fixtureData} />);
+    await user.click(within(screen.getByRole('group', { name: 'Il tuo team' })).getByRole('button', { name: /Gholdengo/ }));
+    expect(screen.getByRole('complementary', { name: 'Scheda' })).toHaveTextContent('Good as Gold');
+    await user.click(within(screen.getByRole('complementary', { name: 'Scheda' })).getByRole('button', { name: 'Kingambit' }));
+    expect(screen.getByRole('complementary', { name: 'Scheda' })).toHaveTextContent('Supreme Overlord');
+  });
+
+  it('in inglese i titoli della scheda sono inglesi, il nome del Pokémon resta', () => {
+    render(<LangProvider lang="en"><MetaTab team={[]} data={fixtureData} /></LangProvider>);
+    const card = screen.getByRole('complementary', { name: 'Profile' });
+    expect(card).toHaveTextContent('Most used moves');
+    expect(card).toHaveTextContent('Great Tusk');
   });
 });

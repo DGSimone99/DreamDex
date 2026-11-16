@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import type { EngineData } from '../../engine/data';
 import { toID } from '../../engine/dex';
-import { metaBoard, META_BOARD_SIZE } from '../../engine/metaBoard';
+import { metaBoard, metaProfile, META_BOARD_SIZE } from '../../engine/metaBoard';
 import type { TeamSet } from '../../engine/sets';
 import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
 import { MetaCard } from './MetaCard';
+import { MetaProfileCard } from './MetaProfileCard';
 
 /**
  * Scheda Meta, solo informativa (il voto non la usa): in alto il tuo team con la posizione e l'uso di ogni membro, sotto i
@@ -23,6 +24,8 @@ export function MetaTab({ team, data }: { team: TeamSet[]; data?: EngineData }) 
   const isSelected = (name: string) => selected !== null && toID(selected) === toID(name);
   const mine = new Set(board.team.map(m => toID(m.name)));
   const max = board.top[0]?.usage ?? 1;
+  const inTop = (name: string) => board.top.some(e => toID(e.name) === toID(name));
+  const profile = selected ? metaProfile(data?.stats ?? null, selected) : null;
   // Meta spento (la sezione è disattivata nella barra): niente da mostrare
   if (data?.ignoreMeta) return <section aria-label={t('tabs.meta')} className="meta-tab" />;
   if (!data?.stats) return <section aria-label={t('tabs.meta')} className="meta-tab"><p className="note">{t('meta.missingStats')}</p></section>;
@@ -59,7 +62,7 @@ export function MetaTab({ team, data }: { team: TeamSet[]; data?: EngineData }) 
           ))}
         </ul>
       </div>
-      <aside className="meta-profile" />
+      {profile && <MetaProfileCard profile={profile} inTop={inTop} onSelect={setPicked} />}
     </section>
   );
 }
