@@ -24,8 +24,6 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
     // La Coverage del meta c'è solo col meta: senza, una scheda in meno
     ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: `${metaKo}/${coverageMeta.rows.length}`, panel: <OffenseMeta offense={offense} ctx={ctx} />, effSide: 'offense' as const }] : []),
   ];
-  // La Generale non ha la guida: le sue due parti (tipi e meta, metà ciascuna) si spiegano già da sole. Le due Coverage
-  // hanno le stesse regole: una pagina sola, che il "?" di tutte e due apre
-  return tabs.map(tab => (tab.key === 'general' ? tab
-    : { ...tab, help: guide, guideLabel: t('guide.off.section'), ...(tab.key === 'coverageMeta' && { guideKey: 'types' }) }));
+  // Le tre schede hanno le stesse regole: una pagina sola ("Come funziona"), che il "?" di tutte e tre apre
+  return tabs.map(tab => ({ ...tab, help: guide, guideLabel: t('guide.off.section'), ...(tab.key !== 'types' && { guideKey: 'types' }) }));
 }

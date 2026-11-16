@@ -64,17 +64,19 @@ describe('Offesa: navigazione e guida', () => {
     await waitFor(() => expect(document.querySelector('.ftip.gat .gat-mons')).not.toBeNull());
     expect(document.querySelectorAll('.ftip.gat .gat-mons > span').length).toBe(withMeta().offense.coverageMeta!.rows.length);
     await user.unhover(metaAsk);
-    // La Generale non ha più la sua sezione nella guida
+    // Una sezione sola anche se il "?" c'è in tutte e tre le schede
     expect(within(dialog).queryByRole('tab', { name: 'Generale' })).toBeNull();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
   });
 
-  it('la Generale non ha il "?": le sue due parti si spiegano da sole', async () => {
+  it('anche la Generale ha il "?": apre la stessa pagina Come funziona', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.queryByRole('button', { name: 'Come funziona Generale' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
+    expect(within(screen.getByRole('dialog', { name: 'Guida: Offesa' })).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{Escape}');
     // Accanto alle testate Tipi e Meta il "?" dei bersagli, lo stesso della guida
     const typesAsk = screen.getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' });
     await user.hover(typesAsk);
@@ -102,7 +104,7 @@ describe('Offesa: navigazione e guida', () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
     expect(names()).toEqual(['General', 'Type coverage', 'Meta coverage']);
-    expect(screen.queryByRole('button', { name: 'How General works' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'How General works' })).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: /^Type coverage/ }));
     await user.click(screen.getByRole('button', { name: 'How Type coverage works' }));
     expect(screen.getByRole('dialog', { name: 'Guide: Offense' })).toBeInTheDocument();
