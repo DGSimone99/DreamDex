@@ -433,6 +433,12 @@
 .dash.tight .sum-sec { padding-top: 5px; }
 .dash.tight .sum-none, .dash.tight .sum-sec-more { top: 4px; }
 .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 96px; }
+/* Cruscotto basso: il core un po' più fitto, così titolo su due righe e le tre righe dei tipi parati stanno ancora;
+   se la lista è più bassa del triangolo con tutto il testo (1280×620 col team aperto) restano il titolo e il triangolo,
+   coi tipi parati sui lati: le tre righe sono nel tooltip del core e, a team ridotto, tornano */
+.dash.tight .sum-syn.trio { padding-block: 1px; }
+.dash.tight .sum-cover { gap: 2px; }
+@container (max-height: 84px) { .dash.tight .sum-tri-row .sum-cover { display: none; } }
 /* Portatili bassissimi (1280×620): il core a triangolo più piccolo e le righe dei tipi parati più fitte */
 @media (max-height: 639px) {
   .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 84px; }
@@ -443,6 +449,7 @@
   .dash.tight .sum-cover img { width: calc(var(--ti-inline) - 2px); height: calc(var(--ti-inline) - 2px); }
   .dash.tight .sum-sec-h { padding-bottom: 3px; }
 }
+
 .dash.rich .dash-summary { --sum-big: 56px; --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
 .sum-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
@@ -563,7 +570,9 @@
 .sum-link { position: relative; z-index: 2; width: var(--link-w); height: var(--link-w); margin: 0 -3px; display: grid; place-items: center; color: var(--c); background: var(--panel); border: 1.5px solid var(--c); border-radius: 50%; }
 .sum-link .icon { width: 10px; height: 10px; }
 .sum-syn-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.sum-syn-head { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Il titolo va a capo invece di finire coi puntini (nel core solo fra un membro e l'altro: ogni "Buio-Acciaio" resta intero) */
+.sum-syn-head { min-width: 0; font-size: 13px; line-height: 1.15; overflow-wrap: anywhere; }
+.sum-core-part { white-space: nowrap; }
 .sum-syn-tag { margin-right: 6px; font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); vertical-align: 1px; }
 .sum-syn-title { font: 700 13px/1.15 var(--display); }
 .sum-syn-text { font-size: 12px; line-height: 1.3; color: var(--muted); }
