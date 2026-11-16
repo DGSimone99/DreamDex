@@ -123,6 +123,25 @@ function heldCount(core: Core, rows: { heldBy: string[] }[]): number {
   return rows.filter(row => row.heldBy.some(name => core.members.includes(name))).length;
 }
 
+type HoldRow = { type: string; heldBy: string[] };
+
+/**
+ * I 18 tipi d'attacco come icone: accese quelle che almeno uno dei tre regge, spente quelle che passano. Con un core solo
+ * stanno in una colonna a destra (grandi, col conto sopra); con due dentro il core aperto (piccole, il conto nel
+ * tooltip). Per i lettori di schermo una frase: quanti ne reggono e quali passano.
+ */
+function HeldTypes({ core, rows, big, lang, t }: { core: Core; rows: HoldRow[]; big: boolean; lang: Lang; t: T }) {
+  const held = rows.filter(row => row.heldBy.some(name => core.members.includes(name)));
+  const open = rows.filter(row => !held.includes(row));
+  const count = t('catalogue.cores.held', { n: held.length, total: rows.length });
+  const label = open.length ? `${count}. ${t('catalogue.cores.through', { types: open.map(row => typeName(row.type, lang)).join(', ') })}` : count;
+  return (
+    <span className={`bm-core-types${big ? ' big' : ''}`} role="img" aria-label={label} title={big ? t('catalogue.cores.heldTip') : `${count} · ${t('catalogue.cores.heldTip')}`}>
+      {rows.map(row => <img key={row.type} className={held.includes(row) ? 'on' : 'off'} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
+    </span>
+  );
+}
+
 /** I core del voto dal primo (quello che regge più tipi) all'ultimo, coi tipi che reggono; a parità l'ordine del voto. */
 function rankedCores(rating: TeamRating): { core: Core; held: number }[] {
   const rows = rating.defense?.coverageTypes?.rows ?? [];
@@ -145,8 +164,8 @@ export function CatalogueList({ lang, kind }: { lang: Lang; kind: CatalogEntry['
 }
 
 /** Un core della colonna di sinistra: aperto ha tutto, chiuso solo il triangolo coi suoi punti (con due core è un pulsante). */
-function CoreCard({ core, open, held, total, toggle, onOpen, lang, t }: {
-  core: Core; open: boolean; held: number; total: number; toggle: boolean; onOpen: () => void; lang: Lang; t: T;
+function CoreCard({ core, open, rows, toggle, onOpen, lang, t }: {
+  core: Core; open: boolean; rows: HoldRow[]; toggle: boolean; onOpen: () => void; lang: Lang; t: T;
 }) {
   const title = coreTypes(core, lang);
   const art = <><CoreArt core={core} sprite={48} /><span className="bm-core-peek" aria-hidden="true">{title}</span><span className="bm-core-mini" aria-hidden="true">+{CORE_TRIO_POINTS}</span></>;
@@ -169,7 +188,8 @@ function CoreCard({ core, open, held, total, toggle, onOpen, lang, t }: {
             );
           })}
         </ul>
-        {total > 0 && <span className="bm-core-chip" title={t('catalogue.cores.heldTip')}>{t('catalogue.cores.held', { n: held, total })}</span>}
+        {/* Con due core i tipi retti stanno qui, piccoli; con uno solo nella colonna a destra */}
+        {toggle && rows.length > 0 && <HeldTypes core={core} rows={rows} big={false} lang={lang} t={t} />}
       </div>
     </li>
   );
@@ -186,7 +206,6 @@ function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T 
   // Per primo (e aperto all'inizio) il core che regge più tipi; l'ordine poi resta quello
   const ranked = rankedCores(rating);
   const cores = ranked.map(r => r.core);
-  const held = ranked.map(r => r.held);
   // L'aperto si ricorda per membri: cambiando team torna quello che regge più tipi
   const [picked, setPicked] = useState<string | null>(null);
   const keyOf = (core: Core) => core.members.join('/');
@@ -214,9 +233,16 @@ function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T 
       ) : (
         <ul className={`bm-core-row${two ? ' two' : ''}`}>
           {cores.map((core, i) => (
-            <CoreCard key={keyOf(core)} core={core} open={i === openIndex} held={held[i]} total={rows.length} toggle={two}
+            <CoreCard key={keyOf(core)} core={core} open={i === openIndex} rows={rows} toggle={two}
               onOpen={() => setPicked(keyOf(core))} lang={lang} t={t} />
           ))}
+          {/* Un core solo: a destra, dove con due starebbe il secondo, i tipi che regge (grandi, col conto sopra) */}
+          {!two && rows.length > 0 && (
+            <li className="bm-core-side">
+              <span className="bm-core-side-head" aria-hidden="true">{t('catalogue.cores.held', { n: ranked[0].held, total: rows.length })}</span>
+              <HeldTypes core={cores[0]} rows={rows} big lang={lang} t={t} />
+            </li>
+          )}
         </ul>
       )}
     </DashCard>

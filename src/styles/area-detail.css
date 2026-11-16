@@ -273,7 +273,6 @@
   flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 10px 16px 10px 18px;
   transition: flex-grow 250ms var(--ease);
 }
-.bm-core-row:not(.two) .bm-core { max-width: 720px; }
 /* Il core chiuso: una colonna della stessa carta oltre una riga sottile, triangolo e +3 al centro */
 .bm-core.shut { flex-grow: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 14px; background: rgb(0 0 0 / 0.12); }
 .bm-core + .bm-core { border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); }
@@ -300,7 +299,17 @@
 .bm-core-lines li { display: flex; align-items: center; gap: 7px; }
 .bm-core-lines img { flex: none; width: 16px; height: 16px; border-radius: 50%; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
-.bm-core-chip { display: inline-block; margin-top: 10px; padding: 2px 8px; background: var(--field); border: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); cursor: help; }
+/* I 18 tipi d'attacco del core: accesi quelli retti, spenti in grigio quelli che passano */
+.bm-core-types { display: grid; grid-template-columns: repeat(9, 20px); gap: 4px; margin-top: 10px; cursor: help; }
+.bm-core-types img { width: 20px; height: 20px; border-radius: 50%; }
+.bm-core-types img.off { filter: grayscale(1); opacity: 0.25; }
+.bm-core-types.big { grid-template-columns: repeat(6, 26px); gap: 6px; margin: 0; }
+.bm-core-types.big img { width: 26px; height: 26px; }
+/* Un core solo: la colonna dei tipi a destra, come il secondo core chiuso (stessa riga sottile, stesso fondo) */
+.bm-core-row:not(.two) .bm-core { max-width: none; }
+.bm-core-side { flex: none; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 10px 20px;
+  border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); background: rgb(0 0 0 / 0.12); }
+.bm-core-side-head { font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .bm-cores-none { flex: 1; display: flex; align-items: center; justify-content: center; gap: 22px; padding: 0 24px; }
 .bm-cores-none p { max-width: 420px; font-size: 13px; line-height: 1.45; color: var(--muted); }
 /* Il core che manca: triangolo e piedistalli tratteggiati, appena visibili */
@@ -322,7 +331,7 @@
   .bm .bm-core-body h5 { margin-bottom: 5px; font-size: 16px; }
   .bm-core-pts { font-size: 19px; }
   .bm-core-lines { gap: 2px; font-size: 12.5px; }
-  .bm-core-chip { margin-top: 6px; }
+  .bm-core-types { margin-top: 6px; }
   .bm .bm-net { font-size: 48px; padding: 5px 26px 6px 12px; }
   .bm-bars { margin-top: 10px; padding-top: 8px; gap: 6px; }
   .bm-cores.dash-card { --cores-h: 196px; }
@@ -347,7 +356,12 @@
   .bm-core-lines img { width: 14px; height: 14px; }
   .bm-core { padding: 4px 10px 4px 14px; gap: 10px; }
   .bm-core.shut .bm-core-body { top: 5px; }
-  .bm-core-chip { margin-top: 4px; padding: 1px 6px; }
+  /* Con due core, su una fila sola: due file non ci stanno nella carta bassa */
+  .bm-core-types { margin-top: 4px; grid-template-columns: repeat(18, 14px); gap: 2px; }
+  .bm-core-types img { width: 14px; height: 14px; }
+  .bm-core-types.big { grid-template-columns: repeat(6, 20px); gap: 4px; }
+  .bm-core-types.big img { width: 20px; height: 20px; }
+  .bm-core-side { padding: 6px 14px; gap: 5px; }
   .bm .bm-label { margin-bottom: 6px; }
   .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }
   .bm-cores.dash-card { --cores-h: 136px; }

@@ -120,7 +120,9 @@
   .bm-core { flex: none; max-width: none; flex-wrap: wrap; }
   .bm-core.open .bm-core-body { flex: 1 1 200px; min-width: 0; }
   .bm-core.shut { min-height: 56px; padding: 6px 14px; flex-direction: row; }
-  .bm-core + .bm-core { border-left: 0; border-top: 1px solid var(--line-soft); }
+  .bm-core + .bm-core, .bm-core-side { border-left: 0; border-top: 1px solid var(--line-soft); }
+  .bm-core-types.big { grid-template-columns: repeat(9, 22px); }
+  .bm-core-types.big img { width: 22px; height: 22px; }
   .bm-core.shut .sum-tri { --tri-w: 64px; --tri-badge: 14px; }
   .bm-core.shut .bm-core-art { flex: 1; flex-direction: row; align-items: center; gap: 12px; opacity: 1; }
   .bm-core.shut .bm-core-peek { display: block; flex: 1; min-width: 0; font: 700 14px/1.2 var(--display); font-style: italic; text-align: left; }
