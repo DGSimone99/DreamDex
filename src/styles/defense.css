@@ -96,8 +96,9 @@
 .guide-rows { display: grid; gap: 0; margin: 0 0 8px; }
 .guide-rows > div { display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
 .guide-rows dt { font-weight: 600; color: var(--text); }
-.guide-rows dd { margin: 0; color: var(--muted); }
-.guide-rows dd .guide-sub { display: block; margin-top: 3px; font-size: 13px; color: var(--faint); }
+/* Righe di lettura non oltre ~70 caratteri (32em: in Kanit un carattere è circa mezzo em): oltre, l'occhio perde la riga dopo */
+.guide-rows dd { max-width: 32em; margin: 0; color: var(--muted); }
+.guide-rows dd .guide-sub { display: block; max-width: 32em; margin-top: 3px; font-size: 13px; color: var(--faint); }
 .guide-note { margin: 0 0 6px; color: var(--muted); }
 @media (max-width: 560px) {
   .guide-rows > div { grid-template-columns: 1fr; gap: 2px; }
@@ -277,6 +278,7 @@
 .guide-verdict { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bad); }
 .guide-verdict b.ct-pill { font-size: 13px; text-transform: none; letter-spacing: 0; }
 .guide-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+.guide-lines li { max-width: 32em; }
 .guide-lines b { color: var(--text); }
 @media (max-width: 560px) {
   .guide-two { grid-template-columns: 1fr; }
