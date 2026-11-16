@@ -51,8 +51,9 @@
 .rl-mark.missing, .rl-pts.missing { font: 600 12px/1 var(--ui); cursor: help; }
 
 /* Le fasce una sotto l'altra; se proprio non stanno (team strani su schermi bassi) scorrono loro, mai la pagina.
-   Ogni fascia prende lo spazio libero in proporzione alle sue righe (--n), fino al tetto delle righe */
-.rl-bands { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+   Ogni fascia prende lo spazio libero in proporzione alle sue righe (--n), fino al tetto delle righe; quello che avanza
+   (poche voci su uno schermo alto) va fra le fasce, così l'ultima finisce sul fondo del pannello e i livelli si staccano */
+.rl-bands { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .rl-band {
   --n: var(--n2, 1); --lv: var(--faint); --lv-ink: var(--muted); display: flex; flex-direction: column; flex: var(--n) 1 auto;
   max-height: calc(var(--rl-head) + var(--n) * var(--rl-row-max));
