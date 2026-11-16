@@ -124,7 +124,7 @@
   .bm-core-types.big { grid-template-columns: repeat(9, 22px); }
   .bm-core-types.big img { width: 22px; height: 22px; }
   .bm-core.shut .sum-tri { --tri-w: 64px; --tri-badge: 14px; }
-  .bm-core.shut .bm-core-art { flex: 1; flex-direction: row; align-items: center; gap: 12px; opacity: 1; }
+  .bm-core.shut .bm-core-art { flex: 1; flex-direction: row; align-items: center; gap: 12px; filter: none; }
   .bm-core.shut .bm-core-peek { display: block; flex: 1; min-width: 0; font: 700 14px/1.2 var(--display); font-style: italic; text-align: left; }
   .bm-core.shut .bm-core-mini { position: static; align-self: center; font-size: 18px; }
   .bm-core.shut .bm-core-body { display: none; }
