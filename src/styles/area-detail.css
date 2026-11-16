@@ -3,7 +3,8 @@
 .ad-head h3 { display: flex; align-items: baseline; gap: 12px; font-size: 20px; }
 .ad-head h3 strong { font: 700 30px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .ad-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; flex: 1; }
-.ad-panel { padding: 16px 22px 22px; overflow-y: auto; }
+/* Lo stesso margine in fondo in ogni area (Offesa, Difesa, Velocità, Ruoli, Bonus): 12px, 10px sugli schermi bassi */
+.ad-panel { padding: 16px 22px 12px; overflow-y: auto; }
 .ad-panel h4 { margin: 0 0 8px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 /* Le spiegazioni occupano tutta la larghezza del pannello: il modale è largo apposta */
 .ad-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); }
@@ -126,8 +127,6 @@
  * colonne, ognuna con la sua medaglia.
  */
 .area-panel:has(> .bm) { display: flex; flex-direction: column; overflow: hidden; }
-/* In fondo lo stesso margine della sottoscheda Ruoli */
-.area-panel.ad-panel:has(> .bm) { padding-bottom: 12px; }
 .bm {
   flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px;
   grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cores grade" "list list"; gap: 18px 28px;
