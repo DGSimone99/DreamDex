@@ -547,15 +547,19 @@ describe('Riassunto', () => {
     expect(section('Sinergie')).not.toHaveTextContent('Giro di U-turn');
   });
 
-  it('Sinergie: col triangolo la coppia non compare; poi i legami nel loro ordine, senza pivot; clic: core a Bonus/Malus (dove il core si vede col suo +3), legami a Ruoli', async () => {
+  it('Sinergie: tutti i core, prima il triangolo e poi la coppia (riga piccola); poi i legami nel loro ordine, senza pivot; clic: core a Bonus/Malus, legami a Ruoli', async () => {
     italianNames();
     const user = userEvent.setup();
     const { onView } = mount({ summary: summaryOf({ cores: [pair, trio], links: [pivotLink, wishLink] }) });
     const rows = within(section('Sinergie')).getAllByRole('button');
-    expect(rows.map(r => r.querySelector('.sum-syn-title')!.textContent)).toEqual(['Drago / Acciaio / Folletto', 'Cure al team']);
-    expect(rows[1].querySelector('.sum-syn-tag')).toHaveTextContent('Desiderio');
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveClass('trio');
+    expect(rows[1]).not.toHaveClass('trio');
+    expect(rows[1].querySelector('.sum-syn-tag')).toHaveTextContent('Core');
+    expect(rows[1].querySelectorAll('.sum-pair-mon')).toHaveLength(2);
+    expect(rows[2].querySelector('.sum-syn-tag')).toHaveTextContent('Desiderio');
     for (const row of rows) await user.click(row);
-    expect(onView.mock.calls.map(c => c[0])).toEqual(['bonusMalus', 'roles']);
+    expect(onView.mock.calls.map(c => c[0])).toEqual(['bonusMalus', 'bonusMalus', 'roles']);
   });
 
   it('Sinergie vuote: una frase attenuata', () => {
@@ -800,7 +804,8 @@ describe('Cruscotto: misure', () => {
     expect(weather.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro che prepara il campo$/);
   });
 
-  it('Riassunto: le sinergie che non stanno vanno nel "+N", con l\'elenco per intero', () => {
+  it('Riassunto: le sinergie che non stanno vanno nel "+N" verde, col tooltip DreamDex che le mostra', async () => {
+    const user = userEvent.setup();
     italianNames();
     stubSumFit(() => 2);
     const links: TeamLink[] = [
@@ -812,14 +817,18 @@ describe('Cruscotto: misure', () => {
     const syn = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Sinergie' }).closest<HTMLElement>('.sum-sec')!;
     expect(within(syn).getAllByRole('button')).toHaveLength(2);
     const more = syn.querySelector('.sum-more')!;
-    // Il core da 3 e Desiderio in riga (niente coppia né pivot), gli altri due nel "+N"
-    expect(more).toHaveTextContent('+2');
-    expect(more.querySelector('.visually-hidden')!.textContent).toBe('Altre 2 sinergie: '
-      + 'Baton Pass Passaggio con Baton Pass: Hatterene fa entrare Iron Valiant senza perdere i vantaggi; '
-      + 'Trappole + cambio Avversari sulle trappole: Skarmory con Whirlwind trascina gli avversari sulle trappole di Landorus-Therian');
-    // Dopo la lista nell'ordine di lettura
+    // Il core da 3 e la coppia in riga (niente pivot), Desiderio, Baton Pass e le trappole nel "+N"
+    expect(more).toHaveTextContent('+3');
+    expect(more.querySelector('.visually-hidden')!.textContent).toMatch(/^Altre 3 sinergie: .*Baton Pass Passaggio con Baton Pass: Hatterene fa entrare Iron Valiant senza perdere i vantaggi; /);
+    // Dopo la lista nell'ordine di lettura; niente tooltip del browser, quello DreamDex al passaggio
     expect(syn.querySelector('.sum-lines')!.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(more).toHaveAttribute('title', more.querySelector('.visually-hidden')!.textContent);
+    expect(more).not.toHaveAttribute('title');
+    expect(syn.querySelector('.sum-sec-more')).toHaveClass('tipped');
+    await user.hover(syn.querySelector('.sum-sec-more')!);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.syn-more'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveTextContent('Altre 3 sinergie');
+    expect(tip.querySelectorAll('.syn-more-list > li')).toHaveLength(3);
+    expect(tip).toHaveTextContent('Hatterene fa entrare Iron Valiant');
   });
 
   it('Ruoli: le fasce non si stirano (CSS): compatte in alto, alte quanto il contenuto', () => {
