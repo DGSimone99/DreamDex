@@ -1193,7 +1193,7 @@ export const en = {
   'guide.off.less.z': " and Z-moves",
   'guide.off.less.tera': " and Tera",
   'guide.off.less.oneuse': ", Tera and Z-moves",
-  'guide.off.less.rule': "Band, Specs and similar, and boosts from setup, weather or terrain{extra} count less (in full if the member brings the weather or terrain itself).",
+  'guide.off.less.rule': "Band, Specs and similar, and boosts from setup, weather or terrain{extra} count less (fully if the member brings the weather or terrain itself).",
   'guide.off.targets.typesTitle': "The average Pokémon of the 18 types",
   'guide.off.targets.metaTitle': "The {n} most used Pokémon",
   'guide.off.cov.targets.meta': "The {n} most used Pokémon, with their most common sets",
