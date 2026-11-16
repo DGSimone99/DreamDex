@@ -73,7 +73,7 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
   return (
     <div className="def-frame def-general sp-general">
       <div className="ad-scroll">
-        <table className="def-grid def-members">
+        <table className="def-grid def-members" aria-label={`${t('area.speed')}: ${t('detail.tab.general')}`}>
           <colgroup><col className="def-col-mon" /><col /></colgroup>
           <thead>
             <tr>

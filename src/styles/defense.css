@@ -254,7 +254,7 @@
    l esempio svolto in fila. I colori seguono il segno (verde aggiunge, rosso toglie) e la griglia (caselle ×½ ×2 ×4) */
 .guide-two { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; }
 .guide-two > div { padding: 8px 10px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
-.guide-two h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-two :is(h5, h6), .area-guide .guide-two h5 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
 .guide-keys { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .guide-keys li { display: grid; justify-items: center; gap: 2px; padding: 5px 4px 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
 .guide-keys span { font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--muted); }

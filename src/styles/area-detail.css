@@ -93,8 +93,10 @@
 .help-points.essential li { background: var(--accent-2-soft); color: var(--text); }
 .help-points.important li { background: var(--accent-soft); color: var(--text); }
 .help-panel .help-note { color: var(--text); }
-.help-panel h5 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
-.help-panel h6 { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
+.help-panel h5, .area-guide .help-panel h4 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
+.help-panel h6, .area-guide .help-panel h5 { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
+/* Nelle guide delle aree i titoletti sono h4 e h5 (sotto la sezione h3): senza il carattere dei titoli di sezione (h4 delle altre finestre) */
+.area-guide .help-panel :is(h4, h5) { font-family: inherit; font-style: normal; line-height: inherit; }
 .help-weights-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
 .help-weights-row > div { display: grid; gap: 6px; min-width: 150px; padding: 8px 12px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
 .help-weights-row dt { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
