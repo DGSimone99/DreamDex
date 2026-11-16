@@ -37,6 +37,15 @@ jobs:
         env:
           # Chiave pubblica del modulo Segnala (Web3Forms): senza, nell'app resta solo il link a GitHub
           VITE_WEB3FORMS_KEY: ${{ secrets.WEB3FORMS_KEY }}
+      # Crea il progetto 'dreamdex' la prima volta; se esiste già il comando fallisce e si va avanti
+      - name: Crea il progetto Cloudflare Pages (solo la prima volta)
+        if: env.HAS_CLOUDFLARE == 'true'
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create dreamdex --production-branch=master
       - name: Pubblica su Cloudflare Pages
         if: env.HAS_CLOUDFLARE == 'true'
         uses: cloudflare/wrangler-action@v3
