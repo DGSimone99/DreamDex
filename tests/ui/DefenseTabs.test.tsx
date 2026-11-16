@@ -325,7 +325,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
 
   it('sottoschede nell\'ordine Generale, Coverage tipi, Sostenibilità, Coverage meta (niente Robustezza)', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità', 'Coverage meta']);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Sostenibilità']);
     expect(document.body.textContent).not.toMatch(/Robustezza/);
   });
 

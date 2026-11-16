@@ -128,7 +128,7 @@ describe('dettaglio della Difesa a schede', () => {
   it('quattro schede col loro valore; Generale con le sottostatistiche e Fisica, Speciale, Sostenibilità di ogni membro', async () => {
     const { dialog } = await openDefense('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità', 'Coverage meta']);
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Sostenibilità']);
     for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
@@ -153,15 +153,17 @@ describe('dettaglio della Difesa a schede', () => {
     expect(totals[2]).toHaveTextContent(/^\d+$/);
   });
 
-  it('Coverage tipi: la regola (attaccante forte, 4HKO pieno, 3HKO a metà) sta nella guida, non sulla pagina', async () => {
+  it('Coverage tipi: il "?" apre la pagina comune "Come funziona" (bersagli, colpo, quanto vale, quanti lo reggono); la Sostenibilità ha la sua pagina col suo peso', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/quarto più forte di quel tipo/);
     await user.click(within(dialog).getByRole('button', { name: 'Come funziona Coverage tipi' }));
-    const guide = within(screen.getByRole('dialog')).getByRole('tabpanel');
-    for (const text of [/quarto più forte di quel tipo; 252 EV, senza strumento/, "Att. e Att. Sp. dell'attaccante di ogni tipo", '4HKO', '3HKO', '2HKO', '70%']) expect(guide).toHaveTextContent(text);
-    expect(guide).not.toHaveTextContent(/Il voto|uno basta|tre lo reggono/);
-    expect(guide).not.toHaveTextContent('+1,5');
+    const guideDialog = screen.getAllByRole('dialog').at(-1)!;
+    expect(within(guideDialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona', 'Sostenibilità']);
+    const guide = within(guideDialog).getByRole('tabpanel');
+    for (const text of ['Un attaccante forte di ognuno dei 18 tipi', 'meno di un terzo dei PS', '1° membro', '70%', 'vale 70, due 90, tre 100']) expect(guide).toHaveTextContent(text);
+    expect(within(guide).getByRole('button', { name: "Gli attaccanti dei 18 tipi" })).toBeInTheDocument();
+    await user.click(within(guideDialog).getByRole('tab', { name: 'Sostenibilità' }));
+    expect(within(guideDialog).getByRole('tabpanel')).toHaveTextContent('Conta per il 20% del voto della Difesa');
   });
 
   it('Sostenibilità: recupero, Stealth Rock e strumenti per membro', async () => {
@@ -207,7 +209,7 @@ describe('dettaglio della Difesa a schede', () => {
 
   it('in inglese', async () => {
     const { dialog } = await openDefense('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Sustainability', 'Meta coverage']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Meta coverage', 'Sustainability']);
     const { user } = { user: userEvent.setup() };
     await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
     expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Coverage' })).toBeInTheDocument();
