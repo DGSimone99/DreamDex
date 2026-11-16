@@ -40,7 +40,7 @@
 
 /* Badge dei colpi: in Offesa verde (prima arriva il KO, meglio è; 3HKO giallo, 4HKO+ grigio); in Difesa i colori della
    scheda Difesa (rosso: ti manda KO presto, verde: lo reggi) */
-.ftip-ko { display: inline-block; padding: 2px 6px 1px; font: 700 10px/1.3 var(--display); letter-spacing: 0.04em; border: 1px solid; white-space: nowrap; }
+.ftip-ko { display: inline-block; padding: 2px 6px 1px; font: 700 11px/1.3 var(--display); letter-spacing: 0.04em; border: 1px solid; white-space: nowrap; }
 .ftip-ko.off.ohko { color: var(--good); border-color: var(--good); background: var(--good-bg); }
 .ftip-ko.off.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
 .ftip-ko.off.three { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
@@ -103,7 +103,7 @@
 .mcard-name img { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
 .mcard-why { justify-self: start; margin-top: 6px; padding: 3px 12px 3px 9px; font: 700 italic 12px/1.2 var(--display); color: var(--on-accent); background: var(--accent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .mcard-kit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: baseline; gap: 6px 8px; padding: 10px 12px 9px; border-bottom: 1px solid var(--line-soft); }
-.mcard-kit small { display: inline; font: 700 10px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.mcard-kit small { display: inline; font: 700 11px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
 .mcard-kit span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .mcard-kit em { font-style: normal; font-weight: 400; color: var(--muted); }
 .mcard-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); align-items: center; gap: 6px; padding: 10px 10px 12px 2px; }
@@ -112,7 +112,7 @@
 .mcard-hex .hx-ring.soft { fill: none; stroke: var(--line-soft); }
 .mcard-hex .hx-axis { stroke: var(--line-soft); stroke-width: 1; }
 .mcard-hex .hx-val { fill: color-mix(in srgb, var(--accent) 28%, transparent); stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 45%, transparent)); }
-.mcard-hex .hx-l { font: 700 9px var(--display); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--faint); }
+.mcard-hex .hx-l { font: 700 11px var(--display); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--faint); }
 .mcard-hex .hx-v { font: 700 italic 12.5px var(--display); fill: var(--text); }
 .mcard-hex .hx-v.up { fill: var(--good); }
 .mcard-hex .hx-v.down { fill: var(--bad); }

@@ -139,7 +139,7 @@
 /* Ruoli: X/Y nel colore del livello peggiore che manca, il +N dei minori verde e più piccolo */
 .area-subs [role='tab'] b.sub-val-bad { color: var(--bad); }
 .area-subs [role='tab'] b.sub-val-warn { color: var(--warn); }
-.sub-plus { font: 700 italic 0.72em/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.sub-plus { font: 700 italic 11px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .sub-plus.neg { color: var(--bad); }
 /* Il pannello parte subito sotto la striscia, alla stessa altezza in ogni area: Ruoli e Bonus ha le sottoschede grandi
    (8px più alte, 5px sugli schermi bassi) e il suo pannello sale di tanto */

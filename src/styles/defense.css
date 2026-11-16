@@ -321,7 +321,7 @@
   .sus-table thead .sus-r { font-size: 11px; letter-spacing: 0; }
   /* Le testate delle perdite restano su una riga ("Strumenti e mosse" un filo più piccola): l'intestazione alta come nelle
      altre schede, così i membri partono alla stessa altezza */
-  .sus-table thead .sus-sub th { font-size: 10px; letter-spacing: 0; }
+  .sus-table thead .sus-sub th { font-size: 11px; letter-spacing: 0; }
   .sus-net-wrap { gap: 8px; }
   .sus-net-num { min-width: 40px; font-size: 13px; }
 }
@@ -373,7 +373,9 @@
 /* Etichetta di efficacia in basso a sinistra della casella (×2 ×4 nell'Offesa; ×4 ×2 ×½ ×¼ 0 nella Difesa): testo piccolo e
    quieto, diverso dal triangolino del setup in alto a destra */
 .def-frame .ct-table td.has-eff { position: relative; }
-.def-frame .ct-table .eff-tag { position: absolute; left: 3px; bottom: 2px; font: 600 11px/1 var(--ui); letter-spacing: 0; color: color-mix(in srgb, var(--text) 70%, transparent); pointer-events: none; }
+.def-frame .ct-table .eff-tag { position: absolute; left: 3px; bottom: 2px; font: 600 11px/1 var(--ui); letter-spacing: 0; color: var(--text); pointer-events: none; }
+/* Sulla casella OHKO (verde acceso) bianco pieno */
+.def-frame .ct-table .ct-cell.ok-ohko .eff-tag, .def-frame .ct-table .rob-cell.ko-ohko .eff-tag { color: #fff; }
 /* "Solo superefficaci" / "Solo efficacia": le altre caselle restano al loro posto ma quasi spente */
 .def-frame .ct-table td { transition: opacity 0.16s ease-out, filter 0.16s ease-out; }
 .def-frame .ct-table td.eff-dim { opacity: 0.2; filter: saturate(0.1); }
@@ -452,7 +454,7 @@
 .mc.wh-ohko b, .mc.wh-two b { color: color-mix(in srgb, var(--bad) 75%, white); }
 .mc.wh-three b { color: var(--warn); }
 .mc.wh-four b { color: var(--good); }
-.mc b small { font-size: 9.5px; font-style: normal; opacity: 0.75; margin-left: 1px; }
+.mc b small { font-size: 11px; font-style: normal; margin-left: 1px; }
 .wh-mon { display: inline-flex; width: 18px; height: 16px; align-items: center; justify-content: center; overflow: visible; }
 .wh-mon > * { width: 26px !important; height: 26px !important; flex: none; }
 .mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }
