@@ -334,55 +334,52 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
   });
 
-  it('le barre hanno la classe della soglia e l\'anello debole è solo sul più basso, solo sotto 50', () => {
+  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Sostenibilità e Difesa barre col colore della soglia', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     const tone = (v: number) => (v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad');
-    const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
+    const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     rating.defense.members.forEach((m, i) => {
+      const lines = rows[i].querySelectorAll('.hb-line');
+      expect(lines).toHaveLength(2);
+      // Il conto dei tipi: quelli dove il lato peggiore toglie meno di metà PS
+      const held = rating.defense.typed[i].cells.filter(c => c.band === 'three' || c.band === 'four').length;
+      expect(lines[0].querySelector('.kob-count-num')).toHaveTextContent(`${held}/18`);
+      // I pezzi contano tutti i 18 tipi
+      const sum = Array.from(lines[0].querySelectorAll('.kob-row > .kob.hb')).reduce((acc, el) => acc + Number(el.querySelector('.kob-num')!.textContent), 0);
+      expect(sum).toBe(18);
       const bars = rows[i].querySelectorAll('.def-bar');
-      expect(bars[0]).toHaveClass(tone(m.hold));
-      expect(bars[1]).toHaveClass(tone(m.metaHold!));
-      expect(bars[3]).toHaveClass(tone(m.value));
+      expect(bars[0]).toHaveClass(tone(m.sustain));
+      expect(bars[1]).toHaveClass(tone(m.value));
     });
-    const values = rating.defense.members.map(m => m.value);
-    const lowest = values.indexOf(Math.min(...values));
-    // L'etichetta c'è due volte nel DOM per riga (accanto al nome e alle statistiche): conta le righe
-    const marked = rows.filter(r => r.querySelector('.def-weak'));
-    if (values[lowest] < 50) {
-      expect(marked).toEqual([rows[lowest]]);
-      expect(rows[lowest]).toHaveTextContent('Anello debole');
-    } else {
-      expect(marked).toHaveLength(0);
-    }
+    // Niente più anello debole
+    expect(document.querySelector('.def-weak')).toBeNull();
   });
 
-  it('una Difesa bassa dà la barra rossa e l\'anello debole', () => {
+  it('una Difesa bassa dà la barra rossa', () => {
     const rating = withMeta();
     const weak = { ...rating, defense: { ...rating.defense, members: rating.defense.members.map((m, i) => (i === 1 ? { ...m, value: 30 } : { ...m, value: 85 })) } };
     renderIt(<AreaView rating={weak} area="defense" team={team} analysis={analysis} problems={[]} />);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
-    expect(rows[1].querySelectorAll('.def-bar')[3]).toHaveClass('bad');
-    expect(rows[0].querySelectorAll('.def-bar')[3]).toHaveClass('good');
-    // L'etichetta c'è due volte nel DOM (accanto al nome e accanto alle statistiche, il CSS ne mostra una), sempre in un membro solo
-    expect(rows.filter(r => r.querySelector('.def-weak'))).toHaveLength(1);
-    expect(rows[1].querySelector('.def-weak')).toBeTruthy();
+    expect(rows[1].querySelectorAll('.def-bar')[1]).toHaveClass('bad');
+    expect(rows[0].querySelectorAll('.def-bar')[1]).toHaveClass('good');
   });
 
-  it('a squadra chiusa compaiono Colpo peggiore (il tipo che fa più male) e Recupero, con un % per ogni riga; altrimenti no', () => {
+  it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori e sotto Sostenibilità il recupero, senza colonne in più; altrimenti no', () => {
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    const headers = screen.getAllByRole('columnheader').map(h => h.textContent);
-    expect(headers).toEqual(['Pokémon', 'Regge i tipi', 'Regge il meta', 'Sostenibilità', 'Difesa', 'Colpo peggiore', 'Recupero']);
-    // La riga vuota in fondo (og-fill) tiene la riga del team in basso: non è un membro
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'Sostenibilità', 'Difesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {
-      expect(row.querySelector('.def-hit .hold-chip')).toHaveTextContent(/\d+%/);
-      expect(row.querySelector('.def-hit .type-icons')).not.toBeNull();
+      const lists = row.querySelectorAll('.mcs.wh');
+      expect(lists).toHaveLength(2);
+      expect(lists[0].querySelectorAll('.mc')).toHaveLength(3);
+      for (const pill of lists[0].querySelectorAll('.mc')) expect(pill).toHaveTextContent(/^(KO|\d+%)$/);
+      expect(row.querySelector('.dg-rec')).toBeTruthy();
     });
     unmount();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).not.toContain('Colpo peggiore');
-    expect(document.querySelector('.def-hit')).toBeNull();
+    expect(document.querySelector('.mcs.wh')).toBeNull();
+    expect(document.querySelector('.dg-rec')).toBeNull();
   });
 });

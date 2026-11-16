@@ -6,6 +6,7 @@ import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { TypeIcons } from '../typeIcons';
+import { Sprite } from '../Sprite';
 import { Target } from '../offense/KoBadges';
 import { HOLD_BANDS } from './holds';
 
@@ -116,5 +117,33 @@ export function TypeAttackers({ formatId }: { formatId: FormatId }) {
       </div>
       <p className="ftip-foot">{t('ddetail.attackerTip')}</p>
     </>
+  );
+}
+
+/** Un colpo peggiore sotto la barra (squadra chiusa): il tipo o la minaccia, quanto toglie e la sua fascia. */
+export interface WorstHit { label: string; kind: 'type' | 'mon'; pct: number | null; band: HoldBand }
+
+/** I tre colpi che fanno più male: prima chi manda KO in un colpo, poi dal danno più alto (a parità, l'ordine dato). */
+export function worstOf(hits: WorstHit[], n = 3): WorstHit[] {
+  const score = (h: WorstHit) => (h.pct === null ? 1000 : h.pct);
+  return hits.map((h, i) => ({ h, i })).sort((a, b) => score(b.h) - score(a.h) || a.i - b.i).slice(0, n).map(x => x.h);
+}
+
+/**
+ * Sotto la barra di Tipi o di Meta, a squadra chiusa: i colpi peggiori come pastiglie (icona del tipo o sprite della
+ * minaccia, poi il danno; "KO" se lo manda KO in un colpo), del colore della loro fascia.
+ */
+export function WorstHits({ hits }: { hits: WorstHit[] }) {
+  const lang = useLang();
+  if (!hits.length) return null;
+  return (
+    <span className="mcs wh">
+      {hits.map(h => (
+        <span key={h.label} className={`mc wh-${h.band}`} title={h.kind === 'type' ? typeName(h.label, lang) : h.label}>
+          {h.kind === 'type' ? <TypeIcons types={[h.label]} /> : <Sprite species={h.label} size={22} />}
+          <b>{h.pct === null || h.pct >= 100 ? 'KO' : <>{h.pct}<small>%</small></>}</b>
+        </span>
+      ))}
+    </span>
   );
 }

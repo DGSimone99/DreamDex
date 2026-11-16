@@ -834,6 +834,7 @@ export const it: Record<keyof typeof en, string> = {
   'kob.legendTeam': "Team setup",
   'kob.legendSetupShort': "Setup",
   'kob.setupWord': "Setup",
+  'ddetail.noRecovery': "Nessun recupero",
   'hold.held': "Regge",
   'hold.say.four': "Gli tolgono meno di un quarto dei PS",
   'hold.say.three': "Gli tolgono meno di metà PS",

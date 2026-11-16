@@ -91,8 +91,6 @@
 .def-general.roomy .def-cell.with-gain { position: relative; grid-template-columns: minmax(0, 1fr) 3ch; }
 .def-general.roomy .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
 .def-general.roomy .def-gain small { font-size: 11px; }
-.def-general.roomy .def-members .def-col-hit { width: 112px; }
-.def-general.roomy .def-members .def-col-rec { width: 170px; }
 
 /* Guida: righe termine / regola, pillole di punti */
 .guide-rows { display: grid; gap: 0; margin: 0 0 8px; }
@@ -440,3 +438,16 @@
 .hb-say { display: flex; align-items: center; gap: 7px; margin: 0 0 6px; font-size: 12px; color: var(--muted); }
 .hb-group + .hb-group { margin-top: 10px; }
 .hb-dot { flex: none; width: 9px; height: 9px; border-radius: 2px; }
+
+/* Squadra chiusa: sotto le barre di Tipi e Meta i colpi peggiori (pastiglie del colore della fascia), sotto Sostenibilità
+   come recupera */
+.mcs.wh { width: calc(100% - 22px); }
+.mc.wh-ohko { --c: var(--bad); }
+.mc.wh-two { --c: color-mix(in srgb, var(--bad) 60%, var(--warn)); }
+.mc.wh-three { --c: var(--warn); }
+.mc.wh-four { --c: var(--good); }
+.mc[class*="wh-"] { cursor: default; padding-left: 3px; }
+.mc .sprite, .mc canvas, .mc img.sprite { width: 22px; height: 22px; margin: -4px 0; }
+.mc b small { font-size: 9.5px; font-style: normal; opacity: 0.75; margin-left: 1px; }
+.dg-rec { display: block; margin-top: 4px; width: calc(100% - 18px); font: 500 11.5px/1.3 var(--display); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }

@@ -832,6 +832,7 @@ export const en = {
   'kob.legendTeam': "Team setup",
   'kob.legendSetupShort': "Setup",
   'kob.setupWord': "Setup",
+  'ddetail.noRecovery': "No recovery",
   'hold.held': "Holds",
   'hold.say.four': "They take less than a quarter of its HP",
   'hold.say.three': "They take less than half its HP",

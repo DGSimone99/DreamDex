@@ -1,19 +1,16 @@
 import type { ReactNode } from 'react';
-import type { HoldBand, SustainParts, TeamDefense } from '../../engine/defense';
+import { holdBand, type TeamDefense } from '../../engine/defense';
 import { useLang, useT } from '../../i18n/react';
-import { gameName, typeName } from '../../i18n/game';
+import { gameName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
-import { TypeIcons } from '../typeIcons';
 import { TYPES } from '../../engine/types';
-import { HOLD_BANDS } from './holds';
-import { HoldBars, metaHolds, teamHolds, typeHolds, TypeAttackers } from './HoldBars';
+import { HoldBars, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
 import { Ask, MetaTargets } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
 
 /** Il colore di una barra dal valore: buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
-
 
 /**
  * Una barra con il numero accanto (0-100), del colore della soglia del valore.
@@ -34,34 +31,12 @@ export function Bar({ value, total, unit = '', gain, reserve = false, extra = 0,
   );
 }
 
-/** Le due colonne in più a squadra chiusa: il colpo di tipo che fa più male al membro e come recupera. */
-function WorstAndRecovery({ hit, parts }: { hit: { type: string; pct: number; band: HoldBand } | null; parts: SustainParts }) {
-  const t = useT();
-  const lang = useLang();
-  const hold = hit ? HOLD_BANDS[hit.band] : undefined;
-  return (
-    <>
-      <td>
-        {hit && hold && (
-          <span className="def-hit">
-            <TypeIcons types={[hit.type]} title={typeName(hit.type, lang)} />
-            <span className={`hold-chip ${hold.cls}`} title={`${typeName(hit.type, lang)}: ${hold.tag}`}>{hit.pct}%<span className="visually-hidden"> {typeName(hit.type, lang)} {hold.tag}</span></span>
-          </span>
-        )}
-      </td>
-      <td className="def-rec">
-        <span>{parts.sources.length ? parts.sources.join(' + ') : '—'}</span>
-        {parts.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}
-      </td>
-    </>
-  );
-}
-
 /**
  * La scheda Generale della Difesa: i membri con una colonna per voce (Regge i tipi, Regge il meta, Sostenibilità) e la
  * Difesa del membro coi pesi della squadra. In fondo la riga Team Coverage, come nell'Offesa: i voti della squadra.
  * Le righe stanno nella cornice comune (`def-frame`): i membri restano nello stesso punto di Coverage tipi.
- * Con la squadra chiusa (`ctx.roomy`) le righe si allungano e compaiono il colpo peggiore e il recupero.
+ * Con la squadra chiusa (`ctx.roomy`) le righe si allungano: sotto Tipi e Meta i tre colpi peggiori, sotto Sostenibilità
+ * come recupera.
  */
 export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
@@ -71,8 +46,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   // La colonna Difesa riserva il posto del "+N" se almeno un membro ha un setup difensivo
   const setupColumn = members.some(m => m.setupGain > 0 && !!m.setupMove);
 
-
-  // Squadra chiusa: il colpo di tipo che fa più male a ogni membro (a parità, il primo tipo)
   // Le barre a pezzi di Tipi e Meta: le fasce di ogni membro, e del team (il membro che regge meglio ogni bersaglio)
   const metaRows = defense.coverageMeta?.rows ?? [];
   const typeBars = members.map((_, i) => typeHolds(defense.typed[i]?.cells ?? []));
@@ -82,8 +55,15 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const ofMeta = t('kob.ofMeta', { n: metaRows.length });
   const teamName = t('odetail.gen.total');
 
-  const worstHit = (i: number) => (defense.typed[i]?.cells ?? []).reduce<{ type: string; pct: number; band: HoldBand } | null>(
-    (best, cell, k) => (!best || cell.pct > best.pct ? { type: TYPES[k], pct: cell.pct, band: cell.band } : best), null);
+  // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
+  // colpo prima, dalla minaccia più usata, poi dal danno più alto)
+  const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band })));
+  const byUse = [...metaRows].sort((x, y) => y.weight - x.weight);
+  const worstMeta = (species: string) => worstOf(byUse.map(row => {
+    const h = row.heldBy.find(x => x.species === species);
+    return { label: row.species, kind: 'mon' as const, pct: h ? h.pct : null, band: h ? holdBand(h.pct / 100) : 'ohko' as const };
+  }));
+
 
   return (
     <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
@@ -92,7 +72,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
           <colgroup>
             <col className="def-col-mon" /><col className="dg-col-bars" />{meta && <col className="dg-col-bars" />}<col className="dg-col-bar" /><col className="dg-col-bar" />
-            {roomy && <><col className="def-col-hit" /><col className="def-col-rec" /></>}
           </colgroup>
           <thead>
             <tr>
@@ -101,7 +80,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               {meta && <th scope="col">{t('kob.headMeta')}<Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('ddetail.sustain')}</th>
               <th scope="col">{t('area.defense')}</th>
-              {roomy && <><th scope="col">{t('ddetail.worstHit')}</th><th scope="col">{t('ddetail.recoveryCol')}</th></>}
             </tr>
           </thead>
           <tbody>
@@ -111,19 +89,23 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} /></td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} /></td>}
-                <td><Bar value={m.sustain} /></td>
+                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} />{roomy && <WorstHits hits={worstMeta(m.species)} />}</td>}
+                <td>
+                  <Bar value={m.sustain} />
+                  {/* Squadra chiusa: come recupera, sotto la barra */}
+                  {roomy && <span className="dg-rec" title={m.sustainParts.sources.join(' + ') || t('ddetail.noRecovery')}>{m.sustainParts.sources.length ? m.sustainParts.sources.join(' + ') : t('ddetail.noRecovery')}
+                    {m.sustainParts.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}</span>}
+                </td>
                 <td>
                   {/* Quanto aggiunge il setup difensivo (tre quarti del guadagno entrano nel voto) */}
                   <Bar value={m.value} total reserve={setupColumn}
                     gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: gameName('move', m.setupMove, lang) })}> (+{m.setupGain})</small>} />
                 </td>
-                {roomy && <WorstAndRecovery hit={worstHit(i)} parts={m.sustainParts} />}
               </tr>
             ))}
             {/* Riempie lo spazio che resta: la riga Team Coverage sta sempre in fondo, con 1 o con 6 membri */}
-            <tr className="og-fill" aria-hidden="true"><td colSpan={4 + (meta ? 1 : 0) + (roomy ? 2 : 0)} /></tr>
+            <tr className="og-fill" aria-hidden="true"><td colSpan={4 + (meta ? 1 : 0)} /></tr>
           </tbody>
           {/* In fondo la squadra intera, come la riga Team Coverage dell'Offesa: i voti delle sottoschede e la Difesa */}
           <tfoot>
@@ -133,7 +115,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               {meta && <td><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></td>}
               <td><Bar value={defense.sustain} total /></td>
               <td><Bar value={defense.value} total reserve={setupColumn} /></td>
-              {roomy && <><td /><td /></>}
             </tr>
           </tfoot>
         </table>
