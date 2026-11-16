@@ -52,7 +52,8 @@ const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };
  * colpo semplice non manda KO in due colpi; ogni pezzo lungo quanto il suo conto (un minimo per il numero), un pezzo a zero
  * non c'è (salvo che il setup ci porti qualcuno: allora resta, spento, col triangolo). `alarm` (la riga del team): il
  * pezzo che resta è in rosso, sono gli scoperti. Passando su un pezzo il tooltip DreamDex elenca i bersagli, poi in righe a
- * parte quelli in più dopo la danza o con Tera/Z. `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18".
+ * parte quelli in più dopo la danza o con Tera/Z. A destra della barra il conto "11/18": quanti ne manda KO in due colpi o
+ * meglio (nella riga del team verde se li copre tutti, rosso se no). `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18".
  */
 export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, alarm = false }: {
   bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
@@ -67,7 +68,11 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
   const list = (items: KoTarget[]) => <div className={`kot-list${items[0]?.kind === 'mon' ? ' mons' : ''}`}>{items.map(x => <Target key={x.label} target={x} />)}</div>;
   const rest = bands.rest.length;
   const restBad = alarm && rest > 0;
+  // Quanti bersagli manda KO in due colpi o meglio (colpo semplice): "11/18", da leggere al volo
+  const hit = bands.plain.ohko.length + bands.plain.two.length;
+  const countTone = alarm ? (rest > 0 ? ' bad' : ' good') : hit === 0 ? ' zero' : '';
   return (
+    <span className="kob-line">
     <span className="kob-row">
       {(['ohko', 'two'] as const).map(b => {
         const n = bands.plain[b].length;
@@ -108,6 +113,8 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
           {bands.once[key].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[key].length}`}>{list(bands.once[key])}</Extra>}
         </FloatTip>
       )}
+    </span>
+    <span className={`kob-count${countTone}`} aria-label={t('kob.countAria', { n: hit, total })}><b aria-hidden="true">{hit}</b><small aria-hidden="true">/{total}</small></span>
     </span>
   );
 }
