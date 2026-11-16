@@ -100,8 +100,8 @@
 @media (min-width: 1100px) and (max-height: 640px) {
   .kob-row > .kob { height: 22px; }
   .kob-num > b { font-size: 15px; }
-  .kob-count { height: 22px; line-height: 22px; }
-  .kob-count > b { font-size: 16px; }
+  .kob-ring { width: 19px; height: 19px; }
+  .kob-count-num > b { font-size: 16px; }
   .off-general tfoot .og-total > * { padding-top: 7px; padding-bottom: 3px; }
 }
 /* Le pastiglie delle mosse (squadra chiusa) solo se la cornice ha posto per sei righe con le pastiglie */
@@ -121,24 +121,23 @@
 /* La barra dei colpi (KoBadges): larga quanto la colonna meno un respiro (le due colonne non si toccano), a pezzi lunghi
    quanto il loro conto: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga
    del team in rosso: gli scoperti). Ogni pezzo ha un minimo per etichetta e numero; il setup è il triangolo nell'angolo */
-.kob-line { display: flex; align-items: center; gap: 6px; width: calc(100% - 28px); min-width: 200px; }
+.kob-line { display: flex; align-items: center; gap: 10px; width: calc(100% - 28px); min-width: 200px; }
 .kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 150px; }
-/* Il conto a destra della barra, "11/18": una targhetta inclinata come i pezzi, il fondo riempito da sinistra quanto
-   copre (--r), il numero grande in corsivo e il totale piccolo; il colore dice quanto copre */
-.kob-count { --c: var(--text); position: relative; flex: none; box-sizing: border-box; min-width: 66px; height: 26px; padding: 0 11px 0 9px; display: inline-flex; align-items: baseline; justify-content: center; gap: 1px;
-  line-height: 26px; color: var(--c); font-variant-numeric: tabular-nums; cursor: default; isolation: isolate;
-  background: color-mix(in srgb, var(--c) 9%, transparent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
-.kob-count::before { content: ""; position: absolute; inset: 0 auto 0 0; z-index: -1; width: calc(var(--r, 0) * 100%); background: color-mix(in srgb, var(--c) 26%, transparent); }
-.kob-count::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, var(--c) calc(var(--r, 0) * 100%), color-mix(in srgb, var(--c) 18%, transparent) 0); }
-.kob-count > b { font: 800 italic 19px/1 var(--display); text-shadow: 0 0 12px color-mix(in srgb, var(--c) 45%, transparent); }
-.kob-count > small { font: 700 italic 11px/1 var(--display); color: color-mix(in srgb, var(--c) 55%, var(--faint)); }
-.kob-count.full { --c: var(--good); }
-.kob-count.full > b { color: color-mix(in srgb, var(--good) 70%, white); }
-.kob-count.good { --c: var(--good); }
+/* Il conto a destra della barra, "11/18": staccato dai pezzi (niente fondo né inclinazione), un anellino che si chiude
+   quanto copre e il numero grande in corsivo col totale piccolo; il colore dice quanto copre */
+.kob-count { --c: var(--text); flex: none; display: inline-flex; align-items: center; gap: 6px; min-width: 78px; padding-left: 8px; border-left: 1px solid var(--line-soft); color: var(--c); cursor: default; }
+.kob-ring { width: 22px; height: 22px; flex: none; transform: rotate(-90deg); }
+.kob-ring circle { fill: none; stroke-width: 5; }
+.kob-ring-bg { stroke: color-mix(in srgb, var(--c) 18%, transparent); }
+.kob-ring-fg { stroke: var(--c); stroke-linecap: round; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--c) 60%, transparent)); }
+.kob-count-num { display: inline-flex; align-items: baseline; gap: 1px; font-variant-numeric: tabular-nums; }
+.kob-count-num > b { font: 800 italic 19px/1 var(--display); }
+.kob-count-num > small { font: 700 italic 11px/1 var(--display); color: var(--faint); }
+.kob-count.full, .kob-count.good { --c: var(--good); }
+.kob-count.full .kob-count-num > b { color: color-mix(in srgb, var(--good) 70%, white); }
 .kob-count.warn { --c: var(--warn); }
 .kob-count.bad { --c: var(--bad); }
 .kob-count.zero { --c: var(--faint); }
-.kob-count.zero > b { text-shadow: none; }
 .kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
 .kob-row > .kob { flex: 1 0 0; min-width: 64px; }
