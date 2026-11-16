@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import type { Format, FormatId } from '../engine/format';
 import { DEX_IDS, dexOf, formatInDex, tiersOf, type DexId } from '../engine/formats';
-import { GAME_IDS, gameReady, type GameId } from '../engine/games';
+import type { GameId } from '../engine/games';
+import { GameDialog } from './GameDialog';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
@@ -53,6 +54,8 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
     ...(format.allowMultipleMegas ? [t('rail.pillMegas')] : []),
   ];
   const game = format.game;
+  const [gameOpen, setGameOpen] = useState(false);
+  const closeGame = useCallback(() => setGameOpen(false), []);
   // Le opzioni del gioco accese, come pastiglie
   const gamePills = [
     ...(format.allPokedex ? [t('rail.pillAllPokedex')] : []),
@@ -65,50 +68,16 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
         {/* Il logo a fascia del kit: le due D nei colori della versione (--accent, --accent-2), la scritta nel colore del testo */}
         <span className="rail-logo-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: logo }} />
       </h1>
-      <details className="popover format-card game-card">
-        <summary aria-label={t('rail.gameAria', { game: t(game ? `game.${game}` : 'game.none'), summary: gamePills.length ? `, ${gamePills.join(', ')}` : '' })}>
+      {/* Il gioco: una carta come quella del formato; il clic apre il modale coi giochi come loghi */}
+      <button type="button" className="format-card game-card" onClick={() => setGameOpen(true)}
+        aria-label={t('rail.gameAria', { game: t(game ? `game.${game}` : 'game.none'), summary: gamePills.length ? `, ${gamePills.join(', ')}` : '' })}>
+        <span className="format-summary">
           <span className="format-key">{t('rail.game')} <Icon name="edit" /></span>
           <span className="format-name">{t(game ? `game.${game}` : 'game.none')}</span>
           {gamePills.length > 0 && <span className="format-pills">{gamePills.map(pill => <span key={pill}>{pill}</span>)}</span>}
-        </summary>
-        <div className="format-menu">
-          <p className="format-menu-head">{t('rail.game')}</p>
-          <div className="format-menu-body">
-            <div className="format-sec">
-              <div className="format-dex" role="radiogroup" aria-label={t('rail.game')}>
-                {[null, ...GAME_IDS].map(id => {
-                  const off = id !== null && !gameReady(id);
-                  return (
-                    <label key={id ?? 'none'} className={`format-dex-opt${id === game ? ' on' : ''}${off ? ' soon' : ''}`}>
-                      <input type="radio" className="visually-hidden" name="game" value={id ?? 'none'} checked={id === game} disabled={off}
-                        onChange={() => onGameChange(id)} />
-                      <b>{t(id ? `game.${id}` : 'game.none')}</b>
-                      <small>{off ? t('top.soon') : t(id ? 'rail.gameNote' : 'rail.noGameNote')}</small>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-            {game && (
-              <div className="format-sec">
-                <p className="rail-label">{t('rail.gameOptions')}</p>
-                <label className="format-toggle">
-                  <input type="checkbox" className="switch" aria-label={t('top.allPokedex')} checked={format.allPokedex}
-                    onChange={e => onFormatChange({ ...format, allPokedex: e.target.checked })} />
-                  <b>{t('top.allPokedex')}</b>
-                  <small>{t('top.allPokedexNote')}</small>
-                </label>
-                <label className="format-toggle">
-                  <input type="checkbox" className="switch" aria-label={t('top.legendaries')} checked={format.legendaries}
-                    onChange={e => onFormatChange({ ...format, legendaries: e.target.checked })} />
-                  <b>{t('top.legendaries')}</b>
-                  <small>{t('top.legendariesNote')}</small>
-                </label>
-              </div>
-            )}
-          </div>
-        </div>
-      </details>
+        </span>
+      </button>
+      {gameOpen && <GameDialog format={format} onGameChange={onGameChange} onFormatChange={onFormatChange} onClose={closeGame} />}
       {game ? (
         // Col gioco il formato lo decide il gioco: si vede, ma non si cambia
         <div className="format-card locked" aria-label={t('rail.formatAria', { format: `${t(`dex.${dex}`)} ${tier}`.trim(), summary: pills.join(', ') })}>

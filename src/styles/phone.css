@@ -48,7 +48,9 @@
   /* Col gioco: la sua carta prende il posto del formato (bloccato, si nasconde); senza tier il nome parte col margine */
   .format-card.locked { display: none; }
   .game-card { margin: 0; }
-  .popover.game-card > summary { padding-left: 10px; }
+  button.game-card { width: auto; flex: 1; min-width: 0; }
+  .game-card > .format-summary { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px; overflow: hidden; }
+  .game-card .format-key, .game-card .format-pills { display: none; }
   .rail-foot { flex: none; padding: 0; }
   .rail-foot .meta, .rail-links { display: none; }
   .rail-foot .lang-switch button { height: 36px; padding: 0 10px; }

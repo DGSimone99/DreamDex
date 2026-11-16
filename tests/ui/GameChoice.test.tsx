@@ -7,8 +7,14 @@ import { initGames, withGame } from '../../src/engine/games';
 import { chooseTier, chosen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
-const chooseGame = (user: ReturnType<typeof userEvent.setup>, id: string) =>
-  user.click(document.querySelector<HTMLInputElement>(`input[name="game"][value="${id}"]`)!);
+/** Apre il modale del gioco dalla carta, sceglie e lo chiude (Esc). */
+async function chooseGame(user: ReturnType<typeof userEvent.setup>, id: string) {
+  await user.click(screen.getByRole('button', { name: /^Gioco / }));
+  await user.click(document.querySelector<HTMLInputElement>(`input[name="game"][value="${id}"]`)!);
+  await user.keyboard('{Escape}');
+}
+/** Apre il modale del gioco e lascia aperto (per gli interruttori). */
+const openGame = (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('button', { name: /^Gioco / }));
 const memoryStorage = (): Storage => {
   const map = new Map<string, string>();
   return { getItem: k => map.get(k) ?? null, setItem: (k, v) => void map.set(k, v), removeItem: k => void map.delete(k), clear: () => map.clear(), key: () => null, get length() { return map.size; } };
@@ -25,6 +31,7 @@ describe('scelta del gioco', () => {
     expect(document.documentElement.dataset.palette).toBe('sv');
     expect(screen.getByText('Lo decide il gioco')).toBeInTheDocument();
     expect(document.querySelector('input[name="format-tier"]')).toBeNull();
+    await openGame(user);
     const all = screen.getByRole('checkbox', { name: 'Tutto il Pokédex' });
     expect(all).not.toBeChecked();
     await user.click(all);
@@ -44,10 +51,11 @@ describe('scelta del gioco', () => {
     expect(screen.queryByText('Lo decide il gioco')).toBeNull();
   });
 
-  it('senza i dati del gioco la voce è spenta e una sessione col gioco riparte senza', () => {
+  it('senza i dati del gioco la voce è spenta e una sessione col gioco riparte senza', async () => {
     const storage = memoryStorage();
     storage.setItem('dreamdex.session', JSON.stringify({ team: [], format: withGame(DEFAULT_FORMAT, 'sv') }));
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} storage={storage} />);
+    await openGame(userEvent.setup());
     expect(document.querySelector<HTMLInputElement>('input[name="game"][value="sv"]')).toBeDisabled();
     expect(document.querySelector<HTMLInputElement>('input[name="game"][value="none"]')).toBeChecked();
     expect(screen.queryByText('Lo decide il gioco')).toBeNull();
