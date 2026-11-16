@@ -31,14 +31,14 @@ const dialogOf = (name: string) => screen.getByRole('dialog', { name: `Velocità
 const checks = (dialog: HTMLElement) => within(dialog).getAllByRole('checkbox').map(c => c.getAttribute('aria-label'));
 
 describe('Velocità: una scheda a barre', () => {
-  it('una sola scheda, senza spiegazioni sulla pagina; i membri dal più veloce con la barra a segmenti e il totale', () => {
+  it('una sola scheda, senza spiegazioni sulla pagina; i membri come nel team con la barra a segmenti e il totale', () => {
     const rating = withMeta();
     view(team, rating);
     expect(names()).toEqual(['Generale']);
     expect(document.querySelector('.ad-how')).toBeNull();
-    expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Ribombee', 'Iron Valiant', 'Dragonite', 'Toxapex']);
-    const rows = document.querySelectorAll('.def-members tbody tr');
-    const sorted = [...rating.speed.members].sort((a, b) => b.speed - a.speed);
+    expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Dragonite', 'Ribombee', 'Iron Valiant', 'Toxapex']);
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill)');
+    const sorted = team.map(s => rating.speed.members.find(m => m.species === s.species)!);
     sorted.forEach((m, i) => {
       const bar = within(rows[i] as HTMLElement).getByRole('button', { name: `Velocità di ${m.species}: apri i rivali` });
       expect(bar).toHaveTextContent(`${Math.round(100 * m.total)}%`);
@@ -48,14 +48,30 @@ describe('Velocità: una scheda a barre', () => {
     const d = sorted.find(m => m.species === 'Dragonite')!;
     const bar = barOf('Dragonite');
     expect(bar).toHaveTextContent(`${Math.round(100 * d.raw)}`);
-    expect(bar.getAttribute('title')).toMatch(/Dragon Dance/);
-    expect(bar.getAttribute('title')).toMatch(/Sticky Web/);
+    expect(bar).not.toHaveAttribute('title');
+    // In fondo la riga del team, col voto dell'area
+    expect(document.querySelector('.def-members tfoot')).toHaveTextContent(`Velocità del team${rating.speed.value}%`);
+  });
+
+  it('passando sulla barra: la scala dei rivali vicini e cosa aggiunge ogni guadagno, icona della Booster accanto al nome', async () => {
+    const user = userEvent.setup();
+    view();
+    await user.hover(barOf('Dragonite'));
+    const tip = await screen.findByText((_, el) => !!el?.classList.contains('stip-ladder'));
+    expect(tip.querySelector('.stip-rung.self')).toHaveTextContent('Dragonite');
+    const gains = document.querySelector('.stip-gains')!;
+    expect(gains).toHaveTextContent(/Dragon Dance/);
+    expect(gains).toHaveTextContent(/Sticky Web/);
+    await user.unhover(barOf('Dragonite'));
+    await user.hover(barOf('Iron Valiant'));
+    const self = await screen.findByText((_, el) => !!el?.classList.contains('self') && !!el.textContent?.includes('Iron Valiant'));
+    expect(self.querySelector('.item-icon')).not.toBeNull();
   });
 
   it('niente tessere sotto la tabella: solo i membri', () => {
     view();
     expect(document.querySelectorAll('.def-tile')).toHaveLength(0);
-    expect(document.querySelectorAll('.sp-bar-btn')).toHaveLength(4);
+    expect(screen.getAllByRole('button', { name: /^Velocità di .*: apri i rivali$/ })).toHaveLength(4);
   });
 
   it('il modale di Dragonite: i check che esistono davvero, la lista dei rivali (una riga per specie) col membro al suo posto', async () => {
@@ -146,7 +162,7 @@ describe('Velocità: una scheda a barre', () => {
     view(t, rateTeam(t, ag, 'it')!, ag);
     const bars = screen.getAllByRole('button', { name: 'Velocità di Dragonite: apri i rivali' });
     expect(bars).toHaveLength(2);
-    // Il primo (dal più veloce) è quello con Dragon Dance, il secondo no
+    // Il primo (nel team) è quello con Dragon Dance, il secondo no
     await user.click(bars[0]);
     expect(checks(dialogOf('Dragonite'))).toContain('Dragon Dance');
     await user.keyboard('{Escape}');
@@ -194,7 +210,7 @@ describe('Velocità: una scheda a barre', () => {
   it('una specie sconosciuta: riga con "—", senza barra', () => {
     const odd = [...team, emptySet('Nessuno')];
     view(odd, withMeta(odd));
-    const rows = document.querySelectorAll('.def-members tbody tr');
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill)');
     expect(rows).toHaveLength(5);
     const last = rows[4];
     expect(last).toHaveTextContent('Nessuno');

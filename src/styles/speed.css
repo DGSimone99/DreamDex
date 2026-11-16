@@ -33,10 +33,16 @@
 /* Velocità: la scheda a barre (una per membro) e il modale del membro */
 .sp-general .def-members thead th:nth-child(2) { text-align: left; }
 .sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) 5.5ch auto 18px; align-items: center; gap: 12px; width: 100%; padding: 3px 4px 3px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.sp-bar-btn:hover { background: var(--raised); }
+/* Un solo hover, quello della riga (come nelle altre tabelle); la freccia da cliccare si accende e si sposta un poco */
+.sp-team { cursor: default; }
 .sp-bar-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.sp-bar-btn svg { width: 16px; height: 16px; color: var(--faint); }
-.sp-bar-btn:hover svg { color: var(--text); }
+.sp-bar-btn svg { width: 16px; height: 16px; color: var(--faint); transition: color 120ms, transform 120ms; }
+.def-members tbody tr:hover .sp-bar-btn svg, .sp-bar-btn:focus-visible svg { color: var(--accent-ink); transform: translateX(3px) scale(1.2); }
+@media (prefers-reduced-motion: reduce) { .sp-bar-btn svg { transition: none; } .def-members tbody tr:hover .sp-bar-btn svg { transform: none; } }
+/* La legenda: gli stessi pezzi a righe della barra, in piccolo */
+.area-legend-swatch i.sp-leg { border-color: transparent; border-radius: 0; box-shadow: none; }
+.area-legend-swatch i.sp-leg.own { background: repeating-linear-gradient(135deg, var(--accent) 0 2px, color-mix(in srgb, var(--accent) 45%, var(--panel)) 2px 4px); }
+.area-legend-swatch i.sp-leg.team { background: repeating-linear-gradient(135deg, var(--muted) 0 2px, color-mix(in srgb, var(--muted) 30%, var(--panel)) 2px 4px); }
 .sp-stack { position: relative; display: flex; height: 10px; background: var(--line-soft); overflow: hidden; }
 .sp-stack i { display: block; height: 100%; flex: none; }
 .sp-stack .sp-seg-raw { background: var(--good); }
