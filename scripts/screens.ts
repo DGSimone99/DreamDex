@@ -935,6 +935,11 @@ for (const [w, h] of sizes) {
     // --hover "sel": porta il puntatore sul primo elemento (per i tooltip)
     const hoverSel = arg('hover');
     if (hoverSel) { const el = await page.$(hoverSel); if (el) { await el.hover(); await wait(500); } else console.log(`hover ${hoverSel}: not found`); }
+    // --focus "sel": porta il fuoco sul primo elemento; --keys "Tab,ArrowRight,…": tasti premuti dopo (per il giro del Tab, le frecce e i tooltip col fuoco)
+    const focusSel = arg('focus');
+    if (focusSel) { if (!await page.evaluate(s => { const el = document.querySelector<HTMLElement>(s); el?.focus(); return !!el; }, focusSel)) console.log(`focus ${focusSel}: not found`); }
+    const keys = arg('keys');
+    if (keys) { for (const k of keys.split(',')) { await page.keyboard.press(k as Parameters<Page['keyboard']['press']>[0]); await wait(60); } await wait(500); }
     // --scan: testo visibile sotto 11px, attenuato con l'opacità o con contrasto sotto 4,5:1 (sul fondo pieno più vicino)
     if (process.argv.includes('--scan')) console.log(`scan ${name} @${w}x${h}:\n` + (await page.evaluate(SCAN_TEXT) as string));
     // --eval <file.js>: un'espressione JS (stringa) valutata nella pagina, il risultato stampato
