@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
@@ -218,7 +218,7 @@ describe('Velocità: una scheda a barre', () => {
     expect(within(last as HTMLElement).queryByRole('button')).toBeNull();
   });
 
-  it('il "?" apre la guida della Velocità: rivali, guadagni con le quote, pesi dei membri, il modale non cambia il voto', async () => {
+  it('il "?" apre la guida della Velocità: rivali, le tre fonti col dettaglio nel tooltip, senza quote né pesi', async () => {
     const user = userEvent.setup();
     view();
     await user.click(screen.getByRole('button', { name: 'Come funziona Velocità' }));
@@ -226,43 +226,32 @@ describe('Velocità: una scheda a barre', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/40 Pokémon più usati/);
     expect(panel).toHaveTextContent(/Stolascelta/);
-    // Le quote (setup 50%, priorità e controllo 25%, il controllo breve 12,5%) e i pesi dei membri 30/30/20/10/5/5
-    expect(panel).toHaveTextContent(/50%/);
-    expect(panel).toHaveTextContent(/25%/);
-    expect(panel).toHaveTextContent(/12,5%/);
-    // Media semplice: ogni membro il 17%
-    expect(panel).toHaveTextContent(/17%/);
+    // Niente quote né pesi: le fonti aggiungono un bonus, il team è la media
+    expect(panel).not.toHaveTextContent(/50%|25%|12,5%|17%/);
     expect(panel).toHaveTextContent(/superarne il 74% vale 74/);
-    expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto/);
-    // Schematica: tre fonti come tessere con solo nome, quota e freccia (il controllo breve dentro il Controllo del team),
-    // niente dettaglio né mosse a tessere chiuse
-    expect(panel.querySelectorAll('.guide-tiles li')).toHaveLength(3);
-    expect(panel.querySelectorAll('.sp-guide-chev')).toHaveLength(3);
-    expect(panel.querySelector('.sp-guide-sub')).toHaveTextContent(/^Breve12,5%$/);
-    expect(panel).not.toHaveTextContent(/×1,5|Tailwind|Trick Room|Booster/);
-    // Una tessera si apre (una alla volta) e mostra tutto quello che conta, dalle tabelle del motore
-    const boost = within(panel).getByRole('button', { name: /^Boost/ });
-    expect(boost).toHaveAttribute('aria-expanded', 'false');
-    await user.click(boost);
-    expect(boost).toHaveAttribute('aria-expanded', 'true');
-    const detail = within(panel).getByRole('region', { name: 'Boost' });
-    const chips = (el: HTMLElement) => [...el.querySelectorAll('.sp-gd-chip')].map(c => c.textContent);
-    // Mosse e abilità come etichette, il meteo o il campo che serve dentro l'etichetta
-    expect(chips(detail)).toContain('Shell Smash');
-    expect(chips(detail)).toContain('Swift Swimpioggia');
-    expect(chips(detail)).toContain('Booster Energy');
-    expect(detail).toHaveTextContent(/×1,5/);
-    await user.click(within(panel).getByRole('button', { name: /^Controllo del team/ }));
-    expect(boost).toHaveAttribute('aria-expanded', 'false');
-    const control = within(panel).getByRole('region', { name: 'Controllo del team' });
+    expect(panel).toHaveTextContent(/ognuno conta uguale/);
+    expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto|Clicca/);
+    // Tre fonti come righe, ognuna col "?": il dettaglio sta nel tooltip, niente a vista sulla pagina
+    expect(panel.querySelectorAll('.guide-rows > div')).toHaveLength(3);
+    expect(panel.querySelectorAll('.guide-ask')).toHaveLength(3);
+    expect(panel).not.toHaveTextContent(/×1,5|Shell Smash/);
+    const chips = () => [...document.querySelectorAll('.sp-gd-tip .sp-gd-chip')].map(c => c.textContent);
+    await user.hover(within(panel).getByRole('button', { name: 'Boost' }));
+    await waitFor(() => expect(chips()).toContain('Shell Smash'));
+    expect(chips()).toContain('Swift Swimpioggia');
+    expect(chips()).toContain('Booster Energy');
+    expect(document.querySelector('.sp-gd-tip')).toHaveTextContent(/×1,5/);
+    await user.unhover(within(panel).getByRole('button', { name: 'Boost' }));
+    await user.hover(within(panel).getByRole('button', { name: 'Controllo del team' }));
+    await waitFor(() => expect(chips()).toContain('Glare'));
     // Le mosse che rallentano come etichette, coi tipi immuni dentro; la regola tiene solo l'eccezione comune
     // (i nomi dei tipi in italiano arrivano coi dati del gioco: qui, senza, restano in inglese)
-    expect(chips(control)).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
+    expect(chips()).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
+    const control = document.querySelector('.sp-gd-tip')!;
     expect(control).toHaveTextContent(/Non sui tipi Elettro/);
     expect(control).toHaveTextContent(/Trick Room/);
     expect(control).toHaveTextContent(/Tailwind/);
-    await user.click(within(control).getByRole('button', { name: 'Chiudi' }));
-    expect(within(panel).queryByRole('region')).toBeNull();
+    expect(control).not.toHaveTextContent(/%/);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
   });

@@ -296,13 +296,15 @@ const speedGuide = (format?: Partial<typeof FORMAT>): State => ({ hash: format ?
 } });
 SPEED_STATES['analysis-speed-guide'] = speedGuide();
 SPEED_STATES['analysis-speed-guide-nometa'] = speedGuide({ meta: false });
-// La guida con una tessera aperta (Boost, Priorità, Controllo del team): il dettaglio di quella fonte
-for (const [key, re] of [['boost', /^Boost/], ['priority', /^Priorit/], ['control', /^(Controllo|Team control)/]] as const) {
+// La guida col tooltip del "?" di una fonte (Boost, Priorità, Controllo del team): il dettaglio di quella fonte
+for (const [key, n] of [['boost', 0], ['priority', 1], ['control', 2]] as const) {
   SPEED_STATES[`analysis-speed-guide-${key}`] = { hash: hash(SPEED_SIX), run: async p => {
     const ok = await speedGuide().run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.sp-guide-tiles button', re)) return 'no tile';
-    await wait(300);
+    const asks = await p.$$('.help-panel .guide-ask');
+    if (!asks[n]) return 'no ?';
+    await asks[n].hover();
+    await wait(400);
     return true;
   } };
 }
