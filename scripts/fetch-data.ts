@@ -7,6 +7,7 @@ import { buildFallbackSets, mergePresets, normalizeAnalysisPresets, normalizeAna
 import { buildFallbackStats, reduceChaos, reducePkmnStats, type ChaosFile, type PkmnStatsFile, type StatsMeta } from '../src/engine/stats';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
 import { fetchItalianNames } from './pokeapi';
+import { fetchGameDex } from './gameDex';
 import { FORMATS_DATA_URL, parseTiers } from './showdown-tiers';
 import { buildBans, FORMATS_URL, parseFormats, parseRulesets, RULESETS_URL } from './showdown-bans';
 
@@ -157,6 +158,16 @@ async function main() {
   } catch (error) {
     console.warn(`Nomi italiani non disponibili (${(error as Error).message}): l'italiano userà i nomi inglesi.`);
     soft('nomi italiani', error);
+  }
+  // Pokédex dei giochi (Pokédex regionali di PokeAPI): senza, la scelta del gioco resta spenta
+  try {
+    const sv = await fetchGameDex();
+    await mkdir(join('data', '_games'), { recursive: true });
+    await writeFile(join('data', '_games', 'sv.json'), JSON.stringify(sv));
+    console.log(`Pokédex di Scarlatto e Violetto: ${sv.dex.length} specie.`);
+  } catch (error) {
+    console.warn(`Pokédex dei giochi non disponibili (${(error as Error).message}): la scelta del gioco resta spenta.`);
+    soft('Pokédex dei giochi', error);
   }
   // Tier National Dex aggiornati da Showdown: un errore non blocca il resto (restano quelli della libreria)
   try {

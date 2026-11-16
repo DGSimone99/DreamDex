@@ -4,6 +4,9 @@ import type { Format } from './format';
 export type GameId = 'sv';
 export const GAME_IDS: GameId[] = ['sv'];
 
+/** Pokédex del gioco preparato da fetch-data (`data/_games/<gioco>.json`): id delle specie dei Pokédex regionali. */
+export interface GameDexFile { dex: string[] }
+
 type Locked = Pick<Format, 'formatId' | 'meta' | 'genLimit' | 'ignoreBans' | 'allowMultipleMegas'>;
 
 /** Il formato che ogni gioco impone: Scarlatto e Violetto = Gen 9 senza meta (Anything Goes, senza ban per tier). */
