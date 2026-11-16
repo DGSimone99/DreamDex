@@ -7,12 +7,13 @@ import { MemberMon, setOf } from './MemberMon';
 import { TypeIcons } from '../typeIcons';
 import { TYPES } from '../../engine/types';
 import { HOLD_BANDS } from './holds';
+import { HoldBars, metaHolds, teamHolds, typeHolds, TypeAttackers } from './HoldBars';
+import { Ask, MetaTargets } from '../offense/TargetsTip';
+import { DEFAULT_FORMAT } from '../../engine/format';
 
 /** Il colore di una barra dal valore: buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 
-/** Sotto questo valore il membro con la Difesa più bassa è l'anello debole. */
-const WEAK_LINK_BELOW = 50;
 
 /**
  * Una barra con il numero accanto (0-100), del colore della soglia del valore.
@@ -70,11 +71,17 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   // La colonna Difesa riserva il posto del "+N" se almeno un membro ha un setup difensivo
   const setupColumn = members.some(m => m.setupGain > 0 && !!m.setupMove);
 
-  // L'anello debole: la Difesa più bassa (a parità, il primo), solo se sotto soglia
-  const lowest = members.reduce((best, m, i) => (m.value < members[best].value ? i : best), 0);
-  const weakLink = members.length > 0 && members[lowest].value < WEAK_LINK_BELOW ? lowest : -1;
 
   // Squadra chiusa: il colpo di tipo che fa più male a ogni membro (a parità, il primo tipo)
+  // Le barre a pezzi di Tipi e Meta: le fasce di ogni membro, e del team (il membro che regge meglio ogni bersaglio)
+  const metaRows = defense.coverageMeta?.rows ?? [];
+  const typeBars = members.map((_, i) => typeHolds(defense.typed[i]?.cells ?? []));
+  const metaBars = members.map(m => metaHolds(metaRows, m.species));
+  const metaSpecies = [...metaRows].sort((x, y) => y.weight - x.weight).map(r => r.species);
+  const ofTypes = t('kob.ofTypes');
+  const ofMeta = t('kob.ofMeta', { n: metaRows.length });
+  const teamName = t('odetail.gen.total');
+
   const worstHit = (i: number) => (defense.typed[i]?.cells ?? []).reduce<{ type: string; pct: number; band: HoldBand } | null>(
     (best, cell, k) => (!best || cell.pct > best.pct ? { type: TYPES[k], pct: cell.pct, band: cell.band } : best), null);
 
@@ -84,14 +91,14 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
         <table className="def-grid def-members">
           {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
           <colgroup>
-            <col className="def-col-mon" /><col />{meta && <col />}<col /><col />
+            <col className="def-col-mon" /><col className="dg-col-bars" />{meta && <col className="dg-col-bars" />}<col className="dg-col-bar" /><col className="dg-col-bar" />
             {roomy && <><col className="def-col-hit" /><col className="def-col-rec" /></>}
           </colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('ddetail.holdTypes')}</th>
-              {meta && <th scope="col">{t('ddetail.holdMeta')}</th>}
+              <th scope="col">{t('kob.headTypes')}<Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col">{t('kob.headMeta')}<Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('ddetail.sustain')}</th>
               <th scope="col">{t('area.defense')}</th>
               {roomy && <><th scope="col">{t('ddetail.worstHit')}</th><th scope="col">{t('ddetail.recoveryCol')}</th></>}
@@ -101,13 +108,11 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             {members.map((m, i) => (
               <tr key={`${m.species}-${i}`}>
                 <th scope="row">
-                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>
-                    {i === weakLink && <span className="def-weak">{t('ddetail.weakLink')}</span>}
-                  </MemberMon>
+                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td title={t('ddetail.sides', { p: m.physical, s: m.special })}><Bar value={m.hold} unit="%" /></td>
-                {meta && <td><Bar value={m.metaHold ?? 0} unit="%" /></td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} /></td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} /></td>}
                 <td><Bar value={m.sustain} /></td>
                 <td>
                   {/* Quanto aggiunge il setup difensivo (tre quarti del guadagno entrano nel voto) */}
@@ -124,8 +129,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           <tfoot>
             <tr className="og-total">
               <th scope="row"><span className="og-plate">{t('odetail.gen.total')}</span></th>
-              <td><Bar value={defense.coverageTypes.value} total /></td>
-              {meta && <td><Bar value={defense.coverageMeta?.value ?? 0} total /></td>}
+              <td><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></td>
+              {meta && <td><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></td>}
               <td><Bar value={defense.sustain} total /></td>
               <td><Bar value={defense.value} total reserve={setupColumn} /></td>
               {roomy && <><td /><td /></>}
@@ -133,6 +138,12 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           </tfoot>
         </table>
       </div>
+      {/* I colori dei pezzi di Tipi e Meta (nei pezzi c'è solo il numero, la colonna è stretta) */}
+      <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">
+        <span className="area-legend-swatch"><i className="hb-sw hb-held" />{t('hold.held')}</span>
+        <span className="area-legend-swatch"><i className="hb-sw hb-2" />2HKO</span>
+        <span className="area-legend-swatch"><i className="hb-sw hb-ohko" />OHKO</span>
+      </span></div>
     </div>
   );
 }
