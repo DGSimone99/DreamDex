@@ -189,7 +189,8 @@
 .stip-ladder { display: flex; flex-direction: column; padding: 6px 0; }
 .stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 9px; padding: 3px 14px 3px 8px; font-size: 13px; }
 .stip-rung .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
-.stip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stip-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.stip-name > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stip-speed { grid-column: 4; font: 700 italic 16px/1 var(--display); text-align: right; min-width: 38px; }
 .stip-rung.faster .stip-speed { color: var(--bad); }
 .stip-rung.slower .stip-speed { color: var(--good); }
@@ -199,6 +200,9 @@
 .stip-rung.self .stip-speed { color: var(--accent-ink); font-size: 18px; }
 .stip-item { grid-column: 3; padding: 1px 8px 1px 6px; font: 700 11px/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .stip-item.tie { color: var(--warn); }
+.stip-gains { margin: 0; padding: 6px 14px 6px 10px; list-style: none; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.stip-gains li { display: flex; justify-content: space-between; gap: 12px; }
+.stip-gains b { color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .stip-empty { margin: 0; padding: 8px 12px; color: var(--muted); }
 
 /* ===== Core (CoreTip): testata verde come i core, una riga per lato: chi para sul piedistallo, il tipo nel suo colore,

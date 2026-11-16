@@ -187,6 +187,13 @@ export function speedTier(set: TeamSet, data: EngineData): SpeedTier | null {
     vsMeta: usesMeta(data),
     total: new Set(rivals.map(r => r.species)).size,
     outspeeds: outspeedShare(speed, rivals),
+    ...speedNeighbours(speed, rivals),
+  };
+}
+
+/** I rivali più vicini a `speed`: sopra (dal più vicino), sotto (dal più vicino) e a pari velocità. */
+export function speedNeighbours<R extends { value: number }>(speed: number, rivals: R[]): { faster: R[]; slower: R[]; ties: R[] } {
+  return {
     faster: rivals.filter(r => r.value > speed).sort((a, b) => a.value - b.value).slice(0, NEIGHBOURS),
     slower: rivals.filter(r => r.value < speed).sort((a, b) => b.value - a.value).slice(0, NEIGHBOURS),
     ties: rivals.filter(r => r.value === speed),

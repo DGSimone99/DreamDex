@@ -234,7 +234,7 @@ describe('dettaglio della Velocità a schede', () => {
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
   });
 
-  it('col controllo: la barra spiega la mossa nel suggerimento', async () => {
+  it('col controllo: passando sulla barra il tooltip spiega la mossa', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -243,7 +243,8 @@ describe('dettaglio della Velocità a schede', () => {
     await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ }));
     const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
     const bar = within(dialog).getByRole('button', { name: 'Velocità di Clefable: apri i rivali' });
-    expect(bar.getAttribute('title')).toMatch(/Thunder Wave/);
+    await user.hover(bar);
+    expect(await screen.findByText((_, el) => !!el?.classList.contains('stip-gains'))).toHaveTextContent(/Thunder Wave/);
   });
 
   it('in inglese', async () => {

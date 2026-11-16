@@ -34,6 +34,8 @@
 .sp-general .def-members thead th:nth-child(2) { text-align: left; }
 .sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) 5.5ch auto 18px; align-items: center; gap: 12px; width: 100%; padding: 3px 4px 3px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .sp-bar-btn:hover { background: var(--raised); }
+.sp-team { cursor: default; }
+.sp-team:hover { background: none; }
 .sp-bar-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .sp-bar-btn svg { width: 16px; height: 16px; color: var(--faint); }
 .sp-bar-btn:hover svg { color: var(--text); }
