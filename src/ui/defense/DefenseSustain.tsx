@@ -29,7 +29,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
     <div className={`def-frame def-sus${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid sus-table def-members">
-          <colgroup><col className="def-col-mon" /><col className="sus-col-loss" /><col className="sus-col-loss" /><col className="sus-col-gain" /><col /><col className="sus-col-val" /></colgroup>
+          <colgroup><col className="def-col-mon" /><col className="sus-col-loss" /><col className="sus-col-loss" /><col /><col className="sus-col-net" /><col className="sus-col-val" /></colgroup>
           <thead>
             <tr className="rob-grp">
               <th scope="col" rowSpan={2} className="def-mon-h">{t('detail.member')}</th>
@@ -74,6 +74,8 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
                 </tr>
               );
             })}
+            {/* Riempie lo spazio che resta: le righe dei membri alte come nelle altre schede (là in fondo c'è la riga del team) */}
+            <tr className="og-fill" aria-hidden="true"><td colSpan={6} /></tr>
           </tbody>
         </table>
       </div>
