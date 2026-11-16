@@ -624,3 +624,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
 .reason .sym-more { flex: none; margin-left: 4px; font: 500 11px/1 var(--ui); color: var(--faint); }
+
+/* Esclusiva di una versione del gioco (Solo Scarlatto / Solo Violetto): pastiglia piccola nel colore della versione */
+.version-mark { display: inline-block; padding: 1px 6px; border-radius: 999px; font-size: 11px; line-height: 1.4; font-weight: 600; white-space: nowrap; }
+.version-mark.scarlet { color: #ffd9d2; background: #5a1a14; box-shadow: inset 0 0 0 1px #ff6a4d; }
+.version-mark.violet { color: #e8dbff; background: #33195c; box-shadow: inset 0 0 0 1px #a774ff; }

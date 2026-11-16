@@ -12,6 +12,7 @@ import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lis
 import { formatLabel } from '../engine/formats';
 import { tierLabel } from '../engine/filters';
 import { battleName, getSpecies } from '../engine/dex';
+import { exclusiveOf } from '../engine/games';
 import { PokemonIcon, TypeDot } from './PokemonName';
 import { TypeChip } from './Sprite';
 import type { ReasonSymbol } from '../engine/explain';
@@ -138,6 +139,16 @@ export function BanMark({ species, format, floating = false }: { species: string
   return banned ? <AlertMark floating={floating} alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
 }
 
+/** Badge delle esclusive nel gioco: "Solo Violetto" (tooltip: ottenibile solo in Violetto); niente senza gioco. */
+export function ExclusiveMark({ species, format }: { species: string; format: Format }) {
+  const tr = useT();
+  const found = getSpecies(species);
+  const version = found ? exclusiveOf(found, format) : null;
+  if (!version) return null;
+  const full = tr(`game.exclusive.${version}`);
+  return <span className={`version-mark ${version}`} role="img" aria-label={full} title={full}>{tr(`game.exclusiveShort.${version}`)}</span>;
+}
+
 /** Il candidato è nei Preferiti dell'utente (e non nella sua lista Ban): il voto lo dice col ♥. */
 export const isFavoriteCandidate = (set: TeamSet, lists?: EffectiveLists) =>
   !isUserBanned(set, lists && { ...lists, allow: undefined }) && isUserFavorite(set, lists);
@@ -163,6 +174,7 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
     <>
       {/* Tooltip flottanti: la casella nasconde ciò che sporge e la lista sta accanto alla scheda */}
       <BanMark species={item.species} format={format} floating />
+      <ExclusiveMark species={battleName(item.set)} format={format} />
       <ListMarks set={item.set} lists={lists} />
       <AlertMark alerts={warnings} floating />
       <AlertMark alerts={together} icon="spark" floating />
