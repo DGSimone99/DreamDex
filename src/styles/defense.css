@@ -282,12 +282,10 @@
   .guide-two { grid-template-columns: 1fr; }
 }
 
-/* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
-.help-dialog.area-guide { width: min(980px, 100%); }
-/* Guida dell'Offesa: sempre alta come con le statistiche medie aperte, così aprirle non la ridimensiona */
-.help-dialog.area-guide-strength { height: min(560px, calc(100vh - 48px)); }
-/* Guida della Difesa: sempre alta come con l'attaccante di ogni tipo aperto, così aprirlo non la ridimensiona */
-.help-dialog.area-guide-defense { height: min(672px, calc(100vh - 48px)); max-height: min(672px, calc(100vh - 48px)); }
+/* Le guide "Come funziona" delle aree: più larghe dei modali d aiuto (i due conti e la scala stanno su una riga) e tutte
+   della stessa altezza fissa, in ogni area e su ogni pagina della guida (il contenuto più lungo scorre dentro), così
+   passando da un'area all'altra o aprendo un dettaglio la finestra non cambia misura */
+.help-dialog.area-guide { width: min(980px, 100%); height: min(620px, calc(100vh - 48px)); max-height: min(620px, calc(100vh - 48px)); }
 
 /* Guida, Robustezza: le quattro soglie come tasti, i pesi dei membri come barra a segmenti, la somma dei lati */
 .guide-holds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }

@@ -102,7 +102,6 @@
 .guide-tiles small { font-size: 12px; line-height: 1.35; color: var(--muted); }
 .help-panel .guide-scale { margin-top: 6px; font-size: 13px; color: var(--muted); }
 /* La guida: righe come Offesa e Difesa, il dettaglio di ogni fonte nel tooltip del "?" */
-.help-dialog.area-guide-speed { height: min(560px, calc(100vh - 48px)); }
 .area-guide-speed .help-panel { padding-bottom: 12px; }
 .area-guide-speed .help-panel h4 { margin-top: 10px; }
 .ftip.gat .sp-gd-tip { padding: 8px 12px 6px; }

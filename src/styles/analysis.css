@@ -83,7 +83,7 @@
 /* Striscia magenta attaccata alla scheda aperta (il margine annulla lo spazio sotto le schede principali) */
 .area-strip { position: relative; margin-top: -12px; flex: none; }
 .area-subs { display: flex; gap: 2px; background: var(--accent-2-wash); border-top: 3px solid var(--accent-2); overflow-x: auto; }
-.area-subs [role='tab'] { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 8px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: 13.5px; font-weight: 500; font-style: normal; line-height: 1.2; white-space: nowrap; }
+.area-subs [role='tab'] { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 8px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 500; font-style: normal; line-height: 1.2; white-space: nowrap; }
 .area-subs [role='tab'] b { font: 700 15px/1 var(--display); color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
 .area-subs [role='tab']:hover { color: var(--text); }
 /* La striscia scorre (overflow): il contorno del fuoco va dentro la scheda, o verrebbe tagliato */
@@ -95,24 +95,11 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
 /* Il taglio segue il posto della sottoscheda: la prima (sul bordo sinistro) solo a destra, quelle in mezzo su entrambi i
-   lati (\__/), l'ultima di Ruoli e Bonus (sul bordo destro) solo a sinistra (sotto). Il lato tagliato a sinistra si allunga
+   lati (\__/). Il lato tagliato a sinistra si allunga
    sotto la vicina (margine negativo pari al padding in più: il testo resta dov'era), così fra le due non resta vuoto */
 .area-subs [role='tab'][aria-selected='true']:not(:first-child) {
   position: relative; z-index: 1; margin-left: -12px; padding-left: 26px; margin-right: -12px; padding-right: 26px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 10px 100%);
-}
-/* Ruoli e Bonus: le due metà, aperte, si allungano sopra l'altra col taglio delle schede principali, a specchio:
-   Bonus/Malus tagliata a destra (/), Ruoli a sinistra (\). L'angolo in basso del taglio sta dove comincia l'altra scheda,
-   quello in alto 30px più in là: niente vuoto fra le due. Margine negativo pari al padding in più e due colonne fisse
-   (griglia): le scritte restano dove stavano */
-.area-view-bonusMalus .area-subs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:first-child {
-  position: relative; z-index: 1; margin-right: -34px; padding-right: 54px;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
-}
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:last-child:not(:first-child) {
-  margin-left: -34px; margin-right: 0; padding-left: 54px; padding-right: 20px;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 30px 100%);
 }
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
 /* Ingrandimento solo visivo (scale dal centro): la larghezza della scheda non cambia, quindi nulla si sposta */
@@ -122,16 +109,6 @@
 .sub-help-room { display: inline-block; width: 30px; }
 .area-help { position: absolute; z-index: 2; display: flex; }
 
-/* Ruoli e Bonus: due sottoschede grandi, metà striscia ciascuna (Bonus/Malus a sinistra, Ruoli a destra), nome e valore
-   in Kanit corsivo come le schede principali. Colori e segno della sottoscheda aperta sono quelli delle altre aree (sopra);
-   cambiano solo misura e carattere. Il "?" sta dentro, dopo il valore */
-.area-view-bonusMalus .area-subs { gap: 4px; }
-.area-view-bonusMalus .area-subs [role='tab'] {
-  flex: 1 1 0; min-width: 0; justify-content: center; gap: 10px; padding: 10px 20px 9px;
-  font: 600 18px/1 var(--display); font-style: italic;
-}
-.area-view-bonusMalus .area-subs [role='tab'] b { font: 800 22px/1 var(--display); font-style: italic; }
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 700; }
 /* Segni dopo il valore della sottoscheda (Ruoli: il +N dei minori) */
 .sub-marks { display: inline-flex; align-self: center; gap: 6px; }
 /* Ruoli: X/Y nel colore del livello peggiore che manca, il +N dei minori verde e più piccolo */
@@ -139,9 +116,6 @@
 .area-subs [role='tab'] b.sub-val-warn { color: var(--warn); }
 .sub-plus { font: 700 italic 11px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .sub-plus.neg { color: var(--bad); }
-/* Il pannello parte subito sotto la striscia, alla stessa altezza in ogni area: Ruoli e Bonus ha le sottoschede grandi
-   (8px più alte, 5px sugli schermi bassi) e il suo pannello sale di tanto */
-.area-view-bonusMalus > .area-panel { margin-top: -8px; }
 /* Problemi dell'area in fondo: la stessa striscia della Panoramica (.fix-row, stessa x, larghezza, altezza e fondo) col
    colore del caso: giallo, rosso se ce n'è almeno uno grave, verde senza problemi */
 .area-problems-row.fix-row { --tone: var(--warn); --tone-bg: var(--warn-bg); font-size: 12.5px; }
@@ -585,7 +559,6 @@
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit] { flex: 1 0 auto; max-height: 88px; }
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit]:has(.sum-syn.trio) { max-height: 196px; }
 .sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
-/* Il badge è l icona del tipo (misura --ti-*) più il bordo verde da 1,5px per lato: --tri-badge = icona + 3px */
 /* Due sprite unite da un anello "catena" nel colore del legame; con una sola sprite la colonna resta larga uguale */
 .sum-pair { flex: none; min-width: calc(var(--sum-small) * 1.56 + var(--link-w) - 6px); display: flex; align-items: center; justify-content: center; }
 .sum-pair-ring { display: flex; align-items: center; }
@@ -614,6 +587,7 @@
 .sum-tri-v::before { content: ""; position: absolute; left: 50%; bottom: 8%; width: 74%; height: 18%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
 .sum-tri-v .sprite { position: relative; display: block; width: calc(var(--tri-w) * 0.345); height: auto; image-rendering: pixelated; }
 /* L'icona tonda del tipo riempie tutto il cerchio dentro l'anello verde (niente fondo che si vede attorno) */
+/* Il badge è l icona del tipo (misura --ti-*) più il bordo verde da 1,5px per lato: --tri-badge = icona + 3px */
 .sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; overflow: hidden; }
 .sum-tri-badge img { display: block; width: 100%; height: 100%; border-radius: 50%; }
 /* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
@@ -1003,9 +977,6 @@
   .area-view { gap: 6px; }
   .fix-row { height: 24px; }
   .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 5px; }
-  .area-view-bonusMalus .area-subs [role='tab'] { padding-top: 7px; padding-bottom: 6px; font-size: 16px; }
-  .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 19px; }
-  .area-view-bonusMalus > .area-panel { margin-top: -5px; }
   .area-panel.ad-panel { padding-bottom: 10px; }
 }
 

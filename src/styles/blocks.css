@@ -103,9 +103,7 @@
 .help-frame.with-peek:has(> .area-guide) { --frame-w: 980px; }
 .help-frame.with-peek:has(> .tt-dialog) { --frame-w: 600px; }
 .help-frame.with-peek > .help-dialog { max-height: min(620px, calc(100vh - 48px - var(--peek-room))); }
-.help-frame.with-peek > .help-dialog.area-guide-strength,
-.help-frame.with-peek > .help-dialog.area-guide-speed { height: min(560px, calc(100vh - 48px - var(--peek-room))); }
-.help-frame.with-peek > .help-dialog.area-guide-defense { height: min(672px, calc(100vh - 48px - var(--peek-room))); max-height: min(672px, calc(100vh - 48px - var(--peek-room))); }
+.help-frame.with-peek > .help-dialog.area-guide { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
 /*
  * La finestra al centro dello schermo, Eevee in più: sotto la cornice lo stesso spazio che c'è sopra per Eevee, finché lo
  * schermo ha posto (altrimenti meno, fino a niente: la finestra non si accorcia per questo). --dlg-h è l'altezza piena
@@ -117,8 +115,6 @@
   .help-backdrop:has(> .help-frame.with-peek) { padding-top: 6px; }
   .help-frame.with-peek { margin-bottom: clamp(0px, calc(100vh - 30px - var(--peek-room) - var(--dlg-h)), var(--peek-room)); }
 }
-.help-frame.with-peek:has(> .area-guide-strength, > .area-guide-speed) { --dlg-h: 560px; }
-.help-frame.with-peek:has(> .area-guide-defense) { --dlg-h: 672px; }
 .help-frame.with-peek:has(> .rating-help) { --dlg-h: 690px; }
 /* Schermi piccoli: Eevee più piccolo, la finestra resta grande */
 @media (max-width: 599px), (max-height: 700px) { .help-frame.with-peek { --peek: 110px; } }
