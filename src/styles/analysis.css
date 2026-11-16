@@ -375,6 +375,8 @@
 .dash-level-name { align-self: center; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .dash-role-list { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 4px 8px; margin: 0; padding: 4px 0; list-style: none; }
 .dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
+/* Le fasce tagliano quello che sborda: l'anello del fuoco (si arriva coi tasti freccia) sta dentro il ruolo */
+.dash-role:focus-visible { outline-offset: -2px; }
 .dash-role-tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; font-size: 12px; line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line-soft); border-radius: 4px; }
 .dash-role-tag .icon { flex: none; width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }
 .dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }

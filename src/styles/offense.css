@@ -211,6 +211,8 @@
 .mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 11.5px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
   background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
 .mc:hover, .mc:focus-visible { background: color-mix(in srgb, var(--c) 32%, transparent); }
+/* La fila delle pastiglie taglia quello che sborda: l'anello del fuoco sta dentro */
+.mc:focus-visible { outline-offset: -2px; }
 .mc img { flex: none; width: 13px; height: 13px; border-radius: 50%; }
 .mc b { flex: none; font: 700 italic 12.5px/1 var(--display); font-variant-numeric: tabular-nums; }
 /* Il nome nascosto, si apre passando sopra */
@@ -232,7 +234,8 @@
 
 /* Tessere cliccabili: aprono il dettaglio */
 .kob.pick { cursor: pointer; }
-.kob.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Il pezzo è tagliato in obliquo (clip-path): l'anello del fuoco fuori non si vedrebbe, sta dentro (bordo e alone interno) */
+.kob:focus-visible { outline: none; border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 /* Coverage tipi / meta aperte da una tessera: accese la riga del membro e le caselle di quella fascia, il resto spento */
 /* Spenti senza opacità: grigi e un filo più scuri, i numeri restano leggibili (almeno 4,5:1 sul loro fondo) */
 .ct-table tr.kf-off > *, .ct-table td.kf-dim { filter: grayscale(1) brightness(0.8); }
