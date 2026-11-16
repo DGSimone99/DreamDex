@@ -63,4 +63,23 @@ describe('scelta del gioco', () => {
     await user.type(screen.getByLabelText('Nome team'), 'Storia{Enter}');
     expect(document.querySelector('.saved-format')).toHaveTextContent('Scarlatto e Violetto');
   });
+
+  it('caricare un team salvato col gioco rimette il gioco col suo blocco; "Nessun gioco" torna al formato di prima', async () => {
+    initGames({ sv: { dex: ['sprigatito'] } });
+    window.localStorage.clear();
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} storage={window.localStorage} />);
+    await chooseGame(user, 'sv');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    await user.type(screen.getByLabelText('Nome team'), 'Storia{Enter}');
+    await chooseGame(user, 'none');
+    await chooseTier(user, 'ubers');
+    await user.click(screen.getByRole('button', { name: 'Storia' }));
+    const pills = () => [...document.querySelectorAll('.format-card.locked .format-pills > span')].map(el => el.textContent);
+    expect(screen.getByText('Lo decide il gioco')).toBeInTheDocument();
+    expect(pills()).toContain('Senza meta');
+    expect(pills()).not.toContain('Meta');
+    await chooseGame(user, 'none');
+    expect(chosen('format-tier')).toBe('ubers');
+  });
 });

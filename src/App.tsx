@@ -78,6 +78,21 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   });
   // Il formato di prima del gioco: con "Nessun gioco" si torna lì
   const [beforeGame, setBeforeGame] = useState<Format | null>(null);
+  /**
+   * Il formato di un team caricato (team salvati, Annulla). Col gioco: il gioco col suo blocco, se i suoi dati ci sono
+   * (si ricorda il formato di prima per "Nessun gioco"); senza gioco: quel formato col meta di adesso, come prima
+   * (uscendo da un gioco, il meta del formato di prima del gioco).
+   */
+  const adoptFormat = (next: Format) => {
+    if (next.game && gameReady(next.game)) {
+      if (!format.game) setBeforeGame(format);
+      setFormat(withGame(next, next.game));
+      return;
+    }
+    const meta = format.game ? (beforeGame ?? DEFAULT_FORMAT).meta : format.meta;
+    if (format.game) setBeforeGame(null);
+    setFormat({ ...withGame(next, null), meta });
+  };
   const changeGame = (game: GameId | null) => {
     if (game === format.game) return;
     if (game) {
@@ -339,7 +354,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     if (again && !chained) { changeTeam(next); return; }
     const before = chained ? chained.before : team;
     const after = changeTeam(next);
-    if (nextFormat) setFormat({ ...nextFormat, meta: format.meta });
+    if (nextFormat) adoptFormat(nextFormat);
     if (before.length) setUndo({ ...action, id: ++undoId.current, before, after, format: chained ? chained.format : nextFormat ? format : undefined });
     else setUndo(null);
   };
@@ -466,7 +481,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       {undo && undo.after === team && (
         <UndoToast action={undo} onClose={() => setUndo(null)}
-          onUndo={() => { changeTeam(undo.before); if (undo.format) setFormat({ ...undo.format, meta: format.meta }); setUndo(null); }} />
+          onUndo={() => { changeTeam(undo.before); if (undo.format) adoptFormat(undo.format); setUndo(null); }} />
       )}
     </div>
     </LangProvider>
