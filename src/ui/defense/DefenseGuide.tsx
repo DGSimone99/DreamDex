@@ -64,8 +64,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
           <div>
             <h6>{t('ddetail.sus.gain')}</h6>
             <Keys items={[
-              { label: g('sus.k.recover'), value: '+50%' }, { label: 'Regenerator', value: '+33%' }, { label: 'Rest', value: '+33%' },
-              { label: g('sus.k.sunMoves'), value: '+50%', title: g('sus.k.sunMoves.rule') },
+              { label: g('sus.k.recover'), value: '+50%', title: g('sus.k.recover.rule') }, { label: 'Regenerator', value: '+33%' }, { label: 'Rest', value: '+33%' },
               { label: 'Wish · Life Dew', value: '+25%' }, { label: 'Pain Split', value: '+25%' }, { label: g('sus.k.drain'), value: dec('+12,5%') },
               { label: 'Poison Heal', value: dec('+12,5%'), title: g('sus.k.poisonHeal') }, { label: 'Leftovers', value: '+6%' },
               { label: g('sus.k.weather'), value: '+6%', title: g('sus.k.weather.rule') }, { label: 'Dry Skin', value: dec('+12,5%'), title: g('sus.k.dryskin') },
