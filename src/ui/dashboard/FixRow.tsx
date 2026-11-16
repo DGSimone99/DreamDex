@@ -59,7 +59,8 @@ export function fixItems(problems: CoachProblem[], lang: Lang): { shown: string[
 export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; steps: CoachStep[] | null; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const lang = useLang();
-  const { shown, hidden, more } = fixItems(steps ? solvable(problems, steps) : [], lang);
+  const fixable = steps ? solvable(problems, steps) : [];
+  const { shown, hidden, more } = fixItems(fixable, lang);
   if (!steps) {
     return (
       <div className="fix-row is-skeleton fill-skeleton" aria-hidden="true">
@@ -73,12 +74,15 @@ export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; 
   // Senza proposte la striscia è verde e ferma, anche se restano problemi che il Coaching non sa risolvere
   const link = count > 0;
   const status = link ? t(count === 1 ? 'area.problems.one' : 'area.problems.many', { n: count }) : t('overview.fix.none');
+  // Il colore dice il caso come nelle aree: rosso con almeno un problema grave, giallo coi soli minori, verde senza
+  const serious = fixable.some(p => p.severity === 'serious');
   return (
     // Il clic sta sulla striscia; il pulsante vero è "Vai al Coaching" (tastiera e lettori: Invio e Spazio fanno un clic)
-    <section className={`fix-row${link ? ' is-link' : ' is-clear'}`} aria-label={t('overview.fix.title')} onClick={link ? () => onView('coaching') : undefined}>
+    <section className={`fix-row${link ? ` is-link${serious ? ' serious' : ' minor'}` : ' is-clear'}`} aria-label={t('overview.fix.title')} onClick={link ? () => onView('coaching') : undefined}>
       {link ? (
         <>
-          <span className="fix-label" aria-hidden="true">{t('overview.fix.title')}</span>
+          {/* "N problemi" come in fondo alle aree (stessa etichetta, stessi colori) */}
+          <span className="area-problems-label" aria-hidden="true"><Icon name="warning" />{status}</span>
           <span className="fix-items" title={[...shown, ...hidden].join(' · ')}>
             {shown.join(' · ')}
           </span>
@@ -90,7 +94,7 @@ export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; 
           )}
         </>
       ) : (
-        <span className="fix-label"><Icon name="check" /> {status}</span>
+        <span className="area-problems-label"><Icon name="check" />{status}</span>
       )}
       {link && (
         <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: status })}>

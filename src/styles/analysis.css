@@ -118,14 +118,12 @@
 .sub-plus.neg { color: var(--bad); }
 /* Problemi dell'area in fondo: la stessa striscia della Panoramica (.fix-row, stessa x, larghezza, altezza e fondo) col
    colore del caso: giallo, rosso se ce n'è almeno uno grave, verde senza problemi */
-.area-problems-row.fix-row { --tone: var(--warn); --tone-bg: var(--warn-bg); font-size: 12.5px; }
+.area-problems-row.fix-row { --tone: var(--warn); --tone-bg: var(--warn-bg); font-size: 13px; }
 .area-problems-row.serious { --tone: var(--bad); --tone-bg: var(--bad-bg); }
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave, verde con la spunta senza problemi */
-.area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 1px 8px; border-radius: 3px; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); background: var(--warn-bg); }
+.area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 1px 8px; border-radius: 3px; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tone); background: var(--tone-bg); }
 .area-problems-label .icon { width: 13px; height: 13px; }
-.area-problems-row.serious .area-problems-label { color: var(--bad); background: var(--bad-bg); }
-.area-problems-row.is-clear .area-problems-label { color: var(--good); background: var(--good-bg); }
-.area-problems { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 12.5px; }
+.area-problems { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 13px; }
 .area-problems > li { flex: none; white-space: nowrap; }
 /* Il "+N" dei problemi che non stanno nella riga (il title li elenca) */
 .area-problems li.area-problems-more { padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
@@ -159,6 +157,7 @@
   border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--line)); border-left: 3px solid var(--tone);
   font-size: 13px;
 }
+.fix-row.minor { --tone: var(--warn); --tone-bg: var(--warn-bg); }
 .fix-row.is-clear { --tone: var(--good); --tone-bg: var(--good-bg); }
 .fix-row.is-link { cursor: pointer; transition: border-color 0.15s ease-out; }
 .fix-row.is-link:hover { border-color: color-mix(in srgb, var(--tone) 60%, var(--line)); border-left-color: var(--tone); }
@@ -169,9 +168,6 @@
 .fix-row.is-skeleton { border-style: dashed; border-color: var(--line); border-left-style: solid; background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .fix-bone { display: block; flex: none; height: 8px; border-radius: 4px; background: var(--raised); }
 @media (prefers-reduced-motion: reduce) { .fix-row.is-link { transition: none; } }
-.fix-label { flex: none; font: 600 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--bad); }
-.fix-row.is-clear .fix-label { color: var(--good); }
-.fix-label .icon { width: 13px; height: 13px; vertical-align: -2px; }
 /* Le tappe si calcolano: "Vai al Coaching" tiene il suo posto, invisibile (la striscia è ferma e i problemi non si spostano) */
 .fix-go-wait { visibility: hidden; }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
