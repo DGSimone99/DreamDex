@@ -123,7 +123,7 @@
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave, verde con la spunta senza problemi */
 .area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 1px 8px; border-radius: 3px; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tone); background: var(--tone-bg); }
 .area-problems-label .icon { width: 13px; height: 13px; }
-.area-problems { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 13px; }
+.area-problems { flex: 1; align-self: stretch; align-items: center; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 13px; }
 .area-problems > li { flex: none; white-space: nowrap; }
 /* Il "+N" dei problemi che non stanno nella riga (il title li elenca) */
 .area-problems li.area-problems-more { padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
@@ -278,7 +278,7 @@
 .dash-plate { flex: none; margin: 0; padding: 4px 22px 4px 12px; font: 700 13px/1.2 var(--display); font-style: italic; color: var(--on-plate); background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
 /* Un h4 usato come targhetta (colonne del Coaching): la targhetta vince sullo stile degli h4 di Analisi */
 .analysis h4.dash-plate { display: block; margin: 0; font: 700 13px/1.2 var(--display); font-style: italic; text-transform: none; letter-spacing: normal; color: var(--on-plate); }
-.dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 3px; margin-block: -3px; font-size: 12px; color: var(--muted); }
 .dash-meta b { font: 700 14px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
 .dash-meta b.bad { color: var(--bad); }
 .dash-links { flex: none; display: flex; gap: 2px; margin-left: auto; }
@@ -461,7 +461,9 @@
 .sum-type { position: relative; min-width: 0; display: flex; align-items: center; gap: 8px; }
 .sum-type::before { content: ""; position: absolute; left: -12px; top: 50%; width: 4px; height: calc(var(--sum-arch) + 4px); transform: translateY(-50%); background: var(--accent-2); }
 .dash.rich .sum-type::before { left: -14px; }
-.sum-arch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 var(--sum-arch)/1.05 var(--display); font-style: italic; color: var(--text); cursor: help; }
+/* Righe a puntini (overflow nascosto) con un po' di spazio sopra e sotto, ripreso col margine negativo: le code di g, p, y
+   non vengono tagliate e la riga resta alta uguale */
+.sum-arch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.2em; margin-block: -0.2em; font: 800 var(--sum-arch)/1.05 var(--display); font-style: italic; color: var(--text); cursor: help; }
 /* Lo stile (Pioggia, Sole…): etichetta tagliata in diagonale nel colore della condizione */
 .sum-style { flex: none; padding: 2px 14px 2px 9px; font: 800 13px/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
 /* "quasi Semi-stall": il tipo accanto quando il team sta sul confine, piccolo e in grigio dopo il nome */
@@ -613,7 +615,7 @@
 @media (prefers-reduced-motion: reduce) { .sum-more-below:hover .icon { animation: none; } }
 .sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
 .sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
-.sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-block: 2px; margin-block: -2px; }
 .sum-cover img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .sum-cover b { font-weight: 600; color: var(--text); }
 .dash.rich .sum-cover { gap: 6px; }
@@ -737,7 +739,7 @@
 .coach-fix-lead { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.3; color: var(--muted); }
 .coach-fix-lead b { font-weight: 600; color: var(--text); }
 .coach-fix-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.coach-fix-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 19px/1.2 var(--display); font-style: italic; color: var(--accent-ink); }
+.coach-fix-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.15em; margin-block: -0.15em; font: 800 19px/1.2 var(--display); font-style: italic; color: var(--accent-ink); }
 .coach-prop.is-main > .coach-fix > .coach-fix-main { flex: 1; }
 /* Col gruppo sprite + nome (carta solo lì) lo spazio libero va prima del +N, non dentro il gruppo */
 .coach-prop.is-main > .coach-fix > .coach-fix-who + .coach-strip-gain { margin-left: auto; }
