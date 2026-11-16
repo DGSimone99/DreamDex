@@ -751,6 +751,10 @@ const STATES: Record<string, State> = {
   } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
+  // Scheda Meta (sopra: team di 5): team di 6, in inglese, col mouse sulla carta #4
+  'meta-six': { hash: hash(SIX), run: async p => { await tab(p, 'meta'); return true; } },
+  'meta-en': { lang: 'en', run: async p => { await tab(p, 'meta'); return true; } },
+  'meta-hover': { run: async p => { await tab(p, 'meta'); await wait(800); const box = await p.evaluate(() => { const r = document.querySelectorAll('.meta-card')[3]?.getBoundingClientRect(); return r ? [r.x + r.width / 2, r.y + 40] : null; }); if (!box) return false; await p.mouse.move(box[0], box[1]); await wait(400); return true; } },
   fill: { run: async p => clickText(p, 'button', /^\s*Completa team/) },
   saved: { run: async p => clickText(p, 'details.popover > summary', /Team salvati/) },
   import: { run: async p => clickText(p, 'details.popover > summary', /Import/) },

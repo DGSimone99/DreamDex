@@ -2,7 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, use
 import { analyzeTeam } from './engine/analysis';
 import { coachTeam } from './engine/coach';
 import type { CoachFix } from './engine/coachFixes';
-import { rateTeam, ratingThreats } from './engine/rating';
+import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { gameReady, withGame, type GameId } from './engine/games';
@@ -11,7 +11,8 @@ import { battleName } from './engine/dex';
 import { UndoToast, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
 import type { TeamSet } from './engine/sets';
-import { AnalysisPanel, MetaPanel } from './ui/AnalysisPanel';
+import { AnalysisPanel } from './ui/AnalysisPanel';
+import { MetaTab } from './ui/meta/MetaTab';
 import { GradeBadge } from './ui/RatingPanel';
 import { blockedReason } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
@@ -29,7 +30,8 @@ import { SettingsDialog } from './ui/SettingsDialog';
 import { CreditsDialog } from './ui/CreditsDialog';
 import { FeedbackDialog } from './ui/FeedbackDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
-import { t, type Lang } from './i18n';
+import { formatPercent, t, type Lang } from './i18n';
+import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
@@ -289,10 +291,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   useEffect(() => { if (team.length === 0) setAnalysisView('overview'); }, [team.length]);
   const coaching = useMemo(() => coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang), [coachSource]);
 
-  // Contatori delle schede: problemi del coach e minacce del meta che nessuno regge (come nel voto)
+  // Contatori delle schede: i problemi del coach; sotto Meta l'uso medio del team (la scheda è solo informativa)
   const problems = coaching.problems;
   const metaOn = !data.ignoreMeta && !!data.stats;
-  const openThreats = ratingThreats(rating, rated).filter(threat => threat.handledBy.length === 0).length;
+  const metaAverage = metaOn ? metaBoard(data.stats, team).average : null;
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi
   const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
@@ -402,8 +404,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         { id: 'meta', label: t(lang, 'tabs.meta'), icon: 'globe', disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
           status: !metaOn ? t(lang, 'rail.metaOff')
             : team.length === 0 ? t(lang, 'rail.metaUsage')
-            : openThreats ? <span className="warn">{t(lang, openThreats === 1 ? 'rail.threatsOne' : 'rail.threatsMany', { n: openThreats })}</span>
-            : t(lang, 'rail.noThreats') },
+            : metaAverage !== null ? t(lang, 'meta.average', { pct: formatPercent(lang, metaAverage) })
+            : t(lang, 'rail.metaUsage') },
         { id: 'lists', label: t(lang, 'tabs.lists'), icon: 'star',
           status: userLists.favorites.size || userLists.bans.size ? [
             userLists.favorites.size ? t(lang, userLists.favorites.size === 1 ? 'rail.favOne' : 'rail.favMany', { n: userLists.favorites.size }) : null,
@@ -462,7 +464,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
-          <MetaPanel team={team} analysis={analysis} rating={rating} data={rated} coaching={coaching} />
+          <MetaTab team={team} data={rated} />
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}

@@ -57,31 +57,31 @@ describe('Riquadro Voto', () => {
     expect(within(band()).queryByRole('button', { name: /, apri il dettaglio/ })).toBeNull();
   });
 
-  it('senza dati Smogon la forza resta calcolata, il Meta Use avvisa', async () => {
+  it('senza dati Smogon la forza resta calcolata, la scheda Meta avvisa', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     expect(band()).not.toHaveTextContent('Statistiche n/d');
-    expect(screen.getByRole('group', { name: 'Meta Use' })).toHaveTextContent('Statistiche Smogon assenti');
+    expect(screen.getByRole('region', { name: 'Meta' })).toHaveTextContent('Statistiche Smogon assenti');
   });
 
-  it('Meta Use sta subito prima di Minacce del meta', async () => {
-    const user = userEvent.setup();
-    render(<App initialLang="it" data={fixtureData} />);
-    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    const meta = screen.getByRole('group', { name: 'Meta Use' });
-    const threats = screen.getByText('Minacce del meta');
-    expect(meta.compareDocumentPosition(threats) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('Meta Use: uso nel meta di ogni membro, fuori dalla valutazione', async () => {
+  it('scheda Meta: posizione e uso di ogni membro, fuori dalla valutazione', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    const meta = screen.getByRole('group', { name: 'Meta Use' });
-    expect(meta).toHaveTextContent('Great Tusk 30,0%');
-    expect(meta).toHaveTextContent('Gholdengo 25,0%');
-    expect(meta).toHaveTextContent('Magikarp non presente nelle statistiche');
+    const team = screen.getByRole('group', { name: 'Il tuo team' });
+    expect(team).toHaveTextContent('Great Tusk #1 30,0%');
+    expect(team).toHaveTextContent('Gholdengo #2 25,0%');
+    expect(team).toHaveTextContent('Magikarp non presente nelle statistiche');
+  });
+
+  it('barra a sinistra: sotto Meta l\'uso medio del team, non le minacce', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const meta = document.getElementById('tab-meta')!;
+    expect(meta).toHaveTextContent('Uso medio 27,5%');
+    expect(meta.textContent).not.toMatch(/minacc/);
   });
 
   it('il "?" nel riquadro Voto apre come funziona il voto', async () => {
