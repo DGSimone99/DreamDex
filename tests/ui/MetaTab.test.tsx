@@ -86,3 +86,24 @@ describe('scheda Meta', () => {
     expect(card).toHaveTextContent('Great Tusk');
   });
 });
+
+describe('scheda Meta su schermo stretto', () => {
+  it('scegliendo una carta la scheda del Pokémon scorre in vista (sta sotto la griglia)', async () => {
+    const user = userEvent.setup();
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: query.includes('max-width'), media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    const scrolled: Element[] = [];
+    const proto = Element.prototype as unknown as { scrollIntoView?: () => void };
+    const before = proto.scrollIntoView;
+    proto.scrollIntoView = function (this: Element) { scrolled.push(this); };
+    try {
+      renderIt(<MetaTab team={[]} data={fixtureData} />);
+      expect(scrolled).toHaveLength(0);
+      await user.click(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ }));
+      expect(scrolled).toEqual([screen.getByRole('complementary', { name: 'Scheda' })]);
+    } finally {
+      window.matchMedia = original;
+      proto.scrollIntoView = before;
+    }
+  });
+});
