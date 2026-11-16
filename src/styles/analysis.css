@@ -456,7 +456,7 @@
 .dash.rich .sum-type::before { left: -14px; }
 .sum-arch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 var(--sum-arch)/1.05 var(--display); font-style: italic; color: var(--text); cursor: help; }
 /* Lo stile (Pioggia, Sole…): etichetta tagliata in diagonale nel colore della condizione */
-.sum-style { flex: none; padding: 2px 14px 2px 9px; font: 800 12.5px/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
+.sum-style { flex: none; padding: 2px 14px 2px 9px; font: 800 13px/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
 /* "quasi Semi-stall": il tipo accanto quando il team sta sul confine, piccolo e in grigio dopo il nome */
 .sum-arch-box { min-width: 0; display: flex; flex-direction: column; }
 /* Tipo non ancora riconosciuto: la scritta c'è ma più tenue */
@@ -524,15 +524,15 @@
 @media (prefers-reduced-motion: reduce) { .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: none; } }
 .sum-line .sum-plinth { width: var(--sum-small); }
 .sum-line .sum-plinth .sprite { margin: calc(var(--sum-small) * -0.12) 0 calc(var(--sum-small) * -0.15); }
-.sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; }
-.dash.rich .sum-name { font-size: 13.5px; }
+.sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.dash.rich .sum-name { font-size: 14px; }
 /* Schermo stretto: la card del Riassunto è più stretta, tipo di team e nomi un po' più piccoli perché non si tronchino */
 @media (max-width: 1320px) {
   .dash.rich .dash-summary { --sum-arch: 22px; }
-  .dash.rich .sum-name { font-size: 12.5px; }
+  .dash.rich .sum-name { font-size: 13px; }
 }
 /* Chip come quelle dei ruoli: bordo --line e pallino colorato */
-.sum-tag { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; white-space: nowrap; color: var(--text); border: 1px solid var(--line); }
+.sum-tag { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text); border: 1px solid var(--line); }
 .sum-tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
 .sum-tags { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; }
 .sum-tags .sum-tag { padding: 2px 6px; gap: 4px; }
@@ -566,7 +566,7 @@
 .sum-syn-head { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sum-syn-tag { margin-right: 6px; font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); vertical-align: 1px; }
 .sum-syn-title { font: 700 13px/1.15 var(--display); }
-.sum-syn-text { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+.sum-syn-text { font-size: 12px; line-height: 1.3; color: var(--muted); }
 .dash.rich .sum-syn-title { font-size: 14px; }
 .dash.rich .sum-syn-text { font-size: 12px; }
 
@@ -603,7 +603,7 @@
 @keyframes sum-more-nudge { to { transform: translateY(2px); } }
 @media (prefers-reduced-motion: reduce) { .sum-more-below:hover .icon { animation: none; } }
 .sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
-.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
+.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
 .sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sum-cover img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .sum-cover b { font-weight: 600; color: var(--text); }
@@ -691,7 +691,7 @@
 .coach-step-num { align-self: stretch; display: flex; align-items: center; justify-content: center; padding-right: 6px; font: 800 30px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums;
   color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, 76% 100%, 0 100%); }
 .coach-strip.minor .coach-step-num { background: var(--stripes), color-mix(in srgb, var(--accent-2) 60%, var(--panel)); }
-.coach-step-problem { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 0; padding: 0 14px 0 10px; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--text); }
+.coach-step-problem { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 0; padding: 0 14px 0 10px; font-size: 13px; font-weight: 600; line-height: 1.35; color: var(--text); }
 .coach-step-problem .coach-sev { margin-right: 4px; vertical-align: 1px; }
 /* Tipi (o minacce) nel titolo: icona e nome */
 /* L'etichetta di copertura (caselle, titoli, "risolve anche"): spada per l'attacco, scudo per la difesa, e la parola */
@@ -905,7 +905,7 @@
   .coach-steps-region { --step-h: 82px; }
   .coach-steps { gap: 8px; }
   .coach-step-num { font-size: 38px; }
-  .coach-step-problem { font-size: 14.5px; padding-left: 14px; }
+  .coach-step-problem { font-size: 14px; padding-left: 14px; }
   .coach-strip-in { width: 72px; height: 72px; }
   .coach-strip-in .sprite { width: 80px; height: 80px; }
   .coach-strip-in .sprite-ani { height: calc(var(--ani-h, 96) / 96 * 80px); }
@@ -913,7 +913,7 @@
   .coach-strip-out .sprite { width: 56px; height: 56px; }
   .coach-fix-main strong { font-size: 22px; }
   .coach-prop.is-main > .coach-fix > .coach-gain { font-size: 26px; }
-  .coach-also { font-size: 12.5px; }
+  .coach-also { font-size: 13px; }
   .coach-map { gap: 12px; margin-bottom: 6px; }
   .coach-tile { padding-bottom: 10px; }
   .coach-tile-head .dash-meta b { font-size: 18px; }
@@ -927,7 +927,7 @@
   .coach-steps-region { --step-h: 100px; }
   .coach-steps { gap: 10px; }
   .coach-step-num { font-size: 46px; }
-  .coach-step-problem { font-size: 15.5px; padding-left: 16px; }
+  .coach-step-problem { font-size: 15px; padding-left: 16px; }
   .coach-strip-in { width: 86px; height: 86px; }
   .coach-strip-in .sprite { width: 96px; height: 96px; }
   .coach-strip-in .sprite-ani { height: calc(var(--ani-h, 96) / 96 * 96px); }

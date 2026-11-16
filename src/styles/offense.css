@@ -209,13 +209,13 @@
    suo tipo (icona e numero dei bersagli); passandoci sopra si allarga col nome, e il tooltip elenca i bersagli.
    A 0 spenta. Sempre una riga: le pastiglie hanno tutte la stessa forma */
 .mcs { display: flex; gap: 6px; width: calc(100% - 36px); min-width: 150px; margin-top: 4px; overflow: hidden; }
-.mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 11.5px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
+.mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 12px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
   background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
 .mc:hover, .mc:focus-visible { background: color-mix(in srgb, var(--c) 32%, transparent); }
 /* La fila delle pastiglie taglia quello che sborda: l'anello del fuoco sta dentro */
 .mc:focus-visible { outline-offset: -2px; }
 .mc img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
-.mc b { flex: none; font: 700 italic 12.5px/1 var(--display); font-variant-numeric: tabular-nums; }
+.mc b { flex: none; font: 700 italic 13px/1 var(--display); font-variant-numeric: tabular-nums; }
 /* Il nome nascosto, si apre passando sopra */
 .mc-name { max-width: 0; margin-right: -5px; overflow: hidden; opacity: 0; transition: max-width 0.2s var(--ease), opacity 0.15s var(--ease), margin 0.2s var(--ease); }
 .mc:hover .mc-name, .mc:focus-visible .mc-name { max-width: 160px; margin-right: 0; opacity: 1; }

@@ -101,7 +101,7 @@
 .rl-name { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; color: var(--text); }
 /* I minori più quieti: nome grigio e un filo più piccolo; scoperti più tenui ancora */
 .rl-band.minor .rl-name { font-size: 13px; color: var(--muted); }
-.rl-general.three .rl-band.minor .rl-name { font-size: 12.5px; }
+.rl-general.three .rl-band.minor .rl-name { font-size: 12px; }
 .rl-row.off .rl-name { font-weight: 400; color: var(--faint); }
 .rl-by { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; min-width: 0; }
 .rl-nobody { font-size: 13px; color: var(--faint); }
