@@ -14,6 +14,7 @@ import { EffSwitch } from './effTag';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
+import { FloatTip, useFloatAnchor } from './FloatTip';
 
 /** Lato del "?" sulla scheda aperta (px). */
 const HELP_SIZE = 18;
@@ -56,10 +57,19 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   const openFocus = (key: string, next: KoFocus) => { focusKey.current = key; setPickedRaw(key); setFocus(next); };
   // Un clic in qualunque punto spegne l'evidenziazione (anche fuori da "Mostra tutti"); il clic che l'ha accesa è già passato.
-  // Le frecce delle pagine di Coverage meta no: si sfogliano i bersagli accesi
+  // Non le frecce delle pagine di Coverage meta (si sfogliano i bersagli accesi), un tooltip, la riga della legenda (lì
+  // c'è "Mostra tutti") e la barra di scorrimento di un riquadro
   useEffect(() => {
     if (!focus) return;
-    const clear = (e: MouseEvent) => { if (!(e.target as Element | null)?.closest?.('.cm-pages')) setFocus(null); };
+    // Sulla barra di scorrimento: il clic cade sul riquadro che scorre, fuori dalla sua parte interna
+    const onBar = (e: MouseEvent, el: Element) => el instanceof HTMLElement && el.clientWidth > 0
+      && (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth)
+      && (e.offsetX > el.clientWidth || e.offsetY > el.clientHeight);
+    const clear = (e: MouseEvent) => {
+      const el = e.target as Element | null;
+      if (el?.closest?.('.cm-pages, .ftip, .rob-legend') || (el && onBar(e, el))) return;
+      setFocus(null);
+    };
     const timer = window.setTimeout(() => document.addEventListener('click', clear), 0);
     return () => { window.clearTimeout(timer); document.removeEventListener('click', clear); };
   }, [focus]);
@@ -201,6 +211,9 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
             <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
           </span>
         )}
+        {/* Offesa, Difesa e Velocità non hanno titoli nelle loro schede: per i lettori di schermo la sottoscheda aperta (h4),
+            sotto l'area (h3); Ruoli e Bonus hanno già i loro (le fasce, Sul voto) */}
+        {(area === 'strength' || area === 'defense' || area === 'speed') && <h4 className="visually-hidden">{current.label}</h4>}
         {current.panel}
       </div>
       {/* In fondo i problemi dell'area, la stessa striscia della Panoramica (stesso posto, stessa misura): c'è sempre. Senza
@@ -220,16 +233,13 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
             <span className="area-problems-label" aria-hidden="true">
               <Icon name="warning" />{count}
             </span>
-            {/* Sempre una riga: quelli che non stanno finiscono nel "+N" (title e testo nascosto con tutti) */}
+            {/* Sempre una riga: quelli che non stanno finiscono nel "+N" (tooltip e testo nascosto con tutti) */}
             <ul ref={listRef} className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
               {sorted.slice(0, fit).map(problem => (
                 <li key={problem.text} className={problem.severity}><Typed text={problem.text} /></li>
               ))}
               {hidden.length > 0 && (
-                <li className="area-problems-more" title={hidden.map(p => p.text).join('\n')}>
-                  <span aria-hidden="true">+{hidden.length}</span>
-                  <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(p => p.text).join('; ')}</span>
-                </li>
+                <MoreProblems hidden={hidden} />
               )}
             </ul>
           </>
@@ -245,5 +255,26 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * Il "+N" in fondo alla striscia dei problemi: quelli che non stanno in riga, nel tooltip DreamDex col mouse e col fuoco
+ * (prima solo nel title del browser); per lo screen reader sono scritti nel testo nascosto.
+ */
+function MoreProblems({ hidden }: { hidden: CoachProblem[] }) {
+  const t = useT();
+  const tip = useFloatAnchor<true>();
+  const serious = hidden.some(p => p.severity === 'serious');
+  return (
+    <li className="area-problems-more" tabIndex={0} {...tip.bind(true)}>
+      <span aria-hidden="true">+{hidden.length}</span>
+      <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(p => p.text).join('; ')}</span>
+      {tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="kot">
+          {hidden.map(p => <p key={p.text} className="kot-none"><Typed text={p.text} /></p>)}
+        </FloatTip>
+      )}
+    </li>
   );
 }

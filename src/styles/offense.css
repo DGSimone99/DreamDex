@@ -62,7 +62,8 @@
 /* Il "?" accanto ai bersagli della guida: un tondino che apre il tooltip col dettaglio (medie dei 18 tipi, minacce del meta) */
 .guide-ask { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 4px; padding: 0; vertical-align: 1px; border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font: 700 11px/1 var(--display); cursor: help; }
-.guide-ask:hover, .guide-ask:focus-visible { background: color-mix(in srgb, var(--accent) 28%, transparent); outline: none; }
+.guide-ask:hover, .guide-ask:focus-visible { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+.guide-ask:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ftip.gat { width: auto; max-width: min(560px, calc(100vw - 16px)); }
 .gat-cols { display: flex; gap: 18px; padding: 8px 12px 10px; }
 .gat-table { border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
