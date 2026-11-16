@@ -117,13 +117,10 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
         </FloatTip>
       )}
     </span>
-    {/* Staccato dalla barra: un anellino che si chiude quanto copre, poi il numero grande e il totale piccolo */}
-    <span className={`kob-count${countTone}`} aria-label={t('kob.countAria', { n: hit, total })}>
-      <svg className="kob-ring" viewBox="0 0 36 36" aria-hidden="true">
-        <circle className="kob-ring-bg" cx="18" cy="18" r="14" />
-        {hit > 0 && <circle className="kob-ring-fg" cx="18" cy="18" r="14" pathLength={100} strokeDasharray={`${ratio * 100} 100`} />}
-      </svg>
+    {/* Staccato dalla barra: il numero grande e il totale piccolo, sotto una lineetta che si riempie quanto copre */}
+    <span className={`kob-count${countTone}`} style={{ '--r': ratio } as CSSProperties} aria-label={t('kob.countAria', { n: hit, total })}>
       <span className="kob-count-num" aria-hidden="true"><b>{hit}</b><small>/{total}</small></span>
+      <span className="kob-count-line" aria-hidden="true" />
     </span>
     </span>
   );
