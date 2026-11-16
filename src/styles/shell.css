@@ -31,6 +31,8 @@
 /* Gioco sopra il formato: due carte uguali, una sotto l'altra */
 .game-card { margin-bottom: 8px; }
 .game-card .format-dex { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Il nome del gioco è lungo ("Scarlatto e Violetto"): va a capo invece di essere tagliato */
+.game-card .format-name { white-space: normal; font-size: 17px; }
 .popover.format-card > summary, .format-card.locked > .format-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

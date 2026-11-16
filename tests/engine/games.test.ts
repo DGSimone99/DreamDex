@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { getSpecies } from '../../src/engine/dex';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { exclusiveOf, gameOf, gameReady, initGames, isLegendary, obtainableIn, withGame } from '../../src/engine/games';
-import { candidatePool } from '../../src/engine/scoring';
+import { candidatePool, scoreSets } from '../../src/engine/scoring';
+import { emptySet } from '../../src/engine/sets';
 import { EMPTY_FILTERS, searchPool } from '../../src/engine/filters';
 import { fixtureData } from '../fixtures/data';
 import { sanitizeFormat } from '../../src/storage';
@@ -70,6 +71,11 @@ describe('ottenibili nel gioco', () => {
     expect(candidatePool([], sv({ allPokedex: true }), fixtureData)).toContain('Venusaur');
     expect(searchPool([], sv(), fixtureData, EMPTY_FILTERS).map(s => s.species)).not.toContain('Venusaur');
     expect(searchPool([], sv({ allPokedex: true }), fixtureData, EMPTY_FILTERS).map(s => s.species)).toContain('Venusaur');
+  });
+
+  it('valutare solo i set dati non aggiunge i candidati del gioco', () => {
+    const scored = scoreSets([], sv(), fixtureData, [emptySet('Meowscarada')]);
+    expect(scored.map(s => s.species)).toEqual(['Meowscarada']);
   });
 
   it('senza gioco i candidati restano quelli delle statistiche', () => {

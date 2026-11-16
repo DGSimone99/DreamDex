@@ -114,9 +114,9 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
         <div className="format-card locked" aria-label={t('rail.formatAria', { format: `${t(`dex.${dex}`)} ${tier}`.trim(), summary: pills.join(', ') })}>
           <div className="format-summary">
             <span className="format-key">{t('rail.format')}</span>
-            {tier && <span className="format-tier">{tier}</span>}
+            {/* Il tier lungo ("Anything Goes") non sta nella fascia accanto alla chiave: va fra le regole (la generazione è già nel nome) */}
             <span className="format-name">{t(`dex.${dex}`)}</span>
-            <span className="format-pills">{pills.map(pill => <span key={pill}>{pill}</span>)}</span>
+            <span className="format-pills">{[tier, t(meta && format.meta ? 'rail.pillMeta' : 'rail.pillNoMeta')].filter(Boolean).map(pill => <span key={pill}>{pill}</span>)}</span>
             <span className="format-lock">{t('rail.formatByGame')}</span>
           </div>
         </div>

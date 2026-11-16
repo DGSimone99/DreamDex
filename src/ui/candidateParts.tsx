@@ -139,14 +139,17 @@ export function BanMark({ species, format, floating = false }: { species: string
   return banned ? <AlertMark floating={floating} alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
 }
 
-/** Badge delle esclusive nel gioco: "Solo Violetto" (tooltip: ottenibile solo in Violetto); niente senza gioco. */
-export function ExclusiveMark({ species, format }: { species: string; format: Format }) {
+/**
+ * Badge delle esclusive nel gioco: "Ottenibile solo in Violetto"; `compact` (scheda del candidato, poco spazio accanto al
+ * nome) solo l'iniziale "V", col testo intero nel tooltip. Niente senza gioco o per chi sta in tutte e due le versioni.
+ */
+export function ExclusiveMark({ species, format, compact = false }: { species: string; format: Format; compact?: boolean }) {
   const tr = useT();
   const found = getSpecies(species);
   const version = found ? exclusiveOf(found, format) : null;
   if (!version) return null;
   const full = tr(`game.exclusive.${version}`);
-  return <span className={`version-mark ${version}`} role="img" aria-label={full} title={full}>{tr(`game.exclusiveShort.${version}`)}</span>;
+  return <span className={`version-mark ${version}${compact ? ' compact' : ''}`} role="img" aria-label={full} title={full}>{compact ? tr(`game.exclusiveLetter.${version}`) : full}</span>;
 }
 
 /** Il candidato è nei Preferiti dell'utente (e non nella sua lista Ban): il voto lo dice col ♥. */
@@ -174,7 +177,7 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
     <>
       {/* Tooltip flottanti: la casella nasconde ciò che sporge e la lista sta accanto alla scheda */}
       <BanMark species={item.species} format={format} floating />
-      <ExclusiveMark species={battleName(item.set)} format={format} />
+      <ExclusiveMark compact species={battleName(item.set)} format={format} />
       <ListMarks set={item.set} lists={lists} />
       <AlertMark alerts={warnings} floating />
       <AlertMark alerts={together} icon="spark" floating />
