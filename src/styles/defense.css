@@ -180,6 +180,8 @@
 /* Coverage tipi: la griglia a caselle come quella della Panoramica (membri in riga, 18 tipi in colonna), in fondo i totali
    per tipo. Riempimenti da color-mix dei token di stato, testo --text; il ×0 usa l accento della palette */
 .ct-table thead th { padding: 0 0 2px; vertical-align: bottom; text-align: center; }
+/* Le caselle delle griglie di Coverage si raggiungono con le frecce: l'anello del fuoco dentro la casella (fuori lo taglierebbe la cornice) */
+.ct-table :is(td, th):focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .ct-table thead .type-icons { display: block; }
 .ct-table thead .type-icons img { display: block; width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; }
 /* Filo sotto l icona: rosso se grave, giallo se minore, vuoto (stessa altezza) altrimenti */

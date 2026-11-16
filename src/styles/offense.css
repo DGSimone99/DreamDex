@@ -209,7 +209,7 @@
 .mcs { display: flex; gap: 6px; width: calc(100% - 36px); min-width: 150px; margin-top: 4px; overflow: hidden; }
 .mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 11.5px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
   background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
-.mc:hover { background: color-mix(in srgb, var(--c) 32%, transparent); }
+.mc:hover, .mc:focus-visible { background: color-mix(in srgb, var(--c) 32%, transparent); }
 .mc img { flex: none; width: 13px; height: 13px; border-radius: 50%; }
 .mc b { flex: none; font: 700 italic 12.5px/1 var(--display); font-variant-numeric: tabular-nums; }
 /* Il nome nascosto, si apre passando sopra */

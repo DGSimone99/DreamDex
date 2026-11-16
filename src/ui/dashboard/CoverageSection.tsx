@@ -2,7 +2,8 @@ import type { CellState, DashboardData } from '../../engine/overviewDashboard';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
+import { useRoving } from '../useRoving';
 import { Icon } from '../icons';
 import { typeColor } from '../Sprite';
 import { typeIconUrl } from '../typeIcons';
@@ -23,8 +24,10 @@ function TypeIcon({ type }: { type: string }) {
  * nome (screen reader); a vista, al passaggio, il tooltip DreamDex (FloatTip) al posto del tooltip del browser.
  */
 function Cell({ state, label, onEnter, onLeave }: { state: CellState; label: string; onEnter: (el: Element) => void; onLeave: () => void }) {
+  // Raggiungibile con le frecce (data-nav: la tabella è un posto solo nel giro del Tab); col fuoco da tastiera il tooltip
   return (
-    <td className={`dash-cell ${state}`} aria-label={label} onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}>
+    <td className={`dash-cell ${state}`} aria-label={label} data-nav="" onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}
+      onFocus={e => { if (keyboardFocus(e.currentTarget)) onEnter(e.currentTarget); }} onBlur={onLeave}>
       <Icon name={state === 'ok' ? 'check' : 'close'} />
     </td>
   );
@@ -40,6 +43,7 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
   const names = coverage.cells.map(cell => typeName(cell.type, lang));
   const tip = useFloatAnchor<{ side: 'offense' | 'defense'; i: number }>();
   const tipCell = tip.anchor ? coverage.cells[tip.anchor.key.i] : null;
+  const nav = useRoving<HTMLTableElement>();
   return (
     <DashCard className="dash-coverage" title={title}
       meta={<>{offense.toLocaleLowerCase()} <b>{coverage.offense}</b> · {defense.toLocaleLowerCase()} <b>{coverage.defense}</b></>}
@@ -48,7 +52,7 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
         <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => onView('strength', 'types')} />
         <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => onView('defense', 'coverageTypes')} />
       </>}>
-      <table className="dash-matrix" aria-label={title}>
+      <table ref={nav.ref} className="dash-matrix" aria-label={title} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
         <thead>
           <tr>
             <td />

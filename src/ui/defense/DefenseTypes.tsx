@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useId, useState, type FocusEvent } from 'react';
+import { GRID_CELLS, useRoving } from '../useRoving';
 import { HELD_LEVEL } from '../../engine/coach';
 import { dummyStats, holdBand, type HoldBand } from '../../engine/defense';
 import { DEFAULT_FORMAT } from '../../engine/format';
@@ -14,7 +15,7 @@ import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
 import { TypeIcons, typeIconUrl } from '../typeIcons';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
 import { useMemberTip } from '../MemberCard';
 import { TypeStatsTip } from '../TypeStatsTip';
@@ -77,11 +78,22 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const anchor = tip.anchor?.key ?? null;
   const openCell = anchor && anchor.slot >= 0 && slots[anchor.slot] !== null ? defense.typed[slots[anchor.slot]!].cells[anchor.col] : null;
   const openType = anchor ? rows[anchor.col].type : null;
+  // Tastiera: la griglia è un posto solo nel giro del Tab, le frecce vanno di casella in casella; col fuoco la casella
+  // accende riga e colonna come il puntatore e apre il suo tooltip
+  const nav = useRoving<HTMLTableElement>(GRID_CELLS);
+  const focusAt = (row: number, col: number, key?: { slot: number; col: number }) => ({
+    onFocus: (e: FocusEvent<HTMLElement>) => { setHover({ row, col }); if (key && keyboardFocus(e.currentTarget)) tip.open(key, e.currentTarget); },
+    onBlur: tip.close,
+  });
+  const leaveGrid = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null); };
+  const notesId = useId();
 
   return (
     <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table className="def-grid spaced ct-table" onMouseLeave={() => { setHover(null); tip.close(); }}>
+        <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table"
+          aria-describedby={!focus && notes.length ? notesId : undefined}
+          onMouseLeave={() => { setHover(null); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" />{rows.map(row => <col key={row.type} />)}</colgroup>
           <thead>
             <tr>
@@ -90,7 +102,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                 const hole = weak.includes(row.type);
                 return (
                   <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
-                    onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, col: i }, e.currentTarget); }} onMouseLeave={tip.close}>
+                    onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
+                    {...focusAt(-1, i, { slot: -1, col: i })}>
                     <TypeIcons types={[row.type]} />
                     <span className="ct-flag" aria-hidden="true" />
                     <span className="visually-hidden">{typeName(row.type as TypeName, lang)}{hole && ` ${t('analysis.shortfallSerious')}`}{` · ${attackerLabel(row.type)}`}</span>
@@ -105,15 +118,16 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               const typed = s === null ? null : defense.typed[s];
               return (
                 <tr key={member} className={[hover?.row === member && 'x-row', focus && (member === focus.slot ? 'kf-row' : 'kf-off')].filter(Boolean).join(' ') || undefined}>
-                  <th scope="row" onMouseEnter={() => { setHover({ row: member, col: -1 }); tip.close(); }}><MemberMon name={battleName(set)} set={set} stats /></th>
+                  <th scope="row" onMouseEnter={() => { setHover({ row: member, col: -1 }); tip.close(); }} {...focusAt(member, -1)}><MemberMon name={battleName(set)} set={set} stats /></th>
                   {rows.map((row, i) => {
                     const cell = typed?.cells[i];
-                    if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)}>—</td>;
+                    if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} {...focusAt(member, i)}>—</td>;
                     const band = HOLD_BANDS[cell.band];
                     const tag = effLabel(multipliers.get(row.type as TypeName)?.[member] ?? 1, 'defense');
                     return (
                       <td key={row.type} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
-                        onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}>
+                        onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
+                        {...focusAt(member, i, { slot: member, col: i })}>
                         <span className="ct-num">{cell.pct}<i>%</i></span>
                         <span className="visually-hidden"> {band.tag} · {t('ddetail.sides', { p: cell.physical, s: cell.special })}</span>
                         <EffTag label={tag} side="defense" />
@@ -125,20 +139,23 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
             })}
             {/* In fondo, come nell'Offesa: la Copertura di ogni tipo e chi lo regge meglio */}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row" onMouseEnter={() => setHover(null)}>{t('ddetail.level')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{t('ddetail.level')}</th>
               {rows.map((row, i) => (
-                <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}>
+                <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}>
                   <span className={`ct-pill ${levelTone(row.level)}`}>{row.level}%</span>
                 </td>
               ))}
             </tr>
             <tr className="ct-sum ct-best">
-              <th scope="row" onMouseEnter={() => setHover(null)}>{t('odetail.types.best')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{t('odetail.types.best')}</th>
               {rows.map((row, i) => {
                 const top = best[i];
                 const who = top === null ? null : battleName(team[top.slot]);
+                // Col fuoco sulla casella la carta del migliore (col mouse si apre sulla sprite)
+                const cardFocus = top ? card.bind(team[top.slot]) : null;
                 return (
-                  <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}>
+                  <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })}
+                    onFocus={e => { setHover({ row: -1, col: i }); if (cardFocus && keyboardFocus(e.currentTarget)) cardFocus.onFocus(e); }} onBlur={cardFocus?.onBlur}>
                     {who
                       ? <span className="ct-best-mon" {...card.bind(team[top!.slot])}><Sprite species={who} size={34} /><span className="visually-hidden">{who}</span></span>
                       : <span className="ct-best-none" aria-label={t('analysis.shortfallSerious')}>—</span>}
@@ -167,9 +184,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           ? <FocusNote name={battleName(team[focus.slot])} band="two" text={t(`hold.focus.${focus.band}`, { name: battleName(team[focus.slot]) })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>}
         {!focus && notes.length > 0 && (
-          <span className="ht-notes note" title={notes.join('\n')}>
-            <Typed text={notes.join(' · ')} />
-          </span>
+          <NotesLine id={notesId} notes={notes} />
         )}
       </div>
     </div>
@@ -218,6 +233,27 @@ function DefenseTypesLegend() {
   return (
     <>
       {HOLD_ORDER.map(b => <span key={b} className="area-legend-swatch"><i className={HOLD_BANDS[b].cls} />{HOLD_BANDS[b].tag}</span>)}
+    </>
+  );
+}
+
+/**
+ * Le note del meteo sulla riga della legenda: se non ci stanno si tagliano coi puntini e il testo intero è nel tooltip
+ * DreamDex (col mouse e col fuoco, prima era il title del browser); per lo screen reader il testo intero c'è sempre e la
+ * griglia lo usa come descrizione (`id`).
+ */
+function NotesLine({ id, notes }: { id: string; notes: string[] }) {
+  const tip = useFloatAnchor<true>();
+  return (
+    <>
+      <span id={id} className="ht-notes note" tabIndex={0} {...tip.bind(true)}>
+        <Typed text={notes.join(' · ')} />
+      </span>
+      {tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot">
+          {notes.map(n => <p key={n} className="kot-none"><Typed text={n} /></p>)}
+        </FloatTip>
+      )}
     </>
   );
 }
