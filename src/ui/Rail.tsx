@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import type { Format, FormatId } from '../engine/format';
 import { DEX_IDS, dexOf, formatInDex, tiersOf, type DexId } from '../engine/formats';
+import { GAME_IDS, gameReady, type GameId } from '../engine/games';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
@@ -12,6 +13,8 @@ const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 interface Props {
   format: Format;
   onFormatChange: (format: Format) => void;
+  /** Sceglie il gioco (null = nessuno): il gioco blocca il formato. */
+  onGameChange?: (game: GameId | null) => void;
   meta: StatsMeta | null;
   lang: Lang;
   onLangChange: (lang: Lang) => void;
@@ -37,7 +40,7 @@ function monthLabel(month: string): string {
  * tessere del menu del gioco con una riga di stato, e in fondo lingua, impostazioni e mese dei dati Smogon.
  * Importa/Esporta e Team salvati stanno sopra la squadra (TeamPanel).
  */
-export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
+export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
   const t = useT();
   const dex = dexOf(format.formatId);
   const tiers = tiersOf(dex);
@@ -49,6 +52,12 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
     ...(format.ignoreBans ? [t('rail.pillNoBans')] : []),
     ...(format.allowMultipleMegas ? [t('rail.pillMegas')] : []),
   ];
+  const game = format.game;
+  // Le opzioni del gioco accese, come pastiglie
+  const gamePills = [
+    ...(format.allPokedex ? [t('rail.pillAllPokedex')] : []),
+    ...(format.legendaries ? [t('rail.pillLegendaries')] : []),
+  ];
   return (
     <aside className="rail" aria-label={t('rail.label')}>
       <h1 className="rail-logo">
@@ -56,6 +65,62 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
         {/* Il logo a fascia del kit: le due D nei colori della versione (--accent, --accent-2), la scritta nel colore del testo */}
         <span className="rail-logo-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: logo }} />
       </h1>
+      <details className="popover format-card game-card">
+        <summary aria-label={t('rail.gameAria', { game: t(game ? `game.${game}` : 'game.none'), summary: gamePills.length ? `, ${gamePills.join(', ')}` : '' })}>
+          <span className="format-key">{t('rail.game')} <Icon name="edit" /></span>
+          <span className="format-name">{t(game ? `game.${game}` : 'game.none')}</span>
+          {gamePills.length > 0 && <span className="format-pills">{gamePills.map(pill => <span key={pill}>{pill}</span>)}</span>}
+        </summary>
+        <div className="format-menu">
+          <p className="format-menu-head">{t('rail.game')}</p>
+          <div className="format-menu-body">
+            <div className="format-sec">
+              <div className="format-dex" role="radiogroup" aria-label={t('rail.game')}>
+                {[null, ...GAME_IDS].map(id => {
+                  const off = id !== null && !gameReady(id);
+                  return (
+                    <label key={id ?? 'none'} className={`format-dex-opt${id === game ? ' on' : ''}${off ? ' soon' : ''}`}>
+                      <input type="radio" className="visually-hidden" name="game" value={id ?? 'none'} checked={id === game} disabled={off}
+                        onChange={() => onGameChange(id)} />
+                      <b>{t(id ? `game.${id}` : 'game.none')}</b>
+                      <small>{off ? t('top.soon') : t(id ? 'rail.gameNote' : 'rail.noGameNote')}</small>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            {game && (
+              <div className="format-sec">
+                <p className="rail-label">{t('rail.gameOptions')}</p>
+                <label className="format-toggle">
+                  <input type="checkbox" className="switch" aria-label={t('top.allPokedex')} checked={format.allPokedex}
+                    onChange={e => onFormatChange({ ...format, allPokedex: e.target.checked })} />
+                  <b>{t('top.allPokedex')}</b>
+                  <small>{t('top.allPokedexNote')}</small>
+                </label>
+                <label className="format-toggle">
+                  <input type="checkbox" className="switch" aria-label={t('top.legendaries')} checked={format.legendaries}
+                    onChange={e => onFormatChange({ ...format, legendaries: e.target.checked })} />
+                  <b>{t('top.legendaries')}</b>
+                  <small>{t('top.legendariesNote')}</small>
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+      </details>
+      {game ? (
+        // Col gioco il formato lo decide il gioco: si vede, ma non si cambia
+        <div className="format-card locked" aria-label={t('rail.formatAria', { format: `${t(`dex.${dex}`)} ${tier}`.trim(), summary: pills.join(', ') })}>
+          <div className="format-summary">
+            <span className="format-key">{t('rail.format')}</span>
+            {tier && <span className="format-tier">{tier}</span>}
+            <span className="format-name">{t(`dex.${dex}`)}</span>
+            <span className="format-pills">{pills.map(pill => <span key={pill}>{pill}</span>)}</span>
+            <span className="format-lock">{t('rail.formatByGame')}</span>
+          </div>
+        </div>
+      ) : (
       <details className="popover format-card">
         <summary aria-label={t('rail.formatAria', { format: `${t(`dex.${dex}`)} ${tier}`.trim(), summary: pills.join(', ') })}>
           <span className="format-key">{t('rail.format')} <Icon name="edit" /></span>
@@ -140,6 +205,7 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
           </div>
         </div>
       </details>
+      )}
       <div className="rail-sections">{tabs}</div>
       <div className="rail-foot">
         <div className="rail-foot-row">

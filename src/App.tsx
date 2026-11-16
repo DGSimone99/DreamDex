@@ -5,6 +5,7 @@ import type { CoachFix } from './engine/coachFixes';
 import { rateTeam, ratingThreats } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
+import { gameReady, withGame, type GameId } from './engine/games';
 import { dataSource, formatLabel, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
 import { UndoToast, type UndoAction } from './ui/UndoToast';
@@ -70,7 +71,23 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [session] = useState(() => (storage ? loadSession(storage) : null));
   // Un link con un team (#team=...) vince sulla sessione salvata; quella resta recuperabile con Annulla
   const [shared] = useState(takeSharedTeam);
-  const [format, setFormat] = useState<Format>(shared?.format ?? session?.format ?? DEFAULT_FORMAT);
+  // Un gioco salvato senza i suoi dati (Pokédex non scaricato) non si può usare: si riparte senza gioco, il team resta
+  const [format, setFormat] = useState<Format>(() => {
+    const saved = shared?.format ?? session?.format ?? DEFAULT_FORMAT;
+    return saved.game && !gameReady(saved.game) ? DEFAULT_FORMAT : saved;
+  });
+  // Il formato di prima del gioco: con "Nessun gioco" si torna lì
+  const [beforeGame, setBeforeGame] = useState<Format | null>(null);
+  const changeGame = (game: GameId | null) => {
+    if (game === format.game) return;
+    if (game) {
+      if (!format.game) setBeforeGame(format);
+      setFormat(withGame(format, game));
+    } else {
+      setFormat(withGame(beforeGame ?? DEFAULT_FORMAT, null));
+      setBeforeGame(null);
+    }
+  };
   // Colori di versione: seguono il gioco del formato (o la palette fissata nelle impostazioni)
   const [palette, setPalette] = useState<PaletteSetting>(() => (storage ? loadPalette(storage) : null) ?? 'auto');
   const changePalette = (next: PaletteSetting) => {
@@ -103,8 +120,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     if (listSprite === 'box') new Image().src = 'https://play.pokemonshowdown.com/sprites/pokemonicons-sheet.png';
   }, [listSprite]);
   useEffect(() => {
-    document.documentElement.dataset.palette = paletteFor(palette, format.formatId);
-  }, [palette, format.formatId]);
+    document.documentElement.dataset.palette = paletteFor(palette, format.formatId, format.game);
+  }, [palette, format.formatId, format.game]);
   // Dati per fonte: ogni formato carica la sua la prima volta, poi resta in memoria.
   // Un caricamento finito tardi si salva sotto la sua fonte, quindi non tocca il formato attuale.
   const [cache, setCache] = useState<Record<string, EngineData>>({ [dataSource(DEFAULT_FORMAT)]: initialData });
@@ -350,7 +367,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         main.focus();
         main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
       }}>{t(lang, 'app.skipToContent')}</a>
-      <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
+      <Rail format={format} onFormatChange={setFormat} onGameChange={changeGame} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
         onCredits={() => setCreditsOpen(true)}
         onFeedback={() => setFeedbackOpen(true)}

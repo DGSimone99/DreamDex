@@ -1,5 +1,6 @@
 import type { FormatId } from '../engine/format';
 import { dexOf } from '../engine/formats';
+import type { GameId } from '../engine/games';
 
 /** Coppie di colori di versione: cambiano solo i due accenti, mai fondi, stato e colori dei tipi. */
 export type PaletteId = 'swsh' | 'sv';
@@ -11,8 +12,12 @@ export type ListSprite = 'normal' | 'box';
 
 export const PALETTES: PaletteId[] = ['swsh', 'sv'];
 
-/** Finché non c'è la scelta del gioco: il Pokédex Gen 9 è Scarlatto e Violetto, il resto Spada e Scudo. */
-export function paletteFor(setting: PaletteSetting, formatId: FormatId): PaletteId {
+/** I colori di ogni gioco. */
+const GAME_PALETTE: Record<GameId, PaletteId> = { sv: 'sv' };
+
+/** Col gioco scelto i suoi colori; senza gioco il Pokédex Gen 9 è Scarlatto e Violetto, il resto Spada e Scudo. */
+export function paletteFor(setting: PaletteSetting, formatId: FormatId, game: GameId | null = null): PaletteId {
   if (setting !== 'auto') return setting;
+  if (game) return GAME_PALETTE[game];
   return dexOf(formatId) === 'gen9' ? 'sv' : 'swsh';
 }

@@ -1,0 +1,66 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it } from 'vitest';
+import { App } from '../../src/App';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { initGames, withGame } from '../../src/engine/games';
+import { chooseTier, chosen } from '../helpers/format';
+import { fixtureData } from '../fixtures/data';
+
+const chooseGame = (user: ReturnType<typeof userEvent.setup>, id: string) =>
+  user.click(document.querySelector<HTMLInputElement>(`input[name="game"][value="${id}"]`)!);
+const memoryStorage = (): Storage => {
+  const map = new Map<string, string>();
+  return { getItem: k => map.get(k) ?? null, setItem: (k, v) => void map.set(k, v), removeItem: k => void map.delete(k), clear: () => map.clear(), key: () => null, get length() { return map.size; } };
+};
+
+afterEach(() => initGames(null));
+
+describe('scelta del gioco', () => {
+  it('Scarlatto e Violetto blocca il formato, cambia i colori e mostra le opzioni del gioco', async () => {
+    initGames({ sv: { dex: ['sprigatito'] } });
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    await chooseGame(user, 'sv');
+    expect(document.documentElement.dataset.palette).toBe('sv');
+    expect(screen.getByText('Lo decide il gioco')).toBeInTheDocument();
+    expect(document.querySelector('input[name="format-tier"]')).toBeNull();
+    const all = screen.getByRole('checkbox', { name: 'Tutto il Pokédex' });
+    expect(all).not.toBeChecked();
+    await user.click(all);
+    expect(screen.getByRole('checkbox', { name: 'Tutto il Pokédex' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Leggendari e post-game' })).not.toBeChecked();
+  });
+
+  it('"Nessun gioco" rimette il formato di prima, col meta', async () => {
+    initGames({ sv: { dex: ['sprigatito'] } });
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    await chooseTier(user, 'ubers');
+    await chooseGame(user, 'sv');
+    await chooseGame(user, 'none');
+    expect(chosen('format-tier')).toBe('ubers');
+    expect(document.querySelector('.format-card:not(.game-card) .format-pills')).toHaveTextContent('Meta');
+    expect(screen.queryByText('Lo decide il gioco')).toBeNull();
+  });
+
+  it('senza i dati del gioco la voce è spenta e una sessione col gioco riparte senza', () => {
+    const storage = memoryStorage();
+    storage.setItem('dreamdex.session', JSON.stringify({ team: [], format: withGame(DEFAULT_FORMAT, 'sv') }));
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} storage={storage} />);
+    expect(document.querySelector<HTMLInputElement>('input[name="game"][value="sv"]')).toBeDisabled();
+    expect(document.querySelector<HTMLInputElement>('input[name="game"][value="none"]')).toBeChecked();
+    expect(screen.queryByText('Lo decide il gioco')).toBeNull();
+  });
+
+  it('un team salvato col gioco mostra il nome del gioco', async () => {
+    initGames({ sv: { dex: ['sprigatito'] } });
+    window.localStorage.clear();
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    await chooseGame(user, 'sv');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    await user.type(screen.getByLabelText('Nome team'), 'Storia{Enter}');
+    expect(document.querySelector('.saved-format')).toHaveTextContent('Scarlatto e Violetto');
+  });
+});

@@ -12,7 +12,7 @@ describe('Barra laterale', () => {
     expect(rail.getByRole('radiogroup', { name: 'Tier del formato' })).toBeInTheDocument();
     expect(rail.getByRole('radiogroup', { name: 'Generazione massima' })).toBeInTheDocument();
     // La carta del formato riassume tutto: Pokédex, tier e le regole come pastiglie
-    expect(document.querySelector('.format-card > summary')).toHaveTextContent('National Dex');
+    expect(document.querySelector('.format-card:not(.game-card) > summary')).toHaveTextContent('National Dex');
     expect(document.querySelector('.format-tier')).toHaveTextContent('OU');
     expect(document.querySelector('.format-pills')).toHaveTextContent('MetaGen 9');
     expect(rail.getByRole('button', { name: 'Col meta' })).toBeInTheDocument();
