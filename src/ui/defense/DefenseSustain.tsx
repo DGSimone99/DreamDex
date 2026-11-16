@@ -14,6 +14,7 @@ const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : '
  * La Sostenibilità, nella cornice comune (i membri nello stesso punto delle altre schede). Per ogni membro quello che perde,
  * a parte Stealth Rock (a ogni ingresso, dimezzata se il team toglie gli hazard) e lo strumento (Life Orb, Flame Orb…), e quello che
  * recupera con le fonti, il netto (recupero meno perdite) come barra attorno allo zero e il valore in pastiglia.
+ * Niente riga del team: il valore del team è già sull'etichetta della scheda.
  */
 export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
@@ -28,7 +29,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
     <div className={`def-frame def-sus${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid sus-table def-members">
-          <colgroup><col className="def-col-mon" /><col className="sus-col-loss" /><col className="sus-col-loss" /><col className="sus-col-gain" /><col /><col className="sus-col-val" /></colgroup>
+          <colgroup><col className="def-col-mon" /><col className="sus-col-loss" /><col className="sus-col-loss" /><col /><col className="sus-col-net" /><col className="sus-col-val" /></colgroup>
           <thead>
             <tr className="rob-grp">
               <th scope="col" rowSpan={2} className="def-mon-h">{t('detail.member')}</th>
@@ -73,18 +74,9 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
                 </tr>
               );
             })}
-            {/* Riempie lo spazio che resta: la riga del team sta sempre in fondo, come nelle altre schede */}
+            {/* Riempie lo spazio che resta: le righe dei membri alte come nelle altre schede (là in fondo c'è la riga del team) */}
             <tr className="og-fill" aria-hidden="true"><td colSpan={6} /></tr>
           </tbody>
-          {/* In fondo il team: la media delle Sostenibilità dei membri, quella che entra nella Difesa (20%) */}
-          <tfoot>
-            <tr className="og-total">
-              <th scope="row"><span className="og-plate">{t('odetail.gen.total')}</span></th>
-              <td /><td /><td />
-              <td />
-              <td className="sus-val"><span className={`ct-pill sus-team ${defense.sustain < 0 ? 'bad' : tone(defense.sustain)}`} title={t('ddetail.sus.teamNote')}>{signed(defense.sustain)}</span></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </div>

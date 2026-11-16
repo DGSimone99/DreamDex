@@ -19,6 +19,8 @@ import { Sprite, typeColor } from '../Sprite';
 import { useMemberTip } from '../MemberCard';
 import { TypeStatsTip } from '../TypeStatsTip';
 import { HOLD_BANDS, HOLD_ORDER } from './holds';
+import { pieceOf } from './HoldBars';
+import { FocusNote } from '../offense/KoBadges';
 
 /** Colore della riga Copertura, come nell'Offesa: rosso a 0, giallo sotto il livello retto (HELD_LEVEL), verde da lì. */
 const levelTone = (level: number) => (level === 0 ? 'bad' : level < HELD_LEVEL ? 'warn' : 'good');
@@ -43,6 +45,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const { team, analysis } = ctx;
   const roomy = !!ctx.roomy;
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
+  // Aperta da un pezzo della barra in Generale: la riga del membro e i tipi di quel pezzo accesi, il resto spento
+  const focus = ctx.focus?.kind === 'dtypes' ? ctx.focus : null;
   const { rows, weak } = defense.coverageTypes;
   const multipliers = new Map(analysis.weakness.map(row => [row.type, row.multipliers]));
   // Il membro del motore per ogni posto del team (i Pokémon sconosciuti non ci sono)
@@ -100,15 +104,15 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               const s = slots[member];
               const typed = s === null ? null : defense.typed[s];
               return (
-                <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
+                <tr key={member} className={[hover?.row === member && 'x-row', focus && (member === focus.slot ? 'kf-row' : 'kf-off')].filter(Boolean).join(' ') || undefined}>
                   <th scope="row" onMouseEnter={() => { setHover({ row: member, col: -1 }); tip.close(); }}><MemberMon name={battleName(set)} set={set} stats /></th>
                   {rows.map((row, i) => {
                     const cell = typed?.cells[i];
-                    if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}`)}>—</td>;
+                    if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)}>—</td>;
                     const band = HOLD_BANDS[cell.band];
                     const tag = effLabel(multipliers.get(row.type as TypeName)?.[member] ?? 1, 'defense');
                     return (
-                      <td key={row.type} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}`)}
+                      <td key={row.type} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
                         onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}>
                         <span className="ct-num">{cell.pct}<i>%</i></span>
                         <span className="visually-hidden"> {band.tag} · {t('ddetail.sides', { p: cell.physical, s: cell.special })}</span>
@@ -159,8 +163,10 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
         </FloatTip>
       )}
       <div className="rob-legend ht-foot">
-        <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>
-        {notes.length > 0 && (
+        {focus
+          ? <FocusNote name={battleName(team[focus.slot])} band="two" text={t(`hold.focus.${focus.band}`, { name: battleName(team[focus.slot]) })} onClear={ctx.clearFocus} />
+          : <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>}
+        {!focus && notes.length > 0 && (
           <span className="ht-notes note" title={notes.join('\n')}>
             <Typed text={notes.join(' · ')} />
           </span>

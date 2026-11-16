@@ -15,7 +15,7 @@ const scaleOf = (d: number[]) => ({ one: d[0], two: d[0] + d[1], three: d[0] + d
 const depthOf = (meta: boolean): number[] => (meta ? depthWeights('meta') : OFFENSE_DEPTH).map(w => Math.round(100 * w));
 
 /** Una barra di pesi (come quella della Difesa): ogni posizione larga quanto pesa; le scritte agli estremi sono facoltative. */
-function Bar({ label, weights, rank, from, to }: { label: string; weights: number[]; rank: (n: number) => string; from?: string; to?: string }) {
+export function Bar({ label, weights, rank, from, to }: { label: string; weights: number[]; rank: (n: number) => string; from?: string; to?: string }) {
   return (
     <div className="guide-weights">
       <ol aria-label={label}>

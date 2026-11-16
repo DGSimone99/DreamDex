@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
+import type { HoldPiece } from './defense/HoldBars';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
@@ -59,7 +60,9 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
 
 /** Il dettaglio di una tessera: che tabella, quale membro (posto nel team) e quale fascia (KO in un colpo o in due). */
 /** `band`: OHKO, 2HKO o 'rest' (quelli che il membro non manda KO in due colpi). */
-export interface KoFocus { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' | 'rest' }
+/** Nella Difesa (kind 'dtypes' / 'dmeta') `band` è il pezzo della barra: 'held' (3HKO+), 2HKO o OHKO. */
+export type KoFocus = { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' | 'rest' }
+  | { kind: 'dtypes' | 'dmeta'; slot: number; band: HoldPiece };
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola

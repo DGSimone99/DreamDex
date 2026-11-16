@@ -252,8 +252,8 @@ export interface MemberDefense {
 }
 
 /**
- * Credito di un membro su un colpo standard tipizzato (danno atteso, al massimo 1): pieno se regge 4 colpi o più
- * (sotto un terzo dei PS), metà se ne regge 3 (sotto la metà), niente da lì in su.
+ * Credito di un membro su un colpo (danno atteso, al massimo 1), uguale per i colpi di tipo e per quelli delle minacce
+ * del meta: pieno se regge 4 colpi o più (sotto un terzo dei PS), metà se ne regge 3 (sotto la metà), niente da lì in su.
  */
 export const holdCredit = (x: number): number => (x < 1 / 3 ? 1 : x < 1 / 2 ? 0.5 : 0);
 
@@ -402,7 +402,7 @@ export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const metaHold = threats.length
     ? Math.round(100 * threats.reduce((acc, { weight }, i) => {
       const x = Math.min(1, threatHits[i]?.expected ?? 0);
-      return acc + weight * (x < HOLD_FULL ? 1 : x < 1 ? 0.5 : 0);
+      return acc + weight * holdCredit(x);
     }, 0))
     : null;
   // Il valore del membro coi pesi della squadra: 40/40/20, senza meta 80/20
@@ -422,7 +422,10 @@ export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): 
   };
 }
 
-/** Una minaccia è retta se toglie meno di metà PS; a metà se manda KO in due colpi. */
+/**
+ * Una minaccia è retta se toglie meno di metà PS (per i malus e il Coaching); `partial` se manda KO in due colpi. Il
+ * credito nel voto è quello dei colpi di tipo (holdCredit): pieno sotto un terzo, metà sotto la metà.
+ */
 const HOLD_FULL = 0.5;
 
 export interface ThreatRow {
@@ -430,9 +433,10 @@ export interface ThreatRow {
   /** Il set della minaccia (il più usato): per la carta del Pokémon sulla sprite in testata e il tipo della sua mossa. */
   set: TeamSet;
   weight: number;
-  /** Quanto è retta: 0–100, coi crediti dei membri al 50, 30 e 20%. */
+  /** Quanto è retta: 0–100, coi crediti dei membri (holdCredit) pesati 70/20/10. */
   level: number;
-  heldBy: { species: string; move: string; pct: number; partial: boolean }[];
+  /** Chi non va KO in un colpo: `band` è la fascia del colpo (4HKO+, 3HKO, 2HKO), come nei colpi di tipo. */
+  heldBy: { species: string; move: string; pct: number; partial: boolean; band: HoldBand }[];
   /**
    * Per ogni membro conosciuto (ordine di `members`): il moltiplicatore di tipo della mossa della minaccia che gli fa più
    * danno (la stessa del % nella casella), per l'etichetta della casella.
@@ -570,9 +574,10 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
         const hit = memberHits[m][i];
         const x = Math.min(1, hit?.expected ?? 0);
         if (x >= 1) return [];
-        return [{ species: battleSpecies(member)?.name ?? member.species, move: hit?.move ?? '', pct: Math.floor(100 * x), partial: x >= HOLD_FULL }];
+        return [{ species: battleSpecies(member)?.name ?? member.species, move: hit?.move ?? '', pct: Math.floor(100 * x), partial: x >= HOLD_FULL, band: holdBand(x) }];
       });
-      const level = depthOf(heldBy.map(h => (h.partial ? 0.5 : 1)));
+      // Il credito di ogni membro come nei colpi di tipo (pieno sotto un terzo dei PS, metà sotto la metà)
+      const level = depthOf(known.map((_, m) => holdCredit(Math.min(1, memberHits[m][i]?.expected ?? 0))));
       total += weight * level;
       // L'efficacia della mossa che fa più danno al membro (la stessa del % nella casella); senza colpo nessuna mossa lo tocca
       const mults = known.map((member, m) => {

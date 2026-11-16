@@ -316,6 +316,17 @@ const DEFENSE_STATES: Record<string, State> = {
     await wait(500);
     return true;
   } } as State])),
+  // Generale: clic sul pezzo 2HKO di Toxapex in Tipi (0) e su quello OHKO in Meta (1): si apre la sottoscheda coi bersagli accesi
+  ...Object.fromEntries([[0, '.hb-2'], [1, '.hb-ohko']].map(([k, cls]) => [`analysis-defense-general-pick-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const cells = await p.$$('.def-general tbody tr:nth-child(3) td');
+    const piece = await cells[k as number]?.$(`.kob${cls}`);
+    if (!piece) return 'no piece';
+    await piece.click();
+    await wait(600);
+    return true;
+  } } as State])),
   // Generale a squadra chiusa col puntatore su una pastiglia dei colpi peggiori: Tipi (0) e Meta (1)
   ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null, { collapsed: true }).run!(p);
@@ -901,7 +912,7 @@ for (const [w, h] of sizes) {
         panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); if (!el) return '';
           // Righe dei membri (cornice comune della Difesa): y e altezza della prima e dell ultima, per vedere che restano ferme
           const rows = [...el.querySelectorAll<HTMLElement>('.def-grid tbody th[scope="row"] .ad-mon')].map(r => r.closest('tr')!.getBoundingClientRect());
-          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)} firstRowY=${Math.round(rows[0].top)} cols=[${[...el.querySelectorAll('.def-members thead th')].map(h => { const r = h.getBoundingClientRect(); return `${Math.round(r.left)}+${Math.round(r.width)}`; }).join(',')}] bars=[${[...el.querySelectorAll('.def-members tbody tr:first-child .kob-line')].map(b => { const r = b.getBoundingClientRect(); return `${Math.round(r.left)}+${Math.round(r.width)}`; }).join(',')}]` : '';
+          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)} head=[${[...el.querySelectorAll('.def-grid thead tr')].map(r => Math.round(r.getBoundingClientRect().height)).join(',')}]@${Math.round(el.querySelector('.def-grid thead')!.getBoundingClientRect().top)} th=[${[...el.querySelectorAll('.def-grid thead th')].map(h => { const r = h.getBoundingClientRect(); return `${Math.round(r.width)}x${Math.round(r.height)}:${h.scrollHeight}`; }).join(',')}] firstRowY=${Math.round(rows[0].top)} cols=[${[...el.querySelectorAll('.def-members thead th')].map(h => { const r = h.getBoundingClientRect(); return `${Math.round(r.left)}+${Math.round(r.width)}`; }).join(',')}] bars=[${[...el.querySelectorAll('.def-members tbody tr:first-child .kob-line')].map(b => { const r = b.getBoundingClientRect(); return `${Math.round(r.left)}+${Math.round(r.width)}`; }).join(',')}]` : '';
           // Sotto le righe: quanto occupa il resto (riga di riepilogo, legenda, pagine) e quanto spazio c'è fino al fondo della cornice
           const frame = el.querySelector<HTMLElement>('.def-frame');
           const last = rows[rows.length - 1]?.bottom ?? 0;
