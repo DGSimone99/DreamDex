@@ -138,8 +138,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Il formato scelto entra nei dati: alcune regole del voto cambiano col formato (Ubers)
   // Il voto e l'analisi non dipendono dalle liste: cambiandole non si ricalcolano (solo i suggerimenti le usano)
   const rated = useMemo(() => ({ ...loaded, formatId: format.formatId, ...(format.meta ? {} : { ignoreMeta: true }),
-    ...(format.allowMultipleMegas ? { allowMultipleMegas: true } : {}) }),
-    [loaded, format.formatId, format.meta, format.allowMultipleMegas]);
+    ...(format.allowMultipleMegas ? { allowMultipleMegas: true } : {}), ...(format.game ? { game: format.game } : {}) }),
+    [loaded, format.formatId, format.meta, format.allowMultipleMegas, format.game]);
   const data = useMemo(() => ({ ...rated, userLists }), [rated, userLists]);
   const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
   const [team, setTeam] = useState<TeamSet[]>(initialTeam);

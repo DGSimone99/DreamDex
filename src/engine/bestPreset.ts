@@ -18,7 +18,7 @@ export const family = (move: string) => (toID(move).startsWith('hiddenpower') ? 
 /** Le mosse quasi obbligatorie del Pokémon (quota d'uso almeno CORE_MOVE_SHARE), solo se legali (tranne con Custom Skillset). */
 export function coreMoves(set: TeamSet, data: EngineData, genLimit: number): string[] {
   if (!data.stats) return [];
-  const legal = set.customSkillset ? null : legalMoves(set.species, genLimit);
+  const legal = set.customSkillset ? null : legalMoves(set.species, genLimit, data.game ?? null);
   return commonChoices(data, set).moves
     .filter(c => (c.share ?? 0) >= CORE_MOVE_SHARE && (!legal || isLearnable(legal, c.name)))
     .map(c => c.name);
@@ -55,7 +55,7 @@ export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLim
   if (!data.stats) return current;
   const common = commonChoices(data, current);
   const custom = !!current.customSkillset;
-  const legal = custom ? null : legalMoves(current.species, genLimit);
+  const legal = custom ? null : legalMoves(current.species, genLimit, data.game ?? null);
   const moves = common.moves.map(c => c.name).filter(move => !legal || isLearnable(legal, move)).slice(0, TUNE_MOVES);
   // Con la megapietra l'abilità è quella della Mega: non si tocca
   const forme = battleSpecies(current);

@@ -432,7 +432,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       </div>
       <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels} roleTips={roleTips}
+        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
         presetAction={
           <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}
