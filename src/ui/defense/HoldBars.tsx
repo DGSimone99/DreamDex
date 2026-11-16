@@ -1,11 +1,11 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { dummyStats, holdBand, type HoldBand } from '../../engine/defense';
 import type { FormatId } from '../../engine/format';
 import { TYPES } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
-import { TypeIcons } from '../typeIcons';
+import { TypeIcons, typeIconUrl } from '../typeIcons';
 import { Sprite } from '../Sprite';
 import { Target } from '../offense/KoBadges';
 import { HOLD_BANDS } from './holds';
@@ -120,30 +120,44 @@ export function TypeAttackers({ formatId }: { formatId: FormatId }) {
   );
 }
 
-/** Un colpo peggiore sotto la barra (squadra chiusa): il tipo o la minaccia, quanto toglie e la sua fascia. */
-export interface WorstHit { label: string; kind: 'type' | 'mon'; pct: number | null; band: HoldBand }
+/**
+ * Un colpo peggiore sotto la barra (squadra chiusa): il tipo o la minaccia, quanto toglie, la sua fascia, il colore della
+ * pastiglia (il tipo, o il primo tipo della minaccia) e il contenuto del tooltip (lo stesso delle caselle di Coverage).
+ */
+export interface WorstHit { label: string; kind: 'type' | 'mon'; pct: number | null; band: HoldBand; color?: string; tip?: ReactNode }
 
 /** I tre colpi che fanno più male: prima chi manda KO in un colpo, poi dal danno più alto (a parità, l'ordine dato). */
-export function worstOf(hits: WorstHit[], n = 3): WorstHit[] {
+export function worstOf<T extends WorstHit>(hits: T[], n = 3): T[] {
   const score = (h: WorstHit) => (h.pct === null ? 1000 : h.pct);
   return hits.map((h, i) => ({ h, i })).sort((a, b) => score(b.h) - score(a.h) || a.i - b.i).slice(0, n).map(x => x.h);
 }
 
 /**
- * Sotto la barra di Tipi o di Meta, a squadra chiusa: i colpi peggiori come pastiglie (icona del tipo o sprite della
- * minaccia, poi il danno; "KO" se lo manda KO in un colpo), del colore della loro fascia.
+ * Sotto la barra di Tipi o di Meta, a squadra chiusa: i colpi peggiori come pastiglie, come le mosse dell'Offesa: nel
+ * colore del tipo, l'icona del tipo o la sprite della minaccia e il danno ("KO" se lo manda KO in un colpo, colorato
+ * dalla fascia); passando sopra si apre il nome e compare il tooltip DreamDex col dettaglio del colpo.
  */
 export function WorstHits({ hits }: { hits: WorstHit[] }) {
   const lang = useLang();
+  const tip = useFloatAnchor<string>();
   if (!hits.length) return null;
+  const open = hits.find(h => h.label === tip.anchor?.key);
   return (
     <span className="mcs wh">
-      {hits.map(h => (
-        <span key={h.label} className={`mc wh-${h.band}`} title={h.kind === 'type' ? typeName(h.label, lang) : h.label}>
-          {h.kind === 'type' ? <TypeIcons types={[h.label]} /> : <Sprite species={h.label} size={22} />}
-          <b>{h.pct === null || h.pct >= 100 ? 'KO' : <>{h.pct}<small>%</small></>}</b>
-        </span>
-      ))}
+      {hits.map(h => {
+        const name = h.kind === 'type' ? typeName(h.label, lang) : h.label;
+        return (
+          <span key={h.label} className={`mc wh-${h.band}`} style={{ '--c': h.color ?? 'var(--faint)' } as CSSProperties}
+            onMouseEnter={e => tip.open(h.label, e.currentTarget)} onMouseLeave={tip.close} aria-label={`${name} ${h.pct === null || h.pct >= 100 ? 'KO' : `${h.pct}%`}`}>
+            {h.kind === 'type' ? <img src={typeIconUrl(h.label)} alt="" draggable={false} /> : <span className="wh-mon"><Sprite species={h.label} size={22} /></span>}
+            <span className="mc-name">{name}</span>
+            <b>{h.pct === null || h.pct >= 100 ? 'KO' : <>{h.pct}<small>%</small></>}</b>
+          </span>
+        );
+      })}
+      {open?.tip && tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone={open.color ?? 'var(--faint)'} className={`tht${open.kind === 'type' ? ' dht' : ''}`}>{open.tip}</FloatTip>
+      )}
     </span>
   );
 }

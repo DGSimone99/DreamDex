@@ -306,6 +306,17 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
+  // Generale a squadra chiusa col puntatore su una pastiglia dei colpi peggiori: Tipi (0) e Meta (1)
+  ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null, { collapsed: true }).run!(p);
+    if (ok !== true) return ok;
+    const pills = await p.$$('.def-general tbody tr:first-child .mcs.wh');
+    const pill = await pills[k]?.$('.mc');
+    if (!pill) return 'no pill';
+    await pill.hover();
+    await wait(500);
+    return true;
+  } } as State])),
   // Coverage tipi con le note del meteo (Pelipper porta la pioggia), Coverage tipi e meta in inglese: sotto la tabella resta una riga
   'analysis-defense-types-rain': defenseState(SUBS.types, { team: RAIN }),
   'analysis-defense-types-en': { ...defenseState(/^Type coverage/), lang: 'en' },

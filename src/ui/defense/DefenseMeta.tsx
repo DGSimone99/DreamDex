@@ -95,27 +95,9 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     const c = cellsOf(row, names)[m];
     if (c === null) return null;
     const types = battleSpecies(row.set)?.types ?? [];
-    const mult = effLabel(row.mults?.[knownIndex[m]], 'defense');
-    const band = c === 'ko' ? 'ohko' : c.partial ? 'two' : 'three';
-    const tag = c === 'ko' ? 'KO' : c.partial ? '2HKO' : '3HKO+';
     return (
       <FloatTip rect={tip.anchor.rect} tone={typeColor((types[0] as string | undefined) ?? '')} className="tht">
-        <div className="ftip-head tht-target">
-          <Sprite species={species} size={40} />
-          <b>{species}</b>
-          <span className={`ftip-ko def ${band} tht-band`}>{tag}</span>
-        </div>
-        <div className="tht-body">
-          <Sprite species={name} size={48} />
-          <span className="tht-text">
-            <span className="tht-name">{name}</span>
-            <span className="tht-move">
-              {c !== 'ko' && c.move ? <MoveLine name={c.move} type={battleMoveType(row.set, c.move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}
-              {mult && <span className="tht-mult">{mult}</span>}
-              {c !== 'ko' && <b className="tht-pct">{c.pct}<small>%</small></b>}
-            </span>
-          </span>
-        </div>
+        <ThreatHitTip row={row} name={name} hit={c} mult={effLabel(row.mults?.[knownIndex[m]], 'defense')} koMove={row.hits?.[knownIndex[m]]?.move} />
       </FloatTip>
     );
   };
@@ -180,6 +162,38 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
 }
 
 /** La legenda di Coverage meta della Difesa, come quella dell'Offesa: il timbro KO, poi regge e a metà. */
+/**
+ * Il tooltip di un colpo di una minaccia su un membro (casella di Coverage meta, pastiglia della Generale): la minaccia
+ * col badge dei colpi, il membro, la mossa della minaccia con l'efficacia e il danno; "KO" se lo manda KO in un colpo.
+ */
+export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name: string; hit: { move: string; pct: number; partial: boolean } | 'ko'; mult: string | null; koMove?: string }) {
+  const t = useT();
+  // La mossa del colpo: quella della casella, o (KO in un colpo) quella che il motore ha trovato per il membro
+  const move = hit === 'ko' ? koMove : hit.move;
+  const band = hit === 'ko' ? 'ohko' : hit.partial ? 'two' : 'three';
+  const tag = hit === 'ko' ? 'KO' : hit.partial ? '2HKO' : '3HKO+';
+  return (
+    <>
+      <div className="ftip-head tht-target">
+        <Sprite species={row.species} size={40} />
+        <b>{row.species}</b>
+        <span className={`ftip-ko def ${band} tht-band`}>{tag}</span>
+      </div>
+      <div className="tht-body">
+        <Sprite species={name} size={48} />
+        <span className="tht-text">
+          <span className="tht-name">{name}</span>
+          <span className="tht-move">
+            {move ? <MoveLine name={move} type={battleMoveType(row.set, move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}
+            {mult && <span className="tht-mult">{mult}</span>}
+            {hit !== 'ko' && <b className="tht-pct">{hit.pct}<small>%</small></b>}
+          </span>
+        </span>
+      </div>
+    </>
+  );
+}
+
 function DefenseMetaLegend() {
   return (
     <>

@@ -174,7 +174,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
  * Il tooltip di una casella: il tipo in testata col badge dei colpi (e l'efficacia sul membro se non è neutra), il
  * membro, e il colpo forte di quel tipo sui due lati (fisico e speciale), ognuno col suo badge.
  */
-function DefenseHitTip({ type, species, cell, mult }: { type: string; species: string; cell: { pct: number; physical: number; special: number; band: HoldBand }; mult: string | null }) {
+export function DefenseHitTip({ type, species, cell, mult }: { type: string; species: string; cell: { pct: number; physical: number; special: number; band: HoldBand }; mult: string | null }) {
   const t = useT();
   const lang = useLang();
   const side = (label: string, pct: number) => {

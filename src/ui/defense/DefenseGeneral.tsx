@@ -8,6 +8,12 @@ import { TYPES } from '../../engine/types';
 import { HoldBars, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
 import { Ask, MetaTargets } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
+import { battleName, battleSpecies } from '../../engine/dex';
+import type { TypeName } from '../../engine/types';
+import { typeColor } from '../Sprite';
+import { effLabel } from '../effTag';
+import { DefenseHitTip } from './DefenseTypes';
+import { ThreatHitTip } from './DefenseMeta';
 
 /** Il colore di una barra dal valore: buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
@@ -56,13 +62,18 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const teamName = t('odetail.gen.total');
 
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
-  // colpo prima, dalla minaccia più usata, poi dal danno più alto)
-  const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band })));
+  // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta
+  const slotOf = (i: number) => ctx.team.findIndex(set => battleName(set) === members[i].species);
+  const multipliers = new Map(ctx.analysis.weakness.map(row => [row.type, row.multipliers]));
+  const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band, cell: c })))
+    .map(h => ({ ...h, color: typeColor(h.label),
+      tip: <DefenseHitTip type={h.label} species={members[i].species} cell={h.cell} mult={effLabel(multipliers.get(h.label as TypeName)?.[slotOf(i)] ?? 1, 'defense')} /> }));
   const byUse = [...metaRows].sort((x, y) => y.weight - x.weight);
-  const worstMeta = (species: string) => worstOf(byUse.map(row => {
-    const h = row.heldBy.find(x => x.species === species);
-    return { label: row.species, kind: 'mon' as const, pct: h ? h.pct : null, band: h ? holdBand(h.pct / 100) : 'ohko' as const };
-  }));
+  const worstMeta = (i: number) => worstOf(byUse.map(row => {
+    const h = row.heldBy.find(x => x.species === members[i].species);
+    return { label: row.species, kind: 'mon' as const, pct: h ? h.pct : null, band: h ? holdBand(h.pct / 100) : 'ohko' as const, row, h };
+  })).map(x => ({ ...x, color: typeColor((battleSpecies(x.row.set)?.types[0] as string | undefined) ?? ''),
+    tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={effLabel(x.row.mults?.[i], 'defense')} koMove={x.row.hits?.[i]?.move} /> }));
 
 
   return (
@@ -90,7 +101,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
                 <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} />{roomy && <WorstHits hits={worstMeta(m.species)} />}</td>}
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   <Bar value={m.sustain} />
                   {/* Squadra chiusa: come recupera, sotto la barra */}
