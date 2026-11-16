@@ -891,7 +891,7 @@ for (const [w, h] of sizes) {
         panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); if (!el) return '';
           // Righe dei membri (cornice comune della Difesa): y e altezza della prima e dell ultima, per vedere che restano ferme
           const rows = [...el.querySelectorAll<HTMLElement>('.def-grid tbody th[scope="row"] .ad-mon')].map(r => r.closest('tr')!.getBoundingClientRect());
-          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)} firstRowY=${Math.round(rows[0].top)}` : '';
+          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)} firstRowY=${Math.round(rows[0].top)} cols=[${[...el.querySelectorAll('.def-members thead th')].map(h => { const r = h.getBoundingClientRect(); return `${Math.round(r.left)}+${Math.round(r.width)}`; }).join(',')}] bars=[${[...el.querySelectorAll('.def-members tbody tr:first-child .kob-line')].map(b => { const r = b.getBoundingClientRect(); return `${Math.round(r.left)}+${Math.round(r.width)}`; }).join(',')}]` : '';
           // Sotto le righe: quanto occupa il resto (riga di riepilogo, legenda, pagine) e quanto spazio c'è fino al fondo della cornice
           const frame = el.querySelector<HTMLElement>('.def-frame');
           const last = rows[rows.length - 1]?.bottom ?? 0;

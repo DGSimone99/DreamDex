@@ -80,17 +80,15 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid def-members">
-          {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
-          <colgroup>
-            <col className="def-col-mon" /><col className="dg-col-bars" />{meta && <col className="dg-col-bars" />}<col className="dg-col-bar" /><col className="dg-col-bar" />
-          </colgroup>
+          {/* Come l'Offesa: i nomi in una colonna, poi Tipi, Meta e l'ultima in colonne uguali; nell'ultima Sostenibilità e
+              Difesa affiancate, così Tipi e Meta stanno nello stesso posto e larghi uguali */}
+          <colgroup><col className="def-col-mon" /><col />{meta && <col />}<col /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               <th scope="col">{t('kob.headTypes')}<Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
               {meta && <th scope="col">{t('kob.headMeta')}<Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
-              <th scope="col">{t('ddetail.sustain')}</th>
-              <th scope="col">{t('area.defense')}</th>
+              <th scope="col" className="dg-pair-h"><span className="dg-pair"><span>{t('ddetail.sustain')}</span><span>{t('area.defense')}</span></span></th>
             </tr>
           </thead>
           <tbody>
@@ -103,20 +101,22 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
                 {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
-                  <Bar value={m.sustain} />
-                  {/* Squadra chiusa: come recupera, sotto la barra */}
-                  {roomy && <span className="dg-rec" title={m.sustainParts.sources.join(' + ') || t('ddetail.noRecovery')}>{m.sustainParts.sources.length ? m.sustainParts.sources.join(' + ') : t('ddetail.noRecovery')}
-                    {m.sustainParts.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}</span>}
-                </td>
-                <td>
-                  {/* Quanto aggiunge il setup difensivo (tre quarti del guadagno entrano nel voto) */}
-                  <Bar value={m.value} total reserve={setupColumn}
-                    gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: gameName('move', m.setupMove, lang) })}> (+{m.setupGain})</small>} />
+                  <span className="dg-pair">
+                    <span>
+                      <Bar value={m.sustain} />
+                      {/* Squadra chiusa: come recupera, sotto la barra */}
+                      {roomy && <span className="dg-rec" title={m.sustainParts.sources.join(' + ') || t('ddetail.noRecovery')}>{m.sustainParts.sources.length ? m.sustainParts.sources.join(' + ') : t('ddetail.noRecovery')}
+                        {m.sustainParts.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}</span>}
+                    </span>
+                    {/* Quanto aggiunge il setup difensivo (tre quarti del guadagno entrano nel voto) */}
+                    <Bar value={m.value} total reserve={setupColumn}
+                      gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: gameName('move', m.setupMove, lang) })}> (+{m.setupGain})</small>} />
+                  </span>
                 </td>
               </tr>
             ))}
             {/* Riempie lo spazio che resta: la riga Team Coverage sta sempre in fondo, con 1 o con 6 membri */}
-            <tr className="og-fill" aria-hidden="true"><td colSpan={4 + (meta ? 1 : 0)} /></tr>
+            <tr className="og-fill" aria-hidden="true"><td colSpan={3 + (meta ? 1 : 0)} /></tr>
           </tbody>
           {/* In fondo la squadra intera, come la riga Team Coverage dell'Offesa: i voti delle sottoschede e la Difesa */}
           <tfoot>
@@ -124,8 +124,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <th scope="row"><span className="og-plate">{t('odetail.gen.total')}</span></th>
               <td><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></td>
               {meta && <td><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></td>}
-              <td><Bar value={defense.sustain} total /></td>
-              <td><Bar value={defense.value} total reserve={setupColumn} /></td>
+              <td><span className="dg-pair"><Bar value={defense.sustain} total /><Bar value={defense.value} total reserve={setupColumn} /></span></td>
             </tr>
           </tfoot>
         </table>

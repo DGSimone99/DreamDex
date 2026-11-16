@@ -367,7 +367,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
 
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori e sotto Sostenibilità il recupero, senza colonne in più; altrimenti no', () => {
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'Sostenibilità', 'Difesa']);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'SostenibilitàDifesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {
