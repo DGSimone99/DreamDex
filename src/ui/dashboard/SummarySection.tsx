@@ -27,9 +27,9 @@ import { useFit } from './useFit';
 const conditionColor = (key: string) => typeColor(CONDITION_TYPE[key] ?? '');
 
 /** Il "+N": a vista solo il numero, per intero nel tooltip e ai lettori di schermo. */
-function More({ label, n }: { label: string; n: number }) {
+function More({ label, n, plain = false }: { label: string; n: number; plain?: boolean }) {
   return (
-    <span className="sum-more" title={label}>
+    <span className="sum-more" title={plain ? undefined : label}>
       <span aria-hidden="true">+{n}</span><span className="visually-hidden">{label}</span>
     </span>
   );
@@ -48,7 +48,7 @@ const Tag = ({ color, children }: { color: string; children: ReactNode }) => (
  * finiscono nel "+N" (useFit), mai tagliate a metà; il "+N" sta accanto al titolo, così non toglie una riga alle altre.
  * Senza righe, la parola `empty` attenuata.
  */
-function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, className = '' }: {
+function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, moreTip, className = '' }: {
   title: string; empty: string;
   rows: T[];
   rowKey: (row: T) => string;
@@ -62,13 +62,18 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
    * verso il basso) che riduce il team, così la card si allunga e le mostra.
    */
   onMore?: () => void;
+  /** Se c'è: il "+N" è colorato e al passaggio apre il tooltip DreamDex con le righe nascoste (questo contenuto). */
+  moreTip?: (hidden: T[]) => ReactNode;
   className?: string;
 }) {
   const t = useT();
+  const tip = useFloatAnchor<true>();
   // La lista è alta quanto il suo contenuto: si guarda anche la card, che cresce col team ridotto
   const fit = useFit<HTMLUListElement>(fitKey, rows.length, { min: 1, outer: '.dash-summary' });
   const shown = Math.min(fit.shown, rows.length);
   const hidden = rows.length - shown;
+  const hover = moreTip ? { onMouseEnter: (e: { currentTarget: Element }) => tip.open(true, e.currentTarget), onMouseLeave: tip.close } : {};
+  const tipped = moreTip ? ' tipped' : '';
   return (
     <div className={`sum-sec${className ? ` ${className}` : ''}`}>
       <h4 className="sum-sec-h">{title}</h4>
@@ -82,7 +87,7 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
       {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
       {hidden > 0 && (onMore
         ? (
-          <button type="button" className="sum-more-below" onClick={onMore} title={more(hidden, rows.slice(shown))}
+          <button type="button" className={`sum-more-below${tipped}`} onClick={() => { tip.close(); onMore(); }} {...hover} title={moreTip ? undefined : more(hidden, rows.slice(shown))}
             aria-label={t('sum.showMore', { label: more(hidden, rows.slice(shown)) })}>
             <span aria-hidden="true">+{hidden}</span>
             <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -90,7 +95,10 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
             </svg>
           </button>
         )
-        : <span className="sum-sec-more"><More n={hidden} label={more(hidden, rows.slice(shown))} /></span>)}
+        : <span className={`sum-sec-more${tipped}`} {...hover}><More n={hidden} label={more(hidden, rows.slice(shown))} plain={!!moreTip} /></span>)}
+      {moreTip && hidden > 0 && tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="syn-more">{moreTip(rows.slice(shown))}</FloatTip>
+      )}
     </div>
   );
 }
@@ -150,13 +158,15 @@ function useSynergyView() {
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
  * la frase (o il giro del triangolo letto in parole).
  */
-function SynergyRow({ syn, view, rich, small, onClick, hover }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void } }) {
+function SynergyRow({ syn, view, rich, small, onClick, hover, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void };
+  /** Un core da 3 dopo il primo: triangolo piccolo anche col team ridotto. */
+  second?: boolean }) {
   const desc = useId();
   return (
     <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}`} style={{ '--c': view.color } as CSSProperties}
       aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick} {...hover}>
       {view.trio && syn.core
-        ? <CoreTriangle core={syn.core} size={rich ? 'roomy' : 'normal'} descId={desc} />
+        ? <CoreTriangle core={syn.core} size={rich && !second ? 'roomy' : 'normal'} descId={desc} />
         : (
           <>
             <span className="sum-pair" aria-hidden="true">
@@ -174,6 +184,36 @@ function SynergyRow({ syn, view, rich, small, onClick, hover }: { syn: Synergy; 
           </>
         )}
     </button>
+  );
+}
+
+/**
+ * Il tooltip DreamDex del "+N" delle Sinergie: le sinergie che non stanno nella card, ognuna con le sue sprite (unite dalla
+ * catena nel colore del legame), l'etichetta, il titolo e la frase.
+ */
+function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }) {
+  return (
+    <>
+      <div className="ftip-head"><b>{label}</b></div>
+      <ul className="syn-more-list">
+        {items.map(view => (
+          <li key={view.key} style={{ '--c': view.color } as CSSProperties}>
+            <span className="syn-more-mons" aria-hidden="true">
+              {view.mons.map((name, i) => (
+                <span key={`${name}:${i}`} className="syn-more-mon">
+                  {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
+                  <Sprite species={name} size={32} />
+                </span>
+              ))}
+            </span>
+            <span className="syn-more-body">
+              <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{view.title}</strong></span>
+              <span className="sum-syn-text">{view.text}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -202,10 +242,11 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
   const coreTip = useFloatAnchor<Core>();
   const monTip = useFloatAnchor<{ name: string; side: 'atk' | 'def'; score?: number }>();
   const setOf = (name: string) => team.find(set => battleName(set) === name);
-  // Solo i core da 3; quelli da 2 solo se il team non ne ha da 3. Poi i legami, senza i pivot
+  // Tutti i core: prima quelli da 3 (il primo col triangolo grande), poi quelli da 2 (riga piccola). Poi i legami, senza i pivot
   const trios = cores.filter(core => core.members.length === 3);
   const synergies: Synergy[] = [
-    ...(trios.length ? trios : cores).map(core => ({ core })),
+    ...trios.map(core => ({ core })),
+    ...cores.filter(core => core.members.length !== 3).map(core => ({ core })),
     ...links.filter(link => link.kind !== 'pivot').map(link => ({ link })),
   ];
   const keyOf = (parts: string[]) => `${lang}|${density}|${rich}|${parts.join()}`;
@@ -322,8 +363,9 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
             // Sul core a tre: il tooltip con quanto regge chi para ogni tipo e chi protegge
             const hover = syn.core && syn.core.members.length === 3
               ? { onMouseEnter: (e: { currentTarget: Element }) => coreTip.open(syn.core!, e.currentTarget), onMouseLeave: coreTip.close } : undefined;
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
-          }} />
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
+          }}
+          moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
       {monTip.anchor && setOf(monTip.anchor.key.name) && (
         <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">

@@ -144,11 +144,11 @@ export const inBand = (pct: number, band: KoBand | 'rest') => (band === 'rest' ?
  * Nella riga bassa di Coverage tipi / meta, al posto della legenda mentre una tessera della Generale tiene acceso un
  * dettaglio: chi e quale fascia sono evidenziati, e "Mostra tutti" per spegnerlo.
  */
-export function FocusNote({ name, band, onClear }: { name: string; band: KoBand | 'rest'; onClear?: () => void }) {
+export function FocusNote({ name, band, onClear, text }: { name: string; band: KoBand | 'rest'; onClear?: () => void; text?: string }) {
   const t = useT();
   return (
     <span className="kf-note">
-      <span>{band === 'rest' ? t('kob.focusRest', { name }) : t('kob.focus', { name, band: t(band === 'ohko' ? 'kob.bandOhko' : 'kob.bandTwo') })}</span>
+      <span>{text ?? (band === 'rest' ? t('kob.focusRest', { name }) : t('kob.focus', { name, band: t(band === 'ohko' ? 'kob.bandOhko' : 'kob.bandTwo') }))}</span>
       {onClear && <button type="button" className="kf-clear" onClick={onClear}>{t('kob.focusClear')}</button>}
     </span>
   );
