@@ -75,6 +75,15 @@ describe('Riquadro Voto', () => {
     expect(team).toHaveTextContent('Magikarp non presente nelle statistiche');
   });
 
+  it('barra a sinistra: sotto Meta l\'uso medio del team, non le minacce', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const meta = document.getElementById('tab-meta')!;
+    expect(meta).toHaveTextContent('Uso medio 27,5%');
+    expect(meta.textContent).not.toMatch(/minacc/);
+  });
+
   it('il "?" nel riquadro Voto apre come funziona il voto', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
