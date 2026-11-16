@@ -45,10 +45,8 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
         ]} />
 
         <h5>{g('how.value')}</h5>
-        <Rows compact rows={[
-          [t('detail.coverageTypes'), g('how.value.types')],
-          ...(meta && defense.coverageMeta ? [[t('detail.coverageMeta'), g('how.value.meta')] as [ReactNode, ReactNode]] : []),
-        ]} />
+        {/* Uguale per i colpi di tipo e per quelli delle minacce */}
+        <ul className="guide-lines"><li>{g('how.value.rule')}</li></ul>
 
         <h5>{g('how.depth')}</h5>
         <Bar label={g('how.depth')} weights={DEPTH} rank={n => t('guide.off.cov.rank', { n })} />

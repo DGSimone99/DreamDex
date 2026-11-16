@@ -190,7 +190,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const byUse = [...metaRows].sort((x, y) => y.weight - x.weight);
   const worstMeta = (i: number) => worstOf(byUse.map(row => {
     const h = row.heldBy.find(x => x.species === members[i].species);
-    return { label: row.species, kind: 'mon' as const, pct: h ? h.pct : null, band: h ? holdBand(h.pct / 100) : 'ohko' as const, row, h };
+    return { label: row.species, kind: 'mon' as const, pct: h ? h.pct : null, band: h ? h.band : 'ohko' as const, row, h };
   })).map(x => ({ ...x, color: typeColor((battleSpecies(x.row.set)?.types[0] as string | undefined) ?? ''),
     tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={effLabel(x.row.mults?.[i], 'defense')} koMove={x.row.hits?.[i]?.move} /> }));
 

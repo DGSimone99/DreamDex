@@ -1,7 +1,8 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { battleName, battleSpecies } from '../../engine/dex';
-import { holdBand, type TeamDefense } from '../../engine/defense';
+import { holdBand, type HoldBand, type TeamDefense } from '../../engine/defense';
 import { pieceOf, type HoldPiece } from './HoldBars';
+import { HOLD_BANDS } from './holds';
 import { FocusNote } from '../offense/KoBadges';
 import { battleMoveType } from '../../engine/types';
 import { useT } from '../../i18n/react';
@@ -21,8 +22,9 @@ type Holder = Row['heldBy'][number];
 
 /** Quanti membri la reggono del tutto: 0 rosso, 1 giallo, da 2 verde (come "Lo coprono" dell'Offesa). */
 const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
-/** Le due soglie con un numero, coi colori di Coverage tipi: regge (sotto metà PS), a metà (KO in due colpi); KO a parte. */
-const LEGEND = [{ cls: 'hold-4', tag: '< 50%' }, { cls: 'hold-3', tag: '50–99%' }] as const;
+/** Le soglie con un numero, coi colori e i crediti di Coverage tipi: pieno sotto un terzo dei PS, metà sotto la metà, niente
+ * se lo manda KO in due colpi; KO a parte. */
+const LEGEND = [{ cls: 'hold-4', tag: '< 33%' }, { cls: 'hold-3', tag: '33–49%' }, { cls: 'hold-2', tag: '50–99%' }] as const;
 
 /**
  * Per ogni posto del team, cosa prende dal colpo migliore della minaccia: `null` se il motore non conosce il membro,
@@ -43,7 +45,7 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
  * Coverage meta della Difesa, con la grafica di quella dell'Offesa: i membri in riga (nello stesso punto delle altre
  * schede), le minacce del meta in colonna, 8 per pagina dalla meno coperta (a pari livello la più usata). In ogni casella
  * il danno che il membro prende dal colpo migliore della minaccia (corsivo, "%" piccolo) con la barra dei PS che gli
- * restano, verde se regge (sotto metà PS), giallo se solo a metà; il timbro KO se va KO in un colpo. Sulla casella il
+ * restano, coi colori di Coverage tipi (4HKO+ sotto un terzo dei PS, 3HKO sotto la metà, 2HKO); il timbro KO se va KO in un colpo. Sulla casella il
  * tooltip DreamDex (minaccia, membro, mossa, efficacia, danno); sulla sprite in testata la carta del Pokémon col suo set
  * più usato e sotto un filo col colore di quanti la reggono. In fondo la riga Team Coverage, come nell'Offesa: nelle
  * colonne quanti membri la reggono del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra; in basso
@@ -61,7 +63,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const focus = ctx.focus?.kind === 'dmeta' ? ctx.focus : null;
   const pieceAt = (row: Row, m: number): HoldPiece | null => {
     const c = cellsOf(row, names)[m];
-    return c === null ? null : c === 'ko' ? 'ohko' : pieceOf(holdBand(c.pct / 100));
+    return c === null ? null : c === 'ko' ? 'ohko' : pieceOf(c.band);
   };
   const lit = (row: Row) => !!focus && pieceAt(row, focus.slot) === focus.band;
   const sorted = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
@@ -89,7 +91,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
       );
     }
     return (
-      <td key={key} className={hover.cls(k, `rob-cell dm-cell ${c.partial ? 'hold-3' : 'hold-4'}${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close}>
+      <td key={key} className={hover.cls(k, `rob-cell dm-cell ${HOLD_BANDS[c.band].cls}${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close}>
         <span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} />
         <span className="visually-hidden"> {row.species}: {c.move ? `${c.move} ` : ''}{c.pct}%</span>
         <EffTag label={tag} side="defense" />
@@ -175,17 +177,18 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
 }
 
-/** La legenda di Coverage meta della Difesa, come quella dell'Offesa: il timbro KO, poi regge e a metà. */
+/** La legenda di Coverage meta della Difesa: il timbro KO, poi le tre fasce col loro % (come Coverage tipi). */
 /**
  * Il tooltip di un colpo di una minaccia su un membro (casella di Coverage meta, pastiglia della Generale): la minaccia
  * col badge dei colpi, il membro, la mossa della minaccia con l'efficacia e il danno; "KO" se lo manda KO in un colpo.
  */
-export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name: string; hit: { move: string; pct: number; partial: boolean } | 'ko'; mult: string | null; koMove?: string }) {
+export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name: string; hit: { move: string; pct: number; partial: boolean; band?: HoldBand } | 'ko'; mult: string | null; koMove?: string }) {
   const t = useT();
   // La mossa del colpo: quella della casella, o (KO in un colpo) quella che il motore ha trovato per il membro
   const move = hit === 'ko' ? koMove : hit.move;
-  const band = hit === 'ko' ? 'ohko' : hit.partial ? 'two' : 'three';
-  const tag = hit === 'ko' ? 'KO' : hit.partial ? '2HKO' : '3HKO+';
+  // La fascia del colpo, come nei colpi di tipo (4HKO+, 3HKO, 2HKO)
+  const band = hit === 'ko' ? 'ohko' : hit.band ?? holdBand(hit.pct / 100);
+  const tag = hit === 'ko' ? 'KO' : HOLD_BANDS[band].tag;
   return (
     <>
       <div className="ftip-head tht-target">

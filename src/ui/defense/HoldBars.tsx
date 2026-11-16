@@ -36,10 +36,10 @@ export const typeHolds = (cells: { band: HoldBand }[]): HoldTarget[] =>
   cells.map((c, k) => ({ label: TYPES[k], kind: 'type', band: c.band }));
 
 /** Le minacce del meta per un membro: chi non è in `heldBy` lo manda KO in un colpo. */
-export const metaHolds = (rows: { species: string; heldBy: { species: string; pct: number }[] }[], member: string): HoldTarget[] =>
+export const metaHolds = (rows: { species: string; heldBy: { species: string; pct: number; band?: HoldBand }[] }[], member: string): HoldTarget[] =>
   rows.map(row => {
     const h = row.heldBy.find(x => x.species === member);
-    return { label: row.species, kind: 'mon', band: h ? holdBand(h.pct / 100) : 'ohko' };
+    return { label: row.species, kind: 'mon', band: h ? h.band ?? holdBand(h.pct / 100) : 'ohko' };
   });
 
 /** Il team su ogni bersaglio: il membro che lo regge meglio. */
