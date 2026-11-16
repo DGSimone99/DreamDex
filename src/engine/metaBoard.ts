@@ -64,7 +64,10 @@ export function metaProfile(stats: StatsData | null, name: string): MetaProfile 
     const move = getMove(id);
     return move ? [{ name: move.name, type: move.type, pct }] : [];
   }).slice(0, 4);
-  const mates = byPct(entry.teammates).map(([mate]) => getSpecies(mate)?.name).filter((n): n is string => !!n).slice(0, 5);
+  const mates = byPct(entry.teammates).flatMap(([mate]) => {
+    const found = getSpecies(mate);
+    return found ? [String(found.name)] : [];
+  }).slice(0, 5);
   return {
     name: species.name, rank, usage: entry.usage, types: [...species.types],
     item: first(entry.items, id => dex.items.get(id)),
