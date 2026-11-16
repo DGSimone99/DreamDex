@@ -46,12 +46,12 @@ describe('Offesa: navigazione e guida', () => {
     // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in alto
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Coverage']);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent(/^CoverageBersagli.*Coverage tipi.*Pokémon medio.*Coverage meta.*Il test.*Colpo/);
+    expect(panel).toHaveTextContent(/^CoverageBersagli.*Coverage tipi.*Pokémon medio.*Coverage meta.*Il test.*Colpo.*contano meno.*Quanti lo coprono/);
     // La regola del credito nella riga del Colpo; quello che vale meno in una riga sola; niente ×2·×4 né righe della legenda
     expect(panel).toHaveTextContent('Per ogni membro, il suo colpo migliore contro ogni bersaglio che fa almeno il 50%');
-    expect(panel).toHaveTextContent('Valgono meno');
-    expect(panel).toHaveTextContent('I colpi che non sono sempre pronti: Band, Specs e Gorilla Tactics, setup,');
-    expect(panel).toHaveTextContent('Il meteo che il membro porta da sé conta pieno.');
+    // Quello che conta meno: a capo sotto il Colpo, senza un titolo suo
+    expect(panel).not.toHaveTextContent('Valgono meno');
+    expect(panel.querySelector('.guide-sub')).toHaveTextContent('Band, Specs e simili, e i boost da setup, meteo o campo e le mosse Z contano meno (pieni se il meteo o il campo lo porta il membro stesso).');
     for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie', '×2 · ×4']) expect(panel).not.toHaveTextContent(gone);
     // Il "?" dei tipi: le medie dei 18 tipi nel tooltip; quello del meta: le sprite delle minacce
     await user.hover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
@@ -80,7 +80,7 @@ describe('Offesa: navigazione e guida', () => {
     await user.click(screen.getByRole('button', { name: 'Come funziona Coverage meta' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
     expect(within(dialog).getByRole('tab', { name: 'Coverage' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Valgono meno');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('contano meno');
   });
 
   it('il Wallbreaking e la Potenza non compaiono più, né nelle schede né nella guida', async () => {

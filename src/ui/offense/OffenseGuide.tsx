@@ -81,7 +81,7 @@ function MetaTargets({ species }: { species: string[] }) {
 
 /**
  * La guida all'Offesa: una pagina per le due Coverage. In alto i bersagli, l'unica differenza fra le due (col "?" il
- * dettaglio: le medie dei 18 tipi, le minacce del meta); poi le regole comuni (colpo, cosa vale meno, pesi).
+ * dettaglio: le medie dei 18 tipi, le minacce del meta); poi le regole comuni (colpo, con sotto cosa conta meno; pesi).
  * Schematica e generica (niente valori del team).
  */
 export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { offense: TeamOffense; formatId?: FormatId }) {
@@ -93,8 +93,7 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
   const format = { ...DEFAULT_FORMAT, formatId };
   const tera = teraAllowed(format);
   const z = pokedexOf(format) === 'natdex';
-  const oneUse = tera && z ? g('less.oneuse') : tera ? g('less.tera') : z ? g('less.z') : null;
-  const less = [g('less.locked'), g('less.setup'), g('less.field'), ...(oneUse ? [oneUse] : [])].join(', ');
+  const oneUse = tera && z ? g('less.oneuse') : tera ? g('less.tera') : z ? g('less.z') : '';
   const metaSpecies = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => b.weight - a.weight).map(r => r.species);
   // I pesi sono gli stessi nelle due schede (70/20/10): la barra è una
   const depth = depthOf(false);
@@ -108,8 +107,8 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
 
       <h5>{g('test')}</h5>
       <Rows compact rows={[
-        [g('power.hit'), g('power.hit.rule')],
-        [g('less'), g('less.rule', { list: less })],
+        // Sotto la regola, a capo e senza titolo: quello che conta meno
+        [g('power.hit'), <>{g('power.hit.rule')}<span className="guide-sub">{g('less.rule', { extra: oneUse })}</span></>],
       ]} />
 
       <h5>{g('cov.depth')}</h5>
