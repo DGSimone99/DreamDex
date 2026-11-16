@@ -523,10 +523,11 @@ const STATES: Record<string, State> = {
   'analysis-bonus-six': bonusState(SIX),
   'analysis-bonus-lone': bonusState(LONE),
   'analysis-bonus-rain': bonusState(RAIN),
-  'analysis-bonus-swap': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
+  // Due core: affiancati se c'è posto (niente da cliccare), a fisarmonica solo su carte strette
+  'analysis-bonus-swap': bonusState(SIX, async p => { if (!await p.$('.bm-core.shut')) return true; const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
   // Telefono: la scheda portata in alto (le voci, poi i core) e il secondo core aperto
   'analysis-bonus-six-scrolled': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm')?.scrollIntoView()); await wait(300); return true; }),
-  'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
+  'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); if (!await p.$('.bm-core.shut')) return true; const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
   'analysis-bonus-rain-open': bonusState(RAIN, async p => { const ok = await clickText(p, 'button.bm-row-toggle', /./); await wait(400); return ok; }),
   'analysis-bonus-stress': bonusState(STRESS),
   // Il team di 5 (senza malus): la scheda Malus vuota; e la scheda Bonus vuota di LONE
