@@ -380,13 +380,18 @@ describe('Bonus/Malus', () => {
     const weak = within(cores).getByRole('button', { name: 'Core Fire / Water / Electric' });
     expect(strong).toHaveAttribute('aria-expanded', 'true');
     expect(weak).toHaveAttribute('aria-expanded', 'false');
-    expect(within(cores).getByText('Reggono 9 tipi su 18')).toBeInTheDocument();
+    // I tipi retti come icone dentro il core aperto (il conto e chi passa nel nome per i lettori di schermo)
+    const types = within(strong.closest('li')!).getByRole('img', { name: /^Reggono 9 tipi su 18\. Passano: / });
+    expect(types.querySelectorAll('img.on')).toHaveLength(9);
+    expect(types.querySelectorAll('img.off')).toHaveLength(9);
     expect(within(cores).getByText((_, el) => el?.tagName === 'SPAN' && el.textContent === 'Heatran para Landorus-Therian da Fire')).toBeInTheDocument();
     await user.click(weak);
     expect(weak).toHaveAttribute('aria-expanded', 'true');
     expect(strong).toHaveAttribute('aria-expanded', 'false');
     expect(weak.closest('li')).toHaveClass('open');
-    expect(within(cores).getByText('Reggono 4 tipi su 18')).toBeInTheDocument();
+    expect(within(weak.closest('li')!).getByRole('img', { name: /^Reggono 4 tipi su 18/ })).toBeInTheDocument();
+    // Con due core niente colonna dei tipi a destra: c'è il secondo core
+    expect(cores.querySelector('.bm-core-side')).toBeNull();
     // I core stanno solo nel riquadro in alto: nessuna voce sotto (contano però nel netto e in "Bonus +6")
     expect(inner().queryByRole('tab', { name: /bonus/i })).toBeNull();
     expect(onGrade()).toHaveTextContent('Bonus +6');
@@ -397,6 +402,12 @@ describe('Bonus/Malus', () => {
     const one = screen.getByRole('region', { name: '1 Core +3' });
     expect(within(one).queryByRole('button')).toBeNull();
     expect(within(one).getByRole('heading', { name: /Fire \/ Ground \/ Poison/ })).toBeInTheDocument();
+    // Un core solo: i tipi che regge nella colonna a destra, grandi, col conto sopra
+    const side = one.querySelector<HTMLElement>('.bm-core-side');
+    expect(side).not.toBeNull();
+    expect(side!.querySelector('.bm-core-types.big')).not.toBeNull();
+    expect(side).toHaveTextContent(/^Reggono \d+ tipi su \d+$/);
+    expect(one.querySelector('.bm-core-open .bm-core-types, .bm-core.open .bm-core-types')).toBeNull();
     unmount();
     renderBm(catalogRating());
     const none = screen.getByRole('region', { name: 'Core' });
