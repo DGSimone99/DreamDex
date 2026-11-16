@@ -17,6 +17,7 @@ import { Typed } from '../TypeText';
 import { TypeIcons, typeIconUrl } from '../typeIcons';
 import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP } from '../spriteSizes';
 import { useMemberTip } from '../MemberCard';
 import { TypeStatsTip } from '../TypeStatsTip';
 import { HOLD_BANDS, HOLD_ORDER } from './holds';
@@ -217,7 +218,7 @@ export function DefenseHitTip({ type, species, cell, mult }: { type: string; spe
         <span className={`ftip-ko def ${cell.band} tht-band`}>{HOLD_BANDS[cell.band].tag}</span>
       </div>
       <div className="tht-body">
-        <Sprite species={species} size={48} />
+        <Sprite species={species} size={SPRITE_TIP} />
         <span className="tht-text">
           <span className="tht-name">{species}</span>
           {side(t('tip.physical'), cell.physical)}

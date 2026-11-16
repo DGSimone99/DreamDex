@@ -2,8 +2,8 @@
    staccarlo dallo sfondo; testata a strisce con l'icona tonda, punta verso la casella di partenza. Solo a vista: il
    testo per gli screen reader sta sulla casella. */
 .ftip {
-  position: fixed; z-index: 1000; width: 360px; max-width: calc(100vw - 16px); pointer-events: none;
-  color: var(--text); font-size: 12px; line-height: 1.3;
+  position: fixed; z-index: 1000; width: var(--tip-m); max-width: calc(100vw - 16px); pointer-events: none;
+  color: var(--text); font-size: var(--tip-body); line-height: 1.3;
   background:
     radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tc) 16%, transparent), transparent 70%),
     linear-gradient(180deg, color-mix(in srgb, var(--raised) 55%, var(--panel)), color-mix(in srgb, var(--field) 40%, var(--panel)));
@@ -11,7 +11,7 @@
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5), 0 0 26px -4px color-mix(in srgb, var(--tc) 45%, transparent), 0 18px 40px rgb(0 0 0 / 0.65);
   animation: ftip-in 0.16s var(--ease);
 }
-.ftip.offense { width: 510px; }
+.ftip.offense { width: var(--tip-l); }
 /* La punta: un quadrato ruotato sul bordo, alla x della casella */
 .ftip::before { content: ""; position: absolute; top: -7px; left: calc(var(--arrow) - 6px); width: 12px; height: 12px; transform: rotate(45deg);
   background: color-mix(in srgb, var(--tc) 30%, var(--panel)); border-left: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); border-top: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
@@ -31,16 +31,19 @@
 .ftip-head { position: relative; display: flex; align-items: center; gap: 8px; padding: 7px 10px 7px 8px;
   background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 38%, transparent), color-mix(in srgb, var(--tc) 8%, transparent));
   border-bottom: 1px solid color-mix(in srgb, var(--tc) 50%, var(--line)); }
-.ftip-head img { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 70%, transparent); }
-.ftip-head b { font: 700 italic 15px/1 var(--display); }
-.ftip-val { margin-left: auto; font: 700 italic 17px/1 var(--display); color: var(--good); }
-.ftip-val small { display: inline; font-size: 11px; }
-.ftip-foot { margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); font-size: 11px; color: var(--faint); }
+.ftip-head img { width: var(--ti-tip); height: var(--ti-tip); border-radius: 50%; box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 70%, transparent); }
+/* Un Pokémon al posto del tipo in testata (minacce del meta): la sprite a misura di riga dei tooltip, non schiacciata nel tondo dell icona; esce un po' sopra e sotto senza allungare la testata */
+.ftip-head img.sprite { width: 40px; height: 40px; margin: -10px -4px -10px -6px; border-radius: 0; box-shadow: none; image-rendering: pixelated; }
+.ftip-head b { font: 700 italic var(--tip-title)/1 var(--display); }
+.ftip-val { margin-left: auto; font: 700 italic var(--tip-num)/1 var(--display); color: var(--good); }
+/* Il "/totale" dopo un numero, uguale ovunque (tooltip e tabelle): piccolo, spento, sulla stessa linea */
+.ftip-val small, .ftip-pct small, .tht-pct small, .kob-count-num > small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--faint); }
+.ftip-foot { margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); font-size: var(--tip-small); color: var(--faint); }
 .ftip-empty { margin: 0; padding: 12px 10px; color: var(--muted); }
 
 /* Badge dei colpi: in Offesa verde (prima arriva il KO, meglio è; 3HKO giallo, 4HKO+ grigio); in Difesa i colori della
    scheda Difesa (rosso: ti manda KO presto, verde: lo reggi) */
-.ftip-ko { display: inline-block; padding: 2px 6px 1px; font: 700 11px/1.3 var(--display); letter-spacing: 0.04em; border: 1px solid; white-space: nowrap; }
+.ftip-ko { display: inline-block; padding: 2px 6px 1px; font: 700 var(--tip-small)/1.3 var(--display); letter-spacing: 0.04em; border: 1px solid; white-space: nowrap; }
 .ftip-ko.off.ohko { color: var(--good); border-color: var(--good); background: var(--good-bg); }
 .ftip-ko.off.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
 .ftip-ko.off.three { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
@@ -53,31 +56,30 @@
 
 /* Offesa: podio, una colonna per colpo; il badge a nastro inclinato in alto a destra sulla sprite */
 .ftip-podium { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
-.ftip-hit { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; text-align: center; border-right: 1px solid var(--line-soft); }
+.ftip-hit { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 2px 9px; text-align: center; border-right: 1px solid var(--line-soft); }
 .ftip-hit:last-child { border-right: 0; }
 .ftip-hit .ftip-ko { position: absolute; top: 8px; right: 8px; transform: skewX(-12deg); }
 .ftip-plinth { position: relative; display: flex; }
 .ftip-plinth::before { content: ""; position: absolute; left: 50%; bottom: 4px; width: 70%; height: 10px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
 .ftip-plinth .sprite { position: relative; display: block; margin: -8px 0 -6px; image-rendering: pixelated; }
-.ftip-pct { font: 700 italic 24px/1 var(--display); color: var(--good); }
+.ftip-pct { font: 700 italic var(--tip-num)/1 var(--display); color: var(--good); }
 .ftip-pct.three { color: var(--warn); }
 .ftip-pct.four { color: var(--muted); }
 .ftip-pct { white-space: nowrap; }
-.ftip-pct small { display: inline; font-size: 12px; }
 .ftip-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 /* La mossa: icona tonda e nome nel colore del suo tipo, schiarito per leggersi sul fondo scuro, con un alone leggerissimo;
    poi simbolo della categoria e potenza in Faint */
-.ftip-move { max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
-.ftip-move img { flex: none; width: 15px; height: 15px; border-radius: 50%; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--mc) 35%, transparent)); }
+.ftip-move { max-width: 100%; display: inline-flex; align-items: center; gap: 3px; }
+.ftip-move img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--mc) 35%, transparent)); }
 .ftip-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
-.ftip-move-cat { flex: none; display: inline-flex; align-items: center; gap: 3px; font: 700 11px/1 var(--display); color: var(--faint); }
+.ftip-move-cat { flex: none; display: inline-flex; align-items: center; gap: 3px; font: 700 var(--tip-small)/1 var(--display); color: var(--faint); }
 .ftip-move-cat .icon { width: 11px; height: 11px; }
 
 /* Difesa: gruppi per moltiplicatore; per membro sprite, nome, danno % e badge */
 .ftip-group { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: start; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line-soft); }
 .ftip-group:last-of-type { border-bottom: 0; }
-.ftip-group-label { padding-top: 9px; font: 700 11px/1.2 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
-.ftip-group-label small { font-size: 11px; letter-spacing: 0; text-transform: none; }
+.ftip-group-label { padding-top: 9px; font: 700 var(--tip-small)/1.2 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
+.ftip-group-label small { font-size: var(--tip-small); letter-spacing: 0; text-transform: none; }
 .ftip-group-label.good { color: var(--good); }
 .ftip-group-label.faint { color: var(--faint); }
 .ftip-group-label.bad { color: var(--bad); }
@@ -85,13 +87,13 @@
 .ftip-mon { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 46px; align-items: center; gap: 6px; }
 .ftip-mon .sprite { display: block; margin: -4px -4px -4px -6px; image-rendering: pixelated; }
 .ftip-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ftip-mon-pct { font: 700 italic 14px/1 var(--display); text-align: right; }
+.ftip-mon-pct { font: 700 italic var(--tip-title)/1 var(--display); text-align: right; }
 .ftip-mon .ftip-ko { text-align: center; }
 
 /* ===== Carta del Pokémon (MemberCard): testata nei due colori dei tipi a strisce con la sprite grande che esce dal bordo,
    lastra azzurra col perché; strumento, abilità, natura ed EV su due colonne; statistiche a esagono come la schermata
    riassunto di Spada e Scudo e le mosse come lastre inclinate nel colore del loro tipo */
-.ftip.member { width: 440px; overflow: visible; }
+.ftip.member { width: var(--tip-l); overflow: visible; }
 .mcard-head { position: relative; display: grid; grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; gap: 0 10px; min-height: 80px; padding: 12px 12px 10px 6px;
   background: var(--stripes), linear-gradient(115deg, color-mix(in srgb, var(--t1) 50%, transparent) 0 52%, color-mix(in srgb, var(--t2) 42%, transparent) 52% 100%);
   border-bottom: 1px solid color-mix(in srgb, var(--t1) 50%, var(--line)); }
@@ -99,11 +101,11 @@
 .mcard-head > * { position: relative; z-index: 1; }
 .mcard-mon { grid-row: 1 / 3; align-self: end; display: flex; justify-content: center; }
 .mcard-mon .sprite { display: block; margin: -30px 0 -16px; image-rendering: pixelated; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45)); }
-.mcard-name { display: flex; align-items: center; gap: 8px; min-width: 0; font: 700 italic 20px/1.1 var(--display); text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
-.mcard-name img { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
-.mcard-why { justify-self: start; margin-top: 6px; padding: 3px 12px 3px 9px; font: 700 italic 12px/1.2 var(--display); color: var(--on-accent); background: var(--accent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+.mcard-name { display: flex; align-items: center; gap: 8px; min-width: 0; font: 700 italic var(--tip-title)/1.1 var(--display); text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.mcard-name img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
+.mcard-why { justify-self: start; margin-top: 6px; padding: 3px 12px 3px 9px; font: 700 italic var(--tip-body)/1.2 var(--display); color: var(--on-accent); background: var(--accent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .mcard-kit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: baseline; gap: 6px 8px; padding: 10px 12px 9px; border-bottom: 1px solid var(--line-soft); }
-.mcard-kit small { display: inline; font: 700 11px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.mcard-kit small { display: inline; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
 .mcard-kit span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .mcard-kit em { font-style: normal; font-weight: 400; color: var(--muted); }
 .mcard-body { display: grid; grid-template-columns: 200px minmax(0, 1fr); align-items: center; gap: 6px; padding: 10px 10px 12px 2px; }
@@ -112,16 +114,16 @@
 .mcard-hex .hx-ring.soft { fill: none; stroke: var(--line-soft); }
 .mcard-hex .hx-axis { stroke: var(--line-soft); stroke-width: 1; }
 .mcard-hex .hx-val { fill: color-mix(in srgb, var(--accent) 28%, transparent); stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 45%, transparent)); }
-.mcard-hex .hx-l { font: 700 11px var(--display); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--faint); }
-.mcard-hex .hx-v { font: 700 italic 12.5px var(--display); fill: var(--text); }
+.mcard-hex .hx-l { font: 700 var(--tip-small) var(--display); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--faint); }
+.mcard-hex .hx-v { font: 700 italic var(--tip-body) var(--display); fill: var(--text); }
 .mcard-hex .hx-v.up { fill: var(--good); }
 .mcard-hex .hx-v.down { fill: var(--bad); }
 .mcard-moves { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .mcard-move { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 5px 12px 5px 8px; clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
   background: linear-gradient(90deg, color-mix(in srgb, var(--mc) 34%, transparent), color-mix(in srgb, var(--mc) 6%, transparent) 85%); }
-.mcard-move img { width: 16px; height: 16px; flex: none; border-radius: 50%; }
-.mcard-move b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 12.5px/1.1 var(--display); }
-.mcard-cat { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 700 11px/1 var(--display); color: var(--muted); }
+.mcard-move img { width: var(--ti-inline); height: var(--ti-inline); flex: none; border-radius: 50%; }
+.mcard-move b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 var(--tip-body)/1.1 var(--display); }
+.mcard-cat { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 700 var(--tip-small)/1 var(--display); color: var(--muted); }
 .mcard-cat .icon { width: 11px; height: 11px; }
 .mcard-none { color: var(--faint); }
 /* Le parti cambiate rispetto al set di prima: in azzurro, la mossa nuova con un bordo azzurro sottile e un punto */
@@ -131,7 +133,7 @@
 
 /* ===== Meteo e campo (ConditionTip): testata nel colore della condizione con una texture sua, effetti come lastre
    inclinate, chi ne approfitta col piedistallo verde. L'unico movimento: la pioggia che scende (spento con riduci animazioni) */
-.ftip.cond { width: 400px; }
+.ftip.cond { width: var(--tip-m); }
 .ctip-head { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; padding: 10px 14px 10px 10px; overflow: hidden;
   background: linear-gradient(100deg, color-mix(in srgb, var(--tc) 46%, transparent), color-mix(in srgb, var(--tc) 10%, transparent) 75%);
   border-bottom: 1px solid color-mix(in srgb, var(--tc) 55%, var(--line)); }
@@ -148,8 +150,8 @@
   background: radial-gradient(70% 160% at 80% 120%, color-mix(in srgb, var(--tc) 55%, transparent), transparent 70%); }
 @media (prefers-reduced-motion: reduce) { .ctip-head.k-rain::before { animation: none; } }
 .ctip-ico { grid-row: 1 / 3; width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.35), 0 4px 12px rgb(0 0 0 / 0.4); }
-.ctip-name { font: 700 italic 19px/1 var(--display); }
-.ctip-sub { grid-column: 2; font-size: 11.5px; color: color-mix(in srgb, var(--tc) 30%, var(--text)); }
+.ctip-name { font: 700 italic var(--tip-title)/1 var(--display); }
+.ctip-sub { grid-column: 2; font-size: var(--tip-small); color: color-mix(in srgb, var(--tc) 30%, var(--text)); }
 .ctip-setter { grid-row: 1 / 3; grid-column: 3; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .ctip-plinth { position: relative; display: flex; justify-content: center; }
 .ctip-plinth::before { content: ""; position: absolute; left: 50%; bottom: 2px; width: 72%; height: 8px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgb(255 255 255 / 0.35), transparent 70%); }
@@ -157,103 +159,105 @@
 .ctip-plinth .sprite { position: relative; display: block; image-rendering: pixelated; }
 .ctip-setter .sprite { margin: -12px 0 -8px; }
 /* Abilità: lastra inclinata; mossa: nome nel colore del tipo, alone leggero */
-.ctip-ab { display: inline-flex; align-items: center; padding: 2px 10px 2px 8px; font: 600 11.5px/1.2 var(--display); color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+.ctip-ab { display: inline-flex; align-items: center; padding: 2px 10px 2px 8px; font: 600 var(--tip-small)/1.2 var(--display); color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .ctip-mv { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
-.ctip-mv img { width: 14px; height: 14px; border-radius: 50%; }
+.ctip-mv img { width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .ctip-arrow { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .ctip-fx { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px; padding: 10px 10px 8px; }
 .ctip-plate { --c: var(--faint); display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
   background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, transparent), color-mix(in srgb, var(--c) 4%, transparent)); }
 .ctip-plate.good { --c: var(--good); }
 .ctip-plate.bad { --c: var(--bad); }
-.ctip-plate img { width: 20px; height: 20px; flex: none; border-radius: 50%; }
-.ctip-plate span { flex: 1; min-width: 0; font-size: 11px; line-height: 1.15; color: var(--muted); }
-.ctip-plate span b { display: block; font: 600 12.5px/1.2 var(--display); color: var(--text); }
-.ctip-plate strong { display: flex; align-items: center; gap: 2px; font: 700 italic 18px/1 var(--display); color: var(--c); white-space: nowrap; }
+.ctip-plate img { width: var(--ti-chip); height: var(--ti-chip); flex: none; border-radius: 50%; }
+.ctip-plate span { flex: 1; min-width: 0; font-size: var(--tip-small); line-height: 1.15; color: var(--muted); }
+.ctip-plate span b { display: block; font: 600 var(--tip-body)/1.2 var(--display); color: var(--text); }
+.ctip-plate strong { display: flex; align-items: center; gap: 2px; font: 700 italic var(--tip-title)/1 var(--display); color: var(--c); white-space: nowrap; }
 .ctip-user { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 0 8px; padding: 6px 12px 6px 8px; border-top: 1px solid var(--line-soft); }
 .ctip-user .sprite { margin: -6px 0; }
 .ctip-who { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.ctip-who b { font: 600 13px/1.1 var(--display); }
+.ctip-who b { font: 600 var(--tip-body)/1.1 var(--display); }
 .ctip-via { display: flex; flex-wrap: wrap; gap: 4px 10px; }
-.ctip-eff { display: inline-flex; align-items: center; gap: 3px; padding: 4px 12px 4px 9px; font: 700 italic 13px/1 var(--display); color: var(--good); white-space: nowrap;
+.ctip-eff { display: inline-flex; align-items: center; gap: 3px; padding: 4px 12px 4px 9px; font: 700 italic var(--tip-body)/1 var(--display); color: var(--good); white-space: nowrap;
   background: linear-gradient(90deg, color-mix(in srgb, var(--good) 20%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 
 /* ===== Velocità (SpeedTip): una scala verticale; in alto chi ti supera (rosso), al centro il membro in azzurro, sotto chi
    superi (verde), ognuno con la velocità effettiva; Sciarpa e Booster come piccole lastre inclinate */
-.ftip.speed { width: 340px; }
+.ftip.speed { width: var(--tip-m); }
 .stip-head { display: flex; align-items: center; gap: 9px; padding: 9px 14px 9px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--accent) 32%, transparent), color-mix(in srgb, var(--accent) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .stip-bolt { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--on-accent); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 50%, transparent); }
 .stip-bolt .icon { width: 15px; height: 15px; }
-.stip-head b { font: 700 italic 17px/1 var(--display); }
-.stip-own { margin-left: auto; font: 700 italic 23px/1 var(--display); color: var(--accent-ink); }
+.stip-head b { font: 700 italic var(--tip-title)/1 var(--display); }
+.stip-own { margin-left: auto; font: 700 italic var(--tip-num)/1 var(--display); color: var(--accent-ink); }
 .stip-ladder { display: flex; flex-direction: column; padding: 6px 0; }
-.stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 9px; padding: 3px 14px 3px 8px; font-size: 13px; }
+.stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 9px; padding: 3px 14px 3px 8px; font-size: var(--tip-body); }
 .stip-rung .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 .stip-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .stip-name > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stip-speed { grid-column: 4; font: 700 italic 16px/1 var(--display); text-align: right; min-width: 38px; }
+.stip-speed { grid-column: 4; font: 700 italic var(--tip-title)/1 var(--display); text-align: right; min-width: 38px; }
 .stip-rung.faster .stip-speed { color: var(--bad); }
 .stip-rung.slower .stip-speed { color: var(--good); }
 .stip-rung.tie .stip-speed { color: var(--warn); }
 .stip-rung.self { margin: 3px 0; padding-block: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 4%, transparent)); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
-.stip-rung.self .stip-name { font: 600 14px/1.1 var(--display); }
-.stip-rung.self .stip-speed { color: var(--accent-ink); font-size: 18px; }
-.stip-item { grid-column: 3; padding: 1px 8px 1px 6px; font: 700 11px/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.stip-rung.self .stip-name { font: 600 var(--tip-title)/1.1 var(--display); }
+.stip-rung.self .stip-speed { color: var(--accent-ink); }
+.stip-item { grid-column: 3; padding: 1px 8px 1px 6px; font: 700 var(--tip-small)/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .stip-item.tie { color: var(--warn); }
-.stip-gains { margin: 0; padding: 6px 14px 6px 10px; list-style: none; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.stip-gains { margin: 0; padding: 6px 14px 6px 10px; list-style: none; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 3px; font-size: var(--tip-body); color: var(--muted); }
 .stip-gains li { display: flex; justify-content: space-between; gap: 12px; }
 .stip-gains b { color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .stip-empty { margin: 0; padding: 8px 12px; color: var(--muted); }
 
 /* ===== Core (CoreTip): testata verde come i core, una riga per lato: chi para sul piedistallo, il tipo nel suo colore,
    il badge dei colpi (quanto lo regge, colori della Difesa) e a destra chi protegge */
-.ftip.core { width: 430px; }
+.ftip.core { width: var(--tip-l); }
 .core-tip-head { display: flex; align-items: baseline; gap: 9px; min-width: 0; padding: 10px 14px 10px 12px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--good) 30%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--good) 45%, var(--line)); }
-.core-tip-tag { font: 700 12px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--good); }
-.core-tip-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic 16px/1.1 var(--display); }
+.core-tip-tag { font: 700 var(--tip-small)/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--good); }
+.core-tip-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic var(--tip-title)/1.1 var(--display); }
 .core-tip-side { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto auto; align-items: center; gap: 0 12px; padding: 8px 14px 8px 8px; border-bottom: 1px solid var(--line-soft); }
 .core-tip-side:last-of-type { border-bottom: 0; }
 .core-tip-side .ctip-plinth .sprite { margin: -6px 0; }
 .core-tip-what { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.core-tip-what b { font: 600 15px/1.1 var(--display); }
-.core-tip-type { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
-.core-tip-type img { width: 17px; height: 17px; border-radius: 50%; }
+.core-tip-what b { font: 600 var(--tip-title)/1.1 var(--display); }
+.core-tip-type { display: inline-flex; align-items: center; gap: 5px; font-size: var(--tip-body); font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
+.core-tip-type img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
 .core-tip-for { display: flex; align-items: center; gap: 2px; color: var(--faint); }
-.core-tip-for small { display: inline; font-size: 12px; }
+.core-tip-for small { display: inline; font-size: var(--tip-small); }
 .core-tip-for .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 
 /* ===== Ruoli (RoleTip): il nome del ruolo col livello, poi solo le sprite di chi lo copre sul piedistallo verde (niente
    percentuali); se manca, una riga rossa (grigia se è un minore) */
-.ftip.role { width: auto; min-width: 250px; max-width: 460px; }
+.ftip.role { width: var(--tip-m); }
 .role-tip-head { display: flex; align-items: center; gap: 8px; padding: 9px 14px 9px 12px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
 .role-tip-head .icon { width: 17px; height: 17px; color: var(--tc); }
-.role-tip-head b { font: 700 italic 17px/1.1 var(--display); }
-.role-tip-head small { display: inline; margin-left: auto; padding-left: 12px; font: 700 11px/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.role-tip-head b { font: 700 italic var(--tip-title)/1.1 var(--display); }
+.role-tip-head small { display: inline; margin-left: auto; padding-left: 12px; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
 .role-tip-mons { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 12px 14px 10px; }
-.role-tip-mon { display: flex; flex-direction: column; align-items: center; gap: 3px; font: 600 13px/1.1 var(--display); }
+.role-tip-mon { display: flex; flex-direction: column; align-items: center; gap: 3px; font: 600 var(--tip-body)/1.1 var(--display); }
 .role-tip-mon .sprite { margin: -6px 0 -4px; }
-.role-tip-none { margin: 0; padding: 12px 14px; font: 600 14px/1.2 var(--display); color: var(--bad); }
+.role-tip-none { margin: 0; padding: 12px 14px; font: 600 var(--tip-title)/1.2 var(--display); color: var(--bad); }
 .role-tip-none.soft { color: var(--muted); }
 
 /* ===== Badge dei colpi (KoBadges): testata col chi e il badge, poi i bersagli (icone dei tipi o sprite delle minacce),
    in righe a parte quelli in più col setup o con Tera/Z */
-.ftip.kot { width: auto; min-width: 240px; max-width: 460px; }
+.ftip.kot { width: var(--tip-m); }
+/* Solo una frase (il conto, cosa vuol dire un numero): il tooltip piccolo */
+.ftip.kot:has(> .kot-none:only-child) { width: var(--tip-s); }
 .kot-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px 8px 10px; background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 28%, transparent), color-mix(in srgb, var(--tc) 5%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
-.kot-head > b { font: 700 italic 15px/1.1 var(--display); }
+.kot-head > b { font: 700 italic var(--tip-title)/1.1 var(--display); }
 .kot-head .kob { cursor: default; }
-.kot-head .kob > b { font-size: 14px; }
-.kot-head small { display: inline; margin-left: auto; padding-left: 12px; font-size: 11.5px; color: var(--faint); }
+.kot-head .kob > b { font-size: var(--tip-title); }
+.kot-head small { display: inline; margin-left: auto; padding-left: 12px; font-size: var(--tip-small); color: var(--faint); }
 .kot-list { display: flex; flex-wrap: wrap; gap: 8px 12px; padding: 10px 12px; }
 .kot-list.mons { gap: 0 2px; }
-.kot-type { display: inline-flex; align-items: center; gap: 5px; font: 600 12.5px/1 var(--display); }
-.kot-type img { width: 20px; height: 20px; border-radius: 50%; }
+.kot-type { display: inline-flex; align-items: center; gap: 5px; font: 600 var(--tip-body)/1 var(--display); }
+.kot-type img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
 .kot-mon .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 .kot-none { margin: 0; padding: 10px 12px; color: var(--muted); }
 .kot-extra { border-top: 1px solid var(--line-soft); }
-.kot-extra-h { display: flex; align-items: center; gap: 6px; padding: 8px 12px 0; font: 700 11px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.kot-extra-h { display: flex; align-items: center; gap: 6px; padding: 8px 12px 0; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 
 /* Le sinergie in più del Riassunto (il "+N" verde): una riga per sinergia, sprite unite dalla catena, etichetta, titolo, frase */
-.ftip.syn-more { width: 400px; }
+.ftip.syn-more { width: var(--tip-l); }
 .syn-more-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .syn-more-list > li { --link-w: 16px; display: flex; align-items: center; gap: 10px; }
 .syn-more-list > li + li { padding-top: 8px; border-top: 1px solid var(--line-soft); }

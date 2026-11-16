@@ -299,14 +299,14 @@
 .bm-core-pts { margin-left: auto; font: 800 22px/1 var(--display); color: var(--good); }
 .bm-core-lines { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
 .bm-core-lines li { display: flex; align-items: center; gap: 7px; }
-.bm-core-lines img { flex: none; width: 16px; height: 16px; border-radius: 50%; }
+.bm-core-lines img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
 /* I 18 tipi d'attacco del core: accesi quelli retti, spenti in grigio quelli che passano */
-.bm-core-types { display: grid; grid-template-columns: repeat(9, 20px); gap: 4px; margin-top: 10px; cursor: help; }
-.bm-core-types img { width: 20px; height: 20px; border-radius: 50%; }
+.bm-core-types { display: grid; grid-template-columns: repeat(9, var(--ti-chip)); gap: 4px; margin-top: 10px; cursor: help; }
+.bm-core-types img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
 .bm-core-types img.off { filter: grayscale(1); opacity: 0.25; }
-.bm-core-types.big { grid-template-columns: repeat(6, 26px); gap: 6px; margin: 0; }
-.bm-core-types.big img { width: 26px; height: 26px; }
+.bm-core-types.big { grid-template-columns: repeat(6, var(--ti-head)); gap: 6px; margin: 0; }
+.bm-core-types.big img { width: var(--ti-head); height: var(--ti-head); }
 /* Un core solo: la colonna dei tipi a destra, come il secondo core chiuso (stessa riga sottile, stesso fondo) */
 .bm-core-row:not(.two) .bm-core { max-width: none; }
 .bm-core-side { flex: none; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 10px 20px;
@@ -328,7 +328,7 @@
 /* Schermi bassi: tutto più compatto (core, netto, carte delle voci) perché le voci stiano senza scorrere */
 @media (max-height: 799px) {
   .bm { row-gap: 12px; }
-  .bm .sum-tri { --tri-w: 112px; --tri-badge: 19px; }
+  .bm .sum-tri { --tri-w: 112px; --tri-badge: calc(var(--ti-chip) + 3px); }
   .bm-core { padding: 8px 14px 8px 16px; }
   .bm .bm-core-body h5 { margin-bottom: 5px; font-size: 16px; }
   .bm-core-pts { font-size: 19px; }
@@ -351,18 +351,17 @@
 @media (max-height: 679px) {
   .area-panel.ad-panel:has(> .bm) { padding-top: 10px; padding-bottom: 10px; }
   .bm { row-gap: 10px; }
-  .bm .sum-tri { --tri-w: 84px; --tri-badge: 16px; }
+  .bm .sum-tri { --tri-w: 84px; --tri-badge: calc(var(--ti-inline) + 3px); }
   .bm .bm-core-body h5 { margin-bottom: 2px; font-size: 15px; }
   .bm-core-pts { font-size: 17px; }
   .bm-core-lines { gap: 0; font-size: 12px; line-height: 1.25; }
-  .bm-core-lines img { width: 14px; height: 14px; }
   .bm-core { padding: 4px 10px 4px 14px; gap: 10px; }
   .bm-core.shut .bm-core-body { top: 5px; }
   /* Con due core, su una fila sola: due file non ci stanno nella carta bassa */
-  .bm-core-types { margin-top: 4px; grid-template-columns: repeat(18, 14px); gap: 2px; }
-  .bm-core-types img { width: 14px; height: 14px; }
-  .bm-core-types.big { grid-template-columns: repeat(6, 20px); gap: 4px; }
-  .bm-core-types.big img { width: 20px; height: 20px; }
+  .bm-core-types { margin-top: 4px; grid-template-columns: repeat(18, var(--ti-inline)); gap: 2px; }
+  .bm-core-types img { width: var(--ti-inline); height: var(--ti-inline); }
+  .bm-core-types.big { grid-template-columns: repeat(6, calc(var(--ti-head) - 4px)); gap: 4px; }
+  .bm-core-types.big img { width: calc(var(--ti-head) - 4px); height: calc(var(--ti-head) - 4px); }
   .bm-core-side { padding: 6px 14px; gap: 5px; }
   .bm .bm-label { margin-bottom: 6px; }
   .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }

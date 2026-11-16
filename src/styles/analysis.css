@@ -349,11 +349,11 @@
 .dash .dash-matrix th, .dash .dash-matrix thead td { border-bottom: 0; }
 /* La card è alta quanto la tabella: niente vuoto sopra o sotto. Ampia: caselle e icone un po' più grandi */
 .dash.roomy .dash-cell { height: 26px; }
-.dash.roomy .dash-type { width: 24px; height: 24px; }
+.dash.roomy .dash-type { width: var(--ti-head); height: var(--ti-head); }
 .dash-matrix thead td, .dash-matrix th[scope='row'] { width: 64px; }
 .dash-matrix thead th { padding: 0 0 2px; }
 .dash-matrix th[scope='row'] { padding: 0 4px 0 0; font: 600 11px/1 var(--ui); text-align: right; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.dash-type { display: block; width: 22px; height: 22px; margin: 0 auto; border-radius: 50%; }
+.dash-type { display: block; width: var(--ti-tip); height: var(--ti-tip); margin: 0 auto; border-radius: 50%; }
 .dash .dash-cell { height: 22px; padding: 0; text-align: center; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: color-mix(in srgb, var(--faint) 40%, var(--raised)); cursor: help; }
 .dash-cell .icon { width: 12px; height: 12px; vertical-align: middle; stroke-width: 2.5; }
 /* Coperto: niente casella, solo la spunta tenue; così le caselle che restano (minori e buchi) saltano all'occhio */
@@ -468,11 +468,11 @@
 /* Portatili bassissimi (1280×620): il core a triangolo più piccolo e le righe dei tipi parati più fitte */
 @media (max-height: 639px) {
   .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 84px; }
-  .dash.tight .sum-tri { --tri-w: clamp(68px, calc((100cqh - 12px) * 150 / 128), 118px); --tri-badge: 18px; }
+  .dash.tight .sum-tri { --tri-w: clamp(68px, calc((100cqh - 12px) * 150 / 128), 118px); --tri-badge: calc(var(--ti-chip) + 3px); }
   .dash.tight .sum-syn.trio { padding-block: 0; }
   .dash.tight .sum-cover { margin-top: 2px; gap: 1px; }
   .dash.tight .sum-cover > span { font-size: 11px; line-height: 1.1; }
-  .dash.tight .sum-cover img { width: 12px; height: 12px; }
+  .dash.tight .sum-cover img { width: calc(var(--ti-inline) - 2px); height: calc(var(--ti-inline) - 2px); }
   .dash.tight .sum-sec-h { padding-bottom: 3px; }
 }
 .dash.rich .dash-summary { --sum-big: 56px; --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
@@ -587,6 +587,7 @@
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit] { flex: 1 0 auto; max-height: 88px; }
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit]:has(.sum-syn.trio) { max-height: 196px; }
 .sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
+/* Il badge è l icona del tipo (misura --ti-*) più il bordo verde da 1,5px per lato: --tri-badge = icona + 3px */
 /* Due sprite unite da un anello "catena" nel colore del legame; con una sola sprite la colonna resta larga uguale */
 .sum-pair { flex: none; min-width: calc(var(--sum-small) * 1.56 + var(--link-w) - 6px); display: flex; align-items: center; justify-content: center; }
 .sum-pair-ring { display: flex; align-items: center; }
@@ -606,8 +607,8 @@
 .sum-syn.trio { padding: 4px 4px 4px 0; }
 .sum-tri-row { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 12px; }
 .sum-tri-row .sum-syn-body { flex: 1 1 auto; }
-.sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 118px); --tri-badge: 20px; position: relative; flex: none; width: var(--tri-w); aspect-ratio: 150 / 128; }
-.sum-tri-row.roomy .sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 150px); --tri-badge: 22px; }
+.sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 118px); --tri-badge: calc(var(--ti-chip) + 3px); position: relative; flex: none; width: var(--tri-w); aspect-ratio: 150 / 128; }
+.sum-tri-row.roomy .sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 150px); --tri-badge: calc(var(--ti-tip) + 3px); }
 .sum-tri-edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .sum-tri-edges line { stroke: var(--good); stroke-width: 2; }
 .sum-tri-edges marker path { fill: var(--good); }
@@ -636,7 +637,7 @@
 .sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
 .sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
 .sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.sum-cover img { flex: none; width: 14px; height: 14px; border-radius: 50%; }
+.sum-cover img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .sum-cover b { font-weight: 600; color: var(--text); }
 .dash.rich .sum-cover { gap: 6px; }
 .dash.rich .sum-cover > span { font-size: 12px; }
@@ -732,7 +733,7 @@
 .coach-step-problem .coach-cover { vertical-align: -2px; }
 .coach-step-subject { white-space: nowrap; }
 .coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
-.coach-step-subject .type-icons img { width: 16px; height: 16px; }
+.coach-step-subject .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
 .coach-step-subject.is-mon .mon-icon { margin: -9px -2px -9px -6px; vertical-align: middle; transform: scale(0.8); }
 /* Coi Pokémon nel titolo le righe sono un po' più alte: le icone non toccano i nomi della riga sopra o sotto */
 .coach-step-problem:has(.is-mon) { line-height: 1.5; }
@@ -793,7 +794,7 @@
 .coach-also { display: flex; align-items: center; gap: 4px 10px; min-width: 0; height: 18px; margin: 0; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .coach-also-label { flex: none; color: var(--faint); }
 .coach-also-item { display: inline-flex; flex: none; align-items: center; gap: 4px; }
-.coach-also .type-icons img { width: 15px; height: 15px; }
+.coach-also .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
 .coach-also-mon .mon-icon { margin: -9px -2px -8px -4px; }
 /* Una copertura in "risolve anche": l'etichetta e subito le sue icone, più stretta fra di loro */
 .coach-also-cover { gap: 3px; }
@@ -857,7 +858,7 @@
 .coach-prob-text { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .coach-counts { white-space: nowrap; }
 .coach-prob-text .type-icons { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
-.coach-prob-text .type-icons img { width: 16px; height: 16px; }
+.coach-prob-text .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
 /* Ruolo mancante: la × nel colore della gravità */
 .coach-prob-text.coach-miss { display: flex; align-items: center; gap: 6px; }
 .coach-miss .icon { flex: none; width: 12px; height: 12px; color: var(--warn); }
@@ -897,7 +898,7 @@
 /* L'icona al centro di un tondo della sua misura: l'anello verde la circonda senza spazio in più (niente margine delle icone di testo) */
 .coach-chip { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border-radius: 50%; line-height: 0; }
 .coach-group-row .coach-chip .type-icons { display: inline-flex; margin: 0; gap: 0; }
-.coach-chip .type-icons img { width: 18px; height: 18px; }
+.coach-chip .type-icons img { width: var(--ti-chip); height: var(--ti-chip); }
 /* Minaccia: l'icona del Pokémon in un riquadro piccolo (più larga di un tipo); l'anello verde come per i tipi */
 .coach-chip.is-mon { width: 30px; height: 26px; border-radius: 6px; overflow: visible; }
 .coach-chip.is-mon .mon-icon { margin: -2px -5px -2px -5px; transform: scale(0.8); }
@@ -974,7 +975,7 @@
   .coach-tile-bar { margin: 12px 14px 14px; }
   .coach-probs { gap: 8px; padding: 0 14px; }
   .coach-prob { padding: 5px 11px 5px 8px; font-size: 14px; }
-  .coach-prob-text .type-icons img { width: 18px; height: 18px; }
+  .coach-prob-text .type-icons img { width: var(--ti-chip); height: var(--ti-chip); }
   .coach-sep { margin: 12px 14px 7px; }
   .coach-sec { margin-bottom: 8px; font-size: 13px; }
 }

@@ -8,6 +8,7 @@ import type { Density } from '../OverviewDashboard';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
+import { SPRITE_TIP } from '../spriteSizes';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
@@ -44,7 +45,7 @@ function RoleTip({ chip }: { chip: RoleChip }) {
       </div>
       {chip.covered
         ? <div className="role-tip-mons">{chip.owners.map(name => (
-          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={56} /></span><span>{name}</span></span>
+          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={SPRITE_TIP} /></span><span>{name}</span></span>
         ))}</div>
         : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
     </>

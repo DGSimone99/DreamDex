@@ -5,6 +5,7 @@ import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
 
 /** Le due fasce che contano per la Coverage: KO in un colpo e in due (il 3HKO quasi non conta: ignorato). */
@@ -42,7 +43,7 @@ export function Target({ target }: { target: KoTarget }) {
   const lang = useLang();
   return target.kind === 'type'
     ? <span className="kot-type"><img src={typeIconUrl(target.label)} alt="" draggable={false} />{typeName(target.label as TypeName, lang)}</span>
-    : <span className="kot-mon" title={target.label}><Sprite species={target.label} size={40} /></span>;
+    : <span className="kot-mon" title={target.label}><Sprite species={target.label} size={SPRITE_TIP_ROW} /></span>;
 }
 
 const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };

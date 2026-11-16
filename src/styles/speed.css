@@ -107,18 +107,18 @@
 .area-guide-speed .help-panel h4 { margin-top: 10px; }
 .ftip.gat .sp-gd-tip { padding: 8px 12px 6px; }
 .sp-gd-tip .ftip-foot { margin: 6px -12px 0; }
-.sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: 10px; row-gap: 2px; align-items: baseline; font-size: 12.5px; line-height: 1.3; }
+.sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: 10px; row-gap: 2px; align-items: baseline; font-size: var(--tip-body); line-height: 1.3; }
 .sp-gd-row { display: contents; }
 .sp-gd-row b { font-weight: 600; color: var(--text); }
 .sp-gd-val { font-weight: 700; color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
 .sp-gd-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 4px; min-width: 0; }
 /* Ogni mossa o abilità è un'etichetta squadrata (3px, come i tag); il meteo o il campo che serve è scritto piccolo dentro */
-.sp-gd-chip { display: inline-flex; align-items: baseline; gap: 4px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text); font-size: 11px; line-height: 1.35; white-space: nowrap; }
-.sp-gd-chip small { font-size: 11px; color: var(--muted); }
-.sp-gd-text { flex: 0 1 auto; color: var(--muted); font-size: 12px; line-height: 1.3; }
+.sp-gd-chip { display: inline-flex; align-items: baseline; gap: 4px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text); font-size: var(--tip-small); line-height: 1.35; white-space: nowrap; }
+.sp-gd-chip small { font-size: var(--tip-small); color: var(--muted); }
+.sp-gd-text { flex: 0 1 auto; color: var(--muted); font-size: var(--tip-body); line-height: 1.3; }
 .sp-gd-rows.grouped { grid-template-columns: max-content max-content 4ch minmax(0, 1fr); }
 /* Il gruppo (Lunghi, Brevi) sta a sinistra della sua prima riga; un po' d'aria tra un gruppo e l'altro */
-.sp-gd-group { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; color: var(--faint); }
+.sp-gd-group { font-size: var(--tip-small); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; color: var(--faint); }
 .sp-gd-row.next-group > * { margin-top: 5px; }
 @media (max-width: 560px) {
   .guide-tiles { grid-template-columns: repeat(2, 1fr); }

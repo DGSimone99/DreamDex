@@ -15,6 +15,7 @@ import { MetaFrame } from '../MetaFrame';
 import { HpLeft } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
 import { MemberMon } from './MemberMon';
 import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 
@@ -198,12 +199,12 @@ export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name:
   return (
     <>
       <div className="ftip-head tht-target">
-        <Sprite species={row.species} size={40} />
+        <Sprite species={row.species} size={SPRITE_TIP_ROW} />
         <b>{row.species}</b>
         <span className={`ftip-ko def ${band} tht-band`}>{tag}</span>
       </div>
       <div className="tht-body">
-        <Sprite species={name} size={48} />
+        <Sprite species={name} size={SPRITE_TIP} />
         <span className="tht-text">
           <span className="tht-name">{name}</span>
           <span className="tht-move">

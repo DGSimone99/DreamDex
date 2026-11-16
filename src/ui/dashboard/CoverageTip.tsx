@@ -8,6 +8,7 @@ import { useLang, useT } from '../../i18n/react';
 import { HOLD_BANDS } from '../defense/holds';
 import { Icon } from '../icons';
 import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
 
 /** Il badge dei colpi (OHKO, 2HKO, 3HKO, 4HKO+) dal danno %, con le soglie della scheda Difesa. */
@@ -62,7 +63,7 @@ export function OffenseTip({ cell }: { cell: TypeCell }) {
               return (
                 <div key={hit.species} className="ftip-hit">
                   <span className={`ftip-ko off ${band}`}>{HOLD_BANDS[band].tag}</span>
-                  <span className="ftip-plinth"><Sprite species={hit.species} size={56} /></span>
+                  <span className="ftip-plinth"><Sprite species={hit.species} size={SPRITE_TIP} /></span>
                   <span className={`ftip-pct ${band}`}>{hit.pct}<small>%</small></span>
                   <span className="ftip-name">{hit.species}</span>
                   <MoveLine name={hit.move!} />
@@ -106,7 +107,7 @@ export function DefenseTip({ cell }: { cell: TypeCell }) {
                 const band = m.pct === null ? null : bandOf(m.pct);
                 return (
                   <span key={m.species} className="ftip-mon">
-                    <Sprite species={m.species} size={34} />
+                    <Sprite species={m.species} size={SPRITE_TIP_ROW} />
                     <span className="ftip-mon-name">{m.species}</span>
                     {m.pct !== null && band && <>
                       <span className="ftip-mon-pct">{m.pct}%</span>
