@@ -6,6 +6,7 @@ import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { pokedexOf, teraAllowed } from '../../engine/formats';
 import { useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
+import { Ask, MetaTargets, TypeAverages } from './TargetsTip';
 
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
@@ -26,8 +27,9 @@ function Bar({ label, weights, rank, from, to }: { label: string; weights: numbe
 }
 
 /**
- * La guida all'Offesa: una pagina per le due Coverage, che hanno le stesse regole (colpo, cosa conta meno, pesi);
- * in fondo i bersagli, l'unica differenza. Schematica e generica (niente valori del team).
+ * La guida all'Offesa: una pagina per le due Coverage. In alto i bersagli, l'unica differenza fra le due (col "?" il
+ * dettaglio: le medie dei 18 tipi, le minacce del meta); poi le regole comuni (colpo, con sotto cosa conta meno; pesi).
+ * Schematica e generica (niente valori del team).
  */
 export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { offense: TeamOffense; formatId?: FormatId }) {
   const t = useT();
@@ -38,29 +40,27 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
   const format = { ...DEFAULT_FORMAT, formatId };
   const tera = teraAllowed(format);
   const z = pokedexOf(format) === 'natdex';
-  const oneUse = tera && z ? g('less.oneuse') : tera ? g('less.tera') : z ? g('less.z') : null;
-  const less = [g('less.locked'), g('less.field'), g('less.setup'), ...(oneUse ? [oneUse] : [])].join(', ');
-  const count = offense.coverageMeta?.rows.length ?? 0;
+  const oneUse = tera && z ? g('less.oneuse') : tera ? g('less.tera') : z ? g('less.z') : '';
+  const metaSpecies = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => b.weight - a.weight).map(r => r.species);
   // I pesi sono gli stessi nelle due schede (70/20/10): la barra è una
   const depth = depthOf(false);
   return (
     <>
+      <h5>{g('test.targets')}</h5>
+      <Rows compact rows={[
+        [t('detail.coverageTypes'), <>{g('targets.types')} <Ask label={g('targets.typesTitle')}><TypeAverages formatId={formatId} /></Ask></>],
+        ...(offense.coverageMeta ? [[t('detail.coverageMeta'), <>{g('cov.targets.meta', { n: metaSpecies.length })} <Ask label={g('targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></>] as [ReactNode, ReactNode]] : []),
+      ]} />
+
       <h5>{g('test')}</h5>
       <Rows compact rows={[
-        [g('power.hit'), g('power.hit.rule')],
-        [g('less'), `${less.charAt(0).toUpperCase()}${less.slice(1)}. ${g('less.own')}`],
-        [g('eff'), g('eff.rule')],
+        // Sotto la regola, a capo e senza titolo: quello che conta meno
+        [g('power.hit'), <>{g('power.hit.rule')}<span className="guide-sub">{g('less.rule', { extra: oneUse })}</span></>],
       ]} />
 
       <h5>{g('cov.depth')}</h5>
       <Bar label={g('cov.depth')} weights={depth} rank={n => g('cov.rank', { n })} />
       {lines([g('cov.scale', scaleOf(depth))])}
-
-      <h5>{g('test.targets')}</h5>
-      <Rows compact rows={[
-        [t('detail.coverageTypes'), g('targets.types')],
-        ...(offense.coverageMeta ? [[t('detail.coverageMeta'), g('cov.targets.meta', { n: count })] as [ReactNode, string]] : []),
-      ]} />
     </>
   );
 }

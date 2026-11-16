@@ -1,4 +1,5 @@
 import { battleSpecies } from '../../engine/dex';
+import { DEFAULT_FORMAT } from '../../engine/format';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
@@ -7,6 +8,7 @@ import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { KoBadges, koBands, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
+import { Ask, MetaTargets, TypeAverages } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect } from 'react';
@@ -79,6 +81,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const shareFrom = ctx.team.map((_, slot) => ctx.team.slice(0, slot).reduce((sum, __, k) => sum + (slots[k] === null ? 0 : shares[slots[k]!].points), 0));
   // A squadra chiusa, sotto le barre: quanto lavora ogni mossa d'attacco (la mossa migliore su ogni bersaglio KO in due colpi)
   const metaRows = offense.coverageMeta?.rows ?? [];
+  // Le minacce del meta dalla più usata, per il "?" sulla testata Meta
+  const metaSpecies = [...metaRows].sort((x, y) => y.weight - x.weight).map(r => r.species);
   const typeMoves = (m: MemberOffense, slot: number) => moveShares(ctx.team[slot].moves, typeTargets(m), x => m.hits.find(h => h.label === x.label)?.move);
   const metaMoves = (slot: number) => {
     const who = battleSpecies(ctx.team[slot])?.name ?? ctx.team[slot].species;
@@ -98,8 +102,9 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('kob.headTypes')}</th>
-              {meta && <th scope="col">{t('kob.headMeta')}</th>}
+              {/* Accanto alle testate il "?" coi bersagli, come nella guida: il Pokémon medio dei 18 tipi, le minacce del meta */}
+              <th scope="col">{t('kob.headTypes')}<Ask label={t('guide.off.targets.typesTitle')}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col">{t('kob.headMeta')}<Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>
