@@ -1,4 +1,5 @@
 import type { FormatId } from './format';
+import type { GameId } from './games';
 import type { PresetsData, SetsData } from './sets';
 import type { FallbackStats, StatsData } from './stats';
 import type { EffectiveLists } from './lists';
@@ -23,6 +24,8 @@ export interface EngineData {
   allowMultipleMegas?: boolean;
   /** Formato scelto, per le regole che cambiano col formato (vedi formatRules). */
   formatId?: FormatId;
+  /** Gioco scelto: i set proposti usano solo le mosse del gioco (il voto non lo legge). */
+  game?: GameId | null;
   /** Preferiti e bannati dell'utente nel formato: i bannati non diventano mai candidati (il voto non cambia). */
   userLists?: EffectiveLists;
 }

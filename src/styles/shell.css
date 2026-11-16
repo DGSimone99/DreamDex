@@ -28,7 +28,12 @@
 /* Carta del formato: il Pokédex in grande, il tier in una fascia azzurra, le regole in una riga di testo; il clic apre il
    menu. Il bordo sottile tinto d'azzurro la distingue dalle tessere delle sezioni; sotto il mouse o aperta è azzurro pieno */
 .format-card { margin: 0 16px; }
-.popover.format-card > summary {
+/* Gioco sopra il formato: due carte uguali, una sotto l'altra */
+.game-card { margin-bottom: 8px; }
+.game-card .format-dex { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Il nome del gioco è lungo ("Scarlatto e Violetto"): va a capo invece di essere tagliato */
+.game-card .format-name { white-space: normal; font-size: 17px; }
+.popover.format-card > summary, .format-card.locked > .format-summary, .game-card > .format-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: 'key tier' 'name name' 'pills pills';
@@ -44,6 +49,9 @@
 }
 .format-key { grid-area: key; display: flex; align-items: center; gap: 6px; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .format-key .icon { width: 13px; height: 13px; color: var(--muted); }
+/* Formato bloccato dal gioco: stessa carta, bordo neutro, niente clic; sotto la nota "Lo decide il gioco" */
+.format-card.locked > .format-summary { grid-template-areas: 'key tier' 'name name' 'pills pills' 'lock lock'; border-color: var(--line); cursor: default; }
+.format-lock { grid-area: lock; color: var(--faint); font: 500 12px/1.4 var(--ui); }
 .format-card > summary:hover .format-key .icon, .format-card[open] .format-key .icon { color: var(--accent); }
 .format-tier { grid-area: tier; padding: 2px 12px 2px 8px; font: 800 15px/1.2 var(--display); font-style: italic; color: var(--on-accent); background: var(--accent); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 .format-name { grid-area: name; overflow: hidden; font: 800 19px/1.1 var(--display); font-style: italic; color: var(--text); white-space: nowrap; text-overflow: ellipsis; }
@@ -148,3 +156,34 @@
 .skip-link { position: fixed; z-index: 200; top: 8px; left: 8px; padding: 8px 14px; border-radius: 4px; background: var(--accent); color: var(--on-accent); font: 700 14px var(--ui); text-decoration: none; transform: translateY(-150%); }
 .skip-link:focus { transform: none; }
 .main:focus { outline: none; }
+
+/* Carta del gioco: un pulsante che apre il modale, con lo stesso aspetto della carta del formato */
+button.game-card { display: block; width: calc(100% - 32px); padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.game-card > .format-summary:hover, .game-card:focus-visible > .format-summary { border-color: var(--accent); }
+.game-card:hover .format-key .icon { color: var(--accent); }
+
+/* Modale del gioco: tessere coi loghi (due versioni affiancate), poi le opzioni del gioco scelto */
+.game-dialog { width: min(820px, 100%); }
+.game-body { display: grid; gap: 16px; padding: 16px 18px 18px; overflow-y: auto; }
+/* Tessere larghe: due loghi interi affiancati (le versioni vanno in coppia) */
+.game-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+.game-tile { display: grid; grid-template-rows: 130px auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow: hidden; cursor: pointer; transition: border-color 0.15s var(--ease), transform 0.15s var(--ease); }
+.game-tile:hover { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); transform: translateY(-2px); }
+.game-tile.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.game-tile:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.game-tile.off { opacity: 0.45; cursor: not-allowed; }
+.game-tile.off:hover { transform: none; border-color: var(--line); }
+.game-art { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-items: center; justify-items: center; gap: 10px; padding: 12px 14px; background: var(--field); }
+.game-tile.none .game-art { grid-auto-flow: row; color: var(--faint); }
+.game-tile.none .game-art .icon { width: 40px; height: 40px; }
+/* Scarlatto e Violetto: metà rossa e metà viola dietro i due loghi */
+.game-tile.game-sv .game-art { background: linear-gradient(100deg, #5a1a14 0 50%, #33195c 50% 100%); }
+.game-logo { display: block; width: 100%; height: 100%; max-height: 106px; object-fit: contain; }
+.game-logo-text { font: 800 italic 20px/1 var(--display); text-align: center; text-transform: uppercase; letter-spacing: 0.02em; }
+.game-logo-text.scarlet { color: #ffb3a3; }
+.game-logo-text.violet { color: #d7c2ff; }
+.game-caption { display: grid; gap: 2px; padding: 10px 12px 12px; }
+.game-caption b { font: 700 italic 16px/1.2 var(--display); color: var(--text); }
+.game-caption small { color: var(--muted); font: 500 12px/1.4 var(--ui); }
+.game-options { display: grid; }
+.game-options > .rail-label + .format-toggle { border-top: 0; }

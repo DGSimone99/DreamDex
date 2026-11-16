@@ -1,5 +1,6 @@
 import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { formatOptions } from './engine/formats';
+import { GAME_IDS, withGame } from './engine/games';
 import type { TeamSet } from './engine/sets';
 import { isLang, type Lang } from './i18n';
 import { EMPTY_LISTS, sanitizeLists, type UserLists } from './engine/lists';
@@ -84,7 +85,7 @@ const SESSION_KEY = 'dreamdex.session';
 /** Ricostruisce un formato valido da dati salvati (campi sconosciuti o errati tornano ai valori di default). */
 export function sanitizeFormat(raw: unknown): Format {
   const f = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Format>;
-  return {
+  const format: Format = {
     formatId: formatOptions().some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
     genLimit: typeof f.genLimit === 'number' && f.genLimit >= 1 && f.genLimit <= 9 ? f.genLimit : DEFAULT_FORMAT.genLimit,
     // L'uso minimo dei suggerimenti non si sceglie più: vale sempre quello di default (anche nei salvataggi vecchi)
@@ -92,7 +93,13 @@ export function sanitizeFormat(raw: unknown): Format {
     allowMultipleMegas: f.allowMultipleMegas === true,
     ignoreBans: f.ignoreBans === true,
     meta: f.meta !== false,
+    game: null,
+    allPokedex: f.allPokedex === true,
+    legendaries: f.legendaries === true,
   };
+  // Un gioco salvato rimette il formato che impone
+  const game = GAME_IDS.find(id => id === f.game) ?? null;
+  return game ? withGame(format, game) : withGame(format, null);
 }
 
 export const isTeamSet = (value: unknown): value is TeamSet =>

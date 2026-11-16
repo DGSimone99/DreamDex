@@ -144,7 +144,7 @@ export function SavedTeams({ team, format, plate, onLoad }: {
                     </span>
                     <span className="saved-text">
                       <span className="saved-name">{entry.name}</span>
-                      {entry.format && <span className="saved-format">{t(`format.${entry.format.formatId}`)}</span>}
+                      {entry.format && <span className="saved-format">{entry.format.game ? t(`game.${entry.format.game}`) : t(`format.${entry.format.formatId}`)}</span>}
                     </span>
                   </button>
                   <button type="button" className="saved-delete" aria-label={t('saved.delete', { name: entry.name })} title={t('saved.delete', { name: entry.name })}

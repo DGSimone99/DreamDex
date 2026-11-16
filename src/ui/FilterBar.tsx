@@ -104,9 +104,11 @@ interface Props {
   onChange: (filters: CandidateFilters) => void;
   /** In Liste (solo un elenco di Pokémon) restano i filtri che non riguardano il meta. */
   context?: 'suggestions' | 'lists';
+  /** Nel gioco non c'è il filtro dell'uso nel meta. */
+  game?: boolean;
 }
 
-export function FilterBar({ filters, onChange, context = 'suggestions' }: Props) {
+export function FilterBar({ filters, onChange, context = 'suggestions', game = false }: Props) {
   const meta = context === 'suggestions';
   const t = useT();
   const lang = useLang();
@@ -150,7 +152,7 @@ export function FilterBar({ filters, onChange, context = 'suggestions' }: Props)
             {(['all', 'legal', 'uber', 'ou', 'uu', 'ru', 'nfe'] as const).map(tier => <option key={tier} value={tier}>{t(`filters.tier.${tier}`)}</option>)}
           </select>
         </label>
-        {meta && (
+        {meta && !game && (
           <label className="control">
             <span className="control-label">{t('filters.usage')}</span>
             <select aria-label={t('filters.usage')} value={filters.usage} onChange={e => set({ usage: e.target.value as CandidateFilters['usage'] })}>

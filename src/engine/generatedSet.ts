@@ -1,6 +1,7 @@
 import { battleSpecies, getMove, getSpecies, isDefined } from './dex';
 import { legalAbilities, legalMoves } from './learnsets';
 import type { StatID, TeamSet } from './sets';
+import type { GameId } from './games';
 import { effectiveness, TYPES, type TypeName } from './types';
 
 /** Mosse d'attacco da non proporre in un set generato: si ricaricano, si esauriscono o dipendono da condizioni. */
@@ -40,7 +41,7 @@ function strength(move: NonNullable<ReturnType<typeof getMove>>, types: readonly
  * Un set ragionevole per un Pokémon senza dati in nessun formato: le STAB più forti, una copertura
  * che colpisce più tipi possibili, una mossa di supporto; natura, EV e strumento dalle statistiche base.
  */
-export function generatedSet(speciesName: string, genLimit = 9): TeamSet {
+export function generatedSet(speciesName: string, genLimit = 9, game: GameId | null = null): TeamSet {
   const species = getSpecies(speciesName);
   const empty: TeamSet = { species: speciesName, item: '', ability: '', moves: [], nature: 'Serious', evs: {} };
   if (!species) return empty;
@@ -48,7 +49,7 @@ export function generatedSet(speciesName: string, genLimit = 9): TeamSet {
   const { hp, atk, def, spa, spd, spe } = forme.baseStats;
   const types = forme.types;
   const physical = atk >= spa;
-  const legal = legalMoves(speciesName, genLimit);
+  const legal = legalMoves(speciesName, genLimit, game);
   const learnable = [...(legal ?? [])].map(getMove).filter(isDefined);
 
   // Attacchi: dello stile del Pokémon (con un margine per i misti), escluse le mosse problematiche

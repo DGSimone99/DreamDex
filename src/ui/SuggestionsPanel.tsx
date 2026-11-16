@@ -26,7 +26,7 @@ import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
 import { SuggestionDetail } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { BanMark, BoxIcon, reasonsOf, type CandidateProps, type Item } from './candidateParts';
+import { BanMark, BoxIcon, ExclusiveMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import type { ListSprite } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { usePerPage } from './usePerPage';
@@ -270,7 +270,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     ?? (pickedIndex >= page * perPage && pickedIndex < (page + 1) * perPage ? items[pickedIndex] : undefined)
     ?? pageItems[0];
   const selectedRank = selected ? items.indexOf(selected) + 1 : 0;
-  const usageOf = (species: string) => statsEntry(data.stats, species)?.usage ?? null;
+  // Nel gioco l'uso nel meta competitivo non dice niente: le schede a team vuoto non lo mostrano
+  const usageOf = (species: string) => (format.game ? null : statsEntry(data.stats, species)?.usage ?? null);
   const act = (item: Item) => {
     if (item.replaces !== undefined) onReplaceWith(item.replaces, item.set);
     else if (replacing) onReplaceWith(replaceIndex, item.set);
@@ -366,7 +367,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
         </select>
       </label>
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} />
     </>
   );
 
@@ -513,7 +514,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             rating={rating}
             archetype={deferred.archetype}
             usage={emptyTeam ? usageOf(selected.species) : null}
-            banMark={<BanMark species={selected.species} format={format} />}
+            banMark={<><BanMark species={selected.species} format={format} /><ExclusiveMark species={battleName(selected.set)} format={format} /></>}
             actionLabel={actionLabelOf(selected)}
             onAction={() => act(selected)}
             listSprite={listSprite}

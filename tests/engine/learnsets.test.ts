@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { EngineData } from '../../src/engine/data';
 import { illegalParts, initLearnsets, legalAbilities, legalMoves } from '../../src/engine/learnsets';
 import { defaultSet, emptySet, presetsForSet, type TeamSet } from '../../src/engine/sets';
-import { bestPreset, bestPresets } from '../../src/engine/bestPreset';
+import { bestPreset, bestPresets, coreMoves } from '../../src/engine/bestPreset';
 import type { SpeciesStats } from '../../src/engine/stats';
 
 beforeAll(async () => { await initLearnsets(); });
@@ -133,5 +133,55 @@ describe('preset fino al limite di generazione', () => {
   it('con Custom Skillset il preset resta com\'è', () => {
     const member = set('Urshifu-Rapid-Strike', 'Unseen Fist', ['Close Combat'], { customSkillset: true });
     expect(presetsForSet(data, member, 8)[0].set.moves).toContain('Ice Spinner');
+  });
+});
+
+describe('mosse del gioco', () => {
+  it('nel gioco solo le mosse imparabili in Scarlatto e Violetto', () => {
+    expect(legalMoves('Meowscarada', 9, 'sv')!.has('flowertrick')).toBe(true);
+    expect(legalMoves('Meowscarada', 9, 'sv')!.has('pursuit')).toBe(false);
+    // Aqua Tail esiste in SV, ma Garchomp la imparava solo dai tutori delle generazioni 4–7
+    expect(legalMoves('Garchomp', 9)!.has('aquatail')).toBe(true);
+    expect(legalMoves('Garchomp', 9, 'sv')!.has('aquatail')).toBe(false);
+    expect(legalMoves('Garchomp', 9, 'sv')!.has('earthquake')).toBe(true);
+  });
+
+  it('ereditate dalle pre-evoluzioni anche nel gioco', () => {
+    expect(legalMoves('Raichu', 9, 'sv')!.has('volttackle')).toBe(true);
+  });
+
+  it('le mosse degli eventi non contano nel gioco', () => {
+    expect(legalMoves('Pikachu', 9)!.has('fly')).toBe(true);
+    expect(legalMoves('Pikachu', 9, 'sv')!.has('fly')).toBe(false);
+  });
+
+  it('il set proposto nel gioco ha solo mosse del gioco', () => {
+    const entry: SpeciesStats = {
+      usage: 0.1, count: 100, items: {}, teraTypes: {}, spreads: {}, teammates: {}, checks: {}, abilities: { roughskin: 1 },
+      moves: { aquatail: 0.95, earthquake: 0.9, stealthrock: 0.8, swordsdance: 0.7, dragonclaw: 0.6 },
+    };
+    const stats = { meta: { month: 'm', cutoff: 1, battles: 1 }, pokemon: { Garchomp: entry } };
+    expect(defaultSet({ stats, sets: {}, formatId: 'gen9ag' }, 'Garchomp', 9).moves).toContain('Aqua Tail');
+    expect(defaultSet({ stats, sets: {}, formatId: 'gen9ag', game: 'sv' }, 'Garchomp', 9).moves)
+      .toEqual(['Earthquake', 'Stealth Rock', 'Swords Dance', 'Dragon Claw']);
+  });
+});
+
+describe('Coaching intatto col gioco', () => {
+  const entry: SpeciesStats = {
+    usage: 0.1, count: 100, items: {}, teraTypes: {}, spreads: {}, teammates: {}, checks: {}, abilities: { roughskin: 1 },
+    moves: { aquatail: 0.95, earthquake: 0.9, stealthrock: 0.8, swordsdance: 0.7 },
+  };
+  const stats = { meta: { month: 'm', cutoff: 1, battles: 1 }, pokemon: { Garchomp: entry } };
+  const member = set('Garchomp', 'Rough Skin', ['Earthquake']);
+
+  it('le mosse quasi obbligatorie del Coaching non leggono il gioco dai dati', () => {
+    const plain = coreMoves(member, { stats, sets: {}, formatId: 'gen9ag', ignoreMeta: true }, 9);
+    expect(plain).toContain('Aqua Tail');
+    expect(coreMoves(member, { stats, sets: {}, formatId: 'gen9ag', ignoreMeta: true, game: 'sv' }, 9)).toEqual(plain);
+  });
+
+  it('chi propone i set nel gioco le filtra col gioco', () => {
+    expect(coreMoves(member, { stats, sets: {} }, 9, 'sv')).not.toContain('Aqua Tail');
   });
 });

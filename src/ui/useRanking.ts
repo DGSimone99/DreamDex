@@ -117,7 +117,7 @@ class RankingClient {
       stats: this.idOf(data.stats), sets: this.idOf(data.sets), fallback: this.idOf(data.fallback),
       presets: this.idOf(data.presets), fallbackPresets: this.idOf(data.fallbackPresets),
       fallbackStats: this.idOf(data.fallbackStats), tournamentTeams: this.idOf(data.tournamentTeams), userLists: this.idOf(data.userLists),
-      ignoreMeta: data.ignoreMeta, allowMultipleMegas: data.allowMultipleMegas, formatId: data.formatId,
+      ignoreMeta: data.ignoreMeta, allowMultipleMegas: data.allowMultipleMegas, formatId: data.formatId, game: data.game,
     };
     // Le liste dell'utente cambiano spesso (preferiti, bannati): quelle vecchie non servono più
     const drop = this.lists && this.lists !== wire.userLists ? [this.lists] : [];

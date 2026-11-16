@@ -13,3 +13,11 @@ describe('paletteFor', () => {
     expect(paletteFor('swsh', 'gen9ou')).toBe('swsh');
   });
 });
+
+describe('paletteFor col gioco', () => {
+  it('col gioco scelto vince la palette del gioco, la palette fissa resta fissa', () => {
+    expect(paletteFor('auto', 'ou', 'sv')).toBe('sv');
+    expect(paletteFor('swsh', 'gen9ag', 'sv')).toBe('swsh');
+    expect(paletteFor('auto', 'ou', null)).toBe('swsh');
+  });
+});
