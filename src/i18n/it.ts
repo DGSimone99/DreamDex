@@ -812,6 +812,7 @@ export const it: Record<keyof typeof en, string> = {
   'roleTip.nobody': "Nessuno lo copre",
   'kob.setupAria': "altri {n} col setup",
   'kob.none': "Nessuno",
+  'kob.countAria': '{n} su {total} KO in due colpi o meglio',
   'kob.restAria': "non KO in due colpi",
   'kob.restTitle': "{name} non li manda KO in due colpi",
   'kob.noAttacks': "Nessuna mossa d'attacco",

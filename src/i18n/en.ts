@@ -810,6 +810,7 @@ export const en = {
   'roleTip.nobody': "Nobody covers it",
   'kob.setupAria': "{n} more with setup",
   'kob.none': "None",
+  'kob.countAria': "{n} of {total} KO'd in two hits or better",
   'kob.restAria': "not KO'd in two hits",
   'kob.restTitle': "{name} doesn't KO these in two hits",
   'kob.noAttacks': "No attacking moves",

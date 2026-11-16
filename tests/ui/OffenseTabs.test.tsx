@@ -372,6 +372,11 @@ describe('Offesa: Generale', () => {
       expectBadges(cells[k], hits);
       const open = hits.filter(h => h.plain < 50).length;
       expect(cells[k]).not.toHaveTextContent('tutti');
+      // A destra della barra il conto "17/18": quanti KO in due colpi o meglio, verde se tutti, rosso se no
+      const count = cells[k].querySelector('.kob-count')!;
+      expect(count).toHaveTextContent(`${hits.length - open}/${hits.length}`);
+      expect(count).toHaveClass(open === 0 ? 'full' : 'bad');
+      expect(count).toHaveAttribute('aria-label', `${hits.length - open} su ${hits.length} KO in due colpi o meglio`);
       if (open === 0) {
         expect(cells[k].querySelector('.kob.bad')).toBeNull();
       } else {

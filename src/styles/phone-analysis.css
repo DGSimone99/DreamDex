@@ -94,6 +94,9 @@
   .def-general .def-cell, .def-general .def-cell.with-gain { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 3ch; gap: 4px; width: 100%; }
   .def-general .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
   .def-general .def-gain small { font-size: 11px; }
+  /* Offesa Generale: le barre dei colpi col conto "11/18" hanno bisogno di posto; la tabella scorre col dito, il membro resta fermo */
+  .off-general .def-members { min-width: calc(var(--def-mon) + 2 * 250px + 110px); }
+  .off-general .def-members:not(:has(colgroup > col:nth-child(4))) { min-width: calc(var(--def-mon) + 250px + 110px); }
 
   /* Ruoli: le voci di ogni fascia su una colonna sola; il link alla guida va a capo sotto */
   .rl-general, .rl-general.three { --cols: 1; }
