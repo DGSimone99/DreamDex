@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
@@ -43,33 +43,52 @@ describe('Offesa: navigazione e guida', () => {
     const help = screen.getByRole('button', { name: 'Come funziona Coverage tipi' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in fondo
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Coverage']);
+    // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in alto
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona']);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent('Pokémon medio');
-    expect(panel).toHaveTextContent(/Bersagli.*Coverage tipi.*Coverage meta/);
-    // La regola del credito nella riga del Colpo; quello che conta meno in una riga sola; niente righe della legenda
-    expect(panel).toHaveTextContent('vale quanto il suo danno se lo manda KO in due colpi, sotto il 50% non conta');
-    expect(panel).toHaveTextContent('Contano meno');
-    expect(panel).toHaveTextContent('Il meteo che il membro porta da sé conta pieno.');
-    for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie']) expect(panel).not.toHaveTextContent(gone);
-    // La Generale non ha più la sua sezione nella guida
+    expect(panel).toHaveTextContent(/^Come funzionaBersagli.*Coverage tipi.*Pokémon medio.*Coverage meta.*Il test.*Colpo.*contano meno.*Quanti lo coprono/);
+    // La regola del credito nella riga del Colpo; quello che vale meno in una riga sola; niente ×2·×4 né righe della legenda
+    expect(panel).toHaveTextContent('Per ogni membro, il suo colpo migliore contro ogni bersaglio che fa almeno il 50%');
+    // Quello che conta meno: a capo sotto il Colpo, senza un titolo suo
+    expect(panel).not.toHaveTextContent('Valgono meno');
+    expect(panel.querySelector('.guide-sub')).toHaveTextContent('Band, Specs e simili, e i boost da setup, meteo o campo e le mosse Z contano meno (pieni se il meteo o il campo lo porta il membro stesso).');
+    for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie', '×2 · ×4']) expect(panel).not.toHaveTextContent(gone);
+    // Il "?" dei tipi: le medie dei 18 tipi nel tooltip; quello del meta: le sprite delle minacce
+    await user.hover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
+    await waitFor(() => expect(document.querySelector('.ftip.gat .gat-table')).not.toBeNull());
+    const avg = document.querySelector('.ftip.gat')!;
+    expect(avg.querySelectorAll('tbody tr')).toHaveLength(18);
+    await user.unhover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
+    const metaAsk = within(panel).getByRole('button', { name: /^I \d+ Pokémon più usati$/ });
+    await user.hover(metaAsk);
+    await waitFor(() => expect(document.querySelector('.ftip.gat .gat-mons')).not.toBeNull());
+    expect(document.querySelectorAll('.ftip.gat .gat-mons > span').length).toBe(withMeta().offense.coverageMeta!.rows.length);
+    await user.unhover(metaAsk);
+    // Una sezione sola anche se il "?" c'è in tutte e tre le schede
     expect(within(dialog).queryByRole('tab', { name: 'Generale' })).toBeNull();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
   });
 
-  it('la Generale non ha il "?": le sue due parti si spiegano da sole', async () => {
+  it('anche la Generale ha il "?": apre la stessa pagina Come funziona', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.queryByRole('button', { name: 'Come funziona Generale' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
+    expect(within(screen.getByRole('dialog', { name: 'Guida: Offesa' })).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{Escape}');
+    // Accanto alle testate Tipi e Meta il "?" dei bersagli, lo stesso della guida
+    const typesAsk = screen.getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' });
+    await user.hover(typesAsk);
+    await waitFor(() => expect(document.querySelectorAll('.ftip.gat tbody tr')).toHaveLength(18));
+    await user.unhover(typesAsk);
+    expect(screen.getByRole('button', { name: /^I \d+ Pokémon più usati$/ })).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     // Il "?" di Coverage meta apre la stessa pagina di Coverage tipi
     await user.click(screen.getByRole('button', { name: 'Come funziona Coverage meta' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Coverage' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Contano meno');
+    expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('contano meno');
   });
 
   it('il Wallbreaking e la Potenza non compaiono più, né nelle schede né nella guida', async () => {
@@ -85,7 +104,7 @@ describe('Offesa: navigazione e guida', () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
     expect(names()).toEqual(['General', 'Type coverage', 'Meta coverage']);
-    expect(screen.queryByRole('button', { name: 'How General works' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'How General works' })).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: /^Type coverage/ }));
     await user.click(screen.getByRole('button', { name: 'How Type coverage works' }));
     expect(screen.getByRole('dialog', { name: 'Guide: Offense' })).toBeInTheDocument();
@@ -353,6 +372,11 @@ describe('Offesa: Generale', () => {
       expectBadges(cells[k], hits);
       const open = hits.filter(h => h.plain < 50).length;
       expect(cells[k]).not.toHaveTextContent('tutti');
+      // A destra della barra il conto "17/18": quanti KO in due colpi o meglio, verde se tutti, rosso se no
+      const count = cells[k].querySelector('.kob-count')!;
+      expect(count).toHaveTextContent(`${hits.length - open}/${hits.length}`);
+      expect(count).toHaveClass(open === 0 ? 'full' : 'bad');
+      expect(count).toHaveAttribute('aria-label', `${hits.length - open} su ${hits.length} KO in due colpi o meglio`);
       if (open === 0) {
         expect(cells[k].querySelector('.kob.bad')).toBeNull();
       } else {

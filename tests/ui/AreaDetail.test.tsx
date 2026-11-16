@@ -32,15 +32,15 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
     // Solo la tabella dei membri: niente tessere sotto
-    // Gli unici pulsanti sono le tessere OHKO/2HKO (aprono il dettaglio): nessun altro controllo nella tabella
-    expect(within(panel).queryAllByRole('button').filter(b => !b.classList.contains('kob'))).toHaveLength(0);
+    // Gli unici pulsanti sono le tessere OHKO/2HKO (aprono il dettaglio) e i due "?" dei bersagli in testata
+    expect(within(panel).queryAllByRole('button').filter(b => !b.classList.contains('kob')).map(b => b.className)).toEqual(['guide-ask', 'guide-ask']);
     const table = within(panel).getByRole('table');
     const headers = within(table).getAllByRole('columnheader').map(h => h.textContent);
     // Sotto Meta e Tipi possono esserci le etichette OHKO / 2HKO: si guarda come iniziano
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
-    expect(headers[1]).toMatch(/^Tipi(OHKO|$)/);
-    expect(headers[2]).toMatch(/^Meta(OHKO|$)/);
+    expect(headers[1]).toMatch(/^Tipi\??(OHKO|$)/);
+    expect(headers[2]).toMatch(/^Meta\??(OHKO|$)/);
     expect(headers[3]).toBe('Offesa');
     const rows = [...table.querySelectorAll('tbody tr:not(.og-fill)')] as HTMLElement[];
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
@@ -109,8 +109,8 @@ describe("dettaglio dell'Offesa a schede", () => {
     const headers = within(dialog).getAllByRole('columnheader').map(h => h.textContent);
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
-    expect(headers[1]).toMatch(/^Types(OHKO|$)/);
-    expect(headers[2]).toMatch(/^Meta(OHKO|$)/);
+    expect(headers[1]).toMatch(/^Types\??(OHKO|$)/);
+    expect(headers[2]).toMatch(/^Meta\??(OHKO|$)/);
     expect(headers[3]).toBe('Offense');
     const foot = document.querySelector('.def-members tfoot tr')!;
     // Gli scoperti in inglese nel nome accessibile
