@@ -1190,7 +1190,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.off.power.hit': "Colpo",
   'guide.off.power.hit.rule': "Per ogni membro, il suo colpo migliore contro ogni bersaglio che fa almeno il 50%",
   'guide.off.targets.types': "Il Pokémon medio di ognuno dei 18 tipi",
-  'guide.off.section': "Coverage",
+  'guide.off.section': "Come funziona",
   'guide.off.targets.tip': "Il Pokémon medio di questo tipo: i colpi si misurano su queste statistiche",
   'guide.off.less.z': " e le mosse Z",
   'guide.off.less.tera': " e il Tera",

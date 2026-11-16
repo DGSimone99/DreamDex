@@ -2,16 +2,11 @@ import type { ReactNode } from 'react';
 import type { TeamOffense } from '../../engine/offense';
 import { OFFENSE_DEPTH } from '../../engine/offense';
 import { depthWeights } from '../../engine/coverage';
-import { typeAverage } from '../../engine/coverage';
 import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { pokedexOf, teraAllowed } from '../../engine/formats';
-import { TYPES } from '../../engine/types';
-import { typeName } from '../../i18n/game';
-import { useLang, useT } from '../../i18n/react';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
-import { Sprite } from '../Sprite';
-import { TypeIcons } from '../typeIcons';
+import { Ask, MetaTargets, TypeAverages } from './TargetsTip';
 
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
@@ -28,54 +23,6 @@ function Bar({ label, weights, rank, from, to }: { label: string; weights: numbe
       </ol>
       {from && to && <div className="guide-weights-axis" aria-hidden="true"><span>{from}</span><span>{to}</span></div>}
     </div>
-  );
-}
-
-/** Un "?" accanto al testo: passandoci sopra (o col fuoco) il tooltip DreamDex con il dettaglio dei bersagli. */
-function Ask({ label, children }: { label: string; children: ReactNode }) {
-  const tip = useFloatAnchor<true>();
-  return (
-    <>
-      <button type="button" className="guide-ask" aria-label={label}
-        onMouseEnter={e => tip.open(true, e.currentTarget)} onMouseLeave={tip.close}
-        onFocus={e => tip.open(true, e.currentTarget)} onBlur={tip.close}>?</button>
-      {tip.anchor && <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="gat">{children}</FloatTip>}
-    </>
-  );
-}
-
-/** Il Pokémon medio dei 18 tipi: PS, Difesa e Difesa Speciale base nel Pokédex del formato, in due colonne. */
-function TypeAverages({ formatId }: { formatId: FormatId }) {
-  const t = useT();
-  const lang = useLang();
-  return (
-    <>
-      <div className="ftip-head"><b>{t('guide.off.targets.typesTitle')}</b></div>
-      <div className="gat-cols">
-        {[TYPES.slice(0, 9), TYPES.slice(9)].map((part, col) => (
-          <table key={col} className="gat-table">
-            <thead><tr><th scope="col" /><th scope="col">{t('stat.hp')}</th><th scope="col">{t('stat.def')}</th><th scope="col">{t('stat.spd')}</th></tr></thead>
-            <tbody>
-              {part.map(type => {
-                const a = typeAverage(type, { stats: null, sets: null, formatId });
-                return <tr key={type}><th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th><td>{a.hp}</td><td>{a.def}</td><td>{a.spd}</td></tr>;
-              })}
-            </tbody>
-          </table>
-        ))}
-      </div>
-    </>
-  );
-}
-
-/** Le minacce del meta usate come bersagli: le sprite, dalla più usata. */
-function MetaTargets({ species }: { species: string[] }) {
-  const t = useT();
-  return (
-    <>
-      <div className="ftip-head"><b>{t('guide.off.targets.metaTitle', { n: species.length })}</b></div>
-      <div className="gat-mons">{species.map(name => <span key={name} title={name}><Sprite species={name} size={40} /></span>)}</div>
-    </>
   );
 }
 

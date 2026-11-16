@@ -1188,7 +1188,7 @@ export const en = {
   'guide.off.power.hit': "Hit",
   'guide.off.power.hit.rule': "For each member, its best hit against each target that deals at least 50%",
   'guide.off.targets.types': "The average Pokémon of each of the 18 types",
-  'guide.off.section': "Coverage",
+  'guide.off.section': "How it works",
   'guide.off.targets.tip': "The average Pokémon of this type: hits are measured on these stats",
   'guide.off.less.z': " and Z-moves",
   'guide.off.less.tera': " and Tera",

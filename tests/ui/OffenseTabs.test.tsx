@@ -44,9 +44,9 @@ describe('Offesa: navigazione e guida', () => {
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
     // Una pagina sola per le due Coverage (stesse regole), coi bersagli di tutte e due in alto
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Coverage']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona']);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent(/^CoverageBersagli.*Coverage tipi.*Pokémon medio.*Coverage meta.*Il test.*Colpo.*contano meno.*Quanti lo coprono/);
+    expect(panel).toHaveTextContent(/^Come funzionaBersagli.*Coverage tipi.*Pokémon medio.*Coverage meta.*Il test.*Colpo.*contano meno.*Quanti lo coprono/);
     // La regola del credito nella riga del Colpo; quello che vale meno in una riga sola; niente ×2·×4 né righe della legenda
     expect(panel).toHaveTextContent('Per ogni membro, il suo colpo migliore contro ogni bersaglio che fa almeno il 50%');
     // Quello che conta meno: a capo sotto il Colpo, senza un titolo suo
@@ -75,11 +75,17 @@ describe('Offesa: navigazione e guida', () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
     expect(screen.queryByRole('button', { name: 'Come funziona Generale' })).toBeNull();
+    // Accanto alle testate Tipi e Meta il "?" dei bersagli, lo stesso della guida
+    const typesAsk = screen.getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' });
+    await user.hover(typesAsk);
+    await waitFor(() => expect(document.querySelectorAll('.ftip.gat tbody tr')).toHaveLength(18));
+    await user.unhover(typesAsk);
+    expect(screen.getByRole('button', { name: /^I \d+ Pokémon più usati$/ })).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     // Il "?" di Coverage meta apre la stessa pagina di Coverage tipi
     await user.click(screen.getByRole('button', { name: 'Come funziona Coverage meta' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Coverage' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('contano meno');
   });
 
