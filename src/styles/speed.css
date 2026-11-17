@@ -1,7 +1,7 @@
 /* Velocità finale e posto nel meta, sotto gli EV; i vicini nel tooltip */
-.speed-line { grid-column: 1 / -1; margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
-.speed-line strong { font: 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
-.speed-scarf { font-size: 11px; color: var(--faint); }
+.speed-line { grid-column: 1 / -1; margin: var(--sp-1) 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-4); font-size: var(--fs-small); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.speed-line strong { font: 700 var(--fs-title-s)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.speed-scarf { font-size: var(--fs-label); color: var(--faint); }
 .speed-rank { position: relative; color: var(--text); border-bottom: 1px dotted var(--faint); cursor: help; }
 .speed-rank:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-bottom-color: var(--accent); }
 .speed-pop {
@@ -11,8 +11,8 @@
   left: 0;
   width: 260px;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-7);
   background: var(--ground);
   border: 1px solid var(--line);
   border-top: 2px solid var(--accent);
@@ -23,22 +23,22 @@
 .speed-pop { display: flex; animation: tip 0.15s var(--ease); }
 .speed-pop.up { top: auto; bottom: calc(100% + 8px); border-top: 1px solid var(--line); border-bottom: 2px solid var(--accent); }
 .speed-group { display: flex; flex-direction: column; gap: 3px; }
-.speed-group-title { font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 2px; }
-.speed-rival { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); }
+.speed-group-title { font: 700 var(--fs-caption)/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: var(--sp-1); }
+.speed-rival { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-small); color: var(--text); }
 .speed-rival .mon-icon { margin: -8px -4px -6px -6px; }
 .speed-rival-value { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-.speed-self { margin: 0 -8px; padding: 3px 8px; background: var(--accent-soft); border-radius: 3px; font-weight: 700; }
-.speed-note { font-size: 11px; color: var(--faint); }
+.speed-self { margin: 0 -8px; padding: 3px var(--sp-4); background: var(--accent-soft); border-radius: 3px; font-weight: 700; }
+.speed-note { font-size: var(--fs-label); color: var(--faint); }
 
 /* Velocità: la scheda a barre (una per membro) e il modale del membro. La scala sotto le barre (16px, 12 sugli schermi
    bassi) si toglie dall'altezza delle righe con --def-tail, così le sei righe e quella del team stanno come prima */
 :is(.def-frame, .def-frame.roomy).sp-general { --sp-val: 132px; --sp-bar-h: 22px; --sp-scale-h: 16px; --def-tail: calc(4px + var(--sp-scale-h) + var(--def-sp)); }
 .sp-general .def-members thead th:nth-child(2) { text-align: left; }
 /* La testata della colonna delle barre: a sinistra cosa dice la barra, a destra "Velocità" sopra il totale (stessa griglia del bottone) */
-.sp-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: 12px; padding-right: 4px; }
+.sp-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: var(--sp-6); padding-right: var(--sp-2); }
 .sp-head > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sp-head-val { text-align: right; }
-.sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; align-items: center; gap: 12px; width: 100%; padding: 3px 4px 3px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; align-items: center; gap: var(--sp-6); width: 100%; padding: 3px var(--sp-2) 3px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 /* Un solo hover, quello della riga (come nelle altre tabelle); la freccia da cliccare si accende e si sposta un poco */
 .sp-team { cursor: default; }
 .sp-bar-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -68,60 +68,60 @@
 /* La metà del meta: una riga tratteggiata in ogni barra */
 .sp-half { position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed rgb(255 255 255 / 0.3); pointer-events: none; }
 /* A destra i pezzi piccoli ("55 +20") e il totale grande, nel colore della velocità pura */
-.sp-val { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; min-width: 0; }
-.sp-total { min-width: 2.6em; font: italic 800 24px/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; color: var(--k, var(--text)); }
+.sp-val { display: flex; align-items: baseline; justify-content: flex-end; gap: var(--sp-4); min-width: 0; }
+.sp-total { min-width: 2.6em; font: italic 800 var(--fs-headline-l)/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; color: var(--k, var(--text)); }
 .sp-bar-btn.good { --k: var(--good); }
 .sp-bar-btn.warn { --k: var(--warn); }
 .sp-bar-btn.bad { --k: var(--bad); }
 .sp-bar-btn.wall { --k: var(--muted); }
-.sp-parts { display: flex; gap: 5px; font: 600 12px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sp-parts { display: flex; gap: var(--sp-2); font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sp-parts .sp-part-own { color: var(--accent-ink); }
 .sp-parts .sp-part-team { color: var(--muted); }
 /* La scala sotto le righe dei membri: 0, 25, 50, 75, 100, allineata alla barra */
 .sp-general .def-members tr.sp-scale { height: var(--sp-scale-h); }
 .sp-general .def-members tr.sp-scale > td { padding-top: 0; padding-bottom: 0; border-bottom: 0; vertical-align: top; }
-.sp-scale-line { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: 12px; padding-right: 4px; }
-.sp-scale-ticks { position: relative; height: 12px; font: 600 11px/12px var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
+.sp-scale-line { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: var(--sp-6); padding-right: var(--sp-2); }
+.sp-scale-ticks { position: relative; height: 12px; font: 600 var(--fs-label)/12px var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
 .sp-scale-ticks > span { position: absolute; top: 0; transform: translateX(-50%); }
 .sp-scale-ticks > span:first-child { transform: none; }
 .sp-scale-ticks > span:last-child { transform: translateX(-100%); }
 /* Sotto il nome: "Speed 300" (il numero in corsivo) e, per i muri, "· muro" */
-.sp-general .def-mon-stats { gap: 5px; font-size: 12px; }
+.sp-general .def-mon-stats { gap: var(--sp-2); font-size: var(--fs-caption); }
 .def-mon-stats > .def-mon-speed { cursor: default; }
-.def-mon-speed em { font: italic 700 13px/1 var(--display); color: var(--text); }
+.def-mon-speed em { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); }
 .def-mon-speed em.up { color: var(--good); }
 .def-mon-speed em.down { color: var(--bad); }
 .sp-wall { color: var(--muted); }
 /* "priorità" dopo il nome: un'etichetta come i tag (fondo Accent Soft, testo ciano); la mossa nel tooltip */
-.sp-prio { flex: none; padding: 2px 5px; border-radius: 3px; background: var(--accent-soft); color: var(--accent-ink); font: 700 11px/1 var(--ui); letter-spacing: 0.03em; cursor: help; }
+.sp-prio { flex: none; padding: var(--sp-1) 5px; border-radius: 3px; background: var(--accent-soft); color: var(--accent-ink); font: 700 var(--fs-label)/1 var(--ui); letter-spacing: 0.03em; cursor: help; }
 .sp-prio:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ftip.sp-prio-ftip { width: var(--tip-s); }
-.sp-prio-tip { margin: 0; padding: 8px 10px; color: var(--muted); }
+.sp-prio-tip { margin: 0; padding: var(--sp-4) var(--sp-5); color: var(--muted); }
 @media (min-width: 1100px) and (max-height: 640px) {
   :is(.def-frame, .def-frame.roomy).sp-general { --sp-bar-h: 16px; --sp-scale-h: 12px; --sp-val: 112px; --def-row-min: 25px; }
-  .sp-total { font-size: 20px; }
+  .sp-total { font-size: var(--fs-heading); }
   .sp-bar-btn { padding-block: 1px; }
   .sp-scale-ticks { height: 11px; line-height: 11px; }
 }
-.sp-mark { display: inline-block; margin-left: 4px; padding: 1px 5px; border-radius: 3px; background: var(--accent-soft); color: var(--text); font: 700 11px/1.3 var(--ui); letter-spacing: 0.02em; vertical-align: middle; }
+.sp-mark { display: inline-block; margin-left: var(--sp-2); padding: 1px 5px; border-radius: 3px; background: var(--accent-soft); color: var(--text); font: 700 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.02em; vertical-align: middle; }
 .sp-tile { cursor: default; }
-.sp-controls { gap: 6px; flex-wrap: wrap; white-space: normal; }
-.sp-control-move { padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; font-size: 12px; }
+.sp-controls { gap: var(--sp-3); flex-wrap: wrap; white-space: normal; }
+.sp-control-move { padding: 1px var(--sp-3); border: 1px solid var(--line); border-radius: 3px; font-size: var(--fs-caption); }
 /* Il modale del membro */
 .help-dialog.sp-dialog { width: min(560px, 100%); max-height: min(760px, calc(100vh - 48px)); }
-.sp-dialog .help-head h3 { display: flex; align-items: center; gap: 8px; }
-.sp-dialog-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 14px 18px 16px; overflow: auto; }
-.sp-dlg-head { display: flex; align-items: baseline; gap: 10px; margin: 0; color: var(--muted); }
-.sp-dlg-speed { font: italic 700 26px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
-.sp-checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 8px 10px 10px; border: 1px solid var(--line); border-radius: 4px; }
-.sp-checks legend { padding: 0 4px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.sp-check { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; cursor: pointer; }
+.sp-dialog .help-head h3 { display: flex; align-items: center; gap: var(--sp-4); }
+.sp-dialog-body { display: flex; flex-direction: column; gap: var(--sp-5); min-height: 0; padding: var(--sp-7) var(--sp-9) var(--sp-8); overflow: auto; }
+.sp-dlg-head { display: flex; align-items: baseline; gap: var(--sp-5); margin: 0; color: var(--muted); }
+.sp-dlg-speed { font: italic 700 var(--fs-display)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.sp-checks { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0; padding: var(--sp-4) var(--sp-5) var(--sp-5); border: 1px solid var(--line); border-radius: 4px; }
+.sp-checks legend { padding: 0 var(--sp-2); font-size: var(--fs-label); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.sp-check { display: inline-flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); border: 1px solid var(--line); border-radius: 999px; font-size: var(--fs-small); cursor: pointer; }
 .sp-check.on { border-color: var(--accent); background: var(--accent-soft); }
 .sp-check input { margin: 0; }
-.sp-check-effect { color: var(--muted); font-size: 11px; }
+.sp-check-effect { color: var(--muted); font-size: var(--fs-label); }
 .sp-dlg-count { margin: 0; font-weight: 700; }
-.sp-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.sp-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 6ch 5ch; align-items: center; gap: 8px; padding: 2px 8px; border-left: 3px solid var(--line); border-radius: 3px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sp-list { display: flex; flex-direction: column; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
+.sp-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 6ch 5ch; align-items: center; gap: var(--sp-4); padding: var(--sp-1) var(--sp-4); border-left: 3px solid var(--line); border-radius: 3px; font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
 .sp-row .def-box { --bs: 0.8; }
 .sp-row.sp-beats { border-left-color: var(--good); }
 .sp-row.sp-beats .sp-rival-diff { color: var(--good); }
@@ -130,38 +130,38 @@
 .sp-row.sp-tie { border-left-color: var(--warn); }
 .sp-row.sp-tie .sp-rival-diff { color: var(--warn); }
 .sp-row.sp-me { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
-.sp-rival-name { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sp-rival-name { display: flex; align-items: center; gap: var(--sp-3); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .sp-row.sp-boosted .sp-rival-name { font-style: italic; }
 .sp-row .item-icon { flex: none; display: inline-block; }
 .sp-rival-speed { text-align: right; }
 .sp-rival-diff { text-align: right; font-weight: 700; }
 /* Guida della Velocità: le tre fonti come tessere (nome, quota e freccia), come le soglie della Difesa */
-.guide-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
-.guide-tiles li { display: grid; align-content: start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
-.guide-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.guide-tile-head b { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--text); }
+.guide-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
+.guide-tiles li { display: grid; align-content: start; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.guide-tile-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.guide-tile-head b { font-size: var(--fs-small); font-weight: 600; line-height: 1.2; color: var(--text); }
 .guide-tile-head .guide-pct { flex: none; margin-left: 0; }
 .guide-pct.low { background: color-mix(in srgb, var(--accent) 10%, var(--raised)); color: var(--muted); }
-.guide-tiles small { font-size: 12px; line-height: 1.35; color: var(--muted); }
-.help-panel .guide-scale { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.guide-tiles small { font-size: var(--fs-caption); line-height: 1.35; color: var(--muted); }
+.help-panel .guide-scale { margin-top: var(--sp-3); font-size: var(--fs-small); color: var(--muted); }
 /* La guida: righe come Offesa e Difesa, il dettaglio di ogni fonte nel tooltip del "?" */
-.area-guide-speed .help-panel { padding-bottom: 12px; }
-.area-guide-speed .help-panel h4 { margin-top: 10px; }
-.ftip.gat .sp-gd-tip { padding: 8px 12px 6px; }
-.sp-gd-tip .ftip-foot { margin: 6px -12px 0; }
-.sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: 10px; row-gap: 2px; align-items: baseline; font-size: var(--tip-body); line-height: 1.3; }
+.area-guide-speed .help-panel { padding-bottom: var(--sp-6); }
+.area-guide-speed .help-panel h4 { margin-top: var(--sp-5); }
+.ftip.gat .sp-gd-tip { padding: var(--sp-4) var(--sp-6) var(--sp-3); }
+.sp-gd-tip .ftip-foot { margin: var(--sp-3) -12px 0; }
+.sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: var(--sp-5); row-gap: var(--sp-1); align-items: baseline; font-size: var(--tip-body); line-height: 1.3; }
 .sp-gd-row { display: contents; }
 .sp-gd-row b { font-weight: 600; color: var(--text); }
 .sp-gd-val { font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
-.sp-gd-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 4px; min-width: 0; }
+.sp-gd-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px var(--sp-2); min-width: 0; }
 /* Ogni mossa o abilità è un'etichetta squadrata (3px, come i tag); il meteo o il campo che serve è scritto piccolo dentro */
-.sp-gd-chip { display: inline-flex; align-items: baseline; gap: 4px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text); font-size: var(--tip-small); line-height: 1.35; white-space: nowrap; }
+.sp-gd-chip { display: inline-flex; align-items: baseline; gap: var(--sp-2); padding: 0 var(--sp-2); border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text); font-size: var(--tip-small); line-height: 1.35; white-space: nowrap; }
 .sp-gd-chip small { font-size: var(--tip-small); color: var(--muted); }
 .sp-gd-text { flex: 0 1 auto; color: var(--muted); font-size: var(--tip-body); line-height: 1.3; }
 .sp-gd-rows.grouped { grid-template-columns: max-content max-content 4ch minmax(0, 1fr); }
 /* Il gruppo (Lunghi, Brevi) sta a sinistra della sua prima riga; un po' d'aria tra un gruppo e l'altro */
 .sp-gd-group { font-size: var(--tip-small); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; color: var(--faint); }
-.sp-gd-row.next-group > * { margin-top: 5px; }
+.sp-gd-row.next-group > * { margin-top: var(--sp-2); }
 @media (max-width: 560px) {
   .guide-tiles { grid-template-columns: repeat(2, 1fr); }
   .sp-gd-rows { grid-template-columns: max-content minmax(0, 1fr); }

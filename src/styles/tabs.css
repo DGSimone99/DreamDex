@@ -1,9 +1,9 @@
 /* Colonne */
 /* Sezioni dell'app (nella barra laterale): base comune, la forma è in .tabs.vertical */
 .tabs { display: flex; }
-.tabs [role='tab'] { gap: 8px; border: 0; border-radius: 0; background: none; color: var(--muted); }
+.tabs [role='tab'] { gap: var(--sp-4); border: 0; border-radius: 0; background: none; color: var(--muted); }
 .tabs [role='tab'][aria-disabled='true'] { color: var(--faint); opacity: 0.55; cursor: not-allowed; }
-.tab-count { font: 600 12px/1 var(--ui); letter-spacing: 0; text-transform: none; padding: 3px 8px; border-radius: 10px; background: var(--raised); color: var(--muted); }
+.tab-count { font: 600 var(--fs-caption)/1 var(--ui); letter-spacing: 0; text-transform: none; padding: 3px var(--sp-4); border-radius: 10px; background: var(--raised); color: var(--muted); }
 .tab-count.serious { background: var(--bad-bg); color: var(--bad); }
 .tab-count.minor, .tab-count.info { background: var(--accent-soft); color: var(--text); }
 .tab-count.warn { background: var(--warn-bg); color: var(--warn); }
@@ -12,14 +12,14 @@
  * Quella aperta è una linguetta inclinata nel colore 2 che sporge dalla barra: l'angolo basso della diagonale tocca
  * il bordo, la parte alta esce di 13 px verso il contenuto.
  */
-.tabs.vertical { flex-direction: column; gap: 6px; padding: 0; margin: 0; border: 0; }
+.tabs.vertical { flex-direction: column; gap: var(--sp-3); padding: 0; margin: 0; border: 0; }
 .tabs.vertical [role='tab'] {
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: var(--sp-5);
   width: calc(100% - 12px);
-  padding: 8px 12px 8px 16px;
+  padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-8);
   margin: 0;
   border: 0;
   text-align: left;
@@ -29,8 +29,8 @@
 .tabs.vertical .tab-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 4px; background: var(--raised); color: var(--accent); }
 .tabs.vertical .tab-icon .icon { width: 20px; height: 20px; }
 .tabs.vertical .tab-text { min-width: 0; display: grid; gap: 3px; }
-.tabs.vertical .tab-name { font: 700 18px/1.05 var(--display); font-style: italic; letter-spacing: 0.01em; }
-.tabs.vertical .tab-status { overflow: hidden; color: var(--muted); font: 500 12px/1.2 var(--ui); white-space: nowrap; text-overflow: ellipsis; }
+.tabs.vertical .tab-name { font: 700 var(--fs-title-l)/1.05 var(--display); font-style: italic; letter-spacing: 0.01em; }
+.tabs.vertical .tab-status { overflow: hidden; color: var(--muted); font: 500 var(--fs-caption)/1.2 var(--ui); white-space: nowrap; text-overflow: ellipsis; }
 .tabs.vertical .tab-status .serious { color: var(--bad); font-weight: 700; }
 .tabs.vertical .tab-status .minor, .tabs.vertical .tab-status .info { color: var(--text); font-weight: 600; }
 .tabs.vertical .tab-status .warn { color: var(--warn); font-weight: 700; }
@@ -52,8 +52,8 @@
 .tabs.vertical [role='tab'][aria-selected='true'] .tab-status * { color: var(--on-accent-2); }
 .tabs.vertical [role='tab'][aria-disabled='true'] { background: none; opacity: 0.5; }
 .tabs.vertical [role='tab'][aria-selected='true'] .tab-count { background: var(--on-accent-2); color: var(--accent-2-ink); }
-.tabs.vertical .tab-count { font-style: normal; margin-right: 10px; }
-.tab-body { padding: 26px 22px 0; }
+.tabs.vertical .tab-count { font-style: normal; margin-right: var(--sp-5); }
+.tab-body { padding: 26px var(--sp-10) 0; }
 .tab-panel:not(.active) { display: none; }
 /* Il titolo della sezione lo dice già la scheda */
 .tab-panel .analysis > h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -64,6 +64,6 @@
   background: var(--panel);
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  padding: 12px 16px;
-  margin-bottom: 10px;
+  padding: var(--sp-6) var(--sp-8);
+  margin-bottom: var(--sp-5);
 }

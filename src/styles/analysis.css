@@ -7,30 +7,30 @@
 .rating .net-fill { position: absolute; top: 0; bottom: 0; }
 .rating .net-fill.pos { left: 50%; background: var(--accent); border-radius: 0 2px 2px 0; }
 .rating .net-fill.neg { right: 50%; background: var(--bad); border-radius: 2px 0 0 2px; }
-.rating .net-list { list-style: none; padding: 0; margin: 4px 0 8px; }
-.rating .net-list li { position: relative; padding-left: 18px; color: var(--text); }
+.rating .net-list { list-style: none; padding: 0; margin: var(--sp-2) 0 var(--sp-4); }
+.rating .net-list li { position: relative; padding-left: var(--sp-9); color: var(--text); }
 .rating .net-list li::before { position: absolute; left: 0; width: 10px; text-align: center; font-weight: 700; }
 .rating .net-list li.pos::before { content: '+'; color: var(--accent); }
 .rating .net-list li.neg::before { content: '−'; color: var(--bad); }
 
-.swap-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; color: var(--muted); }
+.swap-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin: 0; color: var(--muted); }
 .swap-head .icon { color: var(--faint); }
-.swap-head strong { font: 700 17px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); }
-.swap-head .gain { font: 700 15px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-.swap-head small { font-size: 12px; color: var(--faint); }
+.swap-head strong { font: 700 var(--fs-title)/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); }
+.swap-head .gain { font: 700 var(--fs-body)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.swap-head small { font-size: var(--fs-caption); color: var(--faint); }
 .swap-head .gain.worse { color: var(--bad); }
 .swap-head .gain.same { color: var(--muted); }
 
-.analysis table { border-collapse: collapse; width: 100%; font-size: 13px; }
-.analysis th, .analysis td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
+.analysis table { border-collapse: collapse; width: 100%; font-size: var(--fs-small); }
+.analysis th, .analysis td { padding: var(--sp-2) 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
 .analysis thead th { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .analysis tbody th { text-align: left; font-weight: 600; }
 .analysis tr.serious { background: var(--bad-bg); }
 .analysis tr.minor { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 
 /* Avvisi: triangolo rosso per i gravi, blu per i minori */
-.summary-info { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; }
-.issue-counts { display: inline-flex; align-items: center; gap: 8px; }
+.summary-info { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-5); }
+.issue-counts { display: inline-flex; align-items: center; gap: var(--sp-4); }
 .issue-counts:empty { display: none; }
 .issue { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .issue .icon { width: 15px; height: 15px; }
@@ -41,20 +41,20 @@
 .analysis td.resist { color: var(--good); }
 
 /* Elenchi dell'analisi: righe allineate, niente pallini */
-.analysis h4 { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 14px 0 6px; display: flex; align-items: center; gap: 6px; }
-.analysis h4 .count { font: 700 12px/1 var(--display); color: var(--muted); background: var(--raised); padding: 2px 6px; border-radius: 2px; }
+.analysis h4 { font: 600 var(--fs-caption)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: var(--sp-7) 0 var(--sp-3); display: flex; align-items: center; gap: var(--sp-3); }
+.analysis h4 .count { font: 700 var(--fs-caption)/1 var(--display); color: var(--muted); background: var(--raised); padding: var(--sp-1) var(--sp-3); border-radius: 2px; }
 .role-rows, .type-rows { list-style: none; padding: 0; margin: 0; }
 
 .count-weak { color: var(--bad); font-weight: 600; }
 .count-resist { color: var(--good); font-weight: 600; }
 
-.role-group + .role-group { margin-top: 18px; }
-.role-group h4 { margin: 0 0 4px; }
-.role-rows li { display: grid; grid-template-columns: 16px 150px minmax(0, 1fr); gap: 10px; align-items: center; margin: 0; padding: 6px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
+.role-group + .role-group { margin-top: var(--sp-9); }
+.role-group h4 { margin: 0 0 var(--sp-2); }
+.role-rows li { display: grid; grid-template-columns: 16px 150px minmax(0, 1fr); gap: var(--sp-5); align-items: center; margin: 0; padding: var(--sp-3) 0; border-bottom: 1px solid var(--line-soft); font-size: var(--fs-section); }
 .role-rows li:last-child { border-bottom: 0; }
 .role-rows .icon { color: var(--good); }
 .role-rows .role { font-weight: 600; }
-.role-rows .owners { display: flex; flex-wrap: wrap; gap: 4px 6px; color: var(--muted); font-size: 13px; }
+.role-rows .owners { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); color: var(--muted); font-size: var(--fs-small); }
 .role-rows .owner { padding: 1px 7px; border-radius: 2px; background: var(--raised); color: var(--text); }
 .role-rows li.bad .icon, .role-rows li.bad .owners { color: var(--bad); font-weight: 500; }
 /* Minore mancante: grigio tenue col colore del testo, non con la trasparenza (si legge ancora: 4,7:1) */
@@ -63,45 +63,45 @@
 /* Importante mancante: un avviso tenue, né il rosso degli essenziali né il grigio dei minori */
 .role-rows li.warn .owners { color: color-mix(in srgb, var(--warn) 80%, var(--muted)); font-weight: 500; }
 
-.type-rows { display: grid; gap: 2px; }
-.type-rows li { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 12px; align-items: center; margin: 0; padding: 4px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
-.type-rows .hitter { display: inline-flex; gap: 5px; align-items: baseline; margin-right: 14px; }
-.type-rows .hitter small { display: inline; font-size: 12px; color: var(--faint); }
+.type-rows { display: grid; gap: var(--sp-1); }
+.type-rows li { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: var(--sp-6); align-items: center; margin: 0; padding: var(--sp-2) 0; border-bottom: 1px solid var(--line-soft); font-size: var(--fs-section); }
+.type-rows .hitter { display: inline-flex; gap: var(--sp-2); align-items: baseline; margin-right: var(--sp-7); }
+.type-rows .hitter small { display: inline; font-size: var(--fs-caption); color: var(--faint); }
 .type-rows .missing { color: var(--bad); font-weight: 500; }
 .type-rows li.bad { background: linear-gradient(90deg, var(--bad-bg), transparent 80%); }
 
 /* Schede interne di Analisi: Panoramica e le aree del voto, col "?" accanto a quella aperta */
-.analysis-tabs { position: relative; display: flex; align-items: center; margin: 0 0 12px; border-bottom: 1px solid var(--line-soft); }
-.analysis-tabs [role='tablist'] { display: flex; gap: 2px; }
-.analysis-tabs [role='tab'] { padding: 8px 16px 9px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; font: 600 15px/1 var(--display); font-style: italic; color: var(--muted); }
+.analysis-tabs { position: relative; display: flex; align-items: center; margin: 0 0 var(--sp-6); border-bottom: 1px solid var(--line-soft); }
+.analysis-tabs [role='tablist'] { display: flex; gap: var(--sp-1); }
+.analysis-tabs [role='tab'] { padding: var(--sp-4) var(--sp-8) 9px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; font: 600 var(--fs-body)/1 var(--display); font-style: italic; color: var(--muted); }
 .analysis-tabs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
 .analysis-tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
 .analysis-view { flex: 1; min-height: 0; }
 
 /* Un'area sulla pagina: la testata (voto, problemi, sottoschede e "?") attaccata sopra il pannello, che scorre dentro */
-.area-view { display: flex; flex-direction: column; height: 100%; min-height: 0; padding-bottom: 4px; }
+.area-view { display: flex; flex-direction: column; height: 100%; min-height: 0; padding-bottom: var(--sp-2); }
 /* La testata dell'area: toni neutri (niente magenta), tutto su una riga centrata in altezza; il pannello sotto continua
    lo stesso fondo, separato da un filo */
 .area-head {
-  flex: none; display: flex; align-items: center; gap: 14px; min-width: 0; min-height: 50px; padding: 6px 16px;
+  flex: none; display: flex; align-items: center; gap: var(--sp-7); min-width: 0; min-height: 50px; padding: var(--sp-3) var(--sp-8);
   background: var(--panel); border: 1px solid var(--line-soft);
 }
 .area-view > .area-panel { border-top: 0; }
 /* Il voto dell'area: lettera e parola nel colore del voto (S magenta, A verde, B ciano, C giallo, D rosso) */
-.area-grade { --grade: var(--accent); flex: none; display: flex; align-items: baseline; gap: 8px; margin: 0; color: var(--grade); white-space: nowrap; }
+.area-grade { --grade: var(--accent); flex: none; display: flex; align-items: baseline; gap: var(--sp-4); margin: 0; color: var(--grade); white-space: nowrap; }
 .area-grade.grade-S { --grade: var(--accent-2-ink); }
 .area-grade.grade-A { --grade: var(--good); }
 .area-grade.grade-C { --grade: var(--warn); }
 .area-grade.grade-D { --grade: var(--bad); }
-.area-grade-letter { min-width: 0.8em; font: italic 800 30px/0.9 var(--display); text-align: center; }
-.area-grade-word { font: italic 700 19px/1 var(--display); }
+.area-grade-letter { min-width: 0.8em; font: italic 800 var(--fs-stat)/0.9 var(--display); text-align: center; }
+.area-grade-word { font: italic 700 var(--fs-plate)/1 var(--display); }
 /* I problemi dell'area come pillole, in una riga sola (quelle che non stanno nel "+N") */
-.area-chips { flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin: 0; padding: 2px; list-style: none; overflow: hidden; }
+.area-chips { flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: var(--sp-3); margin: 0; padding: var(--sp-1); list-style: none; overflow: hidden; }
 .area-chips > li { flex: none; display: flex; }
 .area-chip {
   --tone: var(--warn); --tone-bg: var(--warn-bg);
-  display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 5px 8px; border: 0; border-radius: 3px;
-  background: var(--tone-bg); color: var(--tone); font: 600 12px/1 var(--ui); white-space: nowrap; cursor: help;
+  display: inline-flex; align-items: center; gap: var(--sp-2); max-width: 100%; padding: 5px var(--sp-4); border: 0; border-radius: 3px;
+  background: var(--tone-bg); color: var(--tone); font: 600 var(--fs-caption)/1 var(--ui); white-space: nowrap; cursor: help;
 }
 .area-chip.serious { --tone: var(--bad); --tone-bg: var(--bad-bg); }
 .area-chip.good { --tone: var(--good); --tone-bg: var(--good-bg); cursor: default; }
@@ -109,11 +109,11 @@
 /* Il testo corto di un problema (ProblemPill): le icone dei tipi davanti, la × di un ruolo mancante, l'icona di una minaccia */
 .coach-prob-text { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .coach-counts { white-space: nowrap; }
-.coach-prob-text .type-icons { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
+.coach-prob-text .type-icons { display: inline-flex; margin-right: var(--sp-2); vertical-align: -3px; }
 .coach-prob-text .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
-.coach-prob-text.coach-miss { display: flex; align-items: center; gap: 6px; }
+.coach-prob-text.coach-miss { display: flex; align-items: center; gap: var(--sp-3); }
 .coach-miss .icon { flex: none; width: 12px; height: 12px; }
-.coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; overflow: visible; white-space: nowrap; }
+.coach-prob-text.is-threat { display: flex; align-items: center; gap: var(--sp-2); overflow: visible; white-space: nowrap; }
 .coach-prob-text.is-threat .mon-icon { flex: none; position: relative; top: -0.15em; }
 .coach-prob-text.is-threat .coach-threat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* Il testo corto della pillola (lo stesso nelle righe del Coaching) nel colore della pillola, intero */
@@ -125,11 +125,11 @@
 .area-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) { .area-chip.is-link { transition: none; } }
 /* Il "+N" delle pillole che non stanno nella riga (il tooltip DreamDex le elenca) */
-.area-chips-more { flex: none; padding: 0 8px; border-radius: 10px; font: 600 12px/20px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
+.area-chips-more { flex: none; padding: 0 var(--sp-4); border-radius: 10px; font: 600 var(--fs-caption)/20px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
 .area-chips-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Le sottoschede: un selettore a segmenti piccolo, neutro, con la scelta su Accent Soft */
 .area-subs { flex: none; display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-.area-subs [role='tab'] { padding: 7px 12px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; color: var(--muted); font: 500 13px/1 var(--ui); white-space: nowrap; }
+.area-subs [role='tab'] { padding: 7px var(--sp-6); border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; color: var(--muted); font: 500 var(--fs-small)/1 var(--ui); white-space: nowrap; }
 .area-subs [role='tab']:last-child { border-right: 0; }
 .area-subs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
 .area-subs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-soft); }
@@ -139,26 +139,26 @@
 /* La legenda dei colori della sottoscheda, a sinistra nella riga bassa in fondo alla tabella (dentro il pannello, nello
    spazio che la tabella lascia già sotto le righe): quieta e sempre intera */
 .area-legend { display: inline-flex; flex: none; align-items: center; gap: var(--legend-item); white-space: nowrap; font-size: var(--legend-size); color: var(--legend-ink); }
-.area-legend .hold-chip { padding: 1px 6px; font-size: 11px; line-height: 16px; }
+.area-legend .hold-chip { padding: 1px var(--sp-3); font-size: var(--fs-label); line-height: 16px; }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
 
 /* Panoramica: il cruscotto che prende il resto, in fondo la riga Da sistemare (il giudizio in cima solo con un membro); scorre solo sotto la misura minima */
-.overview { display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; padding-bottom: 14px; overflow: auto; overscroll-behavior: contain; }
+.overview { display: flex; flex-direction: column; gap: var(--sp-5); height: 100%; min-height: 0; padding-bottom: var(--sp-7); overflow: auto; overscroll-behavior: contain; }
 .overview-empty { margin: 24px 0; color: var(--muted); }
 
 
 /* Panoramica: in testa solo con un membro (l'invito ad aggiungerne), in fondo la riga Da sistemare */
-.overview-headline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
-.overview-headline > strong { font: 800 22px/1.1 var(--display); font-style: italic; }
-.overview-empty { display: grid; justify-items: start; gap: 12px; }
+.overview-headline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-8); }
+.overview-headline > strong { font: 800 var(--fs-headline)/1.1 var(--display); font-style: italic; }
+.overview-empty { display: grid; justify-items: start; gap: var(--sp-6); }
 /* Da sistemare (in fondo alla Panoramica): una striscia sola, alta 26px, rossa a sinistra (o nel colore del caso, --tone);
    il testo lungo finisce coi puntini (tutto nel tooltip). Tutta la striscia porta al Coaching */
 .fix-row {
   --tone: var(--bad); --tone-bg: var(--bad-bg);
-  flex: none; display: flex; align-items: center; gap: 12px; min-width: 0; height: 26px; padding: 0 4px 0 12px; line-height: 20px;
+  flex: none; display: flex; align-items: center; gap: var(--sp-6); min-width: 0; height: 26px; padding: 0 var(--sp-2) 0 var(--sp-6); line-height: 20px;
   overflow: hidden; background: linear-gradient(90deg, var(--tone-bg), var(--panel) 70%);
   border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--line)); border-left: 3px solid var(--tone);
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 .fix-row.minor { --tone: var(--warn); --tone-bg: var(--warn-bg); }
 .fix-row.is-clear { --tone: var(--good); --tone-bg: var(--good-bg); }
@@ -172,34 +172,34 @@
 .fix-bone { display: block; flex: none; height: 8px; border-radius: 4px; background: var(--raised); }
 @media (prefers-reduced-motion: reduce) { .fix-row.is-link { transition: none; } }
 /* L'etichetta "N problemi" in testa: rossa se ce n'è almeno uno grave, gialla coi soli minori, verde con la spunta senza proposte */
-.fix-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 1px 8px; border-radius: 3px; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tone); background: var(--tone-bg); }
+.fix-label { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; padding: 1px var(--sp-4); border-radius: 3px; font-size: var(--fs-label); line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tone); background: var(--tone-bg); }
 .fix-label .icon { width: 13px; height: 13px; }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fix-more { flex: none; padding: 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--raised); }
+.fix-more { flex: none; padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; color: var(--muted); background: var(--raised); }
 .fix-go { flex: none; margin-left: auto; padding-top: 0; padding-bottom: 0; line-height: 20px; }
 /* Il +N della proposta migliore, verde in Kanit corsivo */
-.fix-gain { font: 800 14px/1 var(--display); font-style: italic; color: var(--good); }
+.fix-gain { font: 800 var(--fs-section)/1 var(--display); font-style: italic; color: var(--good); }
 /* Con la riga in fondo il margine sotto la Panoramica si accorcia a 4px, come sotto le aree */
-.overview:has(> .fix-row) { gap: 8px; padding-bottom: 4px; }
+.overview:has(> .fix-row) { gap: var(--sp-4); padding-bottom: var(--sp-2); }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
 .analysis-tabs { border-bottom: 0; }
 /* Panoramica e Coaching (la lettura del team) separate dalle aree del voto da uno stacco con un filo sottile */
 /* Sei schede: due di lettura e quattro aree (Offesa, Difesa, Velocità, Ruoli e Bonus) che riempiono tutta la riga */
-.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(4, minmax(0, 1fr)); gap: 4px; width: 100%; }
-.analysis-tabs [role='tablist']::before { content: ''; grid-column: 3; grid-row: 1; justify-self: center; width: 1px; margin: 6px 0; background: var(--line); }
-.analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: 8px; width: 100%; padding: 8px 14px; border: 1px solid var(--line-soft); background: var(--panel); }
+.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(4, minmax(0, 1fr)); gap: var(--sp-2); width: 100%; }
+.analysis-tabs [role='tablist']::before { content: ''; grid-column: 3; grid-row: 1; justify-self: center; width: 1px; margin: var(--sp-3) 0; background: var(--line); }
+.analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: var(--sp-4); width: 100%; padding: var(--sp-4) var(--sp-7); border: 1px solid var(--line-soft); background: var(--panel); }
 .analysis-tabs [role='tab'][aria-selected='true'] {
   color: var(--on-accent-2); border-color: var(--accent-2);
   background: var(--stripes), var(--accent-2);
   clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
   padding-right: 48px;
 }
-.analysis-tabs .tab-score { font: 700 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent); }
+.analysis-tabs .tab-score { font: 700 var(--fs-title)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent); }
 .analysis-tabs [role='tab'][aria-selected='true'] .tab-score { color: var(--on-accent-2); }
 /* Badge dei problemi gravi: rosso sulla scheda chiusa, scuro su quella aperta */
-.analysis-tabs .tab-badge { align-self: center; min-width: 18px; padding: 1px 5px; border-radius: 9px; background: var(--bad); color: var(--on-accent-2); font: 700 12px/1.3 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
+.analysis-tabs .tab-badge { align-self: center; min-width: 18px; padding: 1px 5px; border-radius: 9px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-caption)/1.3 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
 .analysis-tabs [role='tab'][aria-selected='true'] .tab-badge { background: var(--on-accent-2); color: var(--accent-2); }
 /* Solo problemi minori: come il contatore della barra laterale */
 .analysis-tabs .tab-badge.minor { background: var(--accent-soft); color: var(--text); }
@@ -220,7 +220,7 @@
    scheda si allunga a sinistra, col taglio inclinato (\) sopra la scheda vicina */
 .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
   margin-right: 0; margin-left: -30px;
-  padding-right: 14px; padding-left: 44px;
+  padding-right: var(--sp-7); padding-left: 44px;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%);
   animation-name: tab-stretch-left;
 }
@@ -253,7 +253,7 @@
 @media (prefers-reduced-motion: reduce) {
   .analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
 }
-.area-inactive { margin: 0; font-size: 12px; color: var(--faint); }
+.area-inactive { margin: 0; font-size: var(--fs-caption); color: var(--faint); }
 @media (prefers-reduced-motion: reduce) {
   .analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
   .analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { transition: none; }
@@ -271,7 +271,7 @@
   --dash-row2: 150px; --sum-row-min: 30px;
   flex: 1; min-height: max(300px, calc(8 * var(--sum-row-min) + 48px));
   display: grid; grid-template-columns: minmax(0, 30fr) minmax(0, 40fr) minmax(0, 30fr); grid-template-rows: auto minmax(var(--dash-row2), 1fr);
-  gap: 10px; overflow: hidden;
+  gap: var(--sp-5); overflow: hidden;
 }
 .dash.tight { --sum-row-min: 24px; }
 .dash.roomy { --sum-row-min: 34px; }
@@ -279,16 +279,16 @@
 .dash-coverage { grid-column: 2 / -1; grid-row: 1; }
 .dash-roles { grid-column: 2; }
 .dash-speed { grid-column: 3; }
-.dash-card { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 12px 10px; background: var(--panel); border: 1px solid var(--line-soft); }
-.dash-head { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0 -12px 8px; padding-right: 6px; background: var(--stripes), var(--band); }
-.dash-plate { flex: none; margin: 0; padding: 4px 22px 4px 12px; font: 700 13px/1.2 var(--display); font-style: italic; color: var(--on-plate); background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.dash-card { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 var(--sp-6) var(--sp-5); background: var(--panel); border: 1px solid var(--line-soft); }
+.dash-head { display: flex; align-items: center; gap: var(--sp-5); min-width: 0; margin: 0 -12px var(--sp-4); padding-right: var(--sp-3); background: var(--stripes), var(--band); }
+.dash-plate { flex: none; margin: 0; padding: var(--sp-2) var(--sp-10) var(--sp-2) var(--sp-6); font: 700 var(--fs-small)/1.2 var(--display); font-style: italic; color: var(--on-plate); background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
 /* Un h4 usato come targhetta (colonne del Coaching): la targhetta vince sullo stile degli h4 di Analisi */
-.analysis h4.dash-plate { display: block; margin: 0; font: 700 13px/1.2 var(--display); font-style: italic; text-transform: none; letter-spacing: normal; color: var(--on-plate); }
-.dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 3px; margin-block: -3px; font-size: 12px; color: var(--muted); }
-.dash-meta b { font: 700 14px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
+.analysis h4.dash-plate { display: block; margin: 0; font: 700 var(--fs-small)/1.2 var(--display); font-style: italic; text-transform: none; letter-spacing: normal; color: var(--on-plate); }
+.dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 3px; margin-block: -3px; font-size: var(--fs-caption); color: var(--muted); }
+.dash-meta b { font: 700 var(--fs-section)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
 .dash-meta b.bad { color: var(--bad); }
-.dash-links { flex: none; display: flex; gap: 2px; margin-left: auto; }
-.dash-link { gap: 2px; padding: 2px 6px; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
+.dash-links { flex: none; display: flex; gap: var(--sp-1); margin-left: auto; }
+.dash-link { gap: var(--sp-1); padding: var(--sp-1) var(--sp-3); font-size: var(--fs-caption); font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
 /* Al passaggio: una luce azzurra sfumata senza bordi (come le righe del Riassunto), il testo si accende con un alone
    leggero e la freccia scivola di 2px verso destra */
 .dash-link { position: relative; isolation: isolate; }
@@ -312,7 +312,7 @@
 .dash-head.is-link .dash-link:focus-visible { outline: none; }
 /* Le voci che si contano (useFit): niente scorrimento, ciò che non sta finisce nel "+N" */
 .dash-fit { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-.dash-note { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
+.dash-note { display: flex; align-items: center; gap: var(--sp-3); margin: 0; font-size: var(--fs-small); color: var(--muted); }
 .dash-note.good { color: var(--good); }
 .dash-note .icon { width: 14px; height: 14px; }
 
@@ -325,8 +325,8 @@
 .dash.roomy .dash-cell { height: 26px; }
 .dash.roomy .dash-type { width: var(--ti-head); height: var(--ti-head); }
 .dash-matrix thead td, .dash-matrix th[scope='row'] { width: 64px; }
-.dash-matrix thead th { padding: 0 0 2px; }
-.dash-matrix th[scope='row'] { padding: 0 4px 0 0; text-align: right; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
+.dash-matrix thead th { padding: 0 0 var(--sp-1); }
+.dash-matrix th[scope='row'] { padding: 0 var(--sp-2) 0 0; text-align: right; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .dash-type { display: block; width: var(--ti-tip); height: var(--ti-tip); margin: 0 auto; border-radius: 50%; }
 .dash .dash-cell { height: 22px; padding: 0; text-align: center; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: color-mix(in srgb, var(--faint) 40%, var(--raised)); cursor: help; }
 .dash-cell .icon { width: 12px; height: 12px; vertical-align: middle; stroke-width: 2.5; }
@@ -345,22 +345,22 @@
 .dash.has-threats.tight { --dash-row2: 100px; }
 .dash-threats { grid-column: 2 / -1; grid-row: 2; }
 .dash.has-threats .dash-roles, .dash.has-threats .dash-speed { grid-row: 3; }
-.dash.has-threats .dash-coverage .dash-head { margin-bottom: 6px; }
+.dash.has-threats .dash-coverage .dash-head { margin-bottom: var(--sp-3); }
 .dash.has-threats .dash-cell { height: 18px; line-height: 0; }
 .dash.has-threats .dash-type { width: 20px; height: 20px; }
 .dash.has-threats.roomy .dash-cell { height: 22px; }
 .dash.has-threats.roomy .dash-type { width: var(--ti-tip); height: var(--ti-tip); }
 /* Stretto (1280×620, 1366×768 col team aperto): tutto un po' più fitto, così Ruoli e Velocità tengono ~120px */
-.dash.has-threats.tight { gap: 8px; }
+.dash.has-threats.tight { gap: var(--sp-4); }
 .dash.has-threats.tight .dash-cell { height: 14px; }
 .dash.has-threats.tight .dash-type { width: 16px; height: 16px; }
-.dash.has-threats.tight .dash-card { padding-bottom: 8px; }
-.dash.has-threats.tight .dash-head { margin-bottom: 5px; }
+.dash.has-threats.tight .dash-card { padding-bottom: var(--sp-4); }
+.dash.has-threats.tight .dash-head { margin-bottom: var(--sp-2); }
 .dash.has-threats.tight .dash-cell .icon { width: 10px; height: 10px; }
 
 /* Minacce del meta: le carte in fila, larghe uguali, il "+N" in una colonna stretta in più (--thr-more) */
 .thr-box { min-width: 0; }
-.thr-row { display: grid; grid-template-columns: repeat(var(--thr-n), minmax(0, 1fr)) var(--thr-more); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.thr-row { display: grid; grid-template-columns: repeat(var(--thr-n), minmax(0, 1fr)) var(--thr-more); gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
 .thr-row > li { display: flex; min-width: 0; }
 /* Una carta, nel linguaggio delle carte del team e del Coaching: il fondo Raised lavato nel colore del primo tipo (--t1,
    24% a sinistra che sfuma), una lama di luce e il lato destro obliquo, disegnati nel ::before (così il ritaglio non
@@ -368,8 +368,8 @@
    lo stato come targhetta inclinata (--k su --k-bg: rosso scoperta, giallo a fatica), l'unico segno dello stato */
 .thr-card {
   --k: var(--warn); --k-bg: var(--warn-bg); --wash: 24%;
-  position: relative; isolation: isolate; flex: 1; min-width: 0; height: 52px; display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 6px; align-items: center;
-  padding: 0 10px 0 0; border: 0; border-radius: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  position: relative; isolation: isolate; flex: 1; min-width: 0; height: 52px; display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: var(--sp-3); align-items: center;
+  padding: 0 var(--sp-5) 0 0; border: 0; border-radius: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
   transition: transform 0.15s var(--ease), filter 0.15s var(--ease);
 }
 .thr-card.open { --k: var(--bad); --k-bg: var(--bad-bg); }
@@ -382,22 +382,22 @@
 }
 .thr-card .sprite { width: 48px; height: 48px; image-rendering: pixelated; filter: drop-shadow(0 3px 4px #0008); transition: transform 0.15s var(--ease); }
 .thr-text { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
-.thr-name { display: block; max-width: 100%; white-space: nowrap; font: 700 13px/1.15 var(--display); font-style: italic; text-shadow: 0 1px 3px #0006; }
+.thr-name { display: block; max-width: 100%; white-space: nowrap; font: 700 var(--fs-small)/1.15 var(--display); font-style: italic; text-shadow: 0 1px 3px #0006; }
 .thr-name.wrap { white-space: normal; overflow-wrap: anywhere; line-height: 1.05; }
-.thr-word { padding: 0 9px 0 7px; font: 600 12px/16px var(--ui); color: var(--k); background: var(--k-bg); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); white-space: nowrap; }
+.thr-word { padding: 0 9px 0 7px; font: 600 var(--fs-caption)/16px var(--ui); color: var(--k); background: var(--k-bg); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); white-space: nowrap; }
 /* Sotto il mouse (e col fuoco) come le carte dei candidati, in piccolo: sale di 2px con l'ombra, il fondo si tinge un po'
    di più, la sprite cresce appena; senza movimento con le animazioni ridotte */
 .thr-card:hover, .thr-card:focus-visible { --wash: 34%; transform: translateY(-2px); filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.4)); }
 .thr-card:hover .sprite, .thr-card:focus-visible .sprite { transform: scale(1.05); }
 /* Il "+N": la stessa famiglia del "+N altre" di Bonus/Malus (tratteggiato, 600 14px Muted), alto come le carte */
-.thr-more { flex: 1; min-width: 0; height: 52px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line); border-radius: 0; background: none; color: var(--muted); font: 600 14px var(--ui); cursor: pointer; }
+.thr-more { flex: 1; min-width: 0; height: 52px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line); border-radius: 0; background: none; color: var(--muted); font: 600 var(--fs-section) var(--ui); cursor: pointer; }
 .thr-more:hover { color: var(--text); border-color: var(--muted); background: none; }
 .thr-card:focus-visible, .thr-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Stretto: 40px (la sprite 40px), sempre un po' più ariosa della prima versione; l'altezza la cedono Ruoli e Velocità */
 .dash.tight .thr-card, .dash.tight .thr-more { height: 40px; }
 .dash.tight .thr-card { grid-template-columns: 40px minmax(0, 1fr); }
 .dash.tight .thr-card .sprite { width: 40px; height: 40px; }
-.dash.tight .thr-text { gap: 2px; }
+.dash.tight .thr-text { gap: var(--sp-1); }
 @media (prefers-reduced-motion: reduce) {
   .thr-card, .thr-card .sprite { transition: none; }
   .thr-card:hover, .thr-card:focus-visible { transform: none; }
@@ -406,29 +406,29 @@
 /* Il tooltip di una minaccia: nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
 .ftip.thr-tip { width: var(--tip-s); }
 .thr-tip-use { margin-left: auto; white-space: nowrap; font: 700 italic var(--tip-small)/1 var(--display); color: var(--muted); }
-.thr-tip-why { display: grid; gap: 5px; margin: 0; padding: 9px 10px; list-style: none; }
+.thr-tip-why { display: grid; gap: var(--sp-2); margin: 0; padding: 9px var(--sp-5); list-style: none; }
 .thr-tip-why li { padding-left: 9px; border-left: 2px solid var(--warn); }
 .thr-tip-why li.open { border-left-color: var(--bad); }
-.thr-tip-why li b { font: 700 italic var(--tip-body)/1.2 var(--display); margin-right: 4px; }
+.thr-tip-why li b { font: 700 italic var(--tip-body)/1.2 var(--display); margin-right: var(--sp-2); }
 
 /* La riga Bonus/Malus in fondo al Riassunto: solo se c'è posto (misurato), in posizione assoluta, così non sposta niente */
 .sum-bm {
-  position: absolute; left: 12px; right: 12px; bottom: 10px; height: 28px; display: flex; align-items: center; gap: 8px;
-  padding: 0 4px; border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; color: var(--text);
-  font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+  position: absolute; left: 12px; right: 12px; bottom: 10px; height: 28px; display: flex; align-items: center; gap: var(--sp-4);
+  padding: 0 var(--sp-2); border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; color: var(--text);
+  font: inherit; font-size: var(--fs-caption); text-align: left; cursor: pointer;
 }
 .sum-bm:hover { border-color: var(--line-soft); background: color-mix(in srgb, var(--accent) 7%, transparent); }
 .sum-bm:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.sum-bm-label { flex: none; font: 700 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-.sum-bm-net { flex: none; font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+.sum-bm-label { flex: none; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.sum-bm-net { flex: none; font: 800 var(--fs-title-s)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
 .sum-bm .good { color: var(--good); }
 .sum-bm .bad { color: var(--bad); }
 .sum-bm .zero { color: var(--faint); }
 .sum-bm-list { flex: 1; min-width: 0; height: 18px; display: flex; flex-wrap: wrap; align-items: center; overflow: hidden; line-height: 18px; color: var(--muted); }
 .sum-bm-item { white-space: nowrap; }
-.sum-bm-item + .sum-bm-item::before { content: "·"; margin: 0 6px; color: var(--faint); }
+.sum-bm-item + .sum-bm-item::before { content: "·"; margin: 0 var(--sp-3); color: var(--faint); }
 .sum-bm-item b { font-weight: 700; font-variant-numeric: tabular-nums; }
-.sum-bm-more { margin-left: 8px; padding: 0 6px; font-size: 12px; font-weight: 600; line-height: 16px; color: var(--muted); background: var(--raised); }
+.sum-bm-more { margin-left: var(--sp-4); padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; line-height: 16px; color: var(--muted); background: var(--raised); }
 
 /*
  * Ruoli, stretto e normale: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una
@@ -437,14 +437,14 @@
  */
 .dash-role-bands, .dash-role-bands.dash-fit { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
 /* Ogni fascia: l'etichetta in una colonna stretta, i ruoli in fila che vanno a capo */
-.dash-role-band { flex: none; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 4px 0; border-top: 1px solid var(--line-soft); }
+.dash-role-band { flex: none; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: var(--sp-5); padding: var(--sp-2) 0; border-top: 1px solid var(--line-soft); }
 .dash-role-band:first-child { border-top: 0; }
 .dash-level-name { align-self: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1.2; }
-.dash-role-list { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 4px 8px; margin: 0; padding: 4px 0; list-style: none; }
-.dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
+.dash-role-list { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: var(--sp-2) var(--sp-4); margin: 0; padding: var(--sp-2) 0; list-style: none; }
+.dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: var(--sp-2); }
 /* Le fasce tagliano quello che sborda: l'anello del fuoco (si arriva coi tasti freccia) sta dentro il ruolo */
 .dash-role:focus-visible { outline-offset: -2px; }
-.dash-role-tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; font-size: 12px; line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line-soft); border-radius: 4px; }
+.dash-role-tag { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) 7px; font-size: var(--fs-caption); line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line-soft); border-radius: 4px; }
 .dash-role-tag .icon { flex: none; width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }
 .dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
 .dash-role.bad .dash-role-tag .icon { color: var(--text); }
@@ -462,10 +462,10 @@
 .dash-role:not(.more):hover .dash-role-tag { border-color: color-mix(in srgb, var(--rc, var(--good)) 70%, transparent); }
 .dash-role-row { cursor: default; }
 .dash-role-row:hover > * { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-.dash-role.more { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--faint); }
+.dash-role.more { padding: 0 var(--sp-2); font-size: var(--fs-caption); font-weight: 600; color: var(--faint); }
 /* Stretto: etichette e chip più fitti */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
-.dash.tight .dash-role-list { gap: 3px 8px; padding: 3px 0; }
+.dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0; }
 .dash.tight .dash-role-tag { padding-block: 1px; }
 
 /*
@@ -474,15 +474,15 @@
  * rossa, i minori sono tenui. La tabella si stira fino in fondo: con pochi ruoli le righe si alzano.
  */
 .dash-role-body { display: flex; flex-direction: column; }
-.dash-role-grid { width: 100%; height: 100%; border-collapse: collapse; font-size: 13px; }
-.dash-role-grid thead th { padding: 0 0 2px; font-weight: 400; text-align: center; vertical-align: bottom; }
+.dash-role-grid { width: 100%; height: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+.dash-role-grid thead th { padding: 0 0 var(--sp-1); font-weight: 400; text-align: center; vertical-align: bottom; }
 /* Lo sprite si stringe con la sua colonna: le sei colonne stanno sempre tutte */
 .dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
-.dash-role-sep th { height: 22px; padding: 4px 0 2px; text-align: left; vertical-align: bottom; border-bottom: 1px solid var(--line); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1.2; }
+.dash-role-sep th { height: 22px; padding: var(--sp-2) 0 var(--sp-1); text-align: left; vertical-align: bottom; border-bottom: 1px solid var(--line); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1.2; }
 .dash-role-row th, .dash-role-row td { height: 24px; padding: 0; border-bottom: 1px solid var(--line-soft); }
-.dash-role-row th { width: 1%; padding-right: 8px; text-align: left; font-weight: 500; white-space: nowrap; color: var(--text); }
+.dash-role-row th { width: 1%; padding-right: var(--sp-4); text-align: left; font-weight: 500; white-space: nowrap; color: var(--text); }
 .dash-role-row th > * { vertical-align: middle; }
-.dash-role-row th .icon { width: 12px; height: 12px; margin-right: 5px; stroke-width: 2.5; color: var(--good); }
+.dash-role-row th .icon { width: 12px; height: 12px; margin-right: var(--sp-2); stroke-width: 2.5; color: var(--good); }
 .dash-role-row td { text-align: center; }
 .dash-dot { display: inline-block; width: 12px; height: 12px; vertical-align: middle; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
 /* Mancante (essenziale o importante): riga rossa, nome in grassetto, nessun pallino */
@@ -500,19 +500,19 @@
  * così non si scontra mai coi numeri in cima alle barre.
  */
 .dash-ladder { --avg-gutter: 30px; flex: 1 1 0; min-height: 70px; display: flex; flex-direction: column; }
-.dash-bars { position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: 6px; padding-left: var(--avg-gutter); border-bottom: 1px solid var(--line); }
+.dash-bars { position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: var(--sp-3); padding-left: var(--avg-gutter); border-bottom: 1px solid var(--line); }
 .dash-lane { flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; cursor: help; }
 .dash-bar { position: relative; width: 70%; max-width: 40px; min-height: 2px; background: var(--line); border-radius: 3px 3px 0 0; }
 .dash-bar.above { background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--panel))); }
-.dash-bar small { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 1px; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.dash-bar small { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 1px; font-size: var(--fs-label); font-variant-numeric: tabular-nums; color: var(--muted); }
 .dash-avg { position: absolute; left: 0; right: 0; z-index: 1; border-top: 1.5px dashed var(--warn); pointer-events: none; }
-.dash-avg span { position: absolute; left: 0; top: 0; transform: translateY(-50%); padding: 0 3px 0 0; font: 600 11px/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--warn); background: var(--panel); }
-.dash-sprites { display: flex; gap: 6px; padding-left: var(--avg-gutter); }
+.dash-avg span { position: absolute; left: 0; top: 0; transform: translateY(-50%); padding: 0 3px 0 0; font: 600 var(--fs-label)/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--warn); background: var(--panel); }
+.dash-sprites { display: flex; gap: var(--sp-3); padding-left: var(--avg-gutter); }
 /* Lo sprite intero (gen 5 ha margine trasparente: un po' più grande della casella nominale), mai ritagliato; parte dalla riga di base delle barre */
 .dash-lane-sprite { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: flex-start; height: calc(var(--sprite) * 1.25); }
 /* Mai più largo della sua corsia: se la corsia è stretta si rimpicciolisce, intero */
 .dash-lane-sprite .sprite { flex: none; width: min(calc(var(--sprite) * 1.25), 100%); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
-.dash-ctrl { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.dash-ctrl { margin: var(--sp-3) 0 0; font-size: var(--fs-caption); color: var(--muted); }
 .dash-ctrl b { font-weight: 500; }
 
 /* Altezza minima del cruscotto (.dash) da --sum-row-min: col Riassunto ricco il cruscotto è alto almeno RICH_FROM */
@@ -536,15 +536,15 @@
    se la lista è più bassa del triangolo con tutto il testo (1280×620 col team aperto) restano il titolo e il triangolo,
    coi tipi parati sui lati: le tre righe sono nel tooltip del core e, a team ridotto, tornano */
 .dash.tight .sum-syn.trio { padding-block: 1px; }
-.dash.tight .sum-cover { gap: 2px; }
+.dash.tight .sum-cover { gap: var(--sp-1); }
 @container (max-height: 84px) { .dash.tight .sum-tri-row .sum-cover { display: none; } }
 /* Portatili bassissimi (1280×620): il core a triangolo più piccolo e le righe dei tipi parati più fitte */
 @media (max-height: 639px) {
   .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 84px; }
   .dash.tight .sum-tri { --tri-w: clamp(68px, calc((100cqh - 12px) * 150 / 128), 118px); --tri-badge: calc(var(--ti-chip) + 3px); }
   .dash.tight .sum-syn.trio { padding-block: 0; }
-  .dash.tight .sum-cover { margin-top: 2px; gap: 1px; }
-  .dash.tight .sum-cover > span { font-size: 11px; line-height: 1.1; }
+  .dash.tight .sum-cover { margin-top: var(--sp-1); gap: 1px; }
+  .dash.tight .sum-cover > span { font-size: var(--fs-label); line-height: 1.1; }
   .dash.tight .sum-cover img { width: calc(var(--ti-inline) - 2px); height: calc(var(--ti-inline) - 2px); }
   .dash.tight .sum-sec-h { padding-bottom: 3px; }
 }
@@ -554,21 +554,21 @@
 
 /* Eroe: righe diagonali leggere e una sfumatura dall'alto nel colore del voto del team (S magenta, A verde, B ciano,
    C giallo, D rosso, come la carta del voto), da bordo a bordo della card; senza voto grigia */
-.sum-hero { --sum-g: var(--faint); --sum-g-ink: var(--text); flex: none; margin: -8px -12px 0; padding: 12px 12px 8px; border-bottom: 1px solid var(--line-soft);
+.sum-hero { --sum-g: var(--faint); --sum-g-ink: var(--text); flex: none; margin: -8px -12px 0; padding: var(--sp-6) var(--sp-6) var(--sp-4); border-bottom: 1px solid var(--line-soft);
   background: linear-gradient(180deg, color-mix(in srgb, var(--sum-g) 10%, transparent), transparent 70%), repeating-linear-gradient(-55deg, #ffffff05 0 2px, transparent 2px 9px); }
 .sum-hero.grade-S { --sum-g: var(--accent-2); --sum-g-ink: var(--accent-2-ink); }
 .sum-hero.grade-A { --sum-g: var(--good); --sum-g-ink: var(--good); }
 .sum-hero.grade-B { --sum-g: var(--accent); --sum-g-ink: var(--accent-ink); }
 .sum-hero.grade-C { --sum-g: var(--warn); --sum-g-ink: var(--warn); }
 .sum-hero.grade-D { --sum-g: var(--bad); --sum-g-ink: var(--bad); }
-.dash.rich .sum-hero { padding: 14px 14px 10px; margin-left: -12px; margin-right: -12px; }
+.dash.rich .sum-hero { padding: var(--sp-7) var(--sp-7) var(--sp-5); margin-left: -12px; margin-right: -12px; }
 /* Il nome del tipo, nel colore del voto del team */
-.sum-type { position: relative; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.sum-type { position: relative; min-width: 0; display: flex; align-items: center; gap: var(--sp-4); }
 /* Righe a puntini (overflow nascosto) con un po' di spazio sopra e sotto, ripreso col margine negativo: le code di g, p, y
    non vengono tagliate e la riga resta alta uguale */
 .sum-arch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.2em; margin-block: -0.2em; font: 800 var(--sum-arch)/1.05 var(--display); font-style: italic; color: var(--sum-g-ink, var(--text)); cursor: help; }
 /* Lo stile (Pioggia, Sole…): etichetta tagliata in diagonale nel colore della condizione */
-.sum-style { flex: none; padding: 2px 14px 2px 9px; font: 800 13px/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
+.sum-style { flex: none; padding: var(--sp-1) var(--sp-7) var(--sp-1) 9px; font: 800 var(--fs-small)/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
 /* "quasi Semi-stall": il tipo accanto quando il team sta sul confine, piccolo e in grigio dopo il nome */
 .sum-arch-box { min-width: 0; display: flex; flex-direction: column; }
 /* Tipo non ancora riconosciuto: la scritta c'è ma più tenue */
@@ -576,11 +576,11 @@
 .sum-type .help-button { flex: none; }
 
 /* Chi rende il team tale: una riga di sprite (attaccanti, poi muri dopo una linea sottile); chi non sta va nel "+N" */
-.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: 8px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 2px; clip-path: inset(-12px -6px 0 -6px); }
-.sum-type + .sum-crew { margin-top: 10px; }
+.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: var(--sp-4); display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 var(--sp-1); clip-path: inset(-12px -6px 0 -6px); }
+.sum-type + .sum-crew { margin-top: var(--sp-5); }
 .sum-side { display: contents; }
 .sum-maker { flex: none; height: var(--crew-h); display: flex; align-items: flex-end; }
-.sum-maker.first { margin-left: 8px; padding-left: 10px; border-left: 1px solid var(--line); }
+.sum-maker.first { margin-left: var(--sp-4); padding-left: var(--sp-5); border-left: 1px solid var(--line); }
 .sum-maker.atk { --c: var(--accent-ink); --glow: color-mix(in srgb, var(--accent) 45%, transparent); }
 .sum-maker.def { --c: var(--good); --glow: color-mix(in srgb, var(--good) 42%, transparent); }
 .sum-mon { width: calc(var(--sum-big) + 2px); display: flex; flex-direction: column; align-items: center; padding: 0; color: inherit; background: none; border: 0; border-radius: 3px; }
@@ -593,13 +593,13 @@
 .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: transform 0.18s var(--ease); }
 .sum-mon:hover .sprite { transform: translateY(-2px); }
 .sum-mon .sprite { margin-bottom: calc(var(--sum-big) * -0.12); }
-.sum-score { position: relative; display: flex; align-items: center; gap: 3px; font: 700 11px/1.2 var(--display); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--c); }
+.sum-score { position: relative; display: flex; align-items: center; gap: 3px; font: 700 var(--fs-label)/1.2 var(--display); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--c); }
 .sum-score .icon { width: 10px; height: 10px; }
-.dash.rich .sum-score { font-size: 11px; }
+.dash.rich .sum-score { font-size: var(--fs-label); }
 .dash.rich .sum-score .icon { width: 11px; height: 11px; }
-.sum-crew-more { flex: none; align-self: center; margin-left: 6px; }
-.sum-more { flex: none; font-size: 12px; font-weight: 600; color: var(--faint); }
-.dash.rich .sum-more { font-size: 14px; }
+.sum-crew-more { flex: none; align-self: center; margin-left: var(--sp-3); }
+.sum-more { flex: none; font-size: var(--fs-caption); font-weight: 600; color: var(--faint); }
+.dash.rich .sum-more { font-size: var(--fs-section); }
 
 /* Sprite sul piedistallo: un'ellisse luminosa sotto i piedi, come nelle corsie della Velocità */
 .sum-plinth { position: relative; flex: none; display: flex; justify-content: center; }
@@ -608,11 +608,11 @@
 
 /* Sezioni: intestazione in maiuscoletto, righe separate; alte quanto il contenuto, e si stringono (useFit) se manca spazio,
    ma mai sotto titolo e una riga (sotto si accavallerebbero con la sezione dopo) */
-.sum-sec { position: relative; flex: 0 1 auto; min-height: auto; display: flex; flex-direction: column; padding-top: 8px; }
-.dash.rich .sum-sec { padding-top: 12px; }
-.sum-sec-h, .analysis h4.sum-sec-h { flex: none; display: block; margin: 0; padding-bottom: 5px; font: 700 11px/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line-soft); }
+.sum-sec { position: relative; flex: 0 1 auto; min-height: auto; display: flex; flex-direction: column; padding-top: var(--sp-4); }
+.dash.rich .sum-sec { padding-top: var(--sp-6); }
+.sum-sec-h, .analysis h4.sum-sec-h { flex: none; display: block; margin: 0; padding-bottom: 5px; font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line-soft); }
 /* Sezione vuota: "Nessuno" sulla riga del titolo, a destra (come il +N), così non occupa una riga sua */
-.sum-none { position: absolute; right: 4px; top: 8px; margin: 0; font-size: 12px; line-height: 1.2; color: var(--faint); }
+.sum-none { position: absolute; right: 4px; top: 8px; margin: 0; font-size: var(--fs-caption); line-height: 1.2; color: var(--faint); }
 .dash.rich .sum-none { top: 12px; }
 .sum-lines { flex: 0 1 auto; min-height: var(--sum-line); margin: 0; padding: 0; list-style: none; overflow: hidden; }
 .sum-lines > li { border-bottom: 1px solid var(--line-soft); }
@@ -620,7 +620,7 @@
 /* Il "+N" di una sezione, a destra sulla riga del titolo */
 .sum-sec-more { position: absolute; right: 4px; top: 7px; line-height: 1.2; }
 .dash.rich .sum-sec-more { top: 11px; }
-.sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
+.sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-1) var(--sp-2) var(--sp-1) 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
 /* Righe del Riassunto (meteo, trappole, sinergie) al passaggio: una luce azzurra sfumata su ogni lato, senza bordi né
    forme, che finisce dentro la riga (closest-side: la lista taglia ciò che esce); le sprite si alzano di 2px, nel core
    frecce e cerchi dei tipi si accendono */
@@ -636,21 +636,21 @@
 @media (prefers-reduced-motion: reduce) { .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: none; } }
 .sum-line .sum-plinth { width: var(--sum-small); }
 .sum-line .sum-plinth .sprite { margin: calc(var(--sum-small) * -0.12) 0 calc(var(--sum-small) * -0.15); }
-.sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
-.dash.rich .sum-name { font-size: 14px; }
+.sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); font-weight: 600; }
+.dash.rich .sum-name { font-size: var(--fs-section); }
 /* Schermo stretto: la card del Riassunto è più stretta, tipo di team e nomi un po' più piccoli perché non si tronchino */
 @media (max-width: 1320px) {
   .dash.rich .dash-summary { --sum-arch: 22px; }
-  .dash.rich .sum-name { font-size: 13px; }
+  .dash.rich .sum-name { font-size: var(--fs-small); }
 }
 /* Chip come quelle dei ruoli: bordo --line e pallino colorato */
-.sum-tag { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text); border: 1px solid var(--line); }
+.sum-tag { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-4); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; color: var(--text); border: 1px solid var(--line); }
 .sum-tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
-.sum-tags { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; }
-.sum-tags .sum-tag { padding: 2px 6px; gap: 4px; }
+.sum-tags { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.sum-tags .sum-tag { padding: var(--sp-1) var(--sp-3); gap: var(--sp-2); }
 .sum-to { flex: none; color: var(--faint); }
 /* Chi ne approfitta: mini-sprite accostati; vanno a capo invece di essere tagliati */
-.sum-users { min-width: 0; display: flex; flex-wrap: wrap; gap: 2px 6px; }
+.sum-users { min-width: 0; display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); }
 .sum-user { flex: none; display: flex; margin: calc(var(--sum-mini) * -0.1) calc(var(--sum-mini) * -0.08); }
 
 /*
@@ -666,7 +666,7 @@
 .sum-syn-sec .sum-lines > li { flex: none; display: flex; }
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit] { flex: 1 0 auto; max-height: 88px; }
 .dash.rich .sum-syn-sec .sum-lines > li[data-fit]:has(.sum-syn.trio) { max-height: 196px; }
-.sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
+.sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-2) var(--sp-3) 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
 /* Due sprite unite da un anello "catena" nel colore del legame; con una sola sprite la colonna resta larga uguale */
 .sum-pair { flex: none; min-width: calc(var(--sum-small) * 1.56 + var(--link-w) - 6px); display: flex; align-items: center; justify-content: center; }
 .sum-pair-ring { display: flex; align-items: center; }
@@ -676,17 +676,17 @@
 .sum-link .icon { width: 10px; height: 10px; }
 .sum-syn-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 /* Il titolo va a capo invece di finire coi puntini (nel core solo fra un membro e l'altro: ogni "Buio-Acciaio" resta intero) */
-.sum-syn-head { min-width: 0; font-size: 13px; line-height: 1.15; overflow-wrap: anywhere; }
+.sum-syn-head { min-width: 0; font-size: var(--fs-small); line-height: 1.15; overflow-wrap: anywhere; }
 .sum-core-part { white-space: nowrap; }
-.sum-syn-tag { margin-right: 6px; font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); vertical-align: 1px; }
-.sum-syn-title { font: 700 13px/1.15 var(--display); }
-.sum-syn-text { font-size: 12px; line-height: 1.3; color: var(--muted); }
-.dash.rich .sum-syn-title { font-size: 14px; }
-.dash.rich .sum-syn-text { font-size: 12px; }
+.sum-syn-tag { margin-right: var(--sp-3); font: 700 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); vertical-align: 1px; }
+.sum-syn-title { font: 700 var(--fs-small)/1.15 var(--display); }
+.sum-syn-text { font-size: var(--fs-caption); line-height: 1.3; color: var(--muted); }
+.dash.rich .sum-syn-title { font-size: var(--fs-section); }
+.dash.rich .sum-syn-text { font-size: var(--fs-caption); }
 
 /* Core da 3 a triangolo (sinergie-trio, opzione A): sprite ai vertici su un piedistallo verde, frecce del giro, tipo parato su ogni lato */
-.sum-syn.trio { padding: 4px 4px 4px 0; }
-.sum-tri-row { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 12px; }
+.sum-syn.trio { padding: var(--sp-2) var(--sp-2) var(--sp-2) 0; }
+.sum-tri-row { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); }
 .sum-tri-row .sum-syn-body { flex: 1 1 auto; }
 .sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 118px); --tri-badge: calc(var(--ti-chip) + 3px); position: relative; flex: none; width: var(--tri-w); aspect-ratio: 150 / 128; }
 .sum-tri-row.roomy .sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 150px); --tri-badge: calc(var(--ti-tip) + 3px); }
@@ -701,28 +701,28 @@
 .sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; overflow: hidden; }
 .sum-tri-badge img { display: block; width: 100%; height: 100%; border-radius: 50%; }
 /* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
-.sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: 2px; }
+.sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: var(--sp-1); }
 /* Le sinergie che non stanno col team aperto: tutta la parte bassa del Riassunto è il pulsante, da bordo a bordo (sotto e
    ai lati della card), con un tratto sopra e un gradiente scuro sempre visibile che sale dal bordo basso; al centro "+N"
    sopra due frecce verso il basso. Il clic riduce il team. La card tiene 12px in più sotto, così il fondo pieno sta sul
    margine e il gradiente sfuma solo il bordo dell'ultima riga. Al passaggio si accendono il tratto e le frecce */
 .dash-summary { position: relative; }
-.dash-summary:has(.sum-more-below) { padding-bottom: 22px; }
+.dash-summary:has(.sum-more-below) { padding-bottom: var(--sp-10); }
 .sum-syn-sec:has(.sum-more-below) { position: static; }
-.sum-more-below { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; padding: 0 0 2px; font: 700 italic 11px/1 var(--display); color: var(--accent-ink); background: linear-gradient(to top, var(--field) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); border: 0; border-top: 1px solid var(--line); border-radius: 0; cursor: pointer; }
+.sum-more-below { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; padding: 0 0 var(--sp-1); font: 700 italic var(--fs-label)/1 var(--display); color: var(--accent-ink); background: linear-gradient(to top, var(--field) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); border: 0; border-top: 1px solid var(--line); border-radius: 0; cursor: pointer; }
 .sum-more-below .icon { width: 14px; height: 14px; margin-top: -2px; }
 .sum-more-below:hover { border-top-color: var(--accent); color: var(--accent); }
 .sum-more-below:hover .icon { animation: sum-more-nudge 0.6s ease-in-out infinite alternate; }
 .sum-more-below:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @keyframes sum-more-nudge { to { transform: translateY(2px); } }
 @media (prefers-reduced-motion: reduce) { .sum-more-below:hover .icon { animation: none; } }
-.sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
-.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
-.sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-block: 2px; margin-block: -2px; }
+.sum-cover { margin-top: var(--sp-2); display: flex; flex-direction: column; gap: 3px; }
+.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-caption); line-height: 1.25; white-space: nowrap; color: var(--muted); }
+.sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-block: var(--sp-1); margin-block: -2px; }
 .sum-cover img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .sum-cover b { font-weight: 600; color: var(--text); }
-.dash.rich .sum-cover { gap: 6px; }
-.dash.rich .sum-cover > span { font-size: 12px; }
+.dash.rich .sum-cover { gap: var(--sp-3); }
+.dash.rich .sum-cover > span { font-size: var(--fs-caption); }
 
 /*
  * Lo stesso alone del piedistallo delle Minacce sotto gli altri sprite "in scena": le corsie della Velocità, la testata
@@ -747,15 +747,15 @@
  * Coaching: una lista sola di proposte, dalla più utile. In cima la riga verde delle aree senza problemi, poi il titolo
  * con le pagine a destra, poi le righe (alte uguali, 112px; anche lo scheletro). Scorre dentro solo se serve.
  */
-.coaching { container: coaching / size; display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding-bottom: 0; overflow: hidden auto; overscroll-behavior: contain; }
-.coach-sec { display: flex; align-items: center; gap: 8px; margin: 0; font: 700 13px/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-.coach-count { padding: 3px 8px; border-radius: 10px; font: 600 12px/1 var(--ui); font-style: normal; letter-spacing: 0; color: var(--muted); background: var(--raised); }
+.coaching { container: coaching / size; display: flex; flex-direction: column; gap: var(--sp-3); height: 100%; min-height: 0; padding-bottom: 0; overflow: hidden auto; overscroll-behavior: contain; }
+.coach-sec { display: flex; align-items: center; gap: var(--sp-4); margin: 0; font: 700 var(--fs-small)/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.coach-count { padding: 3px var(--sp-4); border-radius: 10px; font: 600 var(--fs-caption)/1 var(--ui); font-style: normal; letter-spacing: 0; color: var(--muted); background: var(--raised); }
 /* Le aree senza problemi: una riga verde sopra la lista */
-.coach-clean { flex: none; display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 14px; font-size: 14px; color: var(--good); background: var(--panel); }
+.coach-clean { flex: none; display: flex; align-items: center; gap: var(--sp-4); margin: 0; padding: var(--sp-3) var(--sp-7); font-size: var(--fs-section); color: var(--good); background: var(--panel); }
 .coach-clean .icon { width: 14px; height: 14px; }
 .coach-clean b { color: var(--text); font-weight: 600; }
-.coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
-.coach-list-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+.coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.coach-list-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-6); min-height: 28px; }
 /* La lista ha l'altezza che resta: quante righe ci stanno lo conta useRowsPerPage (fino a 4) */
 .coach-list-box { --row-h: 112px; --row-gap: 6px; flex: 1; min-height: 0; }
 .coach-rows { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
@@ -775,11 +775,11 @@
 }
 
 /* Zona del Pokémon: il colore del primo tipo di chi entra (come le carte del team), una lama di luce, il lato destro obliquo */
-.coach-art { position: relative; overflow: hidden; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 30px 0 14px;
+.coach-art { position: relative; overflow: hidden; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; padding: 0 30px 0 var(--sp-7);
   background: linear-gradient(115deg, color-mix(in srgb, var(--t1) 55%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 22%, var(--panel)) 55%, var(--panel) 100%);
   clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
 .coach-art::before { content: ''; position: absolute; inset: -40% auto -40% 38%; width: 60px; background: linear-gradient(90deg, transparent, #ffffff14, transparent); transform: rotate(18deg); pointer-events: none; }
-.coach-art-out { flex: none; align-self: flex-start; display: flex; margin-top: 10px; }
+.coach-art-out { flex: none; align-self: flex-start; display: flex; margin-top: var(--sp-5); }
 .coach-art-out .sprite { width: 48px; height: 48px; image-rendering: pixelated; filter: grayscale(1) brightness(0.7); }
 .coach-art-arrow { flex: none; align-self: flex-start; display: flex; margin-top: 26px; color: var(--text); opacity: 0.8; }
 .coach-art-arrow .icon { width: 16px; height: 16px; }
@@ -790,18 +790,18 @@
 .coach-art-in.is-member { margin-left: 0; }
 .coach-art-in.is-member .sprite { width: 80px; height: 80px; }
 .coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 96px); translate: -50% 0; }
-.coach-art-text { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.coach-art-text { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
 .coach-art-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.1em; margin-block: -0.1em;
-  font: italic 800 22px/1 var(--display); color: var(--text); text-shadow: 0 2px 6px #0006; }
-.coach-art-text small { font-size: 12px; color: var(--text); opacity: 0.85; }
-.coach-art-on { font: italic 700 13px/1 var(--display); color: var(--text); opacity: 0.9; }
-.coach-art-moves { display: flex; align-items: baseline; gap: 8px; max-width: 100%; min-width: 0; white-space: nowrap; }
-.coach-art-moves s { overflow: hidden; text-overflow: ellipsis; font-size: 15px; color: var(--muted); text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); }
-.coach-art-moves b { overflow: hidden; text-overflow: ellipsis; font: italic 800 20px/1.1 var(--display); color: var(--text); }
-.coach-art-empty { font-size: 13px; color: var(--muted); }
+  font: italic 800 var(--fs-headline)/1 var(--display); color: var(--text); text-shadow: 0 2px 6px #0006; }
+.coach-art-text small { font-size: var(--fs-caption); color: var(--text); opacity: 0.85; }
+.coach-art-on { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); opacity: 0.9; }
+.coach-art-moves { display: flex; align-items: baseline; gap: var(--sp-4); max-width: 100%; min-width: 0; white-space: nowrap; }
+.coach-art-moves s { overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-body); color: var(--muted); text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); }
+.coach-art-moves b { overflow: hidden; text-overflow: ellipsis; font: italic 800 var(--fs-heading)/1.1 var(--display); color: var(--text); }
+.coach-art-empty { font-size: var(--fs-small); color: var(--muted); }
 /* "Altre N ▾": il pulsante delle alternative sotto il nome */
-.coach-alt { margin-top: 2px; padding: 5px 9px; gap: 6px; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 4px;
-  font: 600 12px/1 var(--ui); color: var(--text); background: color-mix(in srgb, #000 45%, transparent); }
+.coach-alt { margin-top: var(--sp-1); padding: 5px 9px; gap: var(--sp-3); border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 4px;
+  font: 600 var(--fs-caption)/1 var(--ui); color: var(--text); background: color-mix(in srgb, #000 45%, transparent); }
 .coach-alt:hover { border-color: var(--accent); background: color-mix(in srgb, #000 62%, transparent); }
 .coach-alt[aria-expanded='true'] { border-color: var(--accent); background: var(--accent-wash); }
 .coach-alt-caret { display: inline-block; }
@@ -811,80 +811,80 @@
 .coach-alt[aria-expanded='true'] .coach-alt-caret { transform: rotate(180deg); }
 
 /* Cosa cambia: una riga per area (nome, "da → a", le pillole dei problemi risolti) */
-.coach-solves { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0; padding: 10px 14px 10px 18px; }
-.coach-ar { display: grid; grid-template-columns: 148px minmax(0, 1fr); align-items: center; gap: 10px; min-width: 0; }
-.coach-ar.is-merged { display: flex; flex-wrap: wrap; gap: 4px 18px; }
-.coach-ar-who { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
-.coach-ar-who b { font: 600 12px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
-.coach-change { display: inline-flex; align-items: baseline; gap: 5px; }
-.coach-from { font: 500 12px/1 var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
-.coach-to { font: italic 700 14px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.coach-solves { display: flex; flex-direction: column; justify-content: center; gap: var(--sp-4); min-width: 0; padding: var(--sp-5) var(--sp-7) var(--sp-5) var(--sp-9); }
+.coach-ar { display: grid; grid-template-columns: 148px minmax(0, 1fr); align-items: center; gap: var(--sp-5); min-width: 0; }
+.coach-ar.is-merged { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-9); }
+.coach-ar-who { display: flex; align-items: baseline; gap: var(--sp-4); white-space: nowrap; }
+.coach-ar-who b { font: 600 var(--fs-caption)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.coach-change { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
+.coach-from { font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
+.coach-to { font: italic 700 var(--fs-section)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .coach-change.is-down .coach-to { color: var(--bad); font-style: normal; }
-.coach-ar-chips { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; min-width: 0; padding: 2px; overflow: hidden; }
+.coach-ar-chips { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--sp-3); min-width: 0; padding: var(--sp-1); overflow: hidden; }
 .coach-ar-chips > .area-chip-item { flex: none; display: flex; }
 
 /* Voto in più e azioni, allineati a destra */
-.coach-act { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; padding-right: 16px; }
-.coach-gain { display: flex; align-items: baseline; gap: 6px; }
-.coach-gain small { font: 500 12px/1 var(--ui); color: var(--faint); }
-.coach-gain b { font: italic 800 28px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-.coach-apply { padding: 9px 16px; border: 0; border-radius: 4px; font: 700 13px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
+.coach-act { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: var(--sp-4); padding-right: var(--sp-8); }
+.coach-gain { display: flex; align-items: baseline; gap: var(--sp-3); }
+.coach-gain small { font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); }
+.coach-gain b { font: italic 800 var(--fs-stat-s)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.coach-apply { padding: 9px var(--sp-8); border: 0; border-radius: 4px; font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
 .coach-apply:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }
 /* L'unico magenta della scheda: Applica della prima proposta */
 .coach-apply.is-primary { color: var(--on-accent-2); background: var(--accent-2); }
 .coach-apply.is-primary:hover { background: var(--accent-2-ink); }
-.coach-see, .coach-link { gap: 5px; padding: 2px 0; border: 0; background: none; font: 500 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
+.coach-see, .coach-link { gap: var(--sp-2); padding: var(--sp-1) 0; border: 0; background: none; font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
 .coach-see:hover, .coach-link:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 .coach-see .icon { width: 13px; height: 13px; }
 
 /* La tendina delle alternative, sotto il pulsante */
-.coach-menu { position: absolute; z-index: 10; left: 14px; top: calc(100% - 6px); width: min(560px, calc(100% - 28px)); padding: 6px;
+.coach-menu { position: absolute; z-index: 10; left: 14px; top: calc(100% - 6px); width: min(560px, calc(100% - 28px)); padding: var(--sp-3);
   border: 1px solid var(--line); border-radius: 6px; background: var(--ground); box-shadow: 0 12px 32px #000b; }
-.coach-menu-title { margin: 4px 8px 6px; font: 600 11px/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.coach-menu-list { display: grid; gap: 2px; }
-.coach-opt { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 52px auto; align-items: center; gap: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+.coach-menu-title { margin: var(--sp-2) var(--sp-4) var(--sp-3); font: 600 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.coach-menu-list { display: grid; gap: var(--sp-1); }
+.coach-opt { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 52px auto; align-items: center; gap: var(--sp-5); padding: var(--sp-2) var(--sp-4); border-radius: 4px; cursor: pointer; }
 .coach-opt:hover, .coach-opt:focus-visible { background: var(--raised); }
 .coach-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .coach-opt.is-chosen { background: var(--accent-wash); }
 .coach-opt .sprite { width: 44px; height: 44px; margin: -4px 0; image-rendering: pixelated; }
-.coach-opt-name { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
-.coach-opt-name b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 15px/1.1 var(--display); }
-.coach-opt-name small { font-size: 12px; color: var(--muted); }
-.coach-opt-types { display: flex; gap: 4px; }
-.coach-opt-note { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.coach-opt-gain { font: italic 800 17px/1 var(--display); color: var(--good); text-align: right; font-variant-numeric: tabular-nums; }
-.coach-opt-use { padding: 6px 9px; border: 1px solid var(--line); border-radius: 4px; font: 700 11px/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+.coach-opt-name { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
+.coach-opt-name b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-body)/1.1 var(--display); }
+.coach-opt-name small { font-size: var(--fs-caption); color: var(--muted); }
+.coach-opt-types { display: flex; gap: var(--sp-2); }
+.coach-opt-note { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; }
+.coach-opt-gain { font: italic 800 var(--fs-title)/1 var(--display); color: var(--good); text-align: right; font-variant-numeric: tabular-nums; }
+.coach-opt-use { padding: var(--sp-3) 9px; border: 1px solid var(--line); border-radius: 4px; font: 700 var(--fs-label)/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
 .coach-opt.is-chosen .coach-opt-use { border-color: var(--accent); color: var(--accent-ink); }
 
 /* Senza proposte: Eevee grande a sinistra, il titolo, la frase, le azioni */
 .coach-empty { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 30px; background: var(--panel); }
 .coach-empty .eevee-moment { flex: none; width: 190px; }
 .coach-empty.is-stuck .eevee-moment { width: 170px; }
-.coach-empty-text { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 540px; }
-.coach-empty-text h3 { margin: 0; font: italic 800 26px/1.1 var(--display); color: var(--text); }
-.coach-empty-text p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--muted); }
-.coach-empty-areas { display: flex; align-items: center; gap: 8px; }
+.coach-empty-text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-5); max-width: 540px; }
+.coach-empty-text h3 { margin: 0; font: italic 800 var(--fs-display)/1.1 var(--display); color: var(--text); }
+.coach-empty-text p { margin: 0; font-size: var(--fs-body); line-height: 1.45; color: var(--muted); }
+.coach-empty-areas { display: flex; align-items: center; gap: var(--sp-4); }
 .coach-empty-areas .icon { flex: none; width: 14px; height: 14px; color: var(--good); }
 .coach-empty-areas b { color: var(--text); font-weight: 600; }
-.coach-empty-text p.coach-empty-hint { font-size: 14px; }
-.coach-empty-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 2px; list-style: none; }
+.coach-empty-text p.coach-empty-hint { font-size: var(--fs-section); }
+.coach-empty-chips { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0; padding: var(--sp-1); list-style: none; }
 .coach-empty-chips > li { display: flex; margin: 0; }
-.coach-empty-actions { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
-.coach-btn { padding: 9px 16px; border: 0; border-radius: 4px; font: 700 13px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
+.coach-empty-actions { display: flex; align-items: center; gap: var(--sp-8); margin-top: var(--sp-3); }
+.coach-btn { padding: 9px var(--sp-8); border: 0; border-radius: 4px; font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
 .coach-btn:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }
 .coach-btn .icon { width: 14px; height: 14px; }
-.coach-link { font-size: 14px; }
-.coach-note { margin: 0; font-size: 12px; color: var(--faint); }
-.coach-note.coach-top { margin: 0 0 4px; }
+.coach-link { font-size: var(--fs-section); }
+.coach-note { margin: 0; font-size: var(--fs-caption); color: var(--faint); }
+.coach-note.coach-top { margin: 0 0 var(--sp-2); }
 
 /* Righe più strette (portatili, team aperto): la zona del Pokémon si stringe, i nomi delle aree pure */
 @container coaching (max-width: 1040px) {
   .coach-row { grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) 150px; }
-  .coach-ar { grid-template-columns: 124px minmax(0, 1fr); gap: 8px; }
-  .coach-art-name { font-size: 20px; }
+  .coach-ar { grid-template-columns: 124px minmax(0, 1fr); gap: var(--sp-4); }
+  .coach-art-name { font-size: var(--fs-heading); }
   .coach-art-in .sprite { width: 84px; height: 84px; }
   .coach-art-in.is-member .sprite { width: 72px; height: 72px; }
-  .coach-solves { padding-left: 12px; padding-right: 10px; }
+  .coach-solves { padding-left: var(--sp-6); padding-right: var(--sp-5); }
 }
 
 /* Poca altezza (1280×620 col team aperto): righe più basse (84px), così ne stanno tre invece di due */
@@ -892,17 +892,17 @@
   .coach-list-box { --row-h: 84px; }
   .coach-art-in .sprite { width: 72px; height: 72px; }
   .coach-art-in.is-member .sprite { width: 60px; height: 60px; }
-  .coach-art-out { margin-top: 4px; }
+  .coach-art-out { margin-top: var(--sp-2); }
   .coach-art-out .sprite { width: 36px; height: 36px; }
-  .coach-art-arrow { margin-top: 14px; }
-  .coach-art-text { gap: 2px; }
-  .coach-art-name { font-size: 20px; }
-  .coach-art-moves b { font-size: 17px; }
-  .coach-alt { padding: 3px 8px; }
-  .coach-solves { gap: 4px; padding-top: 4px; padding-bottom: 4px; }
-  .coach-act { gap: 4px; }
-  .coach-gain b { font-size: 22px; }
-  .coach-apply { padding: 7px 14px; }
+  .coach-art-arrow { margin-top: var(--sp-7); }
+  .coach-art-text { gap: var(--sp-1); }
+  .coach-art-name { font-size: var(--fs-heading); }
+  .coach-art-moves b { font-size: var(--fs-title); }
+  .coach-alt { padding: 3px var(--sp-4); }
+  .coach-solves { gap: var(--sp-2); padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+  .coach-act { gap: var(--sp-2); }
+  .coach-gain b { font-size: var(--fs-headline); }
+  .coach-apply { padding: 7px var(--sp-7); }
 }
 
 /* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga
@@ -911,7 +911,7 @@
 .panel-switch { position: absolute; z-index: 2; top: 6px; left: 22px; display: flex; align-items: center; height: 20px; }
 .area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 180px; }
 @media (min-width: 1100px) and (max-height: 640px) { .panel-switch { top: 3px; height: 16px; } }
-.eff-switch { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 2px 4px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 12px/1.2 var(--ui); white-space: nowrap; cursor: pointer; }
+.eff-switch { display: inline-flex; flex: none; align-items: center; gap: var(--sp-3); padding: var(--sp-1) var(--sp-2); border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 var(--fs-caption)/1.2 var(--ui); white-space: nowrap; cursor: pointer; }
 .eff-switch:hover { color: var(--text); }
 .eff-switch-track { position: relative; flex: none; width: 26px; height: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--raised); transition: background 0.15s ease-out, border-color 0.15s ease-out; }
 .eff-switch-knob { position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: transform 0.15s ease-out, background 0.15s ease-out; }
@@ -928,16 +928,16 @@
    pannello più stretti, così ogni sottoscheda delle aree ci sta intera senza scorrere (a 1440×900 e 1536×730 non cambia
    niente). Le tabelle e i Ruoli hanno le loro regole per gli schermi bassi in fondo a defense.css e roles.css */
 @media (min-width: 1100px) and (max-height: 700px) {
-  .area-head { min-height: 40px; padding-top: 4px; padding-bottom: 4px; }
-  .area-grade-letter { font-size: 26px; }
-  .area-grade-word { font-size: 17px; }
+  .area-head { min-height: 40px; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+  .area-grade-letter { font-size: var(--fs-display); }
+  .area-grade-word { font-size: var(--fs-title); }
   .fix-row { height: 24px; }
-  .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 6px; }
-  .area-panel.ad-panel { padding-bottom: 10px; }
+  .area-subs [role='tab'] { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+  .area-panel.ad-panel { padding-bottom: var(--sp-5); }
 }
 
 /* Sinergie: il "+N" delle sinergie che non stanno è verde (sono sinergie in più); al passaggio il tooltip DreamDex le mostra */
-.sum-more-below.tipped > span, .sum-sec-more.tipped .sum-more { display: inline-block; padding: 2px 7px; border-radius: 3px; font: 800 italic 12px/1.1 var(--display); color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); }
-.dash.rich .sum-more-below.tipped > span, .dash.rich .sum-sec-more.tipped .sum-more { font-size: 14px; }
+.sum-more-below.tipped > span, .sum-sec-more.tipped .sum-more { display: inline-block; padding: var(--sp-1) 7px; border-radius: 3px; font: 800 italic var(--fs-caption)/1.1 var(--display); color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); }
+.dash.rich .sum-more-below.tipped > span, .dash.rich .sum-sec-more.tipped .sum-more { font-size: var(--fs-section); }
 .sum-sec-more.tipped { cursor: help; }
 .sum-more-below.tipped:hover > span, .sum-sec-more.tipped:hover .sum-more { background: color-mix(in srgb, var(--good) 28%, transparent); }

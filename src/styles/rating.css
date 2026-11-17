@@ -6,8 +6,8 @@
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: auto auto auto 1fr;
   align-items: end;
-  gap: 2px 10px;
-  padding: 0 14px 12px;
+  gap: var(--sp-1) var(--sp-5);
+  padding: 0 var(--sp-7) var(--sp-6);
   background: var(--panel);
 }
 .grade-badge .grade-head, .grade-badge .grade-areas { grid-column: 1 / -1; }
@@ -17,28 +17,28 @@
 .grade-head {
   align-self: stretch;
   /* Spazio sotto la barra: la lettera grande non la tocca */
-  margin: 0 -14px 12px;
+  margin: 0 -14px var(--sp-6);
   /* Alta quanto la targa del team (28px), che porta dentro il pulsante della guida: le due targhe sono una sola riga */
-  padding: 5.5px 24px 5.5px 12px;
-  font: 700 14px/1.2 var(--display);
+  padding: 5.5px 24px 5.5px var(--sp-6);
+  font: 700 var(--fs-section)/1.2 var(--display);
   font-style: italic;
   color: var(--on-plate);
   background: var(--stripes), var(--plate);
   clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
-.grade-badge .letter { font: 800 76px/0.85 var(--display); font-style: italic; color: var(--accent); }
-.grade-badge .overall { font: 700 22px/1 var(--display); }
-.grade-badge .label { color: var(--muted); font-size: 13px; }
+.grade-badge .letter { font: 800 var(--fs-grade)/0.85 var(--display); font-style: italic; color: var(--accent); }
+.grade-badge .overall { font: 700 var(--fs-headline)/1 var(--display); }
+.grade-badge .label { color: var(--muted); font-size: var(--fs-small); }
 /* Il tipo di team accanto al giudizio: testo semplice (non un pulsante), corsivo ciano come le altre etichette, su una riga
    sola col giudizio; il tratteggio sotto dice che c'è un tooltip */
-.grade-badge:not(.none) .label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.grade-badge:not(.none) .label { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-4); }
 .grade-badge .grade-type {
-  font: 700 13px/1.3 var(--display); font-style: italic; color: var(--accent-ink); white-space: nowrap; cursor: help;
+  font: 700 var(--fs-small)/1.3 var(--display); font-style: italic; color: var(--accent-ink); white-space: nowrap; cursor: help;
   text-decoration: underline dotted color-mix(in srgb, var(--accent-ink) 50%, transparent); text-underline-offset: 3px;
 }
 .grade-badge.rules-broken .grade-type { filter: grayscale(1) brightness(0.85); }
-.grade-areas { align-self: end; display: grid; gap: 4px; margin-top: 8px; }
-.grade-area { display: grid; grid-template-columns: 58px 1fr 24px; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.grade-areas { align-self: end; display: grid; gap: var(--sp-2); margin-top: var(--sp-4); }
+.grade-area { display: grid; grid-template-columns: 58px 1fr 24px; gap: var(--sp-3); align-items: center; font-size: var(--fs-caption); color: var(--muted); }
 .grade-area b { color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
 .grade-area .meter { height: 5px; background: var(--raised); }
 .grade-area .meter > span { display: block; height: 100%; background: var(--accent); }
@@ -47,7 +47,7 @@
 .grade-badge.grade-C .letter { color: var(--warn); }
 .grade-badge.grade-D .letter { color: var(--bad); }
 .grade-badge.none .letter { color: var(--line); }
-.grade-delta { margin-top: 8px; padding: 2px 8px; border-radius: 3px; font: 600 13px var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); background: var(--raised); }
+.grade-delta { margin-top: var(--sp-4); padding: var(--sp-1) var(--sp-4); border-radius: 3px; font: 600 var(--fs-small) var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); background: var(--raised); }
 .grade-delta.up { color: var(--good); background: var(--good-bg); }
 .grade-delta.down { color: var(--bad); background: var(--bad-bg); }
 
@@ -57,12 +57,12 @@
   grid-template-columns: 58px 1fr 24px 10px;
   width: 100%;
   margin: 0 -6px;
-  padding: 2px 6px;
+  padding: var(--sp-1) var(--sp-3);
   border: 0;
   border-radius: 3px;
   background: transparent;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   text-align: left;
   cursor: pointer;
@@ -73,7 +73,7 @@
 .grade-badge button.grade-area:hover .icon { color: var(--accent); }
 /* Aiuto e triangolo delle regole nella testa magenta, a destra */
 /* A metà della fascia "Voto" (alta ~28px, il "?" 20px): non tocca il bordo in alto */
-.grade-tools { position: absolute; top: 4px; right: 22px; display: flex; align-items: center; gap: 4px; }
+.grade-tools { position: absolute; top: 4px; right: 22px; display: flex; align-items: center; gap: var(--sp-2); }
 /* Bersagli da almeno 24×24: l'area cliccabile va oltre il disegno (pseudo-elemento), il disegno e la misura restano */
 .grade-tools .help-button::after, .grade-badge button.grade-area::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
 .grade-badge button.grade-area { position: relative; }
@@ -86,7 +86,7 @@
 .grade-badge button.grade-area.grade-bm.pos b { color: var(--good); }
 .grade-badge button.grade-area.grade-bm.neg b { color: var(--bad); }
 /* Ruoli: coperti/totale (essenziali e importanti) e i punti al posto di barra e numero (stessa altezza delle altre righe) */
-.grade-badge button.grade-area.grade-roles { grid-template-columns: auto minmax(0, 1fr) 10px; column-gap: 4px; }
+.grade-badge button.grade-area.grade-roles { grid-template-columns: auto minmax(0, 1fr) 10px; column-gap: var(--sp-2); }
 .grade-roles-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* Le righe non allargano la carta: una colonna sola, larga quanto la carta */
 .grade-areas { grid-template-columns: minmax(0, 1fr); }
@@ -95,21 +95,21 @@
 .grade-roles-val em.good { color: var(--good); }
 .grade-roles-val em.soft { color: var(--muted); }
 /* Il conteggio prima dei punti: grigio, giallo se manca un importante, rosso se manca un essenziale */
-.grade-roles-count { margin-right: 6px; color: var(--muted); }
+.grade-roles-count { margin-right: var(--sp-3); color: var(--muted); }
 .grade-roles-val em.grade-roles-count.warn { color: var(--warn); }
 .grade-badge button.grade-area.grade-roles.pos b { color: var(--good); }
 .grade-badge button.grade-area.grade-roles.neg b { color: var(--bad); }
 /* Regole infrante: la lettera diventa grigia (lists.css) e sotto il giudizio si scrive perché, con chi nel tooltip;
    la scritta va a capo se il nome del formato è lungo */
-.grade-badge .grade-rules { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: flex-start; gap: 4px; margin-top: 6px; padding: 1px 7px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 12px/1.5 var(--display); letter-spacing: 0.01em; text-wrap: balance; }
-.grade-badge .grade-rules svg { flex: none; width: 13px; height: 13px; margin-top: 2px; }
+.grade-badge .grade-rules { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: flex-start; gap: var(--sp-2); margin-top: var(--sp-3); padding: 1px 7px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 var(--fs-caption)/1.5 var(--display); letter-spacing: 0.01em; text-wrap: balance; }
+.grade-badge .grade-rules svg { flex: none; width: 13px; height: 13px; margin-top: var(--sp-1); }
 /* La scritta può andare su due righe: le aree salgono un po', così la carta del voto (e la fila del team) non cresce */
-.grade-badge.rules-broken .grade-rules { margin-top: 4px; line-height: 1.3; }
+.grade-badge.rules-broken .grade-rules { margin-top: var(--sp-2); line-height: 1.3; }
 .grade-badge.rules-broken .grade-areas { margin-top: 0; padding-top: 3px; }
 
 /* Team ridotto: lettera e punteggio sono il pulsante della tendina "Voto delle aree" (freccia che si gira aperta) */
 .grade-pop-toggle {
-  display: flex; align-items: baseline; gap: 8px; margin: 0; padding: 2px 6px; border: 0; border-radius: 4px;
+  display: flex; align-items: baseline; gap: var(--sp-4); margin: 0; padding: var(--sp-1) var(--sp-3); border: 0; border-radius: 4px;
   background: transparent; color: inherit; font: inherit; cursor: pointer;
   transition: background 0.15s var(--ease);
 }
@@ -120,12 +120,12 @@
 .grade-pop-toggle[aria-expanded='true'] .grade-pop-caret { transform: rotate(180deg); color: var(--accent); }
 /* La tendina: come gli altri menu (Ground, bordo Line, 6px, ombra morbida), sotto il voto e allineata a destra */
 .grade-pop {
-  position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: 236px; padding: 6px 12px 10px;
+  position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: 236px; padding: var(--sp-3) var(--sp-6) var(--sp-5);
   border: 1px solid var(--line); border-radius: 6px; background: var(--ground); box-shadow: 0 12px 32px #000b;
   animation: tip 0.14s var(--ease);
 }
-.grade-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 -4px 4px 0; }
-.grade-pop-title { margin: 2px 0; font: 600 11px/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.band.collapsed .grade-badge .grade-pop .grade-areas { display: grid; margin-top: 0; gap: 4px; }
+.grade-pop-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); margin: 0 -4px var(--sp-2) 0; }
+.grade-pop-title { margin: var(--sp-1) 0; font: 600 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.band.collapsed .grade-badge .grade-pop .grade-areas { display: grid; margin-top: 0; gap: var(--sp-2); }
 .grade-pop .help-button { position: relative; }
 .grade-pop .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; translate: -50% -50%; }

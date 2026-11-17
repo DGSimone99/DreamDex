@@ -48,6 +48,39 @@
   --plate: var(--line);
   --on-plate: var(--text);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Spaziature (padding, margin, gap): la scala misurata su come è fatta l'app, a passi di 2px fino a 18 più il margine
+     grande. 6px è il passo più usato (fra icona e testo, dentro i controlli); 4 e 8 i più comuni dopo. Restano scritti a
+     mano solo i valori ottici: 1px e 3px (bordi, tag sottili), i dispari dentro i padding (compensano il corsivo o
+     l'obliquo), i negativi e le misure di impaginazione (20px e oltre) */
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 8px;
+  --sp-5: 10px;
+  --sp-6: 12px;
+  --sp-7: 14px;
+  --sp-8: 16px;
+  --sp-9: 18px;
+  --sp-10: 22px;
+  /* Misure del testo per ruolo. Le misure dei gradi sugli schermi bassi e sul telefono (40-64px) restano accanto alla
+     loro regola */
+  --fs-label: 11px;       /* etichette maiuscole, chip dei tipi, note dei tooltip: il minimo */
+  --fs-caption: 12px;     /* tag, conti, legende, note sotto una riga */
+  --fs-small: 13px;       /* testo piccolo: spiegazioni, opzioni, testo dei tooltip */
+  --fs-section: 14px;     /* testate nelle sezioni, note lunghe */
+  --fs-body: 15px;        /* testo, pulsanti, titoli dei tooltip */
+  --fs-title-s: 16px;     /* nomi nelle righe, numeri piccoli in corsivo */
+  --fs-title: 17px;       /* nomi sulle carte del team, sezioni della barra laterale */
+  --fs-title-l: 18px;     /* titoli dentro i pannelli, numeri delle statistiche */
+  --fs-plate: 19px;       /* numeri e nomi sulle targhette (formato, conto del team, parola del voto) */
+  --fs-heading: 20px;     /* testate delle guide, nomi nel Coaching */
+  --fs-headline: 22px;    /* h2 delle pagine, numero grande dei tooltip */
+  --fs-headline-l: 24px;  /* nome nel riepilogo, totali */
+  --fs-display: 26px;     /* logo, nome del membro nell'editor */
+  --fs-stat-s: 28px;      /* guadagno +N grande */
+  --fs-stat: 30px;        /* numeri grandi delle aree */
+  --fs-score: 44px;       /* cambio di voto nel riepilogo */
+  --fs-grade: 76px;       /* lettera del voto */
   /* Icone dei tipi: quattro misure per tutta l'Analisi e i tooltip. In riga col testo (accanto a un nome, nelle righe
      delle tabelle e dei tooltip), su una targhetta o in una griglia di icone (badge dei core, riga del tipo nei tooltip),
      in testa a un tooltip, in testa alle colonne delle griglie. Sugli schermi bassi o stretti si scende di un gradino */
@@ -60,22 +93,22 @@
   --tip-s: 300px;
   --tip-m: 380px;
   --tip-l: 480px;
-  --tip-title: 15px;
-  --tip-body: 13px;
-  --tip-small: 11px;
-  --tip-num: 22px;
+  --tip-title: var(--fs-body);
+  --tip-body: var(--fs-small);
+  --tip-small: var(--fs-label);
+  --tip-num: var(--fs-headline);
   /* Testate delle tabelle dell'Analisi (colonne, righe di gruppo, etichette di riga come Regge / Colpisce): uno stile
      solo, maiuscolo 11px in Faint con la stessa spaziatura */
-  --col-head: 600 11px/1.2 var(--ui);
+  --col-head: 600 var(--fs-label)/1.2 var(--ui);
   --col-head-track: 0.05em;
   --col-head-ink: var(--faint);
   /* Legende delle tabelle e delle barre (in alto a destra): 12px in Muted; 16px fra i gruppi della riga (conteggi, note,
-     chiave dei colori), 12px fra una voce e l'altra della chiave, 5px fra il quadratino e la sua parola */
-  --legend-size: 12px;
+     chiave dei colori), 12px fra una voce e l'altra della chiave, 4px fra il quadratino e la sua parola */
+  --legend-size: var(--fs-caption);
   --legend-ink: var(--muted);
-  --legend-gap: 16px;
-  --legend-item: 12px;
-  --legend-pair: 5px;
+  --legend-gap: var(--sp-8);
+  --legend-item: var(--sp-6);
+  --legend-pair: var(--sp-2);
 }
 /*
  * Contrasto (WCAG), su --panel / --raised / --ground:
