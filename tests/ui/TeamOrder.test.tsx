@@ -101,6 +101,20 @@ describe('ordine del team e editor', () => {
     expect(names(team)).toEqual([]);
   });
 
+  it('con Completa team aperto il magenta della pagina si spegne (resta solo nel pannello); chiuso torna', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App data={fixtureData} initialLang="it" />);
+    const team = screen.getByRole('region', { name: 'Team' });
+    const workspace = () => container.querySelector('.workspace')!;
+    expect(workspace()).not.toHaveClass('fill-open');
+    await user.click(within(team).getByRole('button', { name: 'Completa team' }));
+    expect(workspace()).toHaveClass('fill-open');
+    // Il pannello sta nella fascia del team, fuori dalla pagina spenta: la sua azione migliore resta magenta
+    expect(document.querySelector('.fill-panel')!.closest('.workspace')).toBeNull();
+    await user.keyboard('{Escape}');
+    expect(workspace()).not.toHaveClass('fill-open');
+  });
+
   it('un team da torneo caricato prende il posto del team e si annulla', async () => {
     const user = userEvent.setup();
     const tournamentTeams = [{ name: 'Rain Offense', author: 'Lameflame', team: ['Pelipper', 'Greninja'].map(species => ({ ...emptySet(species), moves: ['Protect'] })) }];

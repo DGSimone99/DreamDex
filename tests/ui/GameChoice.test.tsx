@@ -39,7 +39,14 @@ describe('scelta del gioco', () => {
     expect(screen.getByRole('checkbox', { name: 'Leggendari e post-game' })).not.toBeChecked();
   });
 
-  it('"Nessun gioco" rimette il formato di prima, col meta', async () => {
+  it('senza gioco la carta dice "Qualsiasi gioco" (non suona come un errore) e la barra non mostra Confronto', () => {
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    expect(screen.getByRole('button', { name: /^Gioco Qualsiasi gioco/ })).toHaveTextContent('Qualsiasi gioco');
+    expect(screen.queryByText('Nessun gioco')).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Confronto/ })).toBeNull();
+  });
+
+  it('"Qualsiasi gioco" rimette il formato di prima, col meta', async () => {
     initGames({ sv: { dex: ['sprigatito'] } });
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
@@ -72,7 +79,7 @@ describe('scelta del gioco', () => {
     expect(document.querySelector('.saved-format')).toHaveTextContent('Scarlatto e Violetto');
   });
 
-  it('caricare un team salvato col gioco rimette il gioco col suo blocco; "Nessun gioco" torna al formato di prima', async () => {
+  it('caricare un team salvato col gioco rimette il gioco col suo blocco; "Qualsiasi gioco" torna al formato di prima', async () => {
     initGames({ sv: { dex: ['sprigatito'] } });
     window.localStorage.clear();
     const user = userEvent.setup();

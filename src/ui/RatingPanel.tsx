@@ -66,8 +66,8 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
     {!rating && !blocked && <EeveeMoment pose="wave" />}
     <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
     <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}
-      {/* Il tipo di team sulla riga del giudizio, in una targa: la carta non diventa più alta */}
-      {rating && <span className="grade-type" title={typeNote}><span>{typeLabel}</span></span>}
+      {/* Il tipo di team sulla riga del giudizio, come testo semplice (non una targa): la carta non diventa più alta */}
+      {rating && <span className="grade-type" title={typeNote}>{typeLabel}</span>}
     </span>
     {rating && broken && <span className="grade-rules" title={[notLegal, who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegalShort}</span>}
     </span>

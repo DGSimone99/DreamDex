@@ -17,7 +17,7 @@ import { GradeBadge } from './ui/RatingPanel';
 import { blockedReason } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
 import type { KoFocus } from './ui/AreaDetail';
-import { SavedTeams } from './ui/SavedTeams';
+import { SavedPlateName, SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
 import { copyText } from './ui/clipboard';
 import { SuggestionsPanel, type CandidateFocus } from './ui/SuggestionsPanel';
@@ -80,11 +80,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     const saved = shared?.format ?? session?.format ?? DEFAULT_FORMAT;
     return saved.game && !gameReady(saved.game) ? DEFAULT_FORMAT : saved;
   });
-  // Il formato di prima del gioco: con "Nessun gioco" si torna lì
+  // Il formato di prima del gioco: con "Qualsiasi gioco" si torna lì
   const [beforeGame, setBeforeGame] = useState<Format | null>(null);
   /**
    * Il formato di un team caricato (team salvati, Annulla). Col gioco: il gioco col suo blocco, se i suoi dati ci sono
-   * (si ricorda il formato di prima per "Nessun gioco"); senza gioco: quel formato col meta di adesso, come prima
+   * (si ricorda il formato di prima per "Qualsiasi gioco"); senza gioco: quel formato col meta di adesso, come prima
    * (uscendo da un gioco, il meta del formato di prima del gioco).
    */
   const adoptFormat = (next: Format) => {
@@ -210,6 +210,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     });
   };
   const [closeSignal, setCloseSignal] = useState(0);
+  // Completa team aperto: il magenta della pagina si spegne, resta solo quello del pannello (un'azione principale per volta)
+  const [fillOpen, setFillOpen] = useState(false);
   // Migliora i set aperto dal Coaching (ogni numero nuovo apre la finestra del team)
   const [improveSignal, setImproveSignal] = useState(0);
   // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
@@ -420,7 +422,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             userLists.favorites.size ? t(lang, userLists.favorites.size === 1 ? 'rail.favOne' : 'rail.favMany', { n: userLists.favorites.size }) : null,
             userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,
           ].filter(Boolean).join(' · ') : t(lang, 'rail.listsEmpty') },
-        { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
+        // Confronto (in arrivo) non si mostra finché non c'è: quando arriva, si torna ad aggiungere qui
+        // { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
       ])} />} />
       <div className="main" ref={mainRef} id="main-content">
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
@@ -433,10 +436,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
-          saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
+          saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
+          plateName={<SavedPlateName team={team} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
-          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed}
+          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
@@ -447,7 +451,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <Icon name={collapsed ? 'next' : 'prev'} />
         </button>
       </div>
-      <div className={`workspace${editingIndex !== null ? ' editing' : ''}`} ref={workspaceRef}>
+      <div className={`workspace${editingIndex !== null ? ' editing' : ''}${fillOpen ? ' fill-open' : ''}`} ref={workspaceRef}>
       <main className="tab-body">
         <TabPanel id="pokemon" active={shownTab}>
           <SuggestionsPanel

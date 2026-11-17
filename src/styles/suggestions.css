@@ -238,6 +238,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .toolbar .mode-switch > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
 .toolbar .mode-switch > .segmented .icon { width: 14px; height: 14px; }
 .toolbar .mode-switch > .segmented .target-toggle { flex: none; gap: 2px; padding: 8px 11px; }
+.target-toggle .target-prefix { margin-right: 4px; font: 500 12px/1 var(--ui); color: var(--faint); white-space: nowrap; }
+.target-toggle .target-prefix::after { content: ':'; }
+.target-toggle.on .target-prefix { color: var(--muted); }
 .target-toggle.on { background: var(--accent-soft); color: var(--text); }
 .target-toggle[aria-expanded='true'] { color: var(--text); }
 .target-toggle .mon-icon { margin: -8px -4px -8px -6px; }

@@ -62,6 +62,8 @@ interface Props {
   improveSignal?: number;
   /** Team compresso: ogni carta diventa la sola icona del box (con il puntino degli avvisi). */
   collapsed?: boolean;
+  /** Completa team aperto o chiuso: intanto la pagina spegne il suo magenta (resta solo l'azione migliore del pannello). */
+  onFillOpenChange?: (open: boolean) => void;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
@@ -70,8 +72,10 @@ interface Props {
   onAddClick?: () => void;
   /** Importa / Esporta: a destra nella testata, prima di Svuota team. */
   io?: ReactNode;
-  /** Team salvati: è la targa stessa del team (con la freccia) che apre il menu; riceve il contenuto della targa. */
-  saved?: (plate: ReactNode) => ReactNode;
+  /** Team salvati: una linguetta sua nella barra a destra, prima di Importa ed Esporta. */
+  saved?: ReactNode;
+  /** Sulla targa, dopo il numero: il nome del team salvato in uso. */
+  plateName?: ReactNode;
   /** Proposta di mossa del coach: a ogni nonce nuovo apre l'editor del membro e la mostra con Applica / Annulla. */
   proposal?: MoveProposal | null;
   /** Proposta chiusa: applicata (true) o annullata (false). */
@@ -558,7 +562,7 @@ function EmptySlot({ onClick, quiet = false }: { onClick: () => void; quiet?: bo
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -651,6 +655,11 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const canFill = team.length < 6 && !!data.stats;
   // Team pieno o senza statistiche: il pannello si chiude (e non si riapre da solo dopo)
   useEffect(() => { if (!canFill) setFilling(false); }, [canFill]);
+  const fillOpenChange = useRef(onFillOpenChange);
+  fillOpenChange.current = onFillOpenChange;
+  useEffect(() => { fillOpenChange.current?.(filling); }, [filling]);
+  // Smontando il team col pannello aperto la pagina non resta spenta
+  useEffect(() => () => fillOpenChange.current?.(false), []);
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   // Una forma senza il suo strumento non è Mega (legalTeam.ts)
@@ -702,22 +711,21 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
   }), []);
-  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)").
-  // Dentro il menu dei team salvati (un <summary>) un titolo non conta come titolo: lì il disegno resta uguale ma è nascosto
-  // ai lettori di schermo, e il titolo vero sta subito prima, fuori dal menu (solo per loro)
+  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)")
   const title = t(lang, 'team.title', { n: team.length });
-  const plateTitle = (inMenu: boolean) => (
-    <h2 aria-hidden={inMenu || undefined}>
-      <span aria-hidden="true">Team</span>
-      <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
-      {!inMenu && <span className="visually-hidden">{title}</span>}
-    </h2>
-  );
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
-        {/* La targa del team: la parola Team e quanti sono. Con i team salvati la targa è anche il loro menu (freccia ▾) */}
-        {saved ? <><h2 className="visually-hidden">{title}</h2>{saved(plateTitle(true))}</> : <div className="team-plate">{plateTitle(false)}</div>}
+        {/* La targa del team: la parola Team, quanti sono e il nome del team salvato in uso (i team salvati hanno la loro
+            linguetta a destra) */}
+        <div className="team-plate">
+          <h2>
+            <span aria-hidden="true">Team</span>
+            <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
+            <span className="visually-hidden">{title}</span>
+          </h2>
+          {plateName}
+        </div>
         {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
         <div className="team-guide-slot">
           {canFill ? (
@@ -763,10 +771,11 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati, poi Showdown (Import/Export e Copia team attaccate),
-            poi Svuota a parte */}
+        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati e Showdown (Importa / Esporta) come linguette
+            attaccate, poi Svuota a parte */}
         <div className="team-quick">
-            <div className="team-tabs">
+          <div className="team-tabs">
+            {saved}
             {io}
           </div>
           {/* Svuota: il cestino, staccato da Importa ed Esporta da una barretta; il fumetto come quello di Esporta */}

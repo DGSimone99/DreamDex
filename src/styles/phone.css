@@ -166,7 +166,7 @@
   .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 3; font-size: 12px; }
   /* Il tipo di team sotto il giudizio (non accanto): la colonna del voto resta stretta e le aree hanno spazio */
   .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: column; align-items: flex-start; gap: 3px; }
-  .band:not(.collapsed) .grade-badge .grade-type { padding: 0 6px; font-size: 11px; }
+  .band:not(.collapsed) .grade-badge .grade-type { font-size: 12px; }
   .band:not(.collapsed) .grade-badge .grade-rules { grid-column: 2; grid-row: 4; align-self: start; margin-top: 4px; }
   .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 2 / span 4; gap: 1px; margin: 0; }
   .band:not(.collapsed) .grade-badge button.grade-area { grid-template-columns: 60px minmax(0, 1fr) 28px 10px; box-sizing: border-box; min-height: 22px; margin: 0; }
