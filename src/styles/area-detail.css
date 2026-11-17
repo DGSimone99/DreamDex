@@ -122,22 +122,22 @@
 .rating .bars dd { margin: 0; }
 
 /*
- * Bonus/Malus (BonusMalusView): in alto a sinistra i core a tre a triangolo (due a fisarmonica: uno aperto, l'altro solo
- * triangolo), a destra il netto sul voto e le barre (solo se c'è posto); sotto, a tutta larghezza, le voci attive in tre
- * colonne, ognuna con la sua medaglia.
+ * Bonus/Malus (BonusMalusView): in alto a sinistra la carta dei core a tre (due affiancati, aperti tutti e due; a
+ * fisarmonica solo se non stanno), a destra il netto sul voto con bonus e malus scritti e il link al catalogo; sotto, a
+ * tutta larghezza, tutte le altre voci come medaglie, tre per riga (due se la scheda è stretta), prima i malus.
  */
 .area-panel:has(> .bm) { display: flex; flex-direction: column; overflow: hidden; }
 .bm {
-  flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px;
-  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cores grade" "list list"; gap: 18px 28px;
+  container: bm / inline-size;
+  flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cores grade" "list list"; gap: 16px 24px;
 }
 .bm.empty { grid-template-rows: auto; grid-template-areas: "cores grade"; }
 .bm .bm-label { margin: 0 0 8px; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .bm p { margin: 0; }
 
-/* Medaglia: esagono col bordo del colore, esagono interno, riflesso in alto e l'icona della famiglia a tratto */
 /* Medaglia di metallo: bordo chiaro in alto e scuro in basso, smusso interno al contrario, faccia con un po' di luce in
-   alto e un'ombra morbida sotto (niente ombre dure) */
+   alto e un'ombra morbida sotto (niente ombre dure); l'icona della famiglia a tratto */
 .bm-medal { --c: var(--good); --bg: var(--good-bg); flex: none; width: 34px; height: 38px; overflow: visible; filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45)); }
 .bm-medal.malus { --c: var(--bad); --bg: var(--bad-bg); }
 .bm-medal.off { --c: var(--faint); --bg: var(--raised); }
@@ -152,102 +152,68 @@
 .bm-medal-icon { fill: none; stroke: color-mix(in srgb, var(--c) 85%, #fff); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .bm-medal-crack { fill: none; stroke: var(--bad); stroke-width: 1.6; stroke-linejoin: round; }
 
-/* In alto a destra: in testa "Sul voto" e il link al catalogo (in alto a destra come il link dei Ruoli), poi il netto
-   grande con bonus e malus accanto; le barre in fondo, sul filo del fondo della carta dei core */
-.bm-grade { grid-area: grade; align-self: stretch; min-width: 0; display: flex; flex-direction: column; }
-.bm-grade-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-.bm .bm-grade-head .bm-label { margin: 0; }
-.bm-sum { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+/* In alto a destra, in colonna: "Sul voto", il netto grande, bonus e malus scritti, il link al catalogo sul fondo (alla
+   riga del fondo della carta dei core) */
+.bm-grade { grid-area: grade; align-self: stretch; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.bm .bm-grade .bm-label { margin-bottom: 10px; }
 /* Il netto sulla sua targhetta inclinata a righe, nel colore del segno: è il risultato della scheda */
 .bm .bm-net {
-  --tone: var(--faint); justify-self: start; padding: 6px 30px 8px 14px; color: var(--tone);
+  --tone: var(--faint); padding: 6px 30px 8px 14px; color: var(--tone);
   background: var(--stripes), color-mix(in srgb, var(--tone) 15%, var(--band));
   clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
   font: 800 64px/0.9 var(--display); font-style: italic; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
 }
 .bm-net.good { --tone: var(--good); }
 .bm-net.bad { --tone: var(--bad); }
-.bm .bm-parts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13px; color: var(--muted); }
-.bm-parts b { font-weight: 700; }
+.bm .bm-parts { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+.bm-parts b { font-weight: 700; font-style: italic; }
 .bm-parts b.good { color: var(--good); }
 .bm-parts b.bad { color: var(--bad); }
-.bm.no-bars .bm-bars { display: none; }
-.bm-bars { display: grid; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line-soft); }
-.bm-bar { display: grid; grid-template-columns: 52px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font: 600 12px var(--ui); color: var(--muted); }
-.bm-track { height: 8px; background: var(--field); }
-.bm-track > span { display: block; height: 100%; min-width: 2px; }
-.bm-bar.malus .bm-track > span { background: var(--bad); }
-.bm-bar.bonus .bm-track > span { background: var(--good); }
-.bm-bar b { text-align: right; font: 800 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
-.bm-bar.malus b { color: var(--bad); }
-.bm-bar.bonus b { color: var(--good); }
-.bm-bar b.zero { color: var(--faint); }
 .bm-more { padding: 0; background: none; border: 0; color: var(--accent); font: 600 13px var(--ui); cursor: pointer; }
 .bm-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+.bm-grade .bm-more { margin-top: auto; padding-top: 8px; }
 
-/* Sotto, a tutta larghezza: le voci attive in tre colonne, riga per riga (se proprio non stanno, scorrono) */
-/* Sotto: due schede (Bonus, Malus) e le voci di quella scelta a tutta larghezza; colonne e carte compatte le decide
-   useFitEntries perché non scorrano mai (scorre solo con una voce aperta per intero che non sta) */
-.bm-entries-wrap { grid-area: list; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.bm-tabs { flex: none; display: flex; gap: 6px; }
-.bm-tab {
-  --tone: var(--good); display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 14px;
-  background: var(--raised); border: 1px solid var(--line-soft); color: var(--muted); font: 600 13px var(--ui); cursor: pointer;
+/* Sotto, a tutta larghezza: tutte le altre voci come medaglie, tre per riga (due se la scheda è stretta). Quante ne
+   stanno lo conta useFitCount: quelle che non stanno vanno nell'ultima casella "+N altre", mai una barra di scorrimento */
+.bm-others { grid-area: list; min-height: 0; display: flex; flex-direction: column; }
+.bm-list {
+  flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start;
+  gap: 12px 26px; margin: 0; padding: 4px 0 0 14px; list-style: none;
 }
-.bm-tab.malus { --tone: var(--bad); }
-.bm-tab:hover { color: var(--text); border-color: var(--line); }
-.bm-tab[aria-selected='true'] { color: var(--text); background: color-mix(in srgb, var(--tone) 14%, var(--raised)); border-color: color-mix(in srgb, var(--tone) 55%, var(--line)); }
-.bm-tab-count { min-width: 20px; padding: 1px 6px; background: var(--field); font: 600 11px/1.3 var(--ui); font-style: normal; text-align: center; color: var(--muted); }
-.bm-tab b { font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--tone); }
-.bm-tab.none b { color: var(--faint); }
-.bm-entries { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-left: 14px; }
-/* Una scheda senza voci: una medaglia grande e due righe (nessun malus: verde con la spunta; nessun bonus: spenta col più
-   e il link al catalogo) */
-.bm-empty { display: flex; align-items: center; gap: 18px; padding: 10px 4px 4px; }
-.bm-empty .bm-medal { width: 58px; height: 65px; }
-.bm .bm-empty p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
-.bm-empty b { display: block; margin-bottom: 2px; font: 700 17px/1.2 var(--display); font-style: italic; color: var(--text); }
-.bm-empty.good b { color: var(--good); }
-.bm-empty .bm-more { display: block; margin-top: 4px; }
-.bm-grade-head .bm-more { flex: none; }
-.bm-list { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); align-content: start; gap: 12px 26px; margin: 0; padding: 5px 0; list-style: none; }
+@container bm (max-width: 820px) { .bm-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* Una voce: la medaglia appuntata sul bordo sinistro, la carta lavata nel colore della voce che sfuma a destra, i punti
-   su una targhetta inclinata a righe */
+   su una targhetta inclinata a righe; il caso su una riga, tagliato coi puntini (intero nel tooltip) */
 .bm-row {
   --c: var(--good); --bg: var(--good-bg);
-  position: relative; display: flex; align-items: stretch; min-width: 0; min-height: 54px; padding-left: 50px;
+  position: relative; display: flex; align-items: stretch; min-width: 0; height: 54px; padding-left: 50px;
   background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 90%, var(--raised)) 0%, var(--raised) 72%);
   border: 1px solid color-mix(in srgb, var(--c) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
 }
 .bm-row.malus { --c: var(--bad); --bg: var(--bad-bg); }
+.bm-row:focus-visible, .bm-more-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bm-row .bm-medal { position: absolute; left: -14px; top: 50%; translate: 0 -50%; width: 54px; height: 61px; }
-.bm-row-tx { flex: 1; min-width: 0; align-self: center; display: grid; gap: 1px; padding: 6px 10px 6px 0; }
-/* Il caso troppo lungo: un pulsante steso su tutta la carta lo apre per intero, con la freccia in basso a destra */
-.bm-row.long .bm-row-tx { padding-right: 22px; }
-.bm-row-toggle { position: static; padding: 0; background: none; border: 0; color: var(--muted); font: 11px/1 var(--ui); cursor: pointer; }
-.bm-row-toggle::after { content: ""; position: absolute; inset: 0; z-index: 1; }
-.bm-row-toggle > span { position: absolute; right: 6px; bottom: 5px; }
-.bm-row.long:hover .bm-row-case, .bm-row.long:hover .bm-row-toggle { color: var(--text); }
-.bm-row-toggle:focus-visible { outline: none; }
-.bm-row:has(.bm-row-toggle:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.bm-row-tx { flex: 1; min-width: 0; align-self: center; display: grid; gap: 2px; padding: 4px 10px 4px 0; }
 .bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.15em; margin-block: -0.15em; font: 700 15px/1.15 var(--display); font-style: italic; }
-/* Il caso sempre intero: va a capo quanto serve */
-/* Carte della stessa misura: il caso tiene sempre il posto di due righe (una riga sola non accorcia la carta) */
-.bm-row-case { min-height: calc(2 * 1.35em); font-size: 13px; line-height: 1.35; color: var(--muted); }
-/* Carte compatte: altezza fissa, il nome può andare su due righe invece di tagliarsi */
-.bm-entries.compact .bm-row { height: 42px; min-height: 0; padding-left: 32px; }
-.bm-entries.compact .bm-row-tx b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 13px; line-height: 1.12; padding-block: 0; margin-block: 0; }
-.bm-entries.compact .bm-row .bm-medal { left: -10px; width: 34px; height: 38px; }
-.bm-entries.compact .bm-row-tx { padding-top: 2px; padding-bottom: 2px; }
-.bm-entries.compact .bm-row:not(.open) .bm-row-case { display: none; }
-.bm-entries.compact .bm-row-pts { min-width: 46px; font-size: 18px; }
-.bm-entries.compact .bm-list { row-gap: 8px; }
+.bm-row-case { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 1.35; color: var(--muted); }
+.bm-row:hover .bm-row-case { color: var(--text); }
 .bm-row-pts {
   flex: none; display: grid; place-items: center; min-width: 62px; padding: 0 12px 0 22px; color: var(--c);
   background: var(--stripes), color-mix(in srgb, var(--c) 18%, var(--field));
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
   font: 800 24px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums;
 }
+/* L'ultima casella quando non stanno tutte: tratteggiata, le voci nascoste nel tooltip */
+.bm-more-cell { display: flex; align-items: center; justify-content: center; min-width: 0; height: 54px; border: 1px dashed var(--line); color: var(--muted); font: 600 14px var(--ui); cursor: default; }
+.bm-more-cell:hover { color: var(--text); border-color: var(--muted); }
+/* Il tooltip di una voce e di "+N altre": nome e punti in testa, il caso intero sotto */
+.bm-tip-pts { margin-left: auto; padding-left: 12px; font: 800 var(--tip-num)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+.bm-tip-pts.malus { color: var(--bad); }
+.bm-tip-pts.bonus { color: var(--good); }
+.bm-row-tip .kot-none + .kot-none { padding-top: 0; }
+.bm-more-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; }
+.bm-more-line b { font: 700 var(--tip-body)/1.2 var(--display); font-style: italic; color: var(--text); }
+.bm-more-line .bm-tip-pts { margin-left: 0; padding-left: 0; font-size: var(--tip-body); }
+.bm-more-line > span { flex-basis: 100%; }
 /* Quando si apre la scheda le medaglie entrano una dopo l'altra: partono già visibili (niente vuoto), solo un piccolo
    ingrandimento e la luce che sale */
 @keyframes bm-pop { from { opacity: 0.35; transform: scale(0.88); } to { opacity: 1; transform: none; } }
@@ -259,7 +225,7 @@
 /* La carta dei core (come le carte della Panoramica): stessa misura con 0, 1 o 2 core. Una superficie sola: con almeno
    un core lavata di verde; i due core sono due parti della stessa carta, divise da una riga sottile */
 .bm-cores.dash-card {
-  --cores-h: 222px; position: relative; grid-area: cores; align-self: start; height: var(--cores-h); padding: 0 0 0 0; overflow: visible;
+  --cores-h: 168px; position: relative; grid-area: cores; align-self: start; height: var(--cores-h); padding: 0; overflow: visible;
   background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 70%, var(--panel)) 0%, var(--panel) 60%);
   border-color: color-mix(in srgb, var(--good) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
 }
@@ -274,12 +240,12 @@
 .bm-core-row { flex: 1; min-height: 0; display: flex; margin: 0; padding: 0; list-style: none; }
 .bm-core {
   position: relative; display: flex; align-items: center; gap: 16px; min-width: 0; overflow: hidden;
-  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 10px 16px 10px 18px;
+  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 8px 16px 8px 18px;
   transition: flex-grow 250ms var(--ease);
 }
 /* Il core chiuso: una colonna della stessa carta oltre una riga sottile, triangolo e +3 al centro */
-.bm-core.shut { flex-grow: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 14px; background: rgb(0 0 0 / 0.12); }
-.bm-core + .bm-core { border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); }
+.bm-core.shut { flex-grow: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 14px; background: rgb(0 0 0 / 0.12); }
+.bm-core + .bm-core, .bm-core-ghost { border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); }
 /* La carta dei core non entra con l'animazione della Panoramica: in questa scheda si muovono solo le medaglie */
 .bm-cores.dash-card { animation: none; }
 .bm-core-art { flex: none; display: flex; padding: 0; background: none; border: 0; color: inherit; font: inherit; }
@@ -297,34 +263,43 @@
 .bm-core-body { flex: 1 0 220px; min-width: 220px; transition: opacity 200ms var(--ease) 60ms; }
 /* Chiuso: il testo esce dal flusso (non allunga la carta) e resta invisibile */
 .bm-core.shut .bm-core-body { position: absolute; top: 10px; left: calc(var(--tri-w, 150px) + 48px); width: 300px; visibility: hidden; opacity: 0; transition: none; }
-.bm .bm-core-body h5 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; font: 700 18px/1.15 var(--display); font-style: italic; }
+.bm .bm-core-body h5 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; font: 700 17px/1.15 var(--display); font-style: italic; }
 .bm-core-pts { margin-left: auto; font: 800 22px/1 var(--display); color: var(--good); }
-/* Con due core: "Reggono N/18" prima dei punti, piccolo e quieto (il dettaglio nelle icone sotto e nel loro tooltip) */
-.bm-core-held { margin-left: auto; font: 600 12px/1 var(--ui); font-style: normal; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* "Reggono N/18" prima dei punti, piccolo e quieto, sottolineato a puntini: apre il tooltip coi tipi retti */
+.bm-core-held {
+  margin-left: auto; font: 600 12px/1 var(--ui); font-style: normal; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums;
+  text-decoration: underline dotted; text-underline-offset: 3px; cursor: help;
+}
+.bm-core-held:hover { color: var(--text); }
+.bm-core-held:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bm-core-held + .bm-core-pts { margin-left: 0; }
 .bm-core-lines { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
 .bm-core-lines li { display: flex; align-items: center; gap: 7px; margin: 0; }
 .bm-core-lines img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
-/* I 18 tipi d'attacco del core: accesi quelli retti, spenti in grigio quelli che passano */
-.bm-core-types { display: grid; grid-template-columns: repeat(9, var(--ti-chip)); gap: 4px; margin-top: 10px; cursor: help; }
-.bm-core-types img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
-.bm-core-types img.off { filter: grayscale(1); opacity: 0.25; }
-.bm-core-types.big { grid-template-columns: repeat(6, var(--ti-head)); gap: 6px; margin: 0; }
-.bm-core-types.big img { width: var(--ti-head); height: var(--ti-head); }
-/* Due core affiancati (usePairFits): aperti tutti e due, metà carta ciascuno, col triangolo medio. --pair-min è la
-   larghezza della carta sotto cui non stanno (bordi + triangolo + spazio + testo da 230px, per due) e vanno a fisarmonica */
+/* Nel tooltip di "Reggono": i 18 tipi d'attacco, accesi quelli retti, spenti in grigio quelli che passano */
+.ftip.bm-held-tip { width: auto; }
+.bm-held-tip .bm-core-types { display: grid; grid-template-columns: repeat(9, var(--ti-chip)); gap: 6px; padding: 10px 12px; }
+.bm-held-tip .bm-core-types img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
+.bm-held-tip .bm-core-types img.off { filter: grayscale(1); opacity: 0.25; }
+/* Due posti affiancati (usePairFits): due core aperti, o un core e il posto del secondo, metà carta ciascuno, col
+   triangolo medio. --pair-min è la larghezza della carta sotto cui non stanno (bordi + triangolo + spazio + testo da
+   230px, per due): due core vanno a fisarmonica, un core solo prende tutta la carta */
 .bm-core-row { --pair-min: 785px; }
 .bm-core-row.pair .bm-core { flex: 1 1 0; transition: none; }
 .bm-core-row.pair .bm-core-body { flex: 1 1 auto; min-width: 0; }
-.bm-core-row.pair .sum-tri { --tri-w: 112px; --tri-badge: calc(var(--ti-chip) + 3px); }
-/* Un core solo: la colonna dei tipi a destra, come il secondo core chiuso (stessa riga sottile, stesso fondo) */
+.bm-core-row.pair .sum-tri { --tri-w: 100px; --tri-badge: calc(var(--ti-chip) + 3px); }
+/* Affiancati il nome del core, "Reggono N/18" e i punti stanno su una riga anche coi tipi dai nomi lunghi */
+.bm-core-row.pair .bm-core { gap: 12px; padding-right: 12px; }
+.bm-core-row.pair .bm-core-body h5 { gap: 8px; }
 .bm-core-row:not(.two) .bm-core { max-width: none; }
-.bm-core-side { flex: none; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 10px 20px;
-  border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); background: rgb(0 0 0 / 0.12); }
-.bm-core-side-head { font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+/* Un core solo: dove starebbe il secondo, il suo posto tratteggiato e quanto varrebbe */
+.bm-core-ghost { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 16px; padding: 8px 16px 8px 18px; }
+.bm-core-ghost .bm-cores-ghost { width: 112px; height: 96px; }
+.bm-core-ghost p { font-size: 13px; line-height: 1.4; color: var(--muted); }
+.bm-core-ghost b { display: block; margin-bottom: 3px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--text); }
 .bm-cores-none { flex: 1; display: flex; align-items: center; justify-content: center; gap: 22px; padding: 0 24px; }
-.bm-cores-none p { max-width: 420px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.bm-cores-none p { max-width: 520px; font-size: 13px; line-height: 1.45; color: var(--muted); }
 /* Il core che manca: triangolo e piedistalli tratteggiati, appena visibili */
 .bm-cores-ghost { flex: none; width: 128px; height: 109px; overflow: visible; }
 .bm-cores-ghost path, .bm-cores-ghost circle { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 4; }
@@ -334,31 +309,27 @@
   .bm-core, .bm-core-body, .bm-core-mini { transition: none; }
 }
 @media (max-width: 1300px) {
-  .bm { column-gap: 22px; grid-template-columns: minmax(0, 1fr) 280px; }
+  .bm { column-gap: 22px; grid-template-columns: minmax(0, 1fr) 220px; }
 }
-/* Schermi bassi: tutto più compatto (core, netto, carte delle voci) perché le voci stiano senza scorrere */
+/* Schermi bassi: tutto più compatto (core, netto, medaglie) perché ne stiano di più */
 @media (max-height: 799px) {
   .bm { row-gap: 12px; }
   .bm .sum-tri { --tri-w: 112px; --tri-badge: calc(var(--ti-chip) + 3px); }
-  .bm-core { padding: 8px 14px 8px 16px; }
+  .bm-core { padding: 6px 14px 6px 16px; }
   .bm .bm-core-body h5 { margin-bottom: 5px; font-size: 16px; }
   .bm-core-pts { font-size: 19px; }
   .bm-core-lines { gap: 2px; font-size: 12px; }
-  .bm-core-types { margin-top: 6px; }
   .bm .bm-net { font-size: 48px; padding: 5px 26px 6px 12px; }
-  .bm-sum { margin-bottom: 10px; }
-  .bm-bars { padding-top: 8px; gap: 6px; }
-  .bm-cores.dash-card { --cores-h: 196px; }
+  .bm .bm-parts { margin-top: 8px; }
+  .bm-cores.dash-card { --cores-h: 156px; }
   .bm-core-row { --pair-min: 777px; }
-  .bm-entries { padding-left: 12px; }
-  .bm-entries.compact .bm-row { height: 38px; }
-  .bm-entries.compact .bm-list { row-gap: 6px; }
-  .bm-entries.compact .bm-row-tx b { font-size: 12px; }
-  .bm-list { gap: 10px 22px; }
-  .bm-row { min-height: 44px; padding-left: 40px; }
+  .bm-list { gap: 10px 22px; padding-left: 12px; }
+  .bm-row, .bm-more-cell { height: 46px; }
+  .bm-row { padding-left: 40px; }
   .bm-row .bm-medal { left: -12px; width: 44px; height: 50px; }
-  .bm-row-tx { padding: 4px 8px 4px 0; }
+  .bm-row-tx { padding: 3px 8px 3px 0; gap: 1px; }
   .bm-row-tx b { font-size: 14px; }
+  .bm-row-case { font-size: 12px; }
   .bm-row-pts { min-width: 54px; font-size: 20px; }
 }
 @media (max-height: 679px) {
@@ -370,33 +341,25 @@
   .bm-core-lines { gap: 0; font-size: 12px; line-height: 1.25; }
   .bm-core { padding: 4px 10px 4px 14px; gap: 10px; }
   .bm-core.shut .bm-core-body { top: 5px; }
-  /* Con due core, su una fila sola: due file non ci stanno nella carta bassa */
-  .bm-core-types { margin-top: 4px; grid-template-columns: repeat(18, var(--ti-inline)); gap: 2px; }
-  .bm-core-types img { width: var(--ti-inline); height: var(--ti-inline); }
-  .bm-core-types.big { grid-template-columns: repeat(6, calc(var(--ti-head) - 4px)); gap: 4px; }
-  /* Due core affiancati: metà carta ciascuno, i tipi su due file da nove */
   .bm-core-row { --pair-min: 685px; }
   .bm-core-row.pair .sum-tri { --tri-w: 84px; --tri-badge: calc(var(--ti-inline) + 3px); }
-  .bm-core-row.pair .bm-core-types { grid-template-columns: repeat(9, var(--ti-inline)); }
-  .bm-core-types.big img { width: calc(var(--ti-head) - 4px); height: calc(var(--ti-head) - 4px); }
-  .bm-core-side { padding: 6px 14px; gap: 5px; }
-  .bm .bm-label { margin-bottom: 6px; }
+  .bm-core-ghost { gap: 10px; padding: 4px 10px 4px 14px; }
+  .bm-core-ghost .bm-cores-ghost { width: 84px; height: 72px; }
+  .bm-core-ghost p { font-size: 12px; line-height: 1.3; }
+  .bm-core-ghost b { font-size: 14px; }
+  .bm .bm-label, .bm .bm-grade .bm-label { margin-bottom: 6px; }
   .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }
-  .bm-cores.dash-card { --cores-h: 136px; }
+  .bm .bm-parts { margin-top: 6px; font-size: 13px; }
+  .bm-cores.dash-card { --cores-h: 118px; }
   .bm-head-medal.bm-medal { left: -11px; top: -12px; width: 44px; height: 50px; }
   .bm-cores .dash-plate { padding-left: 38px; }
   .bm-cores-ghost { width: 92px; height: 78px; }
-  .bm-empty { padding-top: 4px; }
-  .bm-empty .bm-medal { width: 46px; height: 52px; }
-  .bm-entries-wrap { gap: 4px; }
-  .bm-tab { min-height: 26px; padding: 1px 12px; }
-  .bm-list { gap: 6px 22px; padding-top: 3px; padding-bottom: 0; }
-  .bm-row { min-height: 37px; padding-left: 34px; }
+  .bm-list { gap: 8px 22px; padding-top: 3px; }
+  .bm-row, .bm-more-cell { height: 40px; }
+  .bm-row { padding-left: 34px; }
   .bm-row .bm-medal { left: -11px; width: 38px; height: 43px; }
-  .bm-row-tx { padding: 2px 8px 2px 0; }
-  .bm-row-case { min-height: calc(2 * 1.3em); font-size: 12px; line-height: 1.3; }
-  .bm-entries.compact .bm-row { height: 36px; }
-  .bm-entries.compact .bm-list { row-gap: 5px; }
+  .bm-row-tx { padding: 2px 8px 2px 0; gap: 0; }
+  .bm-row-case { line-height: 1.3; }
   .bm-row-pts { font-size: 19px; }
 }
 

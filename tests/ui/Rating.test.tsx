@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { AreaView } from '../../src/ui/AreaView';
@@ -264,85 +264,89 @@ function renderBm(rating: TeamRating) {
   return { user, view: screen.getByRole('region', { name: 'Ruoli e Bonus' }) };
 }
 const onGrade = () => screen.getByRole('region', { name: 'Sul voto' });
-/** Le schede Bonus e Malus sotto netto e core, e le voci della scheda scelta. */
 /** Dentro la sottoscheda aperta (la striscia di sopra ha anche lei una scheda "Bonus/Malus"). */
 const inner = () => within(document.querySelector<HTMLElement>('.area-panel')!);
-const groupTab = (name: RegExp) => inner().getByRole('tab', { name });
-const entries = () => within(inner().getByRole('tabpanel', { name: /^(Altri )?(bonus|malus)/i })).queryAllByRole('listitem');
+/** Le medaglie delle voci (senza la casella "+N altre"). */
+const medals = () => [...document.querySelectorAll<HTMLElement>('.bm-list > .bm-row')];
+const medalNames = () => medals().map(row => row.querySelector('.bm-row-tx b')!.textContent);
+/** Col tasto Tab fino all'elemento (il tooltip DreamDex si apre col fuoco da tastiera). */
+async function tabTo(user: ReturnType<typeof userEvent.setup>, el: HTMLElement) {
+  for (let i = 0; i < 40 && document.activeElement !== el; i++) await user.tab();
+  expect(el).toHaveFocus();
+}
 
 describe('Bonus/Malus', () => {
-  it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
+  it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto, scritti', () => {
     const { view } = renderBm(catalogRating());
     expect(within(view).getAllByRole('tab')[0].textContent).toBe('Bonus/Malus');
     expect(within(view).getAllByRole('tab')[0]).toHaveAccessibleDescription('−6');
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent('−6');
     expect(onGrade().querySelector('.bm-net')).toHaveClass('bad');
-    expect(onGrade()).toHaveTextContent('Bonus +2');
-    expect(onGrade()).toHaveTextContent('Malus −8');
+    expect(onGrade().querySelector('.bm-parts')).toHaveTextContent('Bonus +2·Malus −8');
+    // Niente più barre: i numeri bastano
+    expect(document.querySelector('.bm-bars')).toBeNull();
+    expect(within(onGrade()).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
   });
 
-  it('le barre di malus e bonus sulla stessa scala (almeno 10), vuota e grigia a zero; decorative', () => {
+  it('tutte le voci insieme come medaglie, senza schede Bonus e Malus: prima i malus, ognuno dal più pesante, poi i bonus', () => {
     renderBm(catalogRating());
-    const bars = onGrade().querySelector<HTMLElement>('.bm-bars')!;
-    expect(bars).toHaveAttribute('aria-hidden', 'true');
-    expect(bars.querySelector<HTMLElement>('.bm-bar.malus .bm-track > span')!.style.width).toBe('80%');
-    expect(bars.querySelector<HTMLElement>('.bm-bar.bonus .bm-track > span')!.style.width).toBe('20%');
-  });
-
-  it('a zero la barra resta vuota e il valore è grigio', () => {
-    renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
-    const bonus = onGrade().querySelector<HTMLElement>('.bm-bar.bonus')!;
-    expect(bonus.querySelector('.bm-track > span')).toBeNull();
-    expect(bonus.querySelector('b')).toHaveClass('zero');
-  });
-
-  it('le voci attive in due schede, Bonus e Malus, con quante sono e il totale: prima i bonus; le frecce passano ai malus', async () => {
-    const { user } = renderBm(catalogRating());
-    const bonus = groupTab(/^Bonus\s*1\s*\+2$/);
-    const malus = groupTab(/^Malus\s*2\s*−8$/);
-    expect(bonus).toHaveAttribute('aria-selected', 'true');
-    expect(malus).toHaveAttribute('aria-selected', 'false');
-    expect(entries().map(row => row.querySelector('b')!.textContent)).toEqual(['Scudo del clima']);
-    expect(entries()[0]).toHaveTextContent('+2');
-    expect(entries()[0]).toHaveClass('bonus');
-    bonus.focus();
-    await user.keyboard('{ArrowRight}');
-    expect(malus).toHaveAttribute('aria-selected', 'true');
-    expect(malus).toHaveFocus();
-    const rows = entries();
-    expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Tipi doppioni', 'Hazard doppio']);
-    // Il caso sempre intero, senza pulsanti per aprirlo
-    expect(rows[1]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
-    expect(rows[1]).toHaveTextContent('−3');
-    expect(rows[1]).toHaveClass('malus');
+    expect(inner().queryByRole('tablist')).toBeNull();
+    expect(inner().queryByRole('tab', { name: /^(bonus|malus)/i })).toBeNull();
+    expect(inner().getByRole('region', { name: 'Le altre voci · prima i malus' })).toBeInTheDocument();
+    expect(medalNames()).toEqual(['Tipi doppioni', 'Hazard doppio', 'Scudo del clima']);
+    const [same, hazard, sun] = medals();
+    expect(same).toHaveClass('malus');
+    expect(same.querySelector('.bm-row-pts')).toHaveTextContent('−5');
+    // Il caso intero nel testo (tagliato coi puntini solo a vista)
+    expect(hazard).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
+    expect(hazard.querySelector('.bm-row-pts')).toHaveTextContent('−3');
+    expect(sun).toHaveClass('bonus');
+    expect(sun.querySelector('.bm-row-pts')).toHaveTextContent('+2');
+    expect(document.querySelector('.bm-more-cell')).toBeNull();
     expect(screen.queryByRole('button', { name: /Mostra tutto il testo/ })).toBeNull();
-    await user.keyboard('{Home}');
-    expect(bonus).toHaveAttribute('aria-selected', 'true');
-    expect(inner().getByRole('tabpanel', { name: /^Bonus/ })).not.toHaveTextContent('Arcobaleno di tipi');
-    expect(onGrade()).not.toHaveTextContent('per ogni');
-    expect(screen.queryByText('Cosa toglie')).toBeNull();
   });
 
-  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; i problemi nella testata come nelle altre aree', async () => {
-    const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
-    expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
-    await user.click(groupTab(/^Bonus/));
-    const empty = inner().getByRole('tabpanel', { name: /^Bonus/ });
-    expect(empty).toHaveTextContent('Nessun bonus per ora');
-    // Il link al catalogo, per vedere come guadagnarli; la scheda vuota ha solo lo zero del conto
-    expect(within(empty).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
-    expect(groupTab(/^Bonus/)).toHaveAccessibleName('Bonus 0');
+  it('col fuoco una medaglia mostra nome, punti e il caso intero nel tooltip DreamDex', async () => {
+    const { user } = renderBm(catalogRating());
+    await tabTo(user, medals()[1]);
+    await waitFor(() => expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Hazard doppio−3'));
+    expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Due setter di Stealth Rock');
+    expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Due setter di Spikes');
+  });
+
+  it('se le medaglie non stanno nell\'altezza, l\'ultima casella è "+N altre" con le voci nascoste nel tooltip e per i lettori di schermo', async () => {
+    // Misura finta: ogni casella della griglia è alta 50, la griglia 110 (ci stanno due caselle)
+    const height = vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('bm-list') ? this.children.length * 50 : 0;
+    });
+    const client = vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('bm-list') ? 110 : 0;
+    });
+    try {
+      const { user } = renderBm(catalogRating());
+      // Una medaglia e la casella "+2 altre": due caselle
+      expect(medalNames()).toEqual(['Tipi doppioni']);
+      const more = document.querySelector<HTMLElement>('.bm-more-cell')!;
+      expect(more).toHaveTextContent(/^\+2 altre/);
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altre 2 voci: Hazard doppio −3: Due setter di Stealth Rock · Due setter di Spikes; Scudo del clima +2: Sole aiuta');
+      await tabTo(user, more);
+      await waitFor(() => expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Hazard doppio −3Due setter di Stealth Rock'));
+      expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Scudo del clima +2Sole aiuta');
+    } finally {
+      height.mockRestore();
+      client.mockRestore();
+    }
+  });
+
+  it('senza bonus solo le medaglie dei malus; i problemi nella testata come nelle altre aree', () => {
+    renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
+    expect(medalNames()).toEqual(['Tipi doppioni', 'Hazard doppio']);
+    expect(onGrade().querySelector('.bm-parts')).toHaveTextContent('Bonus 0·Malus −8');
     expect(document.querySelector('.area-tools-row')).toBeNull();
     expect(document.querySelector('.area-head .area-chip.good')).toHaveTextContent('Nessun problema');
   });
 
-  it('nessun malus: la scheda Malus mostra la medaglia con la spunta e "Il team non perde punti"', async () => {
-    const { user } = renderBm({ ...catalogRating(), penalty: { total: 0, items: [] } } as unknown as TeamRating);
-    await user.click(groupTab(/^Malus/));
-    expect(inner().getByRole('tabpanel', { name: /^Malus/ })).toHaveTextContent('Nessun malusIl team non perde punti');
-  });
-
-  it('netto verde se positivo; senza voci il netto è 0 grigio con "Né bonus né malus per ora"', () => {
+  it('netto verde se positivo; senza voci il netto è 0 grigio con "Né bonus né malus per ora" e nessuna griglia', () => {
     const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating()} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent('+6');
     expect(onGrade().querySelector('.bm-net')).toHaveClass('good');
@@ -351,7 +355,8 @@ describe('Bonus/Malus', () => {
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent(/^0$/);
     expect(onGrade().querySelector('.bm-net')).toHaveClass('zero');
     expect(onGrade()).toHaveTextContent('Né bonus né malus per ora');
-    expect(inner().queryByRole('tab', { name: /^(bonus|malus)/i })).toBeNull();
+    expect(document.querySelector('.bm-list')).toBeNull();
+    expect(document.querySelector('.bm')).toHaveClass('empty');
   });
 
   it('"Tutte le voci possibili" apre il catalogo (la guida della scheda) sui bonus; all\'uscita il focus torna al link', async () => {
@@ -372,7 +377,7 @@ describe('Bonus/Malus', () => {
     expect(link).toHaveFocus();
   });
 
-  it('due core a tre: aperto quello che regge più tipi, l\'altro è un pulsante che lo apre', async () => {
+  it('due core a tre: senza posto per due (qui, senza misure) aperto quello che regge più tipi, l\'altro è un pulsante che lo apre', async () => {
     const { user } = renderBm(coreRating());
     // Nel titolo quanti sono e quanto valgono, con la medaglia accesa
     const cores = screen.getByRole('region', { name: '2 Core +6' });
@@ -381,40 +386,73 @@ describe('Bonus/Malus', () => {
     const weak = within(cores).getByRole('button', { name: 'Core Fire / Water / Electric' });
     expect(strong).toHaveAttribute('aria-expanded', 'true');
     expect(weak).toHaveAttribute('aria-expanded', 'false');
-    // I tipi retti come icone dentro il core aperto (il conto e chi passa nel nome per i lettori di schermo)
-    const types = within(strong.closest('li')!).getByRole('img', { name: /^Reggono 9 tipi su 18\. Passano: / });
-    expect(types.querySelectorAll('img.on')).toHaveLength(9);
-    expect(types.querySelectorAll('img.off')).toHaveLength(9);
     expect(within(cores).getByText((_, el) => el?.tagName === 'SPAN' && el.textContent === 'Heatran para Landorus-Therian da Fire')).toBeInTheDocument();
     await user.click(weak);
     expect(weak).toHaveAttribute('aria-expanded', 'true');
     expect(strong).toHaveAttribute('aria-expanded', 'false');
     expect(weak.closest('li')).toHaveClass('open');
-    expect(within(weak.closest('li')!).getByRole('img', { name: /^Reggono 4 tipi su 18/ })).toBeInTheDocument();
-    // Con due core niente colonna dei tipi a destra: c'è il secondo core
-    expect(cores.querySelector('.bm-core-side')).toBeNull();
-    // I core stanno solo nel riquadro in alto: nessuna voce sotto (contano però nel netto e in "Bonus +6")
-    expect(inner().queryByRole('tab', { name: /bonus/i })).toBeNull();
+    expect(within(weak.closest('li')!).getByText('Reggono 4/18')).toBeInTheDocument();
+    // I core stanno solo nella carta in alto: nessuna medaglia sotto (contano però nel netto e in "Bonus +6")
+    expect(document.querySelector('.bm-list')).toBeNull();
     expect(onGrade()).toHaveTextContent('Bonus +6');
   });
 
-  it('un core solo: aperto, senza pulsante; nessun core: una riga su come averne uno', () => {
+  it('i tipi retti da un core solo nel tooltip di "Reggono N/18" (col fuoco), per i lettori di schermo nella descrizione', async () => {
+    const { user } = renderBm(coreRating());
+    const cores = screen.getByRole('region', { name: '2 Core +6' });
+    // Nella carta niente icone dei tipi retti
+    expect(cores.querySelector('.bm-core-types')).toBeNull();
+    const held = within(cores).getByText('Reggono 9/18');
+    expect(held).toHaveAttribute('tabindex', '0');
+    expect(held).toHaveAccessibleDescription(/^Reggono 9 tipi su 18\. Reggono: Heatran0, .*\. Passano: Pelipper0, /);
+    await tabTo(user, held);
+    await waitFor(() => expect(document.querySelector('.ftip.bm-held-tip')).toHaveTextContent('Reggono 9 tipi su 18'));
+    const tip = document.querySelector<HTMLElement>('.ftip.bm-held-tip')!;
+    expect(tip.querySelectorAll('.bm-core-types img.on')).toHaveLength(9);
+    expect(tip.querySelectorAll('.bm-core-types img.off')).toHaveLength(9);
+  });
+
+  it('un core solo con posto per due: accanto il posto tratteggiato del secondo e quanto varrebbe', () => {
+    // Misure finte: la carta è larga 900 e ne bastano 785 per due posti affiancati
+    vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+    const rect = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, bottom: 100, right: 900, width: 900, height: 100, toJSON: () => ({}) } as DOMRect);
+    const original = window.getComputedStyle.bind(window);
+    const style = vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+      const css = original(el);
+      const get = css.getPropertyValue.bind(css);
+      css.getPropertyValue = (name: string) => (name === '--pair-min' ? '785px' : get(name));
+      return css;
+    });
+    try {
+      render(<LangProvider lang="it"><AreaView rating={coreRating([fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])])} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+      const one = screen.getByRole('region', { name: '1 Core +3' });
+      expect(within(one).queryByRole('button')).toBeNull();
+      expect(within(one).getByRole('heading', { name: /Fire \/ Ground \/ Poison/ })).toBeInTheDocument();
+      const ghost = one.querySelector<HTMLElement>('.bm-core-ghost')!;
+      expect(ghost.querySelector('svg.bm-cores-ghost')).not.toBeNull();
+      expect(ghost).toHaveTextContent('Un secondo core vale altri +3');
+      expect(ghost).toHaveTextContent('Tre membri che si coprono a vicenda: ognuno regge un tipo che fa male al successivo.');
+      // Niente più colonna dei tipi retti accanto al core
+      expect(one.querySelector('.bm-core-side, .bm-core-types')).toBeNull();
+    } finally {
+      rect.mockRestore();
+      style.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('un core solo senza posto per due: prende tutta la carta; nessun core: il triangolo tratteggiato e come averne uno', () => {
     const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating([fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])])} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
     const one = screen.getByRole('region', { name: '1 Core +3' });
-    expect(within(one).queryByRole('button')).toBeNull();
-    expect(within(one).getByRole('heading', { name: /Fire \/ Ground \/ Poison/ })).toBeInTheDocument();
-    // Un core solo: i tipi che regge nella colonna a destra, grandi, col conto sopra
-    const side = one.querySelector<HTMLElement>('.bm-core-side');
-    expect(side).not.toBeNull();
-    expect(side!.querySelector('.bm-core-types.big')).not.toBeNull();
-    expect(side).toHaveTextContent(/^Reggono \d+ tipi su \d+$/);
-    expect(one.querySelector('.bm-core-open .bm-core-types, .bm-core.open .bm-core-types')).toBeNull();
+    expect(one.querySelector('.bm-core-ghost')).toBeNull();
+    expect(within(one).getByText('Reggono 9/18')).toBeInTheDocument();
     unmount();
     renderBm(catalogRating());
     const none = screen.getByRole('region', { name: 'Core' });
     expect(none).toHaveTextContent('Nessun core a tre');
     // Senza core la medaglia del titolo è spenta
     expect(none.querySelector('.bm-head-medal')).toHaveClass('off');
+    expect(none.querySelector('svg.bm-cores-ghost')).not.toBeNull();
     expect(none).toHaveTextContent('tre membri si coprono le debolezze a giro');
   });
 });

@@ -521,7 +521,7 @@ const STATES: Record<string, State> = {
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
   'analysis-bonus': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^(Ruoli e Bonus|Roles & Bonus)/); await wait(900); return ok; } },
-  // Bonus/Malus con altri team: SIX (due core a tre), LONE (nessun core, malus), RAIN; il secondo core aperto; il catalogo
+  // Bonus/Malus con altri team: SIX (due core a tre), LONE (nessun core, malus), RAIN, STRESS (un core e tante voci); il secondo core aperto; il catalogo
   'analysis-bonus-six': bonusState(SIX),
   'analysis-bonus-lone': bonusState(LONE),
   'analysis-bonus-rain': bonusState(RAIN),
@@ -530,12 +530,11 @@ const STATES: Record<string, State> = {
   // Telefono: la scheda portata in alto (le voci, poi i core) e il secondo core aperto
   'analysis-bonus-six-scrolled': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm')?.scrollIntoView()); await wait(300); return true; }),
   'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); if (!await p.$('.bm-core.shut')) return true; const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
-  'analysis-bonus-rain-open': bonusState(RAIN, async p => { const ok = await clickText(p, 'button.bm-row-toggle', /./); await wait(400); return ok; }),
   'analysis-bonus-stress': bonusState(STRESS),
-  // Il team di 5 (senza malus): la scheda Malus vuota; e la scheda Bonus vuota di LONE
-  'analysis-bonus-nomalus': bonusState(TEAM, async p => { const ok = await clickText(p, '.bm-tab', /malus/i); await wait(400); return ok; }),
-  'analysis-bonus-lone-bonus': bonusState(LONE, async p => { const ok = await clickText(p, '.bm-tab', /bonus/i); await wait(400); return ok; }),
-  'analysis-bonus-stress-malus': bonusState(STRESS, async p => { const ok = await clickText(p, '.bm-tab', /malus/i); await wait(400); return ok; }),
+  // Il tooltip coi tipi retti di un core (su "Reggono N/18"), quello di una medaglia e quello di "+N altre"
+  'analysis-bonus-six-held': bonusState(SIX, async p => { const el = await p.$('.bm-core.open .bm-core-held'); if (!el) return false; await el.hover(); await wait(500); return true; }),
+  'analysis-bonus-stress-medal': bonusState(STRESS, async p => { const el = await p.$('.bm-row'); if (!el) return false; await el.hover(); await wait(500); return true; }),
+  'analysis-bonus-stress-more': bonusState(STRESS, async p => { const el = await p.$('.bm-more-cell'); if (!el) return true; await el.hover(); await wait(500); return true; }),
   'analysis-bonus-guide': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-more', /./); await wait(400); return ok; }),
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },

@@ -435,23 +435,17 @@ describe('Bonus/Malus senza i ruoli', () => {
     return { ...base, cores: [], penalty: { total: 8, items: penalty }, bonus: { total: 1, items: bonus } };
   };
 
-  it('le voci dei ruoli non ci sono e i totali non le contano: netto, bonus e malus, schede e la sottoscheda grande', async () => {
-    const user = userEvent.setup();
+  it('le voci dei ruoli non ci sono e i totali non le contano: netto, bonus e malus, medaglie e la sottoscheda grande', () => {
     renderIt(<AreaView rating={rated()} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     // La sottoscheda grande: −4 (solo Tipi doppioni), non −7
     expect(screen.getByRole('tab', { name: 'Bonus/Malus' })).toHaveAccessibleDescription('−4');
     expect(document.querySelector('.bm-net')).toHaveTextContent('−4');
-    expect(document.querySelector('.bm-parts')).toHaveTextContent('Bonus 0Malus −4');
-    // Senza il minore dei ruoli non c'è nessun bonus: si apre sui malus
-    expect(screen.getByRole('tab', { name: /^Bonus 0/ })).toHaveAttribute('aria-selected', 'false');
-    const malus = screen.getByRole('tab', { name: /^Malus 1/ });
-    expect(malus).toHaveAttribute('aria-selected', 'true');
-    expect(malus.querySelector('b')).toHaveTextContent('−4');
+    expect(document.querySelector('.bm-parts')).toHaveTextContent('Bonus 0·Malus −4');
+    // Una medaglia sola: il minore dei ruoli non c'è
     const cards = [...document.querySelectorAll<HTMLElement>('.bm-list > .bm-row')];
     expect(cards.map(c => c.querySelector('.bm-row-tx b')!.textContent)).toEqual(['Tipi doppioni']);
+    expect(cards[0].querySelector('.bm-row-pts')).toHaveTextContent('−4');
     expect(screen.queryByRole('button', { name: /apri i Ruoli/ })).toBeNull();
-    await user.click(screen.getByRole('tab', { name: /^Bonus 0/ }));
-    expect(document.querySelector('.bm-entries')).toHaveTextContent('Nessun bonus per ora');
   });
 
   it('solo malus dei ruoli: la scheda Bonus/Malus è vuota (zero, nessuna voce)', () => {
