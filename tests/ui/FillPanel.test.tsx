@@ -163,7 +163,7 @@ describe('pannello Completa team', () => {
 
 describe('Completa team: bannati dell\'utente', () => {
   it('dice quanti bannati restano fuori', async () => {
-    const userLists = effectiveLists({ ...EMPTY_LISTS, byFormat: { ou: { favorites: [], bans: ['Toxapex', 'Blissey'] } } }, 'ou');
+    const userLists = effectiveLists({ ...EMPTY_LISTS, byContext: { ou: { favorites: [], bans: ['Toxapex', 'Blissey'] } } }, 'ou');
     panel([], vi.fn(), vi.fn(), { ...fillData, userLists });
     expect(await screen.findByText('2 bannati esclusi')).toBeInTheDocument();
   });
@@ -175,7 +175,7 @@ describe('Completa team: bannati dell\'utente', () => {
 });
 
 const favorites = (names: string[]) => ({
-  ...fillData, userLists: effectiveLists({ ...EMPTY_LISTS, byFormat: { ou: { favorites: names, bans: [] } } }, 'ou'),
+  ...fillData, userLists: effectiveLists({ ...EMPTY_LISTS, byContext: { ou: { favorites: names, bans: [] } } }, 'ou'),
 });
 
 describe('Completa team: Tieni il set e preferiti', () => {

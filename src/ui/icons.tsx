@@ -57,6 +57,10 @@ const paths = {
   roles: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   cloud: 'M7 18h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 11.5 3.3 3.3 0 0 0 7 18z',
   // Legame tra due membri (Sinergie del Riassunto): due anelli di catena
+  // Altre azioni (⋯), Espandi e Riduci le liste
+  dots: 'M5.5 12h.01M12 12h.01M18.5 12h.01',
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  shrink: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
   chain: 'M9.8 14.2l4.4-4.4M7.5 10.5l-2.2 2.2a3.2 3.2 0 0 0 4.5 4.5L12 15M16.5 13.5l2.2-2.2a3.2 3.2 0 0 0-4.5-4.5L12 9',
 } as const;
 

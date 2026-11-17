@@ -8,7 +8,7 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { gameReady, withGame, type GameId } from './engine/games';
 import { dataSource, formatLabel, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
-import { UndoToast, type UndoAction } from './ui/UndoToast';
+import { UndoToast, type ListUndo, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
 import { exportShowdown, type TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
@@ -31,7 +31,7 @@ import { loadLang, loadListSprite, loadLists, loadPalette, loadSession, loadTab,
 import { SettingsDialog } from './ui/SettingsDialog';
 import { CreditsDialog } from './ui/CreditsDialog';
 import { FeedbackDialog } from './ui/FeedbackDialog';
-import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
+import { EMPTY_LISTS, effectiveLists, listContext, type UserLists } from './engine/lists';
 import { formatPercent, t, type Lang } from './i18n';
 import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
@@ -153,19 +153,21 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     loadSource(source).then(result => setCache(c => ({ ...c, [source]: result })));
   }, [source, cache, loadSource]);
   const loaded = cache[source] ?? NO_DATA;
-  // Preferiti e bannati dell'utente: salvati nel browser, quelli del formato entrano nei dati (solo i suggerimenti li usano)
+  // Preferiti e bannati dell'utente: salvati nel browser; la raccolta attiva nel contesto (gioco o formato) più l'Universale
+  // entrano nei dati (solo i suggerimenti li usano)
   const [lists, setLists] = useState<UserLists>(() => (storage ? loadLists(storage) : EMPTY_LISTS));
   useEffect(() => {
     if (storage) saveLists(lists, storage);
   }, [lists, storage]);
-  const userLists = useMemo(() => effectiveLists(lists, format.formatId), [lists, format.formatId]);
+  const listCtx = listContext(format);
+  const userLists = useMemo(() => effectiveLists(lists, listCtx), [lists, listCtx]);
   // Lista svuotata: si può annullare per qualche secondo (finché le liste restano quelle)
-  const [listUndo, setListUndo] = useState<{ id: number; from: string; before: UserLists; after: UserLists } | null>(null);
+  const [listUndo, setListUndo] = useState<{ id: number; undo: ListUndo; before: UserLists; after: UserLists } | null>(null);
   // Stabile: la scheda Liste (oltre mille Pokémon) non si ridisegna quando cambia solo il team
   const listsRef = useRef(lists);
   listsRef.current = lists;
-  const changeLists = useCallback((next: UserLists, undo?: { kind: 'clearList'; from: string }) => {
-    setListUndo(undo ? { id: Date.now(), from: undo.from, before: listsRef.current, after: next } : null);
+  const changeLists = useCallback((next: UserLists, undo?: ListUndo) => {
+    setListUndo(undo ? { id: Date.now(), undo, before: listsRef.current, after: next } : null);
     setLists(next);
   }, []);
   // La scheda Liste si monta la prima volta che la si apre, poi resta
@@ -491,7 +493,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
       {feedbackOpen && <FeedbackDialog team={team} format={format} onClose={closeFeedback} />}
       {listUndo && listUndo.after === lists && (
-        <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
+        <UndoToast action={{ id: listUndo.id, ...listUndo.undo }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />
       )}
       {undo && undo.after === team && (

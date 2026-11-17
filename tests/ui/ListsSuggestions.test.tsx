@@ -16,8 +16,9 @@ const memory = (initial: Record<string, string> = {}) => {
     } as unknown as Storage,
   };
 };
-const withLists = (lists: UserLists) => memory({ 'dreamdex.lists': JSON.stringify(lists) });
-const bans = (...names: string[]): UserLists => ({ ...EMPTY_LISTS, byFormat: { ou: { favorites: [], bans: names } } });
+const withLists = (lists: UserLists | object) => memory({ 'dreamdex.lists': JSON.stringify(lists) });
+// Salvate nella forma di prima delle raccolte (byFormat): si leggono con la migrazione
+const bans = (...names: string[]) => ({ universal: { favorites: [], bans: [] }, byFormat: { ou: { favorites: [], bans: names } } });
 const favorites = (...names: string[]): UserLists => ({ ...EMPTY_LISTS, universal: { favorites: names, bans: [] } });
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });

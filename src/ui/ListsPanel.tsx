@@ -2,10 +2,11 @@ import { memo, useCallback, useDeferredValue, useMemo, useRef, useState, type Ke
 import type { EngineData } from '../engine/data';
 import { battleName, getSpecies, toID } from '../engine/dex';
 import { activeFilterCount, EMPTY_FILTERS, searchPool, type CandidateFilters } from '../engine/filters';
-import type { Format, FormatId } from '../engine/format';
-import { formatLabel, formatOptions } from '../engine/formats';
-import { clearList, copyLists, effectiveLists, isUserBanned, isUserFavorite, pokedexSpecies, toggleIn, type ListKind, type ListScope, type UserLists } from '../engine/lists';
+import type { Format } from '../engine/format';
+import { activeScope, clearList, customIdOf, isUserBanned, isUserFavorite, listContext, pairOf, pokedexSpecies, scopeLists, toggleIn, type ListKind, type ListScope, type UserLists } from '../engine/lists';
 import { useLang, useT } from '../i18n/react';
+import { ListsPicker, scopeName } from './ListsPicker';
+import type { ListUndo } from './UndoToast';
 import { FilterBar } from './FilterBar';
 import { Icon } from './icons';
 import { Sprite } from './Sprite';
@@ -15,7 +16,7 @@ interface Props {
   format: Format;
   data: EngineData;
   /** Liste cambiate; con `undo` la modifica si può annullare (Svuota lista). */
-  onChange: (next: UserLists, undo?: { kind: 'clearList'; from: string }) => void;
+  onChange: (next: UserLists, undo?: ListUndo) => void;
 }
 
 const MARK: Record<ListKind, 'heart' | 'ban'> = { favorites: 'heart', bans: 'ban' };
@@ -56,12 +57,15 @@ const DexCell = memo(function DexCell({ name, fav, ban, favHere, banHere, target
 export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChange }: Props) {
   const tr = useT();
   const lang = useLang();
-  const [scope, setScope] = useState<ListScope>(format.formatId);
-  // Il formato cambia: si modifica la sua lista (l'universale resta universale)
-  const editing: ListScope = scope === 'universal' ? 'universal' : format.formatId;
+  const context = listContext(format);
+  // La raccolta scelta nel menu, per il contesto in cui la si è scelta. Il contesto cambia: si guarda la raccolta attiva
+  // del nuovo contesto (quella del formato o la personalizzata scelta lì); l'Universale resta l'Universale
+  const [picked, setPicked] = useState<{ context: string; scope: ListScope } | null>(null);
+  const pickedScope = picked && (picked.context === context || picked.scope === 'universal') ? picked.scope : null;
+  const pickedId = pickedScope ? customIdOf(pickedScope) : null;
+  const editing: ListScope = pickedScope && (pickedId === null || lists.custom.some(c => c.id === pickedId)) ? pickedScope : activeScope(lists, context);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
-  const [copied, setCopied] = useState<string | null>(null);
-  const effective = useMemo(() => effectiveLists(lists, format.formatId), [lists, format.formatId]);
+  const effective = useMemo(() => scopeLists(lists, editing), [lists, editing]);
 
   const all = useMemo(() => pokedexSpecies(format), [format]);
   // Filtri (tipi, ruoli…) sui set di riferimento: solo se ce n'è qualcuno attivo, la sola ricerca è sul nome
@@ -76,7 +80,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   const exact = getSpecies(filters.query.trim())?.name;
   const target = exact && shown.includes(exact) ? exact : query ? shown[0] : undefined;
 
-  const here = pairOfScope(lists, editing);
+  const here = pairOf(lists, editing);
   const toggle = (kind: ListKind, species: string) => onChange(toggleIn(lists, editing, kind, species));
   // Le celle restano ferme finché non cambia il loro stato: il gestore passa da un riferimento stabile
   const live = useRef(toggle);
@@ -87,18 +91,9 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
     e.preventDefault();
     const kind: ListKind = e.shiftKey ? 'bans' : 'favorites';
     // Già in quella lista: resta (Invio non toglie per sbaglio)
-    if (!pairOfScope(lists, editing)[kind].includes(target)) onChange(toggleIn(lists, editing, kind, target));
+    if (!pairOf(lists, editing)[kind].includes(target)) onChange(toggleIn(lists, editing, kind, target));
     setFilters({ ...filters, query: '' });
   };
-  const scopeLabel = (s: ListScope) => (s === 'universal' ? tr('lists.universal') : formatLabel({ ...format, formatId: s }, lang));
-  const sources = formatOptions(lang).filter(f => f.id !== format.formatId
-    && ((lists.byFormat[f.id]?.favorites.length ?? 0) + (lists.byFormat[f.id]?.bans.length ?? 0) > 0));
-  const copyFrom = (from: FormatId) => {
-    const result = copyLists(lists, from, format.formatId, format);
-    onChange(result.lists);
-    setCopied(tr('lists.copied', { copied: result.copied, skipped: result.skipped, format: formatLabel(format, lang) }));
-  };
-
   const listOf = (kind: ListKind) => {
     const label = tr(kind === 'favorites' ? 'lists.favorites' : 'lists.bans');
     const names = all.filter(name => effective[kind].has(name));
@@ -108,9 +103,9 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
       <section className={`user-list ${kind}`}>
         <h3>
           <span><Icon name={MARK[kind]} /> {label} <span className="count">{names.length}</span></span>
-          <button type="button" className="list-clear" disabled={!pairOfScope(lists, editing)[kind].length}
+          <button type="button" className="list-clear" disabled={!pairOf(lists, editing)[kind].length}
             aria-label={tr('lists.clear', { list: label })}
-            onClick={() => onChange(clearList(lists, editing, kind), { kind: 'clearList', from: label })}>
+            onClick={() => onChange(clearList(lists, editing, kind), { kind: 'clearList', from: `${scopeName(lists, editing, lang)} · ${label}` })}>
             {tr('lists.clearShort')}
           </button>
         </h3>
@@ -126,7 +121,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
                   {universal && <small className="scope-tag">{tr('lists.universalTag')}</small>}
                   {overridden && <small className="scope-tag">{tr('lists.overridden', { mark: MARK[overridden] })}</small>}
                   <button type="button" className="list-remove" aria-label={tr('lists.remove', { species: name })}
-                    onClick={() => onChange(toggleIn(lists, universal ? 'universal' : format.formatId, kind, name))}>
+                    onClick={() => onChange(toggleIn(lists, universal ? 'universal' : editing, kind, name))}>
                     <Icon name="close" />
                   </button>
                 </li>
@@ -152,14 +147,8 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
             </span>
           )}
         </span>
-        <div className="segmented" role="group" aria-label={tr('lists.scope')}>
-          {(['format', 'universal'] as const).map(s => (
-            <button key={s} type="button" aria-pressed={(s === 'universal') === (editing === 'universal')}
-              onClick={() => setScope(s === 'universal' ? 'universal' : format.formatId)}>
-              {scopeLabel(s === 'universal' ? 'universal' : format.formatId)}
-            </button>
-          ))}
-        </div>
+        <ListsPicker lists={lists} format={format} context={context} shown={editing} onChange={onChange}
+          onShow={scope => setPicked({ context, scope })} />
       </div>
       <FilterBar filters={filters} onChange={setFilters} context="lists" />
       <div className="lists-main">
@@ -175,22 +164,9 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
         <div className="lists-side">
           {listOf('favorites')}
           {listOf('bans')}
-          <div className="lists-copy">
-            <label>
-              <span className="visually-hidden">{tr('lists.copyFrom')}</span>
-              <select aria-label={tr('lists.copyFrom')} value="" disabled={!sources.length}
-                onChange={e => { if (e.target.value) copyFrom(e.target.value as FormatId); }}>
-                <option value="">{tr('lists.copyFrom')}</option>
-                {sources.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
-              </select>
-            </label>
-            {copied && <p className="note" role="status">{copied}</p>}
-          </div>
         </div>
       </div>
     </section>
   );
 });
 
-const pairOfScope = (lists: UserLists, scope: ListScope) =>
-  (scope === 'universal' ? lists.universal : lists.byFormat[scope]) ?? { favorites: [], bans: [] };

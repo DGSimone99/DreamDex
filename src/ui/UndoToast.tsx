@@ -3,12 +3,18 @@ import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 
+/**
+ * Modifica annullabile delle Liste: una raccolta svuotata o sostituita (Copia da… › Sostituisci; `from` = la raccolta),
+ * un Pokémon tolto da un box (`from` = il Pokémon, `to` = la lista).
+ */
+export interface ListUndo { kind: 'clearList' | 'listReplace' | 'listRemove'; from: string; to?: string }
+
 /** Ultima modifica annullabile del team: membro rimosso o sostituito. */
 export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
   /** Membro rimosso o sostituito, o team caricato da un link, importato o preso dai team salvati (`loadSaved`, il nome in `from`). */
-  kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | 'clearList' | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
+  kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | ListUndo['kind'] | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
   from: string;
   to?: string;
   /** Completa team: Pokémon aggiunti negli slot vuoti. */
@@ -21,7 +27,7 @@ export interface UndoAction {
  *  intera). Sta al centro dello schermo: dura poco, e passandoci sopra si ferma (scelta dell'utente, 2026-11-14). */
 export const UNDO_MS = 3000;
 export const UNDO_BIG_MS = 6000;
-const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'clearList', 'savedDelete'];
+const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'clearList', 'listReplace', 'savedDelete'];
 export const undoDuration = (kind: UndoAction['kind']) => (BIG.includes(kind) ? UNDO_BIG_MS : UNDO_MS);
 
 /** Avviso al centro dell'area di lavoro con Annulla e ×: sparisce dopo 3 o 6 secondi, fermo finché ci sei sopra col mouse o la tastiera. */
@@ -65,6 +71,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
       <p className="undo-text">
         {action.kind === 'move' ? t('undo.move', { member: action.from, change: action.to ?? '' })
           : action.kind === 'clearList' ? t('undo.listCleared', { list: action.from })
+          : action.kind === 'listReplace' ? t('undo.listReplaced', { list: action.from })
           : action.kind === 'mySetDelete' ? t('undo.mySetDeleted', { name: action.from })
           : action.kind === 'savedDelete' ? t('undo.savedDeleted', { name: action.from })
           : action.kind === 'mySetOverwrite' ? t('undo.mySetOverwritten', { name: action.from })
@@ -79,7 +86,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
             : t('undo.presets', { from: action.from, to: action.to ?? '' })) : <>
         <PokemonIcon name={action.from} />
         <strong>{action.from}</strong>{' '}
-        {action.kind === 'remove' ? t('undo.removed') : action.kind === 'add' ? t('undo.added') : action.kind === 'paste' ? t('undo.pasted') : (
+        {action.kind === 'listRemove' ? t('undo.listRemoved', { list: action.to ?? '' }) : action.kind === 'remove' ? t('undo.removed') : action.kind === 'add' ? t('undo.added') : action.kind === 'paste' ? t('undo.pasted') : (
           <>
             <Icon name="swap" /> {t('undo.replacedWith')}{' '}
             <PokemonIcon name={action.to ?? ''} />
