@@ -130,10 +130,13 @@
 .def-general .def-members tr.og-fill td { padding: 0; border: 0; }
 
 /* La barra dei colpi (KoBadges, e HoldBars nella Difesa con la stessa misura): larga quanto la colonna meno un respiro
-   (le due colonne non si toccano), a pezzi: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due
-   colpi (nella riga del team in rosso: gli scoperti). Il setup è il triangolo nell'angolo. Le due Generali hanno la stessa
+   (--kob-gap), così il gruppo Tipi (pezzi + conto) e il gruppo Meta restano due blocchi staccati. Il respiro cresce con la
+   colonna: 12px fissi più una parte che va da 20px (colonne strette, 1280: i pezzi mostrano ancora la proporzione) a 50px
+   (colonne larghe, da 1440 in su: il conto finisce dove prima finiva la riga), in mezzo metà della colonna meno 140px.
+   A pezzi: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga del team in
+   rosso: gli scoperti). Il setup è il triangolo nell'angolo. Le due Generali (e la riga Team Coverage) hanno la stessa
    geometria: stessa riga, stesso conto allo stesso punto, stessa regola per i pezzi (pieceSize) */
-.kob-line { display: flex; align-items: center; gap: 8px; width: calc(100% - 12px); min-width: 0; }
+.kob-line { --kob-gap: calc(12px + clamp(20px, 50% - 140px, 50px)); display: flex; align-items: center; gap: 8px; width: calc(100% - var(--kob-gap)); min-width: 0; }
 /* La riga dei pezzi è un contenitore: se non c'è posto per tutte le etichette, spariscono tutte insieme (restano numero,
    colore, tooltip e nome per i lettori di schermo) */
 .kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 0; container: kobrow / inline-size; }
