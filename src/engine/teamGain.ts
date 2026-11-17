@@ -5,6 +5,7 @@ import type { EngineData } from './data';
 import { battleSpecies } from './dex';
 import { rulesOf } from './formatRules';
 import { rateTeam, type TeamRating } from './rating';
+import { rolesTally } from './rolesArea';
 import type { TeamSet } from './sets';
 import { lostResistances, type LostRole } from './swapGuard';
 import type { TypeName } from './types';
@@ -34,6 +35,27 @@ export interface TeamGain {
   roles?: number;
   /** Come cambia il voto tipo per tipo (Offesa e Difesa): le righe "Forte contro / Resiste a" restano solo se il voto è d'accordo. */
   typeShift?: TypeShift;
+  /** I valori delle aree col cambio (Offesa, Difesa, Velocità, Bonus/Malus, Ruoli): il Coaching li mostra come "da → a". */
+  after?: AreaSnapshot;
+}
+
+/**
+ * I valori delle aree di un voto come li mostra l'app: Offesa, Difesa e Velocità (0–100, null senza valore), il netto di
+ * Bonus/Malus senza i ruoli (come la scheda Bonus/Malus) e il conteggio dei Ruoli (coperti sul totale e i loro punti, come
+ * "8/8 +2"). Per il "da → a" delle proposte del Coaching: si legge dal voto già calcolato, non costa un voto in più.
+ */
+export interface AreaSnapshot {
+  strength: number | null;
+  defense: number | null;
+  speed: number | null;
+  bonusMalus: number;
+  roles: { covered: number; total: number; points: number };
+}
+
+export function areaSnapshot(rating: TeamRating): AreaSnapshot {
+  const value = (key: ScoredArea) => rating.areas.find(a => a.key === key)?.value ?? null;
+  const { covered, total, points } = rolesTally(rating.roles);
+  return { strength: value('strength'), defense: value('defense'), speed: value('speed'), bonusMalus: bonusMalusNet(rating), roles: { covered, total, points } };
 }
 
 /** Variazione per tipo delle righe di Offesa e Difesa del voto, e la Difesa dopo il cambio (per "Nessuno resiste più a X"). */
@@ -160,6 +182,7 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         extras: extrasDelta(before, rating),
         roles: rolesDelta(before, rating),
         typeShift: typeShiftOf(before, rating),
+        after: areaSnapshot(rating),
       },
     };
   };

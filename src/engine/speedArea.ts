@@ -35,6 +35,41 @@ export const PARADOX_SPEED = 1.5;
 export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwind', 'slow'];
 
 /**
+ * Il controllo del team che la scheda Velocità mostra nel pezzo "Controllo del team" (2026-11-17, voce 2.2): Trick Room
+ * no, perché inverte l'ordine invece di far passare avanti; ha il suo interruttore sopra la tabella, che mostra le barre
+ * in Trick Room. Solo la vista: il voto conta ancora Trick Room fra i controlli (`measure`: il migliore fra Trick Room e
+ * gli altri).
+ */
+export const SHOWN_CONTROL: SpeedCondition[] = CONTROL_CONDITIONS.filter(c => c !== 'trickroom');
+
+/** Il totale mostrato di un membro: la velocità sua più il controllo mostrato (senza Trick Room), al massimo 1. */
+export const shownTotal = (m: MemberSpeed): number =>
+  Math.min(1, m.own + m.gains.filter(g => SHOWN_CONTROL.includes(g.condition)).reduce((acc, g) => acc + g.gain, 0));
+
+/**
+ * In Trick Room: la quota del gruppo prima della quale il membro muove (i rivali più veloci; a pari velocità metà).
+ * È il rovescio della velocità pura; spinte, setup e priorità lì non aiutano.
+ */
+export const roomShare = (m: MemberSpeed): number => (m.cells.some(c => c.weight > 0) ? 1 - m.raw : 0);
+
+/** Una misura del team come il voto della Velocità: la media dei membri (i tank a metà), sulla scala 0-100. */
+export const teamSpeedOf = (list: MemberSpeed[], pick: (m: MemberSpeed) => number): number =>
+  (list.length ? softScore(weightedMean(list, pick) / SPEED_FULL) : 0);
+
+/** Una mossa d'attacco che qui colpisce con priorità (Grassy Glide solo col campo erboso; Upper Hand non conta). */
+const priorityHere = (set: TeamSet, move: NonNullable<ReturnType<typeof getMove>>, grassy: boolean) =>
+  move.category !== 'Status' && move.id !== 'upperhand' && (movePriority(set, move) > 0 || (move.id === 'grassyglide' && grassy));
+
+/**
+ * Le mosse d'attacco con priorità del membro nel suo team (la stessa regola della priorità nel voto): l'etichetta
+ * "priorità" accanto al nome nella scheda Velocità, col nome delle mosse nel tooltip.
+ */
+export function priorityMoves(set: TeamSet, team: TeamSet[]): string[] {
+  const grassy = ownConditions(set).includes('grassyterrain') || [...team, set].some(s => ownField(s).terrain === 'grassy');
+  return set.moves.map(m => getMove(m)).filter((d): d is NonNullable<typeof d> => !!d && priorityHere(set, d, grassy)).map(d => d.name);
+}
+
+/**
  * La quota media di Pokémon superati che vale 100: tutti. Il voto è la quota vera (superarne il 74% vale 74).
  */
 export const SPEED_FULL = 1;
@@ -331,7 +366,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   const terrain = grassy ? ['grassyterrain' as const] : ownTerrain.length ? [] : team.terrains.slice(0, 1).map(tr => TERRAIN_TO_CONDITION[tr]).filter(Boolean);
   const conditions = [...own.filter(c => WEATHER_CONDITIONS.has(c) || !grassy), ...teamWeather, ...terrain] as typeof own;
   // Senza mosse che qui sono prioritarie (Grassy Glide senza campo erboso) niente calcoli
-  const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && d.category !== 'Status' && d.id !== 'upperhand' && (movePriority(set, d) > 0 || (d.id === 'grassyglide' && grassy)); });
+  const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && priorityHere(set, d, grassy); });
   const byMove = new Map<string, number>();
   const priorityExtra = pool.map(() => 0);
   if (totalWeight && hasPriority) {

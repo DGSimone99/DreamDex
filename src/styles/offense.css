@@ -1,8 +1,5 @@
 /* Offesa: regole solo dell'Offesa, sopra quelle della Difesa (defense.css) */
 
-/* Generale: i tipi coperti "8/18" in una barra neutra (non è un voto) */
-.off-general .def-cell.ct-count { grid-template-columns: 150px 5ch; }
-.def-bar.neutral i { background: var(--accent); }
 
 /* Coverage tipi: verde dove il membro copre il tipo, giallo a metà (3HKO); testo --text su fondi scuri, contrasto ampio */
 .def-frame .ct-cell.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
@@ -13,12 +10,12 @@
 .area-legend-swatch i, .guide-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--raised); }
 .area-legend-swatch i.ok-full, .guide-swatch.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
 .area-legend-swatch i.ok-half, .guide-swatch.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
-.guide-swatch { display: inline-block; flex: none; margin-right: 6px; vertical-align: -1px; }
+.guide-swatch { display: inline-block; flex: none; margin-right: var(--sp-3); vertical-align: -1px; }
 
 
 /* "+N" dei guadagni nelle tabelle def-grid: verde il setup, blu Tera e mossa Z (come .ad-t) */
-.def-frame .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
-.def-frame .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--accent); cursor: help; }
+.def-frame .ad-gain { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--good); cursor: help; }
+.def-frame .ad-once { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--accent); cursor: help; }
 
 /* Wallbreaking: soglie in verde (OHKO forte, 2HKO, 3HKO giallo), diverse dai hold-* della Difesa; testo --text su fondi scuri */
 .ko-ohko { background: color-mix(in srgb, var(--good) 46%, var(--panel)); color: var(--text); }
@@ -36,77 +33,68 @@
 .def-walls .wall-side-h { width: auto; }
 .def-walls .rob-side { white-space: nowrap; }
 .def-walls .rob-col-side { width: 84px; }
-.def-walls .wall-gain { display: inline; margin: 0 0 0 4px; font-size: 12px; }
+.def-walls .wall-gain { display: inline; margin: 0 0 0 var(--sp-2); font-size: var(--fs-caption); }
+/* Segno verde nell'angolo: la casella sale di soglia col setup (il triangolo è quello di Coverage tipi, .ct-table td.has-setup) */
 .def-walls .rob-cell.has-setup { position: relative; }
-/* Segno verde nell'angolo: la casella sale di soglia col setup (a squadra aperta il "setup N%" resta nascosto) */
-.def-walls .rob-cell.has-setup::after { content: ''; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 9px 9px 0; border-color: transparent var(--good) transparent transparent; }
-.area-legend .wall-legend-setup { display: inline-flex; align-items: center; gap: 5px; margin-left: 4px; }
+.area-legend .wall-legend-setup { display: inline-flex; align-items: center; gap: var(--sp-2); margin-left: var(--sp-2); }
 .area-legend .wall-tick { width: 9px; height: 9px; background: linear-gradient(225deg, var(--good) 50%, transparent 50%); border: 1px solid var(--line); }
 .def-walls .wall-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
 .def-frame.def-walls .wall-h .def-box { --bs: 1.2; }
 .def-walls .ct-sum td { height: 24px; }
 
 /* Guida, Come funziona: le difese medie dei 18 bersagli dei tipi, chiuse sotto una freccina */
-.guide-more { margin: 6px 0 0; }
-.guide-more > summary { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 0; font-size: 13px; font-weight: 600; color: var(--accent-ink); cursor: pointer; list-style: none; }
+.guide-more { margin: var(--sp-3) 0 0; }
+.guide-more > summary { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2) var(--sp-1) 0; font-size: var(--fs-small); font-weight: 600; color: var(--accent-ink); cursor: pointer; list-style: none; }
 .guide-more > summary::-webkit-details-marker { display: none; }
 .guide-more > summary:hover { color: var(--text); }
 .guide-more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .guide-more > summary .icon { width: 14px; height: 14px; transition: transform 0.15s ease-out; }
 .guide-more[open] > summary .icon { transform: rotate(90deg); }
 .guide-targets-cols { display: flex; flex-wrap: wrap; gap: 0 32px; align-items: flex-start; }
-.guide-targets { margin: 6px 0 2px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
-.guide-targets th, .guide-targets td { padding: 2px 10px 2px 0; border-bottom: 1px solid var(--line-soft); text-align: right; }
+.guide-targets { margin: var(--sp-3) 0 var(--sp-1); border-collapse: collapse; font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+.guide-targets th, .guide-targets td { padding: var(--sp-1) var(--sp-5) var(--sp-1) 0; border-bottom: 1px solid var(--line-soft); text-align: right; }
 .guide-targets thead th { font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
-.guide-targets th:first-child { padding-right: 18px; text-align: left; }
+.guide-targets th:first-child { padding-right: var(--sp-9); text-align: left; }
 /* Il "?" accanto ai bersagli (guida e testate della Generale): la variante in riga del pulsante d'aiuto, stessa icona e stessi
    colori in piccolo (16px), con un alone ciano al passaggio; il fuoco col solito anello */
-.guide-ask { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 4px; padding: 0; vertical-align: -3px; border: 0; border-radius: 50%;
+.guide-ask { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: var(--sp-2); padding: 0; vertical-align: -3px; border: 0; border-radius: 50%;
   background: none; color: var(--muted); cursor: help; }
 .guide-ask .icon { width: 16px; height: 16px; vertical-align: 0; }
 .guide-ask:hover, .guide-ask:focus-visible { color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .guide-ask:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ftip.gat { width: var(--tip-l); }
-.gat-cols { display: flex; gap: 18px; padding: 8px 12px 10px; }
+.gat-cols { display: flex; gap: var(--sp-9); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
 .gat-table { border-collapse: collapse; font-size: var(--tip-body); font-variant-numeric: tabular-nums; }
-.gat-table th, .gat-table td { padding: 2px 0 2px 12px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
+.gat-table th, .gat-table td { padding: var(--sp-1) 0 var(--sp-1) var(--sp-6); border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
 .gat-table thead th { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding-bottom: 5px; }
 .gat-table tbody th { padding-left: 0; text-align: left; font-weight: 600; }
-.gat-table tbody th img { width: var(--ti-inline); height: var(--ti-inline); margin-right: 6px; vertical-align: -3px; }
+.gat-table tbody th img { width: var(--ti-inline); height: var(--ti-inline); margin-right: var(--sp-3); vertical-align: -3px; }
 .gat-table tbody tr:last-child > * { border-bottom: 0; }
-.gat-mons { display: grid; grid-template-columns: repeat(8, 40px); gap: 2px 4px; padding: 8px 12px 10px; }
+.gat-mons { display: grid; grid-template-columns: repeat(8, 40px); gap: var(--sp-1) var(--sp-2); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
 .guide-targets tbody th { font-weight: 600; color: var(--text); white-space: nowrap; }
-.guide-targets tbody th .type-icons { margin-right: 6px; vertical-align: middle; }
+.guide-targets tbody th .type-icons { margin-right: var(--sp-3); vertical-align: middle; }
 .guide-targets td { min-width: 4ch; color: var(--text); }
 
 /* Generale dell'Offesa: tre barre col numero; a squadra chiusa sotto le barre i dettagli (tipi per fascia, meta, punti al team) */
-/* Il posto del numero tiene anche il "%" del meta (e il 100%): le tre colonne restano allineate */
-.off-general .def-cell { grid-template-columns: 150px 4.5ch; }
-.off-general.roomy .def-cell { grid-template-columns: minmax(0, 1fr) 4.5ch; }
-.off-general .og-stack { display: block; cursor: help; }
-.off-general .og-detail { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; margin-top: 6px; font: 600 12px/1.2 var(--ui); color: var(--muted); }
-.off-general .og-band { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.off-general .og-detail { display: flex; flex-wrap: wrap; align-items: center; gap: 3px var(--sp-6); margin-top: var(--sp-3); font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); }
+.off-general .og-band { display: inline-flex; align-items: center; gap: var(--sp-2); white-space: nowrap; }
 .off-general .og-band i { width: 9px; height: 9px; border-radius: 2px; border: 1px solid var(--line); background: var(--raised); }
 .off-general .og-band i.ok-ohko { background: var(--good); border-color: var(--good); }
 .off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 35%, var(--panel)); border-color: var(--good); }
 .off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); border-color: var(--warn); }
-/* Quanto porta al team: barra e "+N" in azzurro (non è un voto, non ha soglie). La barra della colonna Offesa arriva
-   fino al bordo, col numero contro il bordo destro (anche nella riga del team) */
-/* La colonna di quanto porta (Offesa / Difesa) più stretta delle barre a pezzi: Tipi e Meta hanno il posto per le etichette */
-:is(.off-general, .def-general) .def-members col:last-child { width: 176px; }
-@media (min-width: 1500px) { :is(.off-general, .def-general) .def-members col:last-child { width: 210px; } }
-:is(.off-general, .def-general) .def-members td:last-child .def-cell { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 4.5ch; }
-.def-general .og-share { display: block; }
-:is(.off-general, .def-general) .og-share-num { color: var(--accent); }
+/* Quanto porta al team (Offesa / Difesa): solo il "+N" in azzurro (non è un voto, non ha soglie; rosso se toglie), in
+   una colonna stretta uguale nelle due Generali, numero e testata allineati a destra; Tipi e Meta si dividono il resto.
+   Non nella Velocità (anche lei .def-general, con la sua barra nell'ultima colonna) */
+:is(.off-general, .def-general:not(.sp-general)) .def-members col:last-child { width: var(--og-share-w, 76px); }
+:is(.off-general, .def-general:not(.sp-general)) .def-members tr > :last-child:not(:first-child) { text-align: right; }
+:is(.off-general, .def-general) .og-share { display: inline-block; cursor: help; }
+:is(.off-general, .def-general) .og-share-num { display: inline-block; color: var(--accent); }
 .def-general .og-share-num.neg { color: var(--bad); }
-:is(.off-general, .def-general) .og-share-bar .og-share-team { background: color-mix(in srgb, var(--accent) 16%, transparent); }
-:is(.off-general, .def-general) .og-share-bar .og-share-own { right: auto; background: var(--accent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-:is(.off-general, .def-general) .og-share-bar .og-share-own:first-child, :is(.off-general, .def-general) .og-share-bar .og-share-own[style^="left: 0%"] { clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-.off-general.roomy .def-members tbody td { padding-top: 6px; padding-bottom: 6px; }
+.off-general.roomy .def-members tbody td { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
 /* Team Coverage: un velo magenta solo, largo quanto la tabella, che sfuma su tutti i lati (in alto una linea sottile che
    sfuma anch'essa ai lati); "TEAM COVERAGE" è una linguetta a cavallo della linea. Disegnati sotto la prima casella
    (100cqw = la larghezza della cornice, cioè della tabella) così le caselle non hanno fondi propri e niente si spezza */
-.off-general tfoot .og-total > *, .def-general tfoot .og-total > *, .cm-matrix tfoot .og-total > *, .def-sus tfoot .og-total > * { position: relative; padding-top: 10px; padding-bottom: 5px; border-top: 0; border-bottom: 0; background: none; }
+.off-general tfoot .og-total > *, .def-general tfoot .og-total > *, .cm-matrix tfoot .og-total > *, .def-sus tfoot .og-total > * { position: relative; padding-top: var(--sp-5); padding-bottom: 5px; border-top: 0; border-bottom: 0; background: none; }
 .off-general tfoot .og-total > * > *, .def-general tfoot .og-total > * > *, .cm-matrix tfoot .og-total > * > *, .def-sus tfoot .og-total > * > * { position: relative; z-index: 1; }
 .off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before,
 .off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { content: ""; position: absolute; left: 0; width: 100cqw; pointer-events: none; z-index: 0;
@@ -114,24 +102,24 @@
 .off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--text) 5%, transparent), transparent); }
 .off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { top: 0; height: 1px; background: var(--plate); }
 .off-general tfoot .og-total th, .def-general tfoot .og-total th, .cm-matrix tfoot .og-total th, .def-sus tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
-.og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-plate);
+.og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: var(--sp-2) var(--sp-8) var(--sp-2) 11px; font: italic 700 var(--fs-caption)/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-plate);
   background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 .og-legend span:where(:not(.area-legend)) { display: inline-flex; align-items: center; gap: var(--legend-pair); }
 /* Schermi bassi: le barre dei colpi più basse (22px), così sei membri e la riga del team stanno nella cornice */
 @media (min-width: 1100px) and (max-height: 640px) {
   /* .def-frame davanti: queste regole vengono prima di quelle di base nel file e senza non valevano */
   .def-frame .kob-row > .kob { height: 22px; }
-  .def-frame .kob-num > b { font-size: 15px; }
-  .def-frame .kob-count-num > b { font-size: 16px; }
+  .def-frame .kob-num > b { font-size: var(--fs-body); }
+  .def-frame .kob-count-num > b { font-size: var(--fs-title-s); }
   /* Il conto e la sua lineetta stanno nei 22px della barra: la riga non si allunga e la tabella non scorre */
-  .def-frame .kob-count { gap: 2px; }
+  .def-frame .kob-count { gap: var(--sp-1); }
   .off-general tfoot .og-total > * { padding-top: 7px; padding-bottom: 3px; }
 }
 /* Le pastiglie delle mosse (squadra chiusa) solo se la cornice ha posto per sei righe con le pastiglie */
 @container (max-height: 500px) { .off-general .mcs, .off-general .mc-none { display: none; } }
 /* Schermi bassi: la riga Team Coverage della Difesa più bassa, così la tabella coi totali sta senza scorrere */
 @media (max-height: 640px) {
-  .def-general tfoot .og-total > *, .cm-matrix tfoot .og-total > * { padding-top: 4px; padding-bottom: 4px; }
+  .def-general tfoot .og-total > *, .cm-matrix tfoot .og-total > * { padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
 }
 
 /* Generale di Offesa e Difesa: la tabella riempie la cornice e una riga vuota prende lo spazio che resta, così la riga
@@ -141,18 +129,22 @@
 .def-general .def-members tr.og-fill { height: auto; }
 .def-general .def-members tr.og-fill td { padding: 0; border: 0; }
 
-/* La barra dei colpi (KoBadges): larga quanto la colonna meno un respiro (le due colonne non si toccano), a pezzi lunghi
-   quanto il loro conto: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga
-   del team in rosso: gli scoperti). Ogni pezzo ha un minimo per etichetta e numero; il setup è il triangolo nell'angolo */
-.kob-line { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-width: 0; }
+/* La barra dei colpi (KoBadges, e HoldBars nella Difesa con la stessa misura): larga quanto la colonna meno un respiro
+   (--kob-gap), così il gruppo Tipi (pezzi + conto) e il gruppo Meta restano due blocchi staccati. Il respiro cresce con la
+   colonna: 12px fissi più una parte che va da 20px (colonne strette, 1280: i pezzi mostrano ancora la proporzione) a 50px
+   (colonne larghe, da 1440 in su: il conto finisce dove prima finiva la riga), in mezzo metà della colonna meno 140px.
+   A pezzi: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga del team in
+   rosso: gli scoperti). Il setup è il triangolo nell'angolo. Le due Generali (e la riga Team Coverage) hanno la stessa
+   geometria: stessa riga, stesso conto allo stesso punto, stessa regola per i pezzi (pieceSize) */
+.kob-line { --kob-gap: calc(12px + clamp(20px, 50% - 140px, 50px)); display: flex; align-items: center; gap: var(--sp-4); width: calc(100% - var(--kob-gap)); min-width: 0; }
 /* La riga dei pezzi è un contenitore: se non c'è posto per tutte le etichette, spariscono tutte insieme (restano numero,
    colore, tooltip e nome per i lettori di schermo) */
 .kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 0; container: kobrow / inline-size; }
 /* Il conto a destra della barra, "11/18": staccato dai pezzi (niente fondo né inclinazione), il numero grande in corsivo
    col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); il colore dice quanto copre */
-.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 46px; color: var(--c); cursor: default; }
+.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: var(--sp-2); min-width: 42px; color: var(--c); cursor: default; }
 .kob-count-num { display: inline-flex; align-items: baseline; justify-content: flex-start; gap: 1px; font-variant-numeric: tabular-nums; }
-.kob-count-num > b { font: 800 italic 19px/1 var(--display); }
+.kob-count-num > b { font: 800 italic var(--fs-plate)/1 var(--display); }
 .kob-count-line { position: relative; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--c) 18%, transparent); overflow: hidden; }
 .kob-count-line::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--r, 0) * 100%); border-radius: 2px; background: var(--c); box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
 .kob-count.full, .kob-count.good { --c: var(--good); }
@@ -160,18 +152,27 @@
 .kob-count.warn { --c: var(--warn); }
 .kob-count.bad { --c: var(--bad); }
 .kob-count.zero { --c: var(--faint); }
-.kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
+/* Neutro: il conto di un muro nell'Offesa, di un attaccante nella Difesa (non è il suo lavoro); la riga del team mai */
+.kob-count.quiet { --c: var(--muted); }
+.kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); height: 26px; padding: 0 var(--sp-6) 0 var(--sp-5); border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
-.kob-row > .kob { flex: 1 0 0; min-width: 74px; padding: 0 9px 0 8px; gap: 4px; }
+/* La regola dei pezzi, uguale in Offesa e Difesa: ogni pezzo parte dal minimo (etichetta e numero ci stanno: 66px) e
+   prende dello spazio che resta una parte in proporzione al suo conto (--n, da pieceSize); così un pezzo da 5 su 18 è
+   lungo uguale nelle due tabelle. Un pezzo a 0 (c'è solo per il setup) resta al minimo */
+.kob-row > .kob { --kob-min: 66px; flex: var(--n, 0) 0 var(--kob-min); min-width: var(--kob-min); padding: 0 var(--sp-3) 0 5px; gap: 3px; }
 /* L'etichetta (OHKO, 2HKO) leggibile: 11px piena, chiara sul fondo del pezzo (almeno 4,5:1) */
-.kob > em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.02em; white-space: nowrap; color: var(--kob-ink, var(--text)); }
-@container kobrow (max-width: 187px) { .kob-row > .kob:not(.rest) { min-width: 40px; } .kob-row > .kob > em { display: none; } }
+.kob > em { font: 700 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0; white-space: nowrap; color: var(--kob-ink, var(--text)); }
+/* Se la riga non ha posto per tre pezzi col minimo (3 × 66 + 2 × 3 = 204px), le etichette spariscono tutte insieme e il
+   minimo scende a 36px (solo il numero), in tutte e due le tabelle */
+@container kobrow (max-width: 203px) { .kob-row > .kob { --kob-min: 36px; } .kob-row > .kob > em { display: none; } }
 /* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
 .kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
-.kob-num > b { font: 700 italic 17px/1 var(--display); font-variant-numeric: tabular-nums; }
-/* Il triangolo del setup nell'angolo in alto a destra, col lato destro sulla stessa diagonale del pezzo (5px su 26) */
-.kob.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; background: var(--good); clip-path: polygon(0 0, 100% 0, calc(100% - 1.7px) 100%); }
+.kob-num > b { font: 700 italic var(--fs-title)/1 var(--display); font-variant-numeric: tabular-nums; }
+/* Il triangolo del setup nell'angolo in alto a destra. Parte dall'angolo esterno del pezzo (-1px: sopra il bordo, niente
+   filo del pezzo intorno) e ha il lato destro dritto: lo taglia il clip-path del pezzo stesso, così il lato destro sta
+   esattamente sulla diagonale del pezzo a ogni altezza (26px, 22px sugli schermi bassi) senza conti sulla pendenza */
+.kob.has-setup::after { content: ""; position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
 .kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
 .kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
 .kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); background: color-mix(in srgb, var(--good) 12%, transparent); }
@@ -182,31 +183,31 @@
 .kob.zero { --kob-ink: var(--faint); color: var(--faint); border-color: color-mix(in srgb, var(--faint) 30%, transparent); border-style: dashed; background: none; box-shadow: none; }
 .kob.zero .kob-num > b { color: var(--faint); }
 /* Quelli che non manda KO in due colpi: grigio, solo il numero, più piccolo */
-.kob-row > .kob.rest { min-width: 34px; padding-left: 6px; color: var(--faint); background: var(--line-soft); }
-.kob.rest .kob-num > b { font-size: 13px; color: var(--muted); }
+.kob-row > .kob.rest { color: var(--faint); background: var(--line-soft); }
+.kob.rest .kob-num > b { font-size: var(--fs-small); color: var(--muted); }
 .kob.rest:hover { background: color-mix(in srgb, var(--faint) 22%, transparent); }
 /* Nella riga del team: gli scoperti in rosso */
 .kob.rest.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
-.kob.rest.bad .kob-num > b { font-size: 15px; color: var(--bad); }
+.kob.rest.bad .kob-num > b { font-size: var(--fs-body); color: var(--bad); }
 .kob.rest.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
 /* Con l'etichetta (nella testata del tooltip): larghezza libera */
-.kob.labeled { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 3px 11px 3px 8px; }
-.kob.labeled em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
-.kob.labeled > b { min-width: 0; font: 700 italic 15px/1 var(--display); }
+.kob.labeled { display: inline-flex; gap: var(--sp-3); width: auto; height: auto; padding: 3px 11px 3px var(--sp-4); }
+.kob.labeled em { font: 700 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
+.kob.labeled > b { min-width: 0; font: 700 italic var(--fs-body)/1 var(--display); }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
 
 
 /* A squadra chiusa, sotto la barra dei colpi: quanto lavora ogni mossa d'attacco, una pastiglia per mossa nel colore del
    suo tipo (icona e numero dei bersagli); passandoci sopra si allarga col nome, e il tooltip elenca i bersagli.
    A 0 spenta. Sempre una riga: le pastiglie hanno tutte la stessa forma */
-.mcs { display: flex; gap: 6px; width: calc(100% - 36px); min-width: 150px; margin-top: 4px; overflow: hidden; }
-.mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 12px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
+.mcs { display: flex; gap: var(--sp-3); width: calc(100% - 36px); min-width: 150px; margin-top: var(--sp-2); overflow: hidden; }
+.mc { display: inline-flex; flex: none; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-2); border-radius: 2px; font: 600 var(--fs-caption)/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
   background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
 .mc:hover, .mc:focus-visible { background: color-mix(in srgb, var(--c) 32%, transparent); }
 /* La fila delle pastiglie taglia quello che sborda: l'anello del fuoco sta dentro */
 .mc:focus-visible { outline-offset: -2px; }
 .mc img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
-.mc b { flex: none; font: 700 italic 13px/1 var(--display); font-variant-numeric: tabular-nums; }
+.mc b { flex: none; font: 700 italic var(--fs-small)/1 var(--display); font-variant-numeric: tabular-nums; }
 /* Il nome nascosto, si apre passando sopra */
 .mc-name { max-width: 0; margin-right: -5px; overflow: hidden; opacity: 0; transition: max-width 0.2s var(--ease), opacity 0.15s var(--ease), margin 0.2s var(--ease); }
 .mc:hover .mc-name, .mc:focus-visible .mc-name { max-width: 160px; margin-right: 0; opacity: 1; }
@@ -214,7 +215,7 @@
 .mc.z { color: var(--faint); background: none; }
 .mc.z:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }
 .mc.z img { filter: grayscale(1) brightness(0.85); }
-.mc-none { display: block; margin-top: 4px; font: 500 12px var(--display); color: var(--faint); }
+.mc-none { display: block; margin-top: var(--sp-2); font: 500 var(--fs-caption) var(--display); color: var(--faint); }
 
 /* Le tabelle dei membri (Generale di tutte le aree): la riga sotto il mouse si accende appena, senza spostare niente */
 .def-frame .def-members tbody tr:not(.og-fill) > * { transition: background-color 0.15s var(--ease); }
@@ -232,8 +233,8 @@
 /* Spenti senza opacità: grigi e un filo più scuri, i numeri restano leggibili (almeno 4,5:1 sul loro fondo) */
 .ct-table tr.kf-off > *, .ct-table td.kf-dim { filter: grayscale(1) brightness(0.8); }
 .ct-table td.kf-hit { filter: none; box-shadow: inset 0 0 0 2px var(--accent), 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent); }
-.kf-note { display: inline-flex; align-items: center; gap: 10px; color: var(--accent-ink); font-weight: 600; }
-.kf-clear { padding: 2px 10px; font: 600 12px/1.2 var(--ui); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 3px; cursor: pointer; }
+.kf-note { display: inline-flex; align-items: center; gap: var(--sp-5); color: var(--accent-ink); font-weight: 600; }
+.kf-clear { padding: var(--sp-1) var(--sp-5); font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 3px; cursor: pointer; }
 .kf-clear:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }
 
 /* Coverage tipi dell'Offesa: le colonne dei tipi scoperti (nessuno li manda KO in due colpi) sotto un velo rosso leggero,
@@ -253,36 +254,37 @@
 /* Il tooltip del tipo in testata a Coverage tipi: PS, Dif e DifSp del Pokémon medio, tre caselle affiancate */
 .ftip.tst { width: var(--tip-s); }
 .tst-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.tst-stats span { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px 8px; border-right: 1px solid var(--line-soft); }
+.tst-stats span { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: 9px var(--sp-2) var(--sp-4); border-right: 1px solid var(--line-soft); }
 .tst-stats span:last-child { border-right: 0; }
 .tst-stats small { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 .tst-stats b { font: 700 italic var(--tip-num)/1 var(--display); font-variant-numeric: tabular-nums; }
 .ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
-.tht-body { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.tht-body { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-5); }
 .tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
 .tht-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .tht-name { font: 600 var(--tip-body)/1.2 var(--display); }
-.tht-move { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tht-move { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
 .tht-mult { font: 700 italic var(--tip-small)/1 var(--display); color: var(--faint); }
 .tht-mult.se { color: var(--good); }
 .tht-mult.nve { color: var(--bad); }
 .tht-pct { margin-left: auto; font: 700 italic var(--tip-title)/1 var(--display); font-variant-numeric: tabular-nums; }
 .tht-none { color: var(--muted); }
-.tht-extra { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); }
-.tht-extra-h { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--muted); }
+.tht-extra { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; padding: var(--sp-3) var(--sp-5) 7px; border-top: 1px solid var(--line-soft); }
+.tht-extra-h { display: flex; align-items: center; gap: var(--sp-3); font-weight: 600; color: var(--muted); }
 .tht-extra-h .ftip-ko { margin-left: auto; }
 
 /* Le tabelle Coverage: freccia, niente cursore del testo; "?" sulle caselle col tooltip */
 .def-frame .ct-table { cursor: default; }
 .off-frame .ct-table td.ok-full, .off-frame .ct-table td.ok-half { cursor: help; }
 /* Coverage tipi dell'Offesa: Copertura e Il migliore staccate dalle righe dei membri, con più aria */
-.off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: 6px; padding-bottom: 6px; }
+.off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
 .off-frame.def-types .ct-table tr.ct-best { height: 32px; }
-.off-frame.def-types .ct-table tr.ct-best > * { padding-top: 2px; }
-@media (min-width: 1100px) and (max-height: 640px) { .off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: 4px; padding-bottom: 4px; } }
+.off-frame.def-types .ct-table tr.ct-best > * { padding-top: var(--sp-1); }
+@media (min-width: 1100px) and (max-height: 640px) { .off-frame.def-types .ct-table tr.ct-sum-first > * { padding-top: var(--sp-2); padding-bottom: var(--sp-2); } }
 /* Il triangolo del setup nell'angolo in alto a destra della casella, come sui pezzi della Generale: la danza fa salire di fascia */
 .off-frame .ct-table td.has-setup { position: relative; }
-.off-frame .ct-table td.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-top-right-radius: 2px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
+/* Il triangolo del setup nell'angolo esterno della casella (-1px: sopra il bordo, con lo stesso raggio di 3px), non dentro */
+.off-frame .ct-table td.has-setup::after { content: ""; position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; border-top-right-radius: 3px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
 /* Coverage tipi dell'Offesa: il numero in Kanit corsivo come gli altri numeri dell'app, il "%" piccolo */
 .off-frame .ct-table td.ct-cell.ok-full, .off-frame .ct-table td.ct-cell.ok-half { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; }
 .ct-num i { display: inline; margin-left: 1px; font-size: max(11px, 0.6em); font-weight: 600; font-style: italic; }
@@ -294,23 +296,23 @@
    sulle caselle (tooltip), più aria intorno a Lo coprono, l'OHKO col suo verde acceso */
 .off-frame.def-walls .rob-cell { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; cursor: help; }
 .off-frame.def-walls .rob-cell.ko-ohko { background: color-mix(in srgb, var(--good) 48%, var(--panel)); border-color: var(--good); color: color-mix(in srgb, var(--good) 8%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
-.off-frame.def-walls .ct-table tr.ct-sum-first > * { padding-top: 6px; padding-bottom: 6px; }
+.off-frame.def-walls .ct-table tr.ct-sum-first > * { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
 .off-frame.def-walls .wall-h .def-box { cursor: help; }
 .off-frame.def-walls .rob-cell.ko-none { font-weight: 600; }
 /* Coverage meta: sotto il danno la barra dei PS che restano al bersaglio (stile gioco: etichetta "PS" gialla, colori
    verde oltre metà, giallo fino a 1/5, rosso sotto); in un colpo il timbro rosso "KO" al posto del numero */
-.cm-hp { display: flex; align-items: center; gap: 3px; width: 72%; margin: 6px auto 0; }
+.cm-hp { display: flex; align-items: center; gap: 3px; width: 72%; margin: var(--sp-3) auto 0; }
 /* L'etichetta "PS" del gioco, disegnata dal CSS (non è testo della casella) */
-.cm-hp::before { content: "PS"; font: 800 11px/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
+.cm-hp::before { content: "PS"; font: 800 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
 .cm-hp-bar { position: relative; flex: 1; height: 5px; border-radius: 3px; background: #15171f; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12); overflow: hidden; }
 .cm-hp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--good); }
 .cm-hp-bar i.warn { background: var(--warn); }
 .cm-hp-bar i.bad { background: var(--bad); }
 .cm-hp-bar.legend { flex: none; display: inline-block; width: 30px; }
 /* Il timbro: rosso più scuro del Bad, così il bianco si legge (almeno 4,5:1) */
-.cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic 16px/1 var(--display); letter-spacing: 0.06em; color: #fff; background: color-mix(in srgb, var(--bad) 40%, #a00d24);
+.cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic var(--fs-title-s)/1 var(--display); letter-spacing: 0.06em; color: #fff; background: color-mix(in srgb, var(--bad) 40%, #a00d24);
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--bad) 60%, transparent)); }
-.cm-ko.small { padding: 2px 7px; font-size: 11px; filter: none; }
+.cm-ko.small { padding: var(--sp-1) 7px; font-size: var(--fs-label); filter: none; }
 /* Righe basse: niente barra, resta il numero */
 @container (max-height: 330px) { .cm-hp { display: none; } }
 /* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
@@ -328,12 +330,12 @@
    setup, verde, sta in alto); lo stesso segno nel tooltip e nella legenda */
 .kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
 .off-frame .ct-table td.has-team { position: relative; }
-.off-frame .ct-table td.has-team::before { content: ""; position: absolute; right: 0; bottom: 0; width: 9px; height: 9px; border-bottom-right-radius: 2px; background: var(--accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.off-frame .ct-table td.has-team::before { content: ""; position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-bottom-right-radius: 3px; background: var(--accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
 /* Nelle legende delle tabelle i triangoli restano triangoli (non quadratini) */
 .area-legend .area-legend-swatch i.kob-tri, .area-legend .wall-legend-setup i.kob-tri { width: 0; height: 0; background: none; border-radius: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
 .area-legend .area-legend-swatch i.kob-tri.team, .area-legend .wall-legend-setup i.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
 /* L'effetto della danza o del meteo accanto al nome della riga: piccolo e spento ("Att ×2", "Fuoco ×1,5") */
-.tht-eff { display: inline; margin-left: 2px; font: 600 var(--tip-small)/1 var(--display); color: var(--faint); white-space: nowrap; }
+.tht-eff { display: inline; margin-left: var(--sp-1); font: 600 var(--tip-small)/1 var(--display); color: var(--faint); white-space: nowrap; }
 /* Coverage meta: la riga Team Coverage in fondo al pannello, allo stesso posto e alta come quella della Generale (la
    tabella riempie la cornice, la riga di riempimento prende lo spazio): la linguetta e nelle colonne le pastiglie di quanti
    lo coprono (i numeri del team sono già nella Generale e nel titolo della sottoscheda) */
@@ -349,3 +351,8 @@
 /* Il testo per i lettori di schermo resta fuori dal flusso anche dentro la riga Team Coverage */
 .cm-total th > .visually-hidden { position: absolute !important; }
 @media (min-width: 1100px) and (max-height: 640px) { .cm-matrix tfoot .og-total { height: 32px; } }
+
+/* Testate Tipi e Meta della Generale (Offesa e Difesa): la spada o lo scudo, poi la parola come le altre testate. Mai a capo */
+.bar-head { display: inline-flex; align-items: center; gap: var(--sp-2); vertical-align: -2px; white-space: nowrap; }
+.bar-head-ic { display: inline-flex; flex: none; color: var(--muted); }
+.bar-head-ic .icon { width: 14px; height: 14px; }

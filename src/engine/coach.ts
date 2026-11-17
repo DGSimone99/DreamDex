@@ -19,7 +19,7 @@ import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBenefic
 import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
-import { moveFixes } from './moveFixes';
+import { moveFixes, type MoveFix } from './moveFixes';
 import type { ScoredArea, TeamGain, TypeShift } from './teamGain';
 import { teamOffense } from './offense';
 import { DEFENSE_DEPTH } from './defense';
@@ -70,7 +70,12 @@ export interface CoachProblem {
 export interface CoachAdvice {
   /** Cambi dalla classifica di Sostituisci che alzano il voto (o a pari voto risolvono), coi problemi che risolvono o riducono. */
   fixes: CoachFix[];
-  /** Tutte le tappe, dalla più urgente: la UI ne mostra `MAX_STEPS`. */
+  /** Cambi di una mossa che alzano il voto (o a pari voto risolvono), coi problemi che risolvono o riducono. */
+  moves: MoveFix[];
+  /**
+   * Le tappe (passata golosa per problema, buildSteps): la scheda Coaching non le usa più (mostra tutte le proposte,
+   * coachProposals.ts); restano per i controlli del motore.
+   */
   steps: CoachStep[];
 }
 
@@ -225,7 +230,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // Coverage: lo stesso pacchetto dei tipi del voto, un problema per tipo sotto il livello 40 (COVERED_LEVEL).
   // Scoperto (nessuno lo manda KO in due colpi): grave se il tipo pesa; coperto poco (nessuno lo manda KO in un colpo, pochi lo colpiscono forte): minore.
   // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (un'approssimazione, senza calcolo dei danni).
-  // Cosa si risolve davvero lo dicono le tappe, con problemChanges.
+  // Cosa si risolve davvero lo dicono le proposte del Coaching, con problemChanges.
   const coverage = teamOffense(team.map(withUsableMoves), data).types;
   for (const row of coverage.rows) {
     if (row.level >= COVERED_LEVEL) continue;
@@ -246,7 +251,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   }
 
   // Pokémon del meta che nessuno manda KO in due colpi, come nella Coverage meta dell'Offesa (vuota senza meta).
-  // Nessun rimedio stimato: chi li risolve lo dicono le tappe
+  // Nessun rimedio stimato: chi li risolve lo dicono le proposte del Coaching
   // I buchi sono combinazioni di tipi (Volante/Terra): si nomina il Pokémon più usato che le rappresenta, come nella scheda
   const offenseMeta = rating?.offense.coverageMeta;
   for (const label of offenseMeta?.holes ?? []) {
@@ -404,11 +409,11 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   };
 }
 
-/** I cambi della classifica di Sostituisci per i problemi di coachTeam, e le tappe. */
+/** I cambi della classifica di Sostituisci e i cambi di mossa per i problemi di coachTeam, e le tappe. */
 export function coachAdvice(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang = 'it'): CoachAdvice {
-  if (team.length < 2) return { fixes: [], steps: [] };
+  if (team.length < 2) return { fixes: [], moves: [], steps: [] };
   if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
   const fixes = coachFixes(team, format, data, problems, lang);
   const moves = data.stats ? moveFixes(team, format, data, problems, lang) : [];
-  return { fixes, steps: buildSteps(problems, fixes, moves) };
+  return { fixes, moves, steps: buildSteps(problems, fixes, moves) };
 }

@@ -64,7 +64,7 @@ export const SETUP_SHARE = 1 / 3;
 /** I Ruoli (wallbreaker, sweeper) tengono il setup a tre quarti: le loro soglie sono tarate su questo. */
 export const ROLES_SETUP_SHARE = 0.75;
 /**
- * Pesi per posizione per la Sostenibilità della Difesa: tutti uguali, una media semplice (scelta dell'utente 2026-11-03).
+ * Pesi per posizione per il Recupero della Difesa: tutti uguali, una media semplice (scelta dell'utente 2026-11-03).
  * L'Offesa non li usa più: il pacchetto pesa i membri per bersaglio (OFFENSE_DEPTH).
  */
 export const RANK_WEIGHTS = [1, 1, 1, 1, 1, 1].map(w => w / 6);

@@ -82,7 +82,7 @@ describe('penalità e bonus del meteo', () => {
 
   it('abilitatore che non serve a nessuno: −2', () => {
     expect(texts([{ ...withMoves('Pelipper', ['U-turn', 'Roost']), ability: 'Drizzle' }, garchomp]))
-      .toContainEqual(expect.objectContaining({ text: 'Drizzle di Pelipper non sfruttato', points: 2 }));
+      .toContainEqual(expect.objectContaining({ text: 'Drizzle di Pelipper: nessuno ne approfitta', points: 2 }));
   });
 
   it('meteo in conflitto: −3', () => {

@@ -57,6 +57,8 @@ const LONE = [
   member('Goodra', 'Assault Vest', 'Sap Sipper', ['Draco Meteor', 'Sludge Bomb', 'Fire Blast', 'Thunderbolt'], 'Modest', { spa: 252, hp: 252, spd: 4 }),
   member('Kommo-o', 'Leftovers', 'Soundproof', ['Close Combat', 'Clanging Scales', 'Dragon Dance', 'Iron Head'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
 ];
+/** Team da torneo senza problemi per il Coaching (stato coaching-clear). */
+const CLEAR = [{"species":"Urshifu-Rapid-Strike","item":"Choice Scarf","ability":"Unseen Fist","moves":["Surging Strikes","Close Combat","U-turn","Ice Spinner"],"nature":"Jolly","evs":{"atk":252,"def":4,"spe":252}},{"species":"Zapdos","item":"Heavy-Duty Boots","ability":"Static","moves":["Volt Switch","Defog","Heat Wave","Roost"],"nature":"Bold","evs":{"hp":248,"def":188,"spe":72},"ivs":{"atk":0}},{"species":"Slowking-Galar","item":"Heavy-Duty Boots","ability":"Regenerator","moves":["Future Sight","Sludge Bomb","Chilly Reception","Thunder Wave"],"nature":"Sassy","evs":{"hp":248,"def":8,"spd":252},"ivs":{"atk":0,"spe":0}},{"species":"Kyurem","item":"Choice Specs","ability":"Pressure","moves":["Freeze-Dry","Blizzard","Draco Meteor","Earth Power"],"nature":"Timid","evs":{"spa":252,"spd":4,"spe":252},"ivs":{"atk":0}},{"species":"Scizor","item":"Scizorite","ability":"Light Metal","moves":["Swords Dance","Bullet Punch","Knock Off","Roost"],"nature":"Impish","evs":{"hp":248,"def":112,"spd":128,"spe":20}},{"species":"Ting-Lu","item":"Leftovers","ability":"Vessel of Ruin","moves":["Earthquake","Ruination","Stealth Rock","Whirlwind"],"nature":"Careful","evs":{"hp":252,"def":4,"spd":252}}];
 /** Preferiti per gli stati *-fav: Pokémon che di solito compaiono fra i primi candidati. */
 const FAVS = ['Corviknight', 'Kyurem', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
 const LONG = [
@@ -120,6 +122,18 @@ async function clickText(page: Page, selector: string, text: RegExp): Promise<bo
     return true;
   }, selector, text.source, text.flags);
 }
+/** Una riga delle aree del voto; col team ridotto le righe stanno nella tendina del voto, che si apre prima. */
+async function gradeRow(page: Page, text: RegExp): Promise<boolean> {
+  const opened = await page.evaluate(() => {
+    const toggle = document.querySelector<HTMLElement>('.grade-pop-toggle');
+    if (document.querySelector('.band button.grade-area') || !toggle) return false;
+    toggle.click();
+    return true;
+  });
+  if (opened) await wait(200);
+  return clickText(page, '.band button.grade-area', text);
+}
+
 async function focus(page: Page, selector: string): Promise<boolean> {
   return page.evaluate(sel => {
     const el = document.querySelector<HTMLElement>(sel);
@@ -195,7 +209,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^(Difesa|Defense)/)) return 'no defense row';
+    if (!await gradeRow(p, /^(Difesa|Defense)/)) return 'no defense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -209,7 +223,7 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Offe(sa|nse)/)) return 'no offense row';
+    if (!await gradeRow(p, /^Offe(sa|nse)/)) return 'no offense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -225,7 +239,7 @@ const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(
 const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: hash(SIX), run: async p => {
   const ok = await offenseState(sub).run!(p);
   if (ok !== true) return ok;
-  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
   await wait(400);
   if (section && !await clickText(p, '.help-nav [role="tab"]', section)) return 'no guide section';
   await wait(300);
@@ -250,6 +264,8 @@ OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.gener
 OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
 // Velocità: lo stesso team con Ribombee (Sticky Web e Stun Spore) al posto di Gholdengo, così il controllo del team si vede
 const SPEED_SIX = [...TEAM, member('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 })];
+// Trick Room: lo stesso team con Hatterene (Trick Room) al posto di Ribombee
+const SPEED_ROOM = [...TEAM, member('Hatterene', 'Life Orb', 'Magic Bounce', ['Trick Room', 'Psyshock', 'Dazzling Gleam', 'Mystical Fire'], 'Quiet', { hp: 252, spa: 252, def: 4 })];
 const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Partial<typeof FORMAT> } = {}): State => ({
   hash: opts.format ? hashWith(SPEED_SIX, opts.format) : hash(SPEED_SIX),
   run: async p => {
@@ -257,7 +273,7 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^(Velocit|Speed)/)) return 'no speed row';
+    if (!await gradeRow(p, /^(Velocit|Speed)/)) return 'no speed row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -276,6 +292,17 @@ const SPEED_STATES: Record<string, State> = {
     await wait(400);
     return true;
   } },
+  // Trick Room: Hatterene al posto di Ribombee; l'interruttore "Trick Room · Hatterene" è acceso di base (le barre in
+  // Trick Room); -off lo spegne
+  'analysis-speed-trickroom': { hash: hash(SPEED_ROOM), run: async p => speedState(null).run!(p) },
+  'analysis-speed-trickroom-off': { hash: hash(SPEED_ROOM), run: async p => {
+    const ok = await speedState(null).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.panel-switch button[role="switch"]', /Trick Room/)) return 'no room switch';
+    await wait(400);
+    return true;
+  } },
+  'analysis-speed-trickroom-collapsed': { hash: hash(SPEED_ROOM), run: async p => speedState(null, { collapsed: true }).run!(p) },
   // Il tooltip della barra: la scala dei vicini (Great Tusk ha la Booster: l'icona accanto al nome)
   'analysis-speed-hover': { hash: hash(SPEED_SIX), run: async p => {
     const ok = await speedState(null).run!(p);
@@ -290,7 +317,7 @@ const SPEED_STATES: Record<string, State> = {
 const speedGuide = (format?: Partial<typeof FORMAT>): State => ({ hash: format ? hashWith(SPEED_SIX, format) : hash(SPEED_SIX), run: async p => {
   const ok = await speedState(null, { format }).run!(p);
   if (ok !== true) return ok;
-  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
   await wait(400);
   return true;
 } });
@@ -310,7 +337,7 @@ for (const [key, n] of [['boost', 0], ['priority', 1], ['control', 2]] as const)
 }
 for (const key of ['boost', 'priority', 'control']) SPEED_STATES[`analysis-speed-guide-${key}-en`] = { ...SPEED_STATES[`analysis-speed-guide-${key}`], lang: 'en' } as State;
 SPEED_STATES['analysis-speed-guide-en'] = { ...SPEED_STATES['analysis-speed-guide'], lang: 'en' } as State;
-const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^(Sostenibilit|Recupero)/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
     [`analysis-defense-${k}`, defenseState(re)],
@@ -318,8 +345,8 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
-  // Generale col puntatore sul "+N" di un membro (Toxapex) e sulla Difesa del team: il tooltip coi pezzi
-  ...Object.fromEntries([['member', '.def-general tbody tr:nth-child(3) .def-cell.dsh'], ['team', '.def-general tfoot .def-cell.dsh']].map(([k, sel]) => [`analysis-defense-general-share-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+  // Generale col puntatore sul "+N" di un membro (Toxapex): il tooltip coi pezzi e il recupero in parole
+  ...Object.fromEntries([['member', '.def-general tbody tr:nth-child(3) .og-share.dsh']].map(([k, sel]) => [`analysis-defense-general-share-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;
     const el = await p.$(sel);
@@ -339,6 +366,17 @@ const DEFENSE_STATES: Record<string, State> = {
     await wait(600);
     return true;
   } } as State])),
+  // Generale col puntatore sul pezzo 2HKO di Toxapex in Tipi: il tooltip coi bersagli e in fondo "Clic: vai a Coverage tipi" (TipGo)
+  'analysis-defense-general-piece-hover': { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const cells = await p.$$('.def-general tbody tr:nth-child(3) td');
+    const piece = await cells[0]?.$('.kob.hb');
+    if (!piece) return 'no piece';
+    await piece.hover();
+    await wait(500);
+    return true;
+  } } as State,
   // Generale a squadra chiusa col puntatore su una pastiglia dei colpi peggiori: Tipi (0) e Meta (1)
   ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null, { collapsed: true }).run!(p);
@@ -358,28 +396,28 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-guide-meta': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.meta).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
   'analysis-defense-guide-sus': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.sustain).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
   'analysis-defense-guide-rob': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.robustness).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
   'analysis-defense-guide-types': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.types).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
@@ -387,7 +425,7 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-guide-types-open': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.types).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     if (!await clickText(p, '.guide-more > summary', /./)) return 'no attackers toggle';
     await wait(300);
@@ -396,7 +434,7 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-guide': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
@@ -411,7 +449,7 @@ const rolesState = (opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' |
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^(Ruoli|Roles)/)) return 'no roles row';
+    if (!await gradeRow(p, /^(Ruoli|Roles)/)) return 'no roles row';
     await wait(800);
     return true;
   },
@@ -419,7 +457,7 @@ const rolesState = (opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' |
 const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'en' } = {}): State => ({ hash: hash(opts.team ?? SIX), lang: opts.lang, run: async p => {
   const ok = await rolesState(opts).run!(p);
   if (ok !== true) return ok;
-  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
   await wait(400);
   if (section && !await clickText(p, '.help-nav [role="tab"]', section)) return 'no guide section';
   await wait(300);
@@ -508,18 +546,18 @@ const STATES: Record<string, State> = {
   'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => clickText(p, '.slot.filled > .slot-card', /./) },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
-  'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
-  'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
+  'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
+  'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
   // Difesa: una scheda per sotto-scheda (SIX), con meta, senza meta, a team chiuso e con nomi lunghi
   ...DEFENSE_STATES,
   ...OFFENSE_STATES,
   ...SPEED_STATES,
   ...ROLES_STATES,
-  'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
-  'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
+  'analysis-offense-strip': { hash: hash(SIX), run: async p => gradeRow(p, /^Offesa/) },
+  'analysis-roles': { run: async p => gradeRow(p, /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
   'analysis-bonus': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^(Ruoli e Bonus|Roles & Bonus)/); await wait(900); return ok; } },
-  // Bonus/Malus con altri team: SIX (due core a tre), LONE (nessun core, malus), RAIN; il secondo core aperto; il catalogo
+  // Bonus/Malus con altri team: SIX (due core a tre), LONE (nessun core, malus), RAIN, STRESS (un core e tante voci); il secondo core aperto; il catalogo
   'analysis-bonus-six': bonusState(SIX),
   'analysis-bonus-lone': bonusState(LONE),
   'analysis-bonus-rain': bonusState(RAIN),
@@ -528,12 +566,11 @@ const STATES: Record<string, State> = {
   // Telefono: la scheda portata in alto (le voci, poi i core) e il secondo core aperto
   'analysis-bonus-six-scrolled': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm')?.scrollIntoView()); await wait(300); return true; }),
   'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); if (!await p.$('.bm-core.shut')) return true; const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
-  'analysis-bonus-rain-open': bonusState(RAIN, async p => { const ok = await clickText(p, 'button.bm-row-toggle', /./); await wait(400); return ok; }),
   'analysis-bonus-stress': bonusState(STRESS),
-  // Il team di 5 (senza malus): la scheda Malus vuota; e la scheda Bonus vuota di LONE
-  'analysis-bonus-nomalus': bonusState(TEAM, async p => { const ok = await clickText(p, '.bm-tab', /malus/i); await wait(400); return ok; }),
-  'analysis-bonus-lone-bonus': bonusState(LONE, async p => { const ok = await clickText(p, '.bm-tab', /bonus/i); await wait(400); return ok; }),
-  'analysis-bonus-stress-malus': bonusState(STRESS, async p => { const ok = await clickText(p, '.bm-tab', /malus/i); await wait(400); return ok; }),
+  // Il tooltip coi tipi retti di un core (su "Reggono N/18"), quello di una medaglia e quello di "+N altre"
+  'analysis-bonus-six-held': bonusState(SIX, async p => { const el = await p.$('.bm-core.open .bm-core-held'); if (!el) return false; await el.hover(); await wait(500); return true; }),
+  'analysis-bonus-stress-medal': bonusState(STRESS, async p => { const el = await p.$('.bm-row'); if (!el) return false; await el.hover(); await wait(500); return true; }),
+  'analysis-bonus-stress-more': bonusState(STRESS, async p => { const el = await p.$('.bm-more-cell'); if (!el) return true; await el.hover(); await wait(500); return true; }),
   'analysis-bonus-guide': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-more', /./); await wait(400); return ok; }),
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },
@@ -569,20 +606,41 @@ const STATES: Record<string, State> = {
     return clickText(p, '.help-nav [role="tab"]', /^Balance/);
   } },
   'analysis-help': { run: async p => {
-    if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
+    if (!await gradeRow(p, /^Difesa/)) return 'no row';
     await wait(300);
-    return clickText(p, '.area-help button', /./);
+    return clickText(p, 'button.area-help', /./);
   } },
-  // Stampa l'altezza della riga delle tappe mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
+  // Stampa l'altezza delle righe delle proposte mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
   'coaching-six': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
     const rowH = (sel: string) => p.evaluate(q => document.querySelector(q)?.getBoundingClientRect().height ?? -1, sel);
     const start = Date.now();
-    const skeleton = await rowH('.coach-steps[aria-busy]');
-    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
-    console.log(`coaching-six: tappe pronte in ${Date.now() - start} ms; steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy]), .coach-steps-none')}`);
+    const skeleton = await rowH('.coach-rows[aria-busy] > li');
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    console.log(`coaching-six: proposte pronte in ${Date.now() - start} ms; row skeleton=${skeleton} real=${await rowH('.coach-rows:not([aria-busy]) > li')}`);
+    const rows = await p.evaluate(() => [...document.querySelectorAll('.coach-rows > li')].map(li => { const r = li.getBoundingClientRect(); return `${Math.round(r.top)}-${Math.round(r.bottom)}`; }).join(' '));
+    const box = await p.evaluate(() => { const r = document.querySelector('.coaching')?.getBoundingClientRect(); const ol = document.querySelector('.coach-rows'); return r ? `${Math.round(r.top)}-${Math.round(r.bottom)} rows=${ol ? getComputedStyle(ol).gridAutoRows : '-'}` : '-'; });
+    console.log(`coaching-six: righe ${rows}; coaching ${box}`);
+    return true;
+  } },
+  // Team senza problemi (un team da torneo di National Dex OU): Eevee contento, "Il team è a posto"
+  'coaching-clear': { hash: hash(CLEAR), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    await wait(600);
+    return (await p.evaluate(() => !!document.querySelector('.coach-empty.is-clear'))) || 'team con problemi';
+  } },
+  // La tendina delle alternative aperta sulla prima riga che ne ha
+  'coaching-menu': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    if (!await clickText(p, 'button.coach-alt', /./)) return 'no alternatives';
+    await wait(300);
     return true;
   } },
   // Coaching del team coi nomi lunghi (molti problemi minori di coverage)
@@ -590,7 +648,7 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
-    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
     return true;
   } },
   // Coaching col team chiuso: la scheda ha più altezza (versione estesa)
@@ -617,10 +675,10 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    // I consigli arrivano dopo il calcolo: si aspetta la riga delle tappe
-    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-alt', { timeout: 20000 });
-    // Il clic sulla proposta la applica: le alternative sono nell'icona accanto
-    if (!await clickText(p, 'button.coach-alt', /./)) return false;
+    // I consigli arrivano dopo il calcolo: si aspettano le righe delle proposte
+    await p.waitForSelector('.coach-rows:not([aria-busy]) button.coach-see', { timeout: 20000 });
+    // Applica applica la proposta: "Vedi nella scheda Pokémon" apre le alternative nella scheda Pokémon
+    if (!await clickText(p, 'button.coach-see', /./)) return false;
     // La lista per membro si calcola dopo il clic: si aspetta che non sia più attenuata
     const start = Date.now();
     await wait(100);
@@ -629,6 +687,25 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Cruscotto della Panoramica col team ridotto: più spazio, più informazione
+  // Team ridotto: la tendina "Voto delle aree" aperta sotto il voto (voce 3.1)
+  'grade-pop': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(500);
+    if (!await clickText(p, '.grade-pop-toggle', /./)) return 'no grade button';
+    await wait(300);
+    const m = await p.evaluate(() => {
+      const pop = document.querySelector('.grade-pop')?.getBoundingClientRect();
+      const btn = document.querySelector('.grade-pop-toggle')?.getBoundingClientRect();
+      if (!pop || !btn) return null;
+      const rows = [...document.querySelectorAll<HTMLElement>('.grade-pop button.grade-area')];
+      const over = rows.filter(r => r.scrollWidth - r.clientWidth > 1).length;
+      return { pop: [Math.round(pop.left), Math.round(pop.top), Math.round(pop.width), Math.round(pop.height)], btn: [Math.round(btn.left), Math.round(btn.bottom), Math.round(btn.right)], rows: rows.length, over, inWindow: pop.right <= innerWidth && pop.bottom <= innerHeight };
+    });
+    console.log(`grade-pop: ${JSON.stringify(m)}`);
+    return !!m;
+  } },
   'analysis-collapsed': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
@@ -725,30 +802,16 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
     return true;
   } },
-  // Puntatore sulla prima proposta: stampa quanti problemi della mappa sono in anteprima (barrati) e quanti risolve la proposta
-  'coaching-hover': { hash: hash(SIX), run: async p => {
-    await tab(p, 'analysis');
-    await wait(300);
-    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-fix', { timeout: 20000 });
-    const count = () => p.evaluate(() => document.querySelectorAll('.coach-prob.is-solved-preview').length);
-    const before = await count();
-    await p.hover('.coach-steps button.coach-fix');
-    await wait(250);
-    const during = await count();
-    console.log(`coaching-hover: is-solved-preview prima=${before} durante=${during}`);
-    return (before === 0 && during > 0) || `before=${before} during=${during}`;
-  } },
-  // Tappe con proposte di mossa (team con set poveri): stampa quante ce ne sono
+  // Proposte di mossa (team con set poveri): stampa quante righe di mossa ci sono nella prima pagina
   'coaching-move-steps': { hash: hash(MOVE), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
-    const n = await p.evaluate(() => document.querySelectorAll('.coach-steps .coach-prop.is-move').length);
+    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
+    const n = await p.evaluate(() => document.querySelectorAll('.coach-rows .coach-row.is-move').length);
     console.log(`coaching-move-steps: ${n} proposte di mossa`);
     return n > 0 || 'no move proposal';
   } },
@@ -757,8 +820,8 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
-    if (!await clickText(p, '.coach-prop.is-move button.coach-alt', /./)) return 'no move proposal';
+    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
+    if (!await clickText(p, '.coach-row.is-move button.coach-see', /./)) return 'no move proposal';
     await wait(600);
     return (await p.evaluate(() => !!document.querySelector('.move-proposal'))) || 'no preview in the editor';
   } },
@@ -1028,31 +1091,28 @@ for (const [w, h] of sizes) {
           }).join(' | ')}] rowHs=[${[...new Set([...rl.querySelectorAll<HTMLElement>('.rl-row')].map(r => Math.round(r.getBoundingClientRect().height)))].join(',')}] three=${rl.classList.contains('three') ? 1 : 0} bandsR=${Math.round(rlScroll?.getBoundingClientRect().right ?? 0)} headR=${Math.round(rl.querySelector('.rl-more')?.getBoundingClientRect().right ?? 0)}` : '';
           const roles = rl ? ` roles: rows=${rlRows} bands=${rl.querySelectorAll('.rl-band').length} missing=${rl.querySelectorAll('.rl-row.bad, .rl-row.warn').length} rowH=${Math.round(rlRowH)} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} headH=${Math.round(rl.querySelector('.rl-head')?.getBoundingClientRect().height ?? 0)} nameCut=${[...rl.querySelectorAll<HTMLElement>('.rl-mon-name, .rl-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length}${rlAlign}` : '';
           // Legenda nella riga in fondo alla tabella: larghezza, quanto sborda dalla riga (0 = intera; footCut = la riga intera
-          // sborda) e problemi mostrati / nel "+N" della striscia in fondo; panelTop = dove parte il pannello (uguale in ogni area)
+          // sborda) e problemi mostrati / nel "+N" della testata dell'area; panelTop = dove parte il pannello (uguale in ogni area)
           const lg = document.querySelector<HTMLElement>('.area-panel .area-legend');
           const lgRow = lg?.parentElement?.getBoundingClientRect();
-          const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
-          const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
+          const shownP = document.querySelectorAll('.area-chips > li:not(.area-chips-more)').length;
+          const moreP = document.querySelector('.area-chips-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
           const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} footCut=${lg.parentElement!.scrollWidth - lg.parentElement!.clientWidth} footGap=${Math.round(el.getBoundingClientRect().bottom - lgRow.bottom)} problems=${shownP}+${moreP} footH=${Math.round(lgRow.height)}` : '';
-          const pr = document.querySelector<HTMLElement>('.area-problems-row');
-          const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} problemsRow=${Math.round(pr.getBoundingClientRect().height)} problemsShown=${document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length}+${document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} problemsCut=${Math.max(0, Math.round(pr.getBoundingClientRect().bottom - (pr.parentElement?.getBoundingClientRect().bottom ?? 0)))}` : '';
+          const pr = document.querySelector<HTMLElement>('.area-head');
+          const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} headH=${Math.round(pr.getBoundingClientRect().height)} chips=${document.querySelectorAll('.area-chips > li:not(.area-chips-more)').length}+${document.querySelector('.area-chips-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} chipsCut=${(() => { const c = pr.querySelector<HTMLElement>('.area-chips'); return c ? c.scrollWidth - c.clientWidth : '-'; })()} headX=${pr.scrollWidth - pr.clientWidth}` : '';
           return `${guide}${prAt}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
-    // Coaching: tappe che sbordano, righe "risolve anche" o nomi tagliati in larghezza, scorrimento orizzontale
+    // Coaching: righe che sbordano, nomi o pillole tagliati in larghezza, scorrimento orizzontale
     const coach = await page.evaluate(() => {
       const box = document.querySelector<HTMLElement>('.coaching');
       if (!box) return '';
-      const steps = [...box.querySelectorAll<HTMLElement>('.coach-step')];
-      const tall = steps.filter(s => s.scrollHeight - s.clientHeight > 1).length;
-      const wide = [...box.querySelectorAll<HTMLElement>('.coach-also, .coach-fix-main strong, .coach-fix-lead')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
-      // Minacce: la percentuale d'uso deve restare intera dentro la riga (si accorcia il nome, non il numero)
-      const usage = [...box.querySelectorAll<HTMLElement>('.coach-usage')];
-      const usageCut = usage.filter(u => u.scrollWidth - u.clientWidth > 0 || u.getBoundingClientRect().right - u.parentElement!.getBoundingClientRect().right > 1).length;
-      const row = box.querySelector('.coach-steps')?.getBoundingClientRect().height ?? 0;
-      const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-problem, .coach-prop.is-main > .coach-fix > *, .coach-strip-extras > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
-      return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} usage=${usage.length} usageCut=${usageCut} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} coachH=${box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
+      const rows = [...box.querySelectorAll<HTMLElement>('.coach-row:not(.skeleton)')];
+      const tall = rows.filter(r => r.scrollHeight - r.clientHeight > 1).length;
+      const wide = [...box.querySelectorAll<HTMLElement>('.coach-art-name, .coach-art-moves, .coach-ar-who')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      const row = rows[0]?.getBoundingClientRect().height ?? 0;
+      const last = rows.at(-1)?.getBoundingClientRect().bottom ?? 0;
+      return `coach: rows=${rows.length} rowH=${Math.round(row)} rowOverflow=${tall} clipped=${wide} lastBottom=${Math.round(last)} coachBottom=${Math.round(box.getBoundingClientRect().bottom)} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} coachH=${box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
     // Lista candidati: scorrimento interno, caselle tagliate dal fondo, misure delle Carte
     const list = await page.evaluate(() => {

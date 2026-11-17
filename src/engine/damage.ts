@@ -134,7 +134,7 @@ const NO_STATUS = new Set(['comatose', 'purifyingsalt']);
 /**
  * Lo stato che il membro si dà da solo con lo strumento: Flame Orb scotta, Toxic Orb avvelena gravemente. Null se non ha
  * l'Orb o ne è immune (Fuoco col bruciore, Veleno e Acciaio col veleno, o l'abilità). Vale per il danno (Guts, Facade,
- * Toxic Boost, Marvel Scale, il bruciore che dimezza l'Attacco) e per la Sostenibilità (la perdita, Poison Heal).
+ * Toxic Boost, Marvel Scale, il bruciore che dimezza l'Attacco) e per il Recupero (la perdita, Poison Heal).
  */
 export function orbStatus(set: Target): 'brn' | 'tox' | null {
   const item = toID(set.item);

@@ -9,7 +9,7 @@ import type { Format } from './format';
 import { bannedParts, pokedexOf } from './formats';
 import { illegalParts } from './learnsets';
 import type { TeamSet } from './sets';
-import { rankByTeamGain, withCandidate } from './teamGain';
+import { rankByTeamGain, withCandidate, type AreaSnapshot } from './teamGain';
 
 /** Un cambio di mossa proposto dal Coaching: una mossa del set al posto di un'altra (o in uno slot vuoto). */
 export interface MoveFix {
@@ -25,6 +25,8 @@ export interface MoveFix {
   gain: number;
   solves: string[];
   reduces: string[];
+  /** I valori delle aree col cambio (assente senza voto): il "da → a" delle righe del Coaching. */
+  after?: AreaSnapshot;
 }
 
 /** Si tengono (e si rianalizzano) solo i cambi di mossa più forti per membro. */
@@ -89,13 +91,13 @@ export function moveFixes(team: TeamSet[], format: Format, data: EngineData, pro
     }));
     if (!candidates.length) return;
     // Per ogni mossa lo slot migliore (la classifica è dal voto più alto)
-    const best = new Map<string, { set: TeamSet; slot: number; to: string; gain: number }>();
+    const best = new Map<string, { set: TeamSet; slot: number; to: string; gain: number; after?: AreaSnapshot }>();
     for (const c of rankByTeamGain(candidates, team, index, data, lang, true)) {
-      if (c.teamGain && !best.has(c.to)) best.set(c.to, { set: c.set, slot: c.slot, to: c.to, gain: c.teamGain.gain });
+      if (c.teamGain && !best.has(c.to)) best.set(c.to, { set: c.set, slot: c.slot, to: c.to, gain: c.teamGain.gain, ...(c.teamGain.after && { after: c.teamGain.after }) });
     }
     for (const c of keepMoveFixes([...best.values()], c => changes(withCandidate(team, c.set, index)), MOVE_FIXES_PER_MEMBER)) {
       fixes.push({ index, member: battleName(member), slot: c.slot, from: member.moves[c.slot] ?? '', to: c.to, set: c.set, gain: c.gain,
-        solves: c.solves, reduces: c.reduces });
+        solves: c.solves, reduces: c.reduces, ...(c.after && { after: c.after }) });
     }
   });
   return fixes.sort((a, b) => b.gain - a.gain);

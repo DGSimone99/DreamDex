@@ -7,6 +7,9 @@ import type { GainJob } from '../../src/engine/teamGain';
 import { cancelPrepareFill, prepareFill, splitJobs, streamFill } from '../../src/ui/useRanking';
 import { fillData } from '../fixtures/fillData';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 /**
  * Un finto calcolo in sottofondo che segue il protocollo di ranking.worker.ts per `fill` (un passo per volta, `max`,
  * `cancel`, risposta non ok a richiesta): deve esistere prima che useRanking crei i suoi worker.

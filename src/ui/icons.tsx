@@ -15,6 +15,8 @@ const paths = {
   next: 'M9.5 6l6 6-6 6',
   check: 'M5 12.5l4.5 4.5L19 7.5',
   unlock: 'M6 11h12v9H6zM9 11V8a3 3 0 0 1 5.8-1.1M12 14.5v2',
+  // Membro fisso del team: lo stesso lucchetto, chiuso
+  lock: 'M6 11h12v9H6zM9 11V8a3 3 0 0 1 6 0v3M12 14.5v2',
   warning: 'M12 3.5 22 20H2zM12 10v4.5M12 17.2v.3',
   external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
   search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 1 0 0-13zM15.5 15.5 20 20',
@@ -55,15 +57,26 @@ const paths = {
   roles: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   cloud: 'M7 18h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 11.5 3.3 3.3 0 0 0 7 18z',
   // Legame tra due membri (Sinergie del Riassunto): due anelli di catena
+  // Altre azioni (⋯), Espandi e Riduci le liste
+  dots: 'M5.5 12h.01M12 12h.01M18.5 12h.01',
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  shrink: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
   chain: 'M9.8 14.2l4.4-4.4M7.5 10.5l-2.2 2.2a3.2 3.2 0 0 0 4.5 4.5L12 15M16.5 13.5l2.2-2.2a3.2 3.2 0 0 0-4.5-4.5L12 9',
 } as const;
 
 export type IconName = keyof typeof paths;
 
+/** Icone che piene si riempiono solo in parte: il lucchetto chiuso ha pieno il corpo, l'arco resta un tratto. */
+const filledPart: Partial<Record<keyof typeof paths, string>> = {
+  lock: 'M6 11h12v9H6z',
+};
+
 export function Icon({ name, filled = false }: { name: keyof typeof paths; filled?: boolean }) {
+  const part = filled ? filledPart[name] : undefined;
   return (
     <svg className="icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"
-      fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      fill={filled && !part ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {part && <path d={part} fill="currentColor" />}
       <path d={paths[name]} />
     </svg>
   );

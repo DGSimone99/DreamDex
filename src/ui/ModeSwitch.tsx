@@ -7,7 +7,7 @@ import { PokemonIcon } from './PokemonName';
 
 /**
  * Aggiungi / Sostituisci, e attaccata a Sostituisci una tendina (▾) con chi esce: Tutti (il motore sceglie per ogni
- * candidato) o un membro preciso. Il pulsante della tendina dice "Tutti" o mostra l'icona del membro scelto; si chiude scegliendo, cliccando fuori
+ * candidato) o un membro preciso. Il pulsante della tendina dice "al posto di: Tutti" o "al posto di" con l'icona del membro scelto; si chiude scegliendo, cliccando fuori
  * o con Esc (il focus torna al pulsante).
  */
 export function ModeSwitch({ team, view, replacing, replaceIndex, addDisabled, improveDisabled, onAdd, onImprove, onAll, onTarget }: {
@@ -54,6 +54,8 @@ export function ModeSwitch({ team, view, replacing, replaceIndex, addDisabled, i
         <button ref={buttonRef} type="button" className={`target-toggle${view !== 'add' ? ' on' : ''}`} disabled={improveDisabled}
           aria-label={`${tr('suggest.target')}: ${chosen ? battleName(chosen) : tr('suggest.targetAll')}`}
           aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(o => !o)}>
+          {/* "al posto di" piccolo davanti: si capisce che si sceglie chi esce */}
+          <span className="target-prefix" aria-hidden="true">{tr('suggest.targetPrefix')}</span>
           {chosen ? <PokemonIcon name={battleName(chosen)} /> : <span className="target-all" aria-hidden="true">{tr('suggest.targetAll')}</span>}
           <span className="chevron" aria-hidden="true" />
         </button>
@@ -69,7 +71,7 @@ export function ModeSwitch({ team, view, replacing, replaceIndex, addDisabled, i
               onClick={() => pick(() => onTarget(index))}>
               <PokemonIcon name={battleName(member)} />
               <span className="target-name" aria-hidden="true">{battleName(member)}</span>
-              {member.favorite && <Icon name="star" />}
+              {member.favorite && <Icon name="lock" filled />}
             </button>
           ))}
         </div>

@@ -488,11 +488,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           )}
           {body}
         </div>
-        {/* Senza candidati resta lo scheletro del dettaglio: la pagina non si accorcia e non salta in alto */}
+        {/* Il dettaglio mostra sempre un candidato (quello aperto, se no il primo della pagina: il n°1 appena la lista
+            c'è). Senza candidati resta lo scheletro: la pagina non si accorcia e non salta in alto; mentre la prima lista
+            si calcola dice che arriva, non "scegli dalla lista" (la lista non c'è ancora) */}
         {!selected && !full && (
-          <aside className="detail detail-empty" aria-hidden="true">
+          <aside className={`detail detail-empty${stale ? ' is-loading' : ''}`} aria-hidden="true">
             <Icon name="search" />
-            <p>{tr('suggest.detailEmpty')}</p>
+            <p>{tr(stale ? 'suggest.detailLoading' : 'suggest.detailEmpty')}</p>
           </aside>
         )}
         {selected && !full && sheetOpen && (

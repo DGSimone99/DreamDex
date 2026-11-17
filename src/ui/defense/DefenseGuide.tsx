@@ -17,7 +17,7 @@ const DEPTH = DEFENSE_DEPTH.map(w => Math.round(100 * w));
 /**
  * La guida alla Difesa, come quella dell'Offesa: "Come funziona" è una pagina sola per Generale, Coverage tipi e
  * Coverage meta (i bersagli col "?" per il dettaglio, il test, quanto vale ogni colpo retto, quanti lo reggono);
- * "Sostenibilità" ha la sua pagina, con quanto conta nella Difesa. Schematica e generica (niente valori del team).
+ * "Recupero" ha la sua pagina, con quanto conta nella Difesa. Schematica e generica (niente valori del team).
  */
 export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT_FORMAT.formatId }: {
   section: Section; defense: TeamDefense; meta: boolean; formatId?: FormatId;
@@ -55,7 +55,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
     );
   }
 
-  // Sostenibilità: quanto conta nella Difesa (col meta o senza è sempre la stessa parte), poi cosa recupera e cosa perde
+  // Recupero: quanto conta nella Difesa (col meta o senza è sempre la stessa parte), poi cosa recupera e cosa perde
   return (
       <>
         <h4>{g('sus.weight')}</h4>

@@ -3,10 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
-import type { CoachProblem } from '../../src/engine/coach';
-import { FixRow, fixItems, solvable } from '../../src/ui/dashboard/FixRow';
-import type { CoachStep } from '../../src/engine/coachSteps';
+import type { CoachAdvice, CoachProblem } from '../../src/engine/coach';
+import type { CoachFix } from '../../src/engine/coachFixes';
+import { coachingOffer, FixRow, solvable } from '../../src/ui/dashboard/FixRow';
 import { LangProvider } from '../../src/i18n/react';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 const panel = () => document.getElementById('panel-analysis')!;
 const views = () => within(panel()).getByRole('tablist', { name: 'Sezioni dell\'Analisi' });
@@ -29,6 +32,13 @@ async function importTeam(text: string) {
   return user;
 }
 
+
+const NO_ADVICE: CoachAdvice = { fixes: [], moves: [], steps: [] };
+/** I consigli del Coaching con una proposta sola che risolve `keys`. */
+const adviceSolving = (...keys: string[]): CoachAdvice => ({
+  fixes: [{ kind: 'swap', species: 'Rotom-Wash', set: { species: 'Rotom-Wash', item: '', ability: '', moves: [], nature: 'Serious', evs: {} }, index: 0, member: 'X', gain: 1, solves: keys, reduces: [] } as unknown as CoachFix],
+  moves: [], steps: [],
+});
 describe('Panoramica di Analisi', () => {
   it('il cruscotto: quattro sezioni coi titoli, senza "Cosa fare" e "Minacce non gestite"', async () => {
     await setup();
@@ -73,7 +83,7 @@ describe('Panoramica di Analisi', () => {
       expect(head).toHaveClass('is-link');
       await user.click(within(head as HTMLElement).getByRole('button', { name: link }));
       expect(within(views()).getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
-      if (name === 'Ruoli') expect(within(panel()).getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
+      if (name === 'Ruoli') expect(within(panel()).getByRole('tab', { name: 'Ruoli' })).toHaveAttribute('aria-selected', 'true');
       await user.click(within(views()).getByRole('tab', { name: 'Panoramica' }));
     }
     // Copertura ha due link: la barra non è un link
@@ -136,12 +146,12 @@ describe('Panoramica di Analisi', () => {
     expect(panel().querySelector('.overview-headline .alert-mark')).toBeNull();
   });
 
-  it('regole per prime tra i problemi del Coaching', async () => {
+  it('Coaching: un membro fuori regola ha una proposta che lo toglie, con la pillola grave nella riga Regole', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
-    const rows = within(within(panel()).getByRole('group', { name: /^Regole/ })).getAllByRole('listitem');
-    expect(rows[0]).toHaveClass('serious');
-    expect(rows[0].getAttribute('data-key')).toMatch(/^rules:/);
+    const chip = (await within(panel()).findAllByText((_, el) => !!el?.matches('.area-chip[data-key^="rules:"]')))[0];
+    expect(chip).toHaveClass('serious');
+    expect(chip.closest('.coach-ar')!.querySelector('.coach-ar-who b')).toHaveTextContent('Regole');
   });
 
   it('team stall: niente più la nota "valutato come stall"', async () => {
@@ -254,28 +264,39 @@ describe('Panoramica: correzioni della revisione', () => {
 
 });
 
-describe('Panoramica: Da sistemare', () => {
+describe('Panoramica: Minacce del meta', () => {
+  it('clic su una minaccia: la sua Coverage meta con la colonna per prima e accesa, "Mostra tutti" la spegne', async () => {
+    const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
+    const card = within(panel()).getByRole('region', { name: 'Minacce del meta' });
+    const first = within(card).getAllByRole('button', { name: /, (scoperta|a fatica):/ })[0];
+    const species = first.getAttribute('aria-label')!.split(',')[0];
+    const offense = /Lo manda KO|Nessuno lo manda KO/.test(first.getAttribute('aria-label')!.split(':')[1]);
+    await user.click(first);
+    expect(within(views()).getByRole('tab', { name: new RegExp(`^${offense ? 'Offesa' : 'Difesa'}`) })).toHaveAttribute('aria-selected', 'true');
+    const table = within(panel()).getByRole('table', { name: `${offense ? 'Offesa' : 'Difesa'}: Coverage meta` });
+    expect(table.querySelector('thead th:nth-child(2)')).toHaveAttribute('aria-label', species);
+    expect(table.querySelectorAll('td.kf-hit').length).toBeGreaterThan(0);
+    expect(within(panel()).getByText(`Evidenziato: ${species}`)).toBeInTheDocument();
+    await user.click(within(panel()).getByRole('button', { name: 'Mostra tutti' }));
+    expect(table.querySelectorAll('td.kf-hit, td.kf-dim').length).toBe(0);
+  });
+});
+
+describe('Panoramica: la riga del Coaching', () => {
   const problem = (p: Partial<CoachProblem> & Pick<CoachProblem, 'text'>): CoachProblem =>
     ({ severity: 'minor', category: 'roles', fixes: [], key: p.text, ...p });
+  /** Una proposta di sostituzione: posto `index`, voto `gain`, problemi risolti `solves`. */
+  const fix = (index: number, gain: number, solves: string[], species = `Mon${index}`) =>
+    ({ kind: 'swap', species, set: { species, item: '', ability: '', moves: [], nature: 'Serious', evs: {} }, index, member: `M${index}`, gain, solves, reduces: [] } as unknown as CoachFix);
 
-  it('Da sistemare: i problemi coi nomi e il link al Coaching', async () => {
+  it('nel team vero: "N problemi" con le proposte del Coaching, il pulsante porta al Coaching', async () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const row = await within(panel()).findByRole('region', { name: 'Da sistemare' }, { timeout: 5000 });
-    expect(row).toHaveTextContent(/Scopert[oi] in difesa contro/);
-    // Le minacce del meta in una frase sola, coi nomi
-    expect((row.textContent!.match(/del meta/g) ?? []).length).toBeLessThanOrEqual(1);
-    await user.click(within(row).getByRole('button', { name: /^Vai al Coaching/ }));
+    const go = await within(row).findByRole('button', { name: /^Vai al Coaching/ }, { timeout: 8000 });
+    expect(row).toHaveTextContent(/\d+ problemi?/);
+    expect(row).toHaveTextContent(/il Coaching ha \d+ propost[ae]|nessuna sostituzione singola/);
+    await user.click(go);
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('meta spento con 2 membri: nella riga nessuna minaccia del meta', async () => {
-    const user = userEvent.setup();
-    render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
-    for (const name of ['Great Tusk', 'Gholdengo', 'Kingambit']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
-    const row = within(panel()).queryByRole('region', { name: 'Da sistemare' });
-    expect(row).not.toBeNull();
-    expect(row).not.toHaveTextContent(/del meta/);
   });
 
   it('con 2 o più membri niente titolo in cima', async () => {
@@ -286,7 +307,7 @@ describe('Panoramica: Da sistemare', () => {
   it('senza problemi la striscia resta, verde e ferma: "Nessun problema da sistemare", niente link al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
-    render(<LangProvider lang="it"><FixRow problems={[]} steps={[]} onView={onView} /></LangProvider>);
+    render(<LangProvider lang="it"><FixRow problems={[]} advice={NO_ADVICE} onView={onView} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-clear');
     expect(row).not.toHaveClass('is-link');
@@ -296,79 +317,71 @@ describe('Panoramica: Da sistemare', () => {
     expect(onView).not.toHaveBeenCalled();
   });
 
-  it('problemi senza proposta: la stessa striscia verde e ferma "Nessun problema da sistemare", niente link al Coaching', async () => {
+  it('problemi e proposte: "N problemi · il Coaching ha M proposte, la migliore +X", tutta la riga porta al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
-    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={[]} onView={onView} /></LangProvider>);
+    const a = problem({ text: 'Debole a Fuoco', key: 'a', severity: 'serious' });
+    const b = problem({ text: 'Manca Pivot', key: 'b' });
+    // Due posti diversi: due righe del Coaching; la migliore +4
+    const advice: CoachAdvice = { fixes: [fix(0, 2, ['a']), fix(1, 4, ['b'])], moves: [], steps: [] };
+    expect(coachingOffer([a, b], advice)).toEqual({ count: 2, best: 4 });
+    render(<LangProvider lang="it"><FixRow problems={[a, b]} advice={advice} onView={onView} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
-    expect(row).toHaveClass('is-clear');
-    expect(row).not.toHaveClass('is-link');
-    expect(row).toHaveTextContent('Nessun problema da sistemare');
-    expect(within(row).queryByRole('button')).toBeNull();
-    await user.click(within(row).getByText('Nessun problema da sistemare'));
-    expect(onView).not.toHaveBeenCalled();
-  });
-
-  it('con proposte: tutta la striscia porta al Coaching, il pulsante dice quanti', async () => {
-    const user = userEvent.setup();
-    const onView = vi.fn();
-    const p = problem({ text: 'Debole a Fuoco', severity: 'serious' });
-    render(<LangProvider lang="it"><FixRow problems={[p]} steps={[{ problem: p, group: [], alsoSolves: [] } as unknown as CoachStep]} onView={onView} /></LangProvider>);
-    const row = screen.getByRole('region', { name: 'Da sistemare' });
-    expect(row).toHaveClass('is-link');
-    await user.click(within(row).getByText('Debole a Fuoco'));
+    expect(row).toHaveClass('is-link', 'serious');
+    expect(row).toHaveTextContent('2 problemi');
+    expect(row).toHaveTextContent('il Coaching ha 2 proposte, la migliore +4');
+    expect(row.querySelector('.fix-gain')).toHaveTextContent('+4');
+    expect(within(row).getByRole('button', { name: 'Vai al Coaching: 2 problemi, il Coaching ha 2 proposte, la migliore +4' })).toBeInTheDocument();
+    await user.click(within(row).getByText('2 problemi'));
     expect(onView).toHaveBeenCalledWith('coaching');
-    expect(within(row).getByRole('button', { name: 'Vai al Coaching: 1 problema' })).toBeInTheDocument();
   });
 
-  it('consigli ancora da calcolare (steps null): uno scheletro nello stesso posto', () => {
-    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={null} onView={() => {}} /></LangProvider>);
+  it('una proposta sola: "il Coaching ha 1 proposta: +X"; coi soli minori la riga è gialla', () => {
+    const p = problem({ text: 'Manca Pivot', key: 'p' });
+    render(<LangProvider lang="it"><FixRow problems={[p]} advice={adviceSolving('p')} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('minor');
+    expect(row).toHaveTextContent('1 problema');
+    expect(row).toHaveTextContent('il Coaching ha 1 proposta: +1');
+  });
+
+  it('le proposte si contano come le righe del Coaching: stesso posto e stesso problema sono una riga', () => {
+    const p = problem({ text: 'x', key: 'x' });
+    const advice: CoachAdvice = { fixes: [fix(0, 3, ['x'], 'A'), fix(0, 2, ['x'], 'B'), fix(0, 1, ['x'], 'C')], moves: [], steps: [] };
+    expect(coachingOffer([p], advice)).toEqual({ count: 1, best: 3 });
+  });
+
+  it('problemi senza proposta: "N problemi · nessuna sostituzione singola li risolve", e porta comunque al Coaching', async () => {
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    const problems = [problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })];
+    render(<LangProvider lang="it"><FixRow problems={problems} advice={NO_ADVICE} onView={onView} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('is-link', 'serious');
+    expect(row).toHaveTextContent('2 problemi');
+    expect(row).toHaveTextContent('nessuna sostituzione singola li risolve');
+    await user.click(within(row).getByRole('button', { name: /^Vai al Coaching/ }));
+    expect(onView).toHaveBeenCalledWith('coaching');
+  });
+
+  it('in inglese', () => {
+    const p = problem({ text: 'x', key: 'x' });
+    render(<LangProvider lang="en"><FixRow problems={[p]} advice={NO_ADVICE} onView={() => {}} /></LangProvider>);
+    expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemno single swap solves itGo to Coaching');
+  });
+
+  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto', () => {
+    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} onView={() => {}} /></LangProvider>);
     const bones = container.querySelector('.fix-row.is-skeleton');
     expect(bones).toHaveAttribute('aria-hidden', 'true');
     expect(bones).toHaveTextContent('');
   });
 
-  it('solvable: solo i problemi che una tappa del Coaching risolve (il suo, il gruppo e gli altri che copre)', () => {
+  it('solvable: i problemi che almeno una proposta del Coaching risolve (cambi di Pokémon e di mossa, tutte)', () => {
     const a = problem({ text: 'a', key: 'a' }), b = problem({ text: 'b', key: 'b' }), c = problem({ text: 'c', key: 'c' }), d = problem({ text: 'd', key: 'd' });
-    const steps = [{ problem: a, swap: null, move: null, group: ['a', 'b'], alsoSolves: ['c'] }] as unknown as CoachStep[];
-    expect(solvable([a, b, c, d], steps).map(p => p.key)).toEqual(['a', 'b', 'c']);
-    expect(solvable([a, b, c, d], [])).toEqual([]);
-  });
-
-  it('fixItems: gli scoperti in attacco in una loro frase, separata dagli scoperti in difesa', () => {
-    const items = fixItems([
-      problem({ text: 'x', category: 'meta', subjects: ['Zapdos'] }),
-      problem({ text: 'y', category: 'metaHit', subjects: ['Corviknight'] }),
-      problem({ text: 'z', category: 'metaHit', subjects: ['Toxapex'] }),
-    ], 'it');
-    expect(items.shown).toEqual(['Scoperti in difesa contro Zapdos del meta', 'Scoperti in attacco contro Corviknight, Toxapex del meta']);
-  });
-
-  it('fixItems: più di 3 minacce, i primi 3 nomi e "e altri N"', () => {
-    const names = ['Kingambit', 'Raging Bolt', 'Diancie-Mega', 'Tapu Koko', 'Charizard-Mega-Y', 'Charizard-Mega-X', 'Melmetal'];
-    const items = fixItems(names.map(n => problem({ text: n, category: 'meta', subjects: [n] })), 'it');
-    expect(items.shown).toEqual(['Scoperti in difesa contro Kingambit, Raging Bolt, Diancie-Mega e altri 4 del meta']);
-  });
-
-  it('fixItems: i gravi prima, le minacce del meta in una frase coi nomi', () => {
-    const items = fixItems([
-      problem({ text: 'Ruoli mancanti: Pivot' }),
-      problem({ text: 'Scoperto in difesa contro Latios-Mega: nessuno regge bene i suoi colpi', category: 'meta', subjects: ['Latios-Mega'] }),
-      problem({ text: 'Scoperto in difesa contro Tapu Koko: nessuno regge bene i suoi colpi', category: 'meta', subjects: ['Tapu Koko'] }),
-      problem({ text: 'Scoperto in difesa contro Diancie-Mega: nessuno regge bene i suoi colpi', category: 'meta', subjects: ['Diancie-Mega'] }),
-      problem({ text: 'Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi', category: 'defense', severity: 'serious' }),
-    ], 'it');
-    expect(items.shown).toEqual(['Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi', 'Ruoli mancanti: Pivot']);
-    expect(items.hidden).toEqual(['Scoperti in difesa contro Latios-Mega, Tapu Koko, Diancie-Mega del meta']);
-    expect(items.more).toBe(1);
-  });
-
-  it('fixItems: con 5 voci se ne vedono 2, le altre in +3; le regole per prime', () => {
-    const items = fixItems([
-      problem({ text: 'a' }), problem({ text: 'b' }), problem({ text: 'c' }), problem({ text: 'd' }),
-      problem({ text: 'Dragapult non è legale in National Dex OU', category: 'rules', severity: 'serious' }),
-    ], 'it');
-    expect(items.shown).toEqual(['Dragapult non è legale in National Dex OU', 'a']);
-    expect(items.more).toBe(3);
+    const advice = adviceSolving('a', 'b');
+    const moves = [{ index: 0, member: 'X', slot: 0, from: '', to: 'Tackle', set: advice.fixes[0].set, gain: 0, solves: ['c'], reduces: [] }];
+    expect(solvable([a, b, c, d], { ...advice, moves }).map(p => p.key)).toEqual(['a', 'b', 'c']);
+    expect(solvable([a, b, c, d], NO_ADVICE)).toEqual([]);
   });
 });

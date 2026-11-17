@@ -37,12 +37,12 @@ describe('sessione salvata', () => {
     const user = userEvent.setup();
     const { unmount } = render(<App initialLang="it" data={fixtureData} storage={storage} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    await user.click(screen.getByRole('button', { name: 'Preferito Great Tusk' }));
+    await user.click(screen.getByRole('button', { name: 'Fisso Great Tusk' }));
     await chooseTier(user, 'uu');
     unmount();
     render(<App initialLang="it" data={fixtureData} storage={storage} />);
     expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Preferito Great Tusk' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Fisso Great Tusk' })).toHaveAttribute('aria-pressed', 'true');
     expect(chosen('format-tier')).toBe('uu');
   });
 

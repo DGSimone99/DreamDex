@@ -60,7 +60,7 @@ export function HelpButton({ title, label = title, className, children }: { titl
   );
 }
 
-/** Le schede interne: tablist orizzontale (frecce, Home/End). Il "?" di Bonus/Malus sta nella sua striscia (AreaView). */
+/** Le schede interne: tablist orizzontale (frecce, Home/End). Il "?" di Bonus/Malus sta nella testata dell'area (AreaView). */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
 /** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica e Ruoli e Bonus non ne hanno). */
 /** Il numero sulla scheda: tutti i problemi, quanti gravi e quanti minori (per il suggerimento al passaggio del mouse). */

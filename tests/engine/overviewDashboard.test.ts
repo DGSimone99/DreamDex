@@ -3,7 +3,7 @@ import { rolesValue } from '../../src/engine/rolesArea';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { COVERED_LEVEL, findProblems, holdSeverity } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { dashboardData } from '../../src/engine/overviewDashboard';
+import { dashboardData, metaThreats, metaVersus } from '../../src/engine/overviewDashboard';
 import { summarizeTeam } from '../../src/engine/overviewSummary';
 import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
@@ -95,11 +95,52 @@ describe('dashboardData', () => {
     for (let i = 1; i < dash.threats.pods.length; i++) expect(dash.threats.pods[i - 1].usage).toBeGreaterThanOrEqual(dash.threats.pods[i].usage);
   });
 
+  it('metaThreats: scoperte (nessuno regge / nessuno KO in due) prima, poi a fatica (uno solo), poi dalla più usata', () => {
+    const { rating, dash } = build();
+    const list = metaThreats(rating, fixtureData);
+    expect(dash.threats.list).toEqual(list);
+    const defense = new Map((rating.defense.coverageMeta?.rows ?? []).map(r => [r.species, r.heldBy.filter(h => !h.partial).length]));
+    const offense = new Map((rating.offense.coverageMeta?.rows ?? []).map(r => [r.species, new Set(r.coveredBy.map(c => c.species)).size]));
+    // Ogni minaccia della lista ha davvero zero o un solo membro che la gestisce, su ogni lato che cita
+    for (const x of list) {
+      for (const r of x.reasons) expect((r.side === 'defense' ? defense : offense).get(x.species)).toBe(r.by.length);
+      expect(x.status).toBe(x.reasons[0].by.length ? 'thin' : 'open');
+    }
+    // E nessuna ne manca
+    for (const [species, n] of defense) if (n <= 1) expect(list.some(x => x.species === species)).toBe(true);
+    for (const [species, n] of offense) if (n <= 1) expect(list.some(x => x.species === species)).toBe(true);
+    const rank = (x: (typeof list)[number]) => (x.status === 'open' ? 0 : 1);
+    for (let i = 1; i < list.length; i++) expect(rank(list[i - 1])).toBeLessThanOrEqual(rank(list[i]));
+  });
+
+  it('metaVersus: le stesse righe e regole di metaThreats; un tuo membro tolto dai conti', () => {
+    const { rating } = build();
+    const list = metaThreats(rating, fixtureData);
+    const species = new Set([...(rating.defense.coverageMeta?.rows ?? []), ...(rating.offense.coverageMeta?.rows ?? [])].map(r => r.species));
+    expect(species.size).toBeGreaterThan(0);
+    for (const name of species) {
+      const vs = metaVersus(rating, name, [])!;
+      expect(vs.own).toBe(false);
+      const threat = list.find(x => x.species === name);
+      // Scoperta / a fatica come la carta della Panoramica; chi non è fra le minacce è gestito
+      expect(vs.status).toBe(threat ? (threat.status === 'open' ? 'open' : 'thin') : 'held');
+      for (const r of threat?.reasons ?? []) expect(vs[r.side]).toEqual(r.by);
+    }
+    // Un membro del team: il resto del team, lui escluso
+    const own = [...species].find(name => team.some(set => set.species === name))!;
+    const mine = metaVersus(rating, own, team)!;
+    expect(mine.own).toBe(true);
+    expect([...(mine.defense ?? []), ...(mine.offense ?? [])]).not.toContain(own);
+    expect(metaVersus(rating, 'Magikarp', team)).toBeNull();
+    expect(metaVersus(null, own, team)).toBeNull();
+  });
+
   it('meta spento: minacce non disponibili, velocità vsMeta false', () => {
     const { dash } = build({ ...fixtureData, ignoreMeta: true });
     expect(dash.threats.available).toBe(false);
     expect(dash.threats.metaOff).toBe(true);
     expect(dash.threats.pods).toEqual([]);
+    expect(dash.threats.list).toEqual([]);
     expect(dash.speed.vsMeta).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { needLabel } from '../../engine/needs';
 import type { DashboardData, RoleChip } from '../../engine/overviewDashboard';
 import { useLang, useT } from '../../i18n/react';
@@ -180,14 +180,41 @@ function RoleTable({ roles, titles }: { roles: DashboardData['roles']; titles: R
   );
 }
 
-/** Ruoli: chip in fasce nello stretto e nel normale, tabella ruoli × membri nell'ampio. */
+/**
+ * Altezza che la tabella dell'ampio chiede (px): testata con le sprite, una riga d'intestazione per fascia e una per ruolo
+ * (come in CSS: 22px le intestazioni, 24px le righe), più la testata e i margini della card.
+ */
+export const roleTableNeed = (roles: DashboardData['roles']) => {
+  const levels = LEVELS.filter(level => roles.chips.some(c => c.level === level)).length;
+  return 52 + 22 * levels + 24 * roles.chips.length + 50;
+};
+
+/**
+ * Ruoli: chip in fasce nello stretto e nel normale, tabella ruoli × membri nell'ampio. Se nell'ampio la card è più bassa
+ * di quanto la tabella chiede (schermi bassi col team ridotto, Minacce del meta sopra), si torna alle fasce, che sanno
+ * stare nello spazio col loro "+N": mai righe tagliate.
+ */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
+  const card = useRef<HTMLDivElement>(null);
+  // Altezza della card (0: non misurata, come nei test senza layout: la tabella)
+  const [height, setHeight] = useState(0);
+  useLayoutEffect(() => {
+    const el = card.current?.closest('.dash-roles');
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const apply = () => { if (el.clientHeight > 0) setHeight(el.clientHeight); };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const table = density === 'roomy' && (!height || height >= roleTableNeed(roles));
   return (
     <DashCard className="dash-roles" title={t('area.roles')} meta={<b>{roles.value}</b>}
       onOpen={() => onView('roles')} openLabel={t('dash.openRoles')}>
-      {density === 'roomy' ? <RoleTable roles={roles} titles={titles} /> : <RoleBands roles={roles} density={density} titles={titles} />}
+      <span ref={card} hidden />
+      {table ? <RoleTable roles={roles} titles={titles} /> : <RoleBands roles={roles} density={density} titles={titles} />}
     </DashCard>
   );
 }
