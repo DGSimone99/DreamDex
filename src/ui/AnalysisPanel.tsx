@@ -18,10 +18,10 @@ import { CoachingView } from './CoachingView';
 /**
  * I problemi del coaching che riguardano ogni area, nella testata dell'area: le stesse colonne della mappa del Coaching
  * (columnOf), così i conti tornano. La Difesa prende anche le minacce del meta che nessuno regge, l'Offesa quelle che
- * nessuno manda KO; Ruoli e Bonus i ruoli che mancano e i malus del Coaching (le ripetizioni), senza le debolezze in comune
- * (le dice già la Difesa, come nella mappa). Regole e condizioni restano nella Panoramica e nel Coaching.
+ * nessuno manda KO; Ruoli e Bonus i ruoli che mancano, le condizioni del tipo di team e i malus del Coaching (le ripetizioni), senza le
+ * debolezze in comune (le dice già la Difesa, come nella mappa). Le regole restano nella Panoramica e nel Coaching.
  */
-const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit'], speed: [], bonusMalus: ['roles', 'redundancy'] };
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit'], speed: [], bonusMalus: ['roles', 'conditions', 'redundancy'] };
 export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? [])
   .filter(p => AREA_PROBLEMS[area].includes(p.category) && !p.key.startsWith('redundancy:sharedWeak:'));
 

@@ -214,14 +214,14 @@ describe('vista di un\'area sulla pagina', () => {
 });
 
 describe('problemi delle aree', () => {
-  it('le stesse colonne della mappa del Coaching: le minacce del meta in Difesa e Offesa, niente debolezze in comune né regole', () => {
+  it('le stesse colonne della mappa del Coaching: le minacce del meta in Difesa e Offesa, le condizioni in Ruoli e Bonus, niente debolezze in comune né regole', () => {
     const p = (category: CoachProblem['category'], key: string): CoachProblem => ({ severity: 'minor', category, text: key, fixes: [], key });
     const all = [p('defense', 'defense:Fire'), p('meta', 'meta:Zapdos'), p('coverage', 'coverage:Fairy'), p('metaHit', 'metaHit:Toxapex'),
-      p('roles', 'roles:important'), p('redundancy', 'redundancy:hazards'), p('redundancy', 'redundancy:sharedWeak:Ice'), p('rules', 'rules:ban')];
+      p('roles', 'roles:important'), p('conditions', 'conditions:pivot'), p('redundancy', 'redundancy:hazards'), p('redundancy', 'redundancy:sharedWeak:Ice'), p('rules', 'rules:ban')];
     const keys = (area: Parameters<typeof problemsOf>[1]) => problemsOf(all, area).map(x => x.key);
     expect(keys('defense')).toEqual(['defense:Fire', 'meta:Zapdos']);
     expect(keys('strength')).toEqual(['coverage:Fairy', 'metaHit:Toxapex']);
-    expect(keys('bonusMalus')).toEqual(['roles:important', 'redundancy:hazards']);
+    expect(keys('bonusMalus')).toEqual(['roles:important', 'conditions:pivot', 'redundancy:hazards']);
     expect(keys('speed')).toEqual([]);
   });
 
