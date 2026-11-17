@@ -23,6 +23,7 @@ import { teamField, TYPES } from './types';
 import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 import { heldByOf, teamCores, type Core, type HeldBy } from './cores';
 import { blockedReason, voteTeam } from './legalTeam';
+import { unheldDuels, type DuelRow } from './duel';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -320,23 +321,22 @@ export const SHARED_WEAK_POINTS = 1;
  */
 export const DEFENSE_HOLE_POINTS = 2;
 /**
- * Senza risposta (2026-11-17, utente): −4 per ogni tipo e ogni Pokémon del meta che nessuno regge (Coverage tipi e meta
- * della Difesa) e nessuno manda KO in due colpi (Coverage tipi e meta dell'Offesa), senza tetto. Sul banco di National
- * Dex OU nessun team da torneo ha un tipo così e quasi nessuno un Pokémon del meta; i brutti uno su quattro. Le aree
- * misurano i due lati a parte, e un team di Pokémon forti teneva alta la media anche col buco. Su un tipo prende il posto
- * del Buco in Difesa (−4 in tutto, non −6): lo stesso problema non si paga due volte.
+ * Senza risposta (2026-11-17, utente), senza tetto, solo team di 6. Le aree misurano chi regge e chi colpisce a parte, e
+ * un team di Pokémon forti teneva alta la media anche con un buco vero.
+ * - Tipi: −4 per ogni tipo che nessuno regge (Coverage tipi della Difesa) e nessuno manda KO in due colpi (Coverage tipi
+ *   dell'Offesa). Prende il posto del Buco in Difesa (−4 in tutto, non −6). Nessun team da torneo di National Dex OU ne ha.
+ * - Pokémon del meta: −2 per ognuno che nessuno regge e nessuno batte prima nel duello (duel.ts: chi lo manda KO prima di
+ *   andare KO, entrando gratis), −1 se lo batte solo a pari velocità. Provati −1/−2/−3/−4 e "solo in attacco" (−1 per ogni
+ *   minaccia non retta anche se battuta: partite vere National Dex OU 53,8% → 51,8%). Col duello le partite restano
+ *   (53,3%, dentro il margine), il distacco torneo − ladder sale da 7,2 a 8,0; i team da torneo in S o A da 396 a 317.
  */
 export const UNANSWERED_POINTS = 4;
+export const UNANSWERED_META_POINTS = 2;
 
-/** I tipi e i Pokémon del meta che nessuno regge e nessuno manda KO in due colpi. */
-export function unanswered(offense: TeamOffense, defense: TeamDefense): { types: string[]; threats: string[] } {
+/** I tipi né retti né battuti, e i Pokémon del meta che nessuno regge né batte prima (`best`: 0 nessuno, 0.5 a pari velocità). */
+export function unanswered(team: TeamSet[], offense: TeamOffense, defense: TeamDefense): { types: string[]; threats: DuelRow[] } {
   const types = defense.coverageTypes.weak.filter(type => offense.types.holes.includes(type));
-  // L'Offesa del meta ha un bersaglio per combinazione di tipi: un Pokémon è battuto se lo è la sua combinazione
-  const holes = new Set(offense.coverageMeta?.holes ?? []);
-  const threats = (defense.coverageMeta?.rows ?? [])
-    .filter(row => !row.heldBy.some(h => !h.partial))
-    .filter(row => holes.has([...(battleSpecies(row.set)?.types ?? [])].sort().join('/')))
-    .map(row => row.species);
+  const threats = unheldDuels(team, defense).filter(row => row.best < 1);
   return { types, threats };
 }
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
@@ -585,10 +585,13 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const holeKeys = new Set(holeItems.map(i => `sharedWeak:${i.key.slice('defenseHole:'.length)}`));
   const redundantItems = redundant.items.filter(i => !i.key || !holeKeys.has(i.key));
   // Senza risposta (né retto né battuto, solo team di 6): sul tipo prende il posto del Buco in Difesa
-  const open = complete ? unanswered(offense, defense) : { types: [], threats: [] };
+  const open = complete ? unanswered(team, offense, defense) : { types: [], threats: [] };
   const unansweredItems = [
     ...open.types.map(type => ({ text: t(lang, 'rating.redundancy.unansweredType', { type: typeName(type, lang) }), points: UNANSWERED_POINTS, catalog: 'unanswered' as const, key: `unanswered:type:${type}` })),
-    ...open.threats.map(species => ({ text: t(lang, 'rating.redundancy.unansweredThreat', { species }), points: UNANSWERED_POINTS, catalog: 'unanswered' as const, key: `unanswered:meta:${species}` })),
+    ...open.threats.map(row => ({
+      text: t(lang, row.best ? 'rating.redundancy.unansweredThreatTie' : 'rating.redundancy.unansweredThreat', { species: row.species, list: row.winners.join(', ') }),
+      points: row.best ? UNANSWERED_META_POINTS / 2 : UNANSWERED_META_POINTS, catalog: 'unanswered' as const, key: `unanswered:meta:${row.species}`,
+    })),
   ];
   const shownHoles = holeItems.filter(i => !open.types.includes(i.key.slice('defenseHole:'.length)));
   const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang)];
@@ -633,7 +636,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang): CatalogEntry[] {
   const values = {
-    shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unanswered: UNANSWERED_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
+    shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unanswered: UNANSWERED_POINTS, unansweredMeta: UNANSWERED_META_POINTS, unansweredTie: UNANSWERED_META_POINTS / 2, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRICK_ROOM_FAST_POINTS, UNANSWERED_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
+import { TRICK_ROOM_FAST_POINTS, UNANSWERED_META_POINTS, UNANSWERED_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -57,7 +57,7 @@ describe('catalogo bonus e malus', () => {
     expect(c.find(e => e.key === 'unusedEnabler')!.points).toBe(`−${UNUSED_ENABLER_POINTS}`);
     expect(c.find(e => e.key === 'trickRoomFast')!.points).toContain(`−${TRICK_ROOM_FAST_POINTS} per membro`);
     expect(c.find(e => e.key === 'coreTrio')!.points).toContain('2');
-    expect(c.find(e => e.key === 'unanswered')!.points).toBe(`−${UNANSWERED_POINTS} per ognuno`);
+    expect(c.find(e => e.key === 'unanswered')!.points).toBe(`−${UNANSWERED_POINTS} per ogni tipo, −${UNANSWERED_META_POINTS} per ogni Pokémon del meta (−${UNANSWERED_META_POINTS / 2} se lo batti solo a pari velocità)`);
   });
 
   it('catalogo EN: stesse chiavi, testi non vuoti', () => {

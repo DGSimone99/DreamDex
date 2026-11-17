@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFENSE_HOLE_POINTS, UNANSWERED_POINTS, rateTeam, unanswered } from '../../src/engine/rating';
+import { DEFENSE_HOLE_POINTS, UNANSWERED_META_POINTS, UNANSWERED_POINTS, rateTeam, unanswered } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -16,7 +16,7 @@ describe('Buco in Difesa', () => {
   it('−2 per ogni tipo che nessuno regge ma qualcuno batte, un malus per tipo', () => {
     const r = rateTeam(glass, fixtureData)!;
     const holes = r.penalty.items.filter(i => i.catalog === 'defenseHole');
-    const open = unanswered(r.offense, r.defense).types;
+    const open = unanswered(glass, r.offense, r.defense).types;
     expect(r.defense.coverageTypes.weak.length).toBeGreaterThan(0);
     expect(holes).toHaveLength(r.defense.coverageTypes.weak.length - open.length);
     expect(holes.every(i => i.points === DEFENSE_HOLE_POINTS)).toBe(true);
@@ -41,7 +41,7 @@ describe('Buco in Difesa', () => {
 describe('Senza risposta', () => {
   it('−4 per ogni tipo né retto né battuto, al posto del Buco in Difesa su quel tipo', () => {
     const r = rateTeam(glass, fixtureData)!;
-    const open = unanswered(r.offense, r.defense);
+    const open = unanswered(glass, r.offense, r.defense);
     expect(open.types.length).toBeGreaterThan(0);
     for (const type of open.types) {
       expect(r.defense.coverageTypes.weak).toContain(type);
@@ -51,15 +51,15 @@ describe('Senza risposta', () => {
     }
   });
 
-  it('un Pokémon del meta conta quando nessuno lo regge e la sua combinazione di tipi è un buco dell\'Offesa', () => {
+  it('un Pokémon del meta conta quando nessuno lo regge e nessuno lo batte prima nel duello: −2, −1 a pari velocità', () => {
     const r = rateTeam(glass, fixtureData)!;
-    const { threats } = unanswered(r.offense, r.defense);
+    const { threats } = unanswered(glass, r.offense, r.defense);
     const items = r.penalty.items.filter(i => i.key?.startsWith('unanswered:meta:'));
-    expect(items.map(i => i.key!.slice('unanswered:meta:'.length))).toEqual(threats);
-    for (const species of threats) {
-      const row = r.defense.coverageMeta!.rows.find(x => x.species === species)!;
-      expect(row.heldBy.some(h => !h.partial)).toBe(false);
+    expect(items.map(i => i.key!.slice('unanswered:meta:'.length))).toEqual(threats.map(t => t.species));
+    for (const [k, row] of threats.entries()) {
+      expect(row.best).toBeLessThan(1);
+      expect(r.defense.coverageMeta!.rows.find(x => x.species === row.species)!.heldBy.some(h => !h.partial)).toBe(false);
+      expect(items[k].points).toBe(row.best ? UNANSWERED_META_POINTS / 2 : UNANSWERED_META_POINTS);
     }
-    expect(items.every(i => i.points === UNANSWERED_POINTS && i.text.startsWith('Nessuno regge né batte'))).toBe(true);
   });
 });

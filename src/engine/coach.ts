@@ -239,14 +239,9 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   }
 
   // Minacce del meta che nessuno regge, come nella Coverage meta della Difesa (la lista è vuota senza meta)
-  // Gravi quando nessuno le manda neanche KO in due colpi: è il malus Senza risposta del voto (2026-11-17)
-  const open = new Set(rating?.penalty.items.filter(i => i.key?.startsWith('unanswered:meta:')).map(i => i.key!.slice('unanswered:meta:'.length)));
-  // Le loro combinazioni di tipi, per i buchi dell'Offesa (un bersaglio per combinazione)
-  const openLabels = new Set((rating?.defense.coverageMeta?.rows ?? []).filter(row => open.has(row.species))
-    .map(row => [...(battleSpecies(row.set)?.types ?? [])].sort().join('/')));
   for (const threat of ratingThreats(rating, data)) {
     if (threat.handledBy.length) continue;
-    add('meta', open.has(threat.name), t(lang, 'coach.problem.threat', { species: threat.name }),
+    add('meta', false, t(lang, 'coach.problem.threat', { species: threat.name }),
       fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`, undefined, [threat.name]);
   }
 
@@ -256,7 +251,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   const offenseMeta = rating?.offense.coverageMeta;
   for (const label of offenseMeta?.holes ?? []) {
     const species = offenseMeta!.rows.find(row => row.label === label)?.species ?? label;
-    add('metaHit', openLabels.has(label), t(lang, 'coach.problem.metaHit', { species }), [], `metaHit:${species}`, undefined, [species]);
+    add('metaHit', false, t(lang, 'coach.problem.metaHit', { species }), [], `metaHit:${species}`, undefined, [species]);
   }
 
   return [...serious, ...minor];
