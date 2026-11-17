@@ -79,7 +79,7 @@ describe('ordine del team e editor', () => {
     expect(names(team)).toEqual(['Garchomp', 'Corviknight']);
   });
 
-  it('stella e × non aprono l’editor (togliendo un membro non si apre quello dopo)', async () => {
+  it('lucchetto e × non aprono l’editor (togliendo un membro non si apre quello dopo)', async () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost\n\nGreninja\n- Surf');
     await user.click(within(team).getByRole('button', { name: /Corviknight/, pressed: false }));

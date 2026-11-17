@@ -51,7 +51,7 @@ describe('Offesa: navigazione e guida', () => {
     expect(panel).toHaveTextContent('Per ogni membro, il suo colpo migliore contro ogni bersaglio che fa almeno il 50%');
     // Quello che conta meno: a capo sotto il Colpo, senza un titolo suo
     expect(panel).not.toHaveTextContent('Valgono meno');
-    expect(panel.querySelector('.guide-sub')).toHaveTextContent('Band, Specs e simili, e i boost da setup, meteo o campo e le mosse Z contano meno (pieni se il meteo o il campo lo porta il membro stesso).');
+    expect(panel.querySelector('.guide-sub')).toHaveTextContent('Band, Specs e simili, e i boost da Setup, meteo o campo e le mosse Z contano meno (pieni se il meteo o il campo lo porta il membro stesso).');
     for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie', '×2 · ×4']) expect(panel).not.toHaveTextContent(gone);
     // Il "?" dei tipi: le medie dei 18 tipi nel tooltip; quello del meta: le sprite delle minacce
     await user.hover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
@@ -169,7 +169,7 @@ describe('Offesa: Generale', () => {
         expect(badge).toHaveClass('has-setup');
         expect(badge).not.toHaveTextContent('+');
         // Il migliore della colonna aggiunge ", il migliore della colonna" (la stella)
-        expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}, altri ${extra} col setup(, il migliore della colonna)?$`));
+        expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}, altri ${extra} col Setup(, il migliore della colonna)?$`));
       } else {
         expect(badge).not.toHaveClass('has-setup');
         expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}(, il migliore della colonna)?$`));
@@ -467,13 +467,13 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     return rating;
   };
 
-  it('una tabella membri × 18 tipi con la riga Copertura e la riga Il migliore (chi colpisce più forte ogni tipo)', async () => {
+  it('una tabella membri × 18 tipi con la riga Team Coverage e la riga Il migliore (chi colpisce più forte ogni tipo)', async () => {
     const rating = await open();
     expect(screen.getAllByRole('table')).toHaveLength(1);
     expect(screen.getAllByRole('columnheader')).toHaveLength(19);
     const rows = screen.getAllByRole('row');
     const sum = rows[rows.length - 2];
-    expect(within(sum).getByRole('rowheader')).toHaveTextContent('Copertura');
+    expect(within(sum).getByRole('rowheader')).toHaveTextContent('Team Coverage');
     const cells = within(sum).getAllByRole('cell');
     expect(cells).toHaveLength(18);
     cells.forEach(c => expect(c.textContent).toMatch(/\d+%/));

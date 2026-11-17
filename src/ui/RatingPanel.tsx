@@ -20,12 +20,13 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
 /**
  * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi; la riga dei Ruoli a
  * Bonus/Malus, sottoscheda Ruoli.
- * `teamType`: il tipo di team del Riassunto (null finché il team non ha 6 membri: "In costruzione").
+ * `teamType`: il tipo di team del Riassunto (null finché il team non ha 6 membri: "Incompleto · 5/6" coi `members`; a
+ * team completo senza tipo "Misto").
  * `collapsed`: team ridotto: lettera e punteggio diventano un pulsante che apre la tendina "Voto delle aree" con le
  * stesse righe (GradeAreaRows) e il "?"; col team aperto la carta resta com'è.
  * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: DetailArea) => void }) {
+export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -47,9 +48,10 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
   // Nella carta (stretta) la scritta corta; il formato è nel tooltip e nella frase per i lettori di schermo
   const notLegal = broken ? t('rating.notLegalIn', { format: formatName, n: Math.max(1, illegalCount) }) : '';
   const notLegalShort = broken ? t('rating.notLegalShort', { n: Math.max(1, illegalCount) }) : '';
-  // Il tipo di team come nel Riassunto: senza tipo (team incompleto) "In costruzione"
-  const typeLabel = t(teamType ? `archetype.${teamType}` : 'sum.archBuilding');
-  const typeNote = t(teamType ? `archetype.${teamType}.note` : 'sum.archBuildingNote');
+  // Il tipo di team come nel Riassunto: senza tipo "Incompleto · 5/6" finché mancano membri, a team completo "Misto"
+  const pending = members < 6;
+  const typeLabel = teamType ? t(`archetype.${teamType}`) : pending ? t('sum.archBuilding', { n: members }) : t('sum.archMixed');
+  const typeNote = t(teamType ? `archetype.${teamType}.note` : pending ? 'sum.archBuildingNote' : 'sum.archMixedNote');
   const who = illegalNames.length ? t('rating.notLegalWho', { list: illegalNames.join(', ') }) : '';
   // Lettera e punteggio (e il resto del disegno): nella carta così, col team ridotto dentro il pulsante della tendina
   const face = (

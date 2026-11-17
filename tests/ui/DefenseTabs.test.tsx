@@ -147,10 +147,10 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
-  it('in fondo, come nell\'Offesa: Copertura di ogni tipo e Il migliore (chi lo regge meglio); i buchi segnati in testata', async () => {
+  it('in fondo, come nell\'Offesa: Team Coverage di ogni tipo e Il migliore (chi lo regge meglio); i buchi segnati in testata', async () => {
     const { rating, table } = await openTypes();
     const rows = rating.defense.coverageTypes.rows;
-    const level = within(table).getByRole('row', { name: /^Copertura/ });
+    const level = within(table).getByRole('row', { name: /^Team Coverage/ });
     expect(within(level).getAllByRole('cell').map(c => c.textContent)).toEqual(rows.map(r => `${r.level}%`));
     const best = within(table).getByRole('row', { name: /^Il migliore/ });
     const typed = rating.defense.typed;

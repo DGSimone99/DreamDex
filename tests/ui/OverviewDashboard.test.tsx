@@ -411,7 +411,7 @@ describe('Riassunto', () => {
   /** La sezione per titolo (l'intestazione e le sue righe). */
   const section = (title: string) => within(region()).getByRole('heading', { name: title }).closest<HTMLElement>('.sum-sec')!;
 
-  it('eroe: il tipo di team, lo stile e il "?" che apre la guida ai tipi; senza tipo "In costruzione" o "Misto"', async () => {
+  it('eroe: il tipo di team, lo stile e il "?" che apre la guida ai tipi; senza tipo "Incompleto · 4/6" o "Misto"', async () => {
     const user = userEvent.setup();
     mount({ summary: summaryOf({ styles: ['rain'] }) });
     const arch = region().querySelector('.sum-arch')!;
@@ -431,7 +431,7 @@ describe('Riassunto', () => {
     expect(region().querySelector('.sum-arch')).toHaveTextContent('Misto');
     cleanup();
     mount({ summary: summaryOf({ archetype: null }), members: 4 });
-    expect(region().querySelector('.sum-arch')).toHaveTextContent('In costruzione');
+    expect(region().querySelector('.sum-arch')).toHaveTextContent('Incompleto · 4/6');
   });
 
   it('eroe: il tipo di team prende il colore del voto (classe grade-X), senza voto nessuna classe', () => {

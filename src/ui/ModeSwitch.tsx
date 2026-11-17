@@ -69,7 +69,7 @@ export function ModeSwitch({ team, view, replacing, replaceIndex, addDisabled, i
               onClick={() => pick(() => onTarget(index))}>
               <PokemonIcon name={battleName(member)} />
               <span className="target-name" aria-hidden="true">{battleName(member)}</span>
-              {member.favorite && <Icon name="star" />}
+              {member.favorite && <Icon name="lock" filled />}
             </button>
           ))}
         </div>

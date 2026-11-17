@@ -90,10 +90,10 @@ describe('liste nella scheda Pokémon', () => {
     expect(within(suggestions()).queryAllByLabelText('Nei tuoi Preferiti')).toHaveLength(0);
   });
 
-  it('la stella delle card del team non tocca le liste', async () => {
+  it('il lucchetto (Fisso) delle card del team non tocca le liste', async () => {
     const { storage, values } = memory();
     const user = await setup(storage, 'Great Tusk');
-    await user.click(screen.getByRole('button', { name: /preferit/i, pressed: false }));
+    await user.click(screen.getByRole('button', { name: /^Fisso /, pressed: false }));
     expect(values['dreamdex.lists'] ?? JSON.stringify(EMPTY_LISTS)).toBe(JSON.stringify(EMPTY_LISTS));
   });
 });

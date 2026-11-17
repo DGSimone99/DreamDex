@@ -513,12 +513,12 @@ describe('Tipo di team nel riquadro Voto', () => {
     expect(band().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(new RegExp(`${plate()!.textContent}$`));
   });
 
-  it('col team incompleto il voto dice In costruzione', async () => {
+  it('col team incompleto il voto dice Incompleto · 2/6', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    expect(plate()).toHaveTextContent('In costruzione');
+    expect(plate()).toHaveTextContent('Incompleto · 2/6');
     expect(plate()!.title).toBe('Il tipo di team si riconosce con tutti e 6 i membri');
-    expect(band().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(/In costruzione$/);
+    expect(band().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(/Incompleto · 2\/6$/);
   });
 });

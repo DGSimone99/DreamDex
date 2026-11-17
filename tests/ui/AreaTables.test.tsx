@@ -22,7 +22,7 @@ describe('tabelle complete nelle schede d\'area', () => {
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(view()).getByRole('table');
     expect(within(table).getAllByRole('columnheader')).toHaveLength(19); // angolo e 18 tipi
-    // Testata, 2 membri, poi Copertura e Il migliore (come nell'Offesa)
+    // Testata, 2 membri, poi Team Coverage e Il migliore (come nell'Offesa)
     expect(within(table).getAllByRole('row')).toHaveLength(5);
   });
 

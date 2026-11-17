@@ -24,7 +24,7 @@ describe('analisi in inglese', () => {
     await user.click(screen.getByRole('tab', { name: /^Analysis/ }));
     const fix = await within(analysis).findByRole('region', { name: 'To fix' }, { timeout: 5000 });
     expect(within(fix).getByRole('button', { name: /^Go to Coaching/ })).toBeInTheDocument();
-    expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent('In progress');
+    expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent(/^Incomplete · [1-5]\/6$/);
     // Il Coaching: le proposte in inglese, ogni riga col suo nome e i pulsanti in inglese
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));
     const list = within(analysis).getByRole('region', { name: 'Proposals, most useful first' });

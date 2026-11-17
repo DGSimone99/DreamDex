@@ -307,7 +307,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
   const warns: Alert[] = warnings.map(text => ({ level: 'warn', text, title: hint(text) }));
   return (
-    // La carta non è un <details>: il clic apre l'editor (stato del team), e stella, × e avvisi stanno accanto al
+    // La carta non è un <details>: il clic apre l'editor (stato del team), e lucchetto, × e avvisi stanno accanto al
     // pulsante della carta, non dentro (niente controlli dentro un altro controllo)
     <div
       className={`slot filled${open ? ' open' : ''}${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
@@ -391,7 +391,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           title={tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff')}
           onClick={() => onChange({ ...set, favorite: !set.favorite })}
         >
-          <Icon name="star" filled={!!set.favorite} />
+          <Icon name="lock" filled={!!set.favorite} />
         </button>
         <button
           type="button"

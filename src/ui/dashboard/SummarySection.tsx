@@ -358,9 +358,9 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
                       {/* Sul confine col tipo accanto: una riga piccola sotto il nome, che non lo accorcia */}
                     </span>
                   )
-                  // Senza tipo riconosciuto: a team incompleto "In costruzione", a team completo "Misto" (non somiglia a nessun tipo)
+                  // Senza tipo riconosciuto: a team incompleto "Incompleto · 5/6", a team completo "Misto" (non somiglia a nessun tipo)
                   : <strong className="sum-arch pending" title={t(members < 6 ? 'sum.archBuildingNote' : 'sum.archMixedNote')}>
-                    {t(members < 6 ? 'sum.archBuilding' : 'sum.archMixed')}
+                    {members < 6 ? t('sum.archBuilding', { n: members }) : t('sum.archMixed')}
                   </strong>}
                 {styles.map(style => (
                   <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
