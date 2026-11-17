@@ -113,7 +113,7 @@ export interface RatingArea {
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole'
+  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'unanswered'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp';
 
 export interface Redundancy {
@@ -319,6 +319,26 @@ export const SHARED_WEAK_POINTS = 1;
  * volte (un Hyper Offense con 5 buchi perdeva circa 19 punti).
  */
 export const DEFENSE_HOLE_POINTS = 2;
+/**
+ * Senza risposta (2026-11-17, utente): −4 per ogni tipo e ogni Pokémon del meta che nessuno regge (Coverage tipi e meta
+ * della Difesa) e nessuno manda KO in due colpi (Coverage tipi e meta dell'Offesa), senza tetto. Sul banco di National
+ * Dex OU nessun team da torneo ha un tipo così e quasi nessuno un Pokémon del meta; i brutti uno su quattro. Le aree
+ * misurano i due lati a parte, e un team di Pokémon forti teneva alta la media anche col buco. Su un tipo prende il posto
+ * del Buco in Difesa (−4 in tutto, non −6): lo stesso problema non si paga due volte.
+ */
+export const UNANSWERED_POINTS = 4;
+
+/** I tipi e i Pokémon del meta che nessuno regge e nessuno manda KO in due colpi. */
+export function unanswered(offense: TeamOffense, defense: TeamDefense): { types: string[]; threats: string[] } {
+  const types = defense.coverageTypes.weak.filter(type => offense.types.holes.includes(type));
+  // L'Offesa del meta ha un bersaglio per combinazione di tipi: un Pokémon è battuto se lo è la sua combinazione
+  const holes = new Set(offense.coverageMeta?.holes ?? []);
+  const threats = (defense.coverageMeta?.rows ?? [])
+    .filter(row => !row.heldBy.some(h => !h.partial))
+    .filter(row => holes.has([...(battleSpecies(row.set)?.types ?? [])].sort().join('/')))
+    .map(row => row.species);
+  return { types, threats };
+}
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
 export const UNMET_POINTS = 3;
 
@@ -564,7 +584,14 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // Un tipo che nessuno regge paga solo il buco, non anche la debolezza condivisa dello stesso tipo
   const holeKeys = new Set(holeItems.map(i => `sharedWeak:${i.key.slice('defenseHole:'.length)}`));
   const redundantItems = redundant.items.filter(i => !i.key || !holeKeys.has(i.key));
-  const extraItems = [...roles.failures, ...roomItems, ...holeItems, ...lockedStatusIssues(input, lang)];
+  // Senza risposta (né retto né battuto, solo team di 6): sul tipo prende il posto del Buco in Difesa
+  const open = complete ? unanswered(offense, defense) : { types: [], threats: [] };
+  const unansweredItems = [
+    ...open.types.map(type => ({ text: t(lang, 'rating.redundancy.unansweredType', { type: typeName(type, lang) }), points: UNANSWERED_POINTS, catalog: 'unanswered' as const, key: `unanswered:type:${type}` })),
+    ...open.threats.map(species => ({ text: t(lang, 'rating.redundancy.unansweredThreat', { species }), points: UNANSWERED_POINTS, catalog: 'unanswered' as const, key: `unanswered:meta:${species}` })),
+  ];
+  const shownHoles = holeItems.filter(i => !open.types.includes(i.key.slice('defenseHole:'.length)));
+  const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang)];
   const allItems = [...redundantItems, ...extraItems];
   const penalty = { total: sum(allItems.map(i => i.points)), items: allItems };
   // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, ruoli minori).
@@ -598,7 +625,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'unanswered'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -606,7 +633,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang): CatalogEntry[] {
   const values = {
-    shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
+    shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unanswered: UNANSWERED_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,

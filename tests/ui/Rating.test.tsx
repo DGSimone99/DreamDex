@@ -364,7 +364,7 @@ describe('Bonus/Malus', () => {
     expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
     expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('+3 per ogni core');
     await user.click(within(dialog).getByRole('tab', { name: 'Tutti i malus' }));
-    expect(within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem')).toHaveLength(12);
+    expect(within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem')).toHaveLength(13);
     expect(dialog).not.toHaveTextContent('Tera');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
