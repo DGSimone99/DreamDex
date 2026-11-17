@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
 import type { Lang } from '../i18n';
 import { typeName } from '../i18n/game';
 import type { Core } from '../engine/cores';
@@ -7,6 +7,7 @@ import { useT } from '../i18n/react';
 import { CoreArt } from './dashboard/CoreTriangle';
 import { DashCard } from './dashboard/DashCard';
 import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
+import { shortCase } from './bonusMalusShort';
 import { Typed } from './TypeText';
 import { typeIconUrl } from './typeIcons';
 import { useFitCount } from './useFit';
@@ -74,8 +75,11 @@ export function Medal({ entry, className = '', style }: { entry: Pick<CatalogEnt
   );
 }
 
-/** Una medaglia della griglia: la voce, il caso concreto e i punti. */
-interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[] }
+/**
+ * Una medaglia della griglia: la voce, il caso concreto e i punti. `short`: il caso corto, senza ripetizioni, da mostrare
+ * solo se quello lungo (`details` con " · ") verrebbe tagliato; null se non c'è o non è più corto.
+ */
+interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[]; short: string | null }
 
 /**
  * Le voci dei Ruoli nel catalogo: nella scheda Bonus/Malus non ci sono (hanno i loro punti nella sottoscheda Ruoli, qui
@@ -104,20 +108,21 @@ function detailOf(item: Redundancy, name: string): string {
   return at > 0 && text.slice(at + 2).toLowerCase() === name.toLowerCase() ? text.slice(0, at) : text;
 }
 
-function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: Redundancy[]): ActiveRow[] {
+function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: Redundancy[], lang: Lang): ActiveRow[] {
   // I core a tre stanno nella carta in alto col loro +3: non si ripetono fra le voci (contano nel netto e in "Bonus +N");
   // le voci dei ruoli non ci sono (stanno nella sottoscheda Ruoli)
   return catalog.filter(e => e.kind === kind && e.key !== 'coreTrio' && !ROLE_KEYS.has(e.key)).flatMap(entry => {
     const own = items.filter(i => i.catalog === entry.key && i.points > 0);
     if (!own.length) return [];
-    return [{ key: entry.key, entry, points: own.reduce((n, i) => n + i.points, 0), details: own.map(i => detailOf(i, entry.name)) }];
+    const details = own.map(i => detailOf(i, entry.name));
+    return [{ key: entry.key, entry, points: own.reduce((n, i) => n + i.points, 0), details, short: shortCase(entry.key, own, lang, details.join(' · ')) }];
   });
 }
 
 /** Tutte le voci attive in una lista sola: prima i malus, poi i bonus, ognuno dal più pesante; a parità l'ordine del catalogo. */
-function orderedRows(catalog: CatalogEntry[], rating: TeamRating): ActiveRow[] {
+function orderedRows(catalog: CatalogEntry[], rating: TeamRating, lang: Lang): ActiveRow[] {
   const byPoints = (rows: ActiveRow[]) => rows.map((row, i) => ({ row, i })).sort((a, b) => b.row.points - a.row.points || a.i - b.i).map(x => x.row);
-  return [...byPoints(activeRows(catalog, 'malus', rating.penalty.items)), ...byPoints(activeRows(catalog, 'bonus', rating.bonus.items))];
+  return [...byPoints(activeRows(catalog, 'malus', rating.penalty.items, lang)), ...byPoints(activeRows(catalog, 'bonus', rating.bonus.items, lang))];
 }
 
 /** Il nome di un core per la scheda: i tre tipi parati, nell'ordine del giro ("Acqua / Lotta / Psico"). */
@@ -327,21 +332,64 @@ function CoreColumn({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T 
 const pointsOf = (row: ActiveRow) => signed(row.entry.kind === 'malus' ? -row.points : row.points);
 
 /**
- * Una medaglia: medaglia, nome, il caso concreto su una riga (tagliato coi puntini se non sta) e i punti. Col mouse e col
- * fuoco il tooltip DreamDex col caso intero; per i lettori di schermo il caso intero è già nel testo.
+ * Il caso lungo verrebbe tagliato? Si disegna il lungo e, prima del disegno, se sborda (`ref`: la riga del caso, larga
+ * quanto la medaglia, qualunque testo abbia) si passa al corto, ricordando quanto è largo il lungo. Quando la riga cambia
+ * larghezza: col corto si resta corti finché il lungo non ci starebbe, altrimenti si rimisura il lungo (si confronta
+ * sempre con la larghezza del lungo, non con quella del testo mostrato: niente avanti e indietro). Da capo quando cambia
+ * `key` (il testo, la lingua) e quando arrivano i caratteri.
+ */
+function useShortIfCut(ref: RefObject<HTMLElement | null>, hasShort: boolean, key: string): boolean {
+  const [cut, setCut] = useState({ key, short: false, longWidth: 0 });
+  if (cut.key !== key) setCut({ key, short: false, longWidth: 0 });
+  const short = hasShort && cut.key === key && cut.short;
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !hasShort || short || cut.key !== key || !el.clientWidth) return;
+    if (el.scrollWidth > el.clientWidth + 1) setCut({ key, short: true, longWidth: el.scrollWidth });
+  });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !hasShort || typeof ResizeObserver === 'undefined') return;
+    let last = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      const width = el.clientWidth;
+      if (!width || width === last) return;
+      last = width;
+      setCut(c => (c.short && width + 1 < c.longWidth ? c : { ...c, short: false, longWidth: 0 }));
+    });
+    observer.observe(el);
+    let alive = true;
+    document.fonts?.ready.then(() => { if (alive) setCut(c => (c.short ? { ...c, short: false, longWidth: 0 } : c)); });
+    return () => { alive = false; observer.disconnect(); };
+  }, [ref, hasShort]);
+
+  return short;
+}
+
+/**
+ * Una medaglia: medaglia, nome, il caso concreto su una riga e i punti. Il caso è quello lungo quando sta; se verrebbe
+ * tagliato, quello corto senza ripetizioni (useShortIfCut); se non sta neanche il corto, i puntini. Col mouse e col fuoco
+ * il tooltip DreamDex ha sempre il caso lungo, e anche i lettori di schermo leggono sempre il lungo.
  */
 function Entry({ row, index }: { row: ActiveRow; index: number }) {
   const { entry, details } = row;
   const tip = useFloatAnchor<true>();
+  const caseRef = useRef<HTMLSpanElement>(null);
+  const long = details.join(' · ');
+  const short = useShortIfCut(caseRef, !!row.short, `${long}|${row.short ?? ''}`) && row.short;
   return (
     <li className={`bm-row ${entry.kind}`} tabIndex={0} {...tip.bind(true)}>
       {/* Le medaglie entrano una dopo l'altra (--i: il ritardo) quando si apre la scheda */}
       <Medal entry={entry} style={{ '--i': index } as CSSProperties} />
       <span className="bm-row-tx">
         <b>{entry.name}</b>
-        <span className="bm-row-case">
-          {details.map((detail, i) => <span key={i}>{i > 0 && ' · '}<Typed text={detail} /></span>)}
+        {/* Sempre la stessa riga (la osserva useShortIfCut), col corto o col lungo dentro; col corto il lungo resta per i lettori di schermo */}
+        <span ref={caseRef} className={`bm-row-case${short ? ' short' : ''}`} aria-hidden={short ? true : undefined}>
+          {short ? <Typed text={short} /> : details.map((detail, i) => <span key={i}>{i > 0 && ' · '}<Typed text={detail} /></span>)}
         </span>
+        {short && <span className="visually-hidden">{long}</span>}
       </span>
       <span className="bm-row-pts">{pointsOf(row)}</span>
       {tip.anchor && (
@@ -388,7 +436,7 @@ function MoreEntries({ hidden, t }: { hidden: ActiveRow[]; t: T }) {
  * nella sottoscheda Ruoli.
  */
 export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamRating; lang: Lang; t: T; onCatalogue?: () => void }) {
-  const rows = orderedRows(bonusMalusCatalog(lang), rating);
+  const rows = orderedRows(bonusMalusCatalog(lang), rating, lang);
   const totals = bonusMalusTotals(rating);
   const net = totals.net;
   const nothing = totals.bonus === 0 && totals.malus === 0;

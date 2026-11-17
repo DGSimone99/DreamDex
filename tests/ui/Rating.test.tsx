@@ -338,6 +338,40 @@ describe('Bonus/Malus', () => {
     }
   });
 
+  it('il caso corto solo quando il lungo verrebbe tagliato; tooltip e lettori di schermo sempre col lungo', async () => {
+    // Misura finta: la riga del caso è larga 260, il testo 7 per carattere
+    const client = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('bm-row-case') ? 260 : 0;
+    });
+    const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('bm-row-case') ? 7 * (this.textContent ?? '').length : 0;
+    });
+    const hole = (type: string) => ({ text: `Nessuno regge ${type}`, points: 2, catalog: 'defenseHole', parts: { type } });
+    const rating = {
+      ...fakeRating([], []),
+      penalty: { total: 7, items: [hole('Water'), hole('Electric'), hole('Grass'), { text: '3 membri di tipo Steel', points: 1, catalog: 'sameType', parts: { n: '3', type: 'Steel' } }] },
+    } as unknown as TeamRating;
+    try {
+      const { user } = renderBm(rating);
+      const [holes, same] = medals();
+      // Lungo: 59 caratteri (413 > 260) → il corto, che sta (32 caratteri)
+      const cut = holes.querySelector('.bm-row-case')!;
+      expect(cut).toHaveClass('short');
+      expect(cut).toHaveTextContent(/^Nessuno regge: Water, Electric, Grass$/);
+      expect(cut).toHaveAttribute('aria-hidden', 'true');
+      expect(holes.querySelector('.visually-hidden')).toHaveTextContent('Nessuno regge Water · Nessuno regge Electric · Nessuno regge Grass');
+      // Il lungo sta (22 caratteri): resta il lungo anche se ha un corto
+      expect(same.querySelector('.bm-row-case')).not.toHaveClass('short');
+      expect(same.querySelector('.bm-row-case')).toHaveTextContent(/^3 membri di tipo Steel$/);
+      expect(same.querySelector('.visually-hidden')).toBeNull();
+      await tabTo(user, holes);
+      await waitFor(() => expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Nessuno regge WaterNessuno regge ElectricNessuno regge Grass'));
+    } finally {
+      client.mockRestore();
+      scroll.mockRestore();
+    }
+  });
+
   it('senza bonus solo le medaglie dei malus; i problemi nella testata come nelle altre aree', () => {
     renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
     expect(medalNames()).toEqual(['Tipi doppioni', 'Hazard doppio']);
