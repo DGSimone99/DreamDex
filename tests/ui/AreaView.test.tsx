@@ -24,7 +24,7 @@ const tabs = () => screen.getAllByRole('tab').map(tab => tab.textContent!.trim()
 describe('vista di un\'area sulla pagina', () => {
   it('Difesa: sottostatistiche calcolate, Generale aperta di default', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(tabs()).toEqual(expect.arrayContaining(['Sostenibilità', 'Coverage tipi', 'Coverage meta']));
+    expect(tabs()).toEqual(expect.arrayContaining(['Recupero', 'Coverage tipi', 'Coverage meta']));
     expect(tabs()).not.toContain('Robustezza');
     expect(screen.getByRole('tab', { name: /^Generale/ })).toHaveAttribute('aria-selected', 'true');
   });

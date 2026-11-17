@@ -8,7 +8,7 @@ import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { KoBadges, koBands, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
-import { Ask, MetaTargets, TypeAverages } from './TargetsTip';
+import { Ask, BarHead, MetaTargets, TypeAverages } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect, type ReactNode } from 'react';
@@ -122,8 +122,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {/* Accanto alle testate il "?" coi bersagli, come nella guida: il Pokémon medio dei 18 tipi, le minacce del meta */}
-              <th scope="col">{t('kob.headTypes')}<Ask label={t('guide.off.targets.typesTitle')}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col">{t('kob.headMeta')}<Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
+              <th scope="col"><BarHead icon="sword" word={t('kob.headTypes')} phrase={t('kob.headTypesWho')} /><Ask label={t('guide.off.targets.typesTitle')}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="sword" word={t('kob.headMeta')} phrase={t('kob.headMetaWho')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>

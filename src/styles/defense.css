@@ -134,7 +134,7 @@
   .rob-side .ct-pill { min-width: 0; padding: 1px 4px; font-size: 11px; }
 }
 
-/* Sostenibilità nella cornice comune: Perde (Stealth Rock e strumenti a parte), Recupera con le fonti, il Netto come barra
+/* Recupero nella cornice comune: Perde (Stealth Rock e strumenti a parte), Recupera con le fonti, il Netto come barra
    attorno allo zero (±50% ai bordi, come SUSTAIN_FULL) e il valore in pastiglia */
 .sus-table .sus-col-loss { width: 120px; }
 /* Recupera prende lo spazio che resta (si stringe per prima sugli schermi piccoli): Perde resta larga, le sue testate su una riga */
@@ -315,7 +315,7 @@
 @media (max-width: 560px) {
   .guide-holds { grid-template-columns: repeat(2, 1fr); }
 }
-/* Sostenibilità in un pannello stretto (1280 a squadra chiusa, 1366 aperta): colonne più strette, il Netto resta leggibile */
+/* Recupero in un pannello stretto (1280 a squadra chiusa, 1366 aperta): colonne più strette, il Netto resta leggibile */
 @container (max-width: 1100px) {
   .sus-table .sus-col-loss { width: 108px; }
   .sus-table .sus-col-net { width: 140px; }
@@ -328,7 +328,7 @@
   .sus-net-num { min-width: 40px; font-size: 13px; }
 }
 
-/* Guida, Sostenibilità: Recupera e Perde come tasti, le eccezioni, dal netto al voto */
+/* Guida, Recupero: Recupera e Perde come tasti, le eccezioni, dal netto al voto */
 .guide-two.even { grid-template-columns: 1fr 1fr; }
 .guide-two .guide-keys { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
 .help-panel .guide-foot, .guide-foot { max-width: none; margin: 6px 0 0; font-size: 12px; color: var(--faint); }
@@ -416,7 +416,7 @@
 @container (max-height: 330px) { .def-meta-grid .ct-table .eff-tag { top: auto; bottom: 2px; } }
 .def-meta-grid .dm-h { line-height: 1; }
 
-/* Generale della Difesa: Tipi e Meta sono barre a pezzi come nell'Offesa (HoldBars), più larghe; Sostenibilità e
+/* Generale della Difesa: Tipi e Meta sono barre a pezzi come nell'Offesa (HoldBars), più larghe; Recupero e
    Difesa restano barre semplici, più strette */
 .kob-line.hb-line { width: calc(100% - 10px); gap: 8px; }
 .kob.hb { cursor: help; }
@@ -433,17 +433,20 @@
 .kob-line.hb-line .kob-count { min-width: 42px; }
 .kob.hb-held { color: var(--good); background: color-mix(in srgb, var(--good) 34%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob.hb-held .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
-.kob.hb-2 { --kob-ink: color-mix(in srgb, var(--bad) 35%, var(--text)); color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+/* Il semaforo: verde regge, giallo (Warn, "da controllare") cade in due colpi, rosso in uno. Il giallo un filo più pieno
+   del rosso di prima, se no sul fondo scuro sembra grigio; etichetta 9,3:1 e numero 7,5:1 sul pezzo (col mouse 7,1 e 5,7) */
+.kob.hb-2 { --kob-ink: color-mix(in srgb, var(--warn) 35%, var(--text)); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); background: color-mix(in srgb, var(--warn) 16%, transparent); }
 .kob.hb-ohko { color: var(--bad); background: color-mix(in srgb, var(--bad) 36%, transparent); }
 .kob.hb-ohko .kob-num > b { color: color-mix(in srgb, var(--bad) 55%, white); }
 .kob.hb-held:hover { background: color-mix(in srgb, var(--good) 42%, transparent); }
-.kob.hb-2:hover { background: color-mix(in srgb, var(--bad) 22%, transparent); }
+.kob.hb-2:hover { background: color-mix(in srgb, var(--warn) 26%, transparent); }
 .kob.hb-ohko:hover { background: color-mix(in srgb, var(--bad) 50%, transparent); }
 .hb-say { display: flex; align-items: center; gap: 7px; margin: 0 0 6px; font-size: var(--tip-body); color: var(--muted); }
 .hb-group + .hb-group { margin-top: 10px; }
 .hb-dot { flex: none; width: 9px; height: 9px; border-radius: 2px; }
+.hb-group-two .hb-dot { background: color-mix(in srgb, var(--warn) 40%, var(--panel)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 65%, transparent); }
 
-/* Squadra chiusa: sotto le barre di Tipi e Meta i colpi peggiori (pastiglie del colore della fascia), sotto Sostenibilità
+/* Squadra chiusa: sotto le barre di Tipi e Meta i colpi peggiori (pastiglie del colore della fascia), sotto Recupero
    come recupera */
 .mcs.wh { width: calc(100% - 36px); }
 /* Come le pastiglie delle mosse dell'Offesa (nel colore del tipo, il nome si apre passando sopra); il danno colorato dalla
@@ -459,14 +462,14 @@
 /* Come nell'Offesa: le pastiglie e il recupero solo se la cornice ha posto per sei righe con loro */
 @container (max-height: 500px) { .def-general .mcs.wh, .def-general .mcs.dscs { display: none; } }
 
-/* Sostenibilità: come la Generale, la riga del team sempre in fondo (riga vuota che prende lo spazio) */
+/* Recupero: come la Generale, la riga del team sempre in fondo (riga vuota che prende lo spazio) */
 .def-sus > .ad-scroll { flex: 1 1 auto; min-height: 0; }
 .def-sus .def-members { height: 100%; }
 .def-sus .def-members tr.og-fill { height: auto; }
 .def-sus .def-members tr.og-fill td { padding: 0; border: 0; }
 
 /* Colonna Difesa della Generale: il pezzo del membro in due parti, quello che regge (colore dell'Offesa) e la
-   Sostenibilità, verde a righe se aggiunge, rossa a righe se toglie (la parte che si mangia) */
+   Recupero, verde a righe se aggiunge, rossa a righe se toglie (la parte che si mangia) */
 .og-share-bar .dsh-sus, .def-bar .dsh-sus { position: absolute; top: 0; bottom: 0; }
 .dsh-sus.gain { background: repeating-linear-gradient(135deg, var(--good) 0 3px, color-mix(in srgb, var(--good) 55%, transparent) 3px 6px); }
 .dsh-sus.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 3px, color-mix(in srgb, var(--bad) 45%, transparent) 3px 6px); }
@@ -487,7 +490,7 @@
 .area-legend-swatch i.dsh-leg.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); border-color: transparent; }
 .ftip.dsh-tip { width: var(--tip-s); }
 
-/* Squadra chiusa, sotto la barra Difesa: le pastiglie della Sostenibilità (come le mosse dell'Offesa), recupero nel colore
+/* Squadra chiusa, sotto la barra Difesa: le pastiglie del Recupero (come le mosse dell'Offesa), recupero nel colore
    della mossa o in verde, perdite in rosso col loro % */
 .mcs.dscs { width: 100%; flex-wrap: wrap; row-gap: 4px; align-items: center; overflow: visible; }
 .mc.dsc { cursor: default; }

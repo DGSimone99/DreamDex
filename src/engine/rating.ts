@@ -162,7 +162,7 @@ export interface TeamRating {
   weightTable: AreaWeightTable;
   /** Offesa: danno vero dei set contro i difensori del formato, con le sottostatistiche per membro. */
   offense: TeamOffense;
-  /** Difesa: robustezza, sostenibilità e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
+  /** Difesa: robustezza, Recupero e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
   defense: TeamDefense;
   /** Velocità: ogni membro coi guadagni (setup, meteo, priorità) e il controllo velocità del team. */
   speed: TeamSpeed;

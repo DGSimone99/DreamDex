@@ -160,7 +160,7 @@ export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: 'walls'
 export function levelOf(archetype: Archetype, key: LevelKey): Level {
   const level = ROLE_LEVELS[archetype][key] ?? 'ignored';
   if (ROLES_COUNT_MEASURED) return level;
-  // Il Recupero lo misura già la Sostenibilità: resta solo dove la tabella lo chiede come essenziale (Balance, semi-stall, stall)
+  // Il ruolo Recupero lo misura già la sottoscheda Recupero della Difesa: resta solo dove la tabella lo chiede come essenziale (Balance, semi-stall, stall)
   if (key === 'recovery') return level === 'essential' ? 'essential' : 'ignored';
   if (SWITCHED.has(key) && level === 'minor') return 'ignored';
   return level;

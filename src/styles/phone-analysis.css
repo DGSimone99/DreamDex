@@ -75,7 +75,7 @@
   .def-frame .def-box { --bs: 1; }
   /* relative: i testi nascosti (assoluti) delle caselle restano dentro lo scorrimento, non allargano la pagina */
   .def-frame > .ad-scroll { position: relative; overflow-x: auto; overscroll-behavior-x: contain; }
-  /* Le tabelle larghe (Sostenibilità, le griglie dei tipi) scorrono dentro la cornice: il membro resta fermo a sinistra */
+  /* Le tabelle larghe (Recupero, le griglie dei tipi) scorrono dentro la cornice: il membro resta fermo a sinistra */
   .def-frame .def-grid tbody th[scope='row'], .def-frame .def-grid thead th.def-mon-h { position: sticky; left: 0; z-index: 1; background: var(--panel); }
   .def-frame .def-mon-stats { display: none; }
   .def-frame .def-mon-tag.line { display: inline-flex; }

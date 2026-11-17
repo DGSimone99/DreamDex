@@ -33,7 +33,7 @@ describe('Difesa: Generale e guida', () => {
   it('Generale: niente tessere sotto la tabella', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
     expect(document.querySelector('.def-tile')).toBeNull();
-    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: /^(Sostenibilità|Coverage tipi|Coverage meta)/ })).toBeNull();
+    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: /^(Recupero|Coverage tipi|Coverage meta)/ })).toBeNull();
   });
 
   it('senza meta: nessuna sezione Coverage meta nella guida', async () => {
@@ -46,11 +46,11 @@ describe('Difesa: Generale e guida', () => {
   it('il "?" della sottoscheda aperta apre la guida su quella sezione; Esc riporta il focus al "?"', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
-    const help = screen.getByRole('button', { name: 'Come funziona Sostenibilità' });
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
+    const help = screen.getByRole('button', { name: 'Come funziona Recupero' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Difesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Sostenibilità' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tab', { name: 'Recupero' })).toHaveAttribute('aria-selected', 'true');
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Mosse che assorbono');
     // Niente più la riga "Regge poco" né la sezione del voto
     expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/Regge poco|Il voto/);
@@ -62,23 +62,23 @@ describe('Difesa: Generale e guida', () => {
   it('cambiare sezione nella guida non sposta la sottoscheda; alla chiusura il focus torna al "?"', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
-    await user.click(screen.getByRole('button', { name: 'Come funziona Sostenibilità' }));
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
+    await user.click(screen.getByRole('button', { name: 'Come funziona Recupero' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Difesa' });
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
     expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{Escape}');
-    expect(screen.getByRole('tab', { name: /^Sostenibilità/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: 'Come funziona Sostenibilità' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: /^Recupero/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Come funziona Recupero' })).toHaveFocus();
   });
 });
 
-describe('Difesa: Robustezza e Sostenibilità', () => {
-  it('Sostenibilità: una riga per membro con perdita, recupero e fonti', async () => {
+describe('Difesa: Robustezza e Recupero', () => {
+  it('Recupero: una riga per membro con perdita, recupero e fonti', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     const panel = screen.getByRole('tabpanel');
     // Gholdengo ha Recover (50%): il recupero è pieno o, se regge poco, vale metà (+25%) e lo dice
     const gholdengo = rating.defense.members[1].sustainParts;
@@ -97,7 +97,7 @@ describe('Difesa: recupero a metà', () => {
     const rating = rateTeam(zam, fixtureData, 'it')!;
     expect(rating.defense.members[0].sustainParts.halved).toBe(true);
     renderIt(<AreaView rating={rating} area="defense" team={zam} analysis={analyzeTeam(zam, fixtureData)} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     const chip = document.querySelector('.ad-halved')!;
     expect(chip.getAttribute('title')).toBe('Recupero ridotto: regge pochi colpi');
     expect(chip.getAttribute('title')).not.toMatch(/3HKO/);
@@ -223,8 +223,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
     expect(metaSwitch.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
-    // Sulle sottoschede senza etichette (Sostenibilità) l'interruttore non c'è
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    // Sulle sottoschede senza etichette (Recupero) l'interruttore non c'è
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     expect(screen.queryByRole('switch')).toBeNull();
   });
 
@@ -324,18 +324,18 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
 describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   const subTabs = () => within(screen.getByRole('tablist', { name: /Difesa/ })).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent);
 
-  it('sottoschede nell\'ordine Generale, Coverage tipi, Sostenibilità, Coverage meta (niente Robustezza)', () => {
+  it('sottoschede nell\'ordine Generale, Coverage tipi, Recupero, Coverage meta (niente Robustezza)', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Sostenibilità']);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Recupero']);
     expect(document.body.textContent).not.toMatch(/Robustezza/);
   });
 
   it('senza meta niente Coverage meta, stesso ordine', () => {
     renderIt(<AreaView rating={noMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Recupero']);
   });
 
-  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Difesa come quanto porta ogni membro (Sostenibilità dentro)', () => {
+  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Difesa come quanto porta ogni membro (Recupero dentro)', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
@@ -356,6 +356,37 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(document.querySelector('.def-weak')).toBeNull();
   });
 
+  it('testate Tipi e Meta con lo scudo e chi colpisce chi: "Tipi, quanti ne reggi", "Meta, chi ti manda KO"', () => {
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const types = screen.getByRole('columnheader', { name: /^Tipi, quanti ne reggi/ });
+    const meta = screen.getByRole('columnheader', { name: /^Meta, chi ti manda KO/ });
+    for (const head of [types, meta]) {
+      // Lo scudo solo per gli occhi, il "?" resta accanto
+      expect(head.querySelector('.bar-head-ic svg')).toHaveAttribute('aria-hidden', 'true');
+      expect(head.querySelector('.guide-ask')).not.toBeNull();
+    }
+  });
+
+  it('il pezzo di mezzo (2HKO) è giallo come gli altri avvisi, non rosso', () => {
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const two = document.querySelector('.def-members .kob.hb.hb-2');
+    expect(two).not.toBeNull();
+    expect(two).toHaveTextContent('2HKO');
+  });
+
+  it('la legenda Recupero / Perdite solo se la colonna Difesa disegna la parte a righe del Recupero', () => {
+    const rating = withMeta();
+    const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    expect(document.querySelector('.dsh-sus')).not.toBeNull();
+    expect(document.querySelector('.def-general .area-legend')).toHaveTextContent('RecuperoPerdite');
+    unmount();
+    // Nessun membro recupera o perde: niente righe, niente legenda
+    const flat = { ...rating, defense: { ...rating.defense, sustain: 0, members: rating.defense.members.map(m => ({ ...m, sustain: 0 })) } };
+    renderIt(<AreaView rating={flat} area="defense" team={team} analysis={analysis} problems={[]} />);
+    expect(document.querySelector('.dsh-sus')).toBeNull();
+    expect(document.querySelector('.def-general .area-legend')).toBeNull();
+  });
+
   it('la Difesa del team in fondo ha la barra col colore della soglia', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
@@ -367,7 +398,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori senza colonne in più; altrimenti niente pastiglie', () => {
     const rating = withMeta();
     const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi, quanti ne reggi', 'Meta, chi ti manda KO', 'Difesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {

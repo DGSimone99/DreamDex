@@ -29,7 +29,7 @@ describe('tabelle complete nelle schede d\'area', () => {
   it('le legende dei colori stanno nella riga della legenda, dentro il pannello; le schede senza legenda non ne hanno', async () => {
     const user = await openTab('Difesa');
     const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
-    // Generale: la legenda della Sostenibilità (i pezzi di Tipi e Meta hanno la loro etichetta dentro)
+    // Generale: la legenda del Recupero (la colonna Difesa ha la parte a righe) (i pezzi di Tipi e Meta hanno la loro etichetta dentro)
     expect(view().querySelector('.area-legend')).toHaveTextContent('RecuperoPerdite');
     expect(view().querySelector('.area-tools-row')).toBeNull();
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
@@ -37,7 +37,7 @@ describe('tabelle complete nelle schede d\'area', () => {
     // La riga in fondo viene dopo la tabella
     const table = within(view()).getByRole('table');
     expect(table.compareDocumentPosition(legend()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    await user.click(within(view()).getByRole('tab', { name: /^Sostenibilit/ }));
+    await user.click(within(view()).getByRole('tab', { name: /^Recupero/ }));
     expect(view().querySelector('.area-legend')).toBeNull();
   });
 

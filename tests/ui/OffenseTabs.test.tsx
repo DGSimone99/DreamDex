@@ -197,6 +197,9 @@ describe('Offesa: Generale', () => {
     expect(heads[1].startsWith('Tipi')).toBe(true);
     expect(heads[2].startsWith('Meta')).toBe(true);
     expect(heads[3]).toBe('Offesa');
+    // Le testate dicono chi colpisce chi, con la spada (solo per gli occhi): "Tipi, quanti ne colpisci", "Meta, chi mandi KO"
+    expect(screen.getByRole('columnheader', { name: /^Tipi, quanti ne colpisci/ }).querySelector('.bar-head-ic svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('columnheader', { name: /^Meta, chi mandi KO/ }).querySelector('.guide-ask')).not.toBeNull();
     expect(memberRows().map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
     unmount();

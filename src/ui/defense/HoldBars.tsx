@@ -13,7 +13,8 @@ import { HOLD_BANDS } from './holds';
 /*
  * La barra a pezzi della Generale della Difesa, sorella di quella dell'Offesa (KoBadges): per un membro (o per il team)
  * quanti dei 18 tipi o delle minacce del meta lo mandano KO in un colpo, in due, in tre, in quattro o più. I colori sono
- * quelli di Coverage tipi della Difesa; i pezzi vanno dal migliore (regge, a sinistra) al peggiore.
+ * un semaforo, come i colori di stato dell'app: verde regge (3HKO+), giallo cade in due colpi (2HKO), rosso in uno (OHKO);
+ * i pezzi vanno dal migliore (regge, a sinistra) al peggiore.
  */
 
 /** Un bersaglio (tipo o minaccia del meta) con la fascia del colpo che il membro prende. */
@@ -93,12 +94,13 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
           );
         })}
         {key && (
-          <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : 'var(--bad)'} className="kot">
+          <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
             <div className="kot-head"><b>{who}</b><span className={`kob labeled hb ${PIECE_CLS[key]}`}><em>{tag(key)}</em><b>{by(key).length}</b></span><small>{of}</small></div>
-            {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO) */}
+            {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO). Il pallino del 2HKO è giallo
+                come il suo pezzo (le caselle di Coverage tengono la loro scala a quattro tinte) */}
             {(key === 'held' ? (['four', 'three'] as const) : [key]).map(b => {
               const items = targets.filter(x => x.band === b);
-              return items.length ? <div key={b} className="hb-group"><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;
+              return items.length ? <div key={b} className={`hb-group${b === 'two' ? ' hb-group-two' : ''}`}><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;
             })}
           </FloatTip>
         )}

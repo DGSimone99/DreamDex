@@ -11,7 +11,7 @@ const halfBar = (x: number) => `${Math.min(50, Math.round(100 * Math.abs(x)))}%`
 const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 
 /**
- * La Sostenibilità, nella cornice comune (i membri nello stesso punto delle altre schede). Per ogni membro quello che perde,
+ * Il Recupero, nella cornice comune (i membri nello stesso punto delle altre schede). Per ogni membro quello che perde,
  * a parte Stealth Rock (a ogni ingresso, dimezzata se il team toglie gli hazard) e lo strumento (Life Orb, Flame Orb…), e quello che
  * recupera con le fonti, il netto (recupero meno perdite) come barra attorno allo zero e il valore in pastiglia.
  * Niente riga del team: il valore del team è già sull'etichetta della scheda.

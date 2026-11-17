@@ -8,7 +8,7 @@ import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
 import { HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
-import { Ask, MetaTargets } from '../offense/TargetsTip';
+import { Ask, BarHead, MetaTargets } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies, getMove, toID } from '../../engine/dex';
 import type { TeamSet } from '../../engine/sets';
@@ -56,7 +56,7 @@ function sustainLine(parts: SustainParts, rocksLabel: string, itemLabel: string)
 
 /**
  * Il tooltip di quanto porta un membro (o il team) alla Difesa: i tre pezzi, Coverage tipi, Coverage meta e
- * Sostenibilità, con sotto la Sostenibilità il suo valore e da dove viene.
+ * Recupero, con sotto il Recupero il suo valore e da dove viene.
  */
 function ShareTip({ who, share, sustain, line, meta, total = false }: { who: string; share: DefenseShare; sustain: number; line: string; meta: boolean; total?: boolean }) {
   const t = useT();
@@ -76,15 +76,18 @@ function ShareTip({ who, share, sustain, line, meta, total = false }: { who: str
 /**
  * Quanto porta un membro alla Difesa del team, come nell'Offesa: in tenue la Difesa del team divisa nei pezzi dei membri,
  * uno dopo l'altro nell'ordine delle righe; il pezzo del membro acceso al suo posto, in due parti: quello che regge (tipi
- * e meta, nel colore dell'Offesa) e la Sostenibilità, verde se aggiunge, rossa se toglie (la parte che si mangia). Il
+ * e meta, nel colore dell'Offesa) e il Recupero, verde se aggiunge, rossa se toglie (la parte che si mangia). Il
  * numero sono i suoi punti; passandoci sopra il tooltip coi pezzi.
  */
+/** Quanto è lunga la parte a righe del Recupero nel pezzo di un membro (la perdita non va oltre quello che regge). */
+const sustainSide = (share: DefenseShare) => (share.sustain >= 0 ? share.sustain : Math.min(Math.max(0, share.types + share.meta), -share.sustain));
+
 function DefShare({ share, from, team, tip, label }: { share: DefenseShare; from: number; team: number; tip: ReactNode; label: string }) {
   const float = useFloatAnchor<true>();
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
   const cover = Math.max(0, share.types + share.meta);
   const lit = share.sustain >= 0 ? cover : Math.max(0, cover + share.sustain);
-  const side = share.sustain >= 0 ? share.sustain : Math.min(cover, -share.sustain);
+  const side = sustainSide(share);
   return (
     // Raggiungibile con le frecce (data-nav, nel gruppo della tabella): col fuoco il tooltip
     <span className="def-cell dsh" data-nav="" role="img" aria-label={label} {...float.bind(true)}>
@@ -100,7 +103,7 @@ function DefShare({ share, from, team, tip, label }: { share: DefenseShare; from
 }
 
 /**
- * A squadra chiusa, sotto la barra Difesa: la Sostenibilità come le mosse dell'Offesa. In verde da dove recupera (la
+ * A squadra chiusa, sotto la barra Difesa: il Recupero come le mosse dell'Offesa. In verde da dove recupera (la
  * mossa con l'icona del suo tipo, lo strumento con la sua icona, l'abilità), in rosso le perdite col loro % (Stealth
  * Rock con l'icona Roccia, lo strumento o la mossa che costa PS). Il nome intero nel suggerimento.
  */
@@ -137,7 +140,7 @@ function SustainChips({ parts, set }: { parts: SustainParts; set: TeamSet | unde
   );
 }
 
-/** La Difesa del team in fondo: la barra in due parti, quello che regge (tipi e meta) e la Sostenibilità (verde o rossa), senza il numero (il voto sta nella testata dell'area). */
+/** La Difesa del team in fondo: la barra in due parti, quello che regge (tipi e meta) e il Recupero (verde o rossa), senza il numero (il voto sta nella testata dell'area). */
 function TeamDefense({ value, sustainPoints, tip, label }: { value: number; sustainPoints: number; tip: ReactNode; label: string }) {
   const float = useFloatAnchor<true>();
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
@@ -167,6 +170,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const span = (x: DefenseShare) => Math.max(0, x.types + x.meta, x.points);
   const shareFrom = shares.map((_, i) => shares.slice(0, i).reduce((a, b) => a + span(b), 0));
   const teamShare = shares.reduce<DefenseShare>((a, b) => ({ points: a.points + b.points, types: a.types + b.types, meta: a.meta + b.meta, sustain: a.sustain + b.sustain }), { points: 0, types: 0, meta: 0, sustain: 0 });
+  // La legenda Recupero / Perdite solo se qualche barra della colonna Difesa ha la parte a righe (verde o rossa)
+  const striped = shares.some(x => sustainSide(x) > 0) || teamShare.sustain !== 0;
   const rocksLabel = t('ddetail.sus.rocks');
   const itemLabel = t('ddetail.sus.orb');
 
@@ -204,14 +209,14 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table ref={nav.ref} className="def-grid def-members" aria-label={`${t('area.defense')}: ${t('detail.tab.general')}`} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
-          {/* Come l'Offesa: i nomi in una colonna, poi Tipi, Meta e l'ultima in colonne uguali; nell'ultima Sostenibilità e
+          {/* Come l'Offesa: i nomi in una colonna, poi Tipi, Meta e l'ultima in colonne uguali; nell'ultima Recupero e
               Difesa affiancate, così Tipi e Meta stanno nello stesso posto e larghi uguali */}
           <colgroup><col className="def-col-mon" /><col />{meta && <col />}<col /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('kob.headTypes')}<Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col">{t('kob.headMeta')}<Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
+              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} phrase={t('hold.headTypesWho')} /><Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} phrase={t('hold.headMetaWho')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('area.defense')}</th>
             </tr>
           </thead>
@@ -225,7 +230,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
                 {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
-                  {/* Quanto porta alla Difesa del team (sommati fanno la Difesa del team): quello che regge e la Sostenibilità */}
+                  {/* Quanto porta alla Difesa del team (sommati fanno la Difesa del team): quello che regge e il Recupero */}
                   <span className="og-share">
                     <DefShare share={shares[i]} from={shareFrom[i]} team={defense.value} label={t('ddetail.shareTitle', { n: signed(shares[i].points) })}
                       tip={<ShareTip who={m.species} share={shares[i]} sustain={m.sustain} line={sustainLine(m.sustainParts, rocksLabel, itemLabel)} meta={!!defense.coverageMeta} />} />
@@ -249,11 +254,12 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           </tfoot>
         </table>
       </div>
-      {/* I colori della Sostenibilità nella colonna Difesa (i pezzi di Tipi e Meta hanno la loro etichetta) */}
-      <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">
+      {/* I colori del Recupero nella colonna Difesa (i pezzi di Tipi e Meta hanno la loro etichetta): la legenda solo se
+          una barra li disegna davvero */}
+      {striped && <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">
         <span className="area-legend-swatch"><i className="dsh-leg gain" />{t('ddetail.legendRecovery')}</span>
         <span className="area-legend-swatch"><i className="dsh-leg loss" />{t('ddetail.legendLoss')}</span>
-      </span></div>
+      </span></div>}
     </div>
   );
 }
