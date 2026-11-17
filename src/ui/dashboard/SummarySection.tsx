@@ -114,9 +114,9 @@ const joinList = (items: string[], lang: string) => {
 /** Una sinergia: un core difensivo (da 2 o 3) o un legame tra membri. */
 type Synergy = { core: Core; link?: undefined } | { link: TeamLink; core?: undefined };
 
-/** Colore dell'etichetta e dell'anello: core verde, pivot e Baton Pass azzurro, Desiderio magenta, trappole giallo. */
+/** Colore dell'etichetta e dell'anello: core verde, pivot e Baton Pass azzurro, Desiderio Accent Ink (azzurro come i link), trappole giallo. */
 const LINK_COLOR: Record<TeamLink['kind'], string> = {
-  pivot: 'var(--accent)', batonpass: 'var(--accent)', wish: 'var(--accent-2-ink)', phazer: 'var(--warn)',
+  pivot: 'var(--accent)', batonpass: 'var(--accent)', wish: 'var(--accent-ink)', phazer: 'var(--warn)',
 };
 
 interface SynergyView { key: string; tag: string; color: string; title: string; text: string; mons: string[]; trio: boolean }

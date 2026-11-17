@@ -62,11 +62,13 @@ export const pieceSize = (n: number) => ({ '--n': Math.max(0, n) } as CSSPropert
  * parte quelli in più dopo la danza o con Tera/Z. A destra della barra il conto "11/18": quanti ne manda KO in due colpi o
  * meglio (nella riga del team verde se li copre tutti, rosso se no). `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18".
  */
-export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, alarm = false }: {
+export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, alarm = false, quiet = false }: {
   bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
   /** Clic su un pezzo OHKO / 2HKO: apre il dettaglio su quei bersagli. */
   onPick?: (band: KoBand | 'rest') => void;
   alarm?: boolean;
+  /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per colpire (un muro). I pezzi restano uguali. */
+  quiet?: boolean;
 }) {
   const t = useT();
   const lang = useLang();
@@ -94,9 +96,9 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
   // Quanti bersagli manda KO in due colpi o meglio (colpo semplice): "11/18", da leggere al volo
   const hit = bands.plain.ohko.length + bands.plain.two.length;
   // Il colore dice quanto copre: pieno verde, da due terzi verde, da un terzo giallo, sotto rosso (zero spento); nella riga
-  // del team basta uno scoperto per il rosso
+  // del team basta uno scoperto per il rosso; `quiet` (un muro) lo lascia neutro
   const ratio = total ? hit / total : 0;
-  const countTone = alarm ? (rest > 0 ? ' bad' : ' full') : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
+  const countTone = alarm ? (rest > 0 ? ' bad' : ' full') : quiet ? ' quiet' : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   return (
     <span className="kob-line">
     <span className="kob-row">

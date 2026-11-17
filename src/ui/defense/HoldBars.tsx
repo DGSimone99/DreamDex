@@ -53,10 +53,12 @@ export const teamHolds = (per: HoldTarget[][]): HoldTarget[] =>
 /**
  * La barra: un pezzo per fascia, misurato come nell'Offesa (pieceSize; un pezzo a zero non c'è), passando su un pezzo il tooltip
  * DreamDex elenca i bersagli. A destra il conto "12/18": quanti ne regge (meno di metà PS). `alarm` (la riga del team):
- * il conto è verde solo se li regge tutti, rosso se no.
+ * il conto è verde solo se li regge tutti, rosso se no. `quiet` (un attaccante): il conto è neutro.
  */
-export function HoldBars({ targets, who, of, alarm = false, onPick }: {
+export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPick }: {
   targets: HoldTarget[]; who: string; of: string; alarm?: boolean;
+  /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per reggere (un attaccante). I pezzi restano uguali. */
+  quiet?: boolean;
   /** Clic su un pezzo: apre Coverage tipi o meta con quei bersagli accesi (come nell'Offesa). */
   onPick?: (piece: Piece) => void;
 }) {
@@ -74,7 +76,7 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
   const tag = (p: Piece) => PIECE_TAG[p];
   const n = by('held').length;
   const ratio = total ? n / total : 0;
-  const countTone = alarm ? (n < total ? ' bad' : ' full') : n === 0 ? ' zero' : n === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
+  const countTone = alarm ? (n < total ? ' bad' : ' full') : quiet ? ' quiet' : n === 0 ? ' zero' : n === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   const list = (items: HoldTarget[]) => <div className={`kot-list${items[0]?.kind === 'mon' ? ' mons' : ''}`}>{items.map(x => <Target key={x.label} target={{ label: x.label, kind: x.kind, plain: 0, setup: null, once: null }} />)}</div>;
   return (
     <span className="kob-line hb-line">

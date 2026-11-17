@@ -152,6 +152,8 @@
 .kob-count.warn { --c: var(--warn); }
 .kob-count.bad { --c: var(--bad); }
 .kob-count.zero { --c: var(--faint); }
+/* Neutro: il conto di un muro nell'Offesa, di un attaccante nella Difesa (non è il suo lavoro); la riga del team mai */
+.kob-count.quiet { --c: var(--muted); }
 .kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
 /* La regola dei pezzi, uguale in Offesa e Difesa: ogni pezzo parte dal minimo (etichetta e numero ci stanno: 66px) e

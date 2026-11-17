@@ -65,6 +65,12 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   /** Spegne il dettaglio evidenziato. */
   clearFocus?: () => void }
 
+/**
+ * La famiglia principale del membro al posto `slot` ('attack', 'wall' o null), la stessa regola dei Ruoli. La usano le
+ * Generali: nella Velocità i muri restano grigi, nell'Offesa il conto dei muri è neutro, nella Difesa quello degli attaccanti.
+ */
+export const familyAt = (ctx: AreaContext, slot: number) => ctx.analysis.needs.primary[slot] ?? null;
+
 /** Il dettaglio di una tessera: che tabella, quale membro (posto nel team) e quale fascia (KO in un colpo o in due). */
 /** `band`: OHKO, 2HKO o 'rest' (quelli che il membro non manda KO in due colpi). */
 /** Nella Difesa (kind 'dtypes' / 'dmeta') `band` è il pezzo della barra: 'held' (3HKO+), 2HKO o OHKO. */

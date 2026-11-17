@@ -40,7 +40,7 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
-.help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--accent-2); background: var(--stripes), var(--band); }
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--line); background: var(--stripes), var(--band); }
 .help-head h3 { font-size: 20px; }
 /* Le guide delle aree partono da h2 (finestra a sé): lo stesso aspetto del titolo h3 delle altre finestre */
 .help-head h2 { margin: 0; font-size: 20px; line-height: inherit; }
@@ -53,7 +53,7 @@
 .help-nav [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-soft); font-weight: 600; }
 .help-panel { padding: 16px 22px 20px; overflow-y: auto; }
 /*
- * Guida ai tipi di team: ogni tipo col nome, i sei posti (spada = attaccante in accento, scudo = muro in magenta,
+ * Guida ai tipi di team: ogni tipo col nome, i sei posti (spada = attaccante in accento, scudo = muro in ciano spento,
  * tratteggiato = l'uno o l'altro) e una frase corta; gli stili come formula "chi lo porta + chi lo sfrutta".
  */
 .help-dialog.tt-dialog { width: min(600px, 100%); }
@@ -328,7 +328,8 @@
 .tt-pip { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; }
 .tt-pip .icon { width: 13px; height: 13px; stroke-width: 2.5; }
 .tt-pip.a { color: var(--on-accent); background: var(--accent); }
-.tt-pip.w { color: var(--on-accent-2); background: var(--accent-2); }
+/* Il muro nello stesso ciano dell'attaccante ma spento (fondo Accent Soft, scudo Accent Ink): si distinguono anche senza l'icona */
+.tt-pip.w { color: var(--accent-ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .tt-pip.x { border: 1.5px dashed var(--line); }
 .tt-caption { font-size: 13px; color: var(--muted); }
 .help-panel .tt-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font-size: 12px; color: var(--faint); }

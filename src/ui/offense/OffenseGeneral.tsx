@@ -3,7 +3,7 @@ import { DEFAULT_FORMAT } from '../../engine/format';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
-import type { AreaContext } from '../AreaDetail';
+import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { KoBadges, koBands, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
@@ -118,16 +118,18 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
               const index = slots[slot];
               const m = index === null ? null : members[index];
               const s = index === null ? null : shares[index];
+              // Il conto di un muro resta neutro: colpire poco non è un difetto per lui (la riga del team no)
+              const quiet = familyAt(ctx, slot) === 'wall';
               return (
                 // Passando sulla riga si accende anche la carta del membro nel team in alto
                 <tr key={`${name}-${slot}`} onMouseEnter={() => linkTeamCard(slot)} onMouseLeave={() => linkTeamCard(null)}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {m && s
                     ? <>
-                      <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
+                      <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} />
                         {roomy && <MoveChips shares={typeMoves(m, slot)} of={ofTypes} />}</td>
-                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
+                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} />
                         {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} />}</td>}
                       <td>

@@ -752,3 +752,23 @@ describe('Offesa: Coverage meta', () => {
     expect(within(table()).getByRole('rowheader', { name: /^Team Coverage\s*Covered by/ })).toBeInTheDocument();
   });
 });
+
+describe('Offesa Generale: il colore del conto segue il ruolo (voce 3.3)', () => {
+  const corv: TeamSet = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', nature: 'Impish', evs: { hp: 248, def: 168, spd: 92 }, moves: ['Roost', 'Brave Bird', 'Defog', 'U-turn'] };
+  const mixed = [team[0], corv];
+  it('il conto di un muro è neutro, quello di un attaccante colorato; la riga Team Coverage resta colorata', () => {
+    const a = analyzeTeam(mixed, fixtureData);
+    expect(a.needs.primary).toEqual(['attack', 'wall']);
+    renderIt(<AreaView rating={rateTeam(mixed, fixtureData, 'it')!} area="strength" team={mixed} analysis={a} problems={[]} />);
+    const rows = [...document.querySelectorAll<HTMLElement>('.def-members tbody tr:not(.og-fill)')];
+    const tones = (el: Element) => [...el.querySelectorAll('.kob-count')].map(c => [...c.classList].filter(k => k !== 'kob-count'));
+    // Great Tusk (attaccante): un colore del semaforo; Corviknight (muro): solo neutro
+    for (const tone of tones(rows[0])) expect(tone.some(k => ['full', 'good', 'warn', 'bad', 'zero'].includes(k))).toBe(true);
+    expect(tones(rows[1]).length).toBe(2);
+    for (const tone of tones(rows[1])) expect(tone).toEqual(['quiet']);
+    // Il testo per lo screen reader non cambia e non dice "muro"
+    expect(rows[1].querySelector('.kob-count')!.getAttribute('aria-label')).toMatch(/^\d+ su \d+ KO in due colpi o meglio$/);
+    expect(rows[1].querySelector('td')).not.toHaveTextContent(/muro/i);
+    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'bad')).toBe(true);
+  });
+});

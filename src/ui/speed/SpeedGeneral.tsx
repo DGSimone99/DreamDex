@@ -7,7 +7,7 @@ import {
   CONTROL_CONDITIONS, priorityMoves, roomShare, SHOWN_CONTROL, shownTotal, teamSpeedOf, type MemberSpeed, type TeamSpeed,
 } from '../../engine/speedArea';
 import { useT } from '../../i18n/react';
-import type { AreaContext } from '../AreaDetail';
+import { familyAt, type AreaContext } from '../AreaDetail';
 import { tone } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
@@ -121,7 +121,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
             {ctx.team.map((set, slot) => {
               const name = battleSpecies(set)?.name ?? set.species;
               const m = memberAt(slot);
-              const wall = ctx.analysis.needs.primary[slot] === 'wall';
+              const wall = familyAt(ctx, slot) === 'wall';
               const moves = m ? priorityMoves(set, ctx.team) : [];
               const prioTag = moves.length > 0 && (
                 <span className="sp-prio" tabIndex={0} aria-label={t('sdetail.prio.label', { moves: moves.join(', ') })} {...prio.bind(slot)}>

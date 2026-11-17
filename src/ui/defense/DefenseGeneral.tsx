@@ -5,7 +5,7 @@ import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { useLang, useT } from '../../i18n/react';
 import { anyGameName } from '../../i18n/game';
 import type { Lang } from '../../i18n';
-import type { AreaContext } from '../AreaDetail';
+import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
 import { HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
@@ -131,6 +131,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
   // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta
   const slotOf = (i: number) => ctx.team.findIndex(set => battleName(set) === members[i].species);
+  // Il conto di un attaccante resta neutro: reggere poco non è un difetto per lui (la riga del team no)
+  const quiet = (i: number) => familyAt(ctx, slotOf(i)) === 'attack';
   // Clic su un pezzo di Tipi o Meta: apre la sottoscheda con la riga del membro e quei bersagli accesi, come nell'Offesa
   const pick = (key: string, kind: 'dtypes' | 'dmeta', i: number) => (ctx.openFocus
     ? (band: HoldPiece) => ctx.openFocus!(key, { kind, slot: slotOf(i), band })
@@ -169,8 +171,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team, solo il numero: i pezzi e il recupero nel tooltip */}
                   {(() => {
