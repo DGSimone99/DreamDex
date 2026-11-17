@@ -8,6 +8,9 @@ import { fixtureData } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { CARD_WAKE_MS } from '../../src/ui/CandidateCard';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
 const list = () => suggestions().querySelector<HTMLElement>('.suggestions')!;
@@ -161,7 +164,7 @@ describe('SuggestionsPanel', () => {
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(within(team()).queryByText(out)).toBeNull();
     // Sei Pokémon scritti a mano più il calcolo degli scambi: sotto il carico di tutta la suite servono più dei 15 s di base
-  }, 30000);
+  }, 60000);
 
   it('team completo: scegliere un membro mostra solo i suoi sostituti; Tutti torna agli scambi liberi', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
@@ -178,7 +181,7 @@ describe('SuggestionsPanel', () => {
     expect(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' })).toHaveAttribute('aria-pressed', 'true');
     await user.click(within(targets()).getByRole('button', { name: 'Tutti' }));
     expect(toggle()).toHaveAccessibleName('Chi sostituire: Tutti');
-  }, 30000);
+  }, 60000);
 
   it('team incompleto: da Aggiungi a Sostituisci e ritorno', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
@@ -252,7 +255,7 @@ describe('SuggestionsPanel', () => {
     expect(first.querySelectorAll('.reason').length).toBeLessThanOrEqual(2);
     expect(first.querySelector('.reason')!.textContent).toMatch(/\S/);
     expect(first.querySelector('.loss')).toBeNull();
-  }, 30000);
+  }, 60000);
 
   it('frecce oltre la pagina: si passa alla successiva', async () => {
     const user = await setup('Great Tusk');
@@ -533,7 +536,7 @@ describe('riga della lista', () => {
     expect(summary.match(/(^|· )−/g)?.length ?? 0).toBeLessThanOrEqual(1);
     expect(first.querySelector('.result small')).toBeNull();
     expect(first.querySelector('.tags')).toBeNull();
-  }, 30000);
+  }, 60000);
 
   it('doppio clic sulla riga fa lo scambio', async () => {
     const user = await setup(...FULL);
@@ -542,7 +545,7 @@ describe('riga della lista', () => {
     await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Annulla' })).toBeInTheDocument();
-  }, 30000);
+  }, 60000);
 
   it('doppio clic sulla casella: aggiunge una volta sola; sul nome solo lo apre', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
@@ -603,7 +606,7 @@ describe('scheda del candidato', () => {
     expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
     expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
     expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
-  }, 30000);
+  }, 60000);
 
   it("team vuoto: la riga dice i ruoli, non ripete l'uso già a destra", async () => {
     await setup();

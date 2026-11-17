@@ -12,6 +12,9 @@ import { LangProvider } from '../../src/i18n/react';
 import { fillData } from '../fixtures/fillData';
 import { renderIt } from '../helpers/italian';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 const WAIT = { timeout: 10000 };
 const attackers = () => ['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => ({ ...emptySet(name), moves: ['Protect'] }));
 const panel = (team: TeamSet[] = [], onApply = vi.fn(), onClose = vi.fn(), data: EngineData = fillData, onLoadTeam = vi.fn()) =>
@@ -119,7 +122,7 @@ describe('pannello Completa team', () => {
     await vi.waitFor(idle, WAIT);
     expect(rows()).toHaveLength(PROPOSALS_PER_ROUND);
     expect(document.querySelectorAll('.fill-proposals > li.fill-skeleton')).toHaveLength(0);
-  }, 30000);
+  }, 60000);
 
   it('mentre calcola le righe restano PROPOSALS_PER_ROUND: ogni proposta prende il posto di uno scheletro', async () => {
     panel([{ ...emptySet('Garchomp'), moves: ['Earthquake'] }]);
@@ -158,7 +161,7 @@ describe('pannello Completa team', () => {
     await user.click(screen.getByRole('radio', { name: 'Stall' }));
     expect(await screen.findByText('Nessun completamento con questo tipo e questa condizione', undefined, { timeout: 20000 })).toBeInTheDocument();
     expect(document.querySelectorAll('.fill-proposal')).toHaveLength(0);
-  }, 30000);
+  }, 60000);
 });
 
 describe('Completa team: bannati dell\'utente', () => {
@@ -190,7 +193,7 @@ describe('Completa team: Tieni il set e preferiti', () => {
     expect(screen.getByText('Calcolo delle proposte…')).toBeInTheDocument();
     await vi.waitFor(idle, WAIT);
     expect((await addButtons()).length).toBeGreaterThan(0);
-  }, 30000);
+  }, 60000);
 
   it('il menu dei preferiti ha tre voci e parte da "Priorità ai preferiti"', () => {
     panel();

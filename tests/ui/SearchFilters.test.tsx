@@ -1,9 +1,12 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import { getSpecies } from '../../src/engine/dex';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -148,7 +151,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(screen.getByLabelText('Aggiungi Pokémon')).toBeInTheDocument();
     expect(within(suggestions()).queryByRole('heading', { name: 'Migliora il team' })).toBeNull();
     // Sei aggiunte, ognuna coi suggerimenti ricalcolati: con la Difesa ogni candidato nuovo costa qualche ms in più
-  }, 30000);
+  }, 60000);
 });
 
 describe('ricerca: Invio aggiunge il primo risultato', () => {

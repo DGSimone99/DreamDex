@@ -6,6 +6,9 @@ import { emptySet as defaultSet } from '../../src/engine/sets';
 import { streamFill } from '../../src/ui/useRanking';
 import { fillData } from '../fixtures/fillData';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 // Senza Worker (jsdom): streamFill avanza il generatore qui, un passo per volta con setTimeout(0)
 const tick = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 

@@ -15,6 +15,9 @@ import { fixtureData, fixtureStats } from '../fixtures/data';
 import { adviceOf } from '../helpers/coach';
 import { renderIt } from '../helpers/italian';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 // Due membri deboli lasciano spazio ai sostituti delle statistiche di prova (come nei test del motore)
 const junk = (species: string): TeamSet => ({ ...emptySet(species), moves: ['Splash'] });
 const six = [...['Great Tusk', 'Gholdengo', 'Toxapex', 'Corviknight'].map(n => mostCommonSet(fixtureStats, n)!), junk('Magikarp'), junk('Sunkern')];

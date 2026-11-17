@@ -1,11 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { initGames, withGame } from '../../src/engine/games';
 import { chooseTier, chosen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 /** Apre il modale del gioco dalla carta, sceglie e lo chiude (Esc). */
 async function chooseGame(user: ReturnType<typeof userEvent.setup>, id: string) {

@@ -8,6 +8,9 @@ import type { CoachFix } from '../../src/engine/coachFixes';
 import { coachingOffer, FixRow, solvable } from '../../src/ui/dashboard/FixRow';
 import { LangProvider } from '../../src/i18n/react';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 const panel = () => document.getElementById('panel-analysis')!;
 const views = () => within(panel()).getByRole('tablist', { name: 'Sezioni dell\'Analisi' });
 

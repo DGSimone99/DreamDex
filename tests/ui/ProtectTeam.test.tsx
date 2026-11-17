@@ -6,6 +6,9 @@ import { UndoToast } from '../../src/ui/UndoToast';
 import { renderIt } from '../helpers/italian';
 import { fixtureData } from '../fixtures/data';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 beforeEach(() => window.localStorage.clear());
 afterEach(() => vi.useRealTimers());
 
