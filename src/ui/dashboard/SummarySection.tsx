@@ -18,7 +18,7 @@ import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreTip } from './CoreTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
-import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 import { MoreBelow } from '../MoreBelow';
@@ -457,7 +457,8 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
           <TipGo place={places.roles} />
         </FloatTip>
       )}
-      {(Object.keys(goIds) as (keyof typeof goIds)[]).map(k => <HiddenText key={k} id={goIds[k]}>{goText(t, places[k])}</HiddenText>)}
+      {/* Dove porta il clic, per i lettori di schermo: nascosto dentro la carta, non nel body */}
+      {(Object.keys(goIds) as (keyof typeof goIds)[]).map(k => <span key={k} id={goIds[k]} hidden>{goText(t, places[k])}</span>)}
     </DashCard>
   );
 }

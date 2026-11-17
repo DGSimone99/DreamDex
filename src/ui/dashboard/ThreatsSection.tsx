@@ -5,7 +5,7 @@ import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import type { KoFocus } from '../AreaDetail';
-import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { Icon } from '../icons';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
@@ -121,7 +121,8 @@ export function ThreatsSection({ threats, onView }: {
               )}
             </ul>
           )}
-        {list.length > 0 && <HiddenText id={goId}>{goText(t, place)}</HiddenText>}
+        {/* Dove porta il clic, per i lettori di schermo: nascosto dentro la carta (non nel body: niente nodi fuori dall'albero della carta) */}
+        {list.length > 0 && <span id={goId} hidden>{goText(t, place)}</span>}
       </div>
       {tip.anchor && tipThreat && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
