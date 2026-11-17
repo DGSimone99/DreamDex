@@ -122,6 +122,18 @@ async function clickText(page: Page, selector: string, text: RegExp): Promise<bo
     return true;
   }, selector, text.source, text.flags);
 }
+/** Una riga delle aree del voto; col team ridotto le righe stanno nella tendina del voto, che si apre prima. */
+async function gradeRow(page: Page, text: RegExp): Promise<boolean> {
+  const opened = await page.evaluate(() => {
+    const toggle = document.querySelector<HTMLElement>('.grade-pop-toggle');
+    if (document.querySelector('.band button.grade-area') || !toggle) return false;
+    toggle.click();
+    return true;
+  });
+  if (opened) await wait(200);
+  return clickText(page, '.band button.grade-area', text);
+}
+
 async function focus(page: Page, selector: string): Promise<boolean> {
   return page.evaluate(sel => {
     const el = document.querySelector<HTMLElement>(sel);
@@ -197,7 +209,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^(Difesa|Defense)/)) return 'no defense row';
+    if (!await gradeRow(p, /^(Difesa|Defense)/)) return 'no defense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -211,7 +223,7 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Offe(sa|nse)/)) return 'no offense row';
+    if (!await gradeRow(p, /^Offe(sa|nse)/)) return 'no offense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -261,7 +273,7 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^(Velocit|Speed)/)) return 'no speed row';
+    if (!await gradeRow(p, /^(Velocit|Speed)/)) return 'no speed row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -426,7 +438,7 @@ const rolesState = (opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' |
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^(Ruoli|Roles)/)) return 'no roles row';
+    if (!await gradeRow(p, /^(Ruoli|Roles)/)) return 'no roles row';
     await wait(800);
     return true;
   },
@@ -523,15 +535,15 @@ const STATES: Record<string, State> = {
   'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => clickText(p, '.slot.filled > .slot-card', /./) },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
-  'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
-  'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
+  'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
+  'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
   // Difesa: una scheda per sotto-scheda (SIX), con meta, senza meta, a team chiuso e con nomi lunghi
   ...DEFENSE_STATES,
   ...OFFENSE_STATES,
   ...SPEED_STATES,
   ...ROLES_STATES,
-  'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
-  'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
+  'analysis-offense-strip': { hash: hash(SIX), run: async p => gradeRow(p, /^Offesa/) },
+  'analysis-roles': { run: async p => gradeRow(p, /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
   'analysis-bonus': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^(Ruoli e Bonus|Roles & Bonus)/); await wait(900); return ok; } },
   // Bonus/Malus con altri team: SIX (due core a tre), LONE (nessun core, malus), RAIN, STRESS (un core e tante voci); il secondo core aperto; il catalogo
@@ -583,7 +595,7 @@ const STATES: Record<string, State> = {
     return clickText(p, '.help-nav [role="tab"]', /^Balance/);
   } },
   'analysis-help': { run: async p => {
-    if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
+    if (!await gradeRow(p, /^Difesa/)) return 'no row';
     await wait(300);
     return clickText(p, '.area-help button', /./);
   } },
@@ -664,6 +676,25 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Cruscotto della Panoramica col team ridotto: più spazio, più informazione
+  // Team ridotto: la tendina "Voto delle aree" aperta sotto il voto (voce 3.1)
+  'grade-pop': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(500);
+    if (!await clickText(p, '.grade-pop-toggle', /./)) return 'no grade button';
+    await wait(300);
+    const m = await p.evaluate(() => {
+      const pop = document.querySelector('.grade-pop')?.getBoundingClientRect();
+      const btn = document.querySelector('.grade-pop-toggle')?.getBoundingClientRect();
+      if (!pop || !btn) return null;
+      const rows = [...document.querySelectorAll<HTMLElement>('.grade-pop button.grade-area')];
+      const over = rows.filter(r => r.scrollWidth - r.clientWidth > 1).length;
+      return { pop: [Math.round(pop.left), Math.round(pop.top), Math.round(pop.width), Math.round(pop.height)], btn: [Math.round(btn.left), Math.round(btn.bottom), Math.round(btn.right)], rows: rows.length, over, inWindow: pop.right <= innerWidth && pop.bottom <= innerHeight };
+    });
+    console.log(`grade-pop: ${JSON.stringify(m)}`);
+    return !!m;
+  } },
   'analysis-collapsed': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);

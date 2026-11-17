@@ -186,7 +186,8 @@
 .band.collapsed .empty-ring { width: 28px; height: 28px; border-width: 1px; }
 .band.collapsed .empty-ring .icon { width: 14px; height: 14px; }
 .band.collapsed .grade-badge { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; background: none; }
-/* Il disegno del voto sta in .grade-visual: nella barra compressa restano lettera e punteggio */
+/* Il disegno del voto sta in .grade-visual: nella barra compressa restano lettera e punteggio, dentro il pulsante della
+   tendina "Voto delle aree" (rating.css, .grade-pop) */
 .band.collapsed .grade-badge .grade-visual > :not(.letter, .overall) { display: none; }
 .band.collapsed .grade-badge .letter { font-size: 40px; }
 .band.collapsed .grade-badge .overall { font-size: 18px; }

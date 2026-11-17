@@ -1354,6 +1354,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalogue.cores.secondHow': "Tre membri che si coprono a vicenda: ognuno regge un tipo che fa male al successivo.",
   'catalogue.cores.name': "Core {title}",
   'catalogue.cores.parry': "{name} para {to} da {type}",
+  'rating.areasPop': "Voto delle aree",
   'rating.badgeHead': "Voto",
   'rating.since': "{delta}",
   'rating.noGrade': "Nessun voto",

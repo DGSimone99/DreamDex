@@ -107,3 +107,26 @@
 /* La scritta può andare su due righe: le aree salgono un po', così la carta del voto (e la fila del team) non cresce */
 .grade-badge.rules-broken .grade-rules { margin-top: 4px; line-height: 1.3; }
 .grade-badge.rules-broken .grade-areas { margin-top: 0; padding-top: 3px; }
+
+/* Team ridotto: lettera e punteggio sono il pulsante della tendina "Voto delle aree" (freccia che si gira aperta) */
+.grade-pop-toggle {
+  display: flex; align-items: baseline; gap: 8px; margin: 0; padding: 2px 6px; border: 0; border-radius: 4px;
+  background: transparent; color: inherit; font: inherit; cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+.grade-pop-toggle:hover, .grade-pop-toggle[aria-expanded='true'] { background: var(--raised); }
+.grade-pop-caret { align-self: center; display: inline-flex; color: var(--faint); transition: transform 0.2s var(--ease), color 0.15s var(--ease); }
+.grade-pop-caret .icon { width: 12px; height: 12px; transform: rotate(90deg); }
+.grade-pop-toggle:hover .grade-pop-caret { color: var(--accent); }
+.grade-pop-toggle[aria-expanded='true'] .grade-pop-caret { transform: rotate(180deg); color: var(--accent); }
+/* La tendina: come gli altri menu (Ground, bordo Line, 6px, ombra morbida), sotto il voto e allineata a destra */
+.grade-pop {
+  position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: 236px; padding: 6px 12px 10px;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--ground); box-shadow: 0 12px 32px #000b;
+  animation: tip 0.14s var(--ease);
+}
+.grade-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 -4px 4px 0; }
+.grade-pop-title { margin: 2px 0; font: 600 11px/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.band.collapsed .grade-badge .grade-pop .grade-areas { display: grid; margin-top: 0; gap: 4px; }
+.grade-pop .help-button { position: relative; }
+.grade-pop .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; translate: -50% -50%; }

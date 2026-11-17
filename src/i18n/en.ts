@@ -1351,6 +1351,7 @@ export const en = {
   'catalogue.cores.secondHow': "Three members that cover each other: each one takes a type that hurts the next.",
   'catalogue.cores.name': "Core {title}",
   'catalogue.cores.parry': "{name} shields {to} from {type}",
+  'rating.areasPop': "Area grades",
   'rating.badgeHead': "Grade",
   'rating.since': "{delta}",
   'rating.noGrade': "No grade",
