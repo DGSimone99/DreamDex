@@ -68,9 +68,8 @@ describe("dettaglio dell'Offesa a schede", () => {
       expect(cell).not.toHaveTextContent('tutti');
       expect(cell.querySelector('.kob.rest:not(.bad)')).toBeNull();
     }
-    // La barra del team senza il numero: il voto dell'Offesa sta nella testata dell'area
-    expect(footCells[2].querySelector('.def-bar')).not.toBeNull();
-    expect(footCells[2]).toHaveTextContent(/^$/);
+    // Nell'ultima colonna niente: il voto dell'Offesa sta nella testata dell'area (i membri hanno solo il loro "+N")
+    expect(footCells[2]).toBeEmptyDOMElement();
   });
 
   it('Coverage tipi: i 18 tipi, i buchi e quanto li colpisce ogni membro', async () => {
@@ -148,14 +147,13 @@ describe('dettaglio della Difesa a schede', () => {
       // Nell'ultima colonna quanto porta il membro alla Difesa del team ("+12")
       expect(cells[2]).toHaveTextContent(/^[+−]\d+$/);
     }
-    // In fondo la riga Team Coverage: le barre a pezzi del team, poi la barra della Difesa senza il numero (il voto sta
-    // nella testata dell'area; ai lettori di schermo lo dice il nome della barra)
+    // In fondo la riga Team Coverage: le barre a pezzi del team, poi nella colonna Difesa niente (il voto sta nella
+    // testata dell'area)
     const total = all[all.length - 1];
     expect(within(total).getByRole('rowheader')).toHaveTextContent('Team Coverage');
     const totals = within(total).getAllByRole('cell');
     expect(totals[0]).toHaveTextContent(/\d+\/18$/);
-    expect(totals[2]).toHaveTextContent(/^$/);
-    expect(within(totals[2]).getByRole('img', { name: /^Difesa \d+$/ })).toBeInTheDocument();
+    expect(totals[2]).toBeEmptyDOMElement();
   });
 
   it('Coverage tipi: il "?" apre la pagina comune "Come funziona" (bersagli, colpo, quanto vale, quanti lo reggono); la Recupero ha la sua pagina col suo peso', async () => {

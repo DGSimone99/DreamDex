@@ -4,15 +4,14 @@ import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
-import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { KoBadges, koBands, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
 import { Ask, BarHead, MetaTargets, TypeAverages } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
-import { useEffect, type ReactNode } from 'react';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { useEffect, useId } from 'react';
+import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 
 /** I 18 tipi di un membro come bersagli: colpo semplice, dopo una danza, con Tera/Z. */
@@ -38,32 +37,21 @@ const teamTargets = (per: KoTarget[][]): KoTarget[] =>
   });
 
 /**
- * Quanto porta un membro: la barra (0-100, come quella del team sotto) ha in tenue l'Offesa del team divisa nei pezzi dei
- * membri, uno dopo l'altro nell'ordine delle righe; il pezzo del membro è acceso, al suo posto. Il numero: i suoi punti.
+ * Quanto porta un membro all'Offesa del team: solo il numero ("+29", i punti dei membri sommati fanno l'Offesa del team),
+ * col suo tooltip DreamDex col mouse e col fuoco: raggiungibile con le frecce (data-nav, nel gruppo della tabella), il
+ * testo è anche il nome per lo screen reader.
  */
-function Share({ points, from, team }: { points: number; from: number; team: number }) {
-  const clamp = (n: number) => Math.max(0, Math.min(100, n));
-  return (
-    <span className="def-cell">
-      <span className="def-bar og-share-bar" aria-hidden="true">
-        <i className="og-share-team" style={{ width: `${clamp(team)}%` }} />
-        <i className="og-share-own" style={{ left: `${clamp(from)}%`, width: `${clamp(Math.min(points, 100 - from))}%` }} />
-      </span>
-      <span className="def-num total og-share-num">+{points}</span>
-    </span>
-  );
-}
-
-/**
- * Quanto porta un membro, col suo tooltip (prima era il title del browser, solo col mouse): raggiungibile con le frecce
- * (data-nav, nel gruppo della tabella), il testo è anche il nome per lo screen reader.
- */
-function ShareTip({ text, children }: { text: string; children: ReactNode }) {
+function ShareTip({ points }: { points: number }) {
+  const t = useT();
   const tip = useFloatAnchor<true>();
+  const text = t('odetail.gen.shareTitle', { n: points });
+  const note = t('odetail.gen.shareNote');
+  const id = useId();
   return (
-    <span className="og-stack og-share" data-nav="" role="img" aria-label={text} {...tip.bind(true)}>
-      {children}
-      {tip.anchor && <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot"><p className="kot-none">{text}</p></FloatTip>}
+    <span className="og-share" data-nav="" role="img" aria-label={text} aria-describedby={id} {...tip.bind(true)}>
+      <span className="def-num total og-share-num">+{points}</span>
+      <HiddenText id={id}>{note}</HiddenText>
+      {tip.anchor && <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot"><p className="kot-none">{text}</p><p className="ftip-foot">{note}</p></FloatTip>}
     </span>
   );
 }
@@ -71,10 +59,9 @@ function ShareTip({ text, children }: { text: string; children: ReactNode }) {
 /**
  * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`). Per ogni membro: quante minacce del meta
  * e quanti dei 18 tipi manda KO in un colpo e in due (badge OHKO e 2HKO, col colpo semplice; il setup come "▴+N" a
- * parte; il 3HKO non conta), passando su un badge i bersagli nel tooltip; poi quanto porta all'Offesa del team ("+18",
- * la barra è la sua fetta). In fondo,
- * sempre allo stesso posto, la riga Team Coverage: per ogni bersaglio il membro migliore, gli scoperti in rosso, e la
- * barra dell'Offesa del team senza il numero (il voto sta nella testata dell'area).
+ * parte; il 3HKO non conta), passando su un badge i bersagli nel tooltip; poi quanto porta all'Offesa del team, solo il
+ * numero ("+18"). In fondo, sempre allo stesso posto, la riga Team Coverage: per ogni bersaglio il membro migliore, gli
+ * scoperti in rosso; nell'ultima colonna niente (il voto sta nella testata dell'area).
  */
 export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
@@ -92,12 +79,10 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const teamTypes = teamTargets(known.map(i => typeTargets(members[i])));
   const teamMeta = teamTargets(ctx.team.map((_, slot) => slot).filter(slot => slots[slot] !== null).map(slot => metaTargets(offense, slot)));
   const teamName = t('odetail.gen.total');
-  // Tutti i pezzi della tabella (barre dei colpi, mosse, quanto porta) sono un posto solo nel giro del Tab, poi le frecce
+  // Tutti i pezzi della tabella (barre dei colpi, mosse, il numero di quanto porta) sono un posto solo nel giro del Tab, poi le frecce
   const nav = useRoving<HTMLTableElement>();
   // Uscendo dalla scheda nessuna carta resta accesa
   useEffect(() => () => linkTeamCard(null), []);
-  // Dove comincia il pezzo di ogni membro nella barra del team: i punti delle righe sopra
-  const shareFrom = ctx.team.map((_, slot) => ctx.team.slice(0, slot).reduce((sum, __, k) => sum + (slots[k] === null ? 0 : shares[slots[k]!].points), 0));
   // A squadra chiusa, sotto le barre: quanto lavora ogni mossa d'attacco (la mossa migliore su ogni bersaglio KO in due colpi)
   const metaRows = offense.coverageMeta?.rows ?? [];
   // Le minacce del meta dalla più usata, per il "?" sulla testata Meta
@@ -147,7 +132,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                         {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} />}</td>}
                       <td>
                         {/* Quanto porta al team: i punti dei membri sommati fanno l'Offesa del team */}
-                        <ShareTip text={t('odetail.gen.shareTitle', { n: s.points })}><Share points={s.points} from={shareFrom[slot]} team={offense.value} /></ShareTip>
+                        <ShareTip points={s.points} />
                       </td>
                     </>
                     : <><td>—</td>{meta && <td>—</td>}<td>—</td></>}
@@ -162,7 +147,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
               <th scope="row"><span className="og-plate">{teamName}</span></th>
               <td><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm /></td>
               {meta && <td><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm /></td>}
-              <td><Bar value={offense.value} total bare /></td>
+              {/* Nell'ultima colonna niente: il voto dell'Offesa sta nella testata dell'area */}
+              <td />
             </tr>
           </tfoot>
         </table>

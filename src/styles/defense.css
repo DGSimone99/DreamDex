@@ -56,23 +56,6 @@
 .def-members thead th:first-child { padding-left: 0; }
 .def-members td, .def-members th[scope='row'] { padding: 0 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
 .def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
-/* Barra e numero in una griglia fissa: la barra parte dove parte l'intestazione della colonna */
-.def-cell { display: inline-grid; grid-template-columns: 150px 3ch; align-items: center; gap: 10px; vertical-align: middle; }
-/* Col "+N" (setup, Tera, mossa Z): un terzo posto fisso dopo il numero, per tutta la colonna; la barra cede lo spazio, non sborda */
-.def-cell.with-gain { display: grid; width: 100%; grid-template-columns: minmax(0, 150px) 3ch 5.5ch; }
-.def-gain { margin-left: -6px; white-space: nowrap; }
-.def-frame .def-gain small { margin-left: 0; }
-.def-bar { position: relative; display: block; width: 100%; height: 8px; background: var(--line-soft);
-  /* Estremi inclinati come le tessere e le schede (vale per tutte le barre delle Generale) */
-  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-.def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-.def-bar.warn i { background: var(--warn); }
-.def-bar.bad i { background: var(--bad); }
-/* Il guadagno del setup: a righe nel colore della barra, staccato con una riga scura (come nella Velocità) */
-.def-bar i.def-bar-extra { right: auto; background: repeating-linear-gradient(135deg, var(--bar-c) 0 3px, color-mix(in srgb, var(--bar-c) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
-.def-bar { --bar-c: var(--good); }
-.def-bar.warn { --bar-c: var(--warn); }
-.def-bar.bad { --bar-c: var(--bad); }
 .def-num { min-width: 2ch; text-align: right; color: var(--text); }
 /* Difesa: il numero in evidenza, del colore della soglia */
 .def-num.total { font: italic 700 17px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -87,12 +70,6 @@
 .def-members td.def-rec { white-space: normal; font-size: 13px; line-height: 1.3; }
 .def-rec .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
 
-/* Le barre seguono la larghezza della colonna: con sette colonne non c'è posto per i 150px fissi */
-.def-general.roomy .def-cell { display: grid; grid-template-columns: minmax(0, 1fr) 3ch; width: 100%; }
-/* A squadra chiusa le colonne sono strette ma le righe alte: il "+N" va sotto il numero, piccolo, e la barra resta lunga */
-.def-general.roomy .def-cell.with-gain { position: relative; grid-template-columns: minmax(0, 1fr) 3ch; }
-.def-general.roomy .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
-.def-general.roomy .def-gain small { font-size: 11px; }
 
 /* Guida: righe termine / regola, pillole di punti */
 .guide-rows { display: grid; gap: 0; margin: 0 0 8px; }
@@ -454,8 +431,8 @@
 .wh-mon > * { width: 26px !important; height: 26px !important; flex: none; }
 .mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }
 .mc .wh-mon img { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
-/* Come nell'Offesa: le pastiglie e il recupero solo se la cornice ha posto per sei righe con loro */
-@container (max-height: 500px) { .def-general .mcs.wh, .def-general .mcs.dscs { display: none; } }
+/* Come nell'Offesa: le pastiglie dei colpi peggiori solo se la cornice ha posto per sei righe con loro */
+@container (max-height: 500px) { .def-general .mcs.wh { display: none; } }
 
 /* Recupero: come la Generale, la riga del team sempre in fondo (riga vuota che prende lo spazio) */
 .def-sus > .ad-scroll { flex: 1 1 auto; min-height: 0; }
@@ -463,12 +440,8 @@
 .def-sus .def-members tr.og-fill { height: auto; }
 .def-sus .def-members tr.og-fill td { padding: 0; border: 0; }
 
-/* Colonna Difesa della Generale: il pezzo del membro in due parti, quello che regge (colore dell'Offesa) e la
-   Recupero, verde a righe se aggiunge, rossa a righe se toglie (la parte che si mangia) */
-.og-share-bar .dsh-sus, .def-bar .dsh-sus { position: absolute; top: 0; bottom: 0; }
-.dsh-sus.gain { background: repeating-linear-gradient(135deg, var(--good) 0 3px, color-mix(in srgb, var(--good) 55%, transparent) 3px 6px); }
-.dsh-sus.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 3px, color-mix(in srgb, var(--bad) 45%, transparent) 3px 6px); }
-.def-cell.dsh { cursor: help; }
+/* Colonna Difesa della Generale: solo il "+N" di quanto porta; il tooltip coi pezzi e, in parole, il recupero e le perdite */
+.og-share.dsh { cursor: help; }
 .dsh-tip .ftip-head { display: flex; align-items: baseline; gap: 10px; }
 .dsh-total { margin-left: auto; font: 800 italic var(--tip-num)/1 var(--display); color: var(--accent); }
 .dsh-total.neg { color: var(--bad); }
@@ -480,19 +453,9 @@
 .dsh-sw.cover { background: var(--accent); }
 .dsh-sw.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); }
 .dsh-sw.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); }
-.dsh-line { padding-left: 18px; font-size: var(--tip-small); color: var(--faint); }
-.area-legend-swatch i.dsh-leg.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); border-color: transparent; }
-.area-legend-swatch i.dsh-leg.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); border-color: transparent; }
+/* Il recupero e le perdite in parole, sotto i pezzi: verde quello che recupera, rosso quello che perde */
+.dsh-line { padding-left: 18px; font-size: var(--tip-small); color: var(--muted); }
+.dsh-line.gain { color: color-mix(in srgb, var(--good) 70%, var(--text)); }
+.dsh-line.loss { color: color-mix(in srgb, var(--bad) 70%, var(--text)); }
 .ftip.dsh-tip { width: var(--tip-s); }
 
-/* Squadra chiusa, sotto la barra Difesa: le pastiglie del Recupero (come le mosse dell'Offesa), recupero nel colore
-   della mossa o in verde, perdite in rosso col loro % */
-.mcs.dscs { width: 100%; flex-wrap: wrap; row-gap: 4px; align-items: center; overflow: visible; }
-.mc.dsc { cursor: default; }
-.mc.dsc .item-icon { flex: none; }
-.mc.dsc.loss { color: color-mix(in srgb, var(--bad) 70%, var(--text)); }
-.mc.dsc.loss b { color: color-mix(in srgb, var(--bad) 80%, white); }
-.dsc-ab { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
-.dsc-ic { display: inline-flex; align-items: center; }
-.mc.dsc b { color: color-mix(in srgb, var(--good) 75%, white); }
-.dsc-name { white-space: nowrap; }

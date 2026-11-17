@@ -83,12 +83,9 @@
   .def-frame .ct-table:has(thead tr > :nth-child(12)) { min-width: calc(var(--def-mon) + 18 * 34px); }
   /* Il rientro delle griglie (margine negativo) farebbe scorrere di 3 px le tabelle che ci stanno */
   .def-frame .def-grid.spaced { width: 100%; margin: 0; }
-  /* Generale: le barre seguono la colonna, il "+N" sotto il numero; le intestazioni vanno a capo invece di tagliarsi */
+  /* Generale: le intestazioni vanno a capo invece di tagliarsi */
   .def-general .def-members thead th:not(.def-mon-h) { white-space: normal; overflow: visible; overflow-wrap: anywhere; hyphens: auto; text-overflow: clip; max-width: none; line-height: 1.15; padding-inline: 4px; text-transform: none; letter-spacing: 0; }
   .def-general .def-members td { padding: 0 4px; }
-  .def-general .def-cell, .def-general .def-cell.with-gain { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 3ch; gap: 4px; width: 100%; }
-  .def-general .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
-  .def-general .def-gain small { font-size: 11px; }
   /* Offesa Generale: le barre dei colpi col conto "11/18" hanno bisogno di posto; la tabella scorre col dito, il membro resta fermo */
   .off-general .def-members { min-width: calc(var(--def-mon) + 2 * 250px + 110px); }
   .off-general .def-members:not(:has(colgroup > col:nth-child(4))) { min-width: calc(var(--def-mon) + 250px + 110px); }

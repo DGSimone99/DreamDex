@@ -29,8 +29,8 @@ describe('tabelle complete nelle schede d\'area', () => {
   it('le legende dei colori stanno nella riga della legenda, dentro il pannello; le schede senza legenda non ne hanno', async () => {
     const user = await openTab('Difesa');
     const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
-    // Generale: la legenda del Recupero (la colonna Difesa ha la parte a righe) (i pezzi di Tipi e Meta hanno la loro etichetta dentro)
-    expect(view().querySelector('.area-legend')).toHaveTextContent('RecuperoPerdite');
+    // Generale: nessuna legenda (i pezzi di Tipi e Meta hanno la loro etichetta dentro, la colonna Difesa è solo il "+N")
+    expect(view().querySelector('.area-legend')).toBeNull();
     expect(view().querySelector('.area-tools-row')).toBeNull();
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     expect(legend()).toHaveTextContent('OHKO2HKO3HKO4HKO+');

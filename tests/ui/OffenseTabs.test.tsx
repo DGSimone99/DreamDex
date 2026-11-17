@@ -241,6 +241,8 @@ describe('Offesa: Generale', () => {
       expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
       expect(cells[2].querySelector('.og-share')!.getAttribute('aria-label')).toBe(`Porta +${rating.offense.shares[i].points} all'Offesa del team`);
       expect(cells[2].querySelector('[title]')).toBeNull();
+      // Solo il numero, niente barra a scalini
+      expect(cells[2].querySelector('.og-share-bar, .def-bar')).toBeNull();
     });
     // A squadra aperta niente dettagli sotto la barra
     expect(document.querySelector('.og-detail')).toBeNull();
@@ -393,9 +395,8 @@ describe('Offesa: Generale', () => {
         await user.unhover(bad);
       }
     }
-    // La barra del team senza il numero: il voto dell'Offesa sta nella testata dell'area
-    expect(cells[2]).toHaveTextContent(/^$/);
-    expect(cells[2].querySelector('.def-bar')).not.toBeNull();
+    // Nell'ultima colonna niente: il voto dell'Offesa sta nella testata dell'area
+    expect(cells[2]).toBeEmptyDOMElement();
   });
 
   it('membro che il motore non conosce: la riga resta con "—" e senza badge', () => {

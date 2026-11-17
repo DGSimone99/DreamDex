@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
@@ -374,25 +374,39 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(two).toHaveTextContent('2HKO');
   });
 
-  it('la legenda Recupero / Perdite solo se la colonna Difesa disegna la parte a righe del Recupero', () => {
-    const rating = withMeta();
-    const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(document.querySelector('.dsh-sus')).not.toBeNull();
-    expect(document.querySelector('.def-general .area-legend')).toHaveTextContent('RecuperoPerdite');
-    unmount();
-    // Nessun membro recupera o perde: niente righe, niente legenda
-    const flat = { ...rating, defense: { ...rating.defense, sustain: 0, members: rating.defense.members.map(m => ({ ...m, sustain: 0 })) } };
-    renderIt(<AreaView rating={flat} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(document.querySelector('.dsh-sus')).toBeNull();
-    expect(document.querySelector('.def-general .area-legend')).toBeNull();
-  });
-
-  it('la Difesa del team in fondo ha la barra col colore della soglia', () => {
+  it('colonna Difesa: solo il "+N", col tooltip (mouse e fuoco) che dice in parole quanto recupera e quanto perde, senza %', async () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const tone = (v: number) => (v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad');
-    const bars = document.querySelectorAll('.def-members tfoot .def-bar');
-    expect(bars[bars.length - 1]).toHaveClass(tone(rating.defense.value));
+    // Niente barre né legenda Recupero / Perdite: la legenda era solo per le righe della barra
+    expect(document.querySelector('.def-general .def-bar')).toBeNull();
+    expect(document.querySelector('.def-general .area-legend')).toBeNull();
+    expect(screen.getByRole('tabpanel')).not.toHaveTextContent(/Perdite/);
+    // Nella riga del team l'ultima casella è vuota (il voto sta nella testata dell'area)
+    const foot = document.querySelectorAll('.def-members tfoot td');
+    expect(foot[foot.length - 1]).toHaveTextContent(/^$/);
+    // Gholdengo (Recover): col fuoco il tooltip coi pezzi e il recupero in parole e numeri semplici
+    const i = rating.defense.members.findIndex(m => m.species === 'Gholdengo');
+    const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[i];
+    const num = row.querySelector<HTMLElement>('.og-share')!;
+    expect(num.closest('td')!.textContent).toMatch(/^[+−]?\d+$/);
+    expect(num).toHaveAttribute('aria-label', expect.stringMatching(/^Porta [+−]?\d+ alla Difesa del team$/));
+    // Lo screen reader ha le stesse cose del tooltip, nella descrizione
+    const said = document.getElementById(num.getAttribute('aria-describedby')!)!.textContent!;
+    expect(said).toMatch(/Recupera \d+ PS su 100 con Recover/);
+    expect(said).not.toContain('%');
+    // Col fuoco da tastiera (l'ultimo gesto è un tasto)
+    await userEvent.setup().keyboard('{Shift}');
+    act(() => num.focus());
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.dsh-tip'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveTextContent(/Recupera \d+ PS su 100 con Recover/);
+    expect(tip).toHaveTextContent('Recupero');
+    expect(tip.textContent).not.toContain('%');
+    // Great Tusk non recupera: perde con Stealth Rock, in parole
+    const tusk = rating.defense.members.findIndex(m => m.species === 'Great Tusk');
+    const tuskNum = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[tusk].querySelector<HTMLElement>('.og-share')!;
+    const tuskSaid = document.getElementById(tuskNum.getAttribute('aria-describedby')!)!.textContent!;
+    expect(tuskSaid).toMatch(/Perde \d+ PS su 100 con Stealth Rock/);
+    expect(tuskSaid).not.toContain('%');
   });
 
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori senza colonne in più; altrimenti niente pastiglie', () => {
