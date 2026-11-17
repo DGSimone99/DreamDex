@@ -3,7 +3,7 @@ import type { CoachProblem } from '../engine/coach';
 import { needLabel, type Need } from '../engine/needs';
 import { typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
-import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
+import { FloatTip, HiddenText, TipGo, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { TypeIcons } from './typeIcons';
@@ -83,7 +83,7 @@ const fullText = ({ problem, role }: ProblemEntry, t: ReturnType<typeof useT>, l
 /**
  * Una pillola di problema, uguale nella testata delle aree e nelle righe del Coaching: il testo corto (ProblemPill) nel
  * colore della gravità. Mouse e fuoco: il tooltip DreamDex col problema intero. `onOpen`: la pillola è un pulsante (nella
- * testata: il Coaching ha una proposta per lei); senza, si raggiunge col Tab solo per il tooltip. `as`: l'elemento
+ * testata: il Coaching ha una proposta per lei; il tooltip finisce con "Clic: vai a Coaching", TipGo); senza, si raggiunge col Tab solo per il tooltip. `as`: l'elemento
  * esterno (li in una lista, span altrove).
  */
 export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemEntry; onOpen?: () => void; as?: 'li' | 'span' }) {
@@ -105,6 +105,7 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
       {tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="kot area-chip-tip">
           <p className="kot-none"><Typed text={full} /></p>
+          {onOpen && <TipGo place={t('analysis.view.coaching')} />}
         </FloatTip>
       )}
     </Tag>

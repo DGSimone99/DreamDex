@@ -127,10 +127,10 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                   {m && s
                     ? <>
                       <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
-                        onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} />
+                        onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} pickPlace={t('detail.coverageTypes')} />
                         {roomy && <MoveChips shares={typeMoves(m, slot)} of={ofTypes} />}</td>
                       {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
-                        onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} />
+                        onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} pickPlace={t('detail.coverageMeta')} />
                         {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} />}</td>}
                       <td>
                         {/* Quanto porta al team: i punti dei membri sommati fanno l'Offesa del team */}

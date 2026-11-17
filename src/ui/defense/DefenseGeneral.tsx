@@ -171,8 +171,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team, solo il numero: i pezzi e il recupero nel tooltip */}
                   {(() => {

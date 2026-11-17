@@ -456,6 +456,12 @@ describe('Difesa Generale: clic sui pezzi delle barre', () => {
     const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
     const piece = row.querySelectorAll('td')[1].querySelector<HTMLElement>('.kob.hb')!;
     const n = Number(piece.querySelector('.kob-num')!.textContent);
+    // Il tooltip del pezzo finisce col piede verso la Coverage meta, e la descrizione lo ripete
+    await user.hover(piece);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.kot'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip.lastElementChild).toHaveClass('ftip-go');
+    expect(tip.lastElementChild).toHaveTextContent('Clic: vai a Coverage meta');
+    expect(piece).toHaveAccessibleDescription(/Clic: vai a Coverage meta$/);
     await user.click(piece);
     expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
     // Le minacce accese vengono per prime: nella prima pagina (8 per pagina) ce ne sono quante ne stanno

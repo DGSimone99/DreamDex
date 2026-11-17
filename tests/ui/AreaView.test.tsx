@@ -118,6 +118,9 @@ describe('vista di un\'area sulla pagina', () => {
     expect(document.querySelector('.ftip.area-chip-tip')).not.toHaveTextContent('tappa');
     // Niente percentuali nel tooltip
     expect(document.querySelector('.ftip.area-chip-tip')!.textContent).not.toMatch(/%/);
+    // In fondo dove porta il clic (TipGo)
+    expect(document.querySelector('.ftip.area-chip-tip')!.lastElementChild).toHaveClass('ftip-go');
+    expect(document.querySelector('.ftip.area-chip-tip')!.lastElementChild).toHaveTextContent('Clic: vai a Coaching');
   });
 
   it('problemi che nessuna proposta del Coaching risolve, o consigli ancora da calcolare: la pillola mostra solo il tooltip', async () => {
@@ -132,6 +135,11 @@ describe('vista di un\'area sulla pagina', () => {
       expect(chip).not.toHaveClass('is-link');
       expect(chip).toHaveAttribute('tabindex', '0');
       expect(within(list).queryByRole('button')).toBeNull();
+      // Senza clic niente piede TipGo nel tooltip
+      await user.hover(chip);
+      await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).not.toBeNull());
+      expect(document.querySelector('.ftip.area-chip-tip .ftip-go')).toBeNull();
+      await user.unhover(chip);
       await user.click(chip);
       expect(onCoaching).not.toHaveBeenCalled();
       unmount();

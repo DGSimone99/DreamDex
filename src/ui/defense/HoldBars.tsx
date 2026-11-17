@@ -4,7 +4,7 @@ import type { FormatId } from '../../engine/format';
 import { TYPES, type TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { TypeIcons, typeIconUrl } from '../typeIcons';
 import { Sprite } from '../Sprite';
 import { pieceSize, Target } from '../offense/KoBadges';
@@ -55,12 +55,14 @@ export const teamHolds = (per: HoldTarget[][]): HoldTarget[] =>
  * DreamDex elenca i bersagli. A destra il conto "12/18": quanti ne regge (meno di metà PS). `alarm` (la riga del team):
  * il conto è verde solo se li regge tutti, rosso se no. `quiet` (un attaccante): il conto è neutro.
  */
-export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPick }: {
+export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPick, pickPlace }: {
   targets: HoldTarget[]; who: string; of: string; alarm?: boolean;
   /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per reggere (un attaccante). I pezzi restano uguali. */
   quiet?: boolean;
   /** Clic su un pezzo: apre Coverage tipi o meta con quei bersagli accesi (come nell'Offesa). */
   onPick?: (piece: Piece) => void;
+  /** Dove porta il clic su un pezzo (il nome della sottoscheda, es. "Coverage meta"): il piede TipGo del tooltip e la descrizione. */
+  pickPlace?: string;
 }) {
   const t = useT();
   const lang = useLang();
@@ -71,6 +73,8 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
   const countTip = useFloatAnchor<true>();
   // Per lo screen reader i bersagli del pezzo (quelli del tooltip), nella descrizione
   const names = (items: HoldTarget[]) => items.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ');
+  // Dove porta il clic: in fondo al tooltip e alla descrizione di ogni pezzo
+  const go = onPick && pickPlace ? goText(t, pickPlace) : '';
   const total = targets.length;
   const by = (p: Piece) => targets.filter(x => pieceOf(x.band) === p);
   const tag = (p: Piece) => PIECE_TAG[p];
@@ -91,7 +95,7 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
               aria-label={`${tag(p)} ${items.length}`}>
               <em aria-hidden="true">{tag(p)}</em>
               <span className="kob-num"><b>{items.length}</b></span>
-              <HiddenText id={`${id}-${p}`}>{names(items)}</HiddenText>
+              <HiddenText id={`${id}-${p}`}>{go ? `${names(items)}. ${go}` : names(items)}</HiddenText>
             </span>
           );
         })}
@@ -104,6 +108,7 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
               const items = targets.filter(x => x.band === b);
               return items.length ? <div key={b} className={`hb-group${b === 'two' ? ' hb-group-two' : ''}`}><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;
             })}
+            {go && <TipGo place={pickPlace!} />}
           </FloatTip>
         )}
       </span>

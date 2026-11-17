@@ -3,7 +3,7 @@ import { getMove } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
@@ -61,11 +61,14 @@ export const pieceSize = (n: number) => ({ '--n': Math.max(0, n) } as CSSPropert
  * pezzo che resta è in rosso, sono gli scoperti. Passando su un pezzo il tooltip DreamDex elenca i bersagli, poi in righe a
  * parte quelli in più dopo la danza o con Tera/Z. A destra della barra il conto "11/18": quanti ne manda KO in due colpi o
  * meglio (nella riga del team verde se li copre tutti, rosso se no). `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18".
+ * Coi pezzi cliccabili (`onPick`) il tooltip finisce col piede TipGo verso `pickPlace` ("Clic: vai a Coverage tipi").
  */
-export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, alarm = false, quiet = false }: {
+export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, pickPlace, alarm = false, quiet = false }: {
   bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
   /** Clic su un pezzo OHKO / 2HKO: apre il dettaglio su quei bersagli. */
   onPick?: (band: KoBand | 'rest') => void;
+  /** Dove porta il clic su un pezzo (il nome della sottoscheda, es. "Coverage tipi"): il piede TipGo del tooltip e la descrizione. */
+  pickPlace?: string;
   alarm?: boolean;
   /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per colpire (un muro). I pezzi restano uguali. */
   quiet?: boolean;
@@ -83,6 +86,10 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
     bands.setup[b].length ? `${setupName} +${bands.setup[b].length}: ${names(bands.setup[b])}` : '',
     bands.once[b].length && onceName ? `${onceName} +${bands.once[b].length}: ${names(bands.once[b])}` : '',
   ].filter(Boolean).join('. '));
+  // Dove porta il clic (solo sui pezzi che si cliccano): in fondo al tooltip e alla descrizione
+  const go = onPick && pickPlace ? goText(t, pickPlace) : '';
+  const picks = (b: KoBand | 'rest') => !!go && (b === 'rest' || bands.plain[b].length > 0);
+  const withGo = (b: KoBand | 'rest', text: string) => (picks(b) ? `${text}. ${go}` : text);
   // Ogni pezzo si raggiunge con le frecce (data-nav: il gruppo è la tabella della Generale); col clic è un pulsante
   const piece = (b: KoBand | 'rest', pick: boolean) => ({
     'data-nav': '', ...tip.bind(b), 'aria-describedby': `${id}-${b}`,
@@ -114,7 +121,7 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
             {/* L'etichetta a sinistra, il numero a destra; il setup è solo il triangolo nell'angolo (il tooltip dice quanti) */}
             <em aria-hidden="true">{TAG[b]}</em>
             <span className="kob-num"><b>{n}</b></span>
-            <HiddenText id={`${id}-${b}`}>{describe(b) || t('kob.none')}</HiddenText>
+            <HiddenText id={`${id}-${b}`}>{withGo(b, describe(b) || t('kob.none'))}</HiddenText>
           </span>
         );
       })}
@@ -123,13 +130,14 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
           {...piece('rest', true)}
           aria-label={`${restBad ? t('kob.uncovered') : t('kob.restAria')} ${rest}`}>
           <span className="kob-num"><b>{rest}</b></span>
-          <HiddenText id={`${id}-rest`}>{describe('rest')}</HiddenText>
+          <HiddenText id={`${id}-rest`}>{withGo('rest', describe('rest'))}</HiddenText>
         </span>
       )}
       {key === 'rest' && (
         <FloatTip rect={tip.anchor!.rect} tone={restBad ? 'var(--bad)' : 'var(--faint)'} className="kot">
           <div className="kot-head"><b>{restBad ? t('kob.uncoveredTitle') : t('kob.restTitle', { name: who })}</b><small>{of}</small></div>
           {list(bands.rest)}
+          {picks('rest') && <TipGo place={pickPlace!} />}
         </FloatTip>
       )}
       {key && key !== 'rest' && (
@@ -139,6 +147,7 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
           {/* In più col setup o con Tera/Z: solo il nome e quanti, "Danzaspada +15" */}
           {bands.setup[key].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={`${setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')} +${bands.setup[key].length}`}>{list(bands.setup[key])}</Extra>}
           {bands.once[key].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[key].length}`}>{list(bands.once[key])}</Extra>}
+          {picks(key) && <TipGo place={pickPlace!} />}
         </FloatTip>
       )}
     </span>

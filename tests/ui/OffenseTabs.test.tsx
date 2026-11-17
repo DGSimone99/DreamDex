@@ -257,6 +257,11 @@ describe('Offesa: Generale', () => {
     const n = count(typeHits(rating, slots[slot]!)).two;
     const tile = memberRows()[slot].querySelectorAll('td')[0].querySelector<HTMLElement>('.kob.two')!;
     expect(tile).toHaveAttribute('role', 'button');
+    // Il tooltip del pezzo finisce col piede che dice dove porta il clic, e la descrizione lo ripete
+    await user.hover(tile);
+    expect((await tipOf()).lastElementChild).toHaveClass('ftip-go');
+    expect((await tipOf()).lastElementChild).toHaveTextContent('Clic: vai a Coverage tipi');
+    expect(tile).toHaveAccessibleDescription(/Clic: vai a Coverage tipi$/);
     await user.click(tile);
     expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
     expect(document.querySelectorAll('td.kf-hit')).toHaveLength(n);

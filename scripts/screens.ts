@@ -366,6 +366,17 @@ const DEFENSE_STATES: Record<string, State> = {
     await wait(600);
     return true;
   } } as State])),
+  // Generale col puntatore sul pezzo 2HKO di Toxapex in Tipi: il tooltip coi bersagli e in fondo "Clic: vai a Coverage tipi" (TipGo)
+  'analysis-defense-general-piece-hover': { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const cells = await p.$$('.def-general tbody tr:nth-child(3) td');
+    const piece = await cells[0]?.$('.kob.hb');
+    if (!piece) return 'no piece';
+    await piece.hover();
+    await wait(500);
+    return true;
+  } } as State,
   // Generale a squadra chiusa col puntatore su una pastiglia dei colpi peggiori: Tipi (0) e Meta (1)
   ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null, { collapsed: true }).run!(p);

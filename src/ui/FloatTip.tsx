@@ -134,9 +134,16 @@ export function HiddenText({ id, children }: { id: string; children: ReactNode }
 /**
  * Il piede dei tooltip il cui elemento porta da qualche parte col clic: una riga Accent Ink sotto un filo, "Clic: vai a
  * {place}" e la freccia. Solo un'indicazione (il tooltip non si clicca): il clic resta sull'elemento. Il modello comune per
- * ogni tooltip che naviga; `place` è il nome della destinazione (es. "Coverage meta").
+ * ogni tooltip che naviga (un'altra scheda, sottoscheda o vista: Coaching, Coverage tipi/meta, Offesa, Difesa, Ruoli...);
+ * `place` è il nome della destinazione come lo mostra l'interfaccia (es. "Coverage meta"). `verb="open"`: il clic apre
+ * una finestra invece di cambiare scheda ("Clic: apri i rivali"). Il piede è solo visivo: le stesse parole stanno nella
+ * descrizione dell'elemento (goText, con HiddenText e aria-describedby) o già nel suo nome.
  */
-export function TipGo({ place }: { place: string }) {
+export function TipGo({ place, verb = 'go' }: { place: string; verb?: 'go' | 'open' }) {
   const t = useT();
-  return <p className="ftip-go">{t('tip.go', { place })}<Icon name="next" /></p>;
+  return <p className="ftip-go">{goText(t, place, verb)}<Icon name="next" /></p>;
 }
+
+/** Le parole del piede di TipGo ("Clic: vai a Coverage meta"), per la descrizione dell'elemento ai lettori di schermo. */
+export const goText = (t: ReturnType<typeof useT>, place: string, verb: 'go' | 'open' = 'go') =>
+  t(verb === 'open' ? 'tip.open' : 'tip.go', { place });

@@ -452,6 +452,10 @@ describe('Riassunto', () => {
     expect([...region().querySelectorAll('.sum-mon')].map(b => b.getAttribute('aria-label')!.split(',')[0])).toEqual(['Garchomp', 'Zapdos', 'Toxapex']);
     // Niente tooltip del browser: al passaggio la carta del Pokémon (tooltip DreamDex), quando il set è nel team
     expect(region().querySelector('.sum-mon[title]')).toBeNull();
+    // Dove porta il clic (il piede TipGo del tooltip) anche nella descrizione: l'attaccante all'Offesa, il muro alla Difesa
+    const mons = [...region().querySelectorAll<HTMLElement>('.sum-mon')];
+    expect(mons[0]).toHaveAccessibleDescription('Clic: vai a Offesa');
+    expect(mons[mons.length - 1]).toHaveAccessibleDescription('Clic: vai a Difesa');
     expect(region().querySelectorAll('.sum-hero .sprite')).toHaveLength(3);
   });
 
@@ -552,7 +556,7 @@ describe('Riassunto', () => {
     expect(row.querySelector('.sum-syn-tag')).toHaveTextContent('Core');
     expect([...row.querySelectorAll('.sum-cover > span')].map(l => l.textContent)).toEqual(['Garchomp para Fuoco', 'Scizor para Acciaio', 'Iron Valiant para Drago']);
     expect(row).toHaveAccessibleName('Core Drago / Acciaio / Folletto');
-    expect(row).toHaveAccessibleDescription('Garchomp para Fuoco a Scizor, Scizor para Acciaio a Iron Valiant, Iron Valiant para Drago a Garchomp');
+    expect(row).toHaveAccessibleDescription('Garchomp para Fuoco a Scizor, Scizor para Acciaio a Iron Valiant, Iron Valiant para Drago a Garchomp Clic: vai a Ruoli e Bonus');
   });
 
   it('Sinergie: il core da 2 (senza core da 3) è una riga a due sprite con etichetta, titolo e frase; i pivot non compaiono', () => {
@@ -595,7 +599,7 @@ describe('Riassunto', () => {
     const [core, ...rest] = within(syn).getAllByRole('button');
     expect(rest).toHaveLength(0);
     expect(core.querySelector('.sum-syn-title')).toHaveTextContent('Dragon / Steel / Fairy');
-    expect(core).toHaveAccessibleDescription('Garchomp blocks Fire for Scizor, Scizor blocks Steel for Iron Valiant, Iron Valiant blocks Dragon for Garchomp');
+    expect(core).toHaveAccessibleDescription('Garchomp blocks Fire for Scizor, Scizor blocks Steel for Iron Valiant, Iron Valiant blocks Dragon for Garchomp Click: go to Roles & Bonus');
   });
 
   it('ricco (team ridotto): sprite più grandi nell\'eroe', () => {
@@ -906,6 +910,7 @@ describe('Minacce del meta', () => {
     expect(tip.closest('.ftip')).toHaveTextContent('14,8% nel meta');
     // In fondo dove porta il clic sulla carta (TipGo)
     expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Coverage meta');
+    expect(zama).toHaveAccessibleDescription('Clic: vai a Coverage meta');
   });
 
   it('clic: apre la Coverage meta della Difesa (o dell\'Offesa) con la minaccia accesa; "+N" e il link sulla Coverage meta', async () => {

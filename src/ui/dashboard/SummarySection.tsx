@@ -18,7 +18,7 @@ import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreTip } from './CoreTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
@@ -160,13 +160,15 @@ function useSynergyView() {
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
  * la frase (o il giro del triangolo letto in parole).
  */
-function SynergyRow({ syn, view, rich, small, onClick, hover, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void };
+function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void };
+  /** La descrizione di dove porta il clic (col tooltip: il suo piede TipGo), dopo la frase. */
+  goId?: string;
   /** Un core da 3 dopo il primo: triangolo piccolo anche col team ridotto. */
   second?: boolean }) {
   const desc = useId();
   return (
     <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}`} style={{ '--c': view.color } as CSSProperties}
-      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick} {...hover}>
+      aria-label={`${view.tag} ${view.title}`} aria-describedby={goId ? `${desc} ${goId}` : desc} onClick={onClick} {...hover}>
       {view.trio && syn.core
         ? <CoreTriangle core={syn.core} size={rich && !second ? 'roomy' : 'normal'} descId={desc} />
         : (
@@ -308,6 +310,9 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
   const coreTip = useFloatAnchor<Core>();
   const monTip = useFloatAnchor<{ name: string; side: 'atk' | 'def'; score?: number }>();
   const setOf = (name: string) => team.find(set => battleName(set) === name);
+  // Dove porta il clic degli elementi col tooltip (il piede TipGo), anche ai lettori di schermo: una descrizione per destinazione
+  const goIds = { strength: useId(), defense: useId(), roles: useId(), bonusMalus: useId() };
+  const places = { strength: t('area.strength'), defense: t('area.defense'), roles: t('area.roles'), bonusMalus: t('analysis.view.bonusMalus') };
   // Tutti i core: prima quelli da 3 (il primo col triangolo grande), poi quelli da 2 (riga piccola). Poi i legami, senza i pivot
   const trios = cores.filter(core => core.members.length === 3);
   const synergies: Synergy[] = [
@@ -333,7 +338,8 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
       {/* Al passaggio (o col fuoco) la carta del Pokémon nel tooltip DreamDex, al posto del tooltip del browser */}
       <button type="button" className="sum-mon" onClick={() => onView(m.side === 'atk' ? 'strength' : 'defense')}
         onMouseEnter={e => monTip.open(m, e.currentTarget)} onMouseLeave={monTip.close} onFocus={e => monTip.open(m, e.currentTarget)} onBlur={monTip.close}
-        aria-label={m.score === undefined ? m.name : t(m.side === 'atk' ? 'sum.offenseOf' : 'sum.defenseOf', { name: m.name, n: m.score })}>
+        aria-label={m.score === undefined ? m.name : t(m.side === 'atk' ? 'sum.offenseOf' : 'sum.defenseOf', { name: m.name, n: m.score })}
+        aria-describedby={goIds[m.side === 'atk' ? 'strength' : 'defense']}>
         <Plinth name={m.name} size={big} />
         {m.score !== undefined && <span className="sum-score" aria-hidden="true"><Icon name={m.side === 'atk' ? 'sword' : 'shield'} />{m.score}</span>}
       </button>
@@ -388,7 +394,7 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
             // Al passaggio (o col fuoco) il tooltip della condizione: effetti e chi ne approfitta
             <button type="button" className="sum-line" onClick={() => onView('roles')}
               onMouseEnter={e => condTip.open(row, e.currentTarget)} onMouseLeave={condTip.close}
-              onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close}>
+              onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close} aria-describedby={goIds.roles}>
               <Plinth name={row.member} size={small} />
               <span className="sum-name">{row.member}</span>
               <Tag color={conditionColor(row.key)}>{row.label}</Tag>
@@ -431,7 +437,7 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
             // Sul core a tre: il tooltip con quanto regge chi para ogni tipo e chi protegge
             const hover = syn.core && syn.core.members.length === 3
               ? { onMouseEnter: (e: { currentTarget: Element }) => coreTip.open(syn.core!, e.currentTarget), onMouseLeave: coreTip.close } : undefined;
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
@@ -440,18 +446,22 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
         <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">
           <MemberCard set={setOf(monTip.anchor.key.name)!} why={monTip.anchor.key.score === undefined ? undefined
             : t(monTip.anchor.key.side === 'atk' ? 'mcard.whyAtk' : 'mcard.whyDef', { n: monTip.anchor.key.score })} />
+          <TipGo place={places[monTip.anchor.key.side === 'atk' ? 'strength' : 'defense']} />
         </FloatTip>
       )}
       {coreTip.anchor && (
         <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
           <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />
+          <TipGo place={places.bonusMalus} />
         </FloatTip>
       )}
       {condTip.anchor && (
         <FloatTip rect={condTip.anchor.rect} tone={conditionColor(condTip.anchor.key.key)} className="cond">
           <ConditionTip row={condTip.anchor.key} />
+          <TipGo place={places.roles} />
         </FloatTip>
       )}
+      {(Object.keys(goIds) as (keyof typeof goIds)[]).map(k => <HiddenText key={k} id={goIds[k]}>{goText(t, places[k])}</HiddenText>)}
     </DashCard>
   );
 }

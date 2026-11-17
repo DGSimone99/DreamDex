@@ -1,11 +1,11 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { DashboardData, MetaThreat } from '../../engine/overviewDashboard';
 import { battleSpecies } from '../../engine/dex';
 import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import type { KoFocus } from '../AreaDetail';
-import { FloatTip, TipGo, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { Icon } from '../icons';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
@@ -39,7 +39,7 @@ function useReasonText() {
  * in `metaThreats`). Ogni carta, lavata nel colore del primo tipo: sprite, nome (mai tagliato) e la targhetta inclinata
  * "scoperta" (rossa) o "a fatica" (gialla), l'unico segno dello stato. Col mouse e col fuoco il tooltip DreamDex con le ragioni intere, l'uso nel meta e in fondo dove porta il clic (TipGo); il
  * clic apre la Coverage meta (Difesa, o Offesa se è il lato peggiore) con la colonna della minaccia accesa. Quelle che
- * non stanno vanno in un "+N" tratteggiato (tooltip coi nomi, clic sulla Coverage meta). Senza minacce una riga verde.
+ * non stanno vanno in un "+N" tratteggiato (tooltip coi nomi e lo stesso piede, clic sulla Coverage meta). Senza minacce una riga verde.
  */
 export function ThreatsSection({ threats, onView }: {
   threats: DashboardData['threats'];
@@ -50,6 +50,9 @@ export function ThreatsSection({ threats, onView }: {
   const reasonText = useReasonText();
   const tip = useFloatAnchor<string>();
   const moreTip = useFloatAnchor<true>();
+  // Dove porta il clic (il piede TipGo dei tooltip), anche ai lettori di schermo: una descrizione per tutte le carte
+  const goId = useId();
+  const place = t('dash.threatFoot');
   const box = useRef<HTMLDivElement>(null);
   // La larghezza della carta (0 = non misurata, come nei test senza layout: 5)
   const [width, setWidth] = useState(0);
@@ -99,7 +102,7 @@ export function ThreatsSection({ threats, onView }: {
                 <li key={x.species}>
                   <button type="button" className={`thr-card ${x.status}`} onClick={() => { tip.close(); open(x); }} {...tip.bind(x.species)}
                     style={{ '--t1': typeColor(firstType(x.species)) } as CSSProperties}
-                    aria-label={t('dash.threatLabel', { species: x.species, word: word(x), reasons: reasonText(x).join('. '), usage: usage(x) })}>
+                    aria-label={t('dash.threatLabel', { species: x.species, word: word(x), reasons: reasonText(x).join('. '), usage: usage(x) })} aria-describedby={goId}>
                     <Sprite species={x.species} size={48} />
                     <span className="thr-text" aria-hidden="true">
                       <b className="thr-name">{x.species}</b>
@@ -111,13 +114,14 @@ export function ThreatsSection({ threats, onView }: {
               {hidden.length > 0 && (
                 <li>
                   <button type="button" className="thr-more" onClick={() => { moreTip.close(); open(); }} {...moreTip.bind(true)}
-                    aria-label={t('dash.threatsMoreSr', { n: hidden.length, list: hidden.map(x => `${x.species} (${word(x)})`).join(', ') })}>
+                    aria-label={t('dash.threatsMoreSr', { n: hidden.length, list: hidden.map(x => `${x.species} (${word(x)})`).join(', ') })} aria-describedby={goId}>
                     <span aria-hidden="true">{t('dash.threatsMore', { n: hidden.length })}</span>
                   </button>
                 </li>
               )}
             </ul>
           )}
+        {list.length > 0 && <HiddenText id={goId}>{goText(t, place)}</HiddenText>}
       </div>
       {tip.anchor && tipThreat && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
@@ -131,7 +135,7 @@ export function ThreatsSection({ threats, onView }: {
               <li key={line} className={tipThreat.reasons[i].by.length ? 'thin' : 'open'}>{line}</li>
             ))}
           </ul>
-          <TipGo place={t('dash.threatFoot')} />
+          <TipGo place={place} />
         </FloatTip>
       )}
       {moreTip.anchor && (
@@ -140,6 +144,7 @@ export function ThreatsSection({ threats, onView }: {
           <ul className="thr-tip-why">
             {hidden.map(x => <li key={x.species} className={x.status === 'open' ? 'open' : 'thin'}><b>{x.species}</b> {word(x)}</li>)}
           </ul>
+          <TipGo place={place} />
         </FloatTip>
       )}
     </DashCard>

@@ -10,7 +10,7 @@ import { useT } from '../../i18n/react';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { tone } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, TipGo, useFloatAnchor } from '../FloatTip';
 import { SpeedTip } from '../dashboard/SpeedTip';
 import { Icon } from '../icons';
 import { offenseSlots } from '../offense/slots';
@@ -191,6 +191,8 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
       {shown && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={room ? 'var(--room)' : 'var(--accent)'} className="speed" side="left">
           <SpeedTip lane={shown} vsMeta={meta} room={room} extra={gains(memberAt(tip.anchor.key)!)} />
+          {/* Il clic apre la finestra coi rivali (non un'altra scheda): lo stesso piede col verbo "apri"; il nome del pulsante lo dice già */}
+          <TipGo place={t('sdetail.bar.go')} verb="open" />
         </FloatTip>
       )}
       {prio.anchor && prioOpen.length > 0 && (
