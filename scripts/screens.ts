@@ -239,7 +239,7 @@ const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(
 const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: hash(SIX), run: async p => {
   const ok = await offenseState(sub).run!(p);
   if (ok !== true) return ok;
-  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
   await wait(400);
   if (section && !await clickText(p, '.help-nav [role="tab"]', section)) return 'no guide section';
   await wait(300);
@@ -317,7 +317,7 @@ const SPEED_STATES: Record<string, State> = {
 const speedGuide = (format?: Partial<typeof FORMAT>): State => ({ hash: format ? hashWith(SPEED_SIX, format) : hash(SPEED_SIX), run: async p => {
   const ok = await speedState(null, { format }).run!(p);
   if (ok !== true) return ok;
-  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
   await wait(400);
   return true;
 } });
@@ -385,28 +385,28 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-guide-meta': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.meta).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
   'analysis-defense-guide-sus': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.sustain).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
   'analysis-defense-guide-rob': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.robustness).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
   'analysis-defense-guide-types': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.types).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
@@ -414,7 +414,7 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-guide-types-open': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.types).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     if (!await clickText(p, '.guide-more > summary', /./)) return 'no attackers toggle';
     await wait(300);
@@ -423,7 +423,7 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-guide': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
     return true;
   } },
@@ -446,7 +446,7 @@ const rolesState = (opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' |
 const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'en' } = {}): State => ({ hash: hash(opts.team ?? SIX), lang: opts.lang, run: async p => {
   const ok = await rolesState(opts).run!(p);
   if (ok !== true) return ok;
-  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
   await wait(400);
   if (section && !await clickText(p, '.help-nav [role="tab"]', section)) return 'no guide section';
   await wait(300);
@@ -597,7 +597,7 @@ const STATES: Record<string, State> = {
   'analysis-help': { run: async p => {
     if (!await gradeRow(p, /^Difesa/)) return 'no row';
     await wait(300);
-    return clickText(p, '.area-help button', /./);
+    return clickText(p, 'button.area-help', /./);
   } },
   // Stampa l'altezza delle righe delle proposte mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
   'coaching-six': { hash: hash(SIX), run: async p => {
