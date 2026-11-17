@@ -15,12 +15,15 @@ import { MetaProfileCard } from './MetaProfileCard';
  * Scheda Meta, solo informativa (il voto non la usa): in alto il tuo team con la posizione e l'uso di ogni membro, sotto i
  * più usati del meta come carte della lista, in ordine di uso; a destra la scheda del Pokémon scelto (il #1 all'inizio),
  * con in fondo "Contro il tuo team" (dai dati della Coverage meta del voto) e i link alla Coverage meta (`onCoverage`).
+ * `onCollapseTeam`: riduce il team, dal pulsante in fondo alla scheda quando non ci sta (solo col team aperto).
  */
-export function MetaTab({ team, data, rating = null, onCoverage }: {
+export function MetaTab({ team, data, rating = null, onCoverage, onCollapseTeam, teamCollapsed = false }: {
   team: TeamSet[];
   data?: EngineData;
   rating?: TeamRating | null;
   onCoverage?: (side: 'defense' | 'offense', species: string) => void;
+  onCollapseTeam?: () => void;
+  teamCollapsed?: boolean;
 }) {
   const t = useT();
   const lang = useLang();
@@ -79,7 +82,8 @@ export function MetaTab({ team, data, rating = null, onCoverage }: {
           ))}
         </ul>
       </div>
-      {profile && <MetaProfileCard profile={profile} inTop={inTop} onSelect={choose} versus={versus} onCoverage={onCoverage} />}
+      {profile && <MetaProfileCard profile={profile} inTop={inTop} onSelect={choose} versus={versus} onCoverage={onCoverage}
+        onMore={teamCollapsed ? undefined : onCollapseTeam} />}
     </section>
   );
 }

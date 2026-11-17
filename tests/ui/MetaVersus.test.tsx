@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import type { TeamRating } from '../../src/engine/rating';
 import { MetaTab } from '../../src/ui/meta/MetaTab';
@@ -97,6 +97,46 @@ describe('scheda Meta: Contro il tuo team', () => {
     expect(off).toHaveTextContent('in Offesa');
     await user.click(off);
     expect(onCoverage).toHaveBeenLastCalledWith('offense', 'Great Tusk');
+  });
+});
+
+describe('scheda Meta che non ci sta: il pulsante in fondo riduce il team', () => {
+  const rating = () => fakeRating({ 'Great Tusk': [held('Kingambit')] }, { 'Great Tusk': [ko('Kingambit')] });
+  /** La scheda è alta 600: col blocco il contenuto è 700 (esce), senza 560 (sta). */
+  const overflow = () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('meta-profile') ? 600 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('meta-profile') ? (this.querySelector('.meta-vs') ? 700 : 560) : 0;
+    });
+  };
+  afterEach(() => vi.restoreAllMocks());
+
+  it('al posto del blocco il pulsante "+ Contro il tuo team", che riduce il team', async () => {
+    overflow();
+    const user = userEvent.setup();
+    const onCollapseTeam = vi.fn();
+    renderIt(<MetaTab team={[]} data={fixtureData} rating={rating()} onCoverage={vi.fn()} onCollapseTeam={onCollapseTeam} />);
+    expect(within(profile()).queryByRole('region', { name: /^Contro il tuo team/ })).toBeNull();
+    expect(within(profile()).getByText('Spesso con')).toBeInTheDocument();
+    const more = within(profile()).getByRole('button', { name: 'Riduci il team per vedere: Contro il tuo team' });
+    expect(more).toHaveClass('sum-more-below');
+    expect(more).toHaveTextContent('+ Contro il tuo team');
+    await user.click(more);
+    expect(onCollapseTeam).toHaveBeenCalledTimes(1);
+  });
+
+  it("col team già ridotto, o se ci sta, il blocco c'è e il pulsante no", () => {
+    overflow();
+    const { unmount } = renderIt(<MetaTab team={[]} data={fixtureData} rating={rating()} onCoverage={vi.fn()} onCollapseTeam={vi.fn()} teamCollapsed />);
+    expect(block()).toBeInTheDocument();
+    expect(within(profile()).queryByRole('button', { name: /^Riduci il team/ })).toBeNull();
+    unmount();
+    vi.restoreAllMocks();
+    renderIt(<MetaTab team={[]} data={fixtureData} rating={rating()} onCoverage={vi.fn()} onCollapseTeam={vi.fn()} />);
+    expect(block()).toBeInTheDocument();
+    expect(within(profile()).queryByRole('button', { name: /^Riduci il team/ })).toBeNull();
   });
 });
 

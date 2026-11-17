@@ -476,7 +476,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             onCoverage={(side, species) => {
               setAnalysisJump(j => ({ view: side === 'defense' ? 'defense' : 'strength', sub: 'coverageMeta', focus: { kind: 'threat', side, species }, nonce: (j?.nonce ?? 0) + 1 }));
               setTab('analysis');
-            }} />
+            }}
+            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}

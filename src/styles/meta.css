@@ -52,8 +52,13 @@
 /* La scheda del Pokémon scelto: testa sul colore del primo tipo, poi strumento e abilità, mosse, compagni */
 .meta-profile { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 12px 14px 14px; background: var(--band); border: 1px solid var(--line-soft); }
 .meta-profile .meta-plate { align-self: flex-start; }
-/* La scheda scorre se non ci sta (schermi bassi): le parti non si schiacciano una sull'altra */
+/* Le parti non si schiacciano una sull'altra. Se non ci stanno (schermi bassi col team aperto) le ultime lasciano il posto
+   al pulsante in fondo della Panoramica (MoreBelow, .sum-more-below in analysis.css) che riduce il team; il suo velo sfuma
+   sul fondo della scheda (Band) e il posto sotto l'ultima parte è suo, così non copre niente */
 .meta-profile > * { flex-shrink: 0; }
+.meta-profile { position: relative; }
+.meta-profile:has(> .sum-more-below) { padding-bottom: 40px; }
+.meta-profile > .sum-more-below { background: linear-gradient(to top, var(--band) 0%, color-mix(in srgb, var(--band) 0%, transparent) 100%); }
 .meta-hero { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--t1) 30%, var(--panel)), var(--panel) 72%); border-bottom: 3px solid var(--t1); }
 .meta-hero .sprite { width: 96px; height: 96px; image-rendering: pixelated; }
@@ -104,7 +109,7 @@
   color: var(--k); background: var(--k-bg); }
 .mvs-links { display: flex; flex-wrap: wrap; gap: 2px 8px; margin-left: -6px; }
 /* Schermi bassi (1280×620): la scheda si stringe (spazi, sprite della testa 72px) e le righe di Contro il tuo team
-   tengono il solo conto, senza sprite (i nomi restano per lo screen reader); quello che non sta scorre nella scheda */
+   tengono il solo conto, senza sprite (i nomi restano per lo screen reader); quello che non sta va nel pulsante in fondo */
 @media (max-height: 700px) {
   .meta-profile { gap: 8px; padding-top: 10px; }
   .meta-hero { grid-template-columns: 72px minmax(0, 1fr); padding: 6px 8px; }

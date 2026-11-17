@@ -21,6 +21,7 @@ import { CoreTriangle, coreTitle } from './CoreTriangle';
 import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
+import { MoreBelow } from '../MoreBelow';
 
 /**
  * Colore di una condizione (meteo, campo, Trick Room, schermi, Ventoincoda) e degli stili di team: il colore del tipo
@@ -68,7 +69,6 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
   moreTip?: (hidden: T[]) => ReactNode;
   className?: string;
 }) {
-  const t = useT();
   const tip = useFloatAnchor<true>();
   // La lista è alta quanto il suo contenuto: si guarda anche la card, che cresce col team ridotto
   const fit = useFit<HTMLUListElement>(fitKey, rows.length, { min: 1, outer: '.dash-summary' });
@@ -89,13 +89,9 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
       {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
       {hidden > 0 && (onMore
         ? (
-          <button type="button" className={`sum-more-below${tipped}`} onClick={() => { tip.close(); onMore(); }} {...hover} title={moreTip ? undefined : more(hidden, rows.slice(shown))}
-            aria-label={t('sum.showMore', { label: more(hidden, rows.slice(shown)) })}>
-            <span aria-hidden="true">+{hidden}</span>
-            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6.5 6.5 12 12l5.5-5.5M6.5 12.5 12 18l5.5-5.5" />
-            </svg>
-          </button>
+          <MoreBelow label={more(hidden, rows.slice(shown))} onClick={() => { tip.close(); onMore(); }} tipped={!!moreTip} hover={hover}>
+            +{hidden}
+          </MoreBelow>
         )
         : <span className={`sum-sec-more${tipped}`} {...hover}><More n={hidden} label={more(hidden, rows.slice(shown))} plain={!!moreTip} /></span>)}
       {moreTip && hidden > 0 && tip.anchor && (
