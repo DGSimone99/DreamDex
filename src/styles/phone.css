@@ -395,26 +395,6 @@
   .editor-actions { margin-left: 0; flex-wrap: wrap; }
 }
 
-/* ── Liste sul telefono e sul tablet: prima le tue liste, poi il Pokédex da cui sceglierle ── */
-@media (max-width: 1099px) {
-  .lists-main { display: flex; flex-direction: column; }
-  .lists-side { order: -1; }
-  .lists-bar { flex-wrap: wrap; }
-  .lists-bar .search-field { flex: 1 1 100%; }
-  .lists-bar .search-hint { display: none; }
-}
-@media (max-width: 1099px) {
-  .lists-main > * { width: 100%; }
-  .dex-grid { max-height: 70dvh; overscroll-behavior: contain; }
-}
-/* Senza mouse non c'è il passaggio sopra: cuore e divieto sempre in vista, grandi abbastanza per il dito */
-@media (hover: none) {
-  .dex-actions { opacity: 1; }
-}
-@media (pointer: coarse) {
-  .dex-actions button { min-width: 44px; min-height: 36px; }
-  .dex-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
-}
 
 /* Tablet largo: lista e scheda affiancate; la scheda resta in vista mentre la pagina scorre */
 @media (min-width: 760px) and (max-width: 1099px) {

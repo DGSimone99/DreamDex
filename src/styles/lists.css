@@ -4,55 +4,6 @@
   .editor-actions .btn-label { display: none; }
 }
 /* Portate in cima (clic su una scheda o su Sostituisci): restano sotto la barra in alto, che è fissa */
-/* Scheda Liste: Pokédex a sinistra, Preferiti e Bannati a destra (metà ciascuno) */
-.lists-panel h2 {
-  align-self: flex-start;
-  margin-bottom: 4px;
-  padding: 4px 26px 4px 12px;
-  font: 700 15px/1.2 var(--display);
-  font-style: italic;
-  color: var(--on-plate);
-  background: var(--stripes), var(--plate);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-}
-.lists-bar { display: flex; gap: 12px; align-items: center; margin: 12px 0; }
-.lists-bar .search-field { flex: 1; }
-.lists-bar .segmented button { white-space: nowrap; padding: 6px 12px; }
-.lists-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 12px; }
-.dex-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; max-height: calc(100vh - 140px); overflow-y: auto; }
-.dex-cell { position: relative; display: grid; justify-items: center; padding: 6px 4px 8px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
-.dex-cell .sprite { image-rendering: pixelated; }
-.dex-no { position: absolute; left: 6px; top: 4px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
-.dex-name { font-size: 12px; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dex-actions { display: flex; gap: 4px; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
-.dex-cell:hover .dex-actions, .dex-cell:focus-within .dex-actions, .dex-cell.target .dex-actions, .dex-cell.fav .dex-actions, .dex-cell.ban .dex-actions { opacity: 1; }
-.dex-actions button { padding: 1px 8px; font-size: 13px; color: var(--muted); background: var(--field); }
-.dex-actions .dex-fav[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
-.dex-actions .dex-ban[aria-pressed='true'] { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
-.dex-cell.fav { border-color: var(--accent); }
-/* Bannato: sprite spento, nome in grigio leggibile (prima tutto trasparente al 40%, il nome a 3,5:1) */
-.dex-cell.ban > :not(.dex-actions) { color: var(--faint); }
-.dex-cell.ban .sprite { opacity: 0.4; filter: grayscale(0.7); }
-.dex-cell.ban .dex-name, .dex-cell.ban .dex-no { color: var(--faint); }
-.dex-cell.target { outline: 2px solid var(--accent); outline-offset: 1px; }
-.lists-side { display: grid; gap: 14px; position: sticky; top: 76px; }
-.user-list { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; padding: 12px 14px; }
-.user-list h3 { display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px; font-size: 15px; font-style: italic; letter-spacing: 0.04em; }
-.user-list.favorites h3 > span { color: var(--accent); }
-.user-list.bans h3 > span { color: var(--bad); }
-.user-list h3 .count { color: var(--muted); font-weight: 500; }
-.user-list .list-clear { font-size: 12px; padding: 2px 8px; }
-.user-list ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
-.user-list li { display: flex; align-items: center; gap: 6px; padding: 2px 6px 2px 2px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; }
-.user-list li .sprite { image-rendering: pixelated; }
-.user-list .list-name { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.user-list .scope-tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; white-space: nowrap; }
-.user-list .list-remove { margin-left: auto; padding: 4px; border: 0; background: none; color: var(--faint); }
-.user-list .list-remove:hover { color: var(--bad); }
-.list-none { margin: 0; color: var(--muted); font-size: 13px; }
-.lists-copy select { font-size: 14px; }
-@media (max-width: 1099px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }
-.lists-bar .search-hint { max-width: 360px; }
 
 /* Blocchi come pannelli del riepilogo: il titolo è una linguetta inclinata, riassunto e freccia a destra */
 .block { border-radius: 0; }
@@ -68,20 +19,17 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
 .block > summary > span + span { flex: 1; }
-/* Analisi e Meta: due colonne che scorrono ognuna per conto suo; Liste: il Pokédex scorre, le liste a destra pure */
+/* Analisi e Meta: due colonne che scorrono ognuna per conto suo; Liste: box e Pokédex a pagine, niente scorre */
 @media (min-width: 1100px) {
   #panel-analysis.active, #panel-meta.active, #panel-lists.active { overflow: hidden; }
   /* Le aree che scorrono contengono anche i loro elementi assoluti (testi nascosti, tooltip): niente sporge fuori dalla colonna */
-  .tab-panel.active, .picker-list, .detail, .analysis-main, .analysis-detail, .meta-tab > *, .dex-grid, .lists-side { position: relative; }
+  .tab-panel.active, .picker-list, .detail, .analysis-main, .analysis-detail, .meta-tab > *, .lists-dex { position: relative; }
   .tab-panel > .analysis, .tab-panel > .meta-tab { height: 100%; }
   .analysis { display: flex; flex-direction: column; }
   .analysis-cols { flex: 1; min-height: 0; align-items: stretch; }
   .meta-tab { align-items: stretch; }
   .analysis-main, .analysis-detail, .meta-tab > * { min-height: 0; overflow: auto; overscroll-behavior: contain; padding-right: 4px; padding-bottom: 12px; }
-  .lists-panel { height: 100%; display: flex; flex-direction: column; }
-  .lists-main { flex: 1; min-height: 0; align-items: stretch; }
-  .dex-grid { max-height: none; height: 100%; }
-  .lists-side { position: static; top: auto; min-height: 0; overflow: auto; align-content: start; padding-bottom: 12px; }
+  .lists-panel { height: 100%; }
 }
 /* Schermi bassi o stretti (portatili 1366×768, 1280×720): tutto resta in una schermata, card e strumenti più compatti */
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
@@ -551,3 +499,169 @@
 .lists-menu-ok { height: 32px; padding: 0 10px; font: 600 12px/1 var(--ui); }
 .lists-note { position: absolute; top: calc(100% + 4px); right: 0; margin: 0; font-size: 12px; color: var(--muted); white-space: nowrap; pointer-events: none; }
 .lists-note:empty { display: none; }
+
+/* ── Scheda Liste come il Box del PC: in alto i due box (Preferiti e Bannati), sotto il Pokédex a carte; tutto a pagine,
+   niente scorre. Vista espansa: le due liste a carte grandi ── */
+.lists-panel { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.lists-bar { display: flex; gap: 10px; align-items: center; flex: none; margin: 0; }
+.lists-bar .search-field { flex: 1; min-width: 0; }
+.lists-bar .search-field input { height: 40px; }
+.lists-bar .search-hint { max-width: 360px; }
+.lists-expand { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; flex: none; white-space: nowrap;
+  font: 600 13px/1 var(--ui); color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: 4px; }
+.lists-expand .icon { width: 15px; height: 15px; }
+.lists-expand:hover { border-color: var(--accent); }
+
+/* I due box, affiancati come nel PC */
+.lists-boxes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; flex: none; }
+.lbox { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 75%, var(--band)), var(--panel)); }
+.lbox-head { display: flex; align-items: center; gap: 10px; height: 34px; padding-right: 8px; flex: none; min-width: 0; }
+.lbox-plate { display: flex; align-items: center; gap: 8px; height: 34px; margin: 0; padding: 0 28px 0 12px; flex: none;
+  font: italic 800 15px/1 var(--display); color: var(--on-plate); background: var(--stripes), var(--plate);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.lbox-plate .icon { width: 15px; height: 15px; }
+/* Preferiti nel ciano del cuore, Bannati nel rosso: la targhetta prende un po' del colore (testo 5,5:1 e 6:1) */
+.favorites .lbox-plate { background: var(--stripes), color-mix(in srgb, var(--accent) 30%, var(--plate)); }
+.bans .lbox-plate { background: var(--stripes), color-mix(in srgb, var(--bad) 28%, var(--plate)); }
+.lbox-count { font: italic 700 14px/1 var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.lbox-note { flex: 1; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lists-panel.dragging .lbox-note { color: var(--text); }
+.lists-pager { display: inline-flex; align-items: center; gap: 6px; flex: none; font: 600 12px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.lists-pager button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; color: var(--text); background: none; border: 1px solid var(--line); border-radius: 4px; }
+.lists-pager button .icon { width: 14px; height: 14px; }
+.lists-pager button:hover:not(:disabled) { border-color: var(--accent); }
+.lists-pager button:disabled { opacity: 0.4; cursor: default; }
+
+.lslots-wrap { position: relative; padding: 8px; }
+.lslots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--cols, 10), minmax(0, 1fr)); gap: 4px; }
+.lslot { position: relative; aspect-ratio: 1; border-radius: 6px; background: #ffffff08; box-shadow: inset 0 0 0 1px #ffffff10; }
+.lslot.on { background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--t) 40%, transparent), #ffffff08 70%); }
+.lslot-mon { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 6px; cursor: grab; }
+/* Icona del box che riempie la casella (~56px a 1440) e può uscire un poco dal bordo, come nel PC; la casella resta il bersaglio */
+.lslot-mon .mon-icon { transform: scale(1.4); image-rendering: pixelated; pointer-events: none; }
+.bans .lslot-mon .mon-icon { filter: grayscale(0.6); }
+.lslot-mon:hover, .lslot-mon:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); outline: none; }
+.bans .lslot-mon:hover, .bans .lslot-mon:focus-visible { box-shadow: inset 0 0 0 2px var(--bad); }
+.lslot-mon:active { cursor: grabbing; }
+.lslot.lifted { opacity: 0.35; }
+.lslot-mark { position: absolute; top: 2px; right: 2px; z-index: 1; display: inline-flex; gap: 1px; padding: 2px; border-radius: 3px; background: #000a; color: var(--muted); }
+.lslot-mark .icon { width: 11px; height: 11px; }
+.lslot-mark.over .icon + .icon { color: var(--accent-ink); }
+.lslots-empty { position: absolute; inset: 8px; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center;
+  font-size: 13px; line-height: 1.4; color: var(--muted); pointer-events: none; }
+/* Si trascina: i box che accolgono hanno il bordo tratteggiato, quello sotto il puntatore nel colore della lista */
+.lbox.accepts .lslots-wrap { outline: 2px dashed var(--line); outline-offset: -4px; }
+.lbox.favorites.over .lslots-wrap { outline: 2px dashed var(--accent); }
+.lbox.bans.over .lslots-wrap { outline: 2px dashed var(--bad); }
+
+/* Il Pokédex sotto i box: carte come i candidati, a pagine */
+.lists-dex { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
+.dex-head { display: flex; align-items: center; gap: 10px; padding: 6px 12px; flex: none; border-bottom: 1px solid var(--line-soft); }
+.dex-head h3 { margin: 0; font: italic 700 14px/1 var(--display); }
+.dex-order { position: relative; }
+.dex-order-pick { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; white-space: nowrap;
+  font: 500 13px/1 var(--ui); color: var(--text); background: var(--field); border: 1px solid var(--control-line); border-radius: 4px; }
+.dex-order-pick small { font: 600 11px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.dex-order-pick:hover, .dex-order-pick[aria-expanded='true'] { border-color: var(--accent); }
+.dex-order-pick[aria-expanded='true'] .lists-chev { margin-top: 4px; transform: rotate(225deg); border-color: var(--accent-ink); }
+.lists-menu.order { left: 0; right: auto; width: 240px; }
+.dex-head .filters { flex: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
+.dex-head .filters > summary { height: 30px; padding: 0 10px; gap: 8px; font-size: 13px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); white-space: nowrap; }
+.dex-head .filters > summary:hover, .dex-head .filters[open] > summary { border-color: var(--accent); }
+.dex-head .filters[open] > summary { margin-bottom: 0; }
+.dex-head .filters::details-content { position: absolute; }
+.dex-head .filters[open]::details-content {
+  position: absolute; z-index: 20; left: 12px; right: 12px; top: 44px; max-height: calc(100% - 56px); overflow: auto; padding: 14px 16px;
+  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.dex-count { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dex-key { display: inline-flex; align-items: center; gap: 4px; }
+.dex-key .icon { width: 12px; height: 12px; }
+.dex-key .icon:not(:first-child) { margin-left: 6px; }
+.dex-grid { flex: 1; min-height: 0; list-style: none; margin: 0; padding: 10px; display: grid; grid-template-columns: repeat(var(--dex-cols, 9), minmax(0, 1fr));
+  grid-auto-rows: 104px; gap: 8px; align-content: start; overflow: hidden; }
+/* Misurata: le righe che entrano si allargano fino a riempire tutta l'altezza (nessuna striscia vuota sotto) */
+.dex-grid[style*="--dex-rows"] { grid-template-rows: repeat(var(--dex-rows), minmax(104px, 1fr)); align-content: stretch; }
+
+.dex-card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; overflow: hidden; padding: 6px 8px;
+  container-type: size; cursor: grab; background: linear-gradient(160deg, color-mix(in srgb, var(--t) 50%, var(--panel)) -10%, var(--panel) 70%);
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease); }
+/* La striscia di luce delle carte Masters */
+.dex-card::before { content: ""; position: absolute; inset: -30% auto -30% 45%; width: 40px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, #ffffff12, transparent); transform: rotate(18deg); }
+.dex-card:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45); }
+.dex-card:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.dex-sprite { position: absolute; top: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
+.dex-sprite .sprite { display: block; width: min(74px, 70cqh); height: min(74px, 70cqh); image-rendering: pixelated; filter: drop-shadow(0 3px 4px #0008); }
+.dex-name { position: relative; z-index: 1; font: italic 700 12.5px/1.15 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dex-no { position: absolute; top: 6px; left: 8px; z-index: 1; font: italic 800 11px/1 var(--display); color: var(--muted); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000c; }
+.dex-actions { position: absolute; top: 5px; right: 5px; z-index: 1; display: flex; flex-direction: column; gap: 4px; }
+.dex-actions button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; background: #000a; color: var(--muted); }
+.dex-actions .icon { width: 13px; height: 13px; }
+.dex-actions button:hover { color: var(--text); }
+/* Preferito: il cuore pieno in ciano (ereditato dall'Universale o dalla specie base: solo il cuore ciano) */
+.dex-card.fav .dex-fav { color: var(--accent-ink); }
+.dex-actions .dex-fav[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.dex-grid .dex-card.fav { box-shadow: inset 0 0 0 2px var(--accent); }
+/* Bannato: carta spenta, tratteggio rosso, divieto pieno in rosso */
+.dex-card.ban { background: linear-gradient(160deg, color-mix(in srgb, var(--t) 16%, var(--panel)) -10%, var(--panel) 70%); }
+.dex-card.ban::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(-45deg, #ff8a8a17 0 6px, transparent 6px 14px); }
+.dex-card.ban .dex-sprite { filter: grayscale(0.85) brightness(0.7); }
+.dex-card.ban .dex-name, .dex-card.ban .dex-no { color: var(--faint); }
+.dex-card.ban .dex-ban { color: var(--bad); }
+.dex-actions .dex-ban[aria-pressed="true"] { background: var(--bad); color: #2a0008; }
+.dex-card.target { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { .dex-card { transition: none; } .dex-card:hover { transform: none; } }
+
+/* Vista espansa: le liste a carte grandi, a pagine (12 per lista affiancate, 24 da sola) */
+.lists-exphead { display: flex; align-items: center; gap: 10px; flex: none; }
+.lists-exphead h2 { margin: 0; font: italic 800 22px/1 var(--display); }
+.lists-pills { display: flex; gap: 6px; }
+.lists-pill { padding: 7px 10px; font: 600 12px/1 var(--ui); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 14px; }
+.lists-pill[aria-pressed="true"] { color: var(--text); background: var(--accent-soft); border-color: var(--accent); }
+.lists-pill:hover { color: var(--text); }
+.lists-exphead-gap { flex: 1; }
+.lists-expgrid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.lists-expgrid.one { grid-template-columns: minmax(0, 1fr); }
+.lists-big { position: relative; display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--panel); }
+.lists-big .lbox-head { padding-right: 10px; }
+.lists-big-grid { flex: 1; min-height: 0; list-style: none; margin: 0; padding: 10px; display: grid; gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+.lists-expgrid.one .lists-big-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.lists-big .dex-card { cursor: default; }
+.lists-big .dex-sprite .sprite { width: min(101px, 72cqh); height: min(101px, 72cqh); }
+.lists-big .dex-name { font-size: 14px; }
+.lists-big-empty { position: absolute; inset: 44px 0 0; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* Schermi bassi o stretti: caselle e carte un po' più piccole */
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .lslot-mon .mon-icon { transform: scale(1.22); }
+  .lists-bar .search-field input, .lists-expand, .lists-pick, .lists-more { height: 36px; }
+  .lists-more { width: 36px; }
+  .lists-exphead h2 { font-size: 19px; }
+}
+
+/* Telefono e tablet: un box sotto l'altro, il Pokédex sotto con la sua altezza; niente trascinamento al tocco,
+   restano i pulsanti sulle carte e la tastiera */
+@media (max-width: 1099px) {
+  .lists-panel { height: auto; }
+  .lists-bar { flex-wrap: wrap; }
+  .lists-bar .search-field { flex: 1 1 100%; }
+  .lists-bar .search-hint { display: none; }
+  .lists-picker { flex: 1; min-width: 0; }
+  .lists-pick { flex: 1; min-width: 0; max-width: none; }
+  .lists-boxes { grid-template-columns: minmax(0, 1fr); }
+  .lslots { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .lists-dex { flex: none; }
+  .dex-head { flex-wrap: wrap; }
+  .dex-count { margin-left: 0; }
+  .dex-key { display: none; }
+  .dex-grid { flex: none; height: 70dvh; }
+  .lists-exphead { flex-wrap: wrap; }
+  .lists-expgrid { grid-template-columns: minmax(0, 1fr); }
+  .lists-big-grid, .lists-expgrid.one .lists-big-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 120px; }
+}
+@media (pointer: coarse) {
+  .dex-actions button { width: 36px; height: 36px; }
+}

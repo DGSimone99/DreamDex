@@ -25,7 +25,7 @@ export function scopeName(lists: UserLists, scope: ListScope, lang: Lang): strin
 const ITEMS = '[role^="menuitem"]:not([aria-disabled="true"]), .lists-menu-input';
 
 /** Frecce su e giù (in giro), Home e End fra le voci del menu; Invio e Spazio restano alla voce (il suo clic). */
-function menuKeys(e: KeyboardEvent<HTMLElement>) {
+export function menuKeys(e: KeyboardEvent<HTMLElement>) {
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
   const items = [...e.currentTarget.querySelectorAll<HTMLElement>(ITEMS)];
   if (!items.length) return;
@@ -39,7 +39,7 @@ function menuKeys(e: KeyboardEvent<HTMLElement>) {
 }
 
 /** Un menu che si apre sotto il suo pulsante: si chiude cliccando fuori o con Esc (il fuoco torna al pulsante). */
-function useMenu(rootRef: RefObject<HTMLElement | null>, buttonRef: RefObject<HTMLButtonElement | null>) {
+export function useMenu(rootRef: RefObject<HTMLElement | null>, buttonRef: RefObject<HTMLButtonElement | null>) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -62,7 +62,7 @@ function useMenu(rootRef: RefObject<HTMLElement | null>, buttonRef: RefObject<HT
 }
 
 /** All'apertura il fuoco va sulla voce scelta (o sulla prima). */
-function useFocusFirst(open: boolean, ref: RefObject<HTMLElement | null>, key?: string) {
+export function useFocusFirst(open: boolean, ref: RefObject<HTMLElement | null>, key?: string) {
   useEffect(() => {
     if (!open) return;
     const menu = ref.current;

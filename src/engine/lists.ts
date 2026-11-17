@@ -272,6 +272,28 @@ export function pokedexSpecies(format: Format): string[] {
     .map(s => s.name);
 }
 
+/** Le regioni dei Pokédex regionali del menu "Ordine" delle Liste, in ordine di generazione. */
+export const REGIONS = ['kanto', 'johto', 'hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'] as const;
+export type Region = (typeof REGIONS)[number];
+/** Ultimo numero del Pokédex nazionale di ogni generazione (Kanto 151 … Galar 905, Paldea fino alla fine). */
+const REGION_END = [151, 251, 386, 493, 649, 721, 809, 905, Infinity];
+
+/**
+ * La regione d'origine del Pokémon. @pkmn/dex non ha i numeri dei Pokédex regionali: si usa la generazione d'origine
+ * (dal numero nazionale), e le forme regionali vanno nella loro regione (Alola, Galar, Paldea; Hisui con Sinnoh, la
+ * regione di prima). Mega e altre forme seguono la specie base.
+ */
+export function regionOf(name: string): Region | null {
+  const species = getSpecies(name);
+  if (!species || species.num <= 0) return null;
+  const forme = species.forme;
+  if (forme.startsWith('Alola')) return 'alola';
+  if (forme.startsWith('Galar')) return 'galar';
+  if (forme.startsWith('Hisui')) return 'sinnoh';
+  if (forme.startsWith('Paldea')) return 'paldea';
+  return REGIONS[REGION_END.findIndex(end => species.num <= end)] ?? null;
+}
+
 /** Il set è nella lista: la forma in battaglia (Charizard-Mega-X) o la specie e la sua specie base (anche per le forme). */
 function listed(set: { species: string; item: string }, names: Set<string>, allow?: Set<string>): boolean {
   const battle = battleSpecies(set)?.name;

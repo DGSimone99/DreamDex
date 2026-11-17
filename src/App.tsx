@@ -161,7 +161,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   }, [lists, storage]);
   const listCtx = listContext(format);
   const userLists = useMemo(() => effectiveLists(lists, listCtx), [lists, listCtx]);
-  // Lista svuotata: si può annullare per qualche secondo (finché le liste restano quelle)
+  // Liste: raccolta svuotata o sostituita, Pokémon tolto da un box: si può annullare per qualche secondo (finché le liste
+  // restano quelle)
   const [listUndo, setListUndo] = useState<{ id: number; undo: ListUndo; before: UserLists; after: UserLists } | null>(null);
   // Stabile: la scheda Liste (oltre mille Pokémon) non si ridisegna quando cambia solo il team
   const listsRef = useRef(lists);

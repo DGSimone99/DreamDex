@@ -159,3 +159,14 @@ describe('raccolte', () => {
     expect(effective.universal.size).toBe(0);
   });
 });
+
+describe('Pokédex regionali (generazione d origine)', () => {
+  it('regionOf: dal numero nazionale; le forme regionali nella loro regione, le Mega con la specie base', async () => {
+    const { regionOf } = await import('../../src/engine/lists');
+    expect(['Bulbasaur', 'Mew', 'Chikorita', 'Treecko', 'Turtwig', 'Victini', 'Chespin', 'Rowlet', 'Meltan', 'Grookey', 'Enamorus', 'Sprigatito', 'Pecharunt'].map(regionOf))
+      .toEqual(['kanto', 'kanto', 'johto', 'hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'alola', 'galar', 'galar', 'paldea', 'paldea']);
+    expect(['Vulpix-Alola', 'Slowking-Galar', 'Zoroark-Hisui', 'Tauros-Paldea-Combat', 'Charizard-Mega-X'].map(regionOf))
+      .toEqual(['alola', 'galar', 'sinnoh', 'paldea', 'kanto']);
+    expect(regionOf('Notamon')).toBeNull();
+  });
+});
