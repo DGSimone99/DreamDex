@@ -106,7 +106,17 @@
 .area-chip.serious { --tone: var(--bad); --tone-bg: var(--bad-bg); }
 .area-chip.good { --tone: var(--good); --tone-bg: var(--good-bg); cursor: default; }
 .area-chip > .icon { flex: none; width: 12px; height: 12px; }
-/* Il testo corto della pillola (lo stesso della mappa del Coaching) nel colore della pillola, intero */
+/* Il testo corto di un problema (ProblemPill): le icone dei tipi davanti, la × di un ruolo mancante, l'icona di una minaccia */
+.coach-prob-text { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coach-counts { white-space: nowrap; }
+.coach-prob-text .type-icons { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
+.coach-prob-text .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
+.coach-prob-text.coach-miss { display: flex; align-items: center; gap: 6px; }
+.coach-miss .icon { flex: none; width: 12px; height: 12px; }
+.coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; overflow: visible; white-space: nowrap; }
+.coach-prob-text.is-threat .mon-icon { flex: none; position: relative; top: -0.15em; }
+.coach-prob-text.is-threat .coach-threat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Il testo corto della pillola (lo stesso nelle righe del Coaching) nel colore della pillola, intero */
 .area-chip .coach-prob-text { flex: none; overflow: visible; color: inherit; }
 .area-chip .coach-prob-text.is-threat .mon-icon { margin: -10px -3px -9px -2px; }
 .area-chip .coach-miss .icon { color: inherit; }
@@ -114,13 +124,9 @@
 .area-chip.is-link:hover { filter: brightness(1.25); }
 .area-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) { .area-chip.is-link { transition: none; } }
-/* Nel tooltip della pillola, sotto il problema, la tappa del Coaching che lo copre */
-.area-chip-tip .area-chip-by { margin: 0; padding: 0 12px 10px; color: var(--accent-ink); font-size: 12px; font-weight: 600; }
-.area-chip-tip .kot-none:has(+ .area-chip-by) { padding-bottom: 6px; }
-.ftip.area-chip-tip:has(> .area-chip-by) { width: var(--tip-s); }
 /* Il "+N" delle pillole che non stanno nella riga (il tooltip DreamDex le elenca) */
-.area-chips > li.area-chips-more { padding: 0 7px; border-radius: 10px; font: 600 11px/20px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
-.area-chips > li.area-chips-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.area-chips-more { flex: none; padding: 0 7px; border-radius: 10px; font: 600 11px/20px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
+.area-chips-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Le sottoschede: un selettore a segmenti piccolo, neutro, con la scelta su Accent Soft */
 .area-subs { flex: none; display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .area-subs [role='tab'] { padding: 7px 12px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; color: var(--muted); font: 500 13px/1 var(--ui); white-space: nowrap; }
@@ -638,333 +644,168 @@
 }
 @keyframes dash-in { from { opacity: 0; transform: translateY(6px); } }
 
-/* Coaching: in alto le tappe (cosa farei io), sotto la mappa dei problemi per area; scorre dentro */
-.coaching { container: coaching / size; display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; padding-bottom: 0; overflow: hidden auto; overscroll-behavior: contain; }
-.coach-sec { margin: 0 0 3px; font: 700 12px/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); }
-.coach-sec.muted { color: var(--muted); }
-/* Gravità: targhetta obliqua in riga col testo */
-.coach-sev { display: inline-block; padding: 1px 9px 1px 5px; font: 700 11px/1.3 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
-.serious > .coach-sev, .serious .coach-step-problem .coach-sev { color: var(--bad-bg); background: var(--bad); }
-.minor > .coach-sev, .minor .coach-step-problem .coach-sev { color: var(--warn); background: var(--warn-bg); }
-
 /*
- * Suggerimenti: strisce a tutta larghezza, alte uguali (anche lo scheletro e la riga "nessuna tappa", così all'arrivo
- * dei consigli niente salta). Colonne: numero sulla lama magenta · problema · scambio (chi esce spento → chi entra
- * grande) · "risolve anche" e la mossa "oppure". Il pulsante della proposta principale copre tutta la striscia.
+ * Coaching: una lista sola di proposte, dalla più utile. In cima la riga verde delle aree senza problemi, poi il titolo
+ * con le pagine a destra, poi le righe (alte uguali, 112px; anche lo scheletro). Scorre dentro solo se serve.
  */
-.coach-steps-region { --step-h: 61px; }
-.coach-steps { display: grid; gap: 5px; margin: 0 0 4px; padding: 0; list-style: none; }
-.coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.15fr) minmax(0, 2.5fr) minmax(0, 1.25fr); align-items: center; height: var(--step-h); min-width: 0;
-  background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--line)); }
-/* Le colonne sono le stesse in ogni striscia, anche senza "risolve anche" (la colonna di destra resta, vuota):
-   le strisce restano allineate e passando su "oppure" niente si sposta */
-/* Con la mossa alternativa ("oppure") la colonna di destra ha tre righe: la striscia può crescere un po' invece di schiacciarle */
-@media (min-width: 600px) {
-  .coach-strip:has(.coach-strip-extras .coach-prop) { height: auto; min-height: var(--step-h); }
-  .coach-strip:has(.coach-strip-extras .coach-prop) > .coach-strip-extras { gap: 4px; padding-top: 7px; padding-bottom: 7px; }
-}
-/* "Oppure" dentro la barra dello scambio, dopo chi entra; il +N grande della barra viene dopo di lei */
-/* Il nome di chi entra resta intero: a stringersi (coi puntini sulle mosse) è il riquadro "oppure" */
-.coach-prop.is-main:has(.is-side) > .coach-fix { flex: none; }
-/* Le colonne restano quelle di ogni striscia (sprite e nomi in linea, la barra finisce allo stesso punto): "oppure" subito dopo il nome, il +N in fondo */
-.coach-prop.is-main:has(.is-side) > .coach-fix .coach-fix-main { flex: 0 1 auto; min-width: 0; }
-.coach-prop.is-main:has(.is-side) > .coach-fix .coach-fix-main strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.coach-prop.is-side { position: relative; z-index: 1; flex: 0 1 auto; min-width: 0; align-self: stretch; display: flex; align-items: center; gap: 6px; margin: 6px 0 6px 10px; padding: 0 6px; border: 1px dashed color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 4px; }
-.coach-prop.is-side[data-or]::before { content: attr(data-or); flex: none; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
-.coach-prop.is-side .coach-fix { gap: 8px; min-width: 0; }
-.coach-prop.is-main > .coach-strip-gain { position: relative; z-index: 0; flex: none; margin-left: auto; min-width: 3.2ch; padding: 0 4px; text-align: right; font: 800 22px/1 var(--display); font-style: italic; color: var(--good); background: none; }
-/* Il blocco sotto il puntatore si illumina, l'altro si spegne un po' */
-.coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix > :not(.coach-fix-main) { opacity: 0.45; }
-.coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix .coach-fix-main { opacity: 0.6; }
-.coach-strip.is-alt-hot .coach-prop.is-side { border-style: solid; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
-.coach-strip.is-main-hot .coach-prop.is-side { opacity: 0.6; }
-@media (prefers-reduced-motion: no-preference) {
-  .coach-prop.is-side, .coach-prop.is-main > .coach-fix > * { transition: opacity 120ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out; }
-}
-.coach-side-mon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; }
-.coach-side-mon .sprite { width: 32px; height: 32px; image-rendering: pixelated; }
-.coach-side-moves { display: grid; justify-items: start; gap: 1px; min-width: 0; }
-.coach-move-old { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--faint); }
-.coach-move-arrow { display: flex; color: var(--accent-ink); }
-.coach-move-arrow .icon { width: 13px; height: 13px; transform: rotate(90deg); }
-.coach-move-new { display: flex; align-items: center; min-width: 0; max-width: 100%; }
-.coach-move-new strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 14px/1.1 var(--display); font-style: italic; color: var(--accent-ink); }
-.coach-prop.is-side .coach-fix:hover .coach-move-new strong { text-decoration: underline; text-underline-offset: 3px; }
-/* "risolve anche" dell'alternativa: un filo azzurro a sinistra dice che è cambiato */
-.coach-strip-extras.is-alt { box-shadow: inset 2px 0 0 var(--accent); }
-.coach-strip:hover, .coach-strip:focus-within { border-color: var(--accent); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
-/* La tappa (o, senza tappa, la pillola della mappa) aperta da un problema nella testata di un'area: un anello ciano
-   come le righe scelte, che si spegne in 2 s; senza animazioni resta fermo finché dura */
-.coach-strip.is-flash, .coach-prob.is-flash, .coach-chip.is-flash { animation: coach-flash 2s ease-out forwards; }
+.coaching { container: coaching / size; display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding-bottom: 0; overflow: hidden auto; overscroll-behavior: contain; }
+.coach-sec { display: flex; align-items: center; gap: 8px; margin: 0; font: 700 13px/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.coach-count { padding: 3px 6px; border-radius: 10px; font: 600 11px/1 var(--ui); font-style: normal; letter-spacing: 0; color: var(--text); background: var(--raised); }
+/* Le aree senza problemi: una riga verde sopra la lista */
+.coach-clean { flex: none; display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 14px; font-size: 14px; color: var(--good); background: var(--panel); }
+.coach-clean .icon { width: 14px; height: 14px; }
+.coach-clean b { color: var(--text); font-weight: 600; }
+.coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.coach-list-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+/* La lista ha l'altezza che resta: quante righe ci stanno lo conta useRowsPerPage (fino a 4) */
+.coach-list-box { --row-h: 112px; --row-gap: 6px; flex: 1; min-height: 0; }
+.coach-rows { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
+
+/* La riga: zona del Pokémon (360px) · cosa cambia, per area · voto in più e azioni (168px) */
+.coach-row { position: relative; margin: 0; display: grid; grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) 168px; min-width: 0; background: var(--panel); }
+.coach-row.skeleton { border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
+.coach-row.is-open { z-index: 3; }
+/* Aperta da un problema nella testata di un'area: un anello ciano che si spegne in 2 secondi */
+.coach-row.is-flash { animation: coach-flash 2s ease-out forwards; }
 @keyframes coach-flash {
-  0%, 60% { box-shadow: inset 0 0 0 1px var(--accent); }
-  100% { box-shadow: inset 0 0 0 1px transparent; }
+  0%, 60% { box-shadow: inset 0 0 0 2px var(--accent); }
+  100% { box-shadow: inset 0 0 0 2px transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .coach-strip.is-flash, .coach-prob.is-flash, .coach-chip.is-flash { animation: none; box-shadow: inset 0 0 0 1px var(--accent); }
+  .coach-row.is-flash { animation: none; box-shadow: inset 0 0 0 1px var(--accent); }
 }
-.coach-strip.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
-.coach-steps-none { display: flex; align-items: center; gap: 10px; height: var(--step-h); margin: 0 0 4px; padding: 0 16px; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }
-.coach-steps-none .icon { width: 16px; height: 16px; color: var(--good); }
-/* Il numero sulla lama: pieno per i gravi, più tenue per i minori */
-.coach-step-num { align-self: stretch; display: flex; align-items: center; justify-content: center; padding-right: 6px; font: 800 30px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums;
-  color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, 76% 100%, 0 100%); }
-.coach-strip.minor .coach-step-num { background: var(--stripes), color-mix(in srgb, var(--accent-2) 60%, var(--panel)); }
-.coach-step-problem { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 0; padding: 0 14px 0 10px; font-size: 13px; font-weight: 600; line-height: 1.35; color: var(--text); }
-.coach-step-problem .coach-sev { margin-right: 4px; vertical-align: 1px; }
-/* Tipi (o minacce) nel titolo: icona e nome */
-/* L'etichetta di copertura (caselle, titoli, "risolve anche"): spada per l'attacco, scudo per la difesa, e la parola */
-.coach-cover { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.coach-side { display: inline-flex; flex: none; color: var(--accent-ink); }
-.coach-side .icon { width: 14px; height: 14px; }
-.coach-step-problem .coach-cover { vertical-align: -2px; }
-.coach-step-subject { white-space: nowrap; }
-.coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
-.coach-step-subject .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
-.coach-step-subject.is-mon .mon-icon { margin: -9px -2px -9px -6px; vertical-align: middle; transform: scale(0.8); }
-/* Coi Pokémon nel titolo le righe sono un po' più alte: le icone non toccano i nomi della riga sopra o sotto */
-.coach-step-problem:has(.is-mon) { line-height: 1.5; }
-/* Proposta principale: lo scambio su un fondo ciano che sfuma; il suo pulsante si allarga a tutta la striscia (::after) */
-.coach-prop { display: flex; align-items: center; min-width: 0; }
-.coach-prop.is-main { align-self: stretch; padding: 0 8px 0 12px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 7%, transparent) 40%, color-mix(in srgb, var(--accent) 12%, transparent)); }
-.coach-fix { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; height: 100%; padding: 0; text-align: left; color: var(--text); background: none; border: 0; font: inherit; }
-.coach-fix:hover { background: none; }
-.coach-prop.is-main .coach-fix::after { content: ''; position: absolute; inset: 0; z-index: 0; }
-/* Sprite e nome di chi entra sopra lo strato cliccabile: solo lì si apre la carta del Pokémon (il clic va comunque al pulsante) */
-.coach-fix-who { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
-.coach-prop.is-main .coach-fix:focus-visible { outline: none; }
-.coach-strip:has(.is-main .coach-fix:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
-.coach-strip-out { flex: none; display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; }
-.coach-strip-out .sprite { width: 48px; height: 48px; image-rendering: pixelated; filter: grayscale(1); opacity: 0.55; }
-.coach-strip-arrow { flex: none; display: flex; color: var(--accent-ink); }
-.coach-strip-arrow .icon { width: 18px; height: 18px; }
-.coach-strip-add { flex: none; font: 700 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.coach-strip-in { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 58px; height: 58px; }
-.coach-strip-in .sprite { width: 60px; height: 60px; image-rendering: pixelated; }
-.coach-strip-in .sprite.covered { visibility: hidden; }
-.coach-strip-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 60px); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
-.coach-fix-text { flex: 1; display: grid; min-width: 0; }
-.coach-fix-lead { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.3; color: var(--muted); }
-.coach-fix-lead b { font-weight: 600; color: var(--text); }
-.coach-fix-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.coach-fix-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.15em; margin-block: -0.15em; font: 800 19px/1.2 var(--display); font-style: italic; color: var(--accent-ink); }
-.coach-prop.is-main > .coach-fix > .coach-fix-main { flex: 1; }
-/* Col gruppo sprite + nome (carta solo lì) lo spazio libero va prima del +N, non dentro il gruppo */
-.coach-prop.is-main > .coach-fix > .coach-fix-who + .coach-strip-gain { margin-left: auto; }
-.coach-prop.is-main > .coach-fix > .coach-fix-who .coach-fix-main { flex: 0 1 auto; }
-.coach-strip:hover .is-main .coach-fix-main strong { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-/* Il voto in più: grande e verde nella proposta principale, piccola etichetta nella mossa "oppure" */
-.coach-gain { flex: none; display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 3px; font: 700 13px/20px var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: var(--good-bg); }
-.coach-prop.is-main > .coach-fix > .coach-gain { padding: 0 4px; font: 800 22px/1 var(--display); font-style: italic; background: none; }
-/* Cambio di mossa principale: il +N grande come quello di uno scambio */
-.coach-prop.is-main.is-move .coach-fix-main .coach-gain { margin-left: 8px; padding: 0 4px; font: 800 20px/1 var(--display); font-style: italic; background: none; }
-/* Sopra il pulsante allargato: le icone "alternative" e la colonna di destra restano cliccabili */
-.coach-alt { position: relative; z-index: 1; flex: none; display: grid; place-items: center; width: 26px; height: 28px; padding: 0; color: var(--muted); background: none; border: 1px solid transparent; }
-.coach-alt:hover { color: var(--accent-ink); background: var(--raised); border-color: var(--line); }
-.coach-alt .icon { width: 15px; height: 15px; }
-.coach-prop.is-main > .coach-alt { align-self: flex-start; margin-top: 6px; }
-.coach-strip-extras { position: relative; z-index: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 0 10px 0 14px;
-  border-left: 1px solid var(--line-soft); cursor: pointer; }
-/* La mossa "oppure": una riga tratteggiata sopra, "oppure" in testa */
-.coach-prop.is-or { gap: 6px; padding-top: 2px; border-top: 1px dashed var(--line); }
-.coach-prop.is-or[data-or]::before { content: attr(data-or); flex: none; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
-.coach-prop.is-or .coach-fix-main strong { font-size: 15px; }
-.coach-prop.is-or .coach-fix:hover .coach-fix-main strong { text-decoration: underline; text-underline-offset: 3px; }
-.coach-prop.is-or .coach-alt { height: 24px; }
-/* Puntatore: un piccolo passo a destra (nessuna entrata animata: cambiando passo le strisce restano ferme) */
-@media (prefers-reduced-motion: no-preference) {
-  .coach-strip { transition: border-color 150ms ease-out, background-color 150ms ease-out; }
-  .coach-step-num { transition: padding 200ms var(--ease); }
-  .coach-strip:hover .coach-step-num { padding: 0 0 0 6px; }
-}
-/* "Risolve anche": una riga sola sotto la proposta, allineata al testo; tipi e minacce come icone, il resto nel "+N" */
-.coach-also { display: flex; align-items: center; gap: 4px 10px; min-width: 0; height: 18px; margin: 0; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
-.coach-also-label { flex: none; color: var(--faint); }
-.coach-also-item { display: inline-flex; flex: none; align-items: center; gap: 4px; }
-.coach-also .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
-.coach-also-mon .mon-icon { margin: -9px -2px -8px -4px; }
-/* Una copertura in "risolve anche": l'etichetta e subito le sue icone, più stretta fra di loro */
-.coach-also-cover { gap: 3px; }
-.coach-also-cover .coach-cover { margin-right: 2px; color: var(--muted); }
-.coach-also-type { display: inline-flex; }
-/* Uno solo nella sua copertura: icona e nome */
-.coach-also-type:has(.coach-also-subject), .coach-also-mon:has(.coach-also-subject) { display: inline-flex; align-items: center; gap: 4px; }
-.coach-also-subject { color: var(--text); white-space: nowrap; }
-/* Nel titolo di una tappa, più soggetti: solo le icone, vicine */
-.coach-step-icons { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
-.coach-step-icons .coach-step-subject .type-icons { margin-right: 0; }
-.coach-also-name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* "risolve anche" va a capo (due righe al più) invece di tagliare i nomi o uscire dalla striscia */
-@media (min-width: 600px) {
-  /* Altezza fissa di due righe (una riga sola sta al centro): così la misura di quante voci ci stanno non cambia con le voci */
-  .coach-strip-extras .coach-also { flex-wrap: wrap; align-content: center; height: 40px; row-gap: 2px; white-space: normal; }
-  .coach-strip-extras .coach-also-name { flex: 0 1 auto; max-width: 100%; white-space: nowrap; }
-}
-.coach-also-more { flex: none; padding: 0 5px; font: 600 11px/16px var(--ui); color: var(--muted); background: var(--raised); border-radius: 10px; }
 
-/*
- * Problemi per area: quattro tessere (targa magenta, voto grande, barretta del voto), i problemi come pillole col bordo
- * del colore della gravità. Ridondanze e minacce sotto un'etichetta, più quiete. Tessera pulita: tinta di verde.
- */
-/* La mappa cede l'altezza alle tappe: il Coaching non scorre, le pillole che non stanno vanno nel "+N" della tessera */
-.coach-map-region { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.coach-steps-region { flex: none; }
-.coach-map { flex: 0 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
-/* Le aree senza problemi: una riga verde sopra la fila */
-.coach-clean { flex: none; display: flex; align-items: center; gap: 6px; margin: 0 0 7px; padding: 5px 12px; font-size: 13px; color: var(--muted);
-  background: linear-gradient(90deg, var(--good-bg), var(--panel) 60%); border: 1px solid color-mix(in srgb, var(--good) 30%, var(--line-soft)); border-left: 3px solid var(--good); }
-.coach-clean .icon { width: 14px; height: 14px; color: var(--good); }
-.coach-clean b { color: var(--text); font-weight: 600; }
-/* Le tessere non si schiacciano sotto due righe di problemi: prima erano le tessere pulite a dare l'altezza alla fila */
-.coach-map { grid-template-rows: minmax(122px, 1fr); }
-/* Una sola tessera: metà larghezza (sul telefono tutta) */
-@media (min-width: 600px) {
-  .coach-map[data-tiles='1'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .coach-map[data-tiles='1'] .coach-probs { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 18px; }
-  .coach-map[data-tiles='1'] .coach-prob:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
-}
-.coach-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 0 5px; overflow: hidden; background: var(--panel); border: 1px solid var(--line-soft); }
-.coach-more { flex: none; align-self: flex-start; margin: 6px 12px 0; padding: 0 8px; border-radius: 10px; font: 600 12px/20px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
-/* La testata come nella Panoramica: la barra scura a righe su tutta la tessera, il valore a destra */
-.coach-tile-head.dash-head { margin: 0; padding-right: 8px; }
-.coach-tile-head .dash-meta { margin-left: auto; }
-.coach-tile-head .dash-links { margin-left: 0; }
-.coach-tile-head .dash-meta b { font: 800 17px/1 var(--display); font-style: italic; }
-.coach-tile-bar { height: 4px; margin: 9px 12px 9px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
-/* Senza voto (Regole · Meta) niente barretta: lo stesso respiro sotto la targa */
-.coach-tile-head + .coach-probs, .coach-tile-head + .coach-sep, .coach-tile-head + .visually-hidden + .coach-probs { margin-top: 10px; }
-/* I problemi come righe ordinate a tutta larghezza: un quadratino della gravità, il testo su una riga, il numero della tappa a destra */
-.coach-probs { display: grid; grid-auto-rows: minmax(28px, auto); margin: 0; padding: 0 12px; list-style: none; }
-.coach-prob { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 4px 3px 0; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--text);
-  border-bottom: 1px solid var(--line-soft); }
-.coach-prob:last-child { border-bottom: 0; }
-.coach-prob::before { content: ''; flex: none; width: 6px; height: 6px; background: var(--warn); }
-.coach-prob.serious::before { background: var(--bad); }
-.coach-prob.is-dim { color: var(--muted); font-weight: 500; }
-/* Testo: una riga, poi i puntini (il testo intero nel title della riga) */
-.coach-prob-text { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.coach-counts { white-space: nowrap; }
-.coach-prob-text .type-icons { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
-.coach-prob-text .type-icons img { width: var(--ti-inline); height: var(--ti-inline); }
-/* Ruolo mancante: la × nel colore della gravità */
-.coach-prob-text.coach-miss { display: flex; align-items: center; gap: 6px; }
-.coach-miss .icon { flex: none; width: 12px; height: 12px; color: var(--warn); }
-.coach-prob.serious .coach-miss .icon { color: var(--bad); }
-/* Minacce: l'icona del Pokémon è più alta della riga, quindi la riga non la taglia; i puntini solo sul nome */
-.coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; overflow: visible; white-space: nowrap; }
-.coach-prob-text.is-threat .mon-icon { flex: none; margin: -10px -4px -9px -8px; }
-.coach-prob-text.is-threat .coach-usage { flex: none; color: inherit; font-variant-numeric: tabular-nums; }
-.coach-prob-text.is-threat .coach-threat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.coach-prob-text.is-threat .coach-usage { font-weight: 400; color: var(--muted); }
-/* "e altri N ›": il chip del +N diventa un link alla scheda dell'area */
-.coach-more.is-link { border: 0; color: var(--accent-ink); background: var(--accent-wash); cursor: pointer; font-style: italic; font-weight: 700; }
-.coach-more.is-link:hover { background: var(--accent-soft); }
-/*
- * Coperto da una tappa: il numero della tappa in un tondino magenta. Puntatore o fuoco su una proposta: le pillole
- * che risolve diventano verdi e barrate
- */
-.coach-prob.is-solved-preview { color: var(--good); background: var(--good-bg); }
-.coach-prob.is-solved-preview::before { background: var(--good); }
-.coach-prob.is-solved-preview .coach-prob-text { text-decoration: line-through; text-decoration-color: var(--good); text-decoration-thickness: 1.5px; }
+/* Zona del Pokémon: il colore del primo tipo di chi entra (come le carte del team), una lama di luce, il lato destro obliquo */
+.coach-art { position: relative; overflow: hidden; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 30px 0 14px;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--t1) 55%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 22%, var(--panel)) 55%, var(--panel) 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+.coach-art::before { content: ''; position: absolute; inset: -40% auto -40% 38%; width: 60px; background: linear-gradient(90deg, transparent, #ffffff14, transparent); transform: rotate(18deg); pointer-events: none; }
+.coach-art-out { flex: none; align-self: flex-start; display: flex; margin-top: 10px; }
+.coach-art-out .sprite { width: 48px; height: 48px; image-rendering: pixelated; filter: grayscale(1) brightness(0.7); }
+.coach-art-arrow { flex: none; align-self: flex-start; display: flex; margin-top: 26px; color: var(--text); opacity: 0.8; }
+.coach-art-arrow .icon { width: 16px; height: 16px; }
+.coach-art-add { flex: none; display: flex; color: var(--text); opacity: 0.8; }
+.coach-art-add .icon { width: 18px; height: 18px; }
+.coach-art-in { position: relative; z-index: 1; flex: none; display: flex; margin: -4px -4px -4px -6px; }
+.coach-art-in .sprite { width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 4px 6px #0007); }
+.coach-art-in.is-member { margin-left: 0; }
+.coach-art-in.is-member .sprite { width: 80px; height: 80px; }
+.coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 96px); translate: -50% 0; }
+.coach-art-text { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.coach-art-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.1em; margin-block: -0.1em;
+  font: italic 800 23px/1 var(--display); color: var(--text); text-shadow: 0 2px 6px #0006; }
+.coach-art-text small { font-size: 12px; color: var(--text); opacity: 0.85; }
+.coach-art-on { font: italic 700 13px/1 var(--display); color: var(--text); opacity: 0.9; }
+.coach-art-moves { display: flex; align-items: baseline; gap: 8px; max-width: 100%; min-width: 0; white-space: nowrap; }
+.coach-art-moves s { overflow: hidden; text-overflow: ellipsis; font-size: 15px; color: var(--muted); text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); }
+.coach-art-moves b { overflow: hidden; text-overflow: ellipsis; font: italic 800 21px/1.1 var(--display); color: var(--text); }
+.coach-art-empty { font-size: 13px; color: var(--muted); }
+/* "Altre N ▾": il pulsante delle alternative sotto il nome */
+.coach-alt { margin-top: 2px; padding: 5px 9px; gap: 6px; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 4px;
+  font: 600 12px/1 var(--ui); color: var(--text); background: color-mix(in srgb, #000 45%, transparent); }
+.coach-alt:hover { border-color: var(--accent); background: color-mix(in srgb, #000 62%, transparent); }
+.coach-alt[aria-expanded='true'] { border-color: var(--accent); background: var(--accent-wash); }
+.coach-alt-caret { display: inline-block; }
 @media (prefers-reduced-motion: no-preference) {
-  .coach-prob { transition: background-color 120ms ease-out, color 120ms ease-out; }
+  .coach-alt-caret { transition: transform 0.2s var(--ease); }
 }
-/* Riga di tipi: l'etichetta e le icone in fila (vanno a capo se tante); col puntatore su una proposta solo le risolte restano accese */
-.coach-prob-text.coach-group-row { display: flex; align-items: center; gap: 4px 10px; overflow: visible; white-space: normal; }
-.coach-group-label { flex: none; line-height: 26px; }
-/* Molte icone vanno a capo: etichetta, quadratino e numeri restano sulla prima fila */
-.coach-prob.coach-group { align-items: flex-start; }
-.coach-prob.coach-group::before { margin-top: 10px; }
-.coach-prob.coach-group > .coach-by { margin-top: 5px; }
-.coach-prob-text.coach-group-row { align-items: flex-start; }
-.coach-chips { align-items: center; min-height: 26px; }
-/* Il nome del tipo o del Pokémon quando nella riga ce n'è uno solo */
-.coach-chip-name { align-self: center; margin-left: 1px; font-weight: 600; white-space: nowrap; }
-.coach-chip-more { width: auto; height: 22px; padding: 0 7px; border-radius: 11px; font: 600 12px/22px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
-.coach-chips { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
-/* L'icona al centro di un tondo della sua misura: l'anello verde la circonda senza spazio in più (niente margine delle icone di testo) */
-.coach-chip { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border-radius: 50%; line-height: 0; }
-.coach-group-row .coach-chip .type-icons { display: inline-flex; margin: 0; gap: 0; }
-.coach-chip .type-icons img { width: var(--ti-chip); height: var(--ti-chip); }
-/* Minaccia: l'icona del Pokémon in un riquadro piccolo (più larga di un tipo); l'anello verde come per i tipi */
-.coach-chip.is-mon { width: 30px; height: 26px; border-radius: 6px; overflow: visible; }
-.coach-chip.is-mon .mon-icon { margin: -2px -5px -2px -5px; transform: scale(0.8); }
-/* Gli sprite piccoli hanno il disegno in basso nel loro riquadro: un po' più su, a metà delle lettere della riga
-   (in em: segue la grandezza del testo anche sugli schermi grandi) */
-.coach-chip.is-mon .mon-icon, .coach-also-mon .mon-icon, .coach-step-subject.is-mon .mon-icon { position: relative; top: -0.15em; }
-.coach-chip.is-solved-preview { box-shadow: 0 0 0 2px var(--good); background: var(--good-bg); }
-.coach-group.is-lit .coach-chip:not(.is-solved-preview) { opacity: 0.35; }
-@media (prefers-reduced-motion: no-preference) {
-  .coach-chip { transition: opacity 120ms ease-out, box-shadow 120ms ease-out; }
-}
-.coach-by { flex: none; margin-left: auto; min-width: 16px; padding: 0 4px; font: 800 11px/16px var(--display); font-style: italic; text-align: center; color: var(--on-accent-2); background: var(--accent-2); border-radius: 8px; }
-.coach-sep { margin: 8px 12px 5px; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
-@media (max-width: 1099px) {
-  .coach-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-.coach-empty { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; color: var(--good); background: color-mix(in srgb, var(--good-bg) 55%, var(--panel)); border: 1px solid color-mix(in srgb, var(--good) 25%, var(--line-soft)); }
-.coach-empty .icon { width: 14px; height: 14px; }
-/* Con Eevee: un riquadro più arioso, Eevee a sinistra, la frase in grande e una riga sotto */
-.coach-empty.with-eevee { gap: 18px; padding: 14px 20px; }
-.coach-empty.with-eevee p { display: grid; gap: 2px; margin: 0; }
-.coach-empty.with-eevee strong { display: flex; align-items: center; gap: 8px; font: 600 17px var(--ui); }
-.coach-empty.with-eevee span { color: var(--muted); font-size: 14px; }
-.coach-note { margin: 6px 0 0; font-size: 12px; color: var(--faint); }
+.coach-alt[aria-expanded='true'] .coach-alt-caret { transform: rotate(180deg); }
+
+/* Cosa cambia: una riga per area (nome, "da → a", le pillole dei problemi risolti) */
+.coach-solves { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0; padding: 10px 14px 10px 18px; }
+.coach-ar { display: grid; grid-template-columns: 148px minmax(0, 1fr); align-items: center; gap: 10px; min-width: 0; }
+.coach-ar.is-merged { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.coach-ar-who { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.coach-ar-who b { font: 600 12px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.coach-change { display: inline-flex; align-items: baseline; gap: 5px; }
+.coach-from { font: 500 12px/1 var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
+.coach-to { font: italic 700 14px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.coach-change.is-down .coach-to { color: var(--bad); font-style: normal; }
+.coach-ar-chips { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; min-width: 0; padding: 2px; overflow: hidden; }
+.coach-ar-chips > .area-chip-item { flex: none; display: flex; }
+
+/* Voto in più e azioni, allineati a destra */
+.coach-act { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; padding-right: 16px; }
+.coach-gain { display: flex; align-items: baseline; gap: 6px; }
+.coach-gain small { font: 500 12px/1 var(--ui); color: var(--faint); }
+.coach-gain b { font: italic 800 28px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.coach-apply { padding: 9px 16px; border: 0; border-radius: 4px; font: 700 13px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
+.coach-apply:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }
+/* L'unico magenta della scheda: Applica della prima proposta */
+.coach-apply.is-primary { color: var(--on-accent-2); background: var(--accent-2); }
+.coach-apply.is-primary:hover { background: var(--accent-2-ink); }
+.coach-see, .coach-link { gap: 5px; padding: 2px 0; border: 0; background: none; font: 500 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
+.coach-see:hover, .coach-link:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.coach-see .icon { width: 13px; height: 13px; }
+
+/* La tendina delle alternative, sotto il pulsante */
+.coach-menu { position: absolute; z-index: 10; left: 14px; top: calc(100% - 6px); width: min(560px, calc(100% - 28px)); padding: 6px;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--ground); box-shadow: 0 12px 32px #000b; }
+.coach-menu-title { margin: 4px 8px 6px; font: 600 11px/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.coach-menu-list { display: grid; gap: 2px; }
+.coach-opt { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 52px auto; align-items: center; gap: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+.coach-opt:hover, .coach-opt:focus-visible { background: var(--raised); }
+.coach-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.coach-opt.is-chosen { background: var(--accent-wash); }
+.coach-opt .sprite { width: 44px; height: 44px; margin: -4px 0; image-rendering: pixelated; }
+.coach-opt-name { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.coach-opt-name b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 15px/1.1 var(--display); }
+.coach-opt-name small { font-size: 12px; color: var(--muted); }
+.coach-opt-types { display: flex; gap: 4px; }
+.coach-opt-note { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.coach-opt-gain { font: italic 800 18px/1 var(--display); color: var(--good); text-align: right; font-variant-numeric: tabular-nums; }
+.coach-opt-use { padding: 6px 9px; border: 1px solid var(--line); border-radius: 4px; font: 700 11px/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+.coach-opt.is-chosen .coach-opt-use { border-color: var(--accent); color: var(--accent-ink); }
+
+/* Senza proposte: Eevee grande a sinistra, il titolo, la frase, le azioni */
+.coach-empty { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 30px; background: var(--panel); }
+.coach-empty .eevee-moment { flex: none; width: 190px; }
+.coach-empty.is-stuck .eevee-moment { width: 170px; }
+.coach-empty-text { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 540px; }
+.coach-empty-text h3 { margin: 0; font: italic 800 28px/1.1 var(--display); color: var(--text); }
+.coach-empty-text p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--muted); }
+.coach-empty-areas { display: flex; align-items: center; gap: 8px; }
+.coach-empty-areas .icon { flex: none; width: 14px; height: 14px; color: var(--good); }
+.coach-empty-areas b { color: var(--text); font-weight: 600; }
+.coach-empty-text p.coach-empty-hint { font-size: 14px; }
+.coach-empty-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 2px; list-style: none; }
+.coach-empty-chips > li { display: flex; margin: 0; }
+.coach-empty-actions { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+.coach-btn { padding: 9px 16px; border: 0; border-radius: 4px; font: 700 13px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
+.coach-btn:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }
+.coach-btn .icon { width: 14px; height: 14px; }
+.coach-link { font-size: 14px; }
+.coach-copied { font-size: 13px; color: var(--good); }
+.coach-copied:empty { display: none; }
+.coach-note { margin: 0; font-size: 12px; color: var(--faint); }
 .coach-note.coach-top { margin: 0 0 4px; }
 
-/*
- * Più spazio (schermo alto o team chiuso): strisce più alte, sprite e nomi più grandi, tessere più ariose.
- * A scatti, secondo l'altezza della scheda, così non cambia mentre la si guarda.
- */
-/* Poco spazio: "oppure" dice solo la mossa nuova (membro e mossa vecchia nel title del pulsante) */
-@container coaching (max-width: 1120px) {
-  .coach-prop.is-side .coach-side-mon, .coach-prop.is-side .coach-move-old, .coach-prop.is-side .coach-move-arrow { display: none; }
+/* Righe più strette (portatili, team aperto): la zona del Pokémon si stringe, i nomi delle aree pure */
+@container coaching (max-width: 1040px) {
+  .coach-row { grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) 150px; }
+  .coach-ar { grid-template-columns: 124px minmax(0, 1fr); gap: 8px; }
+  .coach-art-name { font-size: 20px; }
+  .coach-art-in .sprite { width: 84px; height: 84px; }
+  .coach-art-in.is-member .sprite { width: 72px; height: 72px; }
+  .coach-solves { padding-left: 12px; padding-right: 10px; }
 }
-@container coaching (min-height: 540px) {
-  .coach-steps-region { --step-h: 82px; }
-  .coach-steps { gap: 8px; }
-  .coach-step-num { font-size: 38px; }
-  .coach-step-problem { font-size: 14px; padding-left: 14px; }
-  .coach-strip-in { width: 72px; height: 72px; }
-  .coach-strip-in .sprite { width: 80px; height: 80px; }
-  .coach-strip-in .sprite-ani { height: calc(var(--ani-h, 96) / 96 * 80px); }
-  .coach-strip-out { width: 48px; height: 48px; }
-  .coach-strip-out .sprite { width: 56px; height: 56px; }
-  .coach-fix-main strong { font-size: 22px; }
-  .coach-prop.is-main > .coach-fix > .coach-gain { font-size: 26px; }
-  .coach-also { font-size: 13px; }
-  .coach-map { gap: 12px; margin-bottom: 6px; }
-  .coach-tile { padding-bottom: 10px; }
-  .coach-tile-head .dash-meta b { font-size: 18px; }
-  .coach-tile-bar { margin: 11px 12px 12px; }
-  .coach-probs { gap: 7px; }
-  .coach-prob { padding: 4px 10px 4px 7px; font-size: 13px; }
-  .coach-sec { margin-bottom: 6px; }
-}
-/* Molto spazio (schermo grande, team chiuso): tutto un passo più grande, perché la scheda non resti mezza vuota */
-@container coaching (min-height: 680px) {
-  .coach-steps-region { --step-h: 100px; }
-  .coach-steps { gap: 10px; }
-  .coach-step-num { font-size: 46px; }
-  .coach-step-problem { font-size: 15px; padding-left: 16px; }
-  .coach-strip-in { width: 86px; height: 86px; }
-  .coach-strip-in .sprite { width: 96px; height: 96px; }
-  .coach-strip-in .sprite-ani { height: calc(var(--ani-h, 96) / 96 * 96px); }
-  .coach-strip-out { width: 56px; height: 56px; }
-  .coach-strip-out .sprite { width: 64px; height: 64px; }
-  .coach-strip-arrow .icon { width: 22px; height: 22px; }
-  .coach-fix-main strong { font-size: 26px; }
-  .coach-prop.is-main > .coach-fix > .coach-gain { font-size: 30px; }
-  .coach-also, .coach-fix-lead { font-size: 13px; }
-  .coach-map { gap: 14px; margin-bottom: 12px; }
-  .coach-tile { padding-bottom: 14px; }
-  .coach-tile-head .dash-meta b { font-size: 20px; }
-  .coach-tile-bar { margin: 12px 14px 14px; }
-  .coach-probs { gap: 8px; padding: 0 14px; }
-  .coach-prob { padding: 5px 11px 5px 8px; font-size: 14px; }
-  .coach-prob-text .type-icons img { width: var(--ti-chip); height: var(--ti-chip); }
-  .coach-sep { margin: 12px 14px 7px; }
-  .coach-sec { margin-bottom: 8px; font-size: 13px; }
+
+/* Poca altezza (1280×620 col team aperto): righe più basse (84px), così ne stanno tre invece di due */
+@container coaching (max-height: 400px) {
+  .coach-list-box { --row-h: 84px; }
+  .coach-art-in .sprite { width: 72px; height: 72px; }
+  .coach-art-in.is-member .sprite { width: 60px; height: 60px; }
+  .coach-art-out { margin-top: 4px; }
+  .coach-art-out .sprite { width: 36px; height: 36px; }
+  .coach-art-arrow { margin-top: 14px; }
+  .coach-art-text { gap: 2px; }
+  .coach-art-name { font-size: 19px; }
+  .coach-art-moves b { font-size: 18px; }
+  .coach-alt { padding: 3px 8px; }
+  .coach-solves { gap: 4px; padding-top: 4px; padding-bottom: 4px; }
+  .coach-act { gap: 4px; }
+  .coach-gain b { font-size: 22px; }
+  .coach-apply { padding: 7px 14px; }
 }
 
 /* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga

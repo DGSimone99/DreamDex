@@ -57,6 +57,8 @@ const LONE = [
   member('Goodra', 'Assault Vest', 'Sap Sipper', ['Draco Meteor', 'Sludge Bomb', 'Fire Blast', 'Thunderbolt'], 'Modest', { spa: 252, hp: 252, spd: 4 }),
   member('Kommo-o', 'Leftovers', 'Soundproof', ['Close Combat', 'Clanging Scales', 'Dragon Dance', 'Iron Head'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
 ];
+/** Team da torneo senza problemi per il Coaching (stato coaching-clear). */
+const CLEAR = [{"species":"Urshifu-Rapid-Strike","item":"Choice Scarf","ability":"Unseen Fist","moves":["Surging Strikes","Close Combat","U-turn","Ice Spinner"],"nature":"Jolly","evs":{"atk":252,"def":4,"spe":252}},{"species":"Zapdos","item":"Heavy-Duty Boots","ability":"Static","moves":["Volt Switch","Defog","Heat Wave","Roost"],"nature":"Bold","evs":{"hp":248,"def":188,"spe":72},"ivs":{"atk":0}},{"species":"Slowking-Galar","item":"Heavy-Duty Boots","ability":"Regenerator","moves":["Future Sight","Sludge Bomb","Chilly Reception","Thunder Wave"],"nature":"Sassy","evs":{"hp":248,"def":8,"spd":252},"ivs":{"atk":0,"spe":0}},{"species":"Kyurem","item":"Choice Specs","ability":"Pressure","moves":["Freeze-Dry","Blizzard","Draco Meteor","Earth Power"],"nature":"Timid","evs":{"spa":252,"spd":4,"spe":252},"ivs":{"atk":0}},{"species":"Scizor","item":"Scizorite","ability":"Light Metal","moves":["Swords Dance","Bullet Punch","Knock Off","Roost"],"nature":"Impish","evs":{"hp":248,"def":112,"spd":128,"spe":20}},{"species":"Ting-Lu","item":"Leftovers","ability":"Vessel of Ruin","moves":["Earthquake","Ruination","Stealth Rock","Whirlwind"],"nature":"Careful","evs":{"hp":252,"def":4,"spd":252}}];
 /** Preferiti per gli stati *-fav: Pokémon che di solito compaiono fra i primi candidati. */
 const FAVS = ['Corviknight', 'Kyurem', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
 const LONG = [
@@ -573,16 +575,37 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '.area-help button', /./);
   } },
-  // Stampa l'altezza della riga delle tappe mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
+  // Stampa l'altezza delle righe delle proposte mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
   'coaching-six': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
     const rowH = (sel: string) => p.evaluate(q => document.querySelector(q)?.getBoundingClientRect().height ?? -1, sel);
     const start = Date.now();
-    const skeleton = await rowH('.coach-steps[aria-busy]');
-    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
-    console.log(`coaching-six: tappe pronte in ${Date.now() - start} ms; steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy]), .coach-steps-none')}`);
+    const skeleton = await rowH('.coach-rows[aria-busy] > li');
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    console.log(`coaching-six: proposte pronte in ${Date.now() - start} ms; row skeleton=${skeleton} real=${await rowH('.coach-rows:not([aria-busy]) > li')}`);
+    const rows = await p.evaluate(() => [...document.querySelectorAll('.coach-rows > li')].map(li => { const r = li.getBoundingClientRect(); return `${Math.round(r.top)}-${Math.round(r.bottom)}`; }).join(' '));
+    const box = await p.evaluate(() => { const r = document.querySelector('.coaching')?.getBoundingClientRect(); const ol = document.querySelector('.coach-rows'); return r ? `${Math.round(r.top)}-${Math.round(r.bottom)} rows=${ol ? getComputedStyle(ol).gridAutoRows : '-'}` : '-'; });
+    console.log(`coaching-six: righe ${rows}; coaching ${box}`);
+    return true;
+  } },
+  // Team senza problemi (un team da torneo di National Dex OU): Eevee contento, "Il team è a posto"
+  'coaching-clear': { hash: hash(CLEAR), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    await wait(600);
+    return (await p.evaluate(() => !!document.querySelector('.coach-empty.is-clear'))) || 'team con problemi';
+  } },
+  // La tendina delle alternative aperta sulla prima riga che ne ha
+  'coaching-menu': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    if (!await clickText(p, 'button.coach-alt', /./)) return 'no alternatives';
+    await wait(300);
     return true;
   } },
   // Coaching del team coi nomi lunghi (molti problemi minori di coverage)
@@ -590,7 +613,7 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
-    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
     return true;
   } },
   // Coaching col team chiuso: la scheda ha più altezza (versione estesa)
@@ -617,10 +640,10 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    // I consigli arrivano dopo il calcolo: si aspetta la riga delle tappe
-    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-alt', { timeout: 20000 });
-    // Il clic sulla proposta la applica: le alternative sono nell'icona accanto
-    if (!await clickText(p, 'button.coach-alt', /./)) return false;
+    // I consigli arrivano dopo il calcolo: si aspettano le righe delle proposte
+    await p.waitForSelector('.coach-rows:not([aria-busy]) button.coach-see', { timeout: 20000 });
+    // Applica applica la proposta: "Vedi nella scheda Pokémon" apre le alternative nella scheda Pokémon
+    if (!await clickText(p, 'button.coach-see', /./)) return false;
     // La lista per membro si calcola dopo il clic: si aspetta che non sia più attenuata
     const start = Date.now();
     await wait(100);
@@ -725,30 +748,16 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
     return true;
   } },
-  // Puntatore sulla prima proposta: stampa quanti problemi della mappa sono in anteprima (barrati) e quanti risolve la proposta
-  'coaching-hover': { hash: hash(SIX), run: async p => {
-    await tab(p, 'analysis');
-    await wait(300);
-    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-fix', { timeout: 20000 });
-    const count = () => p.evaluate(() => document.querySelectorAll('.coach-prob.is-solved-preview').length);
-    const before = await count();
-    await p.hover('.coach-steps button.coach-fix');
-    await wait(250);
-    const during = await count();
-    console.log(`coaching-hover: is-solved-preview prima=${before} durante=${during}`);
-    return (before === 0 && during > 0) || `before=${before} during=${during}`;
-  } },
-  // Tappe con proposte di mossa (team con set poveri): stampa quante ce ne sono
+  // Proposte di mossa (team con set poveri): stampa quante righe di mossa ci sono nella prima pagina
   'coaching-move-steps': { hash: hash(MOVE), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
-    const n = await p.evaluate(() => document.querySelectorAll('.coach-steps .coach-prop.is-move').length);
+    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
+    const n = await p.evaluate(() => document.querySelectorAll('.coach-rows .coach-row.is-move').length);
     console.log(`coaching-move-steps: ${n} proposte di mossa`);
     return n > 0 || 'no move proposal';
   } },
@@ -757,8 +766,8 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
-    if (!await clickText(p, '.coach-prop.is-move button.coach-alt', /./)) return 'no move proposal';
+    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
+    if (!await clickText(p, '.coach-row.is-move button.coach-see', /./)) return 'no move proposal';
     await wait(600);
     return (await p.evaluate(() => !!document.querySelector('.move-proposal'))) || 'no preview in the editor';
   } },
@@ -1040,19 +1049,16 @@ for (const [w, h] of sizes) {
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
-    // Coaching: tappe che sbordano, righe "risolve anche" o nomi tagliati in larghezza, scorrimento orizzontale
+    // Coaching: righe che sbordano, nomi o pillole tagliati in larghezza, scorrimento orizzontale
     const coach = await page.evaluate(() => {
       const box = document.querySelector<HTMLElement>('.coaching');
       if (!box) return '';
-      const steps = [...box.querySelectorAll<HTMLElement>('.coach-step')];
-      const tall = steps.filter(s => s.scrollHeight - s.clientHeight > 1).length;
-      const wide = [...box.querySelectorAll<HTMLElement>('.coach-also, .coach-fix-main strong, .coach-fix-lead')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
-      // Minacce: la percentuale d'uso deve restare intera dentro la riga (si accorcia il nome, non il numero)
-      const usage = [...box.querySelectorAll<HTMLElement>('.coach-usage')];
-      const usageCut = usage.filter(u => u.scrollWidth - u.clientWidth > 0 || u.getBoundingClientRect().right - u.parentElement!.getBoundingClientRect().right > 1).length;
-      const row = box.querySelector('.coach-steps')?.getBoundingClientRect().height ?? 0;
-      const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-problem, .coach-prop.is-main > .coach-fix > *, .coach-strip-extras > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
-      return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} usage=${usage.length} usageCut=${usageCut} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} coachH=${box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
+      const rows = [...box.querySelectorAll<HTMLElement>('.coach-row:not(.skeleton)')];
+      const tall = rows.filter(r => r.scrollHeight - r.clientHeight > 1).length;
+      const wide = [...box.querySelectorAll<HTMLElement>('.coach-art-name, .coach-art-moves, .coach-ar-who')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      const row = rows[0]?.getBoundingClientRect().height ?? 0;
+      const last = rows.at(-1)?.getBoundingClientRect().bottom ?? 0;
+      return `coach: rows=${rows.length} rowH=${Math.round(row)} rowOverflow=${tall} clipped=${wide} lastBottom=${Math.round(last)} coachBottom=${Math.round(box.getBoundingClientRect().bottom)} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} coachH=${box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
     // Lista candidati: scorrimento interno, caselle tagliate dal fondo, misure delle Carte
     const list = await page.evaluate(() => {

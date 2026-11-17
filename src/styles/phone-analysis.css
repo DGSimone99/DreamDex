@@ -140,29 +140,23 @@
   .def-frame .def-mon-name { font-size: 12.5px; }
   .def-frame .def-mon-tag .def-weak { padding: 0 4px; font-size: 11px; letter-spacing: 0; }
 
-  /* ── Coaching: le tappe come schede (numero sulla lama a sinistra; problema, proposta e "risolve anche" uno sotto l'altro) ── */
-  .coach-strip { grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto auto; height: auto; min-height: var(--step-h); }
-  .coach-strip.skeleton { height: 150px; }
-  .coach-steps-none { height: auto; min-height: 61px; }
-  .coach-step-num { grid-column: 1; grid-row: 1 / -1; font-size: 26px; }
-  .coach-step-problem { grid-column: 2; grid-row: 1; padding: 10px 12px 6px 10px; -webkit-line-clamp: unset; }
-  .coach-strip > .coach-prop.is-main { grid-column: 2; grid-row: 2; min-height: 64px; padding: 4px 6px 4px 10px; }
-  /* L'alternativa "oppure" va a capo dentro la barra della proposta, sotto chi entra */
-  .coach-prop.is-main:has(.is-side) { flex-wrap: wrap; }
-  .coach-prop.is-main .coach-prop.is-side { order: 3; flex-basis: 100%; margin: 4px 0 8px; padding: 6px 8px; }
-  .coach-strip-extras { grid-column: 2; grid-row: 3; padding: 8px 10px 10px; border-left: 0; border-top: 1px solid var(--line-soft); }
-  /* Sul telefono la riga di "risolve anche" vuota non c'è (il segnaposto è uno span hidden) */
-  .coach-strip-extras:not(:has(> :not([hidden]))) { display: none; }
-  .coach-also { height: auto; min-height: 18px; }
-  /* Lo scambio più compatto: il nome di chi entra resta intero (va a capo se serve) */
-  .coach-prop.is-main > .coach-fix { gap: 6px; }
-  .coach-strip-out { width: 32px; height: 32px; }
-  .coach-strip-out .sprite { width: 40px; height: 40px; }
-  .coach-strip-in { width: 48px; height: 48px; }
-  .coach-strip-in .sprite { width: 52px; height: 52px; }
-  .coach-strip-in .sprite-ani { height: calc(var(--ani-h, 96) / 96 * 52px); }
-  .coach-fix-main strong { white-space: normal; overflow-wrap: anywhere; font-size: 17px; line-height: 1.1; }
-  .coach-prop.is-main > .coach-fix > .coach-gain { font-size: 20px; }
+  /* ── Coaching: ogni riga una scheda (zona del Pokémon in alto, poi cosa cambia, poi voto e azioni), alta quanto serve ── */
+  .coach-list-box { --row-h: auto; }
+  .coach-rows { grid-auto-rows: auto; }
+  .coach-row { grid-template-columns: minmax(0, 1fr); }
+  .coach-row.skeleton { height: 220px; }
+  .coach-art { min-height: 96px; clip-path: none; padding-right: 14px; }
+  .coach-solves { padding: 10px 12px; }
+  .coach-ar { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .coach-ar-chips { flex-wrap: wrap; }
+  .coach-act { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 12px; padding: 0 12px 12px; }
+  .coach-gain { margin-right: auto; }
+  .coach-menu { left: 8px; right: 8px; width: auto; top: 90px; }
+  .coach-opt { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .coach-opt-note { grid-column: 2; }
+  .coach-opt-use { display: none; }
+  .coach-empty { flex-direction: column; gap: 16px; padding: 20px; }
+  .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }
   /* Riassunto: il nome del core va a capo invece di tagliarsi */
   .sum-syn-head { white-space: normal; }
 
@@ -170,7 +164,6 @@
   .def-general.roomy .def-members tr > :nth-last-child(-n + 2) { display: none; }
   .def-general.roomy .def-members :is(.def-col-hit, .def-col-rec) { width: 0; }
 
-  .coach-map { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 599px) {
@@ -216,9 +209,6 @@
   .dash-speed { grid-column: 2; }
   .dash-speed .dash-ladder { height: auto; flex: 1; min-height: 170px; }
 
-  /* Coaching: le strisce come sul desktop, ma alte quanto serve */
-  .coach-strip { height: auto; min-height: var(--step-h); }
-  .coach-step-problem { padding-block: 6px; -webkit-line-clamp: unset; }
 }
 
 /* ── Guide e finestre d'aiuto aperte dall'Analisi ── */
@@ -247,6 +237,6 @@
   .help-dialog .help-close { width: 44px; height: 44px; }
   .help-dialog .help-nav [role='tab'] { min-height: 44px; }
   /* I "?" e le icone piccole restano piccoli da vedere; la zona che si tocca è di 44 px */
-  .analysis .help-button, .analysis .coach-alt { position: relative; }
-  .analysis .help-button::after, .analysis .coach-alt::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
+  .analysis .help-button { position: relative; }
+  .analysis .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
 }

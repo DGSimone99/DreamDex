@@ -7,8 +7,8 @@ import { emptySet } from '../../src/engine/sets';
 import { AreaGuide } from '../../src/ui/AreaGuide';
 import { AreaView } from '../../src/ui/AreaView';
 import { problemsOf } from '../../src/ui/AnalysisPanel';
-import type { CoachProblem } from '../../src/engine/coach';
-import type { CoachStep } from '../../src/engine/coachSteps';
+import type { CoachAdvice, CoachProblem } from '../../src/engine/coach';
+import type { CoachFix } from '../../src/engine/coachFixes';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -85,14 +85,18 @@ describe('vista di un\'area sulla pagina', () => {
     }
   });
 
+  /** I consigli del Coaching con una proposta sola che risolve `keys`. */
+  const adviceSolving = (...keys: string[]): CoachAdvice =>
+    ({ fixes: [{ kind: 'swap', species: 'Rotom-Wash', set: emptySet('Rotom-Wash'), index: 0, member: 'X', gain: 1, solves: keys, reduces: [] } as CoachFix], moves: [], steps: [] });
+
   it('con una proposta del Coaching la pillola è un pulsante che apre il Coaching su quel problema (clic e tastiera)', async () => {
     const user = userEvent.setup();
     const onCoaching = vi.fn();
     const fire = { severity: 'minor' as const, category: 'defense' as const, text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' };
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching}
-      problems={[fire]} steps={[{ problem: fire, swap: null, move: null, group: [], alsoSolves: [] } as unknown as CoachStep]} />);
+      problems={[fire]} advice={adviceSolving('defense:Fire')} />);
     const chip = screen.getByRole('button', { name: 'Debole a Fuoco' });
-    expect(chip).toHaveAccessibleDescription('Debole a Fuoco · Coperto dalla tappa 1 · Vai al Coaching');
+    expect(chip).toHaveAccessibleDescription('Debole a Fuoco · Vai al Coaching');
     await user.click(chip);
     expect(onCoaching).toHaveBeenLastCalledWith('defense:Fire');
     chip.focus();
@@ -102,26 +106,27 @@ describe('vista di un\'area sulla pagina', () => {
     expect(onCoaching).toHaveBeenCalledTimes(3);
   });
 
-  it('col fuoco una pillola mostra il problema intero nel tooltip DreamDex, e la tappa che lo copre', async () => {
+  it('col fuoco una pillola mostra il problema intero nel tooltip DreamDex', async () => {
     const user = userEvent.setup();
     const fire = { severity: 'serious' as const, category: 'defense' as const, text: 'Nessuno regge Fuoco', fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } };
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={() => {}}
-      problems={[fire]} steps={[{ problem: fire, swap: null, move: null, group: [], alsoSolves: [] } as unknown as CoachStep]} />);
+      problems={[fire]} advice={adviceSolving('defense:Fire')} />);
     const chip = screen.getByRole('button', { name: /Nessuno regge Fuoco/ });
     for (let i = 0; i < 20 && document.activeElement !== chip; i++) await user.tab();
     expect(chip).toHaveFocus();
-    await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).toHaveTextContent('Nessuno regge FuocoCoperto dalla tappa 1'));
+    await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).toHaveTextContent('Nessuno regge Fuoco'));
+    expect(document.querySelector('.ftip.area-chip-tip')).not.toHaveTextContent('tappa');
     // Niente percentuali nel tooltip
     expect(document.querySelector('.ftip.area-chip-tip')!.textContent).not.toMatch(/%/);
   });
 
-  it('problemi che nessuna proposta del Coaching risolve, o tappe ancora da calcolare: la pillola mostra solo il tooltip', async () => {
+  it('problemi che nessuna proposta del Coaching risolve, o consigli ancora da calcolare: la pillola mostra solo il tooltip', async () => {
     const user = userEvent.setup();
     const onCoaching = vi.fn();
     const fire = { severity: 'serious' as const, category: 'defense' as const, text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' };
     const other = { ...fire, key: 'defense:Water', text: 'Debole a Acqua' };
-    for (const steps of [[], [{ problem: other, swap: null, move: null, group: [], alsoSolves: [] } as unknown as CoachStep], null]) {
-      const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching} problems={[fire]} steps={steps} />);
+    for (const advice of [{ fixes: [], moves: [], steps: [] }, adviceSolving(other.key), null]) {
+      const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching} problems={[fire]} advice={advice} />);
       const list = screen.getByRole('list', { name: 'Problemi in Difesa' });
       const chip = within(list).getByText('Debole a Fuoco').closest<HTMLElement>('.area-chip')!;
       expect(chip).not.toHaveClass('is-link');

@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
-import type { CoachProblem } from '../../src/engine/coach';
+import type { CoachAdvice, CoachProblem } from '../../src/engine/coach';
+import type { CoachFix } from '../../src/engine/coachFixes';
 import { FixRow, fixItems, solvable } from '../../src/ui/dashboard/FixRow';
-import type { CoachStep } from '../../src/engine/coachSteps';
 import { LangProvider } from '../../src/i18n/react';
 
 const panel = () => document.getElementById('panel-analysis')!;
@@ -29,6 +29,13 @@ async function importTeam(text: string) {
   return user;
 }
 
+
+const NO_ADVICE: CoachAdvice = { fixes: [], moves: [], steps: [] };
+/** I consigli del Coaching con una proposta sola che risolve `keys`. */
+const adviceSolving = (...keys: string[]): CoachAdvice => ({
+  fixes: [{ kind: 'swap', species: 'Rotom-Wash', set: { species: 'Rotom-Wash', item: '', ability: '', moves: [], nature: 'Serious', evs: {} }, index: 0, member: 'X', gain: 1, solves: keys, reduces: [] } as unknown as CoachFix],
+  moves: [], steps: [],
+});
 describe('Panoramica di Analisi', () => {
   it('il cruscotto: quattro sezioni coi titoli, senza "Cosa fare" e "Minacce non gestite"', async () => {
     await setup();
@@ -136,12 +143,12 @@ describe('Panoramica di Analisi', () => {
     expect(panel().querySelector('.overview-headline .alert-mark')).toBeNull();
   });
 
-  it('regole per prime tra i problemi del Coaching', async () => {
+  it('Coaching: un membro fuori regola ha una proposta che lo toglie, con la pillola grave nella riga Regole', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
-    const rows = within(within(panel()).getByRole('group', { name: /^Regole/ })).getAllByRole('listitem');
-    expect(rows[0]).toHaveClass('serious');
-    expect(rows[0].getAttribute('data-key')).toMatch(/^rules:/);
+    const chip = (await within(panel()).findAllByText((_, el) => !!el?.matches('.area-chip[data-key^="rules:"]')))[0];
+    expect(chip).toHaveClass('serious');
+    expect(chip.closest('.coach-ar')!.querySelector('.coach-ar-who b')).toHaveTextContent('Regole');
   });
 
   it('team stall: niente più la nota "valutato come stall"', async () => {
@@ -286,7 +293,7 @@ describe('Panoramica: Da sistemare', () => {
   it('senza problemi la striscia resta, verde e ferma: "Nessun problema da sistemare", niente link al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
-    render(<LangProvider lang="it"><FixRow problems={[]} steps={[]} onView={onView} /></LangProvider>);
+    render(<LangProvider lang="it"><FixRow problems={[]} advice={NO_ADVICE} onView={onView} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-clear');
     expect(row).not.toHaveClass('is-link');
@@ -299,7 +306,7 @@ describe('Panoramica: Da sistemare', () => {
   it('problemi senza proposta: la stessa striscia verde e ferma "Nessun problema da sistemare", niente link al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
-    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={[]} onView={onView} /></LangProvider>);
+    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={NO_ADVICE} onView={onView} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-clear');
     expect(row).not.toHaveClass('is-link');
@@ -313,7 +320,7 @@ describe('Panoramica: Da sistemare', () => {
     const user = userEvent.setup();
     const onView = vi.fn();
     const p = problem({ text: 'Debole a Fuoco', severity: 'serious' });
-    render(<LangProvider lang="it"><FixRow problems={[p]} steps={[{ problem: p, group: [], alsoSolves: [] } as unknown as CoachStep]} onView={onView} /></LangProvider>);
+    render(<LangProvider lang="it"><FixRow problems={[p]} advice={adviceSolving(p.key)} onView={onView} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-link');
     await user.click(within(row).getByText('Debole a Fuoco'));
@@ -321,18 +328,19 @@ describe('Panoramica: Da sistemare', () => {
     expect(within(row).getByRole('button', { name: 'Vai al Coaching: 1 problema' })).toBeInTheDocument();
   });
 
-  it('consigli ancora da calcolare (steps null): uno scheletro nello stesso posto', () => {
-    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={null} onView={() => {}} /></LangProvider>);
+  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto', () => {
+    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} onView={() => {}} /></LangProvider>);
     const bones = container.querySelector('.fix-row.is-skeleton');
     expect(bones).toHaveAttribute('aria-hidden', 'true');
     expect(bones).toHaveTextContent('');
   });
 
-  it('solvable: solo i problemi che una tappa del Coaching risolve (il suo, il gruppo e gli altri che copre)', () => {
+  it('solvable: i problemi che almeno una proposta del Coaching risolve (cambi di Pokémon e di mossa, tutte)', () => {
     const a = problem({ text: 'a', key: 'a' }), b = problem({ text: 'b', key: 'b' }), c = problem({ text: 'c', key: 'c' }), d = problem({ text: 'd', key: 'd' });
-    const steps = [{ problem: a, swap: null, move: null, group: ['a', 'b'], alsoSolves: ['c'] }] as unknown as CoachStep[];
-    expect(solvable([a, b, c, d], steps).map(p => p.key)).toEqual(['a', 'b', 'c']);
-    expect(solvable([a, b, c, d], [])).toEqual([]);
+    const advice = adviceSolving('a', 'b');
+    const moves = [{ index: 0, member: 'X', slot: 0, from: '', to: 'Tackle', set: advice.fixes[0].set, gain: 0, solves: ['c'], reduces: [] }];
+    expect(solvable([a, b, c, d], { ...advice, moves }).map(p => p.key)).toEqual(['a', 'b', 'c']);
+    expect(solvable([a, b, c, d], NO_ADVICE)).toEqual([]);
   });
 
   it('fixItems: gli scoperti in attacco in una loro frase, separata dagli scoperti in difesa', () => {

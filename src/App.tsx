@@ -10,7 +10,7 @@ import { dataSource, formatLabel, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
 import { UndoToast, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
-import type { TeamSet } from './engine/sets';
+import { exportShowdown, type TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { MetaTab } from './ui/meta/MetaTab';
 import { GradeBadge } from './ui/RatingPanel';
@@ -18,6 +18,7 @@ import { blockedReason } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
+import { copyText } from './ui/clipboard';
 import { SuggestionsPanel, type CandidateFocus } from './ui/SuggestionsPanel';
 import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel, type MoveProposal } from './ui/TeamPanel';
@@ -203,6 +204,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     });
   };
   const [closeSignal, setCloseSignal] = useState(0);
+  // Migliora i set aperto dal Coaching (ogni numero nuovo apre la finestra del team)
+  const [improveSignal, setImproveSignal] = useState(0);
   // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
   const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };
   // L'editor copre l'area della sezione: gli serve la sua altezza
@@ -427,7 +430,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
-          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
+          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
@@ -461,6 +464,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
             onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
+            onExport={() => copyText(exportShowdown(team, { tera: teraAllowed(format) }))} onImproveSets={() => setImproveSignal(n => n + 1)}
             onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>

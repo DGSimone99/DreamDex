@@ -1,7 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { PROBLEM_CATEGORIES, type CoachProblem } from '../engine/coach';
+import { PROBLEM_CATEGORIES, type CoachAdvice, type CoachProblem } from '../engine/coach';
 import type { TeamAnalysis } from '../engine/analysis';
-import { needLabel, type Need } from '../engine/needs';
 import { gradeFor, type TeamRating } from '../engine/rating';
 import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
@@ -9,14 +8,11 @@ import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey, type KoFocus } from './AreaDetail';
 import { viewLabelKey } from './AnalysisTabs';
 import { AreaGuide } from './AreaGuide';
-import { stepNumbers, type CoachStep } from '../engine/coachSteps';
 import { solvable } from './dashboard/FixRow';
 import { EffSwitch } from './effTag';
 import { Icon } from './icons';
-import { isMissingRoles, ProblemPill, tipOf } from './ProblemPill';
-import { Typed } from './TypeText';
+import { MoreProblems, problemEntries, ProblemChip } from './ProblemPill';
 import { useFitCount } from './useFit';
-import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
 
 /**
  * Un'area del voto sulla pagina (scheda di Analisi). In alto una testata sola: a sinistra la lettera del voto dell'area e
@@ -25,7 +21,7 @@ import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
  * Ogni pillola mostra il problema intero nel tooltip (mouse e fuoco) e, se il Coaching ha una proposta per lei, è un
  * pulsante che apre il Coaching su quel problema. Sotto, il dettaglio della sottoscheda scelta a tutta larghezza.
  */
-export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, steps = null }: {
+export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, advice = null }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
@@ -40,8 +36,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   formatId?: FormatId;
   /** Apre il Coaching sul problema di una pillola della testata; senza, le pillole non sono pulsanti. */
   onCoaching?: (problemKey?: string) => void;
-  /** Le tappe del Coaching (null: si stanno calcolando, o non ci sono): una pillola porta lì solo se una tappa la risolve. */
-  steps?: CoachStep[] | null;
+  /** I consigli del Coaching (null: si stanno calcolando): una pillola porta lì solo se una proposta la risolve. */
+  advice?: CoachAdvice | null;
 }) {
   const t = useT();
   const lang = useLang();
@@ -149,7 +145,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         )}
         {/* Un'area che non conta nel voto (Velocità nello stall) lo dice accanto al voto */}
         {areaInfo?.inactive && <span className="area-inactive" role="note">{t('rating.notCounted')}</span>}
-        <AreaProblems area={title} problems={problems} steps={steps} onCoaching={onCoaching} />
+        <AreaProblems area={title} problems={problems} advice={advice} onCoaching={onCoaching} />
         {!single && (
           <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
             {tabs.map((tab, i) => (
@@ -193,98 +189,35 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   );
 }
 
-/** Una pillola della testata: un problema, o un ruolo mancante (`role`: una pillola per ruolo, come nella mappa del Coaching). */
-type Entry = { problem: CoachProblem; role?: string };
-
-/** Il testo intero di una pillola (tooltip e lettori di schermo): il ruolo mancante col suo nome, il resto col problema. */
-const fullText = ({ problem, role }: Entry, t: ReturnType<typeof useT>, lang: ReturnType<typeof useLang>) =>
-  (role ? needLabel(role as Need, lang) : tipOf(problem, t));
-
 /**
- * I problemi dell'area nella testata, come pillole in una riga sola: prima quelli che i Suggerimenti risolvono, poi i
+ * I problemi dell'area nella testata, come pillole in una riga sola: prima quelli che il Coaching sa risolvere, poi i
  * gravi, poi l'ordine delle categorie; quelli che non stanno nel "+N". Senza problemi una pillola verde "Nessun problema".
- * Una pillola è un pulsante (apre il Coaching su di lei) solo se il Coaching ha una proposta per lei; mentre le tappe si
- * calcolano, o senza proposte, mostra solo il tooltip.
+ * Una pillola è un pulsante (apre il Coaching sulla prima proposta che la risolve) solo se almeno una proposta del
+ * Coaching la risolve; mentre i consigli si calcolano, o senza proposte, mostra solo il tooltip.
  */
-function AreaProblems({ area, problems, steps, onCoaching }: {
-  area: string; problems: CoachProblem[]; steps: CoachStep[] | null; onCoaching?: (problemKey?: string) => void;
+function AreaProblems({ area, problems, advice, onCoaching }: {
+  area: string; problems: CoachProblem[]; advice: CoachAdvice | null; onCoaching?: (problemKey?: string) => void;
 }) {
   const t = useT();
   const lang = useLang();
   const sorted = [...problems].sort((a, b) => Number(b.fixes.length > 0) - Number(a.fixes.length > 0)
     || Number(b.severity === 'serious') - Number(a.severity === 'serious')
     || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
-  const entries: Entry[] = sorted.flatMap(problem => (isMissingRoles(problem) ? problem.subjects!.map(role => ({ problem, role })) : [{ problem }]));
+  const entries = problemEntries(sorted);
   const listRef = useRef<HTMLUListElement>(null);
   const fit = useFitCount(listRef, entries.length, `${lang}|${entries.map(e => `${e.problem.key}|${e.problem.text}|${e.role ?? ''}`).join('#')}`);
   const hidden = entries.slice(fit);
-  // Quali problemi il Coaching sa risolvere (una tappa mostrata li copre) e il numero della tappa, come nella mappa
-  const fixable = new Set(onCoaching && steps ? solvable(problems, steps).map(p => p.key) : []);
-  const stepOf = steps ? stepNumbers(steps) : new Map<string, number>();
+  // Quali problemi il Coaching sa risolvere: almeno una sua proposta li risolve
+  const fixable = new Set(onCoaching && advice ? solvable(problems, advice).map(p => p.key) : []);
   return (
     <ul ref={listRef} className="area-chips" aria-label={t('analysis.areaProblems', { area })}>
       {entries.length === 0 ? (
         <li><span className="area-chip good"><Icon name="check" />{t('area.problems.clear')}</span></li>
       ) : entries.slice(0, fit).map(entry => (
-        <ProblemChip key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry} step={stepOf.get(entry.problem.key) ?? null}
+        <ProblemChip key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry}
           onOpen={fixable.has(entry.problem.key) ? () => onCoaching!(entry.problem.key) : undefined} />
       ))}
       {hidden.length > 0 && <MoreProblems hidden={hidden} />}
     </ul>
-  );
-}
-
-/**
- * Una pillola: il testo corto del problema (lo stesso della mappa del Coaching) nel colore della gravità. Mouse e fuoco:
- * il tooltip DreamDex col problema intero e, se una tappa lo copre, quale. `onOpen`: il Coaching ha una proposta, la
- * pillola è un pulsante che lo apre su questo problema; senza, si raggiunge col Tab solo per il tooltip.
- */
-function ProblemChip({ entry, step, onOpen }: { entry: Entry; step: number | null; onOpen?: () => void }) {
-  const t = useT();
-  const tip = useFloatAnchor<true>();
-  const descId = useId();
-  const { problem, role } = entry;
-  // Il problema intero (anche per un ruolo mancante: la frase con tutti i ruoli che mancano)
-  const full = tipOf(problem, t);
-  const covered = step !== null ? t('coach.map.coveredBy', { n: step }) : null;
-  const props = { className: `area-chip ${problem.severity}${onOpen ? ' is-link' : ''}`, 'data-key': problem.key, 'aria-describedby': descId, ...tip.bind(true) };
-  const content = <><Icon name="warning" /><ProblemPill problem={problem} role={role} /></>;
-  return (
-    <li>
-      {onOpen
-        ? <button type="button" {...props} onClick={onOpen}>{content}</button>
-        : <span tabIndex={0} {...props}>{content}</span>}
-      {/* Il tooltip è solo visivo: le stesse parole ai lettori di schermo, e dove porta il pulsante */}
-      <HiddenText id={descId}>{[full, covered, onOpen ? t('overview.fix.go') : ''].filter(Boolean).join(' · ')}</HiddenText>
-      {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="kot area-chip-tip">
-          <p className="kot-none"><Typed text={full} /></p>
-          {covered && <p className="area-chip-by">{covered}</p>}
-        </FloatTip>
-      )}
-    </li>
-  );
-}
-
-/**
- * Il "+N" in fondo alle pillole: quelle che non stanno in riga, nel tooltip DreamDex col mouse e col fuoco; per lo screen
- * reader sono scritte nel testo nascosto.
- */
-function MoreProblems({ hidden }: { hidden: Entry[] }) {
-  const t = useT();
-  const lang = useLang();
-  const tip = useFloatAnchor<true>();
-  const serious = hidden.some(e => e.problem.severity === 'serious');
-  const texts = hidden.map(e => fullText(e, t, lang));
-  return (
-    <li className="area-chips-more" tabIndex={0} {...tip.bind(true)}>
-      <span aria-hidden="true">+{hidden.length}</span>
-      <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {texts.join('; ')}</span>
-      {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="kot">
-          {hidden.map((e, i) => <p key={`${e.problem.key}|${e.role ?? ''}`} className="kot-none"><Typed text={texts[i]} /></p>)}
-        </FloatTip>
-      )}
-    </li>
   );
 }

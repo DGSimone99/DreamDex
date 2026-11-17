@@ -58,6 +58,8 @@ interface Props {
   onOpenChange?: (index: number | null) => void;
   /** Ogni cambio chiude l'editor aperto (es. si sceglie una sezione nella barra laterale). */
   closeSignal?: number;
+  /** Ogni cambio apre la finestra Migliora i set (dal Coaching, quando nessuna sostituzione singola risolve i problemi). */
+  improveSignal?: number;
   /** Team compresso: ogni carta diventa la sola icona del box (con il puntino degli avvisi). */
   collapsed?: boolean;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
@@ -556,7 +558,7 @@ function EmptySlot({ onClick, quiet = false }: { onClick: () => void; quiet?: bo
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -611,7 +613,22 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [clearHint, setClearHint] = useState(false);
   const clearNote = useId();
   const presetsButton = useRef<HTMLButtonElement>(null);
-  const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
+  // Aperta da fuori (il Coaching): chiudendo, il fuoco torna dove era (il pulsante del Coaching), non sul pulsante del team
+  const reopenFocus = useRef<HTMLElement | null>(null);
+  const closeConfirm = () => {
+    setConfirmPresets(false);
+    const back = reopenFocus.current;
+    reopenFocus.current = null;
+    (back?.isConnected ? back : presetsButton.current)?.focus();
+  };
+  const lastImprove = useRef(improveSignal);
+  useEffect(() => {
+    if (improveSignal === lastImprove.current) return;
+    lastImprove.current = improveSignal;
+    if (!team.length) return;
+    reopenFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setConfirmPresets(true);
+  }, [improveSignal]); // eslint-disable-line react-hooks/exhaustive-deps
   // Team pieno e fermo da un secondo e mezzo: Migliora i set si prepara in sottofondo, al clic la finestra è già pronta
   useEffect(() => {
     if (team.length < 6 || !data.stats) return;

@@ -1,5 +1,5 @@
-import type { CoachProblem } from '../../engine/coach';
-import { MAX_STEPS, type CoachStep } from '../../engine/coachSteps';
+import type { CoachAdvice, CoachProblem } from '../../engine/coach';
+import { solvedKeys } from '../../engine/coachProposals';
 import { t as translate, type Lang } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
@@ -9,11 +9,11 @@ import { Icon } from '../icons';
 export const THREAT_NAMES = 3;
 
 /**
- * I problemi che il Coaching sa risolvere: quelli delle tappe che mostra (il problema della tappa, il suo gruppo e gli altri
- * che copre). Gli altri (es. minacce minori quando nessun cambio alza il voto) non vanno nella riga: lì non c'è consiglio.
+ * I problemi che il Coaching sa risolvere: quelli che almeno una delle sue proposte risolve (tutte, la scheda le mostra
+ * tutte). Gli altri (es. minacce minori quando nessun cambio alza il voto) non vanno nella riga: lì non c'è consiglio.
  */
-export function solvable(problems: CoachProblem[], steps: CoachStep[]): CoachProblem[] {
-  const keys = new Set(steps.slice(0, MAX_STEPS).flatMap(step => [step.problem.key, ...step.group, ...step.alsoSolves]));
+export function solvable(problems: CoachProblem[], advice: Pick<CoachAdvice, 'fixes' | 'moves'>): CoachProblem[] {
+  const keys = solvedKeys(advice);
   return problems.filter(p => keys.has(p.key));
 }
 
@@ -51,17 +51,17 @@ export function fixItems(problems: CoachProblem[], lang: Lang): { shown: string[
 
 /**
  * In fondo alla Panoramica: cosa il Coaching sa sistemare, coi nomi, e il passaggio al Coaching (tutta la striscia porta
- * lì). C'è sempre: mentre i consigli si calcolano (`steps` null)
- * uno scheletro alto uguale; quando il Coaching non ha nessuna proposta (nessun problema, o problemi che nessuna tappa
+ * lì). C'è sempre: mentre i consigli si calcolano (`advice` null)
+ * uno scheletro alto uguale; quando il Coaching non ha nessuna proposta (nessun problema, o problemi che nessuna proposta
  * risolve) "Nessun problema da sistemare", verde e ferma (niente link: lì non ci sarebbe niente da fare). Porta al
  * Coaching solo con almeno una proposta. Così la pagina non salta.
  */
-export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; steps: CoachStep[] | null; onView: (v: AnalysisView) => void }) {
+export function FixRow({ problems, advice, onView }: { problems: CoachProblem[]; advice: CoachAdvice | null; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const lang = useLang();
-  const fixable = steps ? solvable(problems, steps) : [];
+  const fixable = advice ? solvable(problems, advice) : [];
   const { shown, hidden, more } = fixItems(fixable, lang);
-  if (!steps) {
+  if (!advice) {
     return (
       <div className="fix-row is-skeleton fill-skeleton" aria-hidden="true">
         <span className="fix-bone" style={{ width: 84 }} />
