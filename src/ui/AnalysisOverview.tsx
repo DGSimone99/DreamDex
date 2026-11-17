@@ -51,7 +51,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
     <div className="overview">
       {/* Con un membro solo l'invito ad aggiungerne un altro; dopo, prima com'è fatto il team e in fondo cosa sistemare */}
       {team.length < 2 && coaching && <div className="overview-headline"><strong>{coaching.verdict}</strong></div>}
-      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} team={team} bonusMalus={team.length >= 2 ? bonusMalus : undefined} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
+      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} team={team} grade={rating?.grade} bonusMalus={team.length >= 2 ? bonusMalus : undefined} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
       {team.length >= 2 && problems && <FixRow problems={problems} advice={advice ?? null} onView={onView} />}
     </div>
   );

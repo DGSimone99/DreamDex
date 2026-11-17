@@ -434,6 +434,14 @@ describe('Riassunto', () => {
     expect(region().querySelector('.sum-arch')).toHaveTextContent('In costruzione');
   });
 
+  it('eroe: il tipo di team prende il colore del voto (classe grade-X), senza voto nessuna classe', () => {
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} grade="C" onView={vi.fn()} density="normal" />);
+    expect(region().querySelector('.sum-hero')).toHaveClass('grade-C');
+    cleanup();
+    mount();
+    expect(region().querySelector('.sum-hero')!.className).toBe('sum-hero');
+  });
+
   it('eroe: chi rende il team tale, prima gli attaccanti (Offesa) poi i muri (Difesa)', () => {
     mount();
     const attack = within(region()).getByRole('group', { name: 'Attaccano' });

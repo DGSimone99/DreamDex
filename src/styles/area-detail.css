@@ -87,10 +87,10 @@
 .help-grades strong { font: 800 30px/0.95 var(--display); color: var(--grade); }
 .help-grades span { font: 600 12px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Le voci di un livello: etichette piatte, senza bordo né hover (non si cliccano), nel colore del livello come nella
-   scheda Ruoli (.rl-tag): essenziali magenta, importanti ciano, minori grigie. La spiegazione del ruolo nel tooltip */
+   scheda Ruoli (.rl-tag): essenziali ciano pieno, importanti ciano più tenue, minori grigie. La spiegazione del ruolo nel tooltip */
 .help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
 .help-points li { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 2px; background: var(--raised); font-size: 12px; line-height: 1.35; color: var(--muted); white-space: nowrap; cursor: help; }
-.help-points.essential li { background: var(--accent-2-soft); color: var(--text); }
+.help-points.essential li { background: color-mix(in srgb, var(--accent) 34%, var(--panel)); color: var(--text); }
 .help-points.important li { background: var(--accent-soft); color: var(--text); }
 .help-panel .help-note { color: var(--text); }
 .help-panel h5, .area-guide .help-panel h4 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }

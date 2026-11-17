@@ -552,17 +552,21 @@
 .dash.rich .dash-summary { --sum-big: 56px; --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
 .sum-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
-/* Eroe: righe diagonali leggere e una sfumatura magenta dall'alto, da bordo a bordo della card */
-.sum-hero { flex: none; margin: -8px -12px 0; padding: 12px 12px 8px; border-bottom: 1px solid var(--line-soft);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 10%, transparent), transparent 70%), repeating-linear-gradient(-55deg, #ffffff05 0 2px, transparent 2px 9px); }
+/* Eroe: righe diagonali leggere e una sfumatura dall'alto nel colore del voto del team (S magenta, A verde, B ciano,
+   C giallo, D rosso, come la carta del voto), da bordo a bordo della card; senza voto grigia */
+.sum-hero { --sum-g: var(--faint); --sum-g-ink: var(--text); flex: none; margin: -8px -12px 0; padding: 12px 12px 8px; border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sum-g) 10%, transparent), transparent 70%), repeating-linear-gradient(-55deg, #ffffff05 0 2px, transparent 2px 9px); }
+.sum-hero.grade-S { --sum-g: var(--accent-2); --sum-g-ink: var(--accent-2-ink); }
+.sum-hero.grade-A { --sum-g: var(--good); --sum-g-ink: var(--good); }
+.sum-hero.grade-B { --sum-g: var(--accent); --sum-g-ink: var(--accent-ink); }
+.sum-hero.grade-C { --sum-g: var(--warn); --sum-g-ink: var(--warn); }
+.sum-hero.grade-D { --sum-g: var(--bad); --sum-g-ink: var(--bad); }
 .dash.rich .sum-hero { padding: 14px 14px 10px; margin-left: -12px; margin-right: -12px; }
-/* Il nome del tipo con la barretta magenta a sinistra, sul bordo della card */
+/* Il nome del tipo, nel colore del voto del team */
 .sum-type { position: relative; min-width: 0; display: flex; align-items: center; gap: 8px; }
-.sum-type::before { content: ""; position: absolute; left: -12px; top: 50%; width: 4px; height: calc(var(--sum-arch) + 4px); transform: translateY(-50%); background: var(--accent-2); }
-.dash.rich .sum-type::before { left: -14px; }
 /* Righe a puntini (overflow nascosto) con un po' di spazio sopra e sotto, ripreso col margine negativo: le code di g, p, y
    non vengono tagliate e la riga resta alta uguale */
-.sum-arch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.2em; margin-block: -0.2em; font: 800 var(--sum-arch)/1.05 var(--display); font-style: italic; color: var(--text); cursor: help; }
+.sum-arch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.2em; margin-block: -0.2em; font: 800 var(--sum-arch)/1.05 var(--display); font-style: italic; color: var(--sum-g-ink, var(--text)); cursor: help; }
 /* Lo stile (Pioggia, Sole…): etichetta tagliata in diagonale nel colore della condizione */
 .sum-style { flex: none; padding: 2px 14px 2px 9px; font: 800 13px/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
 /* "quasi Semi-stall": il tipo accanto quando il team sta sul confine, piccolo e in grigio dopo il nome */

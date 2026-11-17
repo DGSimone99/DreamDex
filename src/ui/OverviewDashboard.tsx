@@ -38,13 +38,15 @@ export function densityFor(height: number): Density {
  * solo se c'è posto); a destra la Copertura, sotto le Minacce del meta (solo col meta: senza, la Copertura prende il loro
  * posto), sotto Ruoli | Velocità.
  */
-export function OverviewDashboard({ data, summary, members, team = [], bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
+export function OverviewDashboard({ data, summary, members, team = [], grade, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
   data: DashboardData;
   summary: TeamSummary;
   /** Quanti Pokémon ha il team: con uno solo la riga Tipo non c'è. */
   members: number;
   /** I set del team: la carta del Pokémon nei tooltip del Riassunto. */
   team?: TeamSet[];
+  /** La lettera del voto del team (S…D): il tipo di team del Riassunto ne prende il colore. */
+  grade?: string;
   /** La riga Bonus/Malus del Riassunto (netto e voci); senza, la riga non c'è. */
   bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
   onView: (v: AnalysisView, sub?: string, focus?: KoFocus) => void;
@@ -80,7 +82,7 @@ export function OverviewDashboard({ data, summary, members, team = [], bonusMalu
   const threats = data.threats.available;
   return (
     <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}${threats ? ' has-threats' : ''}`} data-density={density}>
-      <SummarySection summary={summary} members={members} team={team} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
+      <SummarySection summary={summary} members={members} team={team} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       <CoverageSection coverage={data.coverage} onView={onView} />
       {threats && <ThreatsSection threats={data.threats} onView={onView} />}
       <RolesSection roles={data.roles} density={density} onView={onView} />

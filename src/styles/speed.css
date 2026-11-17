@@ -103,7 +103,7 @@
   .sp-bar-btn { padding-block: 1px; }
   .sp-scale-ticks { height: 11px; line-height: 11px; }
 }
-.sp-mark { display: inline-block; margin-left: 4px; padding: 1px 5px; border-radius: 3px; background: var(--accent-2-soft); color: var(--text); font: 700 11px/1.3 var(--ui); letter-spacing: 0.02em; vertical-align: middle; }
+.sp-mark { display: inline-block; margin-left: 4px; padding: 1px 5px; border-radius: 3px; background: var(--accent-soft); color: var(--text); font: 700 11px/1.3 var(--ui); letter-spacing: 0.02em; vertical-align: middle; }
 .sp-tile { cursor: default; }
 .sp-controls { gap: 6px; flex-wrap: wrap; white-space: normal; }
 .sp-control-move { padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; font-size: 12px; }
@@ -141,7 +141,7 @@
 .guide-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .guide-tile-head b { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--text); }
 .guide-tile-head .guide-pct { flex: none; margin-left: 0; }
-.guide-pct.low { background: color-mix(in srgb, var(--accent-2) 10%, var(--raised)); color: var(--muted); }
+.guide-pct.low { background: color-mix(in srgb, var(--accent) 10%, var(--raised)); color: var(--muted); }
 .guide-tiles small { font-size: 12px; line-height: 1.35; color: var(--muted); }
 .help-panel .guide-scale { margin-top: 6px; font-size: 13px; color: var(--muted); }
 /* La guida: righe come Offesa e Difesa, il dettaglio di ogni fonte nel tooltip del "?" */
@@ -152,7 +152,7 @@
 .sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: 10px; row-gap: 2px; align-items: baseline; font-size: var(--tip-body); line-height: 1.3; }
 .sp-gd-row { display: contents; }
 .sp-gd-row b { font-weight: 600; color: var(--text); }
-.sp-gd-val { font-weight: 700; color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
+.sp-gd-val { font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .sp-gd-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 4px; min-width: 0; }
 /* Ogni mossa o abilità è un'etichetta squadrata (3px, come i tag); il meteo o il campo che serve è scritto piccolo dentro */
 .sp-gd-chip { display: inline-flex; align-items: baseline; gap: 4px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text); font-size: var(--tip-small); line-height: 1.35; white-space: nowrap; }

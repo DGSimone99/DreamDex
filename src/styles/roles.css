@@ -6,7 +6,7 @@
 
 /* Etichetta del livello: lo stesso colore in Generale, sottoschede e guida */
 .rl-tag { display: inline-block; flex: none; padding: 1px 7px; border-radius: 3px; font: 600 11px/1.4 var(--ui); letter-spacing: 0.02em; white-space: nowrap; color: var(--muted); background: var(--raised); }
-.rl-tag.essential { color: var(--text); background: var(--accent-2-soft); }
+.rl-tag.essential { color: var(--text); background: color-mix(in srgb, var(--accent) 34%, var(--panel)); }
 .rl-tag.important { color: var(--text); background: var(--accent-soft); }
 .rl-tag.minor { color: var(--muted); background: var(--raised); }
 .rl-tag.ignored { color: var(--faint); background: none; border: 1px solid var(--line-soft); padding: 0 6px; }
@@ -58,12 +58,12 @@
   --n: var(--n2, 1); --lv: var(--faint); --lv-ink: var(--muted); display: flex; flex-direction: column; flex: var(--n) 1 auto;
   max-height: calc(var(--rl-head) + var(--n) * var(--rl-row-max));
 }
-.rl-band.essential { --lv: var(--accent-2); --lv-ink: var(--accent-2-ink); }
-.rl-band.important { --lv: var(--accent); --lv-ink: var(--accent-ink); }
+.rl-band.essential { --lv: var(--accent); --lv-ink: var(--accent-ink); }
+.rl-band.important { --lv: color-mix(in srgb, var(--accent) 55%, var(--panel)); --lv-ink: color-mix(in srgb, var(--accent-ink) 75%, var(--panel)); }
 .rl-general.three .rl-band { --n: var(--n3, 1); }
 
-/* Titolo della fascia, semplice: un segno obliquo nel colore del livello, il nome nell'inchiostro del livello (magenta,
-   azzurro, grigio per i minori), il valore della fascia; sotto un filo appena tinto del livello. Niente fondo dietro al testo */
+/* Titolo della fascia, semplice: un segno obliquo nel colore del livello, il nome nell'inchiostro del livello (una scala
+   sola: ciano pieno, ciano più spento, grigio per i minori), il valore della fascia; sotto un filo appena tinto del livello. Niente fondo dietro al testo */
 .rl-band .rl-band-head {
   flex: none; display: flex; align-items: center; gap: 10px;
   height: var(--rl-head); margin: 0; padding: 0 var(--rl-pad);

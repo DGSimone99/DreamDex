@@ -283,12 +283,14 @@ function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: Bon
  * Il Riassunto della Panoramica, ritratto del team: in alto (eroe) il tipo di team e chi lo rende tale, sotto chi porta
  * meteo e campo, chi piazza le trappole e, in fondo, le Sinergie (core difensivi e legami), che prendono lo spazio che resta.
  */
-export function SummarySection({ summary, members, team = [], density, rich = false, bonusMalus, onView, onShowAll }: {
+export function SummarySection({ summary, members, team = [], grade, density, rich = false, bonusMalus, onView, onShowAll }: {
   summary: TeamSummary; members: number;
   /** La riga Bonus/Malus in fondo, solo se c'è posto (useBonusMalusRoom); senza, non c'è. */
   bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
   /** I set del team: la carta del Pokémon al passaggio su chi rende il team tale. */
   team?: TeamSet[];
+  /** La lettera del voto del team: il nome del tipo e la sfumatura dell'eroe ne prendono il colore (come la carta del voto). */
+  grade?: string;
   /** Sprite e righe cambiano misura con la densità: le parti a misura si rimisurano. */
   density: Density;
   /** Team ridotto e cruscotto alto (RICH_FROM): sprite più grandi, sezioni distribuite su tutta l'altezza. */
@@ -346,7 +348,7 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
     <DashCard className="dash-summary" title={t('sum.title')}>
       <div className="sum-body" ref={card}>
         {(members >= 2 || makers.length > 0) && (
-          <div className="sum-hero">
+          <div className={`sum-hero${grade ? ` grade-${grade}` : ''}`}>
             {members >= 2 && (
               <div className="sum-type">
                 {archetype
