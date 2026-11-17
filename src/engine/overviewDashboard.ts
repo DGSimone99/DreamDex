@@ -59,6 +59,27 @@ export interface ThreatReason { side: 'defense' | 'offense'; by: string[] }
  */
 export interface MetaThreat { species: string; usage: number; status: 'open' | 'thin'; side: 'defense' | 'offense'; reasons: ThreatReason[] }
 
+/** Difesa: chi regge del tutto il colpo migliore della minaccia (la regola di metaThreats e del Coaching). */
+export const defenseHandlers = (row: { heldBy: { species: string; partial: boolean }[] }): string[] =>
+  row.heldBy.filter(h => !h.partial).map(h => h.species);
+/** Offesa: chi manda il Pokémon del meta KO in due colpi (la regola di metaThreats). */
+export const offenseHandlers = (row: { coveredBy: { species: string }[] }): string[] =>
+  [...new Set(row.coveredBy.map(c => c.species))];
+
+/**
+ * L'ordine "Minaccia" di Coverage meta, con la regola delle carte della Panoramica (metaThreats) su un lato solo: prima
+ * le scoperte (nessuno le gestisce), poi quelle a fatica (uno solo), poi le altre; dentro, la più usata e poi il nome.
+ * `count`: quanti membri la gestiscono, lo stesso numero che la tabella mostra nella riga Team Coverage (così i fili
+ * rossi, gialli e verdi in testata vengono in quest'ordine).
+ */
+export function byThreat<R extends { species: string; weight: number }>(rows: readonly R[], count: (row: R) => number): R[] {
+  const rank = (row: R) => Math.min(2, count(row));
+  return [...rows].sort((a, b) => rank(a) - rank(b) || b.weight - a.weight || a.species.localeCompare(b.species));
+}
+/** L'ordine "Uso" di Coverage meta: il più usato nel meta per primo, poi il nome. */
+export const byUsage = <R extends { species: string; weight: number }>(rows: readonly R[]): R[] =>
+  [...rows].sort((a, b) => b.weight - a.weight || a.species.localeCompare(b.species));
+
 /**
  * Le minacce del meta che il team gestisce peggio, dai dati del voto (Coverage meta della Difesa e dell'Offesa).
  *
@@ -73,11 +94,11 @@ export function metaThreats(rating: TeamRating, data: EngineData): MetaThreat[] 
   const bySpecies = new Map<string, ThreatReason[]>();
   const add = (species: string, reason: ThreatReason) => bySpecies.set(species, [...(bySpecies.get(species) ?? []), reason]);
   for (const row of rating.defense.coverageMeta?.rows ?? []) {
-    const by = row.heldBy.filter(h => !h.partial).map(h => h.species);
+    const by = defenseHandlers(row);
     if (by.length <= 1) add(row.species, { side: 'defense', by });
   }
   for (const row of rating.offense.coverageMeta?.rows ?? []) {
-    const by = [...new Set(row.coveredBy.map(c => c.species))];
+    const by = offenseHandlers(row);
     if (by.length <= 1) add(row.species, { side: 'offense', by });
   }
   const list = [...bySpecies].map(([species, found]) => {

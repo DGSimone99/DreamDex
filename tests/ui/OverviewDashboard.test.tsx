@@ -169,6 +169,12 @@ describe('Cruscotto della Panoramica', () => {
     expect(screen.queryByText('Chi')).toBeNull();
   });
 
+  it('Copertura: prima delle 36 caselle, per i lettori di schermo, i tipi scoperti di ogni riga', () => {
+    mount();
+    const table = screen.getByRole('table', { name: 'Copertura' });
+    expect(table).toHaveAccessibleDescription(/^Scoperti: (Normale|Normal) in offesa; (Terra|Ground) in difesa$/);
+  });
+
   it('Copertura: passando su una casella il tooltip DreamDex (nel body, solo a vista): in Offesa i colpi a podio, in Difesa i membri per moltiplicatore', async () => {
     mount();
     const user = userEvent.setup();

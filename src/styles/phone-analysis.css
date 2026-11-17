@@ -65,6 +65,10 @@
   .def-frame { padding-top: 0; }
   .ad-panel .def-frame > .rob-legend { position: static; height: auto; margin-top: 8px; justify-content: flex-start; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
   .ad-panel .def-frame > .rob-legend > .area-legend { order: 0; }
+  /* L'ordine di Coverage meta: su una riga sua, pulsanti alti quanto un dito */
+  .cm-order { flex: 1 0 100%; margin-right: 0; }
+  .cm-order .segmented { height: auto; }
+  .cm-order .segmented button { min-height: 44px; padding: 0 14px; }
   .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
   .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
   /* La striscia Da sistemare della Panoramica: "Vai al Coaching" alto quanto un dito */

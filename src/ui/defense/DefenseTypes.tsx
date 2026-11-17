@@ -88,12 +88,16 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   });
   const leaveGrid = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null); };
   const notesId = useId();
+  // Per i lettori di schermo, prima della griglia: i tipi che nessuno regge (i fili rossi in testata), poi le note del meteo
+  const summaryId = useId();
+  const weakNames = rows.filter(row => weak.includes(row.type)).map(row => typeName(row.type as TypeName, lang));
 
   return (
     <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
+        <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
         <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table"
-          aria-describedby={!focus && notes.length ? notesId : undefined}
+          aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
           onMouseLeave={() => { setHover(null); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" />{rows.map(row => <col key={row.type} />)}</colgroup>
           <thead>

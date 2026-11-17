@@ -874,8 +874,6 @@
 .coach-btn:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }
 .coach-btn .icon { width: 14px; height: 14px; }
 .coach-link { font-size: 14px; }
-.coach-copied { font-size: 13px; color: var(--good); }
-.coach-copied:empty { display: none; }
 .coach-note { margin: 0; font-size: 12px; color: var(--faint); }
 .coach-note.coach-top { margin: 0 0 4px; }
 

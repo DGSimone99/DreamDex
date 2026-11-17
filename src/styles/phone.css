@@ -443,7 +443,6 @@
   /* I tipi di team in una fila che scorre: le proposte prendono tutta la larghezza */
   .fill-types { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
   .fill-types .fill-option { flex: none; width: auto; max-width: 200px; }
-  .fill-types .fill-option small { display: none; }
   .fill-side { gap: 12px; }
   .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
   .fill-cards { grid-template-columns: minmax(0, 1fr); }

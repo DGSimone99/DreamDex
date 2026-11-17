@@ -70,9 +70,9 @@
 .fill-side { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
 .fill-group { min-width: 0; }
 .fill-types { display: grid; gap: 2px; align-content: start; }
-.fill-option { display: grid; gap: 2px; width: 100%; padding: 6px 10px; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; color: var(--text); }
+/* Solo il nome: la frase di ogni tipo sta nel tooltip DreamDex (e nella descrizione per i lettori di schermo) */
+.fill-option { display: grid; gap: 2px; width: 100%; padding: 5px 10px; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; color: var(--text); }
 .fill-option strong { font: 700 15px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
-.fill-option small { font-size: 12px; color: var(--muted); }
 .fill-option:hover { background: var(--raised); }
 .fill-option[aria-checked='true'] { background: var(--accent-soft); border-color: var(--accent); }
 /* Tipo senza proposte con queste scelte: oscurato, non si sceglie */
@@ -202,10 +202,11 @@
 .fill-cards-sep { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 4px 0 0; font: 700 12px/1.2 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .fill-cards-sep::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
 
-/* Schermi bassi (portatili): le frasi dei tipi restano per i lettori di schermo, il pannello sta nello schermo */
+/* Schermi bassi (portatili): i gruppi più vicini, il pannello sta nello schermo */
 @media (min-width: 1100px) and (max-height: 800px) {
-  .fill-types .fill-option small { display: none; }
   .fill-side { gap: 12px; }
+  /* I tipi di team più bassi: la colonna intera (fino alla frase dei preferiti) sta nel pannello anche a 1280×620 */
+  .fill-types .fill-option { padding-top: 3px; padding-bottom: 3px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .fill-proposal, .fill-skeleton::after { animation: none; }
@@ -271,3 +272,5 @@
 .nature-fx .up { color: var(--good); }
 .nature-fx .down { color: var(--bad); }
 .faint { color: var(--faint); }
+/* Il tooltip di una scelta di Completa team: il nome nella testata, la frase sotto (largo come i tooltip piccoli) */
+.ftip.fill-option-tip { width: var(--tip-s); }

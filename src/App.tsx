@@ -8,7 +8,7 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { gameReady, withGame, type GameId } from './engine/games';
 import { dataSource, formatLabel, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
-import { UndoToast, type ListUndo, type UndoAction } from './ui/UndoToast';
+import { DoneToast, UndoToast, type DoneNote, type ListUndo, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
 import { exportShowdown, type TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
@@ -337,6 +337,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       ? { id: 0, kind: 'load', from: '', before: session.team, after: initialTeam, format: session.format }
       : null);
   const undoId = useRef(0);
+  // Esporta (barra del team e Coaching): il testo per Showdown negli appunti e il momento "team pronto" col voto
+  const [done, setDone] = useState<DoneNote | null>(null);
+  const exportTeam = async () => {
+    const ok = await copyText(exportShowdown(team, { tera: teraAllowed(format) }));
+    if (ok) setDone({ id: ++undoId.current, kind: 'exported', grade: rating ? { grade: rating.grade, overall: rating.overall } : null });
+    return ok;
+  };
   const remember = (action: Omit<UndoAction, 'id'>, after: TeamSet[]) =>
     setUndo({ ...action, id: ++undoId.current, before: team, after });
   const replaceAt = (index: number, set: TeamSet) => {
@@ -435,7 +442,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
-          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
+          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           plateName={<SavedPlateName team={team} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
@@ -475,7 +482,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
             jump={analysisJump}
             onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
-            onExport={() => copyText(exportShowdown(team, { tera: teraAllowed(format) }))} onImproveSets={() => setImproveSignal(n => n + 1)}
+            onExport={exportTeam} onImproveSets={() => setImproveSignal(n => n + 1)}
             onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
@@ -497,11 +504,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         onFeedback={() => { setSettingsOpen(false); setFeedbackOpen(true); }} onClose={closeSettings} />}
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
       {feedbackOpen && <FeedbackDialog team={team} format={format} onClose={closeFeedback} />}
-      {listUndo && listUndo.after === lists && (
+      {/* Il team copiato per Showdown: sta dove sta l'avviso di Annulla, che intanto aspetta (torna quando questo si chiude) */}
+      {done && <DoneToast note={done} onClose={() => setDone(null)} />}
+      {!done && listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, ...listUndo.undo }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />
       )}
-      {undo && undo.after === team && (
+      {!done && undo && undo.after === team && (
         <UndoToast action={undo} onClose={() => setUndo(null)}
           onUndo={() => { changeTeam(undo.before); if (undo.format) adoptFormat(undo.format); setUndo(null); }} />
       )}

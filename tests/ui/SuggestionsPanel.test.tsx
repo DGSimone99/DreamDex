@@ -67,6 +67,20 @@ describe('SuggestionsPanel', () => {
     expect(within(team()).getByText(second)).toBeInTheDocument();
   });
 
+  it('la scelta fatta resta; quando sparisce dalla lista nuova il dettaglio torna al n°1, senza spostare il fuoco', async () => {
+    const user = await setup('Great Tusk');
+    const second = rowNames()[1];
+    await user.click(within(list()).getByRole('button', { name: new RegExp(`${second}$`) }));
+    expect(screen.getByRole('complementary', { name: `Dettaglio di ${second}` })).toBeInTheDocument();
+    const detail = screen.getByRole('complementary', { name: `Dettaglio di ${second}` });
+    await user.click(within(detail).getByRole('button', { name: 'Aggiungi al team' }));
+    // Il candidato aggiunto non è più nella lista: il dettaglio mostra il nuovo n°1, mai il riquadro vuoto
+    expect(rowNames()).not.toContain(second);
+    expect(screen.getByRole('complementary', { name: `Dettaglio di ${rowNames()[0]}` })).toBeInTheDocument();
+    expect(document.querySelector('.detail-empty')).toBeNull();
+    expect(document.activeElement?.closest('.detail')).toBeNull();
+  });
+
   it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
     await setup();
     // Nessuna nota sopra la lista: si parte dalla lista stessa

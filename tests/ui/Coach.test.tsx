@@ -424,7 +424,8 @@ describe('CoachingView', () => {
     expect(document.querySelector('.coach-empty-areas')).toHaveTextContent(`Offesa ${Math.round(before.strength!)} · Difesa ${Math.round(before.defense!)}`);
     await user.click(screen.getByRole('button', { name: 'Esporta per Showdown' }));
     expect(h.onExport).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText('Team copiato in formato Showdown')).toBeInTheDocument();
+    // "Team copiato per Showdown" lo dice l'avviso dell'app (DoneToast, in App): qui la spunta sul pulsante
+    expect(await screen.findByRole('button', { name: 'Esporta per Showdown' })).toContainElement(document.querySelector('.coach-btn .icon'));
     await user.click(screen.getByRole('button', { name: 'Vedi la Panoramica' }));
     expect(h.onOverview).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('region', { name: 'Proposte, dalla più utile' })).toBeNull();

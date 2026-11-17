@@ -485,7 +485,7 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
                 </button>
               )}
               {onOverview && <button type="button" className="coach-link" onClick={onOverview}>{tr('coach.clear.overview')}<span aria-hidden="true"> ›</span></button>}
-              <span className="coach-copied" role="status">{copied ? tr('showdown.quickCopied') : ''}</span>
+              {/* "Team copiato per Showdown" lo dice l'avviso dell'app (DoneToast, lo stesso di Esporta nella barra del team) */}
             </div>
           </div>
         </div>

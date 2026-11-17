@@ -1,4 +1,4 @@
-import { useState, type FocusEvent } from 'react';
+import { useId, useState, type FocusEvent } from 'react';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
@@ -77,11 +77,15 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     onBlur: tip.close,
   });
   const leaveGrid = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null); };
+  // Per i lettori di schermo, prima della griglia: i tipi che nessuno manda KO in due colpi (i fili rossi in testata)
+  const summaryId = useId();
+  const holeNames = TYPES.filter(type => holes.includes(type)).map(type => typeName(type, lang));
 
   return (
     <div className={`def-frame off-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table"
+        <p id={summaryId} hidden>{holeNames.length ? t('sr.types.offense', { list: holeNames.join(', ') }) : t('sr.types.offenseNone')}</p>
+        <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
           onMouseLeave={() => { setHover(null); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" /></colgroup>
           <thead>

@@ -39,3 +39,13 @@
 }
 .undo-toast:hover .undo-timer, .undo-toast:focus-within .undo-timer { animation-play-state: paused; }
 @keyframes undo-timer { to { transform: scaleX(0); } }
+/* Team copiato per Showdown (DoneToast): lo stesso avviso, senza Annulla. La spunta verde, la frase e il voto del team in
+   corsivo grande nel colore della lettera (come nella testata delle aree) */
+.done-toast { padding: 18px 44px 18px 28px; }
+.done-toast .undo-text { flex-wrap: nowrap; gap: 8px; white-space: nowrap; }
+.done-toast .undo-text > .icon { width: 20px; height: 20px; color: var(--good); }
+.done-grade { --grade: var(--accent-ink); margin-left: 4px; font: 700 20px/1 var(--display); font-style: italic; color: var(--grade); font-variant-numeric: tabular-nums; }
+.done-grade.grade-S { --grade: var(--accent-2-ink); }
+.done-grade.grade-A { --grade: var(--good); }
+.done-grade.grade-C { --grade: var(--warn); }
+.done-grade.grade-D { --grade: var(--bad); }

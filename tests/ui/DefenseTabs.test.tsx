@@ -14,6 +14,13 @@ import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
+/** Ordine Minaccia di Coverage meta (quello di partenza), la regola della Panoramica: prima le minacce che nessuno regge del
+ *  tutto, poi quelle che regge uno solo, poi le altre; dentro, la più usata. */
+const threatOrder = <R extends { species: string; weight: number; heldBy: { partial: boolean }[] }>(rows: R[]) => {
+  const n = (r: R) => Math.min(2, r.heldBy.filter(h => !h.partial).length);
+  return [...rows].sort((a, b) => n(a) - n(b) || b.weight - a.weight || a.species.localeCompare(b.species));
+};
+
 const team = [
   { ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush', 'Close Combat', 'Ice Spinner', 'Rapid Spin'], evs: { atk: 252, spe: 252 } },
   { ...emptySet('Gholdengo'), ability: 'Good as Gold', moves: ['Make It Rain', 'Shadow Ball', 'Nasty Plot', 'Recover'], evs: { spa: 252, spe: 252 } },
@@ -244,7 +251,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const threats = new Map(metaThreats(fixtureData).map(t => [t.set.species, t.set]));
-    const expected = [...rating.defense.coverageMeta!.rows].sort((a, b) => a.level - b.level || b.weight - a.weight).slice(0, 8);
+    const expected = threatOrder(rating.defense.coverageMeta!.rows).slice(0, 8);
     const table = within(screen.getByRole('tabpanel')).getByRole('table');
     let checked = 0;
     team.forEach((set, m) => {
@@ -262,14 +269,14 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Team Coverage', async () => {
+  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (prima nessuno, poi uno solo; a pari la più usata); danno colorato e riga Team Coverage', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const panel = within(screen.getByRole('tabpanel'));
     const rows = rating.defense.coverageMeta!.rows;
-    const expected = [...rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
+    const expected = threatOrder(rows);
     const names = () => panel.getAllByRole('columnheader').slice(1).map(h => h.getAttribute('aria-label'));
     expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
     // Ogni casella: il danno coi colori di Coverage tipi (4HKO+ sotto un terzo, 3HKO sotto la metà, 2HKO), KO rosso per chi non c'è in heldBy
@@ -308,7 +315,9 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
     // La legenda corta (KO e le tre fasce col loro %, come Coverage tipi), niente conteggi
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
-    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('KO< 33%33–49%50–99%');
+    // Prima l'ordine (Uso · Minaccia), poi la legenda
+    expect(document.querySelector('.def-frame > .rob-legend > .cm-order:first-child')).toHaveTextContent('OrdineUsoMinaccia');
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend')).toHaveTextContent('KO< 33%33–49%50–99%');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));

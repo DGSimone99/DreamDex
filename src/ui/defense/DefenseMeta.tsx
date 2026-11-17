@@ -1,4 +1,4 @@
-import type { FocusEvent, MouseEvent, ReactNode } from 'react';
+import { useId, useState, type FocusEvent, type MouseEvent, type ReactNode } from 'react';
 import { battleName, battleSpecies } from '../../engine/dex';
 import { holdBand, type HoldBand, type TeamDefense } from '../../engine/defense';
 import { pieceOf, type HoldPiece } from './HoldBars';
@@ -11,7 +11,8 @@ import { MoveLine } from '../dashboard/CoverageTip';
 import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { useMemberTip } from '../MemberCard';
-import { MetaFrame } from '../MetaFrame';
+import { MetaFrame, MetaOrderSwitch, type MetaOrder } from '../MetaFrame';
+import { byThreat, byUsage } from '../../engine/overviewDashboard';
 import { HpLeft } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
@@ -45,7 +46,9 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
 
 /**
  * Coverage meta della Difesa, con la grafica di quella dell'Offesa: i membri in riga (nello stesso punto delle altre
- * schede), le minacce del meta in colonna, 8 per pagina dalla meno coperta (a pari livello la più usata). In ogni casella
+ * schede), le minacce del meta in colonna, 8 per pagina nell'ordine scelto sulla riga della legenda: Minaccia (prima quelle
+ * che nessuno regge del tutto, poi quelle che regge uno solo, poi le altre, dentro la più usata: la regola della
+ * Panoramica) o Uso (la più usata). In ogni casella
  * il danno che il membro prende dal colpo migliore della minaccia (corsivo, "%" piccolo) con la barra dei PS che gli
  * restano, coi colori di Coverage tipi (4HKO+ sotto un terzo dei PS, 3HKO sotto la metà, 2HKO); il timbro KO se va KO in un colpo. Sulla casella il
  * tooltip DreamDex (minaccia, membro, mossa, efficacia, danno); sulla sprite in testata la carta del Pokémon col suo set
@@ -72,13 +75,20 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const lit = (row: Row) => !!focus && pieceAt(row, focus.slot) === focus.band;
   // Aperta da una minaccia della Panoramica: la sua colonna per prima (prima pagina) e accesa, le altre spente
   const threat = ctx.focus?.kind === 'threat' && ctx.focus.side === 'defense' ? ctx.focus.species : null;
-  const sorted = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
+  // Quanti membri la reggono del tutto (la regola della Panoramica e del Coaching, il numero della riga Team Coverage)
+  const held = (row: Row) => row.heldBy.filter(h => !h.partial).length;
+  // Ordine scelto: Minaccia (prima quelle che nessuno regge, poi quelle che regge uno solo, come la Panoramica) o Uso
+  const [order, setOrder] = useState<MetaOrder>('threat');
+  const all = defense.coverageMeta?.rows ?? [];
+  const sorted = order === 'usage' ? byUsage(all) : byThreat(all, held);
+  // Per i lettori di schermo, prima della tabella: le minacce che nessuno regge (di tutte le pagine)
+  const summaryId = useId();
+  const open = sorted.filter(r => held(r) === 0).map(r => r.species);
   const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))]
     : threat ? [...sorted.filter(r => r.species === threat), ...sorted.filter(r => r.species !== threat)] : sorted;
   // Il posto fra i membri conosciuti dal motore (l'ordine di `mults`)
   let seen = 0;
   const knownIndex = names.map(name => (name ? seen++ : -1));
-  const held = (row: Row) => row.heldBy.filter(h => !h.partial).length;
 
   const cell = (row: Row, c: Holder | 'ko' | null, m: number, k: number) => {
     const key = `${row.species}-${m}`;
@@ -129,7 +139,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     return (
       <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">
-          <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageMeta')}`} className="def-grid spaced ct-table"
+          <p id={summaryId} hidden>{open.length ? t('sr.cm.defense', { list: open.join(', ') }) : t('sr.cm.defenseNone')}</p>
+          <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
             onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
             <colgroup>
               <col className="def-col-mon" />
@@ -176,7 +187,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         </div>
         {tipCell(shown)}
         {card.tip}
-        <div className="rob-legend cm-foot">{focus
+        <div className="rob-legend cm-foot"><MetaOrderSwitch order={order} onChange={setOrder} />{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span>}</div>
@@ -184,7 +195,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     );
   };
 
-  return <MetaFrame rows={rows} summary={null} body={body}
+  return <MetaFrame rows={rows} summary={null} body={body} resetKey={order}
     labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
 }
 
