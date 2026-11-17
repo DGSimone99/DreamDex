@@ -583,6 +583,12 @@
   grid-auto-rows: 104px; gap: 8px; align-content: start; overflow: hidden; }
 /* Misurata: le righe che entrano si allargano fino a riempire tutta l'altezza (nessuna striscia vuota sotto) */
 .dex-grid[style*="--dex-rows"] { grid-template-rows: repeat(var(--dex-rows), minmax(104px, 1fr)); align-content: stretch; }
+/* Scheda bassa (misurata in ListsPanel, es. 1280×620 col team aperto): carte di 80px con lo sprite di 56px, due righe */
+.lists-panel.low .dex-grid { padding: 8px 10px; grid-auto-rows: 80px; }
+.lists-panel.low .dex-grid[style*="--dex-rows"] { grid-template-rows: repeat(var(--dex-rows), minmax(80px, 1fr)); }
+.lists-panel.low .dex-sprite .sprite { width: min(56px, 70cqh); height: min(56px, 70cqh); }
+.lists-panel.low .dex-name { font-size: 12px; }
+.lists-panel.low .dex-head { padding-block: 4px; }
 
 .dex-card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; overflow: hidden; padding: 6px 8px;
   container-type: size; cursor: grab; background: linear-gradient(160deg, color-mix(in srgb, var(--t) 50%, var(--panel)) -10%, var(--panel) 70%);

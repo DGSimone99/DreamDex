@@ -172,6 +172,27 @@ describe('scheda Liste: i box', () => {
     expect(favoritesList().querySelectorAll('.lslot')).toHaveLength(20);
   });
 
+  it('scheda bassa (misurata): box di una riga da 10, il Pokédex a 6 per riga con le carte basse', () => {
+    // Misure finte: ogni elemento 1000 × 400 (la scheda Liste sotto i 450px di altezza, la griglia stretta)
+    const original = window.ResizeObserver;
+    const width = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth')!;
+    const height = Object.getOwnPropertyDescriptor(Element.prototype, 'clientHeight')!;
+    window.ResizeObserver = class { constructor(private cb: () => void) {} observe() { this.cb(); } unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+    Object.defineProperty(Element.prototype, 'clientWidth', { configurable: true, get: () => 1000 });
+    Object.defineProperty(Element.prototype, 'clientHeight', { configurable: true, get: () => 400 });
+    try {
+      renderIt(<ListsPanel lists={ou(['Garchomp'])} format={DEFAULT_FORMAT} data={fixtureData} onChange={vi.fn()} />);
+      expect(panel()).toHaveClass('low');
+      expect(favoritesList().querySelectorAll('.lslot')).toHaveLength(10);
+      // Righe da 80px (+8) in 400px meno 16 di margine: 4 righe da 6
+      expect(panel().querySelectorAll('.dex-grid .dex-card')).toHaveLength(24);
+    } finally {
+      window.ResizeObserver = original;
+      Object.defineProperty(Element.prototype, 'clientWidth', width);
+      Object.defineProperty(Element.prototype, 'clientHeight', height);
+    }
+  });
+
   it('il clic su una casella non fa niente', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

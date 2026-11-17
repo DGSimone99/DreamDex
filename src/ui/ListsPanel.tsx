@@ -36,6 +36,10 @@ type DexOrder = 'national' | 'usage' | 'type' | 'name' | Region;
 /** Caselle dei box: 10 colonne, sempre 2 righe (20 per pagina). */
 const COLUMNS = 10;
 const BOX_CAP = 2 * COLUMNS;
+/** Scheda bassa (misurata, es. 1280×620 col team aperto): box di una riga e carte del Pokédex più basse, così ne
+ *  entrano due righe. Sotto questa altezza della scheda Liste si passa alla forma bassa. */
+const LOW_PANEL = 450;
+const CARD_H_LOW = 80;
 /** Carte del Pokédex: 9 per riga sugli schermi larghi (griglia da 1100px in su), 6 sugli stretti; righe quante ne
  *  entrano in altezza (almeno una). Senza misura (jsdom) una pagina di 60. */
 const DEX_WIDE = 1100;
@@ -303,13 +307,18 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
 
   // ── Misure: righe dei box (3 o 2) e carte del Pokédex per pagina ──
   const gridRef = useRef<HTMLOListElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   // Si rimisura tornando dalla vista espansa (gli elementi sono nuovi)
   const gridSize = useSize(gridRef, view.expanded);
-  const cap = BOX_CAP;
+  const panelSize = useSize(panelRef, view.expanded);
+  const low = panelSize.h > 0 && panelSize.h < LOW_PANEL;
+  const cap = low ? COLUMNS : BOX_CAP;
+  const cardH = low ? CARD_H_LOW : CARD_H;
+  const gridPad = low ? 16 : 20;
   const measured = gridSize.w > 0 && gridSize.h > 0;
   // Sul telefono (griglia stretta) 3 per riga
   const dexCols = !measured || gridSize.w >= DEX_WIDE ? 9 : gridSize.w >= 600 ? 6 : 3;
-  const dexRows = Math.max(1, Math.floor((gridSize.h - 20 + CARD_GAP) / (CARD_H + CARD_GAP)));
+  const dexRows = Math.max(1, Math.floor((gridSize.h - gridPad + CARD_GAP) / (cardH + CARD_GAP)));
   const dexPer = measured ? dexCols * dexRows : DEX_PAGE;
   const [dexPage, setDexPage] = useState(0);
   const dexPages = Math.max(1, Math.ceil(shown.length / dexPer));
@@ -373,7 +382,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   }
 
   return (
-    <section className={`lists-panel${dragging ? ' dragging' : ''}`} aria-label={tr('lists.title')}
+    <section ref={panelRef} className={`lists-panel${dragging ? ' dragging' : ''}${low ? ' low' : ''}`} aria-label={tr('lists.title')}
       onDragOver={overPanel} onDrop={dropPanel}>
       <h2 className="visually-hidden">{tr('lists.title')}</h2>
       <div className="lists-bar">
