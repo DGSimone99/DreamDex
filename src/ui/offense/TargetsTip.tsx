@@ -30,17 +30,13 @@ export function Ask({ label, children }: { label: string; children: ReactNode })
 
 /**
  * La testata di una colonna a pezzi della Generale (Tipi, Meta): la spada (Offesa: colpisci tu) o lo scudo (Difesa:
- * colpiscono te), la parola come le altre testate e dopo una frase corta in tono spento che dice chi colpisce chi
- * ("· quanti ne colpisci"). Il punto è solo per gli occhi: ai lettori di schermo arriva "Tipi, quanti ne colpisci".
- * Se la colonna è stretta la frase si nasconde (resta per i lettori di schermo), la testata non va a capo.
+ * colpiscono te), poi la parola come le altre testate (l'icona basta a dire chi colpisce chi: è solo per gli occhi).
  */
-export function BarHead({ icon, word, phrase }: { icon: 'sword' | 'shield'; word: string; phrase: string }) {
+export function BarHead({ icon, word }: { icon: 'sword' | 'shield'; word: string }) {
   return (
     <span className="bar-head">
       <span className="bar-head-ic"><Icon name={icon} /></span>
-      {/* La virgola nascosta e lo spazio fuori dagli span (nel flex non si vede): il nome resta "Tipi, quanti ne colpisci" */}
-      <span className="bar-head-word">{word}</span><span className="visually-hidden">,</span>{' '}
-      <span className="bar-head-phrase">{phrase}</span>
+      <span className="bar-head-word">{word}</span>
     </span>
   );
 }

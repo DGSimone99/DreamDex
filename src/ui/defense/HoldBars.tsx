@@ -7,7 +7,7 @@ import { useLang, useT } from '../../i18n/react';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { TypeIcons, typeIconUrl } from '../typeIcons';
 import { Sprite } from '../Sprite';
-import { Target } from '../offense/KoBadges';
+import { pieceSize, Target } from '../offense/KoBadges';
 import { HOLD_BANDS } from './holds';
 
 /*
@@ -51,7 +51,7 @@ export const teamHolds = (per: HoldTarget[][]): HoldTarget[] =>
   });
 
 /**
- * La barra: un pezzo per fascia lungo quanto il suo conto (un pezzo a zero non c'è), passando su un pezzo il tooltip
+ * La barra: un pezzo per fascia, misurato come nell'Offesa (pieceSize; un pezzo a zero non c'è), passando su un pezzo il tooltip
  * DreamDex elenca i bersagli. A destra il conto "12/18": quanti ne regge (meno di metà PS). `alarm` (la riga del team):
  * il conto è verde solo se li regge tutti, rosso se no.
  */
@@ -83,7 +83,7 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
           const items = by(p);
           if (!items.length) return null;
           return (
-            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={{ flexGrow: items.length }}
+            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={pieceSize(items.length)}
               data-nav="" {...tip.bind(p)} aria-describedby={`${id}-${p}`}
               {...(onPick ? { role: 'button', onClick: () => { tip.close(); onPick(p); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tip.close(); onPick(p); } } } : { role: 'img' })}
               aria-label={`${tag(p)} ${items.length}`}>
@@ -96,8 +96,8 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
         {key && (
           <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
             <div className="kot-head"><b>{who}</b><span className={`kob labeled hb ${PIECE_CLS[key]}`}><em>{tag(key)}</em><b>{by(key).length}</b></span><small>{of}</small></div>
-            {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO). Il pallino del 2HKO è giallo
-                come il suo pezzo (le caselle di Coverage tengono la loro scala a quattro tinte) */}
+            {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO). I pallini hanno i colori delle
+                caselle di Coverage (verde, verde chiaro, giallo, rosso); quello del 2HKO un filo più pieno, se no è piccolo e spento */}
             {(key === 'held' ? (['four', 'three'] as const) : [key]).map(b => {
               const items = targets.filter(x => x.band === b);
               return items.length ? <div key={b} className={`hb-group${b === 'two' ? ' hb-group-two' : ''}`}><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;

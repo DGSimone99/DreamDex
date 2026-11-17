@@ -140,16 +140,17 @@
 .def-general .def-members tr.og-fill { height: auto; }
 .def-general .def-members tr.og-fill td { padding: 0; border: 0; }
 
-/* La barra dei colpi (KoBadges): larga quanto la colonna meno un respiro (le due colonne non si toccano), a pezzi lunghi
-   quanto il loro conto: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga
-   del team in rosso: gli scoperti). Ogni pezzo ha un minimo per etichetta e numero; il setup è il triangolo nell'angolo */
-.kob-line { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-width: 0; }
+/* La barra dei colpi (KoBadges, e HoldBars nella Difesa con la stessa misura): larga quanto la colonna meno un respiro
+   (le due colonne non si toccano), a pezzi: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due
+   colpi (nella riga del team in rosso: gli scoperti). Il setup è il triangolo nell'angolo. Le due Generali hanno la stessa
+   geometria: stessa riga, stesso conto allo stesso punto, stessa regola per i pezzi (pieceSize) */
+.kob-line { display: flex; align-items: center; gap: 8px; width: calc(100% - 12px); min-width: 0; }
 /* La riga dei pezzi è un contenitore: se non c'è posto per tutte le etichette, spariscono tutte insieme (restano numero,
    colore, tooltip e nome per i lettori di schermo) */
 .kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 0; container: kobrow / inline-size; }
 /* Il conto a destra della barra, "11/18": staccato dai pezzi (niente fondo né inclinazione), il numero grande in corsivo
    col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); il colore dice quanto copre */
-.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 46px; color: var(--c); cursor: default; }
+.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 42px; color: var(--c); cursor: default; }
 .kob-count-num { display: inline-flex; align-items: baseline; justify-content: flex-start; gap: 1px; font-variant-numeric: tabular-nums; }
 .kob-count-num > b { font: 800 italic 19px/1 var(--display); }
 .kob-count-line { position: relative; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--c) 18%, transparent); overflow: hidden; }
@@ -161,10 +162,15 @@
 .kob-count.zero { --c: var(--faint); }
 .kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
-.kob-row > .kob { flex: 1 0 0; min-width: 74px; padding: 0 9px 0 8px; gap: 4px; }
+/* La regola dei pezzi, uguale in Offesa e Difesa: ogni pezzo parte dal minimo (etichetta e numero ci stanno: 66px) e
+   prende dello spazio che resta una parte in proporzione al suo conto (--n, da pieceSize); così un pezzo da 5 su 18 è
+   lungo uguale nelle due tabelle. Un pezzo a 0 (c'è solo per il setup) resta al minimo */
+.kob-row > .kob { --kob-min: 66px; flex: var(--n, 0) 0 var(--kob-min); min-width: var(--kob-min); padding: 0 6px 0 5px; gap: 3px; }
 /* L'etichetta (OHKO, 2HKO) leggibile: 11px piena, chiara sul fondo del pezzo (almeno 4,5:1) */
-.kob > em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.02em; white-space: nowrap; color: var(--kob-ink, var(--text)); }
-@container kobrow (max-width: 187px) { .kob-row > .kob:not(.rest) { min-width: 40px; } .kob-row > .kob > em { display: none; } }
+.kob > em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0; white-space: nowrap; color: var(--kob-ink, var(--text)); }
+/* Se la riga non ha posto per tre pezzi col minimo (3 × 66 + 2 × 3 = 204px), le etichette spariscono tutte insieme e il
+   minimo scende a 36px (solo il numero), in tutte e due le tabelle */
+@container kobrow (max-width: 203px) { .kob-row > .kob { --kob-min: 36px; } .kob-row > .kob > em { display: none; } }
 /* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
 .kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
@@ -183,7 +189,7 @@
 .kob.zero { --kob-ink: var(--faint); color: var(--faint); border-color: color-mix(in srgb, var(--faint) 30%, transparent); border-style: dashed; background: none; box-shadow: none; }
 .kob.zero .kob-num > b { color: var(--faint); }
 /* Quelli che non manda KO in due colpi: grigio, solo il numero, più piccolo */
-.kob-row > .kob.rest { min-width: 34px; padding-left: 6px; color: var(--faint); background: var(--line-soft); }
+.kob-row > .kob.rest { color: var(--faint); background: var(--line-soft); }
 .kob.rest .kob-num > b { font-size: 13px; color: var(--muted); }
 .kob.rest:hover { background: color-mix(in srgb, var(--faint) 22%, transparent); }
 /* Nella riga del team: gli scoperti in rosso */
@@ -352,14 +358,7 @@
 .cm-total th > .visually-hidden { position: absolute !important; }
 @media (min-width: 1100px) and (max-height: 640px) { .cm-matrix tfoot .og-total { height: 32px; } }
 
-/* Testate Tipi e Meta della Generale (Offesa e Difesa): la spada o lo scudo, la parola come le altre testate, poi una
-   frase corta spenta che dice chi colpisce chi ("· quanti ne colpisci", in minuscolo, non maiuscola). Mai a capo: se la
-   colonna è stretta la frase si nasconde (resta per i lettori di schermo) */
+/* Testate Tipi e Meta della Generale (Offesa e Difesa): la spada o lo scudo, poi la parola come le altre testate. Mai a capo */
 .bar-head { display: inline-flex; align-items: center; gap: 5px; vertical-align: -2px; white-space: nowrap; }
 .bar-head-ic { display: inline-flex; flex: none; color: var(--muted); }
 .bar-head-ic .icon { width: 14px; height: 14px; }
-.bar-head-phrase { font: 500 12px/1.2 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted); }
-/* Il punto solo per gli occhi (testo alternativo vuoto): ai lettori di schermo arriva la virgola nascosta */
-.bar-head-phrase::before { content: "· "; content: "· " / ""; }
-/* Sotto i 1100px (tablet, telefono) le colonne sono strette: la frase resta solo per i lettori di schermo */
-@media (max-width: 1099px) { .bar-head-phrase { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }

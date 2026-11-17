@@ -50,8 +50,8 @@
 .ftip-ko.off.four { color: var(--faint); border-color: var(--line); }
 .ftip-ko.def { color: var(--text); }
 .ftip-ko.def.ohko { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 46%, var(--panel)); }
-.ftip-ko.def.two { border-color: color-mix(in srgb, var(--bad) 55%, transparent); background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
-.ftip-ko.def.three { border-color: color-mix(in srgb, var(--warn) 65%, transparent); background: color-mix(in srgb, var(--warn) 26%, var(--panel)); }
+.ftip-ko.def.two { border-color: color-mix(in srgb, var(--warn) 65%, transparent); background: color-mix(in srgb, var(--warn) 26%, var(--panel)); }
+.ftip-ko.def.three { border-color: color-mix(in srgb, var(--good) 85%, transparent); background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
 .ftip-ko.def.four { border-color: color-mix(in srgb, var(--good) 70%, transparent); background: color-mix(in srgb, var(--good) 30%, var(--panel)); }
 
 /* Offesa: podio, una colonna per colpo; il badge a nastro inclinato in alto a destra sulla sprite */

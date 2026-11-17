@@ -356,10 +356,10 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(document.querySelector('.def-weak')).toBeNull();
   });
 
-  it('testate Tipi e Meta con lo scudo e chi colpisce chi: "Tipi, quanti ne reggi", "Meta, chi ti manda KO"', () => {
+  it('testate Tipi e Meta con lo scudo e solo la parola (niente frase)', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const types = screen.getByRole('columnheader', { name: /^Tipi, quanti ne reggi/ });
-    const meta = screen.getByRole('columnheader', { name: /^Meta, chi ti manda KO/ });
+    const types = screen.getByRole('columnheader', { name: /^Tipi$/ });
+    const meta = screen.getByRole('columnheader', { name: /^Meta$/ });
     for (const head of [types, meta]) {
       // Lo scudo solo per gli occhi, il "?" resta accanto
       expect(head.querySelector('.bar-head-ic svg')).toHaveAttribute('aria-hidden', 'true');
@@ -398,7 +398,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori senza colonne in più; altrimenti niente pastiglie', () => {
     const rating = withMeta();
     const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi, quanti ne reggi', 'Meta, chi ti manda KO', 'Difesa']);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {

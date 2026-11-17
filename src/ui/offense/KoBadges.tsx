@@ -49,8 +49,14 @@ export function Target({ target }: { target: KoTarget }) {
 const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };
 
 /**
+ * La misura di un pezzo, la stessa nelle Generali dell'Offesa (KoBadges) e della Difesa (HoldBars): il CSS dà a ogni pezzo
+ * il minimo per etichetta e numero, più una parte dello spazio che resta in proporzione al suo conto (`--n`, flex-grow).
+ */
+export const pieceSize = (n: number) => ({ '--n': Math.max(0, n) } as CSSProperties);
+
+/**
  * Una barra a pezzi larga quanto la colonna: OHKO (verde pieno), 2HKO (verde col bordo) e in fondo, grigio, quelli che il
- * colpo semplice non manda KO in due colpi; ogni pezzo lungo quanto il suo conto (un minimo per il numero), un pezzo a zero
+ * colpo semplice non manda KO in due colpi; ogni pezzo col minimo più una parte in proporzione al suo conto (pieceSize), un pezzo a zero
  * non c'è (salvo che il setup ci porti qualcuno: allora resta, spento, col triangolo). `alarm` (la riga del team): il
  * pezzo che resta è in rosso, sono gli scoperti. Passando su un pezzo il tooltip DreamDex elenca i bersagli, poi in righe a
  * parte quelli in più dopo la danza o con Tera/Z. A destra della barra il conto "11/18": quanti ne manda KO in due colpi o
@@ -100,7 +106,7 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
         if (n === 0 && extra === 0) return null;
         return (
           <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}${onPick && n > 0 ? ' pick' : ''}`}
-            style={{ '--k': total ? Math.min(1, n / total) : 0, flexGrow: Math.max(n, 1) } as CSSProperties}
+            style={pieceSize(n)}
             {...piece(b, n > 0)}
             aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
             {/* L'etichetta a sinistra, il numero a destra; il setup è solo il triangolo nell'angolo (il tooltip dice quanti) */}
@@ -111,7 +117,7 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
         );
       })}
       {rest > 0 && (
-        <span className={`kob rest${restBad ? ' bad' : ''}${onPick ? ' pick' : ''}`} style={{ flexGrow: rest }}
+        <span className={`kob rest${restBad ? ' bad' : ''}${onPick ? ' pick' : ''}`} style={pieceSize(rest)}
           {...piece('rest', true)}
           aria-label={`${restBad ? t('kob.uncovered') : t('kob.restAria')} ${rest}`}>
           <span className="kob-num"><b>{rest}</b></span>

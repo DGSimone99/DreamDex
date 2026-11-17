@@ -40,8 +40,8 @@ describe("dettaglio dell'Offesa a schede", () => {
     // Sotto Meta e Tipi possono esserci le etichette OHKO / 2HKO: si guarda come iniziano
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
-    expect(headers[1]).toBe('Tipi, quanti ne colpisci');
-    expect(headers[2]).toBe('Meta, chi mandi KO');
+    expect(headers[1]).toBe('Tipi');
+    expect(headers[2]).toBe('Meta');
     expect(headers[3]).toBe('Offesa');
     const rows = [...table.querySelectorAll('tbody tr:not(.og-fill)')] as HTMLElement[];
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
@@ -112,8 +112,8 @@ describe("dettaglio dell'Offesa a schede", () => {
     const headers = within(dialog).getAllByRole('columnheader').map(h => h.textContent);
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
-    expect(headers[1]).toBe('Types, how many you hit');
-    expect(headers[2]).toBe('Meta, who you KO');
+    expect(headers[1]).toBe('Types');
+    expect(headers[2]).toBe('Meta');
     expect(headers[3]).toBe('Offense');
     const foot = document.querySelector('.def-members tfoot tr')!;
     // Gli scoperti in inglese nel nome accessibile
@@ -136,7 +136,7 @@ describe('dettaglio della Difesa a schede', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi, quanti ne reggi', 'Meta, chi ti manda KO', 'Difesa']);
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
     const all = within(table).getAllByRole('row');
     const rows = all.slice(1, -1);
     expect(rows.map(r => within(r).getByRole('rowheader').querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
@@ -219,7 +219,7 @@ describe('dettaglio della Difesa a schede', () => {
     await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
     expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Coverage' })).toBeInTheDocument();
     await user.click(within(dialog).getByRole('tab', { name: /^General/ }));
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Types, how many you take', 'Meta, who KOs you', 'Defense']);
+    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Types', 'Meta', 'Defense']);
   });
 });
 

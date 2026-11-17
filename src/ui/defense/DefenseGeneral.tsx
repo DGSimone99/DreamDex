@@ -215,8 +215,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} phrase={t('hold.headTypesWho')} /><Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} phrase={t('hold.headMetaWho')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
+              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('area.defense')}</th>
             </tr>
           </thead>
