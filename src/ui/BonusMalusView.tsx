@@ -16,7 +16,7 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 /** Famiglia di una voce: decide l'icona dentro la medaglia (una forma sola, l'icona cambia). */
 type Family = 'types' | 'roles' | 'hazards' | 'conditions' | 'members' | 'core' | 'check' | 'plus';
 const FAMILY: Record<CatalogKey, Family> = {
-  sharedWeak: 'types', sameType: 'types', defenseHole: 'types', weakCovered: 'types', typeVariety: 'types',
+  sharedWeak: 'types', sameType: 'types', defenseHole: 'types', unanswered: 'types', weakCovered: 'types', typeVariety: 'types',
   essentialRole: 'roles', importantRole: 'roles', minorRole: 'roles',
   hazardDuplicate: 'hazards',
   weatherClash: 'conditions', unmetCondition: 'conditions', unusedEnabler: 'conditions', conditionUsed: 'conditions', weatherHelp: 'conditions', trickRoomFast: 'conditions',
