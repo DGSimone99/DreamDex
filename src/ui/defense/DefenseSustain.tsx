@@ -28,7 +28,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
   return (
     <div className={`def-frame def-sus${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table className="def-grid sus-table def-members">
+        <table className="def-grid sus-table def-members" aria-label={`${t('area.defense')}: ${t('ddetail.sustain')}`}>
           <colgroup><col className="def-col-mon" /><col className="sus-col-loss" /><col className="sus-col-loss" /><col /><col className="sus-col-net" /><col className="sus-col-val" /></colgroup>
           <thead>
             <tr className="rob-grp">

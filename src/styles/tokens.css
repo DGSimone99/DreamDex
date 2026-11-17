@@ -43,6 +43,34 @@
   --plate: var(--line);
   --on-plate: var(--text);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Icone dei tipi: quattro misure per tutta l'Analisi e i tooltip. In riga col testo (accanto a un nome, nelle righe
+     delle tabelle e dei tooltip), su una targhetta o in una griglia di icone (badge dei core, riga del tipo nei tooltip),
+     in testa a un tooltip, in testa alle colonne delle griglie. Sugli schermi bassi o stretti si scende di un gradino */
+  --ti-inline: 14px;
+  --ti-chip: 18px;
+  --ti-tip: 22px;
+  --ti-head: 24px;
+  /* Tooltip DreamDex: tre larghezze (piccolo: una nota o pochi numeri; medio: righe con icone e nomi; largo: sprite in
+     colonna, profili, tabelle) e quattro misure di testo (titolo e numeri in riga, testo, note ed etichette, il numero grande) */
+  --tip-s: 300px;
+  --tip-m: 380px;
+  --tip-l: 480px;
+  --tip-title: 15px;
+  --tip-body: 13px;
+  --tip-small: 11px;
+  --tip-num: 22px;
+  /* Testate delle tabelle dell'Analisi (colonne, righe di gruppo, etichette di riga come Regge / Colpisce): uno stile
+     solo, maiuscolo 11px in Faint con la stessa spaziatura */
+  --col-head: 600 11px/1.2 var(--ui);
+  --col-head-track: 0.05em;
+  --col-head-ink: var(--faint);
+  /* Legende delle tabelle e delle barre (in alto a destra): 12px in Muted; 16px fra i gruppi della riga (conteggi, note,
+     chiave dei colori), 12px fra una voce e l'altra della chiave, 5px fra il quadratino e la sua parola */
+  --legend-size: 12px;
+  --legend-ink: var(--muted);
+  --legend-gap: 16px;
+  --legend-item: 12px;
+  --legend-pair: 5px;
 }
 /*
  * Contrasto (WCAG), su --panel / --raised / --ground:

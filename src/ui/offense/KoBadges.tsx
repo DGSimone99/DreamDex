@@ -1,10 +1,11 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
+import { useId, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { getMove } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
 
 /** Le due fasce che contano per la Coverage: KO in un colpo e in due (il 3HKO quasi non conta: ignorato). */
@@ -42,7 +43,7 @@ export function Target({ target }: { target: KoTarget }) {
   const lang = useLang();
   return target.kind === 'type'
     ? <span className="kot-type"><img src={typeIconUrl(target.label)} alt="" draggable={false} />{typeName(target.label as TypeName, lang)}</span>
-    : <span className="kot-mon" title={target.label}><Sprite species={target.label} size={40} /></span>;
+    : <span className="kot-mon" title={target.label}><Sprite species={target.label} size={SPRITE_TIP_ROW} /></span>;
 }
 
 const TAG: Record<KoBand, string> = { ohko: 'OHKO', two: '2HKO' };
@@ -65,6 +66,22 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
   const lang = useLang();
   const tip = useFloatAnchor<KoBand | 'rest'>();
   const key = tip.anchor?.key;
+  const id = useId();
+  // Per lo screen reader i bersagli del pezzo (quelli del tooltip), nella descrizione: i nomi, poi quelli in più col setup
+  const names = (items: KoTarget[]) => items.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ');
+  const setupName = setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord');
+  const describe = (b: KoBand | 'rest') => (b === 'rest' ? names(bands.rest) : [
+    names(bands.plain[b]),
+    bands.setup[b].length ? `${setupName} +${bands.setup[b].length}: ${names(bands.setup[b])}` : '',
+    bands.once[b].length && onceName ? `${onceName} +${bands.once[b].length}: ${names(bands.once[b])}` : '',
+  ].filter(Boolean).join('. '));
+  // Ogni pezzo si raggiunge con le frecce (data-nav: il gruppo è la tabella della Generale); col clic è un pulsante
+  const piece = (b: KoBand | 'rest', pick: boolean) => ({
+    'data-nav': '', ...tip.bind(b), 'aria-describedby': `${id}-${b}`,
+    ...(pick && onPick
+      ? { role: 'button', onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tip.close(); onPick(b); } } }
+      : { role: 'img' }),
+  });
   const list = (items: KoTarget[]) => <div className={`kot-list${items[0]?.kind === 'mon' ? ' mons' : ''}`}>{items.map(x => <Target key={x.label} target={x} />)}</div>;
   const rest = bands.rest.length;
   const restBad = alarm && rest > 0;
@@ -84,21 +101,21 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, a
         return (
           <span key={b} className={`kob ${b}${n === 0 ? ' zero' : ''}${extra > 0 ? ' has-setup' : ''}${onPick && n > 0 ? ' pick' : ''}`}
             style={{ '--k': total ? Math.min(1, n / total) : 0, flexGrow: Math.max(n, 1) } as CSSProperties}
-            onMouseEnter={e => tip.open(b, e.currentTarget)} onMouseLeave={tip.close}
-            {...(onPick && n > 0 ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(b); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(b); } } } : {})}
+            {...piece(b, n > 0)}
             aria-label={`${TAG[b]} ${n}${extra ? `, ${t('kob.setupAria', { n: extra })}` : ''}`}>
             {/* L'etichetta a sinistra, il numero a destra; il setup è solo il triangolo nell'angolo (il tooltip dice quanti) */}
             <em aria-hidden="true">{TAG[b]}</em>
             <span className="kob-num"><b>{n}</b></span>
+            <HiddenText id={`${id}-${b}`}>{describe(b) || t('kob.none')}</HiddenText>
           </span>
         );
       })}
       {rest > 0 && (
         <span className={`kob rest${restBad ? ' bad' : ''}${onPick ? ' pick' : ''}`} style={{ flexGrow: rest }}
-          onMouseEnter={e => tip.open('rest', e.currentTarget)} onMouseLeave={tip.close}
-          {...(onPick ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick('rest'); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick('rest'); } } } : {})}
+          {...piece('rest', true)}
           aria-label={`${restBad ? t('kob.uncovered') : t('kob.restAria')} ${rest}`}>
           <span className="kob-num"><b>{rest}</b></span>
+          <HiddenText id={`${id}-rest`}>{describe('rest')}</HiddenText>
         </span>
       )}
       {key === 'rest' && (

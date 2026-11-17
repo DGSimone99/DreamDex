@@ -4,7 +4,7 @@
  *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730]
  * Per ogni foto stampa pageScroll = quanto la pagina scorre oltre la finestra (0 = una schermata).
  */
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import puppeteer, { type Page } from 'puppeteer-core';
 
@@ -523,10 +523,11 @@ const STATES: Record<string, State> = {
   'analysis-bonus-six': bonusState(SIX),
   'analysis-bonus-lone': bonusState(LONE),
   'analysis-bonus-rain': bonusState(RAIN),
-  'analysis-bonus-swap': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
+  // Due core: affiancati se c'è posto (niente da cliccare), a fisarmonica solo su carte strette
+  'analysis-bonus-swap': bonusState(SIX, async p => { if (!await p.$('.bm-core.shut')) return true; const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
   // Telefono: la scheda portata in alto (le voci, poi i core) e il secondo core aperto
   'analysis-bonus-six-scrolled': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm')?.scrollIntoView()); await wait(300); return true; }),
-  'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
+  'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); if (!await p.$('.bm-core.shut')) return true; const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
   'analysis-bonus-rain-open': bonusState(RAIN, async p => { const ok = await clickText(p, 'button.bm-row-toggle', /./); await wait(400); return ok; }),
   'analysis-bonus-stress': bonusState(STRESS),
   // Il team di 5 (senza malus): la scheda Malus vuota; e la scheda Bonus vuota di LONE
@@ -881,7 +882,34 @@ const STATES: Record<string, State> = {
   'removed-toast': { run: async p => { if (!await clickText(p, 'button.remove', /Rimuovi/)) return false; await wait(1200); return toastClear(p); } },
   illegal: { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]) },
 };
-const chosen = (arg('states') ?? Object.keys(STATES).join(',')).split(',');
+// Il controllo del testo (--scan) come stringa: dentro page.evaluate niente funzioni con nome (tsx aggiunge __name)
+const SCAN_TEXT = `(() => {
+  const parse = s => { const n = (s.match(/[\\d.]+/g) || []).map(Number); if (s.startsWith('color(')) return [n[0] * 255, n[1] * 255, n[2] * 255, n.length > 3 ? n[3] : 1]; return [n[0], n[1], n[2], n.length > 3 ? n[3] : 1]; };
+  const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+  const blend = (top, under) => { const a = top[3]; return [top[0] * a + under[0] * (1 - a), top[1] * a + under[1] * (1 - a), top[2] * a + under[2] * (1 - a), 1]; };
+  const bgOf = el => { const layers = []; for (let e = el; e; e = e.parentElement) { const c = parse(getComputedStyle(e).backgroundColor); if (c[3] > 0) { layers.push(c); if (c[3] >= 1) break; } } let base = [16, 18, 25, 1]; for (let i = layers.length - 1; i >= 0; i--) base = blend(layers[i], base); return base; };
+  const out = new Map();
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (!n.textContent.trim()) continue;
+    const el = n.parentElement; if (!el || el.closest('.visually-hidden, script, style')) continue;
+    const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+    const cs = getComputedStyle(el); if (cs.visibility === 'hidden') continue;
+    let op = 1; for (let e = el; e; e = e.parentElement) op *= Number(getComputedStyle(e).opacity);
+    if (op < 0.02) continue;
+    const fs = parseFloat(cs.fontSize);
+    const bg = bgOf(el); let fg = parse(cs.color); fg = blend([fg[0], fg[1], fg[2], fg[3] * op], bg);
+    const L1 = lum(fg), L2 = lum(bg); const cr = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+    const big = fs >= 18.66 || (fs >= 14 && Number(cs.fontWeight) >= 700);
+    if (fs < 11 || op < 0.99 || cr < (big ? 3 : 4.5)) {
+      const name = e => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\\s+/).join('.') : '');
+      const key = name(el) + (el.parentElement ? ' < ' + name(el.parentElement) : '');
+      if (!out.has(key)) out.set(key, 'fs=' + fs + ' op=' + op.toFixed(2) + ' cr=' + cr.toFixed(2) + ' "' + n.textContent.trim().slice(0, 18) + '"');
+    }
+  }
+  return [...out].map(([k, v]) => '  ' + k + '  ' + v).join('\\n') || '  (none)';
+})()`;
+const chosen = (arg('states')?? Object.keys(STATES).join(',')).split(',');
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--hide-scrollbars'] });
 mkdirSync(out, { recursive: true });
@@ -902,6 +930,22 @@ for (const [w, h] of sizes) {
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
     await wait(800);
+    // --add-class "sel:classe": aggiunge una classe prima della foto (per provare una variante non attiva nell'app)
+    const addClass = arg('add-class');
+    if (addClass) { const [sel, cls] = addClass.split(':'); await page.evaluate((s, c) => { document.querySelectorAll(s).forEach(e => e.classList.add(c)); }, sel, cls); await wait(300); }
+    // --hover "sel": porta il puntatore sul primo elemento (per i tooltip)
+    const hoverSel = arg('hover');
+    if (hoverSel) { const el = await page.$(hoverSel); if (el) { await el.hover(); await wait(500); } else console.log(`hover ${hoverSel}: not found`); }
+    // --focus "sel": porta il fuoco sul primo elemento; --keys "Tab,ArrowRight,…": tasti premuti dopo (per il giro del Tab, le frecce e i tooltip col fuoco)
+    const focusSel = arg('focus');
+    if (focusSel) { if (!await page.evaluate(s => { const el = document.querySelector<HTMLElement>(s); el?.focus(); return !!el; }, focusSel)) console.log(`focus ${focusSel}: not found`); }
+    const keys = arg('keys');
+    if (keys) { for (const k of keys.split(',')) { await page.keyboard.press(k as Parameters<Page['keyboard']['press']>[0]); await wait(60); } await wait(500); }
+    // --scan: testo visibile sotto 11px, attenuato con l'opacità o con contrasto sotto 4,5:1 (sul fondo pieno più vicino)
+    if (process.argv.includes('--scan')) console.log(`scan ${name} @${w}x${h}:\n` + (await page.evaluate(SCAN_TEXT) as string));
+    // --eval <file.js>: un'espressione JS (stringa) valutata nella pagina, il risultato stampato
+    const evalFile = arg('eval');
+    if (evalFile) console.log(`eval ${name} @${w}x${h}: ${String(await page.evaluate(readFileSync(evalFile, 'utf8')))}`);
     // pageScroll: quanto scorre la pagina; clipped: quanto della colonna principale resta tagliato (overflow nascosto)
     // dash: altezza e densità del cruscotto, fondo delle due colonne, testo tagliato nelle sezioni
     const { scroll, clipped, dash, panel } = await page.evaluate(() => {
@@ -916,7 +960,9 @@ for (const [w, h] of sizes) {
       const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
         .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
       // Riassunto: nome del tipo, riga dell'eroe e righe delle sezioni tagliati in larghezza (anche in EN)
-      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-crew, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).map(e => e.className).length : 0;
+      // (la riga degli sprite si misura dai suoi figli: la luce del passaggio dell'ultimo sprite sborda apposta di 6px)
+      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length
+        + [...box.querySelectorAll<HTMLElement>('.sum-crew')].filter(e => { const r = e.getBoundingClientRect(); return [...e.children].some(c => c.getBoundingClientRect().right - r.right > 1); }).length : 0;
       const sumRows = box ? [...box.querySelectorAll<HTMLElement>('.sum-hero, .sum-sec')].map(li => Math.round(li.getBoundingClientRect().height)) : [];
       // Parti del Riassunto sotto il fondo della sua card (nascoste) e voci a misura mostrate ma tagliate (fuori dalla riga)
       const sumCard = box?.querySelector('.dash-summary');
@@ -1119,7 +1165,9 @@ for (const [w, h] of sizes) {
     // fixStrip: x, larghezza, altezza e fondo della striscia in fondo (Da sistemare o problemi dell'area), uguale ovunque
     const fixStrip = await page.evaluate(() => { const r = document.querySelector('.fix-row')?.getBoundingClientRect(); return r ? ` fixStrip=x${Math.round(r.left)},w${Math.round(r.width)},h${Math.round(r.height)},bottom${Math.round(r.bottom)}` : ''; });
     const file = join(out, `${w}x${h}-${name}.png`);
-    await page.screenshot({ path: file });
+    // --clip "sel": la foto solo di quell'elemento (se c'è)
+    const clipEl = arg('clip') ? await page.$(arg('clip')!) : null;
+    if (clipEl) await clipEl.screenshot({ path: file }); else await page.screenshot({ path: file });
     console.log(`${file} pageScroll=${scroll} clipped=${clipped}${fixStrip}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
     await page.close();
   }

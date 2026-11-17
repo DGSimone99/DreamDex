@@ -19,6 +19,7 @@ import { typeColor } from '../Sprite';
 import { effLabel } from '../effTag';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
+import { useRoving } from '../useRoving';
 
 /** Il colore di una barra dal valore: buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
@@ -77,14 +78,15 @@ function ShareTip({ who, share, sustain, line, meta, total = false }: { who: str
  * e meta, nel colore dell'Offesa) e la Sostenibilità, verde se aggiunge, rossa se toglie (la parte che si mangia). Il
  * numero sono i suoi punti; passandoci sopra il tooltip coi pezzi.
  */
-function DefShare({ share, from, team, tip }: { share: DefenseShare; from: number; team: number; tip: ReactNode }) {
+function DefShare({ share, from, team, tip, label }: { share: DefenseShare; from: number; team: number; tip: ReactNode; label: string }) {
   const float = useFloatAnchor<true>();
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
   const cover = Math.max(0, share.types + share.meta);
   const lit = share.sustain >= 0 ? cover : Math.max(0, cover + share.sustain);
   const side = share.sustain >= 0 ? share.sustain : Math.min(cover, -share.sustain);
   return (
-    <span className="def-cell dsh" onMouseEnter={e => float.open(true, e.currentTarget)} onMouseLeave={float.close}>
+    // Raggiungibile con le frecce (data-nav, nel gruppo della tabella): col fuoco il tooltip
+    <span className="def-cell dsh" data-nav="" role="img" aria-label={label} {...float.bind(true)}>
       <span className="def-bar og-share-bar" aria-hidden="true">
         <i className="og-share-team" style={{ width: `${clamp(team)}%` }} />
         {lit > 0 && <i className="og-share-own" style={{ left: `${clamp(from)}%`, width: `${clamp(Math.min(lit, 100 - from))}%` }} />}
@@ -135,14 +137,14 @@ function SustainChips({ parts, set }: { parts: SustainParts; set: TeamSet | unde
 }
 
 /** La Difesa del team in fondo: la barra in due parti, quello che regge (tipi e meta) e la Sostenibilità (verde o rossa). */
-function TeamDefense({ value, sustainPoints, tip }: { value: number; sustainPoints: number; tip: ReactNode }) {
+function TeamDefense({ value, sustainPoints, tip, label }: { value: number; sustainPoints: number; tip: ReactNode; label: string }) {
   const float = useFloatAnchor<true>();
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
   const cover = clamp(value - sustainPoints);
   const lit = sustainPoints >= 0 ? cover : clamp(cover + sustainPoints);
   const side = Math.abs(sustainPoints);
   return (
-    <span className="def-cell dsh" onMouseEnter={e => float.open(true, e.currentTarget)} onMouseLeave={float.close}>
+    <span className="def-cell dsh" data-nav="" role="img" aria-label={label} {...float.bind(true)}>
       <span className={`def-bar total ${tone(value)}`} aria-hidden="true">
         <i style={{ width: `${lit}%` }} />
         {side > 0 && <i className={`dsh-sus ${sustainPoints >= 0 ? 'gain' : 'loss'}`} style={{ left: `${lit}%`, width: `${clamp(Math.min(side, 100 - lit))}%` }} />}
@@ -175,6 +177,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const ofTypes = t('kob.ofTypes');
   const ofMeta = t('kob.ofMeta', { n: metaRows.length });
   const teamName = t('odetail.gen.total');
+  // Tutti i pezzi della tabella (barre, colpi peggiori, quanto porta) sono un posto solo nel giro del Tab, poi le frecce
+  const nav = useRoving<HTMLTableElement>();
 
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
   // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta
@@ -198,7 +202,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   return (
     <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table className="def-grid def-members">
+        <table ref={nav.ref} className="def-grid def-members" aria-label={`${t('area.defense')}: ${t('detail.tab.general')}`} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
           {/* Come l'Offesa: i nomi in una colonna, poi Tipi, Meta e l'ultima in colonne uguali; nell'ultima Sostenibilità e
               Difesa affiancate, così Tipi e Meta stanno nello stesso posto e larghi uguali */}
           <colgroup><col className="def-col-mon" /><col />{meta && <col />}<col /></colgroup>
@@ -221,8 +225,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team (sommati fanno la Difesa del team): quello che regge e la Sostenibilità */}
-                  <span className="og-share" aria-label={t('ddetail.shareTitle', { n: signed(shares[i].points) })}>
-                    <DefShare share={shares[i]} from={shareFrom[i]} team={defense.value}
+                  <span className="og-share">
+                    <DefShare share={shares[i]} from={shareFrom[i]} team={defense.value} label={t('ddetail.shareTitle', { n: signed(shares[i].points) })}
                       tip={<ShareTip who={m.species} share={shares[i]} sustain={m.sustain} line={sustainLine(m.sustainParts, rocksLabel, itemLabel)} meta={!!defense.coverageMeta} />} />
                   </span>
                   {roomy && <SustainChips parts={m.sustainParts} set={setOf(ctx.team, m.species)} />}
@@ -238,7 +242,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <th scope="row"><span className="og-plate">{t('odetail.gen.total')}</span></th>
               <td><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></td>
               {meta && <td><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></td>}
-              <td><TeamDefense value={defense.value} sustainPoints={teamShare.sustain}
+              <td><TeamDefense value={defense.value} sustainPoints={teamShare.sustain} label={`${t('area.defense')} ${defense.value}`}
                 tip={<ShareTip who={teamName} share={teamShare} sustain={defense.sustain} line={t('ddetail.sus.teamNote')} meta={!!defense.coverageMeta} total />} /></td>
             </tr>
           </tfoot>

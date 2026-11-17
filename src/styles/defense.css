@@ -27,7 +27,7 @@
 /* La lista parte subito sotto la striscia delle sottoschede: meno margine in alto nel pannello */
 .area-panel:has(> .def-frame) { padding-top: 6px; }
 /* L etichetta "Pokémon" sopra la colonna dei nomi, uguale in ogni tabella */
-.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .def-frame .def-grid { width: 100%; border-collapse: separate; border-spacing: 0 var(--def-sp); table-layout: fixed; font-variant-numeric: tabular-nums; }
 /* Griglie a caselle: lo spazio anche in orizzontale, rientrato perché la prima colonna parta nello stesso punto */
 .def-frame .def-grid.spaced { width: calc(100% + 2 * var(--def-sp)); margin: 0 calc(-1 * var(--def-sp)); border-spacing: var(--def-sp); }
@@ -50,7 +50,7 @@
 
 /* Tabella dei membri con le barre */
 .def-members { table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
-.def-members thead th { padding: 0 8px 6px; vertical-align: bottom; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
+.def-members thead th { padding: 0 8px 6px; vertical-align: bottom; text-align: left; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .def-members thead th:first-child { padding-left: 0; }
 .def-members td, .def-members th[scope='row'] { padding: 0 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
 .def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
@@ -96,8 +96,9 @@
 .guide-rows { display: grid; gap: 0; margin: 0 0 8px; }
 .guide-rows > div { display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
 .guide-rows dt { font-weight: 600; color: var(--text); }
-.guide-rows dd { margin: 0; color: var(--muted); }
-.guide-rows dd .guide-sub { display: block; margin-top: 3px; font-size: 0.92em; color: var(--faint); }
+/* Righe di lettura non oltre ~70 caratteri (32em: in Kanit un carattere è circa mezzo em): oltre, l'occhio perde la riga dopo */
+.guide-rows dd { max-width: 32em; margin: 0; color: var(--muted); }
+.guide-rows dd .guide-sub { display: block; max-width: 32em; margin-top: 3px; font-size: 13px; color: var(--faint); }
 .guide-note { margin: 0 0 6px; color: var(--muted); }
 @media (max-width: 560px) {
   .guide-rows > div { grid-template-columns: 1fr; gap: 2px; }
@@ -107,7 +108,7 @@
 /* Robustezza nella cornice comune: due righe di testata (gruppo, icone) alte quanto la testata delle altre schede */
 .def-frame thead tr.rob-grp { height: 16px; }
 .def-frame thead tr.rob-atk { height: calc(var(--def-head) - 16px - var(--def-sp)); }
-.rob-grp th { padding: 0 0 2px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; border-bottom: 2px solid var(--line); white-space: nowrap; }
+.rob-grp th { padding: 0 0 2px; text-align: center; border-bottom: 2px solid var(--line); white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .rob-grp th.def-mon-h, .rob-grp .rob-side-h { border-bottom: 0; vertical-align: bottom; }
 .rob-grp th:not(.def-mon-h) { line-height: 1; }
 .rob-grp .rob-side-h { text-align: center; overflow: visible; max-width: none; text-overflow: clip; }
@@ -124,7 +125,7 @@
 .def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .rob-side { padding: 0; text-align: center; }
 .rob-side .ct-pill { min-width: 40px; font-size: 13px; }
-.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: auto 0 0; padding-top: 8px; font-size: 12px; color: var(--muted); }
+.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--legend-gap); margin: auto 0 0; padding-top: 8px; font-size: var(--legend-size); color: var(--legend-ink); }
 @container (max-width: 1100px) {
   .def-frame .rob-atk .def-box { --bs: 0.65; }
   .rob-matrix .rob-col-side { width: 52px; }
@@ -139,7 +140,7 @@
 /* Recupera prende lo spazio che resta (si stringe per prima sugli schermi piccoli): Perde resta larga, le sue testate su una riga */
 .sus-table .sus-col-net { width: 170px; }
 .sus-table .sus-col-val { width: 120px; }
-.sus-table thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.sus-table thead th { white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .sus-table thead .sus-h { vertical-align: bottom; text-align: left; padding: 0 12px 6px; }
 .sus-table thead .sus-c { text-align: center; }
 .sus-table thead .sus-r { text-align: right; padding-right: 0; }
@@ -147,7 +148,7 @@
 .sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 2px; text-align: center; line-height: 1; }
 /* «Perde» sopra le sue due colonne: centrata e bassa come le altre righe di gruppo, così i membri partono alla stessa altezza delle altre schede */
 .sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 2px; text-align: center; line-height: 1; }
-.sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--muted); line-height: 1; }
+.sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .sus-table td { padding: 0 12px; border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }
 .sus-table td.sus-loss + td.sus-loss { border-right: 1px solid var(--line); }
@@ -180,8 +181,10 @@
 /* Coverage tipi: la griglia a caselle come quella della Panoramica (membri in riga, 18 tipi in colonna), in fondo i totali
    per tipo. Riempimenti da color-mix dei token di stato, testo --text; il ×0 usa l accento della palette */
 .ct-table thead th { padding: 0 0 2px; vertical-align: bottom; text-align: center; }
+/* Le caselle delle griglie di Coverage si raggiungono con le frecce: l'anello del fuoco dentro la casella (fuori lo taglierebbe la cornice) */
+.ct-table :is(td, th):focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .ct-table thead .type-icons { display: block; }
-.ct-table thead .type-icons img { display: block; width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; }
+.ct-table thead .type-icons img { display: block; width: var(--ti-head); height: var(--ti-head); margin: 0 auto; border-radius: 50%; }
 /* Filo sotto l icona: rosso se grave, giallo se minore, vuoto (stessa altezza) altrimenti */
 .ct-flag { display: block; width: 24px; height: 3px; margin: 4px auto 0; border-radius: 2px; }
 .ct-table th.sev-serious .ct-flag { background: var(--bad); }
@@ -201,7 +204,7 @@
 .ct-table thead th.x-col img { transform: scale(1.15); }
 /* Riepilogo: righe basse, etichette come le righe della Panoramica */
 .ct-table tr.ct-sum { height: 24px; }
-.ct-table tr.ct-sum th { padding: 0 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
+.ct-table tr.ct-sum th { padding: 0 8px 0 0; text-align: left; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .ct-table tr.ct-sum td { padding: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
 .ct-table tr.ct-sum td.bad { color: var(--bad); }
 /* A squadra aperta la Sicurezza è l unico riepilogo: staccata di qualche px dalle caselle */
@@ -211,7 +214,7 @@
 .ct-pill.warn { background: var(--warn-bg); color: var(--warn); }
 .ct-pill.good { background: var(--good-bg); color: var(--good); }
 @container (max-width: 1100px) {
-  .ct-table thead .type-icons img { width: 20px; height: 20px; }
+  .ct-table thead .type-icons img { width: calc(var(--ti-head) - 4px); height: calc(var(--ti-head) - 4px); }
   .ct-table .ct-pill { min-width: 0; padding: 1px 4px; font-size: 11px; }
   .ct-cell { font-size: 12px; }
 }
@@ -231,11 +234,11 @@
    le note del meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) o la nota del focus */
 .def-frame { position: relative; }
 .ad-panel .def-frame > .rob-legend { position: absolute; top: 0; left: 0; right: 0; height: var(--def-legend); margin: 0; padding: 0;
-  display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 18px; white-space: nowrap; line-height: 1.1; font-size: 11.5px; }
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: var(--legend-gap); white-space: nowrap; line-height: 1.1; }
 .ad-panel .def-frame > .rob-legend > .area-legend { order: 2; }
 .ad-panel .def-frame > .rob-legend .cm-summary { margin: 0; }
-.ad-panel .ht-notes { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; font-size: 12px; cursor: help; }
-.ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; font-size: 13px; color: var(--muted); }
+.ad-panel .ht-notes { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; cursor: help; }
+.ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; }
 .cm-summary .ct-pill { font-size: 12px; }
 .ct-pill.zero { background: var(--raised); color: var(--faint); }
 /* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */
@@ -252,7 +255,7 @@
    l esempio svolto in fila. I colori seguono il segno (verde aggiunge, rosso toglie) e la griglia (caselle ×½ ×2 ×4) */
 .guide-two { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; }
 .guide-two > div { padding: 8px 10px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
-.guide-two h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-two :is(h5, h6), .area-guide .guide-two h5 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }
 .guide-keys { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .guide-keys li { display: grid; justify-items: center; gap: 2px; padding: 5px 4px 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
 .guide-keys span { font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--muted); }
@@ -270,22 +273,21 @@
 .guide-mults .x4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
 .guide-arrow { color: var(--faint); }
 .guide-res { display: grid; gap: 1px; padding: 0 12px 0 0; margin-right: 4px; border-right: 1px solid var(--line-soft); }
-.guide-res small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); }
+.guide-res small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--faint); }
 .guide-res b { color: var(--text); font-variant-numeric: tabular-nums; }
 .guide-verdict { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bad); }
 .guide-verdict b.ct-pill { font-size: 13px; text-transform: none; letter-spacing: 0; }
 .guide-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+.guide-lines li { max-width: 32em; }
 .guide-lines b { color: var(--text); }
 @media (max-width: 560px) {
   .guide-two { grid-template-columns: 1fr; }
 }
 
-/* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
-.help-dialog.area-guide { width: min(980px, 100%); }
-/* Guida dell'Offesa: sempre alta come con le statistiche medie aperte, così aprirle non la ridimensiona */
-.help-dialog.area-guide-strength { height: min(560px, calc(100vh - 48px)); }
-/* Guida della Difesa: sempre alta come con l'attaccante di ogni tipo aperto, così aprirlo non la ridimensiona */
-.help-dialog.area-guide-defense { height: min(672px, calc(100vh - 48px)); max-height: min(672px, calc(100vh - 48px)); }
+/* Le guide "Come funziona" delle aree: più larghe dei modali d aiuto (i due conti e la scala stanno su una riga) e tutte
+   della stessa altezza fissa, in ogni area e su ogni pagina della guida (il contenuto più lungo scorre dentro), così
+   passando da un'area all'altra o aprendo un dettaglio la finestra non cambia misura */
+.help-dialog.area-guide { width: min(980px, 100%); height: min(620px, calc(100vh - 48px)); max-height: min(620px, calc(100vh - 48px)); }
 
 /* Guida, Robustezza: le quattro soglie come tasti, i pesi dei membri come barra a segmenti, la somma dei lati */
 .guide-holds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
@@ -293,7 +295,7 @@
 .guide-holds b { font: italic 700 18px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .guide-holds small { font-size: 12px; color: var(--muted); }
 .guide-weights { padding: 8px 10px 6px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
-.guide-weights h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-weights h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }
 .guide-weights ol { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
 .guide-weights li { flex-basis: 0; display: grid; justify-items: center; gap: 2px; min-width: 0; padding: 6px 2px; background: color-mix(in srgb, var(--accent-2) 30%, var(--panel)); }
 .guide-weights li:nth-child(2) { background: color-mix(in srgb, var(--accent-2) 24%, var(--panel)); }
@@ -321,7 +323,7 @@
   .sus-table thead .sus-r { font-size: 11px; letter-spacing: 0; }
   /* Le testate delle perdite restano su una riga ("Strumenti e mosse" un filo più piccola): l'intestazione alta come nelle
      altre schede, così i membri partono alla stessa altezza */
-  .sus-table thead .sus-sub th { font-size: 10px; letter-spacing: 0; }
+  .sus-table thead .sus-sub th { font-size: 11px; letter-spacing: 0; }
   .sus-net-wrap { gap: 8px; }
   .sus-net-num { min-width: 40px; font-size: 13px; }
 }
@@ -338,7 +340,7 @@
 .def-mon-text { display: grid; gap: 1px; min-width: 0; }
 .def-mon-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .def-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.def-mon-types img { display: block; width: 15px; height: 15px; }
+.def-mon-types img { display: block; width: var(--ti-inline); height: var(--ti-inline); }
 .def-mon-types { display: inline-flex; gap: 2px; flex: none; }
 .def-mon-stats { display: flex; gap: 10px; font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; }
 .def-mon-stats > span { display: inline-flex; align-items: center; gap: 3px; cursor: help; }
@@ -373,7 +375,9 @@
 /* Etichetta di efficacia in basso a sinistra della casella (×2 ×4 nell'Offesa; ×4 ×2 ×½ ×¼ 0 nella Difesa): testo piccolo e
    quieto, diverso dal triangolino del setup in alto a destra */
 .def-frame .ct-table td.has-eff { position: relative; }
-.def-frame .ct-table .eff-tag { position: absolute; left: 3px; bottom: 2px; font: 600 11px/1 var(--ui); letter-spacing: 0; color: color-mix(in srgb, var(--text) 70%, transparent); pointer-events: none; }
+.def-frame .ct-table .eff-tag { position: absolute; left: 3px; bottom: 2px; font: 600 11px/1 var(--ui); letter-spacing: 0; color: var(--text); pointer-events: none; }
+/* Sulla casella OHKO (verde acceso) bianco pieno */
+.def-frame .ct-table .ct-cell.ok-ohko .eff-tag, .def-frame .ct-table .rob-cell.ko-ohko .eff-tag { color: #fff; }
 /* "Solo superefficaci" / "Solo efficacia": le altre caselle restano al loro posto ma quasi spente */
 .def-frame .ct-table td { transition: opacity 0.16s ease-out, filter 0.16s ease-out; }
 .def-frame .ct-table td.eff-dim { opacity: 0.2; filter: saturate(0.1); }
@@ -387,7 +391,6 @@
    riga in fondo più bassa */
 @media (min-width: 1100px) and (max-height: 640px) {
   .area-view .def-frame { --def-row-min: 24px; --def-sp: 2px; --def-legend: 16px; }
-  .ad-panel .def-frame > .rob-legend { font-size: 11px; }
   .area-panel:has(> .def-frame) { padding-top: 3px; }
 }
 
@@ -402,8 +405,7 @@
 .area-legend-swatch i.hold-2 { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
 .area-legend-swatch i.hold-3 { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
 .area-legend-swatch i.hold-4 { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
-.ftip.dht { width: 300px; }
-.dht-side { min-width: 64px; font: 600 12px/1 var(--ui); color: var(--muted); }
+.dht-side { min-width: 64px; font: 600 var(--tip-body)/1 var(--ui); color: var(--muted); }
 
 /* Coverage meta della Difesa con la grafica dell'Offesa: numeri grandi in corsivo, barra dei PS che restano, timbro KO su
    fondo chiaro (come le caselle KO dell'Offesa), efficacia in alto a sinistra per non coprire la barra */
@@ -421,23 +423,23 @@
 /* Un pezzo non è mai più stretto di etichetta e numero */
 .kob.hb > em { text-transform: uppercase; }
 /* Nelle righe etichetta (3HKO+, 2HKO, OHKO) e numero come nei pezzi dell'Offesa, un filo più compatti: tre pezzi con
-   l'etichetta e il conto stanno nella colonna anche a 1280px */
-.kob-row > .kob.hb { min-width: 53px; padding: 0 7px 0 6px; gap: 3px; }
-.kob-row > .kob.hb > em { font-size: 8.5px; letter-spacing: 0.02em; white-space: nowrap; }
+   l'etichetta (11px, come nell'Offesa) e il conto stanno nella colonna anche a 1280px; se la riga è più stretta le
+   etichette spariscono tutte insieme */
+.kob-row > .kob.hb { min-width: 62px; padding: 0 7px 0 6px; gap: 4px; }
+.kob-row > .kob.hb.hb-held { min-width: 68px; }
+.kob-row > .kob.hb > em { letter-spacing: 0.02em; }
 .kob-row > .kob.hb .kob-num > b { font-size: 15px; }
+@container kobrow (max-width: 198px) { .kob-row > .kob.hb, .kob-row > .kob.hb.hb-held { min-width: 36px; } .kob-row > .kob.hb > em { display: none; } }
 .kob-line.hb-line .kob-count { min-width: 42px; }
-.area-legend-swatch i.hb-sw.hb-held { background: color-mix(in srgb, var(--good) 34%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
-.area-legend-swatch i.hb-sw.hb-2 { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
-.area-legend-swatch i.hb-sw.hb-ohko { background: color-mix(in srgb, var(--bad) 36%, var(--panel)); border-color: var(--bad); }
 .kob.hb-held { color: var(--good); background: color-mix(in srgb, var(--good) 34%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob.hb-held .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
-.kob.hb-2 { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+.kob.hb-2 { --kob-ink: color-mix(in srgb, var(--bad) 35%, var(--text)); color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
 .kob.hb-ohko { color: var(--bad); background: color-mix(in srgb, var(--bad) 36%, transparent); }
 .kob.hb-ohko .kob-num > b { color: color-mix(in srgb, var(--bad) 55%, white); }
-.kob.hb-held:hover { background: color-mix(in srgb, var(--good) 48%, transparent); }
+.kob.hb-held:hover { background: color-mix(in srgb, var(--good) 42%, transparent); }
 .kob.hb-2:hover { background: color-mix(in srgb, var(--bad) 22%, transparent); }
 .kob.hb-ohko:hover { background: color-mix(in srgb, var(--bad) 50%, transparent); }
-.hb-say { display: flex; align-items: center; gap: 7px; margin: 0 0 6px; font-size: 12px; color: var(--muted); }
+.hb-say { display: flex; align-items: center; gap: 7px; margin: 0 0 6px; font-size: var(--tip-body); color: var(--muted); }
 .hb-group + .hb-group { margin-top: 10px; }
 .hb-dot { flex: none; width: 9px; height: 9px; border-radius: 2px; }
 
@@ -449,7 +451,7 @@
 .mc.wh-ohko b, .mc.wh-two b { color: color-mix(in srgb, var(--bad) 75%, white); }
 .mc.wh-three b { color: var(--warn); }
 .mc.wh-four b { color: var(--good); }
-.mc b small { font-size: 9.5px; font-style: normal; opacity: 0.75; margin-left: 1px; }
+.mc b small { font-size: 11px; font-style: normal; margin-left: 1px; }
 .wh-mon { display: inline-flex; width: 18px; height: 16px; align-items: center; justify-content: center; overflow: visible; }
 .wh-mon > * { width: 26px !important; height: 26px !important; flex: none; }
 .mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }
@@ -470,20 +472,20 @@
 .dsh-sus.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 3px, color-mix(in srgb, var(--bad) 45%, transparent) 3px 6px); }
 .def-cell.dsh { cursor: help; }
 .dsh-tip .ftip-head { display: flex; align-items: baseline; gap: 10px; }
-.dsh-total { margin-left: auto; font: 800 italic 18px/1 var(--display); color: var(--accent); }
+.dsh-total { margin-left: auto; font: 800 italic var(--tip-num)/1 var(--display); color: var(--accent); }
 .dsh-total.neg { color: var(--bad); }
 .dsh-rows { display: grid; gap: 7px; padding: 9px 12px 11px; }
-.dsh-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
-.dsh-row small { color: var(--faint); font-size: 11px; }
-.dsh-row b { margin-left: auto; font: 700 italic 14px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.dsh-row { display: flex; align-items: center; gap: 8px; font-size: var(--tip-body); color: var(--muted); }
+.dsh-row small { color: var(--faint); font-size: var(--tip-small); }
+.dsh-row b { margin-left: auto; font: 700 italic var(--tip-title)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .dsh-sw { flex: none; width: 10px; height: 10px; }
 .dsh-sw.cover { background: var(--accent); }
 .dsh-sw.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); }
 .dsh-sw.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); }
-.dsh-line { padding-left: 18px; font-size: 11.5px; color: var(--faint); }
+.dsh-line { padding-left: 18px; font-size: var(--tip-small); color: var(--faint); }
 .area-legend-swatch i.dsh-leg.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); border-color: transparent; }
 .area-legend-swatch i.dsh-leg.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); border-color: transparent; }
-.ftip.dsh-tip { width: 320px; }
+.ftip.dsh-tip { width: var(--tip-s); }
 
 /* Squadra chiusa, sotto la barra Difesa: le pastiglie della Sostenibilità (come le mosse dell'Offesa), recupero nel colore
    della mossa o in verde, perdite in rosso col loro % */

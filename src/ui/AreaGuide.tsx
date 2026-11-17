@@ -52,7 +52,7 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose, classN
           <EeveePeek />
       <div className={`help-dialog area-guide${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
         <header className="help-head">
-          <h3 id={`${id}-title`}>{title}</h3>
+          <h2 id={`${id}-title`}>{title}</h2>
           <button type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
         </header>
         <div className="help-body">
@@ -71,13 +71,13 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose, classN
             {sections.map(item => (item === section
               ? (
                 <section key={item.key} className="help-panel" id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-${item.key}`}>
-                  <h4>{item.label}</h4>
+                  <h3>{item.label}</h3>
                   {item.content}
                 </section>
               )
               : (
                 <div key={item.key} className="help-panel guide-ghost" aria-hidden="true" inert>
-                  <h4>{item.label}</h4>
+                  <h3>{item.label}</h3>
                   {item.content}
                 </div>
               )))}

@@ -1289,6 +1289,7 @@ export const en = {
   'catalogue.cores.none': "No three-member core",
   'catalogue.cores.how': "You get one when three members cover each other's weaknesses in a ring: the first takes a type that hurts the second, the second one that hurts the third, the third one that hurts the first. Together they must take at least 6 attacking types.",
   'catalogue.cores.held': "Take {n} of {total} types well",
+  'catalogue.cores.heldShort': "Take {n}/{total} well",
   'catalogue.cores.heldTip': "Attacking types that at least one of the three takes well",
   'catalogue.cores.through': "Get through: {types}",
   'catalogue.cores.name': "Core {title}",

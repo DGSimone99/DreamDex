@@ -25,9 +25,9 @@
 .rating .grade-side { position: relative; }
 /* "?" accanto al titolo: apre come funziona il voto */
 .rating-title { display: inline-flex; align-items: center; gap: 8px; }
-.help-button { display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--faint); }
+.help-button { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); }
 .help-button .icon { width: 20px; height: 20px; }
-.help-button:hover { color: var(--accent); }
+.help-button:hover, .help-button:focus-visible { color: var(--accent); }
 .help-backdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px; background: rgba(6, 7, 12, 0.7); }
 .help-dialog {
   display: flex;
@@ -42,6 +42,8 @@
 }
 .help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--accent-2); background: var(--stripes), var(--band); }
 .help-head h3 { font-size: 20px; }
+/* Le guide delle aree partono da h2 (finestra a sé): lo stesso aspetto del titolo h3 delle altre finestre */
+.help-head h2 { margin: 0; font-size: 20px; line-height: inherit; }
 .help-close { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--faint); }
 .help-close:hover { color: var(--text); }
 .help-body { display: grid; grid-template-columns: 190px minmax(0, 1fr); min-height: 0; flex: 1; }
@@ -101,9 +103,7 @@
 .help-frame.with-peek:has(> .area-guide) { --frame-w: 980px; }
 .help-frame.with-peek:has(> .tt-dialog) { --frame-w: 600px; }
 .help-frame.with-peek > .help-dialog { max-height: min(620px, calc(100vh - 48px - var(--peek-room))); }
-.help-frame.with-peek > .help-dialog.area-guide-strength,
-.help-frame.with-peek > .help-dialog.area-guide-speed { height: min(560px, calc(100vh - 48px - var(--peek-room))); }
-.help-frame.with-peek > .help-dialog.area-guide-defense { height: min(672px, calc(100vh - 48px - var(--peek-room))); max-height: min(672px, calc(100vh - 48px - var(--peek-room))); }
+.help-frame.with-peek > .help-dialog.area-guide { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
 /*
  * La finestra al centro dello schermo, Eevee in più: sotto la cornice lo stesso spazio che c'è sopra per Eevee, finché lo
  * schermo ha posto (altrimenti meno, fino a niente: la finestra non si accorcia per questo). --dlg-h è l'altezza piena
@@ -115,8 +115,6 @@
   .help-backdrop:has(> .help-frame.with-peek) { padding-top: 6px; }
   .help-frame.with-peek { margin-bottom: clamp(0px, calc(100vh - 30px - var(--peek-room) - var(--dlg-h)), var(--peek-room)); }
 }
-.help-frame.with-peek:has(> .area-guide-strength, > .area-guide-speed) { --dlg-h: 560px; }
-.help-frame.with-peek:has(> .area-guide-defense) { --dlg-h: 672px; }
 .help-frame.with-peek:has(> .rating-help) { --dlg-h: 690px; }
 /* Schermi piccoli: Eevee più piccolo, la finestra resta grande */
 @media (max-width: 599px), (max-height: 700px) { .help-frame.with-peek { --peek: 110px; } }
@@ -347,7 +345,7 @@
 .tt-formula span { padding: 2px 9px; font-size: 12px; font-weight: 500; color: var(--text); background: var(--raised); border: 1px solid var(--line-soft); border-radius: 4px; }
 .help-panel .tt-note { margin: 18px 0 0; font-size: 12px; color: var(--faint); }
 /* Come si riconosce il tipo (National Dex OU): le righe come gli stili, la nota subito sotto */
-.help-panel h4 { margin: 0 0 10px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
+.help-panel h4, .area-guide .help-panel > h3 { margin: 0 0 10px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .help-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
 .help-table-wrap { overflow-x: auto; }
 /* Impostazioni: un modale piccolo con la palette e la lista candidati (i campioni mostrano i due colori di versione) */

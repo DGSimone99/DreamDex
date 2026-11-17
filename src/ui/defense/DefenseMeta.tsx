@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react';
+import type { FocusEvent, MouseEvent, ReactNode } from 'react';
 import { battleName, battleSpecies } from '../../engine/dex';
 import { holdBand, type HoldBand, type TeamDefense } from '../../engine/defense';
 import { pieceOf, type HoldPiece } from './HoldBars';
@@ -8,12 +8,14 @@ import { battleMoveType } from '../../engine/types';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { MoveLine } from '../dashboard/CoverageTip';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
+import { GRID_CELLS, useRoving } from '../useRoving';
 import { useMemberTip } from '../MemberCard';
 import { MetaFrame } from '../MetaFrame';
 import { HpLeft } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
 import { MemberMon } from './MemberMon';
 import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 
@@ -57,6 +59,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const hover = useColumnHover();
   const tip = useFloatAnchor<{ species: string; m: number }>();
   const card = useMemberTip(400, undefined, true);
+  // Tastiera: la griglia è un posto solo nel giro del Tab, le frecce vanno di casella in casella (col fuoco la colonna e il tooltip)
+  const nav = useRoving<HTMLTableElement>(GRID_CELLS);
   const names = ctx.team.map(set => battleSpecies(set)?.name ?? null);
   // Aperta da un pezzo della barra in Generale: la riga del membro e le minacce di quel pezzo accese, e prima nell'ordine
   // (così stanno nella prima pagina); il resto spento
@@ -81,9 +85,10 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     const tag = effLabel(row.mults?.[knownIndex[m]], 'defense');
     const eff = effClass(tag, 'defense', ctx.effOnly) + kf;
     const enter = (e: MouseEvent<HTMLElement>) => { hover.enter(k).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); };
+    const focusIn = (e: FocusEvent<HTMLElement>) => { hover.enter(k).onFocus(); tip.focus({ species: row.species, m }).onFocus(e); };
     if (c === 'ko') {
       return (
-        <td key={key} className={hover.cls(k, `rob-cell hold-ohko dm-cell${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close}>
+        <td key={key} className={hover.cls(k, `rob-cell hold-ohko dm-cell${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close} onFocus={focusIn} onBlur={tip.close}>
           <span className="cm-ko" aria-hidden="true">KO</span>
           <span className="visually-hidden">{row.species}: KO</span>
           <EffTag label={tag} side="defense" />
@@ -91,7 +96,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
       );
     }
     return (
-      <td key={key} className={hover.cls(k, `rob-cell dm-cell ${HOLD_BANDS[c.band].cls}${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close}>
+      <td key={key} className={hover.cls(k, `rob-cell dm-cell ${HOLD_BANDS[c.band].cls}${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close} onFocus={focusIn} onBlur={tip.close}>
         <span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} />
         <span className="visually-hidden"> {row.species}: {c.move ? `${c.move} ` : ''}{c.pct}%</span>
         <EffTag label={tag} side="defense" />
@@ -121,7 +126,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     return (
       <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">
-          <table className="def-grid spaced ct-table" onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }}>
+          <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageMeta')}`} className="def-grid spaced ct-table"
+            onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
             <colgroup>
               <col className="def-col-mon" />
               {shown.map(r => <col key={r.species} />)}
@@ -130,7 +136,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
               <tr>
                 <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
                 {shown.map((r, k) => (
-                  <th key={r.species} scope="col" aria-label={r.species} className={hover.cls(k, 'dm-h')} {...hover.enter(k)}>
+                  <th key={r.species} scope="col" aria-label={r.species} className={hover.cls(k, 'dm-h')} {...hover.enter(k)}
+                    onFocus={e => { hover.enter(k).onFocus(); if (keyboardFocus(e.currentTarget)) card.bind(r.set).onFocus(e); }} onBlur={card.bind(r.set).onBlur}>
                     {/* Sulla sprite la carta del Pokémon col suo set più usato; sotto un filo col colore di quanti la reggono */}
                     <span className="def-box cm-head-mon" {...card.bind(r.set)}><PokemonIcon name={r.species} /></span>
                     <span className={`cm-flag ${countTone(held(r))}`} aria-hidden="true" />
@@ -141,7 +148,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             <tbody>
               {ctx.team.map((set, m) => (
                 <tr key={`${names[m] ?? set.species}-${m}`} className={focus ? (m === focus.slot ? 'kf-row' : 'kf-off') : undefined}>
-                  <th scope="row" onMouseEnter={() => { hover.table.onMouseLeave(); tip.close(); }}><MemberMon name={battleName(set)} set={set} stats /></th>
+                  <th scope="row" onMouseEnter={() => { hover.table.onMouseLeave(); tip.close(); }} onFocus={hover.clear}><MemberMon name={battleName(set)} set={set} stats /></th>
                   {shown.map((r, k) => cell(r, cells[k][m], m, k))}
                 </tr>
               ))}
@@ -151,7 +158,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             {/* In fondo la riga Team Coverage, come nell'Offesa e allo stesso posto: nelle colonne quanti membri la reggono */}
             <tfoot>
               <tr className="og-total cm-total">
-                <th scope="row" onMouseEnter={hover.table.onMouseLeave}>
+                <th scope="row" onMouseEnter={hover.table.onMouseLeave} onFocus={hover.clear}>
                   <span className="og-plate">{t('odetail.gen.total')}</span>
                   <span className="visually-hidden">{t('ddetail.heldBy')}</span>
                 </th>
@@ -192,12 +199,12 @@ export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name:
   return (
     <>
       <div className="ftip-head tht-target">
-        <Sprite species={row.species} size={40} />
+        <Sprite species={row.species} size={SPRITE_TIP_ROW} />
         <b>{row.species}</b>
         <span className={`ftip-ko def ${band} tht-band`}>{tag}</span>
       </div>
       <div className="tht-body">
-        <Sprite species={name} size={48} />
+        <Sprite species={name} size={SPRITE_TIP} />
         <span className="tht-text">
           <span className="tht-name">{name}</span>
           <span className="tht-move">

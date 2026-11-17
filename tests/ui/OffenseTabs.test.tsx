@@ -234,9 +234,10 @@ describe('Offesa: Generale', () => {
         expect(c.querySelector('.def-bar')).toBeNull();
         expect(c.querySelector('[title]')).toBeNull();
       }
-      // Quanto porta al team, col title del browser
+      // Quanto porta al team: il testo come nome (e nel tooltip DreamDex, col mouse e col fuoco), niente title del browser
       expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
-      expect(cells[2].querySelector('.og-share')!.getAttribute('title')).toBe(`Porta +${rating.offense.shares[i].points} all'Offesa del team`);
+      expect(cells[2].querySelector('.og-share')!.getAttribute('aria-label')).toBe(`Porta +${rating.offense.shares[i].points} all'Offesa del team`);
+      expect(cells[2].querySelector('[title]')).toBeNull();
     });
     // A squadra aperta niente dettagli sotto la barra
     expect(document.querySelector('.og-detail')).toBeNull();

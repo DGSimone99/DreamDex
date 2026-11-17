@@ -1,10 +1,10 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
+import { useId, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { dummyStats, holdBand, type HoldBand } from '../../engine/defense';
 import type { FormatId } from '../../engine/format';
-import { TYPES } from '../../engine/types';
+import { TYPES, type TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { TypeIcons, typeIconUrl } from '../typeIcons';
 import { Sprite } from '../Sprite';
 import { Target } from '../offense/KoBadges';
@@ -60,8 +60,14 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
   onPick?: (piece: Piece) => void;
 }) {
   const t = useT();
+  const lang = useLang();
   const tip = useFloatAnchor<Piece>();
   const key = tip.anchor?.key;
+  const id = useId();
+  // Sul conto "12/18" che cosa conta (prima era solo il title del browser): tooltip col mouse e col fuoco
+  const countTip = useFloatAnchor<true>();
+  // Per lo screen reader i bersagli del pezzo (quelli del tooltip), nella descrizione
+  const names = (items: HoldTarget[]) => items.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ');
   const total = targets.length;
   const by = (p: Piece) => targets.filter(x => pieceOf(x.band) === p);
   const tag = (p: Piece) => PIECE_TAG[p];
@@ -77,11 +83,12 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
           if (!items.length) return null;
           return (
             <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={{ flexGrow: items.length }}
-              onMouseEnter={e => tip.open(p, e.currentTarget)} onMouseLeave={tip.close}
-              {...(onPick ? { role: 'button', tabIndex: 0, onClick: () => { tip.close(); onPick(p); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(p); } } } : {})}
+              data-nav="" {...tip.bind(p)} aria-describedby={`${id}-${p}`}
+              {...(onPick ? { role: 'button', onClick: () => { tip.close(); onPick(p); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tip.close(); onPick(p); } } } : { role: 'img' })}
               aria-label={`${tag(p)} ${items.length}`}>
               <em aria-hidden="true">{tag(p)}</em>
               <span className="kob-num"><b>{items.length}</b></span>
+              <HiddenText id={`${id}-${p}`}>{names(items)}</HiddenText>
             </span>
           );
         })}
@@ -96,10 +103,13 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
           </FloatTip>
         )}
       </span>
-      <span className={`kob-count${countTone}`} style={{ '--r': ratio } as CSSProperties} aria-label={t('hold.countAria', { n, total })} title={t('hold.countTitle')}>
+      <span className={`kob-count${countTone}`} style={{ '--r': ratio } as CSSProperties} data-nav="" role="img" {...countTip.bind(true)}
+        aria-label={t('hold.countAria', { n, total })} aria-describedby={`${id}-count`}>
         <span className="kob-count-num" aria-hidden="true"><b>{n}</b><small>/{total}</small></span>
         <span className="kob-count-line" aria-hidden="true" />
+        <HiddenText id={`${id}-count`}>{t('hold.countTitle')}</HiddenText>
       </span>
+      {countTip.anchor && <FloatTip rect={countTip.anchor.rect} tone="var(--accent)" className="kot"><p className="kot-none">{t('hold.countTitle')}</p></FloatTip>}
     </span>
   );
 }
@@ -150,6 +160,7 @@ export function WorstHits({ hits }: { hits: WorstHit[] }) {
   const lang = useLang();
   const tip = useFloatAnchor<string>();
   if (!hits.length) return null;
+  // Raggiungibili con le frecce (data-nav, nel gruppo della tabella della Generale): col fuoco il tooltip
   const open = hits.find(h => h.label === tip.anchor?.key);
   return (
     <span className="mcs wh">
@@ -157,7 +168,7 @@ export function WorstHits({ hits }: { hits: WorstHit[] }) {
         const name = h.kind === 'type' ? typeName(h.label, lang) : h.label;
         return (
           <span key={h.label} className={`mc wh-${h.band}`} style={{ '--c': h.color ?? 'var(--faint)' } as CSSProperties}
-            onMouseEnter={e => tip.open(h.label, e.currentTarget)} onMouseLeave={tip.close} aria-label={`${name} ${h.pct === null || h.pct >= 100 ? 'KO' : `${h.pct}%`}`}>
+            data-nav="" role="img" {...tip.bind(h.label)} aria-label={`${name} ${h.pct === null || h.pct >= 100 ? 'KO' : `${h.pct}%`}`}>
             {h.kind === 'type' ? <img src={typeIconUrl(h.label)} alt="" draggable={false} /> : <span className="wh-mon"><Sprite species={h.label} size={22} /></span>}
             <span className="mc-name">{name}</span>
             <b>{h.pct === null || h.pct >= 100 ? 'KO' : <>{h.pct}<small>%</small></>}</b>

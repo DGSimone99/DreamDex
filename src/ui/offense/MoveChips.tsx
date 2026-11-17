@@ -1,8 +1,9 @@
-import type { CSSProperties } from 'react';
+import { useId, type CSSProperties } from 'react';
 import { getMove, toID } from '../../engine/dex';
-import { gameName } from '../../i18n/game';
+import type { TypeName } from '../../engine/types';
+import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { typeColor } from '../Sprite';
 import { typeIconUrl } from '../typeIcons';
 import { Target, type KoTarget } from './KoBadges';
@@ -41,6 +42,7 @@ export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
   const t = useT();
   const lang = useLang();
   const tip = useFloatAnchor<string>();
+  const id = useId();
   if (!shares.length) return <span className="mc-none">{t('kob.noAttacks')}</span>;
   const open = shares.find(s => s.move === tip.anchor?.key);
   const why = (name: string) => {
@@ -55,10 +57,13 @@ export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
         const n = targets.length;
         const reason = n === 0 ? why(move) : null;
         const name = gameName('move', move, lang);
+        // Raggiungibile con le frecce (data-nav, nel gruppo della tabella): col fuoco si apre il tooltip, i bersagli nella descrizione
+        const desc = `${id}-${toID(move)}`;
         return (
           <span key={move} className={`mc${n === 0 ? ' z' : ''}`} style={{ '--c': typeColor(type) } as CSSProperties}
-            onMouseEnter={e => tip.open(move, e.currentTarget)} onMouseLeave={tip.close}
+            data-nav="" role="img" {...tip.bind(move)} aria-describedby={n ? desc : undefined}
             aria-label={`${name} ${n}${reason ? `, ${reason}` : ''}`}>
+            {n > 0 && <HiddenText id={desc}>{targets.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ')}</HiddenText>}
             {type && <img src={typeIconUrl(type)} alt="" draggable={false} />}
             {/* Il nome si apre passando sopra; il motivo di una mossa a 0 è nel tooltip */}
             <span className="mc-name">{name}</span>

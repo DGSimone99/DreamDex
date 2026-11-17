@@ -8,7 +8,7 @@
 .def-frame .ct-cell.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .def-frame .ct-cell.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
 .def-frame .ct-table td.ct-cell.ok-full, .def-frame .ct-table td.ct-cell.ok-half { font-size: clamp(11px, calc(var(--def-row) * 0.2), 16px); }
-.area-legend-swatch { display: inline-flex; align-items: center; gap: 5px; }
+.area-legend-swatch { display: inline-flex; align-items: center; gap: var(--legend-pair); }
 /* Le stesse caselle in piccolo: legenda in fondo alla tabella e termini della guida (Copre, A metà, Buco = casella vuota) */
 .area-legend-swatch i, .guide-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--raised); }
 .area-legend-swatch i.ok-full, .guide-swatch.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
@@ -57,19 +57,22 @@
 .guide-targets-cols { display: flex; flex-wrap: wrap; gap: 0 32px; align-items: flex-start; }
 .guide-targets { margin: 6px 0 2px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 .guide-targets th, .guide-targets td { padding: 2px 10px 2px 0; border-bottom: 1px solid var(--line-soft); text-align: right; }
-.guide-targets thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-targets thead th { font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .guide-targets th:first-child { padding-right: 18px; text-align: left; }
-/* Il "?" accanto ai bersagli della guida: un tondino che apre il tooltip col dettaglio (medie dei 18 tipi, minacce del meta) */
-.guide-ask { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 4px; padding: 0; vertical-align: 1px; border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font: 700 11px/1 var(--display); cursor: help; }
-.guide-ask:hover, .guide-ask:focus-visible { background: color-mix(in srgb, var(--accent) 28%, transparent); outline: none; }
-.ftip.gat { width: auto; max-width: min(560px, calc(100vw - 16px)); }
+/* Il "?" accanto ai bersagli (guida e testate della Generale): la variante in riga del pulsante d'aiuto, stessa icona e stessi
+   colori in piccolo (16px), con un alone ciano al passaggio; il fuoco col solito anello */
+.guide-ask { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 4px; padding: 0; vertical-align: -3px; border: 0; border-radius: 50%;
+  background: none; color: var(--muted); cursor: help; }
+.guide-ask .icon { width: 16px; height: 16px; vertical-align: 0; }
+.guide-ask:hover, .guide-ask:focus-visible { color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.guide-ask:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ftip.gat { width: var(--tip-l); }
 .gat-cols { display: flex; gap: 18px; padding: 8px 12px 10px; }
-.gat-table { border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.gat-table { border-collapse: collapse; font-size: var(--tip-body); font-variant-numeric: tabular-nums; }
 .gat-table th, .gat-table td { padding: 2px 0 2px 12px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
-.gat-table thead th { font: 700 10.5px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding-bottom: 5px; }
+.gat-table thead th { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding-bottom: 5px; }
 .gat-table tbody th { padding-left: 0; text-align: left; font-weight: 600; }
-.gat-table tbody th img { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+.gat-table tbody th img { width: var(--ti-inline); height: var(--ti-inline); margin-right: 6px; vertical-align: -3px; }
 .gat-table tbody tr:last-child > * { border-bottom: 0; }
 .gat-mons { display: grid; grid-template-columns: repeat(8, 40px); gap: 2px 4px; padding: 8px 12px 10px; }
 .guide-targets tbody th { font-weight: 600; color: var(--text); white-space: nowrap; }
@@ -89,6 +92,9 @@
 .off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); border-color: var(--warn); }
 /* Quanto porta al team: barra e "+N" in azzurro (non è un voto, non ha soglie). La barra della colonna Offesa arriva
    fino al bordo, col numero contro il bordo destro (anche nella riga del team) */
+/* La colonna di quanto porta (Offesa / Difesa) più stretta delle barre a pezzi: Tipi e Meta hanno il posto per le etichette */
+:is(.off-general, .def-general) .def-members col:last-child { width: 176px; }
+@media (min-width: 1500px) { :is(.off-general, .def-general) .def-members col:last-child { width: 210px; } }
 :is(.off-general, .def-general) .def-members td:last-child .def-cell { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 4.5ch; }
 .def-general .og-share { display: block; }
 :is(.off-general, .def-general) .og-share-num { color: var(--accent); }
@@ -105,17 +111,20 @@
 .off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before,
 .off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { content: ""; position: absolute; left: 0; width: 100cqw; pointer-events: none; z-index: 0;
   -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
-.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 9%, transparent), transparent); }
-.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { top: 0; height: 1px; background: color-mix(in srgb, var(--accent-2) 80%, transparent); }
+.off-general tfoot .og-total th::before, .def-general tfoot .og-total th::before, .cm-matrix tfoot .og-total th::before, .def-sus tfoot .og-total th::before { top: 0; bottom: -6px; background: linear-gradient(180deg, color-mix(in srgb, var(--text) 5%, transparent), transparent); }
+.off-general tfoot .og-total th::after, .def-general tfoot .og-total th::after, .cm-matrix tfoot .og-total th::after, .def-sus tfoot .og-total th::after { top: 0; height: 1px; background: var(--plate); }
 .off-general tfoot .og-total th, .def-general tfoot .og-total th, .cm-matrix tfoot .og-total th, .def-sus tfoot .og-total th { padding-left: 0; text-align: left; white-space: nowrap; }
-.og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 11.5px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-accent-2, #22000f);
-  background: var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-.og-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.og-plate { position: absolute !important; z-index: 2 !important; left: 0; top: -10px; display: inline-block; padding: 4px 16px 4px 11px; font: italic 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-plate);
+  background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.og-legend span:where(:not(.area-legend)) { display: inline-flex; align-items: center; gap: var(--legend-pair); }
 /* Schermi bassi: le barre dei colpi più basse (22px), così sei membri e la riga del team stanno nella cornice */
 @media (min-width: 1100px) and (max-height: 640px) {
-  .kob-row > .kob { height: 22px; }
-  .kob-num > b { font-size: 15px; }
-  .kob-count-num > b { font-size: 16px; }
+  /* .def-frame davanti: queste regole vengono prima di quelle di base nel file e senza non valevano */
+  .def-frame .kob-row > .kob { height: 22px; }
+  .def-frame .kob-num > b { font-size: 15px; }
+  .def-frame .kob-count-num > b { font-size: 16px; }
+  /* Il conto e la sua lineetta stanno nei 22px della barra: la riga non si allunga e la tabella non scorre */
+  .def-frame .kob-count { gap: 2px; }
   .off-general tfoot .og-total > * { padding-top: 7px; padding-bottom: 3px; }
 }
 /* Le pastiglie delle mosse (squadra chiusa) solo se la cornice ha posto per sei righe con le pastiglie */
@@ -135,14 +144,15 @@
 /* La barra dei colpi (KoBadges): larga quanto la colonna meno un respiro (le due colonne non si toccano), a pezzi lunghi
    quanto il loro conto: OHKO verde pieno, 2HKO verde col bordo, in fondo grigio quelli non KO in due colpi (nella riga
    del team in rosso: gli scoperti). Ogni pezzo ha un minimo per etichetta e numero; il setup è il triangolo nell'angolo */
-.kob-line { display: flex; align-items: center; gap: 10px; width: calc(100% - 28px); min-width: 200px; }
-.kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 150px; }
+.kob-line { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-width: 0; }
+/* La riga dei pezzi è un contenitore: se non c'è posto per tutte le etichette, spariscono tutte insieme (restano numero,
+   colore, tooltip e nome per i lettori di schermo) */
+.kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 0; container: kobrow / inline-size; }
 /* Il conto a destra della barra, "11/18": staccato dai pezzi (niente fondo né inclinazione), il numero grande in corsivo
    col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); il colore dice quanto copre */
-.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 52px; color: var(--c); cursor: default; }
+.kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 46px; color: var(--c); cursor: default; }
 .kob-count-num { display: inline-flex; align-items: baseline; justify-content: flex-start; gap: 1px; font-variant-numeric: tabular-nums; }
 .kob-count-num > b { font: 800 italic 19px/1 var(--display); }
-.kob-count-num > small { font: 700 italic 11px/1 var(--display); color: var(--faint); }
 .kob-count-line { position: relative; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--c) 18%, transparent); overflow: hidden; }
 .kob-count-line::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--r, 0) * 100%); border-radius: 2px; background: var(--c); box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
 .kob-count.full, .kob-count.good { --c: var(--good); }
@@ -152,8 +162,10 @@
 .kob-count.zero { --c: var(--faint); }
 .kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 26px; padding: 0 12px 0 10px; border: 1px solid transparent; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
-.kob-row > .kob { flex: 1 0 0; min-width: 64px; }
-.kob > em { font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.04em; color: var(--muted); opacity: 0.8; }
+.kob-row > .kob { flex: 1 0 0; min-width: 74px; padding: 0 9px 0 8px; gap: 4px; }
+/* L'etichetta (OHKO, 2HKO) leggibile: 11px piena, chiara sul fondo del pezzo (almeno 4,5:1) */
+.kob > em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.02em; white-space: nowrap; color: var(--kob-ink, var(--text)); }
+@container kobrow (max-width: 187px) { .kob-row > .kob:not(.rest) { min-width: 40px; } .kob-row > .kob > em { display: none; } }
 /* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
 .kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
@@ -163,21 +175,23 @@
 .kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
 .kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
 .kob.two { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); background: color-mix(in srgb, var(--good) 12%, transparent); }
-.kob.ohko:hover { background: color-mix(in srgb, var(--good) 55%, transparent); }
+.kob.two { --kob-ink: color-mix(in srgb, var(--good) 35%, var(--text)); }
+.kob.ohko:hover { border-color: var(--good); box-shadow: inset 0 1px 0 color-mix(in srgb, white 22%, transparent), 0 0 8px color-mix(in srgb, var(--good) 35%, transparent); }
 .kob.two:hover { background: color-mix(in srgb, var(--good) 26%, transparent); }
 /* Un pezzo a zero c'è solo quando il setup ci porta qualcuno: spento, col triangolo */
-.kob.zero { color: var(--faint); border-color: color-mix(in srgb, var(--faint) 22%, transparent); background: none; box-shadow: none; opacity: 0.6; }
+.kob.zero { --kob-ink: var(--faint); color: var(--faint); border-color: color-mix(in srgb, var(--faint) 30%, transparent); border-style: dashed; background: none; box-shadow: none; }
+.kob.zero .kob-num > b { color: var(--faint); }
 /* Quelli che non manda KO in due colpi: grigio, solo il numero, più piccolo */
 .kob-row > .kob.rest { min-width: 34px; padding-left: 6px; color: var(--faint); background: var(--line-soft); }
-.kob.rest .kob-num > b { font-size: 13px; opacity: 0.85; }
+.kob.rest .kob-num > b { font-size: 13px; color: var(--muted); }
 .kob.rest:hover { background: color-mix(in srgb, var(--faint) 22%, transparent); }
 /* Nella riga del team: gli scoperti in rosso */
 .kob.rest.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
-.kob.rest.bad .kob-num > b { font-size: 15px; opacity: 1; }
+.kob.rest.bad .kob-num > b { font-size: 15px; color: var(--bad); }
 .kob.rest.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
 /* Con l'etichetta (nella testata del tooltip): larghezza libera */
 .kob.labeled { display: inline-flex; gap: 6px; width: auto; height: auto; padding: 3px 11px 3px 8px; }
-.kob.labeled em { font: 700 10px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
+.kob.labeled em { font: 700 11px/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
 .kob.labeled > b { min-width: 0; font: 700 italic 15px/1 var(--display); }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
 
@@ -186,18 +200,20 @@
    suo tipo (icona e numero dei bersagli); passandoci sopra si allarga col nome, e il tooltip elenca i bersagli.
    A 0 spenta. Sempre una riga: le pastiglie hanno tutte la stessa forma */
 .mcs { display: flex; gap: 6px; width: calc(100% - 36px); min-width: 150px; margin-top: 4px; overflow: hidden; }
-.mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 11.5px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
+.mc { display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 2px 8px 2px 4px; border-radius: 2px; font: 600 12px/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
   background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
-.mc:hover { background: color-mix(in srgb, var(--c) 32%, transparent); }
-.mc img { flex: none; width: 13px; height: 13px; border-radius: 50%; }
-.mc b { flex: none; font: 700 italic 12.5px/1 var(--display); font-variant-numeric: tabular-nums; }
+.mc:hover, .mc:focus-visible { background: color-mix(in srgb, var(--c) 32%, transparent); }
+/* La fila delle pastiglie taglia quello che sborda: l'anello del fuoco sta dentro */
+.mc:focus-visible { outline-offset: -2px; }
+.mc img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
+.mc b { flex: none; font: 700 italic 13px/1 var(--display); font-variant-numeric: tabular-nums; }
 /* Il nome nascosto, si apre passando sopra */
 .mc-name { max-width: 0; margin-right: -5px; overflow: hidden; opacity: 0; transition: max-width 0.2s var(--ease), opacity 0.15s var(--ease), margin 0.2s var(--ease); }
 .mc:hover .mc-name, .mc:focus-visible .mc-name { max-width: 160px; margin-right: 0; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .mc-name { transition: none; } }
 .mc.z { color: var(--faint); background: none; }
 .mc.z:hover { background: color-mix(in srgb, var(--faint) 12%, transparent); }
-.mc.z img { opacity: 0.5; }
+.mc.z img { filter: grayscale(1) brightness(0.85); }
 .mc-none { display: block; margin-top: 4px; font: 500 12px var(--display); color: var(--faint); }
 
 /* Le tabelle dei membri (Generale di tutte le aree): la riga sotto il mouse si accende appena, senza spostare niente */
@@ -210,12 +226,12 @@
 
 /* Tessere cliccabili: aprono il dettaglio */
 .kob.pick { cursor: pointer; }
-.kob.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Il pezzo è tagliato in obliquo (clip-path): l'anello del fuoco fuori non si vedrebbe, sta dentro (bordo e alone interno) */
+.kob:focus-visible { outline: none; border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 /* Coverage tipi / meta aperte da una tessera: accese la riga del membro e le caselle di quella fascia, il resto spento */
-.ct-table tr.kf-off > * { opacity: 0.45; }
-.ct-table td.kf-dim { opacity: 0.3; }
-.ct-table tr.kf-row td.kf-dim { opacity: 0.45; }
-.ct-table td.kf-hit { opacity: 1; box-shadow: inset 0 0 0 2px var(--accent), 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent); }
+/* Spenti senza opacità: grigi e un filo più scuri, i numeri restano leggibili (almeno 4,5:1 sul loro fondo) */
+.ct-table tr.kf-off > *, .ct-table td.kf-dim { filter: grayscale(1) brightness(0.8); }
+.ct-table td.kf-hit { filter: none; box-shadow: inset 0 0 0 2px var(--accent), 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent); }
 .kf-note { display: inline-flex; align-items: center; gap: 10px; color: var(--accent-ink); font-weight: 600; }
 .kf-clear { padding: 2px 10px; font: 600 12px/1.2 var(--ui); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 3px; cursor: pointer; }
 .kf-clear:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }
@@ -233,25 +249,24 @@
 
 /* Il tooltip di una casella di Coverage tipi: testata col tipo e il badge dei colpi; il membro con la mossa migliore;
    le righe in più col setup o Tera/Z solo se salgono di fascia */
-.ftip.tht { width: 380px; }
+.ftip.tht { width: var(--tip-m); }
 /* Il tooltip del tipo in testata a Coverage tipi: PS, Dif e DifSp del Pokémon medio, tre caselle affiancate */
-.ftip.tst { width: 250px; }
+.ftip.tst { width: var(--tip-s); }
 .tst-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .tst-stats span { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px 8px; border-right: 1px solid var(--line-soft); }
 .tst-stats span:last-child { border-right: 0; }
-.tst-stats small { font: 700 11px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
-.tst-stats b { font: 700 italic 22px/1 var(--display); font-variant-numeric: tabular-nums; }
+.tst-stats small { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.tst-stats b { font: 700 italic var(--tip-num)/1 var(--display); font-variant-numeric: tabular-nums; }
 .ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
 .tht-body { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
 .tht-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.tht-name { font: 600 13px/1.2 var(--display); }
+.tht-name { font: 600 var(--tip-body)/1.2 var(--display); }
 .tht-move { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.tht-mult { font: 700 italic 12px/1 var(--display); color: var(--faint); }
+.tht-mult { font: 700 italic var(--tip-small)/1 var(--display); color: var(--faint); }
 .tht-mult.se { color: var(--good); }
 .tht-mult.nve { color: var(--bad); }
-.tht-pct { margin-left: auto; font: 700 italic 15px/1 var(--display); font-variant-numeric: tabular-nums; }
-.tht-pct small { display: inline; font-size: 0.65em; }
+.tht-pct { margin-left: auto; font: 700 italic var(--tip-title)/1 var(--display); font-variant-numeric: tabular-nums; }
 .tht-none { color: var(--muted); }
 .tht-extra { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 6px 10px 7px; border-top: 1px solid var(--line-soft); }
 .tht-extra-h { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--muted); }
@@ -270,14 +285,15 @@
 .off-frame .ct-table td.has-setup::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-top-right-radius: 2px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
 /* Coverage tipi dell'Offesa: il numero in Kanit corsivo come gli altri numeri dell'app, il "%" piccolo */
 .off-frame .ct-table td.ct-cell.ok-full, .off-frame .ct-table td.ct-cell.ok-half { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; }
-.ct-num i { display: inline; margin-left: 1px; font-size: 0.6em; font-weight: 600; font-style: italic; opacity: 0.85; }
+.ct-num i { display: inline; margin-left: 1px; font-size: max(11px, 0.6em); font-weight: 600; font-style: italic; }
 /* Il 100% (OHKO): verde pieno e acceso col bordo pieno e il numero verso il bianco, come i pezzi OHKO della Generale */
-.def-frame .ct-cell.ok-ohko, .area-legend-swatch i.ok-ohko { background: color-mix(in srgb, var(--good) 55%, var(--panel)); border-color: var(--good); }
-.off-frame .ct-table td.ct-cell.ok-ohko { color: color-mix(in srgb, var(--good) 25%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
+/* (48% e il numero quasi bianco: almeno 4,5:1 anche a 13px) */
+.def-frame .ct-cell.ok-ohko, .area-legend-swatch i.ok-ohko { background: color-mix(in srgb, var(--good) 48%, var(--panel)); border-color: var(--good); }
+.off-frame .ct-table td.ct-cell.ok-ohko { color: color-mix(in srgb, var(--good) 8%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
 /* Coverage meta dell'Offesa, la stessa veste di Coverage tipi: numeri in Kanit corsivo col % piccolo, freccia col "?"
    sulle caselle (tooltip), più aria intorno a Lo coprono, l'OHKO col suo verde acceso */
 .off-frame.def-walls .rob-cell { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(13px, calc(var(--def-row) * 0.24), 19px); font-variant-numeric: tabular-nums; cursor: help; }
-.off-frame.def-walls .rob-cell.ko-ohko { background: color-mix(in srgb, var(--good) 55%, var(--panel)); border-color: var(--good); color: color-mix(in srgb, var(--good) 25%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
+.off-frame.def-walls .rob-cell.ko-ohko { background: color-mix(in srgb, var(--good) 48%, var(--panel)); border-color: var(--good); color: color-mix(in srgb, var(--good) 8%, white); box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent); }
 .off-frame.def-walls .ct-table tr.ct-sum-first > * { padding-top: 6px; padding-bottom: 6px; }
 .off-frame.def-walls .wall-h .def-box { cursor: help; }
 .off-frame.def-walls .rob-cell.ko-none { font-weight: 600; }
@@ -285,15 +301,16 @@
    verde oltre metà, giallo fino a 1/5, rosso sotto); in un colpo il timbro rosso "KO" al posto del numero */
 .cm-hp { display: flex; align-items: center; gap: 3px; width: 72%; margin: 6px auto 0; }
 /* L'etichetta "PS" del gioco, disegnata dal CSS (non è testo della casella) */
-.cm-hp::before { content: "PS"; font: 800 8px/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
+.cm-hp::before { content: "PS"; font: 800 11px/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
 .cm-hp-bar { position: relative; flex: 1; height: 5px; border-radius: 3px; background: #15171f; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12); overflow: hidden; }
 .cm-hp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--good); }
 .cm-hp-bar i.warn { background: var(--warn); }
 .cm-hp-bar i.bad { background: var(--bad); }
 .cm-hp-bar.legend { flex: none; display: inline-block; width: 30px; }
-.cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic 16px/1 var(--display); letter-spacing: 0.06em; color: #fff; background: var(--bad);
+/* Il timbro: rosso più scuro del Bad, così il bianco si legge (almeno 4,5:1) */
+.cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic 16px/1 var(--display); letter-spacing: 0.06em; color: #fff; background: color-mix(in srgb, var(--bad) 40%, #a00d24);
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--bad) 60%, transparent)); }
-.cm-ko.small { padding: 2px 7px; font-size: 10px; filter: none; }
+.cm-ko.small { padding: 2px 7px; font-size: 11px; filter: none; }
 /* Righe basse: niente barra, resta il numero */
 @container (max-height: 330px) { .cm-hp { display: none; } }
 /* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
@@ -316,7 +333,7 @@
 .area-legend .area-legend-swatch i.kob-tri, .area-legend .wall-legend-setup i.kob-tri { width: 0; height: 0; background: none; border-radius: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
 .area-legend .area-legend-swatch i.kob-tri.team, .area-legend .wall-legend-setup i.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
 /* L'effetto della danza o del meteo accanto al nome della riga: piccolo e spento ("Att ×2", "Fuoco ×1,5") */
-.tht-eff { display: inline; margin-left: 2px; font: 600 11px/1 var(--display); color: var(--faint); white-space: nowrap; }
+.tht-eff { display: inline; margin-left: 2px; font: 600 var(--tip-small)/1 var(--display); color: var(--faint); white-space: nowrap; }
 /* Coverage meta: la riga Team Coverage in fondo al pannello, allo stesso posto e alta come quella della Generale (la
    tabella riempie la cornice, la riga di riempimento prende lo spazio): la linguetta e nelle colonne le pastiglie di quanti
    lo coprono (i numeri del team sono già nella Generale e nel titolo della sottoscheda) */

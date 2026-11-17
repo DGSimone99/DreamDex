@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
@@ -125,7 +125,7 @@ describe('vista di un\'area sulla pagina', () => {
     }
   });
 
-  it('i problemi stanno in una riga: prima i risolvibili, poi i gravi; quelli che non stanno nel "+N" (title e testo nascosto)', () => {
+  it('i problemi stanno in una riga: prima i risolvibili, poi i gravi; quelli che non stanno nel "+N" (tooltip col fuoco e testo nascosto)', async () => {
     // Misura finta: la lista è larga 300px, ogni voce (anche il "+N") 100px
     const width = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-problems') ? 300 : 0; });
     const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-problems') ? 100 * this.children.length : 0; });
@@ -137,7 +137,13 @@ describe('vista di un\'area sulla pagina', () => {
       const items = within(list).getAllByRole('listitem');
       expect(items.map(li => li.textContent)).toEqual(['Problema c', 'Problema b', expect.stringMatching(/^\+3/)]);
       const more = items[2];
-      expect(more).toHaveAttribute('title', 'Problema e\nProblema a\nProblema d');
+      // Niente title del browser: il "+N" si raggiunge col Tab e col fuoco il tooltip DreamDex li elenca
+      expect(more).not.toHaveAttribute('title');
+      expect(more).toHaveAttribute('tabindex', '0');
+      const user = userEvent.setup();
+      for (let i = 0; i < 20 && document.activeElement !== more; i++) await user.tab();
+      expect(more).toHaveFocus();
+      await waitFor(() => expect(document.querySelector('.ftip.kot')).toHaveTextContent('Problema eProblema aProblema d'));
       expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 3 problemi: Problema e; Problema a; Problema d');
     } finally {
       width.mockRestore();

@@ -33,13 +33,13 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
     };
     return (
       <>
-        <h5>{g('what')}</h5>
+        <h4>{g('what')}</h4>
         <ul className="guide-lines">
           <li>{g('what.level', { archetype: t(`archetype.${archetype}`) })}</li>
           <li>{g('what.value', { pct: Math.round(100 * MISSING_BELOW) })}</li>
           <li>{g('what.points')}</li>
         </ul>
-        <h5>{g('levels')}</h5>
+        <h4>{g('levels')}</h4>
         <ul className="guide-tiles rl-guide-tiles">
           {LEVEL_TILES.map(level => (
             <li key={level} className={level}>

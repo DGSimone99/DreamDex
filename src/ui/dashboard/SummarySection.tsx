@@ -13,6 +13,7 @@ import { TeamTypeHelp } from '../CoachPanel';
 import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreTip } from './CoreTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
@@ -202,7 +203,7 @@ function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }
               {view.mons.map((name, i) => (
                 <span key={`${name}:${i}`} className="syn-more-mon">
                   {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
-                  <Sprite species={name} size={32} />
+                  <Sprite species={name} size={SPRITE_TIP_ROW} />
                 </span>
               ))}
             </span>
