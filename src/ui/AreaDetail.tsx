@@ -20,6 +20,8 @@ export type T = ReturnType<typeof useT>;
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode;
   /** Le schede con l'etichetta di efficacia nelle caselle: nel pannello l'interruttore "Solo superefficaci" / "Solo efficacia". */
   effSide?: EffSide;
+  /** La Velocità con Trick Room nel team: chi lo porta. Nel pannello l'interruttore "Trick Room · chi" (le barre in Trick Room). */
+  roomBy?: string[];
   /**
    * Il valore detto a parole per lo screen reader (i Ruoli: coperti, mancanti e punti). Il valore non si scrive sul
    * selettore delle sottoschede: senza `describe` lo screen reader legge `value` nella descrizione della scheda.
@@ -43,6 +45,11 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
    * acceso: le caselle senza etichetta si spengono (restano al loro posto). Uno per area.
    */
   effOnly?: boolean;
+  /**
+   * Interruttore Trick Room della Velocità acceso (in alto nel pannello, solo se un membro ha Trick Room): le barre dicono
+   * prima di quanti del meta muove ogni membro in Trick Room. Acceso all'inizio, poi resta per la sessione come lo mette l'utente.
+   */
+  trickRoom?: boolean;
   /**
    * Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo; Ruoli: "Tabella
    * dei ruoli" apre la pagina Ruoli per tipo di team).

@@ -917,6 +917,10 @@
 .eff-switch.on .eff-switch-track { border-color: var(--accent); background: var(--accent-soft); }
 .eff-switch.on .eff-switch-knob { transform: translateX(12px); background: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .eff-switch-track, .eff-switch-knob { transition: none; } }
+/* L'interruttore Trick Room della Velocità: acceso nel viola della stanza invece che in ciano */
+.eff-switch.room.on .eff-switch-track { border-color: var(--room); background: var(--room-soft); }
+.eff-switch.room.on .eff-switch-knob { background: var(--room); }
+.eff-switch.room.on { color: var(--room-ink); }
 
 /* Portatili bassi (1366×657, 1280×620): testata delle aree, striscia Da sistemare della Panoramica e margini del
    pannello più stretti, così ogni sottoscheda delle aree ci sta intera senza scorrere (a 1440×900 e 1536×730 non cambia

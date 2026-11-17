@@ -23,6 +23,11 @@
   --accent-2-soft: #4a1430;
   --accent-2-wash: #3a1030;
   --on-accent-2: #22000f;
+  /* Trick Room (scheda Velocità): il viola della stanza, lo stesso in ogni palette (è il viola di Scarlatto/Violetto);
+     --room-ink su --panel 7,9:1 */
+  --room: #a35cff;
+  --room-ink: #c09aff;
+  --room-soft: #2f1d52;
   /* Stato: mai legati alla palette */
   --bad: #ff8a8a;
   --bad-bg: #3a1426;

@@ -9,10 +9,19 @@ import { areaTabs, type AreaKey, type KoFocus } from './AreaDetail';
 import { viewLabelKey } from './AnalysisTabs';
 import { AreaGuide } from './AreaGuide';
 import { solvable } from './dashboard/FixRow';
-import { EffSwitch } from './effTag';
+import { EffSwitch, PanelSwitch } from './effTag';
 import { Icon } from './icons';
 import { MoreProblems, problemEntries, ProblemChip } from './ProblemPill';
 import { useFitCount } from './useFit';
+
+/** La scelta dell'interruttore Trick Room nella sessione del browser ("0" spento); senza scelta, o senza memoria, acceso. */
+const ROOM_KEY = 'dreamdex.speedTrickRoom';
+function readRoomPick(): boolean {
+  try { return sessionStorage.getItem(ROOM_KEY) !== '0'; } catch { return true; }
+}
+function writeRoomPick(on: boolean) {
+  try { sessionStorage.setItem(ROOM_KEY, on ? '1' : '0'); } catch { /* senza memoria vale finché la vista resta aperta */ }
+}
 
 /**
  * Un'area del voto sulla pagina (scheda di Analisi). In alto una testata sola: a sinistra la lettera del voto dell'area e
@@ -73,12 +82,16 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   }, [focus]);
   // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
   const [effOnly, setEffOnly] = useState<Partial<Record<AreaKey, boolean>>>({});
+  // Interruttore Trick Room della Velocità (solo con Trick Room nel team): acceso all'inizio, poi resta com'è stato messo
+  // per la sessione, anche cambiando area (la vista si rimonta a ogni area: la scelta sta nella sessione del browser)
+  const [trickRoom, setTrickRoomState] = useState(readRoomPick);
+  const setTrickRoom = (on: boolean) => { setTrickRoomState(on); writeRoomPick(on); };
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
   const [guide, setGuide] = useState<string | null>(null);
   // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
   const opener = useRef<HTMLElement | null>(null);
   const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null) });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], trickRoom, guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null) });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
@@ -180,6 +193,13 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         {current.effSide && (
           <span className="panel-switch">
             <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
+          </span>
+        )}
+        {/* Nello stesso posto, nella Velocità con Trick Room nel team: le barre in Trick Room (i lenti muovono prima) */}
+        {!current.effSide && !!current.roomBy?.length && (
+          <span className="panel-switch">
+            <PanelSwitch tone="room" on={trickRoom} onChange={setTrickRoom}
+              label={`${t('sdetail.room.switch')} · ${current.roomBy.join(', ')}`} title={t('sdetail.room.title')} />
           </span>
         )}
         {/* Offesa, Difesa e Velocità non hanno titoli nelle loro schede: per i lettori di schermo la sottoscheda aperta (h4),

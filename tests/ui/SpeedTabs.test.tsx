@@ -39,12 +39,14 @@ describe('Velocità: una scheda a barre', () => {
     expect(panelName()).toBe('Velocità');
     expect(document.querySelector('.ad-how')).toBeNull();
     expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Dragonite', 'Ribombee', 'Iron Valiant', 'Toxapex']);
-    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill)');
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill):not(.sp-scale)');
     const sorted = team.map(s => rating.speed.members.find(m => m.species === s.species)!);
     sorted.forEach((m, i) => {
       const bar = within(rows[i] as HTMLElement).getByRole('button', { name: `Velocità di ${m.species}: apri i rivali` });
       expect(bar).toHaveTextContent(`${Math.round(100 * m.total)}%`);
-      expect(bar.querySelectorAll('.sp-stack i')).toHaveLength(3);
+      // La velocità pura sempre; i pezzi a righe solo quando aggiungono qualcosa
+      expect(bar.querySelector('.sp-stack .sp-seg-raw')).not.toBeNull();
+      expect(bar.querySelectorAll('.sp-stack i').length).toBeLessThanOrEqual(3);
     });
     // Dragonite: la parte propria (Dragon Dance, Extreme Speed) e quella del team (Web, Stun Spore) sono scritte nel dettaglio
     const d = sorted.find(m => m.species === 'Dragonite')!;
@@ -213,7 +215,7 @@ describe('Velocità: una scheda a barre', () => {
   it('una specie sconosciuta: riga con "—", senza barra', () => {
     const odd = [...team, emptySet('Nessuno')];
     view(odd, withMeta(odd));
-    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill)');
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill):not(.sp-scale)');
     expect(rows).toHaveLength(5);
     const last = rows[4];
     expect(last).toHaveTextContent('Nessuno');

@@ -194,8 +194,8 @@
 .stip-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .stip-name > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stip-speed { grid-column: 4; font: 700 italic var(--tip-title)/1 var(--display); text-align: right; min-width: 38px; }
-.stip-rung.faster .stip-speed { color: var(--bad); }
-.stip-rung.slower .stip-speed { color: var(--good); }
+.stip-rung.ahead .stip-speed { color: var(--bad); }
+.stip-rung.behind .stip-speed { color: var(--good); }
 .stip-rung.tie .stip-speed { color: var(--warn); }
 .stip-rung.self { margin: 3px 0; padding-block: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 4%, transparent)); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
 .stip-rung.self .stip-name { font: 600 var(--tip-title)/1.1 var(--display); }

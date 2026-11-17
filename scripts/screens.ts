@@ -252,6 +252,8 @@ OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.gener
 OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
 // Velocità: lo stesso team con Ribombee (Sticky Web e Stun Spore) al posto di Gholdengo, così il controllo del team si vede
 const SPEED_SIX = [...TEAM, member('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 })];
+// Trick Room: lo stesso team con Hatterene (Trick Room) al posto di Ribombee
+const SPEED_ROOM = [...TEAM, member('Hatterene', 'Life Orb', 'Magic Bounce', ['Trick Room', 'Psyshock', 'Dazzling Gleam', 'Mystical Fire'], 'Quiet', { hp: 252, spa: 252, def: 4 })];
 const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Partial<typeof FORMAT> } = {}): State => ({
   hash: opts.format ? hashWith(SPEED_SIX, opts.format) : hash(SPEED_SIX),
   run: async p => {
@@ -278,6 +280,17 @@ const SPEED_STATES: Record<string, State> = {
     await wait(400);
     return true;
   } },
+  // Trick Room: Hatterene al posto di Ribombee; l'interruttore "Trick Room · Hatterene" è acceso di base (le barre in
+  // Trick Room); -off lo spegne
+  'analysis-speed-trickroom': { hash: hash(SPEED_ROOM), run: async p => speedState(null).run!(p) },
+  'analysis-speed-trickroom-off': { hash: hash(SPEED_ROOM), run: async p => {
+    const ok = await speedState(null).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.panel-switch button[role="switch"]', /Trick Room/)) return 'no room switch';
+    await wait(400);
+    return true;
+  } },
+  'analysis-speed-trickroom-collapsed': { hash: hash(SPEED_ROOM), run: async p => speedState(null, { collapsed: true }).run!(p) },
   // Il tooltip della barra: la scala dei vicini (Great Tusk ha la Booster: l'icona accanto al nome)
   'analysis-speed-hover': { hash: hash(SPEED_SIX), run: async p => {
     const ok = await speedState(null).run!(p);
