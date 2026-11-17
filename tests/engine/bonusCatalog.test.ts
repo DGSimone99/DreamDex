@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRICK_ROOM_FAST_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
+import { TRICK_ROOM_FAST_POINTS, UNANSWERED_META_POINTS, UNANSWERED_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -34,11 +34,11 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 18 voci, 12 malus prima, niente Tera né "Vicino a un altro tipo"', () => {
+  it('catalogo IT: 19 voci, 13 malus prima, niente Tera né "Vicino a un altro tipo"', () => {
     const none = bonusMalusCatalog('it');
-    expect(none).toHaveLength(18);
-    expect(none.slice(0, 12).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(12).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none).toHaveLength(19);
+    expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.map(e => e.key as string)).not.toContain('typeBlend');
     expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'minorRole']));
     expect(none.map(e => e.key as string)).not.toContain('tera');
@@ -57,6 +57,7 @@ describe('catalogo bonus e malus', () => {
     expect(c.find(e => e.key === 'unusedEnabler')!.points).toBe(`−${UNUSED_ENABLER_POINTS}`);
     expect(c.find(e => e.key === 'trickRoomFast')!.points).toContain(`−${TRICK_ROOM_FAST_POINTS} per membro`);
     expect(c.find(e => e.key === 'coreTrio')!.points).toContain('2');
+    expect(c.find(e => e.key === 'unanswered')!.points).toBe(`−${UNANSWERED_POINTS} per ogni tipo, −${UNANSWERED_META_POINTS} per ogni Pokémon del meta (−${UNANSWERED_META_POINTS / 2} se lo batti solo a pari velocità)`);
   });
 
   it('catalogo EN: stesse chiavi, testi non vuoti', () => {
