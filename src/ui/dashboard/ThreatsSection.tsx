@@ -22,6 +22,11 @@ const NAME_PX = 13;
 const NAME_MIN_PX = 11;
 
 /** Le parole di una ragione: "Nessuno lo regge bene", "Lo regge solo Kingambit", "Lo manda KO solo Iron Valiant". */
+/** Il primo tipo della minaccia: dà il colore al fondo della carta e al tooltip. */
+function firstType(species: string): string {
+  return battleSpecies({ species, item: '' })?.types[0] ?? '';
+}
+
 function useReasonText() {
   const t = useT();
   return (threat: MetaThreat) => threat.reasons.map(r => (r.side === 'defense'
@@ -31,8 +36,8 @@ function useReasonText() {
 
 /**
  * Minacce del meta: le N (5 o 4, secondo la larghezza) che il team gestisce peggio, in fila sotto la Copertura (regola
- * in `metaThreats`). Ogni carta: sprite, nome (mai tagliato) e una parola, "scoperta" in rosso o "a fatica" in giallo,
- * col filo sotto dello stesso colore. Col mouse e col fuoco il tooltip DreamDex con le ragioni intere e l'uso nel meta; il
+ * in `metaThreats`). Ogni carta, lavata nel colore del primo tipo: sprite, nome (mai tagliato) e la targhetta inclinata
+ * "scoperta" (rossa) o "a fatica" (gialla), l'unico segno dello stato. Col mouse e col fuoco il tooltip DreamDex con le ragioni intere e l'uso nel meta; il
  * clic apre la Coverage meta (Difesa, o Offesa se è il lato peggiore) con la colonna della minaccia accesa. Quelle che
  * non stanno vanno in un "+N" tratteggiato (tooltip coi nomi, clic sulla Coverage meta). Senza minacce una riga verde.
  */
@@ -93,8 +98,9 @@ export function ThreatsSection({ threats, onView }: {
               {shown.map(x => (
                 <li key={x.species}>
                   <button type="button" className={`thr-card ${x.status}`} onClick={() => { tip.close(); open(x); }} {...tip.bind(x.species)}
+                    style={{ '--t1': typeColor(firstType(x.species)) } as CSSProperties}
                     aria-label={t('dash.threatLabel', { species: x.species, word: word(x), reasons: reasonText(x).join('. '), usage: usage(x) })}>
-                    <Sprite species={x.species} size={44} />
+                    <Sprite species={x.species} size={48} />
                     <span className="thr-text" aria-hidden="true">
                       <b className="thr-name">{x.species}</b>
                       <small className="thr-word">{word(x)}</small>
@@ -114,7 +120,7 @@ export function ThreatsSection({ threats, onView }: {
           )}
       </div>
       {tip.anchor && tipThreat && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(battleSpecies({ species: tipThreat.species, item: '' })?.types[0] ?? '')} className="thr-tip">
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
           <div className="ftip-head">
             <Sprite species={tipThreat.species} size={SPRITE_TIP_ROW} />
             <b>{tipThreat.species}</b>
