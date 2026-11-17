@@ -89,7 +89,7 @@
 .meta-vs { display: flex; flex-direction: column; gap: var(--sp-3); padding-top: var(--sp-5); border-top: 1px solid var(--line-soft); }
 .mvs-head { display: flex; align-items: center; gap: var(--sp-4); }
 .meta-vs .mvs-head h4 { margin: 0; }
-.mvs-tag { padding: 0 11px 0 7px; font: 600 var(--fs-caption)/18px var(--ui); color: var(--k); background: var(--k-bg); white-space: nowrap;
+.mvs-tag { padding: 0 9px 0 7px; font: 600 var(--fs-caption)/16px var(--ui); color: var(--k); background: var(--k-bg); white-space: nowrap;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .mvs-tag.open, .mvs-count.open { --k: var(--bad); --k-bg: var(--bad-bg); }
 .mvs-tag.thin, .mvs-count.thin { --k: var(--warn); --k-bg: var(--warn-bg); }
