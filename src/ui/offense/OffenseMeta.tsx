@@ -65,8 +65,11 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   // (così stanno nella prima pagina); il resto spento
   const focus = ctx.focus?.kind === 'meta' ? ctx.focus : null;
   const lit = (row: Row) => !!focus && inBand(Math.max(0, row.cells?.[focus.slot]?.pct ?? 0), focus.band);
+  // Aperta da una minaccia della Panoramica: la sua colonna per prima (prima pagina) e accesa, le altre spente
+  const threat = ctx.focus?.kind === 'threat' && ctx.focus.side === 'offense' ? ctx.focus.species : null;
   const sorted = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
-  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))] : sorted;
+  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))]
+    : threat ? [...sorted.filter(r => r.species === threat), ...sorted.filter(r => r.species !== threat)] : sorted;
   const covered = rows.filter(r => r.level > 0).length;
   const only3 = rows.filter(r => r.level === 0 && (r.cells ?? []).some(c => c.pct >= 34)).length;
   const summary = (
@@ -80,7 +83,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
 
   const cell = (row: Row, m: number, k0: number) => {
     const c = row.cells?.[m];
-    if (!c || c.pct < 0) return <td key={row.species} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
+    if (!c || c.pct < 0) return <td key={row.species} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}${focus || threat ? ' kf-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
     const tag = effLabel(c.mult, 'offense');
     const k = bucket(c.pct);
     // Il triangolo del setup, come in Coverage tipi e nella Generale: solo se la danza fa salire di fascia fino al 2HKO o all'OHKO
@@ -91,7 +94,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
     const bothUp = !up && !teamUp && c.comboPct !== null && rank(c.comboPct) > rank(c.pct);
     return (
-      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : threat ? (row.species === threat ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { hover.enter(k0).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); }} onMouseLeave={tip.close}
         onFocus={e => { hover.enter(k0).onFocus(); tip.focus({ species: row.species, m }).onFocus(e); }} onBlur={tip.close}>
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
@@ -179,6 +182,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
       {card.tip}
       <div className="rob-legend cm-foot">{focus
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+        : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>}</div>
     </div>
   );

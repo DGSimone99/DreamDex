@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
-import type { Lang } from '../i18n';
+import { t as translate, type Lang } from '../i18n';
 import { typeName } from '../i18n/game';
 import type { Core } from '../engine/cores';
 import { bonusMalusCatalog, CORE_TRIO_POINTS, type CatalogEntry, type CatalogKey, type Redundancy, type TeamRating } from '../engine/rating';
@@ -123,6 +123,28 @@ function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: 
 function orderedRows(catalog: CatalogEntry[], rating: TeamRating, lang: Lang): ActiveRow[] {
   const byPoints = (rows: ActiveRow[]) => rows.map((row, i) => ({ row, i })).sort((a, b) => b.row.points - a.row.points || a.i - b.i).map(x => x.row);
   return [...byPoints(activeRows(catalog, 'malus', rating.penalty.items, lang)), ...byPoints(activeRows(catalog, 'bonus', rating.bonus.items, lang))];
+}
+
+/** Una voce della riga Bonus/Malus del Riassunto della Panoramica: nome e punti col segno (i core a tre in una voce sola). */
+export interface BonusMalusPiece { key: string; name: string; points: number; kind: CatalogEntry['kind'] }
+
+/**
+ * La riga Bonus/Malus del Riassunto: il netto (lo stesso della scheda, senza i ruoli) e le voci dalla più pesante (in
+ * valore assoluto: "2 core +6", "Rete di sicurezza +1", "Tipi doppioni −1"); i core a tre sono una voce sola coi loro
+ * punti insieme; a parità di peso prima i malus, come nella scheda, poi l'ordine del catalogo.
+ */
+export function bonusMalusLine(rating: TeamRating, lang: Lang): { net: number; pieces: BonusMalusPiece[] } {
+  const catalog = bonusMalusCatalog(lang);
+  const rows = orderedRows(catalog, rating, lang);
+  const cores = rating.bonus.items.filter(i => i.catalog === 'coreTrio').reduce((n, i) => n + i.points, 0);
+  const coreCount = Math.round(cores / CORE_TRIO_POINTS);
+  const pieces: BonusMalusPiece[] = [
+    ...(cores > 0 ? [{ key: 'coreTrio', name: translate(lang, coreCount === 1 ? 'sum.bmCoresOne' : 'sum.bmCoresMany', { n: coreCount }), points: cores, kind: 'bonus' as const }] : []),
+    ...rows.map(row => ({ key: row.key, name: row.entry.name, points: row.entry.kind === 'malus' ? -row.points : row.points, kind: row.entry.kind })),
+  ];
+  // sort è stabile: a parità di peso resta l'ordine della scheda (prima i malus, ognuno dal più pesante)
+  const ordered = [...pieces].sort((a, b) => Math.abs(b.points) - Math.abs(a.points) || Number(a.kind === 'bonus') - Number(b.kind === 'bonus'));
+  return { net: bonusMalusTotals(rating).net, pieces: ordered };
 }
 
 /** Il nome di un core per la scheda: i tre tipi parati, nell'ordine del giro ("Acqua / Lotta / Psico"). */

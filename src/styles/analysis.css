@@ -177,6 +177,8 @@
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fix-more { flex: none; padding: 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--raised); }
 .fix-go { flex: none; margin-left: auto; padding-top: 0; padding-bottom: 0; line-height: 20px; }
+/* Il +N della proposta migliore, verde in Kanit corsivo */
+.fix-gain { font: 800 14px/1 var(--display); font-style: italic; color: var(--good); }
 /* Con la riga in fondo il margine sotto la Panoramica si accorcia a 4px, come sotto le aree */
 .overview:has(> .fix-row) { gap: 8px; padding-bottom: 4px; }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
@@ -334,6 +336,82 @@
 .dash .dash-cell.ok .icon { width: 11px; height: 11px; stroke-width: 2.25; }
 .dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+
+/*
+ * Col meta: sotto la Copertura la carta Minacce del meta, a tutta la colonna di destra; Ruoli | Velocità scendono alla
+ * terza riga. La Copertura si fa un po' più fitta (caselle e icone più basse) per lasciarle posto; senza meta resta com'era.
+ */
+.dash.has-threats { grid-template-rows: auto auto minmax(var(--dash-row2), 1fr); --dash-row2: 120px; }
+.dash.has-threats.tight { --dash-row2: 100px; }
+.dash-threats { grid-column: 2 / -1; grid-row: 2; }
+.dash.has-threats .dash-roles, .dash.has-threats .dash-speed { grid-row: 3; }
+.dash.has-threats .dash-coverage .dash-head { margin-bottom: 6px; }
+.dash.has-threats .dash-cell { height: 18px; line-height: 0; }
+.dash.has-threats .dash-type { width: 20px; height: 20px; }
+.dash.has-threats.roomy .dash-cell { height: 22px; }
+.dash.has-threats.roomy .dash-type { width: var(--ti-tip); height: var(--ti-tip); }
+/* Stretto (1280×620, 1366×768 col team aperto): tutto un po' più fitto, così Ruoli e Velocità tengono ~120px */
+.dash.has-threats.tight { gap: 8px; }
+.dash.has-threats.tight .dash-cell { height: 14px; }
+.dash.has-threats.tight .dash-type { width: 16px; height: 16px; }
+.dash.has-threats.tight .dash-card { padding-bottom: 8px; }
+.dash.has-threats.tight .dash-head { margin-bottom: 5px; }
+.dash.has-threats.tight .dash-cell .icon { width: 10px; height: 10px; }
+
+/* Minacce del meta: le carte in fila, larghe uguali, il "+N" in una colonna stretta in più (--thr-more) */
+.thr-box { min-width: 0; }
+.thr-row { display: grid; grid-template-columns: repeat(var(--thr-n), minmax(0, 1fr)) var(--thr-more); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.thr-row > li { display: flex; min-width: 0; }
+/* Una carta: sprite, nome (Kanit corsivo 700, mai tagliato: si rimpicciolisce o va a capo) e la parola nel colore del caso,
+   col filo sotto dello stesso colore (--k: rosso scoperta, giallo a fatica) */
+.thr-card {
+  --k: var(--warn);
+  position: relative; flex: 1; min-width: 0; height: 52px; display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 7px; align-items: center;
+  padding: 0 8px 2px 4px; border: 0; border-radius: 0; background: var(--raised); color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  transition: background-color 0.15s var(--ease);
+}
+.thr-card.open { --k: var(--bad); }
+.thr-card::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--k); }
+.thr-card:hover { background: color-mix(in srgb, var(--k) 12%, var(--raised)); }
+.thr-card .sprite { width: 44px; height: 44px; image-rendering: pixelated; }
+.thr-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.thr-name { display: block; white-space: nowrap; font: 700 13px/1.15 var(--display); font-style: italic; }
+.thr-name.wrap { white-space: normal; overflow-wrap: anywhere; line-height: 1.05; }
+.thr-word { font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--k); }
+.thr-more { flex: 1; min-width: 0; height: 52px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line); border-radius: 0; background: none; color: var(--muted); font: 600 13px var(--ui); cursor: pointer; }
+.thr-more:hover { color: var(--text); border-color: var(--muted); }
+.thr-card:focus-visible, .thr-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Stretto: 40px (la sprite 40px), sempre un po' più ariosa della prima versione; l'altezza la cedono Ruoli e Velocità */
+.dash.tight .thr-card, .dash.tight .thr-more { height: 40px; }
+.dash.tight .thr-card { grid-template-columns: 40px minmax(0, 1fr); }
+.dash.tight .thr-card .sprite { width: 40px; height: 40px; }
+@media (prefers-reduced-motion: reduce) { .thr-card { transition: none; } }
+/* Il tooltip di una minaccia: nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
+.ftip.thr-tip { width: var(--tip-s); }
+.thr-tip-use { margin-left: auto; white-space: nowrap; font: 700 italic var(--tip-small)/1 var(--display); color: var(--muted); }
+.thr-tip-why { display: grid; gap: 5px; margin: 0; padding: 9px 10px; list-style: none; }
+.thr-tip-why li { padding-left: 9px; border-left: 2px solid var(--warn); }
+.thr-tip-why li.open { border-left-color: var(--bad); }
+.thr-tip-why li b { font: 700 italic var(--tip-body)/1.2 var(--display); margin-right: 4px; }
+
+/* La riga Bonus/Malus in fondo al Riassunto: solo se c'è posto (misurato), in posizione assoluta, così non sposta niente */
+.sum-bm {
+  position: absolute; left: 12px; right: 12px; bottom: 10px; height: 28px; display: flex; align-items: center; gap: 8px;
+  padding: 0 4px; border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; color: var(--text);
+  font: inherit; font-size: 12.5px; text-align: left; cursor: pointer;
+}
+.sum-bm:hover { border-color: var(--line-soft); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.sum-bm:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sum-bm-label { flex: none; font: 700 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.sum-bm-net { flex: none; font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+.sum-bm .good { color: var(--good); }
+.sum-bm .bad { color: var(--bad); }
+.sum-bm .zero { color: var(--faint); }
+.sum-bm-list { flex: 1; min-width: 0; height: 18px; display: flex; flex-wrap: wrap; align-items: center; overflow: hidden; line-height: 18px; color: var(--muted); }
+.sum-bm-item { white-space: nowrap; }
+.sum-bm-item + .sum-bm-item::before { content: "·"; margin: 0 6px; color: var(--faint); }
+.sum-bm-item b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.sum-bm-more { margin-left: 8px; padding: 0 6px; font-size: 12px; font-weight: 600; line-height: 16px; color: var(--muted); background: var(--raised); }
 
 /*
  * Ruoli, stretto e normale: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una

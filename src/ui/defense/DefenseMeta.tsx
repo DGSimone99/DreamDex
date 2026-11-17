@@ -70,8 +70,11 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     return c === null ? null : c === 'ko' ? 'ohko' : pieceOf(c.band);
   };
   const lit = (row: Row) => !!focus && pieceAt(row, focus.slot) === focus.band;
+  // Aperta da una minaccia della Panoramica: la sua colonna per prima (prima pagina) e accesa, le altre spente
+  const threat = ctx.focus?.kind === 'threat' && ctx.focus.side === 'defense' ? ctx.focus.species : null;
   const sorted = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
-  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))] : sorted;
+  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))]
+    : threat ? [...sorted.filter(r => r.species === threat), ...sorted.filter(r => r.species !== threat)] : sorted;
   // Il posto fra i membri conosciuti dal motore (l'ordine di `mults`)
   let seen = 0;
   const knownIndex = names.map(name => (name ? seen++ : -1));
@@ -79,8 +82,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
 
   const cell = (row: Row, c: Holder | 'ko' | null, m: number, k: number) => {
     const key = `${row.species}-${m}`;
-    const kf = focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : '';
-    const dim = (ctx.effOnly ? ' eff-dim' : '') + (focus ? ' kf-dim' : '');
+    const kf = focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : threat ? (row.species === threat ? ' kf-hit' : ' kf-dim') : '';
+    const dim = (ctx.effOnly ? ' eff-dim' : '') + (focus || threat ? ' kf-dim' : '');
     if (c === null) return <td key={key} className={hover.cls(k, `rob-cell hold-none${dim}`)} {...hover.enter(k)}>—</td>;
     const tag = effLabel(row.mults?.[knownIndex[m]], 'defense');
     const eff = effClass(tag, 'defense', ctx.effOnly) + kf;
@@ -175,6 +178,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         {card.tip}
         <div className="rob-legend cm-foot">{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
+          : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span>}</div>
       </div>
     );

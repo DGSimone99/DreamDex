@@ -21,7 +21,7 @@ import { useFitCount } from './useFit';
  * Ogni pillola mostra il problema intero nel tooltip (mouse e fuoco) e, se il Coaching ha una proposta per lei, è un
  * pulsante che apre il Coaching su quel problema. Sotto, il dettaglio della sottoscheda scelta a tutta larghezza.
  */
-export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, advice = null }: {
+export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, advice = null, initialFocus = null }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
@@ -38,6 +38,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   onCoaching?: (problemKey?: string) => void;
   /** I consigli del Coaching (null: si stanno calcolando): una pillola porta lì solo se una proposta la risolve. */
   advice?: CoachAdvice | null;
+  /** Il dettaglio da accendere all'apertura (una minaccia scelta nella Panoramica); poi la vista lo tiene da sé. */
+  initialFocus?: KoFocus | null;
 }) {
   const t = useT();
   const lang = useLang();
@@ -46,7 +48,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const picked = remembered !== undefined ? remembered : own;
   const setPickedRaw = (key: string) => (onPick ? onPick(key) : setOwn(key));
   // Il dettaglio evidenziato da una tessera della Generale: si spegne appena si sceglie un'altra sottoscheda
-  const [focus, setFocus] = useState<KoFocus | null>(null);
+  const [focus, setFocus] = useState<KoFocus | null>(initialFocus);
   const setPicked = (key: string) => { setFocus(null); setPickedRaw(key); };
   // `open`: le tessere della scheda Generale aprono la sottoscheda e le passano il focus (il pannello che le ospitava sparisce)
   const focusKey = useRef<string | null>(null);

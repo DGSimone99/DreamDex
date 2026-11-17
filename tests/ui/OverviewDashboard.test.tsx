@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { DashboardData } from '../../src/engine/overviewDashboard';
+import type { DashboardData, MetaThreat } from '../../src/engine/overviewDashboard';
 import type { Core } from '../../src/engine/cores';
 import type { TeamLink } from '../../src/engine/teamLinks';
 import type { TeamSummary } from '../../src/engine/teamSummary';
@@ -14,6 +14,18 @@ import { initGameNames } from '../../src/i18n/game';
 import { LangProvider } from '../../src/i18n/react';
 import { densityFor, OverviewDashboard, RICH_FROM, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
 import { renderIt } from '../helpers/italian';
+import { THREATS_FIVE_FROM } from '../../src/ui/dashboard/ThreatsSection';
+
+/** Sette minacce: tre scoperte, quattro a fatica (una dal lato dell'Offesa). */
+const THREATS: MetaThreat[] = [
+  { species: 'Raging Bolt', usage: 0.172, status: 'open', side: 'defense', reasons: [{ side: 'defense', by: [] }] },
+  { species: 'Tapu Koko', usage: 0.114, status: 'open', side: 'defense', reasons: [{ side: 'defense', by: [] }] },
+  { species: 'Diancie-Mega', usage: 0.089, status: 'open', side: 'defense', reasons: [{ side: 'defense', by: [] }] },
+  { species: 'Zamazenta', usage: 0.148, status: 'thin', side: 'offense', reasons: [{ side: 'offense', by: ['Iron Valiant'] }] },
+  { species: 'Ogerpon-Wellspring', usage: 0.093, status: 'thin', side: 'defense', reasons: [{ side: 'defense', by: ['Toxapex'] }] },
+  { species: 'Latios-Mega', usage: 0.061, status: 'thin', side: 'defense', reasons: [{ side: 'defense', by: ['Kingambit'] }] },
+  { species: 'Kyurem', usage: 0.05, status: 'thin', side: 'defense', reasons: [{ side: 'defense', by: ['Heatran'] }] },
+];
 
 /** Dati costruiti: Terra scoperta in difesa, Normale in offesa, un ruolo mancante, due corsie, tre minacce. */
 function sample(overrides: Partial<DashboardData> = {}): DashboardData {
@@ -56,6 +68,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
     },
     threats: {
       pods: [{ species: 'Great Tusk', usage: 0.23 }, { species: 'Kyurem', usage: 0.21 }, { species: 'Heatran', usage: 0.17 }],
+      list: THREATS,
       total: 20, available: true, metaOff: false,
     },
     ...overrides,
@@ -846,4 +859,107 @@ describe('Cruscotto: misure', () => {
     expect(essential[2]).toHaveTextContent('+2');
   });
 
+});
+
+describe('Minacce del meta', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+  const card = () => screen.getByRole('region', { name: 'Minacce del meta' });
+
+  it('larga (o non misurata): 5 carte con nome e parola, e "+2" per le altre', () => {
+    mount();
+    const cards = within(card()).getAllByRole('button', { name: /, (scoperta|a fatica):/ });
+    expect(cards).toHaveLength(5);
+    expect(cards[0]).toHaveTextContent('Raging Boltscoperta');
+    expect(cards[3]).toHaveTextContent('Zamazentaa fatica');
+    expect(cards[0]).toHaveClass('open');
+    expect(cards[3]).toHaveClass('thin');
+    expect(card()).toHaveTextContent('le 5 gestite peggio');
+    const more = within(card()).getByRole('button', { name: 'Altre 2 minacce: Latios-Mega (a fatica), Kyurem (a fatica)' });
+    expect(more).toHaveTextContent('+2');
+  });
+
+  it('stretta (sotto THREATS_FIVE_FROM): 4 carte e "+3"', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.classList.contains('thr-box') ? THREATS_FIVE_FROM - 34 : 0; });
+    mount();
+    expect(within(card()).getAllByRole('button', { name: /, (scoperta|a fatica):/ })).toHaveLength(4);
+    expect(card()).toHaveTextContent('le 4 gestite peggio');
+    expect(within(card()).getByRole('button', { name: /^Altre 3 minacce/ })).toHaveTextContent('+3');
+  });
+
+  it('il nome intero sempre, la ragione e l\'uso nel nome accessibile e nel tooltip col fuoco', async () => {
+    const user = userEvent.setup();
+    mount();
+    const zama = within(card()).getByRole('button', { name: 'Zamazenta, a fatica: Lo manda KO solo Iron Valiant. 14,8% nel meta' });
+    expect(within(card()).getByText('Ogerpon-Wellspring')).toBeInTheDocument();
+    await user.tab();
+    zama.blur();
+    await act(async () => { zama.focus(); });
+    const tip = await screen.findByText('Lo manda KO solo Iron Valiant', { selector: '.thr-tip li' }, { timeout: 1000 });
+    expect(tip.closest('.ftip')).toHaveTextContent('14,8% nel meta');
+  });
+
+  it('clic: apre la Coverage meta della Difesa (o dell\'Offesa) con la minaccia accesa; "+N" e il link sulla Coverage meta', async () => {
+    const user = userEvent.setup();
+    const { onView } = mount();
+    await user.click(within(card()).getByRole('button', { name: /^Raging Bolt, scoperta/ }));
+    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta', { kind: 'threat', side: 'defense', species: 'Raging Bolt' });
+    await user.click(within(card()).getByRole('button', { name: /^Zamazenta, a fatica/ }));
+    expect(onView).toHaveBeenLastCalledWith('strength', 'coverageMeta', { kind: 'threat', side: 'offense', species: 'Zamazenta' });
+    await user.click(within(card()).getByRole('button', { name: /^Altre 2 minacce/ }));
+    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta');
+    await user.click(within(card()).getByRole('button', { name: 'Coverage meta' }));
+    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta');
+  });
+
+  it('nessuna minaccia: una riga verde; meta spento o senza statistiche: niente carta', () => {
+    const { unmount } = mount({ data: sample({ threats: { pods: [], list: [], total: 20, available: true, metaOff: false } }) });
+    expect(card()).toHaveTextContent('Nessuna minaccia del meta senza risposta');
+    expect(document.querySelector('.dash')).toHaveClass('has-threats');
+    unmount();
+    mount({ data: sample({ threats: { pods: [], list: [], total: 0, available: false, metaOff: true } }) });
+    expect(screen.queryByRole('region', { name: 'Minacce del meta' })).toBeNull();
+    expect(document.querySelector('.dash')).not.toHaveClass('has-threats');
+  });
+});
+
+describe('Riassunto: la riga Bonus/Malus', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+  const bonusMalus = { net: 6, pieces: [
+    { key: 'coreTrio', name: '2 core', points: 6, kind: 'bonus' as const },
+    { key: 'sameType', name: 'Tipi doppioni', points: -1, kind: 'malus' as const },
+    { key: 'weakCovered', name: 'Rete di sicurezza', points: 1, kind: 'bonus' as const },
+  ] };
+  /** Layout finto: il corpo del Riassunto alto `body`, ogni contenuto finisce a `content` px; la riga delle voci alta 18. */
+  function stubSummary(body: number, content: number) {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      if (this.classList.contains('sum-body')) return rect(0, body);
+      if (this.classList.contains('sum-bm-list') || this.closest('.sum-bm-list')) return rect(0, 18);
+      if (this.closest('.sum-body')) return rect(0, content);
+      return rect(0, 0);
+    });
+  }
+  const mountBm = () => renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={bonusMalus} onView={vi.fn()} density="normal" />);
+
+  it('con posto sotto i core: la riga c\'è, col netto e le voci, e apre Bonus/Malus', async () => {
+    stubSummary(400, 300);
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={bonusMalus} onView={onView} density="normal" />);
+    const row = screen.getByRole('button', { name: 'Bonus/Malus +6: 2 core +6, Tipi doppioni −1, Rete di sicurezza +1' });
+    expect(row).toHaveTextContent('Bonus/Malus+62 core +6Tipi doppioni −1Rete di sicurezza +1');
+    await user.click(row);
+    expect(onView).toHaveBeenCalledWith('bonusMalus');
+  });
+
+  it('senza posto (i core arrivano in fondo) la riga non c\'è, nemmeno per i lettori di schermo', () => {
+    stubSummary(400, 380);
+    mountBm();
+    expect(screen.queryByRole('button', { name: /^Bonus\/Malus/ })).toBeNull();
+    expect(document.querySelector('.sum-bm')).toBeNull();
+  });
+
+  it('senza layout (altezza 0) niente riga', () => {
+    mountBm();
+    expect(document.querySelector('.sum-bm')).toBeNull();
+  });
 });

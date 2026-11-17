@@ -8,10 +8,16 @@ import type { TeamSet } from '../engine/sets';
 import { teamSummary } from '../engine/teamSummary';
 import { useLang, useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
+import type { KoFocus } from './AreaDetail';
+import { bonusMalusLine } from './BonusMalusView';
 import { OverviewDashboard } from './OverviewDashboard';
 import { FixRow } from './dashboard/FixRow';
 
-/** La Panoramica: il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio, in fondo la riga Da sistemare; il giudizio in cima solo con un membro. */
+/**
+ * La Panoramica, il riassunto di tutto: il cruscotto (Riassunto con la riga Bonus/Malus, Copertura, Minacce del meta,
+ * Ruoli, Velocità) che riempie lo spazio e in fondo una riga sola per il Coaching (quanti problemi, quante proposte e la
+ * migliore); il giudizio in cima solo con un membro.
+ */
 export function AnalysisOverview({ team, analysis, rating, coaching, advice = null, data, onView, onAdd, onCollapseTeam, teamCollapsed = false }: {
   /** I consigli del Coaching (null finché si calcolano): la riga Da sistemare mostra solo ciò che risolvono. */
   advice?: CoachAdvice | null;
@@ -25,12 +31,13 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
   rating: TeamRating | null;
   coaching?: Coaching;
   data: EngineData;
-  onView: (view: AnalysisView, sub?: string) => void;
+  onView: (view: AnalysisView, sub?: string, focus?: KoFocus) => void;
 }) {
   const t = useT();
   const lang = useLang();
   const problems = coaching?.problems;
   const dash = useMemo(() => (rating ? dashboardData(team, analysis, rating, problems ?? [], data, lang) : null), [team, analysis, rating, problems, data, lang]);
+  const bonusMalus = useMemo(() => (rating ? bonusMalusLine(rating, lang) : undefined), [rating, lang]);
   const summary = useMemo(() => (rating && coaching && dash ? teamSummary(team, rating, coaching, dash, data, lang) : null), [team, rating, coaching, dash, data, lang]);
   if (team.length === 0) {
     return (
@@ -44,7 +51,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
     <div className="overview">
       {/* Con un membro solo l'invito ad aggiungerne un altro; dopo, prima com'è fatto il team e in fondo cosa sistemare */}
       {team.length < 2 && coaching && <div className="overview-headline"><strong>{coaching.verdict}</strong></div>}
-      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} team={team} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
+      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} team={team} bonusMalus={team.length >= 2 ? bonusMalus : undefined} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
       {team.length >= 2 && problems && <FixRow problems={problems} advice={advice ?? null} onView={onView} />}
     </div>
   );

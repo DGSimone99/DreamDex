@@ -1,4 +1,4 @@
-import { useId, type CSSProperties, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
@@ -9,6 +9,7 @@ import { MemberCard } from '../MemberCard';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
+import type { BonusMalusPiece } from '../BonusMalusView';
 import { TeamTypeHelp } from '../CoachPanel';
 import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
@@ -218,12 +219,74 @@ function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }
   );
 }
 
+/** Altezza della riga Bonus/Malus (px, come in CSS `.sum-bm`) e lo stacco minimo sopra di lei. */
+export const BM_LINE = 28;
+const BM_GAP = 6;
+const signedPts = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
+
+/**
+ * Se la riga Bonus/Malus sta in fondo al Riassunto (`card`: il corpo della card, .sum-body): solo se ogni sezione mostra tutte le sue righe (nessun "+N": i core e
+ * le Sinergie vengono prima) e sotto l'ultimo contenuto restano almeno BM_GAP + BM_LINE px. La riga sta in posizione
+ * assoluta in fondo alla card, così mostrarla non sposta niente (niente avanti e indietro). Si rimisura quando la card
+ * cambia misura o il suo contenuto cambia (le sezioni si misurano a più passaggi).
+ */
+function useBonusMalusRoom(card: RefObject<HTMLElement | null>, enabled: boolean): boolean {
+  const [room, setRoom] = useState(false);
+  useLayoutEffect(() => {
+    const el = card.current;
+    if (!enabled || !el) { setRoom(false); return; }
+    let frame = 0;
+    const measure = () => {
+      const { bottom, height } = el.getBoundingClientRect();
+      // Senza layout (test, scheda nascosta) non si sa: niente riga
+      if (!height) { setRoom(false); return; }
+      if (el.querySelector('.sum-sec-more, .sum-more-below, .sum-crew-more')) { setRoom(false); return; }
+      const parts = el.querySelectorAll('.sum-hero, .sum-sec-h, .sum-none, .sum-lines > li > *');
+      const last = Math.max(0, ...[...parts].map(p => p.getBoundingClientRect().bottom));
+      setRoom(last + BM_GAP + BM_LINE <= bottom + 0.5);
+    };
+    const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); };
+    measure();
+    const observers: { disconnect: () => void }[] = [];
+    if (typeof ResizeObserver !== 'undefined') { const ro = new ResizeObserver(later); ro.observe(el); observers.push(ro); }
+    if (typeof MutationObserver !== 'undefined') { const mo = new MutationObserver(later); mo.observe(el, { childList: true, subtree: true }); observers.push(mo); }
+    return () => { cancelAnimationFrame(frame); observers.forEach(o => o.disconnect()); };
+  }, [card, enabled]);
+  return room;
+}
+
+/**
+ * La riga Bonus/Malus in fondo al Riassunto: "Bonus/Malus +6 · 2 core +6 · Rete di sicurezza +1 · Tipi doppioni −1", le
+ * voci dalla più pesante (bonusMalusLine) finché stanno su una riga, le altre in "+N". Tutta la riga apre la scheda Ruoli e
+ * Bonus (Bonus/Malus); il nome per i lettori di schermo dice tutte le voci.
+ */
+function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: BonusMalusPiece[]; lang: string; onOpen: () => void }) {
+  const t = useT();
+  const fit = useFit<HTMLSpanElement>(`${lang}|${pieces.map(p => `${p.key}${p.points}`).join()}`, pieces.length, { more: true });
+  const shown = pieces.slice(0, Math.min(fit.shown, pieces.length));
+  const hidden = pieces.length - shown.length;
+  const tone = (n: number) => (n > 0 ? 'good' : n < 0 ? 'bad' : 'zero');
+  return (
+    <button type="button" className="sum-bm" onClick={onOpen}
+      aria-label={t('sum.bmLabel', { net: signedPts(net), list: pieces.map(p => `${p.name} ${signedPts(p.points)}`).join(', ') })}>
+      <span className="sum-bm-label" aria-hidden="true">{t('area.bonusMalus')}</span>
+      <em className={`sum-bm-net ${tone(net)}`} aria-hidden="true">{signedPts(net)}</em>
+      <span ref={fit.ref} className="sum-bm-list" aria-hidden="true">
+        {shown.map(p => <span key={p.key} data-fit className="sum-bm-item">{p.name} <b className={tone(p.points)}>{signedPts(p.points)}</b></span>)}
+        {hidden > 0 && <span data-fit-more className="sum-bm-more">+{hidden}</span>}
+      </span>
+    </button>
+  );
+}
+
 /**
  * Il Riassunto della Panoramica, ritratto del team: in alto (eroe) il tipo di team e chi lo rende tale, sotto chi porta
  * meteo e campo, chi piazza le trappole e, in fondo, le Sinergie (core difensivi e legami), che prendono lo spazio che resta.
  */
-export function SummarySection({ summary, members, team = [], density, rich = false, onView, onShowAll }: {
+export function SummarySection({ summary, members, team = [], density, rich = false, bonusMalus, onView, onShowAll }: {
   summary: TeamSummary; members: number;
+  /** La riga Bonus/Malus in fondo, solo se c'è posto (useBonusMalusRoom); senza, non c'è. */
+  bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
   /** I set del team: la carta del Pokémon al passaggio su chi rende il team tale. */
   team?: TeamSet[];
   /** Sprite e righe cambiano misura con la densità: le parti a misura si rimisurano. */
@@ -276,10 +339,12 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
   );
   const shownAtk = shown.filter(m => m.side === 'atk');
   const shownDef = shown.filter(m => m.side === 'def');
+  const card = useRef<HTMLDivElement>(null);
+  const bmRoom = useBonusMalusRoom(card, !!bonusMalus && (bonusMalus.pieces.length > 0 || bonusMalus.net !== 0));
 
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
-      <div className="sum-body">
+      <div className="sum-body" ref={card}>
         {(members >= 2 || makers.length > 0) && (
           <div className="sum-hero">
             {members >= 2 && (
@@ -368,6 +433,7 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
+      {bmRoom && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {monTip.anchor && setOf(monTip.anchor.key.name) && (
         <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">
           <MemberCard set={setOf(monTip.anchor.key.name)!} why={monTip.anchor.key.score === undefined ? undefined

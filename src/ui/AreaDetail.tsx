@@ -61,8 +61,10 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
 /** Il dettaglio di una tessera: che tabella, quale membro (posto nel team) e quale fascia (KO in un colpo o in due). */
 /** `band`: OHKO, 2HKO o 'rest' (quelli che il membro non manda KO in due colpi). */
 /** Nella Difesa (kind 'dtypes' / 'dmeta') `band` è il pezzo della barra: 'held' (3HKO+), 2HKO o OHKO. */
+/** `threat` (dalla carta Minacce del meta della Panoramica): in Coverage meta della Difesa o dell'Offesa la colonna di quella minaccia, prima nell'ordine e accesa. */
 export type KoFocus = { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' | 'rest' }
-  | { kind: 'dtypes' | 'dmeta'; slot: number; band: HoldPiece };
+  | { kind: 'dtypes' | 'dmeta'; slot: number; band: HoldPiece }
+  | { kind: 'threat'; side: 'defense' | 'offense'; species: string };
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola

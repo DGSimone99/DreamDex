@@ -10,7 +10,7 @@ import { useT } from '../i18n/react';
 import { AnalysisOverview } from './AnalysisOverview';
 import { AnalysisTabs } from './AnalysisTabs';
 import { resolveView, type AnalysisView, type TabView } from './analysisView';
-import type { AreaKey } from './AreaDetail';
+import type { AreaKey, KoFocus } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
 
@@ -64,10 +64,14 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   // Il problema scelto nella testata di un'area: il Coaching si apre su di lui (`nonce`: anche lo stesso problema di nuovo)
   const [coachFocus, setCoachFocus] = useState<{ key: string; nonce: number } | null>(null);
   // Aprire un'area anche su una sua sotto-scheda (Copertura → Coverage tipi; i Ruoli → Bonus/Malus, sottoscheda Ruoli)
-  const openView = (next: AnalysisView, sub?: string) => {
+  // Il dettaglio da accendere nell'area che si apre (una minaccia della Panoramica): vale solo per quell'area, e si
+  // dimentica appena si passa a un'altra scheda (tornandoci non si riaccende)
+  const [areaFocus, setAreaFocus] = useState<{ area: TabView; focus: KoFocus } | null>(null);
+  const openView = (next: AnalysisView, sub?: string, focus?: KoFocus) => {
     const target = resolveView(next);
     const pick = target.sub ?? sub;
     if (pick && target.tab !== 'overview' && target.tab !== 'coaching') setSubTabs(tabs => ({ ...tabs, [target.tab]: pick }));
+    setAreaFocus(focus ? { area: target.tab, focus } : null);
     onView(target.tab);
   };
   // Una vista che non è una scheda (i Ruoli, da un link del voto o da uno stato vecchio): si apre la sua scheda con la sottoscheda
@@ -77,6 +81,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   const showCoaching = view === 'coaching' && !!rating;
   // Lasciato il Coaching, il problema scelto si dimentica (tornandoci dalle schede non si riaccende)
   useEffect(() => { if (!showCoaching) setCoachFocus(null); }, [showCoaching]);
+  useEffect(() => { if (areaFocus && areaFocus.area !== (area ?? 'overview')) setAreaFocus(null); }, [area]);
   // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
   const problems = coaching?.problems ?? [];
   const serious = problems.filter(p => p.severity === 'serious').length;
@@ -89,7 +94,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
         onCoaching={key => {
           if (key) setCoachFocus(f => ({ key, nonce: (f?.nonce ?? 0) + 1 }));
           openView('coaching');
-        }} advice={advice} />
+        }} advice={advice} initialFocus={areaFocus?.area === area ? areaFocus.focus : null} />
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
