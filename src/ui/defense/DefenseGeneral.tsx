@@ -2,7 +2,9 @@ import { useId, type ReactNode } from 'react';
 import { type SustainParts, type TeamDefense } from '../../engine/defense';
 import { defenseShares, type DefenseShare } from '../../engine/defenseShares';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
-import { useT } from '../../i18n/react';
+import { useLang, useT } from '../../i18n/react';
+import { anyGameName } from '../../i18n/game';
+import type { Lang } from '../../i18n';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
@@ -23,6 +25,15 @@ export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'wa
 /** Un numero con segno: "+47", "−25", "0" (il meno tipografico). */
 export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
+/**
+ * Il nome di una fonte di recupero o di perdita nella lingua scelta: mosse, abilità e strumenti coi nomi ufficiali
+ * ("Recover" → "Ripresa"); più fonti unite da " + " e "Rapid Spin (Great Tusk)" col nome del Pokémon che resta inglese.
+ */
+export const sourceName = (source: string, lang: Lang): string => source.split(' + ').map(part => {
+  const owner = /^(.*) \(([^()]*)\)$/.exec(part);
+  return owner ? `${anyGameName(owner[1], lang)} (${owner[2]})` : anyGameName(part, lang);
+}).join(' + ');
+
 /** PS su 100, senza il segno del %: "6" per il 6% dei PS. */
 const hp = (x: number) => Math.round(100 * x);
 
@@ -32,22 +43,24 @@ const hp = (x: number) => Math.round(100 * x);
  */
 function useSustainWords() {
   const t = useT();
+  const lang = useLang();
+  const name = (source: string) => sourceName(source, lang);
   return (parts: SustainParts): { text: string; tone: 'gain' | 'loss' | 'none' }[] => {
     const out: { text: string; tone: 'gain' | 'loss' | 'none' }[] = [];
     if (parts.recovery > 0) {
-      const from = parts.sources.join(' + ');
+      const from = parts.sources.map(name).join(' + ');
       out.push({ tone: 'gain', text: t(parts.halved ? 'ddetail.share.gainHalved' : 'ddetail.share.gain', { n: hp(parts.recovery), from }) });
     }
     if (parts.rocks > 0) {
       // "(dimezzata: Defog (Corviknight) toglie gli hazard)", con la minuscola dentro la frase
-      const note = parts.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: parts.rocksHalvedBy }) : '';
+      const note = parts.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: name(parts.rocksHalvedBy) }) : '';
       const halved = note ? ` (${note.charAt(0).toLocaleLowerCase()}${note.slice(1)})` : '';
-      out.push({ tone: 'loss', text: `${t('ddetail.share.loss', { n: hp(parts.rocks), from: t('ddetail.sus.rocks') })}${halved}` });
+      out.push({ tone: 'loss', text: `${t('ddetail.share.loss', { n: hp(parts.rocks), from: name('Stealth Rock') })}${halved}` });
     }
     // Le altre perdite fonte per fonte (Life Orb, Flame Orb, le mosse che costano PS); senza dettaglio, in una riga sola
     const losses = parts.losses.filter(l => hp(l.loss) > 0);
-    if (losses.length) for (const l of losses) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(l.loss), from: l.source }) });
-    else if (parts.itemLoss > 0) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(parts.itemLoss), from: parts.itemLossFrom ?? t('ddetail.sus.orb') }) });
+    if (losses.length) for (const l of losses) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(l.loss), from: name(l.source) }) });
+    else if (parts.itemLoss > 0) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(parts.itemLoss), from: parts.itemLossFrom ? name(parts.itemLossFrom) : t('ddetail.sus.orb') }) });
     if (!out.length) out.push({ tone: 'none', text: t('ddetail.share.flat') });
     return out;
   };
@@ -57,7 +70,7 @@ function useSustainWords() {
  * Il tooltip di quanto porta un membro alla Difesa: i tre pezzi, Coverage tipi, Coverage meta e Recupero, e sotto in
  * parole quanto recupera e quanto perde (PS su 100).
  */
-function ShareTip({ who, share, sustain, words, meta }: { who: string; share: DefenseShare; sustain: number; words: { text: string; tone: string }[]; meta: boolean }) {
+function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShare; words: { text: string; tone: string }[]; meta: boolean }) {
   const t = useT();
   return (
     <>
@@ -65,7 +78,7 @@ function ShareTip({ who, share, sustain, words, meta }: { who: string; share: De
       <div className="dsh-rows">
         <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageTypes')}<b>{signed(share.types)}</b></span>
         {meta && <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageMeta')}<b>{signed(share.meta)}</b></span>}
-        <span className="dsh-row"><i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />{t('ddetail.sustain')} <small>{signed(sustain)}</small><b>{signed(share.sustain)}</b></span>
+        <span className="dsh-row"><i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />{t('ddetail.sustain')}<b>{signed(share.sustain)}</b></span>
         {words.map((w, k) => <span key={k} className={`dsh-line ${w.tone}`}>{w.text}</span>)}
       </div>
     </>
@@ -98,10 +111,10 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const sustainWords = useSustainWords();
   const hasMeta = !!defense.coverageMeta;
   // Per lo screen reader le stesse cose del tooltip, in una frase
-  const describe = (share: DefenseShare, sustain: number, words: { text: string }[]) => [
+  const describe = (share: DefenseShare, words: { text: string }[]) => [
     `${t('detail.coverageTypes')} ${signed(share.types)}`,
     hasMeta ? `${t('detail.coverageMeta')} ${signed(share.meta)}` : '',
-    `${t('ddetail.sustain')} ${signed(sustain)}: ${signed(share.sustain)}`,
+    `${t('ddetail.sustain')} ${signed(share.sustain)}`,
   ].filter(Boolean).join(', ') + '. ' + words.map(w => w.text).join('. ');
 
   // Le barre a pezzi di Tipi e Meta: le fasce di ogni membro, e del team (il membro che regge meglio ogni bersaglio)
@@ -162,8 +175,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   {/* Quanto porta alla Difesa del team, solo il numero: i pezzi e il recupero nel tooltip */}
                   {(() => {
                     const words = sustainWords(m.sustainParts);
-                    return <DefShare share={shares[i]} label={t('ddetail.shareTitle', { n: signed(shares[i].points) })} describe={describe(shares[i], m.sustain, words)}
-                      tip={<ShareTip who={m.species} share={shares[i]} sustain={m.sustain} words={words} meta={hasMeta} />} />;
+                    return <DefShare share={shares[i]} label={t('ddetail.shareTitle', { n: signed(shares[i].points) })} describe={describe(shares[i], words)}
+                      tip={<ShareTip who={m.species} share={shares[i]} words={words} meta={hasMeta} />} />;
                   })()}
                 </td>
               </tr>

@@ -1041,7 +1041,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.sus.loss': "Perde",
   'ddetail.sus.gain': "Recupera",
   'ddetail.sus.net': "Netto",
-  'ddetail.sus.rocks': "Stealth Rock",
+  'ddetail.sus.rocks': "Levitoroccia",
   'ddetail.sus.orb': "Strumenti e mosse",
   'ddetail.sus.rocksHalved': "Dimezzata: {by} toglie gli hazard",
   'ddetail.halvedTip': "Recupero ridotto: regge pochi colpi",
