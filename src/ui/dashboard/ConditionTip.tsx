@@ -6,6 +6,7 @@ import type { MessageKey } from '../../i18n';
 import { anyGameName, gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
 
 /**
@@ -105,7 +106,7 @@ export function ConditionTip({ row }: { row: ConditionRow }) {
         <b className="ctip-name">{row.label}</b>
         <span className="ctip-sub">{duration}</span>
         <span className="ctip-setter">
-          <span className="ctip-plinth"><Sprite species={row.member} size={46} /></span>
+          <span className="ctip-plinth"><Sprite species={row.member} size={SPRITE_TIP} /></span>
           <Via via={row.via} />
         </span>
       </div>
@@ -124,7 +125,7 @@ export function ConditionTip({ row }: { row: ConditionRow }) {
         const text = !user.via ? t('ctip.b.setup') : benefit ? t(benefit.text) : t('ctip.b.slow');
         return (
           <div key={user.name} className="ctip-user">
-            <span className="ctip-plinth good"><Sprite species={user.name} size={40} /></span>
+            <span className="ctip-plinth good"><Sprite species={user.name} size={SPRITE_TIP_ROW} /></span>
             <span className="ctip-who"><b>{user.name}</b>{user.via && benefit && <span className="ctip-via"><Via via={user.via} /></span>}</span>
             <span className="ctip-eff">{benefit?.up && <Arrow dir="up" />}{text}</span>
           </div>

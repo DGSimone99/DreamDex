@@ -46,19 +46,19 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
   const depth = depthOf(false);
   return (
     <>
-      <h5>{g('test.targets')}</h5>
+      <h4>{g('test.targets')}</h4>
       <Rows compact rows={[
         [t('detail.coverageTypes'), <>{g('targets.types')} <Ask label={g('targets.typesTitle')}><TypeAverages formatId={formatId} /></Ask></>],
         ...(offense.coverageMeta ? [[t('detail.coverageMeta'), <>{g('cov.targets.meta', { n: metaSpecies.length })} <Ask label={g('targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></>] as [ReactNode, ReactNode]] : []),
       ]} />
 
-      <h5>{g('test')}</h5>
+      <h4>{g('test')}</h4>
       <Rows compact rows={[
         // Sotto la regola, a capo e senza titolo: quello che conta meno
         [g('power.hit'), <>{g('power.hit.rule')}<span className="guide-sub">{g('less.rule', { extra: oneUse })}</span></>],
       ]} />
 
-      <h5>{g('cov.depth')}</h5>
+      <h4>{g('cov.depth')}</h4>
       <Bar label={g('cov.depth')} weights={depth} rank={n => g('cov.rank', { n })} />
       {lines([g('cov.scale', scaleOf(depth))])}
     </>

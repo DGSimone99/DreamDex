@@ -6,7 +6,9 @@ import type { AnalysisView } from '../analysisView';
 import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
+import { SPRITE_TIP } from '../spriteSizes';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
@@ -43,7 +45,7 @@ function RoleTip({ chip }: { chip: RoleChip }) {
       </div>
       {chip.covered
         ? <div className="role-tip-mons">{chip.owners.map(name => (
-          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={56} /></span><span>{name}</span></span>
+          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={SPRITE_TIP} /></span><span>{name}</span></span>
         ))}</div>
         : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
     </>
@@ -53,7 +55,7 @@ function RoleTip({ chip }: { chip: RoleChip }) {
 /** I gestori del tooltip di un ruolo e il tooltip da rendere (uno per chip o riga). */
 function useRoleTip(chip: RoleChip) {
   const tip = useFloatAnchor<RoleChip>();
-  const bind = { onMouseEnter: (e: { currentTarget: Element }) => tip.open(chip, e.currentTarget), onMouseLeave: tip.close };
+  const bind = tip.bind(chip);
   const node = tip.anchor && (
     <FloatTip rect={tip.anchor.rect} tone={chip.covered ? 'var(--good)' : chip.soft ? 'var(--faint)' : 'var(--bad)'} className="role">
       <RoleTip chip={chip} />
@@ -67,7 +69,8 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
   const { label, detail } = useRoleText(chip);
   const tip = useRoleTip(chip);
   return (
-    <li data-fit className={`dash-role ${stateOf(chip)}${chip.level === 'minor' ? ' minor' : ''}`} {...tip.bind}>
+    // Raggiungibile con le frecce (data-nav: le fasce sono un posto solo nel giro del Tab); col fuoco il tooltip
+    <li data-fit data-nav="" className={`dash-role ${stateOf(chip)}${chip.level === 'minor' ? ' minor' : ''}`} {...tip.bind}>
       {tip.node}
       <span className="dash-role-tag">
         <Icon name={chip.covered ? 'check' : 'close'} />
@@ -111,6 +114,7 @@ function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; 
     `${density}|${lang}|${bands.flat().map(c => `${c.need}${c.covered}${c.owners.join('+')}`).join()}`, roles.chips.length,
     { more: true, outer: '.dash-roles' },
   );
+  const nav = useRoving<HTMLDivElement>();
   let left = shown;
   const visible = bands.map(chips => {
     const n = Math.min(chips.length, Math.max(0, left));
@@ -118,7 +122,7 @@ function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; 
     return n;
   });
   return (
-    <div ref={ref} className="dash-role-bands dash-fit">
+    <div ref={el => { ref(el); nav.ref.current = el; }} className="dash-role-bands dash-fit" onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
       {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} shown={visible[i]} />)}
     </div>
   );

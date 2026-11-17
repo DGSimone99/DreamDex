@@ -11,7 +11,9 @@ import { offenseSlots } from './slots';
 import { Ask, MetaTargets, TypeAverages } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { useRoving } from '../useRoving';
 
 /** I 18 tipi di un membro come bersagli: colpo semplice, dopo una danza, con Tera/Z. */
 const typeTargets = (m: MemberOffense): KoTarget[] =>
@@ -53,6 +55,20 @@ function Share({ points, from, team }: { points: number; from: number; team: num
 }
 
 /**
+ * Quanto porta un membro, col suo tooltip (prima era il title del browser, solo col mouse): raggiungibile con le frecce
+ * (data-nav, nel gruppo della tabella), il testo è anche il nome per lo screen reader.
+ */
+function ShareTip({ text, children }: { text: string; children: ReactNode }) {
+  const tip = useFloatAnchor<true>();
+  return (
+    <span className="og-stack og-share" data-nav="" role="img" aria-label={text} {...tip.bind(true)}>
+      {children}
+      {tip.anchor && <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot"><p className="kot-none">{text}</p></FloatTip>}
+    </span>
+  );
+}
+
+/**
  * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`). Per ogni membro: quante minacce del meta
  * e quanti dei 18 tipi manda KO in un colpo e in due (badge OHKO e 2HKO, col colpo semplice; il setup come "▴+N" a
  * parte; il 3HKO non conta), passando su un badge i bersagli nel tooltip; poi quanto porta all'Offesa del team ("+18",
@@ -75,6 +91,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const teamTypes = teamTargets(known.map(i => typeTargets(members[i])));
   const teamMeta = teamTargets(ctx.team.map((_, slot) => slot).filter(slot => slots[slot] !== null).map(slot => metaTargets(offense, slot)));
   const teamName = t('odetail.gen.total');
+  // Tutti i pezzi della tabella (barre dei colpi, mosse, quanto porta) sono un posto solo nel giro del Tab, poi le frecce
+  const nav = useRoving<HTMLTableElement>();
   // Uscendo dalla scheda nessuna carta resta accesa
   useEffect(() => () => linkTeamCard(null), []);
   // Dove comincia il pezzo di ogni membro nella barra del team: i punti delle righe sopra
@@ -97,7 +115,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   return (
     <div className={`def-frame off-frame def-general off-general${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table className="def-grid def-members">
+        <table ref={nav.ref} className="def-grid def-members" aria-label={`${t('area.strength')}: ${t('detail.tab.general')}`} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
           <colgroup><col className="def-col-mon" /><col />{meta && <col />}<col /></colgroup>
           <thead>
             <tr>
@@ -128,7 +146,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                         {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} />}</td>}
                       <td>
                         {/* Quanto porta al team: i punti dei membri sommati fanno l'Offesa del team */}
-                        <span className="og-stack og-share" title={t('odetail.gen.shareTitle', { n: s.points })}><Share points={s.points} from={shareFrom[slot]} team={offense.value} /></span>
+                        <ShareTip text={t('odetail.gen.shareTitle', { n: s.points })}><Share points={s.points} from={shareFrom[slot]} team={offense.value} /></ShareTip>
                       </td>
                     </>
                     : <><td>—</td>{meta && <td>—</td>}<td>—</td></>}
@@ -149,7 +167,9 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
         </table>
       </div>
       {/* Nella riga bassa solo il segno del setup (il resto lo dicono i tooltip delle tessere) */}
-      <div className="rob-legend og-legend" aria-hidden="true"><span><i className="kob-tri" />{t('kob.legendSetupShort')}</span></div>
+      <div className="rob-legend og-legend" aria-hidden="true">
+        <span><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
+      </div>
     </div>
   );
 }

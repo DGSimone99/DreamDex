@@ -1291,6 +1291,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalogue.cores.none': "Nessun core a tre",
   'catalogue.cores.how': "Ne hai uno quando tre membri si coprono le debolezze a giro: il primo regge un tipo che fa male al secondo, il secondo uno che fa male al terzo, il terzo uno che fa male al primo. Insieme devono reggere almeno 6 tipi d'attacco.",
   'catalogue.cores.held': "Reggono {n} tipi su {total}",
+  'catalogue.cores.heldShort': "Reggono {n}/{total}",
   'catalogue.cores.heldTip': "Tipi d'attacco che almeno uno dei tre regge bene",
   'catalogue.cores.through': "Passano: {types}",
   'catalogue.cores.name': "Core {title}",

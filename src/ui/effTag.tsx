@@ -49,8 +49,10 @@ export function useColumnHover() {
     col,
     /** Sulla tabella: uscendo si spegne. */
     table: { onMouseLeave: () => setCol(null) },
-    /** Su ogni casella e intestazione della colonna `i`. */
-    enter: (i: number) => ({ onMouseEnter: () => setCol(i) }),
+    /** Su ogni casella e intestazione della colonna `i` (anche col fuoco: le frecce della griglia). */
+    enter: (i: number) => ({ onMouseEnter: () => setCol(i), onFocus: () => setCol(i) }),
+    /** Spegne la colonna (il fuoco esce dalla griglia). */
+    clear: () => setCol(null),
     /** Classe della colonna accesa. */
     cls: (i: number, extra = '') => [extra, col === i && 'x-col'].filter(Boolean).join(' ') || undefined,
   };

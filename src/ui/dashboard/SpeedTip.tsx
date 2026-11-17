@@ -4,6 +4,7 @@ import { useT } from '../../i18n/react';
 import { Icon } from '../icons';
 import { ItemIcon } from '../ItemIcon';
 import { Sprite } from '../Sprite';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 
 /** Il nome con accanto l'icona dello strumento che alza la Velocità (Sciarpa o Booster), se c'è. */
 function Name({ species, item }: { species: string; item?: string }) {
@@ -14,7 +15,7 @@ function Name({ species, item }: { species: string; item?: string }) {
 function Rung({ mon, tone, tag }: { mon: SpeedNeighbour; tone: 'faster' | 'slower' | 'tie'; tag?: string }) {
   return (
     <div className={`stip-rung ${tone}`}>
-      <span className="stip-mon"><Sprite species={mon.species} size={40} /></span>
+      <span className="stip-mon"><Sprite species={mon.species} size={SPRITE_TIP_ROW} /></span>
       <Name species={mon.species} item={mon.scarf ? 'Choice Scarf' : mon.booster ? 'Booster Energy' : undefined} />
       {tag && <span className="stip-item tie">{tag}</span>}
       <b className="stip-speed">{mon.speed}</b>
@@ -41,7 +42,7 @@ export function SpeedTip({ lane, vsMeta, extra }: { lane: SpeedLane; vsMeta: boo
       <div className="stip-ladder">
         {near && [...near.faster].reverse().map(mon => <Rung key={`f-${mon.species}-${mon.speed}`} mon={mon} tone="faster" />)}
         <div className="stip-rung self">
-          <span className="stip-mon"><Sprite species={lane.species} size={40} /></span>
+          <span className="stip-mon"><Sprite species={lane.species} size={SPRITE_TIP_ROW} /></span>
           <Name species={lane.species} item={lane.item} />
           <b className="stip-speed">{lane.speed}</b>
         </div>

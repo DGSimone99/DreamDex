@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 /** Quanto aspetta prima di aprirsi: passando col mouse sopra la griglia non si accende a ogni casella. */
@@ -7,10 +7,25 @@ const OPEN_DELAY = 140;
 const GAP = 9;
 const EDGE = 8;
 
+/** L'ultimo gesto: un tasto o il puntatore (per chi non sa dire :focus-visible, come jsdom). */
+let lastInput: 'key' | 'pointer' = 'key';
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', () => { lastInput = 'key'; }, true);
+  window.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, true);
+}
+
+/** Fuoco da tastiera (non dal clic): :focus-visible, o l'ultimo gesto è stato un tasto. */
+export const keyboardFocus = (el: Element): boolean => {
+  try { if (el.matches(':focus-visible')) return true; } catch { /* selettore sconosciuto: decide l'ultimo gesto */ }
+  return lastInput === 'key';
+};
+
 /**
  * Il punto di partenza del tooltip: chi lo apre passa il suo riquadro e una chiave (quale casella). `open` dopo un
  * attimo (`delay`, 140 ms; più lungo dove il mouse passa spesso, come le carte del team), `close` subito. Un solo stato
  * per tutta una griglia: ogni casella chiama `open` con la sua chiave.
+ * `focus(key)`: i gestori del fuoco per l'elemento (si apre col fuoco da tastiera, si chiude uscendo; Esc lo chiude);
+ * `bind(key)`: mouse e fuoco insieme, per chi non ha altro da fare all'entrata del mouse.
  */
 export function useFloatAnchor<K>(delay = OPEN_DELAY) {
   const [anchor, setAnchor] = useState<{ key: K; rect: DOMRect } | null>(null);
@@ -25,26 +40,39 @@ export function useFloatAnchor<K>(delay = OPEN_DELAY) {
   }, [delay]);
   const close = useCallback(() => { window.clearTimeout(timer.current); source.current = null; setAnchor(null); }, []);
   useEffect(() => () => window.clearTimeout(timer.current), []);
+  // Esc anche prima che si apra (il fuoco è appena arrivato): niente tooltip
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && source.current) close(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [close]);
   // Scorrere o ridimensionare sposterebbe la casella sotto il tooltip: si chiude. Se la casella esce dalla pagina
   // mentre il mouse ci sta sopra, il browser non manda l'uscita del mouse: si controlla a ogni cambio della pagina
   // e a ogni movimento del mouse.
   useEffect(() => {
     if (!anchor) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     const check = () => { if (!source.current?.isConnected) close(); };
     const watch = new MutationObserver(check);
     watch.observe(document.body, { childList: true, subtree: true });
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
-    window.addEventListener('keydown', onKey);
     window.addEventListener('pointermove', check, true);
     return () => {
       watch.disconnect();
       window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close);
-      window.removeEventListener('keydown', onKey); window.removeEventListener('pointermove', check, true);
+      window.removeEventListener('pointermove', check, true);
     };
   }, [anchor, close]);
-  return { anchor, open, close };
+  const focus = useCallback((key: K) => ({
+    onFocus: (e: FocusEvent<Element>) => { if (keyboardFocus(e.currentTarget)) open(key, e.currentTarget); },
+    onBlur: close,
+  }), [open, close]);
+  const bind = useCallback((key: K) => ({
+    onMouseEnter: (e: { currentTarget: Element }) => open(key, e.currentTarget),
+    onMouseLeave: close,
+    ...focus(key),
+  }), [open, close, focus]);
+  return { anchor, open, close, focus, bind };
 }
 
 /**
@@ -91,4 +119,12 @@ export function FloatTip({ rect, tone, className = '', side = false, children }:
     </div>,
     document.body,
   );
+}
+
+/**
+ * Il testo della descrizione per lo screen reader (aria-describedby) di un elemento piccolo, come un pezzo della barra:
+ * nascosto e fuori dall'elemento (nel body), così non entra nel suo testo né nella casella che lo contiene.
+ */
+export function HiddenText({ id, children }: { id: string; children: ReactNode }) {
+  return createPortal(<span id={id} hidden>{children}</span>, document.body);
 }
