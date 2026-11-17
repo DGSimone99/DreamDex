@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
@@ -16,11 +16,14 @@ import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
 
 /**
- * I problemi del coaching che riguardano ogni area, nella striscia in fondo (regole, condizioni e minacce del meta restano
- * nella Panoramica e nel Coaching). Ruoli e Bonus prende i ruoli che mancano e i malus del Coaching (le ripetizioni).
+ * I problemi del coaching che riguardano ogni area, nella testata dell'area: le stesse colonne della mappa del Coaching
+ * (columnOf), così i conti tornano. La Difesa prende anche le minacce del meta che nessuno regge, l'Offesa quelle che
+ * nessuno manda KO; Ruoli e Bonus i ruoli che mancano e i malus del Coaching (le ripetizioni), senza le debolezze in comune
+ * (le dice già la Difesa, come nella mappa). Regole e condizioni restano nella Panoramica e nel Coaching.
  */
-const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], speed: [], bonusMalus: ['roles', 'redundancy'] };
-export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? []).filter(p => AREA_PROBLEMS[area].includes(p.category));
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit'], speed: [], bonusMalus: ['roles', 'redundancy'] };
+export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? [])
+  .filter(p => AREA_PROBLEMS[area].includes(p.category) && !p.key.startsWith('redundancy:sharedWeak:'));
 
 /**
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
@@ -55,6 +58,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   const tr = useT();
   // La sottoscheda scelta in ogni area, solo in memoria: tornando su un'area si ritrova (Generale se non c'è più)
   const [subTabs, setSubTabs] = useState<Partial<Record<AreaKey, string>>>({});
+  // Il problema scelto nella testata di un'area: il Coaching si apre su di lui (`nonce`: anche lo stesso problema di nuovo)
+  const [coachFocus, setCoachFocus] = useState<{ key: string; nonce: number } | null>(null);
   // Aprire un'area anche su una sua sotto-scheda (Copertura → Coverage tipi; i Ruoli → Bonus/Malus, sottoscheda Ruoli)
   const openView = (next: AnalysisView, sub?: string) => {
     const target = resolveView(next);
@@ -67,6 +72,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   useLayoutEffect(() => { if (target.sub) openView(view); }, [view]);
   const area = target.tab !== 'overview' && target.tab !== 'coaching' && rating ? target.tab : null;
   const showCoaching = view === 'coaching' && !!rating;
+  // Lasciato il Coaching, il problema scelto si dimentica (tornandoci dalle schede non si riaccende)
+  useEffect(() => { if (!showCoaching) setCoachFocus(null); }, [showCoaching]);
   // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
   const problems = coaching?.problems ?? [];
   const serious = problems.filter(p => p.severity === 'serious').length;
@@ -76,7 +83,10 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     body = (
       <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed} formatId={data.formatId}
         picked={(area === target.tab ? target.sub : undefined) ?? subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))}
-        onCoaching={() => openView('coaching')} steps={advice?.steps ?? null} />
+        onCoaching={key => {
+          if (key) setCoachFocus(f => ({ key, nonce: (f?.nonce ?? 0) + 1 }));
+          openView('coaching');
+        }} steps={advice?.steps ?? null} />
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
@@ -84,7 +94,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
       threatUsage={Object.fromEntries([...ratingThreats(rating, data).map(th => th.name), ...(rating?.offense.coverageMeta?.rows ?? []).map(row => row.species)].map(name => [name, usageOf(data.stats, name)]))}
       onOpen={column => { if (column !== 'rules') openView(column === 'offense' ? 'strength' : column); }}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
-      onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
+      onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} focus={coachFocus} />;
   } else {
     body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} advice={advice} data={data}
       onView={openView} onAdd={onAdd} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />;

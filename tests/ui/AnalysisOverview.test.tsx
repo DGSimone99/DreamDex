@@ -73,7 +73,7 @@ describe('Panoramica di Analisi', () => {
       expect(head).toHaveClass('is-link');
       await user.click(within(head as HTMLElement).getByRole('button', { name: link }));
       expect(within(views()).getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
-      if (name === 'Ruoli') expect(within(panel()).getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
+      if (name === 'Ruoli') expect(within(panel()).getByRole('tab', { name: 'Ruoli' })).toHaveAttribute('aria-selected', 'true');
       await user.click(within(views()).getByRole('tab', { name: 'Panoramica' }));
     }
     // Copertura ha due link: la barra non è un link

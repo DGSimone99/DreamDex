@@ -50,8 +50,8 @@ export function fixItems(problems: CoachProblem[], lang: Lang): { shown: string[
 }
 
 /**
- * In fondo alla Panoramica: cosa il Coaching sa sistemare, coi nomi, e il passaggio al Coaching (tutta la striscia porta lì,
- * come quella in fondo alle aree, che sta nello stesso posto). C'è sempre: mentre i consigli si calcolano (`steps` null)
+ * In fondo alla Panoramica: cosa il Coaching sa sistemare, coi nomi, e il passaggio al Coaching (tutta la striscia porta
+ * lì). C'è sempre: mentre i consigli si calcolano (`steps` null)
  * uno scheletro alto uguale; quando il Coaching non ha nessuna proposta (nessun problema, o problemi che nessuna tappa
  * risolve) "Nessun problema da sistemare", verde e ferma (niente link: lì non ci sarebbe niente da fare). Porta al
  * Coaching solo con almeno una proposta. Così la pagina non salta.
@@ -74,15 +74,15 @@ export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; 
   // Senza proposte la striscia è verde e ferma, anche se restano problemi che il Coaching non sa risolvere
   const link = count > 0;
   const status = link ? t(count === 1 ? 'area.problems.one' : 'area.problems.many', { n: count }) : t('overview.fix.none');
-  // Il colore dice il caso come nelle aree: rosso con almeno un problema grave, giallo coi soli minori, verde senza
+  // Il colore dice il caso: rosso con almeno un problema grave, giallo coi soli minori, verde senza
   const serious = fixable.some(p => p.severity === 'serious');
   return (
     // Il clic sta sulla striscia; il pulsante vero è "Vai al Coaching" (tastiera e lettori: Invio e Spazio fanno un clic)
     <section className={`fix-row${link ? ` is-link${serious ? ' serious' : ' minor'}` : ' is-clear'}`} aria-label={t('overview.fix.title')} onClick={link ? () => onView('coaching') : undefined}>
       {link ? (
         <>
-          {/* "N problemi" come in fondo alle aree (stessa etichetta, stessi colori) */}
-          <span className="area-problems-label" aria-hidden="true"><Icon name="warning" />{status}</span>
+          {/* "N problemi" nel colore della striscia */}
+          <span className="fix-label" aria-hidden="true"><Icon name="warning" />{status}</span>
           <span className="fix-items" title={[...shown, ...hidden].join(' · ')}>
             {shown.join(' · ')}
           </span>
@@ -94,7 +94,7 @@ export function FixRow({ problems, steps, onView }: { problems: CoachProblem[]; 
           )}
         </>
       ) : (
-        <span className="area-problems-label"><Icon name="check" />{status}</span>
+        <span className="fix-label"><Icon name="check" />{status}</span>
       )}
       {link && (
         <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: status })}>

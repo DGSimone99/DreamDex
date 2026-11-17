@@ -78,66 +78,63 @@
 .analysis-tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
 .analysis-view { flex: 1; min-height: 0; }
 
-/* Un'area sulla pagina: sottostatistiche e problemi a sinistra, il dettaglio a destra; ognuna scorre dentro */
-.area-view { display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; padding-bottom: 4px; }
-/* Striscia magenta attaccata alla scheda aperta (il margine annulla lo spazio sotto le schede principali) */
-.area-strip { position: relative; margin-top: -12px; flex: none; }
-.area-subs { display: flex; gap: 2px; background: var(--accent-2-wash); border-top: 3px solid var(--accent-2); overflow-x: auto; }
-.area-subs [role='tab'] { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 8px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 500; font-style: normal; line-height: 1.2; white-space: nowrap; }
-.area-subs [role='tab'] b { font: 700 15px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
-.area-subs [role='tab']:hover { color: var(--text); }
-/* La striscia scorre (overflow): il contorno del fuoco va dentro la scheda, o verrebbe tagliato */
-.area-subs [role='tab']:focus-visible { outline-offset: -3px; }
-/* La sottoscheda aperta come la scheda principale aperta, in piccolo: righe magenta, taglio diagonale a destra e testo
-   appena più grande (solo visivo), così si riconosce subito */
-.area-subs [role='tab'][aria-selected='true'] {
-  color: var(--text); background: var(--stripes), var(--accent-2-soft); border-bottom-color: var(--accent-2-ink);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+/* Un'area sulla pagina: la testata (voto, problemi, sottoschede e "?") attaccata sopra il pannello, che scorre dentro */
+.area-view { display: flex; flex-direction: column; height: 100%; min-height: 0; padding-bottom: 4px; }
+/* La testata dell'area: toni neutri (niente magenta), tutto su una riga centrata in altezza; il pannello sotto continua
+   lo stesso fondo, separato da un filo */
+.area-head {
+  flex: none; display: flex; align-items: center; gap: 14px; min-width: 0; min-height: 50px; padding: 6px 16px;
+  background: var(--panel); border: 1px solid var(--line-soft);
 }
-/* Il taglio segue il posto della sottoscheda: la prima (sul bordo sinistro) solo a destra, quelle in mezzo su entrambi i
-   lati (\__/). Il lato tagliato a sinistra si allunga
-   sotto la vicina (margine negativo pari al padding in più: il testo resta dov'era), così fra le due non resta vuoto */
-.area-subs [role='tab'][aria-selected='true']:not(:first-child) {
-  position: relative; z-index: 1; margin-left: -12px; padding-left: 26px; margin-right: -12px; padding-right: 26px;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 10px 100%);
+.area-view > .area-panel { border-top: 0; }
+/* Il voto dell'area: lettera e parola nel colore del voto (S magenta, A verde, B ciano, C giallo, D rosso) */
+.area-grade { --grade: var(--accent); flex: none; display: flex; align-items: baseline; gap: 8px; margin: 0; color: var(--grade); white-space: nowrap; }
+.area-grade.grade-S { --grade: var(--accent-2-ink); }
+.area-grade.grade-A { --grade: var(--good); }
+.area-grade.grade-C { --grade: var(--warn); }
+.area-grade.grade-D { --grade: var(--bad); }
+.area-grade-letter { min-width: 0.8em; font: italic 800 30px/0.9 var(--display); text-align: center; }
+.area-grade-word { font: italic 700 19px/1 var(--display); }
+/* I problemi dell'area come pillole, in una riga sola (quelle che non stanno nel "+N") */
+.area-chips { flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin: 0; padding: 2px; list-style: none; overflow: hidden; }
+.area-chips > li { flex: none; display: flex; }
+.area-chip {
+  --tone: var(--warn); --tone-bg: var(--warn-bg);
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 5px 8px; border: 0; border-radius: 3px;
+  background: var(--tone-bg); color: var(--tone); font: 600 12px/1 var(--ui); white-space: nowrap; cursor: help;
 }
-.area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
-/* Ingrandimento solo visivo (scale dal centro): la larghezza della scheda non cambia, quindi nulla si sposta */
-.area-subs [role='tab'] > span:first-child, .area-subs [role='tab'] > b { display: inline-block; transform-origin: center; }
-.area-subs [role='tab'][aria-selected='true'] > span:first-child, .area-subs [role='tab'][aria-selected='true'] > b { transform: scale(1.05); }
-.area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 500; }
-.sub-help-room { display: inline-block; width: 30px; }
-.area-help { position: absolute; z-index: 2; display: flex; }
-
-/* Segni dopo il valore della sottoscheda (Ruoli: il +N dei minori) */
-.sub-marks { display: inline-flex; align-self: center; gap: 6px; }
-/* Ruoli: X/Y nel colore del livello peggiore che manca, il +N dei minori verde e più piccolo */
-.area-subs [role='tab'] b.sub-val-bad { color: var(--bad); }
-.area-subs [role='tab'] b.sub-val-warn { color: var(--warn); }
-.sub-plus { font: 700 italic 11px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-.sub-plus.neg { color: var(--bad); }
-/* Problemi dell'area in fondo: la stessa striscia della Panoramica (.fix-row, stessa x, larghezza, altezza e fondo) col
-   colore del caso: giallo, rosso se ce n'è almeno uno grave, verde senza problemi */
-.area-problems-row.fix-row { --tone: var(--warn); --tone-bg: var(--warn-bg); font-size: 13px; }
-.area-problems-row.serious { --tone: var(--bad); --tone-bg: var(--bad-bg); }
-/* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave, verde con la spunta senza problemi */
-.area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 1px 8px; border-radius: 3px; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tone); background: var(--tone-bg); }
-.area-problems-label .icon { width: 13px; height: 13px; }
-.area-problems { flex: 1; align-self: stretch; align-items: center; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 13px; }
-.area-problems > li { flex: none; white-space: nowrap; }
-/* Il "+N" dei problemi che non stanno nella riga (il title li elenca) */
-.area-problems li.area-problems-more { padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
-.area-problems li.area-problems-more::before { content: none; }
-/* Testo in linea (niente flex): i nomi dei tipi restano attaccati ai due punti */
-.area-problems li { position: relative; padding-left: 12px; }
-.area-problems li::before { content: '\25CF'; position: absolute; left: 0; color: var(--warn); }
-.area-problems li.serious::before { color: var(--bad); }
+.area-chip.serious { --tone: var(--bad); --tone-bg: var(--bad-bg); }
+.area-chip.good { --tone: var(--good); --tone-bg: var(--good-bg); cursor: default; }
+.area-chip > .icon { flex: none; width: 12px; height: 12px; }
+/* Il testo corto della pillola (lo stesso della mappa del Coaching) nel colore della pillola, intero */
+.area-chip .coach-prob-text { flex: none; overflow: visible; color: inherit; }
+.area-chip .coach-prob-text.is-threat .mon-icon { margin: -10px -3px -9px -2px; }
+.area-chip .coach-miss .icon { color: inherit; }
+.area-chip.is-link { cursor: pointer; transition: filter 0.15s ease-out; }
+.area-chip.is-link:hover { filter: brightness(1.25); }
+.area-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .area-chip.is-link { transition: none; } }
+/* Nel tooltip della pillola, sotto il problema, la tappa del Coaching che lo copre */
+.area-chip-tip .area-chip-by { margin: 0; padding: 0 12px 10px; color: var(--accent-ink); font-size: 12px; font-weight: 600; }
+.area-chip-tip .kot-none:has(+ .area-chip-by) { padding-bottom: 6px; }
+.ftip.area-chip-tip:has(> .area-chip-by) { width: var(--tip-s); }
+/* Il "+N" delle pillole che non stanno nella riga (il tooltip DreamDex le elenca) */
+.area-chips > li.area-chips-more { padding: 0 7px; border-radius: 10px; font: 600 11px/20px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
+.area-chips > li.area-chips-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Le sottoschede: un selettore a segmenti piccolo, neutro, con la scelta su Accent Soft */
+.area-subs { flex: none; display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.area-subs [role='tab'] { padding: 7px 12px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; color: var(--muted); font: 500 13px/1 var(--ui); white-space: nowrap; }
+.area-subs [role='tab']:last-child { border-right: 0; }
+.area-subs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.area-subs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-soft); }
+/* Il selettore taglia quello che sborda: il contorno del fuoco va dentro la scheda */
+.area-subs [role='tab']:focus-visible { outline-offset: -2px; }
+.area-help { flex: none; }
 /* La legenda dei colori della sottoscheda, a sinistra nella riga bassa in fondo alla tabella (dentro il pannello, nello
    spazio che la tabella lascia già sotto le righe): quieta e sempre intera */
 .area-legend { display: inline-flex; flex: none; align-items: center; gap: var(--legend-item); white-space: nowrap; font-size: var(--legend-size); color: var(--legend-ink); }
 .area-legend .hold-chip { padding: 1px 6px; font-size: 11px; line-height: 16px; }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
-/* Ogni scheda tiene il posto per il "?": aprendone un'altra le schede non si spostano */
 
 /* Panoramica: il cruscotto che prende il resto, in fondo la riga Da sistemare (il giudizio in cima solo con un membro); scorre solo sotto la misura minima */
 .overview { display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; padding-bottom: 14px; overflow: auto; overscroll-behavior: contain; }
@@ -148,8 +145,8 @@
 .overview-headline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
 .overview-headline > strong { font: 800 22px/1.1 var(--display); font-style: italic; }
 .overview-empty { display: grid; justify-items: start; gap: 12px; }
-/* Da sistemare (Panoramica) e problemi dell'area (in fondo alle aree): una striscia sola, alta 26px, rossa a sinistra (o
-   nel colore del caso, --tone); il testo lungo finisce coi puntini (tutto nel tooltip). Tutta la striscia porta al Coaching */
+/* Da sistemare (in fondo alla Panoramica): una striscia sola, alta 26px, rossa a sinistra (o nel colore del caso, --tone);
+   il testo lungo finisce coi puntini (tutto nel tooltip). Tutta la striscia porta al Coaching */
 .fix-row {
   --tone: var(--bad); --tone-bg: var(--bad-bg);
   flex: none; display: flex; align-items: center; gap: 12px; min-width: 0; height: 26px; padding: 0 4px 0 12px; line-height: 20px;
@@ -168,12 +165,13 @@
 .fix-row.is-skeleton { border-style: dashed; border-color: var(--line); border-left-style: solid; background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .fix-bone { display: block; flex: none; height: 8px; border-radius: 4px; background: var(--raised); }
 @media (prefers-reduced-motion: reduce) { .fix-row.is-link { transition: none; } }
-/* Le tappe si calcolano: "Vai al Coaching" tiene il suo posto, invisibile (la striscia è ferma e i problemi non si spostano) */
-.fix-go-wait { visibility: hidden; }
+/* L'etichetta "N problemi" in testa: rossa se ce n'è almeno uno grave, gialla coi soli minori, verde con la spunta senza proposte */
+.fix-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 1px 8px; border-radius: 3px; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tone); background: var(--tone-bg); }
+.fix-label .icon { width: 13px; height: 13px; }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fix-more { flex: none; padding: 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--raised); }
 .fix-go { flex: none; margin-left: auto; padding-top: 0; padding-bottom: 0; line-height: 20px; }
-/* Con la riga in fondo il margine sotto la Panoramica si accorcia a 4px, come sotto le aree: la striscia sta nello stesso posto */
+/* Con la riga in fondo il margine sotto la Panoramica si accorcia a 4px, come sotto le aree */
 .overview:has(> .fix-row) { gap: 8px; padding-bottom: 4px; }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 
@@ -695,6 +693,16 @@
 /* "risolve anche" dell'alternativa: un filo azzurro a sinistra dice che è cambiato */
 .coach-strip-extras.is-alt { box-shadow: inset 2px 0 0 var(--accent); }
 .coach-strip:hover, .coach-strip:focus-within { border-color: var(--accent); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
+/* La tappa (o, senza tappa, la pillola della mappa) aperta da un problema nella testata di un'area: un anello ciano
+   come le righe scelte, che si spegne in 2 s; senza animazioni resta fermo finché dura */
+.coach-strip.is-flash, .coach-prob.is-flash, .coach-chip.is-flash { animation: coach-flash 2s ease-out forwards; }
+@keyframes coach-flash {
+  0%, 60% { box-shadow: inset 0 0 0 1px var(--accent); }
+  100% { box-shadow: inset 0 0 0 1px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coach-strip.is-flash, .coach-prob.is-flash, .coach-chip.is-flash { animation: none; box-shadow: inset 0 0 0 1px var(--accent); }
+}
 .coach-strip.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-steps-none { display: flex; align-items: center; gap: 10px; height: var(--step-h); margin: 0 0 4px; padding: 0 16px; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }
 .coach-steps-none .icon { width: 16px; height: 16px; color: var(--good); }
@@ -959,10 +967,8 @@
   .coach-sec { margin-bottom: 8px; font-size: 13px; }
 }
 
-/* Interruttore "Solo superefficaci" / "Solo efficacia": a destra nella striscia delle sottoschede, centrato in altezza
-   (assoluto: la striscia non cambia altezza fra le sottoschede che lo hanno e quelle che no). Neutro e ciano, mai magenta */
-/* L'interruttore dell'efficacia: in alto a sinistra nel pannello, sulla riga della legenda (alta --def-legend, sopra la
-   tabella); la legenda a destra gli lascia il posto */
+/* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga
+   della legenda (alta --def-legend, sopra la tabella); la legenda a destra gli lascia il posto. Neutro e ciano, mai magenta */
 .area-panel:has(> .panel-switch) { position: relative; }
 .panel-switch { position: absolute; z-index: 2; top: 6px; left: 22px; display: flex; align-items: center; height: 20px; }
 .area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 180px; }
@@ -976,14 +982,15 @@
 .eff-switch.on .eff-switch-knob { transform: translateX(12px); background: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .eff-switch-track, .eff-switch-knob { transition: none; } }
 
-/* Portatili bassi (1366×657, 1280×620): striscia, striscia dei problemi in fondo (anche quella della
-   Panoramica, così restano nello stesso posto) e margini del pannello più stretti, così ogni sottoscheda delle aree ci sta
-   intera senza scorrere (a 1440×900 e 1536×730 non cambia niente). Le tabelle e i Ruoli hanno le loro regole per gli
-   schermi bassi in fondo a defense.css e roles.css */
+/* Portatili bassi (1366×657, 1280×620): testata delle aree, striscia Da sistemare della Panoramica e margini del
+   pannello più stretti, così ogni sottoscheda delle aree ci sta intera senza scorrere (a 1440×900 e 1536×730 non cambia
+   niente). Le tabelle e i Ruoli hanno le loro regole per gli schermi bassi in fondo a defense.css e roles.css */
 @media (min-width: 1100px) and (max-height: 700px) {
-  .area-view { gap: 6px; }
+  .area-head { min-height: 40px; padding-top: 4px; padding-bottom: 4px; }
+  .area-grade-letter { font-size: 26px; }
+  .area-grade-word { font-size: 17px; }
   .fix-row { height: 24px; }
-  .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 5px; }
+  .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 6px; }
   .area-panel.ad-panel { padding-bottom: 10px; }
 }
 

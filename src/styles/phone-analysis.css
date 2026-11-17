@@ -46,17 +46,16 @@
   /* Bonus/Malus ha il suo "?" dentro la scheda aperta: spazio a destra per lui */
   .analysis-tabs [role='tab'][aria-selected='true']#analysis-view-bonusMalus { padding-right: 72px; }
 
-  /* ── Sottoschede delle aree: la striscia scorre col dito (il "?" scorre con lei) ── */
-  .area-strip { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-  .area-strip::-webkit-scrollbar { display: none; }
-  .area-subs { width: max-content; min-width: 100%; overflow: visible; }
-  .area-subs [role='tab'] { min-height: 44px; align-items: center; }
-  /* Ruoli e Bonus: le due metà restano affiancate (stanno anche a 390px), più basse e con un testo più piccolo */
-  .area-view-bonusMalus .area-subs { width: auto; }
-  .area-view-bonusMalus .area-subs [role='tab'] { padding: 0 12px; gap: 8px; font-size: 15px; }
-  .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 18px; }
+  /* ── Testata delle aree: voto e "?" in alto, sotto i problemi (una riga col "+N") e le sottoschede a tutta larghezza,
+     che scorrono col dito se non stanno; ogni sottoscheda alta quanto un dito ── */
+  .area-head { flex-wrap: wrap; gap: 8px 12px; padding: 8px 12px; }
+  .area-help { margin-left: auto; }
+  .area-chips { order: 3; flex: 1 1 100%; }
+  .area-subs { order: 4; flex: 1 1 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .area-subs::-webkit-scrollbar { display: none; }
+  .area-subs [role='tab'] { flex: 1 0 auto; min-height: 44px; }
 
-  /* L'interruttore Solo superefficaci / Solo efficacia: la striscia scorre col dito, lui va sotto le sottoschede, alto quanto un dito */
+  /* L'interruttore Solo superefficaci / Solo efficacia: va sotto la testata, nel flusso, alto quanto un dito */
   .panel-switch { position: static; height: auto; margin-bottom: 6px; }
   .panel-switch .eff-switch { min-height: 44px; }
   .area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 0; }
@@ -68,12 +67,8 @@
   .ad-panel .def-frame > .rob-legend > .area-legend { order: 0; }
   .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
   .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
-  /* Problemi dell'area in fondo: tutti, su più righe (la pagina scorre); "Vai al Coaching" alto quanto un dito */
+  /* La striscia Da sistemare della Panoramica: "Vai al Coaching" alto quanto un dito */
   .fix-row { height: auto; min-height: 44px; }
-  .area-problems-row.fix-row { height: auto; min-height: 44px; overflow: visible; flex-wrap: wrap; gap: 6px 12px; }
-  .area-problems { flex: 1 1 100%; order: 2; flex-wrap: wrap; overflow: visible; }
-  .area-problems > li { flex: 0 1 auto; white-space: normal; }
-  .area-problems-row .fix-go { order: 1; }
 
   /* ── Cornice dei membri (Difesa, Offesa, Velocità): righe ad altezza fissa, niente misura sull'altezza ── */
   .def-frame, .def-frame.roomy { --def-row: 50px; --def-mon: 190px; height: auto; container-type: inline-size; }

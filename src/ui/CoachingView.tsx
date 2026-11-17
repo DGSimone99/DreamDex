@@ -1,4 +1,4 @@
-import { Fragment, useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { Fragment, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { PROBLEM_CATEGORIES, type CoachAdvice, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import { needLabel, type Need } from '../engine/needs';
@@ -14,7 +14,7 @@ import { PokemonIcon } from './PokemonName';
 import { useMemberTip } from './MemberCard';
 import { Sprite } from './Sprite';
 import { TypeIcons } from './typeIcons';
-import { Typed } from './TypeText';
+import { isMissingRoles, isThreat, ProblemPill, ProblemText, tipOf } from './ProblemPill';
 import { useFitCount } from './useFit';
 import { rolesValue } from './AreaDetail';
 import { DashLink } from './dashboard/DashCard';
@@ -23,11 +23,6 @@ const CATEGORY: Record<ProblemCategory, MessageKey> = {
   rules: 'coach.category.rules', defense: 'coach.category.defense', coverage: 'coach.category.coverage', roles: 'coach.category.roles',
   conditions: 'coach.category.conditions', redundancy: 'coach.category.redundancy', meta: 'coach.category.meta', metaHit: 'coach.category.metaHit',
 };
-
-// I tipi colorati; `plain`: senza colore (nella mappa l'icona del tipo è già davanti)
-function ProblemText({ text, plain = false }: { text: string; plain?: boolean }) {
-  return plain ? <>{text}</> : <Typed text={text} />;
-}
 
 /** Un testo del dizionario con dei pezzi al posto dei segnaposto ({member}, {species}…). */
 function Template({ text, parts }: { text: string; parts: Record<string, ReactNode> }) {
@@ -164,16 +159,6 @@ function coverOf(p: CoachProblem): { side: Side; uncovered: boolean } | null {
   if (p.category === 'coverage') return { side: 'atk', uncovered: p.size === 2 };
   if (p.category === 'metaHit') return { side: 'atk', uncovered: true };
   return null;
-}
-
-/**
- * Il testo intero di un problema per i tooltip: per i tipi della Difesa che qualcuno regge, anche quanti
- * ("solo 1 membro lo regge bene"); se nessuno lo regge lo dice già il testo.
- */
-function tipOf(p: CoachProblem, tr: ReturnType<typeof useT>): string {
-  const held = p.counts?.held ?? 0;
-  if (held === 0) return p.text;
-  return `${p.text} · ${tr(held === 1 ? 'coach.pill.held1' : 'coach.pill.heldN', { n: held })}`;
 }
 
 /**
@@ -330,8 +315,10 @@ interface StepActions {
  * Puntatore sulla striscia (cioè sul pulsante principale): la mappa mostra tutto quello che le sue proposte risolvono;
  * sulla mossa "oppure": solo il suo.
  */
-function Step({ step, index, problems, actions, onCard, onPreview }: {
+function Step({ step, index, problems, actions, onCard, onPreview, flash = false }: {
   step: CoachStep; index: number; problems: CoachProblem[]; actions: StepActions; onCard: OnPreview; onPreview: OnPreview;
+  /** Aperta dalla testata di un'area (la tappa che copre il problema scelto): si accende per un attimo. */
+  flash?: boolean;
 }) {
   const tr = useT();
   const alsoId = useId();
@@ -342,9 +329,9 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
   const extrasRef = useRef<HTMLDivElement>(null);
   const { problem, swap, move } = step;
   const skip = step.group;
-  const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
+  const solved = solvedBy(step);
   return (
-    <li className={`coach-step coach-strip ${problem.severity}${altHot ? ' is-alt-hot' : mainHot ? ' is-main-hot' : ''}`}
+    <li className={`coach-step coach-strip ${problem.severity}${altHot ? ' is-alt-hot' : mainHot ? ' is-main-hot' : ''}${flash ? ' is-flash' : ''}`}
       onMouseEnter={() => onCard(solved)} onMouseLeave={() => onCard(null)}>
       <span className="coach-step-num">{index + 1}</span>
       <p className="coach-step-problem">
@@ -373,47 +360,25 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
 
 /**
  * Un problema nella tessera della sua area, come pillola: bordo del colore della gravità (la gravità detta solo ai
- * lettori di schermo), icona del tipo o della minaccia, testo; le debolezze in breve ("Terra 3↓ 1↑"). Il testo intero
- * nel title; un ruolo mancante (`role`) con la ×. Se una tappa lo copre, il numero della tappa in fondo. `preview`: la proposta sotto il puntatore (o col
- * fuoco) lo risolve, quindi si vede barrato in verde. `dim`: ridondanze e minacce, più quiete dei problemi veri.
+ * lettori di schermo) e il testo corto di ProblemPill (lo stesso dei problemi nella testata delle aree). Il testo intero
+ * nel title; un ruolo mancante (`role`) con la ×. Se una tappa lo copre, il numero della tappa in fondo. `preview`: la
+ * proposta sotto il puntatore (o col fuoco) lo risolve, quindi si vede barrato in verde. `dim`: ridondanze e minacce, più
+ * quiete dei problemi veri. `flash`: aperto dalla testata di un'area, si accende per un attimo.
  */
-function MapProblem({ problem, step, preview, usage, dim = false, role }: {
+function MapProblem({ problem, step, preview, usage, dim = false, role, flash = false }: {
   problem: CoachProblem; step: number | null; preview: boolean; usage?: number; dim?: boolean;
   /** Per i ruoli mancanti: il ruolo di questa pillola (una pillola per ruolo, tutte con la chiave del problema) */
   role?: string;
+  flash?: boolean;
 }) {
   const tr = useT();
-  const lang = useLang();
-  const subjects = problem.subjects ?? [];
-  const threat = isThreat(problem) && subjects.length > 0 ? subjects[0] : null;
   const covered = step !== null ? tr('coach.map.coveredBy', { n: step }) : '';
-  // Difesa e coverage: le icone dei tipi davanti, il testo senza colori (il tipo non si legge due volte)
-  const typed = (problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0;
-  const counts = problem.category === 'defense' && subjects.length === 1 ? problem.counts : undefined;
   const title = covered ? `${tipOf(problem, tr)} · ${covered}` : tipOf(problem, tr);
   return (
     <li data-key={problem.key} title={title}
-      className={`coach-prob ${problem.severity}${dim ? ' is-dim' : ''}${step !== null ? ' is-covered' : ''}${preview ? ' is-solved-preview' : ''}`}>
+      className={`coach-prob ${problem.severity}${dim ? ' is-dim' : ''}${step !== null ? ' is-covered' : ''}${preview ? ' is-solved-preview' : ''}${flash ? ' is-flash' : ''}`}>
       <span className="coach-sev visually-hidden">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
-      {threat ? (
-        <span className="coach-prob-text is-threat">
-          <PokemonIcon name={threat} /><span className="coach-threat-name" aria-hidden="true">{threat}</span><span className="visually-hidden">{problem.text}</span>
-          {usage !== undefined && <span className="coach-usage">{formatPercent(lang, usage, 0)}</span>}
-        </span>
-      ) : role ? (
-        <span className="coach-prob-text coach-miss"><Icon name="close" />{needLabel(role as Need, lang)}</span>
-      ) : counts ? (
-        <span className="coach-prob-text">
-          <TypeIcons types={subjects} /><span aria-hidden="true">{typeName(subjects[0], lang)}{' '}
-            <span className="coach-counts">· <span className={counts.held ? 'count-resist' : 'count-weak'}>{tr(counts.held === 0 ? 'coach.pill.held0' : counts.held === 1 ? 'coach.pill.held1' : 'coach.pill.heldN', { n: counts.held })}</span></span>
-          </span><span className="visually-hidden">{problem.text}</span>
-        </span>
-      ) : (
-        <span className="coach-prob-text">
-          {typed && <TypeIcons types={subjects} />}
-          <ProblemText text={problem.text} plain={typed} />
-        </span>
-      )}
+      <ProblemPill problem={problem} role={role} usage={usage} />
       {step !== null && <span className="coach-by"><span aria-hidden="true">{step}</span><span className="visually-hidden">{covered}</span></span>}
     </li>
   );
@@ -424,8 +389,10 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
  * tipi. Ogni icona ha il suo testo intero (title e lettori di schermo); in fondo i numeri delle tappe che toccano la riga.
  * Col puntatore su una proposta si accendono solo le icone che risolve, le altre si spengono.
  */
-function MapGroup({ id, label, members, stepOf, preview, usage }: {
+function MapGroup({ id, label, members, stepOf, preview, usage, flash = null }: {
   id: string; label: ReactNode; members: CoachProblem[]; stepOf: Map<string, number>; preview: Set<string> | null;
+  /** Il problema aperto dalla testata di un'area: la sua icona si accende per un attimo. */
+  flash?: string | null;
   /** Uso nel meta (0-1) di una minaccia: nel title della sua icona. */
   usage?: (p: CoachProblem) => number | undefined;
 }) {
@@ -444,7 +411,7 @@ function MapGroup({ id, label, members, stepOf, preview, usage }: {
         <span className="coach-chips">
           {members.slice(0, MAX_CHIPS).map(m => (
             <span key={m.key} data-key={m.key} title={chipTitle(m)}
-              className={`coach-chip${isThreat(m) ? ' is-mon' : ''}${stepOf.has(m.key) ? ' is-covered' : ''}${preview?.has(m.key) ? ' is-solved-preview' : ''}`}>
+              className={`coach-chip${isThreat(m) ? ' is-mon' : ''}${stepOf.has(m.key) ? ' is-covered' : ''}${preview?.has(m.key) ? ' is-solved-preview' : ''}${flash === m.key ? ' is-flash' : ''}`}>
               {isThreat(m) ? <PokemonIcon name={m.subjects![0]} /> : <TypeIcons types={m.subjects ?? []} />}
               <span className="visually-hidden">{chipTitle(m)}</span>
             </span>
@@ -486,14 +453,8 @@ function groupLabel(group: string, n: number): ReactNode {
   return <CoverLabel side={side as Side} uncovered={kind === 'uncovered'} n={n} />;
 }
 
-/** I problemi "ruoli mancanti" (essenziali o importanti) coi ruoli come soggetti. */
-const isMissingRoles = (p: CoachProblem) => p.category === 'roles' && (p.key === 'roles:essential' || p.key === 'roles:important') && (p.subjects?.length ?? 0) > 0;
-
 /** Cosa mostra la scheda che il "+N" di ogni colonna apre (Regole·Meta: la scheda Meta, solo le minacce). */
 const OPENS: Record<MapColumn, ProblemCategory[]> = { defense: ['defense', 'meta'], offense: ['coverage', 'metaHit'], roles: ['roles'], rules: [] };
-
-/** Le minacce del meta: chi nessuno regge (Difesa) e chi nessuno manda KO (Offesa), come righe con l'icona del Pokémon. */
-const isThreat = (p: CoachProblem) => p.category === 'meta' || p.category === 'metaHit';
 
 const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }[] = [
   { key: 'defense', area: 'defense' }, { key: 'offense', area: 'strength' }, { key: 'roles', area: 'roles' }, { key: 'rules', area: null },
@@ -504,7 +465,7 @@ const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }
  * nell'altezza della tessera finiscono in un "+N" (title e testo nascosto con tutte): prima restano quelle risolvibili
  * (rimedi o una tappa mostrata), poi i gravi, poi l'ordine di `items`. Ridondanze e minacce sotto un'etichetta, più quiete.
  */
-function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, watch, onMore, opens = [] }: {
+function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, watch, onMore, opens = [], flash = null }: {
   id: string; name: string; items: CoachProblem[]; score: number | null;
   /** Il "+N" come link alla scheda dell'area (assente: resta una nota, es. Regole col meta spento). */
   onMore?: () => void;
@@ -515,6 +476,8 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   threatUsage?: Record<string, number>;
   /** Il contenitore del Coaching: quando cambia misura si rimisura (la tessera stessa si stringe col contenuto). */
   watch: RefObject<HTMLElement | null>;
+  /** Il problema aperto dalla testata di un'area senza una tappa che lo copra: la sua pillola si accende per un attimo. */
+  flash?: string | null;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -538,7 +501,8 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const all = (x: Raw) => x.members ?? [x.p];
   const solvable = (p: CoachProblem) => p.fixes.length > 0 || stepOf.has(p.key);
   // Col puntatore su un suggerimento, quello che risolve passa in cima (anche se di solito sta nel "+N")
-  const lit = (x: Raw) => all(x).some(p => preview?.has(p.key));
+  // Anche il problema aperto dalla testata di un'area passa in cima, così si vede
+  const lit = (x: Raw) => all(x).some(p => preview?.has(p.key) || p.key === flash);
   const canSolve = (x: Raw) => all(x).some(solvable);
   const priority = [...pills].sort((a, b) => Number(lit(b)) - Number(lit(a)) || Number(canSolve(b)) - Number(canSolve(a))
     || Number(b.p.severity === 'serious') - Number(a.p.severity === 'serious') || a.i - b.i);
@@ -547,11 +511,11 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const hidden = priority.slice(fit);
   const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : all(x).map(p => tipOf(p, tr)).join('; '));
   const row = ({ p, role, section, members, group }: typeof pills[number]) => members ? (
-    <MapGroup key={group} id={group!} label={groupLabel(group!, members.length)} stepOf={stepOf} preview={preview}
+    <MapGroup key={group} id={group!} label={groupLabel(group!, members.length)} stepOf={stepOf} preview={preview} flash={flash}
       members={isThreat(members[0]) ? [...members].sort((a, b) => (threatUsage?.[b.subjects![0]] ?? 0) - (threatUsage?.[a.subjects![0]] ?? 0)) : members}
       usage={p => (isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined)} />
   ) : <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
-    preview={preview?.has(p.key) ?? false} usage={isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
+    preview={preview?.has(p.key) ?? false} usage={isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} flash={flash === p.key} />;
   const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i)).sort((a, b) => Number(lit(b)) - Number(lit(a)) || a.i - b.i);
   const [main, redundancy, threats] = [list('main'), list('redundancy'), list('meta')];
   const threatLabel = tr('coach.map.metaThreats');
@@ -595,12 +559,21 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   );
 }
 
+/** Quanto resta accesa la tappa (o la pillola) aperta dalla testata di un'area. */
+export const FLASH_MS = 2000;
+
+/** Tutto quello che le proposte di una tappa risolvono (il suo problema, il gruppo, scambio e mossa): l'anteprima nella mappa. */
+const solvedBy = (step: CoachStep) => [...new Set([...step.group, ...(step.swap?.solves ?? []), ...(step.move?.solves ?? [])])];
+
 /**
  * La scheda Coaching: in alto i problemi per area (quattro tessere), sotto fino a 3 tappe (cosa farei per prima).
  * `advice` null: i consigli si stanno calcolando (lo scheletro delle tappe; la mappa si vede già).
+ * `focus`: un problema scelto nella testata di un'area (`nonce` cambia a ogni clic): la tappa che lo copre si porta in
+ * vista e si accende per un attimo, con quello che risolve acceso nella mappa; senza una tappa, la sua pillola nella mappa.
  */
-export function CoachingView({ coaching, advice, members, rating, threatUsage, onOpen, onFix, onMoveFix, onApplyFix, onApplyMove }: {
+export function CoachingView({ coaching, advice, members, rating, threatUsage, onOpen, onFix, onMoveFix, onApplyFix, onApplyMove, focus = null }: {
   coaching: Coaching; advice: CoachAdvice | null; members: number; rating: TeamRating | null; metaOn: boolean;
+  focus?: { key: string; nonce: number } | null;
   /** Il "+N" di una tessera apre la scheda della sua area (Regole non ne ha: resta una nota). */
   onOpen?: (column: MapColumn) => void;
   /** Uso in % (0-1) delle minacce per specie, mostrato sulle righe "senza check" */
@@ -608,17 +581,40 @@ export function CoachingView({ coaching, advice, members, rating, threatUsage, o
 } & StepActions) {
   const tr = useT();
   const id = useId();
+  const root = useRef<HTMLDivElement>(null);
   // Anteprima nella mappa: la tappa sotto il puntatore, o più precisa la proposta sotto il puntatore o col fuoco.
   // Vale solo per i consigli con cui è nata: applicata una proposta, la tappa sparisce senza "uscita" del puntatore
   const [hover, setHover] = useState<{ advice: CoachAdvice | null; card: string[] | null; prop: string[] | null }>({ advice: null, card: null, prop: null });
   const live = hover.advice === advice ? hover : null;
-  const shown = live?.prop ?? live?.card ?? null;
+  // Il problema aperto dalla testata di un'area: quale tappa lo copre (null: nessuna, si accende la pillola nella mappa)
+  const [flash, setFlash] = useState<{ nonce: number; key: string; step: number | null } | null>(null);
+  const handled = useRef<number | null>(null);
+  useEffect(() => {
+    // Una volta per clic, e solo coi consigli pronti (mentre si calcolano si aspetta)
+    if (!focus || !advice || handled.current === focus.nonce) return;
+    handled.current = focus.nonce;
+    const i = advice.steps.slice(0, MAX_STEPS).findIndex(step => [step.problem.key, ...step.group, ...step.alsoSolves].includes(focus.key));
+    setFlash({ nonce: focus.nonce, key: focus.key, step: i >= 0 ? i : null });
+  }, [focus, advice]);
+  useEffect(() => {
+    if (!flash) return;
+    const box = root.current;
+    const el = flash.step !== null
+      ? box?.querySelectorAll('.coach-steps > .coach-step')[flash.step]
+      : [...(box?.querySelectorAll('[data-key]') ?? [])].find(x => x.getAttribute('data-key') === flash.key);
+    // Senza animazioni (prefers-reduced-motion) lo scorrimento è immediato
+    const still = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el?.scrollIntoView?.({ block: 'nearest', behavior: still ? 'auto' : 'smooth' });
+    const timer = window.setTimeout(() => setFlash(f => (f?.nonce === flash.nonce ? null : f)), FLASH_MS);
+    return () => window.clearTimeout(timer);
+  }, [flash]);
+  const flashStep = flash?.step != null ? advice?.steps[flash.step] : undefined;
+  const shown = live?.prop ?? live?.card ?? (flashStep ? solvedBy(flashStep) : null);
   const preview = shown ? new Set(shown) : null;
   const onCard: OnPreview = card => setHover(h => ({ advice, card, prop: h.advice === advice ? h.prop : null }));
   const onPreview: OnPreview = prop => setHover(h => ({ advice, card: h.advice === advice ? h.card : null, prop }));
   const actions: StepActions = { onFix, onMoveFix, onApplyFix, onApplyMove };
   const { problems, bannedCount = 0 } = coaching;
-  const root = useRef<HTMLDivElement>(null);
   // Sotto i 2 membri il coach non cerca problemi: l'invito ad aggiungere, non "nessun problema"
   if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
   const steps = (advice?.steps ?? []).slice(0, MAX_STEPS);
@@ -664,7 +660,7 @@ export function CoachingView({ coaching, advice, members, rating, threatUsage, o
               <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={items}
                 score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null}
                 count={key === 'roles' && rating ? rolesValue(rating) : key === 'rules' ? String(items.length) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root}
-                onMore={onOpen && key !== 'rules' ? () => onOpen(key) : undefined} opens={OPENS[key]} />
+                onMore={onOpen && key !== 'rules' ? () => onOpen(key) : undefined} opens={OPENS[key]} flash={flash && flash.step === null ? flash.key : null} />
             ))}
           </div>
         </section>
@@ -677,7 +673,7 @@ export function CoachingView({ coaching, advice, members, rating, threatUsage, o
             <p className="coach-steps-none"><Icon name="check" />{tr('coach.steps.none')}</p>
           ) : advice ? (
             <ol className="coach-steps">
-              {steps.map((step, i) => <Step key={step.problem.key} step={step} index={i} problems={problems} actions={actions} onCard={onCard} onPreview={onPreview} />)}
+              {steps.map((step, i) => <Step key={step.problem.key} step={step} index={i} problems={problems} actions={actions} onCard={onCard} onPreview={onPreview} flash={flash?.step === i} />)}
             </ol>
           ) : (
             <>

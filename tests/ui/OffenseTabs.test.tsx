@@ -390,7 +390,8 @@ describe('Offesa: Generale', () => {
         await user.unhover(bad);
       }
     }
-    expect(cells[2]).toHaveTextContent(new RegExp(`^${rating.offense.value}$`));
+    // La barra del team senza il numero: il voto dell'Offesa sta nella testata dell'area
+    expect(cells[2]).toHaveTextContent(/^$/);
     expect(cells[2].querySelector('.def-bar')).not.toBeNull();
   });
 

@@ -73,7 +73,8 @@ function ShareTip({ text, children }: { text: string; children: ReactNode }) {
  * e quanti dei 18 tipi manda KO in un colpo e in due (badge OHKO e 2HKO, col colpo semplice; il setup come "▴+N" a
  * parte; il 3HKO non conta), passando su un badge i bersagli nel tooltip; poi quanto porta all'Offesa del team ("+18",
  * la barra è la sua fetta). In fondo,
- * sempre allo stesso posto, la riga Team Coverage: per ogni bersaglio il membro migliore, gli scoperti in rosso.
+ * sempre allo stesso posto, la riga Team Coverage: per ogni bersaglio il membro migliore, gli scoperti in rosso, e la
+ * barra dell'Offesa del team senza il numero (il voto sta nella testata dell'area).
  */
 export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
@@ -161,7 +162,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
               <th scope="row"><span className="og-plate">{teamName}</span></th>
               <td><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm /></td>
               {meta && <td><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm /></td>}
-              <td><Bar value={offense.value} total /></td>
+              <td><Bar value={offense.value} total bare /></td>
             </tr>
           </tfoot>
         </table>

@@ -114,7 +114,7 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
               <th scope="row"><span className="og-plate">{t('sdetail.gen.total')}</span></th>
               <td>
                 <span className={`sp-bar-btn sp-team ${tone(Math.round(speed.value))}`}>
-                  <Stack raw={teamSpeed} own={0} team={teamControl} total={Math.round(speed.value)} />
+                  <Stack raw={teamSpeed} own={0} team={teamControl} total={Math.round(speed.value)} bare />
                   <span aria-hidden="true" />
                 </span>
               </td>
@@ -139,9 +139,10 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
 
 /**
  * La barra a segmenti: la velocità pura (piena, nel colore del voto), i guadagni propri (righe ciano) e quelli del
- * team (righe neutre), col totale e il dettaglio "58 · +18 · +22". Per i membri sta in un bottone che apre il modale.
+ * team (righe neutre), col totale e il dettaglio "58 · +18 · +22". Per i membri sta in un bottone che apre il modale;
+ * nella riga del team senza il totale (`bare`: il voto della Velocità sta nella testata dell'area).
  */
-function Stack({ raw, own, team, total }: { raw: number; own: number; team: number; total: number }): ReactNode {
+function Stack({ raw, own, team, total, bare = false }: { raw: number; own: number; team: number; total: number; bare?: boolean }): ReactNode {
   const cls = tone(total);
   return (
     <>
@@ -150,7 +151,8 @@ function Stack({ raw, own, team, total }: { raw: number; own: number; team: numb
         <i className="sp-seg-own" style={{ width: `${Math.max(0, own)}%` }} />
         <i className="sp-seg-team" style={{ width: `${Math.max(0, team)}%` }} />
       </span>
-      <span className={`sp-total ${cls}`}>{total}%</span>
+      {/* `bare` (la riga del team): il posto resta, il numero no (il voto della Velocità sta già nella testata) */}
+      <span className={`sp-total ${cls}`}>{bare ? null : `${total}%`}</span>
       <span className="sp-parts">
         <span>{raw}</span>
         {own > 0 && <span className="sp-part-own">+{own}</span>}

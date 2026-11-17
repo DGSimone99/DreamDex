@@ -35,7 +35,7 @@ describe('Riquadro Voto', () => {
       if (area !== 'Ruoli') { expect(analysis.getByRole('region', { name: area })).toBeInTheDocument(); continue; }
       expect(analysis.getByRole('region', { name: 'Ruoli e Bonus' })).toBeInTheDocument();
       expect(analysis.getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
-      expect(analysis.getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
+      expect(analysis.getByRole('tab', { name: 'Ruoli' })).toHaveAttribute('aria-selected', 'true');
       expect(analysis.getByRole('region', { name: 'Essenziali' })).toBeInTheDocument();
     }
   });
@@ -273,7 +273,8 @@ const entries = () => within(inner().getByRole('tabpanel', { name: /^(Altri )?(b
 describe('Bonus/Malus', () => {
   it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
     const { view } = renderBm(catalogRating());
-    expect(within(view).getAllByRole('tab')[0].textContent).toBe('Bonus/Malus −6');
+    expect(within(view).getAllByRole('tab')[0].textContent).toBe('Bonus/Malus');
+    expect(within(view).getAllByRole('tab')[0]).toHaveAccessibleDescription('−6');
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent('−6');
     expect(onGrade().querySelector('.bm-net')).toHaveClass('bad');
     expect(onGrade()).toHaveTextContent('Bonus +2');
@@ -322,7 +323,7 @@ describe('Bonus/Malus', () => {
     expect(screen.queryByText('Cosa toglie')).toBeNull();
   });
 
-  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; striscia dei problemi come nelle altre aree', async () => {
+  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; i problemi nella testata come nelle altre aree', async () => {
     const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
     expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
     await user.click(groupTab(/^Bonus/));
@@ -332,7 +333,7 @@ describe('Bonus/Malus', () => {
     expect(within(empty).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
     expect(groupTab(/^Bonus/)).toHaveAccessibleName('Bonus 0');
     expect(document.querySelector('.area-tools-row')).toBeNull();
-    expect(document.querySelector('.area-problems-row.is-clear')).toHaveTextContent("Nessun problema in quest'area");
+    expect(document.querySelector('.area-head .area-chip.good')).toHaveTextContent('Nessun problema');
   });
 
   it('nessun malus: la scheda Malus mostra la medaglia con la spunta e "Il team non perde punti"', async () => {

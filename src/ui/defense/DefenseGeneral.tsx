@@ -30,14 +30,15 @@ export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'wa
  * `reserve`: il posto c'è anche senza "+N", per tutta la colonna, così le barre della colonna restano lunghe uguali.
  */
 /** `extra`: un guadagno possibile (il setup) disegnato a righe dopo la barra, staccato da una riga scura. */
-export function Bar({ value, total, unit = '', gain, reserve = false, extra = 0, extraTitle }: { value: number; total?: boolean; unit?: string; gain?: ReactNode; reserve?: boolean; extra?: number; extraTitle?: string }) {
+/** `bare`: solo la barra, senza il numero (la riga del team: il voto dell'area sta già nella testata). */
+export function Bar({ value, total, unit = '', gain, reserve = false, extra = 0, extraTitle, bare = false }: { value: number; total?: boolean; unit?: string; gain?: ReactNode; reserve?: boolean; extra?: number; extraTitle?: string; bare?: boolean }) {
   const slot = reserve || !!gain;
   const base = Math.max(0, Math.min(100, value));
   const more = Math.max(0, Math.min(100 - base, extra));
   return (
     <span className={`def-cell${slot ? ' with-gain' : ''}`}>
       <span className={`def-bar ${tone(value)}${total ? ' total' : ''}`} aria-hidden="true"><i style={{ width: `${base}%` }} />{more > 0 && <i className="def-bar-extra" title={extraTitle} style={{ left: `${base}%`, width: `${more}%` }} />}</span>
-      <span className={`def-num ${tone(value)}${total ? ' total' : ''}`}>{value}{unit}</span>
+      {!bare && <span className={`def-num ${tone(value)}${total ? ' total' : ''}`}>{value}{unit}</span>}
       {slot && <span className="def-gain">{gain}</span>}
     </span>
   );
@@ -136,7 +137,7 @@ function SustainChips({ parts, set }: { parts: SustainParts; set: TeamSet | unde
   );
 }
 
-/** La Difesa del team in fondo: la barra in due parti, quello che regge (tipi e meta) e la Sostenibilità (verde o rossa). */
+/** La Difesa del team in fondo: la barra in due parti, quello che regge (tipi e meta) e la Sostenibilità (verde o rossa), senza il numero (il voto sta nella testata dell'area). */
 function TeamDefense({ value, sustainPoints, tip, label }: { value: number; sustainPoints: number; tip: ReactNode; label: string }) {
   const float = useFloatAnchor<true>();
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
@@ -149,7 +150,7 @@ function TeamDefense({ value, sustainPoints, tip, label }: { value: number; sust
         <i style={{ width: `${lit}%` }} />
         {side > 0 && <i className={`dsh-sus ${sustainPoints >= 0 ? 'gain' : 'loss'}`} style={{ left: `${lit}%`, width: `${clamp(Math.min(side, 100 - lit))}%` }} />}
       </span>
-      <span className={`def-num ${tone(value)} total`}>{value}</span>
+      {/* Il numero no: il voto della Difesa sta già nella testata dell'area (e nel nome della barra) */}
       {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="dsh-tip">{tip}</FloatTip>}
     </span>
   );

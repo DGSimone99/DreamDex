@@ -26,9 +26,10 @@ describe("dettaglio dell'Offesa a schede", () => {
   it('tre schede col loro valore (niente Wallbreaking né Potenza); si parte da Generale con le sottostatistiche e i membri', async () => {
     const { dialog } = await openOffense('it');
     const tabs = within(dialog).getAllByRole('tab');
-    // Coverage tipi e meta portano "N/18" e "N/M" (quanti il team manda KO in due colpi), la Generale il voto
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Coverage meta']);
-    expect(tabs[1].textContent).toMatch(/\d+\/18$/);
+    // Sul selettore solo i nomi; ai lettori di schermo Coverage tipi e meta dicono "N/18" e "N/M" (quanti il team manda KO in
+    // due colpi), la Generale il voto
+    expect(tabs.map(tab => tab.textContent)).toEqual(['Generale', 'Coverage tipi', 'Coverage meta']);
+    expect(tabs[1]).toHaveAccessibleDescription(/^\d+\/18$/);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
     // Solo la tabella dei membri: niente tessere sotto
@@ -67,7 +68,9 @@ describe("dettaglio dell'Offesa a schede", () => {
       expect(cell).not.toHaveTextContent('tutti');
       expect(cell.querySelector('.kob.rest:not(.bad)')).toBeNull();
     }
-    expect(footCells[2]).toHaveTextContent(/^\d+$/);
+    // La barra del team senza il numero: il voto dell'Offesa sta nella testata dell'area
+    expect(footCells[2].querySelector('.def-bar')).not.toBeNull();
+    expect(footCells[2]).toHaveTextContent(/^$/);
   });
 
   it('Coverage tipi: i 18 tipi, i buchi e quanto li colpisce ogni membro', async () => {
@@ -105,7 +108,7 @@ describe("dettaglio dell'Offesa a schede", () => {
 
   it('in inglese', async () => {
     const { dialog } = await openOffense('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['General', 'Type coverage', 'Meta coverage']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['General', 'Type coverage', 'Meta coverage']);
     const headers = within(dialog).getAllByRole('columnheader').map(h => h.textContent);
     expect(headers).toHaveLength(4);
     expect(headers[0]).toBe('Pokémon');
@@ -128,8 +131,8 @@ describe('dettaglio della Difesa a schede', () => {
   it('quattro schede col loro valore; Generale con le sottostatistiche e Fisica, Speciale, Sostenibilità di ogni membro', async () => {
     const { dialog } = await openDefense('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Sostenibilità']);
-    for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
+    expect(tabs.map(tab => tab.textContent)).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Sostenibilità']);
+    for (const tab of tabs) expect(tab).toHaveAccessibleDescription(/^\d+$/);
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
     const table = within(panel).getByRole('table');
@@ -145,12 +148,14 @@ describe('dettaglio della Difesa a schede', () => {
       // Nell'ultima colonna quanto porta il membro alla Difesa del team ("+12")
       expect(cells[2]).toHaveTextContent(/^[+−]\d+$/);
     }
-    // In fondo la riga Team Coverage: le barre a pezzi del team, poi i voti
+    // In fondo la riga Team Coverage: le barre a pezzi del team, poi la barra della Difesa senza il numero (il voto sta
+    // nella testata dell'area; ai lettori di schermo lo dice il nome della barra)
     const total = all[all.length - 1];
     expect(within(total).getByRole('rowheader')).toHaveTextContent('Team Coverage');
     const totals = within(total).getAllByRole('cell');
     expect(totals[0]).toHaveTextContent(/\d+\/18$/);
-    expect(totals[2]).toHaveTextContent(/^\d+$/);
+    expect(totals[2]).toHaveTextContent(/^$/);
+    expect(within(totals[2]).getByRole('img', { name: /^Difesa \d+$/ })).toBeInTheDocument();
   });
 
   it('Coverage tipi: il "?" apre la pagina comune "Come funziona" (bersagli, colpo, quanto vale, quanti lo reggono); la Sostenibilità ha la sua pagina col suo peso', async () => {
@@ -209,7 +214,7 @@ describe('dettaglio della Difesa a schede', () => {
 
   it('in inglese', async () => {
     const { dialog } = await openDefense('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Meta coverage', 'Sustainability']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['General', 'Type coverage', 'Meta coverage', 'Sustainability']);
     const { user } = { user: userEvent.setup() };
     await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
     expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Coverage' })).toBeInTheDocument();
@@ -223,12 +228,11 @@ async function openSpeed(lang: 'it' | 'en') {
 }
 
 describe('dettaglio della Velocità a schede', () => {
-  it('una scheda sola col suo valore; i membri con la barra e le tessere', async () => {
+  it('una scheda sola, senza selettore; il voto nella testata; i membri con la barra e le tessere', async () => {
     const { dialog } = await openSpeed('it');
-    const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['Generale']);
-    for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
-    const panel = within(dialog).getByRole('tabpanel');
+    expect(within(dialog).queryByRole('tablist')).toBeNull();
+    expect(dialog.querySelector('.area-grade')).toHaveTextContent(/^[SABCD] /);
+    const panel = within(dialog).getByRole('tabpanel', { name: 'Velocità' });
     expect(within(panel).getByRole('button', { name: 'Velocità di Great Tusk: apri i rivali' })).toBeInTheDocument();
     expect(within(panel).getByRole('button', { name: 'Velocità di Gholdengo: apri i rivali' })).toBeInTheDocument();
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
@@ -249,7 +253,8 @@ describe('dettaglio della Velocità a schede', () => {
 
   it('in inglese', async () => {
     const { dialog } = await openSpeed('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['General']);
+    expect(within(dialog).queryByRole('tablist')).toBeNull();
+    expect(within(dialog).getByRole('tabpanel', { name: 'Speed' })).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Speed of Great Tusk: open the rivals' })).toBeInTheDocument();
   });
 });

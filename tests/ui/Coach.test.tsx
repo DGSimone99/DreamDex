@@ -318,6 +318,44 @@ describe('CoachingView', () => {
     expect(within(stepsRegion()).queryAllByRole('listitem')).toHaveLength(0);
   });
 
+  it('aperto su un problema dalla testata di un\'area: la tappa che lo copre si porta in vista e si accende, con la mappa accesa', () => {
+    const fire: CoachProblem = { severity: 'serious', category: 'defense', text: 'Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi',
+      fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } };
+    const water: CoachProblem = { ...fire, severity: 'minor', key: 'defense:Water', subjects: ['Water'], text: 'Coperto poco in difesa contro Water' };
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [fire, water] };
+    const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: [fire.key] };
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    vi.useFakeTimers();
+    try {
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: fire, swap, move: null, alsoSolves: [], group: [fire.key] }] }}
+        members={3} rating={rating(three)} metaOn {...noop} focus={{ key: 'defense:Fire', nonce: 1 }} />);
+      const step = stepsRegion().querySelector('.coach-step')!;
+      expect(step).toHaveClass('is-flash');
+      expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ block: 'nearest' }));
+      expect(scroll.mock.contexts[0]).toBe(step);
+      // Nella mappa si accende quello che la tappa risolve, come col puntatore sulla tappa
+      expect(document.querySelector('[data-key="defense:Fire"]')).toHaveClass('is-solved-preview');
+      act(() => { vi.advanceTimersByTime(2100); });
+      expect(step).not.toHaveClass('is-flash');
+      expect(document.querySelector('[data-key="defense:Fire"]')).not.toHaveClass('is-solved-preview');
+    } finally {
+      vi.useRealTimers();
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it('aperto su un problema che nessuna tappa copre: si accende la sua pillola nella mappa', () => {
+    const fire: CoachProblem = { severity: 'serious', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' };
+    const water: CoachProblem = { ...fire, severity: 'minor', key: 'defense:Water', text: 'Debole a Acqua' };
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [fire, water] };
+    const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: [fire.key] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: fire, swap, move: null, alsoSolves: [], group: [fire.key] }] }}
+      members={3} rating={rating(three)} metaOn {...noop} focus={{ key: 'defense:Water', nonce: 1 }} />);
+    expect(stepsRegion().querySelector('.coach-step')).not.toHaveClass('is-flash');
+    expect(document.querySelector('[data-key="defense:Water"]')).toHaveClass('is-flash');
+  });
+
   it('"risolve anche" non mette fra le minacce risolte il candidato stesso', () => {
     const problem = (category: CoachProblem['category'], key: string, subjects: string[]): CoachProblem =>
       ({ severity: 'minor', category, text: key, fixes: [], key, subjects });

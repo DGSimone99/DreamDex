@@ -14,16 +14,16 @@ import { offenseTabs } from './offense/offenseTabs';
 import { rolesTab } from './roles/rolesTabs';
 import { speedTabs } from './speed/speedTabs';
 
-/** Una scheda del dettaglio: etichetta, valore e contenuto. */
+/** Una scheda del dettaglio: etichetta, valore (per lo screen reader) e contenuto. */
 export type T = ReturnType<typeof useT>;
 
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode;
-  /** Le schede con l'etichetta di efficacia nelle caselle: a destra nella striscia l'interruttore "Solo superefficaci" / "Solo efficacia". */
+  /** Le schede con l'etichetta di efficacia nelle caselle: nel pannello l'interruttore "Solo superefficaci" / "Solo efficacia". */
   effSide?: EffSide;
-  /** Segni dopo il valore (i Ruoli: il +N dei minori) e la frase per lo screen reader col valore detto a parole. */
-  marks?: ReactNode;
-  /** Il colore del valore (i Ruoli: rosso se manca un essenziale, giallo se mancano importanti). */
-  valueTone?: 'bad' | 'warn';
+  /**
+   * Il valore detto a parole per lo screen reader (i Ruoli: coperti, mancanti e punti). Il valore non si scrive sul
+   * selettore delle sottoschede: senza `describe` lo screen reader legge `value` nella descrizione della scheda.
+   */
   describe?: string;
   /** La sezione della guida che apre il "?" quando la scheda la condivide con un'altra (l'Offesa: una guida per le due Coverage). */
   guideKey?: string;
@@ -39,7 +39,7 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   /** Formato scelto (la guida dell'Offesa mostra i bersagli del suo Pokédex, e Tera / mosse Z solo dove ci sono). */
   formatId?: FormatId;
   /**
-   * Interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia", a destra nella striscia delle sottoschede)
+   * Interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia", in alto nel pannello della sottoscheda)
    * acceso: le caselle senza etichetta si spengono (restano al loro posto). Uno per area.
    */
   effOnly?: boolean;
@@ -104,7 +104,7 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang, ctx: AreaContext): 
     // Senza i punti dei ruoli, come la scheda: quelli stanno nella sottoscheda Ruoli
     key: 'all', label: t('area.bonusMalus'), value: signed(bonusMalusTotals(rating).net),
     panel: <BonusMalusView rating={rating} lang={lang} t={t} onCatalogue={ctx.guide && (() => ctx.guide!('bonus'))} />,
-    // Il "?" della scheda sta qui, nella striscia, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
+    // Il "?" della scheda sta qui, nella testata dell'area, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
     help: t('help.view.bonusMalus').split(/\n/).map(line => <p key={line}>{line}</p>),
     guidePages: [
       { key: 'bonus', label: t('catalogue.allBonus'), content: <CatalogueList lang={lang} kind="bonus" /> },

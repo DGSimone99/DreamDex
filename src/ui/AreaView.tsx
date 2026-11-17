@@ -1,29 +1,29 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { PROBLEM_CATEGORIES, type CoachProblem } from '../engine/coach';
 import type { TeamAnalysis } from '../engine/analysis';
-import type { TeamRating } from '../engine/rating';
+import { needLabel, type Need } from '../engine/needs';
+import { gradeFor, type TeamRating } from '../engine/rating';
 import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey, type KoFocus } from './AreaDetail';
 import { viewLabelKey } from './AnalysisTabs';
 import { AreaGuide } from './AreaGuide';
-import type { CoachStep } from '../engine/coachSteps';
+import { stepNumbers, type CoachStep } from '../engine/coachSteps';
 import { solvable } from './dashboard/FixRow';
 import { EffSwitch } from './effTag';
 import { Icon } from './icons';
+import { isMissingRoles, ProblemPill, tipOf } from './ProblemPill';
 import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
-import { FloatTip, useFloatAnchor } from './FloatTip';
-
-/** Lato del "?" sulla scheda aperta (px): il pulsante d'aiuto (.help-button). */
-const HELP_SIZE = 20;
+import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
 
 /**
- * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
- * aperta (a destra l'interruttore dell'efficacia), subito sotto il dettaglio di quella scelta a tutta larghezza (la legenda
- * dei colori, dove c'è, sta nella riga in fondo alla tabella) e in fondo la striscia coi problemi dell'area, che porta al
- * Coaching solo quando il Coaching ha una proposta per almeno uno di loro.
+ * Un'area del voto sulla pagina (scheda di Analisi). In alto una testata sola: a sinistra la lettera del voto dell'area e
+ * la sua parola (Ruoli e Bonus non ha un voto solo: niente), poi i problemi dell'area come pillole in una riga (quelli che
+ * non stanno nel "+N"), a destra il selettore delle sottoschede (solo i nomi; con una sottoscheda sola non c'è) e il "?".
+ * Ogni pillola mostra il problema intero nel tooltip (mouse e fuoco) e, se il Coaching ha una proposta per lei, è un
+ * pulsante che apre il Coaching su quel problema. Sotto, il dettaglio della sottoscheda scelta a tutta larghezza.
  */
 export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, steps = null }: {
   rating: TeamRating;
@@ -38,9 +38,9 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   onPick?: (key: string) => void;
   /** Formato scelto, per la guida dell'Offesa. */
   formatId?: FormatId;
-  /** Apre il Coaching (la striscia dei problemi in fondo); senza, la striscia non è un pulsante. */
-  onCoaching?: () => void;
-  /** Le tappe del Coaching (null: si stanno calcolando, o non ci sono): la striscia porta lì solo se una risolve un problema. */
+  /** Apre il Coaching sul problema di una pillola della testata; senza, le pillole non sono pulsanti. */
+  onCoaching?: (problemKey?: string) => void;
+  /** Le tappe del Coaching (null: si stanno calcolando, o non ci sono): una pillola porta lì solo se una tappa la risolve. */
   steps?: CoachStep[] | null;
 }) {
   const t = useT();
@@ -88,55 +88,25 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const helpButton = useRef<HTMLButtonElement>(null);
   // Il nome della scheda di Analisi (Bonus/Malus si chiama "Ruoli e Bonus")
   const title = t(viewLabelKey(area));
-  // Con una sottoscheda sola (Velocità) il "?" spiega l'area intera: porta il suo nome
-  const helpLabel = t('area.guide.button', { tab: tabs.length === 1 ? title : current.label });
-  // Problemi: prima quelli che i Suggerimenti risolvono, poi i gravi, poi l'ordine delle categorie; in riga quelli che stanno
-  const sorted = [...problems].sort((a, b) => Number(b.fixes.length > 0) - Number(a.fixes.length > 0)
-    || Number(b.severity === 'serious') - Number(a.severity === 'serious')
-    || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
-  const listRef = useRef<HTMLUListElement>(null);
-  const fit = useFitCount(listRef, sorted.length, `${lang}|${sorted.map(p => p.text).join('|')}`);
-  const hidden = sorted.slice(fit);
-  const serious = problems.some(p => p.severity === 'serious');
-  const count = t(problems.length === 1 ? 'area.problems.one' : 'area.problems.many', { n: problems.length });
-  // La striscia porta al Coaching solo se lì c'è una proposta per almeno uno dei problemi: senza problemi, coi problemi
-  // che nessuna tappa risolve o mentre le tappe si calcolano è ferma (i problemi restano scritti)
-  const computing = problems.length > 0 && !!onCoaching && steps === null;
-  const link = problems.length > 0 && !!onCoaching && !!steps && solvable(problems, steps).length > 0;
+  // Con una sottoscheda sola (Velocità) il selettore non c'è e il "?" spiega l'area intera: porta il suo nome
+  const single = tabs.length === 1;
+  const helpLabel = t('area.guide.button', { tab: single ? title : current.label });
+  // Il voto dell'area come lettera e parola (Ruoli e Bonus non ha un voto solo)
+  const areaInfo = rating.areas.find(a => a.key === area);
+  const value = area === 'bonusMalus' ? null : areaInfo?.value ?? null;
+  const grade = value === null ? null : gradeFor(value, lang);
 
-  // Il "?" sta fuori dal tablist (lì solo schede) ma si vede sulla scheda aperta, a destra
-  const [helpPlace, setHelpPlace] = useState({ left: 0, top: 0 });
-  const hasHelp = current.help !== undefined;
+  // Telefono: la sottoscheda aperta si porta in vista nel selettore, che lì scorre col dito (sul desktop non scorre: niente)
   useLayoutEffect(() => {
     const tab = buttons.current[index];
-    if (!tab) return;
-    // Centrato sul valore della scheda, nello spazio riservato dopo il numero
-    const place = () => {
-      const strip = tab.parentElement?.parentElement;
-      const value = tab.querySelector('b');
-      const room = tab.querySelector('.sub-help-room');
-      if (!strip || !value || !room) return;
-      const base = strip.getBoundingClientRect();
-      const v = value.getBoundingClientRect();
-      const r = room.getBoundingClientRect();
-      // + scrollLeft: sul telefono la striscia scorre col dito e il "?" (assoluto) si misura dal suo inizio (sul desktop è 0)
-      setHelpPlace({ left: r.right - base.left + strip.scrollLeft - HELP_SIZE, top: v.top + v.height / 2 - base.top - HELP_SIZE / 2 });
-    };
-    // Telefono: la sottoscheda aperta si porta in vista nella striscia (sul desktop la striscia non scorre: niente)
-    const strip = tab.parentElement?.parentElement;
-    if (strip && strip.scrollWidth > strip.clientWidth
-      && (tab.offsetLeft < strip.scrollLeft || tab.offsetLeft + tab.offsetWidth > strip.scrollLeft + strip.clientWidth)) {
+    const strip = tab?.parentElement;
+    if (!tab || !strip || strip.scrollWidth <= strip.clientWidth) return;
+    if (tab.offsetLeft < strip.scrollLeft || tab.offsetLeft + tab.offsetWidth > strip.scrollLeft + strip.clientWidth) {
       strip.scrollLeft = Math.max(0, tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2);
     }
-    place();
-    // La scheda può essere nascosta al primo disegno (misure a 0): si riposiziona quando prende le sue dimensioni
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(place);
-    observer.observe(tab);
-    return () => observer.disconnect();
-  }, [index, t, hasHelp]);
+  }, [index]);
 
-  // Alla chiusura della guida il focus torna a chi l'ha aperta (di solito il "?" della sottoscheda su cui si era)
+  // Alla chiusura della guida il focus torna a chi l'ha aperta (di solito il "?" della testata)
   const wasOpen = useRef(false);
   useEffect(() => {
     if (wasOpen.current && guide === null) (opener.current?.isConnected ? opener.current : helpButton.current)?.focus();
@@ -171,39 +141,42 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
     <section className={`area-view area-view-${area}`} aria-label={title}>
       {/* Titolo per i lettori di schermo: sotto "Analisi" (h2) l'area, poi i titoli delle parti (h4) */}
       <h3 className="visually-hidden">{title}</h3>
-      <div className="area-strip">
-        <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
-          {tabs.map((tab, i) => (
-            <button key={tab.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`${id}-${tab.key}`}
-              aria-selected={tab === current} aria-controls={`${id}-panel`} tabIndex={tab === current ? 0 : -1}
-              aria-describedby={tab.describe ? `${id}-${tab.key}-desc` : undefined}
-              onClick={() => setPicked(tab.key)} onKeyDown={e => onKey(e, i)}>
-              <span>{tab.label}</span>{' '}
-              <b className={tab.valueTone ? `sub-val-${tab.valueTone}` : undefined}>{tab.value ?? 'n/d'}</b>
-              {/* Segni dopo il valore (Ruoli: il +N dei minori), a parole nella descrizione della scheda */}
-              {tab.marks && <span className="sub-marks" aria-hidden="true">{tab.marks}</span>}
-              {/* Posto per il "?": aprendo un'altra scheda la striscia non si sposta */}
-              {tab.help && <span className="sub-help-room" aria-hidden="true" />}
-            </button>
-          ))}
-        </div>
-        {tabs.filter(tab => tab.describe).map(tab => <span key={tab.key} id={`${id}-${tab.key}-desc`} hidden>{tab.describe}</span>)}
+      <div className="area-head">
+        {grade && (
+          <p className={`area-grade grade-${grade.grade}`}>
+            <span className="area-grade-letter">{grade.grade}</span> <span className="area-grade-word">{grade.label}</span>
+          </p>
+        )}
+        {/* Un'area che non conta nel voto (Velocità nello stall) lo dice accanto al voto */}
+        {areaInfo?.inactive && <span className="area-inactive" role="note">{t('rating.notCounted')}</span>}
+        <AreaProblems area={title} problems={problems} steps={steps} onCoaching={onCoaching} />
+        {!single && (
+          <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
+            {tabs.map((tab, i) => (
+              <button key={tab.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`${id}-${tab.key}`}
+                aria-selected={tab === current} aria-controls={`${id}-panel`} tabIndex={tab === current ? 0 : -1}
+                aria-describedby={`${id}-${tab.key}-desc`}
+                onClick={() => setPicked(tab.key)} onKeyDown={e => onKey(e, i)}>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Il valore di ogni sottoscheda non si scrive (la testata resta corta): ai lettori di schermo nella descrizione */}
+        {!single && tabs.map(tab => <span key={tab.key} id={`${id}-${tab.key}-desc`} hidden>{tab.describe ?? tab.value ?? 'n/d'}</span>)}
         {current.help && (
-          <span className="area-help" style={helpPlace}>
-            <button ref={helpButton} type="button" className="help-button" aria-label={helpLabel}
-              title={helpLabel} onClick={() => openGuide(current.guideKey ?? current.key)}>
-              <Icon name="help" />
-            </button>
-          </span>
+          <button ref={helpButton} type="button" className="help-button area-help" aria-label={helpLabel}
+            title={helpLabel} onClick={() => openGuide(current.guideKey ?? current.key)}>
+            <Icon name="help" />
+          </button>
         )}
       </div>
-      {/* Nome e voto dell'area stanno già nella scheda aperta: sotto la striscia solo la nota quando l'area non conta */}
-      {rating.areas.find(a => a.key === area)?.inactive && <p className="area-inactive" role="note">{t('rating.notCounted')}</p>}
       {guide !== null && sections.length > 0 && (
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
           onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
-      <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
+      <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`}
+        aria-labelledby={single ? undefined : `${id}-${current.key}`} aria-label={single ? title : undefined}>
         {/* L'interruttore dell'efficacia, in alto a sinistra sulla riga della legenda, solo sulle sottoschede con l'etichetta
             nelle caselle */}
         {current.effSide && (
@@ -216,63 +189,100 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         {(area === 'strength' || area === 'defense' || area === 'speed') && <h4 className="visually-hidden">{current.label}</h4>}
         {current.panel}
       </div>
-      {/* In fondo i problemi dell'area, la stessa striscia della Panoramica (stesso posto, stessa misura): c'è sempre. Senza
-          problemi (anche in Velocità, dove il Coaching non ne dà) solo "Nessun problema in quest'area", ferma; coi problemi
-          scritti, tutta la striscia porta al Coaching solo se lì c'è una proposta per almeno uno: il clic sta sulla striscia, il
-          pulsante vero è "Vai al Coaching" (tastiera e lettori). Senza proposte la striscia è ferma e senza pulsante; mentre le
-          tappe si calcolano il pulsante tiene il suo posto, invisibile, così i problemi in riga non cambiano */}
-      <div className={`area-problems-row fix-row${problems.length === 0 ? ' is-clear' : serious ? ' serious' : ''}${link ? ' is-link' : ''}`}
-        onClick={link ? onCoaching : undefined}>
-        {problems.length === 0 ? (
-          <span className="area-problems-label" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
-            <Icon name="check" />{t('area.problems.none')}
-          </span>
-        ) : (
-          <>
-            {/* Un'etichetta dice che cos'è la striscia: i problemi dell'area, quanti */}
-            <span className="area-problems-label" aria-hidden="true">
-              <Icon name="warning" />{count}
-            </span>
-            {/* Sempre una riga: quelli che non stanno finiscono nel "+N" (tooltip e testo nascosto con tutti) */}
-            <ul ref={listRef} className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
-              {sorted.slice(0, fit).map(problem => (
-                <li key={problem.text} className={problem.severity}><Typed text={problem.text} /></li>
-              ))}
-              {hidden.length > 0 && (
-                <MoreProblems hidden={hidden} />
-              )}
-            </ul>
-          </>
-        )}
-        {link && (
-          // Il clic arriva alla striscia (anche da tastiera: Invio e Spazio fanno un clic); il nome dice dove porta e cosa c'è
-          <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: `${count} ${t('area.problems.inArea', { area: title })}` })}>
-            {t('overview.fix.go')}<span aria-hidden="true"> ›</span>
-          </button>
-        )}
-        {computing && (
-          <span className="fix-go dash-link fix-go-wait" aria-hidden="true">{t('overview.fix.go')} ›</span>
-        )}
-      </div>
     </section>
   );
 }
 
+/** Una pillola della testata: un problema, o un ruolo mancante (`role`: una pillola per ruolo, come nella mappa del Coaching). */
+type Entry = { problem: CoachProblem; role?: string };
+
+/** Il testo intero di una pillola (tooltip e lettori di schermo): il ruolo mancante col suo nome, il resto col problema. */
+const fullText = ({ problem, role }: Entry, t: ReturnType<typeof useT>, lang: ReturnType<typeof useLang>) =>
+  (role ? needLabel(role as Need, lang) : tipOf(problem, t));
+
 /**
- * Il "+N" in fondo alla striscia dei problemi: quelli che non stanno in riga, nel tooltip DreamDex col mouse e col fuoco
- * (prima solo nel title del browser); per lo screen reader sono scritti nel testo nascosto.
+ * I problemi dell'area nella testata, come pillole in una riga sola: prima quelli che i Suggerimenti risolvono, poi i
+ * gravi, poi l'ordine delle categorie; quelli che non stanno nel "+N". Senza problemi una pillola verde "Nessun problema".
+ * Una pillola è un pulsante (apre il Coaching su di lei) solo se il Coaching ha una proposta per lei; mentre le tappe si
+ * calcolano, o senza proposte, mostra solo il tooltip.
  */
-function MoreProblems({ hidden }: { hidden: CoachProblem[] }) {
+function AreaProblems({ area, problems, steps, onCoaching }: {
+  area: string; problems: CoachProblem[]; steps: CoachStep[] | null; onCoaching?: (problemKey?: string) => void;
+}) {
+  const t = useT();
+  const lang = useLang();
+  const sorted = [...problems].sort((a, b) => Number(b.fixes.length > 0) - Number(a.fixes.length > 0)
+    || Number(b.severity === 'serious') - Number(a.severity === 'serious')
+    || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
+  const entries: Entry[] = sorted.flatMap(problem => (isMissingRoles(problem) ? problem.subjects!.map(role => ({ problem, role })) : [{ problem }]));
+  const listRef = useRef<HTMLUListElement>(null);
+  const fit = useFitCount(listRef, entries.length, `${lang}|${entries.map(e => `${e.problem.key}|${e.problem.text}|${e.role ?? ''}`).join('#')}`);
+  const hidden = entries.slice(fit);
+  // Quali problemi il Coaching sa risolvere (una tappa mostrata li copre) e il numero della tappa, come nella mappa
+  const fixable = new Set(onCoaching && steps ? solvable(problems, steps).map(p => p.key) : []);
+  const stepOf = steps ? stepNumbers(steps) : new Map<string, number>();
+  return (
+    <ul ref={listRef} className="area-chips" aria-label={t('analysis.areaProblems', { area })}>
+      {entries.length === 0 ? (
+        <li><span className="area-chip good"><Icon name="check" />{t('area.problems.clear')}</span></li>
+      ) : entries.slice(0, fit).map(entry => (
+        <ProblemChip key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry} step={stepOf.get(entry.problem.key) ?? null}
+          onOpen={fixable.has(entry.problem.key) ? () => onCoaching!(entry.problem.key) : undefined} />
+      ))}
+      {hidden.length > 0 && <MoreProblems hidden={hidden} />}
+    </ul>
+  );
+}
+
+/**
+ * Una pillola: il testo corto del problema (lo stesso della mappa del Coaching) nel colore della gravità. Mouse e fuoco:
+ * il tooltip DreamDex col problema intero e, se una tappa lo copre, quale. `onOpen`: il Coaching ha una proposta, la
+ * pillola è un pulsante che lo apre su questo problema; senza, si raggiunge col Tab solo per il tooltip.
+ */
+function ProblemChip({ entry, step, onOpen }: { entry: Entry; step: number | null; onOpen?: () => void }) {
   const t = useT();
   const tip = useFloatAnchor<true>();
-  const serious = hidden.some(p => p.severity === 'serious');
+  const descId = useId();
+  const { problem, role } = entry;
+  // Il problema intero (anche per un ruolo mancante: la frase con tutti i ruoli che mancano)
+  const full = tipOf(problem, t);
+  const covered = step !== null ? t('coach.map.coveredBy', { n: step }) : null;
+  const props = { className: `area-chip ${problem.severity}${onOpen ? ' is-link' : ''}`, 'data-key': problem.key, 'aria-describedby': descId, ...tip.bind(true) };
+  const content = <><Icon name="warning" /><ProblemPill problem={problem} role={role} /></>;
   return (
-    <li className="area-problems-more" tabIndex={0} {...tip.bind(true)}>
+    <li>
+      {onOpen
+        ? <button type="button" {...props} onClick={onOpen}>{content}</button>
+        : <span tabIndex={0} {...props}>{content}</span>}
+      {/* Il tooltip è solo visivo: le stesse parole ai lettori di schermo, e dove porta il pulsante */}
+      <HiddenText id={descId}>{[full, covered, onOpen ? t('overview.fix.go') : ''].filter(Boolean).join(' · ')}</HiddenText>
+      {tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="kot area-chip-tip">
+          <p className="kot-none"><Typed text={full} /></p>
+          {covered && <p className="area-chip-by">{covered}</p>}
+        </FloatTip>
+      )}
+    </li>
+  );
+}
+
+/**
+ * Il "+N" in fondo alle pillole: quelle che non stanno in riga, nel tooltip DreamDex col mouse e col fuoco; per lo screen
+ * reader sono scritte nel testo nascosto.
+ */
+function MoreProblems({ hidden }: { hidden: Entry[] }) {
+  const t = useT();
+  const lang = useLang();
+  const tip = useFloatAnchor<true>();
+  const serious = hidden.some(e => e.problem.severity === 'serious');
+  const texts = hidden.map(e => fullText(e, t, lang));
+  return (
+    <li className="area-chips-more" tabIndex={0} {...tip.bind(true)}>
       <span aria-hidden="true">+{hidden.length}</span>
-      <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(p => p.text).join('; ')}</span>
+      <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {texts.join('; ')}</span>
       {tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="kot">
-          {hidden.map(p => <p key={p.text} className="kot-none"><Typed text={p.text} /></p>)}
+          {hidden.map((e, i) => <p key={`${e.problem.key}|${e.role ?? ''}`} className="kot-none"><Typed text={texts[i]} /></p>)}
         </FloatTip>
       )}
     </li>

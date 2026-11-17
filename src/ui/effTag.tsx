@@ -62,7 +62,7 @@ export function useColumnHover() {
 export const ColName = ({ name }: { name: string }) => <span className="col-name" aria-hidden="true">{name}</span>;
 
 /**
- * L'interruttore dell'efficacia, a destra nella striscia delle sottoschede di Coverage tipi e meta: lascia accese solo le
+ * L'interruttore dell'efficacia, in alto nel pannello di Coverage tipi e meta: lascia accese solo le
  * caselle con l'etichetta (superefficaci nell'Offesa, non neutre nella Difesa).
  */
 export function EffSwitch({ side, on, onChange }: { side: EffSide; on: boolean; onChange: (on: boolean) => void }) {

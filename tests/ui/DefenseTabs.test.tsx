@@ -204,11 +204,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes();
     const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
-    // Sta a destra nella striscia delle sottoschede, non nella tabella né nella striscia dei problemi; la tabella ha di nuovo "Pokémon"
+    // Sta in alto nel pannello, non nella tabella né nella testata dell'area; la tabella ha di nuovo "Pokémon"
     expect(sw.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(table).not.toContainElement(sw);
     expect(table.querySelector('thead th.def-mon-h')).toHaveTextContent(/^Pokémon$/);
-    expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
+    expect(document.querySelector('.area-head .eff-switch')).toBeNull();
     expect(table.querySelector('.eff-dim')).toBeNull();
     await user.click(sw);
     expect(sw).toHaveAttribute('aria-checked', 'true');
