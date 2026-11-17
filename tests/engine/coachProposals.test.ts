@@ -40,6 +40,12 @@ describe('proposalGroups', () => {
     expect(names(groups)).toEqual([['U-turn', 'Knock Off'], ['X'], ['Y'], ['Z']]);
   });
 
+  it('lo stesso Pokémon in posti diversi: una riga se risolve le stesse cose, righe diverse se no', () => {
+    const fixes = [swap('Latios-Mega', 0, 4, ['meta:A']), swap('Latios-Mega', 1, 2, ['meta:A']), swap('Latios-Mega', 2, 2, ['meta:B'])];
+    const groups = proposalGroups(problems, { fixes, moves: [] });
+    expect(groups.map(g => g.options.map(o => (o.kind === 'fix' ? o.fix.index : -1)))).toEqual([[0, 1], [2]]);
+  });
+
   it('le righe vanno dal +N più alto; a pari voto prima chi risolve problemi gravi', () => {
     const fixes = [swap('A', 0, 2, ['meta:A']), swap('B', 1, 2, ['defense:Fire']), swap('C', 2, 5, [])];
     expect(names(proposalGroups(problems, { fixes, moves: [] }))).toEqual([['C'], ['B'], ['A']]);

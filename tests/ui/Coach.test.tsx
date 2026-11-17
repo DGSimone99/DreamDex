@@ -411,7 +411,7 @@ describe('CoachingView', () => {
   it('le aree senza problemi in una riga verde sopra la lista', () => {
     renderIt(<CoachingView coaching={coachingOf([zapdos])} advice={advice([swap('Rotom-Wash', 4, 2, [zapdos.key])])} members={6} rating={rating} {...noop} />);
     const clean = document.querySelector('.coach-clean')!;
-    expect(clean).toHaveTextContent(`Nessun problema in Offesa ${Math.round(before.strength!)} · Velocità ${Math.round(before.speed!)} · Ruoli`);
+    expect(clean).toHaveTextContent(`Nessun problema in Offesa ${Math.round(before.strength!)} · Ruoli`);
     expect(clean).not.toHaveTextContent('Difesa');
   });
 

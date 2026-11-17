@@ -37,6 +37,10 @@ const seatOf = (p: Proposal) => (p.kind === 'move' ? `move:${p.fix.index}` : p.f
  * voto più alto (a pari voto quella che risolve di più); la prima è la riga, le altre (al più MAX_ALTERNATIVES) la
  * tendina. Le righe vanno dal voto più alto della loro prima proposta; a pari voto prima chi risolve problemi gravi,
  * poi chi ne risolve di più, poi l'ordine del motore.
+ *
+ * Lo stesso Pokémon in posti diversi: se risolve gli stessi problemi (le stesse chiavi) è una riga sola, col posto
+ * migliore; gli altri posti vanno nella sua tendina ("al posto di Iron Valiant"). Se risolve problemi diversi restano
+ * righe diverse.
  */
 export function proposalGroups(problems: CoachProblem[], advice: Pick<CoachAdvice, 'fixes' | 'moves'>): ProposalGroup[] {
   const order = new Map<string, number>();
@@ -65,10 +69,26 @@ export function proposalGroups(problems: CoachProblem[], advice: Pick<CoachAdvic
     if (!group) groups.set(id, (group = { id, lead, items: [] }));
     group.items.push({ p, i });
   });
-  return [...groups.values()]
+  const sorted = [...groups.values()]
     .map(g => ({ ...g, items: g.items.sort((a, b) => better(a.p, b.p) || a.i - b.i) }))
-    .sort((a, b) => better(a.items[0].p, b.items[0].p) || a.items[0].i - b.items[0].i)
-    .map(g => ({ id: g.id, lead: g.lead, options: g.items.slice(0, MAX_ALTERNATIVES + 1).map(x => x.p) }));
+    .sort((a, b) => better(a.items[0].p, b.items[0].p) || a.items[0].i - b.items[0].i);
+  // Lo stesso Pokémon che entra in posti diversi risolvendo le stesse cose: una riga sola (la migliore), gli altri posti
+  // nella sua tendina dopo le sue alternative
+  const sameKey = (p: Proposal) => (p.kind === 'fix'
+    ? `${p.fix.species}|${[...new Set(p.fix.solves.filter(k => order.has(k)))].sort().join(',')}` : null);
+  const merged: typeof sorted = [];
+  const byMon = new Map<string, (typeof sorted)[number]>();
+  for (const g of sorted) {
+    const key = sameKey(g.items[0].p);
+    const host = key ? byMon.get(key) : undefined;
+    if (host) { host.items.push(...g.items); continue; }
+    if (key) byMon.set(key, g);
+    merged.push(g);
+  }
+  return merged.map(g => {
+    const [first, ...rest] = g.items;
+    return { id: g.id, lead: g.lead, options: [first, ...rest.sort((a, b) => better(a.p, b.p) || a.i - b.i)].slice(0, MAX_ALTERNATIVES + 1).map(x => x.p) };
+  });
 }
 
 /** I problemi che almeno una proposta del Coaching risolve (le pillole delle aree sono link solo per loro). */

@@ -210,7 +210,11 @@ function AlternativesMenu({ id, group, current, problems, onChoose, onClose, but
     else if (e.key === 'Tab') onClose(false);
     else if ((e.key === 'Enter' || e.key === ' ') && at >= 0) { e.preventDefault(); onChoose(order[at]); }
   };
-  const title = `${seatText(best, tr)}, ${tr(group.lead ? 'coach.alt.same' : 'coach.alt.gainOnly')} · ${tr('coach.alt.order')}`;
+  // Posti diversi nella stessa tendina (lo stesso Pokémon in un altro posto): il titolo non nomina il posto, lo dice ogni voce
+  const seat = (p: Proposal) => seatText(p, tr);
+  const mixed = group.options.some(p => seat(p) !== seat(best));
+  const reason = tr(group.lead ? 'coach.alt.same' : 'coach.alt.gainOnly');
+  const title = mixed ? `${reason.charAt(0).toLocaleUpperCase()}${reason.slice(1)} · ${tr('coach.alt.order')}` : `${seat(best)}, ${reason} · ${tr('coach.alt.order')}`;
   const titleId = `${id}-title`;
   return (
     <div ref={ref} className="coach-menu" onKeyDown={onKey}>
@@ -229,6 +233,7 @@ function AlternativesMenu({ id, group, current, problems, onChoose, onClose, but
                 <b>{option.kind === 'fix' ? option.fix.species : gameName('move', option.fix.to, lang)}</b>
                 {types.length > 0 && <span className="coach-opt-types">{types.map(type => <TypeChip key={type} type={type} />)}</span>}
                 {option.kind === 'move' && option.fix.from && <small>{tr('coach.row.insteadMove', { from: gameName('move', option.fix.from, lang) })}</small>}
+                {mixed && option.kind === 'fix' && <small>{seat(option)}</small>}
               </span>
               <span className="coach-opt-note">{note}</span>
               <span className="coach-opt-gain">{gainText(option.fix.gain)}</span>
@@ -444,11 +449,11 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
   if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
 
   const mapped = problems.filter(shown);
-  // Le aree come nella riga verde: Offesa, Difesa, Velocità (mai un problema), Ruoli (coi Bonus/Malus del Coaching)
+  // Le aree come nella riga verde: Offesa, Difesa, Ruoli (coi Bonus/Malus del Coaching). Niente Velocità: il Coaching
+  // non ne dà mai problemi, quindi "nessun problema" lì non direbbe niente (anche con la Velocità bassa)
   const columns = [
     { key: 'offense', name: tr('area.strength'), value: rating?.areas.find(a => a.key === 'strength')?.value },
     { key: 'defense', name: tr('area.defense'), value: rating?.areas.find(a => a.key === 'defense')?.value },
-    { key: 'speed', name: tr('area.speed'), value: rating?.areas.find(a => a.key === 'speed')?.value },
     { key: 'roles', name: tr('area.roles'), text: rating ? rolesValue(rating) : '' },
   ].map(c => ({ ...c, text: 'text' in c ? c.text : c.value == null ? '' : String(Math.round(c.value)) }));
   const clean = columns.filter(c => !mapped.some(p => columnOf(p.category) === c.key));
