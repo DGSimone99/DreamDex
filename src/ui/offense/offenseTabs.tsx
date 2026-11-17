@@ -12,7 +12,7 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
   const meta = !!rating.meta;
   const coverageMeta = offense.coverageMeta;
   const value = rating.areas.find(a => a.key === 'strength')?.value ?? null;
-  // Nella striscia, come nella Generale: quanti tipi e quante minacce il team manda KO in due colpi (il colpo semplice
+  // Il valore delle sottoschede (detto ai lettori di schermo), come nella Generale: quanti tipi e quante minacce il team manda KO in due colpi (il colpo semplice
   // del membro migliore), sul totale
   const typesKo = offense.types.rows.filter((_, i) => offense.members.some(m => (m.hits[i]?.plainPct ?? 0) >= 50)).length;
   const metaKo = coverageMeta ? coverageMeta.rows.filter(r => (r.cells ?? []).some(c => c.pct >= 50)).length : 0;

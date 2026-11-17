@@ -88,10 +88,10 @@ const ITEM_LOSSES: Record<string, number> = { lifeorb: 0.1, flameorb: 0.0625, to
  * Blissey 51%), gli attaccanti sotto (Garchomp 22%, Alakazam 3%).
  */
 export const RECOVERY_HOLD = 0.35;
-/** Recupero netto per turno che vale 100 di Sostenibilità. */
+/** Recupero netto per turno che vale 100 nella sottoscheda Recupero. */
 export const SUSTAIN_FULL = 0.5;
 
-/** Le voci della Sostenibilità, per turno in quota dei PS: il recupero (già dimezzato se serve) e le perdite. */
+/** Le voci del Recupero, per turno in quota dei PS: il recupero (già dimezzato se serve) e le perdite. */
 export interface SustainParts {
   /** Mossa, abilità e strumento che curano (la mossa migliore sola). */
   sources: string[];
@@ -120,7 +120,7 @@ export function hazardRemover(team: TeamSet[]): string | null {
 }
 
 /**
- * Le voci della Sostenibilità del membro. `holdShare` è la quota (0–1) dei 36 colpi di tipo che regge (pieno 1, a metà 0,5);
+ * Le voci del Recupero del membro. `holdShare` è la quota (0–1) dei 36 colpi di tipo che regge (pieno 1, a metà 0,5);
  * `conditions` il meteo che il team porta (per Rain Dish, Dry Skin, Ice Body, Moonlight & co., Shore Up).
  */
 export function sustainParts(set: TeamSet, holdShare: number, remover: string | null = null, conditions: FieldCondition[] = []): SustainParts {
@@ -186,7 +186,7 @@ export function sustainParts(set: TeamSet, holdShare: number, remover: string | 
 
 /**
  * Quanto conta l'effetto del primo colpo (Multiscale, Shadow Shield, Tera Shell) di chi lo subisce: metà se la sua
- * Sostenibilità arriva a 50 (si cura e torna a PS pieni), altrimenti un quarto. La Sostenibilità qui non si dimezza per
+ * Recupero arriva a 50 (si cura e torna a PS pieni), altrimenti un quarto. Il Recupero qui non si dimezza per
  * chi regge pochi colpi (servirebbero i colpi, che dipendono da questa quota).
  */
 export const FIRST_HIT_SUSTAIN = 50;
@@ -197,7 +197,7 @@ export function firstHitShare(set: TeamSet, team: TeamSet[] = [set]): number {
 }
 
 /**
- * La Sostenibilità di un membro, con segno (−100..100): il netto (recupero meno perdite per turno) su SUSTAIN_FULL.
+ * Il Recupero di un membro, con segno (−100..100): il netto (recupero meno perdite per turno) su SUSTAIN_FULL.
  * Sopra zero come prima (softScore); sotto zero lineare: chi perde metà PS a ogni entrata (Stealth Rock ×4) arriva a −100.
  * 2026-11-16: prima si fermava a 0, così le perdite contavano solo contro un recupero; ora abbassano la Difesa anche senza
  * (543 team NatDex OU: voto −0,4 in media, al massimo −2, 12 lettere su 543, distacco torneo-medi uguale).
@@ -245,7 +245,7 @@ export interface MemberDefense {
   hold: number;
   /** Quota (0–100, pesata per uso) delle minacce del meta che regge: sotto metà PS pieno, sotto il KO a metà. Null senza meta. */
   metaHold: number | null;
-  /** Sostenibilità con segno, −100..100 (`signedSustain`): sotto zero se perde più di quanto recupera. */
+  /** Recupero con segno, −100..100 (`signedSustain`): sotto zero se perde più di quanto recupera. */
   sustain: number;
   sustainParts: SustainParts;
   value: number;
@@ -371,9 +371,9 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
 }
 
 /**
- * Difesa del team: Coverage tipi 40, Coverage meta 40, Sostenibilità 20 (2026-11-13, era 40/30/30: più peso a cosa il
- * team regge davvero nel meta); senza meta Coverage tipi 80, Sostenibilità 20 (2026-11-13, era 70/30).
- * 2026-11-03: Sostenibilità da 20 a 30 (via di mezzo): reggere i colpi senza recupero vale poco (il giudice cieco ha
+ * Difesa del team: Coverage tipi 40, Coverage meta 40, Recupero 20 (2026-11-13, era 40/30/30: più peso a cosa il
+ * team regge davvero nel meta); senza meta Coverage tipi 80, Recupero 20 (2026-11-13, era 70/30).
+ * 2026-11-03: Recupero da 20 a 30 (via di mezzo): reggere i colpi senza recupero vale poco (il giudice cieco ha
  * preferito il recupero 8 coppie a 0; gli Hyper Offense con molte resistenze prendevano più Difesa dei core con Regenerator).
  */
 export const DEFENSE_SHARES = { types: 0.4, meta: 0.4, sustain: 0.2 };
@@ -388,7 +388,7 @@ const teamConditions = (team: TeamSet[]): FieldCondition[] => [...new Set(team.f
 
 /**
  * Difesa di un membro, solo informazione (il voto è del team): quanti dei 36 colpi di tipo regge per lato, la
- * Sostenibilità, e il valore 40/40/20 (senza meta 80/20). La danza difensiva conta per tre quarti (DEFENSE_SETUP_SHARE); `setupGain` è quanto alza il valore.
+ * Recupero, e il valore 40/40/20 (senza meta 80/20). La danza difensiva conta per tre quarti (DEFENSE_SETUP_SHARE); `setupGain` è quanto alza il valore.
  */
 export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): MemberDefense | null {
   const species = battleSpecies(set);
@@ -465,9 +465,9 @@ export interface TypeHoldRow {
 }
 
 export interface TeamDefense {
-  /** Coverage tipi 40 + Coverage meta 40 + Sostenibilità 20 (senza meta 80 + 20). */
+  /** Coverage tipi 40 + Coverage meta 40 + Recupero 20 (senza meta 80 + 20). */
   value: number;
-  /** Sostenibilità del team, con segno (media pesata per posizione di quelle dei membri). */
+  /** Recupero del team, con segno (media pesata per posizione di quelle dei membri). */
   sustain: number;
   /** `weak`: i tipi dove nessuno ha credito sul lato peggiore. */
   coverageTypes: { value: number; weak: string[]; rows: TypeHoldRow[] };
@@ -532,7 +532,7 @@ const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce
 /**
  * Difesa del team. Coverage di tipi: per ognuno dei 36 colpi di tipo (18 tipi × fisico e speciale) i crediti dei
  * membri con la profondità 70/20/10, poi la media. Coverage meta: chi regge il colpo migliore vero di ogni minaccia.
- * Sostenibilità: media pesata per posizione. Col meta 40/40/20, senza 80/20.
+ * Recupero: media pesata per posizione. Col meta 40/40/20, senza 80/20.
  */
 export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const known = team.filter(set => !!battleSpecies(set));

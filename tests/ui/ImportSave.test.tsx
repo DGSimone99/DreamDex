@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import { spyClipboard } from '../helpers/clipboard';
@@ -43,7 +43,35 @@ describe('import / export / salvataggio', () => {
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('button', { name: 'Esporta' }));
     expect(copied()).toContain('Great Tusk @ Booster Energy');
-    expect(await screen.findByText('Team copiato in formato Showdown', { selector: '[role="status"]' })).toBeInTheDocument();
+    // Il momento "team pronto": l'avviso dell'app (come quello di Annulla) con la spunta, la frase e il voto del team
+    const toast = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('.done-toast'); if (!el) throw new Error('no toast'); return el; });
+    expect(toast).toHaveAttribute('role', 'status');
+    expect(toast).toHaveTextContent(/^Team copiato per Showdownvoto [SABCD] \d+$/);
+    const grade = toast.querySelector('.done-grade')!;
+    expect(grade.className).toMatch(/grade-[SABCD]/);
+    // Niente fumetto sotto la linguetta: la frase la dice l'avviso, una volta sola
+    expect(document.querySelector('.export-note.done')).toBeNull();
+    await user.click(within(toast).getByRole('button', { name: 'Chiudi' }));
+    expect(document.querySelector('.done-toast')).toBeNull();
+  });
+
+  it("Esporta: l'avviso del team pronto sparisce da solo dopo 3 secondi; il link copiato resta un fumetto", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      spyClipboard();
+      render(<App initialLang="it" data={fixtureData} />);
+      await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+      await user.click(screen.getByRole('button', { name: 'Esporta' }));
+      await vi.waitFor(() => { if (!document.querySelector('.done-toast')) throw new Error('no toast'); });
+      await act(async () => { vi.advanceTimersByTime(3100); });
+      expect(document.querySelector('.done-toast')).toBeNull();
+      await user.click(screen.getByRole('button', { name: 'Copia link' }));
+      expect(await screen.findByText('Link copiato', { selector: '[role="status"]' })).toBeInTheDocument();
+      expect(document.querySelector('.done-toast')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('salva e ricarica un team', async () => {

@@ -20,7 +20,7 @@ function VersionLogo({ file, version }: { file: string; version: 'scarlet' | 'vi
 }
 
 /**
- * Scelta del gioco: i giochi come tessere coi loghi (più "Nessun gioco"); scelto un gioco, sotto le sue opzioni.
+ * Scelta del gioco: i giochi come tessere coi loghi (più "Qualsiasi gioco"); scelto un gioco, sotto le sue opzioni.
  * Il gioco si applica subito; si chiude con ×, Esc o cliccando fuori.
  */
 export function GameDialog({ format, onGameChange, onFormatChange, onClose }: {

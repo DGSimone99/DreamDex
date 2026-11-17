@@ -1,11 +1,12 @@
 import { usesMeta, type TeamAnalysis } from './analysis';
 import { COVERED_LEVEL, holdSeverity, type CoachProblem } from './coach';
 import type { EngineData } from './data';
-import { battleName } from './dex';
+import { battleName, toID } from './dex';
 import { ownersOf } from './needs';
 import { summarizeTeam } from './overviewSummary';
 import { ratingThreats, type TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
+import { usageOf } from './stats';
 import { rolesValue } from './rolesArea';
 import type { TeamSet } from './sets';
 import { poolMedian, speedTier, type SpeedRival } from './speed';
@@ -45,13 +46,103 @@ export function speedItem(set: TeamSet): string | undefined {
   return set.item === 'Choice Scarf' || set.item === 'Booster Energy' ? set.item : undefined;
 }
 export interface ThreatPod { species: string; usage: number }
+
+/**
+ * Perché una minaccia del meta è gestita male, da un lato: `side` dice dove (Difesa: chi la regge, Offesa: chi la manda
+ * KO in due colpi), `by` chi lo fa (vuoto: nessuno; uno solo: lo fa solo lui).
+ */
+export interface ThreatReason { side: 'defense' | 'offense'; by: string[] }
+/**
+ * Una minaccia della carta "Minacce del meta" della Panoramica. `status`: 'open' (scoperta: nessuno la regge o nessuno la
+ * manda KO in due colpi) o 'thin' (a fatica: lo fa un membro solo). `reasons`: i lati che la rendono tale, dal peggiore;
+ * il primo decide dove porta il clic (`side`).
+ */
+export interface MetaThreat { species: string; usage: number; status: 'open' | 'thin'; side: 'defense' | 'offense'; reasons: ThreatReason[] }
+
+/** Difesa: chi regge del tutto il colpo migliore della minaccia (la regola di metaThreats e del Coaching). */
+export const defenseHandlers = (row: { heldBy: { species: string; partial: boolean }[] }): string[] =>
+  row.heldBy.filter(h => !h.partial).map(h => h.species);
+/** Offesa: chi manda il Pokémon del meta KO in due colpi (la regola di metaThreats). */
+export const offenseHandlers = (row: { coveredBy: { species: string }[] }): string[] =>
+  [...new Set(row.coveredBy.map(c => c.species))];
+
+/**
+ * L'ordine "Minaccia" di Coverage meta, con la regola delle carte della Panoramica (metaThreats) su un lato solo: prima
+ * le scoperte (nessuno le gestisce), poi quelle a fatica (uno solo), poi le altre; dentro, la più usata e poi il nome.
+ * `count`: quanti membri la gestiscono, lo stesso numero che la tabella mostra nella riga Team Coverage (così i fili
+ * rossi, gialli e verdi in testata vengono in quest'ordine).
+ */
+export function byThreat<R extends { species: string; weight: number }>(rows: readonly R[], count: (row: R) => number): R[] {
+  const rank = (row: R) => Math.min(2, count(row));
+  return [...rows].sort((a, b) => rank(a) - rank(b) || b.weight - a.weight || a.species.localeCompare(b.species));
+}
+/** L'ordine "Uso" di Coverage meta: il più usato nel meta per primo, poi il nome. */
+export const byUsage = <R extends { species: string; weight: number }>(rows: readonly R[]): R[] =>
+  [...rows].sort((a, b) => b.weight - a.weight || a.species.localeCompare(b.species));
+
+/**
+ * Le minacce del meta che il team gestisce peggio, dai dati del voto (Coverage meta della Difesa e dell'Offesa).
+ *
+ * Regola: in Difesa una minaccia è scoperta se nessun membro regge del tutto il suo colpo migliore (`heldBy` senza
+ * `partial`, la stessa regola del Coaching e della scheda), a fatica se lo regge uno solo; in Offesa è scoperta se
+ * nessuno la manda KO in due colpi (`coveredBy` vuoto, i buchi della Coverage meta), a fatica se lo fa uno solo. Un
+ * Pokémon che compare in tutti e due i lati è una minaccia sola con le due ragioni (prima la peggiore; a parità la
+ * Difesa). Ordine: prima le scoperte, poi quelle a fatica; dentro, prima chi è scoperta su tutti e due i lati, poi la
+ * più usata nel meta, poi il nome. Vuota senza meta.
+ */
+export function metaThreats(rating: TeamRating, data: EngineData): MetaThreat[] {
+  const bySpecies = new Map<string, ThreatReason[]>();
+  const add = (species: string, reason: ThreatReason) => bySpecies.set(species, [...(bySpecies.get(species) ?? []), reason]);
+  for (const row of rating.defense.coverageMeta?.rows ?? []) {
+    const by = defenseHandlers(row);
+    if (by.length <= 1) add(row.species, { side: 'defense', by });
+  }
+  for (const row of rating.offense.coverageMeta?.rows ?? []) {
+    const by = offenseHandlers(row);
+    if (by.length <= 1) add(row.species, { side: 'offense', by });
+  }
+  const list = [...bySpecies].map(([species, found]) => {
+    // La ragione peggiore per prima (nessuno prima di uno solo); a parità la Difesa, che viene prima nella mappa
+    const reasons = [...found].sort((a, b) => a.by.length - b.by.length);
+    return { species, usage: usageOf(data.stats, species), status: reasons[0].by.length ? 'thin' as const : 'open' as const, side: reasons[0].side, reasons };
+  });
+  const openSides = (x: MetaThreat) => x.reasons.filter(r => !r.by.length).length;
+  return list.sort((a, b) => Number(a.status === 'thin') - Number(b.status === 'thin') || openSides(b) - openSides(a) || b.usage - a.usage || a.species.localeCompare(b.species));
+}
+/**
+ * Un Pokémon del meta contro il tuo team, per il blocco "Contro il tuo team" della scheda Meta: le stesse righe e le
+ * stesse regole di `metaThreats` (Difesa: chi regge del tutto il suo colpo migliore; Offesa: chi lo manda KO in due
+ * colpi), niente calcoli nuovi. `defense` / `offense`: i membri, o null se il Pokémon non è fra le righe di quel lato
+ * (le righe dell'Offesa sono una per combinazione di tipi: chi non la rappresenta non c'è). `status` come le carte
+ * della Panoramica: 'open' se un lato ha nessuno, 'thin' se ne ha uno solo, altrimenti 'held'.
+ * `own`: è un tuo membro; allora le righe dicono come se la cava il RESTO del team contro una copia avversaria (il
+ * membro stesso è tolto dai conti). Null se non è in nessuna riga (meta spento, niente statistiche, fuori dai bersagli).
+ */
+export interface MetaVersus { defense: string[] | null; offense: string[] | null; status: 'open' | 'thin' | 'held'; own: boolean }
+
+export function metaVersus(rating: TeamRating | null, species: string, team: TeamSet[]): MetaVersus | null {
+  if (!rating) return null;
+  const id = toID(species);
+  const own = team.some(set => toID(battleName(set)) === id || toID(set.species) === id);
+  const rest = (names: string[]) => [...new Set(names)].filter(name => !own || toID(name) !== id);
+  const def = rating.defense.coverageMeta?.rows.find(row => toID(row.species) === id);
+  const off = rating.offense.coverageMeta?.rows.find(row => toID(row.species) === id);
+  if (!def && !off) return null;
+  const defense = def ? rest(def.heldBy.filter(h => !h.partial).map(h => h.species)) : null;
+  const offense = off ? rest(off.coveredBy.map(c => c.species)) : null;
+  const counts = [defense, offense].filter((x): x is string[] => x !== null).map(x => x.length);
+  const status = counts.some(n => n === 0) ? 'open' : counts.some(n => n === 1) ? 'thin' : 'held';
+  return { defense, offense, status, own };
+}
+
 export interface DashboardData {
   coverage: { cells: TypeCell[]; defense: string; offense: string };
   /** members: i membri in ordine di team (le colonne della tabella dei ruoli), scritti come gli owners. */
   roles: { chips: RoleChip[]; members: string[]; value: string };
   speed: { lanes: SpeedLane[]; median: number | null; vsMeta: boolean; control: { condition: SpeedCondition; move: string; by: string[] }[]; value: string };
   /** metaOff: meta spento dall'utente (altrimenti, se non disponibile, mancano le statistiche). */
-  threats: { pods: ThreatPod[]; total: number; available: boolean; metaOff: boolean };
+  /** `list`: le minacce gestite peggio per la carta della Panoramica (metaThreats). */
+  threats: { pods: ThreatPod[]; list: MetaThreat[]; total: number; available: boolean; metaOff: boolean };
 }
 
 /** I dati del cruscotto dell'Analisi; gli stati vengono da summarizeTeam e dalla gravità delle debolezze. */
@@ -120,6 +211,7 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
     },
     threats: {
       pods: threats.filter(x => !x.handledBy.length).sort((a, b) => b.usage - a.usage).map(x => ({ species: x.name, usage: x.usage })),
+      list: available ? metaThreats(rating, data) : [],
       total: threats.length,
       available,
       metaOff: !!data.ignoreMeta,

@@ -124,6 +124,11 @@ export interface Redundancy {
   catalog?: CatalogKey;
   /** Identità della voce senza nomi né conteggi (chiave del problema nel coaching), dove il testo non basta. */
   key?: string;
+  /**
+   * I pezzi che cambiano nel testo (tipo, membro, mosse… già nella lingua scelta): servono alla scheda Bonus/Malus per
+   * scrivere il caso corto, senza ripetizioni, quando quello lungo non sta nella medaglia (src/ui/bonusMalusShort.ts).
+   */
+  parts?: Record<string, string>;
 }
 
 export interface Redundancies {
@@ -163,7 +168,7 @@ export interface TeamRating {
   weightTable: AreaWeightTable;
   /** Offesa: danno vero dei set contro i difensori del formato, con le sottostatistiche per membro. */
   offense: TeamOffense;
-  /** Difesa: robustezza, sostenibilità e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
+  /** Difesa: robustezza, Recupero e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
   defense: TeamDefense;
   /** Velocità: ogni membro coi guadagni (setup, meteo, priorità) e il controllo velocità del team. */
   speed: TeamSpeed;
@@ -208,17 +213,20 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Red
       setters.set(hazard, (setters.get(hazard) ?? 0) + 1);
     }
   }
-  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1), catalog: 'hazardDuplicate' });
+  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1), catalog: 'hazardDuplicate', parts: { n: String(n), hazard: gameName('move', hazard, lang) } });
   for (const type of TYPES) {
     const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
-    if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: (n - 2) * SAME_TYPE_POINTS, catalog: 'sameType' });
+    if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: (n - 2) * SAME_TYPE_POINTS, catalog: 'sameType', parts: { n: String(n), type: typeName(type, lang) } });
   }
   return items;
 }
 
 /** Meteo/campi in conflitto: −3. */
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
-  return conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS, catalog: 'weatherClash' as const, key: `conflict:${c.kind}` }));
+  return conditionConflicts(team, lang).map(c => ({
+    text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS,
+    catalog: 'weatherClash' as const, key: `conflict:${c.kind}`, parts: { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') },
+  }));
 }
 
 /**
@@ -282,7 +290,7 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
       // Oltre il tetto i membri restano elencati ma senza punti
       const points = Math.min(WEAK_MEMBER_POINTS, WEAK_MEMBER_MAX - total);
       total += points;
-      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points, catalog: 'weakMember' });
+      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points, catalog: 'weakMember', parts: { member: battleName(set) } });
     }
   }
   return items;
@@ -299,7 +307,8 @@ export function lockedStatusIssues(team: TeamSet[], lang: Lang): Redundancy[] {
     const locked = lockedStatusMoves(set);
     if (!locked.length) return [];
     const moves = locked.map(m => gameName('move', m, lang)).join(', ');
-    return [{ text: t(lang, 'rating.redundancy.lockedStatus', { member: battleName(set), item: gameName('item', set.item, lang), moves }), points: LOCKED_STATUS_POINTS, catalog: 'lockedStatus' as const }];
+    const parts = { member: battleName(set), item: gameName('item', set.item, lang), moves };
+    return [{ text: t(lang, 'rating.redundancy.lockedStatus', parts), points: LOCKED_STATUS_POINTS, catalog: 'lockedStatus' as const, parts }];
   });
 }
 
@@ -355,10 +364,17 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
       points: (row.weak - 1) * SHARED_WEAK_POINTS,
       catalog: 'sharedWeak' as const,
       key: `sharedWeak:${row.type}`,
+      parts: { n: String(row.weak), type: typeName(row.type, lang) },
     }));
   const dependencies = [
-    ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: UNMET_POINTS, catalog: 'unmetCondition' as const })),
-    ...unusedEnablers(team).filter(i => !(i.condition === 'trickroom' && i.member === roomFast)).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const })),
+    ...unmetBeneficiaries(team).map(i => {
+      const parts = { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) };
+      return { text: t(lang, 'rating.redundancy.unmet', parts), points: UNMET_POINTS, catalog: 'unmetCondition' as const, parts };
+    }),
+    ...unusedEnablers(team).filter(i => !(i.condition === 'trickroom' && i.member === roomFast)).map(i => {
+      const parts = { via: viaName(i.via, lang), member: i.member };
+      return { text: t(lang, 'rating.redundancy.unused', parts), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const, parts };
+    }),
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
@@ -387,11 +403,8 @@ export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
     if (!team.some(o => battleName(o) !== setter && usesCondition(o, m.condition as Condition))) continue;
     const members = m.members.filter(x => x.to <= 1 && x.species !== setter).map(x => x.species);
     if (!members.length) continue;
-    items.push({
-      text: t(lang, 'rating.bonus.helps', { condition: capitalize(conditionLabel(m.condition as Condition, lang)), setter, list: members.join(', ') }),
-      points: 0,
-      catalog: 'weatherHelp',
-    });
+    const parts = { condition: capitalize(conditionLabel(m.condition as Condition, lang)), setter, list: members.join(', ') };
+    items.push({ text: t(lang, 'rating.bonus.helps', parts), points: 0, catalog: 'weatherHelp', parts });
   }
   // Un solo punto per tutto il team: si mostra sulla prima voce
   if (items.length) items[0].points = WEATHER_HELP;
@@ -454,11 +467,8 @@ export function conditionUsedBonus(team: TeamSet[], lang: Lang = 'it'): Redundan
       const users = team.filter((other, j) => j !== i && usesCondition(other, link.condition));
       if (users.length < CONDITION_USERS_MIN) continue;
       seen.add(link.condition);
-      items.push({
-        text: t(lang, 'rating.bonus.conditionUsed', { condition: capitalize(conditionLabel(link.condition, lang)), setter: battleName(set), list: users.map(battleName).join(', ') }),
-        points: CONDITION_USED_POINTS,
-        catalog: 'conditionUsed',
-      });
+      const parts = { condition: capitalize(conditionLabel(link.condition, lang)), setter: battleName(set), list: users.map(battleName).join(', ') };
+      items.push({ text: t(lang, 'rating.bonus.conditionUsed', parts), points: CONDITION_USED_POINTS, catalog: 'conditionUsed', parts });
     }
   }
   return items;
@@ -574,12 +584,12 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // Con quel malus la stessa Trick Room non conta anche come attivatore inutilizzato
   const redundant = redundancies(team, analysis, lang, fastMembers.length ? battleName(roomSetter!) : undefined);
   const roomItems = fastMembers.length
-    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
+    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const, parts: { list: fastMembers.map(m => m.species).join(', ') } }]
     : [];
   // Le mancanze dei Ruoli (essenziali e importanti, solo team di 6) si sommano alle altre penalità
   const complete = team.filter(set => !!battleSpecies(set)).length >= 6;
   const holeItems = complete
-    ? defense.coverageTypes.weak.map(type => ({ text: t(lang, 'rating.redundancy.defenseHole', { type: typeName(type, lang) }), points: DEFENSE_HOLE_POINTS, catalog: 'defenseHole' as const, key: `defenseHole:${type}` }))
+    ? defense.coverageTypes.weak.map(type => ({ text: t(lang, 'rating.redundancy.defenseHole', { type: typeName(type, lang) }), points: DEFENSE_HOLE_POINTS, catalog: 'defenseHole' as const, key: `defenseHole:${type}`, parts: { type: typeName(type, lang) } }))
     : [];
   // Un tipo che nessuno regge paga solo il buco, non anche la debolezza condivisa dello stesso tipo
   const holeKeys = new Set(holeItems.map(i => `sharedWeak:${i.key.slice('defenseHole:'.length)}`));

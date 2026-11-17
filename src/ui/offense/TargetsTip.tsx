@@ -28,6 +28,19 @@ export function Ask({ label, children }: { label: string; children: ReactNode })
   );
 }
 
+/**
+ * La testata di una colonna a pezzi della Generale (Tipi, Meta): la spada (Offesa: colpisci tu) o lo scudo (Difesa:
+ * colpiscono te), poi la parola come le altre testate (l'icona basta a dire chi colpisce chi: è solo per gli occhi).
+ */
+export function BarHead({ icon, word }: { icon: 'sword' | 'shield'; word: string }) {
+  return (
+    <span className="bar-head">
+      <span className="bar-head-ic"><Icon name={icon} /></span>
+      <span className="bar-head-word">{word}</span>
+    </span>
+  );
+}
+
 /** Il Pokémon medio dei 18 tipi: PS, Difesa e Difesa Speciale base nel Pokédex del formato, in due colonne. */
 export function TypeAverages({ formatId }: { formatId: FormatId }) {
   const t = useT();

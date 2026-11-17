@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Archetype } from '../../src/engine/archetype';
 import type { EngineData } from '../../src/engine/data';
 import { battleAbility, battleName, isMega, toID } from '../../src/engine/dex';
@@ -14,6 +14,9 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { effectiveLists, EMPTY_LISTS, isUserFavorite } from '../../src/engine/lists';
 import { benefits, enables } from '../../src/engine/synergy';
 import { fillData } from '../fixtures/fillData';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 /** Le proposte di un giro (il generatore produce anche `null` come segnale di avanzamento). */
 // Il meta di prova è piccolo: le regole si verificano senza voto minimo, tranne nel test che lo riguarda
@@ -54,7 +57,7 @@ describe('proposte di Completa team', () => {
       expect(list.length, style).toBeGreaterThanOrEqual(1);
       for (const p of list) expect(p.styles).toContain(style);
     }
-  }, 30000);
+  }, 60000);
 
   it('nessuna proposta sotto il voto minimo', () => {
     for (const choice of [any, { archetype: null, style: 'rain' as const }, { archetype: 'balance' as const, style: null }]) {
@@ -148,7 +151,7 @@ describe('proposte di Completa team', () => {
     const list = take([], { archetype: null, style: 'snow' });
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) expect(p.styles).toContain('snow');
-  }, 30000);
+  }, 60000);
 
   it('con un meteo, nessuno porta un altro meteo o dipende da un altro meteo', () => {
     // Pioggia: niente Chlorophyll né Drought (Venusaur, Torkoal); sole: niente Swift Swim né Drizzle (Barraskewda, Pelipper)
@@ -164,7 +167,7 @@ describe('proposte di Completa team', () => {
         expect(dependent, `${style}: ${s.species}`).toBe(false);
       }
     }
-  }, 30000);
+  }, 60000);
 
   it('con un meteo almeno 2 membri lo sfruttano, oltre a chi lo porta', () => {
     for (const style of ['rain', 'sun'] as const) {
@@ -172,7 +175,7 @@ describe('proposte di Completa team', () => {
       const users = first.added.filter(s => !enables(s).some(e => e.condition === style) && benefits(s).some(b => b.condition === style && toID(b.via) !== 'weatherball'));
       expect(users.length, style).toBeGreaterThanOrEqual(2);
     }
-  }, 30000);
+  }, 60000);
 
   it('in Trick Room, dopo chi la porta, i membri sono lenti', () => {
     const list = take([], { archetype: null, style: 'trickroom' });
@@ -181,7 +184,7 @@ describe('proposte di Completa team', () => {
       const others = p.added.filter(s => !enables(s).some(e => e.condition === 'trickroom'));
       for (const s of others) expect(benefits(s).some(b => b.condition === 'trickroom'), s.species).toBe(true);
     }
-  }, 30000);
+  }, 60000);
 
   it('senza proposte possibili produce solo segnali di avanzamento, poi si ferma', () => {
     // Stall con Trick Room e pioggia insieme non esiste: si chiede Stall + neve su un team già offensivo
@@ -203,7 +206,7 @@ describe('proposte di Completa team', () => {
       run = step === null ? run + 1 : 0;
       expect(run).toBeLessThanOrEqual(MAX_MISSES);
     }
-  }, 30000);
+  }, 60000);
 
   it("come finisce il giro: fermato dai tentativi non vuol dire finiti, e il giro dopo ne trova altre", () => {
     /** Consuma il giro e dà le proposte e come è finito. */

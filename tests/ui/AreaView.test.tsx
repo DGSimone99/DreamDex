@@ -6,7 +6,9 @@ import { rateTeam } from '../../src/engine/rating';
 import { emptySet } from '../../src/engine/sets';
 import { AreaGuide } from '../../src/ui/AreaGuide';
 import { AreaView } from '../../src/ui/AreaView';
-import type { CoachStep } from '../../src/engine/coachSteps';
+import { problemsOf } from '../../src/ui/AnalysisPanel';
+import type { CoachAdvice, CoachProblem } from '../../src/engine/coach';
+import type { CoachFix } from '../../src/engine/coachFixes';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -17,12 +19,12 @@ const team = [
 const analysis = analyzeTeam(team, fixtureData);
 const withMeta = () => rateTeam(team, fixtureData, 'it')!;
 const noMeta = () => rateTeam(team, { ...fixtureData, ignoreMeta: true }, 'it')!;
-const tabs = () => screen.getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*[\d.,%n/d–]+$/, '').trim());
+const tabs = () => screen.getAllByRole('tab').map(tab => tab.textContent!.trim());
 
 describe('vista di un\'area sulla pagina', () => {
   it('Difesa: sottostatistiche calcolate, Generale aperta di default', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(tabs()).toEqual(expect.arrayContaining(['Sostenibilità', 'Coverage tipi', 'Coverage meta']));
+    expect(tabs()).toEqual(expect.arrayContaining(['Recupero', 'Coverage tipi', 'Coverage meta']));
     expect(tabs()).not.toContain('Robustezza');
     expect(screen.getByRole('tab', { name: /^Generale/ })).toHaveAttribute('aria-selected', 'true');
   });
@@ -46,78 +48,115 @@ describe('vista di un\'area sulla pagina', () => {
     expect(screen.getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
   });
 
-  it('sottoschede in orizzontale; i problemi in una striscia sotto il pannello, fuori da lui', () => {
-    const { container } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[{ severity: 'serious', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' }]} />);
+  it("una testata sola sopra il pannello: voto dell'area, problemi e sottoschede (solo i nomi, il valore nella descrizione)", () => {
+    const rating = withMeta();
+    const { container } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[{ severity: 'serious', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' }]} />);
     expect(screen.getByRole('tablist')).toHaveAttribute('aria-orientation', 'horizontal');
-    const line = screen.getByRole('list', { name: /Problemi/ });
-    expect(within(line).getByText('Debole a Fuoco').closest('li')).toHaveClass('serious');
+    const line = screen.getByRole('list', { name: 'Problemi in Difesa' });
+    expect(within(line).getByText('Debole a Fuoco').closest('.area-chip')).toHaveClass('serious');
     expect(within(screen.getByRole('tabpanel')).queryByText('Debole a Fuoco')).toBeNull();
-    // Ordine: striscia delle sottoschede, subito il pannello, in fondo i problemi
+    // Ordine: la testata, subito il pannello; niente striscia in fondo
     const order = [...container.querySelector('.area-view')!.children].map(el => el.className.split(' ')[0]).filter(c => c.startsWith('area-'));
-    expect(order).toEqual(['area-strip', 'area-panel', 'area-problems-row']);
-    expect(line.closest('.area-problems-row')).toHaveClass('serious');
+    expect(order).toEqual(['area-head', 'area-panel']);
+    // Il voto dell'area come lettera e parola
+    const value = rating.areas.find(a => a.key === 'defense')!.value!;
+    const letter = value >= 90 ? 'S' : value >= 80 ? 'A' : value >= 70 ? 'B' : value >= 60 ? 'C' : 'D';
+    const grade = container.querySelector('.area-grade')!;
+    expect(grade).toHaveClass(`grade-${letter}`);
+    expect(grade).toHaveTextContent(new RegExp(`^${letter} (Eccellente|Ottimo|Buono|Discreto|Debole)$`));
+    // Sul selettore solo il nome; il valore lo sente lo screen reader
+    const general = screen.getByRole('tab', { name: 'Generale' });
+    expect(general).toHaveTextContent(/^Generale$/);
+    expect(general).toHaveAccessibleDescription(String(value));
   });
 
-  it('la striscia dei problemi c\'è in ogni area, anche in Ruoli e Bonus; niente riga degli strumenti sopra il pannello', () => {
+  it("la testata c'è in ogni area; Ruoli e Bonus senza voto, Velocità senza selettore", () => {
     for (const area of ['defense', 'strength', 'speed', 'bonusMalus'] as const) {
       const { container, unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} />);
-      expect(container.querySelector('.area-tools-row')).toBeNull();
-      expect(container.querySelectorAll('.area-problems-row')).toHaveLength(1);
+      expect(container.querySelectorAll('.area-head')).toHaveLength(1);
+      if (area === 'bonusMalus') expect(container.querySelector('.area-grade')).toBeNull();
+      else expect(container.querySelector('.area-grade')).not.toBeNull();
+      if (area === 'speed') {
+        // Una sottoscheda sola: niente selettore, il pannello porta il nome dell'area
+        expect(screen.queryByRole('tablist')).toBeNull();
+        expect(screen.getByRole('tabpanel', { name: 'Velocità' })).toBeInTheDocument();
+      } else expect(screen.getByRole('tablist')).toBeInTheDocument();
       unmount();
     }
   });
 
-  it('con una proposta del Coaching tutta la striscia dei problemi porta lì; il pulsante dice cosa contiene', async () => {
+  /** I consigli del Coaching con una proposta sola che risolve `keys`. */
+  const adviceSolving = (...keys: string[]): CoachAdvice =>
+    ({ fixes: [{ kind: 'swap', species: 'Rotom-Wash', set: emptySet('Rotom-Wash'), index: 0, member: 'X', gain: 1, solves: keys, reduces: [] } as CoachFix], moves: [], steps: [] });
+
+  it('con una proposta del Coaching la pillola è un pulsante che apre il Coaching su quel problema (clic e tastiera)', async () => {
     const user = userEvent.setup();
     const onCoaching = vi.fn();
     const fire = { severity: 'minor' as const, category: 'defense' as const, text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' };
-    const { container } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching}
-      problems={[fire]} steps={[{ problem: fire, swap: null, move: null, group: [], alsoSolves: [] } as unknown as CoachStep]} />);
-    const go = screen.getByRole('button', { name: 'Vai al Coaching: 1 problema in Difesa' });
-    await user.click(go);
-    expect(onCoaching).toHaveBeenCalledTimes(1);
-    // Anche un clic sul testo del problema
-    await user.click(screen.getByText('Debole a Fuoco'));
-    expect(onCoaching).toHaveBeenCalledTimes(2);
-    // Da tastiera
-    go.focus();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching}
+      problems={[fire]} advice={adviceSolving('defense:Fire')} />);
+    const chip = screen.getByRole('button', { name: 'Debole a Fuoco' });
+    expect(chip).toHaveAccessibleDescription('Debole a Fuoco · Vai al Coaching');
+    await user.click(chip);
+    expect(onCoaching).toHaveBeenLastCalledWith('defense:Fire');
+    chip.focus();
     await user.keyboard('{Enter}');
+    expect(onCoaching).toHaveBeenCalledTimes(2);
+    await user.keyboard(' ');
     expect(onCoaching).toHaveBeenCalledTimes(3);
-    expect(container.querySelector('.area-problems-row')).toHaveClass('is-link');
   });
 
-  it('problemi che nessuna proposta del Coaching risolve, o tappe ancora da calcolare: i problemi restano scritti, la striscia è ferma', async () => {
+  it('col fuoco una pillola mostra il problema intero nel tooltip DreamDex', async () => {
+    const user = userEvent.setup();
+    const fire = { severity: 'serious' as const, category: 'defense' as const, text: 'Nessuno regge Fuoco', fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } };
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={() => {}}
+      problems={[fire]} advice={adviceSolving('defense:Fire')} />);
+    const chip = screen.getByRole('button', { name: /Nessuno regge Fuoco/ });
+    for (let i = 0; i < 20 && document.activeElement !== chip; i++) await user.tab();
+    expect(chip).toHaveFocus();
+    await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).toHaveTextContent('Nessuno regge Fuoco'));
+    expect(document.querySelector('.ftip.area-chip-tip')).not.toHaveTextContent('tappa');
+    // Niente percentuali nel tooltip
+    expect(document.querySelector('.ftip.area-chip-tip')!.textContent).not.toMatch(/%/);
+    // In fondo dove porta il clic (TipGo)
+    expect(document.querySelector('.ftip.area-chip-tip')!.lastElementChild).toHaveClass('ftip-go');
+    expect(document.querySelector('.ftip.area-chip-tip')!.lastElementChild).toHaveTextContent('Clic: vai a Coaching');
+  });
+
+  it('problemi che nessuna proposta del Coaching risolve, o consigli ancora da calcolare: la pillola mostra solo il tooltip', async () => {
     const user = userEvent.setup();
     const onCoaching = vi.fn();
     const fire = { severity: 'serious' as const, category: 'defense' as const, text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' };
     const other = { ...fire, key: 'defense:Water', text: 'Debole a Acqua' };
-    for (const steps of [[], [{ problem: other, swap: null, move: null, group: [], alsoSolves: [] } as unknown as CoachStep], null]) {
-      const { container, unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching} problems={[fire]} steps={steps} />);
-      const row = container.querySelector<HTMLElement>('.area-problems-row')!;
-      expect(row).not.toHaveClass('is-link');
-      expect(within(row).getByText('Debole a Fuoco')).toBeInTheDocument();
-      expect(within(row).queryByRole('button')).toBeNull();
-      // Mentre le tappe si calcolano "Vai al Coaching" tiene il posto, invisibile e fuori dai lettori: niente salti
-      if (steps === null) expect(row.querySelector('.fix-go-wait')).toHaveAttribute('aria-hidden', 'true');
-      else expect(row.querySelector('.fix-go-wait')).toBeNull();
-      await user.click(within(row).getByText('Debole a Fuoco'));
+    for (const advice of [{ fixes: [], moves: [], steps: [] }, adviceSolving(other.key), null]) {
+      const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={onCoaching} problems={[fire]} advice={advice} />);
+      const list = screen.getByRole('list', { name: 'Problemi in Difesa' });
+      const chip = within(list).getByText('Debole a Fuoco').closest<HTMLElement>('.area-chip')!;
+      expect(chip).not.toHaveClass('is-link');
+      expect(chip).toHaveAttribute('tabindex', '0');
+      expect(within(list).queryByRole('button')).toBeNull();
+      // Senza clic niente piede TipGo nel tooltip
+      await user.hover(chip);
+      await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).not.toBeNull());
+      expect(document.querySelector('.ftip.area-chip-tip .ftip-go')).toBeNull();
+      await user.unhover(chip);
+      await user.click(chip);
       expect(onCoaching).not.toHaveBeenCalled();
       unmount();
     }
   });
 
-  it('senza problemi la striscia resta, ferma, con "Nessun problema in quest’area" (anche in Velocità): niente link al Coaching', async () => {
+  it('senza problemi una pillola verde "Nessun problema" (anche in Velocità), ferma', async () => {
     const user = userEvent.setup();
     const onCoaching = vi.fn();
     for (const area of ['defense', 'speed'] as const) {
-      const { container, unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} onCoaching={onCoaching} />);
-      const row = container.querySelector<HTMLElement>('.area-problems-row')!;
-      expect(row).toHaveClass('is-clear');
-      expect(row).not.toHaveClass('is-link');
-      expect(screen.getByRole('note', { name: /^Problemi in / })).toHaveTextContent("Nessun problema in quest'area");
-      expect(screen.queryByRole('list', { name: /Problemi/ })).toBeNull();
-      expect(within(row).queryByRole('button')).toBeNull();
-      await user.click(within(row).getByText("Nessun problema in quest'area"));
+      const { unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} onCoaching={onCoaching} />);
+      const list = screen.getByRole('list', { name: /^Problemi in / });
+      expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+      const chip = within(list).getByText('Nessun problema');
+      expect(chip).toHaveClass('area-chip', 'good');
+      expect(within(list).queryByRole('button')).toBeNull();
+      await user.click(chip);
       expect(onCoaching).not.toHaveBeenCalled();
       // Una sottoscheda sola: il "?" porta il nome dell'area
       if (area === 'speed') expect(screen.getByRole('button', { name: 'Come funziona Velocità' })).toBeInTheDocument();
@@ -127,11 +166,11 @@ describe('vista di un\'area sulla pagina', () => {
 
   it('i problemi stanno in una riga: prima i risolvibili, poi i gravi; quelli che non stanno nel "+N" (tooltip col fuoco e testo nascosto)', async () => {
     // Misura finta: la lista è larga 300px, ogni voce (anche il "+N") 100px
-    const width = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-problems') ? 300 : 0; });
-    const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-problems') ? 100 * this.children.length : 0; });
+    const width = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-chips') ? 300 : 0; });
+    const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-chips') ? 100 * this.children.length : 0; });
     try {
-      const p = (key: string, severity: 'serious' | 'minor', fixes: string[] = []) => ({ severity, category: 'coverage' as const, text: `Problema ${key}`, fixes, key });
-      renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis}
+      const p = (key: string, severity: 'serious' | 'minor', fixes: string[] = []) => ({ severity, category: 'redundancy' as const, text: `Problema ${key}`, fixes, key });
+      renderIt(<AreaView rating={withMeta()} area="bonusMalus" team={team} analysis={analysis}
         problems={[p('a', 'minor'), p('b', 'serious'), p('c', 'minor', ['Kyurem']), p('d', 'minor'), p('e', 'serious')]} />);
       const list = screen.getByRole('list', { name: /Problemi/ });
       const items = within(list).getAllByRole('listitem');
@@ -143,7 +182,7 @@ describe('vista di un\'area sulla pagina', () => {
       const user = userEvent.setup();
       for (let i = 0; i < 20 && document.activeElement !== more; i++) await user.tab();
       expect(more).toHaveFocus();
-      await waitFor(() => expect(document.querySelector('.ftip.kot')).toHaveTextContent('Problema eProblema aProblema d'));
+      await waitFor(() => expect(document.querySelector('.ftip.kot:not(.area-chip-tip)')).toHaveTextContent('Problema eProblema aProblema d'));
       expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 3 problemi: Problema e; Problema a; Problema d');
     } finally {
       width.mockRestore();
@@ -187,11 +226,35 @@ describe('vista di un\'area sulla pagina', () => {
   });
 });
 
+describe('problemi delle aree', () => {
+  it('le stesse colonne della mappa del Coaching: le minacce del meta in Difesa e Offesa, le condizioni in Ruoli e Bonus, niente debolezze in comune né regole', () => {
+    const p = (category: CoachProblem['category'], key: string): CoachProblem => ({ severity: 'minor', category, text: key, fixes: [], key });
+    const all = [p('defense', 'defense:Fire'), p('meta', 'meta:Zapdos'), p('coverage', 'coverage:Fairy'), p('metaHit', 'metaHit:Toxapex'),
+      p('roles', 'roles:important'), p('conditions', 'conditions:pivot'), p('redundancy', 'redundancy:hazards'), p('redundancy', 'redundancy:sharedWeak:Ice'), p('rules', 'rules:ban')];
+    const keys = (area: Parameters<typeof problemsOf>[1]) => problemsOf(all, area).map(x => x.key);
+    expect(keys('defense')).toEqual(['defense:Fire', 'meta:Zapdos']);
+    expect(keys('strength')).toEqual(['coverage:Fairy', 'metaHit:Toxapex']);
+    expect(keys('bonusMalus')).toEqual(['roles:important', 'conditions:pivot', 'redundancy:hazards']);
+    expect(keys('speed')).toEqual([]);
+  });
+
+  it('una minaccia del meta nella testata della Difesa: icona e nome del Pokémon, il testo intero nel tooltip', async () => {
+    const user = userEvent.setup();
+    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Scoperto in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[threat]} />);
+    const list = screen.getByRole('list', { name: 'Problemi in Difesa' });
+    const chip = list.querySelector<HTMLElement>('.area-chip')!;
+    expect(chip.querySelector('.coach-threat-name')).toHaveTextContent('Zapdos');
+    for (let i = 0; i < 20 && document.activeElement !== chip; i++) await user.tab();
+    await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).toHaveTextContent(threat.text));
+  });
+});
+
 describe('vista di un\'area: casi particolari', () => {
   it('un\'area che non conta lo dice nel titolo (Velocità nello stall)', () => {
     const rating = { ...withMeta(), areas: withMeta().areas.map(a => (a.key === 'speed' ? { ...a, inactive: true } : a)) };
     renderIt(<AreaView rating={rating} area="speed" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.getByRole('note', { name: '' })).toHaveTextContent(/Non conta nello Stall/);
+    expect(screen.getByRole('note')).toHaveTextContent(/Non conta nello Stall/);
     // Il titolo dell'area c'è solo per i lettori di schermo (a vista lo dice la scheda aperta)
     expect(screen.getByRole('heading', { level: 3, name: 'Velocità' })).toHaveClass('visually-hidden');
   });

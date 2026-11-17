@@ -9,7 +9,7 @@
   translate: -50% -50%;
   min-width: 300px;
   max-width: min(400px, calc(100vw - 32px));
-  padding: 18px 44px 20px;
+  padding: var(--sp-9) 44px 20px;
   overflow: hidden;
   background: var(--panel);
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
@@ -17,15 +17,15 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent), 0 16px 40px rgba(0, 0, 0, 0.55);
   animation: tip 0.2s var(--ease);
 }
-.undo-text { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 14px; color: var(--muted); }
+.undo-text { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); font-size: var(--fs-section); color: var(--muted); }
 .undo-text strong { color: var(--text); font-weight: 700; }
 .undo-text .mon-icon { margin: -8px -4px -6px -6px; }
 .undo-text .icon { width: 16px; height: 16px; color: var(--faint); }
 .undo-text { justify-content: center; }
-.undo-actions { margin-top: 12px; display: flex; justify-content: center; }
-.undo-button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 16px; }
+.undo-actions { margin-top: var(--sp-6); display: flex; justify-content: center; }
+.undo-button { display: inline-flex; align-items: center; gap: var(--sp-3); padding: 5px var(--sp-8); }
 .undo-button .icon { width: 16px; height: 16px; }
-.undo-toast .undo-close { position: absolute; top: 10px; right: 10px; padding: 2px; border: 0; background: none; color: var(--faint); }
+.undo-toast .undo-close { position: absolute; top: 10px; right: 10px; padding: var(--sp-1); border: 0; background: none; color: var(--faint); }
 .undo-toast .undo-close:hover { color: var(--text); }
 .undo-timer {
   position: absolute;
@@ -39,3 +39,13 @@
 }
 .undo-toast:hover .undo-timer, .undo-toast:focus-within .undo-timer { animation-play-state: paused; }
 @keyframes undo-timer { to { transform: scaleX(0); } }
+/* Team copiato per Showdown (DoneToast): lo stesso avviso, senza Annulla. La spunta verde, la frase e il voto del team in
+   corsivo grande nel colore della lettera (come nella testata delle aree) */
+.done-toast { padding: var(--sp-9) 44px var(--sp-9) 28px; }
+.done-toast .undo-text { flex-wrap: nowrap; gap: var(--sp-4); white-space: nowrap; }
+.done-toast .undo-text > .icon { width: 20px; height: 20px; color: var(--good); }
+.done-grade { --grade: var(--accent-ink); margin-left: var(--sp-2); font: 700 var(--fs-heading)/1 var(--display); font-style: italic; color: var(--grade); font-variant-numeric: tabular-nums; }
+.done-grade.grade-S { --grade: var(--accent-2-ink); }
+.done-grade.grade-A { --grade: var(--good); }
+.done-grade.grade-C { --grade: var(--warn); }
+.done-grade.grade-D { --grade: var(--bad); }

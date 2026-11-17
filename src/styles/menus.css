@@ -25,7 +25,7 @@
   max-height: 340px;
   overflow-y: auto;
   margin: 0;
-  padding: 4px;
+  padding: var(--sp-2);
   list-style: none;
   background: var(--ground);
   border: 1px solid var(--line);
@@ -39,7 +39,7 @@
 .editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: auto; right: 0; }
 /* Mosse in fondo all'editor: il menu si apre verso l'alto e resta nella schermata */
 .editor-group.moves .combobox [role='listbox'] { top: auto; bottom: calc(100% + 4px); }
-.combobox [role='option'] { margin: 0; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
+.combobox [role='option'] { margin: 0; padding: var(--sp-4) var(--sp-5); cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
 .combobox [role='option']:last-of-type { border-bottom: 0; }
 .combobox [role='option'].active { background: var(--raised); border-radius: 3px; border-bottom-color: transparent; }
 .combobox [role='option'][aria-disabled='true'] { opacity: 0.38; cursor: not-allowed; }
@@ -52,19 +52,19 @@
   inset: 1px 28px 1px 11px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sp-4);
   pointer-events: none;
-  font-size: 14px;
+  font-size: var(--fs-section);
   font-weight: 400;
   color: var(--text);
   text-transform: none;
   letter-spacing: 0;
 }
-.combobox .option-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.combobox .option-head strong { font-size: 14px; font-weight: 600; color: var(--text); }
+.combobox .option-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); }
+.combobox .option-head strong { font-size: var(--fs-section); font-weight: 600; color: var(--text); }
 .combobox [role='option'] small {
-  margin-top: 2px;
-  font-size: 12px;
+  margin-top: var(--sp-1);
+  font-size: var(--fs-caption);
   font-weight: 400;
   color: var(--faint);
   display: -webkit-box;
@@ -73,20 +73,20 @@
   overflow: hidden;
 }
 .combobox [role='option'].active small { color: var(--muted); }
-.combobox .empty { margin: 0; padding: 8px; font-size: 13px; font-weight: 400; color: var(--faint); }
+.combobox .empty { margin: 0; padding: var(--sp-4); font-size: var(--fs-small); font-weight: 400; color: var(--faint); }
 /* Più usati: in cima alla tendina, filo e alone dorato, quota d'uso a destra */
 .combobox .group-head {
   margin: 0;
-  padding: 8px 10px 4px;
-  font: 600 11px/1 var(--display);
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  font: 600 var(--fs-label)/1 var(--display);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--faint);
 }
-.combobox .group-head.common-head { color: var(--accent); padding-top: 6px; }
-.combobox .group-head:not(.common-head) { margin-top: 4px; border-top: 1px solid var(--line); padding-top: 10px; }
+.combobox .group-head.common-head { color: var(--accent); padding-top: var(--sp-3); }
+.combobox .group-head:not(.common-head) { margin-top: var(--sp-2); border-top: 1px solid var(--line); padding-top: var(--sp-5); }
 /* Gruppi per formato (preset): il primo in cima senza filo */
-.combobox [role='listbox'] > .group-head:first-child { margin-top: 0; border-top: 0; padding-top: 6px; }
+.combobox [role='listbox'] > .group-head:first-child { margin-top: 0; border-top: 0; padding-top: var(--sp-3); }
 .combobox [role='option'].common {
   background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 13%, transparent), color-mix(in srgb, var(--accent) 2%, transparent) 70%);
   box-shadow: inset 2px 0 0 var(--accent);
@@ -100,7 +100,7 @@
   flex: none;
   min-width: 34px;
   text-align: right;
-  font: 600 13px/1 var(--display);
+  font: 600 var(--fs-small)/1 var(--display);
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
@@ -111,12 +111,12 @@
 /* Tendine native (formato, filtri…) con lo stesso aspetto del menu dell'editor, dove il browser lo permette */
 @supports (appearance: base-select) {
   select, ::picker(select) { appearance: base-select; }
-  select { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
+  select { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); cursor: pointer; }
   select::picker-icon {
     content: '';
     width: 6px;
     height: 6px;
-    margin-right: 2px;
+    margin-right: var(--sp-1);
     border-right: 2px solid var(--faint);
     border-bottom: 2px solid var(--faint);
     transform: translateY(-2px) rotate(45deg);
@@ -124,15 +124,15 @@
   }
   select:open::picker-icon { transform: translateY(2px) rotate(225deg); }
   ::picker(select) {
-    margin-top: 4px;
-    padding: 4px;
+    margin-top: var(--sp-2);
+    padding: var(--sp-2);
     background: var(--ground);
     border: 1px solid var(--line);
     border-radius: 4px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
     max-height: 340px;
   }
-  select option { padding: 8px 10px; font-size: 14px; color: var(--text); border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+  select option { padding: var(--sp-4) var(--sp-5); font-size: var(--fs-section); color: var(--text); border-bottom: 1px solid var(--line-soft); cursor: pointer; }
   select option:last-child { border-bottom: 0; }
   select option:hover, select option:focus-visible { background: var(--raised); border-radius: 3px; outline: none; }
   select option:checked { font-weight: 600; background: var(--accent-soft); border-radius: 3px; }
@@ -145,10 +145,10 @@
   display: inline-flex;
   align-items: center;
   flex: none;
-  padding: 0 6px;
+  padding: 0 var(--sp-3);
   border: 1px solid var(--line);
   border-radius: 3px;
-  font: 600 11px/1.5 var(--ui);
+  font: 600 var(--fs-label)/1.5 var(--ui);
   letter-spacing: 0.02em;
   text-transform: none;
   color: var(--muted);
@@ -164,8 +164,8 @@
   width: 220px;
   display: none;
   flex-direction: column;
-  gap: 5px;
-  padding: 12px 14px;
+  gap: var(--sp-2);
+  padding: var(--sp-6) var(--sp-7);
   background: var(--ground);
   border: 1px solid var(--line);
   border-top: 2px solid var(--accent);
@@ -175,9 +175,9 @@
   cursor: default;
 }
 .stats-badge:hover .stats-pop, .stats-badge:focus-visible .stats-pop { display: flex; animation: tip 0.15s var(--ease); }
-.stats-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 3px; font: 700 13px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-.stats-title small { display: inline; font: 500 11px var(--ui); text-transform: none; letter-spacing: 0; color: var(--faint); }
-.stats-row { display: grid; grid-template-columns: 30px 30px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12px; }
+.stats-title { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); margin-bottom: 3px; font: 700 var(--fs-small)/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.stats-title small { display: inline; font: 500 var(--fs-label) var(--ui); text-transform: none; letter-spacing: 0; color: var(--faint); }
+.stats-row { display: grid; grid-template-columns: 30px 30px minmax(0, 1fr); align-items: center; gap: var(--sp-4); font-size: var(--fs-caption); }
 .stats-name { color: var(--muted); font-weight: 600; }
 .stats-value { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .stats-bar { height: 7px; border-radius: 2px; background: var(--line-soft); overflow: hidden; }
@@ -187,12 +187,12 @@
 .stats-row.ok { --c: #ffd34d; }
 .stats-row.good { --c: #8be26b; }
 .stats-row.top { --c: #3fd6c2; }
-.stats-total { display: flex; justify-content: space-between; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); }
+.stats-total { display: flex; justify-content: space-between; margin-top: var(--sp-2); padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); font-size: var(--fs-caption); color: var(--muted); }
 .stats-total span:last-child { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 /* Confronto in una sostituzione: quanto guadagna o perde ogni statistica rispetto al membro che esce */
-.stats-vs { display: block; margin-bottom: 4px; font-size: 11px; color: var(--muted); }
+.stats-vs { display: block; margin-bottom: var(--sp-2); font-size: var(--fs-label); color: var(--muted); }
 .stats-pop:has(.stats-vs) { min-width: 230px; }
 .stats-pop:has(.stats-vs) .stats-row { grid-template-columns: 30px 30px minmax(0, 1fr) 36px; }
-.stats-diff { text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.stats-diff { text-align: right; font-size: var(--fs-label); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
 .stats-diff.up { color: var(--good); }
 .stats-diff.down { color: var(--bad); }

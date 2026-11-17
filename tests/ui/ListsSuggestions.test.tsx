@@ -1,9 +1,12 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { EMPTY_LISTS, type UserLists } from '../../src/engine/lists';
 import { fixtureData } from '../fixtures/data';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 const memory = (initial: Record<string, string> = {}) => {
   const values = { ...initial };
@@ -16,8 +19,9 @@ const memory = (initial: Record<string, string> = {}) => {
     } as unknown as Storage,
   };
 };
-const withLists = (lists: UserLists) => memory({ 'dreamdex.lists': JSON.stringify(lists) });
-const bans = (...names: string[]): UserLists => ({ ...EMPTY_LISTS, byFormat: { ou: { favorites: [], bans: names } } });
+const withLists = (lists: UserLists | object) => memory({ 'dreamdex.lists': JSON.stringify(lists) });
+// Salvate nella forma di prima delle raccolte (byFormat): si leggono con la migrazione
+const bans = (...names: string[]) => ({ universal: { favorites: [], bans: [] }, byFormat: { ou: { favorites: [], bans: names } } });
 const favorites = (...names: string[]): UserLists => ({ ...EMPTY_LISTS, universal: { favorites: names, bans: [] } });
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
@@ -90,10 +94,10 @@ describe('liste nella scheda Pokémon', () => {
     expect(within(suggestions()).queryAllByLabelText('Nei tuoi Preferiti')).toHaveLength(0);
   });
 
-  it('la stella delle card del team non tocca le liste', async () => {
+  it('il lucchetto (Fisso) delle card del team non tocca le liste', async () => {
     const { storage, values } = memory();
     const user = await setup(storage, 'Great Tusk');
-    await user.click(screen.getByRole('button', { name: /preferit/i, pressed: false }));
+    await user.click(screen.getByRole('button', { name: /^Fisso /, pressed: false }));
     expect(values['dreamdex.lists'] ?? JSON.stringify(EMPTY_LISTS)).toBe(JSON.stringify(EMPTY_LISTS));
   });
 });

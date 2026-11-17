@@ -120,7 +120,7 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
 
       <h4>{g('gains')}</h4>
       <Rows compact rows={GAINS.map(gain)} />
-      <ul className="guide-lines"><li>{g('gains.foot')}</li></ul>
+      <ul className="guide-lines"><li>{g('gains.foot')}</li><li>{g('room')}</li><li>{g('walls')}</li></ul>
 
       <h4>{g('toteam')}</h4>
       <ul className="guide-lines">

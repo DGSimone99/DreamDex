@@ -4,16 +4,17 @@ import type { FormatId } from '../../engine/format';
 import { TYPES, type TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { TypeIcons, typeIconUrl } from '../typeIcons';
 import { Sprite } from '../Sprite';
-import { Target } from '../offense/KoBadges';
+import { pieceSize, Target } from '../offense/KoBadges';
 import { HOLD_BANDS } from './holds';
 
 /*
  * La barra a pezzi della Generale della Difesa, sorella di quella dell'Offesa (KoBadges): per un membro (o per il team)
  * quanti dei 18 tipi o delle minacce del meta lo mandano KO in un colpo, in due, in tre, in quattro o più. I colori sono
- * quelli di Coverage tipi della Difesa; i pezzi vanno dal migliore (regge, a sinistra) al peggiore.
+ * un semaforo, come i colori di stato dell'app: verde regge (3HKO+), giallo cade in due colpi (2HKO), rosso in uno (OHKO);
+ * i pezzi vanno dal migliore (regge, a sinistra) al peggiore.
  */
 
 /** Un bersaglio (tipo o minaccia del meta) con la fascia del colpo che il membro prende. */
@@ -50,14 +51,18 @@ export const teamHolds = (per: HoldTarget[][]): HoldTarget[] =>
   });
 
 /**
- * La barra: un pezzo per fascia lungo quanto il suo conto (un pezzo a zero non c'è), passando su un pezzo il tooltip
+ * La barra: un pezzo per fascia, misurato come nell'Offesa (pieceSize; un pezzo a zero non c'è), passando su un pezzo il tooltip
  * DreamDex elenca i bersagli. A destra il conto "12/18": quanti ne regge (meno di metà PS). `alarm` (la riga del team):
- * il conto è verde solo se li regge tutti, rosso se no.
+ * il conto è verde solo se li regge tutti, rosso se no. `quiet` (un attaccante): il conto è neutro.
  */
-export function HoldBars({ targets, who, of, alarm = false, onPick }: {
+export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPick, pickPlace }: {
   targets: HoldTarget[]; who: string; of: string; alarm?: boolean;
+  /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per reggere (un attaccante). I pezzi restano uguali. */
+  quiet?: boolean;
   /** Clic su un pezzo: apre Coverage tipi o meta con quei bersagli accesi (come nell'Offesa). */
   onPick?: (piece: Piece) => void;
+  /** Dove porta il clic su un pezzo (il nome della sottoscheda, es. "Coverage meta"): il piede TipGo del tooltip e la descrizione. */
+  pickPlace?: string;
 }) {
   const t = useT();
   const lang = useLang();
@@ -68,12 +73,14 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
   const countTip = useFloatAnchor<true>();
   // Per lo screen reader i bersagli del pezzo (quelli del tooltip), nella descrizione
   const names = (items: HoldTarget[]) => items.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ');
+  // Dove porta il clic: in fondo al tooltip e alla descrizione di ogni pezzo
+  const go = onPick && pickPlace ? goText(t, pickPlace) : '';
   const total = targets.length;
   const by = (p: Piece) => targets.filter(x => pieceOf(x.band) === p);
   const tag = (p: Piece) => PIECE_TAG[p];
   const n = by('held').length;
   const ratio = total ? n / total : 0;
-  const countTone = alarm ? (n < total ? ' bad' : ' full') : n === 0 ? ' zero' : n === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
+  const countTone = alarm ? (n < total ? ' bad' : ' full') : quiet ? ' quiet' : n === 0 ? ' zero' : n === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   const list = (items: HoldTarget[]) => <div className={`kot-list${items[0]?.kind === 'mon' ? ' mons' : ''}`}>{items.map(x => <Target key={x.label} target={{ label: x.label, kind: x.kind, plain: 0, setup: null, once: null }} />)}</div>;
   return (
     <span className="kob-line hb-line">
@@ -82,24 +89,26 @@ export function HoldBars({ targets, who, of, alarm = false, onPick }: {
           const items = by(p);
           if (!items.length) return null;
           return (
-            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={{ flexGrow: items.length }}
+            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={pieceSize(items.length)}
               data-nav="" {...tip.bind(p)} aria-describedby={`${id}-${p}`}
               {...(onPick ? { role: 'button', onClick: () => { tip.close(); onPick(p); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tip.close(); onPick(p); } } } : { role: 'img' })}
               aria-label={`${tag(p)} ${items.length}`}>
               <em aria-hidden="true">{tag(p)}</em>
               <span className="kob-num"><b>{items.length}</b></span>
-              <HiddenText id={`${id}-${p}`}>{names(items)}</HiddenText>
+              <HiddenText id={`${id}-${p}`}>{go ? `${names(items)}. ${go}` : names(items)}</HiddenText>
             </span>
           );
         })}
         {key && (
-          <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : 'var(--bad)'} className="kot">
+          <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
             <div className="kot-head"><b>{who}</b><span className={`kob labeled hb ${PIECE_CLS[key]}`}><em>{tag(key)}</em><b>{by(key).length}</b></span><small>{of}</small></div>
-            {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO) */}
+            {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO). I pallini hanno i colori delle
+                caselle di Coverage (verde, verde chiaro, giallo, rosso); quello del 2HKO un filo più pieno, se no è piccolo e spento */}
             {(key === 'held' ? (['four', 'three'] as const) : [key]).map(b => {
               const items = targets.filter(x => x.band === b);
-              return items.length ? <div key={b} className="hb-group"><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;
+              return items.length ? <div key={b} className={`hb-group${b === 'two' ? ' hb-group-two' : ''}`}><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;
             })}
+            {go && <TipGo place={pickPlace!} />}
           </FloatTip>
         )}
       </span>

@@ -8,16 +8,18 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { gameReady, withGame, type GameId } from './engine/games';
 import { dataSource, formatLabel, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
-import { UndoToast, type UndoAction } from './ui/UndoToast';
+import { DoneToast, UndoToast, type DoneNote, type ListUndo, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
-import type { TeamSet } from './engine/sets';
+import { exportShowdown, type TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { MetaTab } from './ui/meta/MetaTab';
 import { GradeBadge } from './ui/RatingPanel';
 import { blockedReason } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
-import { SavedTeams } from './ui/SavedTeams';
+import type { KoFocus } from './ui/AreaDetail';
+import { SavedPlateName, SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
+import { copyText } from './ui/clipboard';
 import { SuggestionsPanel, type CandidateFocus } from './ui/SuggestionsPanel';
 import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel, type MoveProposal } from './ui/TeamPanel';
@@ -29,7 +31,7 @@ import { loadLang, loadListSprite, loadLists, loadPalette, loadSession, loadTab,
 import { SettingsDialog } from './ui/SettingsDialog';
 import { CreditsDialog } from './ui/CreditsDialog';
 import { FeedbackDialog } from './ui/FeedbackDialog';
-import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
+import { EMPTY_LISTS, effectiveLists, listContext, type UserLists } from './engine/lists';
 import { formatPercent, t, type Lang } from './i18n';
 import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
@@ -78,11 +80,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     const saved = shared?.format ?? session?.format ?? DEFAULT_FORMAT;
     return saved.game && !gameReady(saved.game) ? DEFAULT_FORMAT : saved;
   });
-  // Il formato di prima del gioco: con "Nessun gioco" si torna lì
+  // Il formato di prima del gioco: con "Qualsiasi gioco" si torna lì
   const [beforeGame, setBeforeGame] = useState<Format | null>(null);
   /**
    * Il formato di un team caricato (team salvati, Annulla). Col gioco: il gioco col suo blocco, se i suoi dati ci sono
-   * (si ricorda il formato di prima per "Nessun gioco"); senza gioco: quel formato col meta di adesso, come prima
+   * (si ricorda il formato di prima per "Qualsiasi gioco"); senza gioco: quel formato col meta di adesso, come prima
    * (uscendo da un gioco, il meta del formato di prima del gioco).
    */
   const adoptFormat = (next: Format) => {
@@ -151,19 +153,22 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     loadSource(source).then(result => setCache(c => ({ ...c, [source]: result })));
   }, [source, cache, loadSource]);
   const loaded = cache[source] ?? NO_DATA;
-  // Preferiti e bannati dell'utente: salvati nel browser, quelli del formato entrano nei dati (solo i suggerimenti li usano)
+  // Preferiti e bannati dell'utente: salvati nel browser; la raccolta attiva nel contesto (gioco o formato) più l'Universale
+  // entrano nei dati (solo i suggerimenti li usano)
   const [lists, setLists] = useState<UserLists>(() => (storage ? loadLists(storage) : EMPTY_LISTS));
   useEffect(() => {
     if (storage) saveLists(lists, storage);
   }, [lists, storage]);
-  const userLists = useMemo(() => effectiveLists(lists, format.formatId), [lists, format.formatId]);
-  // Lista svuotata: si può annullare per qualche secondo (finché le liste restano quelle)
-  const [listUndo, setListUndo] = useState<{ id: number; from: string; before: UserLists; after: UserLists } | null>(null);
+  const listCtx = listContext(format);
+  const userLists = useMemo(() => effectiveLists(lists, listCtx), [lists, listCtx]);
+  // Liste: raccolta svuotata o sostituita, Pokémon tolto da un box: si può annullare per qualche secondo (finché le liste
+  // restano quelle)
+  const [listUndo, setListUndo] = useState<{ id: number; undo: ListUndo; before: UserLists; after: UserLists } | null>(null);
   // Stabile: la scheda Liste (oltre mille Pokémon) non si ridisegna quando cambia solo il team
   const listsRef = useRef(lists);
   listsRef.current = lists;
-  const changeLists = useCallback((next: UserLists, undo?: { kind: 'clearList'; from: string }) => {
-    setListUndo(undo ? { id: Date.now(), from: undo.from, before: listsRef.current, after: next } : null);
+  const changeLists = useCallback((next: UserLists, undo?: ListUndo) => {
+    setListUndo(undo ? { id: Date.now(), undo, before: listsRef.current, after: next } : null);
     setLists(next);
   }, []);
   // La scheda Liste si monta la prima volta che la si apre, poi resta
@@ -183,6 +188,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Scheda aperta sotto il team: col team vuoto si parte dai Pokémon, poi vale l'ultima scelta
   // Cosa mostra Analisi: la Panoramica o un'area del voto (il riquadro Voto apre le aree)
   const [analysisView, setAnalysisView] = useState<AnalysisView>('overview');
+  // Dalla scheda Meta all'Analisi: la Coverage meta con una minaccia accesa; `nonce` ripete anche la stessa richiesta
+  const [analysisJump, setAnalysisJump] = useState<{ view: AnalysisView; sub: string; focus: KoFocus; nonce: number } | null>(null);
   // Membro aperto nella Panoramica di Analisi, per nome: se il team cambia resta lui o si torna alla Panoramica
   const [tab, setTabState] = useState<TabId>(() => (initialTeam.length && storage ? loadTab(storage) : null) ?? 'pokemon');
   const setTab = (next: TabId) => {
@@ -203,6 +210,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     });
   };
   const [closeSignal, setCloseSignal] = useState(0);
+  // Completa team aperto: il magenta della pagina si spegne, resta solo quello del pannello (un'azione principale per volta)
+  const [fillOpen, setFillOpen] = useState(false);
+  // Migliora i set aperto dal Coaching (ogni numero nuovo apre la finestra del team)
+  const [improveSignal, setImproveSignal] = useState(0);
   // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
   const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };
   // L'editor copre l'area della sezione: gli serve la sua altezza
@@ -326,6 +337,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       ? { id: 0, kind: 'load', from: '', before: session.team, after: initialTeam, format: session.format }
       : null);
   const undoId = useRef(0);
+  // Esporta (barra del team e Coaching): il testo per Showdown negli appunti e il momento "team pronto" col voto
+  const [done, setDone] = useState<DoneNote | null>(null);
+  const exportTeam = async () => {
+    const ok = await copyText(exportShowdown(team, { tera: teraAllowed(format) }));
+    if (ok) setDone({ id: ++undoId.current, kind: 'exported', grade: rating ? { grade: rating.grade, overall: rating.overall } : null });
+    return ok;
+  };
   const remember = (action: Omit<UndoAction, 'id'>, after: TeamSet[]) =>
     setUndo({ ...action, id: ++undoId.current, before: team, after });
   const replaceAt = (index: number, set: TeamSet) => {
@@ -411,7 +429,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             userLists.favorites.size ? t(lang, userLists.favorites.size === 1 ? 'rail.favOne' : 'rail.favMany', { n: userLists.favorites.size }) : null,
             userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,
           ].filter(Boolean).join(' · ') : t(lang, 'rail.listsEmpty') },
-        { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
+        // Confronto (in arrivo) non si mostra finché non c'è: quando arriva, si torna ad aggiungere qui
+        // { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
       ])} />} />
       <div className="main" ref={mainRef} id="main-content">
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
@@ -423,22 +442,23 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
-          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
-          saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
+          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
+          saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
+          plateName={<SavedPlateName team={team} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
-          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
+          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
-          incomplete={team.length < 6} teamType={coaching?.teamType?.archetype ?? null} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
+          incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
         <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />
         </button>
       </div>
-      <div className={`workspace${editingIndex !== null ? ' editing' : ''}`} ref={workspaceRef}>
+      <div className={`workspace${editingIndex !== null ? ' editing' : ''}${fillOpen ? ' fill-open' : ''}`} ref={workspaceRef}>
       <main className="tab-body">
         <TabPanel id="pokemon" active={shownTab}>
           <SuggestionsPanel
@@ -460,11 +480,18 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
+            jump={analysisJump}
             onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
+            onExport={exportTeam} onImproveSets={() => setImproveSignal(n => n + 1)}
             onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
-          <MetaTab team={team} data={rated} />
+          <MetaTab team={team} data={rated} rating={rating}
+            onCoverage={(side, species) => {
+              setAnalysisJump(j => ({ view: side === 'defense' ? 'defense' : 'strength', sub: 'coverageMeta', focus: { kind: 'threat', side, species }, nonce: (j?.nonce ?? 0) + 1 }));
+              setTab('analysis');
+            }}
+            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}
@@ -477,11 +504,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         onFeedback={() => { setSettingsOpen(false); setFeedbackOpen(true); }} onClose={closeSettings} />}
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
       {feedbackOpen && <FeedbackDialog team={team} format={format} onClose={closeFeedback} />}
-      {listUndo && listUndo.after === lists && (
-        <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
+      {/* Il team copiato per Showdown: sta dove sta l'avviso di Annulla, che intanto aspetta (torna quando questo si chiude) */}
+      {done && <DoneToast note={done} onClose={() => setDone(null)} />}
+      {!done && listUndo && listUndo.after === lists && (
+        <UndoToast action={{ id: listUndo.id, ...listUndo.undo }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />
       )}
-      {undo && undo.after === team && (
+      {!done && undo && undo.after === team && (
         <UndoToast action={undo} onClose={() => setUndo(null)}
           onUndo={() => { changeTeam(undo.before); if (undo.format) adoptFormat(undo.format); setUndo(null); }} />
       )}

@@ -23,14 +23,14 @@ export interface DefenseShare {
   /** Dalla Coverage tipi e dalla Coverage meta (meta 0 senza meta). */
   types: number;
   meta: number;
-  /** Dalla Sostenibilità: sotto zero se perde più di quanto recupera. */
+  /** Dal Recupero: sotto zero se perde più di quanto recupera. */
   sustain: number;
 }
 
 /**
  * Quanto porta ogni membro alla Difesa del team (ordine di `defense.members`), come il "+N" dell'Offesa: i punti sommati
  * fanno la Difesa del team. Coverage tipi e meta: per ogni colpo (36 di tipo, le minacce pesate per uso) la parte del
- * membro nella profondità 70/20/10, riportata al valore della sottoscheda; Sostenibilità: la sua quota della media
+ * membro nella profondità 70/20/10, riportata al valore della sottoscheda; Recupero: la sua quota della media
  * (sotto zero se perde, allora toglie). Poi i pesi della Difesa (40/40/20, senza meta 80/20).
  */
 export function defenseShares(defense: TeamDefense): DefenseShare[] {
@@ -63,7 +63,7 @@ export function defenseShares(defense: TeamDefense): DefenseShare[] {
   const meta = defense.coverageMeta ? scaled(metaPart, defense.coverageMeta.value).map(x => shares.meta * x) : types.map(() => 0);
   const sustain = defense.members.map(m => (shares.sustain * m.sustain) / n);
   const points = roundSigned(defense.members.map((_, k) => types[k] + meta[k] + sustain[k]), defense.value);
-  // I pezzi arrotondati: la Sostenibilità e i tipi per conto loro, il meta quello che resta (così sommano a `points`)
+  // I pezzi arrotondati: il Recupero e i tipi per conto loro, il meta quello che resta (così sommano a `points`)
   return points.map((p, k) => {
     const sus = Math.round(sustain[k]);
     const ty = Math.round(types[k]);

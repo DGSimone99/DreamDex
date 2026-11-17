@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { rateTeam } from '../../src/engine/rating';
+import { gradeFor, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { poolSpecies } from '../../src/engine/speed';
 import type { EngineData } from '../../src/engine/data';
@@ -25,7 +25,8 @@ const noMetaData = { ...fixtureData, ignoreMeta: true };
 const noMeta = (t = team) => rateTeam(t, noMetaData, 'it')!;
 const view = (t: TeamSet[] = team, rating = withMeta(t), data = fixtureData) =>
   renderIt(<AreaView rating={rating} area="speed" team={t} analysis={analyzeTeam(t, data)} problems={[]} />);
-const names = () => screen.getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent);
+// Una sottoscheda sola: niente selettore, il pannello porta il nome dell'area
+const panelName = () => screen.getByRole('tabpanel').getAttribute('aria-label');
 const barOf = (name: string) => screen.getByRole('button', { name: `Velocità di ${name}: apri i rivali` });
 const dialogOf = (name: string) => screen.getByRole('dialog', { name: `Velocità di ${name}` });
 const checks = (dialog: HTMLElement) => within(dialog).getAllByRole('checkbox').map(c => c.getAttribute('aria-label'));
@@ -34,23 +35,27 @@ describe('Velocità: una scheda a barre', () => {
   it('una sola scheda, senza spiegazioni sulla pagina; i membri come nel team con la barra a segmenti e il totale', () => {
     const rating = withMeta();
     view(team, rating);
-    expect(names()).toEqual(['Generale']);
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(panelName()).toBe('Velocità');
     expect(document.querySelector('.ad-how')).toBeNull();
     expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Dragonite', 'Ribombee', 'Iron Valiant', 'Toxapex']);
-    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill)');
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill):not(.sp-scale)');
     const sorted = team.map(s => rating.speed.members.find(m => m.species === s.species)!);
     sorted.forEach((m, i) => {
       const bar = within(rows[i] as HTMLElement).getByRole('button', { name: `Velocità di ${m.species}: apri i rivali` });
       expect(bar).toHaveTextContent(`${Math.round(100 * m.total)}%`);
-      expect(bar.querySelectorAll('.sp-stack i')).toHaveLength(3);
+      // La velocità pura sempre; i pezzi a righe solo quando aggiungono qualcosa
+      expect(bar.querySelector('.sp-stack .sp-seg-raw')).not.toBeNull();
+      expect(bar.querySelectorAll('.sp-stack i').length).toBeLessThanOrEqual(3);
     });
     // Dragonite: la parte propria (Dragon Dance, Extreme Speed) e quella del team (Web, Stun Spore) sono scritte nel dettaglio
     const d = sorted.find(m => m.species === 'Dragonite')!;
     const bar = barOf('Dragonite');
     expect(bar).toHaveTextContent(`${Math.round(100 * d.raw)}`);
     expect(bar).not.toHaveAttribute('title');
-    // In fondo la riga del team, col voto dell'area
-    expect(document.querySelector('.def-members tfoot')).toHaveTextContent(`Velocità del team${rating.speed.value}%`);
+    // In fondo la riga del team, senza il numero (il voto dell'area sta nella testata)
+    expect(document.querySelector('.def-members tfoot')).toHaveTextContent(/^Velocità del team\d/);
+    expect(document.querySelector('.def-members tfoot')).not.toHaveTextContent(`${rating.speed.value}%`);
   });
 
   it('passando sulla barra: la scala dei rivali vicini e cosa aggiunge ogni guadagno, icona della Booster accanto al nome', async () => {
@@ -123,7 +128,7 @@ describe('Velocità: una scheda a barre', () => {
     expect(rowsOf('Gholdengo')).toHaveLength(1);
     expect(dialog).not.toHaveTextContent(/versione con lo strumento/);
     // Il voto in testa non cambia
-    expect(screen.getByRole('tab', { name: /^Generale/ })).toHaveTextContent(String(withMeta().speed.value));
+    expect(document.querySelector('.area-grade')).toHaveTextContent(gradeFor(withMeta().speed.value!, 'it').label);
   });
 
   it('un rivale con la Sciarpa su quasi tutti i set (85%): una riga sola, sempre con l\'icona, anche a check spento', async () => {
@@ -210,7 +215,7 @@ describe('Velocità: una scheda a barre', () => {
   it('una specie sconosciuta: riga con "—", senza barra', () => {
     const odd = [...team, emptySet('Nessuno')];
     view(odd, withMeta(odd));
-    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill)');
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill):not(.sp-scale)');
     expect(rows).toHaveLength(5);
     const last = rows[4];
     expect(last).toHaveTextContent('Nessuno');
@@ -259,7 +264,8 @@ describe('Velocità: una scheda a barre', () => {
   it('in inglese', async () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="speed" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} /></LangProvider>);
-    expect(names()).toEqual(['General']);
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(panelName()).toBe('Speed');
     await user.click(screen.getByRole('button', { name: 'Speed of Dragonite: open the rivals' }));
     expect(screen.getByRole('dialog', { name: 'Speed of Dragonite' })).not.toHaveTextContent('the grade does not change');
     await user.keyboard('{Escape}');

@@ -1,8 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 const panel = () => document.getElementById('panel-analysis')!;
 const views = () => within(panel()).getByRole('tablist', { name: 'Sezioni dell\'Analisi' });
@@ -73,14 +76,14 @@ describe('schede interne di Analisi', () => {
     expect(roles).not.toHaveAccessibleDescription(/Sul voto|Voto/);
   });
 
-  it('ogni area ricorda la sua sottoscheda: Difesa → Sostenibilità → Offesa → Difesa riapre Sostenibilità', async () => {
+  it('ogni area ricorda la sua sottoscheda: Difesa → Recupero → Offesa → Difesa riapre Recupero', async () => {
     const user = await setup();
     await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
-    await user.click(within(panel()).getByRole('tab', { name: /^Sostenibilità/ }));
+    await user.click(within(panel()).getByRole('tab', { name: /^Recupero/ }));
     await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
     expect(within(panel()).getByRole('tab', { name: /^Generale/ })).toHaveAttribute('aria-selected', 'true');
     await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
-    expect(within(panel()).getByRole('tab', { name: /^Sostenibilità/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(panel()).getByRole('tab', { name: /^Recupero/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('la scheda resta aperta cambiando il team', async () => {

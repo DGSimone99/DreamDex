@@ -6,12 +6,15 @@ import { UndoToast } from '../../src/ui/UndoToast';
 import { renderIt } from '../helpers/italian';
 import { fixtureData } from '../fixtures/data';
 
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
+
 beforeEach(() => window.localStorage.clear());
 afterEach(() => vi.useRealTimers());
 
 const team = () => screen.getByRole('region', { name: 'Team' });
 const names = () => [...team().querySelectorAll('.slot .name')].map(n => n.textContent);
-const plate = () => document.querySelector('.plate-menu > summary') as HTMLElement;
+const plate = () => document.querySelector('.team-plate') as HTMLElement;
 
 async function importText(user: ReturnType<typeof userEvent.setup>, text: string) {
   await user.clear(screen.getByLabelText('Testo Showdown'));
@@ -111,12 +114,12 @@ describe('durata dell’avviso', () => {
 });
 
 describe('targa del team per i lettori di schermo', () => {
-  it('un titolo vero "Team (n/6)" fuori dal menu; il menu si chiama "Team salvati (n)"', async () => {
+  it('un titolo vero "Team (n/6)" sulla targa, fuori dai menu; la linguetta si chiama "Team salvati (n)"', async () => {
     const user = userEvent.setup();
     render(<App data={fixtureData} initialLang="it" />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     const heading = within(team()).getByRole('heading', { name: 'Team (1/6)' });
     expect(heading.closest('summary')).toBeNull();
-    expect(plate()).toHaveAccessibleName('Team salvati (0)');
+    expect(document.querySelector('.saved-menu > summary')).toHaveAccessibleName('Team salvati (0)');
   });
 });

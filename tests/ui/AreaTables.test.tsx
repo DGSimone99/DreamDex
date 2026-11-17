@@ -22,22 +22,22 @@ describe('tabelle complete nelle schede d\'area', () => {
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(view()).getByRole('table');
     expect(within(table).getAllByRole('columnheader')).toHaveLength(19); // angolo e 18 tipi
-    // Testata, 2 membri, poi Copertura e Il migliore (come nell'Offesa)
+    // Testata, 2 membri, poi Team Coverage e Il migliore (come nell'Offesa)
     expect(within(table).getAllByRole('row')).toHaveLength(5);
   });
 
   it('le legende dei colori stanno nella riga della legenda, dentro il pannello; le schede senza legenda non ne hanno', async () => {
     const user = await openTab('Difesa');
     const legend = () => view().querySelector('.area-panel .rob-legend > .area-legend');
-    // Generale: la legenda della Sostenibilità (i pezzi di Tipi e Meta hanno la loro etichetta dentro)
-    expect(view().querySelector('.area-legend')).toHaveTextContent('RecuperoPerdite');
+    // Generale: nessuna legenda (i pezzi di Tipi e Meta hanno la loro etichetta dentro, la colonna Difesa è solo il "+N")
+    expect(view().querySelector('.area-legend')).toBeNull();
     expect(view().querySelector('.area-tools-row')).toBeNull();
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     expect(legend()).toHaveTextContent('OHKO2HKO3HKO4HKO+');
     // La riga in fondo viene dopo la tabella
     const table = within(view()).getByRole('table');
     expect(table.compareDocumentPosition(legend()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    await user.click(within(view()).getByRole('tab', { name: /^Sostenibilit/ }));
+    await user.click(within(view()).getByRole('tab', { name: /^Recupero/ }));
     expect(view().querySelector('.area-legend')).toBeNull();
   });
 

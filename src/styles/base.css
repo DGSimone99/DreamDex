@@ -2,7 +2,7 @@
 html { background: var(--ground); }
 body {
   margin: 0;
-  font: 15px/1.45 var(--ui);
+  font: var(--fs-body)/1.45 var(--ui);
   background: var(--ground);
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -11,13 +11,13 @@ body {
 }
 ::selection { background: var(--accent); color: var(--on-accent); }
 h1, h2, h3 { font-family: var(--display); font-weight: 700; font-style: italic; letter-spacing: 0.01em; margin: 0; }
-h2 { font-size: 22px; line-height: 1.1; margin-bottom: 12px; }
-h3 { font-size: 16px; }
-small { display: block; color: var(--muted); font-size: 13px; }
-ul { padding-left: 18px; margin: 6px 0; }
+h2 { font-size: var(--fs-headline); line-height: 1.1; margin-bottom: var(--sp-6); }
+h3 { font-size: var(--fs-title-s); }
+small { display: block; color: var(--muted); font-size: var(--fs-small); }
+ul { padding-left: var(--sp-9); margin: var(--sp-3) 0; }
 li { margin: 3px 0; }
-p { margin: 6px 0; }
-code { font-size: 13px; background: var(--field); padding: 1px 5px; border-radius: 3px; }
+p { margin: var(--sp-3) 0; }
+code { font-size: var(--fs-small); background: var(--field); padding: 1px 5px; border-radius: 3px; }
 .icon { flex: none; vertical-align: -3px; }
 /* Movimento ridotto: niente transizioni né animazioni in tutta l'app (le aree con un'alternativa più calma la danno nei loro fogli) */
 @media (prefers-reduced-motion: reduce) {

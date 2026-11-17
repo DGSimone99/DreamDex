@@ -36,7 +36,7 @@ describe('accessibilità di team e voto', () => {
     expect(document.activeElement).toBe(container.querySelector('.slot-toggle'));
   });
 
-  it('nessun controllo dentro un altro: stella, × e avvisi stanno accanto al pulsante della carta', async () => {
+  it('nessun controllo dentro un altro: lucchetto, × e avvisi stanno accanto al pulsante della carta', async () => {
     const user = userEvent.setup();
     const { container } = withTeam();
     const controls = 'button, a, input, select, textarea, summary, [tabindex]';
@@ -45,8 +45,8 @@ describe('accessibilità di team e voto', () => {
     }
     const toggle = container.querySelector<HTMLElement>('.slot-toggle')!;
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    // La stella non apre l'editor
-    await user.click(screen.getByRole('button', { name: 'Preferito Great Tusk' }));
+    // Il lucchetto non apre l'editor
+    await user.click(screen.getByRole('button', { name: 'Fisso Great Tusk' }));
     expect(container.querySelector('.slot.open')).toBeNull();
     // Il clic sulla carta apre l'editor e lascia il fuoco sul suo pulsante
     await user.click(container.querySelector<HTMLElement>('.slot-card .name')!);

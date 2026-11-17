@@ -4,14 +4,14 @@
   z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 196px;
-  gap: 18px;
-  padding: 14px 22px 24px;
+  gap: var(--sp-9);
+  padding: var(--sp-7) var(--sp-10) 24px;
   background: var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-/* Testata del team: a sinistra la targa con la guida e Team salvati, a destra le scorciatoie. Niente si sposta col numero
+/* Testata del team: a sinistra la targa con la guida, a destra le scorciatoie (Team salvati, Importa / Esporta, Svuota). Niente si sposta col numero
    di Pokémon: la targa cresce solo col proprio testo, le scorciatoie restano attaccate al bordo destro */
-.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: var(--sp-5); margin-bottom: var(--sp-6); }
 .fill-anchor { position: relative; display: flex; }
 /* La targa del team (stessa della fascia "Voto": righe, colore, taglio): la parola Team e le sei tacche della squadra */
 .team-plate {
@@ -19,34 +19,20 @@
   isolation: isolate;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sp-6);
   height: 28px;
-  padding: 0 30px 0 12px;
+  padding: 0 30px 0 var(--sp-6);
 }
 .team-plate, .team-guide-slot { flex: none; }
-/* La targa che apre i team salvati: tutta cliccabile, si schiarisce sotto il mouse, aperta prende l'azzurro; dopo il
-   numero il nome del team caricato (pallino giallo se è stato cambiato dopo) e la freccia, che si gira aperta */
-.team-head .plate-menu > summary.team-plate {
-  gap: 10px;
-  padding: 0 34px 0 12px;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  font-weight: inherit;
-  cursor: pointer;
-}
-.plate-menu > summary.team-plate::before { transition: filter 0.15s var(--ease), background 0.15s var(--ease); }
-.plate-menu > summary.team-plate:hover::before { filter: brightness(1.3); }
-.plate-menu[open] > summary.team-plate::before { background: var(--stripes), color-mix(in srgb, var(--accent) 22%, var(--plate)); }
-.plate-menu > summary.team-plate:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Dopo il numero, il nome del team salvato in uso (pallino giallo se è stato cambiato dopo) */
 .plate-name {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-3);
   max-width: 200px;
-  padding-left: 12px;
-  font: 600 13px/1 var(--ui);
+  padding-left: var(--sp-6);
+  font: 600 var(--fs-small)/1 var(--ui);
   color: color-mix(in srgb, var(--on-plate) 85%, transparent);
   white-space: nowrap;
   overflow: hidden;
@@ -54,16 +40,11 @@
 }
 .plate-name::before { content: ''; position: absolute; left: 2px; top: 50%; width: 1px; height: 14px; margin-top: -7px; background: color-mix(in srgb, var(--on-plate) 35%, transparent); transform: skewX(-27deg); }
 .plate-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
-.plate-arrow { display: inline-flex; color: color-mix(in srgb, var(--on-plate) 70%, transparent); transition: transform 0.2s var(--ease), color 0.15s var(--ease); }
-.plate-arrow .icon { width: 14px; height: 14px; }
-.plate-menu > summary.team-plate:hover .plate-arrow { color: var(--on-plate); transform: translateY(1px); }
-.plate-menu[open] > summary.team-plate .plate-arrow { color: var(--accent-ink); transform: rotate(180deg); }
-@media (prefers-reduced-motion: reduce) { .plate-arrow, .plate-menu > summary.team-plate::before { transition: none; } }
 .team-guide-slot { display: flex; }
 /* Quanti sono: il numero grande e pieno, il /6 piccolo e spento; il numero entra con un piccolo scatto quando cambia */
-.team-head h2 { display: flex; align-items: baseline; gap: 10px; }
-.team-count { font: 600 12px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--on-plate) 55%, transparent); }
-.team-count b { display: inline-block; margin-right: 1px; font: 800 19px/1 var(--display); font-style: italic; color: var(--on-plate); animation: count-in 0.25s var(--ease); }
+.team-head h2 { display: flex; align-items: baseline; gap: var(--sp-5); }
+.team-count { font: 600 var(--fs-caption)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--on-plate) 55%, transparent); }
+.team-count b { display: inline-block; margin-right: 1px; font: 800 var(--fs-plate)/1 var(--display); font-style: italic; color: var(--on-plate); animation: count-in 0.25s var(--ease); }
 @keyframes count-in { from { transform: translateY(-4px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .team-count b { animation: none; } }
 .team-plate::before {
@@ -76,7 +57,7 @@
 }
 .team-head h2 {
   margin: 0;
-  font: 700 14px/1.2 var(--display);
+  font: 700 var(--fs-section)/1.2 var(--display);
   font-style: italic;
   color: var(--on-plate);
   white-space: nowrap;
@@ -85,13 +66,13 @@
    magenta resta all'azione migliore del momento (Aggiungi al team del primo candidato) e alla sezione aperta */
 .team-head .team-guide {
   height: 28px;
-  padding: 0 22px 0 20px;
-  gap: 6px;
+  padding: 0 var(--sp-10) 0 20px;
+  gap: var(--sp-3);
   background: var(--accent-soft);
   border: 0;
   border-radius: 0;
   color: var(--text);
-  font: 700 12px/1 var(--display);
+  font: 700 var(--fs-caption)/1 var(--display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
@@ -108,13 +89,13 @@
    in maiuscolo. Aperta, la linguetta si accende d'azzurro con la riga sotto (come la scheda attiva del riassunto) */
 .team-head .team-action, .team-quick .popover > summary {
   height: 28px;
-  padding: 0 22px 0 20px;
-  gap: 7px;
+  padding: 0 var(--sp-10) 0 20px;
+  gap: var(--sp-3);
   background-color: var(--raised);
   border: 0;
   border-radius: 0;
   color: var(--muted);
-  font: 700 12px/1 var(--display);
+  font: 700 var(--fs-caption)/1 var(--display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
@@ -130,18 +111,21 @@
   transition: background-color 0.15s var(--ease), color 0.15s var(--ease), background-size 0.2s var(--ease);
 }
 .team-head .team-action .icon, .team-quick .popover > summary .icon { width: 14px; height: 14px; }
+/* Team salvati: quanti sono, piccolo dopo il nome della linguetta */
+.team-quick .saved-count { font: 600 var(--fs-caption)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--faint); letter-spacing: 0; }
+.team-quick .popover[open] > summary .saved-count { color: var(--accent-ink); }
 .team-head .team-action:hover, .team-quick .popover > summary:hover { background-color: color-mix(in srgb, var(--accent) 16%, var(--raised)); color: var(--text); }
 .team-quick .popover[open] > summary { background-color: var(--accent-soft); background-size: 100% 2px; color: var(--accent-ink); }
 @media (prefers-reduced-motion: reduce) { .team-quick .popover > summary { transition: none; } }
 /* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro */
 .team-head .team-action:focus-visible, .team-quick .popover > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 /* Le scorciatoie a destra; una riga sottile riempie lo spazio vuoto, come nelle testate dei menu del gioco */
-.team-quick { display: flex; flex: 1; align-items: center; justify-content: flex-end; gap: 16px; min-width: 0; }
+.team-quick { display: flex; flex: 1; align-items: center; justify-content: flex-end; gap: var(--sp-8); min-width: 0; }
 /* Team salvati e Showdown come un'unica barra di schede: linguette attaccate, separate da 2px */
 .team-tabs { display: flex; align-items: center; }
 .team-tabs > * + * { margin-left: -11px; }
 .team-tabs > details > summary { position: relative; }
-.team-quick::before { content: ''; flex: 1; height: 1px; margin: 0 4px; background: linear-gradient(90deg, transparent, var(--line)); }
+.team-quick::before { content: ''; flex: 1; height: 1px; margin: 0 var(--sp-2); background: linear-gradient(90deg, transparent, var(--line)); }
 .team-sep { display: none; }
 /* Menu aperto: sopra la freccia che riduce la squadra */
 .team-head:has(.popover[open]) { z-index: 8; }
@@ -159,20 +143,20 @@
 .export-tab > button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--sp-3);
   height: 100%;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: var(--muted);
-  font: 700 12px/1 var(--display);
+  font: 700 var(--fs-caption)/1 var(--display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
   transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
-.export-tab .export-main { padding: 0 12px 0 20px; }
-.export-tab .export-link { position: relative; padding: 0 22px 0 12px; }
+.export-tab .export-main { padding: 0 var(--sp-6) 0 20px; }
+.export-tab .export-link { position: relative; padding: 0 var(--sp-10) 0 var(--sp-6); }
 .export-tab .export-link::before { content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 1px; background: var(--line); }
 .export-tab .icon { width: 14px; height: 14px; }
 .export-tab > button:hover { background-color: color-mix(in srgb, var(--accent) 16%, var(--raised)); color: var(--text); }
@@ -188,13 +172,13 @@
   right: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
+  gap: var(--sp-3);
+  padding: 5px var(--sp-5);
   border-radius: 4px;
   background: var(--ground);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
   color: var(--text);
-  font: 500 12px/1.2 var(--ui);
+  font: 500 var(--fs-caption)/1.2 var(--ui);
   white-space: nowrap;
   pointer-events: none;
   animation: tip 0.14s var(--ease);
@@ -211,13 +195,13 @@
   left: 0;
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
-  padding: 5px 10px;
+  gap: var(--sp-3);
+  padding: 5px var(--sp-5);
   border-radius: 4px;
   background: var(--ground);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
   color: var(--text);
-  font: 500 12px/1.2 var(--ui);
+  font: 500 var(--fs-caption)/1.2 var(--ui);
   letter-spacing: 0;
   text-transform: none;
   white-space: nowrap;
@@ -227,14 +211,14 @@
 .hint-bubble[hidden] { display: none; }
 .hint-wrap.end .hint-bubble { left: auto; right: 0; }
 .hint-detail { color: var(--muted); }
-.hint-detail::before { content: '·'; margin-right: 6px; }
+.hint-detail::before { content: '·'; margin-right: var(--sp-3); }
 .hint-bubble.done { background: var(--good-bg); color: var(--good); }
 @media (prefers-reduced-motion: reduce) { .hint-bubble { animation: none; } }
 /* Al tocco e sul telefono niente fumetti col nome (il tocco dà il fuoco: coprirebbero i campi); resta solo "Copiato" */
 @media (max-width: 599px), (hover: none) { .hint-bubble:not(.done) { display: none; } }
 /* Svuota: il cestino, più discreto delle altre linguette, si accende di rosso solo sotto il mouse; una barretta lo stacca
    da Importa ed Esporta (il gap della fila più la barretta) */
-.clear-wrap { position: relative; display: flex; align-items: center; padding-left: 12px; }
+.clear-wrap { position: relative; display: flex; align-items: center; padding-left: var(--sp-6); }
 .clear-wrap::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
 .team-head .clear-team { width: 44px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
 /* Solo il cestino: il nome resta nel fumetto e per i lettori di schermo */
@@ -251,25 +235,24 @@
 /* Solo sul computer: sul telefono e sul tablet i menu salgono dal basso a tutta larghezza (phone.css) */
 @media (min-width: 1100px) { .team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; } }
 /* Importa: una riga di spiegazione, la scatola con l'esempio in grigio (si allunga se serve), Importa a destra in evidenza */
-.import-panel { display: grid; gap: 10px; }
-.import-hint { margin: 0; font: 400 13px/1.4 var(--ui); color: var(--muted); }
-.import-panel textarea { min-height: 150px; max-height: 50vh; font: 13px/1.45 var(--ui); }
+.import-panel { display: grid; gap: var(--sp-5); }
+.import-hint { margin: 0; font: 400 var(--fs-small)/1.4 var(--ui); color: var(--muted); }
+.import-panel textarea { min-height: 150px; max-height: 50vh; font: var(--fs-small)/1.45 var(--ui); }
 .import-panel textarea::placeholder { color: var(--faint); opacity: 0.8; }
 .import-panel .actions { justify-content: flex-end; }
-.import-panel .apply { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
+.import-panel .apply { display: inline-flex; align-items: center; gap: var(--sp-3); background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
 .import-panel .apply .icon { width: 15px; height: 15px; color: var(--accent-ink); }
 .import-panel .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
-@media (min-width: 1100px) { .team-quick .popover[open] > .saved-panel { width: 380px; } }
 @media (prefers-reduced-motion: reduce) { .team-head .popover[open] > :not(summary) { animation: none; } }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
-.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-5); }
 .slot.filled { display: contents; }
 .slot > .slot-card, .slot.empty {
   position: relative;
   isolation: isolate;
   /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
   min-height: 200px;
-  padding: 8px 12px 20px;
+  padding: var(--sp-4) var(--sp-6) 20px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -352,7 +335,7 @@
 .slot .name { --name-fs: 16px; font: 800 var(--name-fs)/1.05 var(--display); font-size: min(var(--name-fs), max(11px, (100cqi - var(--name-room, 26px)) / var(--name-em, 5.6))); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: normal; word-break: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 /* Icona dello strumento in uno spazio fisso alto quanto la prima riga del nome: icona e nome partono insieme,
    e i nomi restano allineati tra le carte anche senza strumento */
-.slot .name-line { display: flex; align-items: flex-start; gap: 6px; max-width: 100%; margin-top: 4px; }
+.slot .name-line { display: flex; align-items: flex-start; gap: var(--sp-3); max-width: 100%; margin-top: var(--sp-2); }
 .slot .name-line .held { flex: none; display: grid; place-items: center; width: 20px; height: 20px; }
 .slot .name-line .held .item-icon { width: 20px; height: 20px; }
 .slot .name-line .name { min-width: 0; line-height: 20px; }
@@ -360,8 +343,8 @@
 .slot:has(.slot-alerts) .name-line { align-self: stretch; }
 .slot:has(.slot-alerts) .name { --name-room: 53px; }
 .slot:has(.slot-alerts .alert-mark + .alert-mark) .name { --name-room: 80px; }
-.slot .roles { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.slot .types { display: flex; gap: 4px; flex-wrap: nowrap; margin: 2px 0; }
+.slot .roles { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.slot .types { display: flex; gap: var(--sp-2); flex-wrap: nowrap; margin: var(--sp-1) 0; }
 /* I chip devono stare dentro la carta: la fila è larga quanto la carta e, se due chip col nome non entrano, TeamPanel
    mostra le icone tonde dei tipi (come sulle carte dei candidati) */
 .band:not(.collapsed) .slot .types { align-self: stretch; height: 19px; overflow: hidden; }
@@ -370,7 +353,7 @@
 .slot .type-dot img { width: 19px; height: 19px; }
 /* Due chip affiancati anche nelle card strette */
 .slot .type-chip { width: 56px; }
-.slot .type-chip.long { width: auto; min-width: 0; padding: 1px 4px; letter-spacing: -0.02em; }
+.slot .type-chip.long { width: auto; min-width: 0; padding: 1px var(--sp-2); letter-spacing: -0.02em; }
 .slot .favorite, .slot .remove {
   position: absolute;
   /* Area di clic di 32 px attorno all'icona: le due aree si toccano senza sovrapporsi */
@@ -397,10 +380,10 @@
 .slot.warn > .slot-card { outline: 1px solid color-mix(in srgb, var(--warn) 70%, transparent); outline-offset: -1px; }
 /* Il fuoco è sul pulsante della carta (trasparente): l'anello lo disegna la carta */
 .slot-card:has(> .slot-toggle:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.slot.empty { align-items: center; justify-content: center; gap: 10px; color: var(--faint); font-weight: 500; background: none; border: 2px dashed var(--line); border-radius: 0; cursor: pointer; }
+.slot.empty { align-items: center; justify-content: center; gap: var(--sp-5); color: var(--faint); font-weight: 500; background: none; border: 2px dashed var(--line); border-radius: 0; cursor: pointer; }
 .empty-ring { display: grid; place-items: center; width: 56px; height: 56px; border: 2px dashed var(--line); border-radius: 50%; transition: border-color 0.15s, color 0.15s, transform 0.2s var(--ease); }
 .empty-ring .icon { width: 22px; height: 22px; }
-.empty-label { font-size: 14px; text-align: center; }
+.empty-label { font-size: var(--fs-section); text-align: center; }
 .slot.empty:hover { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .slot.empty:hover .empty-ring { border-color: var(--accent); color: var(--accent); transform: scale(1.06); }
 .slot.empty:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -410,7 +393,7 @@
 .sprite.missing { display: block; width: 96px; height: 96px; }
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
 /* Piastrina scura dietro la scritta: il ciano resta leggibile (>=4.5:1) su ogni colore di tipo */
-.slot-lead { position: absolute; left: 8px; top: 7px; padding: 3px 5px 3px 4px; border-radius: 3px; background: color-mix(in srgb, var(--ground) 88%, transparent); font: 700 12px/1 var(--display); font-style: italic; letter-spacing: 0.06em; color: var(--accent-ink); }
+.slot-lead { position: absolute; left: 8px; top: 7px; padding: 3px 5px 3px var(--sp-2); border-radius: 3px; background: color-mix(in srgb, var(--ground) 88%, transparent); font: 700 var(--fs-caption)/1 var(--display); font-style: italic; letter-spacing: 0.06em; color: var(--accent-ink); }
 
 /* Riordino trascinando */
 .slot.dragging > .slot-card { opacity: 0.45; }
@@ -435,20 +418,21 @@
 .band:not(.collapsed) .slot > .slot-card .sprite-wrap { flex: 1 1 0; min-height: 56px; width: 100%; display: flex; justify-content: center; align-items: flex-end; container-type: size; }
 .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 176px); height: min(100cqh, 100cqw, 176px); }
 /* Team salvati, come un piccolo Box del PC: in cima (se il team caricato è cambiato) Salva le modifiche, poi nome e Salva
-   per un team nuovo; ogni team è una riga con i suoi sei sprite piccoli, il nome e il formato, × a destra. Il team in
+   per un team nuovo; ogni team è una riga coi suoi sprite piccoli (solo i Pokémon che ha, niente caselle vuote), il nome,
+   quanti sono ("1/6") e il formato, × a destra. Il team in
    uso ha il fondo azzurrino */
-@media (min-width: 1100px) { .team-head .plate-menu[open] > .saved-panel { width: 440px; } }
-.team-head .saved-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 1100px) { .team-quick .popover[open] > .saved-panel { width: 440px; } }
+.team-head .saved-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
 .saved-update {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sp-4);
   height: 34px;
-  padding: 0 12px;
+  padding: 0 var(--sp-6);
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--text);
-  font: 600 14px/1 var(--ui);
+  font: 600 var(--fs-section)/1 var(--ui);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -456,42 +440,43 @@
 .saved-update .icon { flex: none; width: 15px; height: 15px; color: var(--accent-ink); }
 .saved-update:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 /* Modifiche non salvate: una riga gialla piccola in cima, non una finestra */
-.saved-unsaved { display: flex; align-items: center; gap: 6px; margin: 0; font: 600 12px/1.3 var(--ui); color: var(--warn); }
+.saved-unsaved { display: flex; align-items: center; gap: var(--sp-3); margin: 0; font: 600 var(--fs-caption)/1.3 var(--ui); color: var(--warn); }
 .saved-unsaved .icon { flex: none; width: 13px; height: 13px; }
-.saved-new { position: relative; display: flex; gap: 8px; }
+.saved-new { position: relative; display: flex; gap: var(--sp-4); }
 .saved-new input { flex: 1; min-width: 0; height: 34px; }
 .saved-new button { height: 34px; white-space: nowrap; }
 .saved-new button:disabled { opacity: 0.55; }
-.saved-empty { margin: 0; font-size: 13px; color: var(--muted); }
-.saved-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; max-height: 300px; overflow-y: auto; }
-.saved-list li { display: flex; align-items: center; gap: 4px; border-radius: 4px; }
+.saved-empty { margin: 0; font-size: var(--fs-small); color: var(--muted); }
+.saved-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); margin: 0; max-height: 300px; overflow-y: auto; }
+.saved-list li { display: flex; align-items: center; gap: var(--sp-2); border-radius: 4px; }
 .saved-list li.current { background: var(--accent-wash); }
 .saved-list .saved-load {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sp-6);
   min-height: 48px;
   height: auto;
-  padding: 4px 10px 4px 4px;
+  padding: var(--sp-2) var(--sp-5) var(--sp-2) var(--sp-2);
   text-align: left;
   background: none;
   border-color: transparent;
 }
-.saved-sprites { flex: none; display: flex; }
+/* Sei posti fissi (6 × 32px), così i nomi partono tutti dalla stessa colonna; i posti liberi restano vuoti, senza segni */
+.saved-sprites { flex: none; display: flex; width: 192px; }
 .saved-sprites > * { flex: none; width: 34px; height: 40px; object-fit: contain; object-position: center bottom; margin-right: -2px; transition: transform 0.12s var(--ease); }
-.saved-sprites .saved-gap, .saved-sprites .sprite.missing { width: 34px; }
-/* Posto libero: sei posti fissi, così i nomi partono tutti dalla stessa colonna; un cerchio tratteggiato tenue dice che è vuoto */
-.saved-sprites .saved-gap { display: grid; place-items: center; }
-.saved-sprites .saved-gap::before { content: ''; width: 14px; height: 14px; border: 1px dashed var(--line); border-radius: 50%; }
+.saved-sprites .sprite.missing { width: 34px; }
 .saved-list .saved-load:hover .saved-sprites > * { transform: translateY(-2px); }
 .saved-list .saved-load:hover .saved-sprites > :nth-child(even) { transition-delay: 0.03s; }
 @media (prefers-reduced-motion: reduce) { .saved-sprites > * { transition: none; } .saved-list .saved-load:hover .saved-sprites > * { transform: none; } }
-.saved-text { display: grid; min-width: 0; gap: 2px; }
+.saved-text { display: grid; min-width: 0; gap: var(--sp-1); }
 /* Nomi lunghi su due righe (il nome intero resta nel tooltip della riga) */
-.saved-name { font: 600 14px/1.2 var(--ui); color: var(--text); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.saved-format { font: 400 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-name { font: 600 var(--fs-section)/1.2 var(--ui); color: var(--text); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.saved-meta { display: flex; align-items: baseline; gap: var(--sp-3); min-width: 0; }
+.saved-size { flex: none; font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.saved-format { min-width: 0; font: 400 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-size + .saved-format::before { content: '·'; margin-right: var(--sp-3); color: var(--faint); }
 .saved-list li.current .saved-name { color: var(--accent-ink); }
 .saved-list .saved-load:hover { background: var(--raised); border-color: var(--accent); }
 .saved-list .saved-delete { flex: none; width: 34px; height: 34px; padding: 0; justify-content: center; background: none; border-color: transparent; color: var(--muted); }

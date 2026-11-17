@@ -174,6 +174,30 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     expect(any).toHaveAccessibleDescription('Va bene ogni condizione, anche nessuna');
     expect(screen.queryByRole('radio', { name: 'Nessuna' })).toBeNull();
   });
+
+  it('tipo di team: solo il nome sotto gli occhi; la frase nel tooltip DreamDex (mouse e fuoco) e nella descrizione', async () => {
+    calls.length = 0;
+    const user = userEvent.setup();
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    const types = within(screen.getByRole('radiogroup', { name: 'Tipo di team' }));
+    const balance = types.getByRole('radio', { name: 'Balance' });
+    expect(balance).toHaveAccessibleDescription('Muri e attaccanti in equilibrio');
+    expect(types.getByRole('radio', { name: 'Il migliore' })).toHaveAccessibleDescription('Il voto più alto, di qualsiasi tipo');
+    // La frase non si vede sotto il nome (testo nascosto dentro il pulsante, non nel body) e niente tooltip del browser
+    expect(balance.querySelector('small')).toHaveAttribute('hidden');
+    expect(balance).not.toHaveAttribute('title');
+    expect(balance).toHaveTextContent(/^Balance/);
+    await user.hover(balance);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.fill-option-tip'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveAttribute('aria-hidden', 'true');
+    expect(tip).toHaveTextContent('BalanceMuri e attaccanti in equilibrio');
+    await user.unhover(balance);
+    expect(document.querySelector('.ftip.fill-option-tip')).toBeNull();
+    // Col fuoco da tastiera lo stesso tooltip
+    balance.focus();
+    await user.keyboard('{Shift>}{Tab}{/Shift}{Tab}');
+    await vi.waitFor(() => { if (!document.querySelector('.ftip.fill-option-tip')) throw new Error('no tip'); });
+  });
 });
 
 describe('Completa team: voto di adesso e perché delle proposte', () => {

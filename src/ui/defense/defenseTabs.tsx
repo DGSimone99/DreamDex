@@ -7,7 +7,7 @@ import { DefenseGuideSection } from './DefenseGuide';
 import { DefenseSustain } from './DefenseSustain';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 
-/** Le schede della Difesa: Generale, Coverage di tipi, Coverage del meta, Sostenibilità. */
+/** Le schede della Difesa: Generale, Coverage di tipi, Coverage del meta, Recupero. */
 export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: AreaContext): DetailTab[] {
   const coverageMeta = defense.coverageMeta;
   type Key = 'sustain' | 'coverageTypes' | 'coverageMeta';
@@ -25,7 +25,7 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
 
   const panels: Record<Key, ReactElement | null> = { sustain, coverageTypes, coverageMeta: metaTab };
   // La guida come quella dell'Offesa: Generale, Coverage tipi e Coverage meta hanno le stesse regole, una pagina sola
-  // ("Come funziona") che il "?" di tutte e tre apre; la Sostenibilità ha la sua
+  // ("Come funziona") che il "?" di tutte e tre apre; il Recupero ha la sua
   const how = <DefenseGuideSection section="general" defense={defense} meta={meta} formatId={ctx.formatId} />;
   const sustainGuide = <DefenseGuideSection section="sustain" defense={defense} meta={meta} formatId={ctx.formatId} />;
   return [

@@ -51,7 +51,7 @@ describe('Offesa: navigazione e guida', () => {
     expect(panel).toHaveTextContent('Per ogni membro, il suo colpo migliore contro ogni bersaglio che fa almeno il 50%');
     // Quello che conta meno: a capo sotto il Colpo, senza un titolo suo
     expect(panel).not.toHaveTextContent('Valgono meno');
-    expect(panel.querySelector('.guide-sub')).toHaveTextContent('Band, Specs e simili, e i boost da setup, meteo o campo e le mosse Z contano meno (pieni se il meteo o il campo lo porta il membro stesso).');
+    expect(panel.querySelector('.guide-sub')).toHaveTextContent('Band, Specs e simili, e i boost da Setup, meteo o campo e le mosse Z contano meno (pieni se il meteo o il campo lo porta il membro stesso).');
     for (const gone of ['Scoperto', 'Non conta', 'Dal 66%', 'Statistiche medie', '×2 · ×4']) expect(panel).not.toHaveTextContent(gone);
     // Il "?" dei tipi: le medie dei 18 tipi nel tooltip; quello del meta: le sprite delle minacce
     await user.hover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
@@ -169,7 +169,7 @@ describe('Offesa: Generale', () => {
         expect(badge).toHaveClass('has-setup');
         expect(badge).not.toHaveTextContent('+');
         // Il migliore della colonna aggiunge ", il migliore della colonna" (la stella)
-        expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}, altri ${extra} col setup(, il migliore della colonna)?$`));
+        expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}, altri ${extra} col Setup(, il migliore della colonna)?$`));
       } else {
         expect(badge).not.toHaveClass('has-setup');
         expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}(, il migliore della colonna)?$`));
@@ -197,6 +197,9 @@ describe('Offesa: Generale', () => {
     expect(heads[1].startsWith('Tipi')).toBe(true);
     expect(heads[2].startsWith('Meta')).toBe(true);
     expect(heads[3]).toBe('Offesa');
+    // Le testate con la spada (solo per gli occhi) e solo la parola: "Tipi", "Meta"
+    expect(screen.getByRole('columnheader', { name: /^Tipi$/ }).querySelector('.bar-head-ic svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('columnheader', { name: /^Meta$/ }).querySelector('.guide-ask')).not.toBeNull();
     expect(memberRows().map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
     unmount();
@@ -238,6 +241,8 @@ describe('Offesa: Generale', () => {
       expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
       expect(cells[2].querySelector('.og-share')!.getAttribute('aria-label')).toBe(`Porta +${rating.offense.shares[i].points} all'Offesa del team`);
       expect(cells[2].querySelector('[title]')).toBeNull();
+      // Solo il numero, niente barra a scalini
+      expect(cells[2].querySelector('.og-share-bar, .def-bar')).toBeNull();
     });
     // A squadra aperta niente dettagli sotto la barra
     expect(document.querySelector('.og-detail')).toBeNull();
@@ -252,6 +257,11 @@ describe('Offesa: Generale', () => {
     const n = count(typeHits(rating, slots[slot]!)).two;
     const tile = memberRows()[slot].querySelectorAll('td')[0].querySelector<HTMLElement>('.kob.two')!;
     expect(tile).toHaveAttribute('role', 'button');
+    // Il tooltip del pezzo finisce col piede che dice dove porta il clic, e la descrizione lo ripete
+    await user.hover(tile);
+    expect((await tipOf()).lastElementChild).toHaveClass('ftip-go');
+    expect((await tipOf()).lastElementChild).toHaveTextContent('Clic: vai a Coverage tipi');
+    expect(tile).toHaveAccessibleDescription(/Clic: vai a Coverage tipi$/);
     await user.click(tile);
     expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
     expect(document.querySelectorAll('td.kf-hit')).toHaveLength(n);
@@ -390,8 +400,8 @@ describe('Offesa: Generale', () => {
         await user.unhover(bad);
       }
     }
-    expect(cells[2]).toHaveTextContent(new RegExp(`^${rating.offense.value}$`));
-    expect(cells[2].querySelector('.def-bar')).not.toBeNull();
+    // Nell'ultima colonna niente: il voto dell'Offesa sta nella testata dell'area
+    expect(cells[2]).toBeEmptyDOMElement();
   });
 
   it('membro che il motore non conosce: la riga resta con "—" e senza badge', () => {
@@ -462,13 +472,13 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     return rating;
   };
 
-  it('una tabella membri × 18 tipi con la riga Copertura e la riga Il migliore (chi colpisce più forte ogni tipo)', async () => {
+  it('una tabella membri × 18 tipi con la riga Team Coverage e la riga Il migliore (chi colpisce più forte ogni tipo)', async () => {
     const rating = await open();
     expect(screen.getAllByRole('table')).toHaveLength(1);
     expect(screen.getAllByRole('columnheader')).toHaveLength(19);
     const rows = screen.getAllByRole('row');
     const sum = rows[rows.length - 2];
-    expect(within(sum).getByRole('rowheader')).toHaveTextContent('Copertura');
+    expect(within(sum).getByRole('rowheader')).toHaveTextContent('Team Coverage');
     const cells = within(sum).getAllByRole('cell');
     expect(cells).toHaveLength(18);
     cells.forEach(c => expect(c.textContent).toMatch(/\d+%/));
@@ -603,7 +613,10 @@ describe('Offesa: Coverage meta', () => {
     const rating = rateTeam(t, fixtureData, 'it')!;
     renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    const sorted = [...rating.offense.coverageMeta!.rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
+    // Ordine Minaccia (quello di partenza), la regola della Panoramica: prima chi nessuno manda KO in due colpi, poi chi uno
+    // solo, poi gli altri; dentro, il più usato
+    const n = (r: { cells: { pct: number }[] | null }) => Math.min(2, (r.cells ?? []).filter(c => c.pct >= 50).length);
+    const sorted = [...rating.offense.coverageMeta!.rows].sort((a, b) => n(a) - n(b) || b.weight - a.weight || a.species.localeCompare(b.species));
     return { user, rating, sorted };
   };
   const table = () => within(screen.getByRole('tabpanel')).getByRole('table');
@@ -745,5 +758,25 @@ describe('Offesa: Coverage meta', () => {
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
     await user.click(screen.getByRole('tab', { name: /^Meta coverage/ }));
     expect(within(table()).getByRole('rowheader', { name: /^Team Coverage\s*Covered by/ })).toBeInTheDocument();
+  });
+});
+
+describe('Offesa Generale: il colore del conto segue il ruolo (voce 3.3)', () => {
+  const corv: TeamSet = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', nature: 'Impish', evs: { hp: 248, def: 168, spd: 92 }, moves: ['Roost', 'Brave Bird', 'Defog', 'U-turn'] };
+  const mixed = [team[0], corv];
+  it('il conto di un muro è neutro, quello di un attaccante colorato; la riga Team Coverage resta colorata', () => {
+    const a = analyzeTeam(mixed, fixtureData);
+    expect(a.needs.primary).toEqual(['attack', 'wall']);
+    renderIt(<AreaView rating={rateTeam(mixed, fixtureData, 'it')!} area="strength" team={mixed} analysis={a} problems={[]} />);
+    const rows = [...document.querySelectorAll<HTMLElement>('.def-members tbody tr:not(.og-fill)')];
+    const tones = (el: Element) => [...el.querySelectorAll('.kob-count')].map(c => [...c.classList].filter(k => k !== 'kob-count'));
+    // Great Tusk (attaccante): un colore del semaforo; Corviknight (muro): solo neutro
+    for (const tone of tones(rows[0])) expect(tone.some(k => ['full', 'good', 'warn', 'bad', 'zero'].includes(k))).toBe(true);
+    expect(tones(rows[1]).length).toBe(2);
+    for (const tone of tones(rows[1])) expect(tone).toEqual(['quiet']);
+    // Il testo per lo screen reader non cambia e non dice "muro"
+    expect(rows[1].querySelector('.kob-count')!.getAttribute('aria-label')).toMatch(/^\d+ su \d+ KO in due colpi o meglio$/);
+    expect(rows[1].querySelector('td')).not.toHaveTextContent(/muro/i);
+    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'bad')).toBe(true);
   });
 });

@@ -62,16 +62,24 @@ export function useColumnHover() {
 export const ColName = ({ name }: { name: string }) => <span className="col-name" aria-hidden="true">{name}</span>;
 
 /**
- * L'interruttore dell'efficacia, a destra nella striscia delle sottoschede di Coverage tipi e meta: lascia accese solo le
+ * L'interruttore dell'efficacia, in alto nel pannello di Coverage tipi e meta: lascia accese solo le
  * caselle con l'etichetta (superefficaci nell'Offesa, non neutre nella Difesa).
  */
 export function EffSwitch({ side, on, onChange }: { side: EffSide; on: boolean; onChange: (on: boolean) => void }) {
   const t = useT();
+  return <PanelSwitch on={on} onChange={onChange} label={t(`eff.only.${side}`)} title={t(`eff.only.${side}.title`)} />;
+}
+
+/**
+ * L'interruttore in alto a sinistra nel pannello, sulla riga della legenda (`.panel-switch`): quello dell'efficacia e,
+ * nella Velocità, quello di Trick Room (`tone="room"`: acceso in viola, il colore della stanza).
+ */
+export function PanelSwitch({ on, onChange, label, title, tone }: { on: boolean; onChange: (on: boolean) => void; label: string; title?: string; tone?: 'room' }) {
   return (
-    <button type="button" role="switch" aria-checked={on} className={`eff-switch${on ? ' on' : ''}`}
-      title={t(`eff.only.${side}.title`)} onClick={() => onChange(!on)}>
+    <button type="button" role="switch" aria-checked={on} className={`eff-switch${tone ? ` ${tone}` : ''}${on ? ' on' : ''}`}
+      title={title} onClick={() => onChange(!on)}>
       <span className="eff-switch-track" aria-hidden="true"><span className="eff-switch-knob" /></span>
-      {t(`eff.only.${side}`)}
+      {label}
     </button>
   );
 }

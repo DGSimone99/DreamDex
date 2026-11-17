@@ -14,13 +14,10 @@ export const STEP_MIN_COVERAGE_SIZE = 2;
  * Un problema che può guidare una tappa o comparire nel suo titolo (la coverage minore finisce solo in "risolve anche").
  * Ogni problema di difesa può guidare: c'è solo sotto il livello 50 della Coverage tipi.
  */
-const leads = (p: CoachProblem) => {
+export const leads = (p: CoachProblem) => {
   if (p.category === 'coverage') return p.severity === 'serious' && (p.size ?? 0) >= STEP_MIN_COVERAGE_SIZE;
   return true;
 };
-
-/** Tappe mostrate nel Coaching. */
-export const MAX_STEPS = 3;
 
 export interface CoachStep {
   problem: CoachProblem;
@@ -36,7 +33,7 @@ export interface CoachStep {
   group: string[];
 }
 
-/** Colonne della mappa delle aree. */
+/** Le colonne dei problemi (le aree in cui il Coaching e le testate delle aree li mettono). */
 export type MapColumn = 'defense' | 'offense' | 'roles' | 'rules';
 
 export function columnOf(category: ProblemCategory): MapColumn {
@@ -96,11 +93,4 @@ export function buildSteps(problems: CoachProblem[], fixes: CoachFix[], moves: M
     steps.push({ problem, swap, move, alsoSolves: [...solved].filter(key => key !== problem.key), group });
   }
   return steps;
-}
-
-/** Per la mappa: problema → numero della prima delle `MAX_STEPS` tappe che lo copre (il suo problema o le sue proposte). */
-export function stepNumbers(steps: CoachStep[]): Map<string, number> {
-  const numbers = new Map<string, number>();
-  steps.slice(0, MAX_STEPS).forEach((step, i) => [step.problem.key, ...step.alsoSolves].forEach(key => { if (!numbers.has(key)) numbers.set(key, i + 1); }));
-  return numbers;
 }

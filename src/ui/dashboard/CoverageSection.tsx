@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { CellState, DashboardData } from '../../engine/overviewDashboard';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
@@ -44,6 +45,13 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
   const tip = useFloatAnchor<{ side: 'offense' | 'defense'; i: number }>();
   const tipCell = tip.anchor ? coverage.cells[tip.anchor.key.i] : null;
   const nav = useRoving<HTMLTableElement>();
+  // Per i lettori di schermo, prima delle 36 caselle: i tipi scoperti (rossi) di ogni riga, o nessuno
+  const summaryId = useId();
+  const open = (side: 'offense' | 'defense') => coverage.cells.flatMap((cell, i) => (cell[side] === 'bad' ? [names[i]] : []));
+  const [openOff, openDef] = [open('offense'), open('defense')];
+  const summary = openOff.length || openDef.length
+    ? t('sr.coverage.some', { offense: openOff.join(', ') || t('sr.nobody'), defense: openDef.join(', ') || t('sr.nobody') })
+    : t('sr.coverage.none');
   return (
     <DashCard className="dash-coverage" title={title}
       meta={<>{offense.toLocaleLowerCase()} <b>{coverage.offense}</b> · {defense.toLocaleLowerCase()} <b>{coverage.defense}</b></>}
@@ -52,7 +60,8 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
         <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => onView('strength', 'types')} />
         <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => onView('defense', 'coverageTypes')} />
       </>}>
-      <table ref={nav.ref} className="dash-matrix" aria-label={title} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
+      <p id={summaryId} hidden>{summary}</p>
+      <table ref={nav.ref} className="dash-matrix" aria-label={title} aria-describedby={summaryId} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
         <thead>
           <tr>
             <td />

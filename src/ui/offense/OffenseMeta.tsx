@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { battleSpecies } from '../../engine/dex';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
@@ -12,7 +12,8 @@ import { offenseSlots } from './slots';
 import { TypeHitTip } from './TypeHitTip';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
-import { MetaCount, MetaFrame } from '../MetaFrame';
+import { MetaCount, MetaFrame, MetaOrderSwitch, type MetaOrder } from '../MetaFrame';
+import { byThreat, byUsage } from '../../engine/overviewDashboard';
 import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 import { FocusNote, inBand, koBandOf } from './KoBadges';
 
@@ -34,12 +35,15 @@ export function HpLeft({ pct }: { pct: number }) {
   );
 }
 
+/** Quanti membri lo mandano KO in due colpi col colpo semplice (Lo coprono, il numero della riga Team Coverage). */
+const coveredCount = (row: Row) => (row.cells ?? []).filter(c => c.pct >= 50).length;
 /** Quanti membri lo mandano KO in due colpi: 0 rosso, 1 giallo, da 2 verde. */
 const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 
 /**
  * Coverage meta dell'Offesa: i membri in riga (nello stesso punto delle altre schede), i Pokémon del meta in colonna,
- * 8 per pagina dal meno coperto (a pari livello il più usato). In ogni casella il danno % del colpo semplice (senza
+ * 8 per pagina nell'ordine scelto sulla riga della legenda: Minaccia (prima chi nessuno manda KO in due colpi, poi chi uno
+ * solo, poi gli altri, dentro il più usato: la regola della Panoramica) o Uso (il più usato). In ogni casella il danno % del colpo semplice (senza
  * Tera, Z e setup) colorato per soglia, con "setup N%" quando la danza cambia soglia; in fondo "Lo coprono" conta chi
  * lo manda KO in due colpi. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra, al posto di "Pokémon";
  * in alto a destra la legenda dei colori, in fondo la riga Team Coverage (Lo coprono, la barra del team cliccabile). Sulla casella il tooltip DreamDex (minaccia, colpi, mossa, setup);
@@ -65,9 +69,18 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   // (così stanno nella prima pagina); il resto spento
   const focus = ctx.focus?.kind === 'meta' ? ctx.focus : null;
   const lit = (row: Row) => !!focus && inBand(Math.max(0, row.cells?.[focus.slot]?.pct ?? 0), focus.band);
-  const sorted = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
-  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))] : sorted;
+  // Aperta da una minaccia della Panoramica: la sua colonna per prima (prima pagina) e accesa, le altre spente
+  const threat = ctx.focus?.kind === 'threat' && ctx.focus.side === 'offense' ? ctx.focus.species : null;
+  // Ordine scelto: Minaccia (prima chi nessuno manda KO in due colpi, poi chi uno solo, come la Panoramica) o Uso
+  const [order, setOrder] = useState<MetaOrder>('threat');
+  const all = offense.coverageMeta?.rows ?? [];
+  const sorted = order === 'usage' ? byUsage(all) : byThreat(all, coveredCount);
+  const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))]
+    : threat ? [...sorted.filter(r => r.species === threat), ...sorted.filter(r => r.species !== threat)] : sorted;
   const covered = rows.filter(r => r.level > 0).length;
+  // Per i lettori di schermo, prima della tabella: chi nessuno manda KO in due colpi (di tutte le pagine)
+  const summaryId = useId();
+  const open = sorted.filter(r => coveredCount(r) === 0).map(r => r.species);
   const only3 = rows.filter(r => r.level === 0 && (r.cells ?? []).some(c => c.pct >= 34)).length;
   const summary = (
     <>
@@ -80,7 +93,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
 
   const cell = (row: Row, m: number, k0: number) => {
     const c = row.cells?.[m];
-    if (!c || c.pct < 0) return <td key={row.species} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
+    if (!c || c.pct < 0) return <td key={row.species} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}${focus || threat ? ' kf-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
     const tag = effLabel(c.mult, 'offense');
     const k = bucket(c.pct);
     // Il triangolo del setup, come in Coverage tipi e nella Generale: solo se la danza fa salire di fascia fino al 2HKO o all'OHKO
@@ -91,7 +104,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
     const bothUp = !up && !teamUp && c.comboPct !== null && rank(c.comboPct) > rank(c.pct);
     return (
-      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : threat ? (row.species === threat ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { hover.enter(k0).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); }} onMouseLeave={tip.close}
         onFocus={e => { hover.enter(k0).onFocus(); tip.focus({ species: row.species, m }).onFocus(e); }} onBlur={tip.close}>
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
@@ -125,7 +138,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const body = (shown: Row[], pager: ReactNode) => (
     <div className={`def-frame off-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageMeta')}`} className="def-grid spaced ct-table"
+        <p id={summaryId} hidden>{open.length ? t('sr.cm.offense', { list: open.join(', ') }) : t('sr.cm.offenseNone')}</p>
+        <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
           onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
           <colgroup>
             <col className="def-col-mon" />
@@ -135,7 +149,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
             <tr>
               <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
               {shown.map((r, k) => {
-                const n = (r.cells ?? []).filter(c => c.pct >= 50).length;
+                const n = coveredCount(r);
                 return (
                   <th key={r.species} scope="col" aria-label={r.species} className={hover.cls(k, 'wall-h')} {...hover.enter(k)}
                     onFocus={e => { hover.enter(k).onFocus(); if (keyboardFocus(e.currentTarget)) card.bind(r.set).onFocus(e); }} onBlur={card.bind(r.set).onBlur}>
@@ -168,7 +182,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                 <span className="visually-hidden">{t('odetail.cm.coveredBy')}</span>
               </th>
               {shown.map((r, k) => {
-                const n = (r.cells ?? []).filter(c => c.pct >= 50).length;
+                const n = coveredCount(r);
                 return <td key={r.species} className={hover.cls(k)} {...hover.enter(k)}><span className={`ct-pill ${coverTone(n)}`}>{n}<span className="visually-hidden"> {t('odetail.cm.coveredBy')}</span></span></td>;
               })}
             </tr>
@@ -177,13 +191,14 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
       </div>
       {tipCell(shown)}
       {card.tip}
-      <div className="rob-legend cm-foot">{focus
+      <div className="rob-legend cm-foot"><MetaOrderSwitch order={order} onChange={setOrder} />{focus
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+        : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>}</div>
     </div>
   );
 
-  return <MetaFrame rows={rows} summary={summary} body={body}
+  return <MetaFrame rows={rows} summary={summary} body={body} resetKey={order}
     labels={{ pages: t('odetail.cm.pages'), prev: t('odetail.cm.prev'), next: t('odetail.cm.next'), page: (from, to) => t('odetail.cm.page', { from, to }) }} />;
 }
 
