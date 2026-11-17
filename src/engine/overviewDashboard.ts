@@ -1,7 +1,7 @@
 import { usesMeta, type TeamAnalysis } from './analysis';
 import { COVERED_LEVEL, holdSeverity, type CoachProblem } from './coach';
 import type { EngineData } from './data';
-import { battleName } from './dex';
+import { battleName, toID } from './dex';
 import { ownersOf } from './needs';
 import { summarizeTeam } from './overviewSummary';
 import { ratingThreats, type TeamRating } from './rating';
@@ -88,6 +88,32 @@ export function metaThreats(rating: TeamRating, data: EngineData): MetaThreat[] 
   const openSides = (x: MetaThreat) => x.reasons.filter(r => !r.by.length).length;
   return list.sort((a, b) => Number(a.status === 'thin') - Number(b.status === 'thin') || openSides(b) - openSides(a) || b.usage - a.usage || a.species.localeCompare(b.species));
 }
+/**
+ * Un Pokémon del meta contro il tuo team, per il blocco "Contro il tuo team" della scheda Meta: le stesse righe e le
+ * stesse regole di `metaThreats` (Difesa: chi regge del tutto il suo colpo migliore; Offesa: chi lo manda KO in due
+ * colpi), niente calcoli nuovi. `defense` / `offense`: i membri, o null se il Pokémon non è fra le righe di quel lato
+ * (le righe dell'Offesa sono una per combinazione di tipi: chi non la rappresenta non c'è). `status` come le carte
+ * della Panoramica: 'open' se un lato ha nessuno, 'thin' se ne ha uno solo, altrimenti 'held'.
+ * `own`: è un tuo membro; allora le righe dicono come se la cava il RESTO del team contro una copia avversaria (il
+ * membro stesso è tolto dai conti). Null se non è in nessuna riga (meta spento, niente statistiche, fuori dai bersagli).
+ */
+export interface MetaVersus { defense: string[] | null; offense: string[] | null; status: 'open' | 'thin' | 'held'; own: boolean }
+
+export function metaVersus(rating: TeamRating | null, species: string, team: TeamSet[]): MetaVersus | null {
+  if (!rating) return null;
+  const id = toID(species);
+  const own = team.some(set => toID(battleName(set)) === id || toID(set.species) === id);
+  const rest = (names: string[]) => [...new Set(names)].filter(name => !own || toID(name) !== id);
+  const def = rating.defense.coverageMeta?.rows.find(row => toID(row.species) === id);
+  const off = rating.offense.coverageMeta?.rows.find(row => toID(row.species) === id);
+  if (!def && !off) return null;
+  const defense = def ? rest(def.heldBy.filter(h => !h.partial).map(h => h.species)) : null;
+  const offense = off ? rest(off.coveredBy.map(c => c.species)) : null;
+  const counts = [defense, offense].filter((x): x is string[] => x !== null).map(x => x.length);
+  const status = counts.some(n => n === 0) ? 'open' : counts.some(n => n === 1) ? 'thin' : 'held';
+  return { defense, offense, status, own };
+}
+
 export interface DashboardData {
   coverage: { cells: TypeCell[]; defense: string; offense: string };
   /** members: i membri in ordine di team (le colonne della tabella dei ruoli), scritti come gli owners. */

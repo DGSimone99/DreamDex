@@ -5,7 +5,7 @@ import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import type { KoFocus } from '../AreaDetail';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, TipGo, useFloatAnchor } from '../FloatTip';
 import { Icon } from '../icons';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
@@ -37,7 +37,7 @@ function useReasonText() {
 /**
  * Minacce del meta: le N (5 o 4, secondo la larghezza) che il team gestisce peggio, in fila sotto la Copertura (regola
  * in `metaThreats`). Ogni carta, lavata nel colore del primo tipo: sprite, nome (mai tagliato) e la targhetta inclinata
- * "scoperta" (rossa) o "a fatica" (gialla), l'unico segno dello stato. Col mouse e col fuoco il tooltip DreamDex con le ragioni intere e l'uso nel meta; il
+ * "scoperta" (rossa) o "a fatica" (gialla), l'unico segno dello stato. Col mouse e col fuoco il tooltip DreamDex con le ragioni intere, l'uso nel meta e in fondo dove porta il clic (TipGo); il
  * clic apre la Coverage meta (Difesa, o Offesa se è il lato peggiore) con la colonna della minaccia accesa. Quelle che
  * non stanno vanno in un "+N" tratteggiato (tooltip coi nomi, clic sulla Coverage meta). Senza minacce una riga verde.
  */
@@ -131,7 +131,7 @@ export function ThreatsSection({ threats, onView }: {
               <li key={line} className={tipThreat.reasons[i].by.length ? 'thin' : 'open'}>{line}</li>
             ))}
           </ul>
-          <p className="ftip-foot">{t('dash.threatFoot')}</p>
+          <TipGo place={t('dash.threatFoot')} />
         </FloatTip>
       )}
       {moreTip.anchor && (

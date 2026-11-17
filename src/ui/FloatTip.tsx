@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useT } from '../i18n/react';
+import { Icon } from './icons';
 
 /** Quanto aspetta prima di aprirsi: passando col mouse sopra la griglia non si accende a ogni casella. */
 const OPEN_DELAY = 140;
@@ -127,4 +129,14 @@ export function FloatTip({ rect, tone, className = '', side = false, children }:
  */
 export function HiddenText({ id, children }: { id: string; children: ReactNode }) {
   return createPortal(<span id={id} hidden>{children}</span>, document.body);
+}
+
+/**
+ * Il piede dei tooltip il cui elemento porta da qualche parte col clic: una riga Accent Ink sotto un filo, "Clic: vai a
+ * {place}" e la freccia. Solo un'indicazione (il tooltip non si clicca): il clic resta sull'elemento. Il modello comune per
+ * ogni tooltip che naviga; `place` è il nome della destinazione (es. "Coverage meta").
+ */
+export function TipGo({ place }: { place: string }) {
+  const t = useT();
+  return <p className="ftip-go">{t('tip.go', { place })}<Icon name="next" /></p>;
 }

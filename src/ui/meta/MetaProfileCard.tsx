@@ -1,16 +1,27 @@
 import type { CSSProperties } from 'react';
 import type { MetaProfile } from '../../engine/metaBoard';
+import type { MetaVersus as Versus } from '../../engine/overviewDashboard';
 import { formatPercent } from '../../i18n';
 import { gameName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { formeParts } from '../candidateParts';
 import { Sprite, TypeChip, typeColor } from '../Sprite';
+import { MetaVersus } from './MetaVersus';
 
 /**
  * La scheda del Pokémon scelto nella scheda Meta: uso e posizione, strumento e abilità più usati con la loro %, le 4
- * mosse più usate (col colore del tipo) e i compagni più frequenti (quelli in classifica si aprono col clic).
+ * mosse più usate (col colore del tipo), i compagni più frequenti (quelli in classifica si aprono col clic) e, se il
+ * Pokémon è fra le righe della Coverage meta, come se la cava contro il tuo team (MetaVersus, coi link alla Coverage meta).
  */
-export function MetaProfileCard({ profile, inTop, onSelect }: { profile: MetaProfile; inTop: (name: string) => boolean; onSelect: (name: string) => void }) {
+export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCoverage }: {
+  profile: MetaProfile;
+  inTop: (name: string) => boolean;
+  onSelect: (name: string) => void;
+  /** Contro il tuo team (null: il Pokémon non è nelle righe della Coverage meta, il blocco non c'è). */
+  versus?: Versus | null;
+  /** Apre la Coverage meta dell'area con questo Pokémon acceso. */
+  onCoverage?: (side: 'defense' | 'offense', species: string) => void;
+}) {
   const t = useT();
   const lang = useLang();
   const parts = formeParts(profile.name);
@@ -58,6 +69,7 @@ export function MetaProfileCard({ profile, inTop, onSelect }: { profile: MetaPro
           </ul>
         </section>
       )}
+      {versus && onCoverage && <MetaVersus name={profile.name} versus={versus} onCoverage={side => onCoverage(side, profile.name)} />}
     </aside>
   );
 }

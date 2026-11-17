@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { EngineData } from '../../engine/data';
 import { toID } from '../../engine/dex';
 import { metaBoard, metaProfile, META_BOARD_SIZE } from '../../engine/metaBoard';
+import { metaVersus } from '../../engine/overviewDashboard';
+import type { TeamRating } from '../../engine/rating';
 import type { TeamSet } from '../../engine/sets';
 import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
@@ -11,9 +13,15 @@ import { MetaProfileCard } from './MetaProfileCard';
 
 /**
  * Scheda Meta, solo informativa (il voto non la usa): in alto il tuo team con la posizione e l'uso di ogni membro, sotto i
- * più usati del meta come carte della lista, in ordine di uso; a destra la scheda del Pokémon scelto (il #1 all'inizio).
+ * più usati del meta come carte della lista, in ordine di uso; a destra la scheda del Pokémon scelto (il #1 all'inizio),
+ * con in fondo "Contro il tuo team" (dai dati della Coverage meta del voto) e i link alla Coverage meta (`onCoverage`).
  */
-export function MetaTab({ team, data }: { team: TeamSet[]; data?: EngineData }) {
+export function MetaTab({ team, data, rating = null, onCoverage }: {
+  team: TeamSet[];
+  data?: EngineData;
+  rating?: TeamRating | null;
+  onCoverage?: (side: 'defense' | 'offense', species: string) => void;
+}) {
   const t = useT();
   const lang = useLang();
   const board = metaBoard(data?.stats ?? null, team, META_BOARD_SIZE);
@@ -34,6 +42,7 @@ export function MetaTab({ team, data }: { team: TeamSet[]; data?: EngineData }) 
   const max = board.top[0]?.usage ?? 1;
   const inTop = (name: string) => board.top.some(e => toID(e.name) === toID(name));
   const profile = selected ? metaProfile(data?.stats ?? null, selected) : null;
+  const versus = profile && !data?.ignoreMeta ? metaVersus(rating, profile.name, team) : null;
   // Meta spento (la sezione è disattivata nella barra): niente da mostrare
   if (data?.ignoreMeta) return <section aria-label={t('tabs.meta')} className="meta-tab" />;
   if (!data?.stats) return <section aria-label={t('tabs.meta')} className="meta-tab"><p className="note">{t('meta.missingStats')}</p></section>;
@@ -70,7 +79,7 @@ export function MetaTab({ team, data }: { team: TeamSet[]; data?: EngineData }) 
           ))}
         </ul>
       </div>
-      {profile && <MetaProfileCard profile={profile} inTop={inTop} onSelect={choose} />}
+      {profile && <MetaProfileCard profile={profile} inTop={inTop} onSelect={choose} versus={versus} onCoverage={onCoverage} />}
     </section>
   );
 }

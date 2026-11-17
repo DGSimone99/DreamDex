@@ -16,6 +16,7 @@ import { MetaTab } from './ui/meta/MetaTab';
 import { GradeBadge } from './ui/RatingPanel';
 import { blockedReason } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
+import type { KoFocus } from './ui/AreaDetail';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
 import { copyText } from './ui/clipboard';
@@ -184,6 +185,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Scheda aperta sotto il team: col team vuoto si parte dai Pokémon, poi vale l'ultima scelta
   // Cosa mostra Analisi: la Panoramica o un'area del voto (il riquadro Voto apre le aree)
   const [analysisView, setAnalysisView] = useState<AnalysisView>('overview');
+  // Dalla scheda Meta all'Analisi: la Coverage meta con una minaccia accesa; `nonce` ripete anche la stessa richiesta
+  const [analysisJump, setAnalysisJump] = useState<{ view: AnalysisView; sub: string; focus: KoFocus; nonce: number } | null>(null);
   // Membro aperto nella Panoramica di Analisi, per nome: se il team cambia resta lui o si torna alla Panoramica
   const [tab, setTabState] = useState<TabId>(() => (initialTeam.length && storage ? loadTab(storage) : null) ?? 'pokemon');
   const setTab = (next: TabId) => {
@@ -463,12 +466,17 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
+            jump={analysisJump}
             onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
             onExport={() => copyText(exportShowdown(team, { tera: teraAllowed(format) }))} onImproveSets={() => setImproveSignal(n => n + 1)}
             onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
-          <MetaTab team={team} data={rated} />
+          <MetaTab team={team} data={rated} rating={rating}
+            onCoverage={(side, species) => {
+              setAnalysisJump(j => ({ view: side === 'defense' ? 'defense' : 'strength', sub: 'coverageMeta', focus: { kind: 'threat', side, species }, nonce: (j?.nonce ?? 0) + 1 }));
+              setTab('analysis');
+            }} />
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}

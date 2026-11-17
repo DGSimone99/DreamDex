@@ -904,6 +904,8 @@ describe('Minacce del meta', () => {
     await act(async () => { zama.focus(); });
     const tip = await screen.findByText('Lo manda KO solo Iron Valiant', { selector: '.thr-tip li' }, { timeout: 1000 });
     expect(tip.closest('.ftip')).toHaveTextContent('14,8% nel meta');
+    // In fondo dove porta il clic sulla carta (TipGo)
+    expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Coverage meta');
   });
 
   it('clic: apre la Coverage meta della Difesa (o dell\'Offesa) con la minaccia accesa; "+N" e il link sulla Coverage meta', async () => {

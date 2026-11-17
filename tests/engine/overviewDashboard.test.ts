@@ -3,7 +3,7 @@ import { rolesValue } from '../../src/engine/rolesArea';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { COVERED_LEVEL, findProblems, holdSeverity } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { dashboardData, metaThreats } from '../../src/engine/overviewDashboard';
+import { dashboardData, metaThreats, metaVersus } from '../../src/engine/overviewDashboard';
 import { summarizeTeam } from '../../src/engine/overviewSummary';
 import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
@@ -111,6 +111,28 @@ describe('dashboardData', () => {
     for (const [species, n] of offense) if (n <= 1) expect(list.some(x => x.species === species)).toBe(true);
     const rank = (x: (typeof list)[number]) => (x.status === 'open' ? 0 : 1);
     for (let i = 1; i < list.length; i++) expect(rank(list[i - 1])).toBeLessThanOrEqual(rank(list[i]));
+  });
+
+  it('metaVersus: le stesse righe e regole di metaThreats; un tuo membro tolto dai conti', () => {
+    const { rating } = build();
+    const list = metaThreats(rating, fixtureData);
+    const species = new Set([...(rating.defense.coverageMeta?.rows ?? []), ...(rating.offense.coverageMeta?.rows ?? [])].map(r => r.species));
+    expect(species.size).toBeGreaterThan(0);
+    for (const name of species) {
+      const vs = metaVersus(rating, name, [])!;
+      expect(vs.own).toBe(false);
+      const threat = list.find(x => x.species === name);
+      // Scoperta / a fatica come la carta della Panoramica; chi non è fra le minacce è gestito
+      expect(vs.status).toBe(threat ? (threat.status === 'open' ? 'open' : 'thin') : 'held');
+      for (const r of threat?.reasons ?? []) expect(vs[r.side]).toEqual(r.by);
+    }
+    // Un membro del team: il resto del team, lui escluso
+    const own = [...species].find(name => team.some(set => set.species === name))!;
+    const mine = metaVersus(rating, own, team)!;
+    expect(mine.own).toBe(true);
+    expect([...(mine.defense ?? []), ...(mine.offense ?? [])]).not.toContain(own);
+    expect(metaVersus(rating, 'Magikarp', team)).toBeNull();
+    expect(metaVersus(null, own, team)).toBeNull();
   });
 
   it('meta spento: minacce non disponibili, velocità vsMeta false', () => {

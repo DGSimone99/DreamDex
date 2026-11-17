@@ -28,7 +28,7 @@ export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) 
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, onExport, onImproveSets, onCollapseTeam, teamCollapsed = false }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, jump = null, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, onExport, onImproveSets, onCollapseTeam, teamCollapsed = false }: {
   /** Team ridotto: la Panoramica usa la densità ampia. */
   teamCollapsed?: boolean;
   /** Riduce il team (dal Riassunto della Panoramica). */
@@ -56,6 +56,11 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   /** Panoramica, Coaching o un'area del voto. */
   view: AnalysisView;
   onView: (view: AnalysisView) => void;
+  /**
+   * Una richiesta da fuori (il blocco "Contro il tuo team" della scheda Meta): apre la vista, la sottoscheda e il
+   * dettaglio acceso come un clic della Panoramica; `nonce` la ripete anche uguale.
+   */
+  jump?: { view: AnalysisView; sub?: string; focus?: KoFocus; nonce: number } | null;
   /** Membro aperto nella Panoramica (null: nessuno) e come cambiarlo. */
 }) {
   const tr = useT();
@@ -77,6 +82,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   // Una vista che non è una scheda (i Ruoli, da un link del voto o da uno stato vecchio): si apre la sua scheda con la sottoscheda
   const target = resolveView(view);
   useLayoutEffect(() => { if (target.sub) openView(view); }, [view]);
+  useLayoutEffect(() => { if (jump) openView(jump.view, jump.sub, jump.focus); }, [jump?.nonce]);
   const area = target.tab !== 'overview' && target.tab !== 'coaching' && rating ? target.tab : null;
   const showCoaching = view === 'coaching' && !!rating;
   // Lasciato il Coaching, il problema scelto si dimentica (tornandoci dalle schede non si riaccende)
