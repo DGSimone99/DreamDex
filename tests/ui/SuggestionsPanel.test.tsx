@@ -363,7 +363,7 @@ describe('SuggestionsPanel', () => {
     expect(roles.items[0].short).not.toContain(',');
   });
 
-  it('Porta: il dettaglio mostra tutte le voci, le caselle le prime nello stesso ordine (senza "Usato con")', async () => {
+  it('Porta: il dettaglio raggruppa le voci per tipo (ruoli, difesa, offesa, minacce, sinergie) senza "Usato con"; le caselle le prime voci in ordine di peso', async () => {
     const { bringsOf, reasonsOf } = await import('../../src/ui/candidateParts');
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { formatRules } = await import('../../src/engine/formatRules');
@@ -382,17 +382,22 @@ describe('SuggestionsPanel', () => {
       ],
     } as never;
     renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
-    // Tutte le voci (niente più tetto a 3), dalla più pesante; "Usato con" in fondo
-    expect(points.slice(0, 5)).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Abilita Venusaur: Siccità → Clorofilla', 'Ferma Kingambit', 'Colpisce super efficace Fuoco, scoperti dal team']);
-    expect(points[points.length - 1]).toBe('Usato con Great Tusk nel 30% dei team');
-    // Le caselle: le prime voci della stessa lista, in forma breve
-    const brings = bringsOf(item, 'it', formatRules(DEFAULT_FORMAT.formatId));
-    expect(brings.map(b => b.text)).toEqual(points);
+    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    // I gruppi sempre nello stesso ordine, ognuno con le sue voci; "Usato con" no (è un dato del meta)
+    const groups = [...porta.querySelectorAll('.bring-group')];
+    expect(groups.map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense', 'offense', 'threats', 'synergy']);
+    const texts = (kind: string) => [...porta.querySelectorAll(`.bring-group.${kind} li`)].map(li => li.textContent);
+    expect(texts('defense')).toEqual(['Resiste ad Acqua: debolezze del team']);
+    expect(texts('offense')).toEqual(['Colpisce super efficace Fuoco, scoperti dal team']);
+    expect(texts('threats')).toEqual(['Ferma Kingambit']);
+    expect(texts('synergy')).toEqual(['Abilita Venusaur: Siccità → Clorofilla']);
+    expect(porta.textContent).not.toMatch(/Usato con/);
+    // Le caselle: le prime voci in ordine di peso, in forma breve, senza "Usato con"
+    const brings = bringsOf(item, 'it', formatRules(DEFAULT_FORMAT.formatId)).filter(b => !b.usedWith);
+    expect(brings.map(b => b.text)).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Abilita Venusaur: Siccità → Clorofilla', 'Ferma Kingambit', 'Colpisce super efficace Fuoco, scoperti dal team']);
     for (const n of [1, 2, 3]) {
       const { items } = reasonsOf(item, n, null, DEFAULT_FORMAT, 'it');
       expect(items.map(b => b.short)).toEqual(brings.slice(0, n).map(b => b.short));
-      expect(items.map(b => b.text)).toEqual(points.slice(0, n));
     }
   });
 
@@ -427,7 +432,7 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(toglie.textContent).toMatch(/La pioggia si scontra/);
   });
 
-  it('Porta: "Usato con" sempre per ultimo', async () => {
+  it('Porta: niente "Usato con" nel dettaglio (è un dato del meta), le altre voci nei loro gruppi', async () => {
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
@@ -440,8 +445,9 @@ describe('dettaglio: abilità in battaglia', () => {
       ],
     } as never;
     renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
-    expect(points).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Usato con Great Tusk nel 30% dei team']);
+    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    expect(porta.textContent).not.toMatch(/Usato con/);
+    expect([...porta.querySelectorAll('.bring-group')].map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense']);
   });
 
   it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {

@@ -321,3 +321,30 @@
   .set-sec .mcard-moves { gap: var(--sp-4); }
   .set-sec .mcard-moves .mvp { --mvp-h: 30px; font-size: var(--fs-small); }
 }
+
+/* Porta e Toglie a gruppi (BringGroups): etichetta col segno a sinistra (verde in Porta, rosso in Toglie, giallo negli
+   avvisi), le voci a destra; i ruoli come i riquadri della Panoramica, con la spunta o la × */
+.bring-groups { display: grid; gap: var(--sp-4); }
+.bring-group { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+.bring-label { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 20px; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+.bring-label .icon { flex: none; width: 13px; height: 13px; }
+.bring-label .sym-vs { flex: none; font: 800 italic 10px/1 var(--display); letter-spacing: 0.04em; }
+.bring-groups.gain .bring-label .icon, .bring-groups.gain .bring-label .sym-vs { color: var(--good); }
+.bring-groups.loss .bring-label .icon, .bring-groups.loss .bring-label .sym-vs { color: var(--bad); }
+.bring-group.warning .bring-label, .bring-group.warning .bring-label .icon { color: var(--warn); }
+.bring-items { list-style: none; margin: 0; padding: 2px 0 0; display: grid; gap: var(--sp-1); font-size: var(--fs-small); line-height: 1.35; }
+.bring-roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.bring-roles .dash-role-tag .icon { width: 12px; height: 12px; stroke-width: 2.5; }
+.bring-groups.gain .bring-roles .dash-role-tag .icon { color: var(--good); }
+.bring-groups.loss .bring-roles .dash-role-tag .icon { color: var(--bad); }
+.bring-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
+.bring-roles .dash-role-tag { max-width: 100%; white-space: normal; }
+/* Porta e Toglie affiancati (colonne strette): etichetta e voci sulla stessa riga, le voci sotto solo se non c'è posto */
+.detail-sec:not(.wide) .bring-group { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-2) var(--sp-4); }
+.detail-sec:not(.wide) .bring-group > ul { flex: 1 1 150px; min-width: 0; }
+/* La lastra dei ruoli in testata su una riga sola: l'elenco intero nel tooltip */
+.detail-hero .detail-why { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Il dettaglio che non ci starebbe (.tight, lo decide la misura): il set si stringe come sugli schermi bassi */
+.detail.tight .set-sec .mcard-hex { display: none; }
+.detail.tight .set-sec .mcard-body { display: block; padding-top: var(--sp-3); }
+.detail.tight .set-sec .mcard-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-4); }

@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
@@ -18,7 +18,7 @@ import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
 import type { ListSprite } from './theme';
 import { Icon } from './icons';
-import { BoxIcon, bringsOf, formeParts } from './candidateParts';
+import { BoxIcon, bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
 import { PokemonIcon } from './PokemonName';
 import { battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
@@ -29,6 +29,50 @@ import { MemberKit, MemberStatsMoves } from './MemberCard';
 import { typeIconUrl } from './typeIcons';
 import type { TypeName } from '../engine/types';
 
+
+/** L'ordine dei gruppi di Porta e Toglie, e il segno di ognuno (gli stessi delle carte della lista). */
+const KINDS: BringKind[] = ['roles', 'defense', 'offense', 'threats', 'synergy', 'warning', 'other'];
+const KIND_ICON: Partial<Record<BringKind, 'shield' | 'sword' | 'chain' | 'warning'>> = { defense: 'shield', offense: 'sword', synergy: 'chain', warning: 'warning' };
+
+/**
+ * Porta o Toglie a gruppi, sempre nello stesso ordine: a sinistra l'etichetta col suo segno (scudo, spada, VS, catena),
+ * a destra le voci; i ruoli come riquadri, come nella Panoramica (spunta verde in Porta, × rossa in Toglie).
+ */
+function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'loss'; none: string }) {
+  const tr = useT();
+  if (!items.length) return <p className="bring-none">{none}</p>;
+  return (
+    <div className={`bring-groups ${side}`}>
+      {KINDS.map(kind => {
+        const group = items.filter(item => (item.kind ?? 'other') === kind);
+        if (!group.length) return null;
+        const icon = KIND_ICON[kind];
+        return (
+          <div key={kind} className={`bring-group ${kind}`}>
+            <span className="bring-label">
+              {kind === 'threats' ? <span className="sym-vs" aria-hidden="true">VS</span> : icon ? <Icon name={icon} /> : null}
+              {tr(`detail.group.${kind}`)}
+            </span>
+            {kind === 'roles' ? (
+              <ul className="bring-roles">
+                {group.map(item => (
+                  <li key={item.text} className="dash-role-tag">
+                    <Icon name={side === 'gain' ? 'check' : 'close'} />
+                    <span className="visually-hidden">{side === 'gain' ? '+' : '−'}</span>{item.text}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <ul className="bring-items">
+                {group.map(item => <li key={item.text}><Typed text={item.text} /></li>)}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /**
  * Il candidato selezionato nella lista, disegnato come la carta del tooltip: testata nei colori dei tipi coi ruoli e quanto
@@ -74,7 +118,11 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const result = item.teamGain;
 
   // Porta: tutto, nello stesso ordine delle caselle della lista (che ne mostrano le prime voci)
-  const brings = bringsOf(item, lang, rulesOf(data)).map(bring => bring.text);
+  // ("Usato con X nel N% dei team" no: è un dato del meta, sta nella sezione Meta)
+  // I ruoli uno per uno (la voce "Porta Pivot, Hazard (mancanti nel team)" diventa un riquadro per ruolo), senza doppioni
+  const brings = bringsOf(item, lang, rulesOf(data)).filter(bring => !bring.usedWith)
+    .flatMap((bring): Bring[] => (bring.roles?.length ? bring.roles.map(text => ({ text, short: text, kind: 'roles' })) : [bring]))
+    .filter((bring, i, all) => all.findIndex(other => other.text === bring.text) === i);
   // Ruoli del set consigliato: per primo il principale (lo stesso delle carte del team, evidenziato), poi gli altri
   const mainRole = cardRoles(set, rulesOf(data))[0];
   // Meta: uso nel meta e i 5 compagni più frequenti (quota dei team che lo usano), chi è già nel team riconosciuto per specie
@@ -92,9 +140,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const setRoles = [...(mainRole ? [mainRole] : []), ...detectRoles(set, rulesOf(data)).filter(role => role !== mainRole)];
   const roleName = (role: (typeof setRoles)[number]) => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang));
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
-  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))];
+  const loses: Bring[] = [
+    ...(changes?.cons.map((c): Bring => ({ text: c.text, short: c.text, kind: kindOfArea(c.area) })) ?? []),
+    ...(item.facts.clashes ?? []).map((text): Bring => { const clean = text.replace(/^⚠\s*/, ''); return { text: clean, short: clean, kind: 'warning' }; }),
+  ];
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
-  if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).map(drop => `${drop.label} ${delta(drop.change)}`));
+  if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).map((drop): Bring => { const text = `${drop.label} ${delta(drop.change)}`; return { text, short: text, kind: 'other' }; }));
   // Problemi risolti o nuovi e meteo: la parte del voto che le aree non spiegano, con la sua pillola
   const extras = before && after ? extrasDelta(before, after) : 0;
   // I punti dei Ruoli a parte, come nella carta del voto (Bonus/Malus non li conta)
@@ -102,8 +153,24 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso
   const showLoses = replacing || loses.length > 0;
 
+  // Se il contenuto non ci sta (molte voci in Porta e Toglie, schermo basso) il set si stringe da solo: niente esagono e
+  // mosse su due colonne. Si rimisura col candidato nuovo e quando la finestra cambia misura
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [tight, setTight] = useState(false);
+  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}`;
+  useLayoutEffect(() => setTight(false), [fitKey]);
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    if (!tight && body && body.scrollHeight - body.clientHeight > 1) setTight(true);
+  });
+  useEffect(() => {
+    const reset = () => setTight(false);
+    window.addEventListener('resize', reset);
+    return () => window.removeEventListener('resize', reset);
+  }, []);
+
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside className={`detail${rank === 1 ? ' first' : ''}${tight ? ' tight' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
@@ -167,19 +234,15 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         )}
       </header>
 
-      <div className="detail-body">
+      <div className="detail-body" ref={bodyRef}>
         <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
           <h4>{tr('detail.brings')}</h4>
-          <ul className="detail-points gain">
-            {brings.length ? brings.map(text => <li key={text}><Typed text={text} /></li>) : <li className="none">{tr('suggest.noDifference')}</li>}
-          </ul>
+          <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
         </section>
         {showLoses && (
           <section className="detail-sec loses">
             <h4>{tr('detail.loses')}</h4>
-            <ul className="detail-points loss">
-              {loses.length ? loses.map(text => <li key={text}><Typed text={text} /></li>) : <li className="none">{tr('detail.losesNothing')}</li>}
-            </ul>
+            <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
           </section>
         )}
 
