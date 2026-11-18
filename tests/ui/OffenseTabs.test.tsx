@@ -175,11 +175,15 @@ describe('Offesa: Generale', () => {
         expect(badge.getAttribute('aria-label')).toMatch(new RegExp(`^${tag} ${n}(, il migliore della colonna)?$`));
       }
     }
-    // In fondo, grigio, quelli che non manda KO in due colpi (niente pezzo se non ce ne sono)
+    // In fondo, grigio, quelli che non manda KO in due colpi (niente pezzo se non ce ne sono): a vista una lineetta (nella
+    // riga del team, in rosso, il numero degli scoperti), il conto nel nome per i lettori di schermo
     const rest = hits.filter(h => h.plain < 50).length;
     const restEl = cell.querySelector('.kob.rest');
     if (rest === 0) expect(restEl).toBeNull();
-    else expect(restEl!.querySelector('b')).toHaveTextContent(new RegExp(`^${rest}$`));
+    else {
+      expect(restEl!.querySelector('b')).toHaveTextContent(restEl!.classList.contains('bad') ? new RegExp(`^${rest}$`) : /^—$/);
+      expect(restEl!.getAttribute('aria-label')).toMatch(new RegExp(` ${rest}$`));
+    }
     return c;
   };
   const tipOf = async () => vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.kot'); if (!el) throw new Error('no tip'); return el; });

@@ -144,14 +144,14 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
               );
             })}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{t('detail.level')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('detail.level')}</span></th>
               {TYPES.map((type, i) => {
                 const level = byType.get(type)?.level ?? 0;
                 return <td key={type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}><span className={`ct-pill ${coverTone(level)}`}>{level}%</span></td>;
               })}
             </tr>
             <tr className="ct-sum ct-best">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{t('odetail.types.best')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('odetail.types.best')}</span></th>
               {TYPES.map((type, i) => {
                 const top = best[i];
                 const who = top === null ? null : battleSpecies(team[top.slot])?.name ?? team[top.slot].species;
