@@ -545,9 +545,36 @@ const STATES: Record<string, State> = {
   'pokemon-long-en': { hash: hash(LONG), lang: 'en', run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => clickText(p, '.slot.filled > .slot-card', /./) },
+  // Menu di una mossa aperto dalla freccia: la mano sulla freccia, il menu sopra il pulsante che riduce il team
+  'editor-move-menu': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
+    await wait(500);
+    const arrow = await p.$('.editor-group.moves .field:nth-of-type(1) .combobox-trailing');
+    if (!arrow) return 'no move tail';
+    await arrow.click();
+    await wait(400);
+    console.log(await p.evaluate(() => {
+      const tail = document.querySelector('.editor-group.moves .combobox-trailing')!;
+      const toggle = document.querySelector('.band-toggle')!.getBoundingClientRect();
+      const top = document.elementFromPoint(toggle.left + toggle.width / 2, toggle.top + toggle.height / 2);
+      const tails = [...document.querySelectorAll('.move-combo .mvp-tail')].map(t => `${t.textContent}:${Math.round(t.getBoundingClientRect().width)}`).join(',');
+      return `tails=${tails} menuOpen=${!!document.querySelector('.editor-group.moves .combobox.open [role=listbox]')} cursor=${getComputedStyle(tail).cursor} overToggle=${top?.closest('[role=listbox]') ? 'menu' : top?.className}`;
+    }));
+    return true;
+  } },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
   'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
+  // Carta del membro (tooltip) passando sul primo Pokémon della tabella dell'Offesa: le mosse come pillole piccole
+  'card-tip': { run: async p => {
+    if (await gradeRow(p, /^Offesa/) !== true) return 'no offense';
+    await wait(500);
+    const mon = await p.$('.def-mon-name');
+    if (!mon) return 'no member';
+    await mon.hover();
+    await wait(1200);
+    return (await p.evaluate(() => !!document.querySelector('.ftip .mcard-move'))) || 'no card tip';
+  } },
   // Difesa: una scheda per sotto-scheda (SIX), con meta, senza meta, a team chiuso e con nomi lunghi
   ...DEFENSE_STATES,
   ...OFFENSE_STATES,
@@ -757,6 +784,21 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
     await wait(800);
+    return true;
+  } },
+  // Offesa › Generale col team chiuso: le pillole delle mosse sotto le barre, la prima col mouse sopra (si apre, coda in diagonale)
+  'offense-chips-hover': { hash: hash(SIX), run: async p => {
+    if (await gradeRow(p, /^Offesa/) !== true) return 'no offense';
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(900);
+    const size = () => p.evaluate(() => { const c = document.querySelector('.mcs .mcp:not(.z)'); return c ? `${Math.round(c.getBoundingClientRect().width)}/${getComputedStyle(c.querySelector('.mvp-tail')!).clipPath.slice(0, 18)}` : 'none'; });
+    const before = await size();
+    const chip = await p.$('.mcs .mcp:not(.z)');
+    if (!chip) return 'no chips';
+    await chip.hover();
+    await wait(600);
+    console.log(`chip closed=${before} open=${await size()} symbols=${await p.evaluate(() => document.querySelectorAll('.mcs .mvp-cat').length)}`);
     return true;
   } },
   // Il "?" del tipo di team aperto

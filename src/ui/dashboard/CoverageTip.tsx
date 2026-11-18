@@ -1,15 +1,14 @@
 import type { CSSProperties } from 'react';
 import { holdBand, type HoldBand } from '../../engine/defense';
-import { getMove } from '../../engine/dex';
 import type { TypeCell } from '../../engine/overviewDashboard';
 import type { TypeName } from '../../engine/types';
-import { gameName, typeName } from '../../i18n/game';
+import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { HOLD_BANDS } from '../defense/holds';
-import { Icon } from '../icons';
-import { Sprite, typeColor } from '../Sprite';
+import { Sprite } from '../Sprite';
 import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
+import { MovePill } from '../MovePill';
 
 /** Il badge dei colpi (OHKO, 2HKO, 3HKO, 4HKO+) dal danno %, con le soglie della scheda Difesa. */
 const bandOf = (pct: number): HoldBand => holdBand(pct / 100);
@@ -27,24 +26,9 @@ function Head({ type, value }: { type: string; value: number }) {
 }
 
 /** La mossa: icona tonda e nome nel colore del suo tipo (alone leggero), poi categoria (fisico/speciale) e potenza. */
-export function MoveLine({ name, type: shown }: { name: string; type?: string | null }) {
-  const lang = useLang();
-  const t = useT();
-  const move = getMove(name);
-  // `shown`: il tipo con cui colpisce davvero (Pixilate & co.), se diverso da quello scritto sulla mossa
-  const type = shown ?? move?.type ?? 'Normal';
-  const category = move?.category === 'Special' ? 'special' : move?.category === 'Physical' ? 'physical' : null;
-  return (
-    <span className="ftip-move" style={{ '--mc': typeColor(type) } as CSSProperties}>
-      <img src={typeIconUrl(type)} alt="" draggable={false} />
-      <span className="ftip-move-name">{gameName('move', name, lang)}</span>
-      {category && (
-        <span className="ftip-move-cat" title={t(`tip.${category}`)}>
-          <Icon name={category} />{move?.basePower ? move.basePower : ''}
-        </span>
-      )}
-    </span>
-  );
+export function MoveLine({ name, type }: { name: string; type?: string | null }) {
+  // `type`: il tipo con cui colpisce davvero (Pixilate & co.), se diverso da quello scritto sulla mossa
+  return <MovePill name={name} type={type} size="sm" className="ftip-move" />;
 }
 
 /** Offesa: i tre migliori colpi del team sul Pokémon di prova del tipo, a podio; il badge dei colpi a nastro sulla sprite. */

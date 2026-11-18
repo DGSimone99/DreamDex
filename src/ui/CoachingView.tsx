@@ -14,6 +14,7 @@ import { rolesValue } from './AreaDetail';
 import { EeveeMoment } from './EeveeMoment';
 import { Icon } from './icons';
 import { useMemberTip } from './MemberCard';
+import { MovePill } from './MovePill';
 import { isThreat, MoreProblems, problemEntries, ProblemChip, type ProblemEntry } from './ProblemPill';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { useFitCount } from './useFit';
@@ -230,7 +231,7 @@ function AlternativesMenu({ id, group, current, problems, onChoose, onClose, but
               aria-label={[proposalName(option, tr, lang), note].filter(Boolean).join(' · ')} onClick={() => onChoose(i)}>
               <Sprite species={option.kind === 'fix' ? option.fix.species : option.fix.member} size={48} />
               <span className="coach-opt-name">
-                <b>{option.kind === 'fix' ? option.fix.species : gameName('move', option.fix.to, lang)}</b>
+                {option.kind === 'fix' ? <b>{option.fix.species}</b> : <MovePill name={option.fix.to} size="sm" />}
                 {types.length > 0 && <span className="coach-opt-types">{types.map(type => <TypeChip key={type} type={type} />)}</span>}
                 {option.kind === 'move' && option.fix.from && <small>{tr('coach.row.insteadMove', { from: gameName('move', option.fix.from, lang) })}</small>}
                 {mixed && option.kind === 'fix' && <small>{seat(option)}</small>}
@@ -271,16 +272,16 @@ function SwapArt({ fix, children }: { fix: CoachFix; children?: ReactNode }) {
 /** La zona del Pokémon di un cambio di mossa: il membro, "Su Kingambit", ~~mossa vecchia~~ → mossa nuova, "cambio di mossa". */
 function MoveArt({ fix, children }: { fix: MoveFix; children?: ReactNode }) {
   const tr = useT();
-  const lang = useLang();
   return (
     <>
       <span className="coach-art-in is-member"><Sprite species={fix.member} size={80} /></span>
       <span className="coach-art-text is-move">
         <span className="coach-art-on">{tr('coach.row.on', { member: fix.member })}</span>
         <span className="coach-art-moves">
-          {fix.from ? <s>{gameName('move', fix.from, lang)}</s> : <span className="coach-art-empty">{tr('coach.row.emptySlot')}</span>}
-          <span aria-hidden="true">→</span>
-          <b>{gameName('move', fix.to, lang)}</b>
+          {/* La mossa che esce, spenta e barrata; quella che entra, piena */}
+          {fix.from ? <s><MovePill name={fix.from} size="sm" className="coach-move-out" /></s> : <span className="coach-art-empty">{tr('coach.row.emptySlot')}</span>}
+          <span className="coach-art-arrow" aria-hidden="true">→</span>
+          <MovePill name={fix.to} className="coach-move-in" />
         </span>
         <small>{tr('coach.row.moveKind')}</small>
         {children}

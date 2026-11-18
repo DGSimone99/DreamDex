@@ -1,12 +1,12 @@
 import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react';
-import { battleName, battleSpecies, dex, getMove } from '../engine/dex';
+import { battleName, battleSpecies, dex } from '../engine/dex';
 import type { StatID, TeamSet } from '../engine/sets';
 import { statLines } from '../engine/statCalc';
-import { anyGameName, gameName, natureName, statShort } from '../i18n/game';
+import { anyGameName, natureName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { FloatTip, useFloatAnchor } from './FloatTip';
-import { Icon } from './icons';
 import { Sprite, typeColor } from './Sprite';
+import { MovePill } from './MovePill';
 import { typeIconUrl } from './typeIcons';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
@@ -51,20 +51,9 @@ function StatHex({ set }: { set: TeamSet }) {
   );
 }
 
-/** Una mossa come lastra inclinata nel colore del suo tipo: icona, nome, categoria e potenza (o "stato"). */
+/** Una mossa come pillola: tessera del tipo, nome, potenza nella coda ("—" per le mosse di stato). */
 function MovePlate({ name, fresh = false }: { name: string; fresh?: boolean }) {
-  const lang = useLang();
-  const t = useT();
-  const move = getMove(name);
-  const type = move?.type ?? 'Normal';
-  const category = move?.category === 'Physical' ? 'physical' : move?.category === 'Special' ? 'special' : null;
-  return (
-    <div className={`mcard-move${fresh ? ' is-changed' : ''}`} style={{ '--mc': typeColor(type) } as CSSProperties}>
-      <img src={typeIconUrl(type)} alt="" draggable={false} />
-      <b>{gameName('move', move?.name ?? name, lang)}</b>
-      <span className="mcard-cat">{category ? <><Icon name={category} />{move?.basePower || ''}</> : t('mcard.status')}</span>
-    </div>
-  );
+  return <MovePill name={name} size="sm" className={`mcard-move${fresh ? ' is-changed' : ''}`} />;
 }
 
 /** EV in breve: le statistiche con EV dalla più carica, "252 Att · 252 Vel · 4 PS". */
