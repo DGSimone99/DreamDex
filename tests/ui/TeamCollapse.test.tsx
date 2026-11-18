@@ -50,7 +50,12 @@ describe('team compresso', () => {
     expect(cards.map(card => card.querySelector('.mini-icon .mon-icon'))).not.toContain(null);
     await user.click(cards[1]);
     expect(container.querySelector('.workspace')).toHaveClass('editing');
+    // Con l'editor aperto il team ha una posizione fissa: aperto, e la freccia non c'è; chiuso l'editor torna compresso
+    expect(container.querySelector('.band')).not.toHaveClass('collapsed');
+    expect(container.querySelector('.band-toggle')).toBeNull();
+    await user.click(container.querySelector<HTMLElement>('.slot.open .editor-close')!);
     expect(container.querySelector('.band')).toHaveClass('collapsed');
+    expect(screen.getByRole('button', { name: 'Espandi team' })).toBeInTheDocument();
   });
 
   it('compresso, un membro con un problema mostra il puntino di avviso', async () => {
@@ -64,7 +69,7 @@ describe('team compresso', () => {
     expect(cards[1].querySelector('.mini-alert.danger')).not.toBeNull();
   });
 
-  it("su uno schermo basso l'editor aperto comprime il team da solo; la freccia lo riapre senza salvarlo; chiuso l'editor torna com'era", async () => {
+  it("su uno schermo basso l'editor aperto comprime il team da solo, senza freccia; chiuso l'editor torna com'era", async () => {
     // jsdom non ha matchMedia: lo finge uno schermo basso
     const short = vi.fn((query: string) => ({
       matches: query.includes('max-height: 759px'), media: query, onchange: null,
@@ -79,8 +84,8 @@ describe('team compresso', () => {
       expect(band()).not.toHaveClass('collapsed');
       await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
       expect(band()).toHaveClass('collapsed');
-      await user.click(screen.getByRole('button', { name: 'Espandi team' }));
-      expect(band()).not.toHaveClass('collapsed');
+      // Niente freccia mentre l'editor è aperto: il team resta compresso e la scelta salvata non cambia
+      expect(container.querySelector('.band-toggle')).toBeNull();
       expect(loadTeamCollapsed(storage)).toBeNull();
       await user.click(container.querySelector<HTMLElement>('.slot.open .editor-close')!);
       expect(band()).not.toHaveClass('collapsed');
