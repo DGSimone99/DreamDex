@@ -280,6 +280,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     stable.onPaste({ ...result.sets[0], favorite: set.favorite }, review.skill.length || review.info.length ? review : undefined);
   };
   const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
+  // Nell'editor gli EV di troppo li dice già "EV usati" (590 / 510 · 80 di troppo: voto bloccato): l'avviso li salta
+  const evOverText = evTotal(set.evs) > EV_TOTAL ? tr('team.evOver', { n: evTotal(set.evs) }) : null;
+  const editorProblems = problems.filter(p => p !== evOverText);
   const memberTip = useMemberTip(500, '.slot-card');
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
@@ -494,11 +497,11 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
             <button type="button" className="apply" ref={applyRef} onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
             <button type="button" onClick={() => onProposalDone?.(false)}>{tr('team.moveProposalCancel')}</button>
           </div>
-        )}{open && problems.length > 0 && (
+        )}{open && editorProblems.length > 0 && (
           // I problemi di legalità detti per esteso, con la via d'uscita
           <div className="member-problems" role="note">
             <Icon name="warning" />
-            <span>{problems.join(' · ')}</span>
+            <span>{editorProblems.join(' · ')}</span>
             <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
           </div>
         )}</>}

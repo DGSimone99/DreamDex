@@ -268,7 +268,7 @@
 /* Schermi alti (1080 e oltre): le targhette delle statistiche più alte e più distanziate, c'è spazio */
 @media (min-width: 1100px) and (min-height: 1000px) {
   .stat-row { padding-top: 8px; padding-bottom: 8px; }
-  .set-editor .stat-rows { gap: 9px; --ev-h: 28px; }
+  .set-editor .stat-rows { gap: 9px; --ev-h: 28px; --ev-w: 140px; }
   /* Campi di Set e Mosse più alti: lo spazio in più si riempie di contenuto, non di vuoto */
   .set-editor .editor-side .combobox input { height: 40px; }
   .set-editor .move-combo { --mvp-h: 40px; --mvp-r: 12px; --mvp-cut: 13px; }

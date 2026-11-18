@@ -551,6 +551,19 @@ const STATES: Record<string, State> = {
     console.log(`drawerOver=${await p.evaluate(() => { const d = document.querySelector('.drawer'); return d ? d.scrollHeight - d.clientHeight : -1; })} drawerFree=${await p.evaluate(() => { const d = document.querySelector('.drawer'); const e = d?.querySelector('.set-editor'); if (!d || !e) return -1; const cs = getComputedStyle(d); return Math.round(d.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom) - e.getBoundingClientRect().bottom); })} statRow=${await p.evaluate(() => Math.round(document.querySelectorAll('.stat-row:not(.stat-head)')[0]?.getBoundingClientRect().height ?? 0))} rows=${await p.evaluate(() => { const e = document.querySelector('.drawer .set-editor') as HTMLElement | null; if (!e) return ''; return getComputedStyle(e).gridTemplateRows + ' | ' + [...e.children].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',') + ' | ' + ['.stats-cell > *', '.editor-side > *', '.evs > *'].map(q => [...e.querySelectorAll(q)].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',')).join(' / '); })}`);
     return true;
   } },
+  // EV oltre il massimo: il totale in alto dice quanti di troppo e che il voto è bloccato, senza l'avviso rosso nell'editor
+  'editor-ev-over': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
+    await wait(500);
+    const hp = await p.$('.drawer .ev-input');
+    if (!hp) return 'no ev input';
+    await hp.click({ count: 3 });
+    await hp.type('252');
+    await p.keyboard.press('Tab');
+    await wait(400);
+    console.log(`evOver=${await p.evaluate(() => { const e = document.querySelector('.ev-total.over'); const t = document.querySelector('.stats-toolbar'); return e ? `${e.textContent} toolbarH=${Math.round(t!.getBoundingClientRect().height)} cut=${(e.querySelector('.ev-left') as HTMLElement).scrollWidth > (e.querySelector('.ev-left') as HTMLElement).clientWidth} note=${!!document.querySelector('.drawer .member-problems')}` : 'none'; })}`);
+    return true;
+  } },
   // Velocità finale col mouse sopra: il tooltip col posto nel meta e i vicini (si apre verso sinistra)
   'editor-speed-tip': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';

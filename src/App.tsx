@@ -128,8 +128,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [savedCollapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
   // Schermo basso (portatili): con l'editor aperto il team si comprime da solo, così l'editor sta in una schermata
   const short = useMediaQuery(SHORT_SCREEN);
-  // La freccina durante la compressione automatica riapre il team solo per questo editor (non si salva)
-  const [keepTeamOpen, setKeepTeamOpen] = useState(false);
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
@@ -199,11 +197,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   // Il membro aperto nell'editor: l'editor prende il posto della sezione finché resta aperto
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  useEffect(() => { if (editingIndex === null) setKeepTeamOpen(false); }, [editingIndex]);
-  const autoCollapsed = short && editingIndex !== null && !savedCollapsed && !keepTeamOpen;
-  const collapsed = savedCollapsed || autoCollapsed;
+  // Con l'editor aperto il team non si riduce e non si riapre a mano: aperto sugli schermi normali (l'editor ha la sua
+  // altezza giusta), compresso su quelli bassi (se no l'editor non ci sta); chiuso l'editor torna la scelta salvata
+  const editingOpen = editingIndex !== null;
+  const collapsed = editingOpen ? short : savedCollapsed;
   const toggleCollapsed = () => {
-    if (autoCollapsed) { setKeepTeamOpen(true); return; }
+    if (editingOpen) return;
     setCollapsed(c => {
       if (storage) saveTeamCollapsed(!c, storage);
       return !c;
@@ -453,10 +452,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
           incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
-        <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
+        {/* Niente freccia mentre l'editor è aperto: lì il team ha una posizione fissa */}
+        {!editingOpen && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />
-        </button>
+        </button>}
       </div>
       <div className={`workspace${editingIndex !== null ? ' editing' : ''}${fillOpen ? ' fill-open' : ''}`} ref={workspaceRef}>
       <main className="tab-body">

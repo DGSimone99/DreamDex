@@ -683,7 +683,7 @@ export const en = {
   'editor.evSlider': "{stat} EVs, slider",
   'editor.evTotal': "EVs used",
   'editor.evLeft': "{n} left",
-  'editor.evOver': "{n} too many",
+  'editor.evOver': "{n} too many: grade blocked",
   'editor.final': "Final value",
   'editor.baseHead': "Base",
   'editor.ivHead': "IVs",

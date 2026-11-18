@@ -77,7 +77,11 @@
 .set-editor .evs .spread-panel { display: contents; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
 .stat-rows { display: grid; gap: 5px; margin-top: var(--sp-2); }
-.stat-row { display: grid; grid-template-columns: 66px 92px minmax(0, 1fr) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
+/* Come le righe di Champions: nome e base a sinistra, poi uno spazio libero, e dalla metà della targhetta la barra corta
+   (--ev-w) con EV, IV e finale */
+.stat-rows { --ev-w: 120px; }
+.stat-row > :nth-child(3) { grid-column: 4; }
+.stat-row { display: grid; grid-template-columns: 66px 92px minmax(0, 1fr) var(--ev-w) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
 /* Intestazione delle colonne e selettore del livello sopra i valori finali */
 /* Icona della statistica (come in Champions) prima del nome */
 .stat-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
@@ -135,8 +139,8 @@
   position: relative;
   border-radius: 10px 3px 10px 3px;
   /* Due metà come le righe di Champions: nome e base sul Raised, poi una linea inclinata e la metà con barra, EV, IV e
-     finale un po' più scura (--split: dove cade il taglio, appena prima della barra) */
-  --split: 178px;
+     finale un po' più scura (--split: dove cade il taglio, appena prima della barra, a metà targhetta) */
+  --split: calc(100% - var(--ev-w) - 212px);
   --half-a: var(--raised);
   --half-b: color-mix(in srgb, var(--raised) 62%, #000);
   --cut: var(--line);
@@ -175,6 +179,10 @@
 .ev-total .ev-left { color: var(--faint); }
 .ev-total.over strong, .ev-total.over .ev-left { color: var(--bad); }
 .ev-total.over .ev-meter > span { background: var(--bad); }
+/* Oltre il massimo la barretta lascia il posto al messaggio (590 / 510 · 80 di troppo: voto bloccato) */
+.ev-total.over .ev-meter { display: none; }
+.ev-total { min-width: 0; }
+.ev-total .ev-left { overflow: hidden; text-overflow: ellipsis; }
 /* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
 .spread-panel > summary {
   display: inline-flex;

@@ -685,7 +685,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.evSlider': "EV {stat}, cursore",
   'editor.evTotal': "EV usati",
   'editor.evLeft': "{n} liberi",
-  'editor.evOver': "{n} di troppo",
+  'editor.evOver': "{n} di troppo: voto bloccato",
   'editor.final': "Valore finale",
   'editor.baseHead': "Base",
   'editor.ivHead': "IV",
