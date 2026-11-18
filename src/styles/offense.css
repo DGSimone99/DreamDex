@@ -177,7 +177,7 @@
 .kob.has-setup::after { content: ""; position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
 .kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
 .kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
-.kob.two { color: var(--good); background: color-mix(in srgb, var(--good) 20%, transparent); }
+.kob.two { color: var(--good); background: color-mix(in srgb, var(--good) 22%, transparent); }
 .kob.two { --kob-ink: color-mix(in srgb, var(--good) 35%, var(--text)); }
 .kob.ohko:hover { box-shadow: inset 0 1px 0 color-mix(in srgb, white 22%, transparent), 0 0 8px color-mix(in srgb, var(--good) 35%, transparent); }
 .kob.two:hover { background: color-mix(in srgb, var(--good) 32%, transparent); }
@@ -373,7 +373,7 @@
  * centrata sopra la colonna, sfuma ai due lati, un filo sotto. Le colonne semplici (Pokémon, Offesa) restano scritte.
  */
 .def-members thead th:has(> .bar-head) { position: relative; text-align: center; color: var(--text);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent) center bottom var(--sp-2) / 100% 26px no-repeat; }
+  background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent) center bottom var(--sp-2) / 100% 26px no-repeat; }
 .def-members thead th:has(> .bar-head)::after { content: ""; position: absolute; left: 0; right: 0; bottom: var(--sp-2); height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .def-members thead th:has(> .bar-head) .bar-head-ic { color: var(--text); }
 /* Il gruppo (icona, parola, "?") al centro della fascia, che è alta 26px e sta 4px sopra il fondo della testata; icona e "?"
