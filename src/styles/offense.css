@@ -376,5 +376,9 @@
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent) center bottom var(--sp-2) / 100% 26px no-repeat; }
 .def-members thead th:has(> .bar-head)::after { content: ""; position: absolute; left: 0; right: 0; bottom: var(--sp-2); height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .def-members thead th:has(> .bar-head) .bar-head-ic { color: var(--text); }
+/* Il gruppo (icona, parola, "?") al centro della fascia, che è alta 26px e sta 4px sopra il fondo della testata; icona e "?"
+   un pixel più su: la parola in maiuscolo sta otticamente più in alto del centro della sua riga */
+.def-members thead th:has(> .bar-head) { padding-bottom: 9px; }
+.def-members thead th:has(> .bar-head) :is(.bar-head-ic, .bar-head ~ *) { position: relative; top: -1px; }
 .bar-head-ic { display: inline-flex; flex: none; color: var(--muted); }
 .bar-head-ic .icon { width: 14px; height: 14px; }

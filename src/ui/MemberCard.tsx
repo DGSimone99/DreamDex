@@ -7,6 +7,7 @@ import { useLang, useT } from '../i18n/react';
 import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Sprite, typeColor } from './Sprite';
 import { MovePill } from './MovePill';
+import { NatureArrow } from './NatureArrow';
 import { typeIconUrl } from './typeIcons';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
@@ -75,7 +76,8 @@ export function MemberKit({ set, was }: { set: TeamSet; was?: TeamSet }) {
       <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)}>{set.item ? anyGameName(set.item, lang) : '—'}</span>
       <small>{t('mcard.nature')}</small>
       <span className={diff(was?.nature === set.nature)}>{set.nature ? natureName(set.nature, lang) : '—'}{nature?.plus && nature.minus && (
-        <em> +{statShort(nature.plus as StatID, lang)} −{statShort(nature.minus as StatID, lang)}</em>
+        // Le freccette di Champions; il segno resta nel testo per chi legge senza vedere
+        <em className="kit-nature"> <span className="up"><NatureArrow dir="up" /><span className="visually-hidden">+</span>{statShort(nature.plus as StatID, lang)}</span>{' '}<span className="down"><NatureArrow dir="down" /><span className="visually-hidden">−</span>{statShort(nature.minus as StatID, lang)}</span></em>
       )}</span>
       {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
       <small>{t('mcard.ability')}</small><span className={diff(was?.ability === set.ability)}>{battleAbility(set) || set.ability ? anyGameName(battleAbility(set) || set.ability, lang) : '—'}</span>

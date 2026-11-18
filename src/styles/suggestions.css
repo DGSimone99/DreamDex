@@ -311,7 +311,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Porta in verde, Toglie in rosso: un segno davanti a ogni voce */
 /* Effetto sul team: una riga di pillole per area */
 .detail .effect .detail-areas { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
-.detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 9px; border: 1px solid var(--line); border-radius: 3px; font-size: var(--fs-section); }
+.detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 9px; border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 70%); font-size: var(--fs-section); }
 .detail .effect .detail-areas .change { font: 700 var(--fs-section)/1 var(--display); font-style: italic; color: var(--good); min-width: 0; }
 .detail .effect .detail-areas .change.worse { color: var(--bad); }
 .detail .effect .detail-areas .change.same { color: var(--faint); }
@@ -344,24 +344,27 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .meta-mates .mate-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meta-mates .mate-check { display: grid; place-items: center; }
 .meta-mates .icon { width: 13px; height: 13px; color: var(--accent); }
-.meta-mates .mate-bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--mate-c) calc(var(--share) * 100%), var(--field) 0); }
+.meta-mates .mate-bar { height: 7px; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); background: linear-gradient(rgba(255, 255, 255, 0.3) 0 1px, transparent 1px) 0 0 / calc(var(--share) * 100%) 100% no-repeat, linear-gradient(90deg, var(--mate-c) calc(var(--share) * 100%), var(--field) 0); }
 .meta-mates strong { font-size: var(--fs-small); font-weight: 600; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .meta-mates li.in-team .mate-name { color: var(--accent); }
 .meta-mates li.in-team strong { color: var(--text); }
 .detail-roles li.main { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; }
 .detail-id h3 { font-style: italic; }
 .detail-score strong { font-style: italic; }
+/* I titoli dei gruppi della scheda (Porta, Toglie, Set consigliato, Meta) come la fascia di Pokémon Champions: a sinistra
+   (le colonne affiancate non hanno un centro comune), una fascia chiara che sfuma verso destra e un filo sotto */
 .detail-sec h4 {
-  display: inline-block;
-  padding: 3px 20px 3px 9px;
-  font: 700 var(--fs-caption)/1.2 var(--display);
-  font-style: italic;
-  letter-spacing: 0.02em;
+  position: relative;
+  display: block;
+  padding: 4px 24px 4px 9px;
+  font: 600 var(--fs-small)/1.2 var(--display);
+  letter-spacing: 0.01em;
   text-transform: none;
-  color: var(--on-plate);
-  background: var(--plate);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+  color: var(--text);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 90%, white), transparent 70%);
 }
+.detail-sec h4::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
+.detail-sec h4.visually-hidden::after { content: none; }
 .detail-reasons li::before { background: var(--accent); }
 /* Etichetta solo per gli screen reader (Effetto sul team): niente targhetta magenta, il ritaglio resta quello che la nasconde */
 .detail-sec h4.visually-hidden { padding: 0; clip-path: inset(50%); }
@@ -634,3 +637,6 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .version-mark.compact { padding: 1px 5px; font-size: var(--fs-label); }
 .version-mark.scarlet { color: #ffd9d2; background: #5a1a14; box-shadow: inset 0 0 0 1px #ff6a4d; }
 .version-mark.violet { color: #e8dbff; background: #33195c; box-shadow: inset 0 0 0 1px #a774ff; }
+/* La natura nel set (scheda del candidato, tooltip della carta): freccette di Champions accanto alle statistiche */
+.kit-nature > span { display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+.kit-nature .nature-arrow { width: 11px; height: 11px; }

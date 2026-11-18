@@ -447,6 +447,17 @@
 .wh-mon > * { width: 26px !important; height: 26px !important; flex: none; }
 .mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }
 .mc .wh-mon img { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
+/* Come le mosse chiuse dell'Offesa (Pokémon Champions): tessera quadrata col tipo o la minaccia sul suo colore, corpo scuro
+   che sfuma, il danno a destra; angoli alternati piccoli. Il nome si apre passando sopra, come prima */
+.mcs.wh .mc { height: 24px; gap: 0; padding: 0; overflow: hidden; border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 80%); box-shadow: inset 0 0 0 1px var(--line); }
+.mcs.wh .mc:hover, .mcs.wh .mc:focus-visible { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, var(--raised)), var(--fade-end) 80%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 70%, var(--line)); }
+.mcs.wh .mc > img { flex: none; width: 24px; height: 24px; border-radius: 0; background: var(--c); }
+/* La minaccia del meta con la sua icona da box (40x30), ridotta a 0,8 nella tessera */
+.mcs.wh .wh-mon { flex: none; display: grid; place-items: center; width: 32px; height: 24px; overflow: hidden; background: color-mix(in srgb, var(--c) 45%, var(--panel)); }
+.mcs.wh .wh-mon > .mon-icon { flex: none; margin: 0; transform: scale(0.8); image-rendering: pixelated; }
+.mcs.wh .mc .mc-name { margin-right: 0; }
+.mcs.wh .mc:hover .mc-name, .mcs.wh .mc:focus-visible .mc-name { padding-left: var(--sp-4); }
+.mcs.wh .mc b { padding: 0 var(--sp-4) 0 var(--sp-3); }
 /* Come nell'Offesa: le pastiglie dei colpi peggiori solo se la cornice ha posto per sei righe con loro */
 @container (max-height: 500px) { .def-general .mcs.wh { display: none; } }
 

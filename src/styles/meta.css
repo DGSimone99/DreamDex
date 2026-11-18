@@ -77,12 +77,13 @@
 .meta-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
 .meta-moves li { display: flex; min-width: 0; }
 .meta-moves li .mvp { flex: 1; }
-.meta-mates { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
-.meta-mates li > * { display: grid; place-items: center; width: 44px; height: 42px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
-.meta-mates button { cursor: pointer; color: inherit; }
-@media (hover: hover) { .meta-mates button:hover { border-color: var(--accent); background: var(--accent-wash); } }
-.meta-mates .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
-.meta-mates span[title] { opacity: 0.7; }
+/* Solo nella scheda Meta (ul): la scheda del candidato ha una lista con lo stesso nome (ol), con righe nome + barra */
+ul.meta-mates { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
+ul.meta-mates li > * { display: grid; place-items: center; width: 44px; height: 42px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
+ul.meta-mates button { cursor: pointer; color: inherit; }
+@media (hover: hover) { ul.meta-mates button:hover { border-color: var(--accent); background: var(--accent-wash); } }
+ul.meta-mates .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
+ul.meta-mates span[title] { opacity: 0.7; }
 /* Contro il tuo team: sotto "Spesso con", separato da un filo; testa con l'etichetta e la targhetta inclinata delle
    minacce della Panoramica (scoperta rossa, a fatica gialla, gestito verde, nel tuo team ciano), poi le righe dello
    scudo e della spada su Raised (sprite 28px dei membri, parole, conto colorato) e i link ciano alla Coverage meta */
