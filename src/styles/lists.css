@@ -614,9 +614,9 @@
   .set-editor > :not(.editor-head, .stats-cell, .editor-side, .editor-foot) { grid-row: 2; margin-bottom: var(--ed-gap); }
   .set-editor > .stats-cell, .set-editor > .editor-side { grid-row: 3; }
   .set-editor > .editor-foot { grid-row: 4; margin-top: var(--ed-gap); }
-  /* Statistiche: la barra in alto ferma, le righe si dividono l'altezza */
+  /* Statistiche: la barra in alto ferma, le righe si dividono l'altezza attaccate fra loro (righe alternate senza spazi in mezzo, come in Champions) */
   .set-editor .stats-cell > .evs { display: flex; flex-direction: column; }
-  .set-editor .evs .stat-rows { flex: 1; align-content: space-evenly; }
+  .set-editor .evs .stat-rows { flex: 1; align-content: stretch; grid-auto-rows: 1fr; gap: 0; }
   /* Set e Mosse: metà altezza ciascuno; nel Set le due righe restano vicine al centro, nelle Mosse i campi si distanziano */
   .set-editor .editor-side { grid-template-rows: 1fr 1fr; align-content: stretch; }
   .set-editor .editor-side > .editor-group.moves { align-content: space-evenly; }
