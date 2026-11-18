@@ -144,7 +144,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
             })}
             {/* In fondo, come nell'Offesa: la Copertura di ogni tipo e chi lo regge meglio */}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{t('ddetail.level')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('ddetail.level')}</span></th>
               {rows.map((row, i) => (
                 <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}>
                   <span className={`ct-pill ${levelTone(row.level)}`}>{row.level}%</span>
@@ -152,7 +152,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               ))}
             </tr>
             <tr className="ct-sum ct-best">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{t('odetail.types.best')}</th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('odetail.types.best')}</span></th>
               {rows.map((row, i) => {
                 const top = best[i];
                 const who = top === null ? null : battleName(team[top.slot]);

@@ -28,8 +28,9 @@
 .meta-card .who { gap: 1px; }
 .meta-use { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); }
 .meta-use b { flex: none; font: 700 var(--fs-small)/16px var(--display); font-style: italic; color: var(--text); font-variant-numeric: tabular-nums; }
-.meta-use i { flex: 1; height: 4px; border-radius: 2px; background: var(--field); overflow: hidden; }
-.meta-use i::before { content: ''; display: block; width: var(--w); height: 100%; border-radius: 2px; background: var(--accent); }
+/* La barra dell'uso come quella di Champions: fessura incassata, angoli dritti, riempimento con un filo chiaro in alto */
+.meta-use i { flex: 1; height: 5px; background: var(--field); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); overflow: hidden; }
+.meta-use i::before { content: ''; display: block; width: var(--w); height: 100%; background: linear-gradient(rgba(255, 255, 255, 0.4) 0 1px, transparent 1px), var(--accent); }
 /* "Tuo" sul bordo alto della targhetta del nome, a sinistra (a destra può esserci la forma: MEGA, THERIAN…) */
 .meta-mine { position: absolute; z-index: 1; top: -10px; left: 8px; padding: 1px var(--sp-3); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
   border-radius: 3px; background: var(--ground); color: var(--accent-ink); font: 700 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; }
@@ -73,22 +74,26 @@
 .meta-kv dt { color: var(--muted); }
 .meta-kv dd { margin: 0; font-weight: 500; }
 .meta-kv small { color: var(--faint); font-size: var(--fs-caption); font-weight: 400; }
-.meta-sub h4 { margin: 0 0 var(--sp-3); color: var(--muted); font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; }
+/* I titoli della scheda (Mosse più usate, Spesso con, Contro il tuo team) come la fascia di Champions a sinistra */
+.meta-sub h4, .meta-vs .mvs-head h4 { position: relative; margin: 0 0 var(--sp-3); padding: 4px 24px 4px 9px; color: var(--text); font: 600 var(--fs-small)/1.2 var(--display); letter-spacing: 0.01em; text-transform: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 90%, white), transparent 70%); }
+.meta-sub h4::after, .meta-vs .mvs-head h4::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 .meta-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
 .meta-moves li { display: flex; min-width: 0; }
 .meta-moves li .mvp { flex: 1; }
-.meta-mates { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
-.meta-mates li > * { display: grid; place-items: center; width: 44px; height: 42px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
-.meta-mates button { cursor: pointer; color: inherit; }
-@media (hover: hover) { .meta-mates button:hover { border-color: var(--accent); background: var(--accent-wash); } }
-.meta-mates .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
-.meta-mates span[title] { opacity: 0.7; }
+/* Solo nella scheda Meta (ul): la scheda del candidato ha una lista con lo stesso nome (ol), con righe nome + barra */
+ul.meta-mates { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
+ul.meta-mates li > * { display: grid; place-items: center; width: 44px; height: 42px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
+ul.meta-mates button { cursor: pointer; color: inherit; }
+@media (hover: hover) { ul.meta-mates button:hover { border-color: var(--accent); background: var(--accent-wash); } }
+ul.meta-mates .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
+ul.meta-mates span[title] { opacity: 0.7; }
 /* Contro il tuo team: sotto "Spesso con", separato da un filo; testa con l'etichetta e la targhetta inclinata delle
    minacce della Panoramica (scoperta rossa, a fatica gialla, gestito verde, nel tuo team ciano), poi le righe dello
    scudo e della spada su Raised (sprite 28px dei membri, parole, conto colorato) e i link ciano alla Coverage meta */
-.meta-vs { display: flex; flex-direction: column; gap: var(--sp-3); padding-top: var(--sp-5); border-top: 1px solid var(--line-soft); }
+.meta-vs { display: flex; flex-direction: column; gap: var(--sp-3); padding-top: var(--sp-3); }
 .mvs-head { display: flex; align-items: center; gap: var(--sp-4); }
-.meta-vs .mvs-head h4 { margin: 0; }
+.meta-vs .mvs-head h4 { flex: 1; min-width: 0; margin: 0; }
 .mvs-tag { padding: 0 9px 0 7px; font: 600 var(--fs-caption)/16px var(--ui); color: var(--k); background: var(--k-bg); white-space: nowrap;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .mvs-tag.open, .mvs-count.open { --k: var(--bad); --k-bg: var(--bad-bg); }
@@ -98,7 +103,7 @@
 .mvs-note { margin: 0; color: var(--muted); font-size: var(--fs-caption); line-height: 1.3; }
 .mvs-rows { display: grid; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
 .meta-profile .mvs-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); width: auto; min-height: 32px;
-  margin: 0; padding: var(--sp-1) var(--sp-4); border: 0; background: var(--raised); }
+  margin: 0; padding: var(--sp-1) var(--sp-4); border: 0; border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 85%); box-shadow: inset 0 0 0 1px var(--line); }
 .mvs-row > .icon { color: var(--muted); }
 .mvs-who { display: flex; flex-wrap: wrap; align-items: center; column-gap: 1px; row-gap: 0; min-width: 0; font-size: var(--fs-small); color: var(--muted); }
 .mvs-member { display: inline-grid; place-items: center; width: 28px; height: 28px; }

@@ -11,7 +11,7 @@
   --mvp-cut: 11px;
   --mvp-tail-w: 70px;
   /* Corpo: più chiaro a sinistra, vicino al tipo, fino al nero pieno a destra */
-  --mvp-body: linear-gradient(90deg, color-mix(in srgb, var(--raised) 85%, white) 0%, var(--raised) 22%, #000 100%);
+  --mvp-body: linear-gradient(90deg, color-mix(in srgb, var(--raised) 85%, white) 0%, var(--raised) 22%, var(--fade-end) 60%);
   display: inline-flex;
   align-items: stretch;
   min-width: 0;
@@ -47,6 +47,9 @@
   font-variant-numeric: tabular-nums;
 }
 .mvp-none { color: var(--faint); font-weight: 600; }
+/* Mossa di stato (solo il simbolo): coda stretta attorno al simbolo, non la larghezza fissa delle code col numero */
+.mvp-tail.st { width: auto; padding: 0 var(--sp-5) 0 calc(var(--mvp-cut) + var(--sp-2)); }
+.mcp .mvp-tail.st { padding: 0 var(--sp-2); }
 /* Simbolo della categoria, piccolo, prima del numero (in fondo alla coda per le mosse di stato) */
 .mvp-cat { display: flex; }
 .mvp-num { grid-column: 2; justify-self: center; }
@@ -71,7 +74,7 @@
  * Campo di una mossa nell'editor: lo stesso disegno sul campo dove si scrive. La tessera e la coda stanno sopra il
  * campo, il testo scorre fra le due; la coda (con la freccia del menu dentro) si clicca come la freccia: apre il menu.
  */
-.move-combo { --mvp-tail-w: 70px; --mvp-body: linear-gradient(90deg, color-mix(in srgb, var(--raised) 85%, white) 0%, var(--raised) 22%, #000 100%); --mvp-h: 34px; --mvp-r: 10px; --mvp-q: 3px; --mvp-cut: 11px; }
+.move-combo { --mvp-tail-w: 70px; --mvp-body: linear-gradient(90deg, color-mix(in srgb, var(--raised) 85%, white) 0%, var(--raised) 22%, var(--fade-end) 60%); --mvp-h: 34px; --mvp-r: 10px; --mvp-q: 3px; --mvp-cut: 11px; }
 .combobox.move-combo input {
   height: var(--mvp-h);
   padding: 0 calc(var(--mvp-tail-w) + 22px + var(--sp-3)) 0 calc(var(--mvp-h) + var(--sp-5));
