@@ -302,14 +302,6 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .detail .detail-sec:not(.wide) + .detail-sec:not(.wide) { border-left: 1px solid var(--line-soft); }
 .detail:not(.detail-empty) > .detail-actions { border-top: 1px solid var(--line-soft); }
 /* Porta in verde, Toglie in rosso: un segno davanti a ogni voce */
-.detail-points { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-1); font-size: var(--fs-section); line-height: 1.35; }
-.detail-points li { margin: 0; }
-.detail-points li { position: relative; padding-left: var(--sp-7); }
-.detail-points li::before { position: absolute; left: 0; top: 0; font-weight: 700; }
-.detail-points.gain li::before { content: '+'; color: var(--good); }
-.detail-points.loss li::before { content: '−'; color: var(--bad); }
-.detail-points li.none { padding-left: 0; color: var(--faint); }
-.detail-points li.none::before { content: none; }
 /* Effetto sul team: una riga di pillole per area */
 .detail .effect .detail-areas { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 9px; border: 1px solid var(--line); border-radius: 3px; font-size: var(--fs-section); }

@@ -513,6 +513,21 @@ const STATES: Record<string, State> = {
   'pokemon-sheet': { run: async p => { await tab(p, 'pokemon'); await wait(1500); const picks = await p.$$('.suggestions .pick'); await picks[1]?.evaluate(el => (el as HTMLElement).click()); await wait(500); return picks.length > 1; } },
   // Carta sotto il mouse (la prima è selezionata: la seconda in alto, la prima in basso, l'ultima): stampa quanto esce dalla lista (cut = px tagliati)
   'pokemon-hover': { run: async p => hoverCard(p, 1) },
+  // Modo Sostituisci: il dettaglio con Porta e Toglie a gruppi (ruoli a riquadri, scudo, spada, VS)
+  'pokemon-replace': { run: async p => {
+    await tab(p, 'pokemon');
+    await wait(400);
+    if (!await clickText(p, '.mode-switch button, .toolbar button', /^Sostituisci$/)) return 'no replace button';
+    await wait(1500);
+    // Allineamento: per ogni gruppo, la base della scritta dell'etichetta e quella della prima riga delle voci (stessa = 0)
+    // (codice come stringa: tsx aggiunge __name alle funzioni con nome, che nella pagina non esiste)
+    console.log(`bringAlign=${await p.evaluate(`[...document.querySelectorAll('.detail .bring-group')].map(g => {
+      const textOf = el => { if (!el) return null; const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: n => n.textContent.trim() ? 1 : 3 }); return walker.nextNode(); };
+      const bottom = el => { const n = textOf(el); if (!n) return NaN; const r = document.createRange(); r.selectNodeContents(n); const b = r.getClientRects()[0]; return b ? b.bottom : NaN; };
+      return g.classList[1] + ':' + (bottom(g.querySelector('.bring-label')) - bottom(g.querySelector('li'))).toFixed(1);
+    }).join(' ')`)}`);
+    return (await p.evaluate(() => !!document.querySelector('.detail .bring-groups.loss, .detail .loses'))) || 'no Toglie';
+  } },
   'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
   'pokemon-hover-last': { run: async p => hoverCard(p, 5) },
   // Lista candidati in stile Menu (pillole), team aperto e nascosto

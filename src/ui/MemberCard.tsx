@@ -1,8 +1,8 @@
 import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react';
-import { battleName, battleSpecies, dex } from '../engine/dex';
+import { battleAbility, battleName, battleSpecies, dex } from '../engine/dex';
 import type { StatID, TeamSet } from '../engine/sets';
 import { statLines } from '../engine/statCalc';
-import { anyGameName, natureName, statShort } from '../i18n/game';
+import { anyGameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Sprite, typeColor } from './Sprite';
@@ -23,7 +23,7 @@ const at = (i: number, r: number) => {
 const ring = (f: number) => HEX_ORDER.map((_, i) => at(i, R * f).map(n => n.toFixed(1)).join(',')).join(' ');
 
 /** Le statistiche finali a esagono; quella che la natura alza in verde, quella che abbassa in rosso. */
-function StatHex({ set }: { set: TeamSet }) {
+export function StatHex({ set }: { set: TeamSet }) {
   const lang = useLang();
   const lines = statLines(set);
   const byId = new Map(lines.map(l => [l.stat, l]));
@@ -52,13 +52,63 @@ function StatHex({ set }: { set: TeamSet }) {
 }
 
 /** Una mossa come pillola: tessera del tipo, nome, potenza nella coda ("—" per le mosse di stato). */
-function MovePlate({ name, fresh = false }: { name: string; fresh?: boolean }) {
-  return <MovePill name={name} size="sm" className={`mcard-move${fresh ? ' is-changed' : ''}`} />;
+function MovePlate({ name, fresh = false, item = false }: { name: string; fresh?: boolean; item?: boolean }) {
+  return <MovePill name={name} size="sm" className={`mcard-move${fresh ? ' is-changed' : ''}`} role={item ? 'listitem' : undefined} />;
 }
 
 /** EV in breve: le statistiche con EV dalla più carica, "252 Att · 252 Vel · 4 PS". */
 const evLine = (set: TeamSet, lang: ReturnType<typeof useLang>) =>
   (Object.entries(set.evs) as [StatID, number][]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([s, v]) => `${v} ${statShort(s, lang)}`).join(' · ');
+
+/**
+ * Strumento, natura, abilità ed EV (e la Tera, se c'è) in una griglia con le etichette. `was`: il set di prima, le parti
+ * diverse si accendono in azzurro. Lo stesso blocco nella carta del tooltip e nel dettaglio dei candidati.
+ */
+export function MemberKit({ set, was }: { set: TeamSet; was?: TeamSet }) {
+  const t = useT();
+  const lang = useLang();
+  const nature = set.nature ? dex.natures.get(set.nature) : null;
+  const evs = evLine(set, lang);
+  const diff = (same: boolean) => (was && !same ? 'is-changed' : undefined);
+  return (
+    <div className="mcard-kit">
+      <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)}>{set.item ? anyGameName(set.item, lang) : '—'}</span>
+      <small>{t('mcard.nature')}</small>
+      <span className={diff(was?.nature === set.nature)}>{set.nature ? natureName(set.nature, lang) : '—'}{nature?.plus && nature.minus && (
+        <em> +{statShort(nature.plus as StatID, lang)} −{statShort(nature.minus as StatID, lang)}</em>
+      )}</span>
+      {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
+      <small>{t('mcard.ability')}</small><span className={diff(was?.ability === set.ability)}>{battleAbility(set) || set.ability ? anyGameName(battleAbility(set) || set.ability, lang) : '—'}</span>
+      <small>EV</small><span className={diff(!was || evLine(was, lang) === evs)}><em>{evs || '—'}</em></span>
+      {set.teraType && <><small>{t('editor.tera')}</small><span className={diff(was?.teraType === set.teraType)}>{typeName(set.teraType, lang)}</span></>}
+    </div>
+  );
+}
+
+/**
+ * Le statistiche finali a esagono e le quattro mosse come pillole (le mosse nuove rispetto a `was` col punto azzurro).
+ * `movesLabel`: fuori dal tooltip (nel dettaglio) le mosse sono una lista con quel nome, per i lettori di schermo.
+ */
+export function MemberStatsMoves({ set, was, movesLabel }: { set: TeamSet; was?: TeamSet; movesLabel?: string }) {
+  return (
+    <div className="mcard-body">
+      <StatHex set={set} />
+      <MemberMoves set={set} was={was} movesLabel={movesLabel} />
+    </div>
+  );
+}
+
+/** Le quattro mosse come pillole (le nuove rispetto a `was` col punto azzurro); `movesLabel`: una lista con quel nome. */
+export function MemberMoves({ set, was, movesLabel, className = '' }: { set: TeamSet; was?: TeamSet; movesLabel?: string; className?: string }) {
+  const t = useT();
+  const moves = set.moves.filter(Boolean);
+  const oldMoves = new Set((was?.moves ?? []).filter(Boolean));
+  return (
+    <div className={`mcard-moves${className ? ` ${className}` : ''}`} {...(movesLabel ? { role: 'list', 'aria-label': movesLabel } : {})}>
+      {moves.length ? moves.map((move, i) => <MovePlate key={`${move}#${i}`} name={move} fresh={!!was && !oldMoves.has(move)} item={!!movesLabel} />) : <span className="mcard-none">{t('mcard.noMoves')}</span>}
+    </div>
+  );
+}
 
 /**
  * La carta di un Pokémon del team, per i tooltip DreamDex: testata nei colori dei suoi tipi con la sprite grande, il
@@ -67,15 +117,8 @@ const evLine = (set: TeamSet, lang: ReturnType<typeof useLang>) =>
  * dal Coaching): le parti diverse (strumento, abilità, natura, EV, mosse nuove) si accendono in azzurro.
  */
 export function MemberCard({ set, why, was }: { set: TeamSet; why?: ReactNode; was?: TeamSet }) {
-  const t = useT();
-  const lang = useLang();
   const species = battleSpecies(set);
   const types = (species?.types ?? []) as string[];
-  const nature = set.nature ? dex.natures.get(set.nature) : null;
-  const evs = evLine(set, lang);
-  const moves = set.moves.filter(Boolean);
-  const diff = (same: boolean) => (was && !same ? 'is-changed' : undefined);
-  const oldMoves = new Set((was?.moves ?? []).filter(Boolean));
   return (
     <>
       <div className="mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
@@ -86,21 +129,8 @@ export function MemberCard({ set, why, was }: { set: TeamSet; why?: ReactNode; w
         </span>
         {why && <span className="mcard-why">{why}</span>}
       </div>
-      <div className="mcard-kit">
-        <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)}>{set.item ? anyGameName(set.item, lang) : '—'}</span>
-        <small>{t('mcard.nature')}</small>
-        <span className={diff(was?.nature === set.nature)}>{set.nature ? natureName(set.nature, lang) : '—'}{nature?.plus && nature.minus && (
-          <em> +{statShort(nature.plus as StatID, lang)} −{statShort(nature.minus as StatID, lang)}</em>
-        )}</span>
-        <small>{t('mcard.ability')}</small><span className={diff(was?.ability === set.ability)}>{set.ability ? anyGameName(set.ability, lang) : '—'}</span>
-        <small>EV</small><span className={diff(!was || evLine(was, lang) === evs)}><em>{evs || '—'}</em></span>
-      </div>
-      <div className="mcard-body">
-        <StatHex set={set} />
-        <div className="mcard-moves">
-          {moves.length ? moves.map((move, i) => <MovePlate key={`${move}#${i}`} name={move} fresh={!!was && !oldMoves.has(move)} />) : <span className="mcard-none">{t('mcard.noMoves')}</span>}
-        </div>
-      </div>
+      <MemberKit set={set} was={was} />
+      <MemberStatsMoves set={set} was={was} />
     </>
   );
 }
