@@ -106,3 +106,15 @@ describe('voto del team ridotto: la tendina delle aree', () => {
     expect(document.querySelector('.help-dialog')).not.toBeNull();
   });
 });
+
+describe('voto bloccato', () => {
+  it('EV oltre il massimo: il voto vecchio non compare nemmeno per un istante (niente lettera né avviso delle regole)', () => {
+    // Il voto nuovo arriva un attimo dopo il team: qui la carta riceve ancora il voto vecchio insieme al blocco
+    renderIt(<GradeBadge rating={rated()} blocked="ev" ruleIssues={['Corviknight: 760 EV, più del massimo di 510']} illegalCount={1} />);
+    const card = document.querySelector('.grade-badge')!;
+    expect(card).toHaveClass('none');
+    expect(card.querySelector('.letter')).toBeNull();
+    expect(card.querySelector('.grade-rules')).toBeNull();
+    expect(card.querySelector('.label')).toHaveTextContent(/EV/);
+  });
+});
