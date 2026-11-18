@@ -226,7 +226,7 @@
 .editor-roles ul { list-style: none; display: flex; flex-wrap: nowrap; gap: var(--sp-3); min-width: 0; margin: 0; padding: 0; overflow: hidden; }
 .editor-roles li { flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--sp-9) 0 var(--sp-5); font: 500 var(--fs-caption)/1 var(--display); white-space: nowrap; color: var(--muted);
   background: color-mix(in srgb, var(--raised) 70%, transparent); border-radius: 7px 0 0 2px; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
-.editor-roles li.main-role { color: var(--text); font-weight: 700; background: color-mix(in srgb, var(--raised) 90%, white); }
+.editor-roles li.main-role { color: var(--text); font-weight: 700; }
 /* Riquadro Ruoli basso: una riga di etichette compatte */
 .set-editor .editor-head { row-gap: var(--sp-4); }
 /* Schermi alti meno di 900px (1536×864 e simili): righe delle statistiche un pelo più strette */
@@ -617,9 +617,10 @@
   /* Statistiche: la barra in alto ferma, le righe si dividono l'altezza */
   .set-editor .stats-cell > .evs { display: flex; flex-direction: column; }
   .set-editor .evs .stat-rows { flex: 1; align-content: space-evenly; }
-  /* Set e Mosse: metà altezza ciascuno, i campi distanziati dentro */
+  /* Set e Mosse: metà altezza ciascuno; nel Set le due righe restano vicine al centro, nelle Mosse i campi si distanziano */
   .set-editor .editor-side { grid-template-rows: 1fr 1fr; align-content: stretch; }
-  .set-editor .editor-side > .editor-group { align-content: space-evenly; }
+  .set-editor .editor-side > .editor-group.moves { align-content: space-evenly; }
+  .set-editor .editor-side > .editor-group.set-plates { align-content: center; row-gap: var(--sp-8); }
 }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .drawer > .set-editor { --ed-gap: var(--sp-3); }
