@@ -329,7 +329,7 @@
 .def-mon-types { display: inline-flex; gap: var(--sp-1); flex: none; }
 .def-mon-stats { display: flex; gap: var(--sp-5); font-size: var(--fs-label); font-weight: 600; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; }
 .def-mon-stats > span { display: inline-flex; align-items: center; gap: 3px; cursor: help; }
-.def-mon-stats .icon { width: 11px; height: 11px; color: var(--faint); }
+.def-mon-stats .stat-icon { width: 12px; height: 12px; flex: none; color: var(--faint); }
 .def-mon-stats .up { color: var(--good); }
 .def-mon-stats .down { color: var(--bad); }
 /* Fisica e Speciale in testata col loro simbolo */

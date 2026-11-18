@@ -77,8 +77,11 @@
 .set-editor .evs .spread-panel { display: contents; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
 .stat-rows { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); }
-.stat-row { display: grid; grid-template-columns: 52px 92px minmax(0, 1fr) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
+.stat-row { display: grid; grid-template-columns: 66px 92px minmax(0, 1fr) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
 /* Intestazione delle colonne e selettore del livello sopra i valori finali */
+/* Icona della statistica (come in Champions) prima del nome */
+.stat-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.stat-name .stat-icon { flex: none; width: 14px; height: 14px; }
 .stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 .stat-row.stat-head:hover { background: none; }
 .stat-head-num { text-align: center; }
@@ -92,7 +95,7 @@
 .level-toggle button[aria-pressed='true'] { position: relative; background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .set-editor .iv-input { height: 28px; padding: var(--sp-1) var(--sp-2); text-align: center; font-variant-numeric: tabular-nums; }
 .stat-row:hover { background: color-mix(in srgb, var(--raised) 60%, transparent); }
-.set-editor .stat-row .stat-name { flex-direction: row; align-items: baseline; gap: 0; font: 700 var(--fs-body)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
+.set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-body)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
 .stat-row.nature-up .stat-name { color: var(--good); }
 .stat-row.nature-down .stat-name { color: var(--bad); }
 .stat-row.nature-up .stat-name::after { content: '+'; margin-left: var(--sp-1); }

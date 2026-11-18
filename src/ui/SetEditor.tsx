@@ -23,6 +23,7 @@ import { MySetsField } from './MySetsField';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
 import { CategoryIcon } from './CategoryIcon';
+import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
 
 function NatureEffect({ name }: { name: string }) {
@@ -399,7 +400,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           </div>
           {lines.map(line => (
             <div key={line.stat} className={`stat-row${line.nature ? ` nature-${line.nature}` : ''}`}>
-              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}>{statShort(line.stat, lang).toUpperCase()}</label>
+              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}><StatIcon stat={line.stat} />{statShort(line.stat, lang).toUpperCase()}</label>
               <span className="stat-base" title={t('editor.base', { n: line.base })}>
                 <span className="stat-base-n">{line.base}</span>
                 <span className="stat-base-bar" aria-hidden="true">
