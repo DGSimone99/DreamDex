@@ -7,8 +7,11 @@ import { PokemonIcon } from './PokemonName';
 /** Altezza del tooltip con i vicini (3 sopra, 3 sotto, nota). */
 const POP_HEIGHT = 340;
 
-/** Velocità finale del membro e il suo posto tra i più usati del meta; i vicini nel tooltip. */
-export function SpeedLine({ name, tier, scarf }: { name: string; tier: SpeedTier; scarf: boolean }) {
+/**
+ * Il valore finale della Velocità nella riga VEL dell'editor: passandoci sopra (o col fuoco) il tooltip dice la Velocità
+ * reale (con la Sciarpa), il posto fra i più usati del meta ("più veloce del 55%…") e i vicini sopra e sotto.
+ */
+export function SpeedFinal({ name, tier, scarf, value, testId }: { name: string; tier: SpeedTier; scarf: boolean; value: number; testId?: string }) {
   const t = useT();
   const lang = useLang();
   const id = useId();
@@ -16,7 +19,7 @@ export function SpeedLine({ name, tier, scarf }: { name: string; tier: SpeedTier
   const [shown, setShown] = useState(false);
   // Si apre sopra quando sotto non c'è spazio (riga in fondo alla finestra)
   const [up, setUp] = useState(false);
-  const anchor = useRef<HTMLSpanElement>(null);
+  const anchor = useRef<HTMLElement>(null);
   const show = () => {
     const rect = anchor.current?.getBoundingClientRect();
     setUp(!!rect && window.innerHeight - rect.bottom < POP_HEIGHT && rect.top > POP_HEIGHT);
@@ -36,14 +39,17 @@ export function SpeedLine({ name, tier, scarf }: { name: string; tier: SpeedTier
       ))}
     </span>
   );
+  const rank = t(tier.vsMeta ? 'editor.speedRank' : 'editor.speedRankTier', { pct: formatPercent(lang, tier.outspeeds, 0), n: tier.total });
   return (
-    <p className="speed-line">
-      <span>{t('editor.speed')} <strong>{tier.speed}</strong>{scarf && <> <span className="speed-scarf">{t('editor.scarf')}</span></>}</span>
-      <span aria-hidden="true">·</span>
-      <span className="speed-rank" tabIndex={0} aria-describedby={shown ? id : undefined} ref={anchor}
-        onMouseEnter={show} onMouseLeave={() => setShown(false)} onFocus={show} onBlur={() => setShown(false)}>
-        {t(tier.vsMeta ? 'editor.speedRank' : 'editor.speedRankTier', { pct: formatPercent(lang, tier.outspeeds, 0), n: tier.total })}
+    <strong className="stat-final speed-final" data-testid={testId} tabIndex={0} ref={anchor}
+      aria-label={`${value}, ${rank}`} aria-describedby={shown ? id : undefined}
+      onMouseEnter={show} onMouseLeave={() => setShown(false)} onFocus={show} onBlur={() => setShown(false)}>
+      {value}
         {shown && <span id={id} role="tooltip" className={`speed-pop${up ? ' up' : ''}`}>
+          <span className="speed-pop-head">
+            <span>{t('editor.speed')} <b>{tier.speed}</b>{scarf && <> <span className="speed-scarf">{t('editor.scarf')}</span></>}</span>
+            <span className="speed-pop-rank">{rank}</span>
+          </span>
           {group(t('editor.speedFaster'), [...tier.faster].reverse())}
           {group(t('editor.speedTies'), tier.ties)}
           <span className="speed-rival speed-self">
@@ -54,7 +60,6 @@ export function SpeedLine({ name, tier, scarf }: { name: string; tier: SpeedTier
           {group(t('editor.speedSlower'), tier.slower)}
           <span className="speed-note">{t('editor.speedNote')}</span>
         </span>}
-      </span>
-    </p>
+    </strong>
   );
 }

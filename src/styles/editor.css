@@ -76,7 +76,7 @@
 .set-editor .evs .spread-panel > summary { position: absolute; top: 6px; right: 14px; }
 .set-editor .evs .spread-panel { display: contents; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
-.stat-rows { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); }
+.stat-rows { display: grid; gap: 5px; margin-top: var(--sp-2); }
 .stat-row { display: grid; grid-template-columns: 66px 92px minmax(0, 1fr) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
 /* Intestazione delle colonne e selettore del livello sopra i valori finali */
 /* Icona della statistica (come in Champions) prima del nome */
@@ -86,15 +86,7 @@
 .stat-row.stat-head:hover { background: none; }
 .stat-head-num { text-align: center; }
 .stat-head-final { text-align: right; }
-/* Livello delle statistiche: nella fascia in alto del blocco, a sinistra (a destra c'è "Spread più usati") */
-.set-editor .evs .level-toggle { position: absolute; top: 2px; left: 14px; display: inline-flex; align-items: center; gap: var(--sp-4); }
-.level-toggle-label { font: 600 var(--fs-caption)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.level-toggle button { height: 22px; min-width: 38px; padding: 0 var(--sp-4); border: 1px solid var(--line); background: none; color: var(--muted); font: 600 var(--fs-caption)/1 var(--ui); }
-.level-toggle button:first-of-type { border-radius: 3px 0 0 3px; }
-.level-toggle button:last-of-type { border-radius: 0 3px 3px 0; margin-left: -1px; }
-.level-toggle button[aria-pressed='true'] { position: relative; background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .set-editor .iv-input { height: 28px; padding: var(--sp-1) var(--sp-2); text-align: center; font-variant-numeric: tabular-nums; }
-.stat-row:hover { background: color-mix(in srgb, var(--raised) 60%, transparent); }
 .set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-body)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
 .stat-row.nature-up .stat-name { color: var(--good); }
 .stat-row.nature-down .stat-name { color: var(--bad); }
@@ -104,27 +96,82 @@
 .stat-base-n { width: 26px; text-align: right; font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; }
 .stat-base-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--field); overflow: hidden; }
 .stat-base-bar > span { display: block; height: 100%; border-radius: 3px; }
-.ev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; margin: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
-.ev-slider::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) var(--fill), var(--line) var(--fill)); }
-.ev-slider::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) var(--fill), var(--line) var(--fill)); }
-.ev-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%; background: var(--text); border: 2px solid var(--accent); transition: transform 0.15s var(--ease); }
-.ev-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--accent); }
-.ev-slider:hover::-webkit-slider-thumb, .ev-slider:focus-visible::-webkit-slider-thumb { transform: scale(1.2); }
+.ev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: var(--ev-h); margin: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
+/*
+ * Barra degli EV come il rettangolo di Pokémon Champions: cornice sottile, uno spazio scuro, il binario e il riempimento
+ * pieno, tutti e due con una striscia più chiara in alto; angoli dritti. La tacca bianca per trascinare si vede sulla
+ * riga attiva (mouse sopra o fuoco).
+ */
+.stat-rows { --ev-h: 22px; }
+.ev-slider::-webkit-slider-runnable-track {
+  height: var(--ev-h);
+  border: 1px solid var(--control-line);
+  border-radius: 1px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0 30%, transparent 30%) 2px 2px / calc(100% - 4px) calc(100% - 4px) no-repeat,
+    linear-gradient(90deg, var(--accent) var(--fill), var(--raised) var(--fill)) 2px 2px / calc(100% - 4px) calc(100% - 4px) no-repeat,
+    var(--ground);
+}
+.ev-slider::-moz-range-track {
+  height: var(--ev-h);
+  box-sizing: border-box;
+  border: 1px solid var(--control-line);
+  border-radius: 1px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0 30%, transparent 30%) 2px 2px / calc(100% - 4px) calc(100% - 4px) no-repeat,
+    linear-gradient(90deg, var(--accent) var(--fill), var(--raised) var(--fill)) 2px 2px / calc(100% - 4px) calc(100% - 4px) no-repeat,
+    var(--ground);
+}
+.ev-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: calc(var(--ev-h) + 2px); margin-top: -2px; border-radius: 1px; background: var(--text); box-shadow: 0 0 0 1px var(--ground); opacity: 0; transition: opacity 0.15s var(--ease); }
+.ev-slider::-moz-range-thumb { width: 4px; height: calc(var(--ev-h) + 2px); border: 0; border-radius: 1px; background: var(--text); box-shadow: 0 0 0 1px var(--ground); opacity: 0; transition: opacity 0.15s var(--ease); }
+.stat-row:is(:hover, :focus-within) .ev-slider::-webkit-slider-thumb { opacity: 1; }
+.stat-row:is(:hover, :focus-within) .ev-slider::-moz-range-thumb { opacity: 1; }
 .ev-slider:focus-visible { outline: none; }
-.ev-slider:focus-visible::-webkit-slider-runnable-track { box-shadow: 0 0 0 2px var(--accent-soft); }
+/*
+ * Ogni statistica in una targhetta con gli angoli alternati delle pillole delle mosse, divisa in due come in Champions; la riga
+ * attiva prende il bordo ciano e il triangolino a sinistra, come la freccia della riga scelta in Champions.
+ */
+.stat-row:not(.stat-head) {
+  position: relative;
+  border-radius: 10px 3px 10px 3px;
+  /* Due metà come le righe di Champions: nome e base sul Raised, poi una linea inclinata e la metà con barra, EV, IV e
+     finale un po' più scura (--split: dove cade il taglio, appena prima della barra) */
+  --split: 178px;
+  --half-a: var(--raised);
+  --half-b: color-mix(in srgb, var(--raised) 62%, #000);
+  --cut: var(--line);
+  background: linear-gradient(104deg, var(--half-a) calc(var(--split) - 1px), var(--cut) calc(var(--split) - 1px) calc(var(--split) + 1px), var(--half-b) calc(var(--split) + 1px));
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 0.15s var(--ease), background 0.15s var(--ease);
+}
+.stat-row:not(.stat-head):is(:hover, :focus-within) {
+  --half-a: color-mix(in srgb, var(--accent) 22%, var(--raised));
+  --half-b: color-mix(in srgb, var(--accent) 10%, color-mix(in srgb, var(--raised) 62%, #000));
+  --cut: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* Il nome si accende sulla riga attiva (se la natura non lo colora già di verde o di rosso) */
+.stat-row:not(.stat-head, .nature-up, .nature-down):is(:hover, :focus-within) .stat-name { color: var(--text); }
+.stat-row:not(.stat-head)::before { content: ''; position: absolute; left: -11px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-left: 8px solid var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); pointer-events: none; }
+.stat-row:not(.stat-head):is(:hover, :focus-within)::before { opacity: 1; }
+/* Le caselle EV e IV dentro la targhetta: fondo scuro un po' trasparente, bordo più tenue */
+.stat-row .ev-input, .stat-row .iv-input { background: color-mix(in srgb, var(--field) 80%, transparent); border-color: color-mix(in srgb, var(--control-line) 70%, var(--line)); }
+@media (prefers-reduced-motion: reduce) {
+  .stat-row:not(.stat-head), .stat-row:not(.stat-head)::before, .ev-slider::-webkit-slider-thumb { transition: none; }
+}
 .set-editor .ev-input { height: 28px; padding: var(--sp-1) var(--sp-4); font-variant-numeric: tabular-nums; text-align: right; }
 .stat-final { font: 700 var(--fs-title-l)/1 var(--display); text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
 .stat-row.nature-up .stat-final { color: var(--good); }
 .stat-row.nature-down .stat-final { color: var(--bad); }
-.ev-total { display: flex; align-items: center; gap: var(--sp-4); margin: var(--sp-1) var(--sp-3) 0; font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; }
+/* EV usati nella fascia in alto del blocco: etichetta, barra, 508 / 510 e quanti ne restano, tutto di seguito */
+.ev-total { display: flex; align-items: center; gap: var(--sp-4); margin: 0 0 0 var(--sp-3); font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ev-total strong { font: 700 var(--fs-title-s)/1 var(--display); color: var(--text); }
 .ev-total .ev-used { display: inline-flex; align-items: baseline; gap: var(--sp-1); }
-.ev-meter { width: 120px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.ev-meter { width: 90px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .ev-meter > span { display: block; height: 100%; background: var(--accent); }
-.ev-total .ev-left { margin-left: auto; color: var(--muted); }
+.ev-total .ev-left { color: var(--faint); }
 .ev-total.over strong, .ev-total.over .ev-left { color: var(--bad); }
 .ev-total.over .ev-meter > span { background: var(--bad); }
-.set-editor .evs .speed-line { margin: 0 var(--sp-3); padding-top: var(--sp-5); border-top: 1px solid var(--line-soft); }
 /* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
 .spread-panel > summary {
   display: inline-flex;
