@@ -795,9 +795,13 @@
   font: italic 800 var(--fs-headline)/1 var(--display); color: var(--text); text-shadow: 0 2px 6px #0006; }
 .coach-art-text small { font-size: var(--fs-caption); color: var(--text); opacity: 0.85; }
 .coach-art-on { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); opacity: 0.9; }
-.coach-art-moves { display: flex; align-items: baseline; gap: var(--sp-4); max-width: 100%; min-width: 0; white-space: nowrap; }
-.coach-art-moves s { overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-body); color: var(--muted); text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); }
-.coach-art-moves b { overflow: hidden; text-overflow: ellipsis; font: italic 800 var(--fs-heading)/1.1 var(--display); color: var(--text); }
+.coach-art-moves { display: flex; align-items: center; gap: var(--sp-4); max-width: 100%; min-width: 0; white-space: nowrap; }
+/* Mosse come pillole: quella che esce spenta col nome barrato, quella che entra piena */
+.coach-art-moves s { display: flex; min-width: 0; flex: 0 1 auto; text-decoration: none; }
+.coach-move-out { opacity: 0.6; }
+.coach-move-out .mvp-nm { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); }
+.coach-art-arrow { flex: none; color: var(--muted); }
+.coach-move-in { flex: 0 1 auto; }
 .coach-art-empty { font-size: var(--fs-small); color: var(--muted); }
 /* "Altre N ▾": il pulsante delle alternative sotto il nome */
 .coach-alt { margin-top: var(--sp-1); padding: 5px 9px; gap: var(--sp-3); border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 4px;
@@ -848,6 +852,7 @@
 .coach-opt.is-chosen { background: var(--accent-wash); }
 .coach-opt .sprite { width: 44px; height: 44px; margin: -4px 0; image-rendering: pixelated; }
 .coach-opt-name { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
+.coach-opt-name .mvp { max-width: 100%; }
 .coach-opt-name b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-body)/1.1 var(--display); }
 .coach-opt-name small { font-size: var(--fs-caption); color: var(--muted); }
 .coach-opt-types { display: flex; gap: var(--sp-2); }
@@ -897,7 +902,6 @@
   .coach-art-arrow { margin-top: var(--sp-7); }
   .coach-art-text { gap: var(--sp-1); }
   .coach-art-name { font-size: var(--fs-heading); }
-  .coach-art-moves b { font-size: var(--fs-title); }
   .coach-alt { padding: 3px var(--sp-4); }
   .coach-solves { gap: var(--sp-2); padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
   .coach-act { gap: var(--sp-2); }

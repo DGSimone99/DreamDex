@@ -4,9 +4,10 @@ import {
   PARADOX_SPEED, PARALYSIS, SETUP_PLUS_ONE, SETUP_PLUS_TWO, SPEED_DROP, WEATHER_SPEED, type TeamSpeed,
 } from '../../engine/speedArea';
 import { SPEED_POOL } from '../../engine/speed';
-import { typeName } from '../../i18n/game';
+import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
+import { MovePill } from '../MovePill';
 import { Ask } from '../offense/TargetsTip';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
@@ -21,16 +22,17 @@ const PRIORITY_EXAMPLES = ['extremespeed', 'suckerpunch', 'aquajet', 'bulletpunc
 const SLOW_IMMUNE: Record<string, string> = { thunderwave: 'Ground', nuzzle: 'Ground', stunspore: 'Grass', bulldoze: 'Flying', electroweb: 'Ground', lowsweep: 'Ghost' };
 
 const moveChips = (ids: Iterable<string>, note?: (id: string) => string | undefined): Chip[] =>
-  [...ids].map(id => ({ name: getMove(id)?.name ?? id, note: note?.(id) }));
+  [...ids].map(id => ({ name: getMove(id)?.name ?? id, note: note?.(id), move: true }));
 const abilityName = (id: string) => dex.abilities.get(id).name;
 
 /** Una mossa, abilità o strumento come etichetta; `note` è il meteo o il campo che serve, scritto piccolo dentro. */
-interface Chip { name: string; note?: string }
+interface Chip { name: string; note?: string; move?: boolean }
 /** Una riga del dettaglio: cosa conta, quanto vale, le etichette (mosse, abilità) e la regola breve sotto. */
 interface Row { label: string; value?: string; chips?: Chip[]; text?: ReactNode; group?: string }
 
 /** Il dettaglio di una fonte nel tooltip del "?": le righe (cosa conta, il moltiplicatore, le mosse o abilità) e la nota. */
 function GainTip({ title, rows, grouped, foot }: { title: string; rows: Row[]; grouped?: boolean; foot?: string }) {
+  const lang = useLang();
   return (
     <>
       <div className="ftip-head"><b>{title}</b></div>
@@ -42,7 +44,11 @@ function GainTip({ title, rows, grouped, foot }: { title: string; rows: Row[]; g
               <b>{row.label}</b>
               <span className="sp-gd-val">{row.value}</span>
               <span className="sp-gd-body">
-                {row.chips?.map(chip => <span key={chip.name} className="sp-gd-chip">{chip.name}{chip.note && <small>{chip.note}</small>}</span>)}
+                {row.chips?.map(chip => (chip.move
+                  // Le mosse come pillole (nome tradotto, potenza nella coda); la nota sul tipo immune dentro, piccola
+                  ? <MovePill key={chip.name} name={chip.name} size="sm" className="sp-gd-move"
+                    label={chip.note ? <>{gameName('move', chip.name, lang)}<small>{chip.note}</small></> : undefined} />
+                  : <span key={chip.name} className="sp-gd-chip">{chip.name}{chip.note && <small>{chip.note}</small>}</span>))}
                 {row.text && <span className="sp-gd-text">{row.text}</span>}
               </span>
             </div>

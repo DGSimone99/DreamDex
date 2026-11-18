@@ -73,11 +73,8 @@
 .ftip-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 /* La mossa: icona tonda e nome nel colore del suo tipo, schiarito per leggersi sul fondo scuro, con un alone leggerissimo;
    poi simbolo della categoria e potenza in Faint */
-.ftip-move { max-width: 100%; display: inline-flex; align-items: center; gap: 3px; }
-.ftip-move img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--mc) 35%, transparent)); }
-.ftip-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
-.ftip-move-cat { flex: none; display: inline-flex; align-items: center; gap: 3px; font: 700 var(--tip-small)/1 var(--display); color: var(--faint); }
-.ftip-move-cat .icon { width: 11px; height: 11px; }
+/* Mosse nei tooltip: pillole (move-pill.css), mai più larghe della riga */
+.ftip-move.mvp, .ctip-mv.mvp { max-width: 100%; }
 
 /* Difesa: gruppi per moltiplicatore; per membro sprite, nome, danno % e badge */
 .ftip-group { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: start; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--line-soft); }
@@ -123,17 +120,13 @@
 .mcard-hex .hx-v.up { fill: var(--good); }
 .mcard-hex .hx-v.down { fill: var(--bad); }
 .mcard-moves { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
-.mcard-move { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; padding: 5px var(--sp-6) 5px var(--sp-4); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--mc) 34%, transparent), color-mix(in srgb, var(--mc) 6%, transparent) 85%); }
-.mcard-move img { width: var(--ti-inline); height: var(--ti-inline); flex: none; border-radius: 50%; }
-.mcard-move b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 var(--tip-body)/1.1 var(--display); }
-.mcard-cat { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 700 var(--tip-small)/1 var(--display); color: var(--muted); }
-.mcard-cat .icon { width: 11px; height: 11px; }
+/* Le mosse sono pillole (move-pill.css), larghe quanto la colonna */
+.mcard-moves .mvp { display: flex; }
 .mcard-none { color: var(--faint); }
 /* Le parti cambiate rispetto al set di prima: in azzurro, la mossa nuova con un bordo azzurro sottile e un punto */
 .mcard-kit span.is-changed, .mcard-kit span.is-changed em { color: var(--accent-ink); }
 .mcard-move.is-changed { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); }
-.mcard-move.is-changed b::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: var(--sp-3); border-radius: 50%; vertical-align: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.mcard-move.is-changed .mvp-nm::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: var(--sp-3); border-radius: 50%; vertical-align: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 
 /* ===== Meteo e campo (ConditionTip): testata nel colore della condizione con una texture sua, effetti come lastre
    inclinate, chi ne approfitta col piedistallo verde. L'unico movimento: la pioggia che scende (spento con riduci animazioni) */
@@ -164,8 +157,6 @@
 .ctip-setter .sprite { margin: -12px 0 -8px; }
 /* Abilità: lastra inclinata; mossa: nome nel colore del tipo, alone leggero */
 .ctip-ab { display: inline-flex; align-items: center; padding: var(--sp-1) var(--sp-5) var(--sp-1) var(--sp-4); font: 600 var(--tip-small)/1.2 var(--display); color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
-.ctip-mv { display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
-.ctip-mv img { width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .ctip-arrow { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .ctip-fx { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--sp-3); padding: var(--sp-5) var(--sp-5) var(--sp-4); }
 .ctip-plate { --c: var(--faint); display: flex; align-items: center; gap: var(--sp-4); padding: 7px var(--sp-7) 7px var(--sp-5); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
