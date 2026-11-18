@@ -39,6 +39,7 @@ import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
+import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -53,6 +54,8 @@ interface Props {
   onReplace: (index: number) => void;
   /** Membro tolto con la ×: se manca, si aggiorna solo il team (senza Annulla). */
   onRemove?: (index: number) => void;
+  /** Candidato trascinato dalla lista Pokémon: sopra un membro lo sostituisce (index), sopra uno slot vuoto lo aggiunge (null). */
+  onDropSet?: (index: number | null, set: TeamSet) => void;
   onAllowMultipleMegas: () => void;
   /** Membro aperto nell'editor (null se nessuno). */
   onOpenChange?: (index: number | null) => void;
@@ -342,7 +345,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           card.current?.focus({ preventScroll: true, focusVisible: false });
         }}
         onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
-        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDrag('over'); }}
+        onDragOver={e => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = draggedSet() ? 'copy' : 'move'; onDrag('over'); }}
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
         onDragEnd={() => onDrag('end')}
       >
@@ -549,20 +552,33 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
  * Solo il primo slot libero dice "Aggiungi un Pokémon": gli altri sono cornici tratteggiate più tenui, senza scritta
  * (ma col nome per i lettori di schermo), così l'occhio va a un punto solo.
  */
-function EmptySlot({ onClick, quiet = false }: { onClick: () => void; quiet?: boolean }) {
+function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onDrop }: {
+  onClick: () => void;
+  quiet?: boolean;
+  /** Un candidato della lista trascinato qui sopra: al rilascio si aggiunge. */
+  dropTarget?: boolean;
+  onDragOver: () => void;
+  onDrop: () => void;
+}) {
   const tr = useT();
+  // Solo i candidati della lista si posano su uno slot vuoto (i membri del team si riordinano tra loro)
+  const drop = {
+    onDragOver: (e: React.DragEvent) => { if (!draggedSet()) return; e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; onDragOver(); },
+    onDrop: (e: React.DragEvent) => { if (!draggedSet()) return; e.preventDefault(); onDrop(); },
+  };
+  const cls = `slot empty${quiet ? ' quiet' : ''}${dropTarget ? ' drop-target' : ''}`;
   if (quiet) {
-    return <button type="button" className="slot empty quiet" aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} />;
+    return <button type="button" className={cls} aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop} />;
   }
   return (
-    <button type="button" className="slot empty" title={tr('team.emptyAddTitle')} onClick={onClick}>
+    <button type="button" className={cls} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop}>
       <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
       <span className="empty-label">{tr('team.emptyAdd')}</span>
     </button>
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -595,8 +611,24 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     if (openIndex !== null) animated(() => setOpenIndex(to));
     focusCard(to);
   };
-  // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione
+  // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione.
+  // `from` -1: un candidato trascinato dalla lista Pokémon (teamDrag.ts); `over` oltre i membri = uno slot vuoto
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
+  // Il trascinamento dalla lista finisce fuori dal team (o annullato con Esc): niente slot evidenziato
+  useEffect(() => onSetDrag(set => { if (!set) setDrag(d => (d?.from === -1 ? null : d)); }), []);
+  const dropSet = (i: number) => {
+    const set = draggedSet();
+    endSetDrag();
+    setDrag(null);
+    if (!set) return;
+    // La stessa specie già in un altro slot non entra due volte (la lista può non essersi ancora aggiornata)
+    if (team.some((s, j) => j !== i && s.species === set.species)) return;
+    setOpenIndex(null);
+    if (onDropSet) onDropSet(i < team.length ? i : null, set);
+    else if (i < team.length) onChange(team.map((s, j) => (j === i ? set : s)));
+    else onAdd(set);
+  };
+  const overSlot = (i: number) => setDrag(d => (d ? (d.over !== i ? { ...d, over: i } : d) : draggedSet() ? { from: -1, over: i } : d));
   // Per i lettori di schermo: dove è finito il membro spostato
   const [moveNote, setMoveNote] = useState('');
   const move = (from: number, to: number) => {
@@ -675,8 +707,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     move: (i, delta) => move(i, i + delta),
     drag: (i, phase) => {
       if (phase === 'start') setDrag({ from: i, over: null });
-      else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
-      else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
+      else if (phase === 'over') overSlot(i);
+      else if (phase === 'drop') { if (draggedSet()) dropSet(i); else { if (drag) move(drag.from, i); setDrag(null); } }
       else setDrag(null);
     },
     paste: (i, next, review) => {
@@ -797,7 +829,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
-      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
+      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
+        // Uscendo dalla fila del team lo slot evidenziato si spegne
+        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrag(d => (d && d.over !== null ? { ...d, over: null } : d)); }}>
         {team.map((set, i) => (
           <TeamSlot
             key={keys[i]}
@@ -818,7 +852,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (
-          <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }} />
+          <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }}
+            dropTarget={drag?.from === -1 && drag.over === team.length + i}
+            onDragOver={() => overSlot(team.length + i)} onDrop={() => dropSet(team.length + i)} />
         ))}
       </div>
     </section>

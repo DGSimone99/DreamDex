@@ -5,6 +5,7 @@ import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
 import { useMemberTip } from './MemberCard';
 import { TypeIcons } from './typeIcons';
+import { endSetDrag, startSetDrag } from './teamDrag';
 import { CandidateMarks, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
 /** Quanto il mouse deve restare sulla carta prima che lo sprite esca e parta la GIF (ms): passando sopra la griglia di corsa
@@ -59,6 +60,8 @@ export function CandidateCard(props: CandidateProps) {
       // Uscendo dalla carta si chiude anche la carta del set
       onMouseEnter={e => { enter(); if (!selected) tipHandlers.onMouseEnter(e); }}
       onPointerDown={closeTip} onMouseLeave={() => { leave(); memberTip.close(); }}
+      // Trascinata sul team: sopra un membro lo sostituisce, sopra uno slot vuoto lo aggiunge (teamDrag.ts)
+      draggable onDragStart={e => { leave(); memberTip.close(); startSetDrag(e, item.set); }} onDragEnd={endSetDrag}
       onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="card-face">

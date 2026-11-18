@@ -398,6 +398,8 @@
 /* Riordino trascinando */
 .slot.dragging > .slot-card { opacity: 0.45; }
 .slot.drop-target > .slot-card { outline: 2px dashed var(--accent); outline-offset: 3px; }
+/* Candidato della lista sopra uno slot vuoto: come al passaggio del mouse */
+.slot.empty.drop-target { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 /* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
 .slot > .slot-card { view-transition-name: var(--vt); view-transition-class: slot; }
 .drawer { view-transition-name: slot-drawer; }

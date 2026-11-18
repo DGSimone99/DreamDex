@@ -445,7 +445,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           plateName={<SavedPlateName team={team} />}
-          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
+          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
