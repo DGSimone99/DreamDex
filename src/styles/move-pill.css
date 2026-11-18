@@ -53,11 +53,11 @@
 .mvp-cat:only-child { grid-column: 1 / -1; justify-self: center; }
 /* Senza simbolo il numero va al centro di tutta la coda */
 .mvp-tail > .mvp-num:only-child { grid-column: 1 / -1; }
-.mvp-cat .icon { width: 12px; height: 12px; }
+.mvp-cat .cat-icon { display: block; width: 15px; height: 11px; }
 .mvp-cat.cat-physical { color: var(--move-physical); }
 .mvp-cat.cat-special { color: var(--move-special); }
 .mvp-cat.cat-status { color: var(--muted); }
-.mvp-sm .mvp-cat .icon { width: 10px; height: 10px; }
+.mvp-sm .mvp-cat .cat-icon { width: 13px; height: 10px; }
 
 .mvp-sm { --mvp-h: 24px; --mvp-r: 7px; --mvp-q: 2px; --mvp-cut: 8px; --mvp-tail-w: 64px; font-size: var(--fs-caption); box-shadow: inset 0 0 0 1px var(--line); }
 .mvp-sm .mvp-nm { padding: 0 var(--sp-3) 0 var(--sp-4); }

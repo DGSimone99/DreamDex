@@ -264,9 +264,11 @@
 .move-meta { display: inline-flex; align-items: center; gap: var(--sp-5); text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: var(--fs-caption); }
 .move-stat { display: inline-flex; align-items: center; gap: 3px; min-width: 38px; font-variant-numeric: tabular-nums; }
 .move-stat .icon { width: 13px; height: 13px; }
-.move-stat.cat-physical .icon { color: var(--move-physical); }
-.move-stat.cat-special .icon { color: var(--move-special); }
-.move-stat.cat-status .icon { color: var(--faint); }
+/* Simboli delle categorie come in Champions (CategoryIcon, 4:3) */
+.move-stat .cat-icon { width: 16px; height: 12px; flex: none; }
+.move-stat.cat-physical .cat-icon { color: var(--move-physical); }
+.move-stat.cat-special .cat-icon { color: var(--move-special); }
+.move-stat.cat-status .cat-icon { color: var(--faint); }
 .move-stat.accuracy .icon { color: var(--faint); }
 .nature-fx { font-size: var(--fs-caption); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .nature-fx .up { color: var(--good); }

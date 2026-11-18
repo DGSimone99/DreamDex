@@ -22,6 +22,7 @@ import { Icon } from './icons';
 import { MySetsField } from './MySetsField';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
+import { CategoryIcon } from './CategoryIcon';
 import { typeIconUrl } from './typeIcons';
 
 function NatureEffect({ name }: { name: string }) {
@@ -36,7 +37,6 @@ function NatureEffect({ name }: { name: string }) {
   );
 }
 
-const CATEGORY_ICONS = { Physical: 'physical', Special: 'special', Status: 'status' } as const;
 
 /** Casella IV (0–31): mentre scrivi tiene il testo (anche vuoto), lo applica subito; vuota torna a 31 uscendo. */
 function IvInput({ value, label, onChange }: { value: number; label: string; onChange: (raw: string) => void }) {
@@ -71,7 +71,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
     <span className="move-meta">
       <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
         {/* Nel campo il simbolo sta nella coda della pillola: qui resta solo per i lettori di schermo */}
-        {!inField && <Icon name={CATEGORY_ICONS[move.category]} filled={move.category === 'Physical'} />}
+        {!inField && <CategoryIcon category={move.category} />}
         {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
         {move.basePower > 0
           ? (inField
