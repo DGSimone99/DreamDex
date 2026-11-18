@@ -268,6 +268,7 @@
   .set-editor .stat-rows { gap: 9px; --ev-h: 28px; --ev-w: 140px; }
   /* Campi di Set e Mosse più alti: lo spazio in più si riempie di contenuto, non di vuoto */
   .set-editor .editor-side .combobox input { height: 40px; }
+  .set-editor .set-plates { --plate-h: 40px; }
   .set-editor .move-combo { --mvp-h: 40px; --mvp-r: 12px; --mvp-cut: 13px; }
   .set-editor .editor-side .field-head { font-size: var(--fs-caption); }
 }
@@ -324,8 +325,8 @@
 /* Custom Skillset a destra nella testata, sopra Set e Mosse (le cambia entrambe) */
 .editor-head > .custom-toggle { margin-left: auto; align-self: flex-end; font-size: var(--fs-small); }
 /* Ruoli: tag piatti di sola lettura (non sembrano pulsanti); il principale in grassetto */
-.editor-roles li { border: 0; background: var(--raised); color: var(--muted); }
-.editor-roles li.main { border: 0; background: var(--raised); color: var(--text); font-weight: 700; }
+.editor-roles li { border: 0; border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 70%); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); }
+.editor-roles li.main { border: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 80%, white), var(--raised) 70%); color: var(--text); font-weight: 700; }
 /* Testate dentro l'editor: targhette neutre come tutti i titoli (--plate), il magenta resta a "sei qui" e "fai questo" */
 /* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
 .shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }

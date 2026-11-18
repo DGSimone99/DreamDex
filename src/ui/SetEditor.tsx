@@ -25,14 +25,25 @@ import { CategoryIcon } from './CategoryIcon';
 import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
 
+/** La freccetta doppia della natura, come in Pokémon Champions: su per la statistica che sale, giù per quella che scende. */
+export function NatureArrow({ dir }: { dir: 'up' | 'down' }) {
+  return (
+    <svg className={`nature-arrow ${dir}`} viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">
+      <path d={dir === 'up' ? 'M3 9l5-5 5 5M3 13l5-5 5 5' : 'M3 3l5 5 5-5M3 7l5 5 5-5'} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function NatureEffect({ name }: { name: string }) {
   const lang = useLang();
   const t = useT();
   const { plus, minus } = dex.natures.get(name);
   if (!plus || !minus) return <span className="nature-fx neutral">{t('editor.neutral')}</span>;
   return (
+    // Le freccette di Pokémon Champions (su verde, giù rossa); il segno resta nel testo per chi legge senza vedere
     <span className="nature-fx">
-      <span className="up">+{statShort(plus as StatID, lang)}</span>, <span className="down">−{statShort(minus as StatID, lang)}</span>
+      <span className="up"><NatureArrow dir="up" /><span className="visually-hidden">+</span>{statShort(plus as StatID, lang)}</span>{' '}
+      <span className="down"><NatureArrow dir="down" /><span className="visually-hidden">−</span>{statShort(minus as StatID, lang)}</span>
     </span>
   );
 }
@@ -397,7 +408,11 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           </div>
           {lines.map(line => (
             <div key={line.stat} className={`stat-row${line.nature ? ` nature-${line.nature}` : ''}`}>
-              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}><StatIcon stat={line.stat} />{statShort(line.stat, lang).toUpperCase()}</label>
+              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}>
+                <StatIcon stat={line.stat} />{statShort(line.stat, lang).toUpperCase()}
+                {/* Solo disegnata, come prima il "+"/"−": il nome del campo resta la statistica */}
+                {line.nature && <NatureArrow dir={line.nature} />}
+              </label>
               <span className="stat-base" title={t('editor.base', { n: line.base })}>
                 <span className="stat-base-n">{line.base}</span>
                 <span className="stat-base-bar" aria-hidden="true">
@@ -441,17 +456,17 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       {textPanel}
       </div>
       <div className="editor-side">
-      <fieldset className="editor-group">
+      <fieldset className="editor-group set-plates">
         <legend>{t('editor.set')}</legend>
         <div className="field" data-tip={itemDesc}>
-          <span className="field-head">{t('editor.item')}</span>
+          <span className="field-head"><span className="field-label">{t('editor.item')}</span></span>
           <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc}
             leading={set.item ? <ItemIcon item={set.item} /> : undefined}
             onChange={item => update({ item })} />
         </div>
         <div className="field" data-tip={abilityDesc}>
           <span className="field-head">
-            {t('editor.ability')}
+            <span className="field-label">{t('editor.ability')}</span>
             {megaAbility && <small className="field-note">{t('editor.megaAbilityNote')}</small>}
           </span>
           {megaAbility ? (
@@ -465,14 +480,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           )}
         </div>
         <div className="field">
-          <span className="field-head">{t('editor.nature')}</span>
+          <span className="field-head"><span className="field-label">{t('editor.nature')}</span></span>
           <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted
             display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
             onChange={nature => update({ nature })} />
         </div>
         <div className="field">
           <span className="field-head">
-            {t('editor.tera')}
+            <span className="field-label">{t('editor.tera')}</span>
             {teraBannedIn && <small className="field-note">{t('editor.teraBanned', { format: teraBannedIn })}</small>}
           </span>
           <Combobox label={t('editor.tera')} commonLabel={commonLabel(common?.teraTypes)} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
@@ -512,7 +527,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         <div className="editor-foot">
           {!!roles?.length && (
             <fieldset className="editor-roles">
-              <legend>{t('editor.roles')}</legend>
+              {/* Il titolo resta per i lettori di schermo: i ruoli si spiegano da soli */}
+              <legend className="visually-hidden">{t('editor.roles')}</legend>
               <ul>
                 {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined} title={roleTips?.[i]}>{role}</li>)}
               </ul>

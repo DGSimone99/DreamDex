@@ -37,6 +37,11 @@
 /* Velocità: la scheda a barre (una per membro) e il modale del membro. La scala sotto le barre (16px, 12 sugli schermi
    bassi) si toglie dall'altezza delle righe con --def-tail, così le sei righe e quella del team stanno come prima */
 :is(.def-frame, .def-frame.roomy).sp-general { --sp-val: 132px; --sp-bar-h: 22px; --sp-scale-h: 16px; --def-tail: calc(4px + var(--sp-scale-h) + var(--def-sp)); }
+/* La riga del team qui è più bassa (una barra sola): lo spazio della scala si prende da lì, così le righe dei membri sono
+   alte come in Offesa e Difesa e passando da una scheda all'altra non saltano */
+@media (min-height: 700px) { :is(.def-frame, .def-frame.roomy).sp-general { --def-top: calc(50px - var(--sp-scale-h) - var(--def-sp)); } }
+/* La riga della scala non è un membro: niente striscia */
+.def-frame .def-members tbody tr.sp-scale > * { background: none; }
 .sp-general .def-members thead th:nth-child(2) { text-align: left; }
 /* La testata della colonna delle barre: a sinistra cosa dice la barra, a destra "Velocità" sopra il totale (stessa griglia del bottone) */
 .sp-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: var(--sp-6); padding-right: var(--sp-2); }

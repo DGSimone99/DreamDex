@@ -27,8 +27,10 @@ const CATEGORY = { Physical: 'physical', Special: 'special', Status: 'status' } 
 export function MoveTail({ name, value, symbol = true }: { name: string; value?: ReactNode; symbol?: boolean }) {
   const category = symbol ? getMove(name)?.category : undefined;
   const tail = value !== undefined ? value : movePower(name);
+  // Mossa di stato senza numero: la coda si stringe attorno al simbolo (larga come le altre sembrerebbe vuota)
+  const onlySymbol = tail == null && category === 'Status';
   return (
-    <span className="mvp-tail">
+    <span className={`mvp-tail${onlySymbol ? ' st' : ''}`}>
       {category && <span className={`mvp-cat cat-${CATEGORY[category]}`}><CategoryIcon category={category} /></span>}
       {/* Il numero al centro della coda; senza numero (mosse di stato) al centro va il simbolo */}
       {tail != null ? <span className="mvp-num">{tail}</span> : category === 'Status' ? null : <span className="mvp-num mvp-none" aria-hidden="true">—</span>}

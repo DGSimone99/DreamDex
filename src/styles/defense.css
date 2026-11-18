@@ -129,6 +129,12 @@
 .sus-table thead .rob-grp th[scope='colgroup'] { position: relative; padding: 6px 0; color: var(--text);
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent); }
 .sus-table thead .rob-grp th[scope='colgroup']::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
+/* Le due righe della testata alte insieme quanto la testata di Generale (--def-head): passando da una sotto-scheda
+   all'altra le righe dei membri partono allo stesso punto */
+.def-frame .sus-table thead tr.rob-grp { height: 23px; }
+.def-frame .sus-table thead tr.sus-sub { height: calc(var(--def-head) - 23px - var(--def-sp)); }
+.sus-table thead .rob-grp th[scope='colgroup'] { padding: 3px 0; }
+.sus-table thead .sus-sub th { padding-bottom: var(--sp-2); }
 .sus-table thead .sus-sub th { padding: 0 0 var(--sp-3); text-align: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .sus-table td { padding: 0 var(--sp-6); border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }

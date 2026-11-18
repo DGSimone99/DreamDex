@@ -68,7 +68,11 @@
 .set-editor .custom-toggle .custom-text small { font-size: var(--fs-label); font-weight: 400; color: var(--muted); }
 .set-editor .custom-toggle.on .custom-text small { color: var(--accent-ink); }
 .set-editor fieldset { margin: 0; padding: var(--sp-3) var(--sp-7) var(--sp-6); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
-.set-editor legend { font: 700 var(--fs-small)/1.2 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--on-plate); background: var(--stripes), var(--plate); padding: 3px 20px 3px 9px; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+/* I titoli dei riquadri (Statistiche, Set, Mosse) come la fascia di Pokémon Champions: centrati sul bordo alto, una fascia
+   chiara che sfuma ai due lati e un filo sotto che sfuma uguale */
+.set-editor legend:not(.visually-hidden) { position: relative; width: 60%; margin: 0 auto; padding: 4px 0; text-align: center; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent); }
+.set-editor legend:not(.visually-hidden)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-7); }
 .set-editor .field-note { font-size: var(--fs-label); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .set-editor .evs { position: relative; display: grid; gap: var(--sp-5); align-self: stretch; align-content: start; }
@@ -92,14 +96,16 @@
 .stat-head-final { text-align: right; }
 .set-editor .iv-input { height: 28px; padding: var(--sp-1) var(--sp-2); text-align: center; font-variant-numeric: tabular-nums; }
 .set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-body)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
-.stat-row.nature-up .stat-name { color: var(--good); }
-.stat-row.nature-down .stat-name { color: var(--bad); }
-.stat-row.nature-up .stat-name::after { content: '+'; margin-left: var(--sp-1); }
-.stat-row.nature-down .stat-name::after { content: '−'; margin-left: var(--sp-1); }
+/* La natura: il nome resta del suo colore, accanto la freccetta doppia di Champions (verde su, rossa giù); il finale colorato */
+.nature-arrow { flex: none; display: inline-block; vertical-align: -1px; }
+.nature-arrow.up { color: var(--good); }
+.nature-arrow.down { color: var(--bad); }
+.stat-name .nature-arrow { margin-left: var(--sp-1); }
 .stat-base { display: flex; align-items: center; gap: var(--sp-4); }
 .stat-base-n { width: 26px; text-align: right; font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; }
-.stat-base-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--field); overflow: hidden; }
-.stat-base-bar > span { display: block; height: 100%; border-radius: 3px; }
+/* Barra della base come il rettangolo di Champions (fessura incassata, angoli dritti, filo chiaro in alto), nei colori di oggi */
+.stat-base-bar { flex: 1; height: 7px; background: var(--field); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); overflow: hidden; }
+.stat-base-bar > span { display: block; height: 100%; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35); }
 .ev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: var(--ev-h); margin: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
 /*
  * Barra degli EV come il rettangolo di Pokémon Champions: il binario incassato e il riempimento pieno, tutti e due con una
@@ -149,6 +155,8 @@
   box-shadow: inset 0 0 0 1px transparent;
   transition: box-shadow 0.15s var(--ease), background 0.15s var(--ease);
 }
+/* Una riga sì e una no un po' più scura, come le statistiche di Champions */
+.stat-row:not(.stat-head):nth-child(odd) { --half-a: color-mix(in srgb, var(--raised) 72%, var(--panel)); --half-b: color-mix(in srgb, var(--raised) 50%, #000); }
 .stat-row:not(.stat-head):is(:hover, :focus-within) {
   --half-a: color-mix(in srgb, var(--accent) 22%, var(--raised));
   --half-b: color-mix(in srgb, var(--accent) 10%, color-mix(in srgb, var(--raised) 62%, #000));
@@ -156,7 +164,7 @@
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 /* Il nome si accende sulla riga attiva (se la natura non lo colora già di verde o di rosso) */
-.stat-row:not(.stat-head, .nature-up, .nature-down):is(:hover, :focus-within) .stat-name { color: var(--text); }
+.stat-row:not(.stat-head):is(:hover, :focus-within) .stat-name { color: var(--text); }
 .stat-row:not(.stat-head)::before { content: ''; position: absolute; left: -11px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-left: 8px solid var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); pointer-events: none; }
 .stat-row:not(.stat-head):is(:hover, :focus-within)::before { opacity: 1; }
 /* Le caselle EV e IV dentro la targhetta: fondo scuro, bordo appena visibile che si accende sulla riga attiva e scrivendo */
@@ -206,3 +214,37 @@
 }
 .spread-panel[open] > summary::after { transform: translateY(1px) rotate(225deg); }
 .spread-panel > summary:hover { color: var(--text); }
+
+/*
+ * Strumento, abilità, natura e tera come lastre di Pokémon Champions: l'etichetta entra nella testa della lastra, tagliata in
+ * diagonale e più chiara; il valore sulla lastra che sfuma nel nostro scuro, angoli alternati. Le note (Tera non ammessa,
+ * abilità della Mega) restano sopra a destra, piccole.
+ */
+.set-plates { --plate-k: 96px; }
+.set-plates .field { position: relative; justify-content: flex-end; }
+.set-plates .field-head { justify-content: flex-end; min-height: 0; }
+/* Senza nota la riga sopra non occupa spazio (l'etichetta, che ci sta dentro, è disegnata sulla lastra) */
+.set-plates .field-head:not(:has(.field-note)) { height: 0; margin-bottom: calc(-1 * var(--sp-2)); }
+.set-plates .field-label { position: absolute; z-index: 1; left: 1px; bottom: 1px; height: calc(var(--plate-h, 34px) - 2px); width: var(--plate-k); display: flex; align-items: center; padding-left: var(--sp-5);
+  font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); pointer-events: none;
+  background: color-mix(in srgb, var(--raised) 80%, white); border-radius: 9px 0 0 2px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.set-plates .combobox input { height: var(--plate-h, 34px); padding-left: calc(var(--plate-k) + var(--sp-3)); border-color: var(--line); border-radius: var(--alt-r); background: linear-gradient(90deg, var(--raised), var(--fade-end) 60%); font-weight: 600; }
+.set-plates .combobox input:hover:not(:disabled) { border-color: var(--control-line); }
+.set-plates .combobox input:focus { border-color: var(--accent); }
+.set-plates .combobox-leading { left: calc(var(--plate-k) + var(--sp-2)); }
+.set-plates .combobox:has(.combobox-leading) input { padding-left: calc(var(--plate-k) + 28px); }
+.set-plates .combobox-display { left: calc(var(--plate-k) + var(--sp-3)); font-weight: 600; }
+.set-plates .nature-fx { display: inline-flex; gap: var(--sp-3); }
+.set-plates .nature-fx > span { display: inline-flex; align-items: center; gap: 2px; }
+/* Schermi stretti (sotto 1366): la testa nella lastra ruberebbe il posto al valore ("Capsula energetica" si taglierebbe);
+   l'etichetta torna sopra, la lastra resta */
+@media (max-width: 1365px) {
+  .set-plates { --plate-k: 0px; }
+  .set-plates .field-head:not(:has(.field-note)) { height: auto; margin-bottom: 0; }
+  .set-plates .field-head { justify-content: space-between; }
+  .set-plates .field-label { position: static; width: auto; height: auto; padding: 0; background: none; clip-path: none; border-radius: 0; font: inherit; letter-spacing: inherit; color: inherit; }
+  .set-plates .combobox input { padding-left: var(--sp-5); }
+  .set-plates .combobox-leading { left: 9px; }
+  .set-plates .combobox:has(.combobox-leading) input { padding-left: 32px; }
+  .set-plates .combobox-display { left: 11px; }
+}
