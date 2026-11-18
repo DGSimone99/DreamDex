@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { getMove } from '../engine/dex';
 import { gameName } from '../i18n/game';
-import { useLang } from '../i18n/react';
+import { useLang, useT } from '../i18n/react';
 import { typeColor } from './Sprite';
 import { CategoryIcon } from './CategoryIcon';
 import { typeIconUrl } from './typeIcons';
@@ -25,13 +25,15 @@ const CATEGORY = { Physical: 'physical', Special: 'special', Status: 'status' } 
  * le mosse di stato hanno solo il simbolo, quelle a potenza variabile "—"). Larga sempre uguale.
  */
 export function MoveTail({ name, value, symbol = true }: { name: string; value?: ReactNode; symbol?: boolean }) {
+  const t = useT();
   const category = symbol ? getMove(name)?.category : undefined;
   const tail = value !== undefined ? value : movePower(name);
   // Mossa di stato senza numero: la coda si stringe attorno al simbolo (larga come le altre sembrerebbe vuota)
   const onlySymbol = tail == null && category === 'Status';
   return (
     <span className={`mvp-tail${onlySymbol ? ' st' : ''}`}>
-      {category && <span className={`mvp-cat cat-${CATEGORY[category]}`}><CategoryIcon category={category} /></span>}
+      {/* Il simbolo dice la categoria anche a parole, sotto il mouse (le mosse di stato hanno solo quello) */}
+      {category && <span className={`mvp-cat cat-${CATEGORY[category]}`} title={t(`editor.category.${category}`)}><CategoryIcon category={category} /></span>}
       {/* Il numero al centro della coda; senza numero (mosse di stato) al centro va il simbolo */}
       {tail != null ? <span className="mvp-num">{tail}</span> : category === 'Status' ? null : <span className="mvp-num mvp-none" aria-hidden="true">—</span>}
     </span>

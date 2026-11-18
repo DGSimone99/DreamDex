@@ -75,32 +75,44 @@ describe('editor del set', () => {
   });
 });
 
-describe('preset Smogon nell\'editor', () => {
-  it('scegliere un preset sostituisce il set, tenendo preferito e Custom Skillset', async () => {
+describe('menu Set: preset Smogon', () => {
+  const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: 'Set' }));
+    return screen.getByRole('dialog', { name: 'Set' });
+  };
+  const rowNames = (menu: HTMLElement) => [...menu.querySelectorAll('.set-menu-list > li')]
+    .map(li => (li.classList.contains('set-menu-group') ? `# ${li.textContent}` : li.querySelector('strong')?.textContent));
+
+  it('scegliere un preset sostituisce il set, tenendo preferito e Custom Skillset; ogni riga dice strumento, natura ed EV', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const presets = [
-      { name: 'Sun Sweeper', format: 'gen9nationaldex', set: { ...emptySet('Ninetales'), item: 'Heat Rock', ability: 'Drought', moves: ['Solar Beam', 'Fire Blast'] } },
+      { name: 'Sun Sweeper', format: 'gen9nationaldex', set: { ...emptySet('Ninetales'), item: 'Heat Rock', ability: 'Drought', nature: 'Timid', evs: { spa: 252, spe: 252, hp: 4 }, moves: ['Solar Beam', 'Fire Blast'] } },
       { name: 'Nasty Plot', format: 'gen8ou', set: { ...emptySet('Ninetales'), item: 'Life Orb', ability: 'Drought', moves: ['Nasty Plot', 'Fire Blast'] } },
     ];
     renderIt(<SetEditor set={{ ...set, favorite: true }} presets={presets} genLimit={9} onChange={onChange} />);
-    await user.click(screen.getByLabelText('Preset Smogon'));
-    const list = screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' });
-    const option = within(list).getAllByRole('option')[1];
-    expect(option).toHaveTextContent('Nasty Plot');
-    expect(option).toHaveTextContent('Gen 8 OU');
+    const menu = await openMenu(user);
+    const sun = within(menu).getByRole('button', { name: /^Sun Sweeper/ });
+    expect(sun).toHaveTextContent('Heat Rock · Timid · 252 AttSp / 252 Vel');
+    const nasty = within(menu).getByRole('button', { name: /^Nasty Plot/ });
+    expect(nasty).toHaveTextContent('Gen 8 OU');
     // Due formati: le voci stanno sotto l'intestazione del loro formato, nell'ordine in cui arrivano
-    expect([...list.querySelectorAll('.format-head')].map(h => h.textContent)).toEqual(['NatDex OU', 'Gen 8 OU']);
-    await user.click(option);
+    expect([...menu.querySelectorAll('.set-menu-group')].map(h => h.textContent)).toEqual(['NatDex OU', 'Gen 8 OU']);
+    await user.click(nasty);
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ item: 'Life Orb', moves: ['Nasty Plot', 'Fire Blast'], favorite: true, species: 'Ninetales' }));
+    // Scegliere chiude il menu e il fuoco torna al pulsante
+    expect(screen.queryByRole('dialog', { name: 'Set' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Set' })).toHaveFocus();
   });
 
-  it('senza preset la tendina è disattivata', () => {
+  it('senza preset la scheda Smogon lo dice', async () => {
+    const user = userEvent.setup();
     renderIt(<SetEditor set={set} genLimit={9} onChange={vi.fn()} />);
-    expect(screen.getByLabelText('Preset Smogon')).toBeDisabled();
+    const menu = await openMenu(user);
+    expect(menu).toHaveTextContent('Nessun preset Smogon');
   });
 
-  it('senza voce Custom: il campo resta vuoto appena il set non coincide più con un preset', async () => {
+  it('il preset uguale al set attuale è segnato, finché il set non cambia', async () => {
     const user = userEvent.setup();
     const sun = { ...set, item: 'Heat Rock', ability: 'Drought', nature: 'Timid', moves: ['Solar Beam', 'Fire Blast'], evs: { spa: 252, spe: 252, hp: 4 } };
     const presets = [{ name: 'Sun Sweeper', format: 'gen9nationaldex', set: sun }];
@@ -110,45 +122,45 @@ describe('preset Smogon nell\'editor', () => {
       return <SetEditor set={current} presets={presets} genLimit={9} onChange={setCurrent} />;
     }
     renderIt(<Editor />);
-    const field = () => screen.getByLabelText('Preset Smogon').closest('.combobox')!;
-    expect(field()).toHaveTextContent('Sun Sweeper');
-
-    await user.click(screen.getByLabelText('Preset Smogon'));
-    const options = within(screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' })).getAllByRole('option');
-    // Solo i preset Smogon: niente voce Custom
-    expect(options).toHaveLength(1);
+    let menu = await openMenu(user);
+    expect(within(menu).getByRole('button', { name: /^Sun Sweeper/ })).toHaveAttribute('aria-current', 'true');
     await user.keyboard('{Escape}');
 
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Flamethrower');
     await user.tab();
-    // Il set non è più un preset: il campo resta vuoto
-    expect(field()).not.toHaveTextContent('Sun Sweeper');
-    expect(field()).not.toHaveTextContent('Custom');
+    menu = await openMenu(user);
+    expect(within(menu).getByRole('button', { name: /^Sun Sweeper/ })).not.toHaveAttribute('aria-current');
+  });
 
-    await user.clear(screen.getByLabelText('Mossa 2'));
-    await user.type(screen.getByLabelText('Mossa 2'), 'Solar Beam');
-    await user.tab();
-    expect(field()).toHaveTextContent('Sun Sweeper');
+  it('il preset migliore per il team va in cima, segnato; sceglierlo usa il preset migliore completo', async () => {
+    const user = userEvent.setup();
+    const onBest = vi.fn();
+    const onChange = vi.fn();
+    const mk = (name: string, move: string) => ({ name, format: 'gen9nationaldex', set: { ...emptySet('Ninetales'), item: 'Life Orb', ability: 'Drought', moves: [move, 'Fire Blast'] } });
+    const presets = [mk('Offensive', 'Nasty Plot'), mk('Sun Setter', 'Will-O-Wisp'), mk('Utility', 'Solar Beam')];
+    renderIt(<SetEditor set={set} presets={presets} genLimit={9} bestIndex={() => 1} onBest={onBest} onChange={onChange} />);
+    const menu = await openMenu(user);
+    expect(rowNames(menu)).toEqual(['Sun Setter', 'Offensive', 'Utility']);
+    const best = within(menu).getByRole('button', { name: /^Sun Setter/ });
+    expect(best).toHaveTextContent('Migliore per il team');
+    await user.click(best);
+    expect(onBest).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
 
 describe('preset di più formati', () => {
-  it('raggruppati per formato: il formato scelto in cima, le frecce saltano le intestazioni', async () => {
+  it('raggruppati per formato: il formato scelto in cima', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
     const mk = (name: string, format: string, move: string) =>
       ({ name, format, set: { ...emptySet('Ninetales'), item: 'Life Orb', ability: 'Drought', moves: [move, 'Fire Blast'] } });
     // Un preset di Gen 9 OU arriva in mezzo: il menu lo porta sotto la sua intestazione, dopo quelli NatDex OU
     const presets = [mk('Offensive Utility', 'gen9nationaldex', 'Nasty Plot'), mk('Offensive Utility', 'gen9ou', 'Solar Beam'), mk('Sun Setter', 'gen9nationaldex', 'Will-O-Wisp')];
-    renderIt(<SetEditor set={set} presets={presets} genLimit={9} onChange={onChange} />);
-    await user.click(screen.getByLabelText('Preset Smogon'));
-    const list = screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' });
-    const rows = [...list.children].map(li => (li.classList.contains('format-head') ? `# ${li.textContent}` : li.querySelector('strong')?.textContent));
+    renderIt(<SetEditor set={set} presets={presets} genLimit={9} onChange={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Set' }));
+    const menu = screen.getByRole('dialog', { name: 'Set' });
+    const rows = [...menu.querySelectorAll('.set-menu-list > li')].map(li => (li.classList.contains('set-menu-group') ? `# ${li.textContent}` : li.querySelector('strong')?.textContent));
     expect(rows).toEqual(['# NatDex OU', 'Offensive Utility', 'Sun Setter', '# Gen 9 OU', 'Offensive Utility']);
-    // Le intestazioni non sono voci: tre scelte, e due frecce dalla prima portano dritte al preset di Gen 9 OU
-    expect(within(list).getAllByRole('option')).toHaveLength(3);
-    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
-    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ moves: ['Solar Beam', 'Fire Blast'] }));
   });
 });
