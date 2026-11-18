@@ -445,7 +445,7 @@
 /* Le fasce tagliano quello che sborda: l'anello del fuoco (si arriva coi tasti freccia) sta dentro il ruolo */
 .dash-role:focus-visible { outline-offset: -2px; }
 /* Ruolo come piccola lastra di Champions: la spunta (o la ×) in una tessera a sinistra, come il tipo nelle mosse */
-.dash-role-tag { --rt-h: 22px; display: inline-flex; align-items: stretch; min-height: var(--rt-h); overflow: hidden; font-size: var(--fs-caption); line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 60%); }
+.dash-role-tag { --rt-h: 22px; display: inline-flex; align-items: stretch; min-height: var(--rt-h); overflow: hidden; font-size: var(--fs-caption); line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); }
 .dash-role-tag .icon { flex: none; box-sizing: border-box; width: var(--rt-h); height: auto; padding: 0 5px; stroke-width: 2.5; color: var(--good); background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
 .dash-role-tag .dash-role-name { align-self: center; padding: 0 var(--sp-4) 0 var(--sp-3); }
 .dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 22%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
@@ -617,7 +617,7 @@
 /* I sottotitoli del Riassunto (Meteo e campo, Trappole, Sinergie) come la fascia di Pokémon Champions a sinistra, come i titoli
    della scheda del candidato: fascia chiara che sfuma verso destra e un filo sotto che sfuma uguale */
 .sum-sec-h, .analysis h4.sum-sec-h { position: relative; flex: none; display: block; margin: 0; padding: 4px 24px 4px 9px; font: 600 var(--fs-small)/1.2 var(--display); letter-spacing: 0.01em; text-transform: none; color: var(--text);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 90%, white), transparent 70%); border-bottom: 0; }
+  background: linear-gradient(90deg, var(--band), transparent 70%); border-bottom: 0; }
 .sum-sec-h::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 /* Sezione vuota: "Nessuno" sulla riga del titolo, a destra (come il +N), così non occupa una riga sua */
 .sum-none { position: absolute; right: 4px; top: 13px; margin: 0; font-size: var(--fs-caption); line-height: 1.2; color: var(--faint); }
@@ -765,8 +765,9 @@
 .coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
 .coach-list-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-6); min-height: 28px; }
 /* "Proposte, dalla più utile" come la fascia di Pokémon Champions a sinistra (titolo di un gruppo dentro il pannello) */
+.coach-list-head .coach-count { padding: 1px var(--sp-4); line-height: 14px; }
 .coach-list-head .coach-sec { position: relative; flex: 1; min-width: 0; padding: 4px 24px 4px 9px; font: 600 var(--fs-small)/1.2 var(--display); font-style: normal; text-transform: none; letter-spacing: 0.01em; color: var(--text);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 90%, white), transparent 70%); }
+  background: linear-gradient(90deg, var(--band), transparent 70%); }
 .coach-list-head .coach-sec::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 /* La lista ha l'altezza che resta: quante righe ci stanno lo conta useRowsPerPage (fino a 4) */
 .coach-list-box { --row-h: 112px; --row-gap: 6px; flex: 1; min-height: 0; }

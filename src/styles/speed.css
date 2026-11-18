@@ -49,7 +49,7 @@
 .sp-head-val { text-align: right; }
 /* Sopra le barre la fascia di Pokémon Champions, come Tipi e Meta in Offesa e Difesa; il numero a destra resta scritto */
 .sp-head > span:first-child { position: relative; display: block; padding: 7px 0 6px; text-align: center; color: var(--text);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent); }
+  background: linear-gradient(90deg, transparent, var(--band) 25%, var(--band) 75%, transparent); }
 .sp-head > span:first-child::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .sp-head { align-items: end; }
 .sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; align-items: center; gap: var(--sp-6); width: 100%; padding: 3px var(--sp-2) 3px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }

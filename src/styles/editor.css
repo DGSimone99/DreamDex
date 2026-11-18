@@ -71,7 +71,7 @@
 /* I titoli dei riquadri (Statistiche, Set, Mosse) come la fascia di Pokémon Champions: centrati sul bordo alto, una fascia
    chiara che sfuma ai due lati e un filo sotto che sfuma uguale */
 .set-editor legend:not(.visually-hidden) { position: relative; width: 60%; margin: 0 auto; padding: 4px 0; text-align: center; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent); }
+  background: linear-gradient(90deg, transparent, var(--band) 25%, var(--band) 75%, transparent); }
 .set-editor legend:not(.visually-hidden)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-7); }
 .set-editor .field-note { font-size: var(--fs-label); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
@@ -85,7 +85,7 @@
    (--ev-w) con EV, IV e finale */
 .stat-rows { --ev-w: 120px; }
 .stat-row > :nth-child(3) { grid-column: 4; }
-.stat-row { display: grid; grid-template-columns: 66px 92px minmax(0, 1fr) var(--ev-w) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
+.stat-row { display: grid; grid-template-columns: 92px 92px minmax(0, 1fr) var(--ev-w) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
 /* Intestazione delle colonne e selettore del livello sopra i valori finali */
 /* Icona della statistica (come in Champions) prima del nome */
 .stat-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
@@ -104,8 +104,8 @@
 .stat-base { display: flex; align-items: center; gap: var(--sp-4); }
 .stat-base-n { width: 26px; text-align: right; font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Barra della base come il rettangolo di Champions (fessura incassata, angoli dritti, filo chiaro in alto), nei colori di oggi */
-.stat-base-bar { flex: 1; height: 7px; background: var(--field); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); overflow: hidden; }
-.stat-base-bar > span { display: block; height: 100%; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.stat-base-bar { flex: 1; height: 7px; background: var(--field); box-shadow: var(--slot-inset); overflow: hidden; }
+.stat-base-bar > span { display: block; height: 100%; box-shadow: inset 0 1px 0 var(--slot-shine); }
 .ev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: var(--ev-h); margin: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
 /*
  * Barra degli EV come il rettangolo di Pokémon Champions: il binario incassato e il riempimento pieno, tutti e due con una
@@ -116,8 +116,8 @@
 .ev-slider::-webkit-slider-runnable-track {
   height: var(--ev-h);
   border: 0;
-  border-radius: 1px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  border-radius: 0;
+  box-shadow: var(--slot-inset);
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.16) var(--fill), rgba(255, 255, 255, 0.05) var(--fill)) top / 100% 30% no-repeat,
     linear-gradient(90deg, var(--accent) var(--fill), var(--ground) var(--fill));
@@ -126,8 +126,8 @@
   height: var(--ev-h);
   box-sizing: border-box;
   border: 0;
-  border-radius: 1px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  border-radius: 0;
+  box-shadow: var(--slot-inset);
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.16) var(--fill), rgba(255, 255, 255, 0.05) var(--fill)) top / 100% 30% no-repeat,
     linear-gradient(90deg, var(--accent) var(--fill), var(--ground) var(--fill));
@@ -143,7 +143,7 @@
  */
 .stat-row:not(.stat-head) {
   position: relative;
-  border-radius: 10px 3px 10px 3px;
+  border-radius: var(--alt-r);
   /* Due metà come le righe di Champions: nome e base sul Raised, poi una linea inclinata e la metà con barra, EV, IV e
      finale un po' più scura (--split: dove cade il taglio, appena prima della barra, a metà targhetta) */
   --split: calc(100% - var(--ev-w) - 212px);
@@ -227,8 +227,8 @@
 .set-plates .field-head:not(:has(.field-note)) { height: 0; margin-bottom: calc(-1 * var(--sp-2)); }
 .set-plates .field-label { position: absolute; z-index: 1; left: 1px; bottom: 1px; height: calc(var(--plate-h, 34px) - 2px); width: var(--plate-k); display: flex; align-items: center; padding-left: var(--sp-5);
   font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); pointer-events: none;
-  background: color-mix(in srgb, var(--raised) 80%, white); border-radius: 9px 0 0 2px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
-.set-plates .combobox input { height: var(--plate-h, 34px); padding-left: calc(var(--plate-k) + var(--sp-3)); border-color: var(--line); border-radius: var(--alt-r); background: linear-gradient(90deg, var(--raised), var(--fade-end) 60%); font-weight: 600; }
+  background: var(--plate-head); border-radius: 9px 0 0 2px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.set-plates .combobox input { height: var(--plate-h, 34px); padding-left: calc(var(--plate-k) + var(--sp-3)); border-color: var(--line); border-radius: var(--alt-r); background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); font-weight: 600; }
 .set-plates .combobox input:hover:not(:disabled) { border-color: var(--control-line); }
 .set-plates .combobox input:focus { border-color: var(--accent); }
 .set-plates .combobox-leading { left: calc(var(--plate-k) + var(--sp-2)); }

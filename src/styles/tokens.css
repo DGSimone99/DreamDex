@@ -54,6 +54,14 @@
   --alt-r-sm: 7px 2px 7px 2px;
   /* Dove sfumano lastre, mosse, tipi e ruoli: il nostro scuro dei campi, non il nero puro */
   --fade-end: var(--field);
+  /* Fin dove sfumano lastre, mosse, tipi e ruoli (lo stesso punto ovunque) */
+  --fade-stop: 60%;
+  /* La fascia di Champions (titoli dei gruppi) e la testa più chiara delle lastre (etichetta del Set, ruolo principale) */
+  --band: color-mix(in srgb, var(--raised) 90%, white);
+  --plate-head: color-mix(in srgb, var(--raised) 80%, white);
+  /* Le barre di Champions: fessura incassata e filo chiaro in cima al riempimento */
+  --slot-inset: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  --slot-shine: rgba(255, 255, 255, 0.35);
   /* Spaziature (padding, margin, gap): la scala misurata su come è fatta l'app, a passi di 2px fino a 18 più il margine
      grande. 6px è il passo più usato (fra icona e testo, dentro i controlli); 4 e 8 i più comuni dopo. Restano scritti a
      mano solo i valori ottici: 1px e 3px (bordi, tag sottili), i dispari dentro i padding (compensano il corsivo o
