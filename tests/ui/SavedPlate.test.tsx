@@ -26,12 +26,12 @@ describe('la targa del team e la linguetta Team salvati', () => {
     expect(plate().querySelector('.plate-dot')).toBeNull();
   });
 
-  it('la linguetta Team salvati (nella barra, prima di Importa) apre il menu; la targa non è un menu', async () => {
+  it('la linguetta Team salvati (nella barra, subito dopo la targa) apre il menu; la targa non è un menu', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     expect(plate().closest('details')).toBeNull();
     expect(savedButton()).toHaveAccessibleName('Team salvati (0)');
-    expect(savedButton().closest('.team-tabs')).not.toBeNull();
+    expect(savedButton().closest('.team-saved')).not.toBeNull();
     await user.click(savedButton());
     expect(savedButton().closest('details')).toHaveAttribute('open');
   });

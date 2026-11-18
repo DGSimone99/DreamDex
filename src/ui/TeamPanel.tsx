@@ -13,7 +13,7 @@ import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, 
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
-import { bestPreset } from '../engine/bestPreset';
+import { bestPreset, bestPresetIndex } from '../engine/bestPreset';
 import { ImproveSetsDialog } from './ImproveSetsDialog';
 import { cancelPrepareFill, prepareFill, prepareImproveSets } from './useRanking';
 import { ImportDialog } from './ImportDialog';
@@ -160,8 +160,10 @@ interface SlotActions {
   drag: (index: number, phase: 'start' | 'over' | 'drop' | 'end') => void;
   /** Set incollato; `review`: mosse non imparabili o nomi non trovati, da chiedere/dire dopo averlo applicato. */
   paste: (index: number, set: TeamSet, review?: ImportReview) => void;
-  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
+  /** Preset con il voto del team più alto per questo membro, completato e ritoccato (null se il membro non ne ha). */
   best: (index: number) => TeamSet | null;
+  /** Solo quale preset dà al team il voto più alto (posizione in presetsForSet), per segnarlo nel menu Set. */
+  bestIndex: (index: number) => number | null;
   ignoreWarning: () => void;
   change: (index: number, set: TeamSet) => void;
   remove: (index: number) => void;
@@ -214,25 +216,25 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
   const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
   // Gestori sempre aggiornati anche dentro l'editor memorizzato
-  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning, onBest });
-  live.current = { onChange, onReplace, onPaste, onIgnoreWarning, onBest };
+  const onBestIndex = () => actions.bestIndex(index);
+  // Apre il riquadro del testo del set (assegnato più sotto, dove c'è il suo stato)
+  const textOpen = useRef<() => void>(() => undefined);
+  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
+  live.current = { onChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
     onReplace: () => live.current.onReplace(),
     onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
     onBest: () => live.current.onBest(),
+    onBestIndex: () => live.current.onBestIndex(),
+    // Il preset migliore del menu Set: completato e ritoccato, come faceva il pulsante "Preset migliore"
+    applyBest: () => {
+      const next = live.current.onBest();
+      if (next) live.current.onChange(next);
+    },
+    openText: () => textOpen.current(),
   }), []);
-  // Esito del pulsante Preset migliore, per un attimo: applicato o era già quello
-  const [best, setBest] = useState<'applied' | 'same' | null>(null);
-  const applyBest = () => {
-    const next = stable.onBest();
-    if (!next) return;
-    const same = JSON.stringify(next) === JSON.stringify(set);
-    if (!same) stable.onChange(next);
-    setBest(same ? 'same' : 'applied');
-    setTimeout(() => setBest(null), 1600);
-  };
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
@@ -257,8 +259,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   // `blocked`: cosa ferma l'incolla (detto in una finestra); il testo resta nel riquadro da correggere
   const [paste, setPaste] = useState<{ text: string; original: string; blocked: ImportReview | null } | null>(null);
   const pasteArea = useRef<HTMLTextAreaElement>(null);
-  // Testo del set: il riquadro si apre sopra le Statistiche (Set e Mosse restano in vista) e si chiude cliccando fuori
-  const ioRef = useRef<HTMLSpanElement>(null);
+  // Testo del set (Incolla testo nel menu Set): il riquadro si apre sopra le Statistiche (Set e Mosse restano in vista) e si
+  // chiude cliccando fuori
   const pasteRef = useRef<HTMLDivElement>(null);
   const ioOpen = !!paste;
   useEffect(() => {
@@ -266,11 +268,15 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     // Un testo già modificato non si butta con un clic fuori: si chiude solo con Annulla o Esc
     const away = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (!ioRef.current?.contains(target) && !pasteRef.current?.contains(target)) setPaste(p => (p && p.text !== p.original ? p : null));
+      if (!pasteRef.current?.contains(target)) setPaste(p => (p && p.text !== p.original ? p : null));
     };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, [ioOpen]);
+  textOpen.current = () => {
+    const text = exportShowdown([set], { tera: teraAllowed(format) });
+    setPaste({ text, original: text, blocked: null });
+  };
   const applyPaste = () => {
     if (!paste) return;
     const result = importShowdown(paste.text, lang);
@@ -284,6 +290,23 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const evOverText = evTotal(set.evs) > EV_TOTAL ? tr('team.evOver', { n: evTotal(set.evs) }) : null;
   const editorProblems = problems.filter(p => p !== evOverText);
   const memberTip = useMemberTip(500, '.slot-card');
+  // La punta sotto la carta aperta: al centro della carta, misurato (le carte cambiano larghezza con la finestra)
+  const pointer = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const tip = pointer.current;
+      const box = card.current?.getBoundingClientRect();
+      const base = (tip?.offsetParent as HTMLElement | null)?.getBoundingClientRect();
+      if (!tip || !box || !base) return;
+      tip.style.left = `${box.left + box.width / 2 - base.left}px`;
+    };
+    place();
+    window.addEventListener('resize', place);
+    const watch = typeof ResizeObserver === 'function' ? new ResizeObserver(place) : null;
+    if (card.current) watch?.observe(card.current);
+    return () => { window.removeEventListener('resize', place); watch?.disconnect(); };
+  }, [open, collapsed, index, total]);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
   const shownRoles = cardRoles(set, rules, subRoles);
@@ -442,16 +465,16 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
         {roles.length > 0 && <small className="roles" title={rolesTitle} aria-hidden="true">{roles[0]}</small>}
       </div>
+      {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
+      {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
-        presetAction={
-          <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}
-            aria-label={tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}>
-            <Icon name={best ? 'check' : 'spark'} /> <span className="btn-label">{tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}</span>
-          </button>
-        }
+        bestIndex={stable.onBestIndex}
+        onBest={stable.applyBest}
+        onText={stable.openText}
+        smogonLink={<SmogonLink species={name} format={format} presets={presets} />}
         title={open && (
           <div className="editor-title">
             {/* Con un soprannome, la specie resta sopra come piccola etichetta (come Statistiche, Set e Mosse) */}
@@ -505,25 +528,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
             <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
           </div>
         )}</>}
-        smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
-        ioAction={
-          <span className="io-anchor" ref={ioRef}>
-            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIOTitle')}
-              onClick={() => setPaste(p => {
-                if (p) return null;
-                const text = exportShowdown([set], { tera: teraAllowed(format) });
-                return { text, original: text, blocked: null };
-              })}>
-              <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
-            </button>
-            <Hint label={tr('team.copySet')} done={copied ? tr('team.copied') : undefined}>
-              <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')}
-                onClick={async () => {
-                  if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
-                }}><Icon name={copied ? 'check' : 'copy'} /></button>
-            </Hint>
-          </span>
-        }
         textPanel={paste && (
     <div className="paste-panel" ref={pasteRef} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
@@ -538,6 +542,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     </div>
         )}
         actions={<>
+          {/* Copia il set a un clic, senza aprire niente (il testo intero si incolla o si guarda da Set › Incolla testo) */}
+          <Hint label={tr('team.copySet')} done={copied ? tr('team.copied') : undefined}>
+            <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')}
+              onClick={async () => {
+                if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+              }}><Icon name={copied ? 'check' : 'copy'} /></button>
+          </Hint>
           {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
           <Hint label={tr('team.closeEditor')} end>
             <button type="button" className="editor-close" aria-label={tr('team.closeEditor')}
@@ -719,6 +730,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
       if (review) setAsk({ index: i, review });
     },
     best: i => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; },
+    bestIndex: i => bestPresetIndex(team, i, data, format.genLimit),
     ignoreWarning: onAllowMultipleMegas,
     change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
     remove: i => {
@@ -740,6 +752,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     drag: (i, phase) => live.current.drag(i, phase),
     paste: (i, next, review) => live.current.paste(i, next, review),
     best: i => live.current.best(i),
+    bestIndex: i => live.current.bestIndex(i),
     ignoreWarning: () => live.current.ignoreWarning(),
     change: (i, next) => live.current.change(i, next),
     remove: i => live.current.remove(i),
@@ -761,7 +774,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           </h2>
           {plateName}
         </div>
-        {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
+        {/* Una striscia sola, tutto alto e inclinato uguale: Team salvati accanto alla targa, poi la guida; a destra Importa,
+            Esporta e il link in un gruppo, e il cestino */}
+        {saved && <div className="team-saved">{saved}</div>}
+        {/* La guida: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
         <div className="team-guide-slot">
           {canFill ? (
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
@@ -806,13 +822,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati e Showdown (Importa / Esporta) come linguette
-            attaccate, poi Svuota a parte */}
+        {/* Scorciatoie, sempre allo stesso posto a destra: Importa, Esporta e il link in un gruppo, poi Svuota a parte */}
         <div className="team-quick">
-          <div className="team-tabs">
-            {saved}
-            {io}
-          </div>
+          {io && <div className="team-io">{io}</div>}
           {/* Svuota: il cestino, staccato da Importa ed Esporta da una barretta; il fumetto come quello di Esporta */}
           {team.length > 0 && (
             <span className="clear-wrap">

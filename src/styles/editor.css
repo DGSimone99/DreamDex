@@ -3,7 +3,8 @@
 .drawer {
   padding: var(--sp-7) var(--sp-10) var(--sp-8);
   background: var(--panel);
-  border-top: 3px solid var(--accent);
+  /* Il filo magenta in alto: "stai modificando" la carta aperta sopra (stesso magenta della sua riga e della punta) */
+  border-top: 3px solid var(--accent-2);
   animation: drawer 0.3s var(--ease);
 }
 @media (min-width: 1100px) {
@@ -56,17 +57,8 @@
 .paste-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .paste-actions .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .editor-actions button { height: 36px; white-space: nowrap; }
-.set-editor .preset-field { flex-direction: row; align-items: center; gap: var(--sp-6); width: 400px; flex-shrink: 1; min-width: 0; }
-.set-editor .preset-field .field-head { white-space: nowrap; }
-.set-editor .preset-field .combobox { flex: 1; }
 .preset-format { flex: none; font-size: var(--fs-label); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); padding: 1px var(--sp-3); border: 1px solid var(--line); border-radius: 3px; }
 .combobox input:disabled { opacity: 0.55; cursor: not-allowed; }
-/* Custom Skillset: levetta con sopra il nome e sotto cosa fa adesso (si legge senza tooltip) */
-.set-editor .custom-toggle { flex-direction: row; align-items: center; flex-shrink: 0; height: 36px; gap: var(--sp-5); width: fit-content; white-space: nowrap; text-transform: none; letter-spacing: 0; font-size: var(--fs-section); color: var(--text); cursor: pointer; }
-.set-editor .custom-toggle .custom-text { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; line-height: 1.15; }
-.set-editor .custom-toggle .custom-text b { font: 600 var(--fs-small) var(--ui); color: var(--text); }
-.set-editor .custom-toggle .custom-text small { font-size: var(--fs-label); font-weight: 400; color: var(--muted); }
-.set-editor .custom-toggle.on .custom-text small { color: var(--accent-ink); }
 .set-editor fieldset { margin: 0; padding: var(--sp-3) var(--sp-7) var(--sp-6); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
 /* I titoli dei riquadri (Statistiche, Set, Mosse) come la fascia di Pokémon Champions: centrati sul bordo alto, una fascia
    chiara che sfuma ai due lati e un filo sotto che sfuma uguale */
@@ -79,105 +71,90 @@
 /* "Spread più usati" sulla riga del titolo EV: non ruba una riga al blocco */
 .set-editor .evs .spread-panel > summary { position: absolute; top: 6px; right: 14px; }
 .set-editor .evs .spread-panel { display: contents; }
-/* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
-.stat-rows { display: grid; gap: 5px; margin-top: var(--sp-2); }
-/* Come le righe di Champions: nome e base a sinistra, poi uno spazio libero, e dalla metà della targhetta la barra corta
-   (--ev-w) con EV, IV e finale */
-.stat-rows { --ev-w: 120px; }
-.stat-row > :nth-child(3) { grid-column: 4; }
-.stat-row { display: grid; grid-template-columns: 92px 92px minmax(0, 1fr) var(--ev-w) 58px 44px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-3); border-radius: 3px; }
-/* Intestazione delle colonne e selettore del livello sopra i valori finali */
+/*
+ * Righe delle statistiche come il riepilogo di Champions: icona e nome, la freccetta della natura accanto al numero, il
+ * valore della statistica grande (dove prima stava la base), poi la barra degli EV, il numero degli EV e gli IV.
+ * Righe a strisce (una sì e una no un po' più chiara), angoli alternati piccoli; la riga attiva prende il bordo ciano e il
+ * triangolino a sinistra, come la freccia della riga scelta in Champions.
+ */
+.stat-rows { display: grid; gap: 3px; margin-top: var(--sp-2); }
+.stat-row { display: grid; grid-template-columns: 86px 14px 52px minmax(0, 1fr) 58px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-5) var(--sp-1) var(--sp-4); border-radius: var(--alt-r-sm); }
 /* Icona della statistica (come in Champions) prima del nome */
 .stat-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .stat-name .stat-icon { flex: none; width: 14px; height: 14px; }
-.stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+/* Intestazione: STATS sopra il valore, EV sopra barra e numero insieme, IV sopra il suo campo */
+.stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .stat-row.stat-head:hover { background: none; }
+.stat-head-value { text-align: right; }
+.stat-head-ev { grid-column: span 2; text-align: center; }
 .stat-head-num { text-align: center; }
-.stat-head-final { text-align: right; }
 .set-editor .iv-input { height: 28px; padding: var(--sp-1) var(--sp-2); text-align: center; font-variant-numeric: tabular-nums; }
 .set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-body)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
-/* La natura: il nome resta del suo colore, accanto la freccetta doppia di Champions (verde su, rossa giù); il finale colorato */
+/* La natura: la freccetta doppia di Champions (verde su, rossa giù) accanto al numero, che prende lo stesso colore */
 .nature-arrow { flex: none; display: inline-block; vertical-align: -1px; }
 .nature-arrow.up { color: var(--good); }
 .nature-arrow.down { color: var(--bad); }
-.stat-name .nature-arrow { margin-left: var(--sp-1); }
-.stat-base { display: flex; align-items: center; gap: var(--sp-4); }
-.stat-base-n { width: 26px; text-align: right; font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; }
-/* Barra della base come il rettangolo di Champions (fessura incassata, angoli dritti, filo chiaro in alto), nei colori di oggi */
-.stat-base-bar { flex: 1; height: 7px; background: var(--field); box-shadow: var(--slot-inset); overflow: hidden; }
-.stat-base-bar > span { display: block; height: 100%; box-shadow: inset 0 1px 0 var(--slot-shine); }
-.ev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: var(--ev-h); margin: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.stat-arrow { display: flex; justify-content: flex-end; }
+.ev-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
 /*
- * Barra degli EV come il rettangolo di Pokémon Champions: il binario incassato e il riempimento pieno, tutti e due con una
- * striscia più chiara in alto; angoli dritti. Niente cornice: la metà scura della targhetta fa già da cornice. La tacca bianca per trascinare si vede sulla
- * riga attiva (mouse sopra o fuoco).
+ * Barra degli EV: la fessura incassata di Champions, più quieta (6px, riempimento ciano spento con il filo chiaro in alto).
+ * Sulla riga attiva il riempimento si accende e compare la tacca bianca per trascinare; l'input resta alto 22px, così si
+ * prende bene col mouse.
  */
-.stat-rows { --ev-h: 22px; }
+.stat-rows { --ev-h: 6px; --ev-fill: color-mix(in srgb, var(--accent) 45%, var(--panel)); }
+.stat-row:is(:hover, :focus-within) { --ev-fill: var(--accent); }
 .ev-slider::-webkit-slider-runnable-track {
   height: var(--ev-h);
   border: 0;
-  border-radius: 0;
+  border-radius: 1px;
   box-shadow: var(--slot-inset);
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16) var(--fill), rgba(255, 255, 255, 0.05) var(--fill)) top / 100% 30% no-repeat,
-    linear-gradient(90deg, var(--accent) var(--fill), var(--ground) var(--fill));
+    linear-gradient(90deg, var(--slot-shine) var(--fill), transparent var(--fill)) top / 100% 1px no-repeat,
+    linear-gradient(90deg, var(--ev-fill) var(--fill), var(--field) var(--fill));
 }
 .ev-slider::-moz-range-track {
   height: var(--ev-h);
   box-sizing: border-box;
   border: 0;
-  border-radius: 0;
+  border-radius: 1px;
   box-shadow: var(--slot-inset);
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16) var(--fill), rgba(255, 255, 255, 0.05) var(--fill)) top / 100% 30% no-repeat,
-    linear-gradient(90deg, var(--accent) var(--fill), var(--ground) var(--fill));
+    linear-gradient(90deg, var(--slot-shine) var(--fill), transparent var(--fill)) top / 100% 1px no-repeat,
+    linear-gradient(90deg, var(--ev-fill) var(--fill), var(--field) var(--fill));
 }
-.ev-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: calc(var(--ev-h) + 2px); margin-top: -2px; border-radius: 1px; background: var(--text); box-shadow: 0 0 0 1px var(--ground); opacity: 0; transition: opacity 0.15s var(--ease); }
-.ev-slider::-moz-range-thumb { width: 4px; height: calc(var(--ev-h) + 2px); border: 0; border-radius: 1px; background: var(--text); box-shadow: 0 0 0 1px var(--ground); opacity: 0; transition: opacity 0.15s var(--ease); }
+.ev-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 18px; margin-top: -6px; border-radius: 2px; background: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); opacity: 0; transition: opacity 0.15s var(--ease); }
+.ev-slider::-moz-range-thumb { width: 6px; height: 18px; border: 0; border-radius: 2px; background: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); opacity: 0; transition: opacity 0.15s var(--ease); }
 .stat-row:is(:hover, :focus-within) .ev-slider::-webkit-slider-thumb { opacity: 1; }
 .stat-row:is(:hover, :focus-within) .ev-slider::-moz-range-thumb { opacity: 1; }
 .ev-slider:focus-visible { outline: none; }
-/*
- * Ogni statistica in una targhetta con gli angoli alternati delle pillole delle mosse, divisa in due come in Champions; la riga
- * attiva prende il bordo ciano e il triangolino a sinistra, come la freccia della riga scelta in Champions.
- */
-.stat-row:not(.stat-head) {
-  position: relative;
-  border-radius: var(--alt-r);
-  /* Due metà come le righe di Champions: nome e base sul Raised, poi una linea inclinata e la metà con barra, EV, IV e
-     finale un po' più scura (--split: dove cade il taglio, appena prima della barra, a metà targhetta) */
-  --split: calc(100% - var(--ev-w) - 212px);
-  --half-a: var(--raised);
-  --half-b: color-mix(in srgb, var(--raised) 62%, #000);
-  --cut: var(--line);
-  background: linear-gradient(104deg, var(--half-a) calc(var(--split) - 1px), var(--cut) calc(var(--split) - 1px) calc(var(--split) + 1px), var(--half-b) calc(var(--split) + 1px));
-  /* Niente bordo: le due metà disegnano già la targhetta; il bordo ciano solo sulla riga attiva */
-  box-shadow: inset 0 0 0 1px transparent;
-  transition: box-shadow 0.15s var(--ease), background 0.15s var(--ease);
-}
-/* Una riga sì e una no un po' più scura, come le statistiche di Champions */
-.stat-row:not(.stat-head):nth-child(odd) { --half-a: color-mix(in srgb, var(--raised) 72%, var(--panel)); --half-b: color-mix(in srgb, var(--raised) 50%, #000); }
-.stat-row:not(.stat-head):is(:hover, :focus-within) {
-  --half-a: color-mix(in srgb, var(--accent) 22%, var(--raised));
-  --half-b: color-mix(in srgb, var(--accent) 10%, color-mix(in srgb, var(--raised) 62%, #000));
-  --cut: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-/* Il nome si accende sulla riga attiva (se la natura non lo colora già di verde o di rosso) */
+.stat-row:not(.stat-head) { position: relative; box-shadow: inset 0 0 0 1px transparent; transition: box-shadow 0.15s var(--ease), background 0.15s var(--ease); }
+/* Una riga sì e una no un po' più chiara, come le statistiche di Champions */
+.stat-row:not(.stat-head):nth-child(even) { background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.stat-row:not(.stat-head):is(:hover, :focus-within) { background: color-mix(in srgb, var(--accent) 12%, var(--raised)); box-shadow: inset 0 0 0 1px var(--accent); }
+/* Il nome si accende sulla riga attiva */
 .stat-row:not(.stat-head):is(:hover, :focus-within) .stat-name { color: var(--text); }
 .stat-row:not(.stat-head)::before { content: ''; position: absolute; left: -11px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-left: 8px solid var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); pointer-events: none; }
 .stat-row:not(.stat-head):is(:hover, :focus-within)::before { opacity: 1; }
-/* Le caselle EV e IV dentro la targhetta: fondo scuro, bordo appena visibile che si accende sulla riga attiva e scrivendo */
-.stat-row .ev-input, .stat-row .iv-input { background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--line-soft); transition: border-color 0.15s var(--ease); }
+/* Le caselle EV e IV: fondo scuro, bordo appena visibile che si accende sulla riga attiva e scrivendo */
+.stat-row .ev-input, .stat-row .iv-input { background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--line); transition: border-color 0.15s var(--ease); }
 .stat-row:is(:hover, :focus-within) :is(.ev-input, .iv-input) { border-color: var(--control-line); }
 .stat-row :is(.ev-input, .iv-input):focus { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
-  .stat-row:not(.stat-head), .stat-row:not(.stat-head)::before, .ev-slider::-webkit-slider-thumb { transition: none; }
+  .stat-row:not(.stat-head), .stat-row:not(.stat-head)::before, .ev-slider::-webkit-slider-thumb, .ev-slider::-moz-range-thumb { transition: none; }
 }
 .set-editor .ev-input { height: 28px; padding: var(--sp-1) var(--sp-4); font-variant-numeric: tabular-nums; text-align: right; }
-.stat-final { font: 700 var(--fs-title-l)/1 var(--display); text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+/* Il valore della statistica: grande, al livello 100; verde o rosso secondo la natura */
+.stat-final { font: 700 var(--fs-headline)/1 var(--display); text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
 .stat-row.nature-up .stat-final { color: var(--good); }
 .stat-row.nature-down .stat-final { color: var(--bad); }
+/* Sotto le righe: il posto della Velocità nel meta, una riga sottile su un filo; passandoci sopra il tooltip di Analisi › Velocità */
+.speed-line { display: flex; align-items: center; gap: var(--sp-6); min-height: 30px; margin: var(--sp-3) calc(-1 * var(--sp-7)) calc(-1 * var(--sp-6)); padding: 0 var(--sp-8) 0 var(--sp-8); border-top: 1px solid var(--line-soft); font-size: var(--fs-small); color: var(--muted); }
+.speed-line-anchor { display: inline-flex; align-items: center; gap: var(--sp-3); min-width: 0; white-space: nowrap; cursor: help; border-radius: 2px; }
+.speed-line-anchor .icon { flex: none; width: 14px; height: 14px; color: var(--accent-ink); }
+.speed-line-anchor b { font-weight: 600; color: var(--text); }
+.speed-line-anchor:hover, .speed-line-anchor:focus-visible { color: var(--text); }
+.speed-line-anchor:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.speed-line-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); color: var(--muted); }
 /* EV usati nella fascia in alto del blocco: etichetta, barra, 508 / 510 e quanti ne restano, tutto di seguito */
 .ev-total { display: flex; align-items: center; gap: var(--sp-4); margin: 0 0 0 var(--sp-3); font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ev-total strong { font: 700 var(--fs-title-s)/1 var(--display); color: var(--text); }
@@ -216,35 +193,137 @@
 .spread-panel > summary:hover { color: var(--text); }
 
 /*
- * Strumento, abilità, natura e tera come lastre di Pokémon Champions: l'etichetta entra nella testa della lastra, tagliata in
- * diagonale e più chiara; il valore sulla lastra che sfuma nel nostro scuro, angoli alternati. Le note (Tera non ammessa,
- * abilità della Mega) restano sopra a destra, piccole.
+ * Strumento, abilità, natura e tera come lastre di Pokémon Champions: l'etichetta sta nella testa della lastra, più chiara e
+ * tagliata in diagonale, larga quanto la sua parola (così il valore, es. "Capsula energetica", ha tutto il resto); il
+ * valore sulla lastra che sfuma nel nostro scuro, angoli alternati. La nota dell'abilità della Mega resta sopra, piccola.
+ * Senza Tera nel formato la Natura prende tutta la riga.
  */
-.set-plates { --plate-k: 96px; }
 .set-plates .field { position: relative; justify-content: flex-end; }
-.set-plates .field-head { justify-content: flex-end; min-height: 0; }
-/* Senza nota la riga sopra non occupa spazio (l'etichetta, che ci sta dentro, è disegnata sulla lastra) */
-.set-plates .field-head:not(:has(.field-note)) { height: 0; margin-bottom: calc(-1 * var(--sp-2)); }
-.set-plates .field-label { position: absolute; z-index: 1; left: 1px; bottom: 1px; height: calc(var(--plate-h, 34px) - 2px); width: var(--plate-k); display: flex; align-items: center; padding-left: var(--sp-5);
-  font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); pointer-events: none;
-  background: var(--plate-head); border-radius: 9px 0 0 2px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
-.set-plates .combobox input { height: var(--plate-h, 34px); padding-left: calc(var(--plate-k) + var(--sp-3)); border-color: var(--line); border-radius: var(--alt-r); background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); font-weight: 600; }
-.set-plates .combobox input:hover:not(:disabled) { border-color: var(--control-line); }
-.set-plates .combobox input:focus { border-color: var(--accent); }
-.set-plates .combobox-leading { left: calc(var(--plate-k) + var(--sp-2)); }
-.set-plates .combobox:has(.combobox-leading) input { padding-left: calc(var(--plate-k) + 28px); }
-.set-plates .combobox-display { left: calc(var(--plate-k) + var(--sp-3)); font-weight: 600; }
+.set-plates .field.full { grid-column: 1 / -1; }
+.set-plates .field-head { justify-content: flex-end; }
+.set-plate {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: var(--plate-h, 34px);
+  border-radius: var(--alt-r);
+  background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop));
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 0.15s var(--ease);
+}
+.set-plate:hover { box-shadow: inset 0 0 0 1px var(--control-line); }
+.set-plate:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
+.set-plate:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }
+.set-plate > .field-label {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin: 1px 0 1px 1px;
+  padding: 0 var(--sp-7) 0 var(--sp-4);
+  font: 700 var(--fs-label)/1 var(--display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--plate-head);
+  border-radius: 9px 0 0 2px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.set-plate > .combobox, .set-plate > .plate-lock { flex: 1; min-width: 0; }
+.set-plate > .plate-lock { display: flex; }
+.set-plate > .plate-lock > .combobox { flex: 1; min-width: 0; }
+.set-plates .set-plate .combobox input { height: var(--plate-h, 34px); padding-left: var(--sp-3); border: 0; border-radius: 0 3px 10px 0; background: transparent; font-weight: 600; text-overflow: ellipsis; }
+.set-plates .set-plate .combobox input:focus-visible { outline: none; }
+.set-plates .combobox-leading { left: var(--sp-2); }
+.set-plates .combobox.has-leading input { padding-left: 28px; }
+.set-plates .combobox-display { left: var(--sp-3); font-weight: 600; }
 .set-plates .nature-fx { display: inline-flex; gap: var(--sp-3); }
 .set-plates .nature-fx > span { display: inline-flex; align-items: center; gap: 2px; }
-/* Schermi stretti (sotto 1366): la testa nella lastra ruberebbe il posto al valore ("Capsula energetica" si taglierebbe);
-   l'etichetta torna sopra, la lastra resta */
-@media (max-width: 1365px) {
-  .set-plates { --plate-k: 0px; }
-  .set-plates .field-head:not(:has(.field-note)) { height: auto; margin-bottom: 0; }
-  .set-plates .field-head { justify-content: space-between; }
-  .set-plates .field-label { position: static; width: auto; height: auto; padding: 0; background: none; clip-path: none; border-radius: 0; font: inherit; letter-spacing: inherit; color: inherit; }
-  .set-plates .combobox input { padding-left: var(--sp-5); }
-  .set-plates .combobox-leading { left: 9px; }
-  .set-plates .combobox:has(.combobox-leading) input { padding-left: 32px; }
-  .set-plates .combobox-display { left: 11px; }
+
+/*
+ * Testata dell'editor su una riga: nome, tipi e shiny a sinistra; a destra il pulsante Set (apre preset Smogon e I miei
+ * set), Copia il set e Chiudi. Il pulsante Set è un pulsante pieno (angoli alterni), aperto ha il bordo ciano.
+ */
+.set-menu { position: relative; display: flex; }
+.set-menu-button { height: 36px; gap: var(--sp-4); padding: 0 var(--sp-7) 0 var(--sp-8); font: 600 var(--fs-section)/1 var(--display);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 80%, white), var(--raised)); }
+.set-menu-button .icon { width: 14px; height: 14px; color: var(--muted); transition: transform 0.2s var(--ease); }
+.set-menu-button[aria-expanded='true'] { border-color: var(--accent); }
+.set-menu-button[aria-expanded='true'] .icon { transform: rotate(180deg); }
+.editor-actions .member-copy { width: 36px; padding: 0; justify-content: center; }
+/* Il menu: sotto il pulsante, allineato a destra; Ground, angoli 6px, l'ombra dei menu */
+.set-menu-pop {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 410px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  font: 400 var(--fs-section)/1.3 var(--ui);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  animation: tip 0.14s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) { .set-menu-pop, .set-menu-button .icon { animation: none; transition: none; } }
+.set-menu-tabs { display: flex; gap: var(--sp-2); padding: 0 0 var(--sp-3); margin-bottom: var(--sp-3); border-bottom: 1px solid var(--line-soft); }
+.set-menu-tabs [role='tab'] { flex: 1; justify-content: center; gap: var(--sp-3); height: 32px; border-color: transparent; background: none; font: 600 var(--fs-section)/1 var(--display); color: var(--muted); }
+.set-menu-tabs [role='tab']:hover { background: var(--raised); color: var(--text); border-color: transparent; }
+.set-menu-tabs [role='tab'][aria-selected='true'] { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.set-menu-tabs [role='tab'] small { font-size: var(--fs-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
+.set-menu-body { min-height: 0; max-height: 300px; overflow-y: auto; overscroll-behavior: contain; }
+.set-menu-list { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
+.set-menu-group { padding: var(--sp-4) var(--sp-5) var(--sp-2); font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.set-menu-row { width: 100%; min-height: 46px; justify-content: flex-start; gap: var(--sp-5); padding: var(--sp-3) var(--sp-5); text-align: left; border-color: transparent; background: none; border-radius: var(--alt-r-sm); }
+.set-menu-row:hover { background: var(--raised); border-color: transparent; }
+.set-menu-row.current { background: color-mix(in srgb, var(--accent) 12%, var(--raised)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.set-menu-row > .icon { flex: none; width: 14px; height: 14px; color: var(--accent-ink); }
+.set-menu-text { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.set-menu-name { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
+.set-menu-name strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 var(--fs-section)/1.25 var(--display); }
+.set-menu-text small { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Il preset migliore per il team: la stella e la scritta nel ciano del lavoro (il magenta resta a "sei qui") */
+.set-menu-best { flex: none; display: inline-flex; align-items: center; gap: 3px; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; color: var(--accent-ink); }
+.set-menu-best .icon { width: 11px; height: 11px; }
+.set-menu-empty { margin: 0; padding: var(--sp-6) var(--sp-5); color: var(--muted); font-size: var(--fs-small); }
+.set-menu-mine { display: grid; grid-template-columns: minmax(0, 1fr) 30px 30px; align-items: center; gap: var(--sp-1); }
+.set-menu-mine > input { margin: var(--sp-2); height: 32px; }
+.set-menu-icon { width: 30px; height: 30px; padding: 0; justify-content: center; border-color: transparent; background: none; color: var(--muted); }
+.set-menu-icon:hover { border-color: transparent; color: var(--accent-ink); }
+.set-menu-icon.danger:hover { color: var(--bad); }
+.set-menu-save { display: flex; flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-2) var(--sp-2) var(--sp-5); }
+.set-menu-save input { flex: 1; min-width: 0; height: 32px; }
+.set-menu-save .save-set { flex: none; height: 32px; gap: var(--sp-3); font-weight: 600; white-space: nowrap; }
+.set-menu-save .save-set .icon { width: 14px; height: 14px; }
+.set-menu-save .save-set.overwrite { border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+.set-menu-save .save-set.saved:disabled { opacity: 1; color: var(--good); }
+.set-menu-note { flex: 1 0 100%; margin: 0; font-size: var(--fs-caption); color: var(--warn); }
+/* In fondo: Incolla testo e Salva come… (pulsanti), Apri su Smogon a destra (link) */
+.set-menu-foot { display: flex; align-items: center; gap: var(--sp-4); margin-top: var(--sp-3); padding: var(--sp-4) var(--sp-2) var(--sp-1); border-top: 1px solid var(--line-soft); }
+.set-menu-foot > button { height: 32px; gap: var(--sp-3); padding: 0 var(--sp-6); font: 600 var(--fs-small)/1 var(--display); background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 80%, white), var(--raised)); }
+.set-menu-foot > button .icon { width: 14px; height: 14px; }
+.set-menu-foot > button[aria-expanded='true'] { border-color: var(--accent); }
+.set-menu-foot .smogon-link { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border: 0; background: none; font: 600 var(--fs-caption)/1 var(--display); color: var(--accent-ink); text-decoration: none; border-radius: 2px; }
+.set-menu-foot .smogon-link .icon { width: 13px; height: 13px; }
+.set-menu-foot .smogon-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Custom Skillset a destra nella fascia delle Mosse, alla sua altezza; cosa fa lo dice il fumetto */
+.set-editor .editor-group.moves { position: relative; }
+/* (Il riquadro di un fieldset parte sotto la legenda: -25px la riporta all'altezza della fascia) */
+.set-editor .moves > .custom-toggle { position: absolute; top: -25px; right: var(--sp-7); z-index: 2; flex-direction: row; align-items: center; gap: var(--sp-4); height: 25px;
+  font: 600 var(--fs-caption)/1 var(--display); letter-spacing: 0; text-transform: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.set-editor .moves > .custom-toggle.on { color: var(--text); }
+.set-editor .moves > .custom-toggle .hint-bubble { left: auto; right: 0; top: calc(100% + 4px); }
+/* Sotto i 1440 px le Statistiche (senza più la colonna della base) cedono un po' di larghezza a Set e Mosse: i valori delle
+   lastre ("Capsula energetica") restano interi */
+@media (min-width: 1100px) and (max-width: 1439px) {
+  .set-editor { grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr); }
+  /* EV usati e Spread più usati restano su una riga: la barretta più corta */
+  .ev-meter { width: 52px; }
+  .set-editor .evs .stats-toolbar { gap: var(--sp-4); }
 }

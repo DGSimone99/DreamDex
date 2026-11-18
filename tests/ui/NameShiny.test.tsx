@@ -44,7 +44,8 @@ describe('testata dell\'editor', () => {
     // Sulla carta il soprannome, con la specie nel tooltip
     expect(slot().querySelector('.slot-card .name')).toHaveTextContent('Tusky');
     expect(slot().querySelector('.slot-card .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
-    await user.click(within(slot()).getByRole('button', { name: 'Testo del set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     expect((within(slot()).getByLabelText('Set in testo Showdown') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
   });
 
@@ -66,7 +67,8 @@ describe('testata dell\'editor', () => {
 
   it('Testo del set si apre sopra le Statistiche (Set e Mosse restano in vista) e si chiude cliccando fuori', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Testo del set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     const text = within(slot()).getByLabelText('Set in testo Showdown');
     expect(text.closest('.stats-cell')).not.toBeNull();
     // Un clic dentro il riquadro non lo chiude
@@ -78,7 +80,8 @@ describe('testata dell\'editor', () => {
 
   it('Importa / Esporta: se il testo è stato modificato, un clic fuori non lo butta', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Testo del set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     const text = within(slot()).getByLabelText('Set in testo Showdown');
     await user.clear(text);
     await user.type(text, 'Garchomp');
@@ -99,9 +102,10 @@ describe('testata dell\'editor', () => {
     const shiny = within(slot()).getByRole('button', { name: 'Shiny' });
     act(() => shiny.focus());
     expect(bubbleOf(shiny)).toBeVisible();
-    // Il link a Smogon: il nome resta, dove porta è la sua descrizione
+    // Il link a Smogon (in fondo al menu Set): il nome resta, dove porta è la sua descrizione
+    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
     const smogon = within(slot()).getByRole('link', { name: 'Apri su Smogon' });
-    expect(smogon).toHaveAccessibleDescription(/analisi per|niente analisi/);
+    expect(smogon).toHaveAccessibleDescription(/Analisi Smogon per|nessuna analisi/);
     expect(within(slot()).getByRole('button', { name: 'Chiudi editor' }).closest('.hint-wrap')).not.toBeNull();
   });
 
@@ -111,19 +115,23 @@ describe('testata dell\'editor', () => {
     expect(name.querySelector('.nickname-pencil')).not.toBeNull();
   });
 
-  it('Copia il set è a un clic, accanto a Testo del set, senza aprire il riquadro', async () => {
+  it('Copia il set è a un clic, accanto al pulsante Set, senza aprire il riquadro', async () => {
     const { slot } = await openEditor();
-    expect(within(slot()).getByRole('button', { name: 'Copia il set' }).closest('.io-anchor')).not.toBeNull();
+    const copy = within(slot()).getByRole('button', { name: 'Copia il set' });
+    expect(copy.closest('.editor-actions')).toContainElement(within(slot()).getByRole('button', { name: 'Set' }));
     expect(within(slot()).queryByLabelText('Set in testo Showdown')).toBeNull();
   });
 
-  it('Custom Skillset: la levetta viene dopo il testo, che dice cosa fa adesso', async () => {
+  it('Custom Skillset sta nella fascia delle Mosse: a vista solo il nome, cosa fa nel fumetto e nella descrizione', async () => {
     const { user, slot } = await openEditor();
-    const label = slot().querySelector('.custom-toggle')!;
-    expect(label.firstElementChild).toHaveClass('custom-text');
-    expect(label.lastChild).toBe(label.querySelector('input.switch'));
-    expect(label).toHaveTextContent('Solo mosse imparabili');
-    await user.click(label.querySelector('input')!);
-    expect(label).toHaveTextContent('Mosse e abilità libere');
+    const toggle = within(slot()).getByRole('checkbox', { name: 'Custom Skillset Great Tusk' });
+    expect(toggle.closest('fieldset')).toBe(within(slot()).getByRole('group', { name: 'Mosse' }));
+    const label = toggle.closest('label')!;
+    expect(label.querySelector('.custom-text')).toHaveTextContent(/^Custom Skillset$/);
+    expect(toggle).toHaveAccessibleDescription('Ogni mossa e abilità, anche non imparabili');
+    const bubble = label.querySelector('.hint-bubble')!;
+    expect(bubble).not.toBeVisible();
+    await user.hover(label);
+    expect(bubble).toBeVisible();
   });
 });

@@ -46,7 +46,8 @@ describe('mosse e abilità legali nel team', () => {
   it('Custom Skillset: sblocca solo quel Pokémon, con tooltip e badge', async () => {
     const user = await importTeam('Drakloak\nAbility: Infiltrator\n- Dragon Darts\n\nDreepy\nAbility: Infiltrator\n- Dragon Darts');
     const toggle = screen.getByRole('checkbox', { name: 'Custom Skillset Drakloak' });
-    expect(toggle.closest('label')).toHaveAttribute('title', expect.stringContaining('anche non imparabili'));
+    // Cosa fa: solo nel fumetto e come descrizione della levetta
+    expect(toggle).toHaveAccessibleDescription(expect.stringContaining('anche non imparabili'));
     await user.click(toggle);
     expect(within(team()).queryByText('Mosse non legali in questo formato: Dragon Darts', { selector: '.slot:first-child *' })).toBeNull();
     expect(within(team()).getAllByText('Mosse non legali in questo formato: Dragon Darts')).toHaveLength(1);
