@@ -71,7 +71,7 @@
 /* I titoli dei riquadri (Statistiche, Set, Mosse) come la fascia di Pokémon Champions: centrati sul bordo alto, una fascia
    chiara che sfuma ai due lati e un filo sotto che sfuma uguale */
 .set-editor legend:not(.visually-hidden) { position: relative; width: 60%; margin: 0 auto; padding: 4px 0; text-align: center; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text);
-  background: linear-gradient(90deg, transparent, var(--band) 25%, var(--band) 75%, transparent); }
+  background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
 .set-editor legend:not(.visually-hidden)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-7); }
 .set-editor .field-note { font-size: var(--fs-label); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }

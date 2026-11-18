@@ -361,7 +361,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   letter-spacing: 0.01em;
   text-transform: none;
   color: var(--text);
-  background: linear-gradient(90deg, var(--band), transparent 70%);
+  background: linear-gradient(90deg, var(--champ-band), transparent 70%);
 }
 .detail-sec h4::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 .detail-sec h4.visually-hidden::after { content: none; }

@@ -125,7 +125,7 @@
 .sus-table thead .sus-r { text-align: right; padding-right: 0; }
 /* "Perde" copre due colonne, un gruppo: la fascia di Pokémon Champions come Tipi e Meta */
 .sus-table thead .rob-grp th[scope='colgroup'] { position: relative; padding: 0; text-align: center; line-height: 1.2; color: var(--text);
-  background: linear-gradient(90deg, transparent, var(--band) 25%, var(--band) 75%, transparent); }
+  background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
 .sus-table thead .rob-grp th[scope='colgroup']::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 /* Le due righe della testata alte insieme quanto la testata di Generale (--def-head): passando da una sotto-scheda
    all'altra le righe dei membri partono allo stesso punto */
