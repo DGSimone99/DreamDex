@@ -181,9 +181,11 @@ interface Props {
   /** Slot di mossa evidenziato perché il coach propone di cambiarlo. */
   proposedSlot?: number;
   onChange: (set: TeamSet) => void;
+  /** Set cambiato per intero (preset, I miei set, spread più usati): chi lo riceve offre Annulla; se manca, va a `onChange`. */
+  onSetChange?: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, smogonLink, memberAction, notice, textPanel, roles, roleTips, proposedSlot, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, smogonLink, memberAction, notice, textPanel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -294,7 +296,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           {title}
           {/* A destra: il menu Set (preset Smogon e I miei set), poi Copia il set e Chiudi */}
           <div className="editor-actions">
-            <SetMenu set={set} presets={presets} bestIndex={bestIndex} onBest={onBest} onChange={onChange} onText={onText} smogonLink={smogonLink} />
+            <SetMenu set={set} presets={presets} bestIndex={bestIndex} onBest={onBest} onChange={onSetChange} onText={onText} smogonLink={smogonLink} />
             {actions}
           </div>
         </div>
@@ -323,7 +325,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                 key={spreadKey(spread)}
                 type="button"
                 aria-pressed={spreadKey(spread) === spreadKey(set)}
-                onClick={() => { update({ nature: spread.nature, evs: { ...spread.evs } }); closeSpreads(); }}
+                onClick={() => { onSetChange({ ...set, nature: spread.nature, evs: { ...spread.evs } }); closeSpreads(); }}
               >
                 <Icon name="check" />
                 <strong>{natureName(spread.nature, lang)}</strong>

@@ -357,6 +357,15 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       ? { kind: 'paste', from: battleName(before) }
       : { kind: 'replace', from: battleName(before), to: battleName(set) }, after);
   };
+  // Set intero cambiato dall'editor (preset Smogon, I miei set, spread più usati): si annulla come le altre modifiche.
+  // Più cambi di fila: Annulla riporta il set di prima dell'ultimo
+  const setChangeAt = (index: number, set: TeamSet) => {
+    const before = team[index];
+    // Lo stesso set riapplicato (il preset già in uso): niente cambia, niente avviso
+    if (before && JSON.stringify(before) === JSON.stringify(set)) return;
+    const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
+    if (before) remember({ kind: 'setChange', from: battleName(before) }, after);
+  };
   // Migliora i set (il preset migliore per ogni membro), Completa team, team da torneo caricato o team svuotato: si annullano come le altre modifiche
   const bulk = (kind: 'presets' | 'fill' | 'clear' | 'tournament', next: TeamSet[]) => {
     const after = changeTeam(next);
@@ -444,7 +453,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           plateName={<SavedPlateName team={team} />}
-          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
+          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
@@ -511,7 +520,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />
       )}
       {!done && undo && undo.after === team && (
-        <UndoToast action={undo} onClose={() => setUndo(null)}
+        <UndoToast action={undo} docked={editingIndex !== null} onClose={() => setUndo(null)}
           onUndo={() => { changeTeam(undo.before); if (undo.format) adoptFormat(undo.format); setUndo(null); }} />
       )}
     </div>
