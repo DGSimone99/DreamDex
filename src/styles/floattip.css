@@ -334,9 +334,9 @@
 .bring-group.warning .bring-label, .bring-group.warning .bring-label .icon { color: var(--warn); }
 .bring-items { list-style: none; margin: 0; padding: 2px 0 0; display: grid; gap: var(--sp-1); font-size: var(--fs-small); line-height: 1.35; }
 .bring-roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
-.bring-roles .dash-role-tag .icon { width: 12px; height: 12px; stroke-width: 2.5; }
-.bring-groups.gain .bring-roles .dash-role-tag .icon { color: var(--good); }
-.bring-groups.loss .bring-roles .dash-role-tag .icon { color: var(--bad); }
+.bring-roles .dash-role-tag .icon { stroke-width: 2.5; }
+.bring-groups.gain .bring-roles .dash-role-tag .icon { color: var(--good); background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
+.bring-groups.loss .bring-roles .dash-role-tag .icon { color: var(--bad); background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
 .bring-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
 .bring-roles .dash-role-tag { max-width: 100%; white-space: normal; }
 /* Porta e Toglie affiancati (colonne strette): etichetta e voci sulla stessa riga, le voci sotto solo se non c'è posto */
@@ -355,6 +355,5 @@
 .bring-items { padding-top: 0; }
 .bring-roles .dash-role-tag { min-height: 22px; }
 .detail-why-more { font-style: normal; opacity: 0.75; }
-/* Nei riquadri dei ruoli la linea di base è quella della scritta, non dell'icona (spunta o ×) */
-.bring-roles .dash-role-tag { align-items: baseline; }
-.bring-roles .dash-role-tag .icon { align-self: center; }
+/* Nei riquadri dei ruoli la tessera del segno (spunta o ×) è alta quanto il riquadro, la scritta al centro */
+.bring-roles .dash-role-tag .icon { align-self: stretch; }

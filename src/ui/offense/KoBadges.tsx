@@ -129,7 +129,8 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
         <span className={`kob rest${restBad ? ' bad' : ''}${onPick ? ' pick' : ''}`} style={pieceSize(rest)}
           {...piece('rest', true)}
           aria-label={`${restBad ? t('kob.uncovered') : t('kob.restAria')} ${rest}`}>
-          <span className="kob-num"><b>{rest}</b></span>
+          {/* Fuori dalla riga del team una lineetta: chi non va KO lo dice il tooltip; gli scoperti del team restano contati */}
+          <span className="kob-num"><b aria-hidden={restBad ? undefined : true}>{restBad ? rest : '—'}</b></span>
           <HiddenText id={`${id}-rest`}>{withGo('rest', describe('rest'))}</HiddenText>
         </span>
       )}

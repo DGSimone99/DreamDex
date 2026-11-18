@@ -6,7 +6,7 @@ import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { TypeIcons, typeIconUrl } from '../typeIcons';
-import { Sprite } from '../Sprite';
+import { PokemonIcon } from '../PokemonName';
 import { pieceSize, Target } from '../offense/KoBadges';
 import { HOLD_BANDS } from './holds';
 
@@ -178,7 +178,7 @@ export function WorstHits({ hits }: { hits: WorstHit[] }) {
         return (
           <span key={h.label} className={`mc wh-${h.band}`} style={{ '--c': h.color ?? 'var(--faint)' } as CSSProperties}
             data-nav="" role="img" {...tip.bind(h.label)} aria-label={`${name} ${h.pct === null || h.pct >= 100 ? 'KO' : `${h.pct}%`}`}>
-            {h.kind === 'type' ? <img src={typeIconUrl(h.label)} alt="" draggable={false} /> : <span className="wh-mon"><Sprite species={h.label} size={22} /></span>}
+            {h.kind === 'type' ? <img src={typeIconUrl(h.label)} alt="" draggable={false} /> : <span className="wh-mon"><PokemonIcon name={h.label} /></span>}
             <span className="mc-name">{name}</span>
             <b>{h.pct === null || h.pct >= 100 ? 'KO' : <>{h.pct}<small>%</small></>}</b>
           </span>

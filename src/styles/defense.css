@@ -125,15 +125,22 @@
 .sus-table thead .sus-r { text-align: right; padding-right: 0; }
 /* «Perde» sopra le sue due colonne: centrata e bassa come le altre righe di gruppo, così i membri partono alla stessa altezza delle altre schede */
 .sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 var(--sp-1); text-align: center; line-height: 1; }
-/* «Perde» sopra le sue due colonne: centrata e bassa come le altre righe di gruppo, così i membri partono alla stessa altezza delle altre schede */
-.sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 var(--sp-1); text-align: center; line-height: 1; }
+/* "Perde" copre due colonne, un gruppo: la fascia di Pokémon Champions come Tipi e Meta */
+.sus-table thead .rob-grp th[scope='colgroup'] { position: relative; padding: 6px 0; color: var(--text);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent); }
+.sus-table thead .rob-grp th[scope='colgroup']::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
+/* Le due righe della testata alte insieme quanto la testata di Generale (--def-head): passando da una sotto-scheda
+   all'altra le righe dei membri partono allo stesso punto */
+.def-frame .sus-table thead tr.rob-grp { height: 23px; }
+.def-frame .sus-table thead tr.sus-sub { height: calc(var(--def-head) - 23px - var(--def-sp)); }
+.sus-table thead .rob-grp th[scope='colgroup'] { padding: 3px 0; }
+.sus-table thead .sus-sub th { padding-bottom: var(--sp-2); }
 .sus-table thead .sus-sub th { padding: 0 0 var(--sp-3); text-align: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .sus-table td { padding: 0 var(--sp-6); border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }
-.sus-table td.sus-loss + td.sus-loss { border-right: 1px solid var(--line); }
 .sus-loss-cell { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .sus-loss-cell[title] { cursor: help; }
-.sus-loss-val { display: inline-block; min-width: 52px; padding: 3px var(--sp-4); border-radius: 999px; background: var(--bad-bg); color: var(--bad); font: 700 var(--fs-small)/1.2 var(--ui); font-variant-numeric: tabular-nums; }
+.sus-loss-val { display: inline-block; min-width: 52px; padding: 3px var(--sp-4); border-radius: var(--alt-r-sm); background: var(--bad-bg); color: var(--bad); font: 700 var(--fs-small)/1.2 var(--ui); font-variant-numeric: tabular-nums; }
 /* Stealth Rock dimezzata da chi toglie gli hazard: targhetta gialla, il motivo nel tooltip */
 .sus-half { padding: 1px 5px; border-radius: 3px; background: var(--warn-bg); color: var(--warn); font: 700 var(--fs-label)/1.3 var(--ui); }
 .sus-none { color: var(--faint); }
@@ -147,15 +154,18 @@
 .sus-gain .ad-halved { margin-left: var(--sp-4); color: var(--warn); font-weight: 600; cursor: help; white-space: nowrap; }
 /* Netto: pista con lo zero al centro, rosso a sinistra, verde a destra; il numero accanto */
 .sus-net-wrap { display: flex; align-items: center; gap: var(--sp-6); }
-.sus-net-track { position: relative; flex: 1; height: 10px; background: var(--line-soft); }
+/* La barra del netto come quella di Champions: fessura scura incassata, riempimento pieno con un filo chiaro in alto */
+.sus-net-track { position: relative; flex: 1; height: 10px; background: var(--field); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }
 .sus-net-track::after { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--faint); }
 .sus-net-track i { position: absolute; top: 0; bottom: 0; }
-.sus-net-track i.pos { background: var(--good); }
-.sus-net-track i.neg { background: var(--bad); }
+.sus-net-track i.pos { background: linear-gradient(color-mix(in srgb, white 35%, transparent) 0 1px, transparent 1px), var(--good); }
+.sus-net-track i.neg { background: linear-gradient(color-mix(in srgb, white 35%, transparent) 0 1px, transparent 1px), var(--bad); }
 .sus-net-num { min-width: 48px; text-align: right; font: italic 700 var(--fs-body)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--muted); }
 .sus-net-num.good { color: var(--good); }
 .sus-net-num.bad { color: var(--bad); }
 .sus-table td.sus-val { padding: 0; text-align: right; }
+/* Il punteggio del membro scritto come in Generale (corsivo grande, niente pillola), nel colore del suo tono */
+.sus-table td.sus-val .ct-pill { min-width: 0; padding: 0; background: none; font: italic 700 var(--fs-title)/1 var(--display); font-variant-numeric: tabular-nums; }
 
 /* Coverage tipi: la griglia a caselle come quella della Panoramica (membri in riga, 18 tipi in colonna), in fondo i totali
    per tipo. Riempimenti da color-mix dei token di stato, testo --text; il ×0 usa l accento della palette */
@@ -412,11 +422,11 @@
 .kob.hb-held .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
 /* Il semaforo: verde regge, giallo (Warn, "da controllare") cade in due colpi, rosso in uno. Il giallo un filo più pieno
    del rosso di prima, se no sul fondo scuro sembra grigio; etichetta 9,3:1 e numero 7,5:1 sul pezzo (col mouse 7,1 e 5,7) */
-.kob.hb-2 { --kob-ink: color-mix(in srgb, var(--warn) 35%, var(--text)); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); background: color-mix(in srgb, var(--warn) 16%, transparent); }
+.kob.hb-2 { --kob-ink: color-mix(in srgb, var(--warn) 35%, var(--text)); color: var(--warn); background: color-mix(in srgb, var(--warn) 22%, transparent); }
 .kob.hb-ohko { color: var(--bad); background: color-mix(in srgb, var(--bad) 36%, transparent); }
 .kob.hb-ohko .kob-num > b { color: color-mix(in srgb, var(--bad) 55%, white); }
 .kob.hb-held:hover { background: color-mix(in srgb, var(--good) 42%, transparent); }
-.kob.hb-2:hover { background: color-mix(in srgb, var(--warn) 26%, transparent); }
+.kob.hb-2:hover { background: color-mix(in srgb, var(--warn) 32%, transparent); }
 .kob.hb-ohko:hover { background: color-mix(in srgb, var(--bad) 50%, transparent); }
 .hb-say { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-3); font-size: var(--tip-body); color: var(--muted); }
 .hb-group + .hb-group { margin-top: var(--sp-5); }
@@ -437,6 +447,17 @@
 .wh-mon > * { width: 26px !important; height: 26px !important; flex: none; }
 .mc[class*="wh-"] b { display: inline-flex; align-items: baseline; white-space: nowrap; }
 .mc .wh-mon img { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
+/* Come le mosse chiuse dell'Offesa (Pokémon Champions): tessera quadrata col tipo o la minaccia sul suo colore, corpo scuro
+   che sfuma, il danno a destra; angoli alternati piccoli. Il nome si apre passando sopra, come prima */
+.mcs.wh .mc { height: 24px; gap: 0; padding: 0; overflow: hidden; border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 80%); box-shadow: inset 0 0 0 1px var(--line); }
+.mcs.wh .mc:hover, .mcs.wh .mc:focus-visible { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, var(--raised)), var(--fade-end) 80%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 70%, var(--line)); }
+.mcs.wh .mc > img { flex: none; width: 24px; height: 24px; border-radius: 0; background: var(--c); }
+/* La minaccia del meta con la sua icona da box (40x30), ridotta a 0,8 nella tessera */
+.mcs.wh .wh-mon { flex: none; display: grid; place-items: center; width: 32px; height: 24px; overflow: hidden; background: color-mix(in srgb, var(--c) 45%, var(--panel)); }
+.mcs.wh .wh-mon > .mon-icon { flex: none; margin: 0; transform: scale(0.8); image-rendering: pixelated; }
+.mcs.wh .mc .mc-name { margin-right: 0; }
+.mcs.wh .mc:hover .mc-name, .mcs.wh .mc:focus-visible .mc-name { padding-left: var(--sp-4); }
+.mcs.wh .mc b { padding: 0 var(--sp-4) 0 var(--sp-3); }
 /* Come nell'Offesa: le pastiglie dei colpi peggiori solo se la cornice ha posto per sei righe con loro */
 @container (max-height: 500px) { .def-general .mcs.wh { display: none; } }
 

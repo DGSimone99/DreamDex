@@ -351,9 +351,9 @@
 .slot .types.as-icons { align-items: center; gap: 3px; }
 .slot .type-dot { display: inline-flex; flex: none; }
 .slot .type-dot img { width: 19px; height: 19px; }
-/* Due chip affiancati anche nelle card strette */
-.slot .type-chip { width: 56px; }
-.slot .type-chip.long { width: auto; min-width: 0; padding: 1px var(--sp-2); letter-spacing: -0.02em; }
+/* Due tipi affiancati anche nelle card strette: nome senza maiuscole, più stretto (se non ci stanno, restano le icone) */
+.slot-card .type-chip { --tc-h: 18px; }
+.slot-card .type-chip.type-chip > span { width: auto; padding: 0 var(--sp-2) 0 3px; text-align: left; font-size: var(--fs-label); font-weight: 600; text-transform: none; letter-spacing: -0.01em; }
 .slot .favorite, .slot .remove {
   position: absolute;
   /* Area di clic di 32 px attorno all'icona: le due aree si toccano senza sovrapporsi */

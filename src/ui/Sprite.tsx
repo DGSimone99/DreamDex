@@ -4,6 +4,7 @@ import { battleSpecies, getSpecies, toID } from '../engine/dex';
 import type { TypeName } from '../engine/types';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
+import { typeIconUrl } from './typeIcons';
 
 /** Colori classici dei tipi. */
 export const TYPE_COLORS: Record<TypeName, string> = {
@@ -31,13 +32,18 @@ export function inkFor(hex: string): string {
 
 export const typeColor = (type: string): string => TYPE_COLORS[type as TypeName] ?? '#8890b0';
 
+/** Il tipo come in Pokémon Champions: tessera con l'icona ufficiale nel colore del tipo, poi il nome su una lastra scura. */
 export function TypeChip({ type }: { type: string }) {
   const lang = useLang();
-  const color = typeColor(type);
   const label = typeName(type, lang);
-  // Nomi lunghi ("Coleottero"): testo ridotto, così il chip resta della stessa larghezza degli altri
-  // Colore in una variabile: nelle card del team lo sfondo è un parallelogramma disegnato a parte
-  return <span className={`type-chip${label.length > 8 ? ' long' : ''}`} style={{ '--chip': color, color: inkFor(color) } as CSSProperties}>{label}</span>;
+  const icon = typeIconUrl(type);
+  // Tutti larghi uguali (il nome più lungo), così si allineano in colonna; "Coleottero" ha le lettere più piccole per starci
+  return (
+    <span className={`type-chip${label.length > 8 ? ' long' : ''}`} style={{ '--chip': typeColor(type) } as CSSProperties}>
+      <i aria-hidden="true">{icon && <img src={icon} alt="" draggable={false} />}</i>
+      <span>{label}</span>
+    </span>
+  );
 }
 
 /** Id degli sprite di Showdown: "landorus-therian", "charizard-megay". */

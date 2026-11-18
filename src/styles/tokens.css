@@ -48,6 +48,12 @@
   --plate: var(--line);
   --on-plate: var(--text);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Angoli alternati di Pokémon Champions (tondi in alto a sinistra e in basso a destra, quasi dritti negli altri due):
+     due misure sole, una per i pezzi da 28px in su (pulsanti, lastre, mosse) e una per i piccoli (tipi, ruoli, barre) */
+  --alt-r: 10px 3px 10px 3px;
+  --alt-r-sm: 7px 2px 7px 2px;
+  /* Dove sfumano lastre, mosse, tipi e ruoli: il nostro scuro dei campi, non il nero puro */
+  --fade-end: var(--field);
   /* Spaziature (padding, margin, gap): la scala misurata su come è fatta l'app, a passi di 2px fino a 18 più il margine
      grande. 6px è il passo più usato (fra icona e testo, dentro i controlli); 4 e 8 i più comuni dopo. Restano scritti a
      mano solo i valori ottici: 1px e 3px (bordi, tag sottili), i dispari dentro i padding (compensano il corsivo o
