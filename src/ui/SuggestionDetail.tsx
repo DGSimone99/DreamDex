@@ -25,7 +25,7 @@ import { statsEntry } from '../engine/stats';
 import { Sprite, typeColor } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { Typed } from './TypeText';
-import { MemberKit, MemberStatsMoves } from './MemberCard';
+import { MemberKit, MemberMoves, StatHex } from './MemberCard';
 import { typeIconUrl } from './typeIcons';
 import type { TypeName } from '../engine/types';
 
@@ -293,8 +293,15 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             esagono e mosse come pillole */}
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
-          <MemberKit set={set} />
-          <MemberStatsMoves set={set} movesLabel={tr('editor.moves')} />
+          {/* Una fascia sola, come la schermata riassunto dei giochi: a sinistra l'esagono, a destra le mosse 2 per 2 e sotto
+              di loro i dati del set (la colonna di destra alta quanto l'esagono) */}
+          <div className="set-row">
+            <StatHex set={set} />
+            <div className="set-side">
+              <MemberMoves set={set} movesLabel={tr('editor.moves')} className="set-moves" />
+              <MemberKit set={set} />
+            </div>
+          </div>
         </section>
 
         {/* Meta, solo col team chiuso (c'è l'altezza): a sinistra l'uso nel meta e il posto in classifica, a destra i 5

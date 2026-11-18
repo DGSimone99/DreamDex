@@ -23,7 +23,7 @@ const at = (i: number, r: number) => {
 const ring = (f: number) => HEX_ORDER.map((_, i) => at(i, R * f).map(n => n.toFixed(1)).join(',')).join(' ');
 
 /** Le statistiche finali a esagono; quella che la natura alza in verde, quella che abbassa in rosso. */
-function StatHex({ set }: { set: TeamSet }) {
+export function StatHex({ set }: { set: TeamSet }) {
   const lang = useLang();
   const lines = statLines(set);
   const byId = new Map(lines.map(l => [l.stat, l]));
@@ -90,15 +90,22 @@ export function MemberKit({ set, was }: { set: TeamSet; was?: TeamSet }) {
  * `movesLabel`: fuori dal tooltip (nel dettaglio) le mosse sono una lista con quel nome, per i lettori di schermo.
  */
 export function MemberStatsMoves({ set, was, movesLabel }: { set: TeamSet; was?: TeamSet; movesLabel?: string }) {
+  return (
+    <div className="mcard-body">
+      <StatHex set={set} />
+      <MemberMoves set={set} was={was} movesLabel={movesLabel} />
+    </div>
+  );
+}
+
+/** Le quattro mosse come pillole (le nuove rispetto a `was` col punto azzurro); `movesLabel`: una lista con quel nome. */
+export function MemberMoves({ set, was, movesLabel, className = '' }: { set: TeamSet; was?: TeamSet; movesLabel?: string; className?: string }) {
   const t = useT();
   const moves = set.moves.filter(Boolean);
   const oldMoves = new Set((was?.moves ?? []).filter(Boolean));
   return (
-    <div className="mcard-body">
-      <StatHex set={set} />
-      <div className="mcard-moves" {...(movesLabel ? { role: 'list', 'aria-label': movesLabel } : {})}>
-        {moves.length ? moves.map((move, i) => <MovePlate key={`${move}#${i}`} name={move} fresh={!!was && !oldMoves.has(move)} item={!!movesLabel} />) : <span className="mcard-none">{t('mcard.noMoves')}</span>}
-      </div>
+    <div className={`mcard-moves${className ? ` ${className}` : ''}`} {...(movesLabel ? { role: 'list', 'aria-label': movesLabel } : {})}>
+      {moves.length ? moves.map((move, i) => <MovePlate key={`${move}#${i}`} name={move} fresh={!!was && !oldMoves.has(move)} item={!!movesLabel} />) : <span className="mcard-none">{t('mcard.noMoves')}</span>}
     </div>
   );
 }
