@@ -26,8 +26,12 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
  * stesse righe (GradeAreaRows) e il "?"; col team aperto la carta resta com'è.
  * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
+export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
   const t = useT();
+  // Voto bloccato (EV oltre il massimo, specie sconosciuta): si sa subito dal team, mentre il voto nuovo arriva un attimo
+  // dopo. Nel frattempo il voto vecchio non si mostra, se no per un istante comparirebbe con l'avviso delle regole sotto
+  // e la carta si allungherebbe
+  const rating = blocked ? null : computed;
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
   const [since, setSince] = useState<number | null>(null);
