@@ -505,8 +505,9 @@
 .dash-ladder { --avg-gutter: 30px; flex: 1 1 0; min-height: 70px; display: flex; flex-direction: column; }
 .dash-bars { position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: var(--sp-3); padding-left: var(--avg-gutter); border-bottom: 1px solid var(--line); }
 .dash-lane { flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; cursor: help; }
-.dash-bar { position: relative; width: 70%; max-width: 40px; min-height: 2px; background: var(--line); border-radius: 3px 3px 0 0; }
-.dash-bar.above { background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--panel))); }
+/* Colonne come le barre di Champions: angoli dritti, un filo chiaro in cima */
+.dash-bar { position: relative; width: 70%; max-width: 40px; min-height: 2px; background: var(--line); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18); }
+.dash-bar.above { background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--panel))); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45); }
 .dash-bar small { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 1px; font-size: var(--fs-label); font-variant-numeric: tabular-nums; color: var(--muted); }
 .dash-avg { position: absolute; left: 0; right: 0; z-index: 1; border-top: 1.5px dashed var(--warn); pointer-events: none; }
 .dash-avg span { position: absolute; left: 0; top: 0; transform: translateY(-50%); padding: 0 3px 0 0; font: 600 var(--fs-label)/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--warn); background: var(--panel); }
@@ -533,7 +534,7 @@
 .dash.tight .dash-summary { --sum-big: 32px; --sum-small: 30px; --sum-mini: 24px; --sum-line: 32px; --sum-arch: 20px; }
 /* Cruscotto basso (portatili): sezioni più vicine e il triangolo delle sinergie più basso, così il Riassunto ci sta */
 .dash.tight .sum-sec { padding-top: 5px; }
-.dash.tight .sum-none, .dash.tight .sum-sec-more { top: 4px; }
+.dash.tight .sum-none, .dash.tight .sum-sec-more { top: 9px; }
 .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 96px; }
 /* Cruscotto basso: il core un po' più fitto, così titolo su due righe e le tre righe dei tipi parati stanno ancora;
    se la lista è più bassa del triangolo con tutto il testo (1280×620 col team aperto) restano il titolo e il triangolo,
@@ -613,16 +614,20 @@
    ma mai sotto titolo e una riga (sotto si accavallerebbero con la sezione dopo) */
 .sum-sec { position: relative; flex: 0 1 auto; min-height: auto; display: flex; flex-direction: column; padding-top: var(--sp-4); }
 .dash.rich .sum-sec { padding-top: var(--sp-6); }
-.sum-sec-h, .analysis h4.sum-sec-h { flex: none; display: block; margin: 0; padding-bottom: 5px; font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line-soft); }
+/* I sottotitoli del Riassunto (Meteo e campo, Trappole, Sinergie) come la fascia di Pokémon Champions a sinistra, come i titoli
+   della scheda del candidato: fascia chiara che sfuma verso destra e un filo sotto che sfuma uguale */
+.sum-sec-h, .analysis h4.sum-sec-h { position: relative; flex: none; display: block; margin: 0; padding: 4px 24px 4px 9px; font: 600 var(--fs-small)/1.2 var(--display); letter-spacing: 0.01em; text-transform: none; color: var(--text);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 90%, white), transparent 70%); border-bottom: 0; }
+.sum-sec-h::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 /* Sezione vuota: "Nessuno" sulla riga del titolo, a destra (come il +N), così non occupa una riga sua */
-.sum-none { position: absolute; right: 4px; top: 8px; margin: 0; font-size: var(--fs-caption); line-height: 1.2; color: var(--faint); }
-.dash.rich .sum-none { top: 12px; }
+.sum-none { position: absolute; right: 4px; top: 13px; margin: 0; font-size: var(--fs-caption); line-height: 1.2; color: var(--faint); }
+.dash.rich .sum-none { top: 17px; }
 .sum-lines { flex: 0 1 auto; min-height: var(--sum-line); margin: 0; padding: 0; list-style: none; overflow: hidden; }
 .sum-lines > li { border-bottom: 1px solid var(--line-soft); }
 .sum-lines > li:last-child { border-bottom: 0; }
 /* Il "+N" di una sezione, a destra sulla riga del titolo */
-.sum-sec-more { position: absolute; right: 4px; top: 7px; line-height: 1.2; }
-.dash.rich .sum-sec-more { top: 11px; }
+.sum-sec-more { position: absolute; right: 4px; top: 12px; line-height: 1.2; }
+.dash.rich .sum-sec-more { top: 16px; }
 .sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-1) var(--sp-2) var(--sp-1) 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
 /* Righe del Riassunto (meteo, trappole, sinergie) al passaggio: una luce azzurra sfumata su ogni lato, senza bordi né
    forme, che finisce dentro la riga (closest-side: la lista taglia ciò che esce); le sprite si alzano di 2px, nel core
