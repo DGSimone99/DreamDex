@@ -123,17 +123,15 @@
 .sus-table thead .sus-h { vertical-align: bottom; text-align: left; padding: 0 var(--sp-6) var(--sp-3); }
 .sus-table thead .sus-c { text-align: center; }
 .sus-table thead .sus-r { text-align: right; padding-right: 0; }
-/* «Perde» sopra le sue due colonne: centrata e bassa come le altre righe di gruppo, così i membri partono alla stessa altezza delle altre schede */
-.sus-table thead .rob-grp th[scope='colgroup'] { padding: 0 0 var(--sp-1); text-align: center; line-height: 1; }
 /* "Perde" copre due colonne, un gruppo: la fascia di Pokémon Champions come Tipi e Meta */
-.sus-table thead .rob-grp th[scope='colgroup'] { position: relative; padding: 6px 0; color: var(--text);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raised) 90%, white) 25%, color-mix(in srgb, var(--raised) 90%, white) 75%, transparent); }
+.sus-table thead .rob-grp th[scope='colgroup'] { position: relative; padding: 0; text-align: center; line-height: 1.2; color: var(--text);
+  background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
 .sus-table thead .rob-grp th[scope='colgroup']::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 /* Le due righe della testata alte insieme quanto la testata di Generale (--def-head): passando da una sotto-scheda
    all'altra le righe dei membri partono allo stesso punto */
-.def-frame .sus-table thead tr.rob-grp { height: 23px; }
-.def-frame .sus-table thead tr.sus-sub { height: calc(var(--def-head) - 23px - var(--def-sp)); }
-.sus-table thead .rob-grp th[scope='colgroup'] { padding: 3px 0; }
+.def-frame .sus-table thead tr.rob-grp { height: 26px; }
+.def-frame .sus-table thead tr.sus-sub { height: calc(var(--def-head) - 26px - var(--def-sp)); }
+.def-frame .sus-table thead .sus-sub th { padding-bottom: 2px; line-height: 1; }
 .sus-table thead .sus-sub th { padding-bottom: var(--sp-2); }
 .sus-table thead .sus-sub th { padding: 0 0 var(--sp-3); text-align: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .sus-table td { padding: 0 var(--sp-6); border-bottom: 1px solid var(--line-soft); }
@@ -155,11 +153,11 @@
 /* Netto: pista con lo zero al centro, rosso a sinistra, verde a destra; il numero accanto */
 .sus-net-wrap { display: flex; align-items: center; gap: var(--sp-6); }
 /* La barra del netto come quella di Champions: fessura scura incassata, riempimento pieno con un filo chiaro in alto */
-.sus-net-track { position: relative; flex: 1; height: 10px; background: var(--field); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }
+.sus-net-track { position: relative; flex: 1; height: 10px; background: var(--field); box-shadow: var(--slot-inset); }
 .sus-net-track::after { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--faint); }
 .sus-net-track i { position: absolute; top: 0; bottom: 0; }
-.sus-net-track i.pos { background: linear-gradient(color-mix(in srgb, white 35%, transparent) 0 1px, transparent 1px), var(--good); }
-.sus-net-track i.neg { background: linear-gradient(color-mix(in srgb, white 35%, transparent) 0 1px, transparent 1px), var(--bad); }
+.sus-net-track i.pos { background: linear-gradient(var(--slot-shine) 0 1px, transparent 1px), var(--good); }
+.sus-net-track i.neg { background: linear-gradient(var(--slot-shine) 0 1px, transparent 1px), var(--bad); }
 .sus-net-num { min-width: 48px; text-align: right; font: italic 700 var(--fs-body)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--muted); }
 .sus-net-num.good { color: var(--good); }
 .sus-net-num.bad { color: var(--bad); }
@@ -449,8 +447,8 @@
 .mc .wh-mon img { width: 26px; height: 26px; border-radius: 0; object-fit: contain; }
 /* Come le mosse chiuse dell'Offesa (Pokémon Champions): tessera quadrata col tipo o la minaccia sul suo colore, corpo scuro
    che sfuma, il danno a destra; angoli alternati piccoli. Il nome si apre passando sopra, come prima */
-.mcs.wh .mc { height: 24px; gap: 0; padding: 0; overflow: hidden; border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 80%); box-shadow: inset 0 0 0 1px var(--line); }
-.mcs.wh .mc:hover, .mcs.wh .mc:focus-visible { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, var(--raised)), var(--fade-end) 80%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 70%, var(--line)); }
+.mcs.wh .mc { height: 24px; gap: 0; padding: 0; overflow: hidden; border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); box-shadow: inset 0 0 0 1px var(--line); }
+.mcs.wh .mc:hover, .mcs.wh .mc:focus-visible { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, var(--raised)), var(--fade-end) var(--fade-stop)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 70%, var(--line)); }
 .mcs.wh .mc > img { flex: none; width: 24px; height: 24px; border-radius: 0; background: var(--c); }
 /* La minaccia del meta con la sua icona da box (40x30), ridotta a 0,8 nella tessera */
 .mcs.wh .wh-mon { flex: none; display: grid; place-items: center; width: 32px; height: 24px; overflow: hidden; background: color-mix(in srgb, var(--c) 45%, var(--panel)); }
