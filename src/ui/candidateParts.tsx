@@ -4,7 +4,7 @@ import type { Format } from '../engine/format';
 import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
 import { rankedChanges } from '../engine/coach';
-import { detectRoles } from '../engine/roles';
+import { detectRoles, roleLabel } from '../engine/roles';
 import { OFTEN_TOGETHER, type Suggestion } from '../engine/scoring';
 import type { ScoredArea, SwapOption, TeamGain } from '../engine/teamGain';
 import type { TeamSet } from '../engine/sets';
@@ -70,8 +70,14 @@ export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±
 /** L'area del voto di cui parla una ragione, per non ripetere i guadagni del cambio. */
 const REASON_AREA: Partial<Record<string, ScoredArea>> = { defense: 'defense', coverage: 'strength', roles: 'roles' };
 
+/** Il gruppo di una voce di Porta o Toglie nel dettaglio: ruoli, difesa, offesa, minacce, sinergie, avvisi, altro. */
+export type BringKind = 'roles' | 'defense' | 'offense' | 'threats' | 'synergy' | 'warning' | 'other';
+/** Il gruppo dall'area del voto (i guadagni e le perdite del cambio). */
+export const kindOfArea = (area: ScoredArea): BringKind => (area === 'roles' ? 'roles' : area === 'defense' ? 'defense' : area === 'strength' ? 'offense' : 'other');
+const KIND_OF_COMPONENT: Partial<Record<string, BringKind>> = { defense: 'defense', coverage: 'offense', threats: 'threats', synergy: 'synergy', roles: 'roles' };
+
 /** Una voce di "Porta": il testo lungo (dettaglio) e quello breve (caselle), o a segni (caselle, col testo lungo nascosto). */
-export interface Bring { text: string; short: string; symbol?: ReasonSymbol; usedWith?: true }
+export interface Bring { text: string; short: string; symbol?: ReasonSymbol; usedWith?: true; kind?: BringKind; /** I ruoli uno per uno (la voce "Porta Pivot, …": il dettaglio li mostra a riquadri). */ roles?: string[] }
 
 /**
  * Tutto quello che il candidato porta, in un solo ordine per dettaglio e caselle: i guadagni del cambio (dal più pesante),
@@ -89,15 +95,16 @@ export function bringsOf(item: Item, lang: Lang, rules: FormatRules): Bring[] {
     .map((reason, i) => ({ reason, i }))
     .sort((a, b) => b.reason.weight - a.reason.weight || a.i - b.i)
     .map(({ reason }): Bring => ({
-      text: reason.text, short: reason.short ?? reason.text,
+      text: reason.text, short: reason.short ?? reason.text, kind: KIND_OF_COMPONENT[reason.component] ?? 'other',
+      ...(reason.component === 'roles' && item.facts?.roles?.filled?.length && { roles: item.facts.roles.filled.map(role => roleLabel(role, lang)) }),
       ...(reason.symbol && { symbol: reason.symbol }), ...(reason.usedWith && { usedWith: true as const }),
     }));
   // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
   const roles = !item.teamGain && !changes ? detectRoles(item.set, rules).map(role => t(lang, `role.${role}`)) : [];
   const all: Bring[] = [
-    ...(changes?.pros.map((p): Bring => ({ text: p.text, short: p.text, ...(p.symbol && { symbol: p.symbol }) })) ?? []),
+    ...(changes?.pros.map((p): Bring => ({ text: p.text, short: p.text, kind: kindOfArea(p.area), ...(p.symbol && { symbol: p.symbol }) })) ?? []),
     ...reasons,
-    ...roles.map(text => ({ text, short: text })),
+    ...roles.map((text): Bring => ({ text, short: text, kind: 'roles' })),
   ];
   // Una voce sola per testo; "Usato con X" sempre per ultimo
   const seen = new Set<string>();

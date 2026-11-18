@@ -49,7 +49,10 @@ describe('SuggestionsPanel', () => {
   });
 
   it('il dettaglio mostra il primo candidato: quanto sale il voto del team, in tutto e per area', async () => {
-    await setup('Great Tusk');
+    const user = await setup('Great Tusk');
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+
     const first = rowNames()[0];
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${first}` });
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/^(\+\d+|−\d+|±0)voto del team [SABCD] \d+ → [SABCD] \d+$/);
@@ -85,7 +88,10 @@ describe('SuggestionsPanel', () => {
   });
 
   it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
-    await setup();
+    const user = await setup();
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+
     // Nessuna nota sopra la lista: si parte dalla lista stessa
     expect(within(suggestions()).queryByText(/come si adatta al team/)).toBeNull();
     const usages = within(list()).getAllByLabelText(/^Uso nel meta \d/).map(cell => parseFloat(cell.getAttribute('aria-label')!.replace('Uso nel meta ', '').replace(',', '.')));
@@ -96,8 +102,10 @@ describe('SuggestionsPanel', () => {
     expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
     // Un'area a zero col team vuoto non sembra un errore: si legge "—"
     expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
-    // I ruoli del set hanno la spiegazione nel tooltip
-    for (const role of within(detail).getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')) expect(role.getAttribute('title')).toBeTruthy();
+    // I ruoli del set nella lastra della testata, con la spiegazione nel tooltip
+    const slab = detail.querySelector('.detail-why')!;
+    expect(slab.getAttribute('aria-label')).toMatch(/^Ruoli del set: /);
+    expect(slab.getAttribute('title')).toBeTruthy();
   });
 
   it('mostra i tag sulle righe', async () => {
@@ -361,7 +369,7 @@ describe('SuggestionsPanel', () => {
     expect(roles.items[0].short).not.toContain(',');
   });
 
-  it('Porta: il dettaglio mostra tutte le voci, le caselle le prime nello stesso ordine (senza "Usato con")', async () => {
+  it('Porta: il dettaglio raggruppa le voci per tipo (ruoli, difesa, offesa, minacce, sinergie) senza "Usato con"; le caselle le prime voci in ordine di peso', async () => {
     const { bringsOf, reasonsOf } = await import('../../src/ui/candidateParts');
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { formatRules } = await import('../../src/engine/formatRules');
@@ -380,17 +388,24 @@ describe('SuggestionsPanel', () => {
       ],
     } as never;
     renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
-    // Tutte le voci (niente più tetto a 3), dalla più pesante; "Usato con" in fondo
-    expect(points.slice(0, 5)).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Abilita Venusaur: Siccità → Clorofilla', 'Ferma Kingambit', 'Colpisce super efficace Fuoco, scoperti dal team']);
-    expect(points[points.length - 1]).toBe('Usato con Great Tusk nel 30% dei team');
-    // Le caselle: le prime voci della stessa lista, in forma breve
-    const brings = bringsOf(item, 'it', formatRules(DEFAULT_FORMAT.formatId));
-    expect(brings.map(b => b.text)).toEqual(points);
+    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    // I gruppi sempre nello stesso ordine, ognuno con le sue voci; "Usato con" no (è un dato del meta)
+    const groups = [...porta.querySelectorAll('.bring-group')];
+    expect(groups.map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense', 'offense', 'threats', 'synergy']);
+    const texts = (kind: string) => [...porta.querySelectorAll(`.bring-group.${kind} li`)].map(li => li.textContent);
+    // Difesa, Offesa e Minacce nella forma breve (il gruppo dice già il resto), la frase intera nel tooltip
+    expect(texts('defense')).toEqual(['Resiste ad Acqua']);
+    expect(texts('offense')).toEqual(['Colpisce Fuoco']);
+    expect(texts('threats')).toEqual(['Ferma Kingambit']);
+    expect(porta.querySelector('.bring-group.offense li')).toHaveAttribute('title', 'Colpisce super efficace Fuoco, scoperti dal team');
+    expect(texts('synergy')).toEqual(['Abilita Venusaur: Siccità → Clorofilla']);
+    expect(porta.textContent).not.toMatch(/Usato con/);
+    // Le caselle: le prime voci in ordine di peso, in forma breve, senza "Usato con"
+    const brings = bringsOf(item, 'it', formatRules(DEFAULT_FORMAT.formatId)).filter(b => !b.usedWith);
+    expect(brings.map(b => b.text)).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Abilita Venusaur: Siccità → Clorofilla', 'Ferma Kingambit', 'Colpisce super efficace Fuoco, scoperti dal team']);
     for (const n of [1, 2, 3]) {
       const { items } = reasonsOf(item, n, null, DEFAULT_FORMAT, 'it');
       expect(items.map(b => b.short)).toEqual(brings.slice(0, n).map(b => b.short));
-      expect(items.map(b => b.text)).toEqual(points.slice(0, n));
     }
   });
 
@@ -425,7 +440,7 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(toglie.textContent).toMatch(/La pioggia si scontra/);
   });
 
-  it('Porta: "Usato con" sempre per ultimo', async () => {
+  it('Porta: niente "Usato con" nel dettaglio (è un dato del meta), le altre voci nei loro gruppi', async () => {
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
@@ -438,8 +453,9 @@ describe('dettaglio: abilità in battaglia', () => {
       ],
     } as never;
     renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
-    expect(points).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Usato con Great Tusk nel 30% dei team']);
+    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    expect(porta.textContent).not.toMatch(/Usato con/);
+    expect([...porta.querySelectorAll('.bring-group')].map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense']);
   });
 
   it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {
@@ -513,6 +529,8 @@ Bold Nature
 - Toxic Spikes`,
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     const areas = screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.detail-areas')!;
     // Dal 2026-11-03 nessuna area è inattiva nello stall: niente grigio, niente nota
     expect(areas.querySelector('.inactive')).toBeNull();
@@ -600,11 +618,15 @@ describe('scheda del candidato', () => {
   const section = (name: string) => within(detail()).getByRole('heading', { name }).closest('section')!;
 
   it('Migliora: prima cosa porta e cosa toglie, niente più Perché', async () => {
-    await setup(...FULL);
+    const user = await setup(...FULL);
     expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
     expect(within(detail()).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
     expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+    // Senza la versione estesa niente riga per area; col team chiuso c'è
+    expect(detail().querySelector('.detail-areas')).toBeNull();
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
   }, 60000);
 
@@ -785,16 +807,20 @@ describe('sprite Icona box', () => {
     expect(cards[1].style.getPropertyValue('--wake')).toBe(`${CARD_WAKE_MS}ms`);
   });
 
-  it('Set consigliato: sotto le voci i ruoli del set, il principale per primo ed evidenziato', async () => {
+  it("la lastra della testata: il ruolo principale e quanti altri, l'elenco intero per i lettori di schermo e nel tooltip", async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
       onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="normal" />);
-    const roles = [...screen.getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')];
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    const slab = detail.querySelector('.detail-hero .detail-why')!;
+    const roles = slab.getAttribute('aria-label')!.replace('Ruoli del set: ', '').split(', ');
     expect(roles.length).toBeGreaterThan(0);
-    expect(roles[0].classList.contains('main')).toBe(true);
-    expect(roles.slice(1).some(role => role.classList.contains('main'))).toBe(false);
+    expect(new Set(roles).size).toBe(roles.length);
+    // A vista il principale (il primo dell'elenco) e "+N" per gli altri
+    expect(slab.textContent).toBe(roles.length > 1 ? `${roles[0]} +${roles.length - 1}` : roles[0]);
+    expect(slab.getAttribute('title')).toBeTruthy();
   });
 
   it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {

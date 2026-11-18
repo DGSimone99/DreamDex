@@ -260,3 +260,101 @@
 .syn-more-mon { display: flex; align-items: center; }
 .syn-more-mon .sprite { display: block; image-rendering: pixelated; }
 .syn-more-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
+/* ===== Dettaglio dei candidati disegnato come la carta del tooltip (SuggestionDetail): la testata della carta (diagonale
+   nei colori dei tipi, righe, ombra in basso) con sprite, nome, icone dei tipi e lastra dei ruoli, il voto a destra; il set
+   con la stessa griglia, l'esagono e le pillole. Le misure sono quelle del dettaglio, più grandi del tooltip */
+.detail-hero.mcard-head { grid-template-columns: 96px minmax(0, 1fr) auto; grid-template-rows: auto; align-items: center; align-content: center; gap: var(--sp-3) var(--sp-7); min-height: 108px; padding: var(--sp-6) var(--sp-9) var(--sp-6) var(--sp-6); }
+.detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
+.detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45)); }
+.detail-hero.mcard-head .detail-id { gap: var(--sp-4); }
+.detail-hero.mcard-head .detail-id h3 { gap: var(--sp-4); font-style: italic; text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.detail-types { display: inline-flex; flex: none; gap: var(--sp-2); }
+.detail-types img { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
+.detail-hero .detail-why { align-self: flex-start; justify-self: auto; margin-top: 0; font-size: var(--fs-small); cursor: help; }
+.detail-hero.mcard-head .detail-score strong, .detail-hero.mcard-head .detail-score span { text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.detail-hero.mcard-head .detail-score span { color: var(--text); }
+/*
+ * Set consigliato in una fascia sola, come la schermata riassunto dei giochi: a sinistra l'esagono, a destra le mosse
+ * 2 per 2 a metà larghezza (nome intero) e sotto di loro i dati del set su due colonne. Senza esagono (schermi bassi,
+ * dettaglio che non ci sta) la colonna di destra prende tutta la riga.
+ */
+.detail-sec.set-sec { display: block; }
+.set-row { --hex-w: 176px; display: grid; grid-template-columns: var(--hex-w) minmax(0, 1fr); align-items: center; gap: var(--sp-7); }
+.set-row .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
+.set-side { display: grid; gap: var(--sp-5); min-width: 0; }
+.set-row .set-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-4); }
+.set-row .mcard-kit { padding: 0; border: 0; font-size: var(--fs-small); }
+/* Il dettaglio sta nella colonna senza scorrere: testata ed esagono un po' più bassi; sugli schermi bassi niente esagono
+   e le mosse su due colonne (le statistiche restano in un clic nella scheda) */
+.detail-hero.mcard-head { min-height: 92px; padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+.detail-hero.mcard-head .detail-sprite { width: 80px; height: 80px; }
+.detail-hero.mcard-head { grid-template-columns: 80px minmax(0, 1fr) auto; }
+.detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .set-row .mcard-hex { display: none; }
+  .set-row { grid-template-columns: minmax(0, 1fr); }
+  .detail-hero.mcard-head { min-height: 72px; }
+  .detail-hero.mcard-head .detail-sprite { width: 64px; height: 64px; }
+  .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 64px minmax(0, 1fr) auto auto; }
+}
+/* Sotto i 900px di altezza (1536x864): esagono e testata ancora un filo più bassi */
+@media (min-width: 1100px) and (max-height: 899px) and (min-height: 800px) {
+  .set-row { --hex-w: 152px; }
+  .detail-hero.mcard-head { min-height: 84px; }
+}
+/* Schermi molto bassi (1366x657, 1280x620): sezioni più strette, il titolo del set dentro la sua riga */
+@media (min-width: 1100px) and (max-height: 699px) {
+  .detail:not(.detail-empty) .detail-sec.set-sec h4 { display: none; }
+  .detail-hero.mcard-head { min-height: 64px; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+  .detail-hero.mcard-head .detail-sprite { width: 56px; height: 56px; }
+  .detail-hero.mcard-head { grid-template-columns: 56px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head .detail-id { gap: var(--sp-2); }
+}
+/* Schermi alti (1080 e oltre): c'è spazio, testata ed esagono grandi come nella carta e oltre */
+@media (min-width: 1100px) and (min-height: 1000px) {
+  .detail-hero.mcard-head { min-height: 112px; padding-top: var(--sp-6); padding-bottom: var(--sp-6); grid-template-columns: 96px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
+  .detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; }
+  .set-row { --hex-w: 220px; }
+  .set-row .set-moves { gap: var(--sp-4) var(--sp-5); }
+  .set-row .set-moves .mvp { --mvp-h: 30px; font-size: var(--fs-small); }
+}
+
+/* Porta e Toglie a gruppi (BringGroups): etichetta col segno a sinistra (verde in Porta, rosso in Toglie, giallo negli
+   avvisi), le voci a destra; i ruoli come i riquadri della Panoramica, con la spunta o la × */
+.bring-groups { display: grid; gap: var(--sp-4); }
+.bring-group { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+.bring-label { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 20px; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+.bring-label .icon { flex: none; width: 13px; height: 13px; }
+.bring-label .sym-vs { flex: none; font: 800 italic 10px/1 var(--display); letter-spacing: 0.04em; }
+.bring-groups.gain .bring-label .icon, .bring-groups.gain .bring-label .sym-vs { color: var(--good); }
+.bring-groups.loss .bring-label .icon, .bring-groups.loss .bring-label .sym-vs { color: var(--bad); }
+.bring-group.warning .bring-label, .bring-group.warning .bring-label .icon { color: var(--warn); }
+.bring-items { list-style: none; margin: 0; padding: 2px 0 0; display: grid; gap: var(--sp-1); font-size: var(--fs-small); line-height: 1.35; }
+.bring-roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.bring-roles .dash-role-tag .icon { width: 12px; height: 12px; stroke-width: 2.5; }
+.bring-groups.gain .bring-roles .dash-role-tag .icon { color: var(--good); }
+.bring-groups.loss .bring-roles .dash-role-tag .icon { color: var(--bad); }
+.bring-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
+.bring-roles .dash-role-tag { max-width: 100%; white-space: normal; }
+/* Porta e Toglie affiancati (colonne strette): etichetta e voci sulla stessa riga, le voci sotto solo se non c'è posto */
+.detail-sec:not(.wide) .bring-group { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-2) var(--sp-4); }
+.detail-sec:not(.wide) .bring-group > ul { flex: 1 1 150px; min-width: 0; }
+/* La lastra dei ruoli in testata su una riga sola: l'elenco intero nel tooltip */
+.detail-hero .detail-why { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Il dettaglio che non ci starebbe (.tight, lo decide la misura): il set si stringe come sugli schermi bassi */
+.detail.tight .set-row .mcard-hex { display: none; }
+.detail.tight .set-row { grid-template-columns: minmax(0, 1fr); }
+/* L'etichetta sulla stessa linea di base della prima riga delle voci (o della scritta dei riquadri dei ruoli): le due
+   scritte hanno misure diverse, quindi si allineano le basi, non i centri; i segni restano centrati sulla scritta */
+.bring-group, .detail-sec:not(.wide) .bring-group { align-items: baseline; }
+.bring-label { min-height: 0; height: auto; align-items: baseline; line-height: 1.35; }
+.bring-label .icon, .bring-label .sym-vs { align-self: center; }
+.bring-items { padding-top: 0; }
+.bring-roles .dash-role-tag { min-height: 22px; }
+.detail-why-more { font-style: normal; opacity: 0.75; }
+/* Nei riquadri dei ruoli la linea di base è quella della scritta, non dell'icona (spunta o ×) */
+.bring-roles .dash-role-tag { align-items: baseline; }
+.bring-roles .dash-role-tag .icon { align-self: center; }
