@@ -153,8 +153,8 @@ describe('controllo e malus: casi limite', () => {
   it('il malus resta dentro il tetto delle penalità', () => {
     const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
     const team = [hatt, fast('Regieleki'), fast('Dragapult'), fast('Iron Bundle'), fast('Electrode-Hisui'), fast('Meowscarada')];
-    // Senza i buchi in Difesa (un team di soli attaccanti veloci ne ha), che non dipendono dalla Trick Room
-    const items = rateTeam(team, fixtureData)!.penalty.items.filter(i => i.catalog !== 'defenseHole');
+    // Senza i buchi in Difesa e i Senza risposta (un team di soli attaccanti veloci ne ha), che non dipendono dalla Trick Room
+    const items = rateTeam(team, fixtureData)!.penalty.items.filter(i => i.catalog !== 'defenseHole' && i.catalog !== 'unanswered');
     expect(items.reduce((acc, i) => acc + i.points, 0)).toBeLessThanOrEqual(15);
   });
 });

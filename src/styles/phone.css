@@ -19,11 +19,11 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: var(--sp-5);
     height: var(--top-h);
-    padding: 0 12px 0 14px;
-    padding-left: max(14px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding: 0 var(--sp-6) 0 var(--sp-7);
+    padding-left: max(var(--sp-7), env(safe-area-inset-left));
+    padding-right: max(var(--sp-6), env(safe-area-inset-right));
     border-right: 0;
     border-bottom: 1px solid var(--line-soft);
     background: var(--panel);
@@ -35,25 +35,25 @@
   .popover.format-card > summary {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-4);
     height: 40px;
-    padding: 0 10px 0 0;
+    padding: 0 var(--sp-5) 0 0;
     border-left-width: 1px;
     overflow: hidden;
   }
   .format-card .format-key, .format-card .format-pills { display: none; }
-  .format-card .format-tier { flex: none; align-self: stretch; display: grid; place-items: center; padding: 0 14px 0 10px; font-size: 14px; }
-  .format-card .format-name { flex: 1; min-width: 0; font-size: 15px; }
-  .format-card > summary::after { content: ''; flex: none; width: 7px; height: 7px; margin: -3px 2px 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; rotate: 45deg; }
+  .format-card .format-tier { flex: none; align-self: stretch; display: grid; place-items: center; padding: 0 var(--sp-7) 0 var(--sp-5); font-size: var(--fs-section); }
+  .format-card .format-name { flex: 1; min-width: 0; font-size: var(--fs-body); }
+  .format-card > summary::after { content: ''; flex: none; width: 7px; height: 7px; margin: -3px var(--sp-1) 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; rotate: 45deg; }
   /* Col gioco: la sua carta prende il posto del formato (bloccato, si nasconde); senza tier il nome parte col margine */
   .format-card.locked { display: none; }
   .game-card { margin: 0; }
   button.game-card { width: auto; flex: 1; min-width: 0; }
-  .game-card > .format-summary { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px; overflow: hidden; }
+  .game-card > .format-summary { display: flex; align-items: center; gap: var(--sp-4); height: 40px; padding: 0 var(--sp-5); overflow: hidden; }
   .game-card .format-key, .game-card .format-pills { display: none; }
   .rail-foot { flex: none; padding: 0; }
   .rail-foot .meta, .rail-links { display: none; }
-  .rail-foot .lang-switch button { height: 36px; padding: 0 10px; }
+  .rail-foot .lang-switch button { height: 36px; padding: 0 var(--sp-5); }
   .rail-settings { width: 40px; height: 36px; }
 
   /* ── Sezioni in basso ──────────────────────────────────────────── */
@@ -63,12 +63,12 @@
     right: 0;
     bottom: 0;
     z-index: 45;
-    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + var(--safe-b)) max(8px, env(safe-area-inset-left));
+    padding: var(--sp-3) max(var(--sp-4), env(safe-area-inset-right)) calc(var(--sp-3) + var(--safe-b)) max(var(--sp-4), env(safe-area-inset-left));
     background: var(--panel);
     border-top: 1px solid var(--line);
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
   }
-  .tabs.vertical { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+  .tabs.vertical { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
   /* Confronto non c'è ancora: sul telefono non ruba spazio ai tasti veri */
   .tabs.vertical #tab-compare { display: none; }
   .tabs.vertical [role='tab'] {
@@ -79,15 +79,15 @@
     align-items: center;
     justify-content: center;
     gap: 3px;
-    padding: 4px 6px;
+    padding: var(--sp-2) var(--sp-3);
     text-align: center;
     clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   }
   .tabs.vertical .tab-icon { width: auto; height: auto; background: none; }
   .tabs.vertical .tab-icon .icon { width: 20px; height: 20px; }
   .tabs.vertical .tab-text { justify-items: center; gap: 1px; width: 100%; }
-  .tabs.vertical .tab-name { font-size: 14px; }
-  .tabs.vertical .tab-status { max-width: 100%; font-size: 11px; }
+  .tabs.vertical .tab-name { font-size: var(--fs-section); }
+  .tabs.vertical .tab-status { max-width: 100%; font-size: var(--fs-label); }
   .tabs.vertical [role='tab'][aria-selected='true'] { width: auto; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
   .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon { background: none; color: var(--on-accent-2); }
   .tabs.vertical [role='tab']:hover:not([aria-selected='true']) { background: none; }
@@ -95,10 +95,10 @@
   .tabs.vertical .tab-count { position: absolute; top: 2px; right: 12px; margin: 0; }
 
   /* ── Team ─────────────────────────────────────────────────────── */
-  .band { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 16px; }
+  .band { display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-6) 0 var(--sp-8); }
   .band > .team { order: 2; }
-  .band > .grade-badge { order: 1; margin: 0 14px; }
-  .team-head { flex-wrap: nowrap; gap: 8px; margin: 0 0 10px; padding: 0 14px; overflow-x: auto; scrollbar-width: none; }
+  .band > .grade-badge { order: 1; margin: 0 var(--sp-7); }
+  .team-head { flex-wrap: nowrap; gap: var(--sp-4); margin: 0 0 var(--sp-5); padding: 0 var(--sp-7); overflow-x: auto; scrollbar-width: none; }
   .team-head::-webkit-scrollbar { display: none; }
   .team-head h2 { flex: none; }
   .team-head .team-action, .team-quick .popover > summary { flex: none; height: 36px; white-space: nowrap; }
@@ -107,8 +107,8 @@
   /* Sotto i 600 px le scorciatoie (Importa, Esporta, Svuota) non stanno accanto alla targa e alla guida: vanno su una
      riga loro, allineate a destra, invece di uscire dallo schermo */
   @media (max-width: 599px) {
-    .team-head { flex-wrap: wrap; overflow-x: visible; row-gap: 8px; }
-    .team-quick { flex: 1 1 100%; gap: 8px; }
+    .team-head { flex-wrap: wrap; overflow-x: visible; row-gap: var(--sp-4); }
+    .team-quick { flex: 1 1 100%; gap: var(--sp-4); }
   }
   .team-head .team-guide { height: 30px; }
   /* La fila delle carte scorre col dito e si ferma su una carta; i margini laterali restano nella fila */
@@ -118,8 +118,8 @@
     grid-template-columns: none;
     grid-auto-columns: 124px;
     grid-template-rows: auto;
-    gap: 8px;
-    padding: 6px 14px 4px;
+    gap: var(--sp-4);
+    padding: var(--sp-3) var(--sp-7) var(--sp-2);
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
@@ -128,25 +128,25 @@
   }
   .band .slots::-webkit-scrollbar { display: none; }
   .band .slot > .slot-card, .band .slot.empty { scroll-snap-align: start; }
-  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { min-height: 0; height: 164px; padding: 6px 8px 10px; }
+  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { min-height: 0; height: 164px; padding: var(--sp-3) var(--sp-4) var(--sp-5); }
   .band:not(.collapsed) .slot > .slot-card .sprite-wrap { flex: 1 1 0; min-height: 0; }
   .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 80px); height: min(100cqh, 100cqw, 80px); }
   .band:not(.collapsed) .slot > .slot-card > :is(.ability, .types, .roles, .stats-badge) { display: none; }
   .band .slot .name { --name-fs: 14px; }
-  .band .slot .name-line { gap: 4px; margin-top: 2px; }
+  .band .slot .name-line { gap: var(--sp-2); margin-top: var(--sp-1); }
   .band .slot .name-line .held, .band .slot .name-line .held .item-icon { width: 18px; height: 18px; }
-  .band .slot .slot-lead { left: 5px; top: 5px; font-size: 11px; }
+  .band .slot .slot-lead { left: 5px; top: 5px; font-size: var(--fs-label); }
   .band .slot .favorite { right: 30px; }
   .band .slot :is(.favorite, .remove) { top: 0; width: 30px; height: 30px; }
-  .band .slot.empty { gap: 6px; }
+  .band .slot.empty { gap: var(--sp-3); }
   .band .slot.empty .empty-ring { width: 44px; height: 44px; }
-  .band .slot.empty .empty-label { font-size: 13px; }
+  .band .slot.empty .empty-label { font-size: var(--fs-small); }
   .slot.open > .slot-card { transform: none; box-shadow: inset 0 0 0 2px var(--accent); }
   /* Team ridotto: sei icone in fila, il voto accanto */
-  .band.collapsed { flex-direction: row; align-items: center; padding: 8px 14px 18px 0; }
+  .band.collapsed { flex-direction: row; align-items: center; padding: var(--sp-4) var(--sp-7) var(--sp-9) 0; }
   .band.collapsed > .team { order: 1; flex: 1; min-width: 0; }
   .band.collapsed > .grade-badge { order: 2; margin: 0; }
-  .band.collapsed .slots { grid-auto-columns: 52px; padding: 2px 8px 2px 14px; gap: 6px; }
+  .band.collapsed .slots { grid-auto-columns: 52px; padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-7); gap: var(--sp-3); }
   .band.collapsed .slot > .slot-card, .band.collapsed .slot.empty { height: 48px; padding: 0; justify-content: center; }
   .band.collapsed .slot > .slot-card > .name-line, .band.collapsed .slot .remove { display: none; }
 
@@ -156,18 +156,18 @@
     grid-template-columns: auto auto minmax(0, 1fr);
     grid-template-rows: auto auto auto 1fr;
     align-items: start;
-    gap: 0 10px;
-    padding: 0 12px 10px;
+    gap: 0 var(--sp-5);
+    padding: 0 var(--sp-6) var(--sp-5);
   }
   .band:not(.collapsed) .grade-badge .grade-visual { display: contents; }
-  .band:not(.collapsed) .grade-badge .grade-head { grid-column: 1 / -1; grid-row: 1; margin: 0 -12px 8px; }
+  .band:not(.collapsed) .grade-badge .grade-head { grid-column: 1 / -1; grid-row: 1; margin: 0 -12px var(--sp-4); }
   .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 2 / span 3; align-self: start; font-size: 50px; }
-  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 2; align-self: end; font-size: 18px; white-space: nowrap; }
-  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 3; font-size: 12px; }
+  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 2; align-self: end; font-size: var(--fs-title-l); white-space: nowrap; }
+  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 3; font-size: var(--fs-caption); }
   /* Il tipo di team sotto il giudizio (non accanto): la colonna del voto resta stretta e le aree hanno spazio */
   .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: column; align-items: flex-start; gap: 3px; }
-  .band:not(.collapsed) .grade-badge .grade-type { padding: 0 6px; font-size: 11px; }
-  .band:not(.collapsed) .grade-badge .grade-rules { grid-column: 2; grid-row: 4; align-self: start; margin-top: 4px; }
+  .band:not(.collapsed) .grade-badge .grade-type { font-size: var(--fs-caption); }
+  .band:not(.collapsed) .grade-badge .grade-rules { grid-column: 2; grid-row: 4; align-self: start; margin-top: var(--sp-2); }
   .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 2 / span 4; gap: 1px; margin: 0; }
   .band:not(.collapsed) .grade-badge button.grade-area { grid-template-columns: 60px minmax(0, 1fr) 28px 10px; box-sizing: border-box; min-height: 22px; margin: 0; }
 
@@ -193,14 +193,14 @@
     inset: 0;
     z-index: 50;
     grid-row: auto;
-    padding: 12px max(14px, env(safe-area-inset-right)) calc(20px + var(--safe-b)) max(14px, env(safe-area-inset-left));
+    padding: var(--sp-6) max(var(--sp-7), env(safe-area-inset-right)) calc(20px + var(--safe-b)) max(var(--sp-7), env(safe-area-inset-left));
     overflow: auto;
     overscroll-behavior: contain;
     border-top: 3px solid var(--accent);
   }
   .set-editor { grid-template-columns: minmax(0, 1fr); }
-  .editor-top { flex-wrap: wrap; gap: 10px; }
-  .editor-title strong { font-size: 22px; }
+  .editor-top { flex-wrap: wrap; gap: var(--sp-5); }
+  .editor-title strong { font-size: var(--fs-headline); }
   /* La matita del nome sta sull'angolo del nome, senza prendere spazio: la riga resta nome, tipi, shiny e chiudi */
   .editor-title .nickname { position: relative; gap: 0; }
   .editor-title .nickname-pencil { position: absolute; top: -8px; right: -12px; }
@@ -227,7 +227,7 @@
     max-height: 85dvh;
     overflow: auto;
     overscroll-behavior: contain;
-    padding-bottom: calc(14px + var(--safe-b));
+    padding-bottom: calc(var(--sp-7) + var(--safe-b));
     border-radius: 8px 8px 0 0;
     border-bottom: 0;
     animation: sheet-up 0.22s var(--ease);
@@ -243,17 +243,17 @@
     top: auto;
     bottom: 0;
     max-height: 85dvh;
-    padding-bottom: calc(14px + var(--safe-b));
+    padding-bottom: calc(var(--sp-7) + var(--safe-b));
     border-radius: 8px 8px 0 0;
     animation: sheet-up 0.22s var(--ease);
   }
   .toolbar .filters .filter-controls, .toolbar .filters .type-filters, .filters .filter-switches { grid-template-columns: minmax(0, 1fr); }
   .format-menu-head { margin-right: 40%; }
   .format-dex { grid-template-columns: minmax(0, 1fr); }
-  .format-gens label, .format-chips label { padding-block: 10px; }
+  .format-gens label, .format-chips label { padding-block: var(--sp-5); }
 
   /* ── Finestre: quasi a tutto schermo ──────────────────────────── */
-  .help-backdrop { padding: 12px; place-items: end center; }
+  .help-backdrop { padding: var(--sp-6); place-items: end center; }
   .help-dialog, .help-frame { width: 100% !important; max-height: calc(100dvh - 24px); }
   /* Qui la finestra sta in fondo allo schermo: niente spazio sotto per centrarla */
   .help-frame.with-peek { margin-bottom: 0; }
@@ -263,20 +263,20 @@
   .undo-toast { left: 12px; translate: none; top: auto; bottom: calc(var(--bottom-h) + var(--safe-b) + 12px); min-width: 0; width: calc(100vw - 24px); max-width: none; }
 
   /* Il nome per le transizioni fa della colonna un livello a sé: la scheda del candidato resterebbe sotto le barre */
-  .tab-body { padding: 16px 14px 24px; view-transition-name: none; }
-  .banner { margin-inline: 14px; }
+  .tab-body { padding: var(--sp-8) var(--sp-7) 24px; view-transition-name: none; }
+  .banner { margin-inline: var(--sp-7); }
 }
 @keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
 
 /* Tablet e finestre medie: le sei carte stanno tutte in fila, un po' più grandi */
 @media (min-width: 600px) and (max-width: 1099px) {
-  .band .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; padding-inline: 18px; }
+  .band .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; padding-inline: var(--sp-9); }
   .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { height: 176px; }
   .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 96px); height: min(100cqh, 100cqw, 96px); }
-  .band .slots { padding-inline: 18px; }
-  .team-head { padding-inline: 18px; }
-  .band > .grade-badge { margin-left: 18px; }
-  .tab-body { padding-inline: 18px; }
+  .band .slots { padding-inline: var(--sp-9); }
+  .team-head { padding-inline: var(--sp-9); }
+  .band > .grade-badge { margin-left: var(--sp-9); }
+  .tab-body { padding-inline: var(--sp-9); }
   .tabs.vertical { max-width: 640px; margin: 0 auto; }
   /* Menu e finestre dal basso, ma non più larghi di una colonna comoda */
   .popover[open] > :not(summary), .popover.format-card[open] > .format-menu, .rail .popover[open] > :not(summary) { left: 50%; right: auto; width: min(560px, 100vw); translate: -50% 0; }
@@ -286,7 +286,7 @@
 /* Telefono girato: poca altezza, le barre si fanno più basse */
 @media (max-width: 1099px) and (max-height: 500px) {
   :root { --top-h: 48px; --bottom-h: 52px; }
-  .tabs.vertical [role='tab'] { height: 42px; flex-direction: row; gap: 8px; }
+  .tabs.vertical [role='tab'] { height: 42px; flex-direction: row; gap: var(--sp-4); }
   .tabs.vertical .tab-status { display: none; }
 }
 /* Dita, non mouse: ogni tasto almeno 44 px */
@@ -302,7 +302,7 @@
 @media (max-width: 599px) {
   /* Solo il simbolo del logo: lo spazio va al formato */
   .rail-logo-art { width: 33px; }
-  .suggestions.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; }
+  .suggestions.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--sp-5); }
 }
 /* Tablet: le aree del voto in due colonne */
 @media (min-width: 600px) and (max-width: 1099px) {
@@ -338,15 +338,15 @@
     right: 0;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--sp-3);
     height: 52px;
-    padding: 0 16px;
+    padding: 0 var(--sp-8);
     border: 0;
     border-bottom: 1px solid var(--line-soft);
     border-radius: 0;
     background: var(--panel);
     color: var(--accent-ink);
-    font: 600 15px var(--ui);
+    font: 600 var(--fs-body) var(--ui);
     text-align: left;
   }
   .picker.sheet-open > .sheet-back .icon { width: 20px; height: 20px; }
@@ -354,17 +354,17 @@
     position: sticky;
     bottom: 0;
     margin-top: auto;
-    padding: 10px 14px calc(10px + var(--safe-b));
+    padding: var(--sp-5) var(--sp-7) calc(var(--sp-5) + var(--safe-b));
     background: var(--panel);
     border-top: 1px solid var(--line-soft);
   }
 }
 @media (max-width: 759px) {
   /* Scheda: il set su una colonna, l'azione principale larga e le altre accanto */
-  .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
+  .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+  .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions > * { min-height: 44px; margin: 0; white-space: nowrap; }
-  .picker.sheet-open > .detail .detail-actions .go { font-size: 15px; }
+  .picker.sheet-open > .detail .detail-actions .go { font-size: var(--fs-body); }
 }
 
 /* ── Editor del membro sul telefono e sul tablet ──────────────────── */
@@ -372,7 +372,7 @@
   /* Solo la riga del nome (nome, tipi, shiny e chiudi) resta in vista mentre scorri; preset e I miei set scorrono via.
      La testata si scioglie (display: contents) così la riga del nome è figlia diretta dell'editor e resta ferma per tutta la sua altezza */
   .drawer .set-editor .editor-head { display: contents; }
-  .drawer .set-editor .editor-top { position: sticky; top: -12px; z-index: 5; margin: -12px -14px 0; padding: 12px 14px 10px; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
+  .drawer .set-editor .editor-top { position: sticky; top: -12px; z-index: 5; margin: -12px -14px 0; padding: var(--sp-6) var(--sp-7) var(--sp-5); background: var(--panel); border-bottom: 1px solid var(--line-soft); }
   /* Preset e I miei set: ognuno su una riga intera, senza il rientro e la linea che li separano sul computer */
   .set-editor .editor-head .head-group { width: 100%; }
   .set-editor .editor-head .head-group + .head-group { margin-left: 0; padding-left: 0; border-left: 0; }
@@ -387,38 +387,18 @@
 @media (max-width: 599px) {
   /* Statistiche senza cursori: col pollice sono imprecisi (~3 EV per pixel) e scorrendo l'editor li sposti senza volere.
      Gli EV si scrivono nel numero (tastierino numerico) o si prendono da Spread più usati; la barra della base ha di nuovo posto */
-  .stat-row { grid-template-columns: 46px minmax(0, 1fr) 56px 40px 40px; gap: 8px; padding: 2px 0; }
+  .stat-row { grid-template-columns: 46px minmax(0, 1fr) 56px 40px 40px; gap: var(--sp-4); padding: var(--sp-1) 0; }
   .stat-row .ev-slider, .stat-row.stat-head > span:nth-child(3) { display: none; }
-  .set-editor .stat-row .ev-input { padding-left: 2px; padding-right: 2px; }
+  .set-editor .stat-row .ev-input { padding-left: var(--sp-1); padding-right: var(--sp-1); }
   .set-editor .editor-group { grid-template-columns: minmax(0, 1fr); }
   .editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: 0; right: auto; }
   .editor-actions { margin-left: 0; flex-wrap: wrap; }
 }
 
-/* ── Liste sul telefono e sul tablet: prima le tue liste, poi il Pokédex da cui sceglierle ── */
-@media (max-width: 1099px) {
-  .lists-main { display: flex; flex-direction: column; }
-  .lists-side { order: -1; }
-  .lists-bar { flex-wrap: wrap; }
-  .lists-bar .search-field { flex: 1 1 100%; }
-  .lists-bar .search-hint { display: none; }
-}
-@media (max-width: 1099px) {
-  .lists-main > * { width: 100%; }
-  .dex-grid { max-height: 70dvh; overscroll-behavior: contain; }
-}
-/* Senza mouse non c'è il passaggio sopra: cuore e divieto sempre in vista, grandi abbastanza per il dito */
-@media (hover: none) {
-  .dex-actions { opacity: 1; }
-}
-@media (pointer: coarse) {
-  .dex-actions button { min-width: 44px; min-height: 36px; }
-  .dex-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
-}
 
 /* Tablet largo: lista e scheda affiancate; la scheda resta in vista mentre la pagina scorre */
 @media (min-width: 760px) and (max-width: 1099px) {
-  .picker.has-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
+  .picker.has-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: var(--sp-7); align-items: start; }
   .picker.has-detail > .detail { position: sticky; top: calc(var(--top-h) + 10px); max-height: calc(100dvh - var(--top-h) - var(--bottom-h) - var(--safe-b) - 20px); overflow: auto; overscroll-behavior: contain; }
   .suggestions.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -445,7 +425,7 @@
     max-height: 85dvh;
     overflow: auto;
     overscroll-behavior: contain;
-    padding-bottom: calc(14px + var(--safe-b));
+    padding-bottom: calc(var(--sp-7) + var(--safe-b));
     border-radius: 8px 8px 0 0;
     box-shadow: 0 0 0 100vmax rgba(6, 7, 12, 0.6);
     animation: sheet-up 0.22s var(--ease);
@@ -458,18 +438,17 @@
   /* Le colonne una sotto l'altra: i tuoi Pokémon, le scelte, le proposte */
   .fill-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'mine' 'side' 'main'; }
   .fill-top { position: sticky; top: 0; z-index: 1; background: var(--ground); }
-  .fill-mine-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
+  .fill-mine-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 var(--sp-7); }
   .fill-keep { flex: none; min-height: 44px; }
   /* I tipi di team in una fila che scorre: le proposte prendono tutta la larghezza */
-  .fill-types { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
+  .fill-types { display: flex; gap: var(--sp-3); overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 var(--sp-7); }
   .fill-types .fill-option { flex: none; width: auto; max-width: 200px; }
-  .fill-types .fill-option small { display: none; }
-  .fill-side { gap: 12px; }
+  .fill-side { gap: var(--sp-6); }
   .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
   .fill-cards { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 599px) {
-  .fill-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: 6px 10px; }
+  .fill-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: var(--sp-3) var(--sp-5); }
   .fill-mons { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .fill-mon-name { display: none; }
   .fill-kind { justify-self: start; }
@@ -480,5 +459,5 @@
 }
 @media (max-width: 1099px) {
   .band:has(.fill-panel, .team-head details[open]) .band-toggle { visibility: hidden; }
-  .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
+  .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: var(--sp-4); }
 }

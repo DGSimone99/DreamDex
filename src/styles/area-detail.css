@@ -1,41 +1,42 @@
 /* Dettaglio dell'Offesa: schede a sinistra (Generale e una per sottostatistica), come il modale d'aiuto, più alto */
 .ad-dialog { width: min(1080px, 100%); height: min(860px, calc(100vh - 48px)); max-height: none; }
-.ad-head h3 { display: flex; align-items: baseline; gap: 12px; font-size: 20px; }
-.ad-head h3 strong { font: 700 30px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.ad-head h3 { display: flex; align-items: baseline; gap: var(--sp-6); font-size: var(--fs-heading); }
+.ad-head h3 strong { font: 700 var(--fs-stat)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .ad-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; flex: 1; }
-.ad-panel { padding: 16px 22px 22px; overflow-y: auto; }
-.ad-panel h4 { margin: 0 0 8px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
+/* Lo stesso margine in fondo in ogni area (Offesa, Difesa, Velocità, Ruoli, Bonus): 12px, 10px sugli schermi bassi */
+.ad-panel { padding: var(--sp-8) var(--sp-10) var(--sp-6); overflow-y: auto; }
+.ad-panel h4 { margin: 0 0 var(--sp-4); font: 700 var(--fs-title-l)/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 /* Le spiegazioni occupano tutta la larghezza del pannello: il modale è largo apposta */
-.ad-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); }
-.ad-how { margin: 0 0 16px; padding: 0 0 6px; border-bottom: 1px solid var(--line-soft); }
+.ad-panel p { margin: 0 0 var(--sp-5); font-size: var(--fs-section); line-height: 1.55; color: var(--muted); }
+.ad-how { margin: 0 0 var(--sp-8); padding: 0 0 var(--sp-3); border-bottom: 1px solid var(--line-soft); }
 .ad-holes { color: var(--text) !important; }
-.ad-subs { display: grid; gap: 12px; margin: 0 0 18px; }
-.ad-sub { display: grid; grid-template-columns: minmax(0, 1fr) 44px; grid-template-areas: 'name value' 'bar value' 'tip tip'; gap: 5px 14px; }
-.ad-sub dt { grid-area: name; font-size: 14px; font-weight: 600; color: var(--text); }
+.ad-subs { display: grid; gap: var(--sp-6); margin: 0 0 var(--sp-9); }
+.ad-sub { display: grid; grid-template-columns: minmax(0, 1fr) 44px; grid-template-areas: 'name value' 'bar value' 'tip tip'; gap: var(--sp-2) var(--sp-7); }
+.ad-sub dt { grid-area: name; font-size: var(--fs-section); font-weight: 600; color: var(--text); }
 .ad-sub dd { display: contents; }
 .ad-sub meter { grid-area: bar; display: block; width: 100%; }
-.ad-sub strong { grid-area: value; align-self: center; text-align: right; font: 700 22px/1 var(--display); font-variant-numeric: tabular-nums; }
-.ad-sub span { grid-area: tip; font-size: 13px; color: var(--muted); }
-.ad-t { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
-.ad-t thead th { padding: 10px 6px 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: right; white-space: nowrap; }
+.ad-sub strong { grid-area: value; align-self: center; text-align: right; font: 700 var(--fs-headline)/1 var(--display); font-variant-numeric: tabular-nums; }
+.ad-sub span { grid-area: tip; font-size: var(--fs-small); color: var(--muted); }
+.ad-t { width: 100%; border-collapse: collapse; font-size: var(--fs-section); font-variant-numeric: tabular-nums; }
+.ad-t thead th { padding: var(--sp-5) var(--sp-3) var(--sp-3); text-align: right; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .ad-t thead th:first-child { text-align: left; padding-left: 0; }
-.ad-t td, .ad-t th[scope='row'] { padding: 3px 6px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; color: var(--muted); }
+.ad-t td, .ad-t th[scope='row'] { padding: 3px var(--sp-3); border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; color: var(--muted); }
 .ad-t th[scope='row'] { text-align: left; padding-left: 0; font-weight: 600; color: var(--text); }
 .ad-t .left { text-align: left; }
-.ad-t td.total { font: 700 20px/1 var(--display); color: var(--text); white-space: nowrap; }
-.ad-t .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--accent); cursor: help; }
-.ad-t .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
+.ad-t td.total { font: 700 var(--fs-heading)/1 var(--display); color: var(--text); white-space: nowrap; }
+.ad-t .ad-once { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--accent); cursor: help; }
+.ad-t .ad-gain { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--good); cursor: help; }
 /* Velocità: il guadagno di ogni condizione nella sua colonna, nel verde del setup */
 .ad-t .ad-gain-cell { color: var(--good); font-weight: 600; cursor: help; }
 /* Il controllo velocità è un plus sopra la Velocità: il numero in verde, senza barra */
 .ad-sub strong.ad-plus { grid-row: 1 / span 2; color: var(--good); }
 .ad-t td meter { display: block; width: 110px; }
-.ad-mon { display: flex; align-items: center; gap: 8px; }
+.ad-mon { display: flex; align-items: center; gap: var(--sp-4); }
 .ad-mon .sprite, .ad-matrix thead .sprite { flex: none; }
 .ad-scroll { overflow-x: auto; }
-.ad-matrix thead th { text-align: center; padding: 6px 2px; }
-.ad-matrix td { text-align: center; padding: 3px 2px; }
-.ad-k { display: inline-block; min-width: 46px; padding: 2px 4px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+.ad-matrix thead th { text-align: center; padding: var(--sp-3) var(--sp-1); }
+.ad-matrix td { text-align: center; padding: 3px var(--sp-1); }
+.ad-k { display: inline-block; min-width: 46px; padding: var(--sp-1) var(--sp-2); border-radius: 3px; font-size: var(--fs-label); font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
 .ad-k.ohko { background: var(--accent); color: var(--field); }
 .ad-k.two { background: var(--accent-soft); color: var(--text); }
 .ad-k.three { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
@@ -43,76 +44,77 @@
 /* Il setup cambia la soglia: tra parentesi il danno dopo il potenziamento, nel verde della palette */
 .ad-k.setup { box-shadow: inset 0 0 0 1px var(--good); color: var(--good); }
 .ad-k.setup.two, .ad-k.setup.ohko { color: var(--text); }
-.ad-t .ad-group th { padding: 12px 0 4px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; border-bottom: 1px solid var(--line); }
-.ad-t .ad-src { font: 500 12px/1 var(--ui); color: var(--faint); }
-.ad-t .gap { padding-left: 22px; }
-.ad-legend { margin: 8px 0 0 !important; font-size: 12px !important; color: var(--faint) !important; }
+.ad-t .ad-group th { padding: var(--sp-6) 0 var(--sp-2); text-align: left; border-bottom: 1px solid var(--line); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
+.ad-t .ad-src { font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); }
+.ad-t .gap { padding-left: var(--sp-10); }
 /* Ruoli: malus delle essenziali in rosso, zero in grigio; le mancanze sotto le sottostatistiche */
 .ad-sub strong.ad-minus, .ad-sub strong.ad-zero { grid-row: 1 / span 2; }
 .ad-minus { color: var(--bad); }
 .ad-sub strong.ad-zero { color: var(--faint); }
-.ad-failures { margin: -6px 0 16px; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: var(--bad); }
-.ad-failures li::before { content: '−'; margin-right: 8px; }
+.ad-failures { margin: -6px 0 var(--sp-8); padding: 0; list-style: none; display: grid; gap: var(--sp-2); font-size: var(--fs-small); color: var(--bad); }
+.ad-failures li::before { content: '−'; margin-right: var(--sp-4); }
 /* Chi porta la voce: nome e sprite, fonte tra parentesi; vanno a capo su più righe */
 .ad-t td.ad-by { white-space: normal; }
-.ad-roles td.ad-by > .ad-mon { display: inline-flex; margin: 1px 14px 1px 0; color: var(--text); font-weight: 600; }
+.ad-roles td.ad-by > .ad-mon { display: inline-flex; margin: 1px var(--sp-7) 1px 0; color: var(--text); font-weight: 600; }
 .ad-roles td.ad-by .ad-src { font-weight: 500; }
 .ad-roles td.ad-reason { white-space: normal; min-width: 180px; }
 /* Gruppo di un sotto-ruolo: nome, poi livello e valore di squadra più tenui; le voci che non contano si attenuano */
-.ad-t .ad-group .ad-level { margin-left: 6px; font-weight: 500; color: var(--faint); text-transform: none; letter-spacing: 0; }
+.ad-t .ad-group .ad-level { margin-left: var(--sp-3); font-weight: 500; color: var(--faint); text-transform: none; letter-spacing: 0; }
 .ad-t .ad-group .ad-level.important { color: var(--muted); }
 .ad-t tbody.ad-ignored, .ad-t tbody.ad-ignored :is(th, td, b, span) { color: var(--faint); }
 .ad-t tbody.ad-ignored img { opacity: 0.55; }
 /* Copre a metà (superefficace ma solo da 3HKO): sprite più tenue */
 @media (max-width: 560px) {
   .ad-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
-  .ad-panel { padding: 12px 14px 16px; }
+  .ad-panel { padding: var(--sp-6) var(--sp-7) var(--sp-8); }
 }
 
-.help-weights { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
-.help-weights th, .help-weights td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); text-align: left; white-space: nowrap; }
-.help-weights thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; white-space: normal; vertical-align: bottom; }
+.help-weights { border-collapse: collapse; width: 100%; font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+.help-weights th, .help-weights td { padding: 7px var(--sp-4); border-bottom: 1px solid var(--line-soft); text-align: left; white-space: nowrap; }
+.help-weights thead th { white-space: normal; vertical-align: bottom; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .help-weights th[scope='row'], .help-weights thead th:first-child { text-align: left; color: var(--muted); font-weight: 600; }
 .help-weights tr.current { background: var(--accent-soft); }
 .help-weights tr.current th, .help-weights tr.current td { color: var(--text); }
 /* Le lettere del voto in cima a "Come funziona": grandi, nel colore della carta del voto (S magenta, A verde, B ciano, C giallo, D rosso) */
-.help-grades { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; padding: 0; }
-.help-grades li { --grade: var(--accent); display: grid; justify-items: center; gap: 2px; min-width: 58px; padding: 8px 10px 7px;
+.help-grades { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0 0 var(--sp-7); padding: 0; }
+.help-grades li { --grade: var(--accent); display: grid; justify-items: center; gap: var(--sp-1); min-width: 58px; padding: var(--sp-4) var(--sp-5) 7px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--grade) 16%, transparent), transparent), var(--panel);
   border: 1px solid color-mix(in srgb, var(--grade) 45%, var(--line-soft)); border-radius: 4px; }
 .help-grades .grade-S { --grade: var(--accent-2); }
 .help-grades .grade-A { --grade: var(--good); }
 .help-grades .grade-C { --grade: var(--warn); }
 .help-grades .grade-D { --grade: var(--bad); }
-.help-grades strong { font: 800 30px/0.95 var(--display); color: var(--grade); }
-.help-grades span { font: 600 12px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.help-grades strong { font: 800 var(--fs-stat)/0.95 var(--display); color: var(--grade); }
+.help-grades span { font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Le voci di un livello: etichette piatte, senza bordo né hover (non si cliccano), nel colore del livello come nella
-   scheda Ruoli (.rl-tag): essenziali magenta, importanti ciano, minori grigie. La spiegazione del ruolo nel tooltip */
-.help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
-.help-points li { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 2px; background: var(--raised); font-size: 12px; line-height: 1.35; color: var(--muted); white-space: nowrap; cursor: help; }
-.help-points.essential li { background: var(--accent-2-soft); color: var(--text); }
+   scheda Ruoli (.rl-tag): essenziali ciano pieno, importanti ciano più tenue, minori grigie. La spiegazione del ruolo nel tooltip */
+.help-points { list-style: none; margin: 0 0 var(--sp-6); padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.help-points li { display: inline-flex; align-items: center; padding: var(--sp-1) var(--sp-4); border-radius: 2px; background: var(--raised); font-size: var(--fs-caption); line-height: 1.35; color: var(--muted); white-space: nowrap; cursor: help; }
+.help-points.essential li { background: color-mix(in srgb, var(--accent) 34%, var(--panel)); color: var(--text); }
 .help-points.important li { background: var(--accent-soft); color: var(--text); }
 .help-panel .help-note { color: var(--text); }
-.help-panel h5 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
-.help-panel h6 { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
-.help-weights-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-.help-weights-row > div { display: grid; gap: 6px; min-width: 150px; padding: 8px 12px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
-.help-weights-row dt { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
-.help-weights-row dd { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.help-panel h5, .area-guide .help-panel h4 { margin: var(--sp-7) 0 var(--sp-3); font-size: var(--fs-label); font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }
+.help-panel h6, .area-guide .help-panel h5 { margin: var(--sp-4) 0 var(--sp-2); font-size: var(--fs-small); font-weight: 600; color: var(--text); }
+/* Nelle guide delle aree i titoletti sono h4 e h5 (sotto la sezione h3): senza il carattere dei titoli di sezione (h4 delle altre finestre) */
+.area-guide .help-panel :is(h4, h5) { font-family: inherit; font-style: normal; line-height: inherit; }
+.help-weights-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0 0 var(--sp-6); }
+.help-weights-row > div { display: grid; gap: var(--sp-3); min-width: 150px; padding: var(--sp-4) var(--sp-6) var(--sp-5); background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
+.help-weights-row dt { font-size: var(--fs-label); font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }
+.help-weights-row dd { margin: 0; font-size: var(--fs-title-s); font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .help-weights-row .inactive dt { color: var(--faint); }
 .help-weights-row .inactive dd:not(.help-inactive-note) { opacity: 0.5; }
-.help-weights-row .help-inactive-note { font-size: 12px; font-weight: 400; color: var(--muted); }
+.help-weights-row .help-inactive-note { font-size: var(--fs-caption); font-weight: 400; color: var(--muted); }
 /* Il tipo del team nella lista degli argomenti: una piccola scritta "il tuo team" in ciano, non un pallino da indovinare */
-.help-nav .help-yours-tag { margin-left: 8px; font: 600 11px/1 var(--ui); letter-spacing: 0.02em; color: var(--accent-ink); white-space: nowrap; }
+.help-nav .help-yours-tag { margin-left: var(--sp-4); font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.02em; color: var(--accent-ink); white-space: nowrap; }
 .rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
 .rating .grade .grade-alert .icon { width: 18px; height: 18px; }
-.rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
-.rating .rating-note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
-.rating .grade > strong { font: 700 44px/1 var(--display); color: var(--accent); }
+.rating .grade .grade-alert .alert-pop { font: 400 var(--fs-small)/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
+.rating .rating-note { margin: -4px 0 var(--sp-5); font-size: var(--fs-small); color: var(--muted); }
+.rating .grade > strong { font: 700 var(--fs-score)/1 var(--display); color: var(--accent); }
 .rating .grade-C > strong { color: var(--warn); }
 .rating .grade-D > strong { color: var(--bad); }
-.rating .bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 0 0 8px; }
-.rating .bars dt { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.rating .bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) 20px; margin: 0 0 var(--sp-4); }
+.rating .bars dt { font-size: var(--fs-small); color: var(--muted); margin-bottom: var(--sp-2); }
 .rating .area-link { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-bottom: 1px dotted var(--faint); border-radius: 0; }
 .rating .area-link:hover { color: var(--text); border-bottom-color: var(--accent); }
 /* Le schede raggiunte dai link non finiscono sotto la barra in alto */
@@ -120,22 +122,22 @@
 .rating .bars dd { margin: 0; }
 
 /*
- * Bonus/Malus (BonusMalusView): in alto a sinistra i core a tre a triangolo (due a fisarmonica: uno aperto, l'altro solo
- * triangolo), a destra il netto sul voto e le barre (solo se c'è posto); sotto, a tutta larghezza, le voci attive in tre
- * colonne, ognuna con la sua medaglia.
+ * Bonus/Malus (BonusMalusView): in alto a sinistra la carta dei core a tre (due affiancati, aperti tutti e due; a
+ * fisarmonica solo se non stanno), a destra il netto sul voto con bonus e malus scritti e il link al catalogo; sotto, a
+ * tutta larghezza, tutte le altre voci come medaglie, tre per riga (due se la scheda è stretta), prima i malus.
  */
 .area-panel:has(> .bm) { display: flex; flex-direction: column; overflow: hidden; }
 .bm {
-  flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
-  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cores grade" "list list"; gap: 18px 28px;
+  container: bm / inline-size;
+  flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cores grade" "list list"; gap: var(--sp-8) 24px;
 }
 .bm.empty { grid-template-rows: auto; grid-template-areas: "cores grade"; }
-.bm .bm-label { margin: 0 0 8px; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.bm .bm-label { margin: 0 0 var(--sp-4); font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .bm p { margin: 0; }
 
-/* Medaglia: esagono col bordo del colore, esagono interno, riflesso in alto e l'icona della famiglia a tratto */
 /* Medaglia di metallo: bordo chiaro in alto e scuro in basso, smusso interno al contrario, faccia con un po' di luce in
-   alto e un'ombra morbida sotto (niente ombre dure) */
+   alto e un'ombra morbida sotto (niente ombre dure); l'icona della famiglia a tratto */
 .bm-medal { --c: var(--good); --bg: var(--good-bg); flex: none; width: 34px; height: 38px; overflow: visible; filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45)); }
 .bm-medal.malus { --c: var(--bad); --bg: var(--bad-bg); }
 .bm-medal.off { --c: var(--faint); --bg: var(--raised); }
@@ -150,100 +152,68 @@
 .bm-medal-icon { fill: none; stroke: color-mix(in srgb, var(--c) 85%, #fff); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .bm-medal-crack { fill: none; stroke: var(--bad); stroke-width: 1.6; stroke-linejoin: round; }
 
-/* In alto a destra: il netto grande a sinistra, l'etichetta e bonus/malus a destra; sotto le barre e il link */
-.bm-grade { grid-area: grade; align-self: start; min-width: 0; display: flex; flex-direction: column; }
-.bm-sum { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: end; column-gap: 16px; }
-.bm-sum .bm-net { grid-column: 1; grid-row: 1 / span 2; }
-.bm .bm-sum .bm-label { grid-column: 2; margin: 0 0 5px; }
+/* In alto a destra, in colonna: "Sul voto", il netto grande, bonus e malus scritti, il link al catalogo sul fondo (alla
+   riga del fondo della carta dei core) */
+.bm-grade { grid-area: grade; align-self: stretch; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.bm .bm-grade .bm-label { margin-bottom: var(--sp-5); }
 /* Il netto sulla sua targhetta inclinata a righe, nel colore del segno: è il risultato della scheda */
 .bm .bm-net {
-  --tone: var(--faint); justify-self: start; padding: 6px 30px 8px 14px; color: var(--tone);
+  --tone: var(--faint); padding: var(--sp-3) 30px var(--sp-4) var(--sp-7); color: var(--tone);
   background: var(--stripes), color-mix(in srgb, var(--tone) 15%, var(--band));
   clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
   font: 800 64px/0.9 var(--display); font-style: italic; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
 }
 .bm-net.good { --tone: var(--good); }
 .bm-net.bad { --tone: var(--bad); }
-.bm .bm-parts { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13px; color: var(--muted); }
-.bm-parts b { font-weight: 700; }
+.bm .bm-parts { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin: var(--sp-5) 0 0; font-size: var(--fs-section); color: var(--muted); }
+.bm-parts b { font-weight: 700; font-style: italic; }
 .bm-parts b.good { color: var(--good); }
 .bm-parts b.bad { color: var(--bad); }
-.bm.no-bars .bm-bars { display: none; }
-.bm-bars { display: grid; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
-.bm-bar { display: grid; grid-template-columns: 52px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font: 600 12px var(--ui); color: var(--muted); }
-.bm-track { height: 8px; background: var(--field); }
-.bm-track > span { display: block; height: 100%; min-width: 2px; }
-.bm-bar.malus .bm-track > span { background: var(--bad); }
-.bm-bar.bonus .bm-track > span { background: var(--good); }
-.bm-bar b { text-align: right; font: 800 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
-.bm-bar.malus b { color: var(--bad); }
-.bm-bar.bonus b { color: var(--good); }
-.bm-bar b.zero { color: var(--faint); }
-.bm-more { align-self: flex-end; margin-top: 10px; padding: 0; background: none; border: 0; color: var(--accent); font: 600 13px var(--ui); cursor: pointer; }
-.bm-more:hover { text-decoration: underline; }
+.bm-more { padding: 0; background: none; border: 0; color: var(--accent); font: 600 var(--fs-small) var(--ui); cursor: pointer; }
+.bm-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+.bm-grade .bm-more { margin-top: auto; padding-top: var(--sp-4); }
 
-/* Sotto, a tutta larghezza: le voci attive in tre colonne, riga per riga (se proprio non stanno, scorrono) */
-/* Sotto: due schede (Bonus, Malus) e le voci di quella scelta a tutta larghezza; colonne e carte compatte le decide
-   useFitEntries perché non scorrano mai (scorre solo con una voce aperta per intero che non sta) */
-.bm-entries-wrap { grid-area: list; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.bm-tabs { flex: none; display: flex; gap: 6px; }
-.bm-tab {
-  --tone: var(--good); display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 14px;
-  background: var(--raised); border: 1px solid var(--line-soft); color: var(--muted); font: 600 13px var(--ui); cursor: pointer;
+/* Sotto, a tutta larghezza: tutte le altre voci come medaglie, tre per riga (due se la scheda è stretta). Quante ne
+   stanno lo conta useFitCount: quelle che non stanno vanno nell'ultima casella "+N altre", mai una barra di scorrimento */
+.bm-others { grid-area: list; min-height: 0; display: flex; flex-direction: column; }
+.bm-list {
+  flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start;
+  gap: var(--sp-6) 26px; margin: 0; padding: var(--sp-2) 0 0 var(--sp-7); list-style: none;
 }
-.bm-tab.malus { --tone: var(--bad); }
-.bm-tab:hover { color: var(--text); border-color: var(--line); }
-.bm-tab[aria-selected='true'] { color: var(--text); background: color-mix(in srgb, var(--tone) 14%, var(--raised)); border-color: color-mix(in srgb, var(--tone) 55%, var(--line)); }
-.bm-tab-count { min-width: 20px; padding: 1px 6px; background: var(--field); font: 600 11px/1.3 var(--ui); font-style: normal; text-align: center; color: var(--muted); }
-.bm-tab b { font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--tone); }
-.bm-tab.none b { color: var(--faint); }
-.bm-entries { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-left: 14px; }
-/* Una scheda senza voci: una medaglia grande e due righe (nessun malus: verde con la spunta; nessun bonus: spenta col più
-   e il link al catalogo) */
-.bm-empty { display: flex; align-items: center; gap: 18px; padding: 10px 4px 4px; }
-.bm-empty .bm-medal { width: 58px; height: 65px; }
-.bm .bm-empty p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
-.bm-empty b { display: block; margin-bottom: 2px; font: 700 17px/1.2 var(--display); font-style: italic; color: var(--text); }
-.bm-empty.good b { color: var(--good); }
-.bm-empty .bm-more { display: block; margin-top: 4px; }
-.bm-list { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); align-content: start; gap: 12px 26px; margin: 0; padding: 5px 0; list-style: none; }
+@container bm (max-width: 820px) { .bm-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* Una voce: la medaglia appuntata sul bordo sinistro, la carta lavata nel colore della voce che sfuma a destra, i punti
-   su una targhetta inclinata a righe */
+   su una targhetta inclinata a righe; il caso su una riga, tagliato coi puntini (intero nel tooltip) */
 .bm-row {
   --c: var(--good); --bg: var(--good-bg);
-  position: relative; display: flex; align-items: stretch; min-width: 0; min-height: 54px; padding-left: 50px;
+  position: relative; display: flex; align-items: stretch; min-width: 0; height: 54px; padding-left: 50px;
   background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 90%, var(--raised)) 0%, var(--raised) 72%);
   border: 1px solid color-mix(in srgb, var(--c) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
 }
 .bm-row.malus { --c: var(--bad); --bg: var(--bad-bg); }
+.bm-row:focus-visible, .bm-more-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bm-row .bm-medal { position: absolute; left: -14px; top: 50%; translate: 0 -50%; width: 54px; height: 61px; }
-.bm-row-tx { flex: 1; min-width: 0; align-self: center; display: grid; gap: 1px; padding: 6px 10px 6px 0; }
-/* Il caso troppo lungo: un pulsante steso su tutta la carta lo apre per intero, con la freccia in basso a destra */
-.bm-row.long .bm-row-tx { padding-right: 22px; }
-.bm-row-toggle { position: static; padding: 0; background: none; border: 0; color: var(--muted); font: 11px/1 var(--ui); cursor: pointer; }
-.bm-row-toggle::after { content: ""; position: absolute; inset: 0; z-index: 1; }
-.bm-row-toggle > span { position: absolute; right: 6px; bottom: 5px; }
-.bm-row.long:hover .bm-row-case, .bm-row.long:hover .bm-row-toggle { color: var(--text); }
-.bm-row-toggle:focus-visible { outline: none; }
-.bm-row:has(.bm-row-toggle:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
-.bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.15 var(--display); font-style: italic; }
-/* Il caso sempre intero: va a capo quanto serve */
-/* Carte della stessa misura: il caso tiene sempre il posto di due righe (una riga sola non accorcia la carta) */
-.bm-row-case { min-height: calc(2 * 1.35em); font-size: 12.5px; line-height: 1.35; color: var(--muted); }
-/* Carte compatte: altezza fissa, il nome può andare su due righe invece di tagliarsi */
-.bm-entries.compact .bm-row { height: 42px; min-height: 0; padding-left: 32px; }
-.bm-entries.compact .bm-row-tx b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 13px; line-height: 1.12; }
-.bm-entries.compact .bm-row .bm-medal { left: -10px; width: 34px; height: 38px; }
-.bm-entries.compact .bm-row-tx { padding-top: 2px; padding-bottom: 2px; }
-.bm-entries.compact .bm-row:not(.open) .bm-row-case { display: none; }
-.bm-entries.compact .bm-row-pts { min-width: 46px; font-size: 18px; }
-.bm-entries.compact .bm-list { row-gap: 8px; }
+.bm-row-tx { flex: 1; min-width: 0; align-self: center; display: grid; gap: var(--sp-1); padding: var(--sp-2) var(--sp-5) var(--sp-2) 0; }
+.bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.15em; margin-block: -0.15em; font: 700 var(--fs-body)/1.15 var(--display); font-style: italic; }
+.bm-row-case { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); line-height: 1.35; color: var(--muted); }
+.bm-row:hover .bm-row-case { color: var(--text); }
 .bm-row-pts {
-  flex: none; display: grid; place-items: center; min-width: 62px; padding: 0 12px 0 22px; color: var(--c);
+  flex: none; display: grid; place-items: center; min-width: 62px; padding: 0 var(--sp-6) 0 var(--sp-10); color: var(--c);
   background: var(--stripes), color-mix(in srgb, var(--c) 18%, var(--field));
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
-  font: 800 24px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums;
+  font: 800 var(--fs-headline-l)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums;
 }
+/* L'ultima casella quando non stanno tutte: tratteggiata, le voci nascoste nel tooltip */
+.bm-more-cell { display: flex; align-items: center; justify-content: center; min-width: 0; height: 54px; border: 1px dashed var(--line); color: var(--muted); font: 600 var(--fs-section) var(--ui); cursor: default; }
+.bm-more-cell:hover { color: var(--text); border-color: var(--muted); }
+/* Il tooltip di una voce e di "+N altre": nome e punti in testa, il caso intero sotto */
+.bm-tip-pts { margin-left: auto; padding-left: var(--sp-6); font: 800 var(--tip-num)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+.bm-tip-pts.malus { color: var(--bad); }
+.bm-tip-pts.bonus { color: var(--good); }
+.bm-row-tip .kot-none + .kot-none { padding-top: 0; }
+.bm-more-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--sp-3); }
+.bm-more-line b { font: 700 var(--tip-body)/1.2 var(--display); font-style: italic; color: var(--text); }
+.bm-more-line .bm-tip-pts { margin-left: 0; padding-left: 0; font-size: var(--tip-body); }
+.bm-more-line > span { flex-basis: 100%; }
 /* Quando si apre la scheda le medaglie entrano una dopo l'altra: partono già visibili (niente vuoto), solo un piccolo
    ingrandimento e la luce che sale */
 @keyframes bm-pop { from { opacity: 0.35; transform: scale(0.88); } to { opacity: 1; transform: none; } }
@@ -255,7 +225,7 @@
 /* La carta dei core (come le carte della Panoramica): stessa misura con 0, 1 o 2 core. Una superficie sola: con almeno
    un core lavata di verde; i due core sono due parti della stessa carta, divise da una riga sottile */
 .bm-cores.dash-card {
-  --cores-h: 222px; position: relative; grid-area: cores; align-self: start; height: var(--cores-h); padding: 0 0 0 0; overflow: visible;
+  --cores-h: 168px; position: relative; grid-area: cores; align-self: start; height: var(--cores-h); padding: 0; overflow: visible;
   background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 70%, var(--panel)) 0%, var(--panel) 60%);
   border-color: color-mix(in srgb, var(--good) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
 }
@@ -263,119 +233,144 @@
 /* La targhetta del titolo parte da sotto la medaglia: medaglia e targhetta sono un pezzo solo */
 .bm-cores .dash-head { margin: 0; padding-left: 0; }
 .bm-cores .dash-plate { padding-left: 48px; }
-.bm-plate-pts { margin-left: 6px; font-weight: 800; color: var(--good); }
+.bm-plate-pts { margin-left: var(--sp-3); font-weight: 800; color: var(--good); }
 .bm-cores .dash-meta b.good { color: var(--good); }
 /* La medaglia del core grande come quelle delle voci, appuntata a cavallo della barra del titolo */
 .bm-head-medal.bm-medal { position: absolute; left: -14px; top: -16px; z-index: 1; width: 54px; height: 61px; }
 .bm-core-row { flex: 1; min-height: 0; display: flex; margin: 0; padding: 0; list-style: none; }
 .bm-core {
-  position: relative; display: flex; align-items: center; gap: 16px; min-width: 0; overflow: hidden;
-  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 10px 16px 10px 18px;
+  position: relative; display: flex; align-items: center; gap: var(--sp-8); min-width: 0; overflow: hidden;
+  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: var(--sp-4) var(--sp-8) var(--sp-4) var(--sp-9);
   transition: flex-grow 250ms var(--ease);
 }
-.bm-core-row:not(.two) .bm-core { max-width: 720px; }
 /* Il core chiuso: una colonna della stessa carta oltre una riga sottile, triangolo e +3 al centro */
-.bm-core.shut { flex-grow: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 14px; background: rgb(0 0 0 / 0.12); }
-.bm-core + .bm-core { border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); }
+.bm-core.shut { flex-grow: 0; flex-direction: column; justify-content: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-7); background: rgb(0 0 0 / 0.12); }
+.bm-core + .bm-core, .bm-core-ghost { border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); }
 /* La carta dei core non entra con l'animazione della Panoramica: in questa scheda si muovono solo le medaglie */
 .bm-cores.dash-card { animation: none; }
 .bm-core-art { flex: none; display: flex; padding: 0; background: none; border: 0; color: inherit; font: inherit; }
-.bm-core.shut .bm-core-art { flex-direction: column; align-items: center; gap: 4px; cursor: pointer; opacity: 0.85; }
+.bm-core.shut .bm-core-art { flex-direction: column; align-items: center; gap: var(--sp-2); cursor: pointer; filter: brightness(0.85); }
 /* Tutta la carta chiusa si clicca */
 .bm-core.shut .bm-core-art::after { content: ""; position: absolute; inset: 0; }
 .bm-core.shut:hover { background: rgb(255 255 255 / 0.03); }
-.bm-core.shut:hover .bm-core-art { opacity: 1; }
+.bm-core.shut:hover .bm-core-art { filter: none; }
 .bm-core:has(.bm-core-art:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .bm-core-art:focus-visible { outline: none; }
-.bm-core-mini { display: none; font: 800 18px/1 var(--display); font-style: italic; color: var(--good); }
+.bm-core-mini { display: none; font: 800 var(--fs-title-l)/1 var(--display); font-style: italic; color: var(--good); }
 .bm-core.shut .bm-core-mini { display: block; }
 .bm-core-peek { display: none; }
 /* Il testo resta largo uguale mentre la carta si apre o si chiude (niente righe che saltano): lo taglia la carta */
 .bm-core-body { flex: 1 0 220px; min-width: 220px; transition: opacity 200ms var(--ease) 60ms; }
 /* Chiuso: il testo esce dal flusso (non allunga la carta) e resta invisibile */
 .bm-core.shut .bm-core-body { position: absolute; top: 10px; left: calc(var(--tri-w, 150px) + 48px); width: 300px; visibility: hidden; opacity: 0; transition: none; }
-.bm .bm-core-body h5 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; font: 700 18px/1.15 var(--display); font-style: italic; }
-.bm-core-pts { margin-left: auto; font: 800 22px/1 var(--display); color: var(--good); }
-.bm-core-lines { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
-.bm-core-lines li { display: flex; align-items: center; gap: 7px; }
-.bm-core-lines img { flex: none; width: 16px; height: 16px; border-radius: 50%; }
+.bm .bm-core-body h5 { display: flex; align-items: baseline; gap: var(--sp-5); margin: 0 0 var(--sp-4); font: 700 var(--fs-title)/1.15 var(--display); font-style: italic; }
+.bm-core-pts { margin-left: auto; font: 800 var(--fs-headline)/1 var(--display); color: var(--good); }
+/* "Reggono N/18" prima dei punti, piccolo e quieto, sottolineato a puntini: apre il tooltip coi tipi retti */
+.bm-core-held {
+  margin-left: auto; font: 600 var(--fs-caption)/1 var(--ui); font-style: normal; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums;
+  text-decoration: underline dotted; text-underline-offset: 3px; cursor: help;
+}
+.bm-core-held:hover { color: var(--text); }
+.bm-core-held:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bm-core-held + .bm-core-pts { margin-left: 0; }
+.bm-core-lines { display: grid; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; font-size: var(--fs-small); color: var(--muted); }
+.bm-core-lines li { display: flex; align-items: center; gap: var(--sp-3); margin: 0; }
+.bm-core-lines img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
-.bm-core-chip { display: inline-block; margin-top: 10px; padding: 2px 8px; background: var(--field); border: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); cursor: help; }
-.bm-cores-none { flex: 1; display: flex; align-items: center; justify-content: center; gap: 22px; padding: 0 24px; }
-.bm-cores-none p { max-width: 420px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+/* Nel tooltip di "Reggono": i 18 tipi d'attacco, accesi quelli retti, spenti in grigio quelli che passano */
+.ftip.bm-held-tip { width: auto; }
+.bm-held-tip .bm-core-types { display: grid; grid-template-columns: repeat(9, var(--ti-chip)); gap: var(--sp-3); padding: var(--sp-5) var(--sp-6); }
+.bm-held-tip .bm-core-types img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
+.bm-held-tip .bm-core-types img.off { filter: grayscale(1); opacity: 0.25; }
+/* Due posti affiancati (usePairFits): due core aperti, o un core e il posto del secondo, metà carta ciascuno, col
+   triangolo medio. --pair-min è la larghezza della carta sotto cui non stanno (bordi + triangolo + spazio + testo da
+   230px, per due): due core vanno a fisarmonica, un core solo prende tutta la carta */
+.bm-core-row { --pair-min: 785px; }
+.bm-core-row.pair .bm-core { flex: 1 1 0; transition: none; }
+.bm-core-row.pair .bm-core-body { flex: 1 1 auto; min-width: 0; }
+.bm-core-row.pair .sum-tri { --tri-w: 100px; --tri-badge: calc(var(--ti-chip) + 3px); }
+/* Affiancati il nome del core, "Reggono N/18" e i punti stanno su una riga anche coi tipi dai nomi lunghi */
+.bm-core-row.pair .bm-core { gap: var(--sp-6); padding-right: var(--sp-6); }
+.bm-core-row.pair .bm-core-body h5 { gap: var(--sp-4); }
+.bm-core-row:not(.two) .bm-core { max-width: none; }
+/* Un core solo: dove starebbe il secondo, il suo posto tratteggiato e quanto varrebbe */
+.bm-core-ghost { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-4) var(--sp-8) var(--sp-4) var(--sp-9); }
+.bm-core-ghost .bm-cores-ghost { width: 112px; height: 96px; }
+.bm-core-ghost p { font-size: var(--fs-small); line-height: 1.4; color: var(--muted); }
+.bm-core-ghost b { display: block; margin-bottom: 3px; font: 700 var(--fs-body)/1.2 var(--display); font-style: italic; color: var(--text); }
+.bm-cores-none { flex: 1; display: flex; align-items: center; justify-content: center; gap: var(--sp-10); padding: 0 24px; }
+.bm-cores-none p { max-width: 520px; font-size: var(--fs-small); line-height: 1.45; color: var(--muted); }
 /* Il core che manca: triangolo e piedistalli tratteggiati, appena visibili */
 .bm-cores-ghost { flex: none; width: 128px; height: 109px; overflow: visible; }
 .bm-cores-ghost path, .bm-cores-ghost circle { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 4; }
 .bm-cores-ghost ellipse { fill: color-mix(in srgb, var(--line) 45%, transparent); }
-.bm-cores-none b { display: block; margin-bottom: 2px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--text); }
+.bm-cores-none b { display: block; margin-bottom: var(--sp-1); font: 700 var(--fs-body)/1.2 var(--display); font-style: italic; color: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   .bm-core, .bm-core-body, .bm-core-mini { transition: none; }
 }
-@media (max-width: 1279px) {
-  .bm { column-gap: 22px; grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
+@media (max-width: 1300px) {
+  .bm { column-gap: var(--sp-10); grid-template-columns: minmax(0, 1fr) 220px; }
 }
-/* Schermi bassi: tutto più compatto (core, netto, carte delle voci) perché le voci stiano senza scorrere */
+/* Schermi bassi: tutto più compatto (core, netto, medaglie) perché ne stiano di più */
 @media (max-height: 799px) {
-  .bm { row-gap: 12px; }
-  .bm .sum-tri { --tri-w: 112px; --tri-badge: 19px; }
-  .bm-core { padding: 8px 14px 8px 16px; }
-  .bm .bm-core-body h5 { margin-bottom: 5px; font-size: 16px; }
-  .bm-core-pts { font-size: 19px; }
-  .bm-core-lines { gap: 2px; font-size: 12.5px; }
-  .bm-core-chip { margin-top: 6px; }
-  .bm .bm-net { font-size: 48px; padding: 5px 26px 6px 12px; }
-  .bm-bars { margin-top: 10px; padding-top: 8px; gap: 6px; }
-  .bm-cores.dash-card { --cores-h: 196px; }
-  .bm-entries { padding-left: 12px; }
-  .bm-entries.compact .bm-row { height: 38px; }
-  .bm-entries.compact .bm-list { row-gap: 6px; }
-  .bm-entries.compact .bm-row-tx b { font-size: 12.5px; }
-  .bm-list { gap: 10px 22px; }
-  .bm-row { min-height: 44px; padding-left: 40px; }
+  .bm { row-gap: var(--sp-6); }
+  .bm .sum-tri { --tri-w: 112px; --tri-badge: calc(var(--ti-chip) + 3px); }
+  .bm-core { padding: var(--sp-3) var(--sp-7) var(--sp-3) var(--sp-8); }
+  .bm .bm-core-body h5 { margin-bottom: var(--sp-2); font-size: var(--fs-title-s); }
+  .bm-core-pts { font-size: var(--fs-plate); }
+  .bm-core-lines { gap: var(--sp-1); font-size: var(--fs-caption); }
+  .bm .bm-net { font-size: 48px; padding: 5px 26px var(--sp-3) var(--sp-6); }
+  .bm .bm-parts { margin-top: var(--sp-4); }
+  .bm-cores.dash-card { --cores-h: 156px; }
+  .bm-core-row { --pair-min: 777px; }
+  .bm-list { gap: var(--sp-5) var(--sp-10); padding-left: var(--sp-6); }
+  .bm-row, .bm-more-cell { height: 46px; }
+  .bm-row { padding-left: 40px; }
   .bm-row .bm-medal { left: -12px; width: 44px; height: 50px; }
-  .bm-row-tx { padding: 4px 8px 4px 0; }
-  .bm-row-tx b { font-size: 14px; }
-  .bm-row-pts { min-width: 54px; font-size: 20px; }
+  .bm-row-tx { padding: 3px var(--sp-4) 3px 0; gap: 1px; }
+  .bm-row-tx b { font-size: var(--fs-section); }
+  .bm-row-case { font-size: var(--fs-caption); }
+  .bm-row-pts { min-width: 54px; font-size: var(--fs-heading); }
 }
 @media (max-height: 679px) {
-  .area-panel.ad-panel:has(> .bm) { padding-top: 10px; padding-bottom: 10px; }
-  .bm { row-gap: 10px; }
-  .bm .sum-tri { --tri-w: 84px; --tri-badge: 16px; }
-  .bm .bm-core-body h5 { margin-bottom: 2px; font-size: 15px; }
-  .bm-core-pts { font-size: 17px; }
-  .bm-core-lines { gap: 0; font-size: 12px; line-height: 1.25; }
-  .bm-core-lines img { width: 14px; height: 14px; }
-  .bm-core { padding: 4px 10px 4px 14px; gap: 10px; }
+  .area-panel.ad-panel:has(> .bm) { padding-top: var(--sp-5); padding-bottom: var(--sp-5); }
+  .bm { row-gap: var(--sp-5); }
+  .bm .sum-tri { --tri-w: 84px; --tri-badge: calc(var(--ti-inline) + 3px); }
+  .bm .bm-core-body h5 { margin-bottom: var(--sp-1); font-size: var(--fs-body); }
+  .bm-core-pts { font-size: var(--fs-title); }
+  .bm-core-lines { gap: 0; font-size: var(--fs-caption); line-height: 1.25; }
+  .bm-core { padding: var(--sp-2) var(--sp-5) var(--sp-2) var(--sp-7); gap: var(--sp-5); }
   .bm-core.shut .bm-core-body { top: 5px; }
-  .bm-core-chip { margin-top: 4px; padding: 1px 6px; }
-  .bm .bm-label { margin-bottom: 6px; }
-  .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }
-  .bm-cores.dash-card { --cores-h: 136px; }
+  .bm-core-row { --pair-min: 685px; }
+  .bm-core-row.pair .sum-tri { --tri-w: 84px; --tri-badge: calc(var(--ti-inline) + 3px); }
+  .bm-core-ghost { gap: var(--sp-5); padding: var(--sp-2) var(--sp-5) var(--sp-2) var(--sp-7); }
+  .bm-core-ghost .bm-cores-ghost { width: 84px; height: 72px; }
+  .bm-core-ghost p { font-size: var(--fs-caption); line-height: 1.3; }
+  .bm-core-ghost b { font-size: var(--fs-section); }
+  .bm .bm-label, .bm .bm-grade .bm-label { margin-bottom: var(--sp-3); }
+  .bm .bm-net { font-size: 42px; padding: var(--sp-2) 24px 5px var(--sp-5); }
+  .bm .bm-parts { margin-top: var(--sp-3); font-size: var(--fs-small); }
+  .bm-cores.dash-card { --cores-h: 118px; }
   .bm-head-medal.bm-medal { left: -11px; top: -12px; width: 44px; height: 50px; }
   .bm-cores .dash-plate { padding-left: 38px; }
   .bm-cores-ghost { width: 92px; height: 78px; }
-  .bm-empty { padding-top: 4px; }
-  .bm-empty .bm-medal { width: 46px; height: 52px; }
-  .bm-entries-wrap { gap: 4px; }
-  .bm-tab { min-height: 26px; padding: 1px 12px; }
-  .bm-list { gap: 6px 22px; padding-top: 3px; padding-bottom: 0; }
-  .bm-row { min-height: 37px; padding-left: 34px; }
+  .bm-list { gap: var(--sp-4) var(--sp-10); padding-top: 3px; }
+  .bm-row, .bm-more-cell { height: 40px; }
+  .bm-row { padding-left: 34px; }
   .bm-row .bm-medal { left: -11px; width: 38px; height: 43px; }
-  .bm-row-tx { padding: 2px 8px 2px 0; }
-  .bm-row-case { min-height: calc(2 * 1.3em); font-size: 12px; line-height: 1.3; }
-  .bm-entries.compact .bm-row { height: 36px; }
-  .bm-entries.compact .bm-list { row-gap: 5px; }
-  .bm-row-pts { font-size: 19px; }
+  .bm-row-tx { padding: var(--sp-1) var(--sp-4) var(--sp-1) 0; gap: 0; }
+  .bm-row-case { line-height: 1.3; }
+  .bm-row-pts { font-size: var(--fs-plate); }
 }
 
 /* Il catalogo nella guida della scheda: tutte le voci con la medaglia, quando scattano e quanto valgono */
 .bm-cat { margin: 0; padding: 0; list-style: none; }
-.bm-cat li { display: grid; grid-template-columns: 30px minmax(0, 1fr) minmax(90px, auto); align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
+.bm-cat li { display: grid; grid-template-columns: 30px minmax(0, 1fr) minmax(90px, auto); align-items: center; gap: var(--sp-6); padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
 .bm-cat .bm-medal { width: 30px; height: 34px; }
 .bm-cat-tx { display: grid; gap: 1px; }
-.bm-cat-tx b { font: 700 14px/1.2 var(--display); font-style: italic; color: var(--text); }
-.bm-cat-tx span { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
-.bm-cat-pts { max-width: 180px; text-align: right; font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+.bm-cat-tx b { font: 700 var(--fs-section)/1.2 var(--display); font-style: italic; color: var(--text); }
+.bm-cat-tx span { max-width: 32em; font-size: var(--fs-small); line-height: 1.35; color: var(--muted); }
+.bm-cat-pts { max-width: 180px; text-align: right; font-size: var(--fs-small); font-weight: 600; line-height: 1.3; }
 .bm-cat-pts.bonus { color: var(--good); }
 .bm-cat-pts.malus { color: var(--bad); }
 
@@ -385,12 +380,12 @@
 .help-weights tr.current .help-wbar { background: color-mix(in srgb, var(--field) 70%, var(--accent-soft)); }
 /* Come funziona, pagina generale: le lettere accanto al titolo (non sotto), così la pagina sta tutta nella finestra;
    righe della tabella dei pesi più basse. Sul telefono di nuovo in colonna */
-.help-panel.help-general { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: max-content; align-content: start; column-gap: 16px; }
+.help-panel.help-general { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: max-content; align-content: start; column-gap: var(--sp-8); }
 .help-panel.help-general > * { grid-column: 1 / -1; }
 .help-panel.help-general > h4 { grid-column: 1; align-self: center; margin: 0; }
-.help-panel.help-general > .help-grades { grid-column: 2; margin: 0 0 12px; }
+.help-panel.help-general > .help-grades { grid-column: 2; margin: 0 0 var(--sp-6); }
 .help-general .help-weights th, .help-general .help-weights td { padding-top: 5px; padding-bottom: 5px; }
 @media (max-width: 599px) {
   .help-panel.help-general { display: block; }
-  .help-panel.help-general > h4 { margin: 0 0 10px; }
+  .help-panel.help-general > h4 { margin: 0 0 var(--sp-5); }
 }

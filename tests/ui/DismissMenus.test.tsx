@@ -41,7 +41,7 @@ describe('menu a tendina', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByTitle('Incolla un team scritto per Showdown'));
-    await user.click(screen.getByText(/^Team salvati/));
+    await user.click(screen.getByText('Team salvati (0)'));
     expect(importMenu()).not.toHaveAttribute('open');
     expect(menu('Team salvati (0)')).toHaveAttribute('open');
     await user.keyboard('{Escape}');

@@ -1,8 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { rateTeam } from '../../src/engine/rating';
+import { gradeFor, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { poolSpecies } from '../../src/engine/speed';
 import type { EngineData } from '../../src/engine/data';
@@ -25,37 +25,58 @@ const noMetaData = { ...fixtureData, ignoreMeta: true };
 const noMeta = (t = team) => rateTeam(t, noMetaData, 'it')!;
 const view = (t: TeamSet[] = team, rating = withMeta(t), data = fixtureData) =>
   renderIt(<AreaView rating={rating} area="speed" team={t} analysis={analyzeTeam(t, data)} problems={[]} />);
-const names = () => screen.getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent);
+// Una sottoscheda sola: niente selettore, il pannello porta il nome dell'area
+const panelName = () => screen.getByRole('tabpanel').getAttribute('aria-label');
 const barOf = (name: string) => screen.getByRole('button', { name: `Velocità di ${name}: apri i rivali` });
 const dialogOf = (name: string) => screen.getByRole('dialog', { name: `Velocità di ${name}` });
 const checks = (dialog: HTMLElement) => within(dialog).getAllByRole('checkbox').map(c => c.getAttribute('aria-label'));
 
 describe('Velocità: una scheda a barre', () => {
-  it('una sola scheda, senza spiegazioni sulla pagina; i membri dal più veloce con la barra a segmenti e il totale', () => {
+  it('una sola scheda, senza spiegazioni sulla pagina; i membri come nel team con la barra a segmenti e il totale', () => {
     const rating = withMeta();
     view(team, rating);
-    expect(names()).toEqual(['Generale']);
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(panelName()).toBe('Velocità');
     expect(document.querySelector('.ad-how')).toBeNull();
-    expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Ribombee', 'Iron Valiant', 'Dragonite', 'Toxapex']);
-    const rows = document.querySelectorAll('.def-members tbody tr');
-    const sorted = [...rating.speed.members].sort((a, b) => b.speed - a.speed);
+    expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Dragonite', 'Ribombee', 'Iron Valiant', 'Toxapex']);
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill):not(.sp-scale)');
+    const sorted = team.map(s => rating.speed.members.find(m => m.species === s.species)!);
     sorted.forEach((m, i) => {
       const bar = within(rows[i] as HTMLElement).getByRole('button', { name: `Velocità di ${m.species}: apri i rivali` });
       expect(bar).toHaveTextContent(`${Math.round(100 * m.total)}%`);
-      expect(bar.querySelectorAll('.sp-stack i')).toHaveLength(3);
+      // La velocità pura sempre; i pezzi a righe solo quando aggiungono qualcosa
+      expect(bar.querySelector('.sp-stack .sp-seg-raw')).not.toBeNull();
+      expect(bar.querySelectorAll('.sp-stack i').length).toBeLessThanOrEqual(3);
     });
     // Dragonite: la parte propria (Dragon Dance, Extreme Speed) e quella del team (Web, Stun Spore) sono scritte nel dettaglio
     const d = sorted.find(m => m.species === 'Dragonite')!;
     const bar = barOf('Dragonite');
     expect(bar).toHaveTextContent(`${Math.round(100 * d.raw)}`);
-    expect(bar.getAttribute('title')).toMatch(/Dragon Dance/);
-    expect(bar.getAttribute('title')).toMatch(/Sticky Web/);
+    expect(bar).not.toHaveAttribute('title');
+    // In fondo la riga del team, senza il numero (il voto dell'area sta nella testata)
+    expect(document.querySelector('.def-members tfoot')).toHaveTextContent(/^Velocità del team\d/);
+    expect(document.querySelector('.def-members tfoot')).not.toHaveTextContent(`${rating.speed.value}%`);
+  });
+
+  it('passando sulla barra: la scala dei rivali vicini e cosa aggiunge ogni guadagno, icona della Booster accanto al nome', async () => {
+    const user = userEvent.setup();
+    view();
+    await user.hover(barOf('Dragonite'));
+    const tip = await screen.findByText((_, el) => !!el?.classList.contains('stip-ladder'));
+    expect(tip.querySelector('.stip-rung.self')).toHaveTextContent('Dragonite');
+    const gains = document.querySelector('.stip-gains')!;
+    expect(gains).toHaveTextContent(/Dragon Dance/);
+    expect(gains).toHaveTextContent(/Sticky Web/);
+    await user.unhover(barOf('Dragonite'));
+    await user.hover(barOf('Iron Valiant'));
+    const self = await screen.findByText((_, el) => !!el?.classList.contains('self') && !!el.textContent?.includes('Iron Valiant'));
+    expect(self.querySelector('.item-icon')).not.toBeNull();
   });
 
   it('niente tessere sotto la tabella: solo i membri', () => {
     view();
     expect(document.querySelectorAll('.def-tile')).toHaveLength(0);
-    expect(document.querySelectorAll('.sp-bar-btn')).toHaveLength(4);
+    expect(screen.getAllByRole('button', { name: /^Velocità di .*: apri i rivali$/ })).toHaveLength(4);
   });
 
   it('il modale di Dragonite: i check che esistono davvero, la lista dei rivali (una riga per specie) col membro al suo posto', async () => {
@@ -107,7 +128,7 @@ describe('Velocità: una scheda a barre', () => {
     expect(rowsOf('Gholdengo')).toHaveLength(1);
     expect(dialog).not.toHaveTextContent(/versione con lo strumento/);
     // Il voto in testa non cambia
-    expect(screen.getByRole('tab', { name: /^Generale/ })).toHaveTextContent(String(withMeta().speed.value));
+    expect(document.querySelector('.area-grade')).toHaveTextContent(gradeFor(withMeta().speed.value!, 'it').label);
   });
 
   it('un rivale con la Sciarpa su quasi tutti i set (85%): una riga sola, sempre con l\'icona, anche a check spento', async () => {
@@ -146,7 +167,7 @@ describe('Velocità: una scheda a barre', () => {
     view(t, rateTeam(t, ag, 'it')!, ag);
     const bars = screen.getAllByRole('button', { name: 'Velocità di Dragonite: apri i rivali' });
     expect(bars).toHaveLength(2);
-    // Il primo (dal più veloce) è quello con Dragon Dance, il secondo no
+    // Il primo (nel team) è quello con Dragon Dance, il secondo no
     await user.click(bars[0]);
     expect(checks(dialogOf('Dragonite'))).toContain('Dragon Dance');
     await user.keyboard('{Escape}');
@@ -194,7 +215,7 @@ describe('Velocità: una scheda a barre', () => {
   it('una specie sconosciuta: riga con "—", senza barra', () => {
     const odd = [...team, emptySet('Nessuno')];
     view(odd, withMeta(odd));
-    const rows = document.querySelectorAll('.def-members tbody tr');
+    const rows = document.querySelectorAll('.def-members tbody tr:not(.og-fill):not(.sp-scale)');
     expect(rows).toHaveLength(5);
     const last = rows[4];
     expect(last).toHaveTextContent('Nessuno');
@@ -202,7 +223,7 @@ describe('Velocità: una scheda a barre', () => {
     expect(within(last as HTMLElement).queryByRole('button')).toBeNull();
   });
 
-  it('il "?" apre la guida della Velocità: rivali, guadagni con le quote, pesi dei membri, il modale non cambia il voto', async () => {
+  it('il "?" apre la guida della Velocità: rivali, le tre fonti col dettaglio nel tooltip, senza quote né pesi', async () => {
     const user = userEvent.setup();
     view();
     await user.click(screen.getByRole('button', { name: 'Come funziona Velocità' }));
@@ -210,43 +231,32 @@ describe('Velocità: una scheda a barre', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/40 Pokémon più usati/);
     expect(panel).toHaveTextContent(/Stolascelta/);
-    // Le quote (setup 50%, priorità e controllo 25%, il controllo breve 12,5%) e i pesi dei membri 30/30/20/10/5/5
-    expect(panel).toHaveTextContent(/50%/);
-    expect(panel).toHaveTextContent(/25%/);
-    expect(panel).toHaveTextContent(/12,5%/);
-    // Media semplice: ogni membro il 17%
-    expect(panel).toHaveTextContent(/17%/);
+    // Niente quote né pesi: le fonti aggiungono un bonus, il team è la media
+    expect(panel).not.toHaveTextContent(/50%|25%|12,5%|17%/);
     expect(panel).toHaveTextContent(/superarne il 74% vale 74/);
-    expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto/);
-    // Schematica: tre fonti come tessere con solo nome, quota e freccia (il controllo breve dentro il Controllo del team),
-    // niente dettaglio né mosse a tessere chiuse
-    expect(panel.querySelectorAll('.guide-tiles li')).toHaveLength(3);
-    expect(panel.querySelectorAll('.sp-guide-chev')).toHaveLength(3);
-    expect(panel.querySelector('.sp-guide-sub')).toHaveTextContent(/^Breve12,5%$/);
-    expect(panel).not.toHaveTextContent(/×1,5|Tailwind|Trick Room|Booster/);
-    // Una tessera si apre (una alla volta) e mostra tutto quello che conta, dalle tabelle del motore
-    const boost = within(panel).getByRole('button', { name: /^Boost/ });
-    expect(boost).toHaveAttribute('aria-expanded', 'false');
-    await user.click(boost);
-    expect(boost).toHaveAttribute('aria-expanded', 'true');
-    const detail = within(panel).getByRole('region', { name: 'Boost' });
-    const chips = (el: HTMLElement) => [...el.querySelectorAll('.sp-gd-chip')].map(c => c.textContent);
-    // Mosse e abilità come etichette, il meteo o il campo che serve dentro l'etichetta
-    expect(chips(detail)).toContain('Shell Smash');
-    expect(chips(detail)).toContain('Swift Swimpioggia');
-    expect(chips(detail)).toContain('Booster Energy');
-    expect(detail).toHaveTextContent(/×1,5/);
-    await user.click(within(panel).getByRole('button', { name: /^Controllo del team/ }));
-    expect(boost).toHaveAttribute('aria-expanded', 'false');
-    const control = within(panel).getByRole('region', { name: 'Controllo del team' });
+    expect(panel).toHaveTextContent(/ognuno conta uguale/);
+    expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto|Clicca/);
+    // Tre fonti come righe, ognuna col "?": il dettaglio sta nel tooltip, niente a vista sulla pagina
+    expect(panel.querySelectorAll('.guide-rows > div')).toHaveLength(3);
+    expect(panel.querySelectorAll('.guide-ask')).toHaveLength(3);
+    expect(panel).not.toHaveTextContent(/×1,5|Shell Smash/);
+    const chips = () => [...document.querySelectorAll('.sp-gd-tip .sp-gd-chip')].map(c => c.textContent);
+    await user.hover(within(panel).getByRole('button', { name: 'Boost' }));
+    await waitFor(() => expect(chips()).toContain('Shell Smash'));
+    expect(chips()).toContain('Swift Swimpioggia');
+    expect(chips()).toContain('Booster Energy');
+    expect(document.querySelector('.sp-gd-tip')).toHaveTextContent(/×1,5/);
+    await user.unhover(within(panel).getByRole('button', { name: 'Boost' }));
+    await user.hover(within(panel).getByRole('button', { name: 'Controllo del team' }));
+    await waitFor(() => expect(chips()).toContain('Glare'));
     // Le mosse che rallentano come etichette, coi tipi immuni dentro; la regola tiene solo l'eccezione comune
     // (i nomi dei tipi in italiano arrivano coi dati del gioco: qui, senza, restano in inglese)
-    expect(chips(control)).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
+    expect(chips()).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
+    const control = document.querySelector('.sp-gd-tip')!;
     expect(control).toHaveTextContent(/Non sui tipi Elettro/);
     expect(control).toHaveTextContent(/Trick Room/);
     expect(control).toHaveTextContent(/Tailwind/);
-    await user.click(within(control).getByRole('button', { name: 'Chiudi' }));
-    expect(within(panel).queryByRole('region')).toBeNull();
+    expect(control).not.toHaveTextContent(/%/);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -254,7 +264,8 @@ describe('Velocità: una scheda a barre', () => {
   it('in inglese', async () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="speed" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} /></LangProvider>);
-    expect(names()).toEqual(['General']);
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(panelName()).toBe('Speed');
     await user.click(screen.getByRole('button', { name: 'Speed of Dragonite: open the rivals' }));
     expect(screen.getByRole('dialog', { name: 'Speed of Dragonite' })).not.toHaveTextContent('the grade does not change');
     await user.keyboard('{Escape}');

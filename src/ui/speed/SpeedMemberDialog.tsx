@@ -35,8 +35,10 @@ function rivalRows(member: MemberSpeed): RivalRow[] {
  * l'interruttore "Strumenti avversari" (i rivali che usano spesso la Sciarpa o la Booster anche in quella versione); poi
  * la lista di tutti i rivali del gruppo dal più veloce, col membro al suo posto.
  * I check non cambiano il voto: il voto resta quello della formula.
+ * `room`: aperto con l'interruttore Trick Room della scheda acceso, il check Trick Room parte già acceso (resta un check
+ * come gli altri).
  */
-export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member: MemberSpeed; set: TeamSet; team: TeamSet[]; meta: boolean; onClose: () => void }) {
+export function SpeedMemberDialog({ member, set, team, meta, onClose, room = false }: { member: MemberSpeed; set: TeamSet; team: TeamSet[]; meta: boolean; onClose: () => void; room?: boolean }) {
   const t = useT();
   const lang = useLang();
   const id = useId();
@@ -52,7 +54,7 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
 
   const options = useMemo(() => speedOptions(set, team), [set, team]);
   const rows = useMemo(() => rivalRows(member), [member]);
-  const [on, setOn] = useState<Set<string>>(() => new Set());
+  const [on, setOn] = useState<Set<string>>(() => new Set(room ? options.filter(o => o.trickRoom).map(o => `${o.condition}|${o.source}`) : []));
   // I rivali che usano spesso la Sciarpa o la Booster compaiono anche in quella versione (come nel voto): acceso di base
   const [versions, setVersions] = useState(true);
   // Il check ha senso solo se qualche rivale ha anche la versione normale: chi è sempre con lo strumento resta com'è

@@ -12,8 +12,8 @@
 
   /* ── Schede di Analisi: una fila che scorre col dito, la scheda aperta sempre in vista ── */
   .analysis-tabs {
-    margin: 0 -14px 12px;
-    padding: 0 14px;
+    margin: 0 -14px var(--sp-6);
+    padding: 0 var(--sp-7);
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
@@ -21,66 +21,65 @@
     scrollbar-width: none;
   }
   .analysis-tabs::-webkit-scrollbar { display: none; }
-  .analysis-tabs [role='tablist'] { display: flex; width: max-content; gap: 4px; }
+  .analysis-tabs [role='tablist'] { display: flex; width: max-content; gap: var(--sp-2); }
   .analysis-tabs [role='tablist']::before { content: none; }
   .analysis-tabs [role='tab'] {
     flex: none;
     width: auto;
     min-height: 44px;
     align-items: center;
-    padding: 0 14px;
+    padding: 0 var(--sp-7);
     white-space: nowrap;
     scroll-snap-align: start;
   }
   /* Lo stacco fra Coaching e le aree: un po' di spazio in più */
-  .analysis-tabs #analysis-view-strength { margin-left: 10px; }
+  .analysis-tabs #analysis-view-strength { margin-left: var(--sp-5); }
   .analysis-tabs [role='tab'][aria-selected='true'],
   .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) {
     width: auto;
     margin: 0;
-    padding: 0 30px 0 14px;
+    padding: 0 30px 0 var(--sp-7);
     clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
     animation: none;
   }
-  .analysis-tabs #analysis-view-strength[aria-selected='true'] { margin-left: 10px; }
+  .analysis-tabs #analysis-view-strength[aria-selected='true'] { margin-left: var(--sp-5); }
   /* Bonus/Malus ha il suo "?" dentro la scheda aperta: spazio a destra per lui */
   .analysis-tabs [role='tab'][aria-selected='true']#analysis-view-bonusMalus { padding-right: 72px; }
 
-  /* ── Sottoschede delle aree: la striscia scorre col dito (il "?" scorre con lei) ── */
-  .area-strip { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-  .area-strip::-webkit-scrollbar { display: none; }
-  .area-subs { width: max-content; min-width: 100%; overflow: visible; }
-  .area-subs [role='tab'] { min-height: 44px; align-items: center; }
-  /* Ruoli e Bonus: le due metà restano affiancate (stanno anche a 390px), più basse e con un testo più piccolo */
-  .area-view-bonusMalus .area-subs { width: auto; }
-  .area-view-bonusMalus .area-subs [role='tab'] { padding: 0 12px; gap: 8px; font-size: 15px; }
-  .area-view-bonusMalus .area-subs [role='tab'] b { font-size: 18px; }
+  /* ── Testata delle aree: voto e "?" in alto, sotto i problemi (una riga col "+N") e le sottoschede a tutta larghezza,
+     che scorrono col dito se non stanno; ogni sottoscheda alta quanto un dito ── */
+  .area-head { flex-wrap: wrap; gap: var(--sp-4) var(--sp-6); padding: var(--sp-4) var(--sp-6); }
+  .area-help { margin-left: auto; }
+  .area-chips { order: 3; flex: 1 1 100%; }
+  .area-subs { order: 4; flex: 1 1 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .area-subs::-webkit-scrollbar { display: none; }
+  .area-subs [role='tab'] { flex: 1 0 auto; min-height: 44px; }
 
-  /* L'interruttore Solo superefficaci / Solo efficacia: la striscia scorre col dito, lui va sotto le sottoschede, alto quanto un dito */
-  .panel-switch { position: static; height: auto; margin-bottom: 6px; }
+  /* L'interruttore Solo superefficaci / Solo efficacia: va sotto la testata, nel flusso, alto quanto un dito */
+  .panel-switch { position: static; height: auto; margin-bottom: var(--sp-3); }
   .panel-switch .eff-switch { min-height: 44px; }
   .area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 0; }
   .area-view-bonusMalus > .area-panel { margin-top: 0; }
   /* La riga in fondo alla tabella: legenda e riepilogo vanno a capo */
   /* Sul telefono la legenda torna sotto la tabella, nel flusso, e va a capo */
   .def-frame { padding-top: 0; }
-  .ad-panel .def-frame > .rob-legend { position: static; height: auto; margin-top: 8px; justify-content: flex-start; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
+  .ad-panel .def-frame > .rob-legend { position: static; height: auto; margin-top: var(--sp-4); justify-content: flex-start; flex-wrap: wrap; white-space: normal; row-gap: var(--sp-2); }
   .ad-panel .def-frame > .rob-legend > .area-legend { order: 0; }
-  .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: 4px; }
+  /* L'ordine di Coverage meta: su una riga sua, pulsanti alti quanto un dito */
+  .cm-order { flex: 1 0 100%; margin-right: 0; }
+  .cm-order .segmented { height: auto; }
+  .cm-order .segmented button { min-height: 44px; padding: 0 var(--sp-7); }
+  .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: var(--sp-2); }
   .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
-  /* Problemi dell'area in fondo: tutti, su più righe (la pagina scorre); "Vai al Coaching" alto quanto un dito */
+  /* La striscia Da sistemare della Panoramica: "Vai al Coaching" alto quanto un dito */
   .fix-row { height: auto; min-height: 44px; }
-  .area-problems-row.fix-row { height: auto; min-height: 44px; overflow: visible; flex-wrap: wrap; gap: 6px 12px; }
-  .area-problems { flex: 1 1 100%; order: 2; flex-wrap: wrap; overflow: visible; }
-  .area-problems > li { flex: 0 1 auto; white-space: normal; }
-  .area-problems-row .fix-go { order: 1; }
 
   /* ── Cornice dei membri (Difesa, Offesa, Velocità): righe ad altezza fissa, niente misura sull'altezza ── */
   .def-frame, .def-frame.roomy { --def-row: 50px; --def-mon: 190px; height: auto; container-type: inline-size; }
   .def-frame .def-box { --bs: 1; }
   /* relative: i testi nascosti (assoluti) delle caselle restano dentro lo scorrimento, non allargano la pagina */
   .def-frame > .ad-scroll { position: relative; overflow-x: auto; overscroll-behavior-x: contain; }
-  /* Le tabelle larghe (Sostenibilità, le griglie dei tipi) scorrono dentro la cornice: il membro resta fermo a sinistra */
+  /* Le tabelle larghe (Recupero, le griglie dei tipi) scorrono dentro la cornice: il membro resta fermo a sinistra */
   .def-frame .def-grid tbody th[scope='row'], .def-frame .def-grid thead th.def-mon-h { position: sticky; left: 0; z-index: 1; background: var(--panel); }
   .def-frame .def-mon-stats { display: none; }
   .def-frame .def-mon-tag.line { display: inline-flex; }
@@ -88,12 +87,9 @@
   .def-frame .ct-table:has(thead tr > :nth-child(12)) { min-width: calc(var(--def-mon) + 18 * 34px); }
   /* Il rientro delle griglie (margine negativo) farebbe scorrere di 3 px le tabelle che ci stanno */
   .def-frame .def-grid.spaced { width: 100%; margin: 0; }
-  /* Generale: le barre seguono la colonna, il "+N" sotto il numero; le intestazioni vanno a capo invece di tagliarsi */
-  .def-general .def-members thead th:not(.def-mon-h) { white-space: normal; overflow: visible; overflow-wrap: anywhere; hyphens: auto; text-overflow: clip; max-width: none; line-height: 1.15; padding-inline: 4px; text-transform: none; letter-spacing: 0; }
-  .def-general .def-members td { padding: 0 4px; }
-  .def-general .def-cell, .def-general .def-cell.with-gain { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 3ch; gap: 4px; width: 100%; }
-  .def-general .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
-  .def-general .def-gain small { font-size: 11px; }
+  /* Generale: le intestazioni vanno a capo invece di tagliarsi */
+  .def-general .def-members thead th:not(.def-mon-h) { white-space: normal; overflow: visible; overflow-wrap: anywhere; hyphens: auto; text-overflow: clip; max-width: none; line-height: 1.15; padding-inline: var(--sp-2); text-transform: none; letter-spacing: 0; }
+  .def-general .def-members td { padding: 0 var(--sp-2); }
   /* Offesa Generale: le barre dei colpi col conto "11/18" hanno bisogno di posto; la tabella scorre col dito, il membro resta fermo */
   .off-general .def-members { min-width: calc(var(--def-mon) + 2 * 250px + 110px); }
   .off-general .def-members:not(:has(colgroup > col:nth-child(4))) { min-width: calc(var(--def-mon) + 250px + 110px); }
@@ -109,22 +105,23 @@
   .rl-frame { height: auto; }
   .rl-bands { overflow: visible; }
   .area-panel:has(> .bm) { overflow: visible; }
-  /* Bonus/Malus: prima il netto e le voci, poi i core uno sotto l'altro (il chiuso è una riga col triangolo piccolo) */
-  .bm, .bm.empty { flex: none; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "grade" "list" "cores"; gap: 18px; }
-  .bm-entries { overflow: visible; }
+  /* Bonus/Malus: prima il netto e le medaglie (tutte, una per riga, il caso che va a capo), poi i core uno sotto l'altro
+     (il chiuso è una riga col triangolo piccolo) */
+  .bm, .bm.empty { flex: none; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "grade" "list" "cores"; gap: var(--sp-9); }
   .bm-cores.dash-card { height: auto; }
-  .bm-tab { min-height: 44px; flex: 1; justify-content: center; }
-  .bm-list { grid-template-columns: minmax(0, 1fr); }
-  .bm-more { align-self: flex-start; min-height: 44px; margin-top: 4px; }
+  .bm-list { flex: none; grid-template-columns: minmax(0, 1fr); }
+  .bm-row { height: auto; min-height: 54px; }
+  .bm-row-case { white-space: normal; }
+  .bm-more { align-self: flex-start; min-height: 44px; margin-top: var(--sp-2); }
   .bm-core-row { flex-direction: column; }
   .bm-core { flex: none; max-width: none; flex-wrap: wrap; }
   .bm-core.open .bm-core-body { flex: 1 1 200px; min-width: 0; }
-  .bm-core.shut { min-height: 56px; padding: 6px 14px; flex-direction: row; }
+  .bm-core.shut { min-height: 56px; padding: var(--sp-3) var(--sp-7); flex-direction: row; }
   .bm-core + .bm-core { border-left: 0; border-top: 1px solid var(--line-soft); }
   .bm-core.shut .sum-tri { --tri-w: 64px; --tri-badge: 14px; }
-  .bm-core.shut .bm-core-art { flex: 1; flex-direction: row; align-items: center; gap: 12px; opacity: 1; }
-  .bm-core.shut .bm-core-peek { display: block; flex: 1; min-width: 0; font: 700 14px/1.2 var(--display); font-style: italic; text-align: left; }
-  .bm-core.shut .bm-core-mini { position: static; align-self: center; font-size: 18px; }
+  .bm-core.shut .bm-core-art { flex: 1; flex-direction: row; align-items: center; gap: var(--sp-6); filter: none; }
+  .bm-core.shut .bm-core-peek { display: block; flex: 1; min-width: 0; font: 700 var(--fs-section)/1.2 var(--display); font-style: italic; text-align: left; }
+  .bm-core.shut .bm-core-mini { position: static; align-self: center; font-size: var(--fs-title-l); }
   .bm-core.shut .bm-core-body { display: none; }
 
   /* ── Panoramica: le card una sotto l'altra, nell'ordine di lettura del desktop ── */
@@ -134,7 +131,10 @@
   .dash-ladder { flex: none; height: 170px; }
   /* Testata delle card: il riassunto va a capo invece di tagliarsi contro i link */
   .dash-head { flex-wrap: wrap; row-gap: 0; }
-  .dash-head .dash-meta { flex: 0 1 auto; white-space: normal; padding: 4px 0; }
+  .dash-head .dash-meta { flex: 0 1 auto; white-space: normal; padding: var(--sp-2) 0; }
+  /* Minacce del meta: le carte vanno a capo, due o tre per riga; la riga Bonus/Malus del Riassunto (assoluta) non c'è */
+  .thr-row { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .thr-card, .thr-more { min-height: 44px; }
 
 }
 @media (max-width: 599px) {
@@ -142,33 +142,27 @@
   .def-frame, .def-frame.roomy { --def-mon: 100px; }
   .def-frame .def-mon-types { display: none; }
   .def-frame .def-grid tbody .ad-mon { flex-direction: column; align-items: flex-start; gap: 0; }
-  .def-frame .def-mon-line { flex-wrap: wrap; gap: 2px 4px; }
-  .def-frame .def-mon-name { font-size: 12.5px; }
-  .def-frame .def-mon-tag .def-weak { padding: 0 4px; font-size: 11px; letter-spacing: 0; }
+  .def-frame .def-mon-line { flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); }
+  .def-frame .def-mon-name { font-size: var(--fs-caption); }
+  .def-frame .def-mon-tag .def-weak { padding: 0 var(--sp-2); font-size: var(--fs-label); letter-spacing: 0; }
 
-  /* ── Coaching: le tappe come schede (numero sulla lama a sinistra; problema, proposta e "risolve anche" uno sotto l'altro) ── */
-  .coach-strip { grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto auto; height: auto; min-height: var(--step-h); }
-  .coach-strip.skeleton { height: 150px; }
-  .coach-steps-none { height: auto; min-height: 61px; }
-  .coach-step-num { grid-column: 1; grid-row: 1 / -1; font-size: 26px; }
-  .coach-step-problem { grid-column: 2; grid-row: 1; padding: 10px 12px 6px 10px; -webkit-line-clamp: unset; }
-  .coach-strip > .coach-prop.is-main { grid-column: 2; grid-row: 2; min-height: 64px; padding: 4px 6px 4px 10px; }
-  /* L'alternativa "oppure" va a capo dentro la barra della proposta, sotto chi entra */
-  .coach-prop.is-main:has(.is-side) { flex-wrap: wrap; }
-  .coach-prop.is-main .coach-prop.is-side { order: 3; flex-basis: 100%; margin: 4px 0 8px; padding: 6px 8px; }
-  .coach-strip-extras { grid-column: 2; grid-row: 3; padding: 8px 10px 10px; border-left: 0; border-top: 1px solid var(--line-soft); }
-  /* Sul telefono la riga di "risolve anche" vuota non c'è (il segnaposto è uno span hidden) */
-  .coach-strip-extras:not(:has(> :not([hidden]))) { display: none; }
-  .coach-also { height: auto; min-height: 18px; }
-  /* Lo scambio più compatto: il nome di chi entra resta intero (va a capo se serve) */
-  .coach-prop.is-main > .coach-fix { gap: 6px; }
-  .coach-strip-out { width: 32px; height: 32px; }
-  .coach-strip-out .sprite { width: 40px; height: 40px; }
-  .coach-strip-in { width: 48px; height: 48px; }
-  .coach-strip-in .sprite { width: 52px; height: 52px; }
-  .coach-strip-in .sprite-ani { height: calc(var(--ani-h, 96) / 96 * 52px); }
-  .coach-fix-main strong { white-space: normal; overflow-wrap: anywhere; font-size: 17px; line-height: 1.1; }
-  .coach-prop.is-main > .coach-fix > .coach-gain { font-size: 20px; }
+  /* ── Coaching: ogni riga una scheda (zona del Pokémon in alto, poi cosa cambia, poi voto e azioni), alta quanto serve ── */
+  .coach-list-box { --row-h: auto; }
+  .coach-rows { grid-auto-rows: auto; }
+  .coach-row { grid-template-columns: minmax(0, 1fr); }
+  .coach-row.skeleton { height: 220px; }
+  .coach-art { min-height: 96px; clip-path: none; padding-right: var(--sp-7); }
+  .coach-solves { padding: var(--sp-5) var(--sp-6); }
+  .coach-ar { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .coach-ar-chips { flex-wrap: wrap; }
+  .coach-act { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--sp-6); padding: 0 var(--sp-6) var(--sp-6); }
+  .coach-gain { margin-right: auto; }
+  .coach-menu { left: 8px; right: 8px; width: auto; top: 90px; }
+  .coach-opt { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .coach-opt-note { grid-column: 2; }
+  .coach-opt-use { display: none; }
+  .coach-empty { flex-direction: column; gap: var(--sp-8); padding: 20px; }
+  .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }
   /* Riassunto: il nome del core va a capo invece di tagliarsi */
   .sum-syn-head { white-space: normal; }
 
@@ -176,18 +170,17 @@
   .def-general.roomy .def-members tr > :nth-last-child(-n + 2) { display: none; }
   .def-general.roomy .def-members :is(.def-col-hit, .def-col-rec) { width: 0; }
 
-  .coach-map { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 599px) {
   .analysis-tabs { margin-inline: -14px; }
 
   /* Copertura: i 18 tipi in due file da 9 (in una sola le caselle sarebbero puntini); ogni fila ripete Offesa e Difesa */
-  .dash .dash-matrix { display: grid; grid-template-columns: auto repeat(9, minmax(0, 1fr)); gap: 4px; width: 100%; margin: 0; }
+  .dash .dash-matrix { display: grid; grid-template-columns: auto repeat(9, minmax(0, 1fr)); gap: var(--sp-2); width: 100%; margin: 0; }
   .dash .dash-matrix :is(thead, tbody, tr) { display: contents; }
   .dash .dash-matrix thead td { grid-row: 1; grid-column: 1; width: auto; }
   .dash .dash-matrix thead th:nth-child(-n + 10) { grid-row: 1; }
-  .dash .dash-matrix thead th:nth-child(n + 11) { grid-row: 4; margin-top: 8px; }
+  .dash .dash-matrix thead th:nth-child(n + 11) { grid-row: 4; margin-top: var(--sp-4); }
   /* L'angolo vuoto della seconda fila tiene la prima colonna, così le icone partono dalla seconda */
   .dash .dash-matrix thead tr::before { content: ''; grid-row: 4; grid-column: 1; }
   .dash .dash-matrix tbody tr:first-child > :nth-child(-n + 10) { grid-row: 2; }
@@ -197,8 +190,8 @@
   .dash .dash-matrix th[scope='row'], .dash .dash-matrix tbody tr::before { grid-column: 1; width: auto; align-self: center; }
   .dash .dash-matrix tbody tr::before {
     content: attr(data-label);
-    padding: 0 4px 0 0;
-    font: 600 11px/1 var(--ui);
+    padding: 0 var(--sp-2) 0 0;
+    font: 600 var(--fs-label)/1 var(--ui);
     text-align: right;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -208,23 +201,20 @@
   .dash .dash-matrix .dash-cell { height: 26px; display: grid; place-items: center; }
 }
 @media (min-width: 600px) and (max-width: 1099px) {
-  .analysis-tabs { margin-inline: -18px; padding-inline: 18px; scroll-padding-inline: 18px; }
+  .analysis-tabs { margin-inline: -18px; padding-inline: var(--sp-9); scroll-padding-inline: 18px; }
   /* Tablet: le sette schede stanno quasi tutte; si stringono un poco e riempiono la riga */
   .analysis-tabs [role='tablist'] { min-width: 100%; }
-  .analysis-tabs [role='tab'] { flex: 1 0 auto; justify-content: center; padding-inline: 10px; }
-  .analysis-tabs [role='tab'][aria-selected='true'], .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) { padding: 0 24px 0 10px; }
+  .analysis-tabs [role='tab'] { flex: 1 0 auto; justify-content: center; padding-inline: var(--sp-5); }
+  .analysis-tabs [role='tab'][aria-selected='true'], .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) { padding: 0 24px 0 var(--sp-5); }
   .analysis-tabs [role='tab'][aria-selected='true']#analysis-view-bonusMalus { padding-right: 72px; }
 
   /* Panoramica: Riassunto e Copertura a tutta larghezza, sotto Ruoli e Velocità affiancati */
   .dash { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; }
-  .dash-summary, .dash-coverage { grid-column: 1 / -1; grid-row: auto; }
-  .dash-roles { grid-column: 1; }
-  .dash-speed { grid-column: 2; }
+  .dash-summary, .dash-coverage, .dash-threats { grid-column: 1 / -1; grid-row: auto; }
+  .dash-roles, .dash.has-threats .dash-roles { grid-column: 1; grid-row: auto; }
+  .dash-speed, .dash.has-threats .dash-speed { grid-column: 2; grid-row: auto; }
   .dash-speed .dash-ladder { height: auto; flex: 1; min-height: 170px; }
 
-  /* Coaching: le strisce come sul desktop, ma alte quanto serve */
-  .coach-strip { height: auto; min-height: var(--step-h); }
-  .coach-step-problem { padding-block: 6px; -webkit-line-clamp: unset; }
 }
 
 /* ── Guide e finestre d'aiuto aperte dall'Analisi ── */
@@ -235,8 +225,8 @@
 }
 @media (max-width: 599px) {
   /* Tipi di team: nome e pallini su una riga, la descrizione sotto a tutta larghezza */
-  .tt-types { grid-template-columns: max-content minmax(0, 1fr); gap: 0 12px; }
-  .tt-types li > :nth-child(-n + 2) { padding-bottom: 4px; border-bottom: 0; }
+  .tt-types { grid-template-columns: max-content minmax(0, 1fr); gap: 0 var(--sp-6); }
+  .tt-types li > :nth-child(-n + 2) { padding-bottom: var(--sp-2); border-bottom: 0; }
   .tt-types li > .tt-caption { grid-column: 1 / -1; padding-top: 0; }
   .tt-pips { flex-wrap: wrap; }
 }
@@ -248,11 +238,11 @@
 
 /* ── Dita, non mouse: i tasti dell'Analisi e delle sue guide almeno 44 px ── */
 @media (pointer: coarse) and (max-width: 1099px) {
-  .analysis .dash-link { min-height: 44px; padding-inline: 8px; }
+  .analysis .dash-link { min-height: 44px; padding-inline: var(--sp-4); }
   .analysis .sum-line { min-height: 44px; }
   .help-dialog .help-close { width: 44px; height: 44px; }
   .help-dialog .help-nav [role='tab'] { min-height: 44px; }
   /* I "?" e le icone piccole restano piccoli da vedere; la zona che si tocca è di 44 px */
-  .analysis .help-button, .analysis .coach-alt { position: relative; }
-  .analysis .help-button::after, .analysis .coach-alt::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
+  .analysis .help-button { position: relative; }
+  .analysis .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
 }

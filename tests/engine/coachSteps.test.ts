@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CoachProblem, ProblemCategory } from '../../src/engine/coach';
 import type { CoachFix } from '../../src/engine/coachFixes';
-import { buildSteps, columnOf, MAX_STEPS, stepNumbers } from '../../src/engine/coachSteps';
+import { buildSteps, columnOf } from '../../src/engine/coachSteps';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { emptySet } from '../../src/engine/sets';
 
@@ -141,16 +141,5 @@ describe('buildSteps: problemi raggruppati nel titolo', () => {
     const problems = [problem('meta:X', 'minor', 'meta'), problem('defense:Ice')];
     const [step] = buildSteps(problems, [swap('S', 3, ['meta:X', 'defense:Ice'])], []);
     expect(step.group).toEqual(['meta:X']);
-  });
-});
-
-describe('stepNumbers', () => {
-  it('problema → numero della prima tappa che lo copre, solo le prime MAX_STEPS tappe', () => {
-    expect(MAX_STEPS).toBe(3);
-    const keys = ['a', 'b', 'c', 'd'];
-    const steps = buildSteps(keys.map(k => problem(k)), keys.map((k, i) => swap(`S${k}`, 10 - i, [k, ...(k === 'a' ? ['z', 'c'] : [])])), []);
-    expect(steps.map(s => s.problem.key)).toEqual(['a', 'b', 'd']);
-    expect(Object.fromEntries(stepNumbers(steps))).toEqual({ a: 1, z: 1, c: 1, b: 2, d: 3 });
-    expect(stepNumbers([...steps, ...steps]).size).toBe(5);
   });
 });

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { useT } from '../i18n/react';
 import { Icon } from './icons';
 
 /** Pokémon del meta per pagina: le colonne della tabella. */
@@ -9,19 +10,46 @@ export function MetaCount({ n, tone, label }: { n: number; tone: 'good' | 'warn'
   return <span className={`ct-pill ${n ? tone : 'zero'}`}>{n} {label}</span>;
 }
 
+/** L'ordine delle colonne: dalla minaccia gestita peggio (come la Panoramica) o dal più usato nel meta. */
+export type MetaOrder = 'threat' | 'usage';
+
+/**
+ * L'interruttore dell'ordine, "Uso · Minaccia", a sinistra sulla riga della legenda (dopo l'interruttore dell'efficacia):
+ * due pulsanti a pressione come le altre scelte piccole (.segmented). Cambiarlo riporta alla prima pagina (MetaFrame).
+ */
+export function MetaOrderSwitch({ order, onChange }: { order: MetaOrder; onChange: (order: MetaOrder) => void }) {
+  const t = useT();
+  return (
+    <span className="cm-order">
+      <span className="cm-order-label" aria-hidden="true">{t('cm.order')}</span>
+      <span className="segmented" role="group" aria-label={t('cm.order')}>
+        {(['usage', 'threat'] as const).map(key => (
+          <button key={key} type="button" aria-pressed={order === key} title={t(`cm.order.${key}.title`)} onClick={() => onChange(key)}>
+            {t(`cm.order.${key}`)}
+          </button>
+        ))}
+      </span>
+    </span>
+  );
+}
+
 /** Le etichette della navigazione tra le pagine: minacce per la Difesa, bersagli per l'Offesa. */
 export type MetaLabels = { pages: string; prev: string; next: string; page: (from: number, to: number) => string };
 
 /**
  * Cornice di Coverage meta per Difesa e Offesa: il corpo (la tabella) lo disegna chi chiama e riceve le pagine compatte
  * ("‹ 1/5 ›", da mettere nella casella in alto a sinistra della tabella) e il riepilogo (da mettere sulla riga sotto,
- * accanto alla legenda). Le righe arrivano già ordinate; la cornice taglia la pagina.
+ * accanto alla legenda). Le righe arrivano già ordinate (l'ordine scelto con MetaOrderSwitch); la cornice taglia la pagina.
  */
-export function MetaFrame<R>({ rows, summary, body, labels }: {
+export function MetaFrame<R>({ rows, summary, body, labels, resetKey }: {
   rows: R[]; summary: ReactNode; labels: MetaLabels;
   body: (shown: R[], pager: ReactNode, summary: ReactNode) => ReactNode;
+  /** Cambia (es. l'ordine scelto): si torna alla prima pagina, senza rimontare la tabella (il fuoco resta dov'è). */
+  resetKey?: string;
 }) {
   const [page, setPage] = useState(0);
+  const [seenKey, setSeenKey] = useState(resetKey);
+  if (seenKey !== resetKey) { setSeenKey(resetKey); setPage(0); }
   const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
   const current = Math.min(page, pages - 1);
   const shown = rows.slice(current * META_PAGE, (current + 1) * META_PAGE);

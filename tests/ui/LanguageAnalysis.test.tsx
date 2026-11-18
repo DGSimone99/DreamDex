@@ -24,10 +24,12 @@ describe('analisi in inglese', () => {
     await user.click(screen.getByRole('tab', { name: /^Analysis/ }));
     const fix = await within(analysis).findByRole('region', { name: 'To fix' }, { timeout: 5000 });
     expect(within(fix).getByRole('button', { name: /^Go to Coaching/ })).toBeInTheDocument();
-    expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent('In progress');
-    // I problemi stanno nel Coaching, nella mappa per area, con i titoli in inglese
+    expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent(/^Incomplete · [1-5]\/6$/);
+    // Il Coaching: le proposte in inglese, ogni riga col suo nome e i pulsanti in inglese
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));
-    expect(within(analysis).getByRole('region', { name: 'Suggestions' })).toBeInTheDocument();
-    expect(within(analysis).getByRole('group', { name: 'Defense' })).toHaveTextContent(/On defense: Uncovered|Uncovered on defense vs /);
+    const list = within(analysis).getByRole('region', { name: 'Proposals, most useful first' });
+    const rows = await within(list).findAllByRole('listitem', {}, { timeout: 5000 });
+    expect(rows[0].getAttribute('aria-label')).toMatch(/ (instead of .+|in a free slot|on .+), grade [+±]/);
+    expect(within(rows[0]).getByRole('button', { name: /^Apply: / })).toHaveTextContent('Apply');
   });
 });

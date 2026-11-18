@@ -1,32 +1,34 @@
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import type { EngineData } from '../engine/data';
 import type { MoveFix } from '../engine/moveFixes';
-import { ratingThreats, type TeamRating } from '../engine/rating';
-import { usageOf } from '../engine/stats';
+import type { TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
 import { useT } from '../i18n/react';
 import { AnalysisOverview } from './AnalysisOverview';
 import { AnalysisTabs } from './AnalysisTabs';
 import { resolveView, type AnalysisView, type TabView } from './analysisView';
-import type { AreaKey } from './AreaDetail';
+import type { AreaKey, KoFocus } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
 
 /**
- * I problemi del coaching che riguardano ogni area, nella striscia in fondo (regole, condizioni e minacce del meta restano
- * nella Panoramica e nel Coaching). Ruoli e Bonus prende i ruoli che mancano e i malus del Coaching (le ripetizioni).
+ * I problemi del coaching che riguardano ogni area, nella testata dell'area: le stesse aree delle righe del Coaching
+ * (columnOf), così i conti tornano. La Difesa prende anche le minacce del meta che nessuno regge, l'Offesa quelle che
+ * nessuno manda KO; Ruoli e Bonus i ruoli che mancano, le condizioni del tipo di team e i malus del Coaching (le ripetizioni), senza le
+ * debolezze in comune (le dice già la Difesa, come nel Coaching). Le regole restano nella Panoramica e nel Coaching.
  */
-const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], speed: [], bonusMalus: ['roles', 'redundancy'] };
-export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? []).filter(p => AREA_PROBLEMS[area].includes(p.category));
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit'], speed: [], bonusMalus: ['roles', 'conditions', 'redundancy'] };
+export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? [])
+  .filter(p => AREA_PROBLEMS[area].includes(p.category) && !p.key.startsWith('redundancy:sharedWeak:'));
 
 /**
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, onCollapseTeam, teamCollapsed = false }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, jump = null, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, onExport, onImproveSets, onCollapseTeam, teamCollapsed = false }: {
   /** Team ridotto: la Panoramica usa la densità ampia. */
   teamCollapsed?: boolean;
   /** Riduce il team (dal Riassunto della Panoramica). */
@@ -38,6 +40,10 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   /** Clic su una proposta del Coaching: il cambio di Pokémon o di mossa si applica subito (annullabile). */
   onApplyFix?: (fix: CoachFix) => void;
   onApplyMove?: (fix: MoveFix) => void;
+  /** Il Coaching senza problemi: copia il team per Showdown (come Esporta del team); vero se è andata. */
+  onExport?: () => Promise<boolean>;
+  /** Il Coaching con problemi che nessuna sostituzione risolve: apre Migliora i set. */
+  onImproveSets?: () => void;
   /** Aggiungere un Pokémon (posti liberi, Panoramica vuota): porta alla scheda Pokémon. */
   onAdd?: () => void;
   team: TeamSet[];
@@ -50,23 +56,38 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   /** Panoramica, Coaching o un'area del voto. */
   view: AnalysisView;
   onView: (view: AnalysisView) => void;
+  /**
+   * Una richiesta da fuori (il blocco "Contro il tuo team" della scheda Meta): apre la vista, la sottoscheda e il
+   * dettaglio acceso come un clic della Panoramica; `nonce` la ripete anche uguale.
+   */
+  jump?: { view: AnalysisView; sub?: string; focus?: KoFocus; nonce: number } | null;
   /** Membro aperto nella Panoramica (null: nessuno) e come cambiarlo. */
 }) {
   const tr = useT();
   // La sottoscheda scelta in ogni area, solo in memoria: tornando su un'area si ritrova (Generale se non c'è più)
   const [subTabs, setSubTabs] = useState<Partial<Record<AreaKey, string>>>({});
+  // Il problema scelto nella testata di un'area: il Coaching si apre su di lui (`nonce`: anche lo stesso problema di nuovo)
+  const [coachFocus, setCoachFocus] = useState<{ key: string; nonce: number } | null>(null);
   // Aprire un'area anche su una sua sotto-scheda (Copertura → Coverage tipi; i Ruoli → Bonus/Malus, sottoscheda Ruoli)
-  const openView = (next: AnalysisView, sub?: string) => {
+  // Il dettaglio da accendere nell'area che si apre (una minaccia della Panoramica): vale solo per quell'area, e si
+  // dimentica appena si passa a un'altra scheda (tornandoci non si riaccende)
+  const [areaFocus, setAreaFocus] = useState<{ area: TabView; focus: KoFocus } | null>(null);
+  const openView = (next: AnalysisView, sub?: string, focus?: KoFocus) => {
     const target = resolveView(next);
     const pick = target.sub ?? sub;
     if (pick && target.tab !== 'overview' && target.tab !== 'coaching') setSubTabs(tabs => ({ ...tabs, [target.tab]: pick }));
+    setAreaFocus(focus ? { area: target.tab, focus } : null);
     onView(target.tab);
   };
   // Una vista che non è una scheda (i Ruoli, da un link del voto o da uno stato vecchio): si apre la sua scheda con la sottoscheda
   const target = resolveView(view);
   useLayoutEffect(() => { if (target.sub) openView(view); }, [view]);
+  useLayoutEffect(() => { if (jump) openView(jump.view, jump.sub, jump.focus); }, [jump?.nonce]);
   const area = target.tab !== 'overview' && target.tab !== 'coaching' && rating ? target.tab : null;
   const showCoaching = view === 'coaching' && !!rating;
+  // Lasciato il Coaching, il problema scelto si dimentica (tornandoci dalle schede non si riaccende)
+  useEffect(() => { if (!showCoaching) setCoachFocus(null); }, [showCoaching]);
+  useEffect(() => { if (areaFocus && areaFocus.area !== (area ?? 'overview')) setAreaFocus(null); }, [area]);
   // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
   const problems = coaching?.problems ?? [];
   const serious = problems.filter(p => p.severity === 'serious').length;
@@ -76,15 +97,17 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     body = (
       <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed} formatId={data.formatId}
         picked={(area === target.tab ? target.sub : undefined) ?? subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))}
-        onCoaching={() => openView('coaching')} steps={advice?.steps ?? null} />
+        onCoaching={key => {
+          if (key) setCoachFocus(f => ({ key, nonce: (f?.nonce ?? 0) + 1 }));
+          openView('coaching');
+        }} advice={advice} initialFocus={areaFocus?.area === area ? areaFocus.focus : null} />
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
-    body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} metaOn={!data.ignoreMeta && !!data.stats}
-      threatUsage={Object.fromEntries([...ratingThreats(rating, data).map(th => th.name), ...(rating?.offense.coverageMeta?.rows ?? []).map(row => row.species)].map(name => [name, usageOf(data.stats, name)]))}
-      onOpen={column => { if (column !== 'rules') openView(column === 'offense' ? 'strength' : column); }}
+    body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
-      onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
+      onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} focus={coachFocus}
+      onExport={onExport} onImproveSets={onImproveSets} onOverview={() => openView('overview')} />;
   } else {
     body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} advice={advice} data={data}
       onView={openView} onAdd={onAdd} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />;

@@ -1,15 +1,15 @@
 /* Ruoli: la sottoscheda di Ruoli e Bonus (testata col tipo di team e i punti, tre fasce di voci su due colonne) e la guida */
 
 /* Cornice: alta quanto il pannello, mai la pagina che scorre */
-.rl-frame { display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; }
-.area-panel:has(> .rl-frame) { padding-top: 10px; padding-bottom: 12px; }
+.rl-frame { display: flex; flex-direction: column; gap: var(--sp-5); height: 100%; min-height: 0; }
+.area-panel:has(> .rl-frame) { padding-top: var(--sp-5); }
 
 /* Etichetta del livello: lo stesso colore in Generale, sottoschede e guida */
-.rl-tag { display: inline-block; flex: none; padding: 1px 7px; border-radius: 3px; font: 600 11px/1.4 var(--ui); letter-spacing: 0.02em; white-space: nowrap; color: var(--muted); background: var(--raised); }
-.rl-tag.essential { color: var(--text); background: var(--accent-2-soft); }
+.rl-tag { display: inline-block; flex: none; padding: 1px 7px; border-radius: 3px; font: 600 var(--fs-label)/1.4 var(--ui); letter-spacing: 0.02em; white-space: nowrap; color: var(--muted); background: var(--raised); }
+.rl-tag.essential { color: var(--text); background: color-mix(in srgb, var(--accent) 34%, var(--panel)); }
 .rl-tag.important { color: var(--text); background: var(--accent-soft); }
 .rl-tag.minor { color: var(--muted); background: var(--raised); }
-.rl-tag.ignored { color: var(--faint); background: none; border: 1px solid var(--line-soft); padding: 0 6px; }
+.rl-tag.ignored { color: var(--faint); background: none; border: 1px solid var(--line-soft); padding: 0 var(--sp-3); }
 
 /* Le misure della griglia, una per tutte le fasce: colonne uguali divise da un filo, e in ogni voce le stesse piste
    (nome largo quanto il nome più lungo, misurato dalla vista in --rl-name; chi la copre; punti a larghezza fissa).
@@ -23,54 +23,55 @@
 /* Testata: il tipo di team come titolo (la targa obliqua azzurra della carta del voto, più grande), "team incompleto"
    accanto se mancano membri, i punti dei Ruoli; il link alla guida a destra. Parte dal bordo sinistro delle fasce e finisce
    sul loro bordo destro */
-.rl-head { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
-.ad-panel .rl-title { display: inline-flex; align-items: center; gap: 10px; margin: 0; }
+.rl-head { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-9); }
+.ad-panel .rl-title { display: inline-flex; align-items: center; gap: var(--sp-5); margin: 0; }
 .rl-type {
-  display: inline-block; padding: 3px 12px; transform: skewX(-12deg);
+  display: inline-block; padding: 3px var(--sp-6); transform: skewX(-12deg);
   background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
-  font: 700 17px/1.2 var(--display); font-style: italic; color: var(--accent-ink); white-space: nowrap; cursor: help;
+  font: 700 var(--fs-title)/1.2 var(--display); font-style: italic; color: var(--accent-ink); white-space: nowrap; cursor: help;
 }
 .rl-type > span { display: inline-block; transform: skewX(12deg); }
-.rl-incomplete { font-size: 13px; color: var(--muted); }
-.ad-panel .rl-net { margin: 0; font: 600 14px/1 var(--ui); color: var(--muted); white-space: nowrap; }
-.rl-net b { margin-left: 2px; font: 800 18px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--faint); }
+.rl-incomplete { font-size: var(--fs-small); color: var(--muted); }
+.ad-panel .rl-net { margin: 0; font: 600 var(--fs-section)/1 var(--ui); color: var(--muted); white-space: nowrap; }
+.rl-net b { margin-left: var(--sp-1); font: 800 var(--fs-title-l)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--faint); }
 .rl-net.good b { color: var(--good); }
 .rl-net.bad b { color: var(--bad); }
-.rl-more { margin-left: auto; padding: 0; background: none; border: 0; color: var(--accent); font: 600 13px var(--ui); cursor: pointer; }
+.rl-more { margin-left: auto; padding: 0; background: none; border: 0; color: var(--accent); font: 600 var(--fs-small) var(--ui); cursor: pointer; }
 .rl-more:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* I punti, nelle voci e nei titoli delle fasce: stessa misura, stessa riga di base (scatola alta 18px, centrati);
    spunta e +N verdi, −N rossi, 0 e "manca" grigi */
 .rl-mark, .rl-pts {
   display: inline-flex; align-items: center; justify-content: flex-end; height: 18px;
-  font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--faint);
+  font: 800 var(--fs-title-s)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--faint);
 }
 .rl-mark .icon, .rl-pts .icon { width: 18px; height: 18px; stroke-width: 2.6; }
 .rl-mark.ok, .rl-mark.bonus, .rl-pts.ok, .rl-pts.bonus { color: var(--good); }
 .rl-mark.malus, .rl-pts.malus { color: var(--bad); }
-.rl-mark.missing, .rl-pts.missing { font: 600 12px/1 var(--ui); cursor: help; }
+.rl-mark.missing, .rl-pts.missing { font: 600 var(--fs-caption)/1 var(--ui); cursor: help; }
 
 /* Le fasce una sotto l'altra; se proprio non stanno (team strani su schermi bassi) scorrono loro, mai la pagina.
-   Ogni fascia prende lo spazio libero in proporzione alle sue righe (--n), fino al tetto delle righe */
-.rl-bands { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+   Ogni fascia prende lo spazio libero in proporzione alle sue righe (--n), fino al tetto delle righe; quello che avanza
+   (poche voci su uno schermo alto) va fra le fasce, così l'ultima finisce sul fondo del pannello e i livelli si staccano */
+.rl-bands { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: var(--sp-5); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .rl-band {
   --n: var(--n2, 1); --lv: var(--faint); --lv-ink: var(--muted); display: flex; flex-direction: column; flex: var(--n) 1 auto;
   max-height: calc(var(--rl-head) + var(--n) * var(--rl-row-max));
 }
-.rl-band.essential { --lv: var(--accent-2); --lv-ink: var(--accent-2-ink); }
-.rl-band.important { --lv: var(--accent); --lv-ink: var(--accent-ink); }
+.rl-band.essential { --lv: var(--accent); --lv-ink: var(--accent-ink); }
+.rl-band.important { --lv: color-mix(in srgb, var(--accent) 55%, var(--panel)); --lv-ink: color-mix(in srgb, var(--accent-ink) 75%, var(--panel)); }
 .rl-general.three .rl-band { --n: var(--n3, 1); }
 
-/* Titolo della fascia, semplice: un segno obliquo nel colore del livello, il nome nell'inchiostro del livello (magenta,
-   azzurro, grigio per i minori), il valore della fascia; sotto un filo appena tinto del livello. Niente fondo dietro al testo */
+/* Titolo della fascia, semplice: un segno obliquo nel colore del livello, il nome nell'inchiostro del livello (una scala
+   sola: ciano pieno, ciano più spento, grigio per i minori), il valore della fascia; sotto un filo appena tinto del livello. Niente fondo dietro al testo */
 .rl-band .rl-band-head {
-  flex: none; display: flex; align-items: center; gap: 10px;
+  flex: none; display: flex; align-items: center; gap: var(--sp-5);
   height: var(--rl-head); margin: 0; padding: 0 var(--rl-pad);
-  font: 400 12px/1.2 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted);
+  font: 400 var(--fs-caption)/1.2 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted);
   border-bottom: 1px solid color-mix(in srgb, var(--lv) 30%, var(--line));
 }
 .rl-band-head::before { content: ''; flex: none; width: 6px; height: 18px; margin-right: 1px; background: var(--lv); transform: skewX(-14deg); }
-.rl-band-title { font: 800 17px/1 var(--display); font-style: italic; color: var(--lv-ink); white-space: nowrap; }
+.rl-band-title { font: 800 var(--fs-title)/1 var(--display); font-style: italic; color: var(--lv-ink); white-space: nowrap; }
 /* Il malus degli importanti nel titolo ha il giallo delle sue voci */
 .rl-band.important .rl-band-head .rl-mark.malus { color: var(--warn); }
 
@@ -80,7 +81,7 @@
   column-gap: var(--rl-gap); margin: 0; padding: 0; list-style: none;
 }
 .rl-row {
-  position: relative; display: grid; grid-template-columns: min(var(--rl-name), 45%) minmax(0, 1fr) var(--rl-pts); column-gap: 14px; align-items: center;
+  position: relative; display: grid; grid-template-columns: min(var(--rl-name), 45%) minmax(0, 1fr) var(--rl-pts); column-gap: var(--sp-7); align-items: center;
   min-width: 0; margin: 0; padding: 0 var(--rl-pad); border-bottom: 1px solid color-mix(in srgb, var(--lv) 16%, var(--line-soft));
   transition: background-color 0.12s var(--ease);
 }
@@ -90,20 +91,20 @@
 /* Che manca: una tinta su tutta la cella (rossa per gli essenziali, gialla per gli importanti) */
 .rl-row.bad { background-image: linear-gradient(90deg, var(--bad-bg), color-mix(in srgb, var(--bad-bg) 45%, transparent)); }
 .rl-row.warn { background-image: linear-gradient(90deg, var(--warn-bg), color-mix(in srgb, var(--warn-bg) 45%, transparent)); }
-.rl-general.three .rl-row { column-gap: 8px; }
-.rl-general.three .rl-name { font-size: 13px; }
+.rl-general.three .rl-row { column-gap: var(--sp-4); }
+.rl-general.three .rl-name { font-size: var(--fs-small); }
 .rl-general.three .rl-box .mon-icon { scale: 0.85; }
 /* Su tre colonne chi la copre resta su una riga: con tante icone i posti si stringono e le icone si accostano */
-.rl-general.three .rl-by { flex-wrap: nowrap; gap: 0 2px; }
+.rl-general.three .rl-by { flex-wrap: nowrap; gap: 0 var(--sp-1); }
 .rl-general.three .rl-mon:not(.named) { flex: 0 1 var(--rl-slot); min-width: 16px; }
 .rl-general.three .rl-mon:not(.named) .rl-box { width: 100%; min-width: 0; overflow: visible; }
-.rl-name { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; color: var(--text); }
+.rl-name { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-section); font-weight: 600; color: var(--text); }
 /* I minori più quieti: nome grigio e un filo più piccolo; scoperti più tenui ancora */
-.rl-band.minor .rl-name { font-size: 13px; color: var(--muted); }
-.rl-general.three .rl-band.minor .rl-name { font-size: 12.5px; }
+.rl-band.minor .rl-name { font-size: var(--fs-small); color: var(--muted); }
+.rl-general.three .rl-band.minor .rl-name { font-size: var(--fs-caption); }
 .rl-row.off .rl-name { font-weight: 400; color: var(--faint); }
-.rl-by { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; min-width: 0; }
-.rl-nobody { font-size: 13px; color: var(--faint); }
+.rl-by { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--sp-2); min-width: 0; }
+.rl-nobody { font-size: var(--fs-small); color: var(--faint); }
 .rl-row.bad .rl-nobody { color: var(--bad); }
 .rl-row.warn .rl-nobody { color: var(--warn); }
 .rl-pts { justify-self: end; }
@@ -115,40 +116,40 @@
 .rl-mon { position: relative; display: inline-flex; align-items: center; min-width: 0; cursor: help; }
 .rl-box { display: grid; place-items: center; flex: none; width: var(--rl-slot); height: 30px; }
 .rl-box .mon-icon { image-rendering: pixelated; }
-.rl-mon-name { min-width: 0; margin-left: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text); }
-.rl-val { margin-left: 4px; font: 600 11px/1 var(--ui); color: var(--warn); font-variant-numeric: tabular-nums; }
-.rl-mon:not(.named) .rl-val { position: absolute; right: -2px; bottom: -2px; margin: 0; padding: 1px 2px; border-radius: 2px; background: var(--panel); }
+.rl-mon-name { min-width: 0; margin-left: var(--sp-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); font-weight: 600; color: var(--text); }
+.rl-val { margin-left: var(--sp-2); font: 600 var(--fs-label)/1 var(--ui); color: var(--warn); font-variant-numeric: tabular-nums; }
+.rl-mon:not(.named) .rl-val { position: absolute; right: -2px; bottom: -2px; margin: 0; padding: 1px var(--sp-1); border-radius: 2px; background: var(--panel); }
 .rl-mon.weak .rl-box { opacity: 0.45; filter: grayscale(0.6); }
 .rl-mon.weak .rl-mon-name { color: var(--muted); }
 
 /* Guida: tessere dei livelli, tabella dei tipi di team */
-.rl-guide-tiles .guide-tile-head .rl-tile-val { font: italic 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.rl-guide-tiles .guide-tile-head .rl-tile-val { font: italic 700 var(--fs-title-s)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .rl-guide-tiles li.essential .rl-tile-val { color: var(--bad); }
 .rl-guide-tiles li.minor .rl-tile-val { color: var(--good); }
 .rl-guide-tiles li.ignored .rl-tile-val { color: var(--faint); }
 
-.rl-types { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
-.rl-types thead th { padding: 0 4px 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); text-align: center; white-space: nowrap; }
+.rl-types { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--fs-small); }
+.rl-types thead th { padding: 0 var(--sp-2) 5px; text-align: center; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .rl-types thead th:first-child { width: 190px; text-align: left; padding-left: 0; }
 .rl-types thead th.now { color: var(--text); }
-.rl-types tr.rl-fam th { padding: 6px 0 2px; font: 700 11px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); text-align: left; }
+.rl-types tr.rl-fam th { padding: var(--sp-3) 0 var(--sp-1); font: 700 var(--fs-label)/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); text-align: left; }
 .rl-types tbody th[scope='row'] { padding: 0; height: 23px; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rl-types td { padding: 1px 4px; text-align: center; border-bottom: 1px solid var(--line-soft); }
+.rl-types td { padding: 1px var(--sp-2); text-align: center; border-bottom: 1px solid var(--line-soft); }
 .rl-types tbody th[scope='row'] { border-bottom: 1px solid var(--line-soft); }
 .rl-types .now { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .rl-types thead th.now { box-shadow: inset 0 -2px 0 var(--accent); }
-.rl-types .rl-tag { padding: 0 6px; font-size: 11px; }
+.rl-types .rl-tag { padding: 0 var(--sp-3); font-size: var(--fs-label); }
 .rl-dash { color: var(--faint); }
 
 /* Portatili bassi: righe più basse (prima di tutto il resto), poi testata e fasce più strette */
 @media (min-width: 1100px) and (max-height: 760px) {
   .rl-general { --rl-row-min: 32px; --rl-head: 27px; }
-  .rl-frame { gap: 8px; }
-  .rl-bands { gap: 7px; }
+  .rl-frame { gap: var(--sp-4); }
+  .rl-bands { gap: var(--sp-3); }
 }
 @media (min-width: 1100px) and (max-height: 640px) {
-  .area-panel:has(> .rl-frame) { padding-top: 6px; padding-bottom: 8px; }
+  .area-panel:has(> .rl-frame) { padding-top: var(--sp-3); padding-bottom: var(--sp-5); }
   .rl-general { --rl-row-min: 27px; --rl-head: 25px; }
-  .rl-frame { gap: 6px; }
+  .rl-frame { gap: var(--sp-3); }
   .rl-box { height: 26px; }
 }

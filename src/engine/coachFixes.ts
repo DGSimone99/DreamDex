@@ -8,7 +8,7 @@ import type { Format } from './format';
 import { improveReplacements, type Replacement } from './replace';
 import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
-import { dataKey, idOf, isCollectingGains, rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type SwapReport, type TeamGain } from './teamGain';
+import { dataKey, idOf, isCollectingGains, rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type AreaSnapshot, type SwapReport, type TeamGain } from './teamGain';
 
 /** Un cambio proposto dal Coaching: sostituzione di un membro o aggiunta a un team incompleto. */
 export interface CoachFix {
@@ -24,6 +24,8 @@ export interface CoachFix {
   solves: string[];
   /** Chiavi dei problemi che restano ma più piccoli (meno tipi scoperti, da grave a minore…). */
   reduces: string[];
+  /** I valori delle aree col cambio (assente senza voto): il "da → a" delle righe del Coaching. */
+  after?: AreaSnapshot;
 }
 
 /**
@@ -156,12 +158,14 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
       }
     }
     for (const c of kept) {
-      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain?.gain ?? 0, solves: c.solves, reduces: c.reduces });
+      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain?.gain ?? 0, solves: c.solves, reduces: c.reduces,
+        ...(c.teamGain?.after && { after: c.teamGain.after }) });
     }
   });
   if (team.length < 6) {
     for (const c of keepSwaps(rankedAdditions(team, format, data, ADD_POOL, lang), x => changes(withCandidate(team, x.set, null)), MAX_ADDS)) {
-      fixes.push({ kind: 'add', species: c.species, set: c.set, index: null, member: null, gain: c.teamGain!.gain, solves: c.solves, reduces: c.reduces });
+      fixes.push({ kind: 'add', species: c.species, set: c.set, index: null, member: null, gain: c.teamGain!.gain, solves: c.solves, reduces: c.reduces,
+        ...(c.teamGain?.after && { after: c.teamGain.after }) });
     }
   }
   return fixes.sort((a, b) => b.gain - a.gain);

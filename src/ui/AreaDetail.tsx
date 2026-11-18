@@ -14,16 +14,18 @@ import { offenseTabs } from './offense/offenseTabs';
 import { rolesTab } from './roles/rolesTabs';
 import { speedTabs } from './speed/speedTabs';
 
-/** Una scheda del dettaglio: etichetta, valore e contenuto. */
+/** Una scheda del dettaglio: etichetta, valore (per lo screen reader) e contenuto. */
 export type T = ReturnType<typeof useT>;
 
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode;
-  /** Le schede con l'etichetta di efficacia nelle caselle: a destra nella striscia l'interruttore "Solo superefficaci" / "Solo efficacia". */
+  /** Le schede con l'etichetta di efficacia nelle caselle: nel pannello l'interruttore "Solo superefficaci" / "Solo efficacia". */
   effSide?: EffSide;
-  /** Segni dopo il valore (i Ruoli: il +N dei minori) e la frase per lo screen reader col valore detto a parole. */
-  marks?: ReactNode;
-  /** Il colore del valore (i Ruoli: rosso se manca un essenziale, giallo se mancano importanti). */
-  valueTone?: 'bad' | 'warn';
+  /** La Velocità con Trick Room nel team: chi lo porta. Nel pannello l'interruttore "Trick Room · chi" (le barre in Trick Room). */
+  roomBy?: string[];
+  /**
+   * Il valore detto a parole per lo screen reader (i Ruoli: coperti, mancanti e punti). Il valore non si scrive sul
+   * selettore delle sottoschede: senza `describe` lo screen reader legge `value` nella descrizione della scheda.
+   */
   describe?: string;
   /** La sezione della guida che apre il "?" quando la scheda la condivide con un'altra (l'Offesa: una guida per le due Coverage). */
   guideKey?: string;
@@ -39,10 +41,15 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   /** Formato scelto (la guida dell'Offesa mostra i bersagli del suo Pokédex, e Tera / mosse Z solo dove ci sono). */
   formatId?: FormatId;
   /**
-   * Interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia", a destra nella striscia delle sottoschede)
+   * Interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia", in alto nel pannello della sottoscheda)
    * acceso: le caselle senza etichetta si spengono (restano al loro posto). Uno per area.
    */
   effOnly?: boolean;
+  /**
+   * Interruttore Trick Room della Velocità acceso (in alto nel pannello, solo se un membro ha Trick Room): le barre dicono
+   * prima di quanti del meta muove ogni membro in Trick Room. Acceso all'inizio, poi resta per la sessione come lo mette l'utente.
+   */
+  trickRoom?: boolean;
   /**
    * Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo; Ruoli: "Tabella
    * dei ruoli" apre la pagina Ruoli per tipo di team).
@@ -58,11 +65,19 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   /** Spegne il dettaglio evidenziato. */
   clearFocus?: () => void }
 
+/**
+ * La famiglia principale del membro al posto `slot` ('attack', 'wall' o null), la stessa regola dei Ruoli. La usano le
+ * Generali: nella Velocità i muri restano grigi, nell'Offesa il conto dei muri è neutro, nella Difesa quello degli attaccanti.
+ */
+export const familyAt = (ctx: AreaContext, slot: number) => ctx.analysis.needs.primary[slot] ?? null;
+
 /** Il dettaglio di una tessera: che tabella, quale membro (posto nel team) e quale fascia (KO in un colpo o in due). */
 /** `band`: OHKO, 2HKO o 'rest' (quelli che il membro non manda KO in due colpi). */
 /** Nella Difesa (kind 'dtypes' / 'dmeta') `band` è il pezzo della barra: 'held' (3HKO+), 2HKO o OHKO. */
+/** `threat` (dalla carta Minacce del meta della Panoramica): in Coverage meta della Difesa o dell'Offesa la colonna di quella minaccia, prima nell'ordine e accesa. */
 export type KoFocus = { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' | 'rest' }
-  | { kind: 'dtypes' | 'dmeta'; slot: number; band: HoldPiece };
+  | { kind: 'dtypes' | 'dmeta'; slot: number; band: HoldPiece }
+  | { kind: 'threat'; side: 'defense' | 'offense'; species: string };
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
@@ -104,7 +119,7 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang, ctx: AreaContext): 
     // Senza i punti dei ruoli, come la scheda: quelli stanno nella sottoscheda Ruoli
     key: 'all', label: t('area.bonusMalus'), value: signed(bonusMalusTotals(rating).net),
     panel: <BonusMalusView rating={rating} lang={lang} t={t} onCatalogue={ctx.guide && (() => ctx.guide!('bonus'))} />,
-    // Il "?" della scheda sta qui, nella striscia, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
+    // Il "?" della scheda sta qui, nella testata dell'area, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
     help: t('help.view.bonusMalus').split(/\n/).map(line => <p key={line}>{line}</p>),
     guidePages: [
       { key: 'bonus', label: t('catalogue.allBonus'), content: <CatalogueList lang={lang} kind="bonus" /> },

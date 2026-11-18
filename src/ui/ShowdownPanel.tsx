@@ -8,20 +8,24 @@ import { reviewImport, type ImportReview } from './importReview';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
-export function ShowdownPanel({ team, format, tera = true, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
-  onImport: (team: TeamSet[], again?: boolean) => void }) {
+export function ShowdownPanel({ team, format, tera = true, onImport, onExport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
+  onImport: (team: TeamSet[], again?: boolean) => void;
+  /** Esporta il testo per Showdown e dice "team pronto" con l'avviso (DoneToast, lo stesso del Coaching); senza, copia e basta */
+  onExport?: () => Promise<boolean> }) {
   const t = useT();
   const lang = useLang();
   const [text, setText] = useState('');
   // Esito dell'import da dire in una finestra: cosa lo ferma, o le mosse non imparabili (con i set già importati)
   const [review, setReview] = useState<{ review: ImportReview; sets: TeamSet[] } | null>(null);
-  // Esporta: il testo Showdown o il link vanno negli appunti; sotto la linguetta un fumetto dice per un attimo cosa si è copiato
+  // Esporta: il testo Showdown o il link vanno negli appunti. Il testo lo dice l'avviso "Team copiato per Showdown" col voto
+  // (onExport, lo stesso del Coaching), il link un fumetto sotto la linguetta; la linguetta resta verde con la spunta un attimo
   const [copied, setCopied] = useState<'text' | 'link' | null>(null);
   // Sotto il mouse (o col fuoco) il fumetto dice prima cosa farà il clic
   const [hint, setHint] = useState<'text' | 'link' | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const copy = async (kind: 'text' | 'link') => {
-    if (!await copyText(kind === 'text' ? exportShowdown(team, { tera }) : shareUrl(team, format))) return;
+    const ok = kind === 'text' && onExport ? await onExport() : await copyText(kind === 'text' ? exportShowdown(team, { tera }) : shareUrl(team, format));
+    if (!ok) return;
     setCopied(kind);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(null), 1800);
@@ -85,7 +89,8 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
               <Icon name={copied === 'link' ? 'check' : 'link'} />
             </button>
           </div>
-          {copied ? <span key={copied} className="export-note done" role="status"><Icon name="check" />{t(copied === 'text' ? 'showdown.quickCopied' : 'showdown.linkCopied')}</span>
+          {copied && (copied === 'link' || !onExport) ? <span key={copied} className="export-note done" role="status"><Icon name="check" />{t(copied === 'text' ? 'showdown.quickCopied' : 'showdown.linkCopied')}</span>
+            : copied ? null
             : hint && <span key={hint} id="export-note" className="export-note">{t(hint === 'text' ? 'showdown.quickCopyTitle' : 'showdown.copyLinkTitle')}</span>}
         </div>
       )}

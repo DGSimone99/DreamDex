@@ -39,6 +39,7 @@ import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
+import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -53,13 +54,19 @@ interface Props {
   onReplace: (index: number) => void;
   /** Membro tolto con la ×: se manca, si aggiorna solo il team (senza Annulla). */
   onRemove?: (index: number) => void;
+  /** Candidato trascinato dalla lista Pokémon: sopra un membro lo sostituisce (index), sopra uno slot vuoto lo aggiunge (null). */
+  onDropSet?: (index: number | null, set: TeamSet) => void;
   onAllowMultipleMegas: () => void;
   /** Membro aperto nell'editor (null se nessuno). */
   onOpenChange?: (index: number | null) => void;
   /** Ogni cambio chiude l'editor aperto (es. si sceglie una sezione nella barra laterale). */
   closeSignal?: number;
+  /** Ogni cambio apre la finestra Migliora i set (dal Coaching, quando nessuna sostituzione singola risolve i problemi). */
+  improveSignal?: number;
   /** Team compresso: ogni carta diventa la sola icona del box (con il puntino degli avvisi). */
   collapsed?: boolean;
+  /** Completa team aperto o chiuso: intanto la pagina spegne il suo magenta (resta solo l'azione migliore del pannello). */
+  onFillOpenChange?: (open: boolean) => void;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
@@ -68,8 +75,10 @@ interface Props {
   onAddClick?: () => void;
   /** Importa / Esporta: a destra nella testata, prima di Svuota team. */
   io?: ReactNode;
-  /** Team salvati: è la targa stessa del team (con la freccia) che apre il menu; riceve il contenuto della targa. */
-  saved?: (plate: ReactNode) => ReactNode;
+  /** Team salvati: una linguetta sua nella barra a destra, prima di Importa ed Esporta. */
+  saved?: ReactNode;
+  /** Sulla targa, dopo il numero: il nome del team salvato in uso. */
+  plateName?: ReactNode;
   /** Proposta di mossa del coach: a ogni nonce nuovo apre l'editor del membro e la mostra con Applica / Annulla. */
   proposal?: MoveProposal | null;
   /** Proposta chiusa: applicata (true) o annullata (false). */
@@ -305,7 +314,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
   const warns: Alert[] = warnings.map(text => ({ level: 'warn', text, title: hint(text) }));
   return (
-    // La carta non è un <details>: il clic apre l'editor (stato del team), e stella, × e avvisi stanno accanto al
+    // La carta non è un <details>: il clic apre l'editor (stato del team), e lucchetto, × e avvisi stanno accanto al
     // pulsante della carta, non dentro (niente controlli dentro un altro controllo)
     <div
       className={`slot filled${open ? ' open' : ''}${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
@@ -336,7 +345,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           card.current?.focus({ preventScroll: true, focusVisible: false });
         }}
         onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
-        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDrag('over'); }}
+        onDragOver={e => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = draggedSet() ? 'copy' : 'move'; onDrag('over'); }}
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
         onDragEnd={() => onDrag('end')}
       >
@@ -389,7 +398,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           title={tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff')}
           onClick={() => onChange({ ...set, favorite: !set.favorite })}
         >
-          <Icon name="star" filled={!!set.favorite} />
+          <Icon name="lock" filled={!!set.favorite} />
         </button>
         <button
           type="button"
@@ -543,20 +552,33 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
  * Solo il primo slot libero dice "Aggiungi un Pokémon": gli altri sono cornici tratteggiate più tenui, senza scritta
  * (ma col nome per i lettori di schermo), così l'occhio va a un punto solo.
  */
-function EmptySlot({ onClick, quiet = false }: { onClick: () => void; quiet?: boolean }) {
+function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onDrop }: {
+  onClick: () => void;
+  quiet?: boolean;
+  /** Un candidato della lista trascinato qui sopra: al rilascio si aggiunge. */
+  dropTarget?: boolean;
+  onDragOver: () => void;
+  onDrop: () => void;
+}) {
   const tr = useT();
+  // Solo i candidati della lista si posano su uno slot vuoto (i membri del team si riordinano tra loro)
+  const drop = {
+    onDragOver: (e: React.DragEvent) => { if (!draggedSet()) return; e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; onDragOver(); },
+    onDrop: (e: React.DragEvent) => { if (!draggedSet()) return; e.preventDefault(); onDrop(); },
+  };
+  const cls = `slot empty${quiet ? ' quiet' : ''}${dropTarget ? ' drop-target' : ''}`;
   if (quiet) {
-    return <button type="button" className="slot empty quiet" aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} />;
+    return <button type="button" className={cls} aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop} />;
   }
   return (
-    <button type="button" className="slot empty" title={tr('team.emptyAddTitle')} onClick={onClick}>
+    <button type="button" className={cls} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop}>
       <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
       <span className="empty-label">{tr('team.emptyAdd')}</span>
     </button>
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -589,8 +611,24 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     if (openIndex !== null) animated(() => setOpenIndex(to));
     focusCard(to);
   };
-  // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione
+  // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione.
+  // `from` -1: un candidato trascinato dalla lista Pokémon (teamDrag.ts); `over` oltre i membri = uno slot vuoto
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
+  // Il trascinamento dalla lista finisce fuori dal team (o annullato con Esc): niente slot evidenziato
+  useEffect(() => onSetDrag(set => { if (!set) setDrag(d => (d?.from === -1 ? null : d)); }), []);
+  const dropSet = (i: number) => {
+    const set = draggedSet();
+    endSetDrag();
+    setDrag(null);
+    if (!set) return;
+    // La stessa specie già in un altro slot non entra due volte (la lista può non essersi ancora aggiornata)
+    if (team.some((s, j) => j !== i && s.species === set.species)) return;
+    setOpenIndex(null);
+    if (onDropSet) onDropSet(i < team.length ? i : null, set);
+    else if (i < team.length) onChange(team.map((s, j) => (j === i ? set : s)));
+    else onAdd(set);
+  };
+  const overSlot = (i: number) => setDrag(d => (d ? (d.over !== i ? { ...d, over: i } : d) : draggedSet() ? { from: -1, over: i } : d));
   // Per i lettori di schermo: dove è finito il membro spostato
   const [moveNote, setMoveNote] = useState('');
   const move = (from: number, to: number) => {
@@ -611,7 +649,22 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [clearHint, setClearHint] = useState(false);
   const clearNote = useId();
   const presetsButton = useRef<HTMLButtonElement>(null);
-  const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
+  // Aperta da fuori (il Coaching): chiudendo, il fuoco torna dove era (il pulsante del Coaching), non sul pulsante del team
+  const reopenFocus = useRef<HTMLElement | null>(null);
+  const closeConfirm = () => {
+    setConfirmPresets(false);
+    const back = reopenFocus.current;
+    reopenFocus.current = null;
+    (back?.isConnected ? back : presetsButton.current)?.focus();
+  };
+  const lastImprove = useRef(improveSignal);
+  useEffect(() => {
+    if (improveSignal === lastImprove.current) return;
+    lastImprove.current = improveSignal;
+    if (!team.length) return;
+    reopenFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setConfirmPresets(true);
+  }, [improveSignal]); // eslint-disable-line react-hooks/exhaustive-deps
   // Team pieno e fermo da un secondo e mezzo: Migliora i set si prepara in sottofondo, al clic la finestra è già pronta
   useEffect(() => {
     if (team.length < 6 || !data.stats) return;
@@ -634,6 +687,11 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const canFill = team.length < 6 && !!data.stats;
   // Team pieno o senza statistiche: il pannello si chiude (e non si riapre da solo dopo)
   useEffect(() => { if (!canFill) setFilling(false); }, [canFill]);
+  const fillOpenChange = useRef(onFillOpenChange);
+  fillOpenChange.current = onFillOpenChange;
+  useEffect(() => { fillOpenChange.current?.(filling); }, [filling]);
+  // Smontando il team col pannello aperto la pagina non resta spenta
+  useEffect(() => () => fillOpenChange.current?.(false), []);
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   // Una forma senza il suo strumento non è Mega (legalTeam.ts)
@@ -649,8 +707,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     move: (i, delta) => move(i, i + delta),
     drag: (i, phase) => {
       if (phase === 'start') setDrag({ from: i, over: null });
-      else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
-      else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
+      else if (phase === 'over') overSlot(i);
+      else if (phase === 'drop') { if (draggedSet()) dropSet(i); else { if (drag) move(drag.from, i); setDrag(null); } }
       else setDrag(null);
     },
     paste: (i, next, review) => {
@@ -685,22 +743,21 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
   }), []);
-  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)").
-  // Dentro il menu dei team salvati (un <summary>) un titolo non conta come titolo: lì il disegno resta uguale ma è nascosto
-  // ai lettori di schermo, e il titolo vero sta subito prima, fuori dal menu (solo per loro)
+  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)")
   const title = t(lang, 'team.title', { n: team.length });
-  const plateTitle = (inMenu: boolean) => (
-    <h2 aria-hidden={inMenu || undefined}>
-      <span aria-hidden="true">Team</span>
-      <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
-      {!inMenu && <span className="visually-hidden">{title}</span>}
-    </h2>
-  );
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
-        {/* La targa del team: la parola Team e quanti sono. Con i team salvati la targa è anche il loro menu (freccia ▾) */}
-        {saved ? <><h2 className="visually-hidden">{title}</h2>{saved(plateTitle(true))}</> : <div className="team-plate">{plateTitle(false)}</div>}
+        {/* La targa del team: la parola Team, quanti sono e il nome del team salvato in uso (i team salvati hanno la loro
+            linguetta a destra) */}
+        <div className="team-plate">
+          <h2>
+            <span aria-hidden="true">Team</span>
+            <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
+            <span className="visually-hidden">{title}</span>
+          </h2>
+          {plateName}
+        </div>
         {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
         <div className="team-guide-slot">
           {canFill ? (
@@ -746,10 +803,11 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati, poi Showdown (Import/Export e Copia team attaccate),
-            poi Svuota a parte */}
+        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati e Showdown (Importa / Esporta) come linguette
+            attaccate, poi Svuota a parte */}
         <div className="team-quick">
-            <div className="team-tabs">
+          <div className="team-tabs">
+            {saved}
             {io}
           </div>
           {/* Svuota: il cestino, staccato da Importa ed Esporta da una barretta; il fumetto come quello di Esporta */}
@@ -771,7 +829,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
-      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
+      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
+        // Uscendo dalla fila del team lo slot evidenziato si spegne
+        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrag(d => (d && d.over !== null ? { ...d, over: null } : d)); }}>
         {team.map((set, i) => (
           <TeamSlot
             key={keys[i]}
@@ -792,7 +852,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (
-          <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }} />
+          <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }}
+            dropTarget={drag?.from === -1 && drag.over === team.length + i}
+            onDragOver={() => overSlot(team.length + i)} onDrop={() => dropSet(team.length + i)} />
         ))}
       </div>
     </section>

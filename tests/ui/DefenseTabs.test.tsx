@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
@@ -13,6 +13,13 @@ import { moveAttackMultiplier } from '../../src/engine/types';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
+
+/** Ordine Minaccia di Coverage meta (quello di partenza), la regola della Panoramica: prima le minacce che nessuno regge del
+ *  tutto, poi quelle che regge uno solo, poi le altre; dentro, la più usata. */
+const threatOrder = <R extends { species: string; weight: number; heldBy: { partial: boolean }[] }>(rows: R[]) => {
+  const n = (r: R) => Math.min(2, r.heldBy.filter(h => !h.partial).length);
+  return [...rows].sort((a, b) => n(a) - n(b) || b.weight - a.weight || a.species.localeCompare(b.species));
+};
 
 const team = [
   { ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush', 'Close Combat', 'Ice Spinner', 'Rapid Spin'], evs: { atk: 252, spe: 252 } },
@@ -33,7 +40,7 @@ describe('Difesa: Generale e guida', () => {
   it('Generale: niente tessere sotto la tabella', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
     expect(document.querySelector('.def-tile')).toBeNull();
-    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: /^(Sostenibilità|Coverage tipi|Coverage meta)/ })).toBeNull();
+    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: /^(Recupero|Coverage tipi|Coverage meta)/ })).toBeNull();
   });
 
   it('senza meta: nessuna sezione Coverage meta nella guida', async () => {
@@ -46,11 +53,11 @@ describe('Difesa: Generale e guida', () => {
   it('il "?" della sottoscheda aperta apre la guida su quella sezione; Esc riporta il focus al "?"', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
-    const help = screen.getByRole('button', { name: 'Come funziona Sostenibilità' });
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
+    const help = screen.getByRole('button', { name: 'Come funziona Recupero' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Difesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Sostenibilità' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tab', { name: 'Recupero' })).toHaveAttribute('aria-selected', 'true');
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Mosse che assorbono');
     // Niente più la riga "Regge poco" né la sezione del voto
     expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/Regge poco|Il voto/);
@@ -62,23 +69,23 @@ describe('Difesa: Generale e guida', () => {
   it('cambiare sezione nella guida non sposta la sottoscheda; alla chiusura il focus torna al "?"', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
-    await user.click(screen.getByRole('button', { name: 'Come funziona Sostenibilità' }));
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
+    await user.click(screen.getByRole('button', { name: 'Come funziona Recupero' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Difesa' });
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
     expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{Escape}');
-    expect(screen.getByRole('tab', { name: /^Sostenibilità/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: 'Come funziona Sostenibilità' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: /^Recupero/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Come funziona Recupero' })).toHaveFocus();
   });
 });
 
-describe('Difesa: Robustezza e Sostenibilità', () => {
-  it('Sostenibilità: una riga per membro con perdita, recupero e fonti', async () => {
+describe('Difesa: Robustezza e Recupero', () => {
+  it('Recupero: una riga per membro con perdita, recupero e fonti', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     const panel = screen.getByRole('tabpanel');
     // Gholdengo ha Recover (50%): il recupero è pieno o, se regge poco, vale metà (+25%) e lo dice
     const gholdengo = rating.defense.members[1].sustainParts;
@@ -97,7 +104,7 @@ describe('Difesa: recupero a metà', () => {
     const rating = rateTeam(zam, fixtureData, 'it')!;
     expect(rating.defense.members[0].sustainParts.halved).toBe(true);
     renderIt(<AreaView rating={rating} area="defense" team={zam} analysis={analyzeTeam(zam, fixtureData)} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     const chip = document.querySelector('.ad-halved')!;
     expect(chip.getAttribute('title')).toBe('Recupero ridotto: regge pochi colpi');
     expect(chip.getAttribute('title')).not.toMatch(/3HKO/);
@@ -147,10 +154,10 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
-  it('in fondo, come nell\'Offesa: Copertura di ogni tipo e Il migliore (chi lo regge meglio); i buchi segnati in testata', async () => {
+  it('in fondo, come nell\'Offesa: Team Coverage di ogni tipo e Il migliore (chi lo regge meglio); i buchi segnati in testata', async () => {
     const { rating, table } = await openTypes();
     const rows = rating.defense.coverageTypes.rows;
-    const level = within(table).getByRole('row', { name: /^Copertura/ });
+    const level = within(table).getByRole('row', { name: /^Team Coverage/ });
     expect(within(level).getAllByRole('cell').map(c => c.textContent)).toEqual(rows.map(r => `${r.level}%`));
     const best = within(table).getByRole('row', { name: /^Il migliore/ });
     const typed = rating.defense.typed;
@@ -204,11 +211,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes();
     const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
-    // Sta a destra nella striscia delle sottoschede, non nella tabella né nella striscia dei problemi; la tabella ha di nuovo "Pokémon"
+    // Sta in alto nel pannello, non nella tabella né nella testata dell'area; la tabella ha di nuovo "Pokémon"
     expect(sw.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(table).not.toContainElement(sw);
     expect(table.querySelector('thead th.def-mon-h')).toHaveTextContent(/^Pokémon$/);
-    expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
+    expect(document.querySelector('.area-head .eff-switch')).toBeNull();
     expect(table.querySelector('.eff-dim')).toBeNull();
     await user.click(sw);
     expect(sw).toHaveAttribute('aria-checked', 'true');
@@ -223,8 +230,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
     expect(metaSwitch.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
-    // Sulle sottoschede senza etichette (Sostenibilità) l'interruttore non c'è
-    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    // Sulle sottoschede senza etichette (Recupero) l'interruttore non c'è
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     expect(screen.queryByRole('switch')).toBeNull();
   });
 
@@ -244,7 +251,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const threats = new Map(metaThreats(fixtureData).map(t => [t.set.species, t.set]));
-    const expected = [...rating.defense.coverageMeta!.rows].sort((a, b) => a.level - b.level || b.weight - a.weight).slice(0, 8);
+    const expected = threatOrder(rating.defense.coverageMeta!.rows).slice(0, 8);
     const table = within(screen.getByRole('tabpanel')).getByRole('table');
     let checked = 0;
     team.forEach((set, m) => {
@@ -262,14 +269,14 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Team Coverage', async () => {
+  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (prima nessuno, poi uno solo; a pari la più usata); danno colorato e riga Team Coverage', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const panel = within(screen.getByRole('tabpanel'));
     const rows = rating.defense.coverageMeta!.rows;
-    const expected = [...rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
+    const expected = threatOrder(rows);
     const names = () => panel.getAllByRole('columnheader').slice(1).map(h => h.getAttribute('aria-label'));
     expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
     // Ogni casella: il danno coi colori di Coverage tipi (4HKO+ sotto un terzo, 3HKO sotto la metà, 2HKO), KO rosso per chi non c'è in heldBy
@@ -308,7 +315,9 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
     // La legenda corta (KO e le tre fasce col loro %, come Coverage tipi), niente conteggi
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
-    expect(document.querySelector('.def-frame > .rob-legend > .area-legend:first-child')).toHaveTextContent('KO< 33%33–49%50–99%');
+    // Prima l'ordine (Uso · Minaccia), poi la legenda
+    expect(document.querySelector('.def-frame > .rob-legend > .cm-order:first-child')).toHaveTextContent('OrdineUsoMinaccia');
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend')).toHaveTextContent('KO< 33%33–49%50–99%');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));
@@ -324,18 +333,18 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
 describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   const subTabs = () => within(screen.getByRole('tablist', { name: /Difesa/ })).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent);
 
-  it('sottoschede nell\'ordine Generale, Coverage tipi, Sostenibilità, Coverage meta (niente Robustezza)', () => {
+  it('sottoschede nell\'ordine Generale, Coverage tipi, Recupero, Coverage meta (niente Robustezza)', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Sostenibilità']);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Coverage meta', 'Recupero']);
     expect(document.body.textContent).not.toMatch(/Robustezza/);
   });
 
   it('senza meta niente Coverage meta, stesso ordine', () => {
     renderIt(<AreaView rating={noMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Recupero']);
   });
 
-  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Difesa come quanto porta ogni membro (Sostenibilità dentro)', () => {
+  it('Tipi e Meta sono barre a pezzi (Regge, 2HKO, OHKO) col conto di quanti ne regge; Difesa come quanto porta ogni membro (Recupero dentro)', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
@@ -356,18 +365,63 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(document.querySelector('.def-weak')).toBeNull();
   });
 
-  it('la Difesa del team in fondo ha la barra col colore della soglia', () => {
+  it('testate Tipi e Meta con lo scudo e solo la parola (niente frase)', () => {
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const types = screen.getByRole('columnheader', { name: /^Tipi$/ });
+    const meta = screen.getByRole('columnheader', { name: /^Meta$/ });
+    for (const head of [types, meta]) {
+      // Lo scudo solo per gli occhi, il "?" resta accanto
+      expect(head.querySelector('.bar-head-ic svg')).toHaveAttribute('aria-hidden', 'true');
+      expect(head.querySelector('.guide-ask')).not.toBeNull();
+    }
+  });
+
+  it('il pezzo di mezzo (2HKO) è giallo come gli altri avvisi, non rosso', () => {
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const two = document.querySelector('.def-members .kob.hb.hb-2');
+    expect(two).not.toBeNull();
+    expect(two).toHaveTextContent('2HKO');
+  });
+
+  it('colonna Difesa: solo il "+N", col tooltip (mouse e fuoco) che dice in parole quanto recupera e quanto perde, senza %', async () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const tone = (v: number) => (v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad');
-    const bars = document.querySelectorAll('.def-members tfoot .def-bar');
-    expect(bars[bars.length - 1]).toHaveClass(tone(rating.defense.value));
+    // Niente barre né legenda Recupero / Perdite: la legenda era solo per le righe della barra
+    expect(document.querySelector('.def-general .def-bar')).toBeNull();
+    expect(document.querySelector('.def-general .area-legend')).toBeNull();
+    expect(screen.getByRole('tabpanel')).not.toHaveTextContent(/Perdite/);
+    // Nella riga del team l'ultima casella è vuota (il voto sta nella testata dell'area)
+    const foot = document.querySelectorAll('.def-members tfoot td');
+    expect(foot[foot.length - 1]).toHaveTextContent(/^$/);
+    // Gholdengo (Recover): col fuoco il tooltip coi pezzi e il recupero in parole e numeri semplici
+    const i = rating.defense.members.findIndex(m => m.species === 'Gholdengo');
+    const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[i];
+    const num = row.querySelector<HTMLElement>('.og-share')!;
+    expect(num.closest('td')!.textContent).toMatch(/^[+−]?\d+$/);
+    expect(num).toHaveAttribute('aria-label', expect.stringMatching(/^Porta [+−]?\d+ alla Difesa del team$/));
+    // Lo screen reader ha le stesse cose del tooltip, nella descrizione
+    const said = document.getElementById(num.getAttribute('aria-describedby')!)!.textContent!;
+    expect(said).toMatch(/Recupera \d+ PS su 100 con Recover/);
+    expect(said).not.toContain('%');
+    // Col fuoco da tastiera (l'ultimo gesto è un tasto)
+    await userEvent.setup().keyboard('{Shift}');
+    act(() => num.focus());
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.dsh-tip'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveTextContent(/Recupera \d+ PS su 100 con Recover/);
+    expect(tip).toHaveTextContent('Recupero');
+    expect(tip.textContent).not.toContain('%');
+    // Great Tusk non recupera: perde con Stealth Rock, in parole
+    const tusk = rating.defense.members.findIndex(m => m.species === 'Great Tusk');
+    const tuskNum = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[tusk].querySelector<HTMLElement>('.og-share')!;
+    const tuskSaid = document.getElementById(tuskNum.getAttribute('aria-describedby')!)!.textContent!;
+    expect(tuskSaid).toMatch(/Perde \d+ PS su 100 con Stealth Rock/);
+    expect(tuskSaid).not.toContain('%');
   });
 
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori senza colonne in più; altrimenti niente pastiglie', () => {
     const rating = withMeta();
     const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi?', 'Meta?', 'Difesa']);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {
@@ -411,10 +465,36 @@ describe('Difesa Generale: clic sui pezzi delle barre', () => {
     const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
     const piece = row.querySelectorAll('td')[1].querySelector<HTMLElement>('.kob.hb')!;
     const n = Number(piece.querySelector('.kob-num')!.textContent);
+    // Il tooltip del pezzo finisce col piede verso la Coverage meta, e la descrizione lo ripete
+    await user.hover(piece);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.kot'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip.lastElementChild).toHaveClass('ftip-go');
+    expect(tip.lastElementChild).toHaveTextContent('Clic: vai a Coverage meta');
+    expect(piece).toHaveAccessibleDescription(/Clic: vai a Coverage meta$/);
     await user.click(piece);
     expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
     // Le minacce accese vengono per prime: nella prima pagina (8 per pagina) ce ne sono quante ne stanno
     expect(document.querySelectorAll('td.kf-hit')).toHaveLength(Math.min(n, 8));
     expect(document.querySelector('.kf-note')).not.toBeNull();
+  });
+});
+
+describe('Difesa Generale: il colore del conto segue il ruolo (voce 3.3)', () => {
+  const corv: TeamSet = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', nature: 'Impish', evs: { hp: 248, def: 168, spd: 92 }, moves: ['Roost', 'Brave Bird', 'Defog', 'U-turn'] };
+  const mixed = [team[0], corv];
+  it('il conto di un attaccante è neutro, quello di un muro colorato; la riga Team Coverage resta colorata', () => {
+    const a = analyzeTeam(mixed, fixtureData);
+    expect(a.needs.primary).toEqual(['attack', 'wall']);
+    renderIt(<AreaView rating={rateTeam(mixed, fixtureData, 'it')!} area="defense" team={mixed} analysis={a} problems={[]} />);
+    const rows = [...document.querySelectorAll<HTMLElement>('.def-members tbody tr:not(.og-fill)')];
+    const tones = (el: Element) => [...el.querySelectorAll('.kob-count')].map(c => [...c.classList].filter(k => k !== 'kob-count'));
+    // Great Tusk (attaccante): solo neutro; Corviknight (muro): un colore del semaforo
+    expect(tones(rows[0]).length).toBe(2);
+    for (const tone of tones(rows[0])) expect(tone).toEqual(['quiet']);
+    for (const tone of tones(rows[1])) expect(tone.some(k => ['full', 'good', 'warn', 'bad', 'zero'].includes(k))).toBe(true);
+    // Il testo per lo screen reader non cambia e non dice "muro"
+    expect(rows[0].querySelector('.kob-count')!.getAttribute('aria-label')).toMatch(/^ne regge \d+ su \d+$/);
+    expect(rows[0].querySelector('td')).not.toHaveTextContent(/muro/i);
+    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'bad')).toBe(true);
   });
 });

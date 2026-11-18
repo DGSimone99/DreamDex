@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
@@ -10,6 +10,9 @@ import { rankByTeamGain } from '../../src/engine/teamGain';
 import { LangProvider } from '../../src/i18n/react';
 import { SuggestionDetail } from '../../src/ui/SuggestionDetail';
 import { fixtureData } from '../fixtures/data';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const types = () => screen.getByRole<HTMLSelectElement>('combobox', { name: 'Tipo di team' });

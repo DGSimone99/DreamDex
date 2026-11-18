@@ -1,8 +1,8 @@
 import type { TeamDefense } from '../../engine/defense';
-import { useT } from '../../i18n/react';
+import { useLang, useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
-import { signed } from './DefenseGeneral';
+import { signed, sourceName } from './DefenseGeneral';
 
 const pct = (x: number) => `${Math.round(100 * x)}%`;
 /** Metà barra del netto: un netto di ±50% (SUSTAIN_FULL) arriva al bordo. */
@@ -11,13 +11,14 @@ const halfBar = (x: number) => `${Math.min(50, Math.round(100 * Math.abs(x)))}%`
 const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 
 /**
- * La Sostenibilità, nella cornice comune (i membri nello stesso punto delle altre schede). Per ogni membro quello che perde,
+ * Il Recupero, nella cornice comune (i membri nello stesso punto delle altre schede). Per ogni membro quello che perde,
  * a parte Stealth Rock (a ogni ingresso, dimezzata se il team toglie gli hazard) e lo strumento (Life Orb, Flame Orb…), e quello che
  * recupera con le fonti, il netto (recupero meno perdite) come barra attorno allo zero e il valore in pastiglia.
  * Niente riga del team: il valore del team è già sull'etichetta della scheda.
  */
 export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
+  const lang = useLang();
   const loss = (x: number, note?: string | null, halved = true) => (x > 0
     ? <span className="sus-loss-cell" title={note ?? undefined}>
         <span className="sus-loss-val">−{pct(x)}</span>
@@ -28,7 +29,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
   return (
     <div className={`def-frame def-sus${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table className="def-grid sus-table def-members">
+        <table className="def-grid sus-table def-members" aria-label={`${t('area.defense')}: ${t('ddetail.sustain')}`}>
           <colgroup><col className="def-col-mon" /><col className="sus-col-loss" /><col className="sus-col-loss" /><col /><col className="sus-col-net" /><col className="sus-col-val" /></colgroup>
           <thead>
             <tr className="rob-grp">
@@ -46,19 +47,19 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
           <tbody>
             {defense.members.map((m, i) => {
               const p = m.sustainParts;
-              const halvedBy = p.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: p.rocksHalvedBy }) : null;
+              const halvedBy = p.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: sourceName(p.rocksHalvedBy, lang) }) : null;
               const net = p.recovery - p.rocks - p.itemLoss;
               return (
                 <tr key={`${m.species}-${i}`}>
                   <th scope="row"><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats /></th>
                   <td className="sus-loss">{loss(p.rocks, halvedBy)}</td>
-                  <td className="sus-loss">{loss(p.itemLoss, p.itemLossFrom, false)}</td>
+                  <td className="sus-loss">{loss(p.itemLoss, p.itemLossFrom ? sourceName(p.itemLossFrom, lang) : null, false)}</td>
                   <td className="sus-gain">
                     <div className="sus-flex">
                       {p.recovery > 0
                         ? <span className="sus-num good">+{pct(p.recovery)}</span>
                         : <span className="sus-none" aria-label="0">—</span>}
-                      {p.sources.length > 0 && <small className="ad-src" title={p.sources.join(' + ')}><b>{p.sources.join(' + ')}</b></small>}
+                      {p.sources.length > 0 && <small className="ad-src" title={p.sources.map(x => sourceName(x, lang)).join(' + ')}><b>{p.sources.map(x => sourceName(x, lang)).join(' + ')}</b></small>}
                       {p.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}>{t('ddetail.halved')}</small>}
                     </div>
                   </td>

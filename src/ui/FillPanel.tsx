@@ -14,6 +14,7 @@ import { rankTournamentTeams } from '../engine/tournamentTeams';
 import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import type { Lang } from '../i18n';
 import { useLang, useT } from '../i18n/react';
+import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { Sprite } from './Sprite';
@@ -62,6 +63,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   // Passando su un Pokémon di una proposta o di un team da torneo: la sua carta (set, statistiche, mosse)
   const memberTip = useMemberTip();
   const ids = useId();
+  // Il tooltip DreamDex delle scelte con una spiegazione (tipi di team, Qualsiasi): nome e frase, col mouse e col fuoco
+  const optionTip = useFloatAnchor<{ label: string; note: string }>();
   const [tab, setTab] = useState<Tab>('proposals');
   const [pickState, setPick] = useState<{ archetype: Archetype | null; style: FillStyle | null }>({ archetype: null, style: null });
   const [favorites, setFavorites] = useState<FavoriteMode>('priority');
@@ -260,13 +263,14 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const gapText = (gap: Gap) => gap.kind === 'weakness'
     ? t(gap.count > 3 ? 'fill.gap.weaknessMany' : 'fill.gap.weakness', { n: gap.count, type: typeName(gap.type, lang) })
     : t(`fill.gap.${gap.kind}`);
-  // `tip`: spiegazione senza frase visibile (nel tooltip e per i lettori di schermo)
-  const radio = (key: string, checked: boolean, label: string, onClick: () => void, note?: string, disabled = false, tip?: string) => (
+  // `note`: la spiegazione della scelta, non scritta sotto il nome (la colonna resta corta e le proposte partono più in
+  // alto): nel tooltip DreamDex col mouse e col fuoco, e per i lettori di schermo nella descrizione (testo nascosto qui)
+  const radio = (key: string, checked: boolean, label: string, onClick: () => void, note?: string, disabled = false) => (
     <button key={key} type="button" role="radio" aria-checked={checked} disabled={disabled} aria-label={label}
-      aria-describedby={note ? `${ids}-${key}` : undefined} aria-description={tip} title={tip}
-      className={`fill-option${disabled ? ' empty' : ''}`} onClick={onClick}>
+      aria-describedby={note ? `${ids}-${key}` : undefined}
+      className={`fill-option${disabled ? ' empty' : ''}`} onClick={onClick} {...(note ? optionTip.bind({ label, note }) : {})}>
       <strong>{label}</strong>
-      {note && <small id={`${ids}-${key}`}>{note}</small>}
+      {note && <small id={`${ids}-${key}`} hidden>{note}</small>}
     </button>
   );
   const status = busy ? t('fill.busy')
@@ -344,7 +348,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           <div className="fill-group">
             <span className="fill-head" aria-hidden="true">{t('fill.style')}</span>
             <div className="fill-styles" role="radiogroup" aria-label={t('fill.style')}>
-              {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), undefined, false, t('fill.noStyleNote'))}
+              {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
               {FILL_STYLES.map((style: FillStyle) => radio(style, pickState.style === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
             </div>
           </div>
@@ -357,6 +361,13 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
             <p className="fill-note" id={`${ids}-favorites-note`}>{t(`fill.fav.${favorites}Note`)}</p>
           </div>
         </div>
+
+        {optionTip.anchor && (
+          <FloatTip rect={optionTip.anchor.rect} tone="var(--accent)" className="kot fill-option-tip" side>
+            <div className="kot-head"><b>{optionTip.anchor.key.label}</b></div>
+            <p className="kot-none">{optionTip.anchor.key.note}</p>
+          </FloatTip>
+        )}
 
         <div className="fill-main">
           <ol className="fill-proposals">

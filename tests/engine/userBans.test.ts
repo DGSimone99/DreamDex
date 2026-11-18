@@ -15,7 +15,7 @@ import { adviceOf } from '../helpers/coach';
 
 /** Liste effettive con un solo Pokémon bannato nel formato. */
 const banning = (species: string, allow?: string[]): EffectiveLists => ({
-  ...effectiveLists({ ...EMPTY_LISTS, byFormat: { ou: { favorites: [], bans: [species] } } }, 'ou'),
+  ...effectiveLists({ ...EMPTY_LISTS, byContext: { ou: { favorites: [], bans: [species] } } }, 'ou'),
   ...(allow ? { allow: new Set(allow) } : {}),
 });
 const names = (items: { set: TeamSet }[]) => items.map(i => battleName(i.set));

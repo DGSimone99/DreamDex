@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { rankCandidates, type RankingParams } from '../../src/engine/candidateRanking';
 import type { EngineData } from '../../src/engine/data';
 import { battleName } from '../../src/engine/dex';
@@ -9,6 +9,9 @@ import { initLearnsets } from '../../src/engine/learnsets';
 import { fixtureData } from '../fixtures/data';
 import { rateTeam } from '../../src/engine/rating';
 import { collectGainJobs, computeGains, primeGains, teamGainMisses } from '../../src/engine/teamGain';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 const data: EngineData = { ...fixtureData, formatId: 'gen9ag', ignoreMeta: true, game: 'sv' };
 const params = (format: Format): RankingParams => ({

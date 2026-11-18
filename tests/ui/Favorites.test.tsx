@@ -1,8 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
@@ -14,15 +17,15 @@ async function setup(...names: string[]) {
 describe('preferiti', () => {
   beforeEach(() => window.localStorage.clear());
 
-  it("la stella si vede nell'anteprima dello slot e resta nei team salvati", async () => {
+  it("il lucchetto (Fisso) si vede nell'anteprima dello slot e resta nei team salvati", async () => {
     const user = await setup('Great Tusk', 'Magikarp');
-    await user.click(screen.getByRole('button', { name: 'Preferito Magikarp' }));
-    expect(within(screen.getByRole('region', { name: 'Team' })).getByRole('button', { name: 'Preferito Magikarp' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(screen.getByRole('button', { name: 'Fisso Magikarp' }));
+    expect(within(screen.getByRole('region', { name: 'Team' })).getByRole('button', { name: 'Fisso Magikarp' })).toHaveAttribute('aria-pressed', 'true');
     await user.type(screen.getByLabelText('Nome team'), 'Prova');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));
     await user.click(screen.getByRole('button', { name: 'Rimuovi Magikarp' }));
     await user.click(screen.getByRole('button', { name: 'Prova' }));
-    expect(screen.getByRole('button', { name: 'Preferito Magikarp' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Preferito Great Tusk' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Fisso Magikarp' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Fisso Great Tusk' })).toHaveAttribute('aria-pressed', 'false');
   });
 });

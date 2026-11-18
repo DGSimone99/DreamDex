@@ -1,11 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { initGames, withGame } from '../../src/engine/games';
 import { chooseTier, chosen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
+
+// File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
+vi.setConfig({ testTimeout: 60000 });
 
 /** Apre il modale del gioco dalla carta, sceglie e lo chiude (Esc). */
 async function chooseGame(user: ReturnType<typeof userEvent.setup>, id: string) {
@@ -39,7 +42,14 @@ describe('scelta del gioco', () => {
     expect(screen.getByRole('checkbox', { name: 'Leggendari e post-game' })).not.toBeChecked();
   });
 
-  it('"Nessun gioco" rimette il formato di prima, col meta', async () => {
+  it('senza gioco la carta dice "Qualsiasi gioco" (non suona come un errore) e la barra non mostra Confronto', () => {
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    expect(screen.getByRole('button', { name: /^Gioco Qualsiasi gioco/ })).toHaveTextContent('Qualsiasi gioco');
+    expect(screen.queryByText('Nessun gioco')).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Confronto/ })).toBeNull();
+  });
+
+  it('"Qualsiasi gioco" rimette il formato di prima, col meta', async () => {
     initGames({ sv: { dex: ['sprigatito'] } });
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
@@ -72,7 +82,7 @@ describe('scelta del gioco', () => {
     expect(document.querySelector('.saved-format')).toHaveTextContent('Scarlatto e Violetto');
   });
 
-  it('caricare un team salvato col gioco rimette il gioco col suo blocco; "Nessun gioco" torna al formato di prima', async () => {
+  it('caricare un team salvato col gioco rimette il gioco col suo blocco; "Qualsiasi gioco" torna al formato di prima', async () => {
     initGames({ sv: { dex: ['sprigatito'] } });
     window.localStorage.clear();
     const user = userEvent.setup();

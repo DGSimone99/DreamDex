@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useT } from '../i18n/react';
+import { Icon } from './icons';
 
 /** Quanto aspetta prima di aprirsi: passando col mouse sopra la griglia non si accende a ogni casella. */
 const OPEN_DELAY = 140;
@@ -7,31 +9,72 @@ const OPEN_DELAY = 140;
 const GAP = 9;
 const EDGE = 8;
 
+/** L'ultimo gesto: un tasto o il puntatore (per chi non sa dire :focus-visible, come jsdom). */
+let lastInput: 'key' | 'pointer' = 'key';
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', () => { lastInput = 'key'; }, true);
+  window.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, true);
+}
+
+/** Fuoco da tastiera (non dal clic): :focus-visible, o l'ultimo gesto è stato un tasto. */
+export const keyboardFocus = (el: Element): boolean => {
+  try { if (el.matches(':focus-visible')) return true; } catch { /* selettore sconosciuto: decide l'ultimo gesto */ }
+  return lastInput === 'key';
+};
+
 /**
  * Il punto di partenza del tooltip: chi lo apre passa il suo riquadro e una chiave (quale casella). `open` dopo un
  * attimo (`delay`, 140 ms; più lungo dove il mouse passa spesso, come le carte del team), `close` subito. Un solo stato
  * per tutta una griglia: ogni casella chiama `open` con la sua chiave.
+ * `focus(key)`: i gestori del fuoco per l'elemento (si apre col fuoco da tastiera, si chiude uscendo; Esc lo chiude);
+ * `bind(key)`: mouse e fuoco insieme, per chi non ha altro da fare all'entrata del mouse.
  */
 export function useFloatAnchor<K>(delay = OPEN_DELAY) {
   const [anchor, setAnchor] = useState<{ key: K; rect: DOMRect } | null>(null);
   const timer = useRef<number | undefined>(undefined);
+  /** L'elemento che ha aperto il tooltip: se sparisce dalla pagina (la lista cambia sotto il mouse) il tooltip si chiude. */
+  const source = useRef<Element | null>(null);
   const open = useCallback((key: K, el: Element) => {
     window.clearTimeout(timer.current);
+    source.current = el;
     const rect = el.getBoundingClientRect();
-    timer.current = window.setTimeout(() => setAnchor({ key, rect }), delay);
+    timer.current = window.setTimeout(() => { if (el.isConnected) setAnchor({ key, rect }); }, delay);
   }, [delay]);
-  const close = useCallback(() => { window.clearTimeout(timer.current); setAnchor(null); }, []);
+  const close = useCallback(() => { window.clearTimeout(timer.current); source.current = null; setAnchor(null); }, []);
   useEffect(() => () => window.clearTimeout(timer.current), []);
-  // Scorrere o ridimensionare sposterebbe la casella sotto il tooltip: si chiude
+  // Esc anche prima che si apra (il fuoco è appena arrivato): niente tooltip
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && source.current) close(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [close]);
+  // Scorrere o ridimensionare sposterebbe la casella sotto il tooltip: si chiude. Se la casella esce dalla pagina
+  // mentre il mouse ci sta sopra, il browser non manda l'uscita del mouse: si controlla a ogni cambio della pagina
+  // e a ogni movimento del mouse.
   useEffect(() => {
     if (!anchor) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const check = () => { if (!source.current?.isConnected) close(); };
+    const watch = new MutationObserver(check);
+    watch.observe(document.body, { childList: true, subtree: true });
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
-    window.addEventListener('keydown', onKey);
-    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); window.removeEventListener('keydown', onKey); };
+    window.addEventListener('pointermove', check, true);
+    return () => {
+      watch.disconnect();
+      window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close);
+      window.removeEventListener('pointermove', check, true);
+    };
   }, [anchor, close]);
-  return { anchor, open, close };
+  const focus = useCallback((key: K) => ({
+    onFocus: (e: FocusEvent<Element>) => { if (keyboardFocus(e.currentTarget)) open(key, e.currentTarget); },
+    onBlur: close,
+  }), [open, close]);
+  const bind = useCallback((key: K) => ({
+    onMouseEnter: (e: { currentTarget: Element }) => open(key, e.currentTarget),
+    onMouseLeave: close,
+    ...focus(key),
+  }), [open, close, focus]);
+  return { anchor, open, close, focus, bind };
 }
 
 /**
@@ -79,3 +122,28 @@ export function FloatTip({ rect, tone, className = '', side = false, children }:
     document.body,
   );
 }
+
+/**
+ * Il testo della descrizione per lo screen reader (aria-describedby) di un elemento piccolo, come un pezzo della barra:
+ * nascosto e fuori dall'elemento (nel body), così non entra nel suo testo né nella casella che lo contiene.
+ */
+export function HiddenText({ id, children }: { id: string; children: ReactNode }) {
+  return createPortal(<span id={id} hidden>{children}</span>, document.body);
+}
+
+/**
+ * Il piede dei tooltip il cui elemento porta da qualche parte col clic: una riga Accent Ink sotto un filo, "Clic: vai a
+ * {place}" e la freccia. Solo un'indicazione (il tooltip non si clicca): il clic resta sull'elemento. Il modello comune per
+ * ogni tooltip che naviga (un'altra scheda, sottoscheda o vista: Coaching, Coverage tipi/meta, Offesa, Difesa, Ruoli...);
+ * `place` è il nome della destinazione come lo mostra l'interfaccia (es. "Coverage meta"). `verb="open"`: il clic apre
+ * una finestra invece di cambiare scheda ("Clic: apri i rivali"). Il piede è solo visivo: le stesse parole stanno nella
+ * descrizione dell'elemento (goText, con HiddenText e aria-describedby) o già nel suo nome.
+ */
+export function TipGo({ place, verb = 'go' }: { place: string; verb?: 'go' | 'open' }) {
+  const t = useT();
+  return <p className="ftip-go">{goText(t, place, verb)}<Icon name="next" /></p>;
+}
+
+/** Le parole del piede di TipGo ("Clic: vai a Coverage meta"), per la descrizione dell'elemento ai lettori di schermo. */
+export const goText = (t: ReturnType<typeof useT>, place: string, verb: 'go' | 'open' = 'go') =>
+  t(verb === 'open' ? 'tip.open' : 'tip.go', { place });

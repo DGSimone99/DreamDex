@@ -1,4 +1,4 @@
-import { useId, type CSSProperties, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
@@ -9,16 +9,19 @@ import { MemberCard } from '../MemberCard';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
+import type { BonusMalusPiece } from '../BonusMalusView';
 import { TeamTypeHelp } from '../CoachPanel';
 import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreTip } from './CoreTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
-import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
+import { MoreBelow } from '../MoreBelow';
 
 /**
  * Colore di una condizione (meteo, campo, Trick Room, schermi, Ventoincoda) e degli stili di team: il colore del tipo
@@ -66,7 +69,6 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
   moreTip?: (hidden: T[]) => ReactNode;
   className?: string;
 }) {
-  const t = useT();
   const tip = useFloatAnchor<true>();
   // La lista è alta quanto il suo contenuto: si guarda anche la card, che cresce col team ridotto
   const fit = useFit<HTMLUListElement>(fitKey, rows.length, { min: 1, outer: '.dash-summary' });
@@ -87,13 +89,9 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
       {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
       {hidden > 0 && (onMore
         ? (
-          <button type="button" className={`sum-more-below${tipped}`} onClick={() => { tip.close(); onMore(); }} {...hover} title={moreTip ? undefined : more(hidden, rows.slice(shown))}
-            aria-label={t('sum.showMore', { label: more(hidden, rows.slice(shown)) })}>
-            <span aria-hidden="true">+{hidden}</span>
-            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6.5 6.5 12 12l5.5-5.5M6.5 12.5 12 18l5.5-5.5" />
-            </svg>
-          </button>
+          <MoreBelow label={more(hidden, rows.slice(shown))} onClick={() => { tip.close(); onMore(); }} tipped={!!moreTip} hover={hover}>
+            +{hidden}
+          </MoreBelow>
         )
         : <span className={`sum-sec-more${tipped}`} {...hover}><More n={hidden} label={more(hidden, rows.slice(shown))} plain={!!moreTip} /></span>)}
       {moreTip && hidden > 0 && tip.anchor && (
@@ -112,9 +110,9 @@ const joinList = (items: string[], lang: string) => {
 /** Una sinergia: un core difensivo (da 2 o 3) o un legame tra membri. */
 type Synergy = { core: Core; link?: undefined } | { link: TeamLink; core?: undefined };
 
-/** Colore dell'etichetta e dell'anello: core verde, pivot e Baton Pass azzurro, Desiderio magenta, trappole giallo. */
+/** Colore dell'etichetta e dell'anello: core verde, pivot e Baton Pass azzurro, Desiderio Accent Ink (azzurro come i link), trappole giallo. */
 const LINK_COLOR: Record<TeamLink['kind'], string> = {
-  pivot: 'var(--accent)', batonpass: 'var(--accent)', wish: 'var(--accent-2-ink)', phazer: 'var(--warn)',
+  pivot: 'var(--accent)', batonpass: 'var(--accent)', wish: 'var(--accent-ink)', phazer: 'var(--warn)',
 };
 
 interface SynergyView { key: string; tag: string; color: string; title: string; text: string; mons: string[]; trio: boolean }
@@ -158,13 +156,15 @@ function useSynergyView() {
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
  * la frase (o il giro del triangolo letto in parole).
  */
-function SynergyRow({ syn, view, rich, small, onClick, hover, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void };
+function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void };
+  /** La descrizione di dove porta il clic (col tooltip: il suo piede TipGo), dopo la frase. */
+  goId?: string;
   /** Un core da 3 dopo il primo: triangolo piccolo anche col team ridotto. */
   second?: boolean }) {
   const desc = useId();
   return (
     <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}`} style={{ '--c': view.color } as CSSProperties}
-      aria-label={`${view.tag} ${view.title}`} aria-describedby={desc} onClick={onClick} {...hover}>
+      aria-label={`${view.tag} ${view.title}`} aria-describedby={goId ? `${desc} ${goId}` : desc} onClick={onClick} {...hover}>
       {view.trio && syn.core
         ? <CoreTriangle core={syn.core} size={rich && !second ? 'roomy' : 'normal'} descId={desc} />
         : (
@@ -202,7 +202,7 @@ function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }
               {view.mons.map((name, i) => (
                 <span key={`${name}:${i}`} className="syn-more-mon">
                   {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
-                  <Sprite species={name} size={32} />
+                  <Sprite species={name} size={SPRITE_TIP_ROW} />
                 </span>
               ))}
             </span>
@@ -217,14 +217,78 @@ function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }
   );
 }
 
+/** Altezza della riga Bonus/Malus (px, come in CSS `.sum-bm`) e lo stacco minimo sopra di lei. */
+export const BM_LINE = 28;
+const BM_GAP = 6;
+const signedPts = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
+
+/**
+ * Se la riga Bonus/Malus sta in fondo al Riassunto (`card`: il corpo della card, .sum-body): solo se ogni sezione mostra tutte le sue righe (nessun "+N": i core e
+ * le Sinergie vengono prima) e sotto l'ultimo contenuto restano almeno BM_GAP + BM_LINE px. La riga sta in posizione
+ * assoluta in fondo alla card, così mostrarla non sposta niente (niente avanti e indietro). Si rimisura quando la card
+ * cambia misura o il suo contenuto cambia (le sezioni si misurano a più passaggi).
+ */
+function useBonusMalusRoom(card: RefObject<HTMLElement | null>, enabled: boolean): boolean {
+  const [room, setRoom] = useState(false);
+  useLayoutEffect(() => {
+    const el = card.current;
+    if (!enabled || !el) { setRoom(false); return; }
+    let frame = 0;
+    const measure = () => {
+      const { bottom, height } = el.getBoundingClientRect();
+      // Senza layout (test, scheda nascosta) non si sa: niente riga
+      if (!height) { setRoom(false); return; }
+      if (el.querySelector('.sum-sec-more, .sum-more-below, .sum-crew-more')) { setRoom(false); return; }
+      const parts = el.querySelectorAll('.sum-hero, .sum-sec-h, .sum-none, .sum-lines > li > *');
+      const last = Math.max(0, ...[...parts].map(p => p.getBoundingClientRect().bottom));
+      setRoom(last + BM_GAP + BM_LINE <= bottom + 0.5);
+    };
+    const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); };
+    measure();
+    const observers: { disconnect: () => void }[] = [];
+    if (typeof ResizeObserver !== 'undefined') { const ro = new ResizeObserver(later); ro.observe(el); observers.push(ro); }
+    if (typeof MutationObserver !== 'undefined') { const mo = new MutationObserver(later); mo.observe(el, { childList: true, subtree: true }); observers.push(mo); }
+    return () => { cancelAnimationFrame(frame); observers.forEach(o => o.disconnect()); };
+  }, [card, enabled]);
+  return room;
+}
+
+/**
+ * La riga Bonus/Malus in fondo al Riassunto: "Bonus/Malus +6 · 2 core +6 · Rete di sicurezza +1 · Tipi doppioni −1", le
+ * voci dalla più pesante (bonusMalusLine) finché stanno su una riga, le altre in "+N". Tutta la riga apre la scheda Ruoli e
+ * Bonus (Bonus/Malus); il nome per i lettori di schermo dice tutte le voci.
+ */
+function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: BonusMalusPiece[]; lang: string; onOpen: () => void }) {
+  const t = useT();
+  const fit = useFit<HTMLSpanElement>(`${lang}|${pieces.map(p => `${p.key}${p.points}`).join()}`, pieces.length, { more: true });
+  const shown = pieces.slice(0, Math.min(fit.shown, pieces.length));
+  const hidden = pieces.length - shown.length;
+  const tone = (n: number) => (n > 0 ? 'good' : n < 0 ? 'bad' : 'zero');
+  return (
+    <button type="button" className="sum-bm" onClick={onOpen}
+      aria-label={t('sum.bmLabel', { net: signedPts(net), list: pieces.map(p => `${p.name} ${signedPts(p.points)}`).join(', ') })}>
+      <span className="sum-bm-label" aria-hidden="true">{t('area.bonusMalus')}</span>
+      <em className={`sum-bm-net ${tone(net)}`} aria-hidden="true">{signedPts(net)}</em>
+      <span ref={fit.ref} className="sum-bm-list" aria-hidden="true">
+        {shown.map(p => <span key={p.key} data-fit className="sum-bm-item">{p.name} <b className={tone(p.points)}>{signedPts(p.points)}</b></span>)}
+        {hidden > 0 && <span data-fit-more className="sum-bm-more">+{hidden}</span>}
+      </span>
+    </button>
+  );
+}
+
 /**
  * Il Riassunto della Panoramica, ritratto del team: in alto (eroe) il tipo di team e chi lo rende tale, sotto chi porta
  * meteo e campo, chi piazza le trappole e, in fondo, le Sinergie (core difensivi e legami), che prendono lo spazio che resta.
  */
-export function SummarySection({ summary, members, team = [], density, rich = false, onView, onShowAll }: {
+export function SummarySection({ summary, members, team = [], grade, density, rich = false, bonusMalus, onView, onShowAll }: {
   summary: TeamSummary; members: number;
+  /** La riga Bonus/Malus in fondo, solo se c'è posto (useBonusMalusRoom); senza, non c'è. */
+  bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
   /** I set del team: la carta del Pokémon al passaggio su chi rende il team tale. */
   team?: TeamSet[];
+  /** La lettera del voto del team: il nome del tipo e la sfumatura dell'eroe ne prendono il colore (come la carta del voto). */
+  grade?: string;
   /** Sprite e righe cambiano misura con la densità: le parti a misura si rimisurano. */
   density: Density;
   /** Team ridotto e cruscotto alto (RICH_FROM): sprite più grandi, sezioni distribuite su tutta l'altezza. */
@@ -242,6 +306,9 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
   const coreTip = useFloatAnchor<Core>();
   const monTip = useFloatAnchor<{ name: string; side: 'atk' | 'def'; score?: number }>();
   const setOf = (name: string) => team.find(set => battleName(set) === name);
+  // Dove porta il clic degli elementi col tooltip (il piede TipGo), anche ai lettori di schermo: una descrizione per destinazione
+  const goIds = { strength: useId(), defense: useId(), roles: useId(), bonusMalus: useId() };
+  const places = { strength: t('area.strength'), defense: t('area.defense'), roles: t('area.roles'), bonusMalus: t('analysis.view.bonusMalus') };
   // Tutti i core: prima quelli da 3 (il primo col triangolo grande), poi quelli da 2 (riga piccola). Poi i legami, senza i pivot
   const trios = cores.filter(core => core.members.length === 3);
   const synergies: Synergy[] = [
@@ -267,7 +334,8 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
       {/* Al passaggio (o col fuoco) la carta del Pokémon nel tooltip DreamDex, al posto del tooltip del browser */}
       <button type="button" className="sum-mon" onClick={() => onView(m.side === 'atk' ? 'strength' : 'defense')}
         onMouseEnter={e => monTip.open(m, e.currentTarget)} onMouseLeave={monTip.close} onFocus={e => monTip.open(m, e.currentTarget)} onBlur={monTip.close}
-        aria-label={m.score === undefined ? m.name : t(m.side === 'atk' ? 'sum.offenseOf' : 'sum.defenseOf', { name: m.name, n: m.score })}>
+        aria-label={m.score === undefined ? m.name : t(m.side === 'atk' ? 'sum.offenseOf' : 'sum.defenseOf', { name: m.name, n: m.score })}
+        aria-describedby={goIds[m.side === 'atk' ? 'strength' : 'defense']}>
         <Plinth name={m.name} size={big} />
         {m.score !== undefined && <span className="sum-score" aria-hidden="true"><Icon name={m.side === 'atk' ? 'sword' : 'shield'} />{m.score}</span>}
       </button>
@@ -275,12 +343,14 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
   );
   const shownAtk = shown.filter(m => m.side === 'atk');
   const shownDef = shown.filter(m => m.side === 'def');
+  const card = useRef<HTMLDivElement>(null);
+  const bmRoom = useBonusMalusRoom(card, !!bonusMalus && (bonusMalus.pieces.length > 0 || bonusMalus.net !== 0));
 
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
-      <div className="sum-body">
+      <div className="sum-body" ref={card}>
         {(members >= 2 || makers.length > 0) && (
-          <div className="sum-hero">
+          <div className={`sum-hero${grade ? ` grade-${grade}` : ''}`}>
             {members >= 2 && (
               <div className="sum-type">
                 {archetype
@@ -290,9 +360,9 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
                       {/* Sul confine col tipo accanto: una riga piccola sotto il nome, che non lo accorcia */}
                     </span>
                   )
-                  // Senza tipo riconosciuto: a team incompleto "In costruzione", a team completo "Misto" (non somiglia a nessun tipo)
+                  // Senza tipo riconosciuto: a team incompleto "Incompleto · 5/6", a team completo "Misto" (non somiglia a nessun tipo)
                   : <strong className="sum-arch pending" title={t(members < 6 ? 'sum.archBuildingNote' : 'sum.archMixedNote')}>
-                    {t(members < 6 ? 'sum.archBuilding' : 'sum.archMixed')}
+                    {members < 6 ? t('sum.archBuilding', { n: members }) : t('sum.archMixed')}
                   </strong>}
                 {styles.map(style => (
                   <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
@@ -320,7 +390,7 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
             // Al passaggio (o col fuoco) il tooltip della condizione: effetti e chi ne approfitta
             <button type="button" className="sum-line" onClick={() => onView('roles')}
               onMouseEnter={e => condTip.open(row, e.currentTarget)} onMouseLeave={condTip.close}
-              onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close}>
+              onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close} aria-describedby={goIds.roles}>
               <Plinth name={row.member} size={small} />
               <span className="sum-name">{row.member}</span>
               <Tag color={conditionColor(row.key)}>{row.label}</Tag>
@@ -363,26 +433,32 @@ export function SummarySection({ summary, members, team = [], density, rich = fa
             // Sul core a tre: il tooltip con quanto regge chi para ogni tipo e chi protegge
             const hover = syn.core && syn.core.members.length === 3
               ? { onMouseEnter: (e: { currentTarget: Element }) => coreTip.open(syn.core!, e.currentTarget), onMouseLeave: coreTip.close } : undefined;
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
+      {bmRoom && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {monTip.anchor && setOf(monTip.anchor.key.name) && (
         <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">
           <MemberCard set={setOf(monTip.anchor.key.name)!} why={monTip.anchor.key.score === undefined ? undefined
             : t(monTip.anchor.key.side === 'atk' ? 'mcard.whyAtk' : 'mcard.whyDef', { n: monTip.anchor.key.score })} />
+          <TipGo place={places[monTip.anchor.key.side === 'atk' ? 'strength' : 'defense']} />
         </FloatTip>
       )}
       {coreTip.anchor && (
         <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
           <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />
+          <TipGo place={places.bonusMalus} />
         </FloatTip>
       )}
       {condTip.anchor && (
         <FloatTip rect={condTip.anchor.rect} tone={conditionColor(condTip.anchor.key.key)} className="cond">
           <ConditionTip row={condTip.anchor.key} />
+          <TipGo place={places.roles} />
         </FloatTip>
       )}
+      {/* Dove porta il clic, per i lettori di schermo: nascosto dentro la carta, non nel body */}
+      {(Object.keys(goIds) as (keyof typeof goIds)[]).map(k => <span key={k} id={goIds[k]} hidden>{goText(t, places[k])}</span>)}
     </DashCard>
   );
 }

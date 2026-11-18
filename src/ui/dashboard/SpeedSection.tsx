@@ -6,6 +6,7 @@ import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import type { Density } from '../OverviewDashboard';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
+import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
 import { SpeedTip } from './SpeedTip';
 import { MoveName } from '../TypeText';
@@ -22,6 +23,8 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
   // Barra o sprite di un membro: la scala dei rivali vicini (più veloci sopra, più lenti sotto) nel tooltip DreamDex
   const tip = useFloatAnchor<number>();
   const hover = (i: number) => ({ onMouseEnter: (e: { currentTarget: Element }) => tip.open(i, e.currentTarget), onMouseLeave: tip.close });
+  // Le barre sono un posto solo nel giro del Tab, le frecce vanno da una all'altra; col fuoco il tooltip
+  const nav = useRoving<HTMLDivElement>();
   // Scala: il più veloce (o la media) con un po' d'aria sopra per il numero
   const top = Math.max(1, median ?? 0, ...lanes.map(l => l.speed)) * 1.12;
   const pct = (n: number) => `${(n / top) * 100}%`;
@@ -42,7 +45,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
       meta={<><b>{speed.value}</b> {t(vsMeta ? 'dash.aboveMeta' : 'dash.aboveTier')}</>}
       onOpen={() => onView('speed')}>
       <div className="dash-ladder" style={{ '--sprite': `${SPRITE[density]}px` } as CSSProperties}>
-        <div className="dash-bars">
+        <div ref={nav.ref} className="dash-bars" onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
           {median !== null && (
             <span className="dash-avg" style={{ bottom: pct(median) }}>
               {/* A vista solo il numero, fuori dalle barre; per intero ai lettori di schermo */}
@@ -51,7 +54,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
             </span>
           )}
           {lanes.map((lane, i) => (
-            <span key={`${lane.species}-${i}`} className="dash-lane" {...hover(i)}>
+            <span key={`${lane.species}-${i}`} className="dash-lane" data-nav="" {...hover(i)} {...tip.focus(i)}>
               <span className="visually-hidden">{lane.species}</span>
               <span className={`dash-bar${lane.above ? ' above' : ''}`} style={{ height: pct(lane.speed) }}><small>{lane.speed}</small></span>
             </span>

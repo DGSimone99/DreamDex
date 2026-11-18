@@ -8,7 +8,7 @@
 /* Area da almeno 24×24 per mouse e dita, oltre il disegno (il segno resta piccolo) */
 .alert-mark::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
 /* Avvisi della carta del team: in fondo alla riga del nome, sotto lo sprite (non lo coprono); nella barra compressa c'è il puntino */
-.slot-alerts { position: relative; display: flex; flex: none; gap: 4px; margin: -2px 0 -1px auto; }
+.slot-alerts { position: relative; display: flex; flex: none; gap: var(--sp-2); margin: -2px 0 -1px auto; }
 .band.collapsed .slot-alerts { display: none; }
 .alert-mark.on-card {
   padding: 3px;
@@ -19,7 +19,7 @@
 }
 .alert-mark.on-card .icon { width: 15px; height: 15px; }
 /* Custom Skillset: etichetta del membro, a sinistra sopra l'inizio del nome */
-.alert-mark.slot-custom { position: absolute; left: 14px; top: 8px; padding: 2px; }
+.alert-mark.slot-custom { position: absolute; left: 14px; top: 8px; padding: var(--sp-1); }
 .alert-mark.slot-custom .icon { width: 16px; height: 16px; }
 .slot:first-child .alert-mark.slot-custom { left: 50px; top: 5px; }
 .alert-pop {
@@ -31,14 +31,14 @@
   max-width: 260px;
   display: none;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-6);
   background: var(--ground);
   border: 1px solid var(--line);
   border-top: 2px solid currentColor;
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-  font: 500 13px/1.4 var(--ui);
+  font: 500 var(--fs-small)/1.4 var(--ui);
   text-transform: none;
   letter-spacing: 0;
   white-space: normal;
@@ -51,7 +51,7 @@
 .alert-pop.alert-float.danger { color: var(--bad); }
 .alert-pop.alert-float.warn { color: var(--warn); }
 .alert-pop.alert-float.info { color: var(--accent); }
-.alert-line { position: relative; color: var(--text); padding-left: 14px; }
+.alert-line { position: relative; color: var(--text); padding-left: var(--sp-7); }
 .alert-line::before { content: ''; position: absolute; left: 0; top: 0.5em; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
 .alert-line.danger { --c: var(--bad); }
 .alert-line.warn { --c: var(--warn); }
@@ -60,18 +60,18 @@
 
 /* Icone degli strumenti (24px, dal foglio di Showdown) */
 .item-icon { display: inline-block; flex: none; vertical-align: middle; background-repeat: no-repeat; image-rendering: pixelated; }
-.slot .held { display: flex; align-items: center; gap: 5px; max-width: 100%; min-width: 0; }
+.slot .held { display: flex; align-items: center; gap: var(--sp-2); max-width: 100%; min-width: 0; }
 .slot .ability { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.slot .ability { font-size: 13px; color: var(--muted); margin-top: -2px; }
+.slot .ability { font-size: var(--fs-small); color: var(--muted); margin-top: -2px; }
 .combobox.has-leading input { padding-left: 32px; }
 .combobox-leading { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); display: flex; pointer-events: none; }
-.combobox .option-head { gap: 8px; }
+.combobox .option-head { gap: var(--sp-4); }
 .combobox .option-head { justify-content: flex-start; }
 .combobox .option-head .option-detail, .combobox .option-head > .move-meta { margin-left: auto; }
 
 /* Nomi dei Pokémon nei testi: grassetto con le icone del tipo davanti (due sovrapposte per i doppi tipi) */
 .mon-ref, .mon-name { display: inline; }
-.mon-ref .type-dot, .mon-name .type-dot { margin-right: 4px; vertical-align: -3px; }
+.mon-ref .type-dot, .mon-name .type-dot { margin-right: var(--sp-2); vertical-align: -3px; }
 .mon-name .mon-icon { vertical-align: middle; }
 .mon-ref strong, .mon-name strong { font-weight: 700; color: var(--text); }
 .mon-name.muted strong { color: var(--muted); }
@@ -79,7 +79,7 @@
 .mon-icon { display: inline-block; flex: none; margin: -10px -2px -8px -4px; image-rendering: pixelated; }
 /* Icone tonde dei tipi: la seconda scivola sotto la prima, staccata da un anello nel colore del pannello (isolation: lo z-index resta dentro, mai sopra la paginazione o i pannelli vicini) */
 .type-icons { display: inline-flex; flex: none; align-items: center; isolation: isolate; }
-.type-icons img { display: block; width: 14px; height: 14px; border-radius: 50%; }
+.type-icons img { display: block; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .type-icons img:first-child { position: relative; z-index: 1; box-shadow: 0 0 0 1.5px var(--panel); }
 .type-icons img + img { margin-left: -5px; }
 .mon-ref, .mon-name { white-space: nowrap; }
