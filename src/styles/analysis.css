@@ -764,6 +764,10 @@
 .coach-clean b { color: var(--text); font-weight: 600; }
 .coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
 .coach-list-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-6); min-height: 28px; }
+/* "Proposte, dalla più utile" come la fascia di Pokémon Champions a sinistra (titolo di un gruppo dentro il pannello) */
+.coach-list-head .coach-sec { position: relative; flex: 1; min-width: 0; padding: 4px 24px 4px 9px; font: 600 var(--fs-small)/1.2 var(--display); font-style: normal; text-transform: none; letter-spacing: 0.01em; color: var(--text);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 90%, white), transparent 70%); }
+.coach-list-head .coach-sec::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 /* La lista ha l'altezza che resta: quante righe ci stanno lo conta useRowsPerPage (fino a 4) */
 .coach-list-box { --row-h: 112px; --row-gap: 6px; flex: 1; min-height: 0; }
 .coach-rows { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
