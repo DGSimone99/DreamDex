@@ -563,7 +563,35 @@ const STATES: Record<string, State> = {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(400);
     // L'editor sta nel cassetto senza scorrere: quanto supera (0 = ci sta tutto)
+    // Punta magenta sotto la carta aperta (centro carta vs punta), lastre del Set tagliate, Custom Skillset sopra la fascia
+    // Mosse, la riga della Velocità e le colonne EV (intestazione sopra barra + numero)
+    console.log(await p.evaluate(() => {
+      const [card, ptr, drawer, tog, leg, head, slider, evIn, speed, roles] = ['.slot.open > .slot-card', '.slot-pointer', '.slot.open .drawer',
+        '.slot.open .moves > .custom-toggle', '.slot.open .moves > legend', '.slot.open .stat-head-ev', '.slot.open .stat-row:not(.stat-head) .ev-slider',
+        '.slot.open .stat-row:not(.stat-head) .ev-input', '.slot.open .speed-line', '.slot.open .editor-foot'].map(q => document.querySelector(q)?.getBoundingClientRect());
+      const cut = [...document.querySelectorAll<HTMLElement>('.slot.open .set-plate')].map(pl => {
+        const label = pl.querySelector('.field-label')?.textContent;
+        const disp = pl.querySelector<HTMLElement>('.combobox-display') ?? pl.querySelector<HTMLInputElement>('input');
+        const over = disp ? disp.scrollWidth - disp.clientWidth : -1;
+        return `${label}:${Math.round(pl.getBoundingClientRect().width)}w${over > 0 ? ` CUT${over}` : ''}`;
+      }).join(',');
+      return `pointer=${ptr && card ? Math.round(ptr.left + ptr.width / 2 - (card.left + card.width / 2)) : 'none'} ptrBottom-drawerTop=${ptr && drawer ? Math.round(ptr.bottom - drawer.top) : '-'} plates=${cut} custom=${tog ? `${Math.round(tog.left)}-${Math.round(tog.right)} top=${Math.round(tog.top)} legendTop=${leg ? Math.round(leg.top) : '-'}` : 'none'} evHead=${head ? `${Math.round(head.left)}-${Math.round(head.right)}` : '-'} evCtl=${slider && evIn ? `${Math.round(slider.left)}-${Math.round(evIn.right)}` : '-'} speedLine=${speed ? Math.round(speed.height) : 'none'} foot=${roles ? Math.round(roles.height) : '-'} roles=${[...document.querySelectorAll('.slot.open .editor-roles li')].map(li => { const b = li.getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(li); const t = rg.getBoundingClientRect(); return `y${Math.round(b.top)}h${Math.round(b.height)}t${Math.round(t.top - b.top)}-${Math.round(b.bottom - t.bottom)}`; }).join(',')} chipX=${(() => { const c = document.querySelector('.band.collapsed .slot.open > .slot-card')?.getBoundingClientRect(); const x = document.querySelector('.band.collapsed .slot.open .remove')?.getBoundingClientRect(); return c && x ? `top${Math.round(x.top - c.top)} right${Math.round(c.right - x.right)} bottom${Math.round(c.bottom - x.bottom)}` : '-'; })()}`;
+    }));
     console.log(`drawerOver=${await p.evaluate(() => { const d = document.querySelector('.drawer'); return d ? d.scrollHeight - d.clientHeight : -1; })} drawerFree=${await p.evaluate(() => { const d = document.querySelector('.drawer'); const e = d?.querySelector('.set-editor'); if (!d || !e) return -1; const cs = getComputedStyle(d); return Math.round(d.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom) - e.getBoundingClientRect().bottom); })} statRow=${await p.evaluate(() => Math.round(document.querySelectorAll('.stat-row:not(.stat-head)')[0]?.getBoundingClientRect().height ?? 0))} rows=${await p.evaluate(() => { const e = document.querySelector('.drawer .set-editor') as HTMLElement | null; if (!e) return ''; return getComputedStyle(e).gridTemplateRows + ' | ' + [...e.children].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',') + ' | ' + ['.stats-cell > *', '.editor-side > *', '.evs > *'].map(q => [...e.querySelectorAll(q)].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',')).join(' / '); })}`);
+    return true;
+  } },
+  // La punta magenta segue la carta aperta: apre una carta dopo l'altra e stampa quanto la punta è lontana dal centro della carta
+  'editor-pointer': { run: async p => {
+    const offs: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      await p.evaluate(n => document.querySelectorAll<HTMLElement>('.slot.filled > .slot-card')[n]?.click(), i);
+      await wait(500);
+      offs.push(await p.evaluate(() => {
+        const [card, ptr] = ['.slot.open > .slot-card', '.slot-pointer'].map(q => document.querySelector(q)?.getBoundingClientRect());
+        return card && ptr && ptr.width ? String(Math.round(ptr.left + ptr.width / 2 - (card.left + card.width / 2))) : 'hidden';
+      }));
+    }
+    console.log(`pointerOffsets=${offs.join(',')}`);
     return true;
   } },
   // EV oltre il massimo: il totale in alto dice quanti di troppo e che il voto è bloccato, senza l'avviso rosso nell'editor
@@ -579,15 +607,15 @@ const STATES: Record<string, State> = {
     console.log(`evOver=${await p.evaluate(() => { const e = document.querySelector('.ev-total.over'); const t = document.querySelector('.stats-toolbar'); return e ? `${e.textContent} toolbarH=${Math.round(t!.getBoundingClientRect().height)} cut=${(e.querySelector('.ev-left') as HTMLElement).scrollWidth > (e.querySelector('.ev-left') as HTMLElement).clientWidth} note=${!!document.querySelector('.drawer .member-problems')}` : 'none'; })}`);
     return true;
   } },
-  // Velocità finale col mouse sopra: il tooltip col posto nel meta e i vicini (si apre verso sinistra)
+  // La riga "Più veloce del X% del meta" sotto le statistiche col mouse sopra: il tooltip di Analisi › Velocità
   'editor-speed-tip': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
     await wait(500);
-    const fin = await p.$('[data-testid="final-spe"]');
-    if (!fin) return 'no speed';
-    await fin.hover();
-    await wait(400);
-    console.log(`speedTip=${await p.evaluate(() => { const t = document.querySelector('.speed-pop')?.getBoundingClientRect(); return t ? `${Math.round(t.left)},${Math.round(t.top)},${Math.round(t.right)},${Math.round(t.bottom)} vw=${innerWidth} vh=${innerHeight}` : 'none'; })}`);
+    const line = await p.$('.speed-line-anchor');
+    if (!line) return 'no speed line';
+    await line.hover();
+    await wait(500);
+    console.log(`speedTip=${await p.evaluate(() => { const t = document.querySelector('.ftip.speed')?.getBoundingClientRect(); return t ? `${Math.round(t.left)},${Math.round(t.top)},${Math.round(t.right)},${Math.round(t.bottom)} vw=${innerWidth} vh=${innerHeight}` : 'none'; })}`);
     return true;
   } },
   // Riga delle statistiche col mouse sopra: targhetta col bordo ciano, triangolino, tacca della barra EV
@@ -610,10 +638,11 @@ const STATES: Record<string, State> = {
     await wait(400);
     console.log(await p.evaluate(() => {
       const tail = document.querySelector('.editor-group.moves .combobox-trailing')!;
-      const toggle = document.querySelector('.band-toggle')!.getBoundingClientRect();
-      const top = document.elementFromPoint(toggle.left + toggle.width / 2, toggle.top + toggle.height / 2);
+      // La freccia che riduce il team c'è solo a editor chiuso: senza, niente da coprire
+      const toggle = document.querySelector('.band-toggle')?.getBoundingClientRect();
+      const top = toggle ? document.elementFromPoint(toggle.left + toggle.width / 2, toggle.top + toggle.height / 2) : null;
       const tails = [...document.querySelectorAll('.move-combo .mvp-tail')].map(t => `${t.textContent}:${Math.round(t.getBoundingClientRect().width)}`).join(',');
-      return `tails=${tails} menuOpen=${!!document.querySelector('.editor-group.moves .combobox.open [role=listbox]')} cursor=${getComputedStyle(tail).cursor} overToggle=${top?.closest('[role=listbox]') ? 'menu' : top?.className}`;
+      return `tails=${tails} menuOpen=${!!document.querySelector('.editor-group.moves .combobox.open [role=listbox]')} cursor=${getComputedStyle(tail).cursor} overToggle=${!top ? 'no toggle' : top.closest('[role=listbox]') ? 'menu' : top.className}`;
     }));
     return true;
   } },
@@ -943,7 +972,9 @@ const STATES: Record<string, State> = {
   'grade-delta': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Iron Valiant/)) return 'no card';
     await wait(600);
-    return clickText(p, '.slot.open button.best-preset', /./);
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    return clickText(p, '.slot.open .set-menu-row', /./);
   } },
   'editor-alert': { hash: hash(MOVE), run: async p => {
     // La prima carta con un avviso (Great Tusk con una mossa che non impara)
@@ -953,18 +984,28 @@ const STATES: Record<string, State> = {
   } },
   // Nomi lunghi con l'editor aperto: la carta aperta tiene il nome; nella barra compressa i nomi vanno su due righe
   'editor-long': { hash: hash(LONG), run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Urshifu/)) return 'no card'; await wait(600); return true; } },
-  // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu dei preset aperto e il riquadro Testo del set
+  // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu Set aperto e il riquadro del testo del set
   'editor-head': { run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card'; await wait(600); return editorHead(p); } },
   'editor-presets': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
     await wait(600);
-    return clickText(p, '.slot.open .preset-field [role="combobox"]', /./);
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    console.log(await p.evaluate(() => {
+      const pop = document.querySelector('.slot.open .set-menu-pop')?.getBoundingClientRect();
+      const drawer = document.querySelector('.slot.open .drawer');
+      if (!pop || !drawer) return 'no menu';
+      const d = drawer.getBoundingClientRect();
+      const rows = [...document.querySelectorAll('.slot.open .set-menu-row')].map(r => r.querySelector('strong')?.textContent + (r.querySelector('.set-menu-best') ? '*' : '')).join(',');
+      return `setMenu=${Math.round(pop.left)},${Math.round(pop.top)} ${Math.round(pop.width)}x${Math.round(pop.height)} inDrawer=${pop.bottom <= d.bottom && pop.left >= d.left ? 1 : 0} drawerOver=${drawer.scrollHeight - drawer.clientHeight} rows=${rows}`;
+    }));
+    return true;
   } },
   // Fumetti delle icone della testata col fuoco (dove cadono, se escono dalla finestra), matita del nome, contrasto di "N liberi"
   'editor-hints': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
     await wait(600);
-    for (const sel of ['.shiny-toggle', '.smogon-link', '.save-set', '.member-copy', '.editor-close', '.nickname']) {
+    for (const sel of ['.shiny-toggle', '.member-copy', '.editor-close', '.nickname']) {
       await focus(p, `.slot.open ${sel}`);
       await wait(200);
       console.log(await p.evaluate(s => {
@@ -990,9 +1031,27 @@ const STATES: Record<string, State> = {
   'editor-paste': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
     await wait(600);
-    if (!await clickText(p, '.slot.open button.member-io', /./)) return 'no set text button';
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    if (!await clickText(p, '.slot.open .set-menu-foot button', /Incolla|Paste/)) return 'no paste button';
     await wait(300);
     return editorHead(p);
+  } },
+  // Barra del team (striscia unica): altezza, alto e basso di ogni pezzo, distanze, se esce o va a capo; la freccia che riduce il team
+  'team-bar': { run: async p => {
+    await tab(p, 'pokemon');
+    await wait(300);
+    console.log(await p.evaluate(() => {
+      const head = document.querySelector('.team-head')!.getBoundingClientRect();
+      const parts = [...document.querySelectorAll<HTMLElement>('.team-plate, .team-saved summary, .team-guide, .team-io, .clear-team')].map(e => {
+        const b = e.getBoundingClientRect();
+        return `${(e.className || e.tagName).toString().split(' ')[0]}:${Math.round(b.left)}-${Math.round(b.right)} y${Math.round(b.top)}h${Math.round(b.height)}`;
+      });
+      const tog = document.querySelector('.band-toggle')?.getBoundingClientRect();
+      const band = document.querySelector('.band')?.getBoundingClientRect();
+      return `teamBar head=${Math.round(head.left)}-${Math.round(head.right)} ${parts.join(' ')} out=${head.right > innerWidth ? 1 : 0} toggle=${tog ? `${Math.round(tog.top)}-${Math.round(tog.bottom)} bandBottom=${Math.round(band!.bottom)}` : 'none'}`;
+    }));
+    return true;
   } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
