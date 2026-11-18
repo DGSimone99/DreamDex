@@ -21,17 +21,19 @@ async function importTeam(text: string) {
 }
 
 describe('voto con membri fuori regola', () => {
-  it('voto grigio con il perché sotto il giudizio ("Non legale: 1 Pokémon"), formato, chi e motivo al passaggio, niente triangolo', async () => {
+  it('voto grigio, niente scritta sotto il giudizio (allungava la carta): il perché nel triangolo rosso (formato, chi, motivo)', async () => {
     await importTeam('Great Tusk @ Leftovers\nAbility: Protosynthesis\n- Rapid Spin\n\nMewtwo @ Life Orb\nAbility: Pressure\n- Psystrike');
-    const note = rating().querySelector('.grade-badge .grade-rules') as HTMLElement;
-    expect(note).toHaveTextContent('Non legale: 1 Pokémon');
-    expect(note.title).toContain('Non legale in National Dex OU: 1 Pokémon');
+    expect(rating().querySelector('.grade-badge .grade-rules')).toBeNull();
+    const mark = rating().querySelector('.grade-tools .alert-mark.danger') as HTMLElement;
+    // Il tooltip flottante si tiene dentro lo schermo
+    expect(mark).toHaveClass('floating');
+    const note = mark.querySelector('[role="tooltip"]') as HTMLElement;
+    expect(note).toHaveTextContent('Non legale in National Dex OU: 1 Pokémon');
     // Il voto in grigio anche nella tessera Analisi del menu
     expect(document.querySelector('#tab-analysis .grade')).toHaveClass('illegal');
-    expect(note.title).toContain('Non legali: Mewtwo');
-    expect(note.title).toContain('Mewtwo non è legale in National Dex OU: tier troppo alto');
+    expect(note).toHaveTextContent('Non legali: Mewtwo');
+    expect(note).toHaveTextContent('Mewtwo non è legale in National Dex OU: tier troppo alto');
     expect(rating().querySelector('.grade-badge')).toHaveClass('rules-broken');
-    expect(rating().querySelector('.grade-tools .alert-mark.danger')).toBeNull();
     // Per i lettori di schermo nella frase del voto
     expect(rating().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(/Non legale in National Dex OU: 1 Pokémon \(Mewtwo\): Mewtwo non è legale in National Dex OU/);
   });

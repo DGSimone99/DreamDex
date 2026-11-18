@@ -51,7 +51,6 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
   const broken = ruleIssues.length > 0;
   // Nella carta (stretta) la scritta corta; il formato è nel tooltip e nella frase per i lettori di schermo
   const notLegal = broken ? t('rating.notLegalIn', { format: formatName, n: Math.max(1, illegalCount) }) : '';
-  const notLegalShort = broken ? t('rating.notLegalShort', { n: Math.max(1, illegalCount) }) : '';
   // Il tipo di team come nel Riassunto: senza tipo "Incompleto · 5/6" finché mancano membri, a team completo "Misto"
   const pending = members < 6;
   const typeLabel = teamType ? t(`archetype.${teamType}`) : pending ? t('sum.archBuilding', { n: members }) : t('sum.archMixed');
@@ -73,7 +72,6 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
       {/* Il tipo di team sulla riga del giudizio, come testo semplice (non una targa): la carta non diventa più alta */}
       {rating && <span className="grade-type" title={typeNote}>{typeLabel}</span>}
     </span>
-    {rating && broken && <span className="grade-rules" title={[notLegal, who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegalShort}</span>}
     </span>
     </>
   );
@@ -99,8 +97,11 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
           )}
           {/* In giallo il voto provvisorio (membro senza mosse, specie, mossa o strumento sconosciuti); le regole sono la
               scritta sotto il giudizio (senza voto, quando il voto è bloccato, restano qui in rosso) */}
-          {((!rating && ruleIssues.length > 0) || !!rating?.notes.length) && <AlertMark alerts={[
+          {/* Regole infrante: il triangolo rosso col perché (in quale formato, chi, il motivo); niente scritta sotto il
+              giudizio, che allungava la carta. Col voto c'è anche il grigio */}
+          {(ruleIssues.length > 0 || !!rating?.notes.length) && <AlertMark floating alerts={[
             ...(!rating && ruleIssues.length ? [{ level: 'danger' as const, text: t('rating.rulesBroken') }, ...ruleIssues.map(text => ({ level: 'danger' as const, text }))] : []),
+            ...(rating && broken ? [{ level: 'danger' as const, text: notLegal }, ...(who ? [{ level: 'danger' as const, text: who }] : []), ...ruleIssues.map(text => ({ level: 'danger' as const, text }))] : []),
             ...(rating?.notes.length ? [{ level: 'warn' as const, text: t('rating.provisional') }] : []),
             ...(rating?.notes ?? []).map(text => ({ level: 'warn' as const, text })),
           ]} />}

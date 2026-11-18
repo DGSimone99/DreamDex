@@ -1025,6 +1025,16 @@ const STATES: Record<string, State> = {
   'clear-hover': { run: async p => { await p.hover('.team-head .clear-team'); await wait(300); return true; } },
   cleared: { run: async p => { await p.click('.team-head .clear-team'); await wait(1200); return toastClear(p); } },
   'removed-toast': { run: async p => { if (!await clickText(p, 'button.remove', /Rimuovi/)) return false; await wait(1200); return toastClear(p); } },
+  // Triangolo rosso della carta del voto (team fuori regola) col mouse sopra: il tooltip resta dentro lo schermo
+  'grade-alert-hover': { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]), run: async p => {
+    await wait(800);
+    const mark = await p.$('.grade-tools .alert-mark');
+    if (!mark) return 'no alert mark';
+    await mark.hover();
+    await wait(400);
+    console.log(`gradeAlert=${await p.evaluate(`(() => { const t = document.querySelector('.alert-pop.alert-float'); if (!t) return 'none'; const r = t.getBoundingClientRect(); return Math.round(r.left) + '..' + Math.round(r.right) + ' vw=' + innerWidth + ' out=' + (r.right > innerWidth || r.left < 0); })()`)}`);
+    return true;
+  } },
   illegal: { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]) },
 };
 // Il controllo del testo (--scan) come stringa: dentro page.evaluate niente funzioni con nome (tsx aggiunge __name)
