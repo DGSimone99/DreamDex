@@ -96,8 +96,10 @@ describe('SuggestionsPanel', () => {
     expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
     // Un'area a zero col team vuoto non sembra un errore: si legge "—"
     expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
-    // I ruoli del set hanno la spiegazione nel tooltip
-    for (const role of within(detail).getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')) expect(role.getAttribute('title')).toBeTruthy();
+    // I ruoli del set nella lastra della testata, con la spiegazione nel tooltip
+    const slab = detail.querySelector('.detail-why')!;
+    expect(slab.getAttribute('aria-label')).toMatch(/^Ruoli del set: /);
+    expect(slab.getAttribute('title')).toBeTruthy();
   });
 
   it('mostra i tag sulle righe', async () => {
@@ -785,16 +787,19 @@ describe('sprite Icona box', () => {
     expect(cards[1].style.getPropertyValue('--wake')).toBe(`${CARD_WAKE_MS}ms`);
   });
 
-  it('Set consigliato: sotto le voci i ruoli del set, il principale per primo ed evidenziato', async () => {
+  it('i ruoli del set nella lastra della testata, il principale per primo', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
       onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="normal" />);
-    const roles = [...screen.getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')];
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    const slab = detail.querySelector('.detail-hero .detail-why')!;
+    const roles = slab.textContent!.split(' · ');
     expect(roles.length).toBeGreaterThan(0);
-    expect(roles[0].classList.contains('main')).toBe(true);
-    expect(roles.slice(1).some(role => role.classList.contains('main'))).toBe(false);
+    // Il principale per primo: lo stesso della carta del team (cardRoles), le voci senza doppioni
+    expect(new Set(roles).size).toBe(roles.length);
+    expect(slab.getAttribute('aria-label')).toBe(`Ruoli del set: ${roles.join(', ')}`);
   });
 
   it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {

@@ -260,3 +260,64 @@
 .syn-more-mon { display: flex; align-items: center; }
 .syn-more-mon .sprite { display: block; image-rendering: pixelated; }
 .syn-more-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
+/* ===== Dettaglio dei candidati disegnato come la carta del tooltip (SuggestionDetail): la testata della carta (diagonale
+   nei colori dei tipi, righe, ombra in basso) con sprite, nome, icone dei tipi e lastra dei ruoli, il voto a destra; il set
+   con la stessa griglia, l'esagono e le pillole. Le misure sono quelle del dettaglio, più grandi del tooltip */
+.detail-hero.mcard-head { grid-template-columns: 96px minmax(0, 1fr) auto; grid-template-rows: auto; align-items: center; align-content: center; gap: var(--sp-3) var(--sp-7); min-height: 108px; padding: var(--sp-6) var(--sp-9) var(--sp-6) var(--sp-6); }
+.detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
+.detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45)); }
+.detail-hero.mcard-head .detail-id { gap: var(--sp-4); }
+.detail-hero.mcard-head .detail-id h3 { gap: var(--sp-4); font-style: italic; text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.detail-types { display: inline-flex; flex: none; gap: var(--sp-2); }
+.detail-types img { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
+.detail-hero .detail-why { align-self: flex-start; justify-self: auto; margin-top: 0; font-size: var(--fs-small); cursor: help; }
+.detail-hero.mcard-head .detail-score strong, .detail-hero.mcard-head .detail-score span { text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.detail-hero.mcard-head .detail-score span { color: var(--text); }
+/* Set consigliato: griglia, esagono e pillole senza i margini del tooltip (li dà la sezione) */
+.detail-sec.set-sec { display: block; }
+.set-sec .mcard-kit { padding: 0 0 var(--sp-5); font-size: var(--fs-small); }
+.set-sec .mcard-body { padding: var(--sp-4) 0 0; grid-template-columns: 200px minmax(0, 1fr); gap: var(--sp-6); }
+/* Il dettaglio sta nella colonna senza scorrere: testata ed esagono un po' più bassi; sugli schermi bassi niente esagono
+   e le mosse su due colonne (le statistiche restano in un clic nella scheda) */
+.detail-hero.mcard-head { min-height: 92px; padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+.detail-hero.mcard-head .detail-sprite { width: 80px; height: 80px; }
+.detail-hero.mcard-head { grid-template-columns: 80px minmax(0, 1fr) auto; }
+.detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
+.set-sec .mcard-hex { width: 180px; height: 120px; }
+.set-sec .mcard-body { grid-template-columns: 180px minmax(0, 1fr); }
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .set-sec .mcard-hex { display: none; }
+  .set-sec .mcard-body { display: block; padding-top: var(--sp-3); }
+  .set-sec .mcard-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-4); }
+  .set-sec .mcard-kit { padding-bottom: var(--sp-3); }
+  .detail-hero.mcard-head { min-height: 72px; }
+  .detail-hero.mcard-head .detail-sprite { width: 64px; height: 64px; }
+  .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 64px minmax(0, 1fr) auto auto; }
+}
+/* Sotto i 900px di altezza (1536x864): esagono e testata ancora un filo più bassi */
+@media (min-width: 1100px) and (max-height: 899px) and (min-height: 800px) {
+  .set-sec .mcard-hex { width: 160px; height: 106px; }
+  .set-sec .mcard-body { grid-template-columns: 160px minmax(0, 1fr); padding-top: var(--sp-3); }
+  .set-sec .mcard-kit { padding-bottom: var(--sp-3); }
+  .detail-hero.mcard-head { min-height: 84px; }
+}
+/* Schermi molto bassi (1366x657, 1280x620): sezioni più strette, il titolo del set dentro la sua riga */
+@media (min-width: 1100px) and (max-height: 699px) {
+  .detail:not(.detail-empty) .detail-sec.set-sec h4 { display: none; }
+  .detail-hero.mcard-head { min-height: 64px; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+  .detail-hero.mcard-head .detail-sprite { width: 56px; height: 56px; }
+  .detail-hero.mcard-head { grid-template-columns: 56px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head .detail-id { gap: var(--sp-2); }
+}
+/* Schermi alti (1080 e oltre): c'è spazio, testata ed esagono grandi come nella carta e oltre */
+@media (min-width: 1100px) and (min-height: 1000px) {
+  .detail-hero.mcard-head { min-height: 112px; padding-top: var(--sp-6); padding-bottom: var(--sp-6); grid-template-columns: 96px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
+  .detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; }
+  .set-sec .mcard-hex { width: 240px; height: 160px; }
+  .set-sec .mcard-body { grid-template-columns: 240px minmax(0, 1fr); padding-top: var(--sp-6); }
+  .set-sec .mcard-moves { gap: var(--sp-4); }
+  .set-sec .mcard-moves .mvp { --mvp-h: 30px; font-size: var(--fs-small); }
+}

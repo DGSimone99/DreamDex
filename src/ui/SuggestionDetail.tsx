@@ -10,27 +10,30 @@ import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
 import type { Suggestion } from '../engine/scoring';
-import { exportShowdown, presetsFor, STAT_IDS, type TeamSet } from '../engine/sets';
+import { exportShowdown, presetsFor, type TeamSet } from '../engine/sets';
 import { SmogonLink } from './SmogonLink';
 import type { Format } from '../engine/format';
-import { gameName, natureName, statShort, typeName } from '../i18n/game';
+import { typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
 import type { ListSprite } from './theme';
 import { Icon } from './icons';
-import { ItemIcon } from './ItemIcon';
 import { BoxIcon, bringsOf, formeParts } from './candidateParts';
 import { PokemonIcon } from './PokemonName';
-import { battleAbility, battleName, toID } from '../engine/dex';
+import { battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
-import { Sprite, TypeChip, typeColor } from './Sprite';
+import { Sprite, typeColor } from './Sprite';
 import { StatsBadge } from './StatsBadge';
-import { MoveName, Typed } from './TypeText';
+import { Typed } from './TypeText';
+import { MemberKit, MemberStatsMoves } from './MemberCard';
+import { typeIconUrl } from './typeIcons';
+import type { TypeName } from '../engine/types';
 
 
 /**
- * Il candidato selezionato nella lista, dall'alto per importanza: chi è e quanto sale il voto, cosa porta e cosa toglie,
- * l'effetto sul team area per area (una riga), il set consigliato, le azioni.
+ * Il candidato selezionato nella lista, disegnato come la carta del tooltip: testata nei colori dei tipi coi ruoli e quanto
+ * sale il voto, cosa porta e cosa toglie, l'effetto sul team area per area (una riga), il set consigliato (griglia,
+ * esagono, pillole delle mosse), le azioni.
  */
 export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal', teamCollapsed = false, sheet = false }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
@@ -67,7 +70,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const changes = 'diff' in item && item.diff ? rankedChanges(item.diff, item.teamGain, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
   const forme = formeParts(item.species);
-  const evs = STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
   const result = item.teamGain;
 
@@ -88,6 +90,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     top: mates[0]?.share || 1,
   } : null;
   const setRoles = [...(mainRole ? [mainRole] : []), ...detectRoles(set, rulesOf(data)).filter(role => role !== mainRole)];
+  const roleName = (role: (typeof setRoles)[number]) => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang));
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
   const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))];
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
@@ -102,7 +105,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   return (
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
-      <header className="detail-hero">
+      {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
+          tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
+      <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
         <span className="detail-sprite">
           {listSprite === 'box' ? <Sprite species={item.species} item={set.item} size={144} animated /> : <BoxIcon set={set} />}
@@ -118,10 +123,19 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                 <i className="forme" aria-hidden="true">{forme.forme}</i>
               </span>
             ) : <span>{item.species}</span>}
+            <span className="detail-types" aria-label={types.map(type => typeName(type as TypeName, lang)).join(', ')}>
+              {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}
+            </span>
             {banMark}
             <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
           </h3>
-          <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
+          {/* I ruoli del set, il principale per primo (era la sezione Ruoli) */}
+          {setRoles.length > 0 && (
+            <span className="mcard-why detail-why" aria-label={`${tr('detail.roles')}: ${setRoles.map(roleName).join(', ')}`}
+              title={setRoles.filter(role => role !== 'weather').map(role => `${roleLabel(role, lang)}: ${roleDescription(role, lang)}`).join(' · ')}>
+              {setRoles.map(roleName).join(' · ')}
+            </span>
+          )}
         </div>
         {/* Sostituendo: dopo nome e tipi, ⇄ e chi esce ingrigito, così si vede subito al posto di chi entra */}
         {replacing && (
@@ -206,39 +220,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         )}
 
 
+        {/* Il set consigliato come nella carta del tooltip: griglia (strumento, natura, abilità, EV, Tera), statistiche a
+            esagono e mosse come pillole */}
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
-          {/* Due righe: strumento e abilità, poi natura, EV e Tera */}
-          <p className="detail-set">
-            <span className="set-line">
-              {set.item && <span><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span>}
-              {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
-              {battleAbility(set) && <span>{gameName('ability', battleAbility(set), lang)}</span>}
-            </span>
-            <span className="set-line">
-              {set.nature && <span>{natureName(set.nature, lang)}</span>}
-              {evs && <span className="evs">{evs}</span>}
-              {set.teraType && <span>{tr('editor.tera')} {typeName(set.teraType, lang)}</span>}
-            </span>
-          </p>
-          <ul className="detail-moves" aria-label={tr('editor.moves')}>
-            {set.moves.map(move => <li key={move}><MoveName move={move} /></li>)}
-          </ul>
+          <MemberKit set={set} />
+          <MemberStatsMoves set={set} movesLabel={tr('editor.moves')} />
         </section>
-
-        {/* Ruoli del set consigliato: il principale per primo ed evidenziato */}
-        {setRoles.length > 0 && (
-          <section className="detail-sec wide roles-sec">
-            <h4>{tr('detail.rolesTitle')}</h4>
-            <ul className="detail-roles" aria-label={tr('detail.roles')}>
-              {setRoles.map(role => (
-                <li key={role} className={role === mainRole ? 'main' : undefined} title={role === 'weather' ? undefined : roleDescription(role, lang)}>
-                  {role === 'weather' ? tr('card.weather') : roleLabel(role, lang)}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
 
         {/* Meta, solo col team chiuso (c'è l'altezza): a sinistra l'uso nel meta e il posto in classifica, a destra i 5
             compagni più frequenti come una classifica a barre (lunghe quanto la quota, rispetto al primo; colore del tipo);
