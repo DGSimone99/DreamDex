@@ -15,7 +15,7 @@ function Editor({ initial }: { initial: TeamSet }) {
 const chomp: TeamSet = { ...emptySet('Garchomp'), nature: 'Jolly', evs: { atk: 252, spe: 252, hp: 4 } };
 const finalOf = (stat: string) => within(screen.getByRole('group', { name: 'Statistiche' })).getByTestId(`final-${stat}`).textContent;
 
-describe('IV e livello nel blocco statistiche', () => {
+describe('IV nel blocco statistiche', () => {
   it('l’IV cambia il valore finale e resta nel set', async () => {
     const user = userEvent.setup();
     renderIt(<Editor initial={chomp} />);
@@ -32,15 +32,10 @@ describe('IV e livello nel blocco statistiche', () => {
     expect(latest?.ivs).toBeUndefined();
   });
 
-  it('Lv. 50 mostra i valori del livello 50; il set non cambia', async () => {
-    const user = userEvent.setup();
+  it('niente scelta del livello: i valori finali sono sempre al livello 100', () => {
     renderIt(<Editor initial={chomp} />);
-    await user.click(screen.getByRole('button', { name: 'Lv. 50' }));
-    expect(screen.getByRole('button', { name: 'Lv. 50' })).toHaveAttribute('aria-pressed', 'true');
-    expect(finalOf('spe')).toBe('169');
-    expect(finalOf('hp')).toBe('184');
-    expect(latest).toEqual(chomp);
-    await user.click(screen.getByRole('button', { name: 'Lv. 100' }));
+    expect(screen.queryByRole('button', { name: /^Lv\. / })).toBeNull();
     expect(finalOf('spe')).toBe('333');
+    expect(finalOf('hp')).toBe('358');
   });
 });

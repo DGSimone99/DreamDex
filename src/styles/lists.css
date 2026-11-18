@@ -156,15 +156,10 @@
 .set-editor .save-set, .set-editor .delete-set { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .set-editor .delete-set { width: 36px; padding: 0; justify-content: center; }
 .set-editor .delete-set:hover { border-color: var(--bad); color: var(--bad); }
-/* Livello (due mezze pillole unite) a sinistra e Spread più usati a destra, staccati da titolo e righe */
+/* EV usati a sinistra e Spread più usati a destra, staccati da titolo e righe */
 .set-editor .evs .stats-toolbar { display: flex; align-items: center; gap: var(--sp-6); margin: var(--sp-4) 0 var(--sp-1); }
 .set-editor .evs .stats-toolbar .spread-panel { display: block; margin-left: auto; }
-.set-editor .evs .level-toggle { position: static; display: inline-flex; align-items: center; gap: 0; }
-.set-editor .evs .level-toggle-label { margin-right: var(--sp-4); }
 .set-editor .evs .spread-panel > summary { position: static; }
-.level-toggle button { height: 26px; min-width: 44px; margin: 0; }
-.level-toggle button:first-of-type { border-radius: 13px 0 0 13px; }
-.level-toggle button:last-of-type { border-radius: 0 13px 13px 0; margin-left: -1px; }
 .set-editor .evs .stats-toolbar .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
 .editor-roles ul { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .editor-roles li { padding: 3px var(--sp-5); border: 1px solid var(--line); background: var(--raised); font-size: var(--fs-small); color: var(--text); }
@@ -268,10 +263,19 @@
 .set-editor .preset-field, .set-editor .my-sets-field { gap: var(--sp-1); }
 .set-editor .custom-toggle { margin-left: auto; gap: var(--sp-4); }
 /* Statistiche un po' più basse: righe e campi più stretti, senza schiacciare i cursori */
-.stat-row { padding-top: 1.5px; padding-bottom: 1.5px; }
+.stat-row { padding-top: 4.5px; padding-bottom: 4.5px; }
+.set-editor .stat-rows { gap: 7px; --ev-h: 24px; }
+/* Schermi alti (1080 e oltre): le targhette delle statistiche più alte e più distanziate, c'è spazio */
+@media (min-width: 1100px) and (min-height: 1000px) {
+  .stat-row { padding-top: 8px; padding-bottom: 8px; }
+  .set-editor .stat-rows { gap: 9px; --ev-h: 28px; --ev-w: 140px; }
+  /* Campi di Set e Mosse più alti: lo spazio in più si riempie di contenuto, non di vuoto */
+  .set-editor .editor-side .combobox input { height: 40px; }
+  .set-editor .move-combo { --mvp-h: 40px; --mvp-r: 12px; --mvp-cut: 13px; }
+  .set-editor .editor-side .field-head { font-size: var(--fs-caption); }
+}
 .set-editor .ev-input, .set-editor .iv-input { height: 27px; }
 .set-editor .evs { gap: var(--sp-4); }
-.set-editor .evs .speed-line { padding-top: var(--sp-4); }
 /* Ruoli in un riquadro su una riga; Sostituisci fuori, in basso a destra */
 .editor-foot { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: var(--sp-7); }
 .editor-foot .editor-roles { flex: 1; min-width: 0; }
@@ -285,7 +289,8 @@
 .set-editor .editor-head { row-gap: var(--sp-4); }
 /* Schermi alti meno di 900px (1536×864 e simili): righe delle statistiche un pelo più strette */
 @media (min-width: 1100px) and (max-height: 899px) {
-  .stat-row { padding-top: 0.5px; padding-bottom: 0.5px; }
+  .stat-row { padding-top: 3px; padding-bottom: 3px; }
+  .set-editor .stat-rows { gap: 5px; --ev-h: 21px; }
   .set-editor .ev-input, .set-editor .iv-input { height: 26px; }
   .set-editor .evs { gap: var(--sp-3); }
 }
@@ -296,15 +301,14 @@
   .set-editor .editor-head { gap: var(--sp-5); row-gap: var(--sp-3); }
   .set-editor .preset-field { width: 250px; }
   .set-editor .my-sets-field { width: 210px; }
-  .stat-row { padding-top: 0; padding-bottom: 0; }
+  .stat-row { padding-top: 4.5px; padding-bottom: 4.5px; }
   .set-editor .ev-input, .set-editor .iv-input { height: 24px; }
   .set-editor .evs { gap: var(--sp-2); }
   .set-editor .evs .stats-toolbar { margin: var(--sp-2) 0 0; }
-  .set-editor .stat-rows { gap: 1px; }
+  .set-editor .stat-rows { gap: 6px; --ev-h: 20px; }
   .set-editor fieldset { padding-bottom: var(--sp-4); }
   .set-editor fieldset.editor-roles { padding: 0 var(--sp-5) var(--sp-3); }
   .set-editor .editor-group { gap: var(--sp-3) var(--sp-6); }
-  .set-editor .evs .speed-line { padding-top: var(--sp-2); }
   .editor-title .species-tag { bottom: calc(100% + 2px); }
 }
 /* Copia il set attaccato a Testo del set */
@@ -675,4 +679,29 @@
 }
 @media (pointer: coarse) {
   .dex-actions button { width: 36px; height: 36px; }
+}
+
+/*
+ * Lo spazio che avanza nel cassetto dell'editor va dentro l'editor, non sotto i Ruoli: la fascia centrale (Statistiche | Set e Mosse) prende l'altezza in più. A sinistra lo spazio
+ * in più va fra le targhette delle statistiche; a destra Set e
+ * Mosse si dividono l'altezza e i loro campi si distanziano. Le righe del contenitore senza gap: con l'avviso della
+ * proposta (che non sempre c'è) una riga vuota non lascia uno spazio in più. L'editor è alto almeno quanto il cassetto:
+ * la fascia centrale (1fr) prende solo lo spazio che avanza davvero.
+ */
+@media (min-width: 1100px) {
+  .drawer > .set-editor { min-height: 100%; --ed-gap: var(--sp-4); }
+  .set-editor { grid-template-rows: auto auto minmax(0, 1fr) auto; row-gap: 0; }
+  .set-editor > .editor-head { grid-row: 1; margin-bottom: var(--ed-gap); }
+  .set-editor > :not(.editor-head, .stats-cell, .editor-side, .editor-foot) { grid-row: 2; margin-bottom: var(--ed-gap); }
+  .set-editor > .stats-cell, .set-editor > .editor-side { grid-row: 3; }
+  .set-editor > .editor-foot { grid-row: 4; margin-top: var(--ed-gap); }
+  /* Statistiche: la barra in alto ferma, le righe si dividono l'altezza */
+  .set-editor .stats-cell > .evs { display: flex; flex-direction: column; }
+  .set-editor .evs .stat-rows { flex: 1; align-content: space-evenly; }
+  /* Set e Mosse: metà altezza ciascuno, i campi distanziati dentro */
+  .set-editor .editor-side { grid-template-rows: 1fr 1fr; align-content: stretch; }
+  .set-editor .editor-side > .editor-group { align-content: space-evenly; }
+}
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .drawer > .set-editor { --ed-gap: var(--sp-3); }
 }

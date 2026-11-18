@@ -12,16 +12,17 @@ import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/gam
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
 import { describe } from './describe';
-import { SpeedLine } from './SpeedLine';
+import { SpeedFinal } from './SpeedLine';
 import { speedStat, type SpeedTier } from '../engine/speed';
 import { EV_TOTAL, evTotal, ivOf, statLines } from '../engine/statCalc';
-import { setViewLevel, useViewLevel } from './viewLevel';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { MySetsField } from './MySetsField';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
+import { CategoryIcon } from './CategoryIcon';
+import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
 
 function NatureEffect({ name }: { name: string }) {
@@ -36,7 +37,6 @@ function NatureEffect({ name }: { name: string }) {
   );
 }
 
-const CATEGORY_ICONS = { Physical: 'physical', Special: 'special', Status: 'status' } as const;
 
 /** Casella IV (0–31): mentre scrivi tiene il testo (anche vuoto), lo applica subito; vuota torna a 31 uscendo. */
 function IvInput({ value, label, onChange }: { value: number; label: string; onChange: (raw: string) => void }) {
@@ -71,7 +71,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
     <span className="move-meta">
       <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
         {/* Nel campo il simbolo sta nella coda della pillola: qui resta solo per i lettori di schermo */}
-        {!inField && <Icon name={CATEGORY_ICONS[move.category]} filled={move.category === 'Physical'} />}
+        {!inField && <CategoryIcon category={move.category} />}
         {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
         {move.basePower > 0
           ? (inField
@@ -290,8 +290,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, []);
-  const level = useViewLevel();
-  const lines = statLines(set, level);
+  const lines = statLines(set, 100);
   // IV: 31 se non indicato; nel set restano solo quelli diversi da 31
   const changeIv = (stat: StatID, raw: string) => {
     const value = Math.min(31, Math.max(0, Number.isFinite(Number(raw)) && raw !== '' ? Math.floor(Number(raw)) : 31));
@@ -355,15 +354,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       <div className="stats-cell">
       <fieldset className="evs">
         <legend>{t('editor.stats')}</legend>
-        {/* Livello a sinistra (due mezze pillole unite), "Spread più usati" a destra, sulla stessa riga */}
+        {/* EV usati a sinistra (barra, 508 / 510, quanti ne restano), "Spread più usati" a destra, sulla stessa riga */}
         <div className="stats-toolbar">
-        <div className="level-toggle" role="group" aria-label={t('editor.level')}>
-          <span className="level-toggle-label" aria-hidden="true">{t('editor.levelShort')}</span>
-          {([50, 100] as const).map(n => (
-            <button key={n} type="button" aria-pressed={level === n} aria-label={t('editor.levelN', { n })}
-              onClick={() => setViewLevel(n)}>{n}</button>
-          ))}
-        </div>
+        <p className={`ev-total${used > EV_TOTAL ? ' over' : ''}`}>
+          <span>{t('editor.evTotal')}</span>
+          <span className="ev-meter" aria-hidden="true"><span style={{ width: `${Math.min(100, (used / EV_TOTAL) * 100)}%` }} /></span>
+          <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
+          <span className="ev-left">{used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : t('editor.evLeft', { n: EV_TOTAL - used })}</span>
+        </p>
         {!!common?.spreads.length && (
           // Chiuso di norma
           <details className="spread-panel" ref={spreadMenu}
@@ -399,7 +397,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           </div>
           {lines.map(line => (
             <div key={line.stat} className={`stat-row${line.nature ? ` nature-${line.nature}` : ''}`}>
-              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}>{statShort(line.stat, lang).toUpperCase()}</label>
+              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}><StatIcon stat={line.stat} />{statShort(line.stat, lang).toUpperCase()}</label>
               <span className="stat-base" title={t('editor.base', { n: line.base })}>
                 <span className="stat-base-n">{line.base}</span>
                 <span className="stat-base-bar" aria-hidden="true">
@@ -432,17 +430,13 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               />
               <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })}
                 onChange={raw => changeIv(line.stat, raw)} />
-              <strong className="stat-final" data-testid={`final-${line.stat}`} title={t('editor.finalAt', { n: level })}>{line.value}</strong>
+              {/* La Velocità finale apre il tooltip col posto fra i più usati e i vicini */}
+              {line.stat === 'spe' && speed
+                ? <SpeedFinal name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} value={line.value} testId="final-spe" />
+                : <strong className="stat-final" data-testid={`final-${line.stat}`} title={t('editor.finalAt', { n: 100 })}>{line.value}</strong>}
             </div>
           ))}
         </div>
-        <p className={`ev-total${used > EV_TOTAL ? ' over' : ''}`}>
-          <span>{t('editor.evTotal')}</span>
-          <span className="ev-meter" aria-hidden="true"><span style={{ width: `${Math.min(100, (used / EV_TOTAL) * 100)}%` }} /></span>
-          <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
-          <span className="ev-left">{used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : t('editor.evLeft', { n: EV_TOTAL - used })}</span>
-        </p>
-        {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
       </fieldset>
       {textPanel}
       </div>

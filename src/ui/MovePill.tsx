@@ -3,7 +3,7 @@ import { getMove } from '../engine/dex';
 import { gameName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
-import { Icon } from './icons';
+import { CategoryIcon } from './CategoryIcon';
 import { typeIconUrl } from './typeIcons';
 
 /** La potenza da mostrare nella coda: le mosse di stato e quelle a potenza variabile hanno "—". */
@@ -29,7 +29,7 @@ export function MoveTail({ name, value, symbol = true }: { name: string; value?:
   const tail = value !== undefined ? value : movePower(name);
   return (
     <span className="mvp-tail">
-      {category && <span className={`mvp-cat cat-${CATEGORY[category]}`}><Icon name={CATEGORY[category]} filled={category === 'Physical'} /></span>}
+      {category && <span className={`mvp-cat cat-${CATEGORY[category]}`}><CategoryIcon category={category} /></span>}
       {/* Il numero al centro della coda; senza numero (mosse di stato) al centro va il simbolo */}
       {tail != null ? <span className="mvp-num">{tail}</span> : category === 'Status' ? null : <span className="mvp-num mvp-none" aria-hidden="true">—</span>}
     </span>

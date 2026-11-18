@@ -4,7 +4,7 @@ import { speedStat } from '../../engine/speed';
 import { statLines } from '../../engine/statCalc';
 import type { TeamSet } from '../../engine/sets';
 import { useT } from '../../i18n/react';
-import { Icon } from '../icons';
+import { StatIcon } from '../StatIcon';
 import { PokemonIcon } from '../PokemonName';
 import { useMemberTip } from '../MemberCard';
 import { TypeIcons } from '../typeIcons';
@@ -22,11 +22,11 @@ export function MemberMon({ name, set, stats = false, children, nameTag }: { nam
   const t = useT();
   const species = set ? battleSpecies(set) : getSpecies(name);
   const lines = stats && set ? statLines(set) : null;
-  const stat = (id: 'hp' | 'def' | 'spd' | 'atk' | 'spa' | 'spe', icon: 'heart' | 'physical' | 'special' | 'speed') => {
+  const stat = (id: 'hp' | 'def' | 'spd' | 'atk' | 'spa' | 'spe') => {
     const line = lines!.find(l => l.stat === id)!;
     return (
       <span className={line.nature ?? undefined} title={t(`stat.${id}`)}>
-        <Icon name={icon} /><span className="visually-hidden">{t(`stat.${id}`)}</span>{line.value}
+        <StatIcon stat={id} /><span className="visually-hidden">{t(`stat.${id}`)}</span>{line.value}
       </span>
     );
   };
@@ -36,7 +36,7 @@ export function MemberMon({ name, set, stats = false, children, nameTag }: { nam
     const line = lines!.find(l => l.stat === 'spe')!;
     return (
       <span className={line.nature ?? undefined} title={t('stat.spe')}>
-        <Icon name="speed" /><span className="visually-hidden">{t('stat.spe')}</span>{real.value}
+        <StatIcon stat="spe" /><span className="visually-hidden">{t('stat.spe')}</span>{real.value}
         {real.scarf && <small className="sp-mark">{t('sdetail.mark.scarf')}</small>}
       </span>
     );
@@ -68,8 +68,8 @@ export function MemberMon({ name, set, stats = false, children, nameTag }: { nam
           {children && <span className="def-mon-tag line">{children}</span>}
         </span>
         {lines && <span className="def-mon-stats">{stats === 'offense'
-          ? <>{stat('atk', 'physical')}{stat('spa', 'special')}{realSpeed(set!)}</>
-          : stats === 'speed' ? speedWord(set!) : <>{stat('hp', 'heart')}{stat('def', 'physical')}{stat('spd', 'special')}</>}{children && <span className="def-mon-tag">{children}</span>}</span>}
+          ? <>{stat('atk')}{stat('spa')}{realSpeed(set!)}</>
+          : stats === 'speed' ? speedWord(set!) : <>{stat('hp')}{stat('def')}{stat('spd')}</>}{children && <span className="def-mon-tag">{children}</span>}</span>}
       </span>
       {set && memberTip.tip}
     </span>
