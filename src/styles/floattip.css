@@ -348,3 +348,14 @@
 .detail.tight .set-sec .mcard-hex { display: none; }
 .detail.tight .set-sec .mcard-body { display: block; padding-top: var(--sp-3); }
 .detail.tight .set-sec .mcard-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-4); }
+/* L'etichetta sulla stessa linea di base della prima riga delle voci (o della scritta dei riquadri dei ruoli): le due
+   scritte hanno misure diverse, quindi si allineano le basi, non i centri; i segni restano centrati sulla scritta */
+.bring-group, .detail-sec:not(.wide) .bring-group { align-items: baseline; }
+.bring-label { min-height: 0; height: auto; align-items: baseline; line-height: 1.35; }
+.bring-label .icon, .bring-label .sym-vs { align-self: center; }
+.bring-items { padding-top: 0; }
+.bring-roles .dash-role-tag { min-height: 22px; }
+.detail-why-more { font-style: normal; opacity: 0.75; }
+/* Nei riquadri dei ruoli la linea di base è quella della scritta, non dell'icona (spunta o ×) */
+.bring-roles .dash-role-tag { align-items: baseline; }
+.bring-roles .dash-role-tag .icon { align-self: center; }

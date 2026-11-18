@@ -49,7 +49,10 @@ describe('SuggestionsPanel', () => {
   });
 
   it('il dettaglio mostra il primo candidato: quanto sale il voto del team, in tutto e per area', async () => {
-    await setup('Great Tusk');
+    const user = await setup('Great Tusk');
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+
     const first = rowNames()[0];
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${first}` });
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/^(\+\d+|−\d+|±0)voto del team [SABCD] \d+ → [SABCD] \d+$/);
@@ -85,7 +88,10 @@ describe('SuggestionsPanel', () => {
   });
 
   it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
-    await setup();
+    const user = await setup();
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+
     // Nessuna nota sopra la lista: si parte dalla lista stessa
     expect(within(suggestions()).queryByText(/come si adatta al team/)).toBeNull();
     const usages = within(list()).getAllByLabelText(/^Uso nel meta \d/).map(cell => parseFloat(cell.getAttribute('aria-label')!.replace('Uso nel meta ', '').replace(',', '.')));
@@ -387,9 +393,11 @@ describe('SuggestionsPanel', () => {
     const groups = [...porta.querySelectorAll('.bring-group')];
     expect(groups.map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense', 'offense', 'threats', 'synergy']);
     const texts = (kind: string) => [...porta.querySelectorAll(`.bring-group.${kind} li`)].map(li => li.textContent);
-    expect(texts('defense')).toEqual(['Resiste ad Acqua: debolezze del team']);
-    expect(texts('offense')).toEqual(['Colpisce super efficace Fuoco, scoperti dal team']);
+    // Difesa, Offesa e Minacce nella forma breve (il gruppo dice già il resto), la frase intera nel tooltip
+    expect(texts('defense')).toEqual(['Resiste ad Acqua']);
+    expect(texts('offense')).toEqual(['Colpisce Fuoco']);
     expect(texts('threats')).toEqual(['Ferma Kingambit']);
+    expect(porta.querySelector('.bring-group.offense li')).toHaveAttribute('title', 'Colpisce super efficace Fuoco, scoperti dal team');
     expect(texts('synergy')).toEqual(['Abilita Venusaur: Siccità → Clorofilla']);
     expect(porta.textContent).not.toMatch(/Usato con/);
     // Le caselle: le prime voci in ordine di peso, in forma breve, senza "Usato con"
@@ -521,6 +529,8 @@ Bold Nature
 - Toxic Spikes`,
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     const areas = screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.detail-areas')!;
     // Dal 2026-11-03 nessuna area è inattiva nello stall: niente grigio, niente nota
     expect(areas.querySelector('.inactive')).toBeNull();
@@ -608,11 +618,15 @@ describe('scheda del candidato', () => {
   const section = (name: string) => within(detail()).getByRole('heading', { name }).closest('section')!;
 
   it('Migliora: prima cosa porta e cosa toglie, niente più Perché', async () => {
-    await setup(...FULL);
+    const user = await setup(...FULL);
     expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
     expect(within(detail()).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
     expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+    // Senza la versione estesa niente riga per area; col team chiuso c'è
+    expect(detail().querySelector('.detail-areas')).toBeNull();
+    // La riga per area c'è solo nella versione estesa (team chiuso)
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
   }, 60000);
 
@@ -793,7 +807,7 @@ describe('sprite Icona box', () => {
     expect(cards[1].style.getPropertyValue('--wake')).toBe(`${CARD_WAKE_MS}ms`);
   });
 
-  it('i ruoli del set nella lastra della testata, il principale per primo', async () => {
+  it("la lastra della testata: il ruolo principale e quanti altri, l'elenco intero per i lettori di schermo e nel tooltip", async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
@@ -801,11 +815,12 @@ describe('sprite Icona box', () => {
       onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="normal" />);
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
     const slab = detail.querySelector('.detail-hero .detail-why')!;
-    const roles = slab.textContent!.split(' · ');
+    const roles = slab.getAttribute('aria-label')!.replace('Ruoli del set: ', '').split(', ');
     expect(roles.length).toBeGreaterThan(0);
-    // Il principale per primo: lo stesso della carta del team (cardRoles), le voci senza doppioni
     expect(new Set(roles).size).toBe(roles.length);
-    expect(slab.getAttribute('aria-label')).toBe(`Ruoli del set: ${roles.join(', ')}`);
+    // A vista il principale (il primo dell'elenco) e "+N" per gli altri
+    expect(slab.textContent).toBe(roles.length > 1 ? `${roles[0]} +${roles.length - 1}` : roles[0]);
+    expect(slab.getAttribute('title')).toBeTruthy();
   });
 
   it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {

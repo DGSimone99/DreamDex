@@ -32,6 +32,7 @@ import type { TypeName } from '../engine/types';
 
 /** L'ordine dei gruppi di Porta e Toglie, e il segno di ognuno (gli stessi delle carte della lista). */
 const KINDS: BringKind[] = ['roles', 'defense', 'offense', 'threats', 'synergy', 'warning', 'other'];
+const SHORT_KINDS = new Set<BringKind>(['defense', 'offense', 'threats']);
 const KIND_ICON: Partial<Record<BringKind, 'shield' | 'sword' | 'chain' | 'warning'>> = { defense: 'shield', offense: 'sword', synergy: 'chain', warning: 'warning' };
 
 /**
@@ -64,7 +65,11 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
               </ul>
             ) : (
               <ul className="bring-items">
-                {group.map(item => <li key={item.text}><Typed text={item.text} /></li>)}
+                {group.map(item => {
+                  // Difesa, Offesa e Minacce: la forma breve ("Colpisce Ghiaccio, Psico"), il gruppo dice già il resto
+                  const text = SHORT_KINDS.has(kind) ? item.short : item.text;
+                  return <li key={item.text} title={text !== item.text ? item.text : undefined}><Typed text={text} /></li>;
+                })}
               </ul>
             )}
           </div>
@@ -196,11 +201,11 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             {banMark}
             <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
           </h3>
-          {/* I ruoli del set, il principale per primo (era la sezione Ruoli) */}
+          {/* Il ruolo principale del set e quanti altri ("Pivot +1"); l'elenco intero con le spiegazioni nel tooltip */}
           {setRoles.length > 0 && (
             <span className="mcard-why detail-why" aria-label={`${tr('detail.roles')}: ${setRoles.map(roleName).join(', ')}`}
-              title={setRoles.filter(role => role !== 'weather').map(role => `${roleLabel(role, lang)}: ${roleDescription(role, lang)}`).join(' · ')}>
-              {setRoles.map(roleName).join(' · ')}
+              title={setRoles.map(role => (role === 'weather' ? roleName(role) : `${roleLabel(role, lang)}: ${roleDescription(role, lang)}`)).join(' · ')}>
+              {roleName(setRoles[0])}{setRoles.length > 1 && <span className="detail-why-more"> +{setRoles.length - 1}</span>}
             </span>
           )}
         </div>
@@ -246,7 +251,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           </section>
         )}
 
-        {after && (
+        {/* La riga per area solo nella versione estesa (team chiuso): i gruppi di Porta e Toglie dicono già dove si sale */}
+        {after && teamCollapsed && (
           <section className="detail-sec wide effect">
             {/* Sotto Porta e Toglie, senza etichetta visibile (ne è il risultato; col primo Pokémon resta "Voto con lui da
                 solo"): una riga, per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
