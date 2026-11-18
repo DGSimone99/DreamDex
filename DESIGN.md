@@ -172,6 +172,8 @@ rounded:
   square: "0px"
   hairline: "1px"
   chip: "2px"
+  alt-sm: "7px 2px 7px 2px"
+  alt: "10px 3px 10px 3px"
   tag: "3px"
   control: "4px"
   floating: "6px"
@@ -195,7 +197,7 @@ components:
     backgroundColor: "{colors.raised}"
     textColor: "{colors.text}"
     typography: "{typography.body}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.alt}"
     padding: "6px 10px"
   button-pressed:
     backgroundColor: "{colors.accent-soft}"
@@ -204,7 +206,7 @@ components:
     backgroundColor: "{colors.accent-2}"
     textColor: "{colors.on-accent-2}"
     typography: "{typography.button-primary}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.alt}"
   button-primary-hover:
     backgroundColor: "{colors.accent-2-ink}"
   button-guide:
@@ -258,10 +260,10 @@ components:
     padding: "0 16px"
     height: "50px"
   type-chip:
-    textColor: "{colors.type-ink}"
+    backgroundColor: "{colors.raised}"
     typography: "{typography.chip}"
-    rounded: "{rounded.chip}"
-    width: "66px"
+    rounded: "{rounded.control}"
+    height: "20px"
   tag:
     backgroundColor: "{colors.good-bg}"
     textColor: "{colors.good}"
@@ -346,7 +348,7 @@ A dark, cool ground with two saturated version colours that swap per game, plus 
 - **Text**, **Muted**, **Faint**: primary, secondary and tertiary text. Faint stays at least 4.6:1 on Raised.
 
 ### Type and move colours
-The 18 classic type colours (`src/ui/Sprite.tsx`) fill type chips with whichever ink has more contrast (Type Ink or white), colour card gradients and stripes, type dots and icons, and are lightened toward white for type and move names in text. Move Physical and Move Special colour only the move category icon in the editor; status moves stay Faint.
+The 18 classic type colours (`src/ui/Sprite.tsx`) fill the icon tile of type chips and tint their names toward white, colour card gradients and stripes, type dots and icons, and are lightened toward white for type and move names in text. Move Physical and Move Special colour only the move category icon in the editor; status moves stay Faint.
 
 ### Named Rules
 **The Rare Magenta Rule.** Magenta marks the open rail section or tab, the one best action on screen and the S grade, nothing else. Tags, frames, scores and toolbar buttons around that action stay cyan or neutral; a second "main" button on the same surface is an ordinary button. While the Completa team panel is open, the page behind it turns its magenta actions neutral.
@@ -422,7 +424,7 @@ Flat and tonal. Depth goes Field, Ground, Band, Panel, Raised, separated by 1px 
 
 ## Shapes
 
-Square by default: panels, blocks, lists, the summary screen, team cards and empty slots have no radius. Controls (buttons, inputs, selects) use 4px; menus and dialogs 6px; tags, pager buttons and badges 3px; type chips and meters 2px; count pills 10px; filter pills 14px; phone sheets 8px on top. Chevrons are two-sided 2px borders rotated 45°, down when closed, up when open. Empty team slots are 2px dashed outlines; only the first carries the plus ring.
+Square by default: panels, blocks, lists, the summary screen, team cards and empty slots have no radius. Buttons take Pokémon Champions' alternate corners (`--alt-r` 10/3/10/3, rounded top-left and bottom-right); inputs and selects use 4px; menus and dialogs 6px; tags, pager buttons and badges 3px; meters 2px; the small Champions pieces (role boxes) the small alternate corners; type chips are a plain 4px rounded rectangle as in Champions (`--alt-r-sm` 7/2/7/2). Only these two alternate sizes exist; count pills 10px; filter pills 14px; phone sheets 8px on top. Chevrons are two-sided 2px borders rotated 45°, down when closed, up when open. Empty team slots are 2px dashed outlines; only the first carries the plus ring.
 
 The one expressive shape is the slant: a parallelogram cut by `clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)` (9 to 10px on small heads, 5px on small state tags, 14px on the rail tab), filled with the neutral plate colour under the stripe texture (`--stripes`: `repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px)`). Bar pieces in the Analisi share the same slanted right edge.
 
@@ -443,10 +445,11 @@ The one expressive shape is the slant: a parallelogram cut by `clip-path: polygo
 
 ### Plates, Chips and Tags
 - **Plate:** the neutral slanted striped head (Line, Text, 700 italic) used for section, panel and card titles and for the "TEAM COVERAGE" plate.
-- **Type chip:** fixed 66px (56 on cards, 52 compact), classic type colour, 11px uppercase, 2px corners; long names tighten their letter-spacing instead of widening the chip, so chips align in columns.
+- **Type chip** (`TypeChip`): as in Pokémon Champions, in the site's colours: a square tile in the type colour with the official icon, then the name (11px, 700, uppercase, centred) on a dark plate that fades from Raised to Field, tinted 35% toward the type colour; a plain rounded rectangle (4px, not the moves' alternate corners), 20px tall. One fixed width for every type, as in Champions (the name area is 70px, enough for the longest name; "Coleottero" drops to 10px), so chips line up in columns. Where space is counted the width follows the name instead: list reasons (16px tall) and team cards (18px, name in normal case and tighter; when two do not fit the card shows the type icons alone, measured).
+- **Role box** (`.dash-role-tag`, Panoramica › Ruoli and Porta/Toglie): a small Champions plate, the check or × in a tile on the left (green tint when covered, red when an essential is missing, none when a minor is missing, which stays dashed), the name on a plate fading from Raised to Field, small alternate corners.
 - **Tags:** 3px corners, 12px 600; green by default, yellow for warnings, red for banned or serious, outlined Line for tier. State tags (scoperta, a fatica, gestito) are small slanted tags 16px tall.
 - **Count pills:** 10px radius, Raised and Muted; status-coloured only in the rail.
-- **Move pills** (`MovePill`, `move-pill.css`): every standalone move (editor fields, team card tooltip, Offense chips, Coverage and weather tooltips, Coaching, Meta, Speed guide, Summary hazards) is one pill inspired by Pokémon Champions in the site's dark colours: the official type icon as a square tile on the left, the name in 600 on a body that fades from Raised to pure black, and a lighter slanted tail (Raised) holding the small category symbol (`CategoryIcon`: Pokémon Champions' own shapes redrawn 1:1 as SVG, an 8-point star for physical in orange, nested rings for special in blue, the drop in an oval for status in Muted; the same symbols in the move menu) and the number centred (power by default, targets in Offense, usage in Meta; status moves show only the symbol). In Offense › Generale the pills start closed (tile and number, no symbol, straight tail) and on hover grow open: the name slides in and the tail takes its slanted cut. Alternate corners: rounded top-left and bottom-right, almost square on the others. The tail has a fixed width per size (70px, 64 small, 50 inside tooltips) so tails line up in columns. In the editor the move field is the pill itself (tile and tail drawn over the input, the tail opens the menu); the line above keeps only the accuracy. Moves inside sentences stay plain text.
+- **Move pills** (`MovePill`, `move-pill.css`): every standalone move (editor fields, team card tooltip, Offense chips, Coverage and weather tooltips, Coaching, Meta, Speed guide, Summary hazards) is one pill inspired by Pokémon Champions in the site's dark colours: the official type icon as a square tile on the left, the name in 600 on a body that fades from Raised to Field (`--fade-end`) by 60%, and a lighter slanted tail (Raised) holding the small category symbol (`CategoryIcon`: Pokémon Champions' own shapes redrawn 1:1 as SVG, an 8-point star for physical in orange, nested rings for special in blue, the drop in an oval for status in Muted; the same symbols in the move menu) and the number centred (power by default, targets in Offense, usage in Meta; status moves show only the symbol). In Offense › Generale the pills start closed (tile and number, no symbol, straight tail) and on hover grow open: the name slides in and the tail takes its slanted cut. Alternate corners: rounded top-left and bottom-right, almost square on the others. The tail has a fixed width per size (70px, 64 small, 50 inside tooltips) so tails line up in columns. In the editor the move field is the pill itself (tile and tail drawn over the input, the tail opens the menu); the line above keeps only the accuracy. Moves inside sentences stay plain text.
 - **Stat icons** (`StatIcon`): the stats wear Pokémon Champions' icons, redrawn as SVG from the game's training screen: HP a heart, Attack and Sp. Atk the physical star and special rings, Defense and Sp. Def a shield with the star or the rings cut out, Speed six bars broken by a "<" cut. Filled in the surrounding colour, before the stat names in the editor rows and in the member stats of Offense, Defense and Speed.
 - **Stat rows** (editor): each stat is one plate with the move pills' alternate corners, split in two like Champions' rows by a slanted line near the middle (name, icon and base on Raised, then free space; bar, EV, IV and final on a darker half), no outline. The EV bar is short and fixed (120px, 140 from 1080px tall) and starts right after the cut, like Champions' bar; spare width stays as room in the left half. It is Champions' rectangle without a frame: a dark inset slot, a solid cyan fill, a lighter strip along the top, square corners; a thin white notch to drag shows on the active row. The active row (hover or focus) takes a cyan outline, a cyan tint on both halves and a small cyan triangle on the left; the EV and IV boxes keep a barely visible border that lights up there. The final Speed is underlined with dots and opens the speed tooltip (real Speed, place among the most used, neighbours). Stats are always shown at level 100. "EV usati" sits in the band at the top of the block, beside "Spread più usati"; over 510 it turns red and says how many too many and that the grade is blocked (the editor shows no separate warning for it; the team card keeps its mark). While the editor is open the team band has a fixed state, open on normal screens and collapsed below 760px tall, and the collapse arrow is hidden. Spare height in the editor drawer goes to the middle band (spacing between the stat rows, Set and Mosse sharing the height); from 1080px tall the rows, bar, menus and move pills grow.
 - **Problem chips** (`ProblemPill`): Warn on Warn Bg or Bad on Bad Bg with a warning icon and the short problem text; the same chip in the area head bands and the Coaching rows. A chip is a button only when a Coaching proposal solves it.

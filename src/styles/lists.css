@@ -58,8 +58,6 @@
   .slot .roles { font-size: var(--fs-label); }
   .slot .name { --name-fs: 15px; line-height: 1.1; }
   .slot .held, .slot .ability { font-size: var(--fs-caption); }
-  /* Tipi lunghi (Coleottero, Folletto): il chip si allarga invece di schiacciare il testo */
-  .slot .type-chip { width: auto; min-width: 52px; padding-inline: var(--sp-3); }
   .empty-ring { width: 44px; height: 44px; }
   .grade-badge .letter { font-size: 58px; }
   .grade-badge .overall { font-size: var(--fs-title-l); }

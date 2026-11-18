@@ -12,6 +12,8 @@ button, input, select, textarea {
 input, select, textarea { border-color: var(--control-line); }
 button {
   cursor: pointer;
+  /* Angoli alternati di Pokémon Champions, come le mosse e le lastre */
+  border-radius: var(--alt-r);
   background: var(--raised);
   font-weight: 500;
   display: inline-flex;

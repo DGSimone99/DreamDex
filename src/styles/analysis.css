@@ -444,13 +444,16 @@
 .dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: var(--sp-2); }
 /* Le fasce tagliano quello che sborda: l'anello del fuoco (si arriva coi tasti freccia) sta dentro il ruolo */
 .dash-role:focus-visible { outline-offset: -2px; }
-.dash-role-tag { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) 7px; font-size: var(--fs-caption); line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line-soft); border-radius: 4px; }
-.dash-role-tag .icon { flex: none; width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }
-.dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
-.dash-role.bad .dash-role-tag .icon { color: var(--text); }
+/* Ruolo come piccola lastra di Champions: la spunta (o la ×) in una tessera a sinistra, come il tipo nelle mosse */
+.dash-role-tag { --rt-h: 22px; display: inline-flex; align-items: stretch; min-height: var(--rt-h); overflow: hidden; font-size: var(--fs-caption); line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) 60%); }
+.dash-role-tag .icon { flex: none; box-sizing: border-box; width: var(--rt-h); height: auto; padding: 0 5px; stroke-width: 2.5; color: var(--good); background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
+.dash-role-tag .dash-role-name { align-self: center; padding: 0 var(--sp-4) 0 var(--sp-3); }
+.dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 22%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
+.dash-role.bad .dash-role-tag .icon { color: var(--text); background: color-mix(in srgb, var(--bad) 55%, var(--panel)); }
 /* Minori: più tenui; mancanti tratteggiati (non sono problemi) */
 .dash-role.minor .dash-role-tag { color: var(--muted); }
-.dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
+.dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); background: none; }
+.dash-role.soft .dash-role-tag .icon { color: var(--faint); background: none; }
 /* Al passaggio (si apre il tooltip del ruolo): una luce sfumata senza bordi dietro il chip, verde se coperto, rossa se
    manca, grigia se è un minore che manca; il bordo del chip si accende appena */
 .dash-role:not(.more) { position: relative; isolation: isolate; cursor: default; }
@@ -466,7 +469,7 @@
 /* Stretto: etichette e chip più fitti */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
 .dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0; }
-.dash.tight .dash-role-tag { padding-block: 1px; }
+.dash.tight .dash-role-tag { --rt-h: 20px; }
 
 /*
  * Ruoli, ampio: tabella ruoli × membri con tutti i livelli. In testa gli sprite dei membri, una riga per ruolo con un
