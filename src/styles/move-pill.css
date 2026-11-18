@@ -48,7 +48,8 @@
 }
 .mvp-none { color: var(--faint); font-weight: 600; }
 /* Mossa di stato (solo il simbolo): coda stretta attorno al simbolo, non la larghezza fissa delle code col numero */
-.mvp-tail.st { width: auto; padding: 0 var(--sp-5) 0 calc(var(--mvp-cut) + var(--sp-2)); }
+/* La coda stretta non deve toccare il nome: senza il rientro delle code larghe, un po' di spazio prima del taglio */
+.mvp-tail.st { width: auto; margin-left: var(--sp-2); padding: 0 var(--sp-5) 0 calc(var(--mvp-cut) + var(--sp-3)); }
 .mcp .mvp-tail.st { padding: 0 var(--sp-2); }
 /* Simbolo della categoria, piccolo, prima del numero (in fondo alla coda per le mosse di stato) */
 .mvp-cat { display: flex; }
