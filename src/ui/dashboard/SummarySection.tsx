@@ -22,6 +22,7 @@ import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 import { MoreBelow } from '../MoreBelow';
+import { MovePill } from '../MovePill';
 
 /**
  * Colore di una condizione (meteo, campo, Trick Room, schermi, Ventoincoda) e degli stili di team: il colore del tipo
@@ -416,7 +417,7 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
             <button type="button" className="sum-line" onClick={() => onView('roles')}>
               <Plinth name={row.member} size={small} />
               <span className="sum-name">{row.member}</span>
-              <span className="sum-tags">{row.moves.map(move => <Tag key={move} color="var(--warn)">{gameName('move', move, lang)}</Tag>)}</span>
+              <span className="sum-tags">{row.moves.map(move => <MovePill key={move} name={move} size="sm" />)}</span>
             </button>
           )} />
         <Section className="sum-syn-sec" title={t('sum.synergies')} empty={t('sum.noSynergies')} rows={synergies}

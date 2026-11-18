@@ -1,11 +1,11 @@
-import { useId, type CSSProperties } from 'react';
+import { useId } from 'react';
 import { getMove, toID } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { typeColor } from '../Sprite';
-import { typeIconUrl } from '../typeIcons';
+import { MovePill } from '../MovePill';
 import { Target, type KoTarget } from './KoBadges';
 
 /** Mosse che servono ad altro che al danno: a 0 bersagli non sono "inutili", lo dice l'etichetta. */
@@ -36,7 +36,7 @@ export function moveShares(moves: string[], targets: KoTarget[], best: (target: 
 
 /**
  * Sotto la barra dei colpi (squadra chiusa): quanto lavora ogni mossa d'attacco, nel colore del suo tipo, col numero dei
- * bersagli; passando su una mossa il tooltip li elenca. Icona e numero; il nome si apre passandoci sopra. A 0 spenta (il motivo nel tooltip).
+ * bersagli; passando su una mossa il tooltip li elenca. Pillola chiusa (tessera e numero); il nome si apre passandoci sopra. A 0 spenta (il motivo nel tooltip).
  */
 export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
   const t = useT();
@@ -53,22 +53,16 @@ export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
   return (
     <span className="mcs">
       {shares.map(({ move, targets }) => {
-        const type = getMove(move)?.type ?? '';
         const n = targets.length;
         const reason = n === 0 ? why(move) : null;
         const name = gameName('move', move, lang);
         // Raggiungibile con le frecce (data-nav, nel gruppo della tabella): col fuoco si apre il tooltip, i bersagli nella descrizione
         const desc = `${id}-${toID(move)}`;
         return (
-          <span key={move} className={`mc${n === 0 ? ' z' : ''}`} style={{ '--c': typeColor(type) } as CSSProperties}
+          <MovePill key={move} name={move} size="sm" value={n} symbol={false} className={`mcp${n === 0 ? ' z' : ''}`}
             data-nav="" role="img" {...tip.bind(move)} aria-describedby={n ? desc : undefined}
-            aria-label={`${name} ${n}${reason ? `, ${reason}` : ''}`}>
-            {n > 0 && <HiddenText id={desc}>{targets.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ')}</HiddenText>}
-            {type && <img src={typeIconUrl(type)} alt="" draggable={false} />}
-            {/* Il nome si apre passando sopra; il motivo di una mossa a 0 è nel tooltip */}
-            <span className="mc-name">{name}</span>
-            <b>{n}</b>
-          </span>
+            aria-label={`${name} ${n}${reason ? `, ${reason}` : ''}`}
+            after={n > 0 && <HiddenText id={desc}>{targets.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ')}</HiddenText>} />
         );
       })}
       {open && tip.anchor && (

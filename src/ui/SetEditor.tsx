@@ -1,5 +1,5 @@
 import { presetSet } from '../engine/bestPreset';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames, toID } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
@@ -21,6 +21,8 @@ import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { MySetsField } from './MySetsField';
 import { typeTextColor } from './TypeText';
+import { MoveTail, moveTint } from './MovePill';
+import { typeIconUrl } from './typeIcons';
 
 function NatureEffect({ name }: { name: string }) {
   const lang = useLang();
@@ -55,7 +57,11 @@ function IvInput({ value, label, onChange }: { value: number; label: string; onC
 }
 
 
-function MoveDetail({ name }: { name: string }) {
+/**
+ * Categoria, potenza, precisione e tipo di una mossa. `inField`: nella testata del campo, dove categoria, potenza e tipo
+ * li mostra già la pillola (tessera e coda): resta la precisione, categoria e potenza solo per i lettori di schermo.
+ */
+function MoveDetail({ name, inField = false }: { name: string; inField?: boolean }) {
   const t = useT();
   const move = getMove(name);
   if (!move) return null;
@@ -64,10 +70,13 @@ function MoveDetail({ name }: { name: string }) {
   return (
     <span className="move-meta">
       <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
-        <Icon name={CATEGORY_ICONS[move.category]} filled={move.category === 'Physical'} />
+        {/* Nel campo il simbolo sta nella coda della pillola: qui resta solo per i lettori di schermo */}
+        {!inField && <Icon name={CATEGORY_ICONS[move.category]} filled={move.category === 'Physical'} />}
         {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
         {move.basePower > 0
-          ? <><span className="visually-hidden">{category}, {t('editor.power')} </span>{move.basePower}</>
+          ? (inField
+            ? <span className="visually-hidden">{category}, {t('editor.power')} {move.basePower}</span>
+            : <><span className="visually-hidden">{category}, {t('editor.power')} </span>{move.basePower}</>)
           : <span className="visually-hidden">{category}</span>}
       </span>
       {/* Mosse che non mancano mai: niente precisione invece di "—" */}
@@ -78,9 +87,16 @@ function MoveDetail({ name }: { name: string }) {
           {`${accuracy}%`}
         </span>
       )}
-      <TypeChip type={move.type} />
+      {!inField && <TypeChip type={move.type} />}
     </span>
   );
+}
+
+/** La tessera del tipo nel campo di una mossa (vuota e neutra senza mossa o con una mossa inventata). */
+function MoveTile({ name }: { name: string }) {
+  const type = getMove(name)?.type;
+  const icon = type ? typeIconUrl(type) : undefined;
+  return <span className="mvp-ic" style={{ '--c': moveTint(name) } as CSSProperties}>{icon && <img src={icon} alt="" draggable={false} />}</span>;
 }
 
 // Voci dei menu, calcolate una volta per lingua
@@ -476,9 +492,12 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}`} data-tip={describe.move(move, lang)}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
-              <MoveDetail name={move} />
+              <MoveDetail name={move} inField />
             </span>
             <Combobox
+              className="move-combo"
+              leading={<MoveTile name={move} />}
+              trailing={<MoveTail name={move} />}
               label={t('editor.move', { n: i + 1 })}
               value={move}
               options={moveOptionsFor[i]}

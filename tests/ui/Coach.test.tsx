@@ -375,7 +375,7 @@ describe('CoachingView', () => {
     expect(row).toHaveClass('is-move');
     expect(row.querySelector('.coach-art')).toHaveTextContent('Su Great Tusk');
     expect(row.querySelector('.coach-art s')).toHaveTextContent('Rapid Spin');
-    expect(row.querySelector('.coach-art-moves b')).toHaveTextContent('Knock Off');
+    expect(row.querySelector('.coach-art-moves .coach-move-in')).toHaveTextContent('Knock Off');
     expect(row.querySelector('.coach-art')).toHaveTextContent('cambio di mossa');
     expect(rows()[2].querySelector('.coach-art')).toHaveTextContent('slot libero');
     await user.click(within(row).getByRole('button', { name: /^Applica: Knock Off/ }));

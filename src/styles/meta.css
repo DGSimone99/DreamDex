@@ -72,11 +72,11 @@
 .meta-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-2) var(--sp-6); margin: 0; font-size: var(--fs-section); }
 .meta-kv dt { color: var(--muted); }
 .meta-kv dd { margin: 0; font-weight: 500; }
-.meta-kv small, .meta-moves small { color: var(--faint); font-size: var(--fs-caption); font-weight: 400; }
+.meta-kv small { color: var(--faint); font-size: var(--fs-caption); font-weight: 400; }
 .meta-sub h4 { margin: 0 0 var(--sp-3); color: var(--muted); font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; }
 .meta-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
-.meta-moves li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); min-width: 0; padding: 3px var(--sp-4); background: var(--raised); border-left: 3px solid var(--mc); font-size: var(--fs-small); }
-.meta-moves li span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.meta-moves li { display: flex; min-width: 0; }
+.meta-moves li .mvp { flex: 1; }
 .meta-mates { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
 .meta-mates li > * { display: grid; place-items: center; width: 44px; height: 42px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
 .meta-mates button { cursor: pointer; color: inherit; }

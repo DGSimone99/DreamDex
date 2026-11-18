@@ -196,3 +196,6 @@
 .stats-diff { text-align: right; font-size: var(--fs-label); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
 .stats-diff.up { color: var(--good); }
 .stats-diff.down { color: var(--bad); }
+/* La freccia del menu come zona cliccabile (la disegna ::after): mano invece del cursore del testo */
+.combobox-arrow { position: absolute; top: 0; right: 0; bottom: 0; width: 28px; cursor: pointer; }
+.combobox:has(input:disabled) .combobox-arrow { display: none; }

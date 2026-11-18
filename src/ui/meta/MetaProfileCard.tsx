@@ -6,6 +6,7 @@ import { gameName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { formeParts } from '../candidateParts';
 import { MoreBelow } from '../MoreBelow';
+import { MovePill } from '../MovePill';
 import { Sprite, TypeChip, typeColor } from '../Sprite';
 import { MetaVersus } from './MetaVersus';
 
@@ -63,9 +64,7 @@ export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCov
           <h4>{t('meta.moves')}</h4>
           <ul className="meta-moves">
             {profile.moves.map(move => (
-              <li key={move.name} style={{ '--mc': typeColor(move.type) } as CSSProperties}>
-                <span>{gameName('move', move.name, lang)}</span> <small>{pct(move.pct)}</small>
-              </li>
+              <li key={move.name}><MovePill name={move.name} type={move.type} size="sm" value={pct(move.pct)} /></li>
             ))}
           </ul>
         </section>

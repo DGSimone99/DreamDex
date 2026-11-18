@@ -51,7 +51,11 @@ describe('editor del set', () => {
     expect(field('Strumento')).toHaveAttribute('data-tip', expect.stringMatching(/Sunny Day/));
     expect(field('Abilità')).toHaveAttribute('data-tip', expect.stringMatching(/Sunny Day/));
     expect(field('Mossa 1')).toHaveAttribute('data-tip', '10% chance to burn the target.');
-    expect(field('Mossa 1')!.querySelector('.move-meta')).toHaveTextContent('Speciale, potenza 90precisione 100%Fire');
+    // Sopra: l'icona della categoria (la potenza solo per i lettori di schermo) e la precisione; tipo e potenza nella pillola
+    expect(field('Mossa 1')!.querySelector('.move-meta')).toHaveTextContent('Speciale, potenza 90precisione 100%');
+    expect(field('Mossa 1')!.querySelector('.combobox-leading .mvp-ic img')).not.toBeNull();
+    expect(field('Mossa 1')!.querySelector('.combobox-trailing')).toHaveTextContent('90');
+    expect(field('Mossa 1')!.querySelector('.combobox-trailing .mvp-cat.cat-special')).not.toBeNull();
     expect(field('Mossa 3')).not.toHaveAttribute('data-tip');
   });
 

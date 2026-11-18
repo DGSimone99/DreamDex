@@ -441,22 +441,22 @@ describe('Offesa: Generale', () => {
       expect(cells[2]).toHaveTextContent(new RegExp(`^[+]${rating.offense.shares[i].points}$`));
       expect(cells[0].querySelector('.kob.ohko')).not.toBeNull();
       for (const [k, hits] of [[0, typeHits(rating, i)], [1, metaHits(rating, slot)]] as const) {
-        const chips = [...cells[k].querySelectorAll('.mcs .mc')];
+        const chips = [...cells[k].querySelectorAll('.mcs .mcp')];
         expect(chips.length).toBeGreaterThan(0);
-        const sum = chips.reduce((acc, c) => acc + Number(c.querySelector('b')!.textContent), 0);
+        const sum = chips.reduce((acc, c) => acc + Number(c.querySelector('.mvp-tail')!.textContent), 0);
         expect(sum).toBe(count(hits).ohko + count(hits).two);
         // Dalla più utile; il nome c'è (si apre passandoci sopra)
-        const ns = chips.map(c => Number(c.querySelector('b')!.textContent));
+        const ns = chips.map(c => Number(c.querySelector('.mvp-tail')!.textContent));
         expect(ns).toEqual([...ns].sort((a, b) => b - a));
-        for (const c of chips) expect(c.querySelector('.mc-name')!.textContent).not.toBe('');
+        for (const c of chips) expect(c.querySelector('.mvp-nm')!.textContent).not.toBe('');
       }
     });
     // Il tooltip di una mossa elenca i bersagli su cui è la migliore
-    const chip = memberRows()[0].querySelectorAll('td')[0].querySelector<HTMLElement>('.mcs .mc:not(.z)')!;
+    const chip = memberRows()[0].querySelectorAll('td')[0].querySelector<HTMLElement>('.mcs .mcp:not(.z)')!;
     await user.hover(chip);
     const tip = await tipOf();
-    expect(tip.querySelector('.kot-head')).toHaveTextContent(chip.querySelector('.mc-name')!.textContent!);
-    expect(mainList(tip)!.children).toHaveLength(Number(chip.querySelector('b')!.textContent));
+    expect(tip.querySelector('.kot-head')).toHaveTextContent(chip.querySelector('.mvp-nm')!.textContent!);
+    expect(mainList(tip)!.children).toHaveLength(Number(chip.querySelector('.mvp-tail')!.textContent));
     await user.unhover(chip);
     expect(document.querySelector('.og-bands')).toBeNull();
     expect(document.querySelector('.og-meta')).toBeNull();

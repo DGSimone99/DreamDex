@@ -398,6 +398,8 @@
 }
 /* Il tooltip di un avviso sulla carta passa sopra la freccia che comprime il team */
 .band:has(.slot .alert-mark:hover, .slot .alert-mark:focus-visible) .band-toggle { z-index: 1; }
+/* Un menu aperto nell'editor (le mosse si aprono verso l'alto) passa sopra il pulsante per ridurre il team */
+.band:has(.drawer .combobox.open) .band-toggle { z-index: 3; }
 /* Statistiche e Set un paio di px più giù: le loro etichette non toccano la testata */
 .set-editor > fieldset.evs, .set-editor > .editor-side { margin-top: 3px; }
 /* Preset Smogon alto quanto il suo pulsante (e quanto I miei set) */

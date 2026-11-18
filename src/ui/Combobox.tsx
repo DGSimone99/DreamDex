@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { toID } from '../engine/dex';
 import { useT } from '../i18n/react';
 
@@ -58,12 +58,16 @@ interface Props {
   disabled?: boolean;
   /** Elemento dentro il campo, a sinistra del testo (es. l'icona dello strumento scelto). */
   leading?: ReactNode;
+  /** Elemento dentro il campo, a destra del testo prima della freccia (es. la potenza della mossa). */
+  trailing?: ReactNode;
+  /** Classe in più sul contenitore (es. `move-combo` per i campi delle mosse a pillola). */
+  className?: string;
   /** Intestazione delle voci più usate, se diversa da "Più usati" (es. con il formato da cui vengono). */
   commonLabel?: string;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, commonLabel }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel }: Props) {
   const t = useT();
   const listId = useId();
   const [open, setOpen] = useState(false);
@@ -71,6 +75,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const [query, setQuery] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Le più usate in cima, anche mentre cerchi
   const ordered = useMemo(() => [...options.filter(o => o.common), ...options.filter(o => !o.common)], [options]);
@@ -135,11 +140,24 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     reveal(next);
   };
 
+  /** Clic sulla freccia o sulla coda: il fuoco va al campo (senza perderlo) e il menu si apre o si chiude. */
+  const toggleFromArrow = (e: MouseEvent) => {
+    if (disabled) return;
+    e.preventDefault();
+    inputRef.current?.focus();
+    if (open) setOpen(false);
+    else show();
+  };
+
   return (
-    <div className={`combobox${open ? ' open' : ''}${restricted && display ? ' has-display' : ''}${leading ? ' has-leading' : ''}`}>
+    <div className={`combobox${open ? ' open' : ''}${restricted && display ? ' has-display' : ''}${leading ? ' has-leading' : ''}${trailing ? ' has-trailing' : ''}${className ? ` ${className}` : ''}`}>
       {leading && <span className="combobox-leading" aria-hidden="true">{leading}</span>}
+      {trailing && <span className="combobox-trailing" aria-hidden="true" onMouseDown={toggleFromArrow}>{trailing}</span>}
+      {/* La freccia (disegnata dal contenitore) si clicca come un pulsante: mano, e apre o chiude il menu */}
+      {!disabled && <span className="combobox-arrow" aria-hidden="true" onMouseDown={toggleFromArrow} />}
       {restricted && display && <span className="combobox-display" aria-hidden="true">{display}</span>}
       <input
+        ref={inputRef}
         role="combobox"
         aria-label={label}
         aria-description={description}

@@ -1,13 +1,13 @@
-import type { CSSProperties } from 'react';
 import { getMove, toID } from '../../engine/dex';
 import type { ConditionRow } from '../../engine/teamSummary';
 import type { TypeName } from '../../engine/types';
 import type { MessageKey } from '../../i18n';
-import { anyGameName, gameName, typeName } from '../../i18n/game';
+import { anyGameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { Sprite, typeColor } from '../Sprite';
+import { Sprite } from '../Sprite';
 import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
+import { MovePill } from '../MovePill';
 
 /**
  * Il tipo che corrisponde a una condizione (meteo, campo, Trick Room, schermi, Ventoincoda): colore e icona della sua
@@ -77,9 +77,7 @@ function Via({ via }: { via: string }) {
   const move = getMove(via);
   if (!move) return <span className="ctip-ab">{anyGameName(via, lang)}</span>;
   return (
-    <span className="ctip-mv" style={{ '--mc': typeColor(move.type) } as CSSProperties}>
-      <img src={typeIconUrl(move.type)} alt="" draggable={false} />{gameName('move', move.name, lang)}
-    </span>
+<MovePill name={move.name} size="sm" className="ctip-mv" />
   );
 }
 
