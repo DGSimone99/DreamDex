@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { battleSpeed, duelSpeed, editorDuel, TIP_MAX_EVS } from '../../src/engine/editorDuel';
+import { attackBuffs, battleSpeed, duelSpeed, editorDuel, speedBuffs, TIP_MAX_EVS } from '../../src/engine/editorDuel';
 import { importShowdown } from '../../src/engine/sets';
 
 const [tusk, gholdengo] = importShowdown([
@@ -62,5 +62,21 @@ describe('sfida: la Velocità', () => {
   });
   it('la Sciarpa conta', () => {
     expect(battleSpeed({ ...gholdengo, item: 'Choice Scarf' })).toBeGreaterThan(battleSpeed(gholdengo));
+  });
+});
+
+describe('sfida: i potenziamenti', () => {
+  it('la danza del set compare solo se toglie colpi, e davvero ne toglie', () => {
+    const dancer = { ...tusk, moves: ['Headlong Rush', 'Ice Spinner', 'Rapid Spin', 'Bulk Up'] };
+    const d = editorDuel(dancer, gholdengo);
+    for (const buff of attackBuffs(dancer, gholdengo, [dancer], d.mine)) {
+      expect(buff.hits!).toBeLessThan(d.mine!.hitsSure);
+    }
+  });
+  it('il Ventoincoda di un compagno cambia chi muove prima solo se serve', () => {
+    const slow = { ...tusk, evs: { ...tusk.evs, spe: 0 } };
+    const mate = { ...gholdengo, species: 'Whimsicott', moves: ['Tailwind'] };
+    const now = duelSpeed(slow, gholdengo).order;
+    for (const buff of speedBuffs(slow, gholdengo, [slow, mate])) expect(buff.first).not.toBe(now);
   });
 });

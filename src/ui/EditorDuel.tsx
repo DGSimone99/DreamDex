@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId,
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
-import { duelSpeed, editorDuel, worstThreat, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { attackBuffs, defenseBuffs, duelSpeed, editorDuel, speedBuffs, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
@@ -17,7 +17,6 @@ import { Combobox, type ComboOption } from './Combobox';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { PokemonIcon } from './PokemonName';
-import { moveTint } from './MovePill';
 import { Sprite, typeColor } from './Sprite';
 import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
@@ -38,10 +37,10 @@ function oppSets(data: EngineData, species: string, genLimit: number, lang: Lang
   return list;
 }
 
-/** La tessera del tipo della mossa, come nelle pillole delle mosse. */
-function TypeTile({ move }: { move: string }) {
+/** L'icona del tipo della mossa (quella ufficiale, già nel suo colore), accanto al nome. */
+function TypeIcon({ move }: { move: string }) {
   const type = getMove(move)?.type;
-  return <span className="mvp-ic" style={{ '--c': moveTint(move) } as CSSProperties}>{type && <img src={typeIconUrl(type)} alt="" draggable={false} />}</span>;
+  return type ? <img className="duel-type" src={typeIconUrl(type)} alt="" draggable={false} /> : null;
 }
 
 /** Il sesso fisso della specie come in Champions (maschio azzurro, femmina rosa); niente se può essere entrambi o nessuno. */
@@ -71,7 +70,7 @@ function movePool(set: TeamSet, format: Format): string[] {
  * suo tipo; a destra tre righe col risultato grande: il tuo colpo migliore, il suo che ti fa più male (barra dei PS che
  * restano a chi lo prende) e la Velocità, ognuna coi suoi consigli (mossa migliore, EV). Si aggiorna mentre si cambia il set.
  */
-export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineData; format: Format }) {
+export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: TeamSet[]; data: EngineData; format: Format }) {
   const t = useT();
   const lang = useLang();
   const me = useDeferredValue(set);
@@ -126,6 +125,13 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   const edited = edit.item !== undefined || Object.keys(edit.evs ?? {}).length > 0;
   const result = useMemo(() => (opp ? editorDuel(me, opp, pool) : null), [me, opp, pool]);
   const speed = useMemo(() => (opp ? duelSpeed(me, opp) : null), [me, opp]);
+  // Il team con il membro com'è adesso nell'editor (la Sfida segue le modifiche prima che arrivino al team)
+  const squad = useMemo(() => team.map(member => (member.species === set.species ? me : member)), [team, set.species, me]);
+  const buffs = useMemo(() => (opp && result ? {
+    attack: attackBuffs(me, opp, squad, result.mine),
+    defense: defenseBuffs(me, opp, squad, result.theirs),
+    speed: speedBuffs(me, opp, squad),
+  } : null), [me, opp, squad, result]);
   const itemOptions = useMemo<ComboOption[]>(() => itemNames().map(name => ({
     value: name, label: gameName('item', name, lang), alias: name, icon: <ItemIcon item={name} />,
   })), [lang]);
@@ -140,16 +146,17 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     return { big: `${hit.hitsMaybe}-${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
   const usageBadge = <span className="duel-usage-badge">{t('editor.duelUsageSet')}</span>;
   const evTotal = opp ? Object.values(opp.evs).reduce((acc, n) => acc + (n ?? 0), 0) : 0;
-  const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
 
   const free = 510 - Object.values(set.evs).reduce((acc, n) => acc + (n ?? 0), 0);
+  /** "+84 EV in PS e +20 in Dif": la versione corta va nella riga dei consigli, quella intera nel tooltip. */
+  const evParts = (tip: EvTip) => (Object.entries(tip.add) as [StatID, number][])
+    .map(([stat, n], i) => t(i === 0 ? 'editor.duelTipEvs' : 'editor.duelTipEvsMore', { n, stat: statShort(stat, lang) })).join(' ');
   const evText = (tip: EvTip | null) => {
     if (!tip) return null;
-    // "+84 EV in PS e +20 in Dif"
-    const parts = (Object.entries(tip.add) as [StatID, number][])
-      .map(([stat, n], i) => t(i === 0 ? 'editor.duelTipEvs' : 'editor.duelTipEvsMore', { n, stat: statShort(stat, lang) })).join(' ');
+    const parts = evParts(tip);
     const text = tip.side === 'defense'
       ? t('editor.duelTipDef', { evs: parts, n: tip.hits })
       : t(tip.hits === 1 ? 'editor.duelTipAtkOne' : 'editor.duelTipAtk', { evs: parts, n: tip.hits });
@@ -160,49 +167,85 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     ? t(moveTip.hits === 1 ? 'editor.duelTipMoveOne' : 'editor.duelTipMove', { move: gameName('move', moveTip.move, lang), n: moveTip.hits })
     : null;
 
-  /**
-   * Una riga della scheda: tessera (tipo della mossa o Velocità) e nome, sotto la barra o il dato e i consigli; a destra
-   * il risultato grande con l'unità sotto. Chi colpisce si legge dalla tessera e dal titolo (Tu / Lui) per i lettori di schermo.
-   */
-  const line = (className: string, who: string, tile: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: (string | null)[]) => {
-    const shown = tips.filter((x): x is string => !!x);
+  /** Il nome di chi dà un potenziamento: una mossa (Swords Dance) o un'abilità (Drought); "Sun + Terrain" diviso. */
+  const sourceName = (source: string) => source.split(' + ')
+    .map(part => (getMove(part) ? gameName('move', part, lang) : gameName('ability', part, lang))).join(' + ');
+  const resultText = (buff: DuelBuff) => (buff.first
+    ? t(buff.first === 'mine' ? 'editor.duelResultFirstMine' : buff.first === 'theirs' ? 'editor.duelResultFirstTheirs' : 'editor.duelResultTie')
+    : buff.hits === 1 ? t('editor.duelResultOne') : t('editor.duelResultHits', { n: buff.hits !== undefined && Number.isFinite(buff.hits) ? buff.hits : '—' }));
+  /** I segni dei potenziamenti accanto al nome: verde la danza, azzurro il team, rosso quello dell'avversario. */
+  const buffMarks = (list: DuelBuff[] | undefined, now: string) => (list ?? []).map((buff, i) => {
+    const source = sourceName(buff.source);
+    const text = t(buff.against ? 'editor.duelBuffAgainst' : buff.kind === 'team' ? 'editor.duelBuffTeam' : 'editor.duelBuffSetup',
+      { source, by: buff.by ?? '', result: resultText(buff) });
     return (
-      <div className={`duel-row ${className}`}>
-        <span className="duel-tile">{tile}</span>
-        <span className="duel-label"><span className="visually-hidden">{who}: </span>{label}</span>
-        <strong className={`duel-result ${resultClass}`}><span className="duel-big">{big}</span><span className="duel-unit">{unit}</span></strong>
-        <span className="duel-sub">{sub}</span>
-        {shown.length > 0 && <span className="duel-tips">{shown.map(x => <span key={x}>{x}</span>)}</span>}
-      </div>
-    );
-  };
-  const hitLine = (kind: 'mine' | 'theirs', hit: DuelHit | null, tips: (string | null)[]) => {
-    const who = t(kind === 'mine' ? 'editor.duelMine' : 'editor.duelTheirs');
-    if (!hit) return line(kind, who, <Icon name={kind === 'mine' ? 'sword' : 'shield'} />, <span className="duel-none">{t('editor.duelNoMove')}</span>, '—', '', 'none', null, []);
-    const lo = Math.max(0, 1 - hit.max);
-    const hi = Math.max(0, 1 - hit.min);
-    const zone = hi > 0.5 ? 'high' : hi > 0.2 ? 'mid' : 'low';
-    const { big, unit } = hitsParts(hit);
-    const sub = (
-      <span className="duel-hp" data-zone={zone} style={{ '--lo': lo, '--hi': hi } as CSSProperties}>
-        <span className="duel-hp-bar" aria-hidden="true" />
-        <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
+      <span key={i} className={`duel-buff tip ${buff.against ? 'against' : buff.kind}`} tabIndex={0} data-tip={`${text} (${t('editor.duelNowHits', { now })})`}>
+        <Icon name={buff.against ? 'warning' : 'check'} /><span>{source}</span>
       </span>
     );
+  });
+
+  /**
+   * La riga dei consigli c'è sempre (vuota se non ce ne sono): la scheda non salta quando compaiono. Corta a vista
+   * ("Consigli: Brave Bird · +236 EV in AttSp"), per intero nel tooltip (con quanti colpi servono).
+   */
+  const tipsLine = (short: (string | null)[], long: (string | null)[]) => {
+    const shown = short.filter((x): x is string => !!x);
+    const full = long.filter((x): x is string => !!x);
+    return shown.length
+      ? <span className="duel-tips tip" tabIndex={0} data-tip={full.join('\n')}><b>{t('editor.duelTips')}</b> {shown.join(' · ')}</span>
+      : <span className="duel-tips" aria-hidden="true">{' '}</span>;
+  };
+
+  /**
+   * Una riga della scheda: il titolo col simbolo (spada, scudo, Velocità), sotto il nome con l'icona del tipo e i segni
+   * dei potenziamenti, poi la barra dei PS che restano (il timbro KO se va KO in un colpo) o le due velocità; a destra il
+   * risultato grande; in fondo i consigli.
+   */
+  const line = (className: string, title: ReactNode, label: ReactNode, marks: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode) => (
+    <div className={`duel-row ${className}`}>
+      <span className="duel-title">{title}</span>
+      <span className="duel-label">{label}{marks}</span>
+      <strong className={`duel-result ${resultClass}`}><span className="duel-big">{big}</span><span className="duel-unit">{unit}</span></strong>
+      <span className="duel-sub">{sub}</span>
+      {tips}
+    </div>
+  );
+  const hitLine = (kind: 'mine' | 'theirs', hit: DuelHit | null) => {
+    const title = <><Icon name={kind === 'mine' ? 'sword' : 'shield'} />{t(kind === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}</>;
+    const tips = kind === 'mine'
+      ? tipsLine([moveTip ? gameName('move', moveTip.move, lang) : null, result?.atkTip ? evParts(result.atkTip) : null], [moveText, evText(result?.atkTip ?? null)])
+      : tipsLine([result?.defTip ? evParts(result.defTip) : null], [evText(result?.defTip ?? null)]);
+    if (!hit) return line(kind, title, <span className="duel-none">{t('editor.duelNoMove')}</span>, null, '—', '', 'none', null, tips);
+    const { big, unit } = hitsParts(hit);
+    const left = Math.max(0, 100 - Math.round(hit.max * 100));
+    const tone = left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
+    // Come in Meta Coverage: se va KO in un colpo il timbro KO al posto della barra, altrimenti i PS che restano
+    const sub = hit.hitsSure === 1
+      ? <><span className="cm-ko small">KO</span><span className="duel-range">{`−${pct(hit.min)}–${pct(hit.max)}`}</span></>
+      : (
+        <>
+          <span className="cm-hp duel-bar" aria-hidden="true"><span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span></span>
+          <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
+        </>
+      );
     const ko = hit.hitsSure === 1 ? (kind === 'mine' ? 'good' : 'bad') : 'plain';
-    return line(kind, who, <TypeTile move={hit.move} />, gameName('move', hit.move, lang), big, unit, ko, sub, tips);
+    const marks = buffMarks(kind === 'mine' ? buffs?.attack : buffs?.defense, `${big} ${unit}`);
+    return line(kind, title, <><TypeIcon move={hit.move} /><span className="duel-move-name">{gameName('move', hit.move, lang)}</span></>, marks, big, unit, ko, sub, tips);
   };
 
   // La Velocità: le due velocità in lotta (Sciarpa e Booster comprese), chi muove prima e, se serve, gli EV per superarlo
   const speedTip = speed?.tip
     ? `${t('editor.duelTipSpe', { n: speed.tip.evs })}${speed.tip.evs > free ? ` ${t('editor.duelTipElsewhere')}` : ''}`
     : null;
+  const speedNow = speed ? t(speed.order === 'mine' ? 'editor.duelFirstMine' : speed.order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie') : '';
   const speedLine = speed && line(
-    'speed', t('editor.duelSpeed'), <span className="duel-stat"><StatIcon stat="spe" /></span>,
-    <>{t('editor.duelSpeed')} <span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speed.mine, b: speed.theirs })}</span></>,
-    speed.order === 'mine' ? '1°' : speed.order === 'theirs' ? '2°' : '=',
-    t(speed.order === 'mine' ? 'editor.duelFirstMine' : speed.order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie'),
-    speed.order === 'mine' ? 'good' : speed.order === 'theirs' ? 'bad' : 'warn', null, [speedTip],
+    'speed', <><StatIcon stat="spe" />{t('editor.duelSpeed')}</>,
+    <span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speed.mine, b: speed.theirs })}</span>,
+    buffMarks(buffs?.speed, speedNow),
+    speed.order === 'mine' ? '1°' : speed.order === 'theirs' ? '2°' : '=', speedNow,
+    speed.order === 'mine' ? 'good' : speed.order === 'theirs' ? 'bad' : 'warn', null,
+    tipsLine([speed.tip ? t('editor.duelTipEvShort', { n: speed.tip.evs, stat: statShort('spe', lang) }) : null], [speedTip]),
   );
 
   return (
@@ -286,8 +329,8 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
         </div>
         {result ? (
           <div className="duel-rows">
-            {hitLine('mine', result.mine, [moveText, evText(result.atkTip)])}
-            {hitLine('theirs', result.theirs, [evText(result.defTip)])}
+            {hitLine('mine', result.mine)}
+            {hitLine('theirs', result.theirs)}
             {speedLine}
           </div>
         ) : <p className="duel-empty">{t('editor.duelEmpty')}</p>}
