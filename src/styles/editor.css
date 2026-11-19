@@ -428,3 +428,19 @@
 /* La freccetta della natura più grande (16px) e attaccata al numero, a sinistra; il numero resta allineato a destra */
 .stat-final { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
 .stat-final .nature-arrow { width: 16px; height: 16px; vertical-align: 0; }
+/*
+ * Menu della Natura: largo quanto tutto il rombo (non solo dalla testa NATURA in poi), aperto verso l'alto. In ogni riga la
+ * quota d'uso sta nella colonna sotto la testa NATURA, così il nome della natura parte alla stessa x di quella scelta nella
+ * targhetta. Testa a larghezza fissa (--nd-head) per sapere dove cade il nome: 1px di bordo + 4px del menu + 10px della riga
+ * stanno prima della colonna, 6px dopo la testa prima del valore.
+ */
+.nature-diamond { --nd-head: 94px; }
+.nature-diamond .set-plate > .field-label { flex: none; width: var(--nd-head); box-sizing: border-box; }
+/* Il menu parte dal bordo sinistro del rombo (indietro quanto la testa) e arriva al destro (avanti quanto la punta) */
+.nature-diamond .combobox [role='listbox'] { left: calc(-1 * var(--nd-head)); right: calc(-1 * var(--nd-tip)); width: auto; }
+.nature-diamond .combobox .option-head { display: grid; grid-template-columns: calc(var(--nd-head) + 6px - 15px) minmax(0, 1fr) auto; column-gap: 0; }
+.nature-diamond .combobox .option-head > strong { grid-column: 2; grid-row: 1; }
+.nature-diamond .combobox .option-head > .option-detail { grid-column: 3; grid-row: 1; }
+.nature-diamond .combobox .option-head > .common-share { grid-column: 1; grid-row: 1; justify-self: start; min-width: 0; margin: 0; text-align: left; }
+/* Il rombo (e il suo menu che si apre verso l'alto) sta sopra l'intestazione delle Statistiche */
+.nature-diamond { z-index: 4; }
