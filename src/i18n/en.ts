@@ -1372,6 +1372,7 @@ export const en = {
   'rating.areasPop': "Area grades",
   'rating.badgeHead': "Grade",
   'rating.since': "{delta}",
+  'rating.changedSr': "Grade went from {from} to {to} ({grade})",
   'rating.noGrade': "No grade",
   'rating.addPokemon': "Add a Pokémon",
   'rating.evBlocked': "Blocked: EVs over 510",
