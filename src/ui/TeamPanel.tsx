@@ -20,6 +20,8 @@ import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
 import { SetEditor } from './SetEditor';
+import { EditorMates, matesOf } from './EditorMates';
+import { statsEntry } from '../engine/stats';
 import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
@@ -85,6 +87,8 @@ interface Props {
   proposal?: MoveProposal | null;
   /** Proposta chiusa: applicata (true) o annullata (false). */
   onProposalDone?: (applied: boolean) => void;
+  /** Un compagno del meta scelto nell'editor ("Spesso usato con"): apre il suo dettaglio nella lista Pokémon. */
+  onOpenMate?: (species: string) => void;
 }
 
 export interface MoveProposal { index: number; slot: number; from: string; to: string; gain: number; nonce: number }
@@ -173,9 +177,11 @@ interface SlotActions {
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
+  /** Compagno del meta scelto nell'editor: chiude l'editor e apre il suo dettaglio. */
+  openMate: (species: string) => void;
 }
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
+const TeamSlot = memo(function TeamSlot({ index, total, set, teamKey = '', subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
   index: number;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
   collapsed?: boolean;
@@ -194,6 +200,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   warning: string | null;
   /** La specie c'è già prima nel team (Species Clause): problema rosso, voto bloccato. */
   repeated?: boolean;
+  /** Le specie del team separate da "|": i compagni del meta già nel team hanno la spunta. */
+  teamKey?: string;
   actions: SlotActions;
 }) {
   const onToggle = (next: boolean) => actions.toggle(index, next);
@@ -220,6 +228,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const presets = useMemo<Preset[]>(() => presetsForSet(data, set, format.genLimit), [data, set, format.genLimit]);
   const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
   const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
+  // I compagni più usati nel meta (niente riquadro senza statistiche)
+  const mates = useMemo(() => matesOf(statsEntry(data.stats, set.species)?.teammates, teamKey.split('|')), [data, set.species, teamKey]);
   // Gestori sempre aggiornati anche dentro l'editor memorizzato
   const onBestIndex = () => actions.bestIndex(index);
   // Apre il riquadro del testo del set (assegnato più sotto, dove c'è il suo stato)
@@ -474,7 +484,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       <div className="drawer" id={drawerId}>
-      <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
+      <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}:${teamKey}`}
+        mates={mates.length > 0 ? <EditorMates mates={mates} onOpen={actions.openMate} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
@@ -598,7 +609,7 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onBulk, onAddClick, proposal, onProposalDone, onOpenMate, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -735,6 +746,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   // Smontando il team col pannello aperto la pagina non resta spenta
   useEffect(() => () => fillOpenChange.current?.(false), []);
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
+  const teamKey = team.map(set => set.species).join('|');
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   // Una forma senza il suo strumento non è Mega (legalTeam.ts)
   const repeated = duplicateSpecies(team, format.formatId);
@@ -773,6 +785,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     },
     replace: i => onReplace(i),
     proposalDone: applied => onProposalDone?.(applied),
+    openMate: species => { setOpenIndex(null); onOpenMate?.(species); },
   };
   const actions = useMemo<SlotActions>(() => ({
     toggle: (i, open) => live.current.toggle(i, open),
@@ -788,6 +801,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
+    openMate: species => live.current.openMate(species),
   }), []);
   // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)")
   const title = t(lang, 'team.title', { n: team.length });
@@ -891,6 +905,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             format={format}
             warning={warningFor(set, i)}
             repeated={repeated.includes(i)}
+            teamKey={teamKey}
             open={openIndex === i}
             actions={actions}
             collapsed={collapsed}

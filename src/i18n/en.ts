@@ -1577,6 +1577,7 @@ export const en = {
   'detail.metaUsageLong': "meta usage",
   'detail.metaPlace': "#{n} most used",
   'detail.metaWith': "Often used with",
+  'editor.mateOpen': "Open {name} in the Pokémon list",
   'detail.metaInTeam': "{name} is already in the team",
   'tabs.label': "Sections",
   'tabs.pokemon': "Pokémon",

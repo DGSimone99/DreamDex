@@ -1580,6 +1580,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.metaUsageLong': "uso nel meta",
   'detail.metaPlace': "{n}° più usato",
   'detail.metaWith': "Spesso usato con",
+  'editor.mateOpen': "Apri {name} nella lista Pokémon",
   'detail.metaInTeam': "{name} è già nel team",
   'tabs.label': "Sezioni",
   'tabs.pokemon': "Pokémon",
