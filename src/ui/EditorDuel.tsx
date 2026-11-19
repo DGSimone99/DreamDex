@@ -1,8 +1,9 @@
-import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
-import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, mergeEffects, orderOf, speedBuffs, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, matchup, mergeEffects, orderOf, rankMatchups, speedBuffs, type DuelBuff, type MatchupVerdict, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
@@ -70,26 +71,43 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const t = useT();
   const lang = useLang();
   const me = useDeferredValue(set);
-  const [picked, setPicked] = useState<string | null>(null);
+  // L'avversario scelto, per il membro aperto: all'inizio la sfida peggiore, poi resta quello (anche se cambi il set)
+  // finché non ne scegli un altro
+  const [choice, setChoice] = useState<{ owner: string; name: string } | null>(null);
+  const picked = choice && choice.owner === set.species ? choice.name : null;
+  const setPicked = (name: string | null) => setChoice(name ? { owner: set.species, name } : null);
   const [setKey, setSetKey] = useState<string | null>(null);
   // Le Impostazioni dell'avversario: un pannello sotto l'ingranaggio accanto al nome (si chiude con Esc o cliccando fuori)
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Verso l'alto quando sotto l'ingranaggio non c'è posto (la Sfida sta in fondo al cassetto): niente barra di scorrimento
-  const [settingsUp, setSettingsUp] = useState(true);
-  const toggleSettings = (button: HTMLElement) => {
-    if (!settingsOpen) {
-      const box = button.closest('.drawer')?.getBoundingClientRect();
-      const below = (box ? Math.min(box.bottom, window.innerHeight) : window.innerHeight) - button.getBoundingClientRect().bottom;
-      setSettingsUp(below < 330);
-    }
-    setSettingsOpen(o => !o);
-  };
+  const toggleSettings = () => setSettingsOpen(o => !o);
   // Le modifiche all'avversario (strumento, EV): si azzerano cambiando Pokémon o set
   const [edit, setEdit] = useState<{ item?: string; evs?: Partial<Record<StatID, number>> }>({});
   // I potenziamenti accesi (per id); si spengono cambiando avversario
   const [active, setActive] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) => setActive(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const settingsRoot = useRef<HTMLDivElement>(null);
+  const settingsPop = useRef<HTMLDivElement>(null);
+  // Il nome dell'avversario sempre intero (Charizard-Mega-Y: si vede se è la X o la Y): se non ci sta si rimpicciolisce
+  // un po' alla volta, fino a 13px
+  useLayoutEffect(() => {
+    const root = settingsRoot.current;
+    const input = root?.querySelector<HTMLInputElement>('.duel-species input');
+    if (!root || !input) return;
+    const fit = () => {
+      input.style.fontSize = '';
+      let size = parseFloat(getComputedStyle(input).fontSize);
+      while (input.scrollWidth > input.clientWidth && size > 13) {
+        size -= 0.5;
+        input.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    const watch = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    watch?.observe(root);
+    return () => watch?.disconnect();
+  });
+  // Sotto il nome, allineato a sinistra; sopra se sotto non c'è posto (la Sfida sta in fondo al cassetto), sempre nella finestra
+  useAnchoredPop(settingsRoot, settingsPop, settingsOpen, { width: 320, gap: 6 });
   const settingsId = useId();
   // Passando sullo sprite dell'avversario, la carta del suo set (come sulle carte del team)
   const memberTip = useMemberTip(250, undefined, true);
@@ -104,16 +122,28 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   }, [settingsOpen]);
 
   const threats = useMemo(() => metaThreats(data).map(threat => threat.set), [data]);
-  const auto = useMemo(() => (picked ? null : worstThreat(me, threats.filter(s => toID(s.species) !== toID(me.species)))), [picked, me, threats]);
-  const species = picked ?? auto?.species ?? null;
+  // Le minacce del meta dalla sfida peggiore alla migliore (seguono il set mentre lo cambi)
+  const ranked = useMemo(() => rankMatchups(me, threats.filter(s => toID(s.species) !== toID(me.species))), [me, threats]);
+  const worst = ranked[0]?.set.species ?? null;
+  const species = picked ?? worst;
+  // La sfida peggiore si carica una volta sola: da lì in poi l'avversario resta fisso
+  useEffect(() => { if (!picked && worst) setPicked(worst); }, [picked, worst]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const verdictShort: Record<MatchupVerdict, string> = {
+    bad: t('editor.duelVerdictBadShort'), even: t('editor.duelVerdictEvenShort'), good: t('editor.duelVerdictGoodShort'),
+  };
   const speciesOptions = useMemo<ComboOption[]>(() => {
-    const top = new Set(threats.map(s => s.species));
-    return dexPool(format).map(s => ({
-      value: s.name, label: s.name, icon: <PokemonIcon name={s.name} />,
-      ...(top.has(s.name) ? { common: formatPercent(lang, usageOf(data.stats, s.name)) } : {}),
+    // Prima le minacce del meta, dalla sfida peggiore (col giudizio accanto), poi tutti gli altri in ordine
+    const pool = dexPool(format);
+    const byName = new Set<string>(pool.map(s => s.name));
+    const metaFirst = ranked.filter(r => byName.has(r.set.species)).map(({ set: threat, matchup: m }) => ({
+      value: threat.species, label: threat.species, icon: <PokemonIcon name={threat.species} />,
+      detail: <span className={`duel-verdict-chip ${m.verdict}`}>{verdictShort[m.verdict]}</span>,
+      common: formatPercent(lang, usageOf(data.stats, threat.species)),
     }));
-  }, [format, threats, data, lang]);
+    const inMeta = new Set(metaFirst.map(o => o.value));
+    return [...metaFirst, ...pool.filter(s => !inMeta.has(s.name)).map(s => ({ value: s.name, label: s.name, icon: <PokemonIcon name={s.name} /> }))];
+  }, [format, ranked, data, lang, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sets = useMemo(() => (species ? oppSets(data, species, format.genLimit, lang, t('editor.duelUsageSet'), t('editor.duelBaseSet')) : []),
     [data, species, format.genLimit, lang, t]);
@@ -125,6 +155,9 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     : null), [chosen, edit]);
   const edited = edit.item !== undefined || Object.keys(edit.evs ?? {}).length > 0;
   const result = useMemo(() => (opp ? editorDuel(me, opp, pool) : null), [me, opp, pool]);
+  // Il giudizio sull'avversario in campo (col set e le modifiche scelte); "peggiore" se è la prima sfida della classifica
+  const verdict = useMemo(() => (opp ? matchup(me, opp).verdict : null), [me, opp]);
+  const isWorst = !!species && species === worst && !edited && chosen?.key === sets[0]?.key;
   // Il team con il membro com'è adesso nell'editor (la Sfida segue le modifiche prima che arrivino al team)
   const squad = useMemo(() => team.map(member => (member.species === set.species ? me : member)), [team, set.species, me]);
   const buffs = useMemo(() => (opp && result ? {
@@ -144,7 +177,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
       const n = Number.isFinite(hit.hitsSure) ? hit.hitsSure : hit.hitsMaybe;
       return { big: String(n), unit: t(n === 1 ? 'editor.duelHitUnit' : 'editor.duelHitsUnit') };
     }
-    return { big: `${hit.hitsMaybe}-${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
+    return { big: `${hit.hitsMaybe}–${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
@@ -213,13 +246,16 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const speedChip = (kind: 'mine' | 'theirs') => {
     if (!speeds || !order) return null;
     const value = kind === 'mine' ? speeds.mine : speeds.theirs;
-    const place = order === 'tie' ? '=' : order === kind ? '1°' : '2°';
+    // A parole (Primo, Secondo, Pari), non col numero ordinale: si legge senza il tooltip
+    const place = t(order === 'tie' ? 'editor.duelSpeedEven' : order === kind ? 'editor.duelSpeedFirst' : 'editor.duelSpeedSecond');
     const tone = order === 'tie' ? 'tie' : order === kind ? 'first' : 'second';
     const said = t(order === 'mine' ? 'editor.duelFirstMine' : order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie');
     return (
-      <span className={`duel-speed tip ${tone}`} tabIndex={0}
+      // Solo testo (niente fermata del Tab): il tooltip al passaggio del mouse, per i lettori di schermo la frase intera nascosta
+      <span className={`duel-speed tip ${tone}`}
         data-tip={`${t('editor.duelSpeed')}: ${t('editor.duelSpeedVs', { a: speeds.mine, b: speeds.theirs })} · ${said}`}>
         <StatIcon stat="spe" /><b>{place}</b><span>{value}</span>
+        <span className="visually-hidden">{`, ${t('editor.duelSpeedVs', { a: speeds.mine, b: speeds.theirs })} · ${said}`}</span>
       </span>
     );
   };
@@ -232,7 +268,10 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     const shown = short.filter((x): x is string => !!x);
     const full = long.filter((x): x is string => !!x);
     return shown.length
-      ? <span className="duel-tips tip" tabIndex={0} data-tip={full.join('\n')}><b>{t('editor.duelTips')}</b> {shown.join(' · ')}</span>
+      ? <span className="duel-tips tip" data-tip={full.join('\n')}>
+          <b>{t(shown.length === 1 ? 'editor.duelTip' : 'editor.duelTips')}</b> <span aria-hidden="true">{shown.join(' · ')}</span>
+          <span className="visually-hidden">{full.join('. ')}</span>
+        </span>
       : <span className="duel-tips" aria-hidden="true">{' '}</span>;
   };
 
@@ -273,11 +312,11 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     // Come in Meta Coverage: la barra dei PS che restano; se va KO in un colpo la barra resta (vuota) col timbro KO sopra
     const sub = (
       <>
-        <span className="cm-hp duel-bar" aria-hidden="true">
+        <span className="cm-hp duel-bar" aria-hidden="true" data-hp={t('common.hpBar')}>
           <span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span>
           {hit.hitsSure === 1 && <span className="cm-ko small duel-ko">KO</span>}
         </span>
-        <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
+        <span className="duel-range">{hit.max > 0 ? `${Math.round(hit.min * 100)}–${pct(hit.max)}` : '0%'}</span>
       </>
     );
     const ko = hit.hitsSure === 1 ? (kind === 'mine' ? 'good' : 'bad') : 'plain';
@@ -297,20 +336,26 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
         <div className="duel-head">
           {/* Il nome (dove si cerca l'avversario), il sesso e l'ingranaggio delle Impostazioni: lì si sceglie il Set Smogon
               (e, in arrivo, strumento, EV e potenziamenti) */}
+          {verdict && (
+            <span className={`duel-verdict tip ${isWorst ? 'worst' : verdict}`} data-tip={t('editor.duelVerdictTip')}>
+              {t(isWorst ? 'editor.duelVerdictWorst' : verdict === 'bad' ? 'editor.duelVerdictBad' : verdict === 'even' ? 'editor.duelVerdictEven' : 'editor.duelVerdictGood')}
+              <span className="visually-hidden">. {t('editor.duelVerdictTip')}</span>
+            </span>
+          )}
           <div className="duel-name" ref={settingsRoot}
             onKeyDown={e => { if (e.key === 'Escape' && settingsOpen) { e.stopPropagation(); setSettingsOpen(false); } }}>
-            <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
-              placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
+            <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted searchable className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
+              placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommonRanked')} menuMinWidth={280}
               onChange={name => { setPicked(name || null); setSetKey(null); setEdit({}); setActive(new Set()); }} />
             {species && <GenderMark species={species} />}
             {species && (
               <button type="button" className="duel-settings" aria-haspopup="dialog" aria-expanded={settingsOpen} aria-controls={settingsId}
-                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={e => toggleSettings(e.currentTarget)}>
+                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={toggleSettings}>
                 <Icon name="gear" />
               </button>
             )}
             {settingsOpen && (
-              <div className={`duel-settings-pop${settingsUp ? ' up' : ''}`} id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}
+              <div className="duel-settings-pop" ref={settingsPop} popover={supportsPopover ? 'manual' : undefined} id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}
                 onMouseDownCapture={e => { if ((e.target as Element).closest('[role="option"]')) pickedAt.current = Date.now(); }}
                 onMouseUpCapture={e => {
                   if (Date.now() - pickedAt.current < 600 && !(e.target as Element).closest('[role="option"]')) { e.stopPropagation(); e.preventDefault(); }

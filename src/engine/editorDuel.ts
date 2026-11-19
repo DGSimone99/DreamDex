@@ -171,6 +171,46 @@ export function editorDuel(me: TeamSet, opp: TeamSet, pool: readonly string[] = 
   return { mine, theirs, tip, atkTip, defTip, moveTip: pool.length ? moveTip(me, opp, mine, pool) : null };
 }
 
+/** Come va lo scontro uno contro uno: vinci, perdi, o dipende dai tiri del danno (o dalla Velocità pari). */
+export type MatchupVerdict = 'good' | 'even' | 'bad';
+export interface Matchup {
+  verdict: MatchupVerdict;
+  /** Il tuo danno atteso meno il suo (frazioni dei PS): a parità di giudizio, più è basso più la sfida è brutta. */
+  score: number;
+}
+
+/**
+ * Lo scontro col colpo migliore di ognuno: vince chi manda KO in meno colpi; a pari colpi chi è più veloce. Si guarda
+ * coi tiri a tuo favore (il tuo danno più alto, il suo più basso) e a tuo sfavore: vinci in tutti e due i casi =
+ * favorevole, perdi in tutti e due = sfavorevole, altrimenti alla pari (decidono i tiri, o la Velocità pari).
+ */
+export function matchup(me: TeamSet, opp: TeamSet): Matchup {
+  const mine = bestHit(me, opp, optsFor(me, opp));
+  const theirs = bestHit(opp, me, optsFor(opp, me));
+  const a = battleSpeed(me);
+  const b = battleSpeed(opp);
+  const outcome = (myDamage: number, theirDamage: number) => {
+    const myHits = hitsToKO(myDamage);
+    const theirHits = hitsToKO(theirDamage);
+    if (myHits === Infinity && theirHits === Infinity) return 0;
+    if (myHits !== theirHits) return myHits < theirHits ? 1 : -1;
+    return a > b ? 1 : a < b ? -1 : 0;
+  };
+  const lucky = outcome(mine?.max ?? 0, theirs?.min ?? 0);
+  const unlucky = outcome(mine?.min ?? 0, theirs?.max ?? 0);
+  const verdict: MatchupVerdict = unlucky > 0 ? 'good' : lucky < 0 ? 'bad' : 'even';
+  return { verdict, score: (mine?.expected ?? 0) - (theirs?.expected ?? 0) };
+}
+
+const VERDICT_ORDER: Record<MatchupVerdict, number> = { bad: 0, even: 1, good: 2 };
+
+/** Gli avversari dal matchup peggiore al migliore: prima le sfide sfavorevoli, poi alla pari, poi favorevoli. */
+export function rankMatchups(me: TeamSet, threats: TeamSet[]): { set: TeamSet; matchup: Matchup }[] {
+  return threats
+    .map(set => ({ set, matchup: matchup(me, set) }))
+    .sort((x, y) => VERDICT_ORDER[x.matchup.verdict] - VERDICT_ORDER[y.matchup.verdict] || x.matchup.score - y.matchup.score);
+}
+
 /** L'avversario di partenza: fra le minacce del meta, quella che fa più male al membro. */
 export function worstThreat(me: TeamSet, threats: TeamSet[]): TeamSet | null {
   let worst: { set: TeamSet; expected: number } | null = null;

@@ -26,10 +26,11 @@ const TAG: Record<Bucket, string> = { ohko: 'OHKO', two: '2HKO', three: '3HKO', 
 const KO_ORDER: Bucket[] = ['ohko', 'two', 'three'];
 /** I PS che restano al bersaglio dopo il colpo, coi colori del gioco: verde oltre metà, giallo fino a 1/5, rosso sotto. */
 export function HpLeft({ pct }: { pct: number }) {
+  const t = useT();
   const left = Math.max(0, 100 - pct);
   const tone = left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
   return (
-    <span className="cm-hp" aria-hidden="true">
+    <span className="cm-hp" aria-hidden="true" data-hp={t('common.hpBar')}>
       <span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span>
     </span>
   );
