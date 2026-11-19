@@ -42,6 +42,8 @@ import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
 import { SHORT_SCREEN, useMediaQuery } from './ui/useMediaQuery';
+import { SHEET_QUERY } from './ui/useAnchoredPop';
+import { useAutoCollapse } from './ui/useAutoCollapse';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -201,7 +203,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto il team non si riduce e non si riapre a mano: aperto sugli schermi normali (l'editor ha la sua
   // altezza giusta), compresso su quelli bassi (se no l'editor non ci sta); chiuso l'editor torna la scelta salvata
   const editingOpen = editingIndex !== null;
-  const collapsed = editingOpen ? short : savedCollapsed;
+  // Telefono: niente tasto, il team si riduce scorrendo la pagina e torna grande in cima (useAutoCollapse)
+  const phone = useMediaQuery(SHEET_QUERY);
+  const bandRef = useRef<HTMLDivElement>(null);
+  const auto = useAutoCollapse(phone, bandRef);
+  const collapsed = phone ? auto.collapsed : editingOpen ? short : savedCollapsed;
   const toggleCollapsed = () => {
     if (editingOpen) return;
     setCollapsed(c => {
@@ -216,6 +222,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [improveSignal, setImproveSignal] = useState(0);
   // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
   const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };
+  // Dalla barra delle sezioni (e dal voto): sul telefono la sezione si apre dall'inizio, col team ridotto
+  const navTo = (next: TabId) => { auto.collapseToTop(); openTab(next); };
   // L'editor copre l'area della sezione: gli serve la sua altezza
   const mainRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -415,7 +423,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         onSettings={() => setSettingsOpen(true)}
         onCredits={() => setCreditsOpen(true)}
         onFeedback={() => setFeedbackOpen(true)}
-        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={withEditing([
+        tabs={<Tabs orientation="vertical" active={shownTab} onChange={navTo} tabs={withEditing([
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
           status: replaceIndex !== null && team[replaceIndex]
@@ -449,7 +457,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <p>{t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}</p>
         </div>
       )}
-      <div className={`band${collapsed ? ' collapsed' : ''}`}>
+      <div ref={bandRef} className={`band${collapsed ? ' collapsed' : ''}${phone ? ' auto' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
@@ -461,9 +469,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
-          incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
+          incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { navTo('analysis'); setAnalysisView(area); }} />
         {/* Niente freccia mentre l'editor è aperto: lì il team ha una posizione fissa */}
-        {!editingOpen && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
+        {!editingOpen && !phone && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />
         </button>}
