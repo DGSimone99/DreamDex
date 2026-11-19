@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode 
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { presetSet } from '../engine/bestPreset';
 import { formatName, sameSet, STAT_IDS, type Preset, type TeamSet } from '../engine/sets';
+import { toID } from '../engine/dex';
 import type { Lang } from '../i18n';
 import { gameName, natureName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
@@ -39,6 +40,22 @@ interface Props {
   onText?: () => void;
   /** Il link alla pagina Smogon del Pokémon, in fondo al menu. */
   smogonLink?: ReactNode;
+}
+
+/** Il preset da cui sembra venire un set cambiato a mano: almeno 2 mosse in comune, poi strumento, abilità, natura ed EV. */
+export function nearestPreset(set: TeamSet, presets: Preset[]): number {
+  const moves = new Set(set.moves.filter(Boolean).map(toID));
+  const evs = (s: TeamSet) => STAT_IDS.map(stat => s.evs[stat] ?? 0).join(',');
+  let best = -1;
+  let bestScore = -1;
+  presets.forEach((preset, i) => {
+    const shared = preset.set.moves.filter(move => move && moves.has(toID(move))).length;
+    if (shared < 2) return;
+    const score = shared * 10 + Number(toID(preset.set.item) === toID(set.item)) + Number(toID(preset.set.ability) === toID(set.ability))
+      + Number(preset.set.nature === set.nature) + Number(evs(preset.set) === evs(set));
+    if (score > bestScore) { best = i; bestScore = score; }
+  });
+  return best;
 }
 
 /**
@@ -124,7 +141,11 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
   const order = presets.map((_, i) => i)
     .sort((a, b) => (a === best ? -1 : b === best ? 1 : formatOrder.indexOf(presets[a].format) - formatOrder.indexOf(presets[b].format)));
   const applied = presets.findIndex(p => sameSet(p.set, set));
-  const currentLabel = applied >= 0 ? presets[applied].name : current >= 0 ? mine[current].name : t('editor.setCustom');
+  // Cambiato a mano: il preset da cui sembra venire, se ha in comune almeno 2 mosse su 4 (a parità di mosse vince chi ha
+  // più cose uguali fra strumento, abilità, natura ed EV); sotto quella soglia è un altro set e resta solo "Modificato"
+  const nearest = applied >= 0 || current >= 0 ? -1 : nearestPreset(set, presets);
+  const currentLabel = applied >= 0 ? presets[applied].name : current >= 0 ? mine[current].name
+    : nearest >= 0 ? t('editor.setEditedFrom', { name: presets[nearest].name }) : t('editor.setCustom');
   // Da dove viene il set in uso: Smogon o uno dei miei set (Custom); cambiato a mano, nessuna linguetta
   const source = applied >= 0 ? t('editor.setFromSmogon') : current >= 0 ? t('editor.setFromMine') : null;
   const apply = (i: number) => {
@@ -151,6 +172,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
           <span className="set-menu-text">
             <span className="set-menu-name">
               <strong>{preset.name}</strong>
+              {i === nearest && <span className="set-menu-edited">{t('editor.setEditedTag')}</span>}
               {i === best && <span className="set-menu-best"><Icon name="star" filled />{t('editor.bestForTeam')}</span>}
               {/* Il formato: a vista solo sul migliore (fuori dai gruppi), le altre righe stanno sotto la loro intestazione */}
               {byFormat && (i === best

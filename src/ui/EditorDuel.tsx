@@ -96,7 +96,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     const fit = () => {
       input.style.fontSize = '';
       let size = parseFloat(getComputedStyle(input).fontSize);
-      while (input.scrollWidth > input.clientWidth + 1 && size > 13) {
+      while (input.scrollWidth > input.clientWidth && size > 13) {
         size -= 0.5;
         input.style.fontSize = `${size}px`;
       }
@@ -177,7 +177,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
       const n = Number.isFinite(hit.hitsSure) ? hit.hitsSure : hit.hitsMaybe;
       return { big: String(n), unit: t(n === 1 ? 'editor.duelHitUnit' : 'editor.duelHitsUnit') };
     }
-    return { big: `${hit.hitsMaybe}-${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
+    return { big: `${hit.hitsMaybe}–${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
@@ -251,9 +251,11 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     const tone = order === 'tie' ? 'tie' : order === kind ? 'first' : 'second';
     const said = t(order === 'mine' ? 'editor.duelFirstMine' : order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie');
     return (
-      <span className={`duel-speed tip ${tone}`} tabIndex={0}
+      // Solo testo (niente fermata del Tab): il tooltip al passaggio del mouse, per i lettori di schermo la frase intera nascosta
+      <span className={`duel-speed tip ${tone}`}
         data-tip={`${t('editor.duelSpeed')}: ${t('editor.duelSpeedVs', { a: speeds.mine, b: speeds.theirs })} · ${said}`}>
         <StatIcon stat="spe" /><b>{place}</b><span>{value}</span>
+        <span className="visually-hidden">{`, ${t('editor.duelSpeedVs', { a: speeds.mine, b: speeds.theirs })} · ${said}`}</span>
       </span>
     );
   };
@@ -266,7 +268,10 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     const shown = short.filter((x): x is string => !!x);
     const full = long.filter((x): x is string => !!x);
     return shown.length
-      ? <span className="duel-tips tip" tabIndex={0} data-tip={full.join('\n')}><b>{t('editor.duelTips')}</b> {shown.join(' · ')}</span>
+      ? <span className="duel-tips tip" data-tip={full.join('\n')}>
+          <b>{t(shown.length === 1 ? 'editor.duelTip' : 'editor.duelTips')}</b> <span aria-hidden="true">{shown.join(' · ')}</span>
+          <span className="visually-hidden">{full.join('. ')}</span>
+        </span>
       : <span className="duel-tips" aria-hidden="true">{' '}</span>;
   };
 
@@ -332,8 +337,9 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
           {/* Il nome (dove si cerca l'avversario), il sesso e l'ingranaggio delle Impostazioni: lì si sceglie il Set Smogon
               (e, in arrivo, strumento, EV e potenziamenti) */}
           {verdict && (
-            <span className={`duel-verdict tip ${isWorst ? 'worst' : verdict}`} tabIndex={0} data-tip={t('editor.duelVerdictTip')}>
+            <span className={`duel-verdict tip ${isWorst ? 'worst' : verdict}`} data-tip={t('editor.duelVerdictTip')}>
               {t(isWorst ? 'editor.duelVerdictWorst' : verdict === 'bad' ? 'editor.duelVerdictBad' : verdict === 'even' ? 'editor.duelVerdictEven' : 'editor.duelVerdictGood')}
+              <span className="visually-hidden">. {t('editor.duelVerdictTip')}</span>
             </span>
           )}
           <div className="duel-name" ref={settingsRoot}

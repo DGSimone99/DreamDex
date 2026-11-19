@@ -88,6 +88,10 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Campi in cui non si scrive (Natura, Tera): le lettere digitate di fila saltano alla prima voce che inizia così
+  const typeahead = useRef({ text: '', at: 0 });
+  // La voce a cui saltare quando il menu si apre scrivendo (resta quella anche se l'ordine si capovolge aprendosi sopra)
+  const jumpTo = useRef<string | null>(null);
   // Il menu si allinea al campo; un contenitore con `data-pop-anchor` (es. il rombo della Natura) fa da campo al suo posto
   const anchorRef = useRef<HTMLElement | null>(null);
   const setRoot = (node: HTMLDivElement | null) => { anchorRef.current = node ? node.closest<HTMLElement>('[data-pop-anchor]') ?? node : null; };
@@ -101,7 +105,9 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
       setSide(next);
       // La voce scelta resta quella attiva anche se l'ordine si capovolge
       const list = byside(next);
-      const index = list.findIndex(o => o.value === value);
+      const want = jumpTo.current ?? value;
+      jumpTo.current = null;
+      const index = list.findIndex(o => o.value === want);
       setActive(index >= 0 && index < MAX_SHOWN ? index : joined ? -1 : 0);
     },
   });
@@ -265,7 +271,20 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           setOpen(true);
         }}
         onKeyDown={e => {
-          if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+          if (!typing && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key !== ' ' || typeahead.current.text)) {
+            const now = Date.now();
+            const text = (now - typeahead.current.at < 800 ? typeahead.current.text : '') + e.key;
+            typeahead.current = { text, at: now };
+            const q = searchID(text);
+            const index = q ? ordered.findIndex(o => !o.disabled && [o.label ?? o.value, o.alias ?? ''].some(n => searchID(n).startsWith(q))) : -1;
+            if (index < 0 || index >= MAX_SHOWN) return;
+            e.preventDefault();
+            setActive(index);
+            // Chiuso: si apre e la lista parte da quella voce (vedi onSide); aperto: la si porta in vista
+            if (!open) { jumpTo.current = ordered[index].value; setOpen(true); setQuery(null); }
+            else requestAnimationFrame(() => reveal(index, true));
+          }
+          else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
           else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
           else if (e.key === 'Enter' && open && shown[active]) { e.preventDefault(); pick(shown[active]); }
           // Invio senza voci da scegliere: si salva il testo libero

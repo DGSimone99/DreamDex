@@ -228,6 +228,14 @@
 .nature-diamond:has(.set-plate.empty):not(:focus-within) { filter: drop-shadow(0 0 0.5px var(--warn)) drop-shadow(0 0 0.5px var(--warn)); }
 /* EV ancora da spendere: il totale giallo (il numero dice quanti ne restano nel tooltip) */
 .ev-total.under strong { color: var(--warn); }
+/* Il massimo di 252 per statistica, per un attimo al posto della testa EV quando un numero più alto si ferma a 252 */
+.stat-head .ev-total .ev-max { grid-column: 1 / 4; grid-row: 1; justify-self: center; color: var(--warn); font-weight: 600; }
+.stat-head .ev-total:has(.ev-max) .ev-head { visibility: hidden; }
+/* Mossa vuota: come le targhette vuote, filo ed etichetta gialli */
+.editor-group.moves .field.empty > .field-head { color: var(--warn); }
+.editor-group.moves .field.empty .move-combo input:not(:focus) { border-color: color-mix(in srgb, var(--warn) 70%, transparent); }
+/* Nel menu Set, il preset da cui viene il set cambiato a mano */
+.set-menu-edited { flex: none; font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-style: italic; }
 .set-plate:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }
 .set-plate > .field-label {
   flex: none;

@@ -287,6 +287,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     return others.size ? moveOptions.map(option => (others.has(toID(option.value)) ? { ...option, disabled: true } : option)) : moveOptions;
   }), [moveOptions, movesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
+  const [evMax, setEvMax] = useState(false);
+  const evMaxTimer = useRef(0);
+  const flashEvMax = () => { setEvMax(true); window.clearTimeout(evMaxTimer.current); evMaxTimer.current = window.setTimeout(() => setEvMax(false), 2500); };
+  useEffect(() => () => window.clearTimeout(evMaxTimer.current), []);
   const itemDesc = describe.item(set.item, lang);
   // Con la megapietra l'abilità è quella della Mega: si mostra bloccata, quella del set torna togliendo la pietra
   const forme = battleSpecies(set);
@@ -323,7 +327,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const spreadShare = spreadAt < 0 || !common || common.spreads[spreadAt].share === null ? '' : ` · ${formatPercent(lang, common.spreads[spreadAt].share!, 0)}`;
   // Il posto in breve: "2nd" in inglese, "2°" in italiano
   const ordinal = (n: number) => (lang === 'en' ? `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}` : t('editor.spreadRankShort', { n }));
-  const spreadLabel = spreadAt < 0 || !common ? t('editor.spreadOwn') : (
+  const spreadLabel = spreadAt < 0 || !common ? t(used === 0 ? 'editor.spreadNone' : 'editor.spreadOwn') : (
     <>
       <span className="sp-wide">{spreadAt === 0 ? t('editor.spreadTop') : t('editor.spreadRank', { n: lang === 'en' ? ordinal(spreadAt + 1) : spreadAt + 1 })}</span>
       <span className="sp-narrow" aria-hidden="true">{ordinal(spreadAt + 1)}</span>
@@ -409,6 +413,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               <span className="visually-hidden">{t('editor.evTotal')}</span>
               <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
               {used > EV_TOTAL && <span className="ev-left">{t('editor.evOverShort', { n: used - EV_TOTAL })}</span>}
+              {evMax && used <= EV_TOTAL && <span className="ev-left ev-max" role="status">{t('editor.evMax')}</span>}
             </p>
             <HeadHelp className="stat-head-num" text={t('editor.ivHelp')} end>{t('editor.ivHead')}</HeadHelp>
           </div>
@@ -452,7 +457,11 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                   e.preventDefault();
                   e.currentTarget.closest('.stat-row')?.querySelector<HTMLInputElement>('.iv-input')?.focus();
                 }}
-                onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
+                onChange={e => {
+                  // Oltre 252 il numero si ferma a 252: per un attimo la testa degli EV dice perché
+                  if (Number(e.target.value) > 252) flashEvMax();
+                  update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } });
+                }}
               />
               <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} hint={t('editor.ivToEv')}
                 onChange={raw => changeIv(line.stat, raw)} />
@@ -518,7 +527,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* Le mosse nello stesso riquadro Set (un gruppo col suo nome per i lettori di schermo) */}
         <div className="editor-group moves" role="group" aria-label={t('editor.moves')}>
         {moves.map((move, i) => (
-          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}`} data-tip={describe.move(move, lang)}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}`} data-tip={describe.move(move, lang)}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
               <MoveDetail name={move} inField />

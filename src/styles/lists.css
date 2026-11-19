@@ -689,7 +689,7 @@
 .duel-verdict { --v: var(--bad); align-self: flex-start; margin: 0 0 calc(-1 * var(--sp-2)) var(--sp-1); padding: 3px 10px 2px; cursor: help;
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
   background: color-mix(in srgb, var(--v) 30%, #0b0d14cc); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v) 55%, transparent);
-  font: 700 var(--fs-label)/1.1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: color-mix(in srgb, var(--v) 70%, #fff); }
+  font: 700 var(--fs-caption)/1.1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: color-mix(in srgb, var(--v) 70%, #fff); }
 .duel-verdict.worst { background: color-mix(in srgb, var(--v) 62%, #0b0d14); color: #fff; }
 .duel-verdict.even { --v: var(--warn); }
 .duel-verdict.good { --v: var(--good); }
@@ -727,7 +727,7 @@
 .duel-speed.first { --s: var(--good); }
 .duel-speed.second { --s: var(--bad); }
 .duel-speed.tie { --s: var(--warn); }
-.duel-speed b { font: italic 800 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
+.duel-speed b { font: italic 800 var(--fs-caption)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
 .duel-speed svg { width: 11px; height: 11px; }
 .duel-speed.tip { cursor: help; }
 /* Il tooltip si apre verso sinistra: l'etichetta sta sul bordo destro e il tooltip uscirebbe dalla pagina */
