@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attackBuffs, battleSpeed, duelSpeed, editorDuel, speedBuffs, TIP_MAX_EVS } from '../../src/engine/editorDuel';
+import { attackBuffs, battleSpeed, buffedHit, duelSpeed, editorDuel, mergeEffects, speedBuffs, TIP_MAX_EVS } from '../../src/engine/editorDuel';
 import { importShowdown } from '../../src/engine/sets';
 
 const [tusk, gholdengo] = importShowdown([
@@ -66,17 +66,17 @@ describe('sfida: la Velocità', () => {
 });
 
 describe('sfida: i potenziamenti', () => {
-  it('la danza del set compare solo se toglie colpi, e davvero ne toglie', () => {
+  it('la danza del set compare e, accesa, alza davvero il danno', () => {
     const dancer = { ...tusk, moves: ['Headlong Rush', 'Ice Spinner', 'Rapid Spin', 'Bulk Up'] };
     const d = editorDuel(dancer, gholdengo);
-    for (const buff of attackBuffs(dancer, gholdengo, [dancer], d.mine)) {
-      expect(buff.hits!).toBeLessThan(d.mine!.hitsSure);
-    }
+    const setup = attackBuffs(dancer, gholdengo, [dancer], d.mine).find(b => b.kind === 'setup');
+    expect(setup?.source).toBe('Bulk Up');
+    expect(buffedHit(dancer, gholdengo, mergeEffects([setup!.apply]))!.max).toBeGreaterThan(d.mine!.max);
   });
-  it('il Ventoincoda di un compagno cambia chi muove prima solo se serve', () => {
+  it('il Ventoincoda di un compagno raddoppia la tua Velocità', () => {
     const slow = { ...tusk, evs: { ...tusk.evs, spe: 0 } };
     const mate = { ...gholdengo, species: 'Whimsicott', moves: ['Tailwind'] };
-    const now = duelSpeed(slow, gholdengo).order;
-    for (const buff of speedBuffs(slow, gholdengo, [slow, mate])) expect(buff.first).not.toBe(now);
+    const tailwind = speedBuffs(slow, gholdengo, [slow, mate]).find(b => b.id === 'spe:tailwind');
+    expect(tailwind?.apply.mine).toBe(2);
   });
 });

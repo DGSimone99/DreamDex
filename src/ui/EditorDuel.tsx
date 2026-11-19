@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId,
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
-import { attackBuffs, defenseBuffs, duelSpeed, editorDuel, speedBuffs, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, mergeEffects, orderOf, speedBuffs, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
@@ -17,6 +17,7 @@ import { Combobox, type ComboOption } from './Combobox';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { PokemonIcon } from './PokemonName';
+import { MovePill } from './MovePill';
 import { Sprite, typeColor } from './Sprite';
 import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
@@ -35,12 +36,6 @@ function oppSets(data: EngineData, species: string, genLimit: number, lang: Lang
   for (const preset of presetsFor(data, species)) list.push({ key: `p:${preset.name}`, label: preset.name, set: preset.set });
   if (!list.length) list.push({ key: 'base', label: baseLabel, set: defaultSet(data, species, genLimit) });
   return list;
-}
-
-/** L'icona del tipo della mossa (quella ufficiale, già nel suo colore), accanto al nome. */
-function TypeIcon({ move }: { move: string }) {
-  const type = getMove(move)?.type;
-  return type ? <img className="duel-type" src={typeIconUrl(type)} alt="" draggable={false} /> : null;
 }
 
 /** Il sesso fisso della specie come in Champions (maschio azzurro, femmina rosa); niente se può essere entrambi o nessuno. */
@@ -90,6 +85,9 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   };
   // Le modifiche all'avversario (strumento, EV): si azzerano cambiando Pokémon o set
   const [edit, setEdit] = useState<{ item?: string; evs?: Partial<Record<StatID, number>> }>({});
+  // I potenziamenti accesi (per id); si spengono cambiando avversario
+  const [active, setActive] = useState<Set<string>>(() => new Set());
+  const toggle = (id: string) => setActive(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const settingsRoot = useRef<HTMLDivElement>(null);
   const settingsId = useId();
   // Scegliendo una voce di un elenco del pannello, l'elenco si chiude già alla pressione del tasto: il clic che segue
@@ -173,17 +171,26 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const resultText = (buff: DuelBuff) => (buff.first
     ? t(buff.first === 'mine' ? 'editor.duelResultFirstMine' : buff.first === 'theirs' ? 'editor.duelResultFirstTheirs' : 'editor.duelResultTie')
     : buff.hits === 1 ? t('editor.duelResultOne') : t('editor.duelResultHits', { n: buff.hits !== undefined && Number.isFinite(buff.hits) ? buff.hits : '—' }));
-  /** I segni dei potenziamenti accanto al nome: verde la danza, azzurro il team, rosso quello dell'avversario. */
-  const buffMarks = (list: DuelBuff[] | undefined, now: string) => (list ?? []).map((buff, i) => {
+  /**
+   * Gli interruttori dei potenziamenti accanto alla mossa: acceso, la riga si ricalcola subito (barra, danno, colpi).
+   * Verde la danza del set, azzurro il team, rosso quello dell'avversario; cosa fa da solo nel tooltip.
+   */
+  const buffToggles = (list: DuelBuff[] | undefined) => (list ?? []).map(buff => {
     const source = sourceName(buff.source);
+    const on = active.has(buff.id);
     const text = t(buff.against ? 'editor.duelBuffAgainst' : buff.kind === 'team' ? 'editor.duelBuffTeam' : 'editor.duelBuffSetup',
       { source, by: buff.by ?? '', result: resultText(buff) });
     return (
-      <span key={i} className={`duel-buff tip ${buff.against ? 'against' : buff.kind}`} tabIndex={0} data-tip={`${text} (${t('editor.duelNowHits', { now })})`}>
-        <Icon name={buff.against ? 'warning' : 'check'} /><span>{source}</span>
-      </span>
+      <button key={buff.id} type="button" className={`duel-buff tip ${buff.against ? 'against' : buff.kind}${on ? ' on' : ''}`}
+        aria-pressed={on} data-tip={text} onClick={() => toggle(buff.id)}>
+        <span className="duel-check" aria-hidden="true">{on && <Icon name="check" />}</span><span>{source}</span>
+      </button>
     );
   });
+  const effectOf = (list: DuelBuff[] | undefined) => {
+    const on = (list ?? []).filter(b => active.has(b.id));
+    return on.length ? mergeEffects(on.map(b => b.apply)) : null;
+  };
 
   /**
    * La riga dei consigli c'è sempre (vuota se non ce ne sono): la scheda non salta quando compaiono. Corta a vista
@@ -198,53 +205,64 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   };
 
   /**
-   * Una riga della scheda: il titolo col simbolo (spada, scudo, Velocità), sotto il nome con l'icona del tipo e i segni
-   * dei potenziamenti, poi la barra dei PS che restano (il timbro KO se va KO in un colpo) o le due velocità; a destra il
-   * risultato grande; in fondo i consigli.
+   * Una riga della scheda: il titolo col simbolo (spada, scudo, Velocità); sotto la mossa nella sua pillola (o le due
+   * velocità) con gli interruttori dei potenziamenti; poi la barra dei PS che restano (col timbro KO sopra se va KO in un
+   * colpo); a destra il risultato grande; in fondo i consigli.
    */
-  const line = (className: string, title: ReactNode, label: ReactNode, marks: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode) => (
+  const line = (className: string, title: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode) => (
     <div className={`duel-row ${className}`}>
       <span className="duel-title">{title}</span>
-      <span className="duel-label">{label}{marks}</span>
+      <span className="duel-label">{label}</span>
       <strong className={`duel-result ${resultClass}`}><span className="duel-big">{big}</span><span className="duel-unit">{unit}</span></strong>
       <span className="duel-sub">{sub}</span>
       {tips}
     </div>
   );
-  const hitLine = (kind: 'mine' | 'theirs', hit: DuelHit | null) => {
-    const title = <><Icon name={kind === 'mine' ? 'sword' : 'shield'} />{t(kind === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}</>;
+  const hitLine = (kind: 'mine' | 'theirs', base: DuelHit | null) => {
+    const title = <><Icon name={kind === 'mine' ? 'sword' : 'shield'} /><span className="duel-title-text">{t(kind === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}</span></>;
     const tips = kind === 'mine'
       ? tipsLine([moveTip ? gameName('move', moveTip.move, lang) : null, result?.atkTip ? evParts(result.atkTip) : null], [moveText, evText(result?.atkTip ?? null)])
       : tipsLine([result?.defTip ? evParts(result.defTip) : null], [evText(result?.defTip ?? null)]);
-    if (!hit) return line(kind, title, <span className="duel-none">{t('editor.duelNoMove')}</span>, null, '—', '', 'none', null, tips);
+    const list = kind === 'mine' ? buffs?.attack : buffs?.defense;
+    const effect = effectOf(list);
+    // Coi potenziamenti accesi il colpo si ricalcola (tuo su di lui, o suo su di te)
+    const hit = effect && opp ? (kind === 'mine' ? buffedHit(me, opp, effect) : buffedHit(opp, me, effect)) : base;
+    const toggles = buffToggles(list);
+    if (!hit) return line(kind, title, <><span className="duel-none">{t('editor.duelNoMove')}</span>{toggles}</>, '—', '', 'none', null, tips);
     const { big, unit } = hitsParts(hit);
     const left = Math.max(0, 100 - Math.round(hit.max * 100));
     const tone = left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
-    // Come in Meta Coverage: se va KO in un colpo il timbro KO al posto della barra, altrimenti i PS che restano
-    const sub = hit.hitsSure === 1
-      ? <><span className="cm-ko small">KO</span><span className="duel-range">{`−${pct(hit.min)}–${pct(hit.max)}`}</span></>
-      : (
-        <>
-          <span className="cm-hp duel-bar" aria-hidden="true"><span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span></span>
-          <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
-        </>
-      );
+    // Come in Meta Coverage: la barra dei PS che restano; se va KO in un colpo la barra resta (vuota) col timbro KO sopra
+    const sub = (
+      <>
+        <span className="cm-hp duel-bar" aria-hidden="true">
+          <span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span>
+          {hit.hitsSure === 1 && <span className="cm-ko small duel-ko">KO</span>}
+        </span>
+        <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
+      </>
+    );
     const ko = hit.hitsSure === 1 ? (kind === 'mine' ? 'good' : 'bad') : 'plain';
-    const marks = buffMarks(kind === 'mine' ? buffs?.attack : buffs?.defense, `${big} ${unit}`);
-    return line(kind, title, <><TypeIcon move={hit.move} /><span className="duel-move-name">{gameName('move', hit.move, lang)}</span></>, marks, big, unit, ko, sub, tips);
+    return line(kind, title, <><MovePill name={hit.move} size="sm" className="duel-mvp" />{toggles}</>, big, unit, ko, sub, tips);
   };
 
-  // La Velocità: le due velocità in lotta (Sciarpa e Booster comprese), chi muove prima e, se serve, gli EV per superarlo
+  // La Velocità: le due velocità in lotta (Sciarpa e Booster comprese, e i potenziamenti accesi), chi muove prima e, se
+  // serve, gli EV per superarlo
   const speedTip = speed?.tip
     ? `${t('editor.duelTipSpe', { n: speed.tip.evs })}${speed.tip.evs > free ? ` ${t('editor.duelTipElsewhere')}` : ''}`
     : null;
-  const speedNow = speed ? t(speed.order === 'mine' ? 'editor.duelFirstMine' : speed.order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie') : '';
-  const speedLine = speed && line(
-    'speed', <><StatIcon stat="spe" />{t('editor.duelSpeed')}</>,
-    <span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speed.mine, b: speed.theirs })}</span>,
-    buffMarks(buffs?.speed, speedNow),
-    speed.order === 'mine' ? '1°' : speed.order === 'theirs' ? '2°' : '=', speedNow,
-    speed.order === 'mine' ? 'good' : speed.order === 'theirs' ? 'bad' : 'warn', null,
+  const speedEffect = effectOf(buffs?.speed);
+  const speeds = speed ? {
+    mine: Math.floor(speed.mine * (speedEffect?.mine ?? 1)),
+    theirs: Math.floor(speed.theirs * (speedEffect?.theirs ?? 1)),
+  } : null;
+  const order = speeds ? orderOf(speeds.mine, speeds.theirs) : 'tie';
+  const speedNow = t(order === 'mine' ? 'editor.duelFirstMine' : order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie');
+  const speedLine = speed && speeds && line(
+    'speed', <><StatIcon stat="spe" /><span className="duel-title-text">{t('editor.duelSpeed')}</span></>,
+    <><span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speeds.mine, b: speeds.theirs })}</span>{buffToggles(buffs?.speed)}</>,
+    order === 'mine' ? '1°' : order === 'theirs' ? '2°' : '=', speedNow,
+    order === 'mine' ? 'good' : order === 'theirs' ? 'bad' : 'warn', null,
     tipsLine([speed.tip ? t('editor.duelTipEvShort', { n: speed.tip.evs, stat: statShort('spe', lang) }) : null], [speedTip]),
   );
 
@@ -264,7 +282,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
             onKeyDown={e => { if (e.key === 'Escape' && settingsOpen) { e.stopPropagation(); setSettingsOpen(false); } }}>
             <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
               placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
-              onChange={name => { setPicked(name || null); setSetKey(null); setEdit({}); }} />
+              onChange={name => { setPicked(name || null); setSetKey(null); setEdit({}); setActive(new Set()); }} />
             {species && <GenderMark species={species} />}
             {species && (
               <button type="button" className="duel-settings" aria-haspopup="dialog" aria-expanded={settingsOpen} aria-controls={settingsId}
