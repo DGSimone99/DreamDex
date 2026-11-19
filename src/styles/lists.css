@@ -643,7 +643,9 @@
 .duel-card { display: grid; grid-template-columns: 34% minmax(0, 1fr); min-height: 186px;
   margin: var(--sp-2) calc(var(--sp-7) * -1) calc(var(--sp-6) * -1); border-radius: 0 0 3px 3px; }
 .duel-art { position: absolute; inset: 0; z-index: 0; border-radius: 3px; overflow: hidden; }
-.duel-art::before, .duel-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.duel-art::before, .duel-art::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  /* Il colore pieno in basso (dove c'è lo sprite) che si dissolve salendo: nessun taglio dritto sul bordo alto */
+  -webkit-mask-image: linear-gradient(to top, #000 0 38%, transparent 96%); mask-image: linear-gradient(to top, #000 0 38%, transparent 96%); }
 .duel-art::before { background: color-mix(in srgb, var(--t1) 65%, transparent); clip-path: polygon(36% 0, 36.5% 0, 24.5% 100%, 24% 100%); }
 .duel-art::after { background: var(--stripes), linear-gradient(170deg, color-mix(in srgb, var(--t1) 34%, transparent), color-mix(in srgb, var(--t1) 12%, transparent));
   clip-path: polygon(0 0, 36% 0, 24% 100%, 0 100%); }
