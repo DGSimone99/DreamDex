@@ -1611,7 +1611,7 @@ export const en = {
   'editor.duelTipMove': "With {move} in the set you KO it in {n} hits",
   'editor.duelTipMoveOne': "With {move} in the set you KO it in 1 hit",
   'editor.duelSettings': "Settings",
-  'editor.duelSettingsSoon': "Coming soon: EVs, item and boosts, theirs and yours",
+  'editor.duelSettingsSoon': "Coming here: item, EVs and boosts, theirs and yours",
   'editor.duelSpeed': "Speed",
   'editor.duelSpeedVs': "{a} vs {b}",
   'editor.duelFirstMine': "You move first",

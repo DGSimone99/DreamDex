@@ -1614,7 +1614,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.duelTipMove': "Con {move} nel set lo mandi KO in {n} colpi",
   'editor.duelTipMoveOne': "Con {move} nel set lo mandi KO in 1 colpo",
   'editor.duelSettings': "Impostazioni",
-  'editor.duelSettingsSoon': "In arrivo: EV, strumento e potenziamenti, suoi e tuoi",
+  'editor.duelSettingsSoon': "In arrivo qui: strumento, EV e potenziamenti, suoi e tuoi",
   'editor.duelSpeed': "Velocità",
   'editor.duelSpeedVs': "{a} contro {b}",
   'editor.duelFirstMine': "Muovi prima",

@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useDeferredValue, useMemo, useState } from 'react';
+import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, moveNames, toID } from '../engine/dex';
@@ -72,6 +72,16 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   const me = useDeferredValue(set);
   const [picked, setPicked] = useState<string | null>(null);
   const [setKey, setSetKey] = useState<string | null>(null);
+  // Le Impostazioni dell'avversario: un pannello sotto l'ingranaggio accanto al nome (si chiude con Esc o cliccando fuori)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRoot = useRef<HTMLDivElement>(null);
+  const settingsId = useId();
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const away = (e: PointerEvent) => { if (!settingsRoot.current?.contains(e.target as Node)) setSettingsOpen(false); };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [settingsOpen]);
 
   const threats = useMemo(() => metaThreats(data).map(threat => threat.set), [data]);
   const auto = useMemo(() => (picked ? null : worstThreat(me, threats.filter(s => toID(s.species) !== toID(me.species)))), [picked, me, threats]);
@@ -175,26 +185,34 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
           {species && <span className="duel-stage"><Sprite species={species} size={96} /></span>}
         </div>
         <div className="duel-head">
-          <div className="duel-name">
+          {/* Il nome (dove si cerca l'avversario), il sesso e l'ingranaggio delle Impostazioni: lì si sceglie il Set Smogon
+              (e, in arrivo, strumento, EV e potenziamenti) */}
+          <div className="duel-name" ref={settingsRoot}
+            onKeyDown={e => { if (e.key === 'Escape' && settingsOpen) { e.stopPropagation(); setSettingsOpen(false); } }}>
             <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
               placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
               onChange={name => { setPicked(name || null); setSetKey(null); }} />
             {species && <GenderMark species={species} />}
-          </div>
-          {/* Set dell'avversario come la pillola SET in cima all'editor, e accanto le Impostazioni (per ora segnaposto) */}
-          <div className="duel-opts">
-            {sets.length > 0 && (
-              <div className="duel-setplate">
-                <span className="duel-setplate-label" aria-hidden="true">{t('editor.set')}</span>
-                <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
-                  options={sets.map(s => ({ value: s.key, label: s.label }))}
-                  display={<span>{chosen?.label}</span>}
-                  onChange={key => setSetKey(key)} />
+            {species && (
+              <button type="button" className="duel-settings" aria-haspopup="dialog" aria-expanded={settingsOpen} aria-controls={settingsId}
+                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={() => setSettingsOpen(o => !o)}>
+                <Icon name="gear" />
+              </button>
+            )}
+            {settingsOpen && (
+              <div className="duel-settings-pop" id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}>
+                {sets.length > 0 && (
+                  <div className="duel-settings-row">
+                    <span className="duel-settings-label">{t('editor.set')}</span>
+                    <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
+                      options={sets.map(s => ({ value: s.key, label: s.label }))}
+                      display={<span>{chosen?.label}</span>}
+                      onChange={key => setSetKey(key)} />
+                  </div>
+                )}
+                <p className="duel-settings-soon">{t('editor.duelSettingsSoon')}</p>
               </div>
             )}
-            <button type="button" className="duel-settings" aria-disabled="true" aria-label={t('editor.duelSettings')} title={t('editor.duelSettingsSoon')}>
-              <Icon name="gear" />
-            </button>
           </div>
         </div>
         {result ? (
