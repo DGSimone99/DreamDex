@@ -1,5 +1,5 @@
 import { bestHit, type Hit } from './damage';
-import { getMove } from './dex';
+import { getMove, toID } from './dex';
 import { hitsToKO } from './duel';
 import type { TeamSet } from './sets';
 import type { StatID } from '@pkmn/dex';
@@ -27,10 +27,22 @@ export interface EvTip {
   side: 'defense' | 'attack';
 }
 
+/** Una mossa da mettere nel set che manda KO l'avversario con meno colpi del colpo migliore di oggi. */
+export interface MoveTip {
+  move: string;
+  /** Colpi per un KO sicuro con la mossa nuova. */
+  hits: number;
+}
+
 export interface EditorDuel {
   mine: DuelHit | null;
   theirs: DuelHit | null;
+  /** Il consiglio di EV più piccolo fra attacco e difesa (a parità, la difesa). */
   tip: EvTip | null;
+  /** I consigli di EV per lato, ognuno solo se è un ritocco. */
+  atkTip: EvTip | null;
+  defTip: EvTip | null;
+  moveTip: MoveTip | null;
 }
 
 const hitsFor = hitsToKO;
@@ -106,13 +118,36 @@ function attackTip(me: TeamSet, opp: TeamSet, mine: DuelHit): EvTip | null {
 /** Oltre questi EV in più non è un ritocco ma un altro spread: niente consiglio. */
 export const TIP_MAX_EVS = 160;
 
-/** La sfida: i due colpi e, se c'è, il consiglio di EV più piccolo (a parità, prima la difesa), solo se è un ritocco. */
-export function editorDuel(me: TeamSet, opp: TeamSet): EditorDuel {
+/**
+ * La mossa migliore fra quelle che il membro può imparare (pool) e non ha già: quella col danno atteso più alto, solo se
+ * manda KO con meno colpi sicuri di oggi (o se oggi non ha colpi). Niente mosse OHKO: dipendono dalla precisione.
+ */
+function moveTip(me: TeamSet, opp: TeamSet, mine: DuelHit | null, pool: readonly string[]): MoveTip | null {
+  if (mine && mine.hitsSure <= 1) return null;
+  const have = new Set(me.moves.map(toID));
+  const moves = pool.filter(name => {
+    const move = getMove(name);
+    return !!move && move.category !== 'Status' && !move.ohko && !have.has(move.id);
+  });
+  if (!moves.length) return null;
+  const hit = bestHit({ ...me, moves }, opp, OPTIONS);
+  if (!hit || hit.min <= 0) return null;
+  const hits = hitsFor(hit.min);
+  return !mine || !Number.isFinite(mine.hitsSure) || hits < mine.hitsSure ? { move: hit.move, hits } : null;
+}
+
+/**
+ * La sfida: i due colpi, i consigli di EV per lato (solo se sono un ritocco) e, se si passa l'elenco delle mosse
+ * imparabili, una mossa migliore da mettere nel set.
+ */
+export function editorDuel(me: TeamSet, opp: TeamSet, pool: readonly string[] = []): EditorDuel {
   const mine = toDuelHit(bestHit(me, opp, OPTIONS));
   const theirs = toDuelHit(bestHit(opp, me, OPTIONS));
-  const tips = [theirs && defenseTip(me, opp, theirs), mine && attackTip(me, opp, mine)].filter((t): t is EvTip => !!t);
-  const tip = tips.filter(t => t.total <= TIP_MAX_EVS).sort((a, b) => a.total - b.total)[0] ?? null;
-  return { mine, theirs, tip };
+  const small = (t: EvTip | null) => (t && t.total <= TIP_MAX_EVS ? t : null);
+  const defTip = small(theirs && defenseTip(me, opp, theirs));
+  const atkTip = small(mine && attackTip(me, opp, mine));
+  const tip = [defTip, atkTip].filter((t): t is EvTip => !!t).sort((a, b) => a.total - b.total)[0] ?? null;
+  return { mine, theirs, tip, atkTip, defTip, moveTip: pool.length ? moveTip(me, opp, mine, pool) : null };
 }
 
 /** L'avversario di partenza: fra le minacce del meta, quella che fa più male al membro. */

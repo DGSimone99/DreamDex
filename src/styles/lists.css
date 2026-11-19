@@ -627,47 +627,60 @@
   .drawer > .set-editor { --ed-gap: var(--sp-3); --stat-row-h: 36px; }
 }
 
-/* Sfida nell'editor: avversario e suo set in alto, poi il tuo colpo migliore e il suo peggiore per te, e il consiglio */
+/*
+ * Sfida nell'editor, come la barra della lotta di Champions: a sinistra il riquadro alto quanto tutta la sezione con lo
+ * sprite dell'avversario, in alto la linguetta stretta (Pokémon, pastiglie Set e Impostazioni, sesso; taglio obliquo a
+ * destra), sotto due righe: simbolo, mossa coi consigli sotto, barra dei PS che restano a chi prende il colpo, colpi.
+ * Riquadro e linguetta prendono il colore dal primo tipo dell'avversario (--tc).
+ */
 .set-editor .editor-group.duel { display: flex; flex-direction: column; gap: var(--sp-3); }
-/* L'avversario come la barra della lotta di Champions: riquadro con lo sprite che esce dall'alto, linguetta stretta
-   attaccata in alto (Pokémon e Set, taglio obliquo a destra), sotto la barra dei PS che gli restano dopo il tuo colpo.
-   Il colore del riquadro e della linguetta viene dal primo tipo dell'avversario (--tc). */
-.duel-card { --portrait-w: 96px; --portrait-h: 80px; --tongue-h: 40px; display: grid; grid-template-columns: var(--portrait-w) minmax(0, 1fr); grid-template-rows: var(--tongue-h) auto; align-items: start; margin-top: var(--sp-6); }
-.duel-portrait { grid-row: 1 / 3; position: relative; z-index: 2; width: var(--portrait-w); height: var(--portrait-h); margin-top: calc(var(--sp-6) * -1); border-radius: var(--alt-r);
-  background: radial-gradient(ellipse 70% 55% at 50% 78%, color-mix(in srgb, var(--tc) 55%, transparent), transparent 75%), var(--stripes), linear-gradient(165deg, color-mix(in srgb, var(--tc) 28%, var(--raised)), var(--field));
+.duel-card { --portrait-w: 108px; --tongue-h: 40px; display: grid; grid-template-columns: var(--portrait-w) minmax(0, 1fr); grid-template-rows: var(--tongue-h) auto; margin-top: var(--sp-4); }
+.duel-portrait { grid-row: 1 / -1; position: relative; z-index: 2; min-height: 132px; border-radius: var(--alt-r); overflow: hidden;
+  background: radial-gradient(ellipse 80% 40% at 50% 62%, color-mix(in srgb, var(--tc) 60%, transparent), transparent 75%), var(--stripes), linear-gradient(165deg, color-mix(in srgb, var(--tc) 32%, var(--raised)), var(--field));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 55%, var(--line)), inset 0 1px 0 #ffffff26, 0 6px 14px -4px #00000080; }
-.duel-portrait > .sprite { position: absolute; left: 50%; bottom: -6px; width: 96px; height: 96px; transform: translateX(-50%); image-rendering: pixelated; filter: drop-shadow(0 3px 2px #00000066); }
-.duel-tongue { grid-column: 2; position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; height: var(--tongue-h); margin-left: -14px; padding: 0 22px 0 26px; }
+.duel-portrait > .sprite { position: absolute; left: 50%; top: 52%; width: 112px; height: 112px; transform: translate(-50%, -50%); image-rendering: pixelated; filter: drop-shadow(0 3px 2px #00000066); }
+.duel-tongue { grid-column: 2; position: relative; isolation: isolate; display: flex; align-items: center; gap: var(--sp-4); height: var(--tongue-h); margin-left: -14px; padding: 0 26px 0 22px; }
 .duel-tongue::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 0 3px 0 0;
-  background: linear-gradient(#ffffff2e 0 1px, transparent 1px), var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, var(--raised)), var(--raised) 70%, color-mix(in srgb, var(--raised) 85%, white));
+  background: linear-gradient(#ffffff2e 0 1px, transparent 1px), var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 32%, var(--raised)), var(--raised) 65%, color-mix(in srgb, var(--raised) 85%, white));
   clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%); }
-.duel-tongue .combobox input { height: var(--tongue-h); padding-left: var(--sp-3); border: 0; border-radius: 0; background: transparent; text-overflow: ellipsis; }
+.duel-tongue .combobox input { border: 0; background: transparent; text-overflow: ellipsis; }
 .duel-tongue .combobox input:focus-visible { outline: none; }
-.duel-tongue .combobox:has(input:focus-visible) { box-shadow: inset 0 -2px 0 var(--accent); }
-.duel-tongue .duel-species input { font: italic 700 var(--fs-body)/1 var(--display); letter-spacing: 0.01em; color: var(--text); }
-.duel-tongue .duel-set { position: relative; }
-.duel-tongue .duel-set::before { content: ''; position: absolute; left: -2px; top: 50%; width: 1px; height: 22px; margin-top: -11px; background: color-mix(in srgb, var(--text) 30%, transparent); transform: skewX(-27deg); }
-.duel-tongue .duel-set .combobox-display { left: var(--sp-5); font-weight: 600; color: var(--muted); }
-.duel-hp { grid-column: 2; display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-8) 0 var(--sp-6); --hp: var(--good); }
-.duel-hp[data-zone='mid'] { --hp: var(--warn); }
-.duel-hp[data-zone='low'] { --hp: var(--bad); }
-.duel-hp-tag { flex: none; padding: 1px 7px 1px 5px; font: italic 700 var(--fs-caption)/1.2 var(--display); color: var(--warn); background: var(--field); clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
-.duel-hp-bar { flex: 1; height: 9px; background: linear-gradient(90deg, var(--hp) calc(var(--lo) * 100%), color-mix(in srgb, var(--hp) 40%, transparent) calc(var(--lo) * 100%) calc(var(--hi) * 100%), var(--field) 0); box-shadow: inset 0 0 0 1px #00000040; clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); transition: background 0.3s var(--ease); }
-.duel-hp-num { flex: none; min-width: 5ch; font: italic 700 var(--fs-body)/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
-.duel-row { display: grid; grid-template-columns: 30px minmax(0, 1.3fr) minmax(48px, 1fr) 76px 92px; align-items: center; gap: var(--sp-4); min-height: 30px; }
-.duel-who { font: 700 var(--fs-label)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.duel-tongue .duel-species { flex: 1.15 1 0; min-width: 0; }
+.duel-tongue .duel-species input { height: var(--tongue-h); padding-left: var(--sp-3); border-radius: 0; font: italic 700 var(--fs-body)/1 var(--display); letter-spacing: 0.01em; color: var(--text); }
+.duel-tongue .duel-species:has(input:focus-visible) { box-shadow: inset 0 -2px 0 var(--accent); }
+/* Le pastiglie della linguetta (Set, Impostazioni), più chiare della linguetta come nel disegno */
+.duel-pill { height: 28px; border-radius: 14px; background: color-mix(in srgb, var(--field) 55%, transparent); box-shadow: inset 0 0 0 1px #ffffff1f; }
+.duel-tongue .duel-set { flex: 1 1 0; min-width: 0; }
+.duel-tongue .duel-set input { height: 28px; padding-left: var(--sp-5); border-radius: 14px; }
+.duel-tongue .duel-set .combobox-display { left: var(--sp-5); font-weight: 600; color: var(--text); }
+.duel-tongue .duel-set:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }
+.duel-settings { flex: none; padding: 0 var(--sp-5); border: 0; font: 600 var(--fs-small)/1 var(--ui); color: var(--muted); cursor: help; }
+.duel-settings:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.duel-gender { flex: none; width: 18px; height: 18px; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.duel-gender.male { stroke: #6cb8ff; }
+.duel-gender.female { stroke: #ff86b0; }
+/* Le due righe sotto la linguetta */
+.duel-rows { grid-column: 2; display: flex; flex-direction: column; justify-content: space-evenly; gap: var(--sp-3); padding: var(--sp-4) 0 0 var(--sp-6); }
+.duel-row { display: grid; grid-template-columns: 24px minmax(0, 1.15fr) minmax(96px, 1fr) 84px; align-items: center; column-gap: var(--sp-4); row-gap: 2px; }
+.duel-sym { display: grid; place-items: center; width: 24px; height: 24px; color: var(--accent); }
+.duel-row.theirs .duel-sym { color: var(--bad); }
+.duel-sym svg { width: 20px; height: 20px; }
 .duel-move { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; font-weight: 600; }
 .duel-move > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .duel-move .mvp-ic { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 4px; background: var(--c); }
 .duel-move .mvp-ic img { width: 16px; height: 16px; }
-.duel-bar { --c: var(--accent); height: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--c) calc(var(--lo) * 100%), color-mix(in srgb, var(--c) 45%, transparent) calc(var(--lo) * 100%) calc(var(--hi) * 100%), var(--field) 0); }
-.duel-row.theirs .duel-bar { --c: var(--bad); }
-.duel-range { font-size: var(--fs-small); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
-.duel-hits { font-size: var(--fs-small); text-align: right; white-space: nowrap; }
+/* Barra dei PS come in Champions: verde sopra metà, gialla sopra un quinto, rossa sotto; la parte chiara è l'incertezza del danno */
+.duel-hp { --hp: var(--good); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-3); }
+.duel-hp[data-zone='mid'] { --hp: var(--warn); }
+.duel-hp[data-zone='low'] { --hp: var(--bad); }
+.duel-hp-bar { height: 10px; background: linear-gradient(90deg, var(--hp) calc(var(--lo) * 100%), color-mix(in srgb, var(--hp) 38%, #090b11) calc(var(--lo) * 100%) calc(var(--hi) * 100%), #090b11 0); box-shadow: inset 0 0 0 1px #ffffff21; clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); transition: background 0.3s var(--ease); }
+.duel-range { font-size: var(--fs-caption); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.duel-hits { font: italic 700 var(--fs-small)/1.1 var(--display); text-align: right; white-space: nowrap; }
 .duel-row.mine .duel-hits.ko { color: var(--good); }
 .duel-row.theirs .duel-hits.ko { color: var(--bad); }
-.duel-none, .duel-empty { grid-column: 2 / -1; margin: 0; font-size: var(--fs-small); color: var(--faint); }
-.duel-tip { margin: 0; padding: var(--sp-2) var(--sp-4); border-radius: 4px; background: var(--accent-wash); color: var(--accent-ink); font-size: var(--fs-small); }
+.duel-tips { grid-column: 2 / -1; display: flex; flex-direction: column; font-size: var(--fs-caption); line-height: 1.35; color: var(--accent-2-ink); }
+.duel-none { grid-column: 2 / -1; margin: 0; font-size: var(--fs-small); color: var(--faint); }
+.duel-empty { grid-column: 2; margin: 0; padding: var(--sp-4) 0 0 var(--sp-6); font-size: var(--fs-small); color: var(--faint); }
 @media (min-width: 1100px) {
   /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
   /* Con la Sfida: il Set alto quanto il contenuto (spazi fissi: un po' d'aria sotto la fascia, 12px fra targhette e
@@ -676,14 +689,15 @@
   .set-editor .editor-side.with-duel > .set-box { align-content: start; row-gap: var(--sp-6); padding-top: var(--sp-6); }
   .set-editor .editor-side.with-duel > .set-box > .editor-group { align-content: start; }
   .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-4); }
-  .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: space-evenly; overflow: hidden; }
+  .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: flex-start; overflow: hidden; }
+  .set-editor .editor-side.with-duel .duel-card { flex: 1 1 auto; max-height: 220px; grid-template-rows: var(--tongue-h) minmax(0, 1fr); }
 }
 /* Schermi bassi: la Sfida più fitta, così il cassetto non scorre */
 @media (min-width: 1100px) and (max-height: 700px) {
   .set-editor .editor-group.duel { gap: var(--sp-1); }
-  .duel-card { --portrait-w: 80px; --portrait-h: 64px; --tongue-h: 34px; margin-top: var(--sp-4); }
+  .duel-card { --portrait-w: 92px; --tongue-h: 34px; margin-top: var(--sp-2); }
+  .duel-portrait { min-height: 108px; }
   .duel-portrait > .sprite { width: 80px; height: 80px; }
-  .duel-row { min-height: 24px; }
-  .duel-tip { padding: 1px var(--sp-4); }
+  .duel-rows { gap: var(--sp-1); padding-top: var(--sp-2); }
   .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-2); }
 }

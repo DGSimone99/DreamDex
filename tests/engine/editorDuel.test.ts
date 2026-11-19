@@ -34,3 +34,18 @@ describe('sfida: consiglio solo se è un ritocco', () => {
     expect(d.tip === null || d.tip.total <= TIP_MAX_EVS).toBe(true);
   });
 });
+
+describe('sfida: una mossa migliore da mettere nel set', () => {
+  // Great Tusk con solo Ice Spinner contro Gholdengo: Headlong Rush (nel pool) lo manda KO con meno colpi
+  const weak = { ...tusk, moves: ['Ice Spinner', 'Rapid Spin'] };
+  it('propone una mossa del pool che non ha, con meno colpi del colpo di oggi', () => {
+    const d = editorDuel(weak, gholdengo, ['Headlong Rush', 'Ice Spinner', 'Swords Dance', 'Fissure']);
+    expect(d.moveTip?.move).toBe('Headlong Rush');
+    expect(d.moveTip!.hits).toBeLessThan(d.mine!.hitsSure);
+  });
+  it('niente consiglio senza pool o se il colpo di oggi manda già KO in 1', () => {
+    expect(editorDuel(weak, gholdengo).moveTip).toBeNull();
+    const d = editorDuel(tusk, gholdengo, ['Headlong Rush', 'Earthquake']);
+    if (d.mine!.hitsSure <= 1) expect(d.moveTip).toBeNull();
+  });
+});

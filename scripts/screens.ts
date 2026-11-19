@@ -609,7 +609,7 @@ const STATES: Record<string, State> = {
     });
     if (!picked) return 'no option';
     await wait(1200);
-    console.log(await p.evaluate(() => `duel=${[...document.querySelectorAll('.slot.open .duel-row, .slot.open .duel-tip')].map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | ')}`));
+    console.log(await p.evaluate(() => `duel=${[...document.querySelectorAll('.slot.open .duel-row')].map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | ')}`));
     return true;
   } },
   'editor-undo': { run: async p => {
