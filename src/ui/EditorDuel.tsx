@@ -1,4 +1,5 @@
 import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
@@ -74,22 +75,16 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const [setKey, setSetKey] = useState<string | null>(null);
   // Le Impostazioni dell'avversario: un pannello sotto l'ingranaggio accanto al nome (si chiude con Esc o cliccando fuori)
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Verso l'alto quando sotto l'ingranaggio non c'è posto (la Sfida sta in fondo al cassetto): niente barra di scorrimento
-  const [settingsUp, setSettingsUp] = useState(true);
-  const toggleSettings = (button: HTMLElement) => {
-    if (!settingsOpen) {
-      const box = button.closest('.drawer')?.getBoundingClientRect();
-      const below = (box ? Math.min(box.bottom, window.innerHeight) : window.innerHeight) - button.getBoundingClientRect().bottom;
-      setSettingsUp(below < 330);
-    }
-    setSettingsOpen(o => !o);
-  };
+  const toggleSettings = () => setSettingsOpen(o => !o);
   // Le modifiche all'avversario (strumento, EV): si azzerano cambiando Pokémon o set
   const [edit, setEdit] = useState<{ item?: string; evs?: Partial<Record<StatID, number>> }>({});
   // I potenziamenti accesi (per id); si spengono cambiando avversario
   const [active, setActive] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) => setActive(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const settingsRoot = useRef<HTMLDivElement>(null);
+  const settingsPop = useRef<HTMLDivElement>(null);
+  // Sotto il nome, allineato a sinistra; sopra se sotto non c'è posto (la Sfida sta in fondo al cassetto), sempre nella finestra
+  useAnchoredPop(settingsRoot, settingsPop, settingsOpen, { width: 320, gap: 6 });
   const settingsId = useId();
   // Passando sullo sprite dell'avversario, la carta del suo set (come sulle carte del team)
   const memberTip = useMemberTip(250, undefined, true);
@@ -300,17 +295,17 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
           <div className="duel-name" ref={settingsRoot}
             onKeyDown={e => { if (e.key === 'Escape' && settingsOpen) { e.stopPropagation(); setSettingsOpen(false); } }}>
             <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
-              placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
+              placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')} menuMinWidth={280}
               onChange={name => { setPicked(name || null); setSetKey(null); setEdit({}); setActive(new Set()); }} />
             {species && <GenderMark species={species} />}
             {species && (
               <button type="button" className="duel-settings" aria-haspopup="dialog" aria-expanded={settingsOpen} aria-controls={settingsId}
-                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={e => toggleSettings(e.currentTarget)}>
+                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={toggleSettings}>
                 <Icon name="gear" />
               </button>
             )}
             {settingsOpen && (
-              <div className={`duel-settings-pop${settingsUp ? ' up' : ''}`} id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}
+              <div className="duel-settings-pop" ref={settingsPop} popover={supportsPopover ? 'manual' : undefined} id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}
                 onMouseDownCapture={e => { if ((e.target as Element).closest('[role="option"]')) pickedAt.current = Date.now(); }}
                 onMouseUpCapture={e => {
                   if (Date.now() - pickedAt.current < 600 && !(e.target as Element).closest('[role="option"]')) { e.stopPropagation(); e.preventDefault(); }

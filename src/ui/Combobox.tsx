@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { toID } from '../engine/dex';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { useT } from '../i18n/react';
 
 export interface ComboOption {
@@ -64,10 +65,12 @@ interface Props {
   className?: string;
   /** Intestazione delle voci più usate, se diversa da "Più usati" (es. con il formato da cui vengono). */
   commonLabel?: string;
+  /** Larghezza minima del menu, per i campi stretti (di norma il menu è largo quanto il campo). */
+  menuMinWidth?: number;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth }: Props) {
   const t = useT();
   const listId = useId();
   const [open, setOpen] = useState(false);
@@ -76,6 +79,10 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Il menu si allinea al campo; un contenitore con `data-pop-anchor` (es. il rombo della Natura) fa da campo al suo posto
+  const anchorRef = useRef<HTMLElement | null>(null);
+  const setRoot = (node: HTMLDivElement | null) => { anchorRef.current = node ? node.closest<HTMLElement>('[data-pop-anchor]') ?? node : null; };
+  useAnchoredPop(anchorRef, listRef, open, { minWidth: menuMinWidth });
 
   // Le più usate in cima, anche mentre cerchi
   const ordered = useMemo(() => [...options.filter(o => o.common), ...options.filter(o => !o.common)], [options]);
@@ -150,7 +157,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   };
 
   return (
-    <div className={`combobox${open ? ' open' : ''}${restricted && display ? ' has-display' : ''}${leading ? ' has-leading' : ''}${trailing ? ' has-trailing' : ''}${className ? ` ${className}` : ''}`}>
+    <div ref={setRoot} className={`combobox${open ? ' open' : ''}${restricted && display ? ' has-display' : ''}${leading ? ' has-leading' : ''}${trailing ? ' has-trailing' : ''}${className ? ` ${className}` : ''}`}>
       {leading && <span className="combobox-leading" aria-hidden="true">{leading}</span>}
       {trailing && <span className="combobox-trailing" aria-hidden="true" onMouseDown={toggleFromArrow}>{trailing}</span>}
       {/* La freccia (disegnata dal contenitore) si clicca come un pulsante: mano, e apre o chiude il menu */}
@@ -204,7 +211,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         }}
       />
       {open && (
-        <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef}>
+        <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef} popover={supportsPopover ? 'manual' : undefined}>
           {shown.map((option, i) => [
             hasCommon && i === 0 && option.common
               ? <li key="common-head" role="presentation" className="group-head common-head">{commonLabel ?? t('combobox.common')}</li> : null,

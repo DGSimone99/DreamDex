@@ -277,10 +277,12 @@
 .editor-actions .member-copy { width: 36px; padding: 0; justify-content: center; }
 /* Il menu: sotto il pulsante, allineato a destra; Ground, angoli 6px, l'ombra dei menu */
 .set-menu-pop {
-  position: absolute;
+  /* Posto e lato da useAnchoredPop (strato in cima, dentro la finestra) */
+  position: fixed;
   z-index: 40;
-  top: calc(100% + 6px);
-  right: 0;
+  inset: auto;
+  margin: 0;
+  max-height: 520px;
   width: 410px;
   display: flex;
   flex-direction: column;
@@ -438,7 +440,6 @@
 .nature-diamond { --nd-head: 94px; }
 .nature-diamond .set-plate > .field-label { flex: none; width: var(--nd-head); box-sizing: border-box; }
 /* Il menu parte dal bordo sinistro del rombo (indietro quanto la testa) e arriva al destro (avanti quanto la punta) */
-.nature-diamond .combobox [role='listbox'] { left: calc(-1 * var(--nd-head)); right: calc(-1 * var(--nd-tip)); width: auto; }
 .nature-diamond .combobox .option-head { display: grid; grid-template-columns: calc(var(--nd-head) + 6px - 15px) minmax(0, 1fr) auto; column-gap: 0; }
 .nature-diamond .combobox .option-head > strong { grid-column: 2; grid-row: 1; }
 .nature-diamond .combobox .option-head > .option-detail { grid-column: 3; grid-row: 1; }

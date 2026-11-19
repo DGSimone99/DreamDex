@@ -18,6 +18,7 @@ import { TypeChip } from './Sprite';
 import { NatureArrow } from './NatureArrow';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SetMenu } from './SetMenu';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
@@ -296,6 +297,11 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   // Tendina degli spread: sopra l'editor (non ne cambia l'altezza); si chiude scegliendo, con Esc o cliccando fuori
   const spreadMenu = useRef<HTMLDetailsElement>(null);
   const closeSpreads = () => { if (spreadMenu.current) spreadMenu.current.open = false; };
+  const spreadToggle = useRef<HTMLElement>(null);
+  const spreadList = useRef<HTMLDivElement>(null);
+  const [spreadsOpen, setSpreadsOpen] = useState(false);
+  // Sotto la targhetta Spread, allineato a destra e largo quanto serve agli EV; sopra se sotto non c'è posto
+  useAnchoredPop(spreadToggle, spreadList, spreadsOpen, { width: 'content', minWidth: 340, align: 'end', gap: 6 });
   useEffect(() => {
     const away = (e: PointerEvent) => { if (!spreadMenu.current?.contains(e.target as Node)) closeSpreads(); };
     document.addEventListener('pointerdown', away);
@@ -328,7 +334,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const [customShown, setCustomShown] = useState(false);
   const [natureHelp, setNatureHelp] = useState(false);
   const plate = (label: string, control: ReactNode) => (
-    <div className="set-plate"><span className="field-label" aria-hidden="true">{label}</span>{control}</div>
+    // La targhetta intera (etichetta compresa) fa da campo: il menu si apre largo quanto lei
+    <div className="set-plate" data-pop-anchor><span className="field-label" aria-hidden="true">{label}</span>{control}</div>
   );
 
   return (
@@ -361,13 +368,13 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* Spread sulla fascia delle Statistiche, a destra (come Custom Skillset su quella del Set): dice a quale degli spread
             più usati corrisponde il set (o Personalizzato) e apre l'elenco; uno spread è natura più EV */}
         {!!common?.spreads.length && (
-          <details className="spread-panel" ref={spreadMenu}
+          <details className="spread-panel" ref={spreadMenu} onToggle={e => setSpreadsOpen(e.currentTarget.open)}
             onKeyDown={e => { if (e.key === 'Escape' && spreadMenu.current?.open) { e.stopPropagation(); closeSpreads(); spreadMenu.current.querySelector('summary')?.focus(); } }}>
-            <summary className="spread-toggle">
+            <summary className="spread-toggle" ref={spreadToggle}>
               <span className="spread-name">{t('editor.spread')}<span className="visually-hidden">:</span></span>
               <span className="spread-value">{spreadLabel}</span>
             </summary>
-            <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
+            <div className="spread-presets" ref={spreadList} popover={supportsPopover ? 'manual' : undefined} role="group" aria-label={t('editor.spreads')}>
               {common.spreads.map(spread => (
                 <button
                   key={spreadKey(spread)}
@@ -450,7 +457,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* La Natura sotto le righe, centrata, a rombo come in Champions: cambia le statistiche di sopra (le freccette) */}
         {/* La spiegazione della natura sta fuori dalla testa (che è ritagliata a rombo e la taglierebbe) */}
         <div className="nature-diamond set-plates">
-          <div className="set-plate">
+          <div className="set-plate" data-pop-anchor>
             <span className="field-label" aria-hidden="true" onPointerEnter={() => setNatureHelp(true)} onPointerLeave={() => setNatureHelp(false)}>{t('editor.nature')}</span>
             <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted
               display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}

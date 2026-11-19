@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { presetSet } from '../engine/bestPreset';
 import { formatName, sameSet, STAT_IDS, type Preset, type TeamSet } from '../engine/sets';
 import type { Lang } from '../i18n';
@@ -64,6 +65,9 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
+  // Sotto il pulsante, allineato a destra; sopra se sotto non c'è posto, sempre dentro la finestra
+  useAnchoredPop(button, pop, open, { width: 410, align: 'end', gap: 6 });
   const id = useId();
   const tabId = (which: Tab) => `${id}-tab-${which}`;
   const panelId = `${id}-panel`;
@@ -180,7 +184,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
         </span>
       </button>
       {open && (
-        <div className="set-menu-pop" id={panelId} role="dialog" aria-label={t('editor.setMenu')}>
+        <div className="set-menu-pop" ref={pop} popover={supportsPopover ? 'manual' : undefined} id={panelId} role="dialog" aria-label={t('editor.setMenu')}>
           <div className="set-menu-tabs" role="tablist" aria-label={t('editor.setMenu')}>
             <button type="button" role="tab" id={tabId('smogon')} aria-selected={tab === 'smogon'} aria-controls={`${panelId}-list`}
               tabIndex={tab === 'smogon' ? 0 : -1} onClick={() => setTab('smogon')} onKeyDown={onTabKey}>{t('editor.setMenuSmogon')}</button>
