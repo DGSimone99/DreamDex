@@ -249,9 +249,9 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
       {/* La scheda tagliata in diagonale (come le carte di Masters): a sinistra il colore del tipo dell'avversario col nome
           grande (dove lo si cerca), Set, Impostazioni e lo sprite che sborda in basso; a destra le tre righe */}
       <div className="duel-card" style={{ '--t1': typeColor(oppTypes[0] ?? ''), '--t2': typeColor(oppTypes[1] ?? oppTypes[0] ?? '') } as CSSProperties}>
-        <div className="duel-art" aria-hidden="true">
-          {species && <span className="duel-stage"><Sprite species={species} size={96} /></span>}
-        </div>
+        <div className="duel-art" aria-hidden="true" />
+        {/* Lo sprite fuori dallo sfondo ritagliato e sopra le righe: se è largo può sbordare un po' */}
+        {species && <span className="duel-stage" aria-hidden="true"><Sprite species={species} size={96} /></span>}
         <div className="duel-head">
           {/* Il nome (dove si cerca l'avversario), il sesso e l'ingranaggio delle Impostazioni: lì si sceglie il Set Smogon
               (e, in arrivo, strumento, EV e potenziamenti) */}
