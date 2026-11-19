@@ -735,3 +735,29 @@
   .band-toggle::after { inset: -12px -12px -8px; }
   .band-toggle .icon { width: 16px; height: 16px; }
 }
+
+/* ── Tooltip col dito (TouchTips, 2026-11-19): niente tooltip al tocco, si aprono tenendo premuto ──────── */
+/* Col dito i tooltip che si aprono "passando sopra" restano spenti: col tocco comparirebbero e resterebbero lì */
+html.touch-tips :is(.tip, .field)[data-tip]::after { display: none; }
+html.touch-tips .hint-bubble:not(.done) { display: none; }
+html.touch-tips .ftip:not([data-tip-sheet]) { display: none; }
+/* Il punteggiato sotto le parole con la spiegazione resta: dice che tenendo premuto c'è qualcosa da leggere */
+html.touch-tips :is(button, a, [role='tab'], [role='option'], .slot-card, .tip) { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* Lo sfondo scuro dietro il foglio */
+.tip-sheet-shade { position: fixed; inset: 0; z-index: 1100; background: rgb(4 5 9 / 0.62); animation: fade-in 0.15s var(--ease); }
+@keyframes fade-in { from { opacity: 0; } }
+/* Il foglio del tooltip di testo: dal basso, la spiegazione e la × */
+.tip-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1101; display: flex; align-items: flex-start; gap: var(--sp-5);
+  max-height: 70dvh; overflow-y: auto; padding: var(--sp-8) var(--sp-4) max(var(--sp-8), env(safe-area-inset-bottom)) var(--sp-8);
+  border: 1px solid var(--line); border-bottom: 0; border-radius: 14px 14px 0 0; background: var(--ground); box-shadow: 0 -14px 36px rgba(0, 0, 0, 0.55);
+  animation: sheet-up 0.22s var(--ease); }
+.tip-sheet::before { content: ''; position: absolute; top: var(--sp-3); left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--control-line); }
+.tip-sheet p { flex: 1; margin: var(--sp-3) 0 0; white-space: pre-line; font: 400 var(--fs-body)/1.45 var(--ui); color: var(--text); }
+.tip-sheet-close { flex: none; width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; color: var(--muted); }
+.tip-sheet-close .icon { width: 20px; height: 20px; }
+/* Il tooltip ricco diventa il foglio: largo quanto lo schermo, in fondo, sopra lo sfondo scuro; la × sopra di lui a destra */
+html.touch-tips .ftip[data-tip-sheet] { position: fixed !important; left: 0 !important; right: 0; top: auto !important; bottom: 0; z-index: 1101; width: auto !important; max-width: none;
+  max-height: 75dvh; overflow-y: auto; border-radius: 14px 14px 0 0; padding-bottom: max(var(--sp-6), env(safe-area-inset-bottom)); pointer-events: auto; visibility: visible !important; animation: sheet-up 0.22s var(--ease); }
+html.touch-tips .ftip[data-tip-sheet]::before, html.touch-tips .ftip[data-tip-sheet]::after { display: none; }
+.tip-sheet-close.floating { position: fixed; right: var(--sp-5); z-index: 1102; border-radius: 50%; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line), 0 6px 16px rgba(0, 0, 0, 0.5); color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .tip-sheet, .tip-sheet-shade, html.touch-tips .ftip[data-tip-sheet] { animation: none; } }

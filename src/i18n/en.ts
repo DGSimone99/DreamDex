@@ -719,6 +719,7 @@ export const en = {
   'combobox.options': "{label}: options",
   'combobox.none': "No results",
   'combobox.close': "Close",
+  'touchTip.label': "Explanation",
   'combobox.search': "Search: {label}",
   'combobox.common': "Most used",
   'combobox.commonIn': "Most used · {format}",

@@ -720,6 +720,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.accuracyShort': "precisione",
   'combobox.options': "{label}: opzioni",
   'combobox.close': "Chiudi",
+  'touchTip.label': "Spiegazione",
   'combobox.search': "Cerca: {label}",
   'combobox.none': "Nessun risultato",
   'combobox.common': "Più usati",

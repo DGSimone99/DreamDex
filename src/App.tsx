@@ -37,6 +37,7 @@ import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
+import { TouchTips } from './ui/TouchTips';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
@@ -514,6 +515,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
       {feedbackOpen && <FeedbackDialog team={team} format={format} onClose={closeFeedback} />}
       {/* Il team copiato per Showdown: sta dove sta l'avviso di Annulla, che intanto aspetta (torna quando questo si chiude) */}
+      <TouchTips />
       {done && <DoneToast note={done} onClose={() => setDone(null)} />}
       {!done && listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, ...listUndo.undo }} onClose={() => setListUndo(null)}

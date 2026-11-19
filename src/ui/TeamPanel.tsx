@@ -39,6 +39,7 @@ import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
 import { useMediaQuery } from './useMediaQuery';
+import { TOUCH_QUERY } from './TouchTips';
 import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
@@ -323,6 +324,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const evOverText = evTotal(set.evs) > EV_TOTAL ? tr('team.evOver', { n: evTotal(set.evs) }) : null;
   const editorProblems = problems.filter(p => p !== evOverText);
   const memberTip = useMemberTip(500, '.slot-card');
+  // Col dito: tenendo premuta la carta si apre la carta del set (vedi TouchTips); il suggerimento del trascinamento non serve
+  const touch = useMediaQuery(TOUCH_QUERY);
   // La punta sotto la carta aperta: al centro della carta, misurato (le carte cambiano larghezza con la finestra)
   const pointer = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -392,8 +395,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         className="slot-card"
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
-        title={collapsed ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
-        {...(collapsed && !open ? memberTip.bind(set, roles[0]) : {})}
+        title={collapsed || touch ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
+        {...((collapsed || touch) && !open ? memberTip.bind(set, roles[0]) : {})}
         // Clic su tutta la carta (il pulsante della carta lo prende da tastiera e dai lettori di schermo)
         onClick={e => {
           // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
