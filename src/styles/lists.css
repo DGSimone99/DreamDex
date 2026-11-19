@@ -649,7 +649,7 @@
 .duel-art::before { background: color-mix(in srgb, var(--t1) 65%, transparent); clip-path: polygon(36% 0, 36.5% 0, 24.5% 100%, 24% 100%); }
 .duel-art::after { background: var(--stripes), linear-gradient(170deg, color-mix(in srgb, var(--t1) 34%, transparent), color-mix(in srgb, var(--t1) 12%, transparent));
   clip-path: polygon(0 0, 36% 0, 24% 100%, 0 100%); }
-.duel-stage { position: absolute; z-index: 5; pointer-events: none; left: 2px; bottom: 9px; width: 96px; height: 96px; transform: scale(var(--stage-scale, 1.5)); transform-origin: 0 100%; }
+.duel-stage { position: absolute; z-index: 5; cursor: help; left: 2px; bottom: 9px; width: 96px; height: 96px; transform: scale(var(--stage-scale, 1.5)); transform-origin: 0 100%; }
 .duel-stage > .sprite { display: block; width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 3px 3px #00000080); }
 /* La testa a sinistra: il nome comanda (grande, la freccetta subito dopo il testo), accanto il sesso e l'ingranaggio delle
    Impostazioni, che apre un pannello sotto (Set Smogon; in arrivo strumento, EV, potenziamenti) */

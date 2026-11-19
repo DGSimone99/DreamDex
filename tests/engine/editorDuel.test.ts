@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attackBuffs, battleSpeed, buffedHit, duelSpeed, editorDuel, mergeEffects, speedBuffs, TIP_MAX_EVS } from '../../src/engine/editorDuel';
+import { attackBuffs, battleSpeed, buffedHit, duelField, duelSpeed, editorDuel, mergeEffects, speedBuffs, TIP_MAX_EVS } from '../../src/engine/editorDuel';
 import { importShowdown } from '../../src/engine/sets';
 
 const [tusk, gholdengo] = importShowdown([
@@ -78,5 +78,20 @@ describe('sfida: i potenziamenti', () => {
     const mate = { ...gholdengo, species: 'Whimsicott', moves: ['Tailwind'] };
     const tailwind = speedBuffs(slow, gholdengo, [slow, mate]).find(b => b.id === 'spe:tailwind');
     expect(tailwind?.apply.mine).toBe(2);
+  });
+});
+
+describe('sfida: il meteo delle abilità in campo', () => {
+  const [zard, leafeon] = importShowdown([
+    'Charizard @ Charizardite Y\nAbility: Blaze\nEVs: 252 SpA / 4 SpD / 252 Spe\nTimid Nature\n- Weather Ball\n- Focus Blast\n- Roost\n- Scorching Sands',
+    'Leafeon @ Leftovers\nAbility: Chlorophyll\nEVs: 252 HP / 252 Def / 4 SpD\nImpish Nature\n- Leaf Blade\n- Knock Off\n- Synthesis\n- Swords Dance',
+  ].join('\n\n')).sets;
+  it('Charizard Mega Y porta il sole: Weather Ball è di Fuoco e manda KO Leafeon', () => {
+    const d = editorDuel(zard, leafeon);
+    expect(d.mine?.move).toBe('Weather Ball');
+    expect(d.mine!.min).toBeGreaterThan(1);
+  });
+  it('il sole di chi attacca conta anche per chi difende se lui non porta meteo', () => {
+    expect(duelField(leafeon, zard)).toContain('sun');
   });
 });

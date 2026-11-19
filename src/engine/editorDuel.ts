@@ -15,6 +15,23 @@ import { teamFieldCombos, teamFieldSources } from './partner';
  */
 const OPTIONS = { incoming: true, firstHitShare: 1 } as const;
 
+const WEATHERS: FieldCondition[] = ['sun', 'rain', 'sand', 'snow'];
+/**
+ * Il campo della Sfida: il meteo e il terreno che portano le abilità in campo (Charizard Mega Y col sole, Rillaboom col
+ * Grassy Terrain). Conta prima quello di chi attacca; se non ne porta, quello di chi difende (tra i due resta l'ultimo).
+ */
+export function duelField(attacker: TeamSet, defender: TeamSet): FieldCondition[] {
+  const a = ownConditions(attacker);
+  const d = ownConditions(defender);
+  const pick = (isWeather: boolean) => {
+    const own = a.filter(c => WEATHERS.includes(c) === isWeather);
+    return own.length ? own : d.filter(c => WEATHERS.includes(c) === isWeather);
+  };
+  return [...pick(true), ...pick(false)];
+}
+/** Le opzioni del colpo di chi attacca, col campo della Sfida. */
+const optsFor = (attacker: TeamSet, defender: TeamSet) => ({ ...OPTIONS, conditions: duelField(attacker, defender) });
+
 export interface DuelHit extends Hit {
   category: 'Physical' | 'Special';
   /** Colpi per un KO sicuro (danno minimo) e possibile (danno massimo); Infinity se non fa danno. */
@@ -58,7 +75,7 @@ function toDuelHit(hit: Hit | null): DuelHit | null {
 }
 
 /** Il colpo con una mossa sola (per cercare le soglie senza ricalcolare le altre tre). */
-const single = (attacker: TeamSet, move: string, defender: TeamSet) => bestHit({ ...attacker, moves: [move] }, defender, OPTIONS);
+const single = (attacker: TeamSet, move: string, defender: TeamSet) => bestHit({ ...attacker, moves: [move] }, defender, optsFor(attacker, defender));
 
 const ev = (set: TeamSet, stat: StatID) => set.evs[stat] ?? 0;
 const withEvs = (set: TeamSet, add: Partial<Record<StatID, number>>): TeamSet => {
@@ -134,7 +151,7 @@ function moveTip(me: TeamSet, opp: TeamSet, mine: DuelHit | null, pool: readonly
     return !!move && move.category !== 'Status' && !move.ohko && !have.has(move.id);
   });
   if (!moves.length) return null;
-  const hit = bestHit({ ...me, moves }, opp, OPTIONS);
+  const hit = bestHit({ ...me, moves }, opp, optsFor(me, opp));
   if (!hit || hit.min <= 0) return null;
   const hits = hitsFor(hit.min);
   return !mine || !Number.isFinite(mine.hitsSure) || hits < mine.hitsSure ? { move: hit.move, hits } : null;
@@ -145,8 +162,8 @@ function moveTip(me: TeamSet, opp: TeamSet, mine: DuelHit | null, pool: readonly
  * imparabili, una mossa migliore da mettere nel set.
  */
 export function editorDuel(me: TeamSet, opp: TeamSet, pool: readonly string[] = []): EditorDuel {
-  const mine = toDuelHit(bestHit(me, opp, OPTIONS));
-  const theirs = toDuelHit(bestHit(opp, me, OPTIONS));
+  const mine = toDuelHit(bestHit(me, opp, optsFor(me, opp)));
+  const theirs = toDuelHit(bestHit(opp, me, optsFor(opp, me)));
   const small = (t: EvTip | null) => (t && t.total <= TIP_MAX_EVS ? t : null);
   const defTip = small(theirs && defenseTip(me, opp, theirs));
   const atkTip = small(mine && attackTip(me, opp, mine));
@@ -158,7 +175,7 @@ export function editorDuel(me: TeamSet, opp: TeamSet, pool: readonly string[] = 
 export function worstThreat(me: TeamSet, threats: TeamSet[]): TeamSet | null {
   let worst: { set: TeamSet; expected: number } | null = null;
   for (const set of threats) {
-    const hit = bestHit(set, me, OPTIONS);
+    const hit = bestHit(set, me, optsFor(set, me));
     if (hit && (!worst || hit.expected > worst.expected)) worst = { set, expected: hit.expected };
   }
   return worst?.set ?? null;
@@ -238,7 +255,11 @@ export function mergeEffects(effects: BuffEffect[]): BuffEffect {
 
 /** Il colpo migliore con i potenziamenti accesi (meteo dell'abilità di chi attacca sempre attivo). */
 export function buffedHit(attacker: TeamSet, defender: TeamSet, effect: BuffEffect): DuelHit | null {
-  const conditions = [...new Set([...ownConditions(attacker), ...(effect.conditions ?? [])])];
+  // Il campo della Sfida, con quello che portano i potenziamenti accesi al posto suo (un meteo ne sostituisce un altro)
+  const added = effect.conditions ?? [];
+  const isWeather = (c: FieldCondition) => WEATHERS.includes(c);
+  const base = duelField(attacker, defender).filter(c => !added.some(x => isWeather(x) === isWeather(c)));
+  const conditions = [...new Set([...base, ...added])];
   return toDuelHit(bestHit(attacker, defender, { ...OPTIONS, conditions, boosts: effect.boosts }));
 }
 

@@ -17,6 +17,7 @@ import { Combobox, type ComboOption } from './Combobox';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { PokemonIcon } from './PokemonName';
+import { useMemberTip } from './MemberCard';
 import { MovePill } from './MovePill';
 import { StatIcon } from './StatIcon';
 import { Sprite, typeColor } from './Sprite';
@@ -90,6 +91,8 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const toggle = (id: string) => setActive(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const settingsRoot = useRef<HTMLDivElement>(null);
   const settingsId = useId();
+  // Passando sullo sprite dell'avversario, la carta del suo set (come sulle carte del team)
+  const memberTip = useMemberTip(250, undefined, true);
   // Scegliendo una voce di un elenco del pannello, l'elenco si chiude già alla pressione del tasto: il clic che segue
   // e il rilascio che lo precede finirebbero sul campo sotto (lo Strumento sotto il Set, che selezionerebbe il testo). Li si ferma qui.
   const pickedAt = useRef(0);
@@ -289,7 +292,8 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
       <div className="duel-card" style={{ '--t1': typeColor(oppTypes[0] ?? ''), '--t2': typeColor(oppTypes[1] ?? oppTypes[0] ?? '') } as CSSProperties}>
         <div className="duel-art" aria-hidden="true" />
         {/* Lo sprite fuori dallo sfondo ritagliato e sopra le righe: se è largo può sbordare un po' */}
-        {species && <span className="duel-stage" aria-hidden="true"><Sprite species={species} size={96} /></span>}
+        {species && <span className="duel-stage" aria-hidden="true" {...(opp ? memberTip.bind(opp) : {})}><Sprite species={species} size={96} /></span>}
+        {memberTip.tip}
         <div className="duel-head">
           {/* Il nome (dove si cerca l'avversario), il sesso e l'ingranaggio delle Impostazioni: lì si sceglie il Set Smogon
               (e, in arrivo, strumento, EV e potenziamenti) */}
