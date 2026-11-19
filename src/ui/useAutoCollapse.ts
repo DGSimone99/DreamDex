@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { flushSync } from 'react-dom';
 
 /**
- * Telefono: il team si riduce da solo quando la pagina scorre oltre il team intero e resta fermo in alto, sotto la barra;
+ * Telefono: il team si riduce da solo appena la striscia ridotta non coprirebbe più la pagina (della fascia resta in vista
+ * solo il fondo delle ultime carte) e resta fermo in alto, sotto la barra;
  * torna grande risalendo fino in cima (o tirando giù col dito quando si è già in cima, per le pagine corte).
  * In tutti e due i versi la pagina viene spostata di quanto il team cambia: il contenuto non salta mai. Tornando grande
  * si vede prima solo la sua parte bassa, e salendo ancora lo si scopre tutto, come se fosse sempre stato lì.
@@ -22,6 +23,10 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
     // Con un pannello a tutto schermo aperto la pagina sotto non conta
     const blocked = () => html.classList.contains('modal-open');
     let lastY = window.scrollY;
+    // L'altezza della striscia ridotta (misurata alla prima riduzione) e un margine perché non si riduca e si riapra
+    // a ogni piccolo movimento del dito proprio sul confine
+    let stripH = 74;
+    const SLACK = 16;
     /** Cambia misura al team e sposta la pagina di quanto è cambiato (al netto di ciò che il browser ha già compensato). */
     const resize = (next: boolean) => {
       const band = bandRef.current;
@@ -29,6 +34,7 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
       const y = window.scrollY;
       const before = band.offsetHeight;
       flushSync(() => setCollapsed(next));
+      if (next) stripH = band.offsetHeight;
       const shift = band.offsetHeight - before - (window.scrollY - y);
       if (shift !== 0) { ignoreUntil.current = performance.now() + 120; window.scrollBy(0, shift); }
     };
@@ -37,8 +43,8 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
       const band = bandRef.current;
       if (!band || blocked() || performance.now() < ignoreUntil.current) { lastY = y; return; }
       if (!collapsedRef.current) {
-        // Il team è uscito tutto sotto la barra in alto: si riduce, e la pagina si sposta di quanto si è accorciato
-        if (y > lastY && band.getBoundingClientRect().bottom <= topH()) resize(true);
+        // Del team resta in vista meno della striscia ridotta: si riduce, e la pagina si sposta di quanto si è accorciato
+        if (y > lastY && band.getBoundingClientRect().bottom <= topH() + stripH - SLACK) resize(true);
       } else if (y <= 2 && lastY > 2) {
         // Arrivati in cima risalendo: torna grande sopra la pagina, che scende di altrettanto (si vede la sua parte bassa)
         resize(false);
