@@ -633,13 +633,16 @@
  * righe (il tuo colpo, il suo, la Velocità) col risultato grande a destra. Un bordo chiaro e la striscia dei due tipi in
  * fondo girano attorno a tutto. Colori dai tipi dell'avversario (--t1, --t2).
  */
-.set-editor .editor-group.duel { display: flex; flex-direction: column; gap: var(--sp-3); }
+.set-editor .editor-group.duel { position: relative; display: flex; flex-direction: column; gap: var(--sp-3); }
+/* La legenda sopra il fondo della scheda (che parte dal bordo alto della Sfida) */
+.set-editor .editor-group.duel > legend { z-index: 1; }
 /* Un riquadro solo: la scheda non ha bordo né fondo suoi, arriva fino ai bordi della Sfida (sotto la legenda) e lascia
    vedere il pannello; a sinistra la parte del tipo, trasparente, tagliata in diagonale con una riga sottile nel colore del
-   tipo; lo sprite è ritagliato dal bordo della Sfida */
-.duel-card { position: relative; isolation: isolate; display: grid; grid-template-columns: 34% minmax(0, 1fr); min-height: 186px;
+   tipo; il fondo (.duel-art) si appoggia alla Sfida intera, dal bordo alto, così non c'è un taglio dritto sotto la legenda;
+   lo sprite è ritagliato dal bordo della Sfida */
+.duel-card { display: grid; grid-template-columns: 34% minmax(0, 1fr); min-height: 186px;
   margin: var(--sp-2) calc(var(--sp-7) * -1) calc(var(--sp-6) * -1); border-radius: 0 0 3px 3px; }
-.duel-art { position: absolute; inset: 0; z-index: 0; border-radius: inherit; overflow: hidden; }
+.duel-art { position: absolute; inset: 0; z-index: 0; border-radius: 3px; overflow: hidden; }
 .duel-art::before, .duel-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
 .duel-art::before { background: color-mix(in srgb, var(--t1) 65%, transparent); clip-path: polygon(36% 0, 36.5% 0, 24.5% 100%, 24% 100%); }
 .duel-art::after { background: var(--stripes), linear-gradient(170deg, color-mix(in srgb, var(--t1) 34%, transparent), color-mix(in srgb, var(--t1) 12%, transparent));
