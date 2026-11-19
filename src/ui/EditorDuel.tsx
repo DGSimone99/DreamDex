@@ -10,7 +10,7 @@ import { isBannedName, pokedexOf } from '../engine/formats';
 import { legalMoves } from '../engine/learnsets';
 import { defaultSet, mostCommonSet, presetsFor, type TeamSet } from '../engine/sets';
 import { usageOf } from '../engine/stats';
-import { formatPercent } from '../i18n';
+import { formatPercent, type Lang } from '../i18n';
 import { gameName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
@@ -23,24 +23,17 @@ import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
-interface OppSet { key: string; label: string; set: TeamSet }
+interface OppSet { key: string; label: string; set: TeamSet; usage?: boolean }
 
-/** Quanto due set si somigliano: stesso strumento 2, stessa abilità 1, ogni mossa in comune 1. */
-function likeness(a: TeamSet, b: TeamSet): number {
-  const moves = new Set(b.moves.map(toID));
-  return (toID(a.item) === toID(b.item) ? 2 : 0) + (toID(a.ability) === toID(b.ability) ? 1 : 0) + a.moves.filter(m => moves.has(toID(m))).length;
-}
-
-function oppSets(data: EngineData, species: string, genLimit: number, usageLabel: string, baseLabel: string): OppSet[] {
+/**
+ * I set possibili dell'avversario. Il primo è quello ricostruito dalle statistiche d'uso (strumento, abilità, EV e mosse
+ * più usati): non è per forza un preset Smogon, si chiama col suo strumento e porta il badge Più usato. Poi i preset.
+ */
+function oppSets(data: EngineData, species: string, genLimit: number, lang: Lang, usageLabel: string, baseLabel: string): OppSet[] {
   const list: OppSet[] = [];
   const usage = mostCommonSet(data.stats, species);
-  const presets = presetsFor(data, species);
-  if (usage) {
-    // Il set più usato col nome del preset Smogon che gli somiglia di più (almeno strumento e una mossa, o tre mosse)
-    const near = presets.map(p => ({ p, score: likeness(usage, p.set) })).sort((a, b) => b.score - a.score)[0];
-    list.push({ key: 'usage', label: near && near.score >= 3 ? near.p.name : usageLabel, set: usage });
-  }
-  for (const preset of presets) list.push({ key: `p:${preset.name}`, label: preset.name, set: preset.set });
+  if (usage) list.push({ key: 'usage', label: usage.item ? gameName('item', usage.item, lang) : usageLabel, set: usage, usage: true });
+  for (const preset of presetsFor(data, species)) list.push({ key: `p:${preset.name}`, label: preset.name, set: preset.set });
   if (!list.length) list.push({ key: 'base', label: baseLabel, set: defaultSet(data, species, genLimit) });
   return list;
 }
@@ -119,8 +112,8 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     }));
   }, [format, threats, data, lang]);
 
-  const sets = useMemo(() => (species ? oppSets(data, species, format.genLimit, t('editor.duelUsageSet'), t('editor.duelBaseSet')) : []),
-    [data, species, format.genLimit, t]);
+  const sets = useMemo(() => (species ? oppSets(data, species, format.genLimit, lang, t('editor.duelUsageSet'), t('editor.duelBaseSet')) : []),
+    [data, species, format.genLimit, lang, t]);
   const chosen = sets.find(s => s.key === setKey) ?? sets[0] ?? null;
   const pool = useMemo(() => movePool(me, format), [me.species, me.customSkillset, format]); // eslint-disable-line react-hooks/exhaustive-deps
   // L'avversario in campo: il set scelto con le modifiche fatte nelle Impostazioni
@@ -144,6 +137,7 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     return { big: `${hit.hitsMaybe}-${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const usageBadge = <span className="duel-usage-badge">{t('editor.duelUsageSet')}</span>;
   const evTotal = opp ? Object.values(opp.evs).reduce((acc, n) => acc + (n ?? 0), 0) : 0;
   const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
 
@@ -238,8 +232,8 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
                   <div className="duel-settings-row">
                     <span className="duel-settings-label">{t('editor.set')}</span>
                     <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
-                      options={sets.map(s => ({ value: s.key, label: s.label }))}
-                      display={<span>{chosen?.label}</span>}
+                      options={sets.map(s => ({ value: s.key, label: s.label, ...(s.usage ? { detail: usageBadge } : {}) }))}
+                      display={<><span>{chosen?.label}</span>{chosen?.usage && usageBadge}</>}
                       onChange={key => { setSetKey(key); setEdit({}); }} />
                   </div>
                 )}

@@ -1597,7 +1597,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.duelSet': "Set dell'avversario",
   'editor.duelPick': "Scegli un avversario",
   'editor.duelCommon': "Più usati nel meta",
-  'editor.duelUsageSet': "Il più usato",
+  'editor.duelUsageSet': "Più usato",
   'editor.duelBaseSet': "Set di base",
   'editor.duelMine': "Tu",
   'editor.duelTheirs': "Lui",

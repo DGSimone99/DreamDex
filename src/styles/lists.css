@@ -667,6 +667,11 @@
 .duel-settings-label { font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
 .duel-settings-pop.up { top: auto; bottom: calc(100% + 6px); }
 .duel-settings-pop .combobox input { height: 32px; }
+/* Le tendine del pannello larghe quanto il loro selettore */
+.duel-settings-pop .combobox [role="listbox"] { width: 100%; }
+/* Il badge del set ricostruito dall'uso (non è per forza un preset Smogon) */
+.duel-usage-badge { flex: none; padding: 2px 7px 2px 6px; font: 700 10px/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent); clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.duel-set .combobox-display { gap: var(--sp-3); }
 /* Gli EV dell'avversario: tre righe da due (PS e Vel, i due attacchi, le due difese), il totale in alto a destra */
 .duel-evs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-6); align-items: center; }
 .duel-evs > .duel-settings-label { grid-column: 1; }
