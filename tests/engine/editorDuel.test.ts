@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editorDuel } from '../../src/engine/editorDuel';
+import { editorDuel, TIP_MAX_EVS } from '../../src/engine/editorDuel';
 import { importShowdown } from '../../src/engine/sets';
 
 const [tusk, gholdengo] = importShowdown([
@@ -25,5 +25,12 @@ describe('sfida dell\'editor', () => {
     const after = editorDuel({ ...tusk, evs }, gholdengo);
     if (d.tip.side === 'defense') expect(after.theirs!.hitsMaybe).toBeGreaterThanOrEqual(d.tip.hits);
     else expect(after.mine!.hitsSure).toBeLessThanOrEqual(d.tip.hits);
+  });
+});
+
+describe('sfida: consiglio solo se è un ritocco', () => {
+  it('un consiglio che chiederebbe più di TIP_MAX_EVS non compare (Great Tusk contro Make It Rain servirebbero 388 EV)', () => {
+    const d = editorDuel(tusk, gholdengo);
+    expect(d.tip === null || d.tip.total <= TIP_MAX_EVS).toBe(true);
   });
 });
