@@ -1040,16 +1040,20 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-proposal { position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas: 'kind result action' 'mons mons mons' 'gaps gaps gaps'; row-gap: var(--sp-3); align-items: center;
     padding: var(--sp-4) var(--sp-5) var(--sp-3); border-radius: 6px; overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--k) 40%, var(--line-soft));
-    background: var(--stripes), linear-gradient(160deg, color-mix(in srgb, var(--k) 26%, var(--panel)), var(--panel) 62%); }
-  .fill-proposal.is-best { border: 2px solid var(--accent-2); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4); }
+    border: 1px solid color-mix(in srgb, var(--k) 28%, var(--line-soft));
+    background: var(--stripes), linear-gradient(160deg, color-mix(in srgb, var(--k) 12%, var(--panel)), color-mix(in srgb, var(--panel) 70%, var(--ground)) 60%); }
+  .fill-proposal.is-best { border: 1px solid color-mix(in srgb, var(--accent-2) 70%, var(--line)); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4); }
   .fill-proposal .fill-about { align-self: center; justify-self: start; justify-items: start; text-align: left; }
   .fill-proposal .fill-kind { padding: 0; background: none; font: italic 800 var(--fs-heading)/1.1 var(--display); white-space: normal; color: var(--text); }
   .fill-proposal .fill-result { grid-area: result; display: flex; align-items: baseline; gap: var(--sp-2); }
   .fill-proposal .fill-grade { font: 600 var(--fs-section)/1 var(--ui); }
   .fill-proposal .fill-grade strong { font-size: 30px; margin-right: 2px; }
   .fill-proposal .fill-delta { font: 700 var(--fs-caption)/1 var(--ui); }
-  .fill-proposal .fill-add { min-height: 40px; }
+  /* Usa: più piccolo e centrato; quello della migliore col solo contorno magenta (non pieno) */
+  .fill-proposal .fill-add { min-height: 34px; min-width: 64px; height: 34px; padding: 0 var(--sp-6); justify-content: center; text-align: center;
+    border-radius: 8px 2px 8px 2px; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; }
+  .fill-proposal .fill-add.primary { background: color-mix(in srgb, var(--accent-2) 10%, transparent); border: 1.5px solid var(--accent-2); color: var(--accent-2-ink); box-shadow: none; }
+  .fill-proposal .fill-add.primary:hover { background: color-mix(in srgb, var(--accent-2) 20%, transparent); }
   /* I Pokémon sul fondo della carta, senza caselle; il nuovo con la tacca ciano sotto */
   .fill-proposal .fill-mons { gap: 0; }
   .fill-proposal .fill-mon, .fill-proposal .fill-mon.is-new { height: auto; padding: 0 0 var(--sp-2); background: none; border-radius: 0; overflow: visible; }
@@ -1062,3 +1066,6 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-think { display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-5); border: 1px dashed var(--line); border-radius: 6px; color: var(--muted); font: 500 var(--fs-small)/1.3 var(--ui); }
   .fill-think .eevee-moment { position: static; width: 56px; height: auto; margin: 0; animation: none; }
 }
+
+/* La carta del set tenuta premuta: lo sprite può uscire dal foglio, in alto (la carta non è alta: niente scorrimento) */
+html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: none; }

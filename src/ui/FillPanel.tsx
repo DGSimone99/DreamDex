@@ -467,10 +467,6 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                 )}
               </li>
             ))}
-            {/* Telefono: al posto delle righe vuote, mentre calcola, una riga sola con Eevee che ci pensa */}
-            {busy && watching && (
-              <li className="fill-think" aria-hidden="true"><EeveeMoment pose="thinking" /><span>{t('fill.thinking')}</span></li>
-            )}
             {/* Sempre PROPOSALS_PER_ROUND posti: la lista non cambia altezza. Lo scheletro ha le parti di una riga vera (il
                 tuo team già al suo posto, i nuovi ancora da arrivare) e ogni proposta che arriva ne prende il posto; finito il
                 calcolo, e nelle pagine dei giri già finiti, righe vuote */}
@@ -494,6 +490,10 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
               </li>
             ))}
           </ol>
+          {/* Telefono: al posto delle righe vuote (nascoste), mentre calcola, una riga sola con Eevee che ci pensa */}
+          {busy && watching && (
+            <div className="fill-think" aria-hidden="true"><EeveeMoment pose="thinking" /><span>{t('fill.thinking')}</span></div>
+          )}
           <div className="fill-foot">
             <p className="fill-status" role="status" aria-live="polite">{status}</p>
             {banned > 0 && <p className="banned-note">{t(banned === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: banned })}</p>}
