@@ -689,6 +689,8 @@ export const it: Record<keyof typeof en, string> = {
   'editor.final': "Valore finale",
   'editor.ivHead': "IV",
   'editor.ivFor': "IV {stat}",
+  'editor.evToIv': "Freccia destra: IV",
+  'editor.ivToEv': "Freccia sinistra: torna agli EV",
   'editor.spreads': "Spread più usati",
   'editor.neutral': "neutra",
   'editor.category.Physical': "Fisica",
