@@ -52,6 +52,8 @@ interface Props {
   onChange: (value: string) => void;
   /** Solo le voci della lista, niente testo libero (come una select). */
   restricted?: boolean;
+  /** Con `restricted`: si può comunque scrivere per cercare nella lista (vale solo il nome esatto di una voce). */
+  searchable?: boolean;
   description?: string;
   /** Come mostrare il valore scelto nel campo chiuso (solo con `restricted`). */
   display?: ReactNode;
@@ -72,9 +74,11 @@ interface Props {
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined }: Props) {
   const t = useT();
   const listId = useId();
+  // Si scrive nel campo: sempre senza `restricted`, e con `restricted` se è `searchable`
+  const typing = !restricted || searchable;
   const [open, setOpen] = useState(false);
   // null: mostra tutto (appena aperto); stringa: filtra su quello che hai scritto
   const [query, setQuery] = useState<string | null>(null);
@@ -171,8 +175,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     if (query === null) return;
     const typed = toID(query);
     const exact = typed ? options.find(o => toID(o.label ?? o.value) === typed) : undefined;
-    // Scrivere il nome di una voce bloccata non la sceglie
-    if (exact?.disabled) return;
+    // Scrivere il nome di una voce bloccata non la sceglie; con `restricted` vale solo il nome di una voce
+    if (exact?.disabled || (restricted && !exact)) return;
     const next = exact ? exact.value : query.trim();
     if (next !== value) onChange(next);
   };
@@ -218,26 +222,29 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={open && shown[active] ? `${listId}-${active}` : undefined}
-        readOnly={restricted}
+        readOnly={!typing}
         disabled={disabled}
         placeholder={placeholder}
         // Mentre scrivi si vede il testo digitato; l'etichetta del valore torna quando esci dal campo
         value={query ?? shownValue}
-        // Entrando nel campo il testo si seleziona tutto: scrivere sostituisce il valore invece di aggiungersi in coda
-        // (anche col clic, finché non stai già scrivendo una bozza)
-        onFocus={e => { if (!restricted) e.currentTarget.select(); }}
-        // Sul rilascio del mouse (dopo che il clic ha messo il cursore): il browser non toglie più la selezione
+        // Entrando nel campo il testo non si evidenzia: il cursore va in fondo (scrivere sostituisce comunque il valore, vedi onChange)
+        onFocus={e => { const input = e.currentTarget; input.setSelectionRange(input.value.length, input.value.length); }}
         onMouseUp={e => {
-          if (restricted || query !== null) return;
-          e.preventDefault();
-          e.currentTarget.select();
+          if (query !== null) return;
+          const input = e.currentTarget;
+          input.setSelectionRange(input.value.length, input.value.length);
         }}
         onClick={() => (open ? setOpen(false) : show())}
         // Uscendo dal campo si salva quello che hai scritto (se hai scritto qualcosa)
         onBlur={() => { commit(); setOpen(false); setQuery(null); }}
         onChange={e => {
-          // Mentre scrivi è solo una bozza: il set cambia con Invio, con una voce scelta o uscendo dal campo
-          setQuery(e.target.value);
+          // Mentre scrivi è solo una bozza: il set cambia con Invio, con una voce scelta o uscendo dal campo.
+          // Il primo tasto sostituisce il valore mostrato (non si aggiunge in coda); cancellare lo svuota
+          const next = e.target.value;
+          if (query === null) {
+            const before = shownValue;
+            setQuery(next.startsWith(before) ? next.slice(before.length) : next.length < before.length ? '' : next);
+          } else setQuery(next);
           setOpen(true);
         }}
         onKeyDown={e => {
@@ -246,12 +253,11 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           else if (e.key === 'Enter' && open && shown[active]) { e.preventDefault(); pick(shown[active]); }
           // Invio senza voci da scegliere: si salva il testo libero
           else if (e.key === 'Enter' && query !== null) { e.preventDefault(); commit(); setOpen(false); setQuery(null); }
-          // Esc butta la bozza: torna il valore di prima
-          // (il testo torna selezionato: scrivere di nuovo lo sostituisce)
+          // Esc butta la bozza: torna il valore di prima (scrivere di nuovo lo sostituisce)
           else if (e.key === 'Escape' && (open || query !== null)) {
             e.stopPropagation(); setOpen(false); setQuery(null);
             const input = e.currentTarget;
-            if (!restricted) requestAnimationFrame(() => input.select());
+            if (typing) requestAnimationFrame(() => input.setSelectionRange(input.value.length, input.value.length));
           }
         }}
       />

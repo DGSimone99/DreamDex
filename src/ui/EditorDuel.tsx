@@ -3,7 +3,7 @@ import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
-import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, mergeEffects, orderOf, speedBuffs, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, matchup, mergeEffects, orderOf, rankMatchups, speedBuffs, type DuelBuff, type MatchupVerdict, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
@@ -71,7 +71,11 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const t = useT();
   const lang = useLang();
   const me = useDeferredValue(set);
-  const [picked, setPicked] = useState<string | null>(null);
+  // L'avversario scelto, per il membro aperto: all'inizio la sfida peggiore, poi resta quello (anche se cambi il set)
+  // finché non ne scegli un altro
+  const [choice, setChoice] = useState<{ owner: string; name: string } | null>(null);
+  const picked = choice && choice.owner === set.species ? choice.name : null;
+  const setPicked = (name: string | null) => setChoice(name ? { owner: set.species, name } : null);
   const [setKey, setSetKey] = useState<string | null>(null);
   // Le Impostazioni dell'avversario: un pannello sotto l'ingranaggio accanto al nome (si chiude con Esc o cliccando fuori)
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -99,16 +103,28 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   }, [settingsOpen]);
 
   const threats = useMemo(() => metaThreats(data).map(threat => threat.set), [data]);
-  const auto = useMemo(() => (picked ? null : worstThreat(me, threats.filter(s => toID(s.species) !== toID(me.species)))), [picked, me, threats]);
-  const species = picked ?? auto?.species ?? null;
+  // Le minacce del meta dalla sfida peggiore alla migliore (seguono il set mentre lo cambi)
+  const ranked = useMemo(() => rankMatchups(me, threats.filter(s => toID(s.species) !== toID(me.species))), [me, threats]);
+  const worst = ranked[0]?.set.species ?? null;
+  const species = picked ?? worst;
+  // La sfida peggiore si carica una volta sola: da lì in poi l'avversario resta fisso
+  useEffect(() => { if (!picked && worst) setPicked(worst); }, [picked, worst]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const verdictShort: Record<MatchupVerdict, string> = {
+    bad: t('editor.duelVerdictBadShort'), even: t('editor.duelVerdictEvenShort'), good: t('editor.duelVerdictGoodShort'),
+  };
   const speciesOptions = useMemo<ComboOption[]>(() => {
-    const top = new Set(threats.map(s => s.species));
-    return dexPool(format).map(s => ({
-      value: s.name, label: s.name, icon: <PokemonIcon name={s.name} />,
-      ...(top.has(s.name) ? { common: formatPercent(lang, usageOf(data.stats, s.name)) } : {}),
+    // Prima le minacce del meta, dalla sfida peggiore (col giudizio accanto), poi tutti gli altri in ordine
+    const pool = dexPool(format);
+    const byName = new Set<string>(pool.map(s => s.name));
+    const metaFirst = ranked.filter(r => byName.has(r.set.species)).map(({ set: threat, matchup: m }) => ({
+      value: threat.species, label: threat.species, icon: <PokemonIcon name={threat.species} />,
+      detail: <span className={`duel-verdict-chip ${m.verdict}`}>{verdictShort[m.verdict]}</span>,
+      common: formatPercent(lang, usageOf(data.stats, threat.species)),
     }));
-  }, [format, threats, data, lang]);
+    const inMeta = new Set(metaFirst.map(o => o.value));
+    return [...metaFirst, ...pool.filter(s => !inMeta.has(s.name)).map(s => ({ value: s.name, label: s.name, icon: <PokemonIcon name={s.name} /> }))];
+  }, [format, ranked, data, lang, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sets = useMemo(() => (species ? oppSets(data, species, format.genLimit, lang, t('editor.duelUsageSet'), t('editor.duelBaseSet')) : []),
     [data, species, format.genLimit, lang, t]);
@@ -120,6 +136,9 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     : null), [chosen, edit]);
   const edited = edit.item !== undefined || Object.keys(edit.evs ?? {}).length > 0;
   const result = useMemo(() => (opp ? editorDuel(me, opp, pool) : null), [me, opp, pool]);
+  // Il giudizio sull'avversario in campo (col set e le modifiche scelte); "peggiore" se è la prima sfida della classifica
+  const verdict = useMemo(() => (opp ? matchup(me, opp).verdict : null), [me, opp]);
+  const isWorst = !!species && species === worst && !edited && chosen?.key === sets[0]?.key;
   // Il team con il membro com'è adesso nell'editor (la Sfida segue le modifiche prima che arrivino al team)
   const squad = useMemo(() => team.map(member => (member.species === set.species ? me : member)), [team, set.species, me]);
   const buffs = useMemo(() => (opp && result ? {
@@ -292,10 +311,15 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
         <div className="duel-head">
           {/* Il nome (dove si cerca l'avversario), il sesso e l'ingranaggio delle Impostazioni: lì si sceglie il Set Smogon
               (e, in arrivo, strumento, EV e potenziamenti) */}
+          {verdict && (
+            <span className={`duel-verdict tip ${isWorst ? 'worst' : verdict}`} tabIndex={0} data-tip={t('editor.duelVerdictTip')}>
+              {t(isWorst ? 'editor.duelVerdictWorst' : verdict === 'bad' ? 'editor.duelVerdictBad' : verdict === 'even' ? 'editor.duelVerdictEven' : 'editor.duelVerdictGood')}
+            </span>
+          )}
           <div className="duel-name" ref={settingsRoot}
             onKeyDown={e => { if (e.key === 'Escape' && settingsOpen) { e.stopPropagation(); setSettingsOpen(false); } }}>
-            <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
-              placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')} menuMinWidth={280}
+            <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted searchable className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
+              placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommonRanked')} menuMinWidth={280}
               onChange={name => { setPicked(name || null); setSetKey(null); setEdit({}); setActive(new Set()); }} />
             {species && <GenderMark species={species} />}
             {species && (
