@@ -49,3 +49,9 @@
 .done-grade.grade-A { --grade: var(--good); }
 .done-grade.grade-C { --grade: var(--warn); }
 .done-grade.grade-D { --grade: var(--bad); }
+/* Con l'editor aperto (UndoToast docked): una riga sola nella testata dell'editor, fra il nome del membro e il pulsante Set,
+   così non copre statistiche, Set e Mosse. Posizione e larghezza le mette useDock */
+.undo-toast.docked { display: flex; align-items: center; gap: var(--sp-6); min-width: 0; padding: var(--sp-2) 40px var(--sp-3) var(--sp-6); }
+.undo-toast.docked .undo-text { flex-wrap: nowrap; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.undo-toast.docked .undo-actions { margin-top: 0; flex: none; }
+.undo-toast.docked .undo-close { top: 50%; translate: 0 -50%; }

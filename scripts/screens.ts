@@ -580,6 +580,24 @@ const STATES: Record<string, State> = {
     console.log(`drawerOver=${await p.evaluate(() => { const d = document.querySelector('.drawer'); return d ? d.scrollHeight - d.clientHeight : -1; })} drawerFree=${await p.evaluate(() => { const d = document.querySelector('.drawer'); const e = d?.querySelector('.set-editor'); if (!d || !e) return -1; const cs = getComputedStyle(d); return Math.round(d.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom) - e.getBoundingClientRect().bottom); })} statRow=${await p.evaluate(() => Math.round(document.querySelectorAll('.stat-row:not(.stat-head)')[0]?.getBoundingClientRect().height ?? 0))} rows=${await p.evaluate(() => { const e = document.querySelector('.drawer .set-editor') as HTMLElement | null; if (!e) return ''; return getComputedStyle(e).gridTemplateRows + ' | ' + [...e.children].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',') + ' | ' + ['.stats-cell > *', '.editor-side > *', '.evs > *'].map(q => [...e.querySelectorAll(q)].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',')).join(' / '); })}`);
     return true;
   } },
+  // Annulla dopo un preset applicato dal menu Set: l'avviso non deve coprire i comandi dell'editor (stampa le sovrapposizioni)
+  'editor-undo': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(400);
+    if (!await clickText(p, '.slot.open .set-menu-button', /./)) return false;
+    await wait(300);
+    if (!await p.evaluate(() => { const row = document.querySelector<HTMLElement>('.slot.open .set-menu-row:not(.current)'); row?.click(); return !!row; })) return false;
+    await wait(500);
+    console.log(await p.evaluate(() => {
+      const box = document.querySelector('.undo-toast')?.getBoundingClientRect();
+      if (!box) return 'toast=none';
+      const hits = [...document.querySelectorAll<HTMLElement>('.slot.open .drawer :is(button, input, [role="combobox"], summary, a)')]
+        .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom; })
+        .map(el => el.getAttribute('aria-label') || el.className || el.tagName);
+      return `toast=${Math.round(box.left)},${Math.round(box.top)} ${Math.round(box.width)}x${Math.round(box.height)} covers=${hits.length ? hits.join('|') : 'nothing'}`;
+    }));
+    return true;
+  } },
   // La punta magenta segue la carta aperta: apre una carta dopo l'altra e stampa quanto la punta è lontana dal centro della carta
   'editor-pointer': { run: async p => {
     const offs: string[] = [];

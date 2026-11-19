@@ -1,7 +1,8 @@
-import { useEffect, useRef, type FocusEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, type FocusEvent } from 'react';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
+import { SMALL } from './useBackClose';
 
 /**
  * Modifica annullabile delle Liste: una raccolta svuotata o sostituita (Copia da… › Sostituisci; `from` = la raccolta),
@@ -13,8 +14,8 @@ export interface ListUndo { kind: 'clearList' | 'listReplace' | 'listRemove'; fr
 export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
-  /** Membro rimosso o sostituito, o team caricato da un link, importato o preso dai team salvati (`loadSaved`, il nome in `from`). */
-  kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | ListUndo['kind'] | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
+  /** Membro rimosso o sostituito (`setChange`: il suo set cambiato per intero nell'editor), o team caricato da un link, importato o preso dai team salvati (`loadSaved`, il nome in `from`). */
+  kind: 'remove' | 'add' | 'replace' | 'paste' | 'setChange' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | ListUndo['kind'] | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
   from: string;
   to?: string;
   /** Completa team: Pokémon aggiunti negli slot vuoti. */
@@ -95,15 +96,56 @@ export function DoneToast({ note, onClose }: { note: DoneNote; onClose: () => vo
   );
 }
 
-/** Avviso al centro dell'area di lavoro con Annulla e ×: sparisce dopo 3 o 6 secondi, fermo finché ci sei sopra col mouse o la tastiera. */
-export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onUndo: () => void; onClose: () => void }) {
+/** Spazio minimo fra il nome del membro e il pulsante Set per l'avviso su una riga (sotto, resta al centro). */
+const DOCK_MIN = 300;
+
+/**
+ * Con l'editor di un membro aperto l'avviso al centro coprirebbe i suoi comandi: diventa una riga sola nella testata
+ * dell'editor, nello spazio vuoto fra il nome del membro e il pulsante Set (misurato a ogni disegno e quando la finestra
+ * cambia). Telefono e tablet (l'editor copre lo schermo) o spazio troppo stretto: resta dove sta di solito.
+ */
+function useDock(on: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const place = () => {
+      const title = document.querySelector('.slot.open .editor-title')?.getBoundingClientRect();
+      const actions = document.querySelector('.slot.open .editor-actions')?.getBoundingClientRect();
+      const small = typeof window.matchMedia === 'function' && window.matchMedia(SMALL).matches;
+      const left = title ? title.right + 16 : 0;
+      const right = actions ? actions.left - 16 : 0;
+      if (!on || small || !title || !actions || right - left < DOCK_MIN) {
+        el.classList.remove('docked');
+        el.style.removeProperty('left'); el.style.removeProperty('top'); el.style.removeProperty('max-width');
+        return;
+      }
+      el.classList.add('docked');
+      el.style.left = `${(left + right) / 2}px`;
+      el.style.top = `${(actions.top + actions.bottom) / 2}px`;
+      el.style.maxWidth = `${right - left}px`;
+    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
+  });
+  return ref;
+}
+
+/**
+ * Avviso al centro dell'area di lavoro con Annulla e ×: sparisce dopo 3 o 6 secondi, fermo finché ci sei sopra col mouse o
+ * la tastiera. `docked`: con l'editor aperto si mette in una riga nella sua testata (useDock), senza coprirne i comandi.
+ */
+export function UndoToast({ action, onUndo, onClose, docked = false }: { action: UndoAction; onUndo: () => void; onClose: () => void; docked?: boolean }) {
   const t = useT();
   const duration = undoDuration(action.kind);
   const handlers = useToastTimer(action.id, duration, onClose);
+  const dock = useDock(docked);
 
   return (
     <div
       key={action.id}
+      ref={dock}
       className="undo-toast"
       role="status"
       {...handlers}
@@ -126,7 +168,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
             : t('undo.presets', { from: action.from, to: action.to ?? '' })) : <>
         <PokemonIcon name={action.from} />
         <strong>{action.from}</strong>{' '}
-        {action.kind === 'listRemove' ? t('undo.listRemoved', { list: action.to ?? '' }) : action.kind === 'remove' ? t('undo.removed') : action.kind === 'add' ? t('undo.added') : action.kind === 'paste' ? t('undo.pasted') : (
+        {action.kind === 'listRemove' ? t('undo.listRemoved', { list: action.to ?? '' }) : action.kind === 'remove' ? t('undo.removed') : action.kind === 'add' ? t('undo.added') : action.kind === 'paste' ? t('undo.pasted') : action.kind === 'setChange' ? t('undo.setChanged') : (
           <>
             <Icon name="swap" /> {t('undo.replacedWith')}{' '}
             <PokemonIcon name={action.to ?? ''} />

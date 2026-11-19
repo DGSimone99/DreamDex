@@ -69,6 +69,8 @@ interface Props {
   onFillOpenChange?: (open: boolean) => void;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
+  /** Set intero cambiato nell'editor (preset Smogon, I miei set, spread più usati), annullabile; se manca, si aggiorna solo il team. */
+  onSetChange?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
   onBulk?: (kind: 'presets' | 'fill' | 'clear' | 'tournament', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
@@ -166,6 +168,8 @@ interface SlotActions {
   bestIndex: (index: number) => number | null;
   ignoreWarning: () => void;
   change: (index: number, set: TeamSet) => void;
+  /** Set intero cambiato (preset, I miei set, spread): con Annulla. */
+  setChange: (index: number, set: TeamSet) => void;
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
@@ -200,6 +204,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const onBest = () => actions.best(index);
   const onIgnoreWarning = actions.ignoreWarning;
   const onChange = (next: TeamSet) => actions.change(index, next);
+  const onSetChange = (next: TeamSet) => actions.setChange(index, next);
   const onRemove = () => actions.remove(index);
   const onReplace = () => actions.replace(index);
   const onProposalDone = actions.proposalDone;
@@ -219,10 +224,11 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const onBestIndex = () => actions.bestIndex(index);
   // Apre il riquadro del testo del set (assegnato più sotto, dove c'è il suo stato)
   const textOpen = useRef<() => void>(() => undefined);
-  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
-  live.current = { onChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
+  const live = useRef({ onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
+  live.current = { onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
+    onSetChange: (next: TeamSet) => live.current.onSetChange(next),
     onReplace: () => live.current.onReplace(),
     onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
@@ -231,7 +237,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     // Il preset migliore del menu Set: completato e ritoccato, come faceva il pulsante "Preset migliore"
     applyBest: () => {
       const next = live.current.onBest();
-      if (next) live.current.onChange(next);
+      if (next) live.current.onSetChange(next);
     },
     openText: () => textOpen.current(),
   }), []);
@@ -359,7 +365,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         className="slot-card"
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
-        title={collapsed ? undefined : tr('team.dragTitle')}
+        title={collapsed ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
         {...(collapsed && !open ? memberTip.bind(set, roles[0]) : {})}
         // Clic su tutta la carta (il pulsante della carta lo prende da tastiera e dai lettori di schermo)
         onClick={e => {
@@ -391,8 +397,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
             warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
             tr('team.position', { n: index + 1, total }),
           ].filter(Boolean).join(', ')}
-          aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
-          title={tr('team.dragTitle')}
+          aria-keyshortcuts={`${index + 1} Alt+ArrowLeft Alt+ArrowRight`}
+          title={`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
         />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
         <span className="mini-icon" aria-hidden="true">
@@ -470,7 +476,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
-        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
+        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
         onBest={stable.applyBest}
         onText={stable.openText}
@@ -592,7 +598,7 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -625,6 +631,28 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     if (openIndex !== null) animated(() => setOpenIndex(to));
     focusCard(to);
   };
+  // Editor aperto: i tasti 1-6 aprono il membro in quella posizione (fuoco sulla sua carta, come con le frecce). Non mentre
+  // si scrive (campi, menu a tendina), con una finestra, un menu o una tendina aperti, né con Ctrl/Alt/Maiusc/Cmd
+  const openKey = useRef<(e: KeyboardEvent) => void>(() => undefined);
+  openKey.current = e => {
+    if (openIndex === null || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.isComposing) return;
+    const n = '123456'.indexOf(e.key);
+    if (n < 0 || e.key.length !== 1) return;
+    const target = e.target instanceof HTMLElement ? e.target : null;
+    if (target && (target.isContentEditable || target.closest('input, textarea, select, [role="combobox"], [role="textbox"], [contenteditable]'))) return;
+    if (document.querySelector('[aria-modal="true"], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], details.popover[open], details.spread-panel[open], dialog[open]')) return;
+    if (n >= team.length) return;
+    e.preventDefault();
+    if (n !== openIndex) animated(() => setOpenIndex(n));
+    focusCard(n);
+  };
+  const editorOpen = openIndex !== null;
+  useEffect(() => {
+    if (!editorOpen) return;
+    const onKey = (e: KeyboardEvent) => openKey.current(e);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [editorOpen]);
   // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione.
   // `from` -1: un candidato trascinato dalla lista Pokémon (teamDrag.ts); `over` oltre i membri = uno slot vuoto
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
@@ -733,6 +761,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     bestIndex: i => bestPresetIndex(team, i, data, format.genLimit),
     ignoreWarning: onAllowMultipleMegas,
     change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
+    setChange: (i, next) => { if (onSetChange) onSetChange(i, next); else onChange(team.map((s, j) => (j === i ? next : s))); },
     remove: i => {
       setOpenIndex(null);
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
@@ -755,6 +784,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     bestIndex: i => live.current.bestIndex(i),
     ignoreWarning: () => live.current.ignoreWarning(),
     change: (i, next) => live.current.change(i, next),
+    setChange: (i, next) => live.current.setChange(i, next),
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),

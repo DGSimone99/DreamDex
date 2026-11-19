@@ -33,7 +33,7 @@ describe('ordine del team e editor', () => {
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost\n\nGreninja\n- Surf');
     const card = within(team).getByText('Garchomp', { selector: '.name' }).closest('.slot')!.querySelector('.slot-toggle') as HTMLElement;
     expect(card.getAttribute('aria-label')).toMatch(/, posizione 1 di 3$/);
-    expect(card).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight');
+    expect(card).toHaveAttribute('aria-keyshortcuts', '1 Alt+ArrowLeft Alt+ArrowRight');
     fireEvent.keyDown(card, { key: 'ArrowRight', altKey: true });
     expect(team.querySelector('[aria-live="polite"]')).toHaveTextContent('Garchomp spostato in posizione 2 di 3');
     const moved = within(team).getByText('Garchomp', { selector: '.name' }).closest('.slot')!.querySelector('.slot-toggle') as HTMLElement;
