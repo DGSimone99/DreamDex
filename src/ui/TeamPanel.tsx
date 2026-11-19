@@ -324,8 +324,16 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const evOverText = evTotal(set.evs) > EV_TOTAL ? tr('team.evOver', { n: evTotal(set.evs) }) : null;
   const editorProblems = problems.filter(p => p !== evOverText);
   const memberTip = useMemberTip(500, '.slot-card');
-  // Col dito: tenendo premuta la carta si apre la carta del set (vedi TouchTips); il suggerimento del trascinamento non serve
+  // Col dito: tenendo premuta la carta si apre dal basso il menu del membro (modifica, blocca, sposta, sostituisci,
+  // togli) al posto dei pulsantini sulla carta; il suggerimento del trascinamento (col dito non si trascina) non serve
   const touch = useMediaQuery(TOUCH_QUERY);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const hold = useRef<{ x: number; y: number; timer: number } | null>(null);
+  const held = useRef(false);
+  useAnchoredPop(card, menuRef, menuOpen, { sheet: true, width: 280, onDismiss: () => setMenuOpen(false) });
+  const endHold = () => { if (hold.current) window.clearTimeout(hold.current.timer); hold.current = null; };
+  const menuDo = (run: () => void) => { setMenuOpen(false); run(); };
   // La punta sotto la carta aperta: al centro della carta, misurato (le carte cambiano larghezza con la finestra)
   const pointer = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -396,9 +404,21 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
         title={collapsed || touch ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
-        {...((collapsed || touch) && !open ? memberTip.bind(set, roles[0]) : {})}
+        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0]) : {})}
+        data-own-hold={touch || undefined}
+        onPointerDown={e => {
+          if (!touch || e.pointerType === 'mouse' || (e.target as Element).closest('button:not(.slot-toggle), a, input')) return;
+          held.current = false;
+          endHold();
+          hold.current = { x: e.clientX, y: e.clientY, timer: window.setTimeout(() => { held.current = true; hold.current = null; setMenuOpen(true); }, 450) };
+        }}
+        onPointerMove={e => { if (hold.current && Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 10) endHold(); }}
+        onPointerUp={endHold}
+        onPointerCancel={endHold}
         // Clic su tutta la carta (il pulsante della carta lo prende da tastiera e dai lettori di schermo)
         onClick={e => {
+          // Dopo il tocco lungo (menu del membro) il clic non apre l'editor
+          if (held.current) { held.current = false; e.preventDefault(); return; }
           // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
           const hit = (e.target as HTMLElement).closest('button, a, input, [tabindex]');
           if (hit && hit !== card.current) return;
@@ -501,6 +521,20 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
         {roles.length > 0 && <small className="roles" title={rolesTitle} aria-hidden="true">{roles[0]}</small>}
       </div>
+      {menuOpen && (
+        <div className="member-menu" ref={menuRef} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={tr('team.memberMenu', { species: name })}
+          onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMenuOpen(false); card.current?.focus(); } }}>
+          <p className="member-menu-head" aria-hidden="true"><Sprite species={set.species} item={set.item} shiny={!!set.shiny} size={48} /><strong>{set.name || name}</strong></p>
+          <button type="button" role="menuitem" onClick={() => menuDo(() => onToggle(true))}><Icon name="edit" />{tr('team.editSet')}</button>
+          <button type="button" role="menuitem" onClick={() => menuDo(() => onChange({ ...set, favorite: !set.favorite }))}>
+            <Icon name="lock" filled={!!set.favorite} /><span>{tr(set.favorite ? 'team.unlock' : 'team.lock')}<small>{tr('team.lockNote')}</small></span>
+          </button>
+          <button type="button" role="menuitem" disabled={index === 0} onClick={() => menuDo(() => onMove(-1))}><Icon name="prev" />{tr('team.moveLeft')}</button>
+          <button type="button" role="menuitem" disabled={index >= total - 1} onClick={() => menuDo(() => onMove(1))}><Icon name="next" />{tr('team.moveRight')}</button>
+          <button type="button" role="menuitem" onClick={() => menuDo(onReplace)}><Icon name="swap" />{tr('team.replaceButton')}</button>
+          <button type="button" role="menuitem" className="danger" onClick={() => menuDo(onRemove)}><Icon name="close" />{tr('team.removeShort')}</button>
+        </div>
+      )}
       {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}

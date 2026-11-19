@@ -99,7 +99,7 @@ export function TouchTips() {
       if (e.pointerType === 'mouse' || openRef.current) return;
       const target = e.target as Element | null;
       // Nei campi si scrive (tenere premuto seleziona il testo), nei fogli si sceglie
-      if (!target || target.closest('input, textarea, select, [contenteditable], [data-sheet], .tip-sheet')) return;
+      if (!target || target.closest('input, textarea, select, [contenteditable], [data-sheet], .tip-sheet, [data-own-hold]')) return;
       start = { x: e.clientX, y: e.clientY, target };
       window.clearTimeout(timer);
       timer = window.setTimeout(fire, HOLD_MS);
@@ -107,7 +107,8 @@ export function TouchTips() {
     const move = (e: PointerEvent) => { if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP) cancel(); };
     // Dopo un tocco lungo il clic che segue non preme l'elemento; il menu del browser non si apre
     const click = (e: MouseEvent) => { if (Date.now() < swallowUntil) { e.preventDefault(); e.stopPropagation(); swallowUntil = 0; } };
-    const menu = (e: Event) => { if (start || Date.now() < swallowUntil || openRef.current) e.preventDefault(); };
+    // Col dito il menu del browser (come il tasto destro) non serve nell'app: resta solo nei campi di testo
+    const menu = (e: Event) => { if (!(e.target as Element | null)?.closest?.('input, textarea, [contenteditable]')) e.preventDefault(); };
     document.addEventListener('pointerdown', down, true);
     document.addEventListener('pointermove', move, true);
     document.addEventListener('pointerup', cancel, true);
