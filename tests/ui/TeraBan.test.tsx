@@ -17,11 +17,11 @@ async function importGarchomp() {
 }
 
 describe('Tera vietato nel formato (National Dex OU)', () => {
-  it('niente lastra del Tera (la Natura prende la riga); il valore resta nel set', async () => {
+  it("niente Tera nella testata dell'editor; il valore resta nel set", async () => {
     const user = await importGarchomp();
     await user.click(within(team()).getByText('Garchomp', { selector: '.name' }));
     expect(within(team()).queryByLabelText('Tera')).toBeNull();
-    expect(within(team()).getByLabelText('Natura').closest('.field')).toHaveClass('full');
+    expect(team().querySelector('.slot.open .editor-tera')).toBeNull();
   });
 
   it('export Showdown senza Tera', async () => {

@@ -152,15 +152,12 @@
 .band.collapsed .grade-badge .overall { font-size: var(--fs-title-l); }
 /* Editor del set: chiusura, riga EV usati / spread, ruoli in fondo, colonne allineate in basso */
 .set-editor { align-items: stretch; row-gap: var(--sp-4); }
-/* Set in alto, Mosse in basso: il fondo delle Mosse coincide con quello delle Statistiche, senza spazio vuoto dentro */
+/* Set (con le mosse) in alto, la Sfida sotto */
 .set-editor .editor-side { grid-template-rows: auto auto; align-content: space-between; }
 .editor-actions .editor-close { width: 36px; padding: 0; justify-content: center; }
 .editor-actions .editor-close:hover { border-color: var(--bad); color: var(--bad); }
-/* EV usati a sinistra e Spread più usati a destra, staccati da titolo e righe */
-.set-editor .evs .stats-toolbar { display: flex; align-items: center; gap: var(--sp-6); margin: var(--sp-4) 0 var(--sp-1); }
-.set-editor .evs .stats-toolbar .spread-panel { display: block; margin-left: auto; }
-.set-editor .evs .spread-panel > summary { position: static; }
-.set-editor .evs .stats-toolbar .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
+/* L'elenco degli spread si apre sotto la targhetta Spread */
+.set-editor .evs .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
 /* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
    tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
@@ -253,7 +250,6 @@
   .stat-row { padding-top: 4.5px; padding-bottom: 4.5px; }
   .set-editor .ev-input, .set-editor .iv-input { height: 24px; }
   .set-editor .evs { gap: var(--sp-2); }
-  .set-editor .evs .stats-toolbar { margin: var(--sp-2) 0 0; }
   .set-editor .stat-rows { gap: 6px; }
   .set-editor fieldset { padding-bottom: var(--sp-4); }
   .set-editor .editor-group { gap: var(--sp-3) var(--sp-6); }
@@ -620,11 +616,11 @@
   /* Statistiche: righe alternate attaccate (come in Champions), da 40px (36 su schermi bassi) fino a 56px */
   .set-editor .stats-cell > .evs { display: flex; flex-direction: column; gap: var(--sp-2); }
   .set-editor .evs .stat-rows { flex: 1 1 auto; max-height: calc(6 * 56px + 36px); align-content: stretch; grid-template-rows: auto; grid-auto-rows: minmax(min-content, 1fr); gap: 0; }
-  .set-editor .evs .stat-rows > .stat-head { padding: var(--sp-4) 0 var(--sp-2); }
+  .set-editor .evs .stat-rows > .stat-head { padding: var(--sp-4) var(--sp-5) var(--sp-2) var(--sp-4); }
   /* Oltre il massimo delle righe, la riga della velocità resta attaccata al fondo del riquadro */
   .set-editor .evs .speed-line { margin-top: auto; }
-  /* Set e Mosse: lo spazio in più diviso 2 a 3 (quanto contengono); dentro, i campi si distanziano in modo uguale */
-  .set-editor .editor-side { grid-template-rows: minmax(auto, 2fr) minmax(auto, 3fr); align-content: stretch; }
+  /* Senza Sfida il Set prende tutta l'altezza; dentro, i campi si distanziano in modo uguale */
+  .set-editor .editor-side { grid-template-rows: minmax(auto, 1fr); align-content: stretch; }
   .set-editor .editor-side > .editor-group { align-content: space-evenly; }
 }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
@@ -651,9 +647,12 @@
 .duel-tip { margin: 0; padding: var(--sp-2) var(--sp-4); border-radius: 4px; background: var(--accent-wash); color: var(--accent-ink); font-size: var(--fs-small); }
 @media (min-width: 1100px) {
   /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
-  .set-editor .editor-side.with-duel { grid-template-rows: auto auto minmax(0, 1fr); }
-  .set-editor .editor-side.with-duel > .editor-group:not(.duel) { align-content: start; }
-  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-4); }
+  /* Con la Sfida: il Set alto quanto il contenuto (spazi fissi: un po' d'aria sotto la fascia, 12px fra targhette e
+     mosse), la Sfida prende tutto il resto */
+  .set-editor .editor-side.with-duel { grid-template-rows: auto minmax(0, 1fr); }
+  .set-editor .editor-side.with-duel > .set-box { align-content: start; row-gap: var(--sp-6); padding-top: var(--sp-6); }
+  .set-editor .editor-side.with-duel > .set-box > .editor-group { align-content: start; }
+  .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-4); }
   .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: space-evenly; overflow: hidden; }
 }
 .duel-pick .combobox.has-leading input { padding-left: 44px; }
@@ -664,5 +663,5 @@
   .duel-pick .combobox input, .duel-pick .combobox .combo-display { height: 30px; }
   .duel-row { min-height: 24px; }
   .duel-tip { padding: 1px var(--sp-4); }
-  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-2); }
+  .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-2); }
 }

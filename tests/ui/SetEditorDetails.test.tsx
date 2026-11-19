@@ -77,7 +77,7 @@ describe('editor del set', () => {
 
 describe('menu Set: preset Smogon', () => {
   const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
-    await user.click(screen.getByRole('button', { name: 'Set' }));
+    await user.click(screen.getByRole('button', { name: /^Set:/ }));
     return screen.getByRole('dialog', { name: 'Set' });
   };
   const rowNames = (menu: HTMLElement) => [...menu.querySelectorAll('.set-menu-list > li')]
@@ -102,7 +102,7 @@ describe('menu Set: preset Smogon', () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ item: 'Life Orb', moves: ['Nasty Plot', 'Fire Blast'], favorite: true, species: 'Ninetales' }));
     // Scegliere chiude il menu e il fuoco torna al pulsante
     expect(screen.queryByRole('dialog', { name: 'Set' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Set' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: /^Set:/ })).toHaveFocus();
   });
 
   it('senza preset la scheda Smogon lo dice', async () => {
@@ -122,6 +122,8 @@ describe('menu Set: preset Smogon', () => {
       return <SetEditor set={current} presets={presets} genLimit={9} onChange={setCurrent} />;
     }
     renderIt(<Editor />);
+    // Il pulsante dice il nome del set in uso e da dove viene
+    expect(screen.getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Sun Sweeper, Smogon$/);
     let menu = await openMenu(user);
     expect(within(menu).getByRole('button', { name: /^Sun Sweeper/ })).toHaveAttribute('aria-current', 'true');
     await user.keyboard('{Escape}');
@@ -129,6 +131,7 @@ describe('menu Set: preset Smogon', () => {
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Flamethrower');
     await user.tab();
+    expect(screen.getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Personalizzato$/);
     menu = await openMenu(user);
     expect(within(menu).getByRole('button', { name: /^Sun Sweeper/ })).not.toHaveAttribute('aria-current');
   });
@@ -158,7 +161,7 @@ describe('preset di più formati', () => {
     // Un preset di Gen 9 OU arriva in mezzo: il menu lo porta sotto la sua intestazione, dopo quelli NatDex OU
     const presets = [mk('Offensive Utility', 'gen9nationaldex', 'Nasty Plot'), mk('Offensive Utility', 'gen9ou', 'Solar Beam'), mk('Sun Setter', 'gen9nationaldex', 'Will-O-Wisp')];
     renderIt(<SetEditor set={set} presets={presets} genLimit={9} onChange={vi.fn()} />);
-    await user.click(screen.getByRole('button', { name: 'Set' }));
+    await user.click(screen.getByRole('button', { name: /^Set:/ }));
     const menu = screen.getByRole('dialog', { name: 'Set' });
     const rows = [...menu.querySelectorAll('.set-menu-list > li')].map(li => (li.classList.contains('set-menu-group') ? `# ${li.textContent}` : li.querySelector('strong')?.textContent));
     expect(rows).toEqual(['# NatDex OU', 'Offensive Utility', 'Sun Setter', '# Gen 9 OU', 'Offensive Utility']);

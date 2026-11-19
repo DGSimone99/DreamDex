@@ -38,7 +38,7 @@
 /* Colonna destra: il menu si apre verso sinistra per non uscire dal pannello */
 .editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: auto; right: 0; }
 /* Mosse in fondo all'editor: il menu si apre verso l'alto e resta nella schermata */
-.editor-group.moves .combobox [role='listbox'] { top: auto; bottom: calc(100% + 4px); }
+.editor-group.moves .combobox [role='listbox'], .nature-diamond .combobox [role='listbox'] { top: auto; bottom: calc(100% + 4px); }
 /* Le mosse hanno in riga anche il tipo (largo fisso): il menu più largo, così i nomi lunghi non vanno a capo */
 .editor-group.moves .combobox [role='listbox'] { width: max(100%, 430px); }
 .combobox [role='option'] { margin: 0; padding: var(--sp-4) var(--sp-5); cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }

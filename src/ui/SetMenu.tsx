@@ -120,6 +120,9 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
   const order = presets.map((_, i) => i)
     .sort((a, b) => (a === best ? -1 : b === best ? 1 : formatOrder.indexOf(presets[a].format) - formatOrder.indexOf(presets[b].format)));
   const applied = presets.findIndex(p => sameSet(p.set, set));
+  const currentLabel = applied >= 0 ? presets[applied].name : current >= 0 ? mine[current].name : t('editor.setCustom');
+  // Da dove viene il set in uso: Smogon o uno dei miei set (Custom); cambiato a mano, nessuna linguetta
+  const source = applied >= 0 ? t('editor.setFromSmogon') : current >= 0 ? t('editor.setFromMine') : null;
   const apply = (i: number) => {
     if (i === best && onBest) onBest(); else onChange(presetSet(set, presets[i].set));
     close();
@@ -165,9 +168,16 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
       // Il fuoco esce dal menu (Tab oltre l'ultimo pulsante): si chiude
       onBlur={e => { if (open && e.relatedTarget && !root.current?.contains(e.relatedTarget as Node)) close(false); }}>
       <button type="button" className="set-menu-button" ref={button} aria-haspopup="dialog" aria-expanded={open}
-        aria-controls={open ? panelId : undefined} title={t('editor.setMenuTitle')}
+        aria-controls={open ? panelId : undefined} title={`${currentLabel}${source ? ` (${source})` : ''} · ${t('editor.setMenuTitle')}`}
         onClick={() => (open ? close() : show())}>
-        <span>{t('editor.setMenu')}</span><Icon name="down" />
+        {/* Come la pillola di una mossa: testa "SET" tagliata a "/", il nome sul corpo che sfuma nel nero, la coda tagliata a "/"
+            con la provenienza (Smogon o Custom, cioè uno dei miei set; niente se cambiato a mano) e la freccia del menu */}
+        <span className="set-menu-label">{t('editor.setMenu')}<span className="visually-hidden">:</span></span>
+        <span className="set-menu-current">{currentLabel}</span>
+        <span className={`set-menu-tail${applied >= 0 ? ' smogon' : ''}`}>
+          {source && <span className="set-menu-source"><span className="visually-hidden">, </span>{source}</span>}
+          <Icon name="down" />
+        </span>
       </button>
       {open && (
         <div className="set-menu-pop" id={panelId} role="dialog" aria-label={t('editor.setMenu')}>

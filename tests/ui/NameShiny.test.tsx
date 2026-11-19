@@ -44,7 +44,7 @@ describe('testata dell\'editor', () => {
     // Sulla carta il soprannome, con la specie nel tooltip
     expect(slot().querySelector('.slot-card .name')).toHaveTextContent('Tusky');
     expect(slot().querySelector('.slot-card .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     expect((within(slot()).getByLabelText('Set in testo Showdown') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
   });
@@ -67,7 +67,7 @@ describe('testata dell\'editor', () => {
 
   it('Testo del set si apre sopra le Statistiche (Set e Mosse restano in vista) e si chiude cliccando fuori', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     const text = within(slot()).getByLabelText('Set in testo Showdown');
     expect(text.closest('.stats-cell')).not.toBeNull();
@@ -80,7 +80,7 @@ describe('testata dell\'editor', () => {
 
   it('Importa / Esporta: se il testo è stato modificato, un clic fuori non lo butta', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     const text = within(slot()).getByLabelText('Set in testo Showdown');
     await user.clear(text);
@@ -103,7 +103,7 @@ describe('testata dell\'editor', () => {
     act(() => shiny.focus());
     expect(bubbleOf(shiny)).toBeVisible();
     // Il link a Smogon (in fondo al menu Set): il nome resta, dove porta è la sua descrizione
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     const smogon = within(slot()).getByRole('link', { name: 'Apri su Smogon' });
     expect(smogon).toHaveAccessibleDescription(/Analisi Smogon per|nessuna analisi/);
     expect(within(slot()).getByRole('button', { name: 'Chiudi editor' }).closest('.hint-wrap')).not.toBeNull();
@@ -118,14 +118,14 @@ describe('testata dell\'editor', () => {
   it('Copia il set è a un clic, accanto al pulsante Set, senza aprire il riquadro', async () => {
     const { slot } = await openEditor();
     const copy = within(slot()).getByRole('button', { name: 'Copia il set' });
-    expect(copy.closest('.editor-actions')).toContainElement(within(slot()).getByRole('button', { name: 'Set' }));
+    expect(copy.closest('.editor-actions')).toContainElement(within(slot()).getByRole('button', { name: /^Set:/ }));
     expect(within(slot()).queryByLabelText('Set in testo Showdown')).toBeNull();
   });
 
-  it('Custom Skillset sta nella fascia delle Mosse: a vista solo il nome, cosa fa nel fumetto e nella descrizione', async () => {
+  it('Custom Skillset sta nella fascia del Set: a vista solo il nome, cosa fa nel fumetto e nella descrizione', async () => {
     const { user, slot } = await openEditor();
     const toggle = within(slot()).getByRole('checkbox', { name: 'Custom Skillset Great Tusk' });
-    expect(toggle.closest('fieldset')).toBe(within(slot()).getByRole('group', { name: 'Mosse' }));
+    expect(toggle.closest('fieldset')).toBe(within(slot()).getByRole('group', { name: 'Set' }));
     const label = toggle.closest('label')!;
     expect(label.querySelector('.custom-text')).toHaveTextContent(/^Custom Skillset$/);
     expect(toggle).toHaveAccessibleDescription('Ogni mossa e abilità, anche non imparabili');
