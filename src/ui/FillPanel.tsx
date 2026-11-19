@@ -4,7 +4,7 @@ import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { teamArchetype, type Archetype } from '../engine/archetype';
 import type { Gap } from '../engine/coherence';
 import type { EngineData } from '../engine/data';
-import { battleAbility, battleName } from '../engine/dex';
+import { battleAbility, battleName, battleSpecies } from '../engine/dex';
 import { FILL_STYLES, PROPOSALS_PER_ROUND, proposalOrder, type FavoriteMode, type FillChoice, type FillStyle, type Proposal } from '../engine/fillProposals';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
@@ -19,7 +19,8 @@ import { useLang, useT } from '../i18n/react';
 import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
-import { Sprite } from './Sprite';
+import { Sprite, typeColor } from './Sprite';
+import type { CSSProperties } from 'react';
 import { useMemberTip } from './MemberCard';
 import { streamFill } from './useRanking';
 
@@ -424,6 +425,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                     const why = changed ? t('mcard.changed') : mine ? t('mcard.yours') : t('mcard.new');
                     return (
                       <span key={`${set.species}#${j}`} {...memberTip.bind(set, why, changed ? team[j] : undefined)}
+                        // I colori dei tipi: sul telefono la casella di un Pokémon nuovo prende il colore del suo tipo, come le carte del team
+                        style={{ '--t1': typeColor(battleSpecies(set)?.types[0] ?? ''), '--t2': typeColor(battleSpecies(set)?.types[1] ?? battleSpecies(set)?.types[0] ?? '') } as CSSProperties}
                         className={`fill-mon ${mine ? 'is-mine' : 'is-new'}${changed ? ' is-changed' : ''}${favorite ? ' is-favorite' : ''}`}>
                         <span className="fill-mon-sprite">
                           <Sprite species={set.species} item={set.item} size={48} />
@@ -448,7 +451,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                   )}
                 </span>
                 <span className="fill-result">
-                  <span className="fill-grade"><strong>{proposal.grade}</strong> {proposal.overall}</span>
+                  <span className={`fill-grade grade-${proposal.grade}`}><strong>{proposal.grade}</strong> {proposal.overall}</span>
                   {before !== null && proposal.overall !== before && (
                     <span className={`fill-delta ${proposal.overall > before ? 'up' : 'down'}`}>
                       {proposal.overall > before ? '+' : '−'}{Math.abs(proposal.overall - before)}

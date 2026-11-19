@@ -993,3 +993,34 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-proposal .fill-why { display: none; }
   .fill-result { justify-items: end; text-align: right; }
 }
+
+/* ── Telefono: guida più alta, lucchetto in alto a destra, editor senza striscia, team proposti a colori (2026-11-20) ── */
+@media (max-width: 599px) {
+  /* Come funziona il voto: la finestra sale fin dove lo spazio sopra Eevee lo permette */
+  .help-backdrop { padding: var(--sp-3) var(--sp-3) var(--sp-4); }
+  .help-frame.with-peek { --peek: 120px; }
+  .help-dialog.rating-help, .help-frame.with-peek > .help-dialog.rating-help {
+    height: calc(100dvh - var(--peek-room) - 20px); max-height: calc(100dvh - var(--peek-room) - 20px); }
+  /* Il lucchetto di un membro fissato, in alto a destra sulla carta */
+  html.touch-tips .band:not(.collapsed) .slot > .slot-card > .favorite[aria-pressed='true'] { top: 2px; right: 2px; width: 30px; height: 30px; }
+  /* L'editor: niente striscia azzurra in alto (c'è già il filo magenta sotto la testata) */
+  .drawer { border-top: 0; }
+  /* Completa team, i team proposti: i Pokémon nuovi in caselle nel colore del loro tipo con la striscia dei tipi sotto
+     (come le carte del team), i tuoi su un fondo quieto; lo sprite più grande; il voto grande nel suo colore */
+  .fill-proposal { padding: var(--sp-5); border-radius: 6px; background: var(--panel); border: 1px solid var(--line-soft); }
+  .fill-proposal .fill-mons { gap: var(--sp-2); }
+  .fill-proposal .fill-mon { position: relative; height: 62px; padding: 0; align-content: center; overflow: hidden; border-radius: 4px;
+    background: linear-gradient(165deg, color-mix(in srgb, var(--t1) 22%, var(--field)), var(--field) 80%); }
+  .fill-proposal .fill-mon.is-new { background: linear-gradient(165deg, color-mix(in srgb, var(--t1) 48%, var(--panel)), color-mix(in srgb, var(--t1) 14%, var(--panel)) 75%); }
+  .fill-proposal .fill-mon.is-new::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); }
+  .fill-proposal .fill-mon-sprite { height: 56px; }
+  .fill-proposal .fill-mon .sprite { width: 56px; height: 56px; }
+  .fill-proposal .fill-grade strong { font-size: 28px; }
+  .fill-proposal .fill-grade.grade-S strong { color: var(--accent-2-ink); }
+  .fill-proposal .fill-grade.grade-A strong { color: var(--good); }
+  .fill-proposal .fill-grade.grade-B strong { color: var(--accent-ink); }
+  .fill-proposal .fill-grade.grade-C strong { color: var(--warn); }
+  .fill-proposal .fill-grade.grade-D strong { color: var(--bad); }
+  .fill-proposal .fill-grade { font-size: var(--fs-section); color: var(--text); }
+  .fill-proposal .fill-kind { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-caption); }
+}
