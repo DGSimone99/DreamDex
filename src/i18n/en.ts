@@ -1079,7 +1079,7 @@ export const en = {
   'help.general.letters': "Letters: S from {S}, A from {A}, B from {B}, C from {C}, below is D.",
   'help.general.2': "The areas count differently depending on the kind of team, and so do the roles it needs.",
   'help.general.yours': "Your team is judged as {type}",
-  'help.general.type': "Kind of team",
+  'help.general.type': "Team type",
   'help.type.hyperOffense': "Offense and Speed weigh the most; walls aren't needed.",
   'help.type.bulkyOffense': "Offense weighs more than Defense, but walls count.",
   'help.type.balance': "Defense and Offense weigh almost the same.",

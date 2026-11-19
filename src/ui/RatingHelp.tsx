@@ -96,18 +96,20 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
                   </section>
                 ) : (
                   <>
-                    {/* La risposta che si cerca quasi sempre: il tipo del tuo team, coi pesi e i ruoli */}
-                    {teamType && (
-                      <section className="help-panel help-yours" aria-labelledby={`${titleId}-yours`}>
-                        <p className="help-yours-k">{t('help.yourTeam')}</p>
-                        <h4 id={`${titleId}-yours`}>{t(`archetype.${teamType}`)}</h4>
-                        <TypeTopic type={teamType} weights={weights} typeRule={typeRule} />
-                      </section>
-                    )}
+                    {/* Si apre su come funziona il voto (senza la tabella dei pesi: ogni tipo ha i suoi nella sua pagina) */}
+                    <section className="help-panel help-general" aria-labelledby={`${titleId}-general`}>
+                      <h4 id={`${titleId}-general`}>{t('help.general')}</h4>
+                      <GeneralTopic teamType={teamType} weights={weights} table={false} />
+                    </section>
+                    {/* Sotto, i tipi di team: il tuo per primo, contornato d'azzurro; ognuno apre la sua pagina */}
+                    <h5 className="help-list-title">{t('help.general.type')}</h5>
                     <nav className="help-list" aria-label={t('help.nav')}>
-                      {TOPICS.filter(item => item !== teamType).map(item => (
-                        <button key={item} type="button" onClick={() => setPage(item)}>
-                          <span>{t(topicLabel(item))}{item !== 'general' && <small>{t(`archetype.${item}.note`)}</small>}</span>
+                      {[...ARCHETYPES].sort((a, b) => Number(b === teamType) - Number(a === teamType)).map(item => (
+                        <button key={item} type="button" className={item === teamType ? 'yours' : undefined} aria-current={item === teamType || undefined} onClick={() => setPage(item)}>
+                          <span>
+                            <span className="help-list-name">{t(topicLabel(item))}{item === teamType && <em className="help-yours-tag">{t('help.yourTeam')}</em>}</span>
+                            <small>{t(`archetype.${item}.note`)}</small>
+                          </span>
                           <Icon name="next" />
                         </button>
                       ))}
@@ -145,7 +147,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weights: AreaWeightTable }) {
+function GeneralTopic({ teamType, weights, table = true }: { teamType: Archetype | null; weights: AreaWeightTable; table?: boolean }) {
   const t = useT();
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
@@ -163,6 +165,7 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
       <p>{t('help.general.2')}</p>
       {/* Trick Room solo qui, in Come funziona, non nelle schede dei tipi (scelta dell'utente, confermata 2026-11-13) */}
       <p>{t('help.type.trickRoom')}</p>
+      {table && (
       <div className="help-table-wrap">
         <table className="help-weights">
           <thead>
@@ -178,6 +181,7 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
           </tbody>
         </table>
       </div>
+      )}
     </>
   );
 }

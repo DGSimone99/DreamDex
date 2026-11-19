@@ -946,3 +946,33 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .help-back { display: inline-flex; align-items: center; gap: var(--sp-2); height: 40px; margin: 0 0 var(--sp-3) calc(-1 * var(--sp-3)); padding: 0 var(--sp-3); border: 0; background: none; color: var(--accent-ink); font: 600 var(--fs-section)/1 var(--ui); }
   .help-back .icon { width: 16px; height: 16px; }
 }
+
+/* ── Finestre: la pagina sotto ferma; guida del voto sul telefono, giro 2 (2026-11-19) ───────────────────── */
+html.modal-open { overflow: hidden; }
+/* Col dito: dove la finestra non scorre (testata, Eevee, sfondo) il trascinamento non arriva alla pagina sotto;
+   le parti che scorrono scorrono e si fermano ai bordi senza passare la spinta alla pagina */
+.help-backdrop { overscroll-behavior: contain; touch-action: none; }
+.help-backdrop :is(.help-body, .help-panel, .help-nav, .help-phone, .help-frame, .help-dialog) { touch-action: pan-y; overscroll-behavior: contain; }
+@media (max-width: 599px) {
+  .help-list-title { margin: var(--sp-8) 0 var(--sp-4); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .help-phone .help-list { margin-top: 0; gap: var(--sp-3); border: 0; background: none; overflow: visible; }
+  .help-phone .help-list button { border: 1px solid var(--line-soft); border-radius: 6px; background: var(--panel); }
+  .help-phone .help-list button:first-child { border-top: 1px solid var(--line-soft); }
+  .help-phone .help-list button.yours { border-color: color-mix(in srgb, var(--accent) 70%, var(--line)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+    background: radial-gradient(120% 140% at 100% 0, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%), var(--panel); }
+  .help-phone .help-list .help-yours-tag { margin-left: var(--sp-4); font: 700 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-ink); }
+  .help-phone .help-general h4 { margin-top: 0; }
+}
+/* Il nome del tipo e "il tuo team" sulla stessa riga */
+.help-list-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--sp-4); }
+.help-phone .help-list .help-yours-tag { margin-left: 0; }
+/* Col dito niente riquadro azzurro del tocco del browser (Eevee, carte, pulsanti): gli stati li disegna l'app */
+html { -webkit-tap-highlight-color: transparent; }
+.peek-head, .peek-head *, .eevee-peek, .eevee-peek * { outline: none; }
+@media (max-width: 599px) {
+  /* Pesi delle aree in una riga sola: tre colonne strette, solo nome e barra */
+  .help-weights-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+  .help-weights-row > div { min-width: 0; gap: var(--sp-3); padding: var(--sp-4) var(--sp-4) var(--sp-5); }
+  .help-weights-row .help-wbar { min-width: 0; width: 100%; }
+  .help-weights-row .help-inactive-note { font-size: var(--fs-label); }
+}
