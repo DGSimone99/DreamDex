@@ -662,10 +662,22 @@
 .duel-settings svg { width: 15px; height: 15px; transition: transform 0.3s var(--ease); }
 .duel-settings[aria-expanded='true'] svg { transform: rotate(60deg); }
 .duel-settings:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.duel-settings-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: 300px; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); animation: tip 0.14s var(--ease); }
+.duel-settings-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: 320px; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); animation: tip 0.14s var(--ease); }
 .duel-settings-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--sp-5); }
 .duel-settings-label { font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
-.duel-settings-pop .duel-set input { height: 32px; }
+.duel-settings-pop.up { top: auto; bottom: calc(100% + 6px); }
+.duel-settings-pop .combobox input { height: 32px; }
+/* Gli EV dell'avversario: tre righe da due (PS e Vel, i due attacchi, le due difese), il totale in alto a destra */
+.duel-evs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-6); align-items: center; }
+.duel-evs > .duel-settings-label { grid-column: 1; }
+.duel-ev-total { grid-column: 2; justify-self: end; font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.duel-ev-total.over { color: var(--bad); }
+.duel-settings-pop .duel-ev { display: grid; grid-template-columns: minmax(0, 1fr) 64px; align-items: center; gap: var(--sp-3); font: 600 var(--fs-small)/1 var(--ui); color: var(--muted); }
+.duel-ev .ev-input { height: 28px; padding: 0 var(--sp-3); font-variant-numeric: tabular-nums; text-align: center; background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--line); appearance: textfield; -moz-appearance: textfield; }
+.duel-ev .ev-input::-webkit-inner-spin-button, .duel-ev .ev-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.duel-ev .ev-input.zero:not(:focus) { color: var(--faint); }
+.duel-ev .ev-input:focus { border-color: var(--accent); }
+.duel-reset { align-self: flex-start; padding: 0; border: 0; background: none; font: 600 var(--fs-caption)/1 var(--ui); color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .duel-settings-soon { margin: 0; padding-top: var(--sp-4); border-top: 1px solid var(--line-soft); font-size: var(--fs-caption); color: var(--faint); }
 @media (prefers-reduced-motion: reduce) { .duel-settings-pop { animation: none; } .duel-settings svg { transition: none; } }
 .duel-name .duel-species { flex: 0 1 auto; min-width: 0; }

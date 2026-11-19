@@ -1,7 +1,7 @@
 import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
-import { getMove, getSpecies, moveNames, toID } from '../engine/dex';
+import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
 import { duelSpeed, editorDuel, worstThreat, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
@@ -15,6 +15,7 @@ import { gameName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
 import { Icon } from './icons';
+import { ItemIcon } from './ItemIcon';
 import { PokemonIcon } from './PokemonName';
 import { moveTint } from './MovePill';
 import { Sprite, typeColor } from './Sprite';
@@ -24,11 +25,22 @@ import { typeIconUrl } from './typeIcons';
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
 interface OppSet { key: string; label: string; set: TeamSet }
 
+/** Quanto due set si somigliano: stesso strumento 2, stessa abilità 1, ogni mossa in comune 1. */
+function likeness(a: TeamSet, b: TeamSet): number {
+  const moves = new Set(b.moves.map(toID));
+  return (toID(a.item) === toID(b.item) ? 2 : 0) + (toID(a.ability) === toID(b.ability) ? 1 : 0) + a.moves.filter(m => moves.has(toID(m))).length;
+}
+
 function oppSets(data: EngineData, species: string, genLimit: number, usageLabel: string, baseLabel: string): OppSet[] {
   const list: OppSet[] = [];
   const usage = mostCommonSet(data.stats, species);
-  if (usage) list.push({ key: 'usage', label: usageLabel, set: usage });
-  for (const preset of presetsFor(data, species)) list.push({ key: `p:${preset.name}`, label: preset.name, set: preset.set });
+  const presets = presetsFor(data, species);
+  if (usage) {
+    // Il set più usato col nome del preset Smogon che gli somiglia di più (almeno strumento e una mossa, o tre mosse)
+    const near = presets.map(p => ({ p, score: likeness(usage, p.set) })).sort((a, b) => b.score - a.score)[0];
+    list.push({ key: 'usage', label: near && near.score >= 3 ? near.p.name : usageLabel, set: usage });
+  }
+  for (const preset of presets) list.push({ key: `p:${preset.name}`, label: preset.name, set: preset.set });
   if (!list.length) list.push({ key: 'base', label: baseLabel, set: defaultSet(data, species, genLimit) });
   return list;
 }
@@ -74,6 +86,18 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   const [setKey, setSetKey] = useState<string | null>(null);
   // Le Impostazioni dell'avversario: un pannello sotto l'ingranaggio accanto al nome (si chiude con Esc o cliccando fuori)
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Verso l'alto quando sotto l'ingranaggio non c'è posto (la Sfida sta in fondo al cassetto): niente barra di scorrimento
+  const [settingsUp, setSettingsUp] = useState(true);
+  const toggleSettings = (button: HTMLElement) => {
+    if (!settingsOpen) {
+      const box = button.closest('.drawer')?.getBoundingClientRect();
+      const below = (box ? Math.min(box.bottom, window.innerHeight) : window.innerHeight) - button.getBoundingClientRect().bottom;
+      setSettingsUp(below < 330);
+    }
+    setSettingsOpen(o => !o);
+  };
+  // Le modifiche all'avversario (strumento, EV): si azzerano cambiando Pokémon o set
+  const [edit, setEdit] = useState<{ item?: string; evs?: Partial<Record<StatID, number>> }>({});
   const settingsRoot = useRef<HTMLDivElement>(null);
   const settingsId = useId();
   useEffect(() => {
@@ -99,8 +123,16 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     [data, species, format.genLimit, t]);
   const chosen = sets.find(s => s.key === setKey) ?? sets[0] ?? null;
   const pool = useMemo(() => movePool(me, format), [me.species, me.customSkillset, format]); // eslint-disable-line react-hooks/exhaustive-deps
-  const result = useMemo(() => (chosen ? editorDuel(me, chosen.set, pool) : null), [me, chosen, pool]);
-  const speed = useMemo(() => (chosen ? duelSpeed(me, chosen.set) : null), [me, chosen]);
+  // L'avversario in campo: il set scelto con le modifiche fatte nelle Impostazioni
+  const opp = useMemo<TeamSet | null>(() => (chosen
+    ? { ...chosen.set, ...(edit.item !== undefined ? { item: edit.item } : {}), evs: { ...chosen.set.evs, ...edit.evs } }
+    : null), [chosen, edit]);
+  const edited = edit.item !== undefined || Object.keys(edit.evs ?? {}).length > 0;
+  const result = useMemo(() => (opp ? editorDuel(me, opp, pool) : null), [me, opp, pool]);
+  const speed = useMemo(() => (opp ? duelSpeed(me, opp) : null), [me, opp]);
+  const itemOptions = useMemo<ComboOption[]>(() => itemNames().map(name => ({
+    value: name, label: gameName('item', name, lang), alias: name, icon: <ItemIcon item={name} />,
+  })), [lang]);
 
   /** I colpi per il KO scritti grandi ("1", "2-3") con l'unità sotto ("colpo", "colpi"). */
   const hitsParts = (hit: DuelHit): { big: string; unit: string } => {
@@ -112,6 +144,7 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     return { big: `${hit.hitsMaybe}-${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const evTotal = opp ? Object.values(opp.evs).reduce((acc, n) => acc + (n ?? 0), 0) : 0;
   const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
 
   const free = 510 - Object.values(set.evs).reduce((acc, n) => acc + (n ?? 0), 0);
@@ -191,24 +224,52 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
             onKeyDown={e => { if (e.key === 'Escape' && settingsOpen) { e.stopPropagation(); setSettingsOpen(false); } }}>
             <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
               placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
-              onChange={name => { setPicked(name || null); setSetKey(null); }} />
+              onChange={name => { setPicked(name || null); setSetKey(null); setEdit({}); }} />
             {species && <GenderMark species={species} />}
             {species && (
               <button type="button" className="duel-settings" aria-haspopup="dialog" aria-expanded={settingsOpen} aria-controls={settingsId}
-                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={() => setSettingsOpen(o => !o)}>
+                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={e => toggleSettings(e.currentTarget)}>
                 <Icon name="gear" />
               </button>
             )}
             {settingsOpen && (
-              <div className="duel-settings-pop" id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}>
+              <div className={`duel-settings-pop${settingsUp ? ' up' : ''}`} id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}>
                 {sets.length > 0 && (
                   <div className="duel-settings-row">
                     <span className="duel-settings-label">{t('editor.set')}</span>
                     <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
                       options={sets.map(s => ({ value: s.key, label: s.label }))}
                       display={<span>{chosen?.label}</span>}
-                      onChange={key => setSetKey(key)} />
+                      onChange={key => { setSetKey(key); setEdit({}); }} />
                   </div>
+                )}
+                {opp && (
+                  <>
+                    <div className="duel-settings-row">
+                      <span className="duel-settings-label">{t('editor.item')}</span>
+                      <Combobox label={t('editor.duelItem')} value={opp.item} options={itemOptions} className="duel-item"
+                        leading={opp.item ? <ItemIcon item={opp.item} /> : undefined}
+                        onChange={item => setEdit(e => ({ ...e, item }))} />
+                    </div>
+                    {/* Gli EV a coppie: PS e Velocità, i due attacchi, le due difese */}
+                    <div className="duel-evs">
+                      <span className="duel-settings-label">EV</span>
+                      <span className={`duel-ev-total${evTotal > 510 ? ' over' : ''}`}>{evTotal} / 510</span>
+                      {(['hp', 'spe', 'atk', 'spa', 'def', 'spd'] as StatID[]).map(stat => (
+                        <label key={stat} className="duel-ev">
+                          <span>{statShort(stat, lang)}</span>
+                          <input type="number" inputMode="numeric" min={0} max={252} step={2} value={opp.evs[stat] ?? 0}
+                            className={`ev-input${opp.evs[stat] ? '' : ' zero'}`}
+                            aria-label={t('editor.duelEv', { stat: statShort(stat, lang) })}
+                            onChange={e => {
+                              const n = Math.min(252, Math.max(0, Math.floor(Number(e.target.value) || 0)));
+                              setEdit(prev => ({ ...prev, evs: { ...prev.evs, [stat]: n } }));
+                            }} />
+                        </label>
+                      ))}
+                    </div>
+                    {edited && <button type="button" className="duel-reset" onClick={() => setEdit({})}>{t('editor.duelReset')}</button>}
+                  </>
                 )}
                 <p className="duel-settings-soon">{t('editor.duelSettingsSoon')}</p>
               </div>
