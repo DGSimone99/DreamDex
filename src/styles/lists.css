@@ -703,14 +703,17 @@
  * Coverage, col timbro KO sopra quando va KO in un colpo; in fondo la riga dei consigli, che c'è sempre (vuota se non ce
  * ne sono) così la scheda non salta; il risultato grande a destra.
  */
-.duel-rows { grid-column: 2; position: relative; z-index: 2; display: grid; align-content: space-evenly; padding: var(--sp-1) var(--sp-6) var(--sp-3) var(--sp-8); }
-.duel-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-5); row-gap: 2px; align-items: center; padding: var(--sp-1) 0; }
+.duel-rows { grid-column: 2; position: relative; z-index: 2; display: grid; align-content: space-evenly; padding: var(--sp-4) var(--sp-6) var(--sp-5) var(--sp-8); }
+.duel-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-6); row-gap: 5px; align-items: center; padding: var(--sp-4) 0; }
 .duel-row + .duel-row { border-top: 1px solid #ffffff12; }
 .duel-title { grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 5px; font: 700 10px/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .duel-title svg { width: 12px; height: 12px; flex: none; }
 .duel-row.mine .duel-title svg { color: var(--accent); }
 .duel-row.theirs .duel-title svg { color: var(--bad); }
-.duel-label { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: var(--sp-3); min-width: 0; font: 700 13.5px/1.1 var(--display); }
+.duel-label { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font: 600 12px/1.1 var(--display); }
+/* La pillola piccola, senza la coda della potenza: qui conta il danno vero, scritto accanto alla barra */
+.duel-label .duel-mvp .mvp-tail { display: none; }
+.duel-label .duel-mvp .mvp-nm { padding-right: var(--sp-6); }
 .duel-label .duel-mvp { flex: 0 1 auto; min-width: 0; }
 .duel-speed-vs { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .duel-none { font: 600 var(--fs-small)/1.1 var(--ui); color: var(--faint); }
@@ -731,29 +734,19 @@
 .duel-sub .duel-bar { position: relative; flex: none; width: 150px; margin: 0; }
 /* Il timbro KO sopra la barra (vuota), al centro della barra */
 .duel-sub .duel-ko { position: absolute; left: calc(50% + 9px); top: 50%; transform: translate(-50%, -50%); padding: 1px 7px; }
-.duel-range { font-size: var(--fs-caption); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.duel-range { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .duel-result { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
-.duel-big { font: italic 800 23px/0.9 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.duel-unit { font: 700 10.5px/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.duel-big { font: italic 800 22px/0.9 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.duel-unit { font: 700 10px/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .duel-result.good .duel-big { color: var(--good); }
 .duel-result.bad .duel-big { color: var(--bad); }
 .duel-result.warn .duel-big { color: var(--warn); }
 .duel-result.none .duel-big { color: var(--faint); }
 /* La riga dei consigli: corta a vista ("Consigli: Brave Bird · +236 EV in AttSp"), per intero nel tooltip */
-.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 var(--fs-caption)/1.25 var(--ui); color: var(--accent-2-ink); }
+.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--accent-2-ink); }
 .duel-tips.tip { overflow: visible; border-bottom: 0; text-decoration: underline dotted color-mix(in srgb, var(--accent-2-ink) 55%, transparent); text-underline-offset: 3px; }
 .duel-tips b { font-weight: 700; }
 .duel-tips:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-/* Schermi bassi: del titolo resta il simbolo, accanto alla mossa (una riga in meno) */
-@media (min-width: 1100px) and (max-height: 760px) {
-  .duel-row { grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: var(--sp-3); }
-  .duel-title { grid-column: 1; grid-row: 2; }
-  .duel-title-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .duel-label { grid-column: 2; grid-row: 2; }
-  .duel-sub { grid-column: 2; grid-row: 3; }
-  .duel-result { grid-column: 3; grid-row: 2 / 4; }
-  .duel-tips { grid-column: 2 / -1; grid-row: 4; }
-}
 .duel-empty { grid-column: 2; position: relative; z-index: 2; align-self: center; margin: 0; padding: 0 var(--sp-6) 0 var(--sp-8); font-size: var(--fs-small); color: var(--faint); }
 @media (min-width: 1100px) {
   /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
@@ -775,10 +768,4 @@
   .duel-rows { padding-top: var(--sp-1); padding-bottom: var(--sp-4); }
   .duel-row { padding: 1px 0; }
   .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-2); }
-}
-/* Schermi molto bassi (1280×620): le righe della Sfida più strette, così il cassetto non scorre */
-@media (min-width: 1100px) and (max-height: 660px) {
-  .duel-rows { padding-top: 0; padding-bottom: var(--sp-1); }
-  .duel-row { row-gap: 0; }
-  .duel-tips { line-height: 1.15; }
 }

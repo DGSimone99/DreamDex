@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId,
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
-import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, mergeEffects, orderOf, speedBuffs, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { attackBuffs, buffedHit, defenseBuffs, editorDuel, mergeEffects, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
@@ -19,7 +19,6 @@ import { ItemIcon } from './ItemIcon';
 import { PokemonIcon } from './PokemonName';
 import { MovePill } from './MovePill';
 import { Sprite, typeColor } from './Sprite';
-import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
@@ -122,13 +121,11 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     : null), [chosen, edit]);
   const edited = edit.item !== undefined || Object.keys(edit.evs ?? {}).length > 0;
   const result = useMemo(() => (opp ? editorDuel(me, opp, pool) : null), [me, opp, pool]);
-  const speed = useMemo(() => (opp ? duelSpeed(me, opp) : null), [me, opp]);
   // Il team con il membro com'è adesso nell'editor (la Sfida segue le modifiche prima che arrivino al team)
   const squad = useMemo(() => team.map(member => (member.species === set.species ? me : member)), [team, set.species, me]);
   const buffs = useMemo(() => (opp && result ? {
     attack: attackBuffs(me, opp, squad, result.mine),
     defense: defenseBuffs(me, opp, squad, result.theirs),
-    speed: speedBuffs(me, opp, squad),
   } : null), [me, opp, squad, result]);
   const itemOptions = useMemo<ComboOption[]>(() => itemNames().map(name => ({
     value: name, label: gameName('item', name, lang), alias: name, icon: <ItemIcon item={name} />,
@@ -246,26 +243,6 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     return line(kind, title, <><MovePill name={hit.move} size="sm" className="duel-mvp" />{toggles}</>, big, unit, ko, sub, tips);
   };
 
-  // La Velocità: le due velocità in lotta (Sciarpa e Booster comprese, e i potenziamenti accesi), chi muove prima e, se
-  // serve, gli EV per superarlo
-  const speedTip = speed?.tip
-    ? `${t('editor.duelTipSpe', { n: speed.tip.evs })}${speed.tip.evs > free ? ` ${t('editor.duelTipElsewhere')}` : ''}`
-    : null;
-  const speedEffect = effectOf(buffs?.speed);
-  const speeds = speed ? {
-    mine: Math.floor(speed.mine * (speedEffect?.mine ?? 1)),
-    theirs: Math.floor(speed.theirs * (speedEffect?.theirs ?? 1)),
-  } : null;
-  const order = speeds ? orderOf(speeds.mine, speeds.theirs) : 'tie';
-  const speedNow = t(order === 'mine' ? 'editor.duelFirstMine' : order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie');
-  const speedLine = speed && speeds && line(
-    'speed', <><StatIcon stat="spe" /><span className="duel-title-text">{t('editor.duelSpeed')}</span></>,
-    <><span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speeds.mine, b: speeds.theirs })}</span>{buffToggles(buffs?.speed)}</>,
-    order === 'mine' ? '1°' : order === 'theirs' ? '2°' : '=', speedNow,
-    order === 'mine' ? 'good' : order === 'theirs' ? 'bad' : 'warn', null,
-    tipsLine([speed.tip ? t('editor.duelTipEvShort', { n: speed.tip.evs, stat: statShort('spe', lang) }) : null], [speedTip]),
-  );
-
   return (
     <fieldset className="editor-group duel">
       <legend>{t('editor.duel')}</legend>
@@ -349,7 +326,6 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
           <div className="duel-rows">
             {hitLine('mine', result.mine)}
             {hitLine('theirs', result.theirs)}
-            {speedLine}
           </div>
         ) : <p className="duel-empty">{t('editor.duelEmpty')}</p>}
       </div>
