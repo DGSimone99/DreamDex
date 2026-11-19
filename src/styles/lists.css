@@ -601,27 +601,31 @@
 }
 
 /*
- * Lo spazio che avanza nel cassetto dell'editor va dentro l'editor, non sotto i Ruoli: la fascia centrale (Statistiche | Set e Mosse) prende l'altezza in più. A sinistra lo spazio
- * in più va fra le targhette delle statistiche; a destra Set e
- * Mosse si dividono l'altezza e i loro campi si distanziano. Le righe del contenitore senza gap: con l'avviso della
- * proposta (che non sempre c'è) una riga vuota non lascia uno spazio in più. L'editor è alto almeno quanto il cassetto:
- * la fascia centrale (1fr) prende solo lo spazio che avanza davvero.
+ * Editor compatto: ogni parte è alta quanto il suo contenuto, niente si allunga per riempire il cassetto. Lo spazio che
+ * avanza resta tutto in fondo, sotto i Ruoli, in un punto solo (prima era sparso a fette fra righe e riquadri). Le righe
+ * del contenitore senza gap: con l'avviso della proposta (che non sempre c'è) una riga vuota non lascia uno spazio in più.
+ * Statistiche e Set/Mosse stanno sulla stessa riga: i due riquadri hanno la stessa altezza, quello più corto tiene il
+ * poco spazio in più in basso.
  */
 @media (min-width: 1100px) {
-  .drawer > .set-editor { min-height: 100%; --ed-gap: var(--sp-4); }
-  .set-editor { grid-template-rows: auto auto minmax(0, 1fr) auto; row-gap: 0; }
+  .drawer > .set-editor { --ed-gap: var(--sp-4); --stat-row-h: 40px; }
+  .set-editor { grid-template-rows: auto auto auto auto; align-content: start; row-gap: 0; }
   .set-editor > .editor-head { grid-row: 1; margin-bottom: var(--ed-gap); }
   .set-editor > :not(.editor-head, .stats-cell, .editor-side, .editor-foot) { grid-row: 2; margin-bottom: var(--ed-gap); }
   .set-editor > .stats-cell, .set-editor > .editor-side { grid-row: 3; }
   .set-editor > .editor-foot { grid-row: 4; margin-top: var(--ed-gap); }
-  /* Statistiche: la barra in alto ferma, le righe si dividono l'altezza attaccate fra loro (righe alternate senza spazi in mezzo, come in Champions) */
+  /* Statistiche: righe alternate attaccate fra loro (come in Champions), ognuna alta quanto basta */
   .set-editor .stats-cell > .evs { display: flex; flex-direction: column; }
-  .set-editor .evs .stat-rows { flex: 1; align-content: stretch; grid-auto-rows: 1fr; gap: 0; }
-  /* Set e Mosse: metà altezza ciascuno; nel Set le due righe restano vicine al centro, nelle Mosse i campi si distanziano */
-  .set-editor .editor-side { grid-template-rows: 1fr 1fr; align-content: stretch; }
-  .set-editor .editor-side > .editor-group.moves { align-content: space-evenly; }
-  .set-editor .editor-side > .editor-group.set-plates { align-content: center; row-gap: var(--sp-8); }
+  .set-editor .evs .stat-rows { grid-template-rows: auto; grid-auto-rows: var(--stat-row-h); gap: 0; }
+  .set-editor .evs .speed-line { margin-top: auto; }
+  /* Set e Mosse: ognuno alto quanto il contenuto, uno sotto l'altro */
+  .set-editor .editor-side { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
+  .set-editor .editor-side > .editor-group { align-content: start; }
+  /* La barra "EV usati" vicina ai titoli delle colonne; fra le due file di mosse un respiro vero, non un vuoto in fondo */
+  .set-editor .stats-cell > .evs { gap: var(--sp-2); }
+  .set-editor .evs .stat-rows > .stat-head { padding: var(--sp-4) 0 var(--sp-2); }
+  .set-editor .editor-side > .editor-group.moves { row-gap: var(--sp-7); }
 }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
-  .drawer > .set-editor { --ed-gap: var(--sp-3); }
+  .drawer > .set-editor { --ed-gap: var(--sp-3); --stat-row-h: 36px; }
 }
