@@ -83,6 +83,9 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
           aria-controls={popOpen ? popId : undefined} onClick={() => setPopOpen(o => !o)}
           onKeyDown={e => { if (e.key === 'Escape' && popOpen) { e.preventDefault(); e.stopPropagation(); closePop(true); } }}>
           {face}
+          {/* Le tre aree sempre visibili anche col team ridotto (mentre modifichi un membro): barrette senza scritte, nel
+              colore della lettera che varrebbero da sole; i numeri e il resto nella tendina */}
+          <GradeMini rating={rating} />
           <span className="grade-pop-caret" aria-hidden="true"><Icon name="next" /></span>
         </button>
       ) : face}
@@ -121,6 +124,23 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
   );
 }
 
+
+/** Le tre aree (Offesa, Difesa, Velocità) come barrette impilate, per il voto del team ridotto. Solo disegno. */
+function GradeMini({ rating }: { rating: TeamRating }) {
+  const t = useT();
+  const areas = [...rating.areas].sort((a, b) => ANALYSIS_VIEWS.indexOf(a.key as TabView) - ANALYSIS_VIEWS.indexOf(b.key as TabView));
+  return (
+    <span className="grade-mini" aria-hidden="true">
+      {areas.map(area => (
+        <span key={area.key} className={`grade-mini-row band-${GRADES.find(g => (area.value ?? 0) >= g.min)!.grade}${area.inactive ? ' inactive' : ''}`}>
+          <span className="grade-mini-label">{t(`area.${area.key}Short` as 'area.strengthShort')}</span>
+          <span className="meter"><span style={{ width: `${area.value ?? 0}%` }} /></span>
+          <b>{area.value ?? '—'}</b>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 /**
  * Le righe delle aree della carta del voto: le tre aree con barra e numero, i Ruoli "8/8 +2" e Bonus/Malus "+6"; ogni
