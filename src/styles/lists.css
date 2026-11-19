@@ -676,6 +676,9 @@
 .duel-evs > .duel-settings-label { grid-column: 1; }
 .duel-ev-total { grid-column: 2; justify-self: end; font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 .duel-ev-total.over { color: var(--bad); }
+/* Il simbolo della statistica attaccato al nome, come in Statistiche */
+.duel-ev-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.duel-ev-name .stat-icon { flex: none; width: 16px; height: 16px; }
 .duel-settings-pop .duel-ev { display: grid; grid-template-columns: minmax(0, 1fr) 64px; align-items: center; gap: var(--sp-3); font: 700 var(--fs-caption)/1 var(--display); text-transform: uppercase; color: var(--muted); }
 .duel-ev .ev-input { height: 28px; padding: 0 var(--sp-3); font-variant-numeric: tabular-nums; text-align: center; background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--line); appearance: textfield; -moz-appearance: textfield; }
 .duel-ev .ev-input::-webkit-inner-spin-button, .duel-ev .ev-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

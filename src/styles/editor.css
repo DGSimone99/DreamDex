@@ -78,7 +78,8 @@
 .stat-row { display: grid; grid-template-columns: 86px 14px 52px minmax(0, 1fr) 58px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-5) var(--sp-1) var(--sp-4); border-radius: var(--alt-r-sm); }
 /* Icona della statistica (come in Champions) prima del nome */
 .stat-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
-.stat-name .stat-icon { flex: none; width: 14px; height: 14px; }
+/* I simboli delle statistiche grandi e attaccati al nome, come nel riepilogo di Pokémon Champions */
+.stat-name .stat-icon { flex: none; width: 18px; height: 18px; }
 /* Intestazione: STATS sopra il valore, EV sopra barra e numero insieme, IV sopra il suo campo */
 .stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .stat-row.stat-head:hover { background: none; }
@@ -90,7 +91,7 @@
 .stat-row:not(.stat-head) .ev-slider { margin-left: var(--sp-4); width: calc(100% - var(--sp-4)); }
 .stat-head-num { text-align: center; }
 .set-editor .iv-input { height: 28px; padding: var(--sp-1) var(--sp-2); text-align: center; font-variant-numeric: tabular-nums; }
-.set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
+.set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-2); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
 /* La natura: la freccetta doppia di Champions (verde su, rossa giù) accanto al numero, che prende lo stesso colore */
 .nature-arrow { flex: none; display: inline-block; vertical-align: -1px; }
 .nature-arrow.up { color: var(--good); }

@@ -341,7 +341,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
                       <span className={`duel-ev-total${evTotal > 510 ? ' over' : ''}`}>{evTotal} / 510</span>
                       {(['hp', 'spe', 'atk', 'spa', 'def', 'spd'] as StatID[]).map(stat => (
                         <label key={stat} className="duel-ev">
-                          <span>{statShort(stat, lang)}</span>
+                          <span className="duel-ev-name"><StatIcon stat={stat} />{statShort(stat, lang)}</span>
                           <input type="number" inputMode="numeric" min={0} max={252} step={2} value={opp.evs[stat] ?? 0}
                             className={`ev-input${opp.evs[stat] ? '' : ' zero'}`}
                             aria-label={t('editor.duelEv', { stat: statShort(stat, lang) })}
