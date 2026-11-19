@@ -34,6 +34,17 @@ describe('voto del team ridotto: la tendina delle aree', () => {
     expect(screen.getByRole('button', { name: /^Offesa \d+, apri il dettaglio/ })).toBeInTheDocument();
   });
 
+  it('chiuso: le tre aree restano a vista come barrette (solo disegno), col numero di ognuna', () => {
+    const { rating } = setup();
+    const mini = document.querySelector('.grade-pop-toggle .grade-mini')!;
+    expect(mini).toHaveAttribute('aria-hidden', 'true');
+    const rows = [...mini.querySelectorAll('.grade-mini-row')];
+    expect(rows.map(r => r.querySelector('.grade-mini-label')?.textContent)).toEqual(['Off', 'Dif', 'Vel']);
+    const value = (key: string) => String(rating.areas.find(a => a.key === key)!.value);
+    expect(rows.map(r => r.querySelector('b')?.textContent)).toEqual([value('strength'), value('defense'), value('speed')]);
+    expect(toggle()).toBeInTheDocument();
+  });
+
   it('chiuso: niente righe; il pulsante dice cosa apre', () => {
     setup();
     const button = toggle();
