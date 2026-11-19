@@ -781,3 +781,39 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 .member-menu [role='menuitem'] .icon { flex: none; width: 20px; height: 20px; color: var(--accent); }
 .member-menu [role='menuitem']:disabled { opacity: 0.4; }
 .member-menu [role='menuitem'].danger, .member-menu [role='menuitem'].danger .icon { color: var(--bad); }
+
+/* ── Editor sul telefono: testata ferma che si stringe scorrendo, pulsanti tondi (2026-11-19) ───────────── */
+@media (max-width: 599px) {
+  /* La testata (riepilogo, Set e schede) resta ferma in alto mentre la scheda scorre */
+  .drawer .set-editor .editor-head { position: sticky; top: -12px; z-index: 6; background: var(--ground); box-shadow: 0 1px 0 var(--line-soft); }
+  .set-editor .editor-tabs { margin-bottom: var(--sp-5); }
+  /* × a sinistra (chiude), shiny e copia insieme a destra: cerchi uguali da 40, semitrasparenti sul colore del tipo */
+  .set-editor :is(.editor-actions .member-copy, .editor-actions .editor-close, .editor-title .shiny-toggle) {
+    position: absolute; z-index: 3; top: var(--sp-5); width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%;
+    border: 1px solid color-mix(in srgb, #fff 18%, transparent); background: color-mix(in srgb, var(--ground) 55%, transparent);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+  .set-editor .editor-actions .editor-close { left: var(--sp-6); right: auto; }
+  .set-editor .editor-title .shiny-toggle { left: auto; right: calc(var(--sp-6) + 48px); }
+  .set-editor .editor-actions .member-copy { right: var(--sp-6); }
+  .set-editor .editor-title .shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+  .set-editor :is(.member-copy, .editor-close, .shiny-toggle) .icon { width: 18px; height: 18px; }
+  .set-editor .editor-title { transition: min-height 0.2s var(--ease), padding 0.2s var(--ease); }
+  .set-editor .editor-title .nickname strong { transition: font-size 0.2s var(--ease); }
+  .editor-hero > .sprite { transition: all 0.2s var(--ease); }
+
+  /* Stretta (dopo aver scorso): una barra alta 60, × | sprite piccolo | nome e tipi | shiny e copia; il Set si nasconde
+     (torna in cima) */
+  /* (la testata ferma sale di 12 px sopra il bordo, quelli del margine del cassetto: la barra li tiene vuoti) */
+  .set-editor.compact-head .editor-title { min-height: 72px; align-content: center; gap: var(--sp-2); padding: calc(12px + var(--sp-3)) 104px var(--sp-3) 112px; border-bottom-width: 2px; }
+  .set-editor.compact-head .editor-title .nickname strong { font-size: 19px; white-space: nowrap; }
+  .set-editor.compact-head .editor-title > .types .type-chip { --tc-h: 18px; }
+  .set-editor.compact-head .editor-hero > .sprite { left: 56px; right: auto; top: 18px; bottom: auto; width: 48px; height: 48px; }
+  .set-editor.compact-head :is(.editor-actions .member-copy, .editor-actions .editor-close, .editor-title .shiny-toggle) { top: 22px; }
+  /* Grande: un nome lungo va a capo (Urshifu-Rapid- / Strike) invece di tagliarsi */
+  .set-editor:not(.compact-head) .editor-title .nickname strong { white-space: normal; line-height: 1.05; text-align: left; }
+  .set-editor.compact-head .editor-actions .set-menu, .set-editor.compact-head .editor-tera { display: none; }
+  .set-editor.compact-head .editor-tabs { margin-top: var(--sp-4); }
+}
+@media (max-width: 599px) and (prefers-reduced-motion: reduce) {
+  .set-editor .editor-title, .set-editor .editor-title .nickname strong, .editor-hero > .sprite { transition: none; }
+}

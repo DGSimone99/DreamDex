@@ -342,6 +342,24 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const [natureHelp, setNatureHelp] = useState(false);
   // Telefono: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
   const phone = useMediaQuery('(max-width: 599px)');
+  // Telefono: la testata resta ferma in alto; scorrendo si stringe in una barra (chiudi, sprite piccolo, nome e tipi,
+  // shiny e copia) e torna grande in cima. Due soglie diverse: al limite non salta avanti e indietro
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const drawer = editorRef.current?.closest('.drawer');
+    if (!phone || !drawer) { setCompact(false); return; }
+    // Si stringe solo se, stretta, resta ancora da scorrere: altrimenti togliendo spazio tornerebbe subito in cima
+    const head = () => editorRef.current?.querySelector('.editor-head')?.getBoundingClientRect().height ?? 0;
+    const onScroll = () => setCompact(was => {
+      if (was) return drawer.scrollTop > 8;
+      const room = drawer.scrollHeight - drawer.clientHeight;
+      return drawer.scrollTop > 64 && room - (head() - 130) > 40;
+    });
+    onScroll();
+    drawer.addEventListener('scroll', onScroll, { passive: true });
+    return () => drawer.removeEventListener('scroll', onScroll);
+  }, [phone]);
   const [phoneTab, setPhoneTab] = useState<'set' | 'stats' | 'duel'>('set');
   const tabsId = useId();
   const phoneTabs: { id: 'set' | 'stats' | 'duel'; label: string }[] = [
@@ -369,7 +387,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   );
 
   return (
-    <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
+    <div className={`set-editor${phone && compact ? ' compact-head' : ''}`} ref={editorRef} data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
         <div className="editor-top">
           {title}
