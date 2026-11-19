@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId,
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
-import { attackBuffs, buffedHit, defenseBuffs, editorDuel, mergeEffects, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, mergeEffects, orderOf, speedBuffs, worstThreat, type DuelBuff, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
@@ -18,6 +18,7 @@ import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { PokemonIcon } from './PokemonName';
 import { MovePill } from './MovePill';
+import { StatIcon } from './StatIcon';
 import { Sprite, typeColor } from './Sprite';
 import { typeIconUrl } from './typeIcons';
 
@@ -126,7 +127,9 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const buffs = useMemo(() => (opp && result ? {
     attack: attackBuffs(me, opp, squad, result.mine),
     defense: defenseBuffs(me, opp, squad, result.theirs),
+    speed: speedBuffs(me, opp, squad),
   } : null), [me, opp, squad, result]);
+  const speed = useMemo(() => (opp ? duelSpeed(me, opp) : null), [me, opp]);
   const itemOptions = useMemo<ComboOption[]>(() => itemNames().map(name => ({
     value: name, label: gameName('item', name, lang), alias: name, icon: <ItemIcon item={name} />,
   })), [lang]);
@@ -188,6 +191,35 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     const on = (list ?? []).filter(b => active.has(b.id));
     return on.length ? mergeEffects(on.map(b => b.apply)) : null;
   };
+  /**
+   * La Velocità sta sui colpi, non in una riga sua. Una danza che alza colpo e velocità (Eledanza, Danza Drago) è un solo
+   * interruttore: acceso, alza tutte e due. Quelle che alzano solo la velocità (Agilità) e il Ventoincoda del team hanno
+   * il loro interruttore nella riga di chi ne approfitta.
+   */
+  const twin = (buff: DuelBuff) => [...(buffs?.attack ?? []), ...(buffs?.defense ?? [])]
+    .find(b => b.kind === 'setup' && buff.kind === 'setup' && !!b.against === !!buff.against && b.source === buff.source);
+  const speedOnly = (against: boolean) => (buffs?.speed ?? []).filter(b => !!b.against === against && !twin(b));
+  const speedOn = (buffs?.speed ?? []).filter(b => active.has(b.id) || (twin(b) && active.has(twin(b)!.id)));
+  const speedEffect = speedOn.length ? mergeEffects(speedOn.map(b => b.apply)) : null;
+  const speeds = speed ? { mine: Math.floor(speed.mine * (speedEffect?.mine ?? 1)), theirs: Math.floor(speed.theirs * (speedEffect?.theirs ?? 1)) } : null;
+  const order = speeds ? orderOf(speeds.mine, speeds.theirs) : null;
+  const speedTip = speed?.tip
+    ? `${t('editor.duelTipSpe', { n: speed.tip.evs })}${speed.tip.evs > free ? ` ${t('editor.duelTipElsewhere')}` : ''}`
+    : null;
+  /** L'etichetta della Velocità sul colpo: "» 1° · 328" verde per chi muove prima, rossa per l'altro, gialla se pari. */
+  const speedChip = (kind: 'mine' | 'theirs') => {
+    if (!speeds || !order) return null;
+    const value = kind === 'mine' ? speeds.mine : speeds.theirs;
+    const place = order === 'tie' ? '=' : order === kind ? '1°' : '2°';
+    const tone = order === 'tie' ? 'tie' : order === kind ? 'first' : 'second';
+    const said = t(order === 'mine' ? 'editor.duelFirstMine' : order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie');
+    return (
+      <span className={`duel-speed tip ${tone}`} tabIndex={0}
+        data-tip={`${t('editor.duelSpeed')}: ${t('editor.duelSpeedVs', { a: speeds.mine, b: speeds.theirs })} · ${said}`}>
+        <StatIcon stat="spe" /><b>{place}</b><span>{value}</span>
+      </span>
+    );
+  };
 
   /**
    * La riga dei consigli c'è sempre (vuota se non ce ne sono): la scheda non salta quando compaiono. Corta a vista
@@ -206,9 +238,10 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
    * velocità) con gli interruttori dei potenziamenti; poi la barra dei PS che restano (col timbro KO sopra se va KO in un
    * colpo); a destra il risultato grande; in fondo i consigli.
    */
-  const line = (className: string, title: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode) => (
+  const line = (className: string, title: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode, chip?: ReactNode) => (
     <div className={`duel-row ${className}`}>
       <span className="duel-title">{title}</span>
+      {chip}
       <span className="duel-label">{label}</span>
       <strong className={`duel-result ${resultClass}`}><span className="duel-big">{big}</span><span className="duel-unit">{unit}</span></strong>
       <span className="duel-sub">{sub}</span>
@@ -218,14 +251,19 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const hitLine = (kind: 'mine' | 'theirs', base: DuelHit | null) => {
     const title = <><Icon name={kind === 'mine' ? 'sword' : 'shield'} /><span className="duel-title-text">{t(kind === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}</span></>;
     const tips = kind === 'mine'
-      ? tipsLine([moveTip ? gameName('move', moveTip.move, lang) : null, result?.atkTip ? evParts(result.atkTip) : null], [moveText, evText(result?.atkTip ?? null)])
+      ? tipsLine([
+        moveTip ? gameName('move', moveTip.move, lang) : null,
+        result?.atkTip ? evParts(result.atkTip) : null,
+        speed?.tip ? t('editor.duelTipEvShort', { n: speed.tip.evs, stat: statShort('spe', lang) }) : null,
+      ], [moveText, evText(result?.atkTip ?? null), speedTip])
       : tipsLine([result?.defTip ? evParts(result.defTip) : null], [evText(result?.defTip ?? null)]);
+    const chip = speedChip(kind);
     const list = kind === 'mine' ? buffs?.attack : buffs?.defense;
     const effect = effectOf(list);
     // Coi potenziamenti accesi il colpo si ricalcola (tuo su di lui, o suo su di te)
     const hit = effect && opp ? (kind === 'mine' ? buffedHit(me, opp, effect) : buffedHit(opp, me, effect)) : base;
-    const toggles = buffToggles(list);
-    if (!hit) return line(kind, title, <><span className="duel-none">{t('editor.duelNoMove')}</span>{toggles}</>, '—', '', 'none', null, tips);
+    const toggles = <>{buffToggles(list)}{buffToggles(speedOnly(kind === 'theirs'))}</>;
+    if (!hit) return line(kind, title, <><span className="duel-none">{t('editor.duelNoMove')}</span>{toggles}</>, '—', '', 'none', null, tips, chip);
     const { big, unit } = hitsParts(hit);
     const left = Math.max(0, 100 - Math.round(hit.max * 100));
     const tone = left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
@@ -240,7 +278,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
       </>
     );
     const ko = hit.hitsSure === 1 ? (kind === 'mine' ? 'good' : 'bad') : 'plain';
-    return line(kind, title, <><MovePill name={hit.move} size="sm" className="duel-mvp" />{toggles}</>, big, unit, ko, sub, tips);
+    return line(kind, title, <><MovePill name={hit.move} size="sm" className="duel-mvp" />{toggles}</>, big, unit, ko, sub, tips, chip);
   };
 
   return (
