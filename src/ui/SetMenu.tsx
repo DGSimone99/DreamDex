@@ -84,7 +84,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
   const nameRef = useRef<HTMLInputElement>(null);
   const pop = useRef<HTMLDivElement>(null);
   // Sotto il pulsante, allineato a destra; sopra se sotto non c'è posto, sempre dentro la finestra
-  useAnchoredPop(button, pop, open, { width: 410, align: 'end', gap: 6 });
+  useAnchoredPop(button, pop, open, { width: 410, align: 'end', gap: 6, sheet: true, onDismiss: () => close(false) });
   const id = useId();
   const tabId = (which: Tab) => `${id}-tab-${which}`;
   const panelId = `${id}-panel`;

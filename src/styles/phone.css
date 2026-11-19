@@ -456,3 +456,143 @@
   .band:has(.fill-panel, .team-head details[open]) .band-toggle { visibility: hidden; }
   .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: var(--sp-4); }
 }
+
+/* ── Editor sul telefono (2026-11-19): tre schede sotto la testata ferma ────────────────────────────────── */
+/* I riquadri non si allargano oltre lo schermo per il loro contenuto (i fieldset di base non scendono sotto il contenuto) */
+.set-editor fieldset { min-inline-size: 0; }
+@media (max-width: 599px) {
+  /* La testata intera (nome, tipi, Set, copia, chiudi e le schede) resta ferma in alto mentre la scheda scorre */
+  .drawer .set-editor .editor-head { display: block; position: sticky; top: -12px; z-index: 6; margin: -12px -14px 0; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
+  .drawer .set-editor .editor-top { position: static; margin: 0; border-bottom: 0; flex-wrap: wrap; row-gap: var(--sp-4); column-gap: var(--sp-4); padding: var(--sp-5) var(--sp-6) var(--sp-4); }
+  /* Riga 1: nome (intero, si rimpicciolisce), tipi e shiny; riga 2: Set largo, copia e chiudi */
+  .set-editor .editor-title { flex: 1 1 100%; flex-wrap: wrap; row-gap: var(--sp-2); margin-right: 0; }
+  .set-editor .editor-title .nickname strong { font-size: 22px; }
+  /* Riga 1 nome e shiny, riga 2 i tipi (a sinistra sotto il nome): un nome lungo non spinge fuori i tipi né lo shiny */
+  .set-editor .editor-title > .types { order: 3; flex-basis: 100%; }
+  .set-editor .editor-title .types .type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); }
+  .set-editor .editor-title .shiny-toggle { width: 40px; height: 40px; }
+  .set-editor .editor-actions { flex: 1 1 100%; margin-left: 0; flex-wrap: nowrap; }
+  .set-editor .editor-actions .set-menu { flex: 1; min-width: 0; }
+  .set-editor .editor-actions .set-menu-button { width: 100%; height: 44px; }
+  .set-editor .editor-actions .set-menu-current { flex: 1; max-width: none; text-align: left; }
+  .set-editor .editor-actions :is(.member-copy, .editor-close) { width: 44px; height: 44px; }
+  .set-editor .editor-tera { flex: 1 1 100%; }
+  /* Le schede: tre linguette larghe uguali, quella aperta sottolineata nel ciano del lavoro */
+  .editor-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-top: 1px solid var(--line-soft); }
+  .editor-tabs [role='tab'] { height: 44px; padding: 0; border: 0; border-radius: 0; background: none; font: 600 var(--fs-section)/1 var(--display); color: var(--muted); justify-content: center; }
+  .editor-tabs [role='tab'][aria-selected='true'] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .editor-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* Una scheda alla volta */
+  .set-editor[data-tab='set'] .stats-cell, .set-editor[data-tab='set'] .editor-side > .duel { display: none; }
+  .set-editor[data-tab='stats'] .editor-side, .set-editor[data-tab='stats'] .editor-foot { display: none; }
+  .set-editor[data-tab='duel'] .stats-cell, .set-editor[data-tab='duel'] .set-box, .set-editor[data-tab='duel'] .editor-foot { display: none; }
+  /* Statistiche a tutta larghezza: nome, freccia, valore, EV, IV (i cursori non ci sono: gli EV si scrivono) */
+  .set-editor .stat-row { grid-template-columns: minmax(0, 1fr) 14px 48px 64px 48px; gap: var(--sp-4); padding: var(--sp-2) var(--sp-3); }
+  .set-editor .stat-row :is(.ev-input, .iv-input) { height: 40px; font-size: var(--fs-section); }
+  /* Intestazione: EV e il totale sopra valore e casella degli EV, IV sopra gli IV (la terza cella vuota non serve) */
+  .set-editor .stat-head > span:nth-child(3) { display: none; }
+  .set-editor .stat-head .ev-total { grid-column: 3 / 5; grid-template-columns: minmax(0, 1fr) auto; }
+  .set-editor .stat-head .ev-total .ev-used { grid-column: 2; }
+  .set-editor .stat-head .ev-total .ev-head { grid-column: 1; justify-self: start; }
+  /* Il riquadro non si allarga per il contenuto: la colonna si ferma alla larghezza dello schermo */
+  .set-editor .stats-cell, .set-editor .evs { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  /* La riga della Velocità: la frase va a capo, il rimando (che apre la lista con un tocco sulla frase) non serve */
+  .set-editor .speed-line { flex-wrap: wrap; }
+  .set-editor .speed-line-hint { display: none; }
+  /* Sfida in colonna: in alto l'avversario (giudizio, nome, ingranaggio) col suo sprite a destra sul fondo del suo tipo,
+     sotto i due colpi a tutta larghezza */
+  .set-editor .duel-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
+  .set-editor .duel-art { inset: 0 0 auto 0; height: 124px; border-radius: 3px 3px 0 0; }
+  .set-editor .duel-art::before { display: none; }
+  .set-editor .duel-art::after { clip-path: none; -webkit-mask-image: linear-gradient(to left, #000 0 30%, transparent 100%); mask-image: linear-gradient(to left, #000 0 30%, transparent 100%); }
+  .set-editor .duel-head { grid-column: 1; grid-row: 1; min-height: 124px; justify-content: center; padding: var(--sp-5) 128px var(--sp-5) var(--sp-6); }
+  .set-editor .duel-verdict { white-space: nowrap; }
+  .set-editor .duel-settings { width: 40px; height: 40px; }
+  .set-editor .duel-stage { left: auto; right: var(--sp-5); top: 14px; bottom: auto; transform: none; }
+  .set-editor .duel-rows { grid-column: 1; grid-row: 2; padding: var(--sp-3) var(--sp-6) var(--sp-5); }
+  .set-editor .duel-buff { height: 32px; }
+}
+
+/* ── Fogli dal basso sul telefono (tendine, menu Set, Spread, Impostazioni della Sfida) ─────────────────── */
+@media (max-width: 599px) {
+  /* Posto, larghezza e altezza da useAnchoredPop (sopra la tastiera, tre quarti dello schermo al massimo) */
+  [popover][data-sheet] { box-sizing: border-box; border: 1px solid var(--line); border-bottom: 0; border-radius: 14px 14px 0 0;
+    padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom)); background: var(--ground); color: var(--text);
+    /* L'ombra enorme fa da sfondo scuro su tutto il resto dello schermo */
+    box-shadow: 0 0 0 100vmax rgb(4 5 9 / 0.62), 0 -14px 36px rgba(0, 0, 0, 0.55); overflow-y: auto; overscroll-behavior: contain; animation: sheet-up 0.22s var(--ease); }
+  /* La maniglia in cima: dice che è un foglio */
+  [popover][data-sheet]::before { content: ''; display: block; width: 40px; height: 4px; margin: var(--sp-3) auto var(--sp-2); border-radius: 2px; background: var(--control-line); }
+  .combo-sheet { display: flex; flex-direction: column; overflow: hidden; }
+  .combo-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: 0 var(--sp-3) 0 var(--sp-7);
+    font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .combo-sheet-close { width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; color: var(--muted); }
+  .combo-sheet-search { flex: none; margin: var(--sp-2) var(--sp-6) var(--sp-4); height: 44px; font-size: 16px; }
+  .combo-sheet > ul[role='listbox'][id] { position: static; inset: auto; flex: 1; min-height: 0; width: auto; max-height: none; margin: 0; padding: 0 var(--sp-4) var(--sp-2);
+    overflow-y: auto; overscroll-behavior: contain; border: 0; border-radius: 0; background: none; box-shadow: none; animation: none; clip-path: none; }
+  .combo-sheet [role='option'] { display: flex; flex-direction: column; justify-content: center; min-height: 48px; }
+  .combo-sheet .option-footer { position: static; margin: 0; }
+  /* Menu Set e Impostazioni della Sfida dentro il foglio: niente bordo e ombra loro */
+  .set-menu-pop[data-sheet], .duel-settings-pop[data-sheet], .spread-presets[data-sheet] { min-width: 0; max-width: none; }
+  .set-menu-pop[data-sheet] .set-menu-body { max-height: none; }
+  .set-menu-pop[data-sheet] .set-menu-row { min-height: 52px; }
+  .spread-presets[data-sheet] button { min-height: 48px; }
+}
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [popover][data-sheet] { animation: none; } }
+
+/* ── Team sul telefono (2026-11-19) ─────────────────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+  /* Riga 1: la targa del team e la guida (l'azione principale); riga 2: team salvati e scorciatoie a icona (il nome
+     resta per i lettori di schermo e nel tooltip), bersagli da dito */
+  .team-head .team-guide-slot { order: 1; }
+  .team-head .team-saved { order: 2; }
+  .team-head .team-quick { order: 3; flex: 1 1 auto; justify-content: flex-start; gap: var(--sp-3); }
+  .team-head .team-quick::before { display: none; }
+  .team-head :is(.team-saved, .team-quick) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .team-head :is(.team-saved, .team-quick) :is(.team-action, .popover > summary) { width: 44px; height: 40px; padding: 0; justify-content: center; }
+  .team-head .team-saved .saved-count { display: none; }
+  .team-head .team-plate, .team-head .team-guide { height: 40px; }
+}
+/* L'avviso con Annulla sotto i 1100 px: una striscia di una riga (frase, Annulla, ×) sopra la barra delle sezioni,
+   non un riquadro grande in mezzo allo schermo */
+@media (max-width: 1099px) {
+  .undo-toast { display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) 44px var(--sp-4) var(--sp-6); }
+  .undo-toast .undo-text { flex: 1; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .undo-toast .undo-actions { margin-top: 0; flex: none; }
+  .undo-toast .undo-button { min-height: 40px; }
+  .undo-toast .undo-close { top: 50%; translate: 0 -50%; width: 40px; height: 40px; display: grid; place-items: center; right: 2px; }
+  .done-toast { padding: var(--sp-5) 44px var(--sp-5) var(--sp-6); }
+}
+/* Barra in alto sul telefono: gioco e formato su una riga sola (il nome lungo finisce coi puntini, intero nel menu) */
+@media (max-width: 599px) {
+  .rail :is(.game-card, .format-card) .format-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-caption); }
+  /* Il gioco largo quanto il suo nome (al massimo un terzo), il formato prende il resto */
+  .rail button.game-card { flex: 0 1 auto; max-width: 34%; }
+  .rail .game-card > .format-summary { padding: 0 var(--sp-4); }
+  .rail .popover.format-card { flex: 1 1 0; }
+  .rail .format-card .format-tier { padding: 0 var(--sp-4); }
+  .rail .rail-foot .lang-switch button { padding: 0 var(--sp-3); }
+  .rail { gap: var(--sp-3); }
+}
+/* Editor col dito (telefono, tablet, telefono girato): campi e pulsanti alti 44 px, i numeri degli EV e IV 40 */
+@media (pointer: coarse) and (max-width: 1099px) {
+  .set-editor { --plate-h: 44px; }
+  .set-editor .move-combo { --mvp-h: 44px; --mvp-r: 12px; --mvp-cut: 13px; }
+  .set-editor .editor-actions :is(.member-copy, .editor-close) { width: 44px; height: 44px; }
+  .set-editor .editor-actions .set-menu-button { height: 44px; }
+  .set-editor .shiny-toggle { width: 40px; height: 40px; }
+  .set-editor .spread-toggle { height: 32px; }
+  .set-editor .stat-row :is(.ev-input, .iv-input) { height: 40px; }
+  .set-editor .custom-toggle { min-height: 40px; }
+  .set-editor .editor-tera .combobox input { height: 44px; }
+  .band:not(.collapsed) .grade-badge button.grade-area { min-height: 32px; }
+  .band .team-head :is(.team-action, .team-guide, .popover > summary, .export-main, .export-link) { min-height: 40px; }
+  .band .grade-badge .help-button { width: 36px; height: 36px; }
+  .set-editor .duel-settings { width: 40px; height: 40px; }
+  .set-editor .duel-buff { height: 32px; }
+  .set-editor .duel-species input { height: 40px; }
+}
+/* Telefono: il titolo dei riquadri ripete la scheda aperta; la fascia resta (ci stanno Spread e Custom Skillset), la scritta no */
+@media (max-width: 599px) {
+  .set-editor[data-tab] fieldset > legend:not(.visually-hidden) { color: transparent; }
+}

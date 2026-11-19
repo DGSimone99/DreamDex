@@ -93,21 +93,32 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     const root = settingsRoot.current;
     const input = root?.querySelector<HTMLInputElement>('.duel-species input');
     if (!root || !input) return;
+    // Il testo si misura a parte (un campo che si adatta al contenuto non dice quando il testo esce): lo spazio è quello
+    // della riga del nome meno sesso, ingranaggio e i margini interni del campo
+    const canvas = document.createElement('canvas').getContext('2d');
     const fit = () => {
       input.style.fontSize = '';
-      let size = parseFloat(getComputedStyle(input).fontSize);
-      while (input.scrollWidth > input.clientWidth && size > 13) {
-        size -= 0.5;
-        input.style.fontSize = `${size}px`;
-      }
+      if (!canvas || !input.value) return;
+      const cs = getComputedStyle(input);
+      const others = [...root.children].filter(child => !child.contains(input))
+        .reduce((sum, child) => sum + (child as HTMLElement).getBoundingClientRect().width, 0);
+      const gap = parseFloat(getComputedStyle(root).columnGap) || 0;
+      const room = root.clientWidth - others - gap * (root.children.length - 1) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;
+      if (room <= 0) return;
+      let size = parseFloat(cs.fontSize);
+      const width = (px: number) => { canvas.font = `${cs.fontStyle} ${cs.fontWeight} ${px}px ${cs.fontFamily}`; return canvas.measureText(input.value).width; };
+      while (width(size) > room && size > 13) size -= 0.5;
+      if (size !== parseFloat(cs.fontSize)) input.style.fontSize = `${size}px`;
     };
     fit();
     const watch = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
     watch?.observe(root);
+    // Anche quando la Sfida torna visibile (sul telefono sta in una scheda): da nascosta non si può misurare
+    watch?.observe(input);
     return () => watch?.disconnect();
   });
   // Sotto il nome, allineato a sinistra; sopra se sotto non c'è posto (la Sfida sta in fondo al cassetto), sempre nella finestra
-  useAnchoredPop(settingsRoot, settingsPop, settingsOpen, { width: 320, gap: 6 });
+  useAnchoredPop(settingsRoot, settingsPop, settingsOpen, { width: 320, gap: 6, sheet: true, onDismiss: () => setSettingsOpen(false) });
   const settingsId = useId();
   // Passando sullo sprite dell'avversario, la carta del suo set (come sulle carte del team)
   const memberTip = useMemberTip(250, undefined, true);
