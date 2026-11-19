@@ -85,10 +85,10 @@ describe('editor del set', () => {
     expect(within(head).queryByRole('button', { name: 'Preset migliore' })).toBeNull();
     expect(within(head).queryByRole('button', { name: 'Testo del set' })).toBeNull();
     const actions = [...head.querySelectorAll<HTMLElement>('.editor-actions button')].map(b => b.getAttribute('aria-label') ?? b.textContent);
-    expect(actions).toEqual(['Set', 'Copia il set', 'Chiudi editor']);
+    expect(actions).toEqual(['Set:Personalizzato', 'Copia il set', 'Chiudi editor']);
     const custom = within(slot).getByRole('checkbox', { name: /Custom Skillset/ });
     expect(head).not.toContainElement(custom);
-    expect(within(slot).getByRole('group', { name: 'Mosse' })).toContainElement(custom);
+    expect(within(slot).getByRole('group', { name: 'Set' })).toContainElement(custom);
   });
 
   it('I miei set: salva il set attuale, lo riapplica, al massimo 5 per specie', async () => {
@@ -97,7 +97,7 @@ describe('editor del set', () => {
     const slot = await openFirst(user, container);
     // Salva come… nel menu Set: il campo del nome e il salvataggio
     const saveNow = async () => {
-      if (!within(slot).queryByRole('dialog', { name: 'Set' })) await user.click(within(slot).getByRole('button', { name: 'Set' }));
+      if (!within(slot).queryByRole('dialog', { name: 'Set' })) await user.click(within(slot).getByRole('button', { name: /^Set:/ }));
       const menu = within(slot).getByRole('dialog', { name: 'Set' });
       if (!within(menu).queryByLabelText('Nome del set')) await user.click(within(menu).getByRole('button', { name: 'Salva come…' }));
       return within(menu).getByRole('button', { name: /Salva in I miei set|Set salvato/ });
@@ -108,7 +108,7 @@ describe('editor del set', () => {
     // Cambio un campo: il preset non è più quello, poi riapplico il set salvato
     await user.clear(within(slot).getByLabelText('Mossa 1'));
     await user.type(within(slot).getByLabelText('Mossa 1'), 'Earthquake{Enter}');
-    await user.click(within(slot).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot).getByRole('tab', { name: /I miei set/ }));
     await user.click(within(screen.getByRole('list', { name: 'I miei set: opzioni' })).getByRole('button', { name: /^Set 1/ }));
     expect(within(slot).getByLabelText('Mossa 1')).toHaveValue(tusk.moves[0]);

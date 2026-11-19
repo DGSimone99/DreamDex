@@ -25,7 +25,7 @@ const setMove = async (user: ReturnType<typeof userEvent.setup>, slot: HTMLEleme
 
 /** Apre il menu Set; con `save` anche il campo di Salva come… (nella scheda I miei set). */
 async function openSetMenu(user: ReturnType<typeof userEvent.setup>, slot: HTMLElement, save = false) {
-  if (!within(slot).queryByRole('dialog', { name: 'Set' })) await user.click(within(slot).getByRole('button', { name: 'Set' }));
+  if (!within(slot).queryByRole('dialog', { name: 'Set' })) await user.click(within(slot).getByRole('button', { name: /^Set:/ }));
   const menu = within(slot).getByRole('dialog', { name: 'Set' });
   if (save && !within(menu).queryByLabelText('Nome del set')) await user.click(within(menu).getByRole('button', { name: 'Salva come…' }));
   return menu;
@@ -45,6 +45,8 @@ describe('I miei set', () => {
     await user.type(within(menu).getByLabelText('Nome del set'), 'Spinner');
     await user.click(within(menu).getByRole('button', { name: 'Salva in I miei set' }));
     expect(loadMySets()['Great Tusk'].map(s => s.name)).toEqual(['Spinner']);
+    // Il pulsante Set ora dice il nome del set salvato, segnato Custom
+    expect(within(slot).getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Spinner, Custom$/);
   });
 
   it('un nome già usato trasforma il salvataggio in sovrascrittura, annullabile', async () => {
@@ -97,7 +99,7 @@ describe('I miei set', () => {
 describe('menu Set', () => {
   it('Esc chiude il menu e il fuoco torna al pulsante; le schede si cambiano con le frecce', async () => {
     const { user, slot } = await openEditor();
-    const button = within(slot).getByRole('button', { name: 'Set' });
+    const button = within(slot).getByRole('button', { name: /^Set:/ });
     await user.click(button);
     expect(button).toHaveAttribute('aria-expanded', 'true');
     const smogon = within(slot).getByRole('tab', { name: 'Smogon' });

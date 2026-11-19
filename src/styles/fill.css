@@ -230,7 +230,6 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   animation: tip 0.12s var(--ease);
 }
-.set-editor .evs .spread-panel .spread-presets { top: 20px; right: 14px; }
 .spread-presets button {
   grid-column: 1 / -1;
   display: grid;

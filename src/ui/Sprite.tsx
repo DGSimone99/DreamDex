@@ -33,13 +33,28 @@ export function inkFor(hex: string): string {
 export const typeColor = (type: string): string => TYPE_COLORS[type as TypeName] ?? '#8890b0';
 
 /** Il tipo come in Pokémon Champions: tessera con l'icona ufficiale nel colore del tipo, poi il nome su una lastra scura. */
+/**
+ * Nomi dei tipi divisi in corti, medi e lunghi (misurati in maiuscolo, Kanit 700 a 11px), per lingua: nelle carte del
+ * team, quando la larghezza unica non entra, ogni gruppo ha la sua larghezza fissa (team.css, --tw-s/m/l).
+ * Si guarda il nome scritto (inglese o italiano): finché i nomi italiani non sono arrivati vale il gruppo inglese.
+ */
+const TYPE_WIDTH: Record<string, 's' | 'm' | 'l'> = {
+  // Inglese: corti fino a FLYING, medi fino a NORMAL, lunghi ELECTRIC e FIGHTING
+  ice: 's', bug: 's', fire: 's', rock: 's', dark: 's', steel: 's', fairy: 's', grass: 's', ghost: 's', water: 's', flying: 's',
+  poison: 'm', psychic: 'm', dragon: 'm', ground: 'm', normal: 'm', electric: 'l', fighting: 'l',
+  // Italiano: corti fino a ACQUA, medi fino a SPETTRO, lunghi da VOLANTE (COLEOTTERO col suo carattere più piccolo)
+  buio: 's', erba: 's', psico: 's', lotta: 's', terra: 's', fuoco: 's', drago: 's', acqua: 's',
+  roccia: 'm', veleno: 'm', acciaio: 'm', elettro: 'm', spettro: 'm',
+  volante: 'l', ghiaccio: 'l', normale: 'l', folletto: 'l', coleottero: 'l',
+};
+
 export function TypeChip({ type }: { type: string }) {
   const lang = useLang();
   const label = typeName(type, lang);
   const icon = typeIconUrl(type);
   // Tutti larghi uguali (il nome più lungo), così si allineano in colonna; "Coleottero" ha le lettere più piccole per starci
   return (
-    <span className={`type-chip${label.length > 8 ? ' long' : ''}`} style={{ '--chip': typeColor(type) } as CSSProperties}>
+    <span className={`type-chip tw-${TYPE_WIDTH[label.toLowerCase()] ?? 's'}${label.length > 8 ? ' long' : ''}`} style={{ '--chip': typeColor(type) } as CSSProperties}>
       <i aria-hidden="true">{icon && <img src={icon} alt="" draggable={false} />}</i>
       <span>{label}</span>
     </span>

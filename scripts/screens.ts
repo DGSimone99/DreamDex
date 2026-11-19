@@ -567,7 +567,7 @@ const STATES: Record<string, State> = {
     // Mosse, la riga della Velocità e le colonne EV (intestazione sopra barra + numero)
     console.log(await p.evaluate(() => {
       const [card, ptr, drawer, tog, leg, head, slider, evIn, speed, roles] = ['.slot.open > .slot-card', '.slot-pointer', '.slot.open .drawer',
-        '.slot.open .moves > .custom-toggle', '.slot.open .moves > legend', '.slot.open .stat-head-ev', '.slot.open .stat-row:not(.stat-head) .ev-slider',
+        '.slot.open .set-box > .custom-toggle', '.slot.open .set-box > legend', '.slot.open .stat-head-ev', '.slot.open .stat-row:not(.stat-head) .ev-slider',
         '.slot.open .stat-row:not(.stat-head) .ev-input', '.slot.open .speed-line', '.slot.open .editor-foot'].map(q => document.querySelector(q)?.getBoundingClientRect());
       const cut = [...document.querySelectorAll<HTMLElement>('.slot.open .set-plate')].map(pl => {
         const label = pl.querySelector('.field-label')?.textContent;
@@ -582,6 +582,17 @@ const STATES: Record<string, State> = {
   } },
   // Annulla dopo un preset applicato dal menu Set: l'avviso non deve coprire i comandi dell'editor (stampa le sovrapposizioni)
   // La Sfida contro Gholdengo (col set più usato c'è un consiglio di EV piccolo)
+  // Gen 9 OU: la Tera nella testata dell'editor, accanto a nome e tipi
+  'editor-gen9': { hash: hashWith(TEAM, { formatId: 'gen9ou' }), run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(500);
+    console.log(await p.evaluate(() => {
+      const [tera, title, acts] = ['.slot.open .editor-tera', '.slot.open .editor-title', '.slot.open .editor-actions'].map(q => document.querySelector(q)?.getBoundingClientRect());
+      const drawer = document.querySelector('.slot.open .drawer');
+      return `tera=${tera ? `${Math.round(tera.left)}-${Math.round(tera.right)} h${Math.round(tera.height)}` : 'none'} titleR=${Math.round(title?.right ?? 0)} actsL=${Math.round(acts?.left ?? 0)} drawerOver=${drawer ? drawer.scrollHeight - drawer.clientHeight : -1}`;
+    }));
+    return true;
+  } },
   'editor-duel': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(500);
@@ -642,7 +653,7 @@ const STATES: Record<string, State> = {
     await hp.type('252');
     await p.keyboard.press('Tab');
     await wait(400);
-    console.log(`evOver=${await p.evaluate(() => { const e = document.querySelector('.ev-total.over'); const t = document.querySelector('.stats-toolbar'); return e ? `${e.textContent} toolbarH=${Math.round(t!.getBoundingClientRect().height)} cut=${(e.querySelector('.ev-left') as HTMLElement).scrollWidth > (e.querySelector('.ev-left') as HTMLElement).clientWidth} note=${!!document.querySelector('.drawer .member-problems')}` : 'none'; })}`);
+    console.log(`evOver=${await p.evaluate(() => { const e = document.querySelector('.ev-total.over'); const t = document.querySelector('.stat-head'); return e ? `${e.textContent} toolbarH=${Math.round(t!.getBoundingClientRect().height)} cut=${(e.querySelector('.ev-left') as HTMLElement).scrollWidth > (e.querySelector('.ev-left') as HTMLElement).clientWidth} note=${!!document.querySelector('.drawer .member-problems')}` : 'none'; })}`);
     return true;
   } },
   // La riga "Più veloce del X% del meta" sotto le statistiche col mouse sopra: il tooltip di Analisi › Velocità
@@ -1024,6 +1035,21 @@ const STATES: Record<string, State> = {
   'editor-long': { hash: hash(LONG), run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Urshifu/)) return 'no card'; await wait(600); return true; } },
   // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu Set aperto e il riquadro del testo del set
   'editor-head': { run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card'; await wait(600); return editorHead(p); } },
+  // Il pulsante Set dopo aver scelto il primo preset Smogon: "SET  <nome>  SMOGON"
+  'editor-preset-applied': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    if (!await clickText(p, '.slot.open .set-menu-row', /./)) return 'no preset';
+    await wait(500);
+    console.log(await p.evaluate(() => {
+      const b = document.querySelector<HTMLElement>('.slot.open .set-menu-button');
+      const cur = b?.querySelector<HTMLElement>('.set-menu-current');
+      return `setButton="${b?.textContent}" w=${Math.round(b?.getBoundingClientRect().width ?? 0)} nameCut=${cur ? cur.scrollWidth - cur.clientWidth : -1}`;
+    }));
+    return true;
+  } },
   'editor-presets': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
     await wait(600);

@@ -82,11 +82,12 @@ describe('spread pronti sopra gli EV', () => {
     }
     const user = userEvent.setup();
     renderIt(<Editor />);
-    // Chiuso di norma; il titolo dice quale spread noto stai usando
-    const panel = screen.getByText('Spread più usati').closest('details')!;
+    // Chiuso di norma, sulla fascia delle Statistiche; dice quale degli spread più usati stai usando
+    const panel = document.querySelector<HTMLElement>('.evs > details.spread-panel')!;
     expect(panel).not.toHaveAttribute('open');
-    // Da chiuso solo il titolo, senza lo spread scelto
-    expect(panel.querySelector('summary')).toHaveTextContent(/^Spread più usati$/);
+    // Per esteso "Il più usato"; nel riquadro stretto la forma corta "1°" (l'altra resta nascosta)
+    expect(panel.querySelector('summary .sp-wide')).toHaveTextContent(/^Il più usato$/);
+    expect(panel.querySelector('summary')).toHaveTextContent(/· 32%$/);
     await user.click(panel.querySelector('summary')!);
     expect(panel).toHaveAttribute('open');
     const group = screen.getByRole('group', { name: 'Spread più usati' });

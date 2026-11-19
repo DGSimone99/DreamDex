@@ -68,9 +68,6 @@
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-7); }
 .set-editor .field-note { font-size: var(--fs-label); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .set-editor .evs { position: relative; display: grid; gap: var(--sp-5); align-self: stretch; align-content: start; }
-/* "Spread più usati" sulla riga del titolo EV: non ruba una riga al blocco */
-.set-editor .evs .spread-panel > summary { position: absolute; top: 6px; right: 14px; }
-.set-editor .evs .spread-panel { display: contents; }
 /*
  * Righe delle statistiche come il riepilogo di Champions: icona e nome, la freccetta della natura accanto al numero, il
  * valore della statistica grande (dove prima stava la base), poi la barra degli EV, il numero degli EV e gli IV.
@@ -85,8 +82,12 @@
 /* Intestazione: STATS sopra il valore, EV sopra barra e numero insieme, IV sopra il suo campo */
 .stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .stat-row.stat-head:hover { background: none; }
+/* L'intestazione sta sopra le righe: i fumetti di EV e IV coprono le righe sotto, non il contrario */
+.stat-row.stat-head { position: relative; z-index: 3; }
 .stat-head-value { text-align: right; }
 .stat-head-ev { grid-column: span 2; text-align: center; }
+/* Il valore e la barra: un po' d'aria fra il numero grande e l'inizio della barra */
+.stat-row:not(.stat-head) .ev-slider { margin-left: var(--sp-4); width: calc(100% - var(--sp-4)); }
 .stat-head-num { text-align: center; }
 .set-editor .iv-input { height: 28px; padding: var(--sp-1) var(--sp-2); text-align: center; font-variant-numeric: tabular-nums; }
 .set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-body)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
@@ -138,11 +139,15 @@
 /* Le caselle EV e IV: fondo scuro, bordo appena visibile che si accende sulla riga attiva e scrivendo */
 .stat-row .ev-input, .stat-row .iv-input { background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--line); transition: border-color 0.15s var(--ease); }
 .stat-row:is(:hover, :focus-within) :is(.ev-input, .iv-input) { border-color: var(--control-line); }
+/* EV a 0 spenti; IV a 31 senza casella (solo il numero, tenue): la casella torna sulla riga attiva */
+.set-editor .stat-row .ev-input.zero:not(:focus) { color: var(--faint); }
+.stat-row .iv-input.max { background: transparent; border-color: transparent; color: var(--faint); }
+.stat-row:is(:hover, :focus-within) .iv-input.max { border-color: var(--line); color: var(--muted); }
 .stat-row :is(.ev-input, .iv-input):focus { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .stat-row:not(.stat-head), .stat-row:not(.stat-head)::before, .ev-slider::-webkit-slider-thumb, .ev-slider::-moz-range-thumb { transition: none; }
 }
-.set-editor .ev-input { height: 28px; padding: var(--sp-1) var(--sp-4); font-variant-numeric: tabular-nums; text-align: right; }
+.set-editor .ev-input { height: 28px; padding: var(--sp-1) var(--sp-4); font-variant-numeric: tabular-nums; text-align: center; }
 /* Il valore della statistica: grande, al livello 100; verde o rosso secondo la natura */
 .stat-final { font: 700 var(--fs-headline)/1 var(--display); text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
 .stat-row.nature-up .stat-final { color: var(--good); }
@@ -155,42 +160,44 @@
 .speed-line-anchor:hover, .speed-line-anchor:focus-visible { color: var(--text); }
 .speed-line-anchor:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .speed-line-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); color: var(--muted); }
-/* EV usati nella fascia in alto del blocco: etichetta, barra, 508 / 510 e quanti ne restano, tutto di seguito */
+/* EV usati nell'intestazione, sopra la colonna degli EV (barra e numero): EV, barra lunga quanto i cursori, 508 / 510 e
+   quanti ne restano. Oltre il massimo la barra lascia il posto al messaggio */
+.stat-head .ev-total { display: grid; grid-column: 4 / 6; grid-template-columns: auto minmax(0, 1fr) auto 58px; align-items: center; column-gap: var(--sp-4);
+  margin: 0 0 0 var(--sp-4); padding: 0; text-transform: none; letter-spacing: 0; font-weight: 400; }
+/* Le colonne dell'intestazione cadono su quelle delle righe: EV e barra sopra i cursori, "2 liberi" alla fine della barra,
+   508 / 510 al centro sopra le caselle degli EV (l'ultima colonna è larga quanto loro) */
+.stat-head .ev-total .ev-used { grid-column: 4; grid-row: 1; justify-self: center; }
+.stat-head .ev-total.over .ev-left { grid-column: 2 / 4; justify-self: start; }
+.stat-head .ev-total strong { font-size: var(--fs-section); }
+.stat-head .ev-total .ev-head { font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .ev-total { display: flex; align-items: center; gap: var(--sp-4); margin: 0 0 0 var(--sp-3); font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ev-total strong { font: 700 var(--fs-title-s)/1 var(--display); color: var(--text); }
 .ev-total .ev-used { display: inline-flex; align-items: baseline; gap: var(--sp-1); }
-.ev-meter { width: 90px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
-.ev-meter > span { display: block; height: 100%; background: var(--accent); }
 .ev-total .ev-left { color: var(--faint); }
 .ev-total.over strong, .ev-total.over .ev-left { color: var(--bad); }
-.ev-total.over .ev-meter > span { background: var(--bad); }
 /* Oltre il massimo la barretta lascia il posto al messaggio (590 / 510 · 80 di troppo: voto bloccato) */
-.ev-total.over .ev-meter { display: none; }
 .ev-total { min-width: 0; }
 .ev-total .ev-left { overflow: hidden; text-overflow: ellipsis; }
-/* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
-.spread-panel > summary {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--sp-5);
-  padding: var(--sp-1) 0;
-  font: 600 var(--fs-caption)/1.2 var(--display);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.spread-panel > summary::after {
-  content: '';
-  align-self: center;
-  width: 6px;
-  height: 6px;
-  border: solid var(--accent);
-  border-width: 0 1.5px 1.5px 0;
-  transform: translateY(-2px) rotate(45deg);
-  transition: transform 0.2s var(--ease);
-}
-.spread-panel[open] > summary::after { transform: translateY(1px) rotate(225deg); }
-.spread-panel > summary:hover { color: var(--text); }
+/* Spread sulla fascia delle Statistiche, a destra, come Custom Skillset su quella del Set: "Spread 2° · 14% ▾", piccolo;
+   l'elenco si apre sotto, allineato a destra. (La fascia sta 25px sopra il primo contenuto del riquadro) */
+/* Alta e in riga quanto la fascia (il riquadro di un fieldset parte sotto la legenda: -25px è la cima della fascia) */
+.set-editor .evs > .spread-panel { position: absolute; z-index: 3; top: -25px; right: var(--sp-9); }
+.spread-toggle { list-style: none; display: inline-flex; align-items: stretch; gap: var(--sp-3); height: 23px; margin-top: 1px; padding: 0 var(--sp-5) 0 0; overflow: hidden; cursor: pointer;
+  white-space: nowrap; font: 600 var(--fs-caption)/1 var(--display); color: var(--text); border-radius: 9px 2px 9px 2px;
+  background: linear-gradient(90deg, var(--raised), var(--panel)); box-shadow: inset 0 0 0 1px var(--control-line); }
+.spread-toggle::-webkit-details-marker { display: none; }
+/* La testa SPREAD come quella delle targhette (chiara, tagliata in diagonale) */
+.spread-toggle .spread-name { display: flex; align-items: center; padding: 0 calc(var(--sp-5) + 3px) 0 var(--sp-4); background: var(--plate-head);
+  font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.spread-toggle .spread-value { align-self: center; font-variant-numeric: tabular-nums; }
+.spread-toggle::after { content: ''; align-self: center; width: 6px; height: 6px; margin: -3px 0 0 var(--sp-1); border: solid var(--muted); border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg); transition: transform 0.2s var(--ease); }
+.spread-panel[open] > .spread-toggle::after { margin-top: 3px; transform: rotate(225deg); }
+.spread-toggle:hover { box-shadow: inset 0 0 0 1px var(--muted); }
+.spread-panel[open] > .spread-toggle { box-shadow: inset 0 0 0 1px var(--accent); }
+.spread-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+
 
 /*
  * Strumento, abilità, natura e tera come lastre di Pokémon Champions: l'etichetta sta nella testa della lastra, più chiara e
@@ -244,8 +251,25 @@
  * set), Copia il set e Chiudi. Il pulsante Set è un pulsante pieno (angoli alterni), aperto ha il bordo ciano.
  */
 .set-menu { position: relative; display: flex; }
-.set-menu-button { height: 36px; gap: var(--sp-4); padding: 0 var(--sp-7) 0 var(--sp-8); font: 600 var(--fs-section)/1 var(--display);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 80%, white), var(--raised)); }
+/*
+ * Il pulsante Set ha il disegno della pillola delle mosse (move-pill.css): testa chiara "SET" tagliata a "/", il nome sul
+ * corpo che sfuma nel nero, coda chiara tagliata a "/" con la provenienza (SMOGON in ciano, CUSTOM neutra) e la freccia.
+ * Angoli alternati come le pillole: tondi in alto a sinistra e in basso a destra.
+ */
+.set-menu-button { --sm-cut: 11px; --sm-r: 10px; --sm-q: 3px; height: 36px; gap: 0; padding: 0; overflow: hidden;
+  border-color: var(--line); border-radius: var(--sm-r) var(--sm-q) var(--sm-r) var(--sm-q);
+  background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); font: 600 var(--fs-section)/1 var(--display); }
+.set-menu-button:hover { border-color: var(--control-line); }
+.set-menu-label, .set-menu-tail { align-self: stretch; display: flex; align-items: center;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 80%, white), var(--raised) 60%); }
+.set-menu-label { padding: 0 calc(var(--sm-cut) + var(--sp-4)) 0 var(--sp-5); clip-path: polygon(0 0, 100% 0, calc(100% - var(--sm-cut)) 100%, 0 100%);
+  font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
+.set-menu-current { max-width: 220px; padding: 0 var(--sp-5) 0 var(--sp-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.set-menu-tail { gap: var(--sp-3); margin-left: calc(var(--sm-cut) * -0.5); padding: 0 var(--sp-5) 0 calc(var(--sm-cut) + var(--sp-3));
+  clip-path: polygon(var(--sm-cut) 0, 100% 0, 100% 100%, 0 100%); }
+.set-menu-source { font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
+.set-menu-tail.smogon { background: linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 85%, white 6%), var(--accent-wash) 70%); }
+.set-menu-tail.smogon .set-menu-source { color: var(--accent-ink); }
 .set-menu-button .icon { width: 14px; height: 14px; color: var(--muted); transition: transform 0.2s var(--ease); }
 .set-menu-button[aria-expanded='true'] { border-color: var(--accent); }
 .set-menu-button[aria-expanded='true'] .icon { transform: rotate(180deg); }
@@ -312,18 +336,111 @@
 .set-menu-foot .smogon-link .icon { width: 13px; height: 13px; }
 .set-menu-foot .smogon-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-/* Custom Skillset a destra nella fascia delle Mosse, alla sua altezza; cosa fa lo dice il fumetto */
-.set-editor .editor-group.moves { position: relative; }
-/* (Il riquadro di un fieldset parte sotto la legenda: -25px la riporta all'altezza della fascia) */
-.set-editor .moves > .custom-toggle { position: absolute; top: -25px; right: var(--sp-7); z-index: 2; flex-direction: row; align-items: center; gap: var(--sp-4); height: 25px;
+/* Set: Strumento e Abilità, poi le quattro mosse, in un solo riquadro */
+.set-editor .editor-group.set-box { position: relative; grid-template-columns: minmax(0, 1fr); row-gap: var(--sp-5); }
+/* Custom Skillset a destra nella fascia del Set, alla sua altezza; cosa fa lo dice il fumetto.
+   (Il riquadro di un fieldset parte sotto la legenda: la fascia sta 25px più su del primo contenuto) */
+.set-editor .set-box > .custom-toggle { position: absolute; top: -25px; right: var(--sp-9); z-index: 2; flex-direction: row; align-items: center; gap: var(--sp-4); height: 25px;
   font: 600 var(--fs-caption)/1 var(--display); letter-spacing: 0; text-transform: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
-.set-editor .moves > .custom-toggle.on { color: var(--text); }
-.set-editor .moves > .custom-toggle .hint-bubble { left: auto; right: 0; top: calc(100% + 4px); }
+.set-editor .set-box > .custom-toggle.on { color: var(--text); }
+.set-editor .set-box > .custom-toggle .hint-bubble { left: auto; right: 0; top: calc(100% + 4px); }
 /* Sotto i 1440 px le Statistiche (senza più la colonna della base) cedono un po' di larghezza a Set e Mosse: i valori delle
    lastre ("Capsula energetica") restano interi */
 @media (min-width: 1100px) and (max-width: 1439px) {
   .set-editor { grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr); }
-  /* EV usati e Spread più usati restano su una riga: la barretta più corta */
-  .ev-meter { width: 52px; }
-  .set-editor .evs .stats-toolbar { gap: var(--sp-4); }
 }
+
+/* Tera nella testata, accanto a nome e tipi: una targhetta corta (testa TERA, la pastiglia del tipo) */
+.editor-tera { flex: none; width: 196px; }
+.editor-tera .field-label { padding-right: var(--sp-7); }
+.set-editor .editor-tera .combobox input { height: 32px; }
+.editor-tera .set-plate { height: 32px; }
+/*
+ * Natura sotto le righe delle statistiche, centrata, a rombo come in Champions: le punte < e > ai lati e la testa NATURA
+ * che finisce a "<". Stessi colori delle targhette; cambia solo la forma, perché la natura cambia le statistiche di sopra.
+ * Il filo segue la forma (drop-shadow, non il bordo che il ritaglio taglierebbe).
+ */
+/* Più aria sopra (stacca la natura dalla tabella) che sotto (resta vicina alla riga della Velocità, il piede) */
+.nature-diamond { --nd-tip: 14px; position: relative; display: flex; justify-content: center; margin: var(--sp-8) 0 var(--sp-6); }
+.nature-diamond .set-plate { position: relative; isolation: isolate; width: min(100%, 340px); padding: 0 var(--nd-tip) 0 0; border-radius: 0; box-shadow: none; background: none; }
+/* La forma sta in un livello sotto il contenuto: ritagliare la targhetta taglierebbe anche il menu che si apre */
+.nature-diamond .set-plate::before { content: ''; position: absolute; inset: 0; z-index: -1;
+  clip-path: polygon(var(--nd-tip) 0, calc(100% - var(--nd-tip)) 0, 100% 50%, calc(100% - var(--nd-tip)) 100%, var(--nd-tip) 100%, 0 50%);
+  background: linear-gradient(90deg, var(--raised), var(--fade-end) 60%, var(--raised)); }
+.nature-diamond { filter: drop-shadow(0 0 0.5px var(--control-line)) drop-shadow(0 0 0.5px var(--control-line)); }
+.nature-diamond:hover { filter: drop-shadow(0 0 0.5px var(--text)) drop-shadow(0 0 0.5px var(--control-line)); }
+.nature-diamond:focus-within { filter: none; }
+/* Selezionata: un anello ciano di 2px che segue il rombo (un livello sotto la forma, 2px più largo), non il rettangolo
+   delle altre targhette; il campo non disegna il suo contorno */
+.nature-diamond .set-plate::after { content: ''; position: absolute; inset: -2px; z-index: -2; opacity: 0; background: var(--accent);
+  clip-path: polygon(var(--nd-tip) 0, calc(100% - var(--nd-tip)) 0, 100% 50%, calc(100% - var(--nd-tip)) 100%, var(--nd-tip) 100%, 0 50%); }
+.nature-diamond:focus-within .set-plate::after { opacity: 1; }
+.nature-diamond .set-plate:is(:focus-within, :has(input:focus-visible)) { box-shadow: none; }
+.nature-diamond .combobox input:focus-visible { outline: none; }
+.nature-diamond .set-plate > .field-label { margin: 0; padding: 0 calc(var(--sp-7) + 4px) 0 calc(var(--nd-tip) + var(--sp-3)); border-radius: 0;
+  clip-path: polygon(var(--nd-tip) 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, var(--nd-tip) 100%, 0 50%); }
+.nature-diamond .combobox input { text-align: left; }
+
+/*
+ * Ritmo delle Statistiche: fascia del titolo, 16px d'aria, la tabella (intestazione e righe attaccate), più aria, la
+ * Natura, e il piede della Velocità più alto (36px) così la frase non è schiacciata sul bordo. Sugli schermi bassi gli
+ * stessi rapporti, più stretti.
+ */
+.set-editor fieldset.evs { padding-top: var(--sp-8); }
+.set-editor .evs .speed-line { min-height: 36px; }
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .set-editor fieldset.evs { padding-top: var(--sp-5); }
+  .nature-diamond { margin: var(--sp-5) 0 var(--sp-3); }
+  .set-editor .evs .speed-line { min-height: 32px; }
+}
+
+/* Spiegazioni di EV, IV e Natura: la voce sottolineata a puntini, il fumetto (frase intera, a capo) al passaggio del mouse */
+.head-help { position: relative; cursor: help; text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 3px; }
+.nature-diamond .field-label { cursor: help; text-decoration: underline dotted color-mix(in srgb, var(--text) 50%, transparent); text-underline-offset: 3px; }
+.help-bubble { width: 310px; white-space: pre-line; line-height: 1.4; text-transform: none; letter-spacing: 0; font-weight: 500; text-align: left;
+  border: 1px solid var(--control-line); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6); }
+.head-help.end .help-bubble { left: auto; right: 0; }
+.nature-diamond > .help-bubble { top: auto; bottom: calc(100% + 6px); left: calc(50% - 170px); }
+/* Zeri quieti: a 0 EV niente casella (come gli IV a 31), torna sulla riga attiva */
+.set-editor .stat-row .ev-input.zero:not(:focus) { background: transparent; border-color: transparent; }
+.stat-row:is(:hover, :focus-within) .ev-input.zero { background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--control-line); }
+/* Tastiera: scrivendo in una casella EV, una freccetta ciano indica l'IV della riga (ci si arriva con →), che torna in casella */
+.stat-row:has(.ev-input:focus)::after { content: '›'; position: absolute; top: 50%; right: calc(var(--sp-5) + 44px + var(--sp-5) / 2);
+  transform: translate(50%, -55%); font: 700 16px/1 var(--display); color: var(--accent); pointer-events: none; }
+.stat-row:has(.ev-input:focus) .iv-input.max { border-color: var(--control-line); color: var(--text); }
+/* Il riquadro delle Statistiche misura sé stesso: stretto (sotto 560px), lo Spread scrive solo "2°" */
+.set-editor fieldset.evs { container: stats / inline-size; }
+.spread-toggle .sp-narrow { display: none; }
+@container stats (max-width: 559px) {
+  .spread-toggle .sp-wide { display: none; }
+  .spread-toggle .spread-value { font-size: var(--fs-label); }
+  .spread-toggle .sp-narrow { display: inline; }
+}
+/* Oltre 510: "250 di troppo" in rosso sopra i cursori (la frase intera nel tooltip), al posto della scritta EV */
+.stat-head .ev-total.over .ev-head { display: none; }
+.stat-head .ev-total.over .ev-left { grid-column: 1 / 4; min-width: 0; font-weight: 600; }
+/* Caselle EV e IV senza le frecce del browser (finivano quasi sul numero, staccate dal bordo): si cambia scrivendo, con
+   le frecce della tastiera o col cursore */
+.stat-row :is(.ev-input, .iv-input)::-webkit-inner-spin-button, .stat-row :is(.ev-input, .iv-input)::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.stat-row :is(.ev-input, .iv-input) { -moz-appearance: textfield; appearance: textfield; }
+/* La scritta EV al centro sopra i cursori (come 508 / 510 sopra le caselle e IV sopra gli IV) */
+.stat-head .ev-total .ev-head { grid-column: 1 / 4; grid-row: 1; justify-self: center; }
+/* La freccetta della natura più grande (16px) e attaccata al numero, a sinistra; il numero resta allineato a destra */
+.stat-final { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
+.stat-final .nature-arrow { width: 16px; height: 16px; vertical-align: 0; }
+/*
+ * Menu della Natura: largo quanto tutto il rombo (non solo dalla testa NATURA in poi), aperto verso l'alto. In ogni riga la
+ * quota d'uso sta nella colonna sotto la testa NATURA, così il nome della natura parte alla stessa x di quella scelta nella
+ * targhetta. Testa a larghezza fissa (--nd-head) per sapere dove cade il nome: 1px di bordo + 4px del menu + 10px della riga
+ * stanno prima della colonna, 6px dopo la testa prima del valore.
+ */
+.nature-diamond { --nd-head: 94px; }
+.nature-diamond .set-plate > .field-label { flex: none; width: var(--nd-head); box-sizing: border-box; }
+/* Il menu parte dal bordo sinistro del rombo (indietro quanto la testa) e arriva al destro (avanti quanto la punta) */
+.nature-diamond .combobox [role='listbox'] { left: calc(-1 * var(--nd-head)); right: calc(-1 * var(--nd-tip)); width: auto; }
+.nature-diamond .combobox .option-head { display: grid; grid-template-columns: calc(var(--nd-head) + 6px - 15px) minmax(0, 1fr) auto; column-gap: 0; }
+.nature-diamond .combobox .option-head > strong { grid-column: 2; grid-row: 1; }
+.nature-diamond .combobox .option-head > .option-detail { grid-column: 3; grid-row: 1; }
+.nature-diamond .combobox .option-head > .common-share { grid-column: 1; grid-row: 1; justify-self: start; min-width: 0; margin: 0; text-align: left; }
+/* Il rombo (e il suo menu che si apre verso l'alto) sta sopra l'intestazione delle Statistiche */
+.nature-diamond { z-index: 4; }
