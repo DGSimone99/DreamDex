@@ -355,7 +355,6 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
                     {edited && <button type="button" className="duel-reset" onClick={() => setEdit({})}>{t('editor.duelReset')}</button>}
                   </>
                 )}
-                <p className="duel-settings-soon">{t('editor.duelSettingsSoon')}</p>
               </div>
             )}
           </div>
