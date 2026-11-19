@@ -498,7 +498,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       </div>
       {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
-      <div className="drawer" id={drawerId}>
+      {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
+      <div className="drawer" id={drawerId} inert={!open}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
         duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}

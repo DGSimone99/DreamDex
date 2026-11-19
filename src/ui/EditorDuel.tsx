@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
@@ -87,6 +87,25 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const toggle = (id: string) => setActive(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const settingsRoot = useRef<HTMLDivElement>(null);
   const settingsPop = useRef<HTMLDivElement>(null);
+  // Il nome dell'avversario sempre intero (Charizard-Mega-Y: si vede se è la X o la Y): se non ci sta si rimpicciolisce
+  // un po' alla volta, fino a 13px
+  useLayoutEffect(() => {
+    const root = settingsRoot.current;
+    const input = root?.querySelector<HTMLInputElement>('.duel-species input');
+    if (!root || !input) return;
+    const fit = () => {
+      input.style.fontSize = '';
+      let size = parseFloat(getComputedStyle(input).fontSize);
+      while (input.scrollWidth > input.clientWidth + 1 && size > 13) {
+        size -= 0.5;
+        input.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    const watch = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    watch?.observe(root);
+    return () => watch?.disconnect();
+  });
   // Sotto il nome, allineato a sinistra; sopra se sotto non c'è posto (la Sfida sta in fondo al cassetto), sempre nella finestra
   useAnchoredPop(settingsRoot, settingsPop, settingsOpen, { width: 320, gap: 6 });
   const settingsId = useId();
@@ -227,7 +246,8 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const speedChip = (kind: 'mine' | 'theirs') => {
     if (!speeds || !order) return null;
     const value = kind === 'mine' ? speeds.mine : speeds.theirs;
-    const place = order === 'tie' ? '=' : order === kind ? '1°' : '2°';
+    // A parole (Primo, Secondo, Pari), non col numero ordinale: si legge senza il tooltip
+    const place = t(order === 'tie' ? 'editor.duelSpeedEven' : order === kind ? 'editor.duelSpeedFirst' : 'editor.duelSpeedSecond');
     const tone = order === 'tie' ? 'tie' : order === kind ? 'first' : 'second';
     const said = t(order === 'mine' ? 'editor.duelFirstMine' : order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie');
     return (
@@ -287,11 +307,11 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     // Come in Meta Coverage: la barra dei PS che restano; se va KO in un colpo la barra resta (vuota) col timbro KO sopra
     const sub = (
       <>
-        <span className="cm-hp duel-bar" aria-hidden="true">
+        <span className="cm-hp duel-bar" aria-hidden="true" data-hp={t('common.hpBar')}>
           <span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span>
           {hit.hitsSure === 1 && <span className="cm-ko small duel-ko">KO</span>}
         </span>
-        <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
+        <span className="duel-range">{hit.max > 0 ? `${Math.round(hit.min * 100)}–${pct(hit.max)}` : '0%'}</span>
       </>
     );
     const ko = hit.hitsSure === 1 ? (kind === 'mine' ? 'good' : 'bad') : 'plain';

@@ -727,7 +727,7 @@
 .duel-speed.first { --s: var(--good); }
 .duel-speed.second { --s: var(--bad); }
 .duel-speed.tie { --s: var(--warn); }
-.duel-speed b { font: italic 800 var(--fs-caption)/1 var(--display); }
+.duel-speed b { font: italic 800 var(--fs-label)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
 .duel-speed svg { width: 11px; height: 11px; }
 .duel-speed.tip { cursor: help; }
 /* Il tooltip si apre verso sinistra: l'etichetta sta sul bordo destro e il tooltip uscirebbe dalla pagina */
@@ -744,7 +744,7 @@
 .duel-none { font: 600 var(--fs-small)/1.1 var(--ui); color: var(--faint); }
 /* Gli interruttori dei potenziamenti: la casellina si spunta e la riga si ricalcola. Verde la danza, azzurro il team,
    rosso quello dell'avversario; acceso, il fondo si fa pieno del suo colore */
-.duel-buff { --b: var(--good); flex: none; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 5px; border: 0; border-radius: 3px; font: 700 var(--fs-caption)/1 var(--ui); white-space: nowrap; color: var(--b); background: color-mix(in srgb, var(--b) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--b) 40%, transparent); cursor: pointer; transition: background 0.15s, box-shadow 0.15s; }
+.duel-buff { --b: var(--good); flex: none; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 7px 0 5px; border: 0; border-radius: 3px; font: 700 var(--fs-caption)/1 var(--ui); white-space: nowrap; color: var(--b); background: color-mix(in srgb, var(--b) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--b) 40%, transparent); cursor: pointer; transition: background 0.15s, box-shadow 0.15s; }
 .duel-buff.team { --b: var(--accent-ink); }
 .duel-buff.against { --b: var(--bad); }
 .duel-buff:hover { box-shadow: inset 0 0 0 1px var(--b); }
@@ -769,9 +769,10 @@
 .duel-result.warn .duel-big { color: var(--warn); }
 .duel-result.none .duel-big { color: var(--faint); }
 /* La riga dei consigli: corta a vista ("Consigli: Brave Bird · +236 EV in AttSp"), per intero nel tooltip */
-.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--accent-2-ink); }
-.duel-tips.tip { overflow: visible; border-bottom: 0; text-decoration: underline dotted color-mix(in srgb, var(--accent-2-ink) 55%, transparent); text-underline-offset: 3px; }
-.duel-tips b { font-weight: 700; }
+/* I consigli: testo normale con l'etichetta nel ciano del lavoro (il magenta resta raro: solo l'azione migliore) */
+.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--text); }
+.duel-tips.tip { overflow: visible; border-bottom: 0; text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 3px; }
+.duel-tips b { font-weight: 700; color: var(--accent-ink); }
 .duel-tips:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .duel-empty { grid-column: 2; position: relative; z-index: 2; align-self: center; margin: 0; padding: 0 var(--sp-6) 0 var(--sp-8); font-size: var(--fs-small); color: var(--faint); }
 @media (min-width: 1100px) {
