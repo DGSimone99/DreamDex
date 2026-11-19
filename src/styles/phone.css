@@ -721,3 +721,17 @@
   .band.collapsed .grade-badge .grade-pop-toggle { width: auto; align-items: center; }
   .band.collapsed .grade-badge .overall { position: static; align-self: center; margin: 0; }
 }
+@media (max-width: 599px) {
+  /* Team compresso col dito: il voto in colonna (lettera sopra, punteggio sotto) lascia alle carte almeno 44 px di larghezza */
+  .band.collapsed { gap: var(--sp-4); }
+  .band.collapsed .slots { gap: var(--sp-2); }
+  .band.collapsed .grade-badge .grade-pop-toggle { flex-direction: column; justify-content: center; gap: 2px; min-width: 56px; padding: 0 var(--sp-4); }
+  .band.collapsed .grade-badge .letter { font-size: 26px; line-height: 0.9; }
+  .band.collapsed .grade-badge .overall { font-size: var(--fs-caption); white-space: nowrap; }
+  .band.collapsed .grade-badge .grade-pop-caret { display: none; }
+  /* La maniglia per comprimere e riaprire il team: più grande, e la zona del tocco alta 44 px */
+  .band { margin-bottom: var(--sp-8); }
+  .band-toggle { width: 88px; height: 24px; border-radius: 0 0 12px 12px; }
+  .band-toggle::after { inset: -12px -12px -8px; }
+  .band-toggle .icon { width: 16px; height: 16px; }
+}
