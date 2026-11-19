@@ -634,17 +634,17 @@
  * fondo girano attorno a tutto. Colori dai tipi dell'avversario (--t1, --t2).
  */
 .set-editor .editor-group.duel { display: flex; flex-direction: column; gap: var(--sp-3); }
-.duel-card { --rim: color-mix(in srgb, var(--t1) 45%, #ffffff8c); --cut: 30%;
-  position: relative; isolation: isolate; display: grid; grid-template-columns: 34% minmax(0, 1fr); min-height: 186px; margin-top: var(--sp-3);
-  border-radius: var(--alt-r); background: var(--band); box-shadow: 0 8px 18px -6px #000000a6; }
-.duel-card::before { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--rim), inset 0 2px 0 #ffffff1a; pointer-events: none; }
-.duel-card::after { content: ''; position: absolute; left: 1px; right: 1px; bottom: 1px; z-index: 1; height: 4px; border-radius: 0 0 9px 2px; background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); pointer-events: none; }
-/* Lo sfondo: il colore del tipo fino al taglio, una riga chiara sul taglio, le righine; lo sprite ritagliato dalla scheda */
-.duel-art { position: absolute; inset: 0; z-index: 0; border-radius: inherit; overflow: hidden;
-  background:
-    linear-gradient(115deg, transparent var(--cut), color-mix(in srgb, var(--t1) 70%, white) var(--cut) calc(var(--cut) + 0.7%), transparent calc(var(--cut) + 0.7%)),
-    var(--stripes),
-    linear-gradient(115deg, color-mix(in srgb, var(--t1) 60%, var(--panel)) 0, color-mix(in srgb, var(--t1) 36%, var(--panel)) var(--cut), var(--band) var(--cut)); }
+/* Un riquadro solo: la scheda non ha bordo né fondo suoi, arriva fino ai bordi della Sfida (sotto la legenda) e lascia
+   vedere il pannello; a sinistra la parte del tipo, trasparente, tagliata in diagonale con una riga sottile nel colore del
+   tipo; lo sprite è ritagliato dal bordo della Sfida */
+.duel-card { position: relative; isolation: isolate; display: grid; grid-template-columns: 34% minmax(0, 1fr); min-height: 186px;
+  margin: var(--sp-2) calc(var(--sp-7) * -1) calc(var(--sp-6) * -1); border-radius: 0 0 3px 3px; }
+.duel-art { position: absolute; inset: 0; z-index: 0; border-radius: inherit; overflow: hidden; }
+.duel-art::before, .duel-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.duel-art::before { background: color-mix(in srgb, var(--t1) 65%, transparent); clip-path: polygon(36% 0, 36.5% 0, 24.5% 100%, 24% 100%); }
+.duel-art::after { background: var(--stripes), linear-gradient(170deg, color-mix(in srgb, var(--t1) 34%, transparent), color-mix(in srgb, var(--t1) 12%, transparent));
+  clip-path: polygon(0 0, 36% 0, 24% 100%, 0 100%); }
+.duel-art > .duel-stage { z-index: 1; }
 .duel-stage { position: absolute; left: 2px; bottom: -14px; width: 96px; height: 96px; transform: scale(var(--stage-scale, 1.5)); transform-origin: 0 100%; }
 .duel-stage > .sprite { display: block; width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 3px 3px #00000080); }
 /* La testa a sinistra, dentro la parte colorata: il nome comanda (grande, la freccetta subito dopo il testo); sotto, la
@@ -716,7 +716,7 @@
   .set-editor .editor-side.with-duel > .set-box > .editor-group { align-content: start; }
   .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-4); }
   .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: flex-start; overflow: hidden; }
-  .set-editor .editor-side.with-duel .duel-card { flex: 1 1 auto; max-height: 240px; }
+  .set-editor .editor-side.with-duel .duel-card { flex: 1 1 auto; }
 }
 /* Schermi bassi: la Sfida più fitta, così il cassetto non scorre */
 @media (min-width: 1100px) and (max-height: 700px) {
