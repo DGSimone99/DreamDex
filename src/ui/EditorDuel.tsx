@@ -101,7 +101,7 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     return t('editor.duelHitsRange', { a: hit.hitsMaybe, b: hit.hitsSure });
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
-  const oppType = species ? getSpecies(species)?.types[0] : undefined;
+  const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
 
   const free = 510 - Object.values(set.evs).reduce((acc, n) => acc + (n ?? 0), 0);
   const evText = (tip: EvTip | null) => {
@@ -150,8 +150,12 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   return (
     <fieldset className="editor-group duel">
       <legend>{t('editor.duel')}</legend>
-      <div className="duel-card" style={{ '--tc': typeColor(oppType ?? '') } as CSSProperties}>
-        <div className="duel-portrait" aria-hidden="true">{species && <Sprite species={species} size={96} />}</div>
+      <div className="duel-card" style={{ '--t1': typeColor(oppTypes[0] ?? ''), '--t2': typeColor(oppTypes[1] ?? oppTypes[0] ?? '') } as CSSProperties}>
+        {/* Il riquadro come le carte del team (Masters EX): colore del tipo, riflesso, striscia dei tipi in fondo; lo sprite
+            sulla pedana della lotta */}
+        <div className="duel-portrait" aria-hidden="true">
+          {species && <span className="duel-stage"><Sprite species={species} size={96} /></span>}
+        </div>
         <div className="duel-tongue">
           <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className="duel-species"
             placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
