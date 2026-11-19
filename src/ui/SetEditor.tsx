@@ -174,8 +174,8 @@ interface Props {
   notice?: ReactNode;
   /** Il riquadro del Testo del set, aperto: copre le Statistiche, così Set e Mosse restano in vista per confrontare. */
   textPanel?: ReactNode;
-  /** Sotto le Mosse, "Spesso usato con": i compagni più usati nel meta (niente senza statistiche). */
-  mates?: ReactNode;
+  /** Sotto le Mosse, la Sfida contro un avversario scelto (EditorDuel). */
+  duel?: ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
   roles?: string[];
   /** La spiegazione di ogni ruolo (stesso ordine di `roles`), nel tooltip. */
@@ -187,7 +187,7 @@ interface Props {
   onSetChange?: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, smogonLink, memberAction, notice, textPanel, mates, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -390,7 +390,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       </fieldset>
       {textPanel}
       </div>
-      <div className={`editor-side${mates ? ' with-mates' : ''}`}>
+      <div className={`editor-side${duel ? ' with-duel' : ''}`}>
       <fieldset className="editor-group set-plates">
         <legend>{t('editor.set')}</legend>
         <div className="field" data-tip={itemDesc}>
@@ -473,7 +473,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           </div>
         ))}
       </fieldset>
-      {mates}
+      {duel}
       </div>
       {(!!roles?.length || memberAction) && (
         // Ruoli e, in basso a destra, l'azione sul membro (Sostituisci)

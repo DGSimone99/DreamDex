@@ -628,21 +628,38 @@
   .drawer > .set-editor { --ed-gap: var(--sp-3); --stat-row-h: 36px; }
 }
 
-/* "Spesso usato con" nell'editor: i compagni del meta su due colonne, righe come nel dettaglio dei candidati */
-.set-editor .editor-group.mates { display: block; }
-.editor-mates { max-width: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-8); }
-.editor-mates li { display: block; height: auto; }
-.editor-mates .mate-row { display: grid; grid-template-columns: 26px minmax(0, 8.6em) 13px minmax(24px, 1fr) 46px; align-items: center; gap: 0 var(--sp-3); width: 100%; height: 28px; margin: 0; padding: 0 var(--sp-2); border: 0; border-radius: 4px; background: none; color: inherit; font: inherit; text-align: left; }
-.editor-mates button.mate-row { cursor: pointer; transition: background 0.15s var(--ease); }
-@media (hover: hover) { .editor-mates button.mate-row:hover { background: var(--raised); } .editor-mates button.mate-row:hover .mate-name { color: var(--accent-ink); } }
+/* Sfida nell'editor: avversario e suo set in alto, poi il tuo colpo migliore e il suo peggiore per te, e il consiglio */
+.set-editor .editor-group.duel { display: flex; flex-direction: column; gap: var(--sp-3); }
+.duel-pick { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--sp-4); }
+.duel-pick .combobox input, .duel-pick .combobox .combo-display { height: 34px; }
+.duel-row { display: grid; grid-template-columns: 30px minmax(0, 1.3fr) minmax(48px, 1fr) 76px 92px; align-items: center; gap: var(--sp-4); min-height: 30px; }
+.duel-who { font: 700 var(--fs-label)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.duel-move { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; font-weight: 600; }
+.duel-move > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.duel-move .mvp-ic { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 4px; background: var(--c); }
+.duel-move .mvp-ic img { width: 16px; height: 16px; }
+.duel-bar { --c: var(--accent); height: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--c) calc(var(--lo) * 100%), color-mix(in srgb, var(--c) 45%, transparent) calc(var(--lo) * 100%) calc(var(--hi) * 100%), var(--field) 0); }
+.duel-row.theirs .duel-bar { --c: var(--bad); }
+.duel-range { font-size: var(--fs-small); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.duel-hits { font-size: var(--fs-small); text-align: right; white-space: nowrap; }
+.duel-row.mine .duel-hits.ko { color: var(--good); }
+.duel-row.theirs .duel-hits.ko { color: var(--bad); }
+.duel-none, .duel-empty { grid-column: 2 / -1; margin: 0; font-size: var(--fs-small); color: var(--faint); }
+.duel-tip { margin: 0; padding: var(--sp-2) var(--sp-4); border-radius: 4px; background: var(--accent-wash); color: var(--accent-ink); font-size: var(--fs-small); }
 @media (min-width: 1100px) {
-  /* Con i compagni: Set e Mosse alti quanto il contenuto, i compagni prendono lo spazio che avanza */
-  .set-editor .editor-side.with-mates { grid-template-rows: auto auto minmax(0, 1fr); }
-  .set-editor .editor-side.with-mates > .editor-group:not(.mates) { align-content: start; }
-  .set-editor .editor-side.with-mates > .editor-group.moves { row-gap: var(--sp-5); }
-  .set-editor .editor-side.with-mates > .editor-group.mates { align-content: center; overflow: hidden; }
+  /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
+  .set-editor .editor-side.with-duel { grid-template-rows: auto auto minmax(0, 1fr); }
+  .set-editor .editor-side.with-duel > .editor-group:not(.duel) { align-content: start; }
+  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-4); }
+  .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: space-evenly; overflow: hidden; }
 }
-/* Schermi molto bassi: 4 compagni invece di 6 */
-@media (min-width: 1100px) and (max-height: 640px) {
-  .editor-mates li:nth-child(n + 5) { display: none; }
+.duel-pick .combobox.has-leading input { padding-left: 44px; }
+.duel-pick .combobox-leading { left: var(--sp-2); width: 36px; height: 30px; justify-content: center; align-items: center; overflow: hidden; }
+/* Schermi bassi: la Sfida più fitta, così il cassetto non scorre */
+@media (min-width: 1100px) and (max-height: 700px) {
+  .set-editor .editor-group.duel { gap: var(--sp-1); }
+  .duel-pick .combobox input, .duel-pick .combobox .combo-display { height: 30px; }
+  .duel-row { min-height: 24px; }
+  .duel-tip { padding: 1px var(--sp-4); }
+  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-2); }
 }
