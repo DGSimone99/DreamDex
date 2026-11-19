@@ -214,10 +214,15 @@
 /* Tendina degli spread: sopra il blocco statistiche, come i menu dell'editor */
 .spread-panel { position: relative; }
 .spread-presets {
-  position: absolute;
+  /* Posto e lato da useAnchoredPop (strato in cima, dentro la finestra) */
+  position: fixed;
   z-index: 40;
-  top: 22px;
-  right: 0;
+  inset: auto;
+  margin: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  max-height: 420px;
+  color: var(--text);
   width: max-content;
   min-width: 340px;
   display: grid;

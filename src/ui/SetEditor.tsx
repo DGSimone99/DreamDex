@@ -18,6 +18,7 @@ import { TypeChip } from './Sprite';
 import { NatureArrow } from './NatureArrow';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SetMenu } from './SetMenu';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
@@ -286,6 +287,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     return others.size ? moveOptions.map(option => (others.has(toID(option.value)) ? { ...option, disabled: true } : option)) : moveOptions;
   }), [moveOptions, movesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
+  const [evMax, setEvMax] = useState(false);
+  const evMaxTimer = useRef(0);
+  const flashEvMax = () => { setEvMax(true); window.clearTimeout(evMaxTimer.current); evMaxTimer.current = window.setTimeout(() => setEvMax(false), 2500); };
+  useEffect(() => () => window.clearTimeout(evMaxTimer.current), []);
   const itemDesc = describe.item(set.item, lang);
   // Con la megapietra l'abilità è quella della Mega: si mostra bloccata, quella del set torna togliendo la pietra
   const forme = battleSpecies(set);
@@ -296,6 +301,11 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   // Tendina degli spread: sopra l'editor (non ne cambia l'altezza); si chiude scegliendo, con Esc o cliccando fuori
   const spreadMenu = useRef<HTMLDetailsElement>(null);
   const closeSpreads = () => { if (spreadMenu.current) spreadMenu.current.open = false; };
+  const spreadToggle = useRef<HTMLElement>(null);
+  const spreadList = useRef<HTMLDivElement>(null);
+  const [spreadsOpen, setSpreadsOpen] = useState(false);
+  // Sotto la targhetta Spread, allineato a destra e largo quanto serve agli EV; sopra se sotto non c'è posto
+  useAnchoredPop(spreadToggle, spreadList, spreadsOpen, { width: 'content', minWidth: 340, align: 'end', gap: 6 });
   useEffect(() => {
     const away = (e: PointerEvent) => { if (!spreadMenu.current?.contains(e.target as Node)) closeSpreads(); };
     document.addEventListener('pointerdown', away);
@@ -315,10 +325,12 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   // Nel riquadro stretto la parte lunga ("Il più usato", "2° più usato") lascia il posto a "1°", "2°": la pastiglia sulla
   // fascia non tocca il titolo
   const spreadShare = spreadAt < 0 || !common || common.spreads[spreadAt].share === null ? '' : ` · ${formatPercent(lang, common.spreads[spreadAt].share!, 0)}`;
-  const spreadLabel = spreadAt < 0 || !common ? t('editor.setCustom') : (
+  // Il posto in breve: "2nd" in inglese, "2°" in italiano
+  const ordinal = (n: number) => (lang === 'en' ? `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}` : t('editor.spreadRankShort', { n }));
+  const spreadLabel = spreadAt < 0 || !common ? t(used === 0 ? 'editor.spreadNone' : 'editor.spreadOwn') : (
     <>
-      <span className="sp-wide">{spreadAt === 0 ? t('editor.spreadTop') : t('editor.spreadRank', { n: spreadAt + 1 })}</span>
-      <span className="sp-narrow" aria-hidden="true">{t('editor.spreadRankShort', { n: spreadAt + 1 })}</span>
+      <span className="sp-wide">{spreadAt === 0 ? t('editor.spreadTop') : t('editor.spreadRank', { n: lang === 'en' ? ordinal(spreadAt + 1) : spreadAt + 1 })}</span>
+      <span className="sp-narrow" aria-hidden="true">{ordinal(spreadAt + 1)}</span>
       {spreadShare}
     </>
   );
@@ -327,8 +339,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const customHintId = `${uid}-custom`;
   const [customShown, setCustomShown] = useState(false);
   const [natureHelp, setNatureHelp] = useState(false);
-  const plate = (label: string, control: ReactNode) => (
-    <div className="set-plate"><span className="field-label" aria-hidden="true">{label}</span>{control}</div>
+  // Vuota (niente strumento, abilità o natura): filo ed etichetta gialli, come i segni "da controllare" del team
+  const plate = (label: string, control: ReactNode, empty = false) => (
+    // La targhetta intera (etichetta compresa) fa da campo: il menu si apre largo quanto lei
+    <div className={`set-plate${empty ? ' empty' : ''}`} data-pop-anchor><span className="field-label" aria-hidden="true">{label}</span>{control}</div>
   );
 
   return (
@@ -361,13 +375,13 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* Spread sulla fascia delle Statistiche, a destra (come Custom Skillset su quella del Set): dice a quale degli spread
             più usati corrisponde il set (o Personalizzato) e apre l'elenco; uno spread è natura più EV */}
         {!!common?.spreads.length && (
-          <details className="spread-panel" ref={spreadMenu}
+          <details className="spread-panel" ref={spreadMenu} onToggle={e => setSpreadsOpen(e.currentTarget.open)}
             onKeyDown={e => { if (e.key === 'Escape' && spreadMenu.current?.open) { e.stopPropagation(); closeSpreads(); spreadMenu.current.querySelector('summary')?.focus(); } }}>
-            <summary className="spread-toggle">
+            <summary className="spread-toggle" ref={spreadToggle} title={t('editor.spreadTip')}>
               <span className="spread-name">{t('editor.spread')}<span className="visually-hidden">:</span></span>
               <span className="spread-value">{spreadLabel}</span>
             </summary>
-            <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
+            <div className="spread-presets" ref={spreadList} popover={supportsPopover ? 'manual' : undefined} role="group" aria-label={t('editor.spreads')}>
               {common.spreads.map(spread => (
                 <button
                   key={spreadKey(spread)}
@@ -392,11 +406,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
             <span />
             <span />
             <span />
-            <p className={`stat-head-ev ev-total${used > EV_TOTAL ? ' over' : ''}`} title={used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : undefined}>
+            {/* Oltre 510 rosso; 8 o più EV ancora da spendere (2 punti di statistica) giallo, col tooltip che lo dice */}
+            <p className={`stat-head-ev ev-total${used > EV_TOTAL ? ' over' : EV_TOTAL - used >= 8 ? ' under' : ''}`}
+              title={used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : EV_TOTAL - used >= 8 ? t('editor.evUnder', { n: EV_TOTAL - used }) : undefined}>
               <HeadHelp className="ev-head" text={t('editor.evHelp')}>{t('editor.evs')}</HeadHelp>
               <span className="visually-hidden">{t('editor.evTotal')}</span>
               <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
               {used > EV_TOTAL && <span className="ev-left">{t('editor.evOverShort', { n: used - EV_TOTAL })}</span>}
+              {evMax && used <= EV_TOTAL && <span className="ev-left ev-max" role="status">{t('editor.evMax')}</span>}
             </p>
             <HeadHelp className="stat-head-num" text={t('editor.ivHelp')} end>{t('editor.ivHead')}</HeadHelp>
           </div>
@@ -440,7 +457,11 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                   e.preventDefault();
                   e.currentTarget.closest('.stat-row')?.querySelector<HTMLInputElement>('.iv-input')?.focus();
                 }}
-                onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
+                onChange={e => {
+                  // Oltre 252 il numero si ferma a 252: per un attimo la testa degli EV dice perché
+                  if (Number(e.target.value) > 252) flashEvMax();
+                  update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } });
+                }}
               />
               <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} hint={t('editor.ivToEv')}
                 onChange={raw => changeIv(line.stat, raw)} />
@@ -450,9 +471,9 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* La Natura sotto le righe, centrata, a rombo come in Champions: cambia le statistiche di sopra (le freccette) */}
         {/* La spiegazione della natura sta fuori dalla testa (che è ritagliata a rombo e la taglierebbe) */}
         <div className="nature-diamond set-plates">
-          <div className="set-plate">
+          <div className={`set-plate${set.nature ? '' : ' empty'}`} data-pop-anchor>
             <span className="field-label" aria-hidden="true" onPointerEnter={() => setNatureHelp(true)} onPointerLeave={() => setNatureHelp(false)}>{t('editor.nature')}</span>
-            <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted
+            <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted menuJoined={2}
               display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
               onChange={nature => update({ nature })} />
           </div>
@@ -486,10 +507,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         <div className="editor-group set-plates">
         <div className="field" data-tip={itemDesc}>
           {plate(t('editor.item'), (
-            <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc}
+            <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
               leading={set.item ? <ItemIcon item={set.item} /> : undefined}
               onChange={item => update({ item })} />
-          ))}
+          ), !set.item)}
         </div>
         <div className="field" data-tip={abilityDesc}>
           {plate(t('editor.ability'), megaAbility ? (
@@ -500,19 +521,20 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           ) : (
             <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom}
               description={abilityDesc} onChange={ability => update({ ability })} />
-          ))}
+          ), !megaAbility && !set.ability)}
         </div>
         </div>
         {/* Le mosse nello stesso riquadro Set (un gruppo col suo nome per i lettori di schermo) */}
         <div className="editor-group moves" role="group" aria-label={t('editor.moves')}>
         {moves.map((move, i) => (
-          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}`} data-tip={describe.move(move, lang)}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}`} data-tip={describe.move(move, lang)}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
               <MoveDetail name={move} inField />
             </span>
             <Combobox
               className="move-combo"
+              descriptionFooter
               leading={<MoveTile name={move} />}
               trailing={<MoveTail name={move} />}
               label={t('editor.move', { n: i + 1 })}
