@@ -103,12 +103,15 @@ function attackTip(me: TeamSet, opp: TeamSet, mine: DuelHit): EvTip | null {
   return n === null ? null : { add: { [stat]: n }, total: n, hits: target, side: 'attack' };
 }
 
-/** La sfida: i due colpi e, se c'è, il consiglio di EV più piccolo (a parità, prima la difesa). */
+/** Oltre questi EV in più non è un ritocco ma un altro spread: niente consiglio. */
+export const TIP_MAX_EVS = 160;
+
+/** La sfida: i due colpi e, se c'è, il consiglio di EV più piccolo (a parità, prima la difesa), solo se è un ritocco. */
 export function editorDuel(me: TeamSet, opp: TeamSet): EditorDuel {
   const mine = toDuelHit(bestHit(me, opp, OPTIONS));
   const theirs = toDuelHit(bestHit(opp, me, OPTIONS));
   const tips = [theirs && defenseTip(me, opp, theirs), mine && attackTip(me, opp, mine)].filter((t): t is EvTip => !!t);
-  const tip = tips.sort((a, b) => a.total - b.total)[0] ?? null;
+  const tip = tips.filter(t => t.total <= TIP_MAX_EVS).sort((a, b) => a.total - b.total)[0] ?? null;
   return { mine, theirs, tip };
 }
 

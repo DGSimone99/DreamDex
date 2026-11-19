@@ -90,7 +90,9 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   const tip = result?.tip;
   const free = 510 - Object.values(set.evs).reduce((acc, n) => acc + (n ?? 0), 0);
   const tipText = tip && (() => {
-    const parts = (Object.entries(tip.add) as [StatID, number][]).map(([stat, n]) => `+${n} ${statShort(stat, lang)}`).join(' ');
+    // "+84 EV in PS e +20 in Dif"
+    const parts = (Object.entries(tip.add) as [StatID, number][])
+      .map(([stat, n], i) => t(i === 0 ? 'editor.duelTipEvs' : 'editor.duelTipEvsMore', { n, stat: statShort(stat, lang) })).join(' ');
     const text = tip.side === 'defense'
       ? t('editor.duelTipDef', { evs: parts, n: tip.hits })
       : t(tip.hits === 1 ? 'editor.duelTipAtkOne' : 'editor.duelTipAtk', { evs: parts, n: tip.hits });
