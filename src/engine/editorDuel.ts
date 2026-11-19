@@ -1,8 +1,12 @@
-import { bestHit, type Hit } from './damage';
-import { getMove } from './dex';
+import { bestHit, type FieldCondition, type Hit, type HitOptions } from './damage';
+import { getMove, toID } from './dex';
 import { hitsToKO } from './duel';
 import type { TeamSet } from './sets';
 import type { StatID } from '@pkmn/dex';
+import { paradoxSpeedBoost, speedStat } from './speed';
+import { setupBoosts } from './setupBoosts';
+import { ownConditions } from './coverage';
+import { teamFieldCombos, teamFieldSources } from './partner';
 
 /**
  * La Sfida dell'editor: il membro contro un avversario scelto. Il colpo migliore del membro e quello che fa più male
@@ -10,6 +14,23 @@ import type { StatID } from '@pkmn/dex';
  * Il danno è quello pieno (niente sconto della Choice né mezze misure del primo colpo: Multiscale vale a PS pieni).
  */
 const OPTIONS = { incoming: true, firstHitShare: 1 } as const;
+
+const WEATHERS: FieldCondition[] = ['sun', 'rain', 'sand', 'snow'];
+/**
+ * Il campo della Sfida: il meteo e il terreno che portano le abilità in campo (Charizard Mega Y col sole, Rillaboom col
+ * Grassy Terrain). Conta prima quello di chi attacca; se non ne porta, quello di chi difende (tra i due resta l'ultimo).
+ */
+export function duelField(attacker: TeamSet, defender: TeamSet): FieldCondition[] {
+  const a = ownConditions(attacker);
+  const d = ownConditions(defender);
+  const pick = (isWeather: boolean) => {
+    const own = a.filter(c => WEATHERS.includes(c) === isWeather);
+    return own.length ? own : d.filter(c => WEATHERS.includes(c) === isWeather);
+  };
+  return [...pick(true), ...pick(false)];
+}
+/** Le opzioni del colpo di chi attacca, col campo della Sfida. */
+const optsFor = (attacker: TeamSet, defender: TeamSet) => ({ ...OPTIONS, conditions: duelField(attacker, defender) });
 
 export interface DuelHit extends Hit {
   category: 'Physical' | 'Special';
@@ -27,10 +48,22 @@ export interface EvTip {
   side: 'defense' | 'attack';
 }
 
+/** Una mossa da mettere nel set che manda KO l'avversario con meno colpi del colpo migliore di oggi. */
+export interface MoveTip {
+  move: string;
+  /** Colpi per un KO sicuro con la mossa nuova. */
+  hits: number;
+}
+
 export interface EditorDuel {
   mine: DuelHit | null;
   theirs: DuelHit | null;
+  /** Il consiglio di EV più piccolo fra attacco e difesa (a parità, la difesa). */
   tip: EvTip | null;
+  /** I consigli di EV per lato, ognuno solo se è un ritocco. */
+  atkTip: EvTip | null;
+  defTip: EvTip | null;
+  moveTip: MoveTip | null;
 }
 
 const hitsFor = hitsToKO;
@@ -42,7 +75,7 @@ function toDuelHit(hit: Hit | null): DuelHit | null {
 }
 
 /** Il colpo con una mossa sola (per cercare le soglie senza ricalcolare le altre tre). */
-const single = (attacker: TeamSet, move: string, defender: TeamSet) => bestHit({ ...attacker, moves: [move] }, defender, OPTIONS);
+const single = (attacker: TeamSet, move: string, defender: TeamSet) => bestHit({ ...attacker, moves: [move] }, defender, optsFor(attacker, defender));
 
 const ev = (set: TeamSet, stat: StatID) => set.evs[stat] ?? 0;
 const withEvs = (set: TeamSet, add: Partial<Record<StatID, number>>): TeamSet => {
@@ -106,21 +139,197 @@ function attackTip(me: TeamSet, opp: TeamSet, mine: DuelHit): EvTip | null {
 /** Oltre questi EV in più non è un ritocco ma un altro spread: niente consiglio. */
 export const TIP_MAX_EVS = 160;
 
-/** La sfida: i due colpi e, se c'è, il consiglio di EV più piccolo (a parità, prima la difesa), solo se è un ritocco. */
-export function editorDuel(me: TeamSet, opp: TeamSet): EditorDuel {
-  const mine = toDuelHit(bestHit(me, opp, OPTIONS));
-  const theirs = toDuelHit(bestHit(opp, me, OPTIONS));
-  const tips = [theirs && defenseTip(me, opp, theirs), mine && attackTip(me, opp, mine)].filter((t): t is EvTip => !!t);
-  const tip = tips.filter(t => t.total <= TIP_MAX_EVS).sort((a, b) => a.total - b.total)[0] ?? null;
-  return { mine, theirs, tip };
+/**
+ * La mossa migliore fra quelle che il membro può imparare (pool) e non ha già: quella col danno atteso più alto, solo se
+ * manda KO con meno colpi sicuri di oggi (o se oggi non ha colpi). Niente mosse OHKO: dipendono dalla precisione.
+ */
+function moveTip(me: TeamSet, opp: TeamSet, mine: DuelHit | null, pool: readonly string[]): MoveTip | null {
+  if (mine && mine.hitsSure <= 1) return null;
+  const have = new Set(me.moves.map(toID));
+  const moves = pool.filter(name => {
+    const move = getMove(name);
+    return !!move && move.category !== 'Status' && !move.ohko && !have.has(move.id);
+  });
+  if (!moves.length) return null;
+  const hit = bestHit({ ...me, moves }, opp, optsFor(me, opp));
+  if (!hit || hit.min <= 0) return null;
+  const hits = hitsFor(hit.min);
+  return !mine || !Number.isFinite(mine.hitsSure) || hits < mine.hitsSure ? { move: hit.move, hits } : null;
+}
+
+/**
+ * La sfida: i due colpi, i consigli di EV per lato (solo se sono un ritocco) e, se si passa l'elenco delle mosse
+ * imparabili, una mossa migliore da mettere nel set.
+ */
+export function editorDuel(me: TeamSet, opp: TeamSet, pool: readonly string[] = []): EditorDuel {
+  const mine = toDuelHit(bestHit(me, opp, optsFor(me, opp)));
+  const theirs = toDuelHit(bestHit(opp, me, optsFor(opp, me)));
+  const small = (t: EvTip | null) => (t && t.total <= TIP_MAX_EVS ? t : null);
+  const defTip = small(theirs && defenseTip(me, opp, theirs));
+  const atkTip = small(mine && attackTip(me, opp, mine));
+  const tip = [defTip, atkTip].filter((t): t is EvTip => !!t).sort((a, b) => a.total - b.total)[0] ?? null;
+  return { mine, theirs, tip, atkTip, defTip, moveTip: pool.length ? moveTip(me, opp, mine, pool) : null };
 }
 
 /** L'avversario di partenza: fra le minacce del meta, quella che fa più male al membro. */
 export function worstThreat(me: TeamSet, threats: TeamSet[]): TeamSet | null {
   let worst: { set: TeamSet; expected: number } | null = null;
   for (const set of threats) {
-    const hit = bestHit(set, me, OPTIONS);
+    const hit = bestHit(set, me, optsFor(set, me));
     if (hit && (!worst || hit.expected > worst.expected)) worst = { set, expected: hit.expected };
   }
   return worst?.set ?? null;
+}
+
+/** Velocità in lotta: quella finale (Sciarpa compresa) e ×1,5 se Protosynthesis o Quark Drive la alzano con la Booster Energy. */
+export function battleSpeed(set: TeamSet): number {
+  const { value } = speedStat(set);
+  const booster = toID(set.item) === 'boosterenergy' && paradoxSpeedBoost(set);
+  return booster ? Math.floor(value * 1.5) : value;
+}
+
+export interface DuelSpeed {
+  mine: number;
+  theirs: number;
+  /** Chi muove per primo (senza mosse con priorità): 'pari' = 50% a testa. */
+  order: 'mine' | 'theirs' | 'tie';
+  /** Se sei più lento o pari: quanti EV in più in Velocità servono per superarlo (solo se è un ritocco). */
+  tip: { evs: number } | null;
+}
+
+/** Il confronto di Velocità della Sfida, col consiglio di EV come per i colpi. */
+export function duelSpeed(me: TeamSet, opp: TeamSet): DuelSpeed {
+  const mine = battleSpeed(me);
+  const theirs = battleSpeed(opp);
+  const order = mine > theirs ? 'mine' : mine < theirs ? 'theirs' : 'tie';
+  let tip: DuelSpeed['tip'] = null;
+  if (order !== 'mine') {
+    const n = smallest(252 - ev(me, 'spe'), add => battleSpeed(withEvs(me, { spe: add })) > theirs);
+    if (n !== null && n <= TIP_MAX_EVS) tip = { evs: n };
+  }
+  return { mine, theirs, order, tip };
+}
+
+
+/**
+ * Un potenziamento che si può accendere in una riga della Sfida: la danza del set (setup), il meteo o il campo che porta
+ * il team (team), il Ventoincoda di un compagno. `against`: è dell'avversario (va contro di te). `apply`: cosa cambia nel
+ * calcolo (aumenti di chi attacca, meteo e campi; per la Velocità i moltiplicatori). `hits` / `first`: l'esito col solo
+ * questo potenziamento, per il tooltip.
+ */
+export interface DuelBuff {
+  id: string;
+  kind: 'setup' | 'team';
+  /** La mossa o l'abilità che lo dà (Swords Dance, Drought, Tailwind). */
+  source: string;
+  /** Chi lo porta, se è un compagno. */
+  by?: string;
+  against?: boolean;
+  apply: BuffEffect;
+  hits?: number;
+  first?: 'mine' | 'theirs' | 'tie';
+}
+
+export interface BuffEffect {
+  boosts?: NonNullable<HitOptions['boosts']>;
+  conditions?: FieldCondition[];
+  /** Velocità: moltiplicatori tuo e suo. */
+  mine?: number;
+  theirs?: number;
+}
+
+/** Più potenziamenti accesi insieme: gli aumenti si sommano (fino a +6), meteo e campi si uniscono, i moltiplicatori si moltiplicano. */
+export function mergeEffects(effects: BuffEffect[]): BuffEffect {
+  const boosts: NonNullable<HitOptions['boosts']> = {};
+  const conditions = new Set<FieldCondition>();
+  let mine = 1;
+  let theirs = 1;
+  for (const e of effects) {
+    for (const [stat, n] of Object.entries(e.boosts ?? {}) as [keyof NonNullable<HitOptions['boosts']>, number][]) boosts[stat] = Math.min(6, (boosts[stat] ?? 0) + n);
+    for (const c of e.conditions ?? []) conditions.add(c);
+    mine *= e.mine ?? 1;
+    theirs *= e.theirs ?? 1;
+  }
+  return { boosts, conditions: [...conditions], mine, theirs };
+}
+
+/** Il colpo migliore con i potenziamenti accesi (meteo dell'abilità di chi attacca sempre attivo). */
+export function buffedHit(attacker: TeamSet, defender: TeamSet, effect: BuffEffect): DuelHit | null {
+  // Il campo della Sfida, con quello che portano i potenziamenti accesi al posto suo (un meteo ne sostituisce un altro)
+  const added = effect.conditions ?? [];
+  const isWeather = (c: FieldCondition) => WEATHERS.includes(c);
+  const base = duelField(attacker, defender).filter(c => !added.some(x => isWeather(x) === isWeather(c)));
+  const conditions = [...new Set([...base, ...added])];
+  return toDuelHit(bestHit(attacker, defender, { ...OPTIONS, conditions, boosts: effect.boosts }));
+}
+
+/** Un potenziamento conta se sposta il danno (almeno mezzo punto di PS) o i colpi. */
+const changes = (now: DuelHit | null, next: DuelHit | null) => !!next && (!now
+  || Math.abs(next.max - now.max) >= 0.005 || next.hitsSure !== now.hitsSure);
+
+/** Il meteo e i campi del team che cambiano un colpo, uno per combinazione: il primo che lo sposta di più. */
+function teamFieldBuffs(holder: TeamSet, attacker: TeamSet, defender: TeamSet, team: TeamSet[], now: DuelHit | null, prefix: string): DuelBuff[] {
+  const sources = teamFieldSources(holder, team);
+  const out: DuelBuff[] = [];
+  for (const c of teamFieldCombos(ownConditions(holder), sources)) {
+    if (c.added.length !== 1) continue;
+    const effect = { conditions: c.added };
+    const next = buffedHit(attacker, defender, effect);
+    if (!changes(now, next)) continue;
+    const via = sources.filter(s => c.added.includes(s.condition));
+    out.push({ id: `${prefix}:team:${c.added.join('+')}`, kind: 'team', source: via.map(v => v.via).join(' + '), by: via.map(v => v.species).join(', '), apply: effect, hits: next!.hitsSure });
+  }
+  return out;
+}
+
+/** I potenziamenti del tuo colpo: la danza del tuo set, il meteo o il campo del team. */
+export function attackBuffs(me: TeamSet, opp: TeamSet, team: TeamSet[], now: DuelHit | null): DuelBuff[] {
+  const out: DuelBuff[] = [];
+  const setup = setupBoosts(me);
+  if (setup) {
+    const effect = { boosts: setup.boosts };
+    const next = buffedHit(me, opp, effect);
+    if (changes(now, next)) out.push({ id: 'atk:setup', kind: 'setup', source: setup.move, apply: effect, hits: next!.hitsSure });
+  }
+  return [...out, ...teamFieldBuffs(me, me, opp, team, now, 'atk')];
+}
+
+/** La riga del suo colpo: il meteo o il campo del tuo team (a tuo favore o no), e la sua danza (contro di te). */
+export function defenseBuffs(me: TeamSet, opp: TeamSet, team: TeamSet[], now: DuelHit | null): DuelBuff[] {
+  const out = teamFieldBuffs(me, opp, me, team, now, 'def').map(b => ({ ...b, hits: buffedHit(opp, me, b.apply)?.hitsMaybe }));
+  const setup = setupBoosts(opp);
+  if (setup) {
+    const effect = { boosts: setup.boosts };
+    const next = buffedHit(opp, me, effect);
+    if (changes(now, next)) out.push({ id: 'def:setup', kind: 'setup', source: setup.move, against: true, apply: effect, hits: next!.hitsMaybe });
+  }
+  return out;
+}
+
+/** Il moltiplicatore della Velocità dopo n aumenti. */
+const stageMult = (n: number) => (2 + Math.min(6, n)) / 2;
+/** La mossa di stato del set che alza di più la Velocità (Dragon Dance, Agility, Shift Gear), e di quanto. */
+function speedSetup(set: TeamSet): { move: string; stages: number } | null {
+  let best: { move: string; stages: number } | null = null;
+  for (const name of set.moves) {
+    const move = getMove(name);
+    const spe = move?.category === 'Status' && move.target === 'self' ? move.boosts?.spe ?? 0 : 0;
+    if (move && spe > 0 && (!best || spe > best.stages)) best = { move: move.name, stages: spe };
+  }
+  return best;
+}
+export const orderOf = (a: number, b: number): 'mine' | 'theirs' | 'tie' => (a > b ? 'mine' : a < b ? 'theirs' : 'tie');
+
+/** I potenziamenti della Velocità: la tua danza, il Ventoincoda del team, la sua danza. */
+export function speedBuffs(me: TeamSet, opp: TeamSet, team: TeamSet[]): DuelBuff[] {
+  const mine = battleSpeed(me);
+  const theirs = battleSpeed(opp);
+  const out: DuelBuff[] = [];
+  const own = speedSetup(me);
+  if (own) out.push({ id: 'spe:setup', kind: 'setup', source: own.move, apply: { mine: stageMult(own.stages) }, first: orderOf(Math.floor(mine * stageMult(own.stages)), theirs) });
+  const tailwind = team.find(member => member.moves.some(m => toID(m) === 'tailwind'));
+  if (tailwind) out.push({ id: 'spe:tailwind', kind: 'team', source: getMove('tailwind')?.name ?? 'Tailwind', by: tailwind.species, apply: { mine: 2 }, first: orderOf(mine * 2, theirs) });
+  const theirSetup = speedSetup(opp);
+  if (theirSetup) out.push({ id: 'spe:against', kind: 'setup', source: theirSetup.move, against: true, apply: { theirs: stageMult(theirSetup.stages) }, first: orderOf(mine, Math.floor(theirs * stageMult(theirSetup.stages))) });
+  return out;
 }

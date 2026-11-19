@@ -189,12 +189,14 @@ const typesOverflow = (el: HTMLElement) =>
 /** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
 const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
+const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
   index: number;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
   collapsed?: boolean;
   /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
   total: number;
+  /** Il team intero, solo per la carta aperta (la Sfida ne usa meteo, campi e Ventoincoda). */
+  team?: TeamSet[];
   /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
   proposal?: MoveProposal | null;
   /** Sotto-ruoli misurati del membro nel team (gli stessi del voto, già in cache): la carta li mostra. */
@@ -498,7 +500,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        duel={open ? <EditorDuel set={set} data={data} format={format} /> : undefined}
+        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
@@ -910,6 +912,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             index={i}
             total={team.length}
             set={set}
+            team={openIndex === i ? team : undefined}
             proposal={proposal?.index === i ? proposal : null}
             subRoles={subRoles[i]}
             dragging={drag?.from === i}

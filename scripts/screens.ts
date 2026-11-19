@@ -596,20 +596,21 @@ const STATES: Record<string, State> = {
   'editor-duel': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(500);
-    const input = await p.$('.slot.open .duel-pick .combobox input');
+    const input = await p.$('.slot.open .duel-species input');
     if (!input) return 'no duel';
     await input.click({ clickCount: 3 });
-    await input.type('Gholdengo');
+    const opp = process.env.DUEL_OPP ?? 'Gholdengo';
+    await input.type(opp);
     await wait(600);
-    const picked = await p.evaluate(() => {
-      const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-pick [role="option"]')].find(o => /Gholdengo/.test(o.textContent ?? ''));
+    const picked = await p.evaluate((name: string) => {
+      const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-species [role="option"]')].find(o => (o.textContent ?? '').includes(name));
       option?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       option?.click();
       return !!option;
-    });
+    }, opp);
     if (!picked) return 'no option';
     await wait(1200);
-    console.log(await p.evaluate(() => `duel=${[...document.querySelectorAll('.slot.open .duel-row, .slot.open .duel-tip')].map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | ')}`));
+    console.log(await p.evaluate(() => `duel=${[...document.querySelectorAll('.slot.open .duel-row')].map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | ')}`));
     return true;
   } },
   'editor-undo': { run: async p => {

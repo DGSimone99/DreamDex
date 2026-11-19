@@ -492,7 +492,6 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           ))}
         </div>
         <div className="field" data-tip={abilityDesc}>
-          {megaAbility && <span className="field-head"><small className="field-note">{t('editor.megaAbilityNote')}</small></span>}
           {plate(t('editor.ability'), megaAbility ? (
             <span className="plate-lock" title={t('editor.megaAbility')}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
