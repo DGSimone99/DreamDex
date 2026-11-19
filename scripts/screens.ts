@@ -1,7 +1,7 @@
 /**
  * Foto della pagina negli stati del restyle (sezioni, editor, modali, popover, tooltip), a più dimensioni.
  * Serve il server di sviluppo su http://localhost:5173 (npx vite).
- *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730]
+ *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv]
  * Per ogni foto stampa pageScroll = quanto la pagina scorre oltre la finestra (0 = una schermata).
  */
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -581,6 +581,26 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Annulla dopo un preset applicato dal menu Set: l'avviso non deve coprire i comandi dell'editor (stampa le sovrapposizioni)
+  // La Sfida contro Gholdengo (col set più usato c'è un consiglio di EV piccolo)
+  'editor-duel': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(500);
+    const input = await p.$('.slot.open .duel-pick .combobox input');
+    if (!input) return 'no duel';
+    await input.click({ clickCount: 3 });
+    await input.type('Gholdengo');
+    await wait(600);
+    const picked = await p.evaluate(() => {
+      const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-pick [role="option"]')].find(o => /Gholdengo/.test(o.textContent ?? ''));
+      option?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      option?.click();
+      return !!option;
+    });
+    if (!picked) return 'no option';
+    await wait(1200);
+    console.log(await p.evaluate(() => `duel=${[...document.querySelectorAll('.slot.open .duel-row, .slot.open .duel-tip')].map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | ')}`));
+    return true;
+  } },
   'editor-undo': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(400);
@@ -1177,6 +1197,9 @@ for (const [w, h] of sizes) {
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
     await wait(800);
+    // --palette sv: la palette di Scarlatto/Violetto (accento arancione) sulla pagina, per controllare i colori
+    const palette = arg('palette');
+    if (palette) { await page.evaluate(p => { document.documentElement.dataset.palette = p; }, palette); await wait(300); }
     // --add-class "sel:classe": aggiunge una classe prima della foto (per provare una variante non attiva nell'app)
     const addClass = arg('add-class');
     if (addClass) { const [sel, cls] = addClass.split(':'); await page.evaluate((s, c) => { document.querySelectorAll(s).forEach(e => e.classList.add(c)); }, sel, cls); await wait(300); }
