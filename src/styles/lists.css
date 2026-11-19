@@ -114,10 +114,19 @@
 /* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
    stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
 .band.collapsed .slot > .slot-card > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: var(--sp-2); flex: 1; min-width: 0; margin: 0; }
-/* Nomi lunghi (Urshifu-Rapid-Strike, Ogerpon-Wellspring) su due righe, a capo dopo il trattino: nella pillola si leggono
-   interi; i puntini solo oltre la seconda riga */
-.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: var(--fs-small); line-height: 14px; white-space: normal; overflow-wrap: anywhere; overflow: hidden; }
-@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { font-size: var(--fs-caption); } }
+/* Nomi lunghi: a capo solo agli spazi e dopo i trattini (mai a metà parola), al massimo due righe. Se la parte più
+   lunga non entra, la scritta si rimpicciolisce quanto basta (fino a 11px; --name-em come nelle carte, la riga è la
+   pillola meno l'icona dello strumento); se il nome intero verrebbe tagliato, TeamPanel mette il nome senza forma;
+   i puntini solo per un nome ancora troppo lungo */
+.band.collapsed .slot > .slot-card > .name-line { container-type: inline-size; }
+.band.collapsed .slot .name-line .name { --name-fs: var(--fs-small); flex: 1; min-width: 0; font-size: min(var(--name-fs), max(11px, (100cqi - 24px) / var(--name-em, 5.6))); line-height: 14px; white-space: normal; overflow-wrap: normal; word-break: normal; overflow: hidden; }
+@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { --name-fs: var(--fs-caption); } }
+/* Sotto i 1600 px (portatili) la pillola è stretta: l'icona dello strumento lascia il posto al nome (lo strumento è
+   nell'editor e nel tooltip della pillola) */
+@media (max-width: 1599px) {
+  .band.collapsed .slot .name-line .name { font-size: min(var(--name-fs), max(11px, 100cqi / var(--name-em, 5.6))); }
+  .band.collapsed .slot .name-line .held { display: none; }
+}
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > .slot-card, .band.collapsed .slot.warn > .slot-card { outline: none; }
 .band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent-2); outline-offset: -2px; }

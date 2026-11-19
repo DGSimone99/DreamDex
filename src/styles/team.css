@@ -344,6 +344,8 @@
 .slot .name-line .held { flex: none; display: grid; place-items: center; width: 20px; height: 20px; }
 .slot .name-line .held .item-icon { width: 20px; height: 20px; }
 .slot .name-line .name { min-width: 0; line-height: 20px; }
+/* Nome troppo lungo anche rimpicciolito e senza forma (TeamPanel): una riga sola coi puntini */
+.slot .name.dots { display: block; white-space: nowrap; text-overflow: ellipsis; }
 /* Spazio dei triangoli in fondo alla riga: uno 27px, due 54px */
 .slot:has(.slot-alerts) .name-line { align-self: stretch; }
 .slot:has(.slot-alerts) .name { --name-room: 53px; }

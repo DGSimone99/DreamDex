@@ -264,13 +264,16 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const typeText = useContext(TypeTextContext);
   // Nome: va a capo solo agli spazi e ai trattini; la larghezza vera della parte più lunga (in em) decide se e quanto si
   // rimpicciolisce (CSS --name-em)
-  // Se il nome intero verrebbe tagliato (anche al carattere più piccolo), la carta mostra il nome senza forma
-  // ("Urshifu" per Urshifu-Rapid-Strike, "Charizard" per Charizard-Mega-X); quello intero resta nel tooltip.
-  // Si misura sulla carta (watch): la sua misura non dipende dal nome mostrato. Un soprannome non si accorcia
+  // Il nome prima si rimpicciolisce (CSS); se intero verrebbe tagliato anche così, la carta mostra il nome senza forma
+  // ("Urshifu" per Urshifu-Rapid-Strike, "Charizard" per Charizard-Mega-X; un soprannome non si accorcia), e se nemmeno
+  // quello entra, una riga sola coi puntini. Il nome intero resta nel tooltip.
+  // Si misura sulla carta (watch): la sua misura non dipende dal nome mostrato
   const nameRef = useRef<HTMLElement>(null);
   const shortName = !set.name && species && species.baseSpecies !== name ? species.baseSpecies : null;
-  const fullName = useFitCount(nameRef, shortName ? 1 : 0, `${name}|${collapsed}`, card, false, nameCut) > 0;
-  const shownName = set.name || (shortName && !fullName ? shortName : name);
+  const nameSteps = shortName ? 2 : 1;
+  const nameStep = useFitCount(nameRef, nameSteps, `${set.name ?? ''}|${name}|${collapsed}`, card, false, nameCut);
+  const shownName = set.name || (shortName && nameStep < nameSteps ? shortName : name);
+  const nameDots = nameStep === 0;
   const nameEm = useNameEm(shownName);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
@@ -470,7 +473,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" ref={nameRef} aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
