@@ -545,13 +545,12 @@
   /* Riga 1: la targa del team e la guida (l'azione principale); riga 2: team salvati e scorciatoie a icona (il nome
      resta per i lettori di schermo e nel tooltip), bersagli da dito */
   .team-head .team-guide-slot { order: 1; }
-  .team-head .team-saved { order: 2; }
-  .team-head .team-quick { order: 3; flex: 1 1 auto; justify-content: flex-start; gap: var(--sp-3); }
+  .team-head .team-saved { order: 2; margin-left: auto; }
+  .team-head .team-quick { order: 3; flex: 1 1 100%; justify-content: space-between; gap: var(--sp-4); }
   .team-head .team-quick::before { display: none; }
-  .team-head :is(.team-saved, .team-quick) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .team-head :is(.team-saved, .team-quick) :is(.team-action, .popover > summary) { width: 44px; height: 40px; padding: 0; justify-content: center; }
+  /* Team salvati: solo l'icona (il nome per i lettori di schermo e nel tooltip), così la prima riga ci sta */
+  .team-head .team-saved .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .team-head .team-saved .saved-count { display: none; }
-  .team-head .team-plate, .team-head .team-guide { height: 40px; }
 }
 /* L'avviso con Annulla sotto i 1100 px: una striscia di una riga (frase, Annulla, ×) sopra la barra delle sezioni,
    non un riquadro grande in mezzo allo schermo */
@@ -586,7 +585,10 @@
   .set-editor .custom-toggle { min-height: 40px; }
   .set-editor .editor-tera .combobox input { height: 44px; }
   .band:not(.collapsed) .grade-badge button.grade-area { min-height: 32px; }
-  .band .team-head :is(.team-action, .team-guide, .popover > summary, .export-main, .export-link) { min-height: 40px; }
+  .band .team-head :is(.team-plate, .team-guide, .team-io, .team-io .export-tab, .team-saved .popover > summary, .clear-team) { height: 40px; }
+  .band .team-head .team-io > .popover { height: 100%; display: flex; }
+  .band .team-head .team-io :is(.popover > summary, .export-tab > button) { height: 100%; }
+  .band .team-head .team-saved .popover > summary, .band .team-head .clear-team { min-width: 52px; justify-content: center; }
   .band .grade-badge .help-button { width: 36px; height: 36px; }
   .set-editor .duel-settings { width: 40px; height: 40px; }
   .set-editor .duel-buff { height: 32px; }
@@ -594,5 +596,24 @@
 }
 /* Telefono: il titolo dei riquadri ripete la scheda aperta; la fascia resta (ci stanno Spread e Custom Skillset), la scritta no */
 @media (max-width: 599px) {
-  .set-editor[data-tab] fieldset > legend:not(.visually-hidden) { color: transparent; }
+  .set-editor[data-tab] fieldset > legend:not(.visually-hidden) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .set-editor[data-tab] fieldset { padding: 0; border: 0; background: none; }
+  .set-editor[data-tab] .evs > .spread-panel, .set-editor[data-tab] .set-box > .custom-toggle { position: static; justify-self: end; align-self: end; margin: 0 0 var(--sp-2); }
+  .set-editor[data-tab='set'] .set-box { display: grid; gap: var(--sp-5); }
+  .set-editor[data-tab] .duel-card { margin: 0; border-radius: 4px; overflow: hidden; }
+  .set-editor[data-tab] .stats-cell, .set-editor[data-tab] .editor-side { margin-top: var(--sp-4); }
 }
+
+/* ── Voto sul telefono e sul tablet: compatto e ordinato ───────────────────────────────────────────────── */
+@media (max-width: 1099px) {
+  /* La fascia "Voto" alta 36: il "?" ci sta dentro, a destra, non sotto */
+  .band:not(.collapsed) .grade-badge .grade-head { min-height: 36px; display: flex; align-items: center; padding-top: 0; padding-bottom: 0; }
+  .band:not(.collapsed) .grade-badge .grade-tools { top: 0; right: 14px; height: 36px; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 28px; height: 28px; }
+  /* Le aree: righe da 30, e Ruoli e Bonus/Malus col valore allineato a destra come i numeri delle altre */
+  .band:not(.collapsed) .grade-badge button.grade-area { min-height: 30px; }
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-roles, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm { grid-template-columns: minmax(0, 1fr) auto 10px; }
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b { grid-column: 2; text-align: right; }
+}
+/* La matita del soprannome staccata dal nome (il corsivo sporge a destra) */
+.editor-title .nickname { column-gap: var(--sp-4); }
