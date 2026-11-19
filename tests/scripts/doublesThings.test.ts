@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { pairResults, thingResults, THINGS, type BenchGame } from '../../scripts/doublesThings';
+import { CONTROLS, pairResults, thingResults, THINGS, type BenchGame } from '../../scripts/doublesThings';
 
 const mon = (species: string, moves: string[] = [], extra: Partial<TeamSet> = {}): TeamSet => ({ ...emptySet(species), moves, ...extra });
 /** Un team da 6: i membri dati più riempitivi senza mosse (ogni chiamata con `fill` diverso è un team diverso). */
@@ -31,7 +31,8 @@ describe('thingResults', () => {
     const games: BenchGame[] = [0, 1, 2, 3].map(i => ({ a: fo(i), b: no(i), winner: i === 0 ? 2 : 1 }));
     const r = result(games, 'fakeout');
     expect(r.winRate).toBe(0.75);
-    expect(r.margin).toBeCloseTo(1.96 * Math.sqrt(0.75 * 0.25 / 4), 10);
+    // Il margine è allargato di 1,2: lo stesso team entra fino a 3 volte e le sue partite non sono indipendenti
+    expect(r.margin).toBeCloseTo(1.2 * 1.96 * Math.sqrt(0.75 * 0.25 / 4), 10);
   });
 
   it('lo stesso team conta al massimo 3 volte', () => {
@@ -91,5 +92,39 @@ describe('pairResults', () => {
     expect(r.share).toBe(3 / 6);
     expect(r.games).toBe(3);
     expect(r.winRate).toBeCloseTo(2 / 3, 10);
+  });
+});
+
+describe('visto in partita', () => {
+  it('una mossa che viene solo dal set più usato conta nel totale ma non nel "visto in partita"', () => {
+    const full = team([mon('Tornadus', ['Tailwind'])]);
+    const seenOnly = team([mon('Tornadus', [])]);
+    const no = team([mon('Heatran', ['Flamethrower'])], 3);
+    const games: BenchGame[] = [{ a: full, b: no, winner: 1, seen: { a: seenOnly, b: no } }];
+    const r = result(games, 'tailwind');
+    expect(r.games).toBe(1);
+    expect(r.seen!.games).toBe(0);
+    expect(r.seen!.share).toBe(0);
+  });
+
+  it('senza i team "visti" non esiste la seconda misura', () => {
+    expect(result([{ a: team([mon('Tornadus', ['Tailwind'])]), b: team([], 3), winner: 1 }], 'tailwind').seen).toBeUndefined();
+  });
+});
+
+describe('CONTROLS (quello che un lato mostra)', () => {
+  const has = (key: string, t: TeamSet[]) => CONTROLS.find(c => c.key === key)!.has(t);
+  it('Mega vista', () => {
+    expect(has('megashown', team([mon('Charizard-Mega-Y')]))).toBe(true);
+    expect(has('megashown', team([mon('Charizard')]))).toBe(false);
+  });
+  it('almeno 2 Pokémon che non hanno mai mosso', () => {
+    const all = FILL.slice(0, 6).map(s => mon(s, ['Protect']));
+    expect(has('unmoved2', all)).toBe(false);
+    expect(has('unmoved2', [...all.slice(0, 4), mon('Ditto'), mon('Mew')])).toBe(true);
+  });
+  it('almeno 11 mosse viste', () => {
+    expect(has('moves11', FILL.slice(0, 6).map(s => mon(s, ['Protect', 'Tackle'])))).toBe(true);
+    expect(has('moves11', FILL.slice(0, 6).map(s => mon(s, ['Protect'])))).toBe(false);
   });
 });

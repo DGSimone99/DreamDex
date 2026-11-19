@@ -6,11 +6,17 @@
  * Conta solo le partite dove un lato ha la cosa e l'altro no; lo stesso team entra al massimo in REPEAT_CAP partite
  * (pochi team giocano centinaia di partite e da soli sposterebbero i numeri).
  */
-import { battleAbility, getMove, toID } from '../src/engine/dex';
+import { battleAbility, getMove, isMega, toID } from '../src/engine/dex';
 import type { TeamSet } from '../src/engine/sets';
 
 export interface Thing { key: string; label: string; has: (team: TeamSet[]) => boolean }
-export interface BenchGame { a: TeamSet[]; b: TeamSet[]; winner: 1 | 2 }
+export interface BenchGame {
+  a: TeamSet[];
+  b: TeamSet[];
+  winner: 1 | 2;
+  /** Gli stessi team con le sole mosse viste in partita (senza quelle aggiunte dal set più usato). */
+  seen?: { a: TeamSet[]; b: TeamSet[] };
+}
 export interface ThingResult {
   key: string;
   label: string;
@@ -20,9 +26,20 @@ export interface ThingResult {
   games: number;
   /** Quota vinta da chi ce l'ha (0–1); NaN con games = 0. */
   winRate: number;
-  /** Margine al 95% della quota (1,96·√(p(1−p)/n)); NaN con games = 0. */
+  /** Margine al 95% della quota (1,2 × 1,96·√(p(1−p)/n)); NaN con games = 0. */
   margin: number;
+  /** La stessa misura contando solo le mosse viste in partita (c'è se le partite portano i team "visti"). */
+  seen?: { share: number; games: number; winRate: number; margin: number };
 }
+
+/**
+ * Il margine semplice viene troppo stretto: lo stesso team entra fino a REPEAT_CAP volte e le sue partite non sono
+ * indipendenti. Con un tratto messo a caso sui team (600 prove sulle partite vere) cade fuori dal margine semplice
+ * il 9–11% delle volte invece del 5%: allargato di 1,2 torna giusto.
+ */
+const MARGIN_WIDEN = 1.2;
+/** Il tetto dipende dall'ordine delle partite: si fa la media su tanti ordini mescolati (sempre gli stessi, seme fisso). */
+const SHUFFLES = 20;
 
 /** Ogni team entra al massimo in tante partite. */
 const REPEAT_CAP = 3;
@@ -69,7 +86,7 @@ export const THINGS: Thing[] = [
 const teamKey = (team: TeamSet[]) => team.map(m => m.species).sort().join('/');
 
 /** Le partite col tetto: una partita si salta se uno dei due team è già entrato REPEAT_CAP volte. */
-function capped(games: BenchGame[]): BenchGame[] {
+function capOnce(games: BenchGame[]): BenchGame[] {
   const seen = new Map<string, number>();
   return games.filter(g => {
     const keys = [teamKey(g.a), teamKey(g.b)];
@@ -79,18 +96,57 @@ function capped(games: BenchGame[]): BenchGame[] {
   });
 }
 
-function measure(all: BenchGame[], kept: BenchGame[], thing: Thing): ThingResult {
-  const sides = all.flatMap(g => [g.a, g.b]);
-  const share = sides.length ? sides.filter(thing.has).length / sides.length : 0;
-  let games = 0, wins = 0;
-  for (const g of kept) {
-    const [a, b] = [thing.has(g.a), thing.has(g.b)];
+/** Le partite col tetto, in SHUFFLES ordini diversi: senza, resterebbero sempre le 3 partite più recenti di ogni team. */
+function capped(games: BenchGame[]): BenchGame[][] {
+  let seed = 12345;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  return Array.from({ length: SHUFFLES }, () => {
+    const order = [...games];
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    return capOnce(order);
+  });
+}
+
+type Teams = (g: BenchGame) => { a: TeamSet[]; b: TeamSet[] };
+const FULL: Teams = g => g;
+const SEEN: Teams = g => g.seen ?? g;
+
+/** Quota dei lati che hanno la cosa, e quanto vince chi ce l'ha (media sugli ordini mescolati). */
+function rate(all: BenchGame[], kept: BenchGame[][], has: Thing['has'], teams: Teams) {
+  const sides = all.flatMap(g => { const t = teams(g); return [t.a, t.b]; });
+  const share = sides.length ? sides.filter(has).length / sides.length : 0;
+  let counted = 0, wins = 0;
+  for (const round of kept) for (const g of round) {
+    const t = teams(g);
+    const [a, b] = [has(t.a), has(t.b)];
     if (a === b) continue;
-    games++;
+    counted++;
     if ((a && g.winner === 1) || (b && g.winner === 2)) wins++;
   }
-  const winRate = games ? wins / games : NaN;
-  return { key: thing.key, label: thing.label, share, games, winRate, margin: games ? 1.96 * Math.sqrt(winRate * (1 - winRate) / games) : NaN };
+  const games = Math.round(counted / kept.length);
+  const winRate = counted ? wins / counted : NaN;
+  return { share, games, winRate, margin: games ? MARGIN_WIDEN * 1.96 * Math.sqrt(winRate * (1 - winRate) / games) : NaN };
+}
+
+function measure(all: BenchGame[], kept: BenchGame[][], thing: Thing, teams: Teams = FULL): ThingResult {
+  const withSeen = teams === FULL && all.length > 0 && all.every(g => g.seen);
+  return { key: thing.key, label: thing.label, ...rate(all, kept, thing.has, teams), ...(withSeen && { seen: rate(all, kept, thing.has, SEEN) }) };
+}
+
+/**
+ * Controllo: quello che un lato MOSTRA in partita va insieme al vincere più di quasi tutte le cose (chi vince tiene
+ * Pokémon in panchina e mostra più mosse). Si misurano sui team "visti": servono a pesare le altre righe.
+ */
+export const CONTROLS: Thing[] = [
+  { key: 'megashown', label: 'Controllo: una Mega vista in campo', has: team => team.some(isMega) },
+  { key: 'unmoved2', label: 'Controllo: almeno 2 Pokémon che non hanno mai mosso', has: team => count(team, m => m.moves.length === 0) >= 2 },
+  { key: 'moves11', label: 'Controllo: almeno 11 mosse viste in tutto', has: team => team.reduce((n, m) => n + m.moves.length, 0) >= 11 },
+];
+
+/** I controlli, misurati sui team con le sole mosse viste (le partite devono portarli). */
+export function controlResults(games: BenchGame[]): ThingResult[] {
+  const kept = capped(games);
+  return CONTROLS.map(thing => measure(games, kept, thing, SEEN));
 }
 
 export function thingResults(games: BenchGame[], things: Thing[] = THINGS): ThingResult[] {

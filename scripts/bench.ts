@@ -36,7 +36,7 @@ import { defaultSet, type TeamSet } from '../src/engine/sets';
 import { dex, getMove, toID } from '../src/engine/dex';
 import { lockedStatusMoves } from '../src/engine/lockedMoves';
 import { statsEntry } from '../src/engine/stats';
-import { pairResults, thingResults, type BenchGame, type ThingResult } from './doublesThings';
+import { controlResults, pairResults, thingResults, type BenchGame, type ThingResult } from './doublesThings';
 import type { Game as RealGame, Revealed } from './fetch-games';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 
@@ -366,7 +366,7 @@ function clusterInterval(counted: { keys: [string, string]; right: boolean }[], 
  *  in campo la sua, e il team che perde sembrerebbe più forte (Mega vista in 2179 team che perdono, 1986 che vincono). */
 function realGames(doubles = false) {
   const games = readRealGames(doubles ? DOUBLES_GAMES : 'games.json');
-  if (!games.length) { console.error(doubles ? MISSING_DOUBLES : 'Mancano le partite: lancia npx tsx scripts/fetch-games.ts'); return; }
+  if (!games.length) { console.error(MIN_GAME_RATING ? `Nessuna partita da ${MIN_GAME_RATING} in su` : doubles ? MISSING_DOUBLES : 'Mancano le partite: lancia npx tsx scripts/fetch-games.ts'); return; }
   const bins = [[1, 4], [5, 9], [10, 100]] as const;
   // In doppio molti team non hanno una Mega: il blocco esce due volte, con tutte le partite e col filtro del singolo
   for (const fmt of [...new Set(games.map(g => GAMES_FORMAT[g.format]))]) for (const mega of doubles ? [false, true] : [MEGA_FORMATS.has(fmt)]) {
@@ -407,25 +407,42 @@ function realGames(doubles = false) {
 /** --doppio-cose: per ogni cosa del doppio quanto vince chi ce l'ha contro chi non ce l'ha, e le coppie più viste. */
 function doublesThings() {
   const games = readRealGames(DOUBLES_GAMES);
-  if (!games.length) { console.error(MISSING_DOUBLES); return; }
-  let skipped = 0;
+  if (!games.length) { console.error(MIN_GAME_RATING ? `Nessuna partita del doppio da ${MIN_GAME_RATING} in su` : MISSING_DOUBLES); return; }
+  let skipped = 0, members = 0, noStats = 0;
   const list: BenchGame[] = [];
+  /** Lo stesso team con le sole mosse viste in partita (quelle aggiunte dal set più usato tolte). */
+  const seenTeam = (team: TeamSet[], side: Revealed[]) => team.map((set, i) => ({ ...set, moves: set.moves.filter(m => side[i].moves.some(r => toID(r) === toID(m))) }));
   for (const g of games) {
     const fmt = GAMES_FORMAT[g.format];
     const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
     if (!a || !b) { skipped++; continue; }
-    list.push({ a, b, winner: g.winner });
+    // Un Pokémon senza statistiche di doppio prende mosse e strumento da un set del singolo o generato
+    for (const r of [...g.p1, ...g.p2]) { members++; if (!statsEntry(DATA[fmt].stats, r.species)) noStats++; }
+    list.push({ a, b, winner: g.winner, seen: { a: seenTeam(a, g.p1), b: seenTeam(b, g.p2) } });
   }
+  const pct = (x: number) => (100 * x).toFixed(1);
   console.log(`
-== doppio: cosa fa vincere — ${list.length} partite su ${games.length}${MIN_GAME_RATING ? ` da ${MIN_GAME_RATING} in su` : ''} (${skipped} saltate: Pokémon senza set)`);
-  console.log('Di un Pokémon si vede solo quello che usa in partita; il resto è il set più usato. Una mossa portata ma mai usata può mancare.');
-  console.log('Contano le partite dove un lato ha la cosa e l\'altro no; ogni team al massimo 3 volte. Sopra il 50% = chi ce l\'ha vince di più.\n');
-  const row = (r: ThingResult) => console.log(`  ${r.label.padEnd(58)} ${`${(100 * r.share).toFixed(0)}% dei team`.padStart(13)}  ${String(r.games).padStart(5)} partite  ${
-    r.games ? `vince ${(100 * r.winRate).toFixed(1)}% ± ${(100 * r.margin).toFixed(1)}` : 'vince –'}${r.games < 50 ? '  (poche partite)' : ''}`);
+== doppio: cosa fa vincere — ${list.length} partite su ${games.length}${MIN_GAME_RATING ? ` da ${MIN_GAME_RATING} in su` : ''} (${skipped} saltate)`);
+  console.log(`Come si legge:
+  - Contano le partite dove un lato ha la cosa e l'altro no; ogni team al massimo 3 volte (media su 20 ordini mescolati).
+    Sopra il 50% = chi ce l'ha vince di più. Il ± è il margine al 95%, già allargato per i team ripetuti.
+  - "ha": mosse viste in partita più quelle del set più usato della specie. "visto": solo le mosse usate davvero in partita.
+    Dove i due numeri sono lontani, "ha" racconta soprattutto quali specie ci sono, non la mossa. Abilità: i due numeri coincidono.
+  - È "sta insieme al vincere", non "fa vincere": le cose viaggiano insieme sugli stessi team (Charizard col sole, Rillaboom
+    col campo e Fake Out). Con tante righe lette insieme, circa 1 su 20 esce dal suo margine per caso.
+  - Le fasce (0–1, 2–3, 4+) sono confrontate con tutte le altre fasce insieme, non con una base fissa.
+  - ${noStats} Pokémon su ${members} (${pct(noStats / members)}%) non hanno statistiche di doppio: mosse e strumento da un set del singolo o generato.
+`);
+  const cell = (x: { share: number; games: number; winRate: number; margin: number }) =>
+    `${`${(100 * x.share).toFixed(0)}%`.padStart(4)} ${String(x.games).padStart(4)} ${(x.games ? `${pct(x.winRate)}% ± ${pct(x.margin)}` : '–').padEnd(13)}${x.games < 50 ? '*' : ' '}`;
+  console.log(`  ${''.padEnd(58)} ha: team partite vince         visto: team partite vince   (* = meno di 50 partite)`);
+  const row = (r: ThingResult) => console.log(`  ${r.label.padEnd(58)}     ${cell(r)}        ${r.seen ? cell(r.seen) : ''}`);
   const far = (r: ThingResult) => (r.games ? Math.abs(r.winRate - 0.5) : -1);
   [...thingResults(list)].sort((x, y) => far(y) - far(x)).forEach(row);
+  console.log('\n  Controlli: quello che un lato mostra in partita (chi vince tiene Pokémon in panchina e mostra più mosse)');
+  controlResults(list).forEach(r => console.log(`  ${r.label.padEnd(58)}     ${cell(r)}`));
   console.log('\n  Le 20 coppie di compagni più viste');
-  pairResults(list).forEach(row);
+  pairResults(list).forEach(r => console.log(`  ${r.label.padEnd(58)}     ${cell(r)}`));
 }
 
 type Rate = (team: TeamSet[], fmt: FormatId, withMeta: boolean) => TeamRating;
