@@ -302,6 +302,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   return (
     <div className="fill-panel" role="dialog" aria-modal="false" aria-label={t('fill.title')} ref={root}>
       <div className="fill-top">
+        {/* Telefono: il titolo e la × in testa (a tutto schermo non c'è un "fuori" da toccare per chiudere) */}
+        <p className="fill-title" aria-hidden="true">{t('fill.title')}</p>
+        <button type="button" className="fill-close" aria-label={t('combobox.close')} onClick={onClose}><Icon name="close" /></button>
         <div className="fill-tabs" role="tablist" aria-label={t('fill.title')}>
           {tabButton('proposals', t('fill.tabProposals'))}
           {tabButton('tournament', t('fill.tabTournament'), data.tournamentTeams?.length ?? 0)}

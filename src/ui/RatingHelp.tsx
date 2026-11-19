@@ -135,7 +135,7 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
             {ARCHETYPES.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar weight={weights[arch][area]} step={stepOf(weights, arch, area)} /></td>)}
+                {WEIGHT_AREAS.map(area => <td key={area} data-label={t(`area.${area}`)}><WeightBar weight={weights[arch][area]} step={stepOf(weights, arch, area)} /></td>)}
               </tr>
             ))}
           </tbody>

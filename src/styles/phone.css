@@ -877,3 +877,35 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .band .team-head .team-guide-slot .team-guide:hover::before, .band .team-head .team-guide-slot .team-guide[aria-expanded='true']::before { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   .band .team-head .team-guide-slot .team-guide:focus-visible { outline-offset: 2px; border-radius: 8px 2px 8px 2px; }
 }
+
+/* ── Completa team e "Come funziona il voto" sul telefono (2026-11-19) ──────────────────────────────────── */
+/* La × e il titolo di Completa team solo sul telefono (altrove si chiude col suo pulsante, fuori o con Esc) */
+.fill-title, .fill-close { display: none; }
+@media (max-width: 599px) {
+  /* A tutto schermo; in testa titolo, voto di adesso e ×; sotto le due schede, metà e metà */
+  .fill-panel { top: 0; height: 100dvh; max-height: 100dvh; border-radius: 0; padding-top: 0; }
+  .fill-top { position: sticky; top: 0; z-index: 3; flex-wrap: wrap; row-gap: 0; column-gap: var(--sp-4); padding: var(--sp-3) var(--sp-3) 0 var(--sp-7); background: var(--panel); }
+  .fill-title { display: block; order: 0; flex: 1; margin: 0; font: italic 800 var(--fs-heading)/1 var(--display); }
+  .fill-now { order: 1; margin: 0; }
+  .fill-close { display: inline-flex; order: 2; width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; color: var(--muted); }
+  .fill-close .icon { width: 20px; height: 20px; }
+  .fill-tabs { order: 3; flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; margin: var(--sp-2) 0 0 calc(-1 * var(--sp-4)); }
+  .fill-tab { justify-content: center; align-items: center; padding: var(--sp-5) var(--sp-3) var(--sp-4); white-space: nowrap; font-size: var(--fs-section); }
+  /* I tipi di team vanno a capo (prima uscivano dallo schermo a destra) */
+  .fill-types { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; gap: var(--sp-3); }
+  .fill-types .fill-option { max-width: none; }
+  /* Usa col dito */
+  .fill-panel .fill-add { min-height: 44px; min-width: 64px; }
+
+  /* Come funziona il voto: la tabella dei pesi diventa una scheda per tipo di team, le aree in colonna col loro nome */
+  .help-table-wrap { overflow: visible; }
+  .help-weights, .help-weights tbody, .help-weights tr, .help-weights th, .help-weights td { display: block; }
+  .help-weights thead { display: none; }
+  .help-weights tbody { display: grid; gap: var(--sp-4); }
+  .help-weights tr { padding: var(--sp-4) var(--sp-5); border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel); }
+  .help-weights tr.current { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .help-weights th[scope='row'] { padding: 0 0 var(--sp-3); border: 0; font: 700 var(--fs-section)/1.2 var(--display); color: var(--text); }
+  .help-weights td { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: var(--sp-4); padding: 3px 0; border: 0; }
+  .help-weights td::before { content: attr(data-label); font-size: var(--fs-caption); color: var(--muted); }
+  .help-weights .help-wbar { min-width: 0; }
+}
