@@ -827,3 +827,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   /* Un nome lungo va a capo (Urshifu-Rapid- / Strike) invece di tagliarsi */
   .set-editor .editor-title .nickname strong { white-space: normal; line-height: 1.05; text-align: left; }
 }
+/* Telefono: niente piede dell'editor (Ruoli e Sostituisci). Sostituisci sta nel menu del membro (tenendo premuta la carta) */
+@media (max-width: 599px) {
+  .set-editor .editor-foot { display: none; }
+}
