@@ -1,7 +1,7 @@
 import { type CSSProperties, useDeferredValue, useMemo, useState } from 'react';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
-import { getMove, toID } from '../engine/dex';
+import { getMove, getSpecies, toID } from '../engine/dex';
 import { editorDuel, worstThreat, type DuelHit } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
@@ -14,6 +14,7 @@ import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
 import { PokemonIcon } from './PokemonName';
 import { moveTint } from './MovePill';
+import { Sprite, typeColor } from './Sprite';
 import { typeIconUrl } from './typeIcons';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
@@ -73,6 +74,14 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     return t('editor.duelHitsRange', { a: hit.hitsMaybe, b: hit.hitsSure });
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const oppType = species ? getSpecies(species)?.types[0] : undefined;
+  // PS che restano all'avversario dopo il tuo colpo migliore (da quello peggiore a quello migliore per lui)
+  const left = result?.mine ? (() => {
+    const lo = Math.max(0, 1 - result.mine.max), hi = Math.max(0, 1 - result.mine.min);
+    const zone = hi > 0.5 ? 'high' : hi > 0.2 ? 'mid' : 'low';
+    const text = Math.round(lo * 100) === Math.round(hi * 100) ? pct(hi) : `${Math.round(lo * 100)}–${pct(hi)}`;
+    return { lo, hi, zone, text };
+  })() : null;
   const row = (kind: 'mine' | 'theirs', hit: DuelHit | null) => (
     <div className={`duel-row ${kind}`}>
       <span className="duel-who">{t(kind === 'mine' ? 'editor.duelMine' : 'editor.duelTheirs')}</span>
@@ -102,16 +111,27 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   return (
     <fieldset className="editor-group duel">
       <legend>{t('editor.duel')}</legend>
-      <div className="duel-pick">
-        <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted
-          placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
-          leading={species ? <PokemonIcon name={species} /> : undefined}
-          onChange={name => { setPicked(name || null); setSetKey(null); }} />
-        {sets.length > 0 && (
-          <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2}
-            options={sets.map(s => ({ value: s.key, label: s.label }))}
-            display={<span>{chosen?.label}</span>}
-            onChange={key => setSetKey(key)} />
+      {/* L'avversario come la barra della lotta di Champions: il riquadro con lo sprite e, attaccata in alto, la linguetta
+          con Pokémon e Set; sotto la linguetta i PS che gli restano dopo il tuo colpo migliore */}
+      <div className="duel-card" style={{ '--tc': typeColor(oppType ?? '') } as CSSProperties}>
+        <div className="duel-portrait" aria-hidden="true">{species && <Sprite species={species} size={96} />}</div>
+        <div className="duel-tongue">
+          <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className="duel-species"
+            placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
+            onChange={name => { setPicked(name || null); setSetKey(null); }} />
+          {sets.length > 0 && (
+            <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
+              options={sets.map(s => ({ value: s.key, label: s.label }))}
+              display={<span>{chosen?.label}</span>}
+              onChange={key => setSetKey(key)} />
+          )}
+        </div>
+        {left && (
+          <div className="duel-hp" style={{ '--lo': left.lo, '--hi': left.hi } as CSSProperties} data-zone={left.zone}>
+            <span className="duel-hp-tag" aria-hidden="true">PS</span>
+            <span className="duel-hp-bar" aria-hidden="true" />
+            <span className="duel-hp-num">{left.text}</span>
+          </div>
         )}
       </div>
       {result ? (

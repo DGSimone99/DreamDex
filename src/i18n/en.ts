@@ -682,7 +682,6 @@ export const en = {
   'editor.speedFaster': "Faster",
   'editor.speedTies': "Same speed",
   'editor.speedSlower': "Slower",
-  'editor.megaAbilityNote': "Set by the Mega",
   'editor.evSlider': "{stat} EVs, slider",
   'editor.evTotal': "EVs used",
   'editor.evLeft': "{n} left",

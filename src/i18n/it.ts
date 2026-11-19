@@ -684,7 +684,6 @@ export const it: Record<keyof typeof en, string> = {
   'editor.speedFaster': "Più veloci",
   'editor.speedTies': "Stessa velocità",
   'editor.speedSlower': "Più lenti",
-  'editor.megaAbilityNote': "Fissata dalla Mega",
   'editor.evSlider': "EV {stat}, cursore",
   'editor.evTotal': "EV usati",
   'editor.evLeft': "{n} liberi",
