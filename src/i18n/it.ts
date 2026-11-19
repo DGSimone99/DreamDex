@@ -508,6 +508,7 @@ export const it: Record<keyof typeof en, string> = {
   'undo.presets': "Set migliorati: {from} → {to}",
   'team.bestPresets': "Migliora i set",
   'team.bestPresetsTitle': "Per ogni membro, il preset Smogon che dà al team il voto più alto",
+  'team.more': "Azioni del team",
   'team.clear': "Svuota team",
   'team.clearTitle': "Svuota il team",
   'undo.filledOne': "Aggiunto 1 Pokémon: {from} → {to}",

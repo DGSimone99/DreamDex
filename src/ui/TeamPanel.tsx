@@ -38,6 +38,8 @@ import { SMALL, useBackClose } from './useBackClose';
 import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
+import { useMediaQuery } from './useMediaQuery';
+import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
 import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
@@ -530,6 +532,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
               </button>
             )}
             <span className="types" aria-hidden="true">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
+            {/* Telefono: la testata dell'editor come il riepilogo di un gioco, lo sprite grande a destra sul colore del tipo
+                (sul computer non c'è: lo sprite animato sta già nella carta aperta) */}
+            <span className="editor-hero" aria-hidden="true"
+              style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as CSSProperties}>
+              <Sprite species={set.species} item={set.item} shiny={!!set.shiny} />
+            </span>
             <Hint label={tr('team.shiny')}>
               <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')}
                 onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
@@ -752,6 +760,18 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   }, [team, data, format]);
   // Completa team: pannello con le proposte e i team da torneo
   const [filling, setFilling] = useState(false);
+  // Telefono: Team salvati, Importa, Esporta, link e Svuota in un menu "…" che si apre dal basso, ognuna col suo nome.
+  // Le voci premono i pulsanti veri (nascosti a vista ma vivi), così i loro pannelli si aprono come sempre
+  const phoneMenu = useMediaQuery(SHEET_QUERY);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreButton = useRef<HTMLButtonElement>(null);
+  const moreSheet = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
+  useAnchoredPop(moreButton, moreSheet, moreOpen, { sheet: true, onDismiss: () => setMoreOpen(false) });
+  const pressReal = (selector: string) => {
+    setMoreOpen(false);
+    requestAnimationFrame(() => headRef.current?.querySelector<HTMLElement>(selector)?.click());
+  };
   const fillToggle = useRef<HTMLButtonElement>(null);
   // Chiudendo il pannello il focus torna al pulsante
   const closeFill = useCallback(() => { setFilling(false); fillToggle.current?.focus(); }, []);
@@ -822,7 +842,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const title = t(lang, 'team.title', { n: team.length });
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
-      <div className="team-head">
+      <div className="team-head" ref={headRef}>
         {/* La targa del team: la parola Team, quanti sono e il nome del team salvato in uso (i team salvati hanno la loro
             linguetta a destra) */}
         <div className="team-plate">
@@ -880,6 +900,23 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             if (member) onChange(team.map((s, j) => (j === ask.index ? { ...member, customSkillset: true } : s)));
             setAsk(null);
           }} />
+        )}
+        {phoneMenu && (
+          <div className="team-more">
+            <button type="button" className="team-more-button" ref={moreButton} aria-label={t(lang, 'team.more')} aria-haspopup="menu"
+              aria-expanded={moreOpen} onClick={() => setMoreOpen(open => !open)}><Icon name="dots" /></button>
+            {moreOpen && (
+              <div className="team-more-sheet" ref={moreSheet} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={t(lang, 'team.more')}
+                onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMoreOpen(false); moreButton.current?.focus(); } }}>
+                <p className="team-more-title" aria-hidden="true">Team</p>
+                {saved && <button type="button" role="menuitem" onClick={() => pressReal('.team-saved .popover > summary')}><Icon name="box" />{t(lang, 'saved.label')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .popover > summary')}><Icon name="paste" />{t(lang, 'showdown.import')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-main')}><Icon name="copy" />{t(lang, 'showdown.quickCopy')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-link')}><Icon name="link" />{t(lang, 'showdown.copyLink')}</button>}
+                {team.length > 0 && <button type="button" role="menuitem" className="danger" onClick={() => pressReal('.clear-team')}><Icon name="trash" />{t(lang, 'team.clear')}</button>}
+              </div>
+            )}
+          </div>
         )}
         {/* Scorciatoie, sempre allo stesso posto a destra: Importa, Esporta e il link in un gruppo, poi Svuota a parte */}
         <div className="team-quick">
