@@ -114,10 +114,19 @@
 /* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
    stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
 .band.collapsed .slot > .slot-card > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: var(--sp-2); flex: 1; min-width: 0; margin: 0; }
-/* Nomi lunghi (Urshifu-Rapid-Strike, Ogerpon-Wellspring) su due righe, a capo dopo il trattino: nella pillola si leggono
-   interi; i puntini solo oltre la seconda riga */
-.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: var(--fs-small); line-height: 14px; white-space: normal; overflow-wrap: anywhere; overflow: hidden; }
-@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { font-size: var(--fs-caption); } }
+/* Nomi lunghi: a capo solo agli spazi e dopo i trattini (mai a metà parola), al massimo due righe. Se la parte più
+   lunga non entra, la scritta si rimpicciolisce quanto basta (fino a 11px; --name-em come nelle carte, la riga è la
+   pillola meno l'icona dello strumento); se il nome intero verrebbe tagliato, TeamPanel mette il nome senza forma;
+   i puntini solo per un nome ancora troppo lungo */
+.band.collapsed .slot > .slot-card > .name-line { container-type: inline-size; }
+.band.collapsed .slot .name-line .name { --name-fs: var(--fs-small); flex: 1; min-width: 0; font-size: min(var(--name-fs), max(11px, (100cqi - 24px) / var(--name-em, 5.6))); line-height: 14px; white-space: normal; overflow-wrap: normal; word-break: normal; overflow: hidden; }
+@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { --name-fs: var(--fs-caption); } }
+/* Sotto i 1600 px (portatili) la pillola è stretta: l'icona dello strumento lascia il posto al nome (lo strumento è
+   nell'editor e nel tooltip della pillola) */
+@media (max-width: 1599px) {
+  .band.collapsed .slot .name-line .name { font-size: min(var(--name-fs), max(11px, 100cqi / var(--name-em, 5.6))); }
+  .band.collapsed .slot .name-line .held { display: none; }
+}
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > .slot-card, .band.collapsed .slot.warn > .slot-card { outline: none; }
 .band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent-2); outline-offset: -2px; }
@@ -143,15 +152,12 @@
 .band.collapsed .grade-badge .overall { font-size: var(--fs-title-l); }
 /* Editor del set: chiusura, riga EV usati / spread, ruoli in fondo, colonne allineate in basso */
 .set-editor { align-items: stretch; row-gap: var(--sp-4); }
-/* Set in alto, Mosse in basso: il fondo delle Mosse coincide con quello delle Statistiche, senza spazio vuoto dentro */
+/* Set (con le mosse) in alto, la Sfida sotto */
 .set-editor .editor-side { grid-template-rows: auto auto; align-content: space-between; }
 .editor-actions .editor-close { width: 36px; padding: 0; justify-content: center; }
 .editor-actions .editor-close:hover { border-color: var(--bad); color: var(--bad); }
-/* EV usati a sinistra e Spread più usati a destra, staccati da titolo e righe */
-.set-editor .evs .stats-toolbar { display: flex; align-items: center; gap: var(--sp-6); margin: var(--sp-4) 0 var(--sp-1); }
-.set-editor .evs .stats-toolbar .spread-panel { display: block; margin-left: auto; }
-.set-editor .evs .spread-panel > summary { position: static; }
-.set-editor .evs .stats-toolbar .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
+/* L'elenco degli spread si apre sotto la targhetta Spread */
+.set-editor .evs .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
 /* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
    tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
@@ -244,7 +250,6 @@
   .stat-row { padding-top: 4.5px; padding-bottom: 4.5px; }
   .set-editor .ev-input, .set-editor .iv-input { height: 24px; }
   .set-editor .evs { gap: var(--sp-2); }
-  .set-editor .evs .stats-toolbar { margin: var(--sp-2) 0 0; }
   .set-editor .stat-rows { gap: 6px; }
   .set-editor fieldset { padding-bottom: var(--sp-4); }
   .set-editor .editor-group { gap: var(--sp-3) var(--sp-6); }
@@ -298,13 +303,7 @@
 @media (min-width: 2200px) and (min-height: 1100px) {
   html { zoom: 1.25; }
   .app { height: calc(100dvh / 1.25); min-height: 0; }
-  /* Schermo largo: la carta del voto prende più larghezza (dalle carte del team) e scritte e barre un po' più grandi */
-  .band { grid-template-columns: minmax(0, 1fr) 330px; }
-  .grade-area { font-size: var(--fs-section); }
-  .grade-badge button.grade-area { font-size: var(--fs-section); grid-template-columns: 78px 1fr 28px 10px; }
-  .grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 28px 10px; }
-  .grade-badge button.grade-area.grade-roles { grid-template-columns: 78px 1fr 10px; }
-  .grade-area .meter { height: 9px; }
+  /* La carta del voto resta quella di sempre (già ingrandita con tutto il resto): niente larghezza né scritte in più */
 }
 @media (min-width: 3000px) and (min-height: 1500px) {
   html { zoom: 1.6; }
@@ -617,11 +616,11 @@
   /* Statistiche: righe alternate attaccate (come in Champions), da 40px (36 su schermi bassi) fino a 56px */
   .set-editor .stats-cell > .evs { display: flex; flex-direction: column; gap: var(--sp-2); }
   .set-editor .evs .stat-rows { flex: 1 1 auto; max-height: calc(6 * 56px + 36px); align-content: stretch; grid-template-rows: auto; grid-auto-rows: minmax(min-content, 1fr); gap: 0; }
-  .set-editor .evs .stat-rows > .stat-head { padding: var(--sp-4) 0 var(--sp-2); }
+  .set-editor .evs .stat-rows > .stat-head { padding: var(--sp-4) var(--sp-5) var(--sp-2) var(--sp-4); }
   /* Oltre il massimo delle righe, la riga della velocità resta attaccata al fondo del riquadro */
   .set-editor .evs .speed-line { margin-top: auto; }
-  /* Set e Mosse: lo spazio in più diviso 2 a 3 (quanto contengono); dentro, i campi si distanziano in modo uguale */
-  .set-editor .editor-side { grid-template-rows: minmax(auto, 2fr) minmax(auto, 3fr); align-content: stretch; }
+  /* Senza Sfida il Set prende tutta l'altezza; dentro, i campi si distanziano in modo uguale */
+  .set-editor .editor-side { grid-template-rows: minmax(auto, 1fr); align-content: stretch; }
   .set-editor .editor-side > .editor-group { align-content: space-evenly; }
 }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
@@ -648,9 +647,12 @@
 .duel-tip { margin: 0; padding: var(--sp-2) var(--sp-4); border-radius: 4px; background: var(--accent-wash); color: var(--accent-ink); font-size: var(--fs-small); }
 @media (min-width: 1100px) {
   /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
-  .set-editor .editor-side.with-duel { grid-template-rows: auto auto minmax(0, 1fr); }
-  .set-editor .editor-side.with-duel > .editor-group:not(.duel) { align-content: start; }
-  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-4); }
+  /* Con la Sfida: il Set alto quanto il contenuto (spazi fissi: un po' d'aria sotto la fascia, 12px fra targhette e
+     mosse), la Sfida prende tutto il resto */
+  .set-editor .editor-side.with-duel { grid-template-rows: auto minmax(0, 1fr); }
+  .set-editor .editor-side.with-duel > .set-box { align-content: start; row-gap: var(--sp-6); padding-top: var(--sp-6); }
+  .set-editor .editor-side.with-duel > .set-box > .editor-group { align-content: start; }
+  .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-4); }
   .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: space-evenly; overflow: hidden; }
 }
 .duel-pick .combobox.has-leading input { padding-left: 44px; }
@@ -661,5 +663,5 @@
   .duel-pick .combobox input, .duel-pick .combobox .combo-display { height: 30px; }
   .duel-row { min-height: 24px; }
   .duel-tip { padding: 1px var(--sp-4); }
-  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-2); }
+  .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-2); }
 }

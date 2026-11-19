@@ -10,8 +10,9 @@ const overflows = (el: HTMLElement, onlyX = false) => el.scrollWidth > el.client
  * e quando arrivano i caratteri. `watch`: un contenitore la cui misura non dipende dagli elementi mostrati
  * (se `ref` si stringe col contenuto, osservarlo farebbe ripartire la misura all'infinito).
  * `onlyX`: conta solo la larghezza (una fila con menu che si aprono sotto, che non sono contenuto che sborda).
+ * `test`: al posto di "ref sborda", un controllo proprio (es. "una delle carte dentro ref sborda").
  */
-export function useFitCount(ref: RefObject<HTMLElement | null>, total: number, key: string, watch?: RefObject<HTMLElement | null>, onlyX = false): number {
+export function useFitCount(ref: RefObject<HTMLElement | null>, total: number, key: string, watch?: RefObject<HTMLElement | null>, onlyX = false, test?: (el: HTMLElement) => boolean): number {
   // v conta le ripartenze: un passo misurato prima di una ripartenza non la cancella
   const [fit, setFit] = useState({ key, n: total, v: 0 });
   const n = fit.key === key ? Math.min(fit.n, total) : total;
@@ -19,7 +20,7 @@ export function useFitCount(ref: RefObject<HTMLElement | null>, total: number, k
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el || n === 0 || fit.key !== key || !overflows(el, onlyX)) return;
+    if (!el || n === 0 || fit.key !== key || !(test ? test(el) : overflows(el, onlyX))) return;
     setFit(f => (f.v === fit.v ? { ...f, n: n - 1 } : f));
   });
 

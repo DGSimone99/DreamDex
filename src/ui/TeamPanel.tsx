@@ -9,7 +9,7 @@ import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { createContext, memo, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
@@ -176,6 +176,19 @@ interface SlotActions {
   proposalDone: (applied: boolean) => void;
 }
 
+/**
+ * Tipi nelle carte del team, a passi uguali per tutte le carte (TeamPanel misura la fila e scende di un passo appena
+ * una delle coppie del team non entra): 3 = una larghezza unica (il nome più lungo), 2 = tre larghezze fisse (nomi
+ * corti, medi, lunghi), 1 = larghezza che segue il nome (scritta più piccola nelle carte strette), 0 = solo le icone.
+ */
+const TypeTextContext = createContext(true);
+const TYPE_STEPS = ['icons', 'fit', 'sized', 'full'] as const;
+const typesOverflow = (el: HTMLElement) =>
+  [...el.querySelectorAll<HTMLElement>('.slot-card .types')].some(row => row.scrollWidth > row.clientWidth + 1);
+
+/** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
+const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
+
 const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
   index: number;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
@@ -245,13 +258,22 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
-  // Tipi: due chip col nome se entrano nella carta, sennò le icone tonde dei tipi (il nome nel tooltip e per i lettori)
+  // Tipi: chip col nome finché entrano in tutte le carte, sennò le icone tonde dei tipi (il nome nel tooltip e per i
+  // lettori). Lo decide la fila del team (TypeTextContext), uguale per tutte le carte
   const typeList = species?.types ?? ['?'];
-  const typesRef = useRef<HTMLSpanElement>(null);
-  const typeText = useFitCount(typesRef, 1, `${lang}|${typeList.join('/')}`, undefined, true) > 0;
+  const typeText = useContext(TypeTextContext);
   // Nome: va a capo solo agli spazi e ai trattini; la larghezza vera della parte più lunga (in em) decide se e quanto si
   // rimpicciolisce (CSS --name-em)
-  const shownName = set.name || name;
+  // Il nome prima si rimpicciolisce (CSS); se intero verrebbe tagliato anche così, la carta mostra il nome senza forma
+  // ("Urshifu" per Urshifu-Rapid-Strike, "Charizard" per Charizard-Mega-X; un soprannome non si accorcia), e se nemmeno
+  // quello entra, una riga sola coi puntini. Il nome intero resta nel tooltip.
+  // Si misura sulla carta (watch): la sua misura non dipende dal nome mostrato
+  const nameRef = useRef<HTMLElement>(null);
+  const shortName = !set.name && species && species.baseSpecies !== name ? species.baseSpecies : null;
+  const nameSteps = shortName ? 2 : 1;
+  const nameStep = useFitCount(nameRef, nameSteps, `${set.name ?? ''}|${name}|${collapsed}`, card, false, nameCut);
+  const shownName = set.name || (shortName && nameStep < nameSteps ? shortName : name);
+  const nameDots = nameStep === 0;
   const nameEm = useNameEm(shownName);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
@@ -451,7 +473,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
@@ -461,7 +483,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         )}
         </span>
         <small className="ability" title={describe.ability(ability, lang)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
-        <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef} aria-hidden="true">
+        <span className={`types${typeText ? '' : ' as-icons'}`} aria-hidden="true">
           {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
             <span key={type} className="type-dot" title={typeName(type, lang)}>
               <img src={typeIconUrl(type)} alt="" draggable={false} />
@@ -627,6 +649,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     // Conta solo il nonce: la proposta cambia a ogni modifica, ma si apre una volta per nonce (lastNonce)
   }, [proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   const slotsRef = useRef<HTMLDivElement>(null);
+  const typeKey = `${lang}|${collapsed}|${team.map(set => battleSpecies(set)?.types.join('/') ?? '?').join(',')}`;
+  const typeStep = useFitCount(slotsRef, 3, typeKey, undefined, true, typesOverflow);
   const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > .slot-card > .slot-toggle')[i]?.focus());
   const step = (from: number, delta: number) => {
     const to = (from + delta + team.length) % team.length;
@@ -876,9 +900,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
-      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
+      <div className={`slots types-${TYPE_STEPS[typeStep]}${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
         // Uscendo dalla fila del team lo slot evidenziato si spegne
         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrag(d => (d && d.over !== null ? { ...d, over: null } : d)); }}>
+        <TypeTextContext.Provider value={typeStep > 0}>
         {team.map((set, i) => (
           <TeamSlot
             key={keys[i]}
@@ -898,6 +923,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             collapsed={collapsed}
           />
         ))}
+        </TypeTextContext.Provider>
         {Array.from({ length: 6 - team.length }, (_, i) => (
           <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }}
             dropTarget={drag?.from === -1 && drag.over === team.length + i}

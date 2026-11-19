@@ -344,11 +344,14 @@
 .slot .name-line .held { flex: none; display: grid; place-items: center; width: 20px; height: 20px; }
 .slot .name-line .held .item-icon { width: 20px; height: 20px; }
 .slot .name-line .name { min-width: 0; line-height: 20px; }
+/* Nome troppo lungo anche rimpicciolito e senza forma (TeamPanel): una riga sola coi puntini */
+.slot .name.dots { display: block; white-space: nowrap; text-overflow: ellipsis; }
 /* Spazio dei triangoli in fondo alla riga: uno 27px, due 54px */
 .slot:has(.slot-alerts) .name-line { align-self: stretch; }
 .slot:has(.slot-alerts) .name { --name-room: 53px; }
 .slot:has(.slot-alerts .alert-mark + .alert-mark) .name { --name-room: 80px; }
-.slot .roles { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* Altezza riga in px interi: con 12px × 1.45 (17.4px) i tipi sopra finivano a mezzo pixel e la scritta saliva verso il bordo alto */
+.slot .roles { font-size: var(--fs-caption); line-height: 18px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .slot .types { display: flex; gap: var(--sp-2); flex-wrap: nowrap; margin: var(--sp-1) 0; }
 /* I chip devono stare dentro la carta: la fila è larga quanto la carta e, se due chip col nome non entrano, TeamPanel
    mostra le icone tonde dei tipi (come sulle carte dei candidati) */
@@ -356,9 +359,15 @@
 .slot .types.as-icons { align-items: center; gap: 3px; }
 .slot .type-dot { display: inline-flex; flex: none; }
 .slot .type-dot img { width: 19px; height: 19px; }
-/* Tipi nelle carte, in maiuscolo come ovunque (come in Champions). Misura fissa e piena quando la carta è larga
-   (1080p, 2K); solo nelle carte strette (1366/1440) scritta più piccola e meno spazio, così due tipi ci stanno ancora
-   (se non ci stanno, restano le icone). L'icona resta sempre quadrata */
+/* Tipi nelle carte, in maiuscolo come ovunque (come in Champions). Quattro passi, uguali per tutte le carte (la classe
+   sulla fila .slots la mette TeamPanel, che scende di un passo appena una coppia del team non entra):
+   full  = una larghezza unica, quella del nome più lungo (2K, 1080p), così i tipi si allineano in colonna;
+   sized = tre larghezze fisse: nomi corti, medi e lunghi (gruppi in TypeChip, Sprite.tsx);
+   fit   = la larghezza segue il nome, scritta più piccola nelle carte strette;
+   icons = solo le icone dei tipi.
+   Larghezze = nome più lungo del gruppo (Kanit 700 11px, maiuscolo) + 8px, per lingua. L'icona resta sempre quadrata */
+.slots { --tw-s: 45px; --tw-m: 55px; --tw-l: 58px; }
+:lang(it) .slots { --tw-s: 47px; --tw-m: 56px; --tw-l: 70px; }
 .slot-card .type-chip { --tc-h: 18px; }
 .slot-card .type-chip > i { width: var(--tc-h); }
 .slot-card .type-chip.type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); text-align: left; font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
@@ -366,6 +375,12 @@
   .slot-card .types:not(.as-icons) { gap: 3px; }
   .slot-card .type-chip.type-chip > span { padding: 0 3px 0 2px; font-size: 10px; letter-spacing: -0.02em; }
 }
+.slots:is(.types-full, .types-sized) .slot-card .types { gap: var(--sp-2); }
+.slots:is(.types-full, .types-sized) .slot-card .type-chip.type-chip > span { width: var(--tw-l); padding: 0; text-align: center; font-size: var(--fs-label); letter-spacing: 0.02em; }
+.slots.types-sized .slot-card .type-chip.tw-s > span { width: var(--tw-s); }
+.slots.types-sized .slot-card .type-chip.tw-m > span { width: var(--tw-m); }
+/* "Coleottero": lettere più piccole, come ovunque, così il gruppo lungo resta stretto */
+.slots:is(.types-full, .types-sized) .slot-card .type-chip.long > span { font-size: 10px; letter-spacing: 0; }
 .slot .favorite, .slot .remove {
   position: absolute;
   /* Area di clic di 32 px attorno all'icona: le due aree si toccano senza sovrapporsi */
@@ -383,6 +398,10 @@
 .slot .favorite[aria-pressed='true'] { color: var(--accent); background: none; }
 .slot .favorite:hover { color: var(--accent); }
 .slot .remove { right: 4px; }
+/* Sotto i 1920 px di larghezza il lucchetto va sotto la ×: affiancati finirebbero presto sopra lo sprite */
+@media (min-width: 1100px) and (max-width: 1919px) {
+  .band:not(.collapsed) .slot .favorite { top: 34px; right: 4px; }
+}
 .slot .remove:hover { color: var(--bad); }
 /* Badge Stats su una riga sua sopra il nome: spazio riservato, non va mai sopra lo sprite */
 /* La card col tooltip aperto passa sopra alle vicine */

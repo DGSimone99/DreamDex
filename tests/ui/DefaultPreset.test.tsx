@@ -33,7 +33,7 @@ describe('il set iniziale è il primo preset Smogon del formato', () => {
     const team = screen.getByRole('region', { name: 'Team' });
     await user.click(within(team).getByText('Great Tusk', { selector: '.name' }));
     // Nel menu Set il preset uguale al set è segnato come quello in uso
-    await user.click(within(team).getByRole('button', { name: 'Set' }));
+    await user.click(within(team).getByRole('button', { name: /^Set:/ }));
     expect(within(team).getByRole('button', { name: /^Offensive Spinner/ })).toHaveAttribute('aria-current', 'true');
   });
 });
@@ -62,7 +62,7 @@ describe('preset senza abilità (Pokémon con una sola abilità)', () => {
     await user.click(within(team).getByText('Gholdengo', { selector: '.name' }));
     expect(within(team).getByLabelText('Abilità')).toHaveValue('Good as Gold');
     // Nel menu Set il preset uguale al set è segnato come quello in uso
-    await user.click(within(team).getByRole('button', { name: 'Set' }));
+    await user.click(within(team).getByRole('button', { name: /^Set:/ }));
     expect(within(team).getByRole('button', { name: /^Scarf/ })).toHaveAttribute('aria-current', 'true');
   });
 });

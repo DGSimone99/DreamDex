@@ -40,7 +40,7 @@ describe('ordine del team e editor', () => {
     expect(moved.getAttribute('aria-label')).toMatch(/, posizione 2 di 3$/);
   });
 
-  it('gli EV vanno di 2 in 2 e il totale dice quanti ne restano', async () => {
+  it('gli EV vanno di 2 in 2 e il totale lo dice (510 / 510)', async () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp @ Rocky Helmet\nEVs: 252 Atk / 252 Spe\nJolly Nature\n- Earthquake');
     await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
@@ -49,8 +49,7 @@ describe('ordine del team e editor', () => {
     expect(hp).toHaveAttribute('step', '2');
     await user.clear(hp);
     await user.type(hp, '6');
-    expect(evs).toHaveTextContent('510');
-    expect(evs).toHaveTextContent('0 liberi');
+    expect(evs.querySelector('.ev-used')).toHaveTextContent('510/ 510');
   });
 
   it('Importa / Esporta set: incollare un set cambia il membro intero e si può annullare', async () => {
@@ -58,7 +57,7 @@ describe('ordine del team e editor', () => {
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost');
     await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
     const open = () => team.querySelector('.slot.open') as HTMLElement;
-    await user.click(within(open()).getByRole('button', { name: 'Set' }));
+    await user.click(within(open()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(open()).getByRole('button', { name: 'Incolla testo' }));
     // Il campo parte col set attuale (da copiare): si sostituisce con quello da incollare
     await user.clear(within(open()).getByLabelText('Set in testo Showdown'));

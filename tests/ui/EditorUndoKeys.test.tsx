@@ -42,7 +42,7 @@ describe('Annulla dopo aver cambiato il set intero', () => {
   it('preset Smogon applicato: l\'avviso dice "set cambiato" e Annulla riporta il set di prima', async () => {
     const { user, slot } = await openFirst();
     const before = shown(slot());
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot()).getByRole('button', { name: /^Bulky/ }));
     expect(shown(slot())).not.toEqual(before);
     const note = toast()!;
@@ -54,7 +54,7 @@ describe('Annulla dopo aver cambiato il set intero', () => {
 
   it('due cambi di fila (preset, poi spread): Annulla torna al set di prima dell\'ultimo', async () => {
     const { user, slot } = await openFirst();
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot()).getByRole('button', { name: /^Bulky/ }));
     const afterPreset = shown(slot());
     const spreads = slot().querySelector<HTMLElement>('.spread-panel summary');
@@ -71,7 +71,7 @@ describe('Annulla dopo aver cambiato il set intero', () => {
   it('set incollato come testo: Annulla riporta il set di prima', async () => {
     const { user, slot } = await openFirst();
     const before = shown(slot());
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     const area = within(slot()).getByLabelText('Set in testo Showdown');
     await user.clear(area);
@@ -111,7 +111,7 @@ describe('tasti 1-6 con l\'editor aperto', () => {
 
   it('con il menu Set aperto i numeri non cambiano membro', async () => {
     const { user, container, slot } = await openFirst();
-    await user.click(within(slot()).getByRole('button', { name: 'Set' }));
+    await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.keyboard('2');
     expect(slot()).toContainElement(container.querySelectorAll<HTMLElement>('.slot-toggle')[0]);
   });
