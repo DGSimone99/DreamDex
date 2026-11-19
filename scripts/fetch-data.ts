@@ -5,7 +5,7 @@ import type { EngineData } from '../src/engine/data';
 import { normalizeTeams, type TournamentTeam } from '../src/engine/tournamentTeams';
 import { buildFallbackSets, mergePresets, normalizeAnalysisPresets, normalizeAnalysisSets, type PresetsData, type SetsData } from '../src/engine/sets';
 import { buildFallbackStats, reduceChaos, reducePkmnStats, type ChaosFile, type PkmnStatsFile, type StatsMeta } from '../src/engine/stats';
-import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
+import { doublesToFetch, FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
 import { fetchItalianNames } from './pokeapi';
 import { fetchGameDex } from './gameDex';
 import { FORMATS_DATA_URL, parseTiers } from './showdown-tiers';
@@ -125,6 +125,14 @@ async function main() {
     }
   }
   if (downloaded.length === 0) process.exit(1);
+  // Il doppio: scaricato a parte e mai usato per i dati di riserva del singolo; un errore non blocca niente
+  for (const source of doublesToFetch(STRICT)) {
+    try {
+      await fetchSource(source, months);
+    } catch (error) {
+      console.warn(`[${source}] Doppio non scaricato (${(error as Error).message}): il singolo non ne risente.`);
+    }
+  }
   // Set di riserva: per ogni Pokémon, il set del formato in cui è in più squadre (anche fuori dal National Dex)
   const extraStats: EngineData[] = [];
   const extraFormats: string[] = [];
