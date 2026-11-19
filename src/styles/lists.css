@@ -601,27 +601,65 @@
 }
 
 /*
- * Lo spazio che avanza nel cassetto dell'editor va dentro l'editor, non sotto i Ruoli: la fascia centrale (Statistiche | Set e Mosse) prende l'altezza in più. A sinistra lo spazio
- * in più va fra le targhette delle statistiche; a destra Set e
- * Mosse si dividono l'altezza e i loro campi si distanziano. Le righe del contenitore senza gap: con l'avviso della
- * proposta (che non sempre c'è) una riga vuota non lascia uno spazio in più. L'editor è alto almeno quanto il cassetto:
- * la fascia centrale (1fr) prende solo lo spazio che avanza davvero.
+ * L'editor riempie il cassetto, ma in proporzione e con dei limiti: le righe delle statistiche crescono con lo schermo
+ * fino a 56px (non oltre: niente righe stirate), Set e Mosse si dividono lo spazio in proporzione a quanto contengono
+ * (2 a 3), non a metà. Le righe del contenitore senza gap: con l'avviso della proposta (che non sempre c'è) una riga
+ * vuota non lascia uno spazio in più.
  */
 @media (min-width: 1100px) {
-  .drawer > .set-editor { min-height: 100%; --ed-gap: var(--sp-4); }
+  /* Riempie il cassetto fino a 580px (quanto basta alle righe al massimo): sugli schermi molto alti lo spazio oltre resta in fondo, non fra le righe */
+  .drawer > .set-editor { min-height: min(100%, 580px); --ed-gap: var(--sp-4); --stat-row-h: 40px; }
   .set-editor { grid-template-rows: auto auto minmax(0, 1fr) auto; row-gap: 0; }
   .set-editor > .editor-head { grid-row: 1; margin-bottom: var(--ed-gap); }
   .set-editor > :not(.editor-head, .stats-cell, .editor-side, .editor-foot) { grid-row: 2; margin-bottom: var(--ed-gap); }
   .set-editor > .stats-cell, .set-editor > .editor-side { grid-row: 3; }
   .set-editor > .editor-foot { grid-row: 4; margin-top: var(--ed-gap); }
-  /* Statistiche: la barra in alto ferma, le righe si dividono l'altezza attaccate fra loro (righe alternate senza spazi in mezzo, come in Champions) */
-  .set-editor .stats-cell > .evs { display: flex; flex-direction: column; }
-  .set-editor .evs .stat-rows { flex: 1; align-content: stretch; grid-auto-rows: 1fr; gap: 0; }
-  /* Set e Mosse: metà altezza ciascuno; nel Set le due righe restano vicine al centro, nelle Mosse i campi si distanziano */
-  .set-editor .editor-side { grid-template-rows: 1fr 1fr; align-content: stretch; }
-  .set-editor .editor-side > .editor-group.moves { align-content: space-evenly; }
-  .set-editor .editor-side > .editor-group.set-plates { align-content: center; row-gap: var(--sp-8); }
+  /* Statistiche: righe alternate attaccate (come in Champions), da 40px (36 su schermi bassi) fino a 56px */
+  .set-editor .stats-cell > .evs { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .set-editor .evs .stat-rows { flex: 1 1 auto; max-height: calc(6 * 56px + 36px); align-content: stretch; grid-template-rows: auto; grid-auto-rows: minmax(min-content, 1fr); gap: 0; }
+  .set-editor .evs .stat-rows > .stat-head { padding: var(--sp-4) 0 var(--sp-2); }
+  /* Oltre il massimo delle righe, la riga della velocità resta attaccata al fondo del riquadro */
+  .set-editor .evs .speed-line { margin-top: auto; }
+  /* Set e Mosse: lo spazio in più diviso 2 a 3 (quanto contengono); dentro, i campi si distanziano in modo uguale */
+  .set-editor .editor-side { grid-template-rows: minmax(auto, 2fr) minmax(auto, 3fr); align-content: stretch; }
+  .set-editor .editor-side > .editor-group { align-content: space-evenly; }
 }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
-  .drawer > .set-editor { --ed-gap: var(--sp-3); }
+  .drawer > .set-editor { --ed-gap: var(--sp-3); --stat-row-h: 36px; }
+}
+
+/* Sfida nell'editor: avversario e suo set in alto, poi il tuo colpo migliore e il suo peggiore per te, e il consiglio */
+.set-editor .editor-group.duel { display: flex; flex-direction: column; gap: var(--sp-3); }
+.duel-pick { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--sp-4); }
+.duel-pick .combobox input, .duel-pick .combobox .combo-display { height: 34px; }
+.duel-row { display: grid; grid-template-columns: 30px minmax(0, 1.3fr) minmax(48px, 1fr) 76px 92px; align-items: center; gap: var(--sp-4); min-height: 30px; }
+.duel-who { font: 700 var(--fs-label)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.duel-move { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; font-weight: 600; }
+.duel-move > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.duel-move .mvp-ic { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 4px; background: var(--c); }
+.duel-move .mvp-ic img { width: 16px; height: 16px; }
+.duel-bar { --c: var(--accent); height: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--c) calc(var(--lo) * 100%), color-mix(in srgb, var(--c) 45%, transparent) calc(var(--lo) * 100%) calc(var(--hi) * 100%), var(--field) 0); }
+.duel-row.theirs .duel-bar { --c: var(--bad); }
+.duel-range { font-size: var(--fs-small); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.duel-hits { font-size: var(--fs-small); text-align: right; white-space: nowrap; }
+.duel-row.mine .duel-hits.ko { color: var(--good); }
+.duel-row.theirs .duel-hits.ko { color: var(--bad); }
+.duel-none, .duel-empty { grid-column: 2 / -1; margin: 0; font-size: var(--fs-small); color: var(--faint); }
+.duel-tip { margin: 0; padding: var(--sp-2) var(--sp-4); border-radius: 4px; background: var(--accent-wash); color: var(--accent-ink); font-size: var(--fs-small); }
+@media (min-width: 1100px) {
+  /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
+  .set-editor .editor-side.with-duel { grid-template-rows: auto auto minmax(0, 1fr); }
+  .set-editor .editor-side.with-duel > .editor-group:not(.duel) { align-content: start; }
+  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-4); }
+  .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: space-evenly; overflow: hidden; }
+}
+.duel-pick .combobox.has-leading input { padding-left: 44px; }
+.duel-pick .combobox-leading { left: var(--sp-2); width: 36px; height: 30px; justify-content: center; align-items: center; overflow: hidden; }
+/* Schermi bassi: la Sfida più fitta, così il cassetto non scorre */
+@media (min-width: 1100px) and (max-height: 700px) {
+  .set-editor .editor-group.duel { gap: var(--sp-1); }
+  .duel-pick .combobox input, .duel-pick .combobox .combo-display { height: 30px; }
+  .duel-row { min-height: 24px; }
+  .duel-tip { padding: 1px var(--sp-4); }
+  .set-editor .editor-side.with-duel > .editor-group.moves { row-gap: var(--sp-2); }
 }
