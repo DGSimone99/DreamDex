@@ -80,7 +80,7 @@
 .stat-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .stat-name .stat-icon { flex: none; width: 14px; height: 14px; }
 /* Intestazione: STATS sopra il valore, EV sopra barra e numero insieme, IV sopra il suo campo */
-.stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .stat-row.stat-head:hover { background: none; }
 /* L'intestazione sta sopra le righe: i fumetti di EV e IV coprono le righe sotto, non il contrario */
 .stat-row.stat-head { position: relative; z-index: 3; }
@@ -90,7 +90,7 @@
 .stat-row:not(.stat-head) .ev-slider { margin-left: var(--sp-4); width: calc(100% - var(--sp-4)); }
 .stat-head-num { text-align: center; }
 .set-editor .iv-input { height: 28px; padding: var(--sp-1) var(--sp-2); text-align: center; font-variant-numeric: tabular-nums; }
-.set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-body)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
+.set-editor .stat-row .stat-name { flex-direction: row; align-items: center; gap: var(--sp-3); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
 /* La natura: la freccetta doppia di Champions (verde su, rossa giù) accanto al numero, che prende lo stesso colore */
 .nature-arrow { flex: none; display: inline-block; vertical-align: -1px; }
 .nature-arrow.up { color: var(--good); }
@@ -149,7 +149,7 @@
 }
 .set-editor .ev-input { height: 28px; padding: var(--sp-1) var(--sp-4); font-variant-numeric: tabular-nums; text-align: center; }
 /* Il valore della statistica: grande, al livello 100; verde o rosso secondo la natura */
-.stat-final { font: 700 var(--fs-headline)/1 var(--display); text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+.stat-final { font: 700 var(--fs-title-l)/1 var(--display); text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
 .stat-row.nature-up .stat-final { color: var(--good); }
 .stat-row.nature-down .stat-final { color: var(--bad); }
 /* Sotto le righe: il posto della Velocità nel meta, una riga sottile su un filo; passandoci sopra il tooltip di Analisi › Velocità */
@@ -169,7 +169,7 @@
 .stat-head .ev-total .ev-used { grid-column: 4; grid-row: 1; justify-self: center; }
 .stat-head .ev-total.over .ev-left { grid-column: 2 / 4; justify-self: start; }
 .stat-head .ev-total strong { font-size: var(--fs-section); }
-.stat-head .ev-total .ev-head { font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stat-head .ev-total .ev-head { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .ev-total { display: flex; align-items: center; gap: var(--sp-4); margin: 0 0 0 var(--sp-3); font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ev-total strong { font: 700 var(--fs-title-s)/1 var(--display); color: var(--text); }
 .ev-total .ev-used { display: inline-flex; align-items: baseline; gap: var(--sp-1); }
@@ -227,7 +227,7 @@
   align-items: center;
   margin: 1px 0 1px 1px;
   padding: 0 var(--sp-7) 0 var(--sp-4);
-  font: 700 var(--fs-label)/1 var(--display);
+  font: 700 var(--fs-caption)/1 var(--display);
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--text);
@@ -379,7 +379,7 @@
 .nature-diamond .combobox input:focus-visible { outline: none; }
 .nature-diamond .set-plate > .field-label { margin: 0; padding: 0 calc(var(--sp-7) + 4px) 0 calc(var(--nd-tip) + var(--sp-3)); border-radius: 0;
   clip-path: polygon(var(--nd-tip) 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, var(--nd-tip) 100%, 0 50%); }
-.nature-diamond .combobox input { text-align: left; }
+.nature-diamond .combobox input { text-align: left; font-size: var(--fs-section); }
 
 /*
  * Ritmo delle Statistiche: fascia del titolo, 16px d'aria, la tabella (intestazione e righe attaccate), più aria, la
