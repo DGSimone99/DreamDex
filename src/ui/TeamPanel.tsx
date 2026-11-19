@@ -20,6 +20,7 @@ import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
 import { SetEditor } from './SetEditor';
+import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
@@ -475,6 +476,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
+        duel={open ? <EditorDuel set={set} data={data} format={format} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
