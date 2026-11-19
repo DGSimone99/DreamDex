@@ -176,20 +176,24 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
         </div>
         <div className="duel-head">
           <div className="duel-name">
-            <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className="duel-species"
+            <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className={`duel-species${(species?.length ?? 0) > 16 ? " longer" : (species?.length ?? 0) > 11 ? " long" : ""}`}
               placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
               onChange={name => { setPicked(name || null); setSetKey(null); }} />
             {species && <GenderMark species={species} />}
           </div>
+          {/* Set dell'avversario come la pillola SET in cima all'editor, e accanto le Impostazioni (per ora segnaposto) */}
           <div className="duel-opts">
             {sets.length > 0 && (
-              <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
-                options={sets.map(s => ({ value: s.key, label: s.label }))}
-                display={<span>{chosen?.label}</span>}
-                onChange={key => setSetKey(key)} />
+              <div className="duel-setplate">
+                <span className="duel-setplate-label" aria-hidden="true">{t('editor.set')}</span>
+                <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
+                  options={sets.map(s => ({ value: s.key, label: s.label }))}
+                  display={<span>{chosen?.label}</span>}
+                  onChange={key => setSetKey(key)} />
+              </div>
             )}
-            <button type="button" className="duel-settings" aria-disabled="true" title={t('editor.duelSettingsSoon')}>
-              <Icon name="gear" />{t('editor.duelSettings')}
+            <button type="button" className="duel-settings" aria-disabled="true" aria-label={t('editor.duelSettings')} title={t('editor.duelSettingsSoon')}>
+              <Icon name="gear" />
             </button>
           </div>
         </div>
