@@ -687,6 +687,8 @@ export const en = {
   'editor.final': "Final value",
   'editor.ivHead': "IVs",
   'editor.ivFor': "{stat} IV",
+  'editor.evToIv': "Right arrow: IVs",
+  'editor.ivToEv': "Left arrow: back to EVs",
   'editor.spreads': "Most used spreads",
   'editor.neutral': "neutral",
   'editor.category.Physical': "Physical",

@@ -32,7 +32,7 @@ describe('editor del set', () => {
     expect(status().textContent).toBe(before);
   });
 
-  it('col Tab i cursori degli EV si saltano: dal numero degli EV si passa agli IV e poi al numero della statistica dopo', async () => {
+  it('col Tab i cursori degli EV si saltano, e anche gli IV a 31: dal numero degli EV si passa al numero della statistica dopo', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
     const slot = await openFirst(user, container);
@@ -41,8 +41,6 @@ describe('editor del set', () => {
     sliders.forEach(slider => expect(slider).toHaveAttribute('tabindex', '-1'));
     const evs = slot.querySelectorAll<HTMLInputElement>('.ev-input');
     evs[0].focus();
-    await user.tab();
-    expect(document.activeElement).toHaveClass('iv-input');
     await user.tab();
     expect(document.activeElement).toBe(evs[1]);
   });
