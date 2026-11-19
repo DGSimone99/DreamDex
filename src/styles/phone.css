@@ -868,3 +868,12 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .tabs.vertical .tab-status { display: none; }
 }
 @media (max-width: 1099px) and (prefers-reduced-motion: reduce) { .tabs.vertical .tab-icon { transition: none; } }
+/* Telefono: Completa team dritto, con gli angoli alterni come il menu "…" accanto (la targa del team resta inclinata);
+   fondo ciano scuro e bordo ciano tenue: è l'azione principale della riga */
+@media (max-width: 599px) {
+  .band .team-head .team-guide-slot .team-guide { height: 40px; padding: 0 var(--sp-8); color: var(--text); }
+  .band .team-head .team-guide-slot .team-guide::before { inset: 0; transform: none; border-radius: 8px 2px 8px 2px;
+    background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, var(--line)); }
+  .band .team-head .team-guide-slot .team-guide:hover::before, .band .team-head .team-guide-slot .team-guide[aria-expanded='true']::before { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .band .team-head .team-guide-slot .team-guide:focus-visible { outline-offset: 2px; border-radius: 8px 2px 8px 2px; }
+}
