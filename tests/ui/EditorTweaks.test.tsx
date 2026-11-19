@@ -85,7 +85,7 @@ describe('editor del set', () => {
     expect(within(head).queryByRole('button', { name: 'Preset migliore' })).toBeNull();
     expect(within(head).queryByRole('button', { name: 'Testo del set' })).toBeNull();
     const actions = [...head.querySelectorAll<HTMLElement>('.editor-actions button')].map(b => b.getAttribute('aria-label') ?? b.textContent);
-    expect(actions).toEqual(['Set:Personalizzato', 'Copia il set', 'Chiudi editor']);
+    expect(actions).toEqual(['Set:Modificato', 'Copia il set', 'Chiudi editor']);
     const custom = within(slot).getByRole('checkbox', { name: /Custom Skillset/ });
     expect(head).not.toContainElement(custom);
     expect(within(slot).getByRole('group', { name: 'Set' })).toContainElement(custom);

@@ -221,6 +221,13 @@
 }
 .set-plate:hover { box-shadow: inset 0 0 0 1px var(--control-line); }
 .set-plate:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
+/* Targhetta vuota (strumento, abilità, natura da scegliere): filo ed etichetta gialli; scelta una voce torna normale */
+.set-plate.empty:not(:focus-within) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 70%, transparent); }
+.set-plate.empty > .field-label { color: var(--warn); }
+.nature-diamond .set-plate.empty:not(:focus-within) { box-shadow: none; }
+.nature-diamond:has(.set-plate.empty):not(:focus-within) { filter: drop-shadow(0 0 0.5px var(--warn)) drop-shadow(0 0 0.5px var(--warn)); }
+/* EV ancora da spendere: il totale giallo (il numero dice quanti ne restano nel tooltip) */
+.ev-total.under strong { color: var(--warn); }
 .set-plate:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }
 .set-plate > .field-label {
   flex: none;

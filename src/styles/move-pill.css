@@ -132,7 +132,11 @@
 
 /* Il menu delle mosse è largo quanto la pillola: il nome (con la quota d'uso) sulla prima riga, categoria, potenza,
    precisione e tipo sulla seconda */
-.move-combo [role='option'] .option-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-4); row-gap: var(--sp-2); }
+.move-combo [role='option'] .option-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-4); row-gap: 2px; }
+/* Voci più basse (la spiegazione è nella riga fissa in fondo): ne stanno di più anche sugli schermi bassi */
+.move-combo [role='option'] { padding-top: 6px; padding-bottom: 6px; }
+.move-combo [role='option'] .option-head > strong { line-height: 1.2; }
+.move-combo [role='option'] .type-chip { --tc-h: 18px; }
 .move-combo [role='option'] .option-head > strong { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .move-combo [role='option'] .option-head > .common-share { grid-column: 2; grid-row: 1; }
 .move-combo [role='option'] .option-head > .option-detail { grid-column: 1 / -1; grid-row: 2; margin-left: 0; justify-self: start; }

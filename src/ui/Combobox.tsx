@@ -71,10 +71,13 @@ interface Props {
   menuMinWidth?: number;
   /** Il menu abbraccia il campo: senza stacco, entra fino a metà della sua altezza e ne sborda di tanto per lato (il rombo della Natura). */
   menuJoined?: number;
+  /** Le spiegazioni delle voci non stanno in ogni riga ma in una riga fissa in fondo al menu, quella della voce attiva
+   *  (più voci in vista: le mosse e gli strumenti). */
+  descriptionFooter?: boolean;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined, descriptionFooter = false }: Props) {
   const t = useT();
   const listId = useId();
   // Si scrive nel campo: sempre senza `restricted`, e con `restricted` se è `searchable`
@@ -118,15 +121,26 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const matches = useMemo(() => {
     if (!query) return ordered;
     const q = searchID(query);
-    // Nome mostrato e nome inglese, senza accenti ("velocita" trova "Velocità")
-    const names = (o: ComboOption) => [searchID(o.label ?? o.value), ...(o.alias ? [searchID(o.alias)] : [])];
-    const starts = ordered.filter(o => names(o).some(n => n.startsWith(q)));
-    const contains = ordered.filter(o => !starts.includes(o) && names(o).some(n => n.includes(q)));
-    const found = [...starts, ...contains];
-    const best = [...found.filter(o => o.common), ...found.filter(o => !o.common)];
+    // Quanto bene una voce risponde a quello che hai scritto: nome esatto, nome che inizia così, una parola del nome che
+    // inizia così ("ice" → Ice Beam prima di Hyper Voice), il nome che lo contiene da qualche parte. Vale il nome mostrato
+    // o quello inglese, senza accenti ("velocita" trova "Velocità"). Le più usate passano avanti solo dentro lo stesso grado
+    const rank = (o: ComboOption): number => {
+      let best = 4;
+      for (const text of [o.label ?? o.value, ...(o.alias ? [o.alias] : [])]) {
+        const id = searchID(text);
+        if (id === q) return 0;
+        if (id.startsWith(q)) best = Math.min(best, 1);
+        else if (text.split(/[\s\-:'’.]+/).some(word => searchID(word).startsWith(q))) best = Math.min(best, 2);
+        else if (id.includes(q)) best = Math.min(best, 3);
+      }
+      return best;
+    };
+    const scored = listed.map((o, i) => ({ o, i, r: rank(o) })).filter(x => x.r < 4);
+    scored.sort((a, b) => a.r - b.r || Number(!!b.o.common) - Number(!!a.o.common) || a.i - b.i);
+    const best = scored.map(x => x.o);
     // Aperto sopra: la più adatta in fondo, vicino a quello che scrivi
     return up ? best.reverse() : best;
-  }, [ordered, query, up]);
+  }, [listed, ordered, query, up]);
   const shown = up ? matches.slice(-MAX_SHOWN) : matches.slice(0, MAX_SHOWN);
   // Il campo mostra l'etichetta del valore (es. il nome italiano); il valore salvato resta quello della voce
   const shownValue = options.find(o => o.value === value)?.label ?? value;
@@ -221,6 +235,9 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
+        // Nomi di mosse e strumenti: niente sottolineature rosse del correttore, niente suggerimenti del browser
+        spellCheck={false}
+        autoComplete="off"
         aria-activedescendant={open && shown[active] ? `${listId}-${active}` : undefined}
         readOnly={!typing}
         disabled={disabled}
@@ -264,11 +281,11 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
       {open && (
         <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef} popover={supportsPopover ? 'manual' : undefined}>
           {shown.map((option, i) => [
-            hasCommon && option.common && (i === 0 || !shown[i - 1].common)
+            !query && hasCommon && option.common && (i === 0 || !shown[i - 1].common)
               ? <li key="common-head" role="presentation" className="group-head common-head">{commonLabel ?? t('combobox.common')}</li> : null,
-            hasCommon && !grouped && !option.common && (i === 0 || shown[i - 1].common)
+            !query && hasCommon && !grouped && !option.common && (i === 0 || shown[i - 1].common)
               ? <li key="all-head" role="presentation" className="group-head">{t('combobox.all')}</li> : null,
-            grouped && !option.common && option.group && (i === 0 || shown[i - 1].common || shown[i - 1].group !== option.group)
+            !query && grouped && !option.common && option.group && (i === 0 || shown[i - 1].common || shown[i - 1].group !== option.group)
               ? <li key={`group-${option.group}-${i}`} role="presentation" className="group-head format-head">{option.group}</li> : null,
             <li
               key={option.value}
@@ -288,10 +305,15 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
                 {option.detail && <span className="option-detail">{option.detail}</span>}
                 {option.common && <span className="common-share" title={option.commonTitle}>{option.common}</span>}
               </span>
-              {option.description && <small>{option.description}</small>}
+              {option.description && !descriptionFooter && <small>{option.description}</small>}
             </li>,
           ])}
           {shown.length === 0 && <li className="empty" aria-disabled="true">{t("combobox.none")}</li>}
+          {/* La spiegazione della voce attiva (o di quella sotto il mouse), sempre in fondo e sempre alta uguale: la lista
+              non salta. Per i lettori di schermo la spiegazione è già nel title della voce */}
+          {descriptionFooter && shown.length > 0 && (
+            <li className="option-footer" role="presentation" aria-hidden="true">{shown[active]?.description ?? ''}</li>
+          )}
           {matches.length > MAX_SHOWN && (
             <li className="empty" aria-disabled="true">{t("combobox.more", { n: matches.length - MAX_SHOWN })}</li>
           )}

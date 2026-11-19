@@ -24,13 +24,13 @@ describe('voci più usate in cima alla tendina', () => {
     expect(list).toHaveTextContent('Tutti');
   });
 
-  it('cercando, le più usate che corrispondono restano in cima', async () => {
+  it('cercando, prima i nomi che iniziano così (le più usate davanti fra quelli), poi quelli che lo contengono', async () => {
     const user = userEvent.setup();
     renderIt(<Combobox label="Strumento" value="" options={options} onChange={() => undefined} />);
     await user.type(screen.getByLabelText('Strumento'), 'l');
     const names = within(screen.getByRole('listbox')).getAllByRole('option').map(o => o.querySelector('strong')!.textContent);
-    // 'l': Leftovers e Life Orb iniziano così, Rocky Helmet la contiene; Choice Band no
-    expect(names).toEqual(['Leftovers', 'Rocky Helmet', 'Life Orb']);
+    // 'l': Leftovers (più usato) e Life Orb iniziano così, Rocky Helmet (più usato) la contiene soltanto; Choice Band no
+    expect(names).toEqual(['Leftovers', 'Life Orb', 'Rocky Helmet']);
   });
 
   it('frecce e Invio scelgono nell\'ordine mostrato', async () => {

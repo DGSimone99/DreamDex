@@ -133,7 +133,7 @@ describe('menu Set: preset Smogon', () => {
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Flamethrower');
     await user.tab();
-    expect(screen.getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Personalizzato$/);
+    expect(screen.getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Modificato$/);
     menu = await openMenu(user);
     expect(within(menu).getByRole('button', { name: /^Sun Sweeper/ })).not.toHaveAttribute('aria-current');
   });
