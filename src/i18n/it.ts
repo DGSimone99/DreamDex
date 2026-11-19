@@ -1375,6 +1375,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.areasPop': "Voto delle aree",
   'rating.badgeHead': "Voto",
   'rating.since': "{delta}",
+  'rating.changedSr': "Voto passato da {from} a {to} ({grade})",
   'rating.noGrade': "Nessun voto",
   'rating.addPokemon': "Aggiungi un Pokémon",
   'rating.evBlocked': "Bloccato: EV oltre 510",

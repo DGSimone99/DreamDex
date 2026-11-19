@@ -36,8 +36,31 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
   const editing = useEditing();
   const [since, setSince] = useState<number | null>(null);
   const overall = rating?.overall ?? null;
-  useEffect(() => { setSince(editing === null ? null : overall); }, [editing]);
   const delta = rating && since !== null ? rating.overall - since : 0;
+  // Chiudendo l'editor, di quanto è cambiato il voto resta a vista un attimo (sale, poi sparisce): il risultato del lavoro.
+  // Se è cambiata anche la lettera, la lettera fa un piccolo salto. `lastEdit` è il voto di partenza e il cambio
+  // dell'ultimo giro nell'editor (letto al render, prima che `since` si azzeri)
+  const lastEdit = useRef<{ from: number; delta: number } | null>(null);
+  if (editing !== null && since !== null && rating) lastEdit.current = { from: since, delta };
+  const [flash, setFlash] = useState<{ from: number; delta: number; letter: boolean; key: number } | null>(null);
+  useEffect(() => {
+    setSince(editing === null ? null : overall);
+    const last = lastEdit.current;
+    lastEdit.current = null;
+    if (editing !== null) { setFlash(null); return; }
+    if (!last || last.delta === 0 || overall === null) return;
+    const letterOf = (v: number) => GRADES.find(g => v >= g.min)?.grade;
+    setFlash({ ...last, letter: letterOf(last.from) !== letterOf(overall), key: Date.now() });
+    const id = setTimeout(() => setFlash(null), 2600);
+    return () => clearTimeout(id);
+  }, [editing]);
+  // Il cambio da mostrare: quello in corso mentre modifichi, o quello appena chiuso
+  const shown = editing !== null ? delta : flash?.delta ?? 0;
+  const deltaChip = (where: string) => rating && shown !== 0 && (
+    <span key={flash?.key ?? 'live'} className={`grade-delta ${where} ${shown > 0 ? 'up' : 'down'}${editing === null ? ' flash' : ''}`} aria-hidden="true">
+      {t('rating.since', { from: since ?? flash?.from ?? 0, delta: `${shown > 0 ? '+' : '−'}${Math.abs(shown)}` })}
+    </span>
+  );
   // Team ridotto: la tendina delle aree sotto lettera e punteggio
   const [popOpen, setPopOpen] = useState(false);
   const popId = useId();
@@ -67,7 +90,7 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
     <span className="grade-head">{t('rating.badgeHead')}</span>
     {rating && <span className="letter">{rating.grade}</span>}
     {!rating && !blocked && <EeveeMoment pose="wave" />}
-    <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
+    <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}{withPop && deltaChip('in-strip')}</span>
     <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}
       {/* Il tipo di team sulla riga del giudizio, come testo semplice (non una targa): la carta non diventa più alta */}
       {rating && <span className="grade-type" title={typeNote}>{typeLabel}</span>}
@@ -76,7 +99,7 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
     </>
   );
   return (
-    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}`}>
+    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}${flash?.letter ? ' letter-changed' : ''}`}>
       {withPop ? (
         // Team ridotto: lettera e punteggio aprono la tendina con le righe delle aree (stessa frase per i lettori di schermo)
         <button ref={popButton} type="button" className="grade-pop-toggle" aria-haspopup="dialog" aria-expanded={popOpen}
@@ -93,11 +116,7 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
       {(rating || blocked) && (
         <span className="grade-tools">
           {/* Di quanto è cambiato il voto da quando si è aperto l'editor: la prima della fila, così non va mai sotto i segni */}
-          {rating && since !== null && delta !== 0 && (
-            <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`} aria-hidden="true">
-              {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}
-            </span>
-          )}
+          {deltaChip('in-card')}
           {/* In giallo il voto provvisorio (membro senza mosse, specie, mossa o strumento sconosciuti); le regole sono la
               scritta sotto il giudizio (senza voto, quando il voto è bloccato, restano qui in rosso) */}
           {/* Regole infrante: il triangolo rosso col perché (in quale formato, chi, il motivo); niente scritta sotto il
@@ -120,6 +139,10 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
           <GradeAreaRows rating={rating} onOpen={area => { onOpen?.(area); closePop(true); }} />
         </GradePopover>
       )}
+      {/* Per i lettori di schermo, alla chiusura dell'editor: da quanto a quanto è passato il voto */}
+      <span className="visually-hidden grade-change-sr" aria-live="polite">
+        {flash && rating ? t('rating.changedSr', { from: flash.from, to: rating.overall, grade: rating.grade }) : ''}
+      </span>
     </div>
   );
 }
