@@ -4,9 +4,10 @@
  * tarare i pesi del voto sui risultati (con 500 partite l'errore è ±2,4 punti, con 5000 ±0,7).
  *
  *   npx tsx scripts/fetch-games.ts [--min=1500] [--max=Infinity] [--target=3000] [--days=60] [formato…]
+ *   npx tsx scripts/fetch-games.ts --out=games-doubles.json gen9nationaldexdoubles   (il doppio, in un file a parte)
  *
  * Scorre le partite dalle più recenti all'indietro (search.json?before=…), tiene quelle col rating nella fascia, e
- * aggiunge a scripts/bench/games.json (le partite già salvate si saltano). Una richiesta ogni 300 ms. I log restano in
+ * aggiunge a scripts/bench/games.json, o al file di --out (le partite già salvate si saltano). Una richiesta ogni 300 ms. I log restano in
  * data/replay-logs: con --reparse le partite già salvate si rileggono col parser di oggi senza riscaricarle.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -223,7 +224,8 @@ async function main() {
     console.log(JSON.stringify(parseGame(readFileSync(parseOnly, 'utf8')), null, 1));
     process.exit(0);
   }
-  const file = join('scripts', 'bench', 'games.json');
+  // --out=<nome>: il file d'uscita in scripts/bench (le partite del doppio stanno a parte, in games-doubles.json)
+  const file = join('scripts', 'bench', process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'games.json');
   const save = (games: Game[]) => writeFileSync(file, '[\n' + games.map(g => JSON.stringify(g)).join(',\n') + '\n]\n');
   // --reparse: rilegge le partite già salvate col parser di oggi (i log da data/replay-logs, o riscaricati una volta)
   if (process.argv.includes('--reparse')) {
