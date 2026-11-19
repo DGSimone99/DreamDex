@@ -203,6 +203,8 @@ interface Props {
   notice?: ReactNode;
   /** Il riquadro del Testo del set, aperto: copre le Statistiche, così Set e Mosse restano in vista per confrontare. */
   textPanel?: ReactNode;
+  /** Copia il set negli appunti (testo Showdown): sul telefono sta nel menu Set; vero se è riuscito. */
+  onCopy?: () => Promise<boolean>;
   /** Sotto le Mosse, la Sfida contro un avversario scelto (EditorDuel). */
   duel?: ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
@@ -216,7 +218,7 @@ interface Props {
   onSetChange?: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -342,24 +344,6 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const [natureHelp, setNatureHelp] = useState(false);
   // Telefono: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
   const phone = useMediaQuery('(max-width: 599px)');
-  // Telefono: la testata resta ferma in alto; scorrendo si stringe in una barra (chiudi, sprite piccolo, nome e tipi,
-  // shiny e copia) e torna grande in cima. Due soglie diverse: al limite non salta avanti e indietro
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [compact, setCompact] = useState(false);
-  useEffect(() => {
-    const drawer = editorRef.current?.closest('.drawer');
-    if (!phone || !drawer) { setCompact(false); return; }
-    // Si stringe solo se, stretta, resta ancora da scorrere: altrimenti togliendo spazio tornerebbe subito in cima
-    const head = () => editorRef.current?.querySelector('.editor-head')?.getBoundingClientRect().height ?? 0;
-    const onScroll = () => setCompact(was => {
-      if (was) return drawer.scrollTop > 8;
-      const room = drawer.scrollHeight - drawer.clientHeight;
-      return drawer.scrollTop > 64 && room - (head() - 130) > 40;
-    });
-    onScroll();
-    drawer.addEventListener('scroll', onScroll, { passive: true });
-    return () => drawer.removeEventListener('scroll', onScroll);
-  }, [phone]);
   const [phoneTab, setPhoneTab] = useState<'set' | 'stats' | 'duel'>('set');
   const tabsId = useId();
   const phoneTabs: { id: 'set' | 'stats' | 'duel'; label: string }[] = [
@@ -387,7 +371,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   );
 
   return (
-    <div className={`set-editor${phone && compact ? ' compact-head' : ''}`} ref={editorRef} data-tab={phone ? phoneTab : undefined}>
+    <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
         <div className="editor-top">
           {title}
@@ -403,7 +387,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           )}
           {/* A destra: il menu Set (preset Smogon e I miei set), poi Copia il set e Chiudi */}
           <div className="editor-actions">
-            <SetMenu set={set} presets={presets} bestIndex={bestIndex} onBest={onBest} onChange={onSetChange} onText={onText} smogonLink={smogonLink} />
+            <SetMenu set={set} presets={presets} bestIndex={bestIndex} onBest={onBest} onChange={onSetChange} onText={onText} onCopy={onCopy} smogonLink={smogonLink} />
             {actions}
           </div>
         </div>

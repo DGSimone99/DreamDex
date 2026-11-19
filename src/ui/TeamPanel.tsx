@@ -546,6 +546,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         bestIndex={stable.onBestIndex}
         onBest={stable.applyBest}
         onText={stable.openText}
+        onCopy={() => copyText(exportShowdown([set], { tera: teraAllowed(format) }))}
         smogonLink={<SmogonLink species={name} format={format} presets={presets} />}
         title={open && (
           <div className="editor-title">

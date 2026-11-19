@@ -40,6 +40,8 @@ interface Props {
   onText?: () => void;
   /** Il link alla pagina Smogon del Pokémon, in fondo al menu. */
   smogonLink?: ReactNode;
+  /** Copia il set (sul telefono sta qui, nel computer è il pulsante accanto al Set): vero se è riuscito. */
+  onCopy?: () => Promise<boolean>;
 }
 
 /** Il preset da cui sembra venire un set cambiato a mano: almeno 2 mosse in comune, poi strumento, abilità, natura ed EV. */
@@ -63,13 +65,14 @@ export function nearestPreset(set: TeamSet, presets: Preset[]): number {
  * segnato) e I miei set (applica, rinomina, elimina); in fondo Incolla testo, Salva come… e Apri su Smogon.
  * Esc o un clic fuori lo chiudono e il fuoco torna al pulsante; le schede si cambiano con le frecce.
  */
-export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smogonLink }: Props) {
+export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onCopy, smogonLink }: Props) {
   const t = useT();
   const lang = useLang();
   const species = set.species;
   const mine = useMySets(species);
   const current = mySetIndex(mine, set);
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<Tab>('smogon');
   const [best, setBest] = useState<number | null>(null);
   // Salva come…: il campo del nome compare in cima a I miei set
@@ -267,6 +270,11 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
             )}
           </div>
           <div className="set-menu-foot">
+            {onCopy && (
+              <button type="button" className={`set-menu-copy${copied ? ' done' : ''}`} onClick={async () => {
+                if (await onCopy()) { setCopied(true); setTimeout(() => { setCopied(false); close(false); }, 900); }
+              }}><Icon name={copied ? 'check' : 'copy'} />{t(copied ? 'team.copied' : 'team.copySet')}</button>
+            )}
             {onText && <button type="button" onClick={() => { close(false); onText(); }}><Icon name="paste" />{t('editor.pasteText')}</button>}
             <button type="button" aria-expanded={saving} onClick={() => { setTab('mine'); setSaving(s => !s); }}><Icon name="save" />{t('editor.saveAs')}</button>
             {smogonLink}

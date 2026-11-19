@@ -801,19 +801,29 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .set-editor .editor-title .nickname strong { transition: font-size 0.2s var(--ease); }
   .editor-hero > .sprite { transition: all 0.2s var(--ease); }
 
-  /* Stretta (dopo aver scorso): una barra alta 60, × | sprite piccolo | nome e tipi | shiny e copia; il Set si nasconde
-     (torna in cima) */
-  /* (la testata ferma sale di 12 px sopra il bordo, quelli del margine del cassetto: la barra li tiene vuoti) */
-  .set-editor.compact-head .editor-title { min-height: 72px; align-content: center; gap: var(--sp-2); padding: calc(12px + var(--sp-3)) 104px var(--sp-3) 112px; border-bottom-width: 2px; }
-  .set-editor.compact-head .editor-title .nickname strong { font-size: 19px; white-space: nowrap; }
-  .set-editor.compact-head .editor-title > .types .type-chip { --tc-h: 18px; }
-  .set-editor.compact-head .editor-hero > .sprite { left: 56px; right: auto; top: 18px; bottom: auto; width: 48px; height: 48px; }
-  .set-editor.compact-head :is(.editor-actions .member-copy, .editor-actions .editor-close, .editor-title .shiny-toggle) { top: 22px; }
-  /* Grande: un nome lungo va a capo (Urshifu-Rapid- / Strike) invece di tagliarsi */
-  .set-editor:not(.compact-head) .editor-title .nickname strong { white-space: normal; line-height: 1.05; text-align: left; }
-  .set-editor.compact-head .editor-actions .set-menu, .set-editor.compact-head .editor-tera { display: none; }
-  .set-editor.compact-head .editor-tabs { margin-top: var(--sp-4); }
 }
 @media (max-width: 599px) and (prefers-reduced-motion: reduce) {
   .set-editor .editor-title, .set-editor .editor-title .nickname strong, .editor-hero > .sprite { transition: none; }
+}
+
+/* ── Testata dell'editor sul telefono, giro 3 (2026-11-19): × e shiny senza cerchi, Copia nel menu Set ────── */
+/* Copia nel menu Set solo sul telefono (sul computer resta il pulsante accanto al Set) */
+.set-menu-copy { display: none; }
+@media (max-width: 599px) {
+  .set-menu-pop .set-menu-copy { display: inline-flex; }
+  .set-menu-copy.done { color: var(--good); }
+  .set-editor .editor-actions .hint-wrap:has(> .member-copy) { display: none; }
+  /* × in alto a destra e shiny in basso a sinistra dello sprite: senza cerchio né fondo, solo un alone scuro leggero
+     che li stacca dal colore del tipo; la zona del tocco resta 44 px */
+  .set-editor :is(.editor-actions .editor-close, .editor-title .shiny-toggle) {
+    width: 44px; height: 44px; border: 0; border-radius: 50%; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+    background: radial-gradient(closest-side, rgb(5 6 10 / 0.38), transparent); color: var(--text); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6)); }
+  .set-editor .editor-actions .editor-close { top: var(--sp-3); right: var(--sp-3); left: auto; }
+  .set-editor .editor-title .shiny-toggle { top: auto; bottom: var(--sp-3); right: calc(var(--sp-6) + 92px); left: auto; }
+  .set-editor .editor-title .shiny-toggle[aria-pressed='true'] { color: var(--warn); background: radial-gradient(closest-side, color-mix(in srgb, var(--warn) 22%, transparent), transparent); }
+  .set-editor :is(.editor-close, .shiny-toggle) .icon { width: 20px; height: 20px; }
+  /* Il riepilogo senza la fila dei pulsanti in alto: il nome sale un po' */
+  .set-editor .editor-title { padding-top: 44px; min-height: 150px; }
+  /* Un nome lungo va a capo (Urshifu-Rapid- / Strike) invece di tagliarsi */
+  .set-editor .editor-title .nickname strong { white-space: normal; line-height: 1.05; text-align: left; }
 }
