@@ -8,6 +8,10 @@
  *   npm run bench -- --games   partite coi set veri (scripts/bench/games.json): quante ne vince il voto più alto
  *                            (nei formati con le Mega solo le partite dove tutti e due i lati la mostrano), col margine
  *                            a gruppi di team e il conto con ogni team al massimo 3 volte (pochi team giocano centinaia di partite)
+ *   npm run bench -- --games --doppio   lo stesso sulle partite di doppio (scripts/bench/games-doubles.json), due volte:
+ *                            tutte le partite, e solo quelle con la Mega vista da tutti e due i lati; --min=1500 per il solo alto livello
+ *   npm run bench -- --doppio-cose   doppio: per ogni cosa (Fake Out, Tailwind, Trick Room…) quanto vince chi ce l'ha
+ *                            contro chi non ce l'ha, e le coppie di compagni più viste (scripts/doublesThings.ts)
  *   npm run bench -- --replays partite vere (scripts/bench/replays.json di alto livello e, se c'è, ladder.json dei medi):
  *                            quante ne vince il team col voto più alto
  *   ROLES_MEASURED=1 npm run bench   con l'interruttore dei Ruoli acceso (Attacco, muri e Recupero contano anche nei Ruoli)
@@ -32,6 +36,7 @@ import { defaultSet, type TeamSet } from '../src/engine/sets';
 import { dex, getMove, toID } from '../src/engine/dex';
 import { lockedStatusMoves } from '../src/engine/lockedMoves';
 import { statsEntry } from '../src/engine/stats';
+import { pairResults, thingResults, type BenchGame, type ThingResult } from './doublesThings';
 import type { Game as RealGame, Revealed } from './fetch-games';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 
@@ -49,6 +54,8 @@ interface BenchTeam {
 
 const SOURCES: Partial<Record<FormatId, string>> = {
   ou: 'gen9nationaldex', ubers: 'gen9nationaldexubers', uu: 'gen9nationaldexuu', gen9ou: 'gen9ou', gen9uu: 'gen9uu', gen9ag: 'gen9anythinggoes',
+  // Doppio: solo per --games --doppio e --doppio-cose (nessun team del banco è in questo formato)
+  natdexdoubles: 'gen9nationaldexdoubles',
 };
 const read = (dir: string, name: string) => {
   const path = join('data', dir, `${name}.json`);
@@ -95,7 +102,7 @@ const areas = (r: TeamRating) => r.areas.map(a => `${a.key} ${a.value ?? '–'}`
 const reference = teams.find(t => t.cat === 'riferimento');
 
 interface Game { format: string; rating: number; p1: string[]; p2: string[]; winner: 1 | 2 }
-const REPLAY_FORMAT: Record<string, FormatId> = { gen9nationaldex: 'ou', gen9ou: 'gen9ou', gen9nationaldexubers: 'ubers', gen9uu: 'gen9uu', gen9nationaldexuu: 'uu' };
+const REPLAY_FORMAT: Record<string, FormatId> = { gen9nationaldex: 'ou', gen9ou: 'gen9ou', gen9nationaldexubers: 'ubers', gen9uu: 'gen9uu', gen9nationaldexuu: 'uu', gen9nationaldexdoubles: 'natdexdoubles' };
 const readGames = (name: string): Game[] => {
   const file = join('scripts', 'bench', name);
   return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Game[]).filter(g => REPLAY_FORMAT[g.format] && DATA[REPLAY_FORMAT[g.format]]) : [];
@@ -305,9 +312,14 @@ export function realSet(fmt: FormatId, r: Revealed): TeamSet | null {
   return { ...base, moves, item, ability: r.ability ?? base.ability, ...(r.tera || base.teraType ? { teraType: r.tera ?? base.teraType } : {}) };
 }
 const GAMES_FORMAT: Record<string, FormatId> = REPLAY_FORMAT;
-export const readRealGames = (): RealGame[] => {
-  const file = join('scripts', 'bench', 'games.json');
-  return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as RealGame[]).filter(g => GAMES_FORMAT[g.format] && DATA[GAMES_FORMAT[g.format]]) : [];
+/** Le partite del doppio stanno in un file a parte: mai mescolate a quelle del singolo. */
+const DOUBLES_GAMES = 'games-doubles.json';
+const MISSING_DOUBLES = 'Mancano le partite del doppio: npx tsx scripts/fetch-games.ts --out=games-doubles.json gen9nationaldexdoubles';
+/** --min=<rating>: solo le partite da quel rating in su (per guardare il solo alto livello). */
+const MIN_GAME_RATING = Number(process.argv.find(a => a.startsWith('--min='))?.slice(6) ?? 0);
+export const readRealGames = (name = 'games.json'): RealGame[] => {
+  const file = join('scripts', 'bench', name);
+  return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as RealGame[]).filter(g => GAMES_FORMAT[g.format] && DATA[GAMES_FORMAT[g.format]] && g.rating >= MIN_GAME_RATING) : [];
 };
 export const realTeam = (fmt: FormatId, side: Revealed[]): TeamSet[] | null => {
   const team = side.map(r => realSet(fmt, r)).filter((s): s is TeamSet => !!s);
@@ -352,18 +364,19 @@ function clusterInterval(counted: { keys: [string, string]; right: boolean }[], 
 /** --games: le partite coi set veri (scripts/bench/games.json, da scripts/fetch-games.ts): quante ne vince il voto più alto.
  *  Nei formati con le Mega contano solo le partite dove tutti e due i lati mostrano la Mega: chi vince spesso non manda
  *  in campo la sua, e il team che perde sembrerebbe più forte (Mega vista in 2179 team che perdono, 1986 che vincono). */
-function realGames() {
-  const games = readRealGames();
-  if (!games.length) { console.error('Mancano le partite: lancia npx tsx scripts/fetch-games.ts'); return; }
+function realGames(doubles = false) {
+  const games = readRealGames(doubles ? DOUBLES_GAMES : 'games.json');
+  if (!games.length) { console.error(doubles ? MISSING_DOUBLES : 'Mancano le partite: lancia npx tsx scripts/fetch-games.ts'); return; }
   const bins = [[1, 4], [5, 9], [10, 100]] as const;
-  for (const fmt of [...new Set(games.map(g => GAMES_FORMAT[g.format]))]) {
+  // In doppio molti team non hanno una Mega: il blocco esce due volte, con tutte le partite e col filtro del singolo
+  for (const fmt of [...new Set(games.map(g => GAMES_FORMAT[g.format]))]) for (const mega of doubles ? [false, true] : [MEGA_FORMATS.has(fmt)]) {
     const stats = bins.map(() => ({ right: 0, total: 0 }));
     let skipped = 0, noMega = 0;
     const list = games.filter(g => GAMES_FORMAT[g.format] === fmt);
     // Partite contate, coi due team: per il conto "ogni team al massimo REPEAT_CAP volte" e per il margine a gruppi di team
     const counted: { keys: [string, string]; right: boolean }[] = [];
     for (const g of list) {
-      if (MEGA_FORMATS.has(fmt) && !(showsMega(g.p1) && showsMega(g.p2))) { noMega++; continue; }
+      if (mega && !(showsMega(g.p1) && showsMega(g.p2))) { noMega++; continue; }
       const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
       if (!a || !b) { skipped++; continue; }
       const diff = rateTeam(a, DATA[fmt])!.overall - rateTeam(b, DATA[fmt])!.overall;
@@ -377,7 +390,7 @@ function realGames() {
     const all = stats.reduce((acc, x) => ({ right: acc.right + x.right, total: acc.total + x.total }), { right: 0, total: 0 });
     const pct = (x: { right: number; total: number }) => (x.total ? `${(100 * x.right / x.total).toFixed(1)}% su ${x.total}` : '–');
     console.log(`
-== ${fmt}: ${list.length} partite coi set veri (${skipped} saltate${noMega ? `, ${noMega} senza la Mega vista da tutti e due i lati` : ''})`);
+== ${fmt}: ${list.length} partite coi set veri (${skipped} saltate${noMega ? `, ${noMega} senza la Mega vista da tutti e due i lati` : ''})${doubles ? ` — ${mega ? 'solo con la Mega vista da tutti e due i lati' : 'tutte le partite'}` : ''}`);
     console.log(`  vince il voto più alto: ${pct(all)}  (margine vero, a gruppi di team: ${clusterInterval(counted)})`);
     // Pochi team giocano centinaia di partite (uno solo il 10% dei lati): contati al massimo REPEAT_CAP volte ciascuno
     const seen = new Map<string, number>();
@@ -389,6 +402,30 @@ function realGames() {
     console.log(`  ogni team al massimo ${REPEAT_CAP} volte: ${pct({ right: capped.filter(c => c.right).length, total: capped.length })}  (${new Set(counted.flatMap(c => c.keys)).size} team diversi)`);
     bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
   }
+}
+
+/** --doppio-cose: per ogni cosa del doppio quanto vince chi ce l'ha contro chi non ce l'ha, e le coppie più viste. */
+function doublesThings() {
+  const games = readRealGames(DOUBLES_GAMES);
+  if (!games.length) { console.error(MISSING_DOUBLES); return; }
+  let skipped = 0;
+  const list: BenchGame[] = [];
+  for (const g of games) {
+    const fmt = GAMES_FORMAT[g.format];
+    const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
+    if (!a || !b) { skipped++; continue; }
+    list.push({ a, b, winner: g.winner });
+  }
+  console.log(`
+== doppio: cosa fa vincere — ${list.length} partite su ${games.length}${MIN_GAME_RATING ? ` da ${MIN_GAME_RATING} in su` : ''} (${skipped} saltate: Pokémon senza set)`);
+  console.log('Di un Pokémon si vede solo quello che usa in partita; il resto è il set più usato. Una mossa portata ma mai usata può mancare.');
+  console.log('Contano le partite dove un lato ha la cosa e l\'altro no; ogni team al massimo 3 volte. Sopra il 50% = chi ce l\'ha vince di più.\n');
+  const row = (r: ThingResult) => console.log(`  ${r.label.padEnd(58)} ${`${(100 * r.share).toFixed(0)}% dei team`.padStart(13)}  ${String(r.games).padStart(5)} partite  ${
+    r.games ? `vince ${(100 * r.winRate).toFixed(1)}% ± ${(100 * r.margin).toFixed(1)}` : 'vince –'}${r.games < 50 ? '  (poche partite)' : ''}`);
+  const far = (r: ThingResult) => (r.games ? Math.abs(r.winRate - 0.5) : -1);
+  [...thingResults(list)].sort((x, y) => far(y) - far(x)).forEach(row);
+  console.log('\n  Le 20 coppie di compagni più viste');
+  pairResults(list).forEach(row);
 }
 
 type Rate = (team: TeamSet[], fmt: FormatId, withMeta: boolean) => TeamRating;
@@ -460,8 +497,10 @@ function confrontaReplays() {
   }
 }
 
-if (process.argv.includes('--games')) {
-  realGames();
+if (process.argv.includes('--doppio-cose')) {
+  doublesThings();
+} else if (process.argv.includes('--games')) {
+  realGames(process.argv.includes('--doppio'));
 } else if (process.argv.includes('--confronta')) {
   if (process.argv.includes('--replays')) confrontaReplays();
   else confronta();
