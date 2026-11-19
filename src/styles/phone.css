@@ -1040,8 +1040,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-proposal { position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas: 'kind result action' 'mons mons mons' 'gaps gaps gaps'; row-gap: var(--sp-3); align-items: center;
     padding: var(--sp-4) var(--sp-5) var(--sp-3); border-radius: 6px; overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--k) 28%, var(--line-soft));
-    background: var(--stripes), linear-gradient(160deg, color-mix(in srgb, var(--k) 12%, var(--panel)), color-mix(in srgb, var(--panel) 70%, var(--ground)) 60%); }
+    border: 1px solid var(--line-soft); border-top: 3px solid var(--k); background: var(--panel); }
   .fill-proposal.is-best { border: 1px solid color-mix(in srgb, var(--accent-2) 70%, var(--line)); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4); }
   .fill-proposal .fill-about { align-self: center; justify-self: start; justify-items: start; text-align: left; }
   .fill-proposal .fill-kind { padding: 0; background: none; font: italic 800 var(--fs-heading)/1.1 var(--display); white-space: normal; color: var(--text); }
@@ -1069,3 +1068,11 @@ html { -webkit-tap-highlight-color: transparent; }
 
 /* La carta del set tenuta premuta: lo sprite può uscire dal foglio, in alto (la carta non è alta: niente scorrimento) */
 html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: none; }
+
+/* Completa team, carte: i Pokémon su una fascia scura e uniforme (si staccano bene), il tipo di team scritto nel suo colore */
+@media (max-width: 599px) {
+  .fill-proposal .fill-mons { padding: var(--sp-2) var(--sp-2) 0; border-radius: 4px; background: var(--field); }
+  .fill-proposal .fill-kind { color: color-mix(in srgb, var(--k) 70%, var(--text)); }
+  .fill-proposal.is-best { border-top: 3px solid var(--k); }
+  .fill-proposal .fill-mon { cursor: pointer; }
+}

@@ -95,7 +95,8 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     if (!root || !input) return;
     // Il testo si misura a parte (un campo che si adatta al contenuto non dice quando il testo esce): lo spazio è quello
     // della riga del nome meno sesso, ingranaggio e i margini interni del campo
-    const canvas = document.createElement('canvas').getContext('2d');
+    // Una tela fuori dalla pagina (nei test, dove non c'è, il nome resta com'è)
+    const canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(1, 1).getContext('2d') : null;
     const fit = () => {
       input.style.fontSize = '';
       if (!canvas || !input.value) return;

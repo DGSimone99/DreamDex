@@ -428,6 +428,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                       <span key={`${set.species}#${j}`} {...memberTip.bind(set, why, changed ? team[j] : undefined)}
                         // I colori dei tipi: sul telefono la casella di un Pokémon nuovo prende il colore del suo tipo, come le carte del team
                         style={{ '--t1': typeColor(battleSpecies(set)?.types[0] ?? ''), '--t2': typeColor(battleSpecies(set)?.types[1] ?? battleSpecies(set)?.types[0] ?? '') } as CSSProperties}
+                        data-tap-tip
                         className={`fill-mon ${mine ? 'is-mine' : 'is-new'}${changed ? ' is-changed' : ''}${favorite ? ' is-favorite' : ''}`}>
                         <span className="fill-mon-sprite">
                           <Sprite species={set.species} item={set.item} size={48} />

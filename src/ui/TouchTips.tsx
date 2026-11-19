@@ -70,6 +70,10 @@ export function TouchTips() {
       if (!start) return;
       const target = start.target;
       start = null;
+      openFor(target);
+    };
+    /** Apre il tooltip di un elemento: quello ricco se compare, altrimenti il testo. */
+    const openFor = (target: Element) => {
       // Prima il tooltip ricco: l'elemento riceve il passaggio del mouse; se compare un pannello nuovo, è quello
       const before = new Set(document.querySelectorAll('.ftip'));
       target.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body }));
@@ -105,8 +109,16 @@ export function TouchTips() {
       timer = window.setTimeout(fire, HOLD_MS);
     };
     const move = (e: PointerEvent) => { if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP) cancel(); };
-    // Dopo un tocco lungo il clic che segue non preme l'elemento; il menu del browser non si apre
-    const click = (e: MouseEvent) => { if (Date.now() < swallowUntil) { e.preventDefault(); e.stopPropagation(); swallowUntil = 0; } };
+    // Dopo un tocco lungo il clic che segue non preme l'elemento; il menu del browser non si apre.
+    // Gli elementi che al tocco non fanno niente (data-tap-tip, es. i Pokémon delle proposte) aprono i dettagli con un tocco
+    const click = (e: MouseEvent) => {
+      if (Date.now() < swallowUntil) { e.preventDefault(); e.stopPropagation(); swallowUntil = 0; return; }
+      const tap = (e.target as Element | null)?.closest?.('[data-tap-tip]');
+      if (!tap || openRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openFor(e.target as Element);
+    };
     // Col dito il menu del browser (come il tasto destro) non serve nell'app: resta solo nei campi di testo
     const menu = (e: Event) => { if (!(e.target as Element | null)?.closest?.('input, textarea, [contenteditable]')) e.preventDefault(); };
     document.addEventListener('pointerdown', down, true);
