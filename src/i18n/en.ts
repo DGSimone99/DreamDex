@@ -1618,6 +1618,8 @@ export const en = {
   'editor.duelFirstTheirs': "They move first",
   'editor.duelSpeedTie': "Tie: 50%",
   'editor.duelTipSpe': "With +{n} Spe EVs you outspeed it",
+  'editor.duelHitUnit': "hit",
+  'editor.duelHitsUnit': "hits",
   'editor.duelTipElsewhere': "(take them from elsewhere)",
   'editor.duelEmpty': "Pick an opponent: see your best hit and the one that hurts you most",
   'detail.metaInTeam': "{name} is already in the team",

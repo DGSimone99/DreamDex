@@ -1,4 +1,4 @@
-import { type CSSProperties, useDeferredValue, useMemo, useState } from 'react';
+import { type CSSProperties, type ReactNode, useDeferredValue, useMemo, useState } from 'react';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, moveNames, toID } from '../engine/dex';
@@ -61,12 +61,10 @@ function movePool(set: TeamSet, format: Format): string[] {
 }
 
 /**
- * La Sfida dell'editor, come la barra della lotta di Champions: a sinistra il riquadro alto con lo sprite
- * dell'avversario (di partenza, fra i più usati del meta, quello che fa più male al membro); in alto la linguetta con
- * Pokémon, Set, Impostazioni (per ora segnaposto) e sesso; sotto due righe, la spada col tuo colpo migliore e lo scudo
- * col suo che ti fa più male, ognuna con la barra dei PS che restano a chi lo prende e i colpi per il KO, e sotto il
- * consiglio di quella riga (una mossa migliore da mettere nel set, gli EV che spostano una soglia). Si aggiorna mentre si
- * cambiano EV, mosse o strumento.
+ * La Sfida dell'editor, una scheda tagliata in diagonale: a sinistra l'avversario (di partenza, fra i più usati del meta,
+ * quello che fa più male al membro) col nome grande, Set, Impostazioni (per ora segnaposto), sesso e sprite nel colore del
+ * suo tipo; a destra tre righe col risultato grande: il tuo colpo migliore, il suo che ti fa più male (barra dei PS che
+ * restano a chi lo prende) e la Velocità, ognuna coi suoi consigli (mossa migliore, EV). Si aggiorna mentre si cambia il set.
  */
 export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineData; format: Format }) {
   const t = useT();
@@ -94,13 +92,14 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   const result = useMemo(() => (chosen ? editorDuel(me, chosen.set, pool) : null), [me, chosen, pool]);
   const speed = useMemo(() => (chosen ? duelSpeed(me, chosen.set) : null), [me, chosen]);
 
-  const hitsText = (hit: DuelHit) => {
-    if (!Number.isFinite(hit.hitsMaybe)) return t('editor.duelNoDamage');
+  /** I colpi per il KO scritti grandi ("1", "2-3") con l'unità sotto ("colpo", "colpi"). */
+  const hitsParts = (hit: DuelHit): { big: string; unit: string } => {
+    if (!Number.isFinite(hit.hitsMaybe)) return { big: '—', unit: t('editor.duelNoDamage') };
     if (hit.hitsSure === hit.hitsMaybe || !Number.isFinite(hit.hitsSure)) {
       const n = Number.isFinite(hit.hitsSure) ? hit.hitsSure : hit.hitsMaybe;
-      return n === 1 ? t('editor.duelOneHit') : t('editor.duelHits', { n });
+      return { big: String(n), unit: t(n === 1 ? 'editor.duelHitUnit' : 'editor.duelHitsUnit') };
     }
-    return t('editor.duelHitsRange', { a: hit.hitsMaybe, b: hit.hitsSure });
+    return { big: `${hit.hitsMaybe}-${hit.hitsSure}`, unit: t('editor.duelHitsUnit') };
   };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   const oppTypes = species ? getSpecies(species)?.types ?? [] : [];
@@ -121,80 +120,84 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     ? t(moveTip.hits === 1 ? 'editor.duelTipMoveOne' : 'editor.duelTipMove', { move: gameName('move', moveTip.move, lang), n: moveTip.hits })
     : null;
 
-  // Una riga: simbolo, mossa (sotto i consigli), barra dei PS che restano a chi prende il colpo, colpi per il KO
-  const row = (kind: 'mine' | 'theirs', hit: DuelHit | null, tips: (string | null)[]) => {
-    const lo = hit ? Math.max(0, 1 - hit.max) : 1;
-    const hi = hit ? Math.max(0, 1 - hit.min) : 1;
-    const zone = hi > 0.5 ? 'high' : hi > 0.2 ? 'mid' : 'low';
+  /**
+   * Una riga della scheda: tessera (tipo della mossa o Velocità) e nome, sotto la barra o il dato e i consigli; a destra
+   * il risultato grande con l'unità sotto. Chi colpisce si legge dalla tessera e dal titolo (Tu / Lui) per i lettori di schermo.
+   */
+  const line = (className: string, who: string, tile: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: (string | null)[]) => {
     const shown = tips.filter((x): x is string => !!x);
-    const who = t(kind === 'mine' ? 'editor.duelMine' : 'editor.duelTheirs');
     return (
-      <div className={`duel-row ${kind}`}>
-        <span className="duel-sym" title={who}>
-          <Icon name={kind === 'mine' ? 'sword' : 'shield'} />
-          <span className="visually-hidden">{who}</span>
-        </span>
-        {hit ? (
-          <>
-            <span className="duel-move"><TypeTile move={hit.move} /><span>{gameName('move', hit.move, lang)}</span></span>
-            <span className="duel-hp" data-zone={zone} style={{ '--lo': lo, '--hi': hi } as CSSProperties}>
-              <span className="duel-hp-bar" aria-hidden="true" />
-              <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
-            </span>
-            <strong className={`duel-hits${hit.hitsSure === 1 ? ' ko' : ''}`}>{hitsText(hit)}</strong>
-          </>
-        ) : <span className="duel-none">{t('editor.duelNoMove')}</span>}
+      <div className={`duel-row ${className}`}>
+        <span className="duel-tile">{tile}</span>
+        <span className="duel-label"><span className="visually-hidden">{who}: </span>{label}</span>
+        <strong className={`duel-result ${resultClass}`}><span className="duel-big">{big}</span><span className="duel-unit">{unit}</span></strong>
+        <span className="duel-sub">{sub}</span>
         {shown.length > 0 && <span className="duel-tips">{shown.map(x => <span key={x}>{x}</span>)}</span>}
       </div>
     );
+  };
+  const hitLine = (kind: 'mine' | 'theirs', hit: DuelHit | null, tips: (string | null)[]) => {
+    const who = t(kind === 'mine' ? 'editor.duelMine' : 'editor.duelTheirs');
+    if (!hit) return line(kind, who, <Icon name={kind === 'mine' ? 'sword' : 'shield'} />, <span className="duel-none">{t('editor.duelNoMove')}</span>, '—', '', 'none', null, []);
+    const lo = Math.max(0, 1 - hit.max);
+    const hi = Math.max(0, 1 - hit.min);
+    const zone = hi > 0.5 ? 'high' : hi > 0.2 ? 'mid' : 'low';
+    const { big, unit } = hitsParts(hit);
+    const sub = (
+      <span className="duel-hp" data-zone={zone} style={{ '--lo': lo, '--hi': hi } as CSSProperties}>
+        <span className="duel-hp-bar" aria-hidden="true" />
+        <span className="duel-range">{hit.max > 0 ? `−${pct(hit.min)}–${pct(hit.max)}` : '0%'}</span>
+      </span>
+    );
+    const ko = hit.hitsSure === 1 ? (kind === 'mine' ? 'good' : 'bad') : 'plain';
+    return line(kind, who, <TypeTile move={hit.move} />, gameName('move', hit.move, lang), big, unit, ko, sub, tips);
   };
 
   // La Velocità: le due velocità in lotta (Sciarpa e Booster comprese), chi muove prima e, se serve, gli EV per superarlo
   const speedTip = speed?.tip
     ? `${t('editor.duelTipSpe', { n: speed.tip.evs })}${speed.tip.evs > free ? ` ${t('editor.duelTipElsewhere')}` : ''}`
     : null;
-  const speedRow = speed && (
-    <div className={`duel-row speed first-${speed.order}`}>
-      <span className="duel-sym" title={t('editor.duelSpeed')}>
-        <StatIcon stat="spe" />
-        <span className="visually-hidden">{t('editor.duelSpeed')}</span>
-      </span>
-      <span className="duel-move">{t('editor.duelSpeed')}</span>
-      <span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speed.mine, b: speed.theirs })}</span>
-      <strong className="duel-hits">{t(speed.order === 'mine' ? 'editor.duelFirstMine' : speed.order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie')}</strong>
-      {speedTip && <span className="duel-tips"><span>{speedTip}</span></span>}
-    </div>
+  const speedLine = speed && line(
+    'speed', t('editor.duelSpeed'), <span className="duel-stat"><StatIcon stat="spe" /></span>,
+    <>{t('editor.duelSpeed')} <span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speed.mine, b: speed.theirs })}</span></>,
+    speed.order === 'mine' ? '1°' : speed.order === 'theirs' ? '2°' : '=',
+    t(speed.order === 'mine' ? 'editor.duelFirstMine' : speed.order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie'),
+    speed.order === 'mine' ? 'good' : speed.order === 'theirs' ? 'bad' : 'warn', null, [speedTip],
   );
 
   return (
     <fieldset className="editor-group duel">
       <legend>{t('editor.duel')}</legend>
+      {/* La scheda tagliata in diagonale (come le carte di Masters): a sinistra il colore del tipo dell'avversario col nome
+          grande (dove lo si cerca), Set, Impostazioni e lo sprite che sborda in basso; a destra le tre righe */}
       <div className="duel-card" style={{ '--t1': typeColor(oppTypes[0] ?? ''), '--t2': typeColor(oppTypes[1] ?? oppTypes[0] ?? '') } as CSSProperties}>
-        {/* Il riquadro come le carte del team (Masters EX): colore del tipo, riflesso, striscia dei tipi in fondo; in alto il
-            nome (dove si cerca l'avversario), sotto lo sprite sulla pedana della lotta */}
-        <div className="duel-portrait">
-          <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className="duel-species"
-            placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
-            onChange={name => { setPicked(name || null); setSetKey(null); }} />
-          {species && <span className="duel-stage" aria-hidden="true"><Sprite species={species} size={96} /></span>}
+        <div className="duel-art" aria-hidden="true">
+          {species && <span className="duel-stage"><Sprite species={species} size={96} /></span>}
         </div>
-        <div className="duel-tongue">
-          {sets.length > 0 && (
-            <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-pill duel-set"
-              options={sets.map(s => ({ value: s.key, label: s.label }))}
-              display={<span>{chosen?.label}</span>}
-              onChange={key => setSetKey(key)} />
-          )}
-          <button type="button" className="duel-pill duel-settings" aria-disabled="true" title={t('editor.duelSettingsSoon')}>
-            {t('editor.duelSettings')}
-          </button>
-          {species && <GenderMark species={species} />}
+        <div className="duel-head">
+          <div className="duel-name">
+            <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className="duel-species"
+              placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
+              onChange={name => { setPicked(name || null); setSetKey(null); }} />
+            {species && <GenderMark species={species} />}
+          </div>
+          <div className="duel-opts">
+            {sets.length > 0 && (
+              <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-set"
+                options={sets.map(s => ({ value: s.key, label: s.label }))}
+                display={<span>{chosen?.label}</span>}
+                onChange={key => setSetKey(key)} />
+            )}
+            <button type="button" className="duel-settings" aria-disabled="true" title={t('editor.duelSettingsSoon')}>
+              <Icon name="gear" />{t('editor.duelSettings')}
+            </button>
+          </div>
         </div>
         {result ? (
           <div className="duel-rows">
-            {row('mine', result.mine, [moveText, evText(result.atkTip)])}
-            {row('theirs', result.theirs, [evText(result.defTip)])}
-            {speed && speedRow}
+            {hitLine('mine', result.mine, [moveText, evText(result.atkTip)])}
+            {hitLine('theirs', result.theirs, [evText(result.defTip)])}
+            {speedLine}
           </div>
         ) : <p className="duel-empty">{t('editor.duelEmpty')}</p>}
       </div>

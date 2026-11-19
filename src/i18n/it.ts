@@ -1621,6 +1621,8 @@ export const it: Record<keyof typeof en, string> = {
   'editor.duelFirstTheirs': "Muove prima lui",
   'editor.duelSpeedTie': "Pari: 50%",
   'editor.duelTipSpe': "Con +{n} EV in Vel lo superi",
+  'editor.duelHitUnit': "colpo",
+  'editor.duelHitsUnit': "colpi",
   'editor.duelTipElsewhere': "(da togliere altrove)",
   'editor.duelEmpty': "Scegli un avversario: vedi il tuo colpo migliore e quello che ti fa più male",
   'detail.metaInTeam': "{name} è già nel team",
