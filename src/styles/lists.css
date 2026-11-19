@@ -628,40 +628,42 @@
 }
 
 /*
- * Sfida nell'editor, come la barra della lotta di Champions: a sinistra il riquadro alto quanto tutta la sezione con lo
- * sprite dell'avversario, in alto la linguetta stretta (Pokémon, pastiglie Set e Impostazioni, sesso; taglio obliquo a
- * destra), sotto due righe: simbolo, mossa coi consigli sotto, barra dei PS che restano a chi prende il colpo, colpi.
- * Riquadro e linguetta prendono il colore dai tipi dell'avversario (--t1, --t2).
+ * Sfida nell'editor, come la barra della lotta di Champions, in una piastra sola: a sinistra il riquadro con il nome in
+ * alto (dove si cerca l'avversario) e lo sprite sulla pedana, in alto a destra la linguetta (pastiglie Set e
+ * Impostazioni, sesso; taglio obliquo a destra), sotto due righe: simbolo, mossa coi consigli sotto, barra dei PS che
+ * restano a chi prende il colpo, colpi. Un bordo chiaro e la striscia dei tipi in fondo girano attorno a tutto.
+ * Colori dai tipi dell'avversario (--t1, --t2).
  */
 .set-editor .editor-group.duel { display: flex; flex-direction: column; gap: var(--sp-3); }
-.duel-card { --portrait-w: 108px; --tongue-h: 40px; display: grid; grid-template-columns: var(--portrait-w) minmax(0, 1fr); grid-template-rows: var(--tongue-h) auto; margin-top: var(--sp-4); }
-/* Il riquadro come le carte del team (Masters EX): sfumatura del primo tipo dall'alto, riflesso diagonale, striscia dei
-   due tipi in fondo; dentro la pedana della lotta (ellisse chiara nel colore del tipo) con sopra lo sprite.
-   Bordo chiaro di 1px come la cornice di Champions, uguale a quello della linguetta: le due parti sembrano un pezzo solo. */
-.duel-portrait { grid-row: 1 / -1; position: relative; isolation: isolate; z-index: 2; min-height: 132px; border-radius: var(--alt-r); overflow: hidden;
+.duel-card { --portrait-w: 140px; --tongue-h: 40px; --rim: color-mix(in srgb, var(--t1) 45%, #ffffff8c);
+  position: relative; isolation: isolate; display: grid; grid-template-columns: var(--portrait-w) minmax(0, 1fr); grid-template-rows: var(--tongue-h) auto; margin-top: var(--sp-4); border-radius: var(--alt-r);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 16%, var(--panel)), var(--panel) 55%);
+  box-shadow: 0 8px 18px -6px #000000a6; }
+/* Il bordo sopra a tutto (anche al colore del riquadro), e la striscia dei due tipi in fondo come nelle carte del team */
+.duel-card::before { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--rim), inset 0 2px 0 #ffffff1a; pointer-events: none; }
+.duel-card::after { content: ''; position: absolute; left: 1px; right: 1px; bottom: 1px; z-index: 3; height: 4px; border-radius: 0 0 9px 2px; background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); pointer-events: none; }
+/* Il riquadro come le carte del team (Masters EX): sfumatura del primo tipo dall'alto, riflesso diagonale, la pedana
+   della lotta (ellisse scura col bordo chiaro nel colore del tipo) con sopra lo sprite; verso destra sfuma nella piastra */
+.duel-portrait { grid-row: 1 / -1; position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 156px; border-radius: 10px 0 0 3px;
   background:
-    radial-gradient(ellipse 42% 8% at 50% 78%, color-mix(in srgb, var(--t1) 30%, var(--field)) 0 72%, color-mix(in srgb, var(--t1) 60%, white) 80%, transparent 96%),
-    radial-gradient(ellipse 70% 32% at 50% 74%, color-mix(in srgb, var(--t1) 34%, transparent), transparent 80%),
-    linear-gradient(170deg, color-mix(in srgb, var(--t1) 58%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 18%, var(--panel)) 55%, var(--field) 100%);
-  box-shadow: inset 0 0 0 1px var(--rim), inset 0 2px 0 #ffffff1f, 0 8px 18px -6px #000000a6; }
-.duel-card { --rim: color-mix(in srgb, var(--t1) 45%, #ffffff8c); }
-.duel-portrait::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(115deg, transparent 34%, #ffffff17 35%, transparent 52%), var(--stripes); pointer-events: none; }
-.duel-portrait::after { content: ''; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 4px; border-radius: 0 0 9px 2px; background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); }
-/* Lo sprite coi piedi sulla pedana (78% dell'altezza del riquadro) */
-.duel-stage { position: absolute; left: 50%; top: 78%; width: 96px; height: 96px; transform: translate(-50%, -86%) scale(var(--stage-scale, 1.15)); transform-origin: 50% 86%; }
+    radial-gradient(ellipse 40% 7% at 50% 82%, color-mix(in srgb, var(--t1) 30%, var(--field)) 0 72%, color-mix(in srgb, var(--t1) 60%, white) 80%, transparent 96%),
+    radial-gradient(ellipse 70% 30% at 50% 78%, color-mix(in srgb, var(--t1) 34%, transparent), transparent 80%),
+    linear-gradient(170deg, color-mix(in srgb, var(--t1) 58%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 20%, var(--panel)) 60%, color-mix(in srgb, var(--t1) 10%, var(--field)) 100%); }
+.duel-portrait::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: linear-gradient(115deg, transparent 34%, #ffffff17 35%, transparent 52%), var(--stripes); pointer-events: none; }
+/* Il nome in cima al riquadro: corsivo grassetto come i nomi in lotta, i nomi lunghi finiscono coi puntini (intero nel menu) */
+.duel-portrait .duel-species { position: relative; z-index: 2; }
+.duel-portrait .duel-species input { height: 38px; padding: 0 26px 0 var(--sp-5); border: 0; border-radius: 10px 0 0 0; background: linear-gradient(#00000038, transparent); font: italic 700 var(--fs-body)/1 var(--display); letter-spacing: 0.01em; color: var(--text); text-overflow: ellipsis; text-shadow: 0 1px 2px #00000080; }
+.duel-portrait .duel-species input:focus-visible { outline: none; }
+.duel-portrait .duel-species:has(input:focus-visible) { box-shadow: inset 0 -2px 0 var(--accent); }
+/* Lo sprite coi piedi sulla pedana (82% dell'altezza del riquadro) */
+.duel-stage { position: absolute; left: 50%; top: 82%; width: 96px; height: 96px; transform: translate(-50%, -86%) scale(var(--stage-scale, 1.2)); transform-origin: 50% 86%; pointer-events: none; }
 .duel-stage > .sprite { display: block; width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 3px 2px #00000066); }
-.duel-tongue { grid-column: 2; position: relative; isolation: isolate; display: flex; align-items: center; gap: var(--sp-4); height: var(--tongue-h); margin-left: -14px; padding: 0 26px 0 22px; }
-/* Linguetta: sotto il bordo chiaro (::before, sagoma piena), sopra il riempimento rientrato di 1px (::after); colore del
-   primo tipo deciso a sinistra, dove si attacca al riquadro, che sfuma nel grigio verso il taglio obliquo */
-.duel-tongue::before, .duel-tongue::after { content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%); }
-.duel-tongue::before { background: var(--rim); }
-.duel-tongue::after { inset: 1px 1px 1px 0; clip-path: polygon(0 0, 100% 0, calc(100% - 15.5px) 100%, 0 100%);
-  background: linear-gradient(#ffffff26 0 1px, transparent 1px), var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--t1) 48%, var(--raised)), color-mix(in srgb, var(--t1) 16%, var(--raised)) 60%, var(--raised)); }
+/* Linguetta: testata della parte destra, col colore del tipo che continua dal riquadro e sfuma verso il taglio obliquo */
+.duel-tongue { grid-column: 2; position: relative; isolation: isolate; display: flex; align-items: center; gap: var(--sp-4); height: var(--tongue-h); padding: 0 30px 0 var(--sp-5); }
+.duel-tongue::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 0 3px 0 0; clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+  background: linear-gradient(#ffffff1f 0 1px, transparent 1px), var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--t1) 38%, var(--raised)), color-mix(in srgb, var(--t1) 14%, var(--raised)) 60%, var(--raised)); }
 .duel-tongue .combobox input { border: 0; background: transparent; text-overflow: ellipsis; }
 .duel-tongue .combobox input:focus-visible { outline: none; }
-.duel-tongue .duel-species { flex: 1.15 1 0; min-width: 0; }
-.duel-tongue .duel-species input { height: var(--tongue-h); padding-left: var(--sp-3); border-radius: 0; font: italic 700 var(--fs-body)/1 var(--display); letter-spacing: 0.01em; color: var(--text); }
-.duel-tongue .duel-species:has(input:focus-visible) { box-shadow: inset 0 -2px 0 var(--accent); }
 /* Le pastiglie della linguetta (Set, Impostazioni), più chiare della linguetta come nel disegno */
 .duel-pill { height: 28px; border-radius: 14px; background: color-mix(in srgb, var(--field) 55%, transparent); box-shadow: inset 0 0 0 1px #ffffff1f; }
 .duel-tongue .duel-set { flex: 1 1 0; min-width: 0; }
@@ -674,7 +676,7 @@
 .duel-gender.male { stroke: #6cb8ff; }
 .duel-gender.female { stroke: #ff86b0; }
 /* Le due righe sotto la linguetta */
-.duel-rows { grid-column: 2; display: flex; flex-direction: column; justify-content: space-evenly; gap: var(--sp-3); padding: var(--sp-4) 0 0 var(--sp-6); }
+.duel-rows { grid-column: 2; display: flex; flex-direction: column; justify-content: space-evenly; gap: var(--sp-3); padding: var(--sp-4) var(--sp-6) var(--sp-6); }
 .duel-row { display: grid; grid-template-columns: 24px minmax(0, 1.15fr) minmax(96px, 1fr) 84px; align-items: center; column-gap: var(--sp-4); row-gap: 2px; }
 .duel-sym { display: grid; place-items: center; width: 24px; height: 24px; color: var(--accent); }
 .duel-row.theirs .duel-sym { color: var(--bad); }
@@ -709,9 +711,10 @@
 /* Schermi bassi: la Sfida più fitta, così il cassetto non scorre */
 @media (min-width: 1100px) and (max-height: 700px) {
   .set-editor .editor-group.duel { gap: var(--sp-1); }
-  .duel-card { --portrait-w: 92px; --tongue-h: 34px; margin-top: var(--sp-2); }
-  .duel-portrait { min-height: 108px; }
+  .duel-card { --portrait-w: 124px; --tongue-h: 34px; margin-top: var(--sp-2); }
+  .duel-portrait { min-height: 124px; }
+  .duel-portrait .duel-species input { height: 32px; }
   .duel-stage { --stage-scale: 0.95; }
-  .duel-rows { gap: var(--sp-1); padding-top: var(--sp-2); }
+  .duel-rows { gap: var(--sp-1); padding-top: var(--sp-2); padding-bottom: var(--sp-4); }
   .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-2); }
 }

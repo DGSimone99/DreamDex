@@ -151,15 +151,15 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     <fieldset className="editor-group duel">
       <legend>{t('editor.duel')}</legend>
       <div className="duel-card" style={{ '--t1': typeColor(oppTypes[0] ?? ''), '--t2': typeColor(oppTypes[1] ?? oppTypes[0] ?? '') } as CSSProperties}>
-        {/* Il riquadro come le carte del team (Masters EX): colore del tipo, riflesso, striscia dei tipi in fondo; lo sprite
-            sulla pedana della lotta */}
-        <div className="duel-portrait" aria-hidden="true">
-          {species && <span className="duel-stage"><Sprite species={species} size={96} /></span>}
-        </div>
-        <div className="duel-tongue">
+        {/* Il riquadro come le carte del team (Masters EX): colore del tipo, riflesso, striscia dei tipi in fondo; in alto il
+            nome (dove si cerca l'avversario), sotto lo sprite sulla pedana della lotta */}
+        <div className="duel-portrait">
           <Combobox label={t('editor.duelOpponent')} value={species ?? ''} options={speciesOptions} restricted className="duel-species"
             placeholder={t('editor.duelPick')} commonLabel={t('editor.duelCommon')}
             onChange={name => { setPicked(name || null); setSetKey(null); }} />
+          {species && <span className="duel-stage" aria-hidden="true"><Sprite species={species} size={96} /></span>}
+        </div>
+        <div className="duel-tongue">
           {sets.length > 0 && (
             <Combobox label={t('editor.duelSet')} value={chosen?.key ?? ''} restricted disabled={sets.length < 2} className="duel-pill duel-set"
               options={sets.map(s => ({ value: s.key, label: s.label }))}

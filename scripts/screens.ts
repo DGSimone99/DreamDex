@@ -596,14 +596,14 @@ const STATES: Record<string, State> = {
   'editor-duel': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(500);
-    const input = await p.$('.slot.open .duel-tongue .combobox input');
+    const input = await p.$('.slot.open .duel-species input');
     if (!input) return 'no duel';
     await input.click({ clickCount: 3 });
     const opp = process.env.DUEL_OPP ?? 'Gholdengo';
     await input.type(opp);
     await wait(600);
     const picked = await p.evaluate((name: string) => {
-      const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-tongue [role="option"]')].find(o => (o.textContent ?? '').includes(name));
+      const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-species [role="option"]')].find(o => (o.textContent ?? '').includes(name));
       option?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       option?.click();
       return !!option;
