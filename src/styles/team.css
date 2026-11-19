@@ -356,12 +356,16 @@
 .slot .types.as-icons { align-items: center; gap: 3px; }
 .slot .type-dot { display: inline-flex; flex: none; }
 .slot .type-dot img { width: 19px; height: 19px; }
-/* Due tipi affiancati anche nelle card strette: in maiuscolo come ovunque (come in Champions), più stretti e senza
-   spaziatura in più (se non ci stanno, restano le icone) */
+/* Tipi nelle carte, in maiuscolo come ovunque (come in Champions). Misura fissa e piena quando la carta è larga
+   (1080p, 2K); solo nelle carte strette (1366/1440) scritta più piccola e meno spazio, così due tipi ci stanno ancora
+   (se non ci stanno, restano le icone). L'icona resta sempre quadrata */
 .slot-card .type-chip { --tc-h: 18px; }
-.slot-card .types:not(.as-icons) { gap: 3px; }
-.slot-card .type-chip > i { width: 16px; }
-.slot-card .type-chip.type-chip > span { width: auto; padding: 0 3px 0 2px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: -0.02em; }
+.slot-card .type-chip > i { width: var(--tc-h); }
+.slot-card .type-chip.type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); text-align: left; font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+@container (max-width: 179px) {
+  .slot-card .types:not(.as-icons) { gap: 3px; }
+  .slot-card .type-chip.type-chip > span { padding: 0 3px 0 2px; font-size: 10px; letter-spacing: -0.02em; }
+}
 .slot .favorite, .slot .remove {
   position: absolute;
   /* Area di clic di 32 px attorno all'icona: le due aree si toccano senza sovrapporsi */
