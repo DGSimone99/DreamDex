@@ -93,6 +93,9 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   const [edit, setEdit] = useState<{ item?: string; evs?: Partial<Record<StatID, number>> }>({});
   const settingsRoot = useRef<HTMLDivElement>(null);
   const settingsId = useId();
+  // Scegliendo una voce di un elenco del pannello, l'elenco si chiude già alla pressione del tasto: il clic che segue
+  // e il rilascio che lo precede finirebbero sul campo sotto (lo Strumento sotto il Set, che selezionerebbe il testo). Li si ferma qui.
+  const pickedAt = useRef(0);
   useEffect(() => {
     if (!settingsOpen) return;
     const away = (e: PointerEvent) => { if (!settingsRoot.current?.contains(e.target as Node)) setSettingsOpen(false); };
@@ -227,7 +230,18 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
               </button>
             )}
             {settingsOpen && (
-              <div className={`duel-settings-pop${settingsUp ? ' up' : ''}`} id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}>
+              <div className={`duel-settings-pop${settingsUp ? ' up' : ''}`} id={settingsId} role="dialog" aria-label={t('editor.duelSettings')}
+                onMouseDownCapture={e => { if ((e.target as Element).closest('[role="option"]')) pickedAt.current = Date.now(); }}
+                onMouseUpCapture={e => {
+                  if (Date.now() - pickedAt.current < 600 && !(e.target as Element).closest('[role="option"]')) { e.stopPropagation(); e.preventDefault(); }
+                }}
+                onClickCapture={e => {
+                  if (Date.now() - pickedAt.current < 600 && !(e.target as Element).closest('[role="option"]')) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    pickedAt.current = 0;
+                  }
+                }}>
                 {sets.length > 0 && (
                   <div className="duel-settings-row">
                     <span className="duel-settings-label">{t('editor.set')}</span>
