@@ -41,7 +41,11 @@ function NatureEffect({ name }: { name: string }) {
 
 
 /** Casella IV (0–31): mentre scrivi tiene il testo (anche vuoto), lo applica subito; vuota torna a 31 uscendo. */
-function IvInput({ value, label, onChange }: { value: number; label: string; onChange: (raw: string) => void }) {
+/**
+ * La casella degli IV. A 31 (quasi sempre) è fuori dal giro del Tab, così il Tab passa da un EV all'altro: ci si arriva
+ * con la freccia destra dalla casella EV della riga (e la sinistra riporta lì). Un IV diverso da 31 resta nel giro.
+ */
+function IvInput({ value, label, hint, onChange }: { value: number; label: string; hint: string; onChange: (raw: string) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <input
@@ -51,7 +55,15 @@ function IvInput({ value, label, onChange }: { value: number; label: string; onC
       min={0}
       max={31}
       value={draft ?? value}
+      tabIndex={value === 31 && draft === null ? -1 : undefined}
       aria-label={label}
+      aria-keyshortcuts="ArrowLeft"
+      title={hint}
+      onKeyDown={e => {
+        if (e.key !== 'ArrowLeft' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        e.preventDefault();
+        e.currentTarget.closest('.stat-row')?.querySelector<HTMLInputElement>('.ev-input')?.focus();
+      }}
       onChange={e => { setDraft(e.target.value); if (e.target.value !== '') onChange(e.target.value); }}
       onBlur={() => { if (draft === '') onChange(''); setDraft(null); }}
     />
@@ -378,9 +390,17 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                 max={252}
                 step={EV_STEP}
                 value={line.ev}
+                aria-keyshortcuts="ArrowRight"
+                title={t('editor.evToIv')}
+                onKeyDown={e => {
+                  // Freccia destra: all'IV della riga (fuori dal Tab quando vale 31)
+                  if (e.key !== 'ArrowRight' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+                  e.preventDefault();
+                  e.currentTarget.closest('.stat-row')?.querySelector<HTMLInputElement>('.iv-input')?.focus();
+                }}
                 onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
               />
-              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })}
+              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} hint={t('editor.ivToEv')}
                 onChange={raw => changeIv(line.stat, raw)} />
             </div>
           ))}
