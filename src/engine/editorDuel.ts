@@ -3,6 +3,7 @@ import { getMove, toID } from './dex';
 import { hitsToKO } from './duel';
 import type { TeamSet } from './sets';
 import type { StatID } from '@pkmn/dex';
+import { paradoxSpeedBoost, speedStat } from './speed';
 
 /**
  * La Sfida dell'editor: il membro contro un avversario scelto. Il colpo migliore del membro e quello che fa più male
@@ -158,4 +159,33 @@ export function worstThreat(me: TeamSet, threats: TeamSet[]): TeamSet | null {
     if (hit && (!worst || hit.expected > worst.expected)) worst = { set, expected: hit.expected };
   }
   return worst?.set ?? null;
+}
+
+/** Velocità in lotta: quella finale (Sciarpa compresa) e ×1,5 se Protosynthesis o Quark Drive la alzano con la Booster Energy. */
+export function battleSpeed(set: TeamSet): number {
+  const { value } = speedStat(set);
+  const booster = toID(set.item) === 'boosterenergy' && paradoxSpeedBoost(set);
+  return booster ? Math.floor(value * 1.5) : value;
+}
+
+export interface DuelSpeed {
+  mine: number;
+  theirs: number;
+  /** Chi muove per primo (senza mosse con priorità): 'pari' = 50% a testa. */
+  order: 'mine' | 'theirs' | 'tie';
+  /** Se sei più lento o pari: quanti EV in più in Velocità servono per superarlo (solo se è un ritocco). */
+  tip: { evs: number } | null;
+}
+
+/** Il confronto di Velocità della Sfida, col consiglio di EV come per i colpi. */
+export function duelSpeed(me: TeamSet, opp: TeamSet): DuelSpeed {
+  const mine = battleSpeed(me);
+  const theirs = battleSpeed(opp);
+  const order = mine > theirs ? 'mine' : mine < theirs ? 'theirs' : 'tie';
+  let tip: DuelSpeed['tip'] = null;
+  if (order !== 'mine') {
+    const n = smallest(252 - ev(me, 'spe'), add => battleSpeed(withEvs(me, { spe: add })) > theirs);
+    if (n !== null && n <= TIP_MAX_EVS) tip = { evs: n };
+  }
+  return { mine, theirs, order, tip };
 }

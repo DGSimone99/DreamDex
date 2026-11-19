@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editorDuel, TIP_MAX_EVS } from '../../src/engine/editorDuel';
+import { battleSpeed, duelSpeed, editorDuel, TIP_MAX_EVS } from '../../src/engine/editorDuel';
 import { importShowdown } from '../../src/engine/sets';
 
 const [tusk, gholdengo] = importShowdown([
@@ -47,5 +47,20 @@ describe('sfida: una mossa migliore da mettere nel set', () => {
     expect(editorDuel(weak, gholdengo).moveTip).toBeNull();
     const d = editorDuel(tusk, gholdengo, ['Headlong Rush', 'Earthquake']);
     if (d.mine!.hitsSure <= 1) expect(d.moveTip).toBeNull();
+  });
+});
+
+describe('sfida: la Velocità', () => {
+  it('chi muove prima, e il consiglio di EV supera davvero l\'avversario', () => {
+    const slow = { ...tusk, evs: { ...tusk.evs, spe: 0 } };
+    const s = duelSpeed(slow, gholdengo);
+    expect(s.order).toBe(s.mine > s.theirs ? 'mine' : s.mine < s.theirs ? 'theirs' : 'tie');
+    if (s.tip) {
+      expect(s.tip.evs % 4).toBe(0);
+      expect(battleSpeed({ ...slow, evs: { ...slow.evs, spe: s.tip.evs } })).toBeGreaterThan(s.theirs);
+    }
+  });
+  it('la Sciarpa conta', () => {
+    expect(battleSpeed({ ...gholdengo, item: 'Choice Scarf' })).toBeGreaterThan(battleSpeed(gholdengo));
   });
 });

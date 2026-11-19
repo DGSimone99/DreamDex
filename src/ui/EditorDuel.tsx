@@ -2,7 +2,7 @@ import { type CSSProperties, useDeferredValue, useMemo, useState } from 'react';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, moveNames, toID } from '../engine/dex';
-import { editorDuel, worstThreat, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { duelSpeed, editorDuel, worstThreat, type DuelHit, type EvTip } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
@@ -18,6 +18,7 @@ import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { moveTint } from './MovePill';
 import { Sprite, typeColor } from './Sprite';
+import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
@@ -91,6 +92,7 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
   const chosen = sets.find(s => s.key === setKey) ?? sets[0] ?? null;
   const pool = useMemo(() => movePool(me, format), [me.species, me.customSkillset, format]); // eslint-disable-line react-hooks/exhaustive-deps
   const result = useMemo(() => (chosen ? editorDuel(me, chosen.set, pool) : null), [me, chosen, pool]);
+  const speed = useMemo(() => (chosen ? duelSpeed(me, chosen.set) : null), [me, chosen]);
 
   const hitsText = (hit: DuelHit) => {
     if (!Number.isFinite(hit.hitsMaybe)) return t('editor.duelNoDamage');
@@ -147,6 +149,23 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
     );
   };
 
+  // La Velocità: le due velocità in lotta (Sciarpa e Booster comprese), chi muove prima e, se serve, gli EV per superarlo
+  const speedTip = speed?.tip
+    ? `${t('editor.duelTipSpe', { n: speed.tip.evs })}${speed.tip.evs > free ? ` ${t('editor.duelTipElsewhere')}` : ''}`
+    : null;
+  const speedRow = speed && (
+    <div className={`duel-row speed first-${speed.order}`}>
+      <span className="duel-sym" title={t('editor.duelSpeed')}>
+        <StatIcon stat="spe" />
+        <span className="visually-hidden">{t('editor.duelSpeed')}</span>
+      </span>
+      <span className="duel-move">{t('editor.duelSpeed')}</span>
+      <span className="duel-speed-vs">{t('editor.duelSpeedVs', { a: speed.mine, b: speed.theirs })}</span>
+      <strong className="duel-hits">{t(speed.order === 'mine' ? 'editor.duelFirstMine' : speed.order === 'theirs' ? 'editor.duelFirstTheirs' : 'editor.duelSpeedTie')}</strong>
+      {speedTip && <span className="duel-tips"><span>{speedTip}</span></span>}
+    </div>
+  );
+
   return (
     <fieldset className="editor-group duel">
       <legend>{t('editor.duel')}</legend>
@@ -175,6 +194,7 @@ export function EditorDuel({ set, data, format }: { set: TeamSet; data: EngineDa
           <div className="duel-rows">
             {row('mine', result.mine, [moveText, evText(result.atkTip)])}
             {row('theirs', result.theirs, [evText(result.defTip)])}
+            {speed && speedRow}
           </div>
         ) : <p className="duel-empty">{t('editor.duelEmpty')}</p>}
       </div>

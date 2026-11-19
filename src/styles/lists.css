@@ -677,7 +677,7 @@
 .duel-gender.female { stroke: #ff86b0; }
 /* Le due righe sotto la linguetta */
 .duel-rows { grid-column: 2; display: flex; flex-direction: column; justify-content: space-evenly; gap: var(--sp-3); padding: var(--sp-4) var(--sp-6) var(--sp-6); }
-.duel-row { display: grid; grid-template-columns: 24px minmax(0, 1.15fr) minmax(96px, 1fr) 84px; align-items: center; column-gap: var(--sp-4); row-gap: 2px; }
+.duel-row { display: grid; grid-template-columns: 24px minmax(0, 1.15fr) minmax(96px, 1fr) 104px; align-items: center; column-gap: var(--sp-4); row-gap: 2px; }
 .duel-sym { display: grid; place-items: center; width: 24px; height: 24px; color: var(--accent); }
 .duel-row.theirs .duel-sym { color: var(--bad); }
 .duel-sym svg { width: 20px; height: 20px; }
@@ -718,3 +718,10 @@
   .duel-rows { gap: var(--sp-1); padding-top: var(--sp-2); padding-bottom: var(--sp-4); }
   .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-2); }
 }
+/* La riga della Velocità: le due velocità al posto della barra, chi muove prima al posto dei colpi */
+.duel-row.speed .duel-sym { color: var(--muted); }
+.duel-row.speed .duel-sym svg { width: 18px; height: 18px; }
+.duel-speed-vs { font: italic 700 var(--fs-small)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--muted); }
+.duel-row.speed.first-mine .duel-hits { color: var(--good); }
+.duel-row.speed.first-theirs .duel-hits { color: var(--bad); }
+.duel-row.speed.first-tie .duel-hits { color: var(--warn); }
