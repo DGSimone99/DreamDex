@@ -3,8 +3,8 @@ import { SOURCES } from '../../scripts/sources';
 import { readSource } from '../../src/data/load';
 
 describe('fonti dati', () => {
-  it('lo script scarica le 4 fonti', () => {
-    expect(SOURCES).toEqual(['gen9nationaldex', 'gen9nationaldexubers', 'gen9nationaldexuu', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9anythinggoes']);
+  it('lo script scarica le fonti', () => {
+    expect(SOURCES).toEqual(['gen9nationaldex', 'gen9nationaldexubers', 'gen9nationaldexuu', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9anythinggoes', 'gen9nationaldexdoubles']);
   });
 
   it('una fonte assente dà statistiche nulle', async () => {

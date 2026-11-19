@@ -22,6 +22,11 @@ const FORMATS = [
   '\t\truleset: [\'[Gen 9] OU\'],',
   '\t\tbanlist: [\'OU\', \'UUBL\'],',
   '\t},',
+  '\t{',
+  '\t\tname: "[Gen 9] National Dex Doubles",',
+  '\t\truleset: [\'Standard Doubles\'],',
+  '\t\tbanlist: [\'Urshifu\', \'Commander\', \'Coaching\', \'Swagger\'],',
+  '\t},',
   '];',
 ].join('\n');
 const RULESETS = [
@@ -36,6 +41,10 @@ const RULESETS = [
   '\t},',
   '\tohkoclause: {',
   '\t\tname: \'OHKO Clause\',',
+  '\t},',
+  '\tstandarddoubles: {',
+  '\t\tname: \'Standard Doubles\',',
+  '\t\truleset: [\'OHKO Clause\'],',
   '\t},',
   '\tsleepmovesclause: {',
   '\t\tname: \'Sleep Moves Clause\',',
@@ -65,6 +74,13 @@ describe('ban di Showdown', () => {
     expect(bans.moves).toEqual(expect.arrayContaining(['Shed Tail', 'Minimize', 'Yawn', 'Fissure', 'Spore', 'Hypnosis']));
     expect(bans.species).toEqual([]);
   });
+
+  it('National Dex Doubles: Pokémon, abilità e mosse vietati per nome, più la OHKO Clause', () => {
+    const dbl = buildBans(rules).natdexdoubles;
+    expect(dbl.species).toContain('Urshifu');
+    expect(dbl.abilities).toContain('Commander');
+    expect(dbl.moves).toEqual(expect.arrayContaining(['Coaching', 'Swagger', 'Fissure']));
+  });
 });
 
 describe('ban nel set', () => {
@@ -91,6 +107,16 @@ describe('ban nel set', () => {
     const team = [{ ...emptySet('Cyclizar'), ability: 'Regenerator', moves: ['Shed Tail', 'Rapid Spin'] }, { ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush'] }];
     const rules = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.filter(p => p.category === 'rules').map(p => p.text);
     expect(rules).toContain('Cyclizar: Mosse vietate in National Dex OU: Shed Tail');
+  });
+
+  it('in doppio Urshifu resta nel team ed è segnalato come vietato', () => {
+    initBans({ natdexdoubles: { moves: [], abilities: [], items: [], species: ['Urshifu'] } });
+    const doubles = { ...DEFAULT_FORMAT, formatId: 'natdexdoubles' as const };
+    expect(isBannedIn(getSpecies('Urshifu')!, doubles)).toBe(true);
+    const team = [{ ...emptySet('Urshifu'), ability: 'Unseen Fist', moves: ['Wicked Blow'] }, { ...emptySet('Amoonguss'), ability: 'Regenerator', moves: ['Spore'] }];
+    const report = coachTeam(team, doubles, fixtureData);
+    expect(report.problems.filter(p => p.category === 'rules').some(p => p.text.includes('Urshifu'))).toBe(true);
+    expect(team.map(m => m.species)).toEqual(['Urshifu', 'Amoonguss']);
   });
 
   it('il set predefinito non porta mosse vietate', () => {

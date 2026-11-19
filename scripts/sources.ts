@@ -1,5 +1,5 @@
 /** Fonti di statistiche Smogon scaricate da `npm run fetch-data`, una cartella `data/<fonte>/` ciascuna. */
-export const SOURCES = ['gen9nationaldex', 'gen9nationaldexubers', 'gen9nationaldexuu', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9anythinggoes'];
+export const SOURCES = ['gen9nationaldex', 'gen9nationaldexubers', 'gen9nationaldexuu', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9anythinggoes', 'gen9nationaldexdoubles'];
 
 /**
  * Altri formati usati solo per i set di riserva (Pokémon senza dati nel formato scelto),
