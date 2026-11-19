@@ -909,7 +909,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
               <div className="team-more-sheet" ref={moreSheet} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={t(lang, 'team.more')}
                 onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMoreOpen(false); moreButton.current?.focus(); } }}>
                 <p className="team-more-title" aria-hidden="true">Team</p>
-                {saved && <button type="button" role="menuitem" onClick={() => pressReal('.team-saved .popover > summary')}><Icon name="box" />{t(lang, 'saved.label')}</button>}
+                {saved && <button type="button" role="menuitem" data-saved onClick={() => pressReal('.team-saved .popover > summary')}><Icon name="box" />{t(lang, 'saved.label')}</button>}
                 {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .popover > summary')}><Icon name="paste" />{t(lang, 'showdown.import')}</button>}
                 {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-main')}><Icon name="copy" />{t(lang, 'showdown.quickCopy')}</button>}
                 {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-link')}><Icon name="link" />{t(lang, 'showdown.copyLink')}</button>}
