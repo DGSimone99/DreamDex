@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getSpecies } from '../../src/engine/dex';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
-import { dataSource, formatLabel, isBannedIn, isLegalIn } from '../../src/engine/formats';
+import { doublesEnabled } from '../../src/engine/features';
+import { battleOf, dataSource, dexOf, formatIn, formatLabel, formatOptions, isBannedIn, isLegalIn, pokedexOf, teraAllowed, tiersOf } from '../../src/engine/formats';
+import { sanitizeFormat } from '../../src/storage';
 import { candidatePool } from '../../src/engine/scoring';
 import { fixtureData, tusk } from '../fixtures/data';
 
@@ -36,5 +38,45 @@ describe('formati', () => {
     expect(candidatePool([tusk], f(open), fixtureData)).not.toContain('Dragapult');
     expect(candidatePool([tusk], f({ ...open, formatId: 'ubers' }), fixtureData)).toContain('Dragapult');
     expect(candidatePool([tusk], f({ ...open, formatId: 'uu' }), fixtureData)).toEqual(['Rotom-Wash']);
+  });
+
+  it('National Dex Doubles: fonte, Pokédex, Tera, etichetta', () => {
+    const dbl = f({ formatId: 'natdexdoubles' });
+    expect(dataSource(dbl)).toBe('gen9nationaldexdoubles');
+    expect(pokedexOf(dbl)).toBe('natdex');
+    expect(teraAllowed(dbl)).toBe(true);
+    expect(formatLabel(dbl)).toBe('National Dex Doubles');
+    expect(dexOf('natdexdoubles')).toBe('natdex');
+    expect(battleOf('natdexdoubles')).toBe('doubles');
+    expect(battleOf('ou')).toBe('singles');
+  });
+
+  it('nessun divieto per tier in doppio (Dragapult, Uber in singolo, è legale)', () => {
+    expect(isBannedIn(sp('Dragapult'), f({ formatId: 'natdexdoubles' }))).toBe(false);
+  });
+
+  it('menu: Doppio solo in National Dex, ripiego sul Singolo', () => {
+    expect(tiersOf('natdex', 'doubles')).toEqual([{ formatId: 'natdexdoubles', tier: 'OU' }]);
+    expect(tiersOf('gen9', 'doubles')).toEqual([]);
+    expect(tiersOf('nolimits', 'doubles')).toEqual([]);
+    expect(formatIn('natdex', 'doubles', 'ou')).toBe('natdexdoubles');
+    expect(formatIn('gen9', 'doubles', 'natdexdoubles')).toBe('gen9ou');
+    expect(formatIn('natdex', 'singles', 'natdexdoubles')).toBe('ou');
+  });
+
+  it('interruttore spento: niente doppio nel menu né tra i formati', () => {
+    vi.stubEnv('DEV', false);
+    try {
+      expect(doublesEnabled()).toBe(false);
+      expect(tiersOf('natdex', 'doubles')).toEqual([]);
+      expect(formatOptions().map(o => o.id)).not.toContain('natdexdoubles');
+    } finally { vi.unstubAllEnvs(); }
+  });
+
+  it("un salvataggio in doppio con l'interruttore spento torna a National Dex OU", () => {
+    expect(sanitizeFormat({ formatId: 'natdexdoubles' }).formatId).toBe('natdexdoubles');
+    vi.stubEnv('DEV', false);
+    try { expect(sanitizeFormat({ formatId: 'natdexdoubles' }).formatId).toBe('ou'); }
+    finally { vi.unstubAllEnvs(); }
   });
 });

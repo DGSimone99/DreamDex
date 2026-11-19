@@ -2,6 +2,7 @@ import type { Item, Move, Species } from '@pkmn/dex';
 import { gen9Tier, isSelectable, natDexTier, toID } from './dex';
 import type { Format, FormatId } from './format';
 import { t, type Lang } from '../i18n';
+import { doublesEnabled } from './features';
 
 /** Da dove vengono Pokémon, mosse e strumenti: tutto il National Dex o solo Scarlatto/Violetto. */
 export type Pokedex = 'natdex' | 'sv';
@@ -26,37 +27,64 @@ const FORMATS: Record<FormatId, FormatDef> = {
   gen9uu: { source: 'gen9uu', banned: new Set(['OU', 'UUBL', 'Uber', 'AG', ...ALWAYS]), tera: true, pokedex: 'sv' },
   // Anything Goes: nessun Pokémon vietato, solo quelli ottenibili in Scarlatto/Violetto
   gen9ag: { source: 'gen9anythinggoes', banned: new Set(ALWAYS), tera: true, pokedex: 'sv' },
+  // National Dex Doubles: i divieti sono una lista per nome di Showdown, nessun tier del singolo; Tera, Mega e Z ammesse
+  natdexdoubles: { source: 'gen9nationaldexdoubles', banned: new Set(ALWAYS), tera: true, pokedex: 'natdex' },
 };
 
-const FORMAT_IDS: FormatId[] = ['ou', 'ubers', 'uu', 'all', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9ag'];
+const FORMAT_IDS: FormatId[] = ['ou', 'ubers', 'uu', 'all', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9ag', 'natdexdoubles'];
 
-/** I formati per il menu, con le etichette nella lingua data. */
+/** I formati per il menu, con le etichette nella lingua data (i doppi solo con l'interruttore acceso). */
 export const formatOptions = (lang: Lang = 'it'): { id: FormatId; label: string }[] =>
-  FORMAT_IDS.map(id => ({ id, label: t(lang, id === 'all' ? 'format.allOption' : `format.${id}`) }));
+  FORMAT_IDS.filter(id => doublesEnabled() || battleOf(id) === 'singles').map(id => ({ id, label: t(lang, id === 'all' ? 'format.allOption' : `format.${id}`) }));
 
 export const formatLabel = (format: Format, lang: Lang = 'it'): string => t(lang, `format.${format.formatId}`);
 
 /** Pokédex del menu: Gen 9, National Dex, Senza limiti. Ogni formato appartiene a uno solo. */
 export type DexId = 'gen9' | 'natdex' | 'nolimits';
 
-/** Per ogni Pokédex i suoi tier, nell'ordine del menu; Senza limiti ha un solo formato e nessun tier da scegliere. */
-const DEX_TIERS: Record<DexId, { formatId: FormatId; tier: string }[]> = {
-  gen9: [{ formatId: 'gen9ou', tier: 'OU' }, { formatId: 'gen9ubers', tier: 'Ubers' }, { formatId: 'gen9uu', tier: 'UU' }, { formatId: 'gen9ag', tier: 'Anything Goes' }],
-  natdex: [{ formatId: 'ou', tier: 'OU' }, { formatId: 'ubers', tier: 'Ubers' }, { formatId: 'uu', tier: 'UU' }],
-  nolimits: [{ formatId: 'all', tier: '' }],
+/** Tipo di lotta: singolo o doppio (due Pokémon per parte in campo). */
+export type BattleId = 'singles' | 'doubles';
+export const BATTLE_IDS: BattleId[] = ['singles', 'doubles'];
+
+type TierEntry = { formatId: FormatId; tier: string };
+/** Per ogni Pokédex e lotta i suoi tier, nell'ordine del menu; Senza limiti ha un solo formato e nessun tier da scegliere. */
+const DEX_TIERS: Record<DexId, Record<BattleId, TierEntry[]>> = {
+  gen9: {
+    singles: [{ formatId: 'gen9ou', tier: 'OU' }, { formatId: 'gen9ubers', tier: 'Ubers' }, { formatId: 'gen9uu', tier: 'UU' }, { formatId: 'gen9ag', tier: 'Anything Goes' }],
+    doubles: [],
+  },
+  natdex: {
+    singles: [{ formatId: 'ou', tier: 'OU' }, { formatId: 'ubers', tier: 'Ubers' }, { formatId: 'uu', tier: 'UU' }],
+    doubles: [{ formatId: 'natdexdoubles', tier: 'OU' }],
+  },
+  nolimits: { singles: [{ formatId: 'all', tier: '' }], doubles: [] },
 };
 export const DEX_IDS: DexId[] = ['gen9', 'natdex', 'nolimits'];
 
+const entryOf = (formatId: FormatId): { dex: DexId; battle: BattleId; tier: string } => {
+  for (const dex of DEX_IDS) for (const battle of BATTLE_IDS) {
+    const entry = DEX_TIERS[dex][battle].find(x => x.formatId === formatId);
+    if (entry) return { dex, battle, tier: entry.tier };
+  }
+  throw new Error(`Formato sconosciuto: ${formatId}`);
+};
+
 /** Il Pokédex del formato. */
-export const dexOf = (formatId: FormatId): DexId => DEX_IDS.find(dex => DEX_TIERS[dex].some(x => x.formatId === formatId))!;
+export const dexOf = (formatId: FormatId): DexId => entryOf(formatId).dex;
+/** La lotta del formato (singolo o doppio). */
+export const battleOf = (formatId: FormatId): BattleId => entryOf(formatId).battle;
 
-/** I tier del Pokédex (vuoto se non ancora disponibile). */
-export const tiersOf = (dex: DexId): { formatId: FormatId; tier: string }[] => DEX_TIERS[dex];
+/** I tier del Pokédex per quella lotta (vuoto se non c'è; i doppi solo con l'interruttore acceso). */
+export const tiersOf = (dex: DexId, battle: BattleId = 'singles'): TierEntry[] =>
+  (battle === 'doubles' && !doublesEnabled() ? [] : DEX_TIERS[dex][battle]);
 
-/** Il formato scelto passando a un altro Pokédex: lo stesso tier se c'è (OU resta OU), altrimenti il primo. */
-export function formatInDex(dex: DexId, current: FormatId): FormatId | null {
-  const tiers = DEX_TIERS[dex];
-  const tier = DEX_TIERS[dexOf(current)].find(x => x.formatId === current)?.tier;
+/**
+ * Il formato scelto cambiando Pokédex o lotta: lo stesso tier se c'è (OU resta OU), altrimenti il primo;
+ * se la lotta non ha formati in quel Pokédex (Doppio in Gen 9), il Singolo.
+ */
+export function formatIn(dex: DexId, battle: BattleId, current: FormatId): FormatId | null {
+  const tiers = tiersOf(dex, battle).length ? tiersOf(dex, battle) : tiersOf(dex, 'singles');
+  const tier = entryOf(current).tier;
   return (tiers.find(x => x.tier === tier) ?? tiers[0])?.formatId ?? null;
 }
 
@@ -145,6 +173,8 @@ export function isLegalIn(species: Species, format: Format): boolean {
 const SMOGON_FORMATS: Record<FormatId, string | null> = {
   ou: 'national-dex', ubers: 'national-dex-ubers', uu: 'national-dex-uu', all: null,
   gen9ou: 'ou', gen9ubers: 'uber', gen9uu: 'uu', gen9ag: 'ag',
+  // Nessun indirizzo dell'analisi in doppio: si apre la pagina generale del Pokémon
+  natdexdoubles: null,
 };
 
 /**

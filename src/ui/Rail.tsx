@@ -1,7 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import type { Format, FormatId } from '../engine/format';
-import { DEX_IDS, dexOf, formatInDex, tiersOf, type DexId } from '../engine/formats';
+import { battleOf, DEX_IDS, dexOf, formatIn, tiersOf, type DexId } from '../engine/formats';
 import type { GameId } from '../engine/games';
 import { GameDialog } from './GameDialog';
 import type { StatsMeta } from '../engine/stats';
@@ -109,7 +109,7 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
                     <label key={id} className={`format-dex-opt${id === dex ? ' on' : ''}${soon ? ' soon' : ''}`}>
                       <input type="radio" className="visually-hidden" name="format-dex" value={id} checked={id === dex} disabled={soon}
                         onChange={() => {
-                          const formatId = formatInDex(id, format.formatId);
+                          const formatId = formatIn(id, battleOf(format.formatId), format.formatId);
                           if (formatId) onFormatChange({ ...format, formatId });
                         }} />
                       <b>{t(`dex.${id}`)}</b>

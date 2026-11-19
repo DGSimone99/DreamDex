@@ -127,6 +127,7 @@ export const it: Record<keyof typeof en, string> = {
   'format.ou': "National Dex OU",
   'format.ubers': "National Dex Ubers",
   'format.uu': "National Dex UU",
+  'format.natdexdoubles': "National Dex Doubles",
   'format.all': "Tutti i Pokémon",
   'format.allOption': "Tutti i Pokémon (senza limiti)",
   'grade.S': "Eccellente",

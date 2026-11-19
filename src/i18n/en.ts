@@ -125,6 +125,7 @@ export const en = {
   'format.ou': "National Dex OU",
   'format.ubers': "National Dex Ubers",
   'format.uu': "National Dex UU",
+  'format.natdexdoubles': "National Dex Doubles",
   'format.all': "All Pokémon",
   'format.allOption': "All Pokémon (no limits)",
   'grade.S': "Excellent",

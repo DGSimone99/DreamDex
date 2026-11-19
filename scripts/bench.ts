@@ -393,7 +393,7 @@ function realGames() {
 
 type Rate = (team: TeamSet[], fmt: FormatId, withMeta: boolean) => TeamRating;
 const ENGINES: { name: string; rate: Rate }[] = [
-  { name: 'v1', rate: (team, fmt, withMeta) => rateTeamV1(team, withMeta ? DATA_V1[fmt] : { ...DATA_V1[fmt], ignoreMeta: true }) as unknown as TeamRating },
+  { name: 'v1', rate: (team, fmt, withMeta) => rateTeamV1(team, (withMeta ? DATA_V1[fmt] : { ...DATA_V1[fmt], ignoreMeta: true }) as Parameters<typeof rateTeamV1>[1]) as unknown as TeamRating },
   { name: 'nuovo', rate: (team, fmt, withMeta) => rateTeam(team, withMeta ? DATA[fmt] : { ...DATA[fmt], ignoreMeta: true })! },
 ];
 const AREA_KEYS = ['strength', 'defense', 'speed', 'roles'];

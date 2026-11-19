@@ -50,6 +50,8 @@ export const GEN9_AG_RULES: FormatRules = { ...GEN9_RULES, wallIndex: UBERS_RULE
 const RULES: Partial<Record<FormatId, FormatRules>> = {
   ou: NATDEX_OU_RULES, ubers: UBERS_RULES, uu: UU_RULES,
   gen9ou: GEN9_RULES, gen9ubers: GEN9_UBERS_RULES, gen9uu: GEN9_UU_RULES, gen9ag: GEN9_AG_RULES,
+  // Doppio: per ora il voto del singolo, identico a National Dex OU (il voto in doppio è un passo a parte)
+  natdexdoubles: NATDEX_OU_RULES,
 };
 
 export function formatRules(formatId: FormatId | undefined): FormatRules {
