@@ -459,7 +459,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         <div className="nature-diamond set-plates">
           <div className="set-plate" data-pop-anchor>
             <span className="field-label" aria-hidden="true" onPointerEnter={() => setNatureHelp(true)} onPointerLeave={() => setNatureHelp(false)}>{t('editor.nature')}</span>
-            <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted
+            <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted menuJoined={2}
               display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
               onChange={nature => update({ nature })} />
           </div>

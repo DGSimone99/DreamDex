@@ -56,7 +56,10 @@ describe('editor del team: più usati dalle statistiche del formato', () => {
     const team = screen.getByRole('region', { name: 'Team' });
     await user.click(within(team).getByText('Great Tusk', { selector: '.name' }));
     const common = commonChoices({ stats: fixtureStats, sets: null }, emptySet('Great Tusk'));
-    for (const [field, top] of [['Mossa 1', common.moves[0]], ['Strumento', common.items[0]], ['Abilità', common.abilities[0]], ['Natura', common.natures[0]]] as const) {
+    // La Natura scelta non si ripete nella sua lista (è il campo): in cima la più usata fra le altre
+    const nature = (within(team).getByLabelText('Natura') as HTMLInputElement).value;
+    const topNature = common.natures.find(n => n.name !== nature)!;
+    for (const [field, top] of [['Mossa 1', common.moves[0]], ['Strumento', common.items[0]], ['Abilità', common.abilities[0]], ['Natura', topNature]] as const) {
       await user.click(within(team).getByLabelText(field));
       const first = within(screen.getByRole('listbox')).getAllByRole('option')[0];
       expect(first, field).toHaveTextContent(top.name);

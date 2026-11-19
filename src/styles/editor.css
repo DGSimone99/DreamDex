@@ -446,3 +446,16 @@
 .nature-diamond .combobox .option-head > .common-share { grid-column: 1; grid-row: 1; justify-self: start; min-width: 0; margin: 0; text-align: left; }
 /* Il rombo (e il suo menu che si apre verso l'alto) sta sopra l'intestazione delle Statistiche */
 .nature-diamond { z-index: 4; }
+
+/*
+ * Natura aperta: il rombo resta intero e la tendina parte dalle sue punte < >. È larga da punta a punta (quanto l'anello
+ * ciano) e scende fino all'altezza delle punte; in fondo ha una tacca con la forma della metà di sopra del rombo, dove il
+ * rombo si incastra: il filo ciano sale dalle punte lungo i lati della tendina e quello dei tagli è l'anello del rombo.
+ * La natura scelta (solo nel campo, evidenziata) è come l'ultima voce della lista (la prima se si apre sotto).
+ */
+.nature-diamond .set-plate[data-pop-side]::before { background: linear-gradient(90deg, var(--raised), var(--accent-soft) 45%, var(--accent-soft) 75%, var(--raised)); }
+.nature-diamond .combobox [role='listbox'] { --notch: calc(var(--anchor-h, 34px) / 2 + 2px); border: 2px solid var(--accent); }
+.nature-diamond .combobox [role='listbox'][data-side='above'] { border-bottom: 0; border-radius: 4px 4px 0 0; padding: var(--sp-2) var(--sp-2) var(--notch);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, calc(100% - var(--nd-tip)) calc(100% - var(--notch)), var(--nd-tip) calc(100% - var(--notch)), 0 100%); }
+.nature-diamond .combobox [role='listbox'][data-side='below'] { border-top: 0; border-radius: 0 0 4px 4px; padding: var(--notch) var(--sp-2) var(--sp-2);
+  clip-path: polygon(0 0, var(--nd-tip) var(--notch), calc(100% - var(--nd-tip)) var(--notch), 100% 0, 100% 100%, 0 100%); }

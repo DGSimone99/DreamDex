@@ -1,4 +1,4 @@
-import { useLayoutEffect, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 
 /** Il browser sa mettere un elemento nello strato in cima a tutto (popover): niente z-index né contenitori che lo tagliano. */
 export const supportsPopover = typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
@@ -16,8 +16,14 @@ interface Options {
   align?: 'start' | 'end';
   /** Lato preferito: sotto, se non ci sta e sopra c'è più posto si apre sopra (e viceversa). */
   prefer?: 'below' | 'above';
-  /** Distanza dal campo. */
+  /** Distanza dal campo (0: la tendina continua il campo, senza stacco). */
   gap?: number;
+  /** Quanto la tendina entra nel campo, in frazione della sua altezza (0.5: arriva a metà, alle punte del rombo). */
+  overlap?: number;
+  /** Quanto la tendina sborda dal campo a destra e a sinistra (es. 2px per allinearsi all'anello di selezione). */
+  bleed?: number;
+  /** Avvisa da che lato si è aperta (sotto o sopra), ogni volta che cambia. */
+  onSide?: (side: 'below' | 'above') => void;
 }
 
 /**
@@ -27,7 +33,9 @@ interface Options {
  * L'elemento deve avere `popover="manual"` (vedi `supportsPopover`); senza, si posiziona comunque fisso.
  */
 export function useAnchoredPop(anchor: RefObject<HTMLElement | null>, pop: RefObject<HTMLElement | null>, open: boolean, options: Options = {}): void {
-  const { minWidth = 0, width, align = 'start', prefer = 'below', gap = GAP } = options;
+  const { minWidth = 0, width, align = 'start', prefer = 'below', gap: baseGap = GAP, bleed = 0, overlap = 0 } = options;
+  const onSide = useRef(options.onSide);
+  onSide.current = options.onSide;
   useLayoutEffect(() => {
     const el = pop.current;
     if (!open || !el) return;
@@ -38,7 +46,11 @@ export function useAnchoredPop(anchor: RefObject<HTMLElement | null>, pop: RefOb
     const place = () => {
       const a = anchor.current;
       if (!a || !el.isConnected) return;
-      const r = a.getBoundingClientRect();
+      const box = a.getBoundingClientRect();
+      const r = { left: box.left - bleed, right: box.right + bleed, width: box.width + 2 * bleed, top: box.top, bottom: box.bottom };
+      const gap = baseGap - overlap * box.height;
+      // L'altezza del campo, per le forme che lo abbracciano (es. la tacca a rombo della Natura)
+      el.style.setProperty('--anchor-h', `${box.height}px`);
       const vw = document.documentElement.clientWidth;
       const vh = document.documentElement.clientHeight;
       if (width === 'content') el.style.width = '';
@@ -61,9 +73,29 @@ export function useAnchoredPop(anchor: RefObject<HTMLElement | null>, pop: RefOb
       el.style.maxHeight = `${Math.floor(Math.min(cssMax, room))}px`;
       if (down) el.style.top = `${Math.round(r.bottom + gap)}px`;
       else el.style.bottom = `${Math.round(vh - r.top + gap)}px`;
-      el.dataset.side = down ? 'below' : 'above';
+      const side = down ? 'below' : 'above';
+      if (el.dataset.side !== side) {
+        el.dataset.side = side;
+        // Anche il campo sa da che lato è aperta la sua tendina (es. il rombo della Natura cambia forma da quel lato)
+        a.dataset.popSide = side;
+        onSide.current?.(side);
+      }
     };
     place();
+    // Il campo può spostarsi senza scorrimento né cambi di misura (animazioni dell'editor, contenuti che arrivano dopo):
+    // a ogni fotogramma si guarda dov'è, e se si è mosso la tendina lo segue
+    let last = '';
+    let frame = 0;
+    const follow = () => {
+      const a = anchor.current;
+      if (a) {
+        const r = a.getBoundingClientRect();
+        const key = `${r.left},${r.top},${r.width},${r.height}`;
+        if (key !== last) { if (last) place(); last = key; }
+      }
+      frame = requestAnimationFrame(follow);
+    };
+    if (typeof requestAnimationFrame !== 'undefined') frame = requestAnimationFrame(follow);
     // Lo scorrimento della tendina stessa non la sposta
     const onScroll = (e: Event) => { if (!(e.target instanceof Node && el.contains(e.target))) place(); };
     window.addEventListener('scroll', onScroll, true);
@@ -74,11 +106,14 @@ export function useAnchoredPop(anchor: RefObject<HTMLElement | null>, pop: RefOb
     const content = typeof MutationObserver !== 'undefined' ? new MutationObserver(place) : null;
     content?.observe(el, { childList: true, subtree: true });
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', place);
       watch?.disconnect();
       content?.disconnect();
+      delete el.dataset.side;
+      if (anchor.current) delete anchor.current.dataset.popSide;
       if (supportsPopover && el.isConnected && el.matches(':popover-open')) el.hidePopover();
     };
-  }, [open, anchor, pop, minWidth, width, align, prefer, gap]);
+  }, [open, anchor, pop, minWidth, width, align, prefer, baseGap, bleed, overlap]);
 }

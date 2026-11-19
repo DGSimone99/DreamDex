@@ -25,8 +25,10 @@ describe('editor del set', () => {
     expect(screen.getByLabelText('Natura')).toHaveValue('Modest');
     await user.click(screen.getByLabelText('Natura'));
     const list = screen.getByRole('listbox', { name: 'Natura: opzioni' });
-    expect(within(list).getByRole('option', { name: 'Modest (+AttSp, −Att)' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(list).getByRole('option', { name: 'Timid (+Vel, −Att)' })).toBeInTheDocument();
     expect(within(list).getByRole('option', { name: 'Hardy (neutra)' })).toBeInTheDocument();
+    // La natura scelta è il campo stesso (la lista ne continua il rombo): non si ripete fra le voci
+    expect(within(list).queryByRole('option', { name: 'Modest (+AttSp, −Att)' })).not.toBeInTheDocument();
   });
 
   it('Tera: menu con i chip dei tipi', async () => {

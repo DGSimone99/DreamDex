@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { toID } from '../engine/dex';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { useT } from '../i18n/react';
@@ -67,10 +67,12 @@ interface Props {
   commonLabel?: string;
   /** Larghezza minima del menu, per i campi stretti (di norma il menu è largo quanto il campo). */
   menuMinWidth?: number;
+  /** Il menu abbraccia il campo: senza stacco, entra fino a metà della sua altezza e ne sborda di tanto per lato (il rombo della Natura). */
+  menuJoined?: number;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined }: Props) {
   const t = useT();
   const listId = useId();
   const [open, setOpen] = useState(false);
@@ -82,11 +84,31 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   // Il menu si allinea al campo; un contenitore con `data-pop-anchor` (es. il rombo della Natura) fa da campo al suo posto
   const anchorRef = useRef<HTMLElement | null>(null);
   const setRoot = (node: HTMLDivElement | null) => { anchorRef.current = node ? node.closest<HTMLElement>('[data-pop-anchor]') ?? node : null; };
-  useAnchoredPop(anchorRef, listRef, open, { minWidth: menuMinWidth });
+  // Da che lato si apre il menu: aperto sopra il campo, le voci più vicine al campo sono quelle in fondo
+  const [side, setSide] = useState<'below' | 'above'>('below');
+  const up = side === 'above';
+  useAnchoredPop(anchorRef, listRef, open, {
+    minWidth: menuMinWidth,
+    ...(menuJoined !== undefined ? { gap: 0, bleed: menuJoined, overlap: 0.5 } : {}),
+    onSide: next => {
+      setSide(next);
+      // La voce scelta resta quella attiva anche se l'ordine si capovolge
+      const list = byside(next);
+      const index = list.findIndex(o => o.value === value);
+      setActive(index >= 0 && index < MAX_SHOWN ? index : joined ? -1 : 0);
+    },
+  });
 
-  // Le più usate in cima, anche mentre cerchi
-  const ordered = useMemo(() => [...options.filter(o => o.common), ...options.filter(o => !o.common)], [options]);
-  const hasCommon = ordered.length > 0 && !!ordered[0].common;
+  // Le più usate vicino al campo, anche mentre cerchi: in cima se il menu si apre sotto, in fondo se si apre sopra
+  // (tutte le altre restano in ordine alfabetico)
+  // Menu attaccato al campo: la voce scelta è il campo stesso (l'ultima voce, o la prima), non si ripete nella lista
+  const joined = menuJoined !== undefined;
+  const listed = useMemo(() => (menuJoined !== undefined ? options.filter(o => o.value !== value) : options), [options, menuJoined, value]);
+  const common = useMemo(() => listed.filter(o => o.common), [listed]);
+  const others = useMemo(() => listed.filter(o => !o.common), [listed]);
+  const byside = (which: 'below' | 'above') => (which === 'above' ? [...others, ...common] : [...common, ...others]);
+  const ordered = useMemo(() => byside(side), [common, others, side]); // eslint-disable-line react-hooks/exhaustive-deps
+  const hasCommon = common.length > 0;
   // Intestazioni dei gruppi solo se ce n'è più d'uno (le frecce le saltano: non sono voci)
   const grouped = useMemo(() => new Set(options.map(o => o.group).filter(Boolean)).size > 1, [options]);
   const matches = useMemo(() => {
@@ -97,32 +119,46 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     const starts = ordered.filter(o => names(o).some(n => n.startsWith(q)));
     const contains = ordered.filter(o => !starts.includes(o) && names(o).some(n => n.includes(q)));
     const found = [...starts, ...contains];
-    return [...found.filter(o => o.common), ...found.filter(o => !o.common)];
-  }, [ordered, query]);
-  const shown = matches.slice(0, MAX_SHOWN);
+    const best = [...found.filter(o => o.common), ...found.filter(o => !o.common)];
+    // Aperto sopra: la più adatta in fondo, vicino a quello che scrivi
+    return up ? best.reverse() : best;
+  }, [ordered, query, up]);
+  const shown = up ? matches.slice(-MAX_SHOWN) : matches.slice(0, MAX_SHOWN);
   // Il campo mostra l'etichetta del valore (es. il nome italiano); il valore salvato resta quello della voce
   const shownValue = options.find(o => o.value === value)?.label ?? value;
   /** Porta la voce in vista scorrendo solo la lista, non la pagina. */
   const reveal = (index: number, center = false) => {
     const list = listRef.current;
     const item = document.getElementById(`${listId}-${index}`);
-    if (!list || !item) return;
-    // Se la voce è già visibile partendo dall'inizio, si resta in cima (intestazione "Più usati" compresa)
-    if (center) list.scrollTop = item.offsetTop + item.offsetHeight <= list.clientHeight ? 0 : item.offsetTop - (list.clientHeight - item.offsetHeight) / 2;
+    if (!list) return;
+    // Nessuna voce attiva (menu attaccato): la lista parte dal lato del campo
+    if (!item) { if (center && up) list.scrollTop = list.scrollHeight; return; }
+    // Se la voce è già visibile partendo dal lato del campo, si resta lì (in cima, o in fondo se il menu è sopra il campo)
+    const end = list.scrollHeight - list.clientHeight;
+    if (center && up) list.scrollTop = item.offsetTop >= end ? end : item.offsetTop - (list.clientHeight - item.offsetHeight) / 2;
+    else if (center) list.scrollTop = item.offsetTop + item.offsetHeight <= list.clientHeight ? 0 : item.offsetTop - (list.clientHeight - item.offsetHeight) / 2;
     else if (item.offsetTop < list.scrollTop) list.scrollTop = item.offsetTop;
     else if (item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = item.offsetTop + item.offsetHeight - list.clientHeight;
   };
   // Appena aperto, la lista parte dalla voce scelta
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open) reveal(active, true);
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, side]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Scrivendo, la voce attiva è la più adatta: la prima, o l'ultima se il menu è sopra il campo
+  useLayoutEffect(() => {
+    if (query === null) return;
+    const best = up ? shown.length - 1 : 0;
+    setActive(Math.max(0, best));
+    reveal(Math.max(0, best), up);
+  }, [query, up]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const show = () => {
     setOpen(true);
     setQuery(null);
     // Oltre le prime voci la scelta attuale non sarebbe mostrata: si parte dall'inizio
     const index = ordered.findIndex(o => o.value === value);
-    setActive(index >= 0 && index < MAX_SHOWN ? index : 0);
+    // Menu attaccato: nessuna voce attiva, la scelta è il campo (le frecce partono da lì)
+    setActive(index >= 0 && index < MAX_SHOWN ? index : joined ? -1 : 0);
   };
   const pick = (option: ComboOption) => {
     if (option.disabled) return;
@@ -142,6 +178,16 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   };
   const move = (delta: number) => {
     if (!open) return show();
+    // Menu attaccato: le frecce passano dal campo (nessuna voce attiva, -1) alla voce più vicina, e ci tornano
+    if (joined && query === null) {
+      const toward = up ? -1 : 1;
+      const next = active < 0 ? (delta === toward ? (up ? shown.length - 1 : 0) : -1)
+        : (up && active === shown.length - 1 && delta > 0) || (!up && active === 0 && delta < 0) ? -1
+        : Math.min(shown.length - 1, Math.max(0, active + delta));
+      setActive(next);
+      if (next >= 0) reveal(next);
+      return;
+    }
     const next = Math.min(shown.length - 1, Math.max(0, active + delta));
     setActive(next);
     reveal(next);
@@ -192,7 +238,6 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         onChange={e => {
           // Mentre scrivi è solo una bozza: il set cambia con Invio, con una voce scelta o uscendo dal campo
           setQuery(e.target.value);
-          setActive(0);
           setOpen(true);
         }}
         onKeyDown={e => {
@@ -213,7 +258,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
       {open && (
         <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef} popover={supportsPopover ? 'manual' : undefined}>
           {shown.map((option, i) => [
-            hasCommon && i === 0 && option.common
+            hasCommon && option.common && (i === 0 || !shown[i - 1].common)
               ? <li key="common-head" role="presentation" className="group-head common-head">{commonLabel ?? t('combobox.common')}</li> : null,
             hasCommon && !grouped && !option.common && (i === 0 || shown[i - 1].common)
               ? <li key="all-head" role="presentation" className="group-head">{t('combobox.all')}</li> : null,
