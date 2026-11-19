@@ -76,9 +76,11 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const [tab, setTab] = useState<Tab>('proposals');
   const [pickState, setPick] = useState<{ archetype: Archetype | null; style: FillStyle | null }>({ archetype: null, style: null });
   const [favorites, setFavorites] = useState<FavoriteMode>('priority');
-  // "Tieni il set" per membro, legato a questo team: cambiando team ripartono tutti spuntati
-  const [keepState, setKeepState] = useState({ team, keep: team.map(() => true) });
-  const keep = keepState.team === team ? keepState.keep : team.map(() => true);
+  // Il lucchetto "fissa il set" per membro, legato a questo team: si parte liberi (le proposte possono migliorare il set),
+  // tranne i membri già fissati nel team; cambiando team si riparte da lì
+  const startKeep = () => team.map(set => !!set.favorite);
+  const [keepState, setKeepState] = useState(() => ({ team, keep: startKeep() }));
+  const keep = keepState.team === team ? keepState.keep : startKeep();
   const keepKey = keep.map(k => (k ? 1 : 0)).join('');
   const choice = useMemo<FillChoice>(() => ({ ...pickState, favorites, keepSets: keep }),
     [pickState, favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -199,6 +201,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   useEffect(() => {
     const away = (e: PointerEvent) => {
       const target = e.target as Element;
+      // I fogli fuori dal pannello (i dettagli di un Pokémon tenuto premuto, la loro ×) non contano come "fuori"
+      if (target.closest?.('.tip-sheet, .tip-sheet-shade, .tip-sheet-close, .ftip, [data-sheet]')) return;
       if (!root.current?.contains(target) && !target.closest?.('[data-fill-toggle]')) onClose();
     };
     const escape = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } };
@@ -299,13 +303,13 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     setTab(next);
     root.current?.querySelector<HTMLElement>(`#${CSS.escape(`${ids}-tab-${next}`)}`)?.focus();
   };
-  // Il riassunto delle scelte sul telefono: "The best · Any · Favourites first", e i tuoi Pokémon se ne hai lasciato libero qualcuno
-  const freed = keep.filter(k => !k).length;
+  // Il riassunto delle scelte sul telefono: "The best · Any · Favourites first", e quanti dei tuoi hai fissato (se ce n'è)
+  const locked = keep.filter(Boolean).length;
   const summary = [
     pickState.archetype ? t(`archetype.${pickState.archetype}`) : t('fill.best'),
     pickState.style ? t(`teamStyle.${pickState.style}`) : t('fill.noStyle'),
     t(`fill.fav.${favorites}`),
-    ...(freed ? [t('fill.freed', { n: freed })] : []),
+    ...(locked ? [t('fill.locked', { n: locked })] : []),
   ].join(' · ');
   const tabButton = (id: Tab, label: string, count?: number) => (
     <button type="button" role="tab" id={`${ids}-tab-${id}`} aria-selected={tab === id} aria-controls={`${ids}-panel-${id}`}
@@ -358,11 +362,12 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
               <legend className="fill-head">{t('fill.mine')}</legend>
               <div className="fill-mine-row">
                 {team.map((set, i) => (
-                  <label key={`${set.species}#${i}`} className={`fill-keep${keep[i] ? '' : ' is-free'}`} title={setTitle(set)}>
-                    <input type="checkbox" checked={keep[i]} aria-label={t('fill.keepN', { name: battleName(set) })} onChange={() => toggleKeep(i)} />
+                  <label key={`${set.species}#${i}`} className={`fill-keep${keep[i] ? ' is-locked' : ''}`} title={setTitle(set)}>
+                    {/* Una casella vera (tastiera, lettori di schermo), a vista il lucchetto chiuso o aperto */}
+                    <input type="checkbox" className="visually-hidden" checked={keep[i]} aria-label={t('fill.keepN', { name: battleName(set) })} onChange={() => toggleKeep(i)} />
                     <PokemonIcon name={battleName(set)} />
                     <span className="fill-keep-name">{battleName(set)}</span>
-                    {!keep[i] && <Icon name="edit" />}
+                    <Icon name={keep[i] ? 'lock' : 'unlock'} filled={keep[i]} />
                   </label>
                 ))}
               </div>

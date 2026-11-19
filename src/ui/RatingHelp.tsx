@@ -90,8 +90,11 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
               <div className="help-body help-phone" key={page ?? 'home'}>
                 {page ? (
                   <section className={`help-panel${page === 'general' ? ' help-general' : ''}`} aria-labelledby={`${titleId}-page`}>
-                    <button type="button" className="help-back" onClick={() => setPage(null)}><Icon name="prev" />{t('help.back')}</button>
-                    <h4 id={`${titleId}-page`}>{t(topicLabel(page))}</h4>
+                    {/* Indietro sulla riga del titolo, dalla parte opposta: non prende spazio in altezza */}
+                    <div className="help-page-head">
+                      <h4 id={`${titleId}-page`}>{t(topicLabel(page))}</h4>
+                      <button type="button" className="help-back" onClick={() => setPage(null)}><Icon name="prev" />{t('help.back')}</button>
+                    </div>
                     {page === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={page} weights={weights} typeRule={typeRule} />}
                   </section>
                 ) : (

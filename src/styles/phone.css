@@ -976,3 +976,20 @@ html { -webkit-tap-highlight-color: transparent; }
   .help-weights-row .help-wbar { min-width: 0; width: 100%; }
   .help-weights-row .help-inactive-note { font-size: var(--fs-label); }
 }
+
+/* ── Guida: Indietro accanto al titolo; Completa team: lucchetti in fila e carte più semplici (telefono) ──── */
+@media (max-width: 599px) {
+  .help-page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); margin-bottom: var(--sp-3); }
+  .help-page-head h4 { margin: 0; }
+  .help-page-head .help-back { margin: 0 calc(-1 * var(--sp-3)) 0 0; flex: none; }
+  /* I tuoi Pokémon: solo l'icona e il lucchetto, tutti in una fila (sei ci stanno anche a 360) */
+  .fill-settings .fill-mine-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .fill-settings .fill-keep { min-height: 44px; justify-content: center; gap: var(--sp-1); padding: 0 var(--sp-2); }
+  .fill-settings .fill-keep-name { display: none; }
+  /* La carta della proposta: i sei Pokémon, poi a sinistra il tipo di team e a destra voto e Usa (niente riga dei
+     guadagni: il voto li riassume) */
+  .fill-row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; align-items: center; }
+  .fill-about { justify-items: start; }
+  .fill-proposal .fill-why { display: none; }
+  .fill-result { justify-items: end; text-align: right; }
+}
