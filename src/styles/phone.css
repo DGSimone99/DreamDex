@@ -1024,3 +1024,41 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-proposal .fill-grade { font-size: var(--fs-section); color: var(--text); }
   .fill-proposal .fill-kind { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-caption); }
 }
+
+/* ── Completa team sul telefono, carte "Masters" asciutte (2026-11-20) ──────────────────────────────────── */
+/* Il colore di ogni tipo di team (anche nella sua etichetta) */
+.fill-proposal { --k: var(--accent); }
+.fill-proposal.arch-hyperOffense { --k: #ff7a4d; }
+.fill-proposal.arch-bulkyOffense { --k: #ffb04d; }
+.fill-proposal.arch-balance { --k: var(--accent); }
+.fill-proposal.arch-semiStall { --k: var(--good); }
+.fill-proposal.arch-stall { --k: var(--room); }
+.fill-think { display: none; }
+@media (max-width: 599px) {
+  /* Una carta per proposta: fondo nel colore del suo tipo di team con le righe; in alto tipo, voto e Usa su una riga,
+     sotto i sei Pokémon in fila sul fondo della carta (i nuovi con una tacca ciano); la prima col bordo magenta */
+  .fill-proposal { position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'kind result action' 'mons mons mons' 'gaps gaps gaps'; row-gap: var(--sp-3); align-items: center;
+    padding: var(--sp-4) var(--sp-5) var(--sp-3); border-radius: 6px; overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--k) 40%, var(--line-soft));
+    background: var(--stripes), linear-gradient(160deg, color-mix(in srgb, var(--k) 26%, var(--panel)), var(--panel) 62%); }
+  .fill-proposal.is-best { border: 2px solid var(--accent-2); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4); }
+  .fill-proposal .fill-about { align-self: center; justify-self: start; justify-items: start; text-align: left; }
+  .fill-proposal .fill-kind { padding: 0; background: none; font: italic 800 var(--fs-heading)/1.1 var(--display); white-space: normal; color: var(--text); }
+  .fill-proposal .fill-result { grid-area: result; display: flex; align-items: baseline; gap: var(--sp-2); }
+  .fill-proposal .fill-grade { font: 600 var(--fs-section)/1 var(--ui); }
+  .fill-proposal .fill-grade strong { font-size: 30px; margin-right: 2px; }
+  .fill-proposal .fill-delta { font: 700 var(--fs-caption)/1 var(--ui); }
+  .fill-proposal .fill-add { min-height: 40px; }
+  /* I Pokémon sul fondo della carta, senza caselle; il nuovo con la tacca ciano sotto */
+  .fill-proposal .fill-mons { gap: 0; }
+  .fill-proposal .fill-mon, .fill-proposal .fill-mon.is-new { height: auto; padding: 0 0 var(--sp-2); background: none; border-radius: 0; overflow: visible; }
+  .fill-proposal .fill-mon::after, .fill-proposal .fill-mon.is-new::after { display: none; }
+  .fill-proposal .fill-mon.is-new::before { content: ''; position: absolute; left: 22%; right: 22%; bottom: 0; height: 3px; border-radius: 2px; background: var(--accent); }
+  .fill-proposal .fill-mon-sprite { height: 58px; }
+  .fill-proposal .fill-mon .sprite { width: 58px; height: 58px; filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.5)); }
+  /* Niente righe grigie da riempire: mentre calcola una riga sola con Eevee che ci pensa */
+  .fill-row.fill-skeleton, .fill-row.fill-placeholder { display: none; }
+  .fill-think { display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-5); border: 1px dashed var(--line); border-radius: 6px; color: var(--muted); font: 500 var(--fs-small)/1.3 var(--ui); }
+  .fill-think .eevee-moment { position: static; width: 56px; height: auto; margin: 0; animation: none; }
+}

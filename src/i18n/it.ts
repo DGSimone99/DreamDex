@@ -545,6 +545,7 @@ export const it: Record<keyof typeof en, string> = {
   'team.fillTitle': "Proposte per finire il team, da usare con un clic, e team da torneo da caricare",
   'fill.settings': "Impostazioni",
   'fill.locked': "{n} fissati",
+  'fill.thinking': "Eevee sta cercando altri team…",
   'fill.title': "Completa team",
   'fill.type': "Tipo di team",
   'fill.best': "Il migliore",

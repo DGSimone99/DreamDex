@@ -20,6 +20,7 @@ import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { Sprite, typeColor } from './Sprite';
+import { EeveeMoment } from './EeveeMoment';
 import type { CSSProperties } from 'react';
 import { useMemberTip } from './MemberCard';
 import { streamFill } from './useRanking';
@@ -415,7 +416,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
         <div className="fill-main">
           <ol className="fill-proposals">
             {shown.map((proposal, i) => (
-              <li key={proposal.added.map(s => `${s.species}@${s.item}`).join('|')} className={`fill-row fill-proposal${best(i) ? ' is-best' : ''}`}>
+              <li key={proposal.added.map(s => `${s.species}@${s.item}`).join('|')} className={`fill-row fill-proposal arch-${proposal.archetype}${best(i) ? ' is-best' : ''}`}>
                 <span className="fill-mons">
                   {proposal.team.map((set, j) => {
                     const mine = j < team.length;
@@ -466,6 +467,10 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                 )}
               </li>
             ))}
+            {/* Telefono: al posto delle righe vuote, mentre calcola, una riga sola con Eevee che ci pensa */}
+            {busy && watching && (
+              <li className="fill-think" aria-hidden="true"><EeveeMoment pose="thinking" /><span>{t('fill.thinking')}</span></li>
+            )}
             {/* Sempre PROPOSALS_PER_ROUND posti: la lista non cambia altezza. Lo scheletro ha le parti di una riga vera (il
                 tuo team già al suo posto, i nuovi ancora da arrivare) e ogni proposta che arriva ne prende il posto; finito il
                 calcolo, e nelle pagine dei giri già finiti, righe vuote */}

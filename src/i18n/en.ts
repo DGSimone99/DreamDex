@@ -543,6 +543,7 @@ export const en = {
   'team.fillTitle': "Proposals to finish your team, used in one click, and tournament teams to load",
   'fill.settings': "Settings",
   'fill.locked': "{n} locked",
+  'fill.thinking': "Eevee is looking for more teams…",
   'fill.title': "Fill team",
   'fill.type': "Team type",
   'fill.best': "The best",
