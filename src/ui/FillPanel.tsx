@@ -1,4 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useMediaQuery } from './useMediaQuery';
+import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { teamArchetype, type Archetype } from '../engine/archetype';
 import type { Gap } from '../engine/coherence';
 import type { EngineData } from '../engine/data';
@@ -58,6 +60,12 @@ const evsText = (set: TeamSet, lang: Lang) =>
  * Team da torneo: i team della fonte per il formato, prima quelli con più Pokémon in comune.
  */
 export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: Props) {
+  // Telefono: le impostazioni in un foglio unico che si apre dal basso (sopra le proposte resta il loro riassunto)
+  const phone = useMediaQuery(SHEET_QUERY);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsButton = useRef<HTMLButtonElement>(null);
+  const settingsSheet = useRef<HTMLDivElement>(null);
+  useAnchoredPop(settingsButton, settingsSheet, phone && settingsOpen, { sheet: true, onDismiss: () => setSettingsOpen(false) });
   const t = useT();
   const lang = useLang();
   // Passando su un Pokémon di una proposta o di un team da torneo: la sua carta (set, statistiche, mosse)
@@ -291,6 +299,14 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     setTab(next);
     root.current?.querySelector<HTMLElement>(`#${CSS.escape(`${ids}-tab-${next}`)}`)?.focus();
   };
+  // Il riassunto delle scelte sul telefono: "The best · Any · Favourites first", e i tuoi Pokémon se ne hai lasciato libero qualcuno
+  const freed = keep.filter(k => !k).length;
+  const summary = [
+    pickState.archetype ? t(`archetype.${pickState.archetype}`) : t('fill.best'),
+    pickState.style ? t(`teamStyle.${pickState.style}`) : t('fill.noStyle'),
+    t(`fill.fav.${favorites}`),
+    ...(freed ? [t('fill.freed', { n: freed })] : []),
+  ].join(' · ');
   const tabButton = (id: Tab, label: string, count?: number) => (
     <button type="button" role="tab" id={`${ids}-tab-${id}`} aria-selected={tab === id} aria-controls={`${ids}-panel-${id}`}
       tabIndex={tab === id ? 0 : -1} className="fill-tab" onClick={() => setTab(id)} onKeyDown={tabKeys}>
@@ -320,48 +336,66 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
 
       {/* Le proposte restano montate (e il calcolo va avanti) anche guardando i team da torneo */}
       <div className="fill-body" role="tabpanel" id={`${ids}-panel-proposals`} aria-labelledby={`${ids}-tab-proposals`} hidden={tab !== 'proposals'}>
-        {team.length > 0 && (
-          <fieldset className="fill-mine">
-            <legend className="fill-head">{t('fill.mine')}</legend>
-            <div className="fill-mine-row">
-              {team.map((set, i) => (
-                <label key={`${set.species}#${i}`} className={`fill-keep${keep[i] ? '' : ' is-free'}`} title={setTitle(set)}>
-                  <input type="checkbox" checked={keep[i]} aria-label={t('fill.keepN', { name: battleName(set) })} onChange={() => toggleKeep(i)} />
-                  <PokemonIcon name={battleName(set)} />
-                  <span className="fill-keep-name">{battleName(set)}</span>
-                  {!keep[i] && <Icon name="edit" />}
-                </label>
-              ))}
-            </div>
-            <p className="fill-note">{t('fill.mineNote')}</p>
-          </fieldset>
+        {/* Telefono: una riga che riassume le scelte e apre il foglio unico delle impostazioni (le proposte restano in vista) */}
+        {phone && (
+          <div className="fill-summary">
+            <span className="fill-summary-text">{summary}</span>
+            <button type="button" className="fill-settings-button" ref={settingsButton} aria-haspopup="dialog" aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen(o => !o)}><Icon name="gear" />{t('fill.settings')}</button>
+          </div>
         )}
+        {/* Le impostazioni: sul computer accanto alle proposte come sempre (il contenitore non conta), sul telefono nel foglio */}
+        <div className="fill-settings" ref={settingsSheet} role={phone ? 'dialog' : undefined} aria-label={phone ? t('fill.settings') : undefined}
+          popover={phone && supportsPopover ? 'manual' : undefined}>
+          {phone && (
+            <div className="fill-settings-head">
+              <strong>{t('fill.settings')}</strong>
+              <button type="button" className="fill-close" aria-label={t('combobox.close')} onClick={() => setSettingsOpen(false)}><Icon name="close" /></button>
+            </div>
+          )}
+          {team.length > 0 && (
+            <fieldset className="fill-mine">
+              <legend className="fill-head">{t('fill.mine')}</legend>
+              <div className="fill-mine-row">
+                {team.map((set, i) => (
+                  <label key={`${set.species}#${i}`} className={`fill-keep${keep[i] ? '' : ' is-free'}`} title={setTitle(set)}>
+                    <input type="checkbox" checked={keep[i]} aria-label={t('fill.keepN', { name: battleName(set) })} onChange={() => toggleKeep(i)} />
+                    <PokemonIcon name={battleName(set)} />
+                    <span className="fill-keep-name">{battleName(set)}</span>
+                    {!keep[i] && <Icon name="edit" />}
+                  </label>
+                ))}
+              </div>
+              <p className="fill-note">{t('fill.mineNote')}</p>
+            </fieldset>
+          )}
 
-        <div className="fill-side">
-          <div className="fill-group">
-            <span className="fill-head" aria-hidden="true">{t('fill.type')}</span>
-            <div className="fill-types" role="radiogroup" aria-label={t('fill.type')}>
-              {TYPES.map(archetype => radio(typeKey(archetype), pickState.archetype === archetype,
-                archetype ? t(`archetype.${archetype}`) : t('fill.best'),
-                () => pick({ ...pickState, archetype }),
-                archetype ? t(`archetype.${archetype}.note`) : t('fill.bestNote'),
-                available[typeKey(archetype)] === false && pickState.archetype !== archetype))}
+          <div className="fill-side">
+            <div className="fill-group">
+              <span className="fill-head" aria-hidden="true">{t('fill.type')}</span>
+              <div className="fill-types" role="radiogroup" aria-label={t('fill.type')}>
+                {TYPES.map(archetype => radio(typeKey(archetype), pickState.archetype === archetype,
+                  archetype ? t(`archetype.${archetype}`) : t('fill.best'),
+                  () => pick({ ...pickState, archetype }),
+                  archetype ? t(`archetype.${archetype}.note`) : t('fill.bestNote'),
+                  available[typeKey(archetype)] === false && pickState.archetype !== archetype))}
+              </div>
             </div>
-          </div>
-          <div className="fill-group">
-            <span className="fill-head" aria-hidden="true">{t('fill.style')}</span>
-            <div className="fill-styles" role="radiogroup" aria-label={t('fill.style')}>
-              {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
-              {FILL_STYLES.map((style: FillStyle) => radio(style, pickState.style === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
+            <div className="fill-group">
+              <span className="fill-head" aria-hidden="true">{t('fill.style')}</span>
+              <div className="fill-styles" role="radiogroup" aria-label={t('fill.style')}>
+                {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
+                {FILL_STYLES.map((style: FillStyle) => radio(style, pickState.style === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
+              </div>
             </div>
-          </div>
-          <div className="fill-group">
-            <label className="fill-head" htmlFor={`${ids}-favorites`}>{t('fill.favorites')}</label>
-            <select id={`${ids}-favorites`} className="fill-favorites" value={favorites} aria-describedby={`${ids}-favorites-note`}
-              onChange={e => chooseFavorites(e.target.value as FavoriteMode)}>
-              {FAVORITE_MODES.map(mode => <option key={mode} value={mode} title={t(`fill.fav.${mode}Note`)}>{t(`fill.fav.${mode}`)}</option>)}
-            </select>
-            <p className="fill-note" id={`${ids}-favorites-note`}>{t(`fill.fav.${favorites}Note`)}</p>
+            <div className="fill-group">
+              <label className="fill-head" htmlFor={`${ids}-favorites`}>{t('fill.favorites')}</label>
+              <select id={`${ids}-favorites`} className="fill-favorites" value={favorites} aria-describedby={`${ids}-favorites-note`}
+                onChange={e => chooseFavorites(e.target.value as FavoriteMode)}>
+                {FAVORITE_MODES.map(mode => <option key={mode} value={mode} title={t(`fill.fav.${mode}Note`)}>{t(`fill.fav.${mode}`)}</option>)}
+              </select>
+              <p className="fill-note" id={`${ids}-favorites-note`}>{t(`fill.fav.${favorites}Note`)}</p>
+            </div>
           </div>
         </div>
 

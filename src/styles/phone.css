@@ -909,3 +909,40 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .help-weights td::before { content: attr(data-label); font-size: var(--fs-caption); color: var(--muted); }
   .help-weights .help-wbar { min-width: 0; }
 }
+
+/* ── Completa team: impostazioni nel foglio; Come funziona il voto: prima il tuo team (telefono, 2026-11-19) ── */
+.fill-settings { display: contents; }
+@media (max-width: 599px) {
+  /* Le impostazioni fuori dalla pagina finché non si apre il foglio; sopra le proposte il loro riassunto */
+  .fill-settings:not([data-sheet]) { display: none; }
+  .fill-settings[data-sheet] { display: grid; align-content: start; gap: var(--sp-6); padding: 0 var(--sp-7) max(var(--sp-8), env(safe-area-inset-bottom)); }
+  .fill-settings-head { display: flex; align-items: center; justify-content: space-between; margin-right: calc(-1 * var(--sp-4)); }
+  .fill-settings-head strong { font: italic 800 var(--fs-heading)/1 var(--display); }
+  .fill-settings-head .fill-close { display: inline-flex; order: 0; }
+  .fill-settings .fill-side { display: grid; gap: var(--sp-6); }
+  /* Nel foglio i blocchi non tengono il posto che hanno nella griglia del computer: uno sotto l'altro */
+  .fill-settings[data-sheet] > :is(.fill-mine, .fill-side) { grid-area: auto; }
+  .fill-settings .fill-mine { padding-bottom: var(--sp-5); }
+  .fill-summary { display: flex; align-items: center; gap: var(--sp-5); margin: 0 0 var(--sp-5); }
+  .fill-summary-text { flex: 1; min-width: 0; font: 500 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
+  .fill-settings-button { flex: none; height: 40px; gap: var(--sp-3); padding: 0 var(--sp-6); border-radius: 20px; background: var(--panel); border: 1px solid var(--line); color: var(--text); font: 600 var(--fs-section)/1 var(--ui); }
+  .fill-settings-button .icon { width: 16px; height: 16px; color: var(--accent); }
+  .fill-settings-button[aria-expanded='true'] { border-color: var(--accent); }
+
+  /* Come funziona il voto: in cima il tuo team, poi la lista che apre le pagine (con Indietro) */
+  .help-phone { display: block; overflow-y: auto; padding: var(--sp-5) var(--sp-6) var(--sp-8); }
+  .help-phone .help-panel { padding: 0; overflow: visible; }
+  .help-phone .help-yours { padding: var(--sp-6); border-radius: 8px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+    background: radial-gradient(120% 120% at 100% 0, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%), var(--panel); }
+  .help-phone .help-yours-k { margin: 0 0 var(--sp-2); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
+  .help-phone .help-yours h4 { margin-top: 0; }
+  .help-list { display: grid; margin-top: var(--sp-6); border-radius: 6px; border: 1px solid var(--line-soft); background: var(--panel); overflow: hidden; }
+  .help-list button { display: flex; align-items: center; gap: var(--sp-5); min-height: 56px; padding: var(--sp-4) var(--sp-6); justify-content: space-between; text-align: left;
+    border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; color: var(--text); font: 600 var(--fs-body)/1.2 var(--ui); }
+  .help-list button:first-child { border-top: 0; }
+  .help-list button > span { display: grid; gap: 2px; }
+  .help-list small { font: 400 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
+  .help-list .icon { flex: none; width: 16px; height: 16px; color: var(--faint); }
+  .help-back { display: inline-flex; align-items: center; gap: var(--sp-2); height: 40px; margin: 0 0 var(--sp-3) calc(-1 * var(--sp-3)); padding: 0 var(--sp-3); border: 0; background: none; color: var(--accent-ink); font: 600 var(--fs-section)/1 var(--ui); }
+  .help-back .icon { width: 16px; height: 16px; }
+}
