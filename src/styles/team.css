@@ -395,6 +395,10 @@
 .slot .favorite[aria-pressed='true'] { color: var(--accent); background: none; }
 .slot .favorite:hover { color: var(--accent); }
 .slot .remove { right: 4px; }
+/* Sotto i 1920 px di larghezza il lucchetto va sotto la ×: affiancati finirebbero presto sopra lo sprite */
+@media (min-width: 1100px) and (max-width: 1919px) {
+  .band:not(.collapsed) .slot .favorite { top: 34px; right: 4px; }
+}
 .slot .remove:hover { color: var(--bad); }
 /* Badge Stats su una riga sua sopra il nome: spazio riservato, non va mai sopra lo sprite */
 /* La card col tooltip aperto passa sopra alle vicine */

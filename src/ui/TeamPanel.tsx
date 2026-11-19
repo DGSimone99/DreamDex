@@ -186,6 +186,9 @@ const TYPE_STEPS = ['icons', 'fit', 'sized', 'full'] as const;
 const typesOverflow = (el: HTMLElement) =>
   [...el.querySelectorAll<HTMLElement>('.slot-card .types')].some(row => row.scrollWidth > row.clientWidth + 1);
 
+/** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
+const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
+
 const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
   index: number;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
@@ -261,7 +264,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const typeText = useContext(TypeTextContext);
   // Nome: va a capo solo agli spazi e ai trattini; la larghezza vera della parte più lunga (in em) decide se e quanto si
   // rimpicciolisce (CSS --name-em)
-  const shownName = set.name || name;
+  // Se il nome intero verrebbe tagliato (anche al carattere più piccolo), la carta mostra il nome senza forma
+  // ("Urshifu" per Urshifu-Rapid-Strike, "Charizard" per Charizard-Mega-X); quello intero resta nel tooltip.
+  // Si misura sulla carta (watch): la sua misura non dipende dal nome mostrato. Un soprannome non si accorcia
+  const nameRef = useRef<HTMLElement>(null);
+  const shortName = !set.name && species && species.baseSpecies !== name ? species.baseSpecies : null;
+  const fullName = useFitCount(nameRef, shortName ? 1 : 0, `${name}|${collapsed}`, card, false, nameCut) > 0;
+  const shownName = set.name || (shortName && !fullName ? shortName : name);
   const nameEm = useNameEm(shownName);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
@@ -461,7 +470,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className="name" ref={nameRef} aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
