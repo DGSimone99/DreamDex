@@ -28,10 +28,19 @@ describe('sfida dell\'editor', () => {
   });
 });
 
-describe('sfida: consiglio solo se è un ritocco', () => {
-  it('un consiglio che chiederebbe più di TIP_MAX_EVS non compare (Great Tusk contro Make It Rain servirebbero 388 EV)', () => {
+describe('sfida: tetto dei consigli di EV', () => {
+  it('la difesa (PS + una difesa) solo se è un ritocco: oltre TIP_MAX_EVS non compare (Great Tusk contro Make It Rain servirebbero 388 EV)', () => {
     const d = editorDuel(tusk, gholdengo);
-    expect(d.tip === null || d.tip.total <= TIP_MAX_EVS).toBe(true);
+    expect(d.defTip === null || d.defTip.total <= TIP_MAX_EVS).toBe(true);
+  });
+  it("l'attacco tocca una statistica sola: nessun tetto oltre i 252 (Ninetales a 0 SpA: +212 per l'OHKO con Overheat su Great Tusk)", () => {
+    const [nine] = importShowdown('Ninetales @ Heat Rock\nAbility: Drought\nEVs: 252 HP / 4 SpD / 252 Spe\nTimid Nature\n- Overheat\n- Will-O-Wisp\n- Healing Wish\n- Solar Beam').sets;
+    const d = editorDuel(nine, tusk);
+    expect(d.mine!.hitsSure).toBe(2);
+    expect(d.atkTip!.add.spa).toBeGreaterThan(TIP_MAX_EVS);
+    expect(d.atkTip!.add.spa).toBeLessThanOrEqual(252);
+    const after = editorDuel({ ...nine, evs: { ...nine.evs, spa: d.atkTip!.add.spa! } }, tusk);
+    expect(after.mine!.hitsSure).toBe(1);
   });
 });
 
