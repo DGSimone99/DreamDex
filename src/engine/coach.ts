@@ -1,7 +1,7 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import { teamArchetype, type Archetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
-import type { FormatRules } from './formatRules';
+import { isOneType, type FormatRules } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, withinGen } from './dex';
 import { bannedParts, formatLabel, illegalReason, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
@@ -208,8 +208,13 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // Squilibrio degli attaccanti: nel voto lo dicono le voci Attaccante fisico / speciale dei Ruoli, solo a team finito
   // I punti crescono col conteggio: meno doppioni, problema ridotto
   for (const item of roleAndTypeRedundancies(usable, lang)) add('redundancy', false, item.text, [], undefined, item.points);
-  // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta
-  for (const item of [...weatherClashes(usable, lang), ...weakenedMoveNotes(usable, lang)]) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
+  // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta.
+  // Doppio: il meteo contro è un malus del voto (weatherSabotage), anche quando la mossa non è nel set ma il Pokémon di
+  // solito la usa: un problema per ogni membro che il voto conta, con lo stesso testo e gli stessi punti, al posto della
+  // nota delle mosse indebolite (che vede solo le mosse del set e farebbe un doppione).
+  const sabotage = isOneType(analysis.needs.rules);
+  for (const item of [...weatherClashes(usable, lang), ...(sabotage ? [] : weakenedMoveNotes(usable, lang))]) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
+  if (sabotage) for (const item of rating?.penalty.items.filter(i => i.catalog === 'weatherSabotage') ?? []) add('conditions', false, item.text, [], `conditions:${item.key}`, item.points);
 
   // Trick Room in un team veloce: lo stesso testo del malus del voto, e la stessa Trick Room non è anche "inutilizzata"
   const room = rating?.penalty.items.find(item => item.catalog === 'trickRoomFast');
