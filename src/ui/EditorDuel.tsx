@@ -290,15 +290,15 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   /**
    * Una riga della scheda: il titolo col simbolo (spada, scudo, Velocità); sotto la mossa nella sua pillola (o le due
    * velocità) con gli interruttori dei potenziamenti; poi la barra dei PS che restano (col timbro KO sopra se va KO in un
-   * colpo); a destra il risultato grande; in fondo i consigli.
+   * colpo), il danno e di fianco i colpi; a destra, ferma, la Velocità; in fondo i consigli.
    */
   const line = (className: string, title: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode, chip?: ReactNode) => (
     <div className={`duel-row ${className}`}>
       <span className="duel-title">{title}</span>
       {chip}
       <span className="duel-label">{label}</span>
-      <strong className={`duel-result ${resultClass}`}><span className="duel-big">{big}</span><span className="duel-unit">{unit}</span></strong>
-      <span className="duel-sub">{sub}</span>
+      {/* I colpi di fianco alla barra, poco dopo la percentuale */}
+      <span className="duel-sub">{sub}<strong className={`duel-result ${resultClass}`}><span className="duel-big">{big}</span><span className="duel-unit">{unit}</span></strong></span>
       {tips}
     </div>
   );

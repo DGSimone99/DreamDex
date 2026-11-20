@@ -184,14 +184,12 @@
 .editor-title .nickname strong { font: 800 var(--fs-display)/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
-/* La matita del soprannome: compare col mouse o col fuoco (come FORMATO ✎ nella barra a sinistra); al tocco resta sempre, tenue */
-.editor-title .nickname { display: inline-flex; align-items: center; gap: var(--sp-3); }
-.nickname-pencil { flex: none; display: grid; place-items: center; color: var(--accent); opacity: 0; transition: opacity 0.15s var(--ease);
-  /* Il nome ha margini negativi (per non tagliare il corsivo): la matita scende al centro della scritta, non del pulsante */
-  transform: translateY(0.45em); }
+/* La matita del soprannome solo al tocco (tenue, in alto a destra del nome, senza occupare spazio); col mouse basta la
+   sottolineatura a puntini del nome: i tipi restano vicini al nome */
+.editor-title .nickname { position: relative; display: inline-flex; align-items: center; }
+.nickname-pencil { display: none; position: absolute; left: calc(100% + 1px); top: -4px; place-items: center; pointer-events: none; }
 .nickname-pencil .icon { width: 15px; height: 15px; }
-.editor-title .nickname:hover .nickname-pencil, .editor-title .nickname:focus-visible .nickname-pencil { opacity: 1; }
-@media (hover: none) { .nickname-pencil { opacity: 0.6; color: var(--muted); } }
+@media (hover: none) { .nickname-pencil { display: grid; opacity: 0.6; color: var(--muted); } }
 .editor-title .species-tag {
   position: absolute;
   left: 0;
@@ -723,7 +721,7 @@
  * ne sono) così la scheda non salta; il risultato grande a destra.
  */
 .duel-rows { grid-column: 2; position: relative; z-index: 2; display: grid; align-content: space-evenly; padding: var(--sp-4) var(--sp-6) var(--sp-5) var(--sp-8); }
-/* A destra una colonna fissa: in alto la Velocità (sempre allo stesso posto), sotto i colpi, vicini alla barra */
+/* A destra una colonna fissa per la Velocità (sempre allo stesso posto); i colpi stanno di fianco alla barra */
 .duel-row { display: grid; grid-template-columns: minmax(0, 1fr) 104px; column-gap: var(--sp-6); row-gap: 5px; align-items: center; padding: var(--sp-4) 0; }
 .duel-row + .duel-row { border-top: 1px solid #ffffff12; }
 .duel-title { grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 5px; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
@@ -763,12 +761,11 @@
 .duel-sub { grid-column: 1; grid-row: 3; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
 .duel-sub:empty { display: none; }
 /* display: la regola di Meta Coverage che nasconde la barra nei riquadri bassi (@container) qui non vale */
-/* La barra si allunga fino ai colpi: percentuale e colpi restano vicini */
-.duel-sub .cm-hp.duel-bar { position: relative; display: flex; flex: 1 1 150px; margin: 0; }
+.duel-sub .cm-hp.duel-bar { position: relative; display: flex; flex: 0 1 160px; min-width: 80px; margin: 0; }
 /* Il timbro KO sopra la barra (vuota), al centro della barra */
 .duel-sub .duel-ko { position: absolute; left: calc(50% + 9px); top: 50%; transform: translate(-50%, -50%); padding: 1px 7px; }
 .duel-range { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.duel-result { grid-column: 2; grid-row: 2 / 4; align-self: start; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.duel-result { display: inline-flex; align-items: baseline; gap: 4px; margin-left: var(--sp-4); white-space: nowrap; }
 .duel-big { font: italic 800 var(--fs-title-l)/0.9 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .duel-unit { font: 700 var(--fs-caption)/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .duel-result.good .duel-big { color: var(--good); }
@@ -819,11 +816,11 @@
   .duel-row { grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: var(--sp-3); padding: var(--sp-1) 0; }
   .duel-title { grid-column: 1; grid-row: 2; }
   .duel-title-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .duel-label { grid-column: 2; grid-row: 2; }
+  .duel-label { grid-column: 2 / -1; grid-row: 2; }
   .duel-sub { grid-column: 2; grid-row: 3; }
-  .duel-result { grid-column: 3; grid-row: 2 / 4; }
   .duel-tips { grid-column: 2 / -1; grid-row: 4; line-height: 1.15; }
-  .duel-speed { grid-column: 2; grid-row: 3; }
+  /* La Velocità a destra, sulla riga della barra (la mossa resta intera) */
+  .duel-speed { grid-column: 3; grid-row: 3; }
   .duel-stage { --stage-scale: 1.15; }
 }
 @container duel (max-height: 175px) {
