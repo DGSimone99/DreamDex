@@ -277,24 +277,32 @@ describe("doppio: nell'app", () => {
     expect(screen.queryByLabelText('Tipo di team')).toBeNull();
   });
 
-  it('in doppio la carta di Incineroar mostra un ruolo del doppio e nel tooltip Fake Out, Priorità e Pivot; niente ruoli del singolo', async () => {
-    await start(true);
+  /** I ruoli del membro i nel riquadro Ruoli del suo editor. */
+  const rolesOf = async (user: ReturnType<typeof userEvent.setup>, i: number) => {
+    await user.click(document.querySelectorAll<HTMLElement>('.slot-toggle')[i]);
+    const slot = document.querySelector<HTMLElement>('.slot.open')!;
+    return within(within(slot).getByRole('group', { name: 'Ruoli' })).getAllByRole('listitem').map(li => li.textContent!).join(' · ');
+  };
+
+  it('in doppio la carta di Incineroar mostra un ruolo del doppio (spiegato nel fumetto) e nei Ruoli Fake Out, Priorità e Pivot; niente ruoli del singolo', async () => {
+    const user = await start(true);
     const roles = [...document.querySelectorAll<HTMLElement>('.slot .roles')][0];
     expect(roles.textContent).toMatch(/^(Attaccante|Muro)$/);
-    const title = roles.getAttribute('title')!;
-    for (const name of ['Fake Out', 'Priorità', 'Pivot']) expect(title).toContain(name);
-    for (const name of ['Rimozione Strumenti', 'Sweeper', 'Wallbreaker', 'Muro Fisico']) expect(title).not.toContain(name);
+    expect(roles.getAttribute('data-hint')).toMatch(/^(Attaccante|Muro): /);
+    const all = await rolesOf(user, 0);
+    for (const name of ['Fake Out', 'Priorità', 'Pivot']) expect(all).toContain(name);
+    for (const name of ['Rimozione Strumenti', 'Sweeper', 'Wallbreaker', 'Muro Fisico']) expect(all).not.toContain(name);
     // Amoonguss: Redirector, non gli stati
-    const amoonguss = [...document.querySelectorAll<HTMLElement>('.slot .roles')][1].getAttribute('title')!;
+    const amoonguss = await rolesOf(user, 1);
     expect(amoonguss).toContain('Redirector');
     expect(amoonguss).not.toContain('Debuff');
   });
 
   it('in singolo la carta di Incineroar ha i ruoli di sempre', async () => {
-    await start(false);
-    const title = [...document.querySelectorAll<HTMLElement>('.slot .roles')][0].getAttribute('title')!;
-    expect(title).toContain('Rimozione Strumenti');
-    expect(title).not.toContain('Fake Out');
+    const user = await start(false);
+    const all = await rolesOf(user, 0);
+    expect(all).toContain('Rimozione Strumenti');
+    expect(all).not.toContain('Fake Out');
   });
 
   it('in singolo la stessa schermata è quella di prima: Incompleto, la scelta del tipo fra i candidati', async () => {

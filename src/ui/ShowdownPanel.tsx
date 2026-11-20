@@ -7,6 +7,7 @@ import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
+import { hint as bubble } from './MoveTip';
 
 export function ShowdownPanel({ team, format, tera = true, onImport, onExport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
   onImport: (team: TeamSet[], again?: boolean) => void;
@@ -63,7 +64,7 @@ export function ShowdownPanel({ team, format, tera = true, onImport, onExport }:
   return (
     <>
       <details className="popover" ref={menu} data-keep-open={filled || undefined} onToggle={e => setOpen(e.currentTarget.open)}>
-        <summary title={t('showdown.importTitle')}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
+        <summary {...bubble(t('showdown.importTitle'))}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
         {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza (spento finché
             la scatola è vuota) e Annulla, come nel pannello del testo di un membro */}
         <div className="import-panel">

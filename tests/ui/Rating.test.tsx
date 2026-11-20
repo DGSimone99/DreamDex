@@ -135,7 +135,7 @@ describe('Riquadro Voto', () => {
       expect(within(panel).queryAllByRole('button')).toHaveLength(0);
     }
     await user.click(within(dialog).getByRole('tab', { name: 'Balance' }));
-    expect(within(within(dialog).getByRole('tabpanel')).getByText('Muro Fisico')).toHaveAttribute('title', 'Regge bene i colpi fisici e resta in campo a lungo');
+    expect(within(within(dialog).getByRole('tabpanel')).getByText('Muro Fisico')).toHaveAttribute('title', 'Regge bene i colpi fisici');
     // Come funziona: Bonus/Malus, lettere dalle soglie, nessun testo delle vecchie aree
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
     const general = within(dialog).getByRole('tabpanel');

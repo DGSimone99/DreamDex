@@ -38,7 +38,7 @@ import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { TouchTips } from './ui/TouchTips';
-import { MoveTipHost } from './ui/MoveTip';
+import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
@@ -535,7 +535,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       {/* Il team copiato per Showdown: sta dove sta l'avviso di Annulla, che intanto aspetta (torna quando questo si chiude) */}
       <TouchTips />
       {/* Il tooltip delle mosse: uno per tutta l'app, su ogni pillola o campo con data-move-tip */}
-      <MoveTipHost />
+      <TipHost />
       {done && <DoneToast note={done} onClose={() => setDone(null)} />}
       {!done && listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, ...listUndo.undo }} onClose={() => setListUndo(null)}

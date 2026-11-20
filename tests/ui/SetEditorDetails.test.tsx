@@ -50,9 +50,10 @@ describe('editor del set', () => {
   it('il tooltip spiega solo l\'effetto; potenza e precisione stanno accanto alla mossa', () => {
     renderEditor();
     const field = (label: string) => screen.getByLabelText(label).closest('.field');
-    expect(field('Strumento')).toHaveAttribute('data-tip', expect.stringMatching(/Sunny Day/));
-    expect(field('Abilità')).toHaveAttribute('data-tip', expect.stringMatching(/Sunny Day/));
-    // La mossa ha il suo tooltip ricco (MoveTipHost): categoria, potenza, precisione, bersaglio e descrizione
+    // Strumento e abilità hanno il loro tooltip DreamDex (TipHost): nome e descrizione
+    expect(field('Strumento')).toHaveAttribute('data-item-tip', expect.stringMatching(/\S/));
+    expect(field('Abilità')).toHaveAttribute('data-ability-tip', expect.stringMatching(/\S/));
+    // La mossa ha il suo tooltip ricco (TipHost): categoria, potenza, precisione, bersaglio e descrizione
     expect(field('Mossa 1')).toHaveAttribute('data-move-tip', 'Flamethrower');
     expect(field('Mossa 1')).not.toHaveAttribute('data-tip');
     // Sopra: l'icona della categoria (la potenza solo per i lettori di schermo) e la precisione; tipo e potenza nella pillola

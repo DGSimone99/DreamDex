@@ -81,7 +81,7 @@ describe('import del team: mosse non imparabili', () => {
     await user.click(within(screen.getByRole('alertdialog', { name: 'Mosse non imparabili' })).getByRole('button', { name: 'No' }));
     expect(screen.getByRole('checkbox', { name: 'Custom Skillset Drakloak' })).not.toBeChecked();
     const warning = within(team()).getByText('Mosse non legali in questo formato: Dragon Darts');
-    expect(warning).toHaveAttribute('title', 'Cambiale o attiva Custom Skillset');
+    expect(warning).toHaveAttribute('data-hint', 'Cambiale o attiva Custom Skillset');
   });
 
   it('strumento non trovato: importato, detto solo per sapere (OK)', async () => {
