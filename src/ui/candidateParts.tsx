@@ -4,7 +4,7 @@ import type { Format } from '../engine/format';
 import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
 import { rankedChanges } from '../engine/coach';
-import { detectRoles, roleLabel } from '../engine/roles';
+import { detectRoles, roleLabel, shownRoles } from '../engine/roles';
 import { OFTEN_TOGETHER, type Suggestion } from '../engine/scoring';
 import type { ScoredArea, SwapOption, TeamGain } from '../engine/teamGain';
 import type { TeamSet } from '../engine/sets';
@@ -100,7 +100,7 @@ export function bringsOf(item: Item, lang: Lang, rules: FormatRules): Bring[] {
       ...(reason.symbol && { symbol: reason.symbol }), ...(reason.usedWith && { usedWith: true as const }),
     }));
   // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
-  const roles = !item.teamGain && !changes ? detectRoles(item.set, rules).map(role => t(lang, `role.${role}`)) : [];
+  const roles = !item.teamGain && !changes ? shownRoles(detectRoles(item.set, rules), rules).map(role => roleLabel(role, lang)) : [];
   const all: Bring[] = [
     ...(changes?.pros.map((p): Bring => ({ text: p.text, short: p.text, kind: kindOfArea(p.area), ...(p.symbol && { symbol: p.symbol }) })) ?? []),
     ...reasons,
@@ -123,7 +123,7 @@ export function reasonsOf(item: Item, n: number, usage: number | null, format: F
   const rules = formatRules(format.formatId);
   // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, col "+" come i bonus
   if (usage !== null) {
-    const roles = detectRoles(item.set, rules).slice(0, n).map(role => plain(t(lang, `role.${role}`)));
+    const roles = shownRoles(detectRoles(item.set, rules), rules).slice(0, n).map(role => plain(roleLabel(role, lang)));
     return { pros: roles.length > 0, items: roles };
   }
   const items = bringsOf(item, lang, rules).filter(b => !b.usedWith).slice(0, n);

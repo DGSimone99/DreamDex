@@ -4,9 +4,9 @@ import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelecta
 import { formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
-import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
+import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
-import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
+import { measuredSubRoles, rolesListFor, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
 import { createContext, memo, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
@@ -340,11 +340,11 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   }, [open, collapsed, index, total]);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
-  const shownRoles = cardRoles(set, rules, subRoles);
+  const onCard = cardRoles(set, rules, subRoles);
   const weather = weatherOf(set);
-  const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
-  // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri
-  const allRoles = [...shownRoles, ...(subRoles ? rolesList(subRoles) : detectRoles(set, rules)).filter(role => !shownRoles.includes(role))];
+  const roles = onCard.map(role => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
+  // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri (in doppio quelli del doppio)
+  const allRoles = [...onCard, ...shownRoles(subRoles ? rolesListFor(subRoles, rules) : detectRoles(set, rules), rules).filter(role => !onCard.includes(role))];
   const roleLabels = allRoles.map(role => (role === 'weather' && weather
     ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));

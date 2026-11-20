@@ -27,7 +27,7 @@ const LEGACY_ORDER: LegacyRole[] = [
  * wallbreaker, fisico e speciale non si distinguono, come nel voto).
  */
 export type ShownRole = SubRole | 'anyAttacker' | 'anyWall';
-const isGrouped = (role: ShownRole | 'setup'): role is 'anyAttacker' | 'anyWall' => role === 'anyAttacker' || role === 'anyWall';
+const isGrouped = (role: ShownRole | 'setup' | 'priority'): role is 'anyAttacker' | 'anyWall' => role === 'anyAttacker' || role === 'anyWall';
 const SHOWN_ATTACK: SubRole[] = ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalAttacker', 'specialAttacker'];
 const SHOWN_WALL: SubRole[] = ['physicalWall', 'specialWall'];
 
@@ -46,7 +46,7 @@ export function shownRoles(roles: readonly SubRole[], rules: FormatRules): Shown
 }
 
 /** Nome del ruolo nella lingua data (anche il setup, che compare sulle carte ma non è un ruolo del voto). */
-export const roleLabel = (role: ShownRole | 'setup', lang: Lang = 'it'): string => (isGrouped(role) ? t(lang, `need.${role}`) : t(lang, `role.${role}`));
+export const roleLabel = (role: ShownRole | 'setup' | 'priority', lang: Lang = 'it'): string => (isGrouped(role) ? t(lang, `need.${role}`) : t(lang, `role.${role}`));
 
 /** Il ruolo spiegato in una frase semplice, per i tooltip (Sweeper Fisico: "Veloce o potenziato, travolge…"). */
 export const roleDescription = (role: ShownRole | 'setup' | 'priority', lang: Lang = 'it'): string => t(lang, `roleDesc.${role}`);

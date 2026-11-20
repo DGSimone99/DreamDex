@@ -4,13 +4,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
 import type { EngineData } from '../../src/engine/data';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
+import { EMPTY_FILTERS } from '../../src/engine/filters';
 import { DOUBLES_RULES, NATDEX_OU_RULES } from '../../src/engine/formatRules';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { BonusMalusView, CatalogueList } from '../../src/ui/BonusMalusView';
 import { DefenseGuideSection } from '../../src/ui/defense/DefenseGuide';
+import { reasonsOf } from '../../src/ui/candidateParts';
 import { FillPanel } from '../../src/ui/FillPanel';
+import { FilterBar } from '../../src/ui/FilterBar';
 import { OffenseGuide } from '../../src/ui/offense/OffenseGuide';
 import { RatingHelp } from '../../src/ui/RatingHelp';
 import { RolesGeneral } from '../../src/ui/roles/RolesGeneral';
@@ -262,11 +265,56 @@ describe("doppio: nell'app", () => {
     expect(screen.queryByLabelText('Tipo di team')).toBeNull();
   });
 
+  it('in doppio la carta di Incineroar mostra un ruolo del doppio e nel tooltip Fake Out, Priorità e Pivot; niente ruoli del singolo', async () => {
+    await start(true);
+    const roles = [...document.querySelectorAll<HTMLElement>('.slot .roles')][0];
+    expect(roles.textContent).toMatch(/^(Attaccante|Muro)$/);
+    const title = roles.getAttribute('title')!;
+    for (const name of ['Fake Out', 'Priorità', 'Pivot']) expect(title).toContain(name);
+    for (const name of ['Rimozione Strumenti', 'Sweeper', 'Wallbreaker', 'Muro Fisico']) expect(title).not.toContain(name);
+    // Amoonguss: Redirector, non gli stati
+    const amoonguss = [...document.querySelectorAll<HTMLElement>('.slot .roles')][1].getAttribute('title')!;
+    expect(amoonguss).toContain('Redirector');
+    expect(amoonguss).not.toContain('Debuff');
+  });
+
+  it('in singolo la carta di Incineroar ha i ruoli di sempre', async () => {
+    await start(false);
+    const title = [...document.querySelectorAll<HTMLElement>('.slot .roles')][0].getAttribute('title')!;
+    expect(title).toContain('Rimozione Strumenti');
+    expect(title).not.toContain('Fake Out');
+  });
+
   it('in singolo la stessa schermata è quella di prima: Incompleto, la scelta del tipo fra i candidati', async () => {
     await start(false);
     const band = document.querySelector<HTMLElement>('.band')!;
     expect(band).toHaveTextContent('Incompleto');
     expect(band).not.toHaveTextContent('Doppio');
     expect(screen.getByLabelText('Tipo di team')).toBeInTheDocument();
+  });
+});
+
+describe('doppio: filtri e carte dei candidati', () => {
+  const chips = () => texts(within(screen.getByRole('group', { name: 'Ruolo' })).getAllByRole('button'));
+
+  it('in doppio i filtri per ruolo sono quelli del doppio', () => {
+    renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={DOUBLES_RULES} />);
+    expect(chips()).toEqual(['Attaccante', 'Muro', 'Fake Out', 'Redirector', 'Mossa a più bersagli', 'Protect', 'Pivot', 'Hazard', 'Priorità', 'Setup']);
+  });
+
+  it('in singolo i filtri per ruolo restano quelli di sempre', () => {
+    renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={NATDEX_OU_RULES} />);
+    const names = chips();
+    expect(names).toHaveLength(21);
+    expect(names).not.toContain('Fake Out');
+    expect(names).not.toContain('Attaccante');
+  });
+
+  it('col team vuoto la carta di un candidato con Follow Me dice Redirector', () => {
+    const clefairy = mk('Clefairy', 'Eviolite', 'Friend Guard', ['Follow Me', 'Helping Hand', 'Moonblast', 'Protect'], 'Bold', bulky);
+    const item = { species: 'Clefairy', set: clefairy, reasons: [], facts: {} } as unknown as Parameters<typeof reasonsOf>[0];
+    const names = (format: Format) => reasonsOf(item, 6, 0.1, format, 'it').items.map(b => b.text);
+    expect(names({ ...DEFAULT_FORMAT, formatId: 'natdexdoubles' })).toEqual(expect.arrayContaining(['Redirector', 'Protect']));
+    expect(names(DEFAULT_FORMAT)).not.toContain('Redirector');
   });
 });

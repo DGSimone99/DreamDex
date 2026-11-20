@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react';
-import { activeFilterCount, EMPTY_FILTERS, normalizeTypes, type CandidateFilters, type FilterRole, type Inclusion } from '../engine/filters';
-import { FAMILIES } from '../engine/subRoles';
+import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, normalizeTypes, type CandidateFilters, type Inclusion } from '../engine/filters';
+import { DEFAULT_RULES, type FormatRules } from '../engine/formatRules';
+import { roleDescription, roleLabel } from '../engine/roles';
 import { CONDITIONS, conditionName, type Condition } from '../engine/synergy';
 import { TYPES, type TypeName } from '../engine/types';
 import { inkFor, typeColor } from './Sprite';
@@ -9,8 +10,6 @@ import { typeName } from '../i18n/game';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
-/** I sotto-ruoli nell'ordine delle famiglie, poi i filtri sulle mosse (ricerca, non voto); il Controllo Velocità è già fra i sotto-ruoli. */
-const ROLES: FilterRole[] = [...Object.values(FAMILIES).flat(), 'priority', 'setup'];
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
 /** Griglia dei 18 tipi da accendere e spegnere, nei loro colori. */
@@ -106,9 +105,11 @@ interface Props {
   context?: 'suggestions' | 'lists';
   /** Nel gioco non c'è il filtro dell'uso nel meta. */
   game?: boolean;
+  /** Le regole del formato: decidono quali ruoli si possono cercare (in doppio quelli del doppio). */
+  rules?: FormatRules;
 }
 
-export function FilterBar({ filters, onChange, context = 'suggestions', game = false }: Props) {
+export function FilterBar({ filters, onChange, context = 'suggestions', game = false, rules = DEFAULT_RULES }: Props) {
   const meta = context === 'suggestions';
   const t = useT();
   const lang = useLang();
@@ -170,9 +171,9 @@ export function FilterBar({ filters, onChange, context = 'suggestions', game = f
       <div className="filter-section">
         <h3>{t('filters.role')}</h3>
         <div role="group" aria-label={t('filters.role')} className="chips">
-          {ROLES.map(role => (
-            <button key={role} type="button" aria-pressed={filters.roles.includes(role)} title={t(`roleDesc.${role}`)} onClick={() => set({ roles: toggle(filters.roles, role) })}>
-              {t(`role.${role}`)}
+          {filterRolesFor(rules).map(role => (
+            <button key={role} type="button" aria-pressed={filters.roles.includes(role)} title={roleDescription(role, lang)} onClick={() => set({ roles: toggle(filters.roles, role) })}>
+              {roleLabel(role, lang)}
             </button>
           ))}
         </div>

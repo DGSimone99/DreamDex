@@ -18,7 +18,7 @@ import { statsEntry } from '../engine/stats';
 import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
-import { EMPTY_FILTERS, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
+import { EMPTY_FILTERS, filtersFor, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
@@ -95,7 +95,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
   const listRef = useRef<HTMLOListElement>(null);
   const { perPage, columns, tileHeight, reasons } = usePerPage(listRef, teamCollapsed);
-  const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
+  const [chosenFilters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
+  // I ruoli scelti in un formato che questo non offre (singolo → doppio) qui non valgono: né accesi né contati
+  const filterRules = useMemo(() => formatRules(format.formatId), [format.formatId]);
+  const filters = useMemo(() => filtersFor(chosenFilters, filterRules), [chosenFilters, filterRules]);
   // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
   const applied = useDebounced(filters, SEARCH_DELAY);
   const filtering = isFiltering(applied);
@@ -372,7 +375,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           </select>
         </label>
       )}
-      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} />
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} />
     </>
   );
 
