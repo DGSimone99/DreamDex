@@ -1,5 +1,6 @@
 import { usesMeta } from './analysis';
 import { bestHit, hasZMove, setKey, type FieldCondition, type Target } from './damage';
+import { hitRules } from './formatRules';
 import type { EngineData } from './data';
 import type { Species } from '@pkmn/dex';
 import { battleAbility, battleSpecies, dex, getMove, isSelectable, toID } from './dex';
@@ -187,16 +188,18 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
   const zOk = hasZMove(set);
   const superEffectiveOnly = kind !== 'meta';
+  // Doppio: le mosse a più bersagli fanno meno danno (in ogni colpo qui sotto)
+  const rules = hitRules(data);
   // La danza c'è solo nel meta (la tabella la mostra, il credito ne prende un terzo)
   const setup = kind === 'meta' ? setupBoosts(set) : null;
   hits = targets.map(target => {
-    const base = bestHit(set, target.set, { superEffectiveOnly, conditions });
-    const once = [teraOk && bestHit(set, target.set, { superEffectiveOnly, conditions, tera: true }), zOk && bestHit(set, target.set, { superEffectiveOnly, conditions, z: true })]
+    const base = bestHit(set, target.set, { superEffectiveOnly, conditions, ...rules });
+    const once = [teraOk && bestHit(set, target.set, { superEffectiveOnly, conditions, tera: true, ...rules }), zOk && bestHit(set, target.set, { superEffectiveOnly, conditions, z: true, ...rules })]
       .filter((hit): hit is NonNullable<typeof base> => !!hit);
     const x = Math.min(1, base?.expected ?? 0);
     const boosted = Math.max(x, ...once.map(hit => Math.min(1, hit.expected)));
     // Tera e mossa Z una volta a partita: un quarto di quello che aggiungono
-    const danced = setup ? Math.max(x, Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts: setup.boosts })?.expected ?? 0)) : null;
+    const danced = setup ? Math.max(x, Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts: setup.boosts, ...rules })?.expected ?? 0)) : null;
     // Col meteo o il campo del team: la combinazione che fa di più, solo se fa di più del colpo semplice
     let team: number | null = null;
     let teamVia: FieldSource[] | null = null;
@@ -204,12 +207,12 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
     let combo: number | null = null;
     let comboMove: string | null = null;
     for (const c of teamFieldCombos(conditions, sources)) {
-      const found = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions });
+      const found = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, ...rules });
       const hit = Math.min(1, found?.expected ?? 0);
       if (hit > x && hit > (team ?? 0)) { team = hit; teamVia = sources.filter(s => c.added.includes(s.condition)); teamMove = found?.move ?? null; }
       // Danza e meteo del team insieme
       if (setup) {
-        const both = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, boosts: setup.boosts });
+        const both = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, boosts: setup.boosts, ...rules });
         if ((both?.expected ?? 0) > (combo ?? 0)) { combo = Math.min(1, both!.expected); comboMove = both!.move ?? null; }
       }
     }
@@ -219,10 +222,10 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
     if (kind === 'meta') {
       const shareOf = (added: FieldCondition[]) => (sources.some(s => added.includes(s.condition) && getMove(s.via)) ? MOVE_FIELD_SHARE : FIELD_SHARE);
       const withTeam = (boosts?: NonNullable<typeof setup>['boosts']) => {
-        const off = boosts ? Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts })?.expected ?? 0) : x;
+        const off = boosts ? Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts, ...rules })?.expected ?? 0) : x;
         let best = off;
         for (const c of teamFieldCombos(conditions, sources)) {
-          const hit = Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, ...(boosts && { boosts }) })?.expected ?? 0);
+          const hit = Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, ...(boosts && { boosts }), ...rules })?.expected ?? 0);
           const share = shareOf(c.added);
           best = Math.max(best, (1 - share) * off + share * hit);
         }

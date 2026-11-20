@@ -9,7 +9,7 @@ import { firstHitShare } from './defense';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
-import { rulesOf } from './formatRules';
+import { hitRules, rulesOf } from './formatRules';
 import { attackStyle } from './roles';
 import { mostCommonSet, type TeamSet } from './sets';
 import { setupBoosts } from './setupBoosts';
@@ -303,7 +303,7 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
     // Multiscale, Tera Shell, Air Balloon del bersaglio: un quarto, metà se si cura (damage.ts)
     const firstHit = firstHitShare(target);
     for (const variant of oneUse ? oneUseVariants : [{ tera: false, z: false }]) {
-      const base = { ...variant, boosts, firstHitShare: firstHit };
+      const base = { ...variant, boosts, firstHitShare: firstHit, ...hitRules(data) };
       const off = bestHit(set, target, { ...base, conditions: own });
       // Col meteo del team: ogni combinazione possibile (un meteo e un terreno alla volta), quella che conviene di più
       // Un KO è un KO: oltre il 100% dei PS il danno non conta di più. Il meteo vale `share` del colpo, il resto è senza

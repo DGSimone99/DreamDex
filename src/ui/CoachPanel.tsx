@@ -1,4 +1,4 @@
-import type { Archetype } from '../engine/archetype';
+import type { SinglesArchetype } from '../engine/archetype';
 import { useT } from '../i18n/react';
 import { HelpButton } from './AnalysisTabs';
 import { Icon } from './icons';
@@ -7,7 +7,7 @@ import { Icon } from './icons';
 type Slot = 'a' | 'w' | 'x';
 
 /** I tipi dal più offensivo al più difensivo, coi sei posti disegnati (indicativi, non la regola esatta). */
-const TYPES: { archetype: Archetype; slots: Slot[] }[] = [
+const TYPES: { archetype: SinglesArchetype; slots: Slot[] }[] = [
   { archetype: 'hyperOffense', slots: ['a', 'a', 'a', 'a', 'a', 'a'] },
   { archetype: 'bulkyOffense', slots: ['a', 'a', 'a', 'a', 'x', 'x'] },
   { archetype: 'balance', slots: ['a', 'a', 'a', 'w', 'w', 'w'] },

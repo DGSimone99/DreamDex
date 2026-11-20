@@ -2,6 +2,7 @@ import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
 import { dexPool, ownConditions } from './coverage';
 import { bestHit, FIRST_HIT_SHARE, hasZMove, FIRST_HIT_SHARE_RECOVERY, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
+import { hitRules } from './formatRules';
 import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
@@ -482,7 +483,7 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField
   // Il meteo della minaccia è sempre il suo; quello del team, dove la minaccia non ne porta uno, a metà
   const own = ownConditions(threat);
   const conditions = own;
-  const incoming = { incoming: true, firstHitShare: firstHit };
+  const incoming = { incoming: true, firstHitShare: firstHit, ...hitRules(data) };
   const base = bestHit(threat, member, { conditions, ...incoming });
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!threat.teraType;
   const zOk = hasZMove(threat);

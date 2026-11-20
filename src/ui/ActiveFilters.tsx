@@ -1,4 +1,5 @@
 import { activeFilterCount, EMPTY_FILTERS, type CandidateFilters, type Inclusion } from '../engine/filters';
+import { roleLabel } from '../engine/roles';
 import { conditionName } from '../engine/synergy';
 import type { TypeName } from '../engine/types';
 import { typeName } from '../i18n/game';
@@ -25,7 +26,7 @@ export function ActiveFilters({ filters, onChange }: { filters: CandidateFilters
     ...(filters.usage !== 'all' ? [{ key: 'usage', label: `${t('filters.usage')}: ${t(`filters.usage.${filters.usage}`)}`, clear: { usage: 'all' as const } }] : []),
     ...(filters.resists.length ? [{ key: 'resists', label: `${t('filters.resists')}: ${types(filters.resists)}`, clear: { resists: [] } }] : []),
     ...(filters.hits.length ? [{ key: 'hits', label: `${t('filters.hits')}: ${types(filters.hits)}`, clear: { hits: [] } }] : []),
-    ...(filters.roles.length ? [{ key: 'roles', label: `${t('filters.role')}: ${filters.roles.map(role => t(`role.${role}`)).join(', ')}`, clear: { roles: [] } }] : []),
+    ...(filters.roles.length ? [{ key: 'roles', label: `${t('filters.role')}: ${filters.roles.map(role => roleLabel(role, lang)).join(', ')}`, clear: { roles: [] } }] : []),
     ...(filters.mega !== 'all' ? [{ key: 'mega', label: `${t('filters.mega')}: ${incl(filters.mega)}`, clear: { mega: 'all' as const } }] : []),
     ...(filters.legendary !== 'all' ? [{ key: 'legendary', label: `${t('filters.legendary')}: ${incl(filters.legendary)}`, clear: { legendary: 'all' as const } }] : []),
     ...(filters.favoritesOnly ? [{ key: 'favorites', label: t('filters.favoritesOnly'), clear: { favoritesOnly: false } }] : []),

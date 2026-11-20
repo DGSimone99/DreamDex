@@ -1,4 +1,5 @@
 import type { EngineData } from './data';
+import { hitRules, isOneType, rulesOf, type FormatRules } from './formatRules';
 import { battleAbility, battleSpecies, dex, getMove, movePriority, toID } from './dex';
 import { softScore } from './scale';
 import { bestHit, setKey } from './damage';
@@ -90,6 +91,13 @@ export const speedRankWeights = (): number[] => SPEED_RANK_WEIGHTS;
  * considera veloce un team di Trick Room o di Web, 8 coppie a 0; sul banco la separazione torneo-ladder migliora).
  */
 export const CONDITION_QUOTA: Record<SpeedCondition, number> = { setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.25, web: 0.25, trickroom: 0.25, tailwind: 0.125, slow: 0.125 };
+
+/** Doppio (2026-11-21): Tailwind vale un quarto, come Trick Room (un compagno lo mette mentre l'altro attacca). */
+export const DOUBLES_TAILWIND_QUOTA = 0.25;
+
+/** La quota della condizione nel formato: quelle di CONDITION_QUOTA, con Tailwind a un quarto in doppio. */
+export const conditionQuota = (condition: SpeedCondition, rules: FormatRules): number =>
+  (condition === 'tailwind' && isOneType(rules) ? DOUBLES_TAILWIND_QUOTA : CONDITION_QUOTA[condition]);
 
 export interface SpeedGain {
   condition: SpeedCondition;
@@ -326,8 +334,9 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
    * Guadagno per rivale: la quota della condizione per quanto il rivale è superato in più. Con Trick Room i rivali più
    * lenti si perdono (guadagno negativo): la condizione conta solo se in media fa guadagnare.
    */
-  const extraOf = (condition: SpeedCondition, boosted: number[]) => boosted.map((b, i) => CONDITION_QUOTA[condition] * (b - bases[i]));
-  const gainOf = (condition: SpeedCondition, share: number) => CONDITION_QUOTA[condition] * Math.max(0, share - raw);
+  const rules = rulesOf(data);
+  const extraOf = (condition: SpeedCondition, boosted: number[]) => boosted.map((b, i) => conditionQuota(condition, rules) * (b - bases[i]));
+  const gainOf = (condition: SpeedCondition, share: number) => conditionQuota(condition, rules) * Math.max(0, share - raw);
   const add = (condition: SpeedCondition, source: string, boosted: number[], by?: string[]) => {
     const extra = extraOf(condition, boosted);
     const gain = wmean(extra);
@@ -372,10 +381,10 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   if (totalWeight && hasPriority) {
     pool.forEach((r, i) => {
       if (!weights[i] || r.value < speed) return;
-      const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions });
+      const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions, ...hitRules(data) });
       if (!hit) return;
       const first = (r.value === speed ? 0.5 : 1) * Math.min(1, hit.expected / PRIORITY_FULL);
-      priorityExtra[i] = CONDITION_QUOTA.priority * first;
+      priorityExtra[i] = conditionQuota('priority', rules) * first;
       byMove.set(hit.move, (byMove.get(hit.move) ?? 0) + weights[i] * first);
     });
   }
@@ -383,7 +392,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   // Il nome: la mossa che porta più guadagno
   const priorityMove = [...byMove.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
   if (priorityMove && firstHits > 0) {
-    gains.push({ condition: 'priority', source: priorityMove, gain: CONDITION_QUOTA.priority * firstHits / totalWeight });
+    gains.push({ condition: 'priority', source: priorityMove, gain: conditionQuota('priority', rules) * firstHits / totalWeight });
     perRival.set('priority', priorityExtra);
   }
 

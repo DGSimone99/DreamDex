@@ -370,7 +370,8 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
                     {t(`teamStyle.${style}`)}
                   </span>
                 ))}
-                <TeamTypeHelp />
+                {/* In doppio c'è un tipo solo: la guida ai tipi di team non serve */}
+                {summary.typeRule !== 'oneType' && <TeamTypeHelp />}
               </div>
             )}
             {makers.length > 0 && (

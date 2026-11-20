@@ -4,9 +4,9 @@ import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined,
 import { gameOf, obtainableIn } from './games';
 import { isBannedIn, speciesInPokedex, tierIn } from './formats';
 import type { Format } from './format';
-import { formatRules, type FormatRules } from './formatRules';
-import { detectRoles, hasPriority, hasSetup, hasSpeedControl } from './roles';
-import type { SubRole } from './subRoles';
+import { formatRules, isOneType, type FormatRules } from './formatRules';
+import { detectRoles, hasPriority, hasSetup, hasSpeedControl, shownRoles } from './roles';
+import { FAMILIES, type SubRole } from './subRoles';
 import { scoreSets, uniqueFormes, type Suggestion } from './scoring';
 import { defaultSet, type TeamSet } from './sets';
 import { isUserFavorite } from './lists';
@@ -14,15 +14,39 @@ import { usageOf } from './stats';
 import { benefits, enables, type Condition } from './synergy';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 
-/** Ruoli cercabili: i 17 sotto-ruoli più tre filtri sulle mosse (priorità, controllo velocità, setup), che non entrano nel voto. */
-export type FilterRole = SubRole | 'priority' | 'speedControl' | 'setup';
+/**
+ * Ruoli cercabili: i sotto-ruoli più tre filtri sulle mosse (priorità, controllo velocità, setup), che non entrano nel
+ * voto; in doppio anche "Attaccante" e "Muro", le voci uniche del doppio.
+ */
+export type FilterRole = SubRole | 'anyAttacker' | 'anyWall' | 'priority' | 'speedControl' | 'setup';
 
-/** Il set ha il ruolo cercato: i tre filtri extra guardano le mosse, gli altri i sotto-ruoli del set. */
+/** I ruoli del filtro nel singolo: i sotto-ruoli nell'ordine delle famiglie (il Controllo Velocità è fra loro), poi i filtri sulle mosse. */
+const singlesFilterRoles = (): FilterRole[] => [...Object.values(FAMILIES).flat(), 'priority', 'setup'];
+/** In doppio i ruoli del doppio; la priorità resta la voce di sempre (un attacco con priorità), una sola. */
+const DOUBLES_FILTER_ROLES: FilterRole[] = ['anyAttacker', 'anyWall', 'fakeOut', 'redirector', 'spread', 'protect', 'pivot', 'hazards', 'priority', 'setup'];
+
+/** I ruoli che il filtro offre nel formato. */
+export const filterRolesFor = (rules: FormatRules): FilterRole[] => (isOneType(rules) ? DOUBLES_FILTER_ROLES : singlesFilterRoles());
+
+/**
+ * Il set ha il ruolo cercato: i tre filtri extra guardano le mosse, gli altri i ruoli del set. Un ruolo che il formato
+ * non offre (scelto nel singolo, poi si passa al doppio, o il contrario) si ignora: non svuota la lista.
+ */
 export function hasFilterRole(set: TeamSet, role: FilterRole, rules: FormatRules): boolean {
+  if (!filterRolesFor(rules).includes(role)) return true;
   if (role === 'priority') return hasPriority(set);
   if (role === 'speedControl') return hasSpeedControl(set);
   if (role === 'setup') return hasSetup(set);
-  return detectRoles(set, rules).includes(role);
+  return (shownRoles(detectRoles(set, rules), rules) as FilterRole[]).includes(role);
+}
+
+/**
+ * I filtri come valgono nel formato: i ruoli che il formato non offre si tolgono (non restano accesi senza vedersi).
+ * Lo stesso oggetto se non c'è niente da togliere.
+ */
+export function filtersFor(filters: CandidateFilters, rules: FormatRules): CandidateFilters {
+  const offered = filterRolesFor(rules);
+  return filters.roles.every(role => offered.includes(role)) ? filters : { ...filters, roles: filters.roles.filter(role => offered.includes(role)) };
 }
 
 export interface CandidateFilters {

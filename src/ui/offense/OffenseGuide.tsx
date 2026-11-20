@@ -1,3 +1,4 @@
+import { formatRules, isOneType } from '../../engine/formatRules';
 import type { ReactNode } from 'react';
 import type { TeamOffense } from '../../engine/offense';
 import { OFFENSE_DEPTH } from '../../engine/offense';
@@ -39,6 +40,8 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
   // Scarlatto/Violetto non esistono); il meteo del membro stesso conta pieno
   const format = { ...DEFAULT_FORMAT, formatId };
   const tera = teraAllowed(format);
+  // Doppio: le mosse a più bersagli fanno meno danno (una riga in più sotto la regola del colpo)
+  const doubles = isOneType(formatRules(formatId));
   const z = pokedexOf(format) === 'natdex';
   const oneUse = tera && z ? g('less.oneuse') : tera ? g('less.tera') : z ? g('less.z') : '';
   const metaSpecies = [...(offense.coverageMeta?.rows ?? [])].sort((a, b) => b.weight - a.weight).map(r => r.species);
@@ -55,7 +58,7 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
       <h4>{g('test')}</h4>
       <Rows compact rows={[
         // Sotto la regola, a capo e senza titolo: quello che conta meno
-        [g('power.hit'), <>{g('power.hit.rule')}<span className="guide-sub">{g('less.rule', { extra: oneUse })}</span></>],
+        [g('power.hit'), <>{g('power.hit.rule')}<span className="guide-sub">{g('less.rule', { extra: oneUse })}</span>{doubles && <span className="guide-sub">{g('doubles.spread')}</span>}</>],
       ]} />
 
       <h4>{g('cov.depth')}</h4>

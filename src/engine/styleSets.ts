@@ -6,14 +6,32 @@ import type { Format } from './format';
 import { isLegalIn } from './formats';
 import { isLearnable, legalAbilities, legalMoves } from './learnsets';
 import type { TeamSet } from './sets';
-import { benefits, conditionTools, enables } from './synergy';
+import { benefits, conditionTools, enables, usesCondition } from './synergy';
 
 /** Mosse e abilità che non contano come stile (come in teamArchetype): Chilly Reception porta la neve di passaggio, Weather Ball la sfrutta poco. */
 const NOT_A_SETTER = 'chillyreception';
 const NOT_A_USER = 'weatherball';
 
-const setsUp = (set: TeamSet, style: FillStyle) => enables(set).some(e => e.condition === style && toID(e.via) !== NOT_A_SETTER);
-const uses = (set: TeamSet, style: FillStyle) => benefits(set).some(b => b.condition === style && toID(b.via) !== NOT_A_USER);
+/**
+ * Il set porta lo stile. Tailwind non è una condizione (synergy.ts): si riconosce dalla mossa, come fa l'etichetta di
+ * stile del doppio.
+ */
+export const setsUp = (set: TeamSet, style: FillStyle): boolean => (style === 'tailwind'
+  ? set.moves.some(m => toID(m) === 'tailwind')
+  : enables(set).some(e => e.condition === style && toID(e.via) !== NOT_A_SETTER));
+/**
+ * Il set sfrutta lo stile. Meteo e Trick Room come sempre (benefits); un campo con la regola dell'etichetta di stile
+ * (usesCondition: anche chi attacca a terra col tipo che il campo potenzia); Tailwind non ha "chi lo sfrutta": ne
+ * beneficiano tutti.
+ */
+export const uses = (set: TeamSet, style: FillStyle): boolean => (style === 'tailwind' ? false
+  : style.endsWith('terrain') ? usesCondition(set, style)
+  : benefits(set).some(b => b.condition === style && toID(b.via) !== NOT_A_USER));
+/**
+ * Stili a cui basta chi li porta: Tailwind (ne beneficiano tutti) e il Campo Nebbioso (protegge tutti dagli stati;
+ * quasi nessun Pokémon lo "sfrutta" con una mossa o un'abilità, e chiederlo non trovava proposte).
+ */
+export const setterOnly = (style: FillStyle): boolean => style === 'tailwind' || style === 'mistyterrain';
 /** Con la megapietra combatte la Mega: l'abilità è la sua e non si cambia. */
 const abilityLocked = (set: TeamSet) => {
   const forme = battleSpecies(set);
@@ -71,6 +89,11 @@ function withMove(set: TeamSet, name: string): TeamSet | null {
 /** Il set che porta lo stile: già lo porta, o con l'abilità che lo attiva, o con la mossa. Null se non può. */
 export function asSetter(set: TeamSet, style: FillStyle, genLimit: number): TeamSet | null {
   if (setsUp(set, style)) return set;
+  // Tailwind: solo la mossa, per chi la impara
+  if (style === 'tailwind') {
+    const move = pickMove(set, ['tailwind'], genLimit);
+    return move ? withMove(set, moveName(move)) : null;
+  }
   const tools = conditionTools(style);
   const ability = pickAbility(set, tools.enablerAbilities, genLimit);
   if (ability) return { ...set, ability };
@@ -80,8 +103,12 @@ export function asSetter(set: TeamSet, style: FillStyle, genLimit: number): Team
   return adapted && setsUp(adapted, style) ? adapted : null;
 }
 
-/** Il set che sfrutta lo stile: già lo sfrutta, o con l'abilità, o con la mossa (mai Weather Ball). Trick Room: solo i lenti. */
+/**
+ * Il set che sfrutta lo stile: già lo sfrutta, o con l'abilità, o con la mossa (mai Weather Ball). Trick Room: solo i
+ * lenti. Tailwind: nessuno (non servono membri che lo sfruttano).
+ */
 export function asUser(set: TeamSet, style: FillStyle, genLimit: number): TeamSet | null {
+  if (style === 'tailwind') return null;
   if (uses(set, style)) return set;
   if (style === 'trickroom') return null;
   const tools = conditionTools(style);
