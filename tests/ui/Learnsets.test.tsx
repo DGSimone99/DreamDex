@@ -43,6 +43,19 @@ describe('mosse e abilità legali nel team', () => {
     expect(within(team()).getByLabelText('Mossa 1')).toHaveValue('Dragon Darts');
   });
 
+  it('editor aperto: la mossa non legale è segnata sul suo campo e detta ai lettori di schermo', async () => {
+    const user = await importTeam('Drakloak\nAbility: Infiltrator\n- Dragon Darts\n- U-turn');
+    await user.click(team().querySelector<HTMLElement>('.slot-card .name')!);
+    const bad = within(team()).getByLabelText('Mossa 1');
+    expect(bad).toHaveAttribute('aria-invalid', 'true');
+    expect(bad).toHaveAccessibleDescription(expect.stringContaining('Mosse non legali in questo formato: Dragon Darts'));
+    expect(bad.closest('.field')).toHaveClass('flagged');
+    expect(within(team()).getByLabelText('Mossa 2')).not.toHaveAttribute('aria-invalid');
+    // Solo il campo in rosso, niente avvisi a tutta larghezza; la via d'uscita nella descrizione
+    expect(bad).toHaveAccessibleDescription(expect.stringContaining('Cambiale o attiva Custom Skillset'));
+    expect(team().querySelector('.slot.open [role=note]')).toBeNull();
+  });
+
   it('Custom Skillset: sblocca solo quel Pokémon, con tooltip e badge', async () => {
     const user = await importTeam('Drakloak\nAbility: Infiltrator\n- Dragon Darts\n\nDreepy\nAbility: Infiltrator\n- Dragon Darts');
     const toggle = screen.getByRole('checkbox', { name: 'Custom Skillset Drakloak' });
