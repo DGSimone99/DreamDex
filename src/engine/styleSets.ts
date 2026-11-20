@@ -27,6 +27,11 @@ export const setsUp = (set: TeamSet, style: FillStyle): boolean => (style === 't
 export const uses = (set: TeamSet, style: FillStyle): boolean => (style === 'tailwind' ? false
   : style.endsWith('terrain') ? usesCondition(set, style)
   : benefits(set).some(b => b.condition === style && toID(b.via) !== NOT_A_USER));
+/**
+ * Stili a cui basta chi li porta: Tailwind (ne beneficiano tutti) e il Campo Nebbioso (protegge tutti dagli stati;
+ * quasi nessun Pokémon lo "sfrutta" con una mossa o un'abilità, e chiederlo non trovava proposte).
+ */
+export const setterOnly = (style: FillStyle): boolean => style === 'tailwind' || style === 'mistyterrain';
 /** Con la megapietra combatte la Mega: l'abilità è la sua e non si cambia. */
 const abilityLocked = (set: TeamSet) => {
   const forme = battleSpecies(set);

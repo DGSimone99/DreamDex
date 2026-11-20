@@ -54,6 +54,16 @@ describe('doppio: il team ha lo stile chiesto', () => {
     expect(matchesChoice(without, choose(without, 'tailwind'), doubles)).toBe(false);
   });
 
+  it('Campo Nebbioso: basta chi lo porta, anche se nessuno lo sfrutta', () => {
+    const fini = mk('Tapu Fini', 'Misty Surge', ['Moonblast', 'Muddy Water', 'Protect']);
+    const withFini = [fini, garchomp, incineroar, kingambit, kingdra, tornadus];
+    expect(matchesChoice(withFini, choose(withFini, 'mistyterrain'), doubles)).toBe(true);
+    expect(matchesChoice(mixed, choose(mixed, 'mistyterrain'), doubles)).toBe(false);
+    // Gli altri campi vogliono ancora chi li sfrutta
+    const lonely = [rillaboom, tornadus, pelipper];
+    expect(matchesChoice(lonely, choose(lonely, 'grassyterrain'), doubles)).toBe(false);
+  });
+
   it('nessuno stile chiesto: sempre vero', () => {
     expect(matchesChoice(mixed, choose(mixed, null), doubles)).toBe(true);
   });
@@ -136,6 +146,13 @@ describe('doppio: le proposte di Completa team con Tailwind', () => {
     const { proposals, end } = run(team, 'tailwind', old);
     expect(proposals).toEqual([]);
     expect(end).toBe('exhausted');
+  });
+
+  it('Campo Nebbioso da un team di 3: le proposte arrivano e hanno chi lo porta', () => {
+    const team = [incineroar, garchomp, kingambit];
+    const { proposals } = run(team, 'mistyterrain');
+    expect(proposals.length).toBeGreaterThan(0);
+    for (const proposal of proposals) expect(matchesChoice(proposal.team, choose(team, 'mistyterrain'), doubles)).toBe(true);
   });
 
   it('Campo Erboso da un team di 4: le proposte lo hanno fra i loro stili', () => {

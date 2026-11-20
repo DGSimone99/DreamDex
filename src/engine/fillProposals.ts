@@ -11,7 +11,7 @@ import { rateTeam, type RatingArea } from './rating';
 import { detectRoles, isPassive } from './roles';
 import { defensiveMultiplier, type TypeName } from './types';
 import { scoreSets, suggest, type Suggestion } from './scoring';
-import { asSetter, asUser, setsUp, stylePool, uses } from './styleSets';
+import { asSetter, asUser, setsUp, setterOnly, stylePool, uses } from './styleSets';
 import { presetsForSet, type TeamSet } from './sets';
 import { benefits, enables, opposesWeather } from './synergy';
 
@@ -134,14 +134,18 @@ export function proposalOrder(a: Proposal, b: Proposal, mode: FavoriteMode): num
 /**
  * Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). In doppio lo stile chiesto basta che sia fra
  * TUTTI gli stili del team (doublesStyles), non solo quello dell'etichetta, che ne mostra uno: un team di pioggia a
- * cui si chiede il Campo Erboso lo ha anche se l'etichetta resta "Pioggia".
+ * cui si chiede il Campo Erboso lo ha anche se l'etichetta resta "Pioggia". Per Tailwind e il Campo Nebbioso basta
+ * chi lo porta (setterOnly).
  */
 export function matchesChoice(team: TeamSet[], choice: FillChoice, format: Format): boolean {
   const rules = formatRules(format.formatId);
   const found = teamArchetype(team, rules);
   if (!found) return false;
   // Col tipo unico (doppio) un tipo scelto, anche rimasto da prima, non conta
-  if (isOneType(rules)) return !choice.style || doublesStyles(team).includes(choice.style);
+  if (isOneType(rules)) {
+    const style = choice.style;
+    return !style || (setterOnly(style) ? team.some(set => setsUp(set, style)) : doublesStyles(team).includes(style));
+  }
   if (choice.archetype && found.archetype !== choice.archetype) return false;
   return !choice.style || found.styles.includes(choice.style);
 }
@@ -302,10 +306,10 @@ export function* fillProposals(
       const style = choice.style;
       const needSetter = !current.some(s => setsUp(s, style));
       // Trick Room: dopo chi la porta, tutti lenti; meteo: almeno WEATHER_USERS che lo sfruttino
-      // Tailwind: basta chi lo porta, ne beneficiano tutti
-      const needUsers = !needSetter && style !== 'tailwind' && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < WEATHER_USERS);
+      // Tailwind e Campo Nebbioso: basta chi lo porta
+      const needUsers = !needSetter && !setterOnly(style) && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < WEATHER_USERS);
       // Slot libero di un team meteo: chi lo sfrutta (anche fuori dal meta) entra tra i candidati, senza restringere la lista
-      const freeWeatherSlot = !needSetter && !needUsers && style !== 'trickroom' && style !== 'tailwind';
+      const freeWeatherSlot = !needSetter && !needUsers && style !== 'trickroom' && !setterOnly(style);
       if (needSetter || needUsers || freeWeatherSlot) {
         // Oltre al meta, tutto il Pokédex: chi può portare o sfruttare lo stile, col set adattato
         const adapt = needSetter ? asSetter : asUser;
