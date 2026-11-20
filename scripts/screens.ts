@@ -598,7 +598,7 @@ const STATES: Record<string, State> = {
     await wait(500);
     const input = await p.$('.slot.open .duel-species input');
     if (!input) return 'no duel';
-    await input.click({ clickCount: 3 });
+    await input.click({ count: 3 });
     const opp = process.env.DUEL_OPP ?? 'Gholdengo';
     await input.type(opp);
     await wait(600);
