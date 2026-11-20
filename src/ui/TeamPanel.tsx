@@ -718,12 +718,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
               onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
           </Hint>
         </>} />
-      {/* Telefono: Fatto in fondo, dove arriva il pollice (la × sta in alto); chiude come la × */}
-      {open && (
-        <div className="editor-done-bar">
-          <button type="button" className="editor-done" onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="check" />{tr('editor.done')}</button>
-        </div>
-      )}
       </div>
       {!open && memberTip.tip}
     </div>

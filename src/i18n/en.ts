@@ -647,7 +647,6 @@ export const en = {
   'editor.flagBanned': "Banned",
   'editor.flagIllegal': "Not legal",
   'editor.flagBannedItem': "Banned",
-  'editor.done': "Done",
   'editor.gradeLabel': "Team grade",
   'editor.swapMove': "Use {to} instead of {from}",
   'editor.stats': "Stats",

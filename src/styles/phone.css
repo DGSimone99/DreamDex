@@ -1118,7 +1118,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .set-editor label:has(> input.switch) { min-height: 44px; }
 }
 
-/* Telefono: il voto del team nella testata dell'editor (accanto allo shiny) e Fatto fermo in fondo, dove arriva il pollice */
+/* Telefono: il voto del team nella testata dell'editor (lì il voto grande è coperto) */
 @media (max-width: 1099px) {
   /* Testata un po' più alta col chip: il nome scende sotto di lui (la testata parte 12px sotto il bordo dello schermo) */
   .set-editor .editor-title:has(.editor-grade) { padding-top: 66px; }
@@ -1142,21 +1142,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .editor-grade :is(.up, .down) { color: var(--muted); }
   .editor-grade .up > b { color: var(--good); }
   .editor-grade .down > b { color: var(--bad); }
-  /* Con poco contenuto (la scheda Sfida) Fatto scende comunque in fondo allo schermo */
-  .drawer:has(> .editor-done-bar) { display: flex; flex-direction: column; }
-  .drawer:has(> .editor-done-bar) > .set-editor { flex: none; margin-bottom: var(--sp-6); }
-  .drawer .editor-done-bar {
-    display: block; position: sticky; bottom: calc(-20px - var(--safe-b)); z-index: 7;
-    /* In alto auto: con poco contenuto scende in fondo; lo spazio dal contenuto lo dà il margine dell'editor */
-    margin: auto calc(-1 * var(--sp-7)) calc(-20px - var(--safe-b));
-    padding: var(--sp-5) var(--sp-7) calc(var(--sp-5) + var(--safe-b));
-    background: var(--ground); box-shadow: 0 -1px 0 var(--line-soft);
-  }
-  .editor-done { display: flex; align-items: center; justify-content: center; gap: var(--sp-4); width: 100%; height: 48px;
-    border: 1px solid var(--accent); border-radius: var(--alt-r); background: var(--accent-soft); color: var(--text);
-    font: 700 var(--fs-body)/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
-  .editor-done .icon { width: 16px; height: 16px; color: var(--accent-ink); }
-  .editor-done:active { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 }
 
 /* Telefono: scorrendo l'editor il riepilogo del membro si stringe a una riga (sprite piccolo, nome, voto, ×): Set e
@@ -1182,4 +1167,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .set-editor .field-swap { height: 28px; padding: 0 var(--sp-4); }
   .set-editor .field-swap::before { inset: -9px 0; }
   .set-editor :is(.field.flagged, .field:has(> .set-plate.flagged)) > .field-head { min-height: 28px; margin-bottom: var(--sp-3); }
+  /* Sul telefono (una colonna) la riga sopra strumento e abilità c'è solo con l'avviso: niente spazio vuoto */
+  .set-editor .editor-group.set-plates .field > .field-head:empty { display: none; }
 }
