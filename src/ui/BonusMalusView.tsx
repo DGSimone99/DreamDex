@@ -22,7 +22,7 @@ const FAMILY: Record<CatalogKey, Family> = {
   sharedWeak: 'types', sameType: 'types', defenseHole: 'types', unanswered: 'types', weakCovered: 'types', typeVariety: 'types',
   essentialRole: 'roles', importantRole: 'roles', minorRole: 'roles',
   hazardDuplicate: 'hazards',
-  weatherClash: 'conditions', unmetCondition: 'conditions', unusedEnabler: 'conditions', conditionUsed: 'conditions', weatherHelp: 'conditions', trickRoomFast: 'conditions',
+  weatherClash: 'conditions', weatherSabotage: 'conditions', unmetCondition: 'conditions', unusedEnabler: 'conditions', conditionUsed: 'conditions', weatherHelp: 'conditions', trickRoomFast: 'conditions',
   weakMember: 'members', lockedStatus: 'members',
   coreTrio: 'core',
 };

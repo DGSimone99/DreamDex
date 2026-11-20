@@ -11,7 +11,7 @@ import { typeMix, type Archetype, type TypeMix } from './archetype';
 import { isPassive, isStall } from './roles';
 import { isOneType, rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
-import { FAMILIES, type SubRoleValues } from './subRoles';
+import { FAMILIES, hasDoublesRole, type SubRoleValues } from './subRoles';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { usageOf } from './stats';
@@ -20,7 +20,7 @@ import { lockedStatusMoves, withUsableMoves } from './lockedMoves';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { teamField, TYPES } from './types';
-import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, sabotagedMembers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 import { heldByOf, teamCores, type Core, type HeldBy } from './cores';
 import { blockedReason, voteTeam } from './legalTeam';
 import { unheldDuels, type DuelRow } from './duel';
@@ -129,7 +129,7 @@ export interface RatingArea {
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
   | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'unanswered'
-  | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp';
+  | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'weatherSabotage';
 
 export interface Redundancy {
   text: string;
@@ -256,6 +256,24 @@ export function weakenedMoveNotes(team: TeamSet[], lang: Lang = 'it'): Redundanc
   }));
 }
 
+/**
+ * Doppio (2026-11-21): −2 per ogni membro sabotato dal meteo del team (il sole sull'Acqua, la pioggia sul Fuoco), anche
+ * se la mossa non è nel set ma è fra le più usate di quel Pokémon (synergy.ts sabotagedMembers). Sulle partite di doppio
+ * questi team vincono meno (41% contro 51%) e i giocatori forti li portano meno. In singolo resta solo l'avviso del coach.
+ */
+export const SABOTAGE_POINTS = 2;
+
+export function weatherSabotage(team: TeamSet[], data: EngineData, lang: Lang = 'it'): Redundancy[] {
+  const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  return sabotagedMembers(team, data).map(w => {
+    const parts = { condition: conditionLabel(w.condition, lang), setter: w.setter, type: typeName(w.type, lang), member: w.member };
+    return {
+      text: cap(t(lang, 'rating.redundancy.sabotage', parts)), points: SABOTAGE_POINTS, catalog: 'weatherSabotage' as const,
+      key: `sabotage:${w.member}`, parts,
+    };
+  });
+}
+
 /** Trick Room rallenta un membro che supera da solo almeno questa quota del meta; il malus si ferma a −3. */
 export const TRICK_ROOM_FAST = 0.5;
 /** Ogni membro veloce sotto Trick Room costa 1 punto. */
@@ -290,6 +308,7 @@ export const WEAK_MEMBER_MAX = 12;
 /**
  * Membri deboli senza utilità chiave (−4 ciascuno, al massimo −12; non dipende dal meta: Pelipper che porta la pioggia è esente).
  * Ditto con Imposter è esente: copia l'avversario, le sue statistiche base non dicono nulla.
+ * In doppio un membro con Fake Out, Follow Me o Rage Powder non è mai debole: è un supporto vero (Clefairy, Hitmontop).
  * Lo squilibrio degli attaccanti si vede nei Ruoli: le voci Attaccante fisico e Attaccante speciale (rolesArea.ts).
  */
 export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Redundancy[] {
@@ -298,6 +317,7 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
   let total = 0;
   for (const [i, set] of team.entries()) {
     if (toID(battleAbility(set)) === 'imposter') continue;
+    if (isOneType(rules) && (hasDoublesRole(set, 'fakeOut') || hasDoublesRole(set, 'redirector'))) continue;
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
     if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, needs.members[i] ?? {})) {
@@ -470,7 +490,10 @@ export function weakCoveredBonus(team: TeamSet[], analysis: TeamAnalysis, lang: 
 export const CONDITION_USERS_MIN = 2;
 export const CONDITION_USED_POINTS = 1;
 
-/** +1 per ogni condizione portata da un membro e sfruttata da almeno due compagni: lo specchio di "attivatore inutilizzato". */
+/**
+ * +1 per ogni condizione portata da un membro e sfruttata da almeno due compagni: lo specchio di "attivatore inutilizzato".
+ * In doppio non si dà (rateTeamAs): sulle partite è l'unica voce che va al contrario (i giocatori forti ce l'hanno meno).
+ */
 export function conditionUsedBonus(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const items: Redundancy[] = [];
   const seen = new Set<Condition>();
@@ -620,7 +643,10 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
     })),
   ];
   const shownHoles = holeItems.filter(i => !open.types.includes(i.key.slice('defenseHole:'.length)));
-  const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang)];
+  // Doppio: il sabotaggio del meteo è un malus, e il bonus "condizione usata" non si dà
+  const oneType = isOneType(rules);
+  const sabotageItems = oneType ? weatherSabotage(team, data, lang) : [];
+  const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang), ...sabotageItems];
   const allItems = [...redundantItems, ...extraItems];
   const penalty = { total: sum(allItems.map(i => i.points)), items: allItems };
   // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, ruoli minori).
@@ -628,7 +654,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // stesso modo (torneo 2,1, ladder 2,2) e il Tera si usa una volta sola, scelto in partita: troppe variabili
   const trios = coreTrios(team, heldByOf(defense.coverageTypes.rows));
   const bonusItems = [
-    ...coreTrioBonus(team, lang, undefined, trios), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...conditionUsedBonus(team, lang),
+    ...coreTrioBonus(team, lang, undefined, trios), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...(oneType ? [] : conditionUsedBonus(team, lang)),
     ...weatherBonus(team, lang).items, ...roles.bonuses,
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
@@ -654,21 +680,29 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'unanswered'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'weatherSabotage', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'unanswered'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
-/** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
-export function bonusMalusCatalog(lang: Lang): CatalogEntry[] {
+/** Voci che esistono solo in doppio, e voci del singolo che in doppio non ci sono. */
+const DOUBLES_ONLY = new Set<CatalogKey>(['weatherSabotage']);
+const SINGLES_ONLY = new Set<CatalogKey>(['conditionUsed']);
+
+/**
+ * Tutti i bonus e malus possibili nel formato (`rules`; senza, quelli del singolo), con il testo per il modale; i punti
+ * nei testi vengono dalle costanti.
+ */
+export function bonusMalusCatalog(lang: Lang, rules?: FormatRules): CatalogEntry[] {
+  const doubles = !!rules && isOneType(rules);
   const values = {
     shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unanswered: UNANSWERED_POINTS, unansweredMeta: UNANSWERED_META_POINTS, unansweredTie: UNANSWERED_META_POINTS / 2, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
-    used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN,
+    used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN, sabotage: SABOTAGE_POINTS,
   };
-  return CATALOG_ORDER.map(({ key, kind }) => ({
+  return CATALOG_ORDER.filter(({ key }) => !(doubles ? SINGLES_ONLY : DOUBLES_ONLY).has(key)).map(({ key, kind }) => ({
     key, kind,
     name: t(lang, `catalog.${key}.name`, values),
     when: t(lang, `catalog.${key}.when`, values),

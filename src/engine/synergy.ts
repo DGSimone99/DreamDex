@@ -1,6 +1,8 @@
 import { battleAbility, battleName, battleSpecies, dex, getMove, isDefined, toID } from './dex';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
+import type { EngineData } from './data';
+import { statsEntry } from './stats';
 import { t, type Lang } from '../i18n';
 import { anyGameName } from '../i18n/game';
 import { attackingMoves, defensiveMultiplier, type TypeName } from './types';
@@ -390,6 +392,35 @@ export interface WeakenedMove {
  * Kyogre nel team) non conta: quando è in campo ha il suo.
  */
 export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
+  return weakenedBy(team, (member, type) => attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam'));
+}
+
+/** Quota d'uso da cui una mossa è "fra le più usate" di un Pokémon nel formato (scelta di taratura, 2026-11-21). */
+export const SABOTAGE_USAGE = 0.3;
+
+/**
+ * Doppio: i membri sabotati dal meteo del team (malus del voto, rating.ts). Come `weakenedMoves`, più chi non ha la
+ * mossa nel set ma ha, fra le mosse usate da almeno SABOTAGE_USAGE nelle statistiche del formato, un attacco del tipo
+ * indebolito (non Hydro Steam): togliere la mossa dal set non deve togliere il malus. Un membro una volta sola.
+ * Senza statistiche (o col meta spento) vale solo la mossa nel set.
+ */
+export function sabotagedMembers(team: TeamSet[], data: EngineData): WeakenedMove[] {
+  const stats = data.stats && !data.ignoreMeta ? data.stats : null;
+  const usual = (member: TeamSet, type: TypeName): boolean => {
+    const entry = statsEntry(stats, battleName(member)) ?? statsEntry(stats, member.species);
+    return Object.entries(entry?.moves ?? {}).some(([name, share]) => {
+      const move = getMove(name);
+      return share >= SABOTAGE_USAGE && !!move && move.category !== 'Status' && move.type === type && move.id !== 'hydrosteam';
+    });
+  };
+  const own = (member: TeamSet, type: TypeName) => attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam');
+  const seen = new Set<string>();
+  return weakenedBy(team, (member, type) => own(member, type) || usual(member, type))
+    .filter(w => (seen.has(w.member) ? false : (seen.add(w.member), true)));
+}
+
+/** I membri che il meteo del team indebolisce, secondo `hit` (il membro ha un attacco del tipo dimezzato). */
+function weakenedBy(team: TeamSet[], hit: (member: TeamSet, type: TypeName) => boolean): WeakenedMove[] {
   const seen = new Set<Condition>();
   const result: WeakenedMove[] = [];
   for (const setter of team) {
@@ -400,8 +431,7 @@ export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
       for (const member of team) {
         if (isPrimal(e) && member !== setter) continue;
         if (enables(member).some(own => WEATHERS.includes(own.condition) && own.condition !== e.condition)) continue;
-        const hit = attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam');
-        if (!hit) continue;
+        if (!hit(member, type)) continue;
         const stab = ((battleSpecies(member)?.types ?? []) as readonly string[]).includes(type);
         result.push({ condition: e.condition, setter: battleName(setter), member: battleName(member), type, stab });
       }
