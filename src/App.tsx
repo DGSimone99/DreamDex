@@ -468,6 +468,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <AutoBand phone={phone} collapsed={collapsed} control={bandControl}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
+          grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           plateName={<SavedPlateName team={team} />}
