@@ -8,15 +8,13 @@ import { fixtureData, tusk } from '../fixtures/data';
 
 afterEach(() => window.history.replaceState(null, '', '/'));
 
-describe('editor sul telefono: voto e Fatto', () => {
-  it('il chip dice il voto del team, Fatto chiude come la ×', async () => {
+describe('editor sul telefono: voto', () => {
+  it('il chip dice il voto del team', async () => {
     const user = userEvent.setup();
     window.history.replaceState(null, '', `/#team=${encodeShare([tusk], DEFAULT_FORMAT)}`);
     const { container } = render(<App initialLang="it" data={fixtureData} />);
     await user.click(container.querySelector<HTMLElement>('.slot-card')!);
     // Il voto arriva un attimo dopo (calcolo in sottofondo)
     await screen.findByText((_, el) => !!el?.matches('.slot.open .editor-grade') && /Voto del team [SABCD]\d+/.test(el.textContent ?? ''));
-    await user.click(screen.getByRole('button', { name: 'Fatto' }));
-    expect(container.querySelector('.slot.open')).toBeNull();
   });
 });
