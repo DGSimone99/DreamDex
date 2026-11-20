@@ -1,13 +1,13 @@
-import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 
 /**
- * Telefono: il team si riduce da solo appena della fascia grande resta in vista poco più della striscia ridotta (il
- * fondo delle ultime carte) e resta fermo in alto, sotto la barra; torna grande risalendo fino in cima (o tirando giù
+ * Telefono: il team si riduce da solo appena della fascia grande resta in vista quanto la striscia ridotta (il fondo
+ * delle ultime carte) e resta fermo in alto, sotto la barra; torna grande risalendo fino in cima (o tirando giù
  * col dito quando si è già in cima, per le pagine corte).
  * In tutti e due i versi la pagina viene spostata di quanto il team cambia: il contenuto non salta mai. Tornando grande
  * si vede prima solo la sua parte bassa, e salendo ancora lo si scopre tutto, come se fosse sempre stato lì.
- * Ridisegnare la pagina costa (tutta l'app): il cambio si prepara a pezzetti senza fermare lo scorrimento.
+ * Il cambio è immediato (AutoBand ridisegna solo il team): la striscia compare esattamente al punto giusto.
  * `collapseToTop` lo riduce e riporta la pagina all'inizio (la barra in basso).
  */
 export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement | null>) {
@@ -40,21 +40,21 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
     const topH = () => parseFloat(getComputedStyle(html).getPropertyValue('--top-h')) || 0;
     // Con un pannello a tutto schermo aperto la pagina sotto non conta
     const blocked = () => html.classList.contains('modal-open');
-    // Si riduce un po' prima che la fascia grande esca: quando ne resta in vista poco più della striscia ridotta
-    const EARLY = 132;
+    // Si riduce quando della fascia grande resta in vista quanto la striscia ridotta: la striscia ne prende il posto
+    // esatto e non copre niente. Prima non si può: la pagina dovrebbe salire oltre la cima e il contenuto salterebbe
     let lastY = window.scrollY;
     const resize = (next: boolean) => {
       const band = bandRef.current;
       if (!band || pending.current !== null) return;
       pending.current = band.offsetHeight;
-      startTransition(() => setCollapsed(next));
+      flushSync(() => setCollapsed(next));
     };
     const onScroll = () => {
       const y = window.scrollY;
       const band = bandRef.current;
       if (!band || blocked() || pending.current !== null || performance.now() < ignoreUntil.current) { lastY = y; return; }
       if (!collapsedRef.current) {
-        if (y > lastY && y > armY.current && band.getBoundingClientRect().bottom <= topH() + stripH.current + EARLY) resize(true);
+        if (y > lastY && y > armY.current && band.getBoundingClientRect().bottom <= topH() + stripH.current) resize(true);
       } else if (y <= 2 && lastY > 2) {
         // Arrivati in cima risalendo: torna grande sopra la pagina, che scende di altrettanto (si vede la sua parte bassa)
         resize(false);
