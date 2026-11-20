@@ -173,6 +173,8 @@ export function* fillProposals(
   const rules = formatRules(format.formatId);
   // Col tipo unico (doppio) non c'è un tipo da scegliere: una scelta rimasta da prima si ignora
   if (isOneType(rules) && choice.archetype) choice = { ...choice, archetype: null };
+  // I ruoli di coerenza da garantire: in doppio nessuno (le trappole lì non sono un bisogno del team)
+  const roleGaps: readonly (typeof ROLE_GAPS)[number][] = isOneType(rules) ? [] : ROLE_GAPS;
   // Primo giro: nessuna proposta mostrata, nessun Pokémon nuovo si ripete
   const strict = shown.length === 0;
   // Tutti i Pokémon nuovi già mostrati (anche in questo giro)
@@ -277,7 +279,7 @@ export function* fillProposals(
       // Chi porta un ruolo di coerenza che manca (trappole, chi le toglie) resta anche se da solo non "sembra" del tipo:
       // il tipo lo decide il team intero (matchesChoice all'ultimo posto). Senza, finiti Great Tusk e Iron Treads un
       // Bulky Offense non trovava più chi toglie le trappole e il giro si fermava a 2 proposte
-      const lacking = ROLE_GAPS.filter(role => !current.some(member => rolesOf(member).includes(role)));
+      const lacking = roleGaps.filter(role => !current.some(member => rolesOf(member).includes(role)));
       if (fit && quota === 0 && result.length) result = narrow(result, set => fitsArchetype(set, fit, rules) || lacking.some(role => rolesOf(set).includes(role)));
       return result;
     };
@@ -340,7 +342,7 @@ export function* fillProposals(
     }
     list = byType(list, true);
     // Trappole e chi le toglie: se i ruoli che mancano sono tanti quanti i posti liberi, questo posto ne porta uno
-    const missing = ROLE_GAPS.filter(role => !current.some(s => rolesOf(s).includes(role)));
+    const missing = roleGaps.filter(role => !current.some(s => rolesOf(s).includes(role)));
     const brings = (set: TeamSet) => missing.some(role => rolesOf(set).includes(role));
     if (!last && missing.length >= 6 - current.length) list = narrow(list, s => brings(s));
     let top = preferFresh(list.map(s => s.set), last ? CANDIDATES : RATE_TOP);

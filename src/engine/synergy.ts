@@ -385,6 +385,8 @@ export interface WeakenedMove {
   type: TypeName;
   /** Vero se le mosse indebolite sono del tipo del membro (STAB). */
   stab: boolean;
+  /** Solo da `sabotagedMembers`: il set non ha la mossa, ma è fra le più usate di quel Pokémon. */
+  usual?: boolean;
 }
 
 /**
@@ -415,8 +417,10 @@ export function sabotagedMembers(team: TeamSet[], data: EngineData): WeakenedMov
   };
   const own = (member: TeamSet, type: TypeName) => attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam');
   const seen = new Set<string>();
+  const byName = new Map(team.map(member => [battleName(member), member]));
   return weakenedBy(team, (member, type) => own(member, type) || usual(member, type))
-    .filter(w => (seen.has(w.member) ? false : (seen.add(w.member), true)));
+    .filter(w => (seen.has(w.member) ? false : (seen.add(w.member), true)))
+    .map(w => { const member = byName.get(w.member); return member && !own(member, w.type) ? { ...w, usual: true } : w; });
 }
 
 /** I membri che il meteo del team indebolisce, secondo `hit` (il membro ha un attacco del tipo dimezzato). */

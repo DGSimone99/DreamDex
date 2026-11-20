@@ -111,7 +111,8 @@ function RoleRow({ line, full, rating, ctx }: { line: RoleLine; full: boolean; r
   const state = rowState(line.level, line.missing);
   const one = line.by.length === 1;
   // Una voce che chiede due membri (Protect, Priorità in doppio) con un membro solo: manca, ma si mostra chi ce l'ha
-  const lone = line.missing && SECOND_KEYS.has(line.key) ? line.by.filter(h => h.value >= MISSING_BELOW) : [];
+  // Solo in doppio: nel singolo "2° Attaccante" con un attaccante solo resta com'era ("Nessuno")
+  const lone = rating.needs.rules.typeRule === 'oneType' && line.missing && SECOND_KEYS.has(line.key) ? line.by.filter(h => h.value >= MISSING_BELOW) : [];
   const partly = lone.length === 1 ? t('rdetail.needTwo', { name: lone[0].species })
     : line.missing && line.by.length > 0 ? t('rdetail.partly', { list: line.by.map(h => `${h.species} ${pct(h.value)}%`).join(', ') }) : undefined;
   return (

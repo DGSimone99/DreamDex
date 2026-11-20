@@ -268,7 +268,8 @@ export function weatherSabotage(team: TeamSet[], data: EngineData, lang: Lang = 
   return sabotagedMembers(team, data).map(w => {
     const parts = { condition: conditionLabel(w.condition, lang), setter: w.setter, type: typeName(w.type, lang), member: w.member };
     return {
-      text: cap(t(lang, 'rating.redundancy.sabotage', parts)), points: SABOTAGE_POINTS, catalog: 'weatherSabotage' as const,
+      // Se la mossa non è nel set il testo lo dice: "di solito usa mosse…"
+      text: cap(t(lang, w.usual ? 'rating.redundancy.sabotageUsual' : 'rating.redundancy.sabotage', parts)), points: SABOTAGE_POINTS, catalog: 'weatherSabotage' as const,
       key: `sabotage:${w.member}`, parts,
     };
   });

@@ -49,6 +49,12 @@ describe('doppio: il sabotaggio del meteo', () => {
   it("vale anche senza la mossa nel set, se è fra le più usate di quel Pokémon", () => {
     const data = withStats({ Basculegion: entry({ wavecrash: 0.8, lastrespects: 0.9 }) });
     expect(sabotage([torkoal, dryBasculegion, garchomp], data).map(i => i.parts?.member)).toEqual(['Basculegion']);
+    // Il testo non dice che il set ha mosse Acqua (non le ha): dice che di solito le usa
+    expect(sabotage([torkoal, dryBasculegion, garchomp], data)[0].text).toBe('Basculegion di solito usa mosse Water, che il sole di Torkoal dimezza');
+    expect(rateTeam([torkoal, dryBasculegion, garchomp], { ...data }, 'en')!.penalty.items.find(i => i.catalog === 'weatherSabotage')!.text)
+      .toBe("Basculegion usually runs Water moves, which Torkoal's sun halves");
+    // Con la mossa nel set resta il testo di sempre, anche se è pure fra le più usate
+    expect(sabotage([torkoal, basculegion, garchomp], data)[0].text).toBe('Il sole di Torkoal dimezza le mosse Water di Basculegion');
     expect(sabotagedMembers([torkoal, dryBasculegion, garchomp], data).map(w => w.member)).toEqual(['Basculegion']);
     // Le statistiche coi nomi per esteso (data.pkmn.cc) valgono uguale
     const named = withStats({ Basculegion: entry({ 'Wave Crash': 0.8 }) });

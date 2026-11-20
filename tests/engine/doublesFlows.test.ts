@@ -3,6 +3,8 @@ import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { defaultChoice, fillProposals, matchesChoice, type FillChoice } from '../../src/engine/fillProposals';
 import { rateTeam } from '../../src/engine/rating';
+import { coherenceGaps } from '../../src/engine/coherence';
+import { DOUBLES_RULES, NATDEX_OU_RULES } from '../../src/engine/formatRules';
 import { levelKeysFor } from '../../src/engine/roleLevels';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { teamSummary } from '../../src/engine/teamSummary';
@@ -58,6 +60,25 @@ describe('doppio: un tipo scelto a mano si ignora', () => {
     const without = run(defaultChoice(full.slice(0, 4)));
     expect(withType.map(p => p.added.map(s => s.species))).toEqual(without.map(p => p.added.map(s => s.species)));
     for (const proposal of withType) expect(proposal.archetype).toBe('doubles');
+  });
+});
+
+describe('doppio: Completa team non ragiona con le trappole del singolo', () => {
+  it('in doppio "manca chi mette / toglie le trappole" non è un buco; le debolezze condivise sì', () => {
+    // Nessuno mette né toglie trappole
+    const bare = full.map(set => (set.species === 'Landorus-Therian' ? { ...set, moves: ['Earthquake', 'Rock Slide', 'U-turn', 'Protect'] } : set));
+    expect(coherenceGaps(bare, NATDEX_OU_RULES).map(g => g.kind)).toEqual(expect.arrayContaining(['hazards', 'removal']));
+    expect(coherenceGaps(bare, DOUBLES_RULES).map(g => g.kind).filter(kind => kind !== 'weakness')).toEqual([]);
+    // Tre deboli allo stesso tipo senza nessuno che lo resista: resta un buco anche in doppio
+    const rock = ['Charizard', 'Volcarona', 'Articuno', 'Moltres', 'Talonflame', 'Butterfree'].map(species => mk(species, '', '', ['Protect']));
+    expect(coherenceGaps(rock, DOUBLES_RULES).map(g => g.kind)).toContain('weakness');
+  });
+
+  it('nessuna proposta del doppio porta il buco delle trappole', () => {
+    const data = { ...fillData, formatId: 'natdexdoubles' as const };
+    const proposals = [...fillProposals(full.slice(0, 2), defaultChoice(full.slice(0, 2)), [], doubles, data)].filter((p): p is NonNullable<typeof p> => !!p);
+    expect(proposals.length).toBeGreaterThan(0);
+    for (const proposal of proposals) expect(proposal.gaps.map(g => g.kind).filter(kind => kind !== 'weakness')).toEqual([]);
   });
 });
 

@@ -107,6 +107,14 @@ describe('i Ruoli del doppio', () => {
     expect(roles(swap('Incineroar', ['Protect', 'Flare Blitz', 'Knock Off', 'Parting Shot']).slice(0, 5)).failures).toEqual([]);
   });
 
+  it('una specie sconosciuta in doppio: il tipo resta Doppio, i ruoli mancanti non costano, nessun errore', () => {
+    const typo = swap('Incineroar', ['Protect', 'Flare Blitz', 'Knock Off', 'Parting Shot']).map(set => (set.species === 'Cresselia' ? { ...set, species: 'Creselia' } : set));
+    const r = rating(typo);
+    expect(r.teamType).toBe('doubles');
+    expect(r.provisional).toBe(true);
+    expect(r.roles.failures).toEqual([]);
+  });
+
   it('un team OU non ha nessuna voce del doppio, e i suoi membri nessun sotto-ruolo del doppio', () => {
     const r = rateTeam(full, ouData)!;
     const keys = r.roles.rows.map(row => row.key);

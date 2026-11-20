@@ -249,6 +249,7 @@ export const en = {
   'rating.redundancy.conflict': "{kind} in conflict: {list}",
   'rating.redundancy.weakens': "{condition} from {setter} weakens {member}'s {type} moves",
   'rating.redundancy.sabotage': "{setter}'s {condition} halves {member}'s {type} moves",
+  'rating.redundancy.sabotageUsual': "{member} usually runs {type} moves, which {setter}'s {condition} halves",
   'rating.redundancy.trickRoomFast': "{setter}'s Trick Room slows {n} fast members ({list})",
   'rating.redundancy.trickRoomFastOne': "{setter}'s Trick Room slows 1 fast member ({list})",
   'rating.redundancy.defenseHole': "Nobody takes {type}",

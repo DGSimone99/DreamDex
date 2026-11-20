@@ -115,6 +115,25 @@ describe('doppio: la scheda e la guida dei Ruoli', () => {
     expect(row).toHaveAttribute('title', tr('rdetail.needTwo', { name: 'Amoonguss' }));
   });
 
+  it('in singolo "2° Attaccante" con un solo attaccante dice ancora "Nessuno" (la riga col membro solo è del doppio)', () => {
+    const bulkyEvs = { hp: 248, def: 252, spd: 8 };
+    const stall: TeamSet[] = [
+      mk('Chansey', 'Eviolite', 'Natural Cure', ['Seismic Toss', 'Soft-Boiled', 'Toxic', 'Stealth Rock'], 'Bold', bulkyEvs),
+      mk('Blissey', 'Leftovers', 'Natural Cure', ['Protect', 'Seismic Toss', 'Toxic', 'Wish'], 'Bold', bulkyEvs),
+      mk('Clodsire', 'Leftovers', 'Unaware', ['Amnesia', 'Poison Jab', 'Recover', 'Spikes'], 'Careful', bulkyEvs),
+      mk('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Defog', 'Iron Defense', 'Roost'], 'Impish', bulkyEvs),
+      mk('Toxapex', 'Rocky Helmet', 'Regenerator', ['Knock Off', 'Recover', 'Scald', 'Toxic Spikes'], 'Bold', bulkyEvs),
+      mk('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head']),
+    ];
+    const rating = rateTeam(stall, ouData, 'it', { archetype: 'stall' })!;
+    const second = rating.roles.rows.find(r => r.key === 'secondAttacker')!;
+    expect(second.by.filter(b => b.value >= 0.5).map(b => b.species)).toEqual(['Kingambit']);
+    const view = renderIt(<RolesGeneral rating={rating} ctx={{ team: stall, analysis: analyzeTeam(stall, ouData) }} />).container;
+    const row = [...view.querySelectorAll<HTMLElement>('.rl-row')].find(r => r.querySelector('.rl-name')?.textContent === '2° Attaccante')!;
+    expect(row.querySelector('.rl-by')).toHaveTextContent('Nessuno');
+    expect(row.getAttribute('title') ?? '').not.toContain('Ne servono due');
+  });
+
   it('in singolo la scheda non ha nessuna voce del doppio', () => {
     const view = general(full, ouData);
     for (const name of ['Protect (2 membri)', 'Mossa a più bersagli', 'Fake Out', 'Redirector', 'Priorità (2 membri)', 'Muro']) {

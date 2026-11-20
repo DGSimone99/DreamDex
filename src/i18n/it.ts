@@ -251,6 +251,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.redundancy.conflict': "{kind} in conflitto: {list}",
   'rating.redundancy.weakens': "{condition} di {setter} indebolisce le mosse {type} di {member}",
   'rating.redundancy.sabotage': "{condition} di {setter} dimezza le mosse {type} di {member}",
+  'rating.redundancy.sabotageUsual': "{member} di solito usa mosse {type}, che {condition} di {setter} dimezza",
   'rating.redundancy.trickRoomFast': "Trick Room di {setter} rallenta {n} membri veloci ({list})",
   'rating.redundancy.trickRoomFastOne': "Trick Room di {setter} rallenta 1 membro veloce ({list})",
   'rating.redundancy.defenseHole': "Nessuno regge {type}",
