@@ -1117,3 +1117,40 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .spread-presets button { min-height: 44px; }
   .set-editor label:has(> input.switch) { min-height: 44px; }
 }
+
+/* Telefono: il voto del team nella testata dell'editor (accanto allo shiny) e Fatto fermo in fondo, dove arriva il pollice */
+@media (max-width: 1099px) {
+  /* Testata un po' più alta col chip: il nome scende sotto di lui (la testata parte 12px sotto il bordo dello schermo) */
+  .set-editor .editor-title:has(.editor-grade) { padding-top: 66px; }
+  .set-editor .editor-title .editor-grade {
+    --grade: var(--accent);
+    /* Solo da leggere (non si tocca): alto 32, centrato sulla × */
+    position: absolute; top: 22px; left: var(--sp-6); z-index: 2;
+    display: inline-flex; align-items: center; gap: var(--sp-4); height: 32px; padding: 0 var(--sp-5);
+    border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--field) 70%, transparent);
+    font: 600 var(--fs-body)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap;
+  }
+  .set-editor .editor-title .editor-grade.grade-S { --grade: var(--accent-2-ink); }
+  .set-editor .editor-title .editor-grade.grade-A { --grade: var(--good); }
+  .set-editor .editor-title .editor-grade.grade-C { --grade: var(--warn); }
+  .set-editor .editor-title .editor-grade.grade-D { --grade: var(--bad); }
+  .set-editor .editor-title .editor-grade.illegal { --grade: var(--faint); }
+  .editor-grade > b:first-of-type { font: italic 800 var(--fs-title-l)/1 var(--display); color: var(--grade); }
+  .editor-grade > span:not(.visually-hidden) { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .editor-grade .icon { width: 12px; height: 12px; color: var(--muted); }
+  /* Da dove si parte in grigio, dove si arriva in verde (sale) o rosso (scende) */
+  .editor-grade :is(.up, .down) { color: var(--muted); }
+  .editor-grade .up > b { color: var(--good); }
+  .editor-grade .down > b { color: var(--bad); }
+  .drawer .editor-done-bar {
+    display: block; position: sticky; bottom: calc(-20px - var(--safe-b)); z-index: 7;
+    margin: var(--sp-6) calc(-1 * var(--sp-7)) calc(-20px - var(--safe-b));
+    padding: var(--sp-5) var(--sp-7) calc(var(--sp-5) + var(--safe-b));
+    background: var(--ground); box-shadow: 0 -1px 0 var(--line-soft);
+  }
+  .editor-done { display: flex; align-items: center; justify-content: center; gap: var(--sp-4); width: 100%; height: 48px;
+    border: 1px solid var(--accent); border-radius: var(--alt-r); background: var(--accent-soft); color: var(--text);
+    font: 700 var(--fs-body)/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+  .editor-done .icon { width: 16px; height: 16px; color: var(--accent-ink); }
+  .editor-done:active { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
+}
