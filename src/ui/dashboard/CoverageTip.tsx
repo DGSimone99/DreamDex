@@ -28,7 +28,7 @@ function Head({ type, value }: { type: string; value: number }) {
 /** La mossa: icona tonda e nome nel colore del suo tipo (alone leggero), poi categoria (fisico/speciale) e potenza. */
 export function MoveLine({ name, type }: { name: string; type?: string | null }) {
   // `type`: il tipo con cui colpisce davvero (Pixilate & co.), se diverso da quello scritto sulla mossa
-  return <MovePill name={name} type={type} size="sm" className="ftip-move" />;
+  return <MovePill name={name} type={type} size="sm" tip={false} className="ftip-move" />;
 }
 
 /** Offesa: i tre migliori colpi del team sul Pokémon di prova del tipo, a podio; il badge dei colpi a nastro sulla sprite. */

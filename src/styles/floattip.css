@@ -359,3 +359,37 @@
 .detail-why-more { font-style: normal; opacity: 0.75; }
 /* Nei riquadri dei ruoli la tessera del segno (spunta o ×) è alta quanto il riquadro, la scritta al centro */
 .bring-roles .dash-role-tag .icon { align-self: stretch; }
+
+/* ===== Mossa (MoveTip): le forme della scheda mossa di Pokémon Champions coi colori del sito. Testata DreamDex nel colore
+   del tipo (icona, nome, la priorità come lastra inclinata); sotto, caselle separate: l'etichetta su una fascia tinta
+   del tipo e il valore in uno slot scuro incassato (categoria, potenza, precisione); il bersaglio come etichetta in slot
+   + fascia lunga col valore; poi la descrizione in chiaro */
+.ftip.move { width: var(--tip-s); }
+.ftip.move .ftip-head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mtip-prio { flex: none; padding: 2px var(--sp-4) 1px; font: 700 var(--tip-small)/1.3 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+  color: var(--on-accent); background: var(--accent); transform: skewX(-12deg); }
+.mtip-prio.neg { color: var(--text); background: color-mix(in srgb, var(--bad) 46%, var(--panel)); }
+.mtip-stats { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: var(--sp-2); padding: var(--sp-4) var(--sp-4) 0; }
+.mtip-stats > span { display: grid; grid-template-rows: auto 1fr; gap: var(--sp-1); min-width: 0; }
+/* La fascia dell'etichetta: tinta del tipo, come le testate viola di Champions */
+.mtip-stats small, .mtip-target small { display: block; padding: 4px var(--sp-2) 3px; border-radius: 4px; text-align: center; white-space: nowrap;
+  font: 700 var(--tip-small)/1.1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 34%, var(--raised)), color-mix(in srgb, var(--tc) 22%, var(--raised))); }
+/* Il valore: slot scuro incassato */
+.mtip-stats b { display: flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 var(--sp-2); border-radius: 4px;
+  font: 700 italic var(--tip-num)/1 var(--display); font-variant-numeric: tabular-nums; background: var(--field); box-shadow: var(--slot-inset); }
+/* La categoria: simbolo nel suo colore e il nome, più piccolo dei numeri accanto */
+.mtip-cat { gap: var(--sp-2); }
+.mtip-stats b.mtip-cat { font: 600 var(--tip-body)/1 var(--display); }
+.mtip-cat .cat-icon { width: 16px; height: 12px; flex: none; }
+.mtip-cat.cat-physical .cat-icon { color: var(--move-physical); }
+.mtip-cat.cat-special .cat-icon { color: var(--move-special); }
+.mtip-cat.cat-status .cat-icon { color: var(--muted); }
+.mtip-target { display: grid; grid-template-columns: 1.25fr 2fr; gap: var(--sp-2); align-items: stretch; padding: var(--sp-2) var(--sp-4) 0; }
+.mtip-target small { display: flex; align-items: center; justify-content: center; color: var(--faint); background: var(--field); box-shadow: var(--slot-inset); }
+.mtip-target span { display: flex; align-items: center; justify-content: center; min-height: 28px; padding: 0 var(--sp-4); border-radius: 4px; text-align: center;
+  font: 600 var(--tip-body)/1.2 var(--display);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 34%, var(--raised)), color-mix(in srgb, var(--tc) 22%, var(--raised))); }
+.mtip-desc { margin: 0; padding: var(--sp-4) var(--sp-5) var(--sp-5); color: var(--text); text-wrap: pretty; }
+/* Senza descrizione: un po' d'aria sotto il bersaglio */
+.mtip-target:last-child { padding-bottom: var(--sp-4); }

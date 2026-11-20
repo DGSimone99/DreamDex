@@ -77,7 +77,7 @@ function Via({ via }: { via: string }) {
   const move = getMove(via);
   if (!move) return <span className="ctip-ab">{anyGameName(via, lang)}</span>;
   return (
-<MovePill name={move.name} size="sm" className="ctip-mv" />
+<MovePill name={move.name} size="sm" tip={false} className="ctip-mv" />
   );
 }
 

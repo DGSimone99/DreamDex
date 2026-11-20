@@ -10,11 +10,12 @@ import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
+import { MoveTipBody } from './MoveTip';
 import { describe } from './describe';
 import { SpeedMeta } from './SpeedLine';
 import type { SpeedTier } from '../engine/speed';
 import { EV_TOTAL, evTotal, ivOf, statLines } from '../engine/statCalc';
-import { TypeChip } from './Sprite';
+import { TypeChip, typeColor } from './Sprite';
 import { NatureArrow } from './NatureArrow';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
@@ -100,7 +101,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
   const category = t(`editor.category.${move.category}`);
   return (
     <span className="move-meta">
-      <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
+      <span className={`move-stat cat-${move.category.toLowerCase()}`} title={inField ? undefined : category}>
         {/* Nel campo il simbolo sta nella coda della pillola: qui resta solo per i lettori di schermo */}
         {!inField && <CategoryIcon category={move.category} />}
         {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
@@ -112,7 +113,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
       </span>
       {/* Mosse che non mancano mai: niente precisione invece di "—" */}
       {accuracy !== null && (
-        <span className="move-stat accuracy" title={t('editor.accuracy')}>
+        <span className="move-stat accuracy" title={inField ? undefined : t('editor.accuracy')}>
           <Icon name="target" />
           <span className="visually-hidden">{t('editor.accuracyShort')} </span>
           {`${accuracy}%`}
@@ -150,6 +151,11 @@ function moveOption(name: string, lang: Lang): ComboOption {
   return option;
 }
 const ALL_MOVES = moveNames();
+/** Il tooltip di una voce del menu delle mosse (di lato alla voce attiva). */
+const moveTipOf = (option: ComboOption) => {
+  const move = getMove(option.value);
+  return move ? { tone: typeColor(move.type), content: <MoveTipBody name={move.name} />, className: 'move' } : null;
+};
 const ITEMS = itemNames();
 const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstandard).map(a => a.name).sort();
 const abilityOption = (name: string, lang: Lang): ComboOption =>
@@ -562,7 +568,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* Le mosse nello stesso riquadro Set (un gruppo col suo nome per i lettori di schermo) */}
         <div className="editor-group moves" role="group" aria-label={t('editor.moves')}>
         {moves.map((move, i) => (
-          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}`} data-tip={describe.move(move, lang)}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}`} data-move-tip={move || undefined}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
               <MoveDetail name={move} inField />
@@ -571,12 +577,13 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               className="move-combo"
               descriptionFooter
               leading={<MoveTile name={move} />}
-              trailing={<MoveTail name={move} />}
+              trailing={<MoveTail name={move} titled={false} />}
               label={t('editor.move', { n: i + 1 })}
               value={move}
               options={moveOptionsFor[i]}
               commonLabel={commonLabel(common?.moves)}
               description={describe.move(move, lang)}
+              optionTip={moveTipOf}
               onChange={value => {
                 const next = [...moves];
                 next[i] = value;
