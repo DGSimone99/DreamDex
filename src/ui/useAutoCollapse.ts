@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 
 /**
- * Telefono: il team si riduce da solo appena la striscia ridotta non coprirebbe più la pagina (della fascia resta in vista
- * solo il fondo delle ultime carte) e resta fermo in alto, sotto la barra;
- * torna grande risalendo fino in cima (o tirando giù col dito quando si è già in cima, per le pagine corte).
+ * Telefono: il team si riduce da solo appena della fascia grande resta in vista poco più della striscia ridotta (il
+ * fondo delle ultime carte) e resta fermo in alto, sotto la barra; torna grande risalendo fino in cima (o tirando giù
+ * col dito quando si è già in cima, per le pagine corte).
  * In tutti e due i versi la pagina viene spostata di quanto il team cambia: il contenuto non salta mai. Tornando grande
  * si vede prima solo la sua parte bassa, e salendo ancora lo si scopre tutto, come se fosse sempre stato lì.
+ * Ridisegnare la pagina costa (tutta l'app): il cambio si prepara a pezzetti senza fermare lo scorrimento.
  * `collapseToTop` lo riduce e riporta la pagina all'inizio (la barra in basso).
  */
 export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement | null>) {
@@ -15,36 +16,45 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
   collapsedRef.current = collapsed;
   // Gli scorrimenti fatti dal codice (la compensazione, il ritorno in cima) non contano come gesti
   const ignoreUntil = useRef(0);
+  // Un cambio di misura chiesto e non ancora disegnato: l'altezza di prima, per spostare la pagina appena è pronto
+  const pending = useRef<number | null>(null);
+  // L'altezza della striscia ridotta (misurata a ogni riduzione)
+  const stripH = useRef(74);
+  // Appena tornato grande non si riduce finché non si scende ancora un po' (niente riduci-riapri sul confine)
+  const armY = useRef(-Infinity);
+
+  // Il cambio è disegnato: la pagina si sposta di quanto il team è cambiato, il contenuto resta dov'era
+  useLayoutEffect(() => {
+    const band = bandRef.current;
+    if (!band || pending.current === null) return;
+    const shift = band.offsetHeight - pending.current;
+    pending.current = null;
+    if (collapsed) stripH.current = band.offsetHeight;
+    if (shift !== 0) { ignoreUntil.current = performance.now() + 120; window.scrollBy(0, shift); }
+    if (!collapsed) armY.current = window.scrollY + 48;
+  }, [collapsed, bandRef]);
 
   useEffect(() => {
-    if (!enabled) { setCollapsed(false); return; }
+    if (!enabled) { pending.current = null; setCollapsed(false); return; }
     const html = document.documentElement;
     const topH = () => parseFloat(getComputedStyle(html).getPropertyValue('--top-h')) || 0;
     // Con un pannello a tutto schermo aperto la pagina sotto non conta
     const blocked = () => html.classList.contains('modal-open');
+    // Si riduce un po' prima che la fascia grande esca: quando ne resta in vista poco più della striscia ridotta
+    const EARLY = 32;
     let lastY = window.scrollY;
-    // L'altezza della striscia ridotta (misurata alla prima riduzione) e un margine perché non si riduca e si riapra
-    // a ogni piccolo movimento del dito proprio sul confine
-    let stripH = 74;
-    const SLACK = 16;
-    /** Cambia misura al team e sposta la pagina di quanto è cambiato (al netto di ciò che il browser ha già compensato). */
     const resize = (next: boolean) => {
       const band = bandRef.current;
-      if (!band) { setCollapsed(next); return; }
-      const y = window.scrollY;
-      const before = band.offsetHeight;
-      flushSync(() => setCollapsed(next));
-      if (next) stripH = band.offsetHeight;
-      const shift = band.offsetHeight - before - (window.scrollY - y);
-      if (shift !== 0) { ignoreUntil.current = performance.now() + 120; window.scrollBy(0, shift); }
+      if (!band || pending.current !== null) return;
+      pending.current = band.offsetHeight;
+      startTransition(() => setCollapsed(next));
     };
     const onScroll = () => {
       const y = window.scrollY;
       const band = bandRef.current;
-      if (!band || blocked() || performance.now() < ignoreUntil.current) { lastY = y; return; }
+      if (!band || blocked() || pending.current !== null || performance.now() < ignoreUntil.current) { lastY = y; return; }
       if (!collapsedRef.current) {
-        // Del team resta in vista meno della striscia ridotta: si riduce, e la pagina si sposta di quanto si è accorciato
-        if (y > lastY && band.getBoundingClientRect().bottom <= topH() + stripH - SLACK) resize(true);
+        if (y > lastY && y > armY.current && band.getBoundingClientRect().bottom <= topH() + stripH.current + EARLY) resize(true);
       } else if (y <= 2 && lastY > 2) {
         // Arrivati in cima risalendo: torna grande sopra la pagina, che scende di altrettanto (si vede la sua parte bassa)
         resize(false);
@@ -76,6 +86,7 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
   const collapseToTop = useCallback(() => {
     if (!enabled) return;
     ignoreUntil.current = performance.now() + 400;
+    pending.current = null;
     flushSync(() => setCollapsed(true));
     window.scrollTo({ top: 0 });
   }, [enabled]);

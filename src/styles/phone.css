@@ -1085,4 +1085,11 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band.auto.collapsed:has(details[open], .slot.open, .fill-panel) { z-index: 50; }
 }
 @keyframes band-drop { from { transform: translateY(-100%); } }
-@media (prefers-reduced-motion: reduce) { .band.auto.collapsed { animation: none; } }
+/* Tornando grande il team compare con una dissolvenza (la pagina non si muove, cambia solo lui); niente ancoraggio
+   automatico dello scorrimento: la pagina la sposta useAutoCollapse, di quanto il team è cambiato */
+@media (max-width: 599px) {
+  html { overflow-anchor: none; }
+  .band.auto:not(.collapsed) > :is(.team, .grade-badge) { animation: band-show 0.24s ease-out; }
+}
+@keyframes band-show { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .band.auto.collapsed, .band.auto:not(.collapsed) > :is(.team, .grade-badge) { animation: none; } }
