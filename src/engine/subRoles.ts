@@ -1,5 +1,5 @@
 import { battleAbility, battleSpecies, getMove, getSpecies, hasPriorityAttack, isDefined, STAT_ABILITIES, toID } from './dex';
-import { rulesOf, type FormatRules } from './formatRules';
+import { isOneType, rulesOf, type FormatRules } from './formatRules';
 import { mostCommonSet, type TeamSet } from './sets';
 import { statLines } from './statCalc';
 import { attackStyle, SPEED_ABILITIES } from './roles';
@@ -8,7 +8,7 @@ import { usesMeta } from './analysis';
 import { orbStatus, setKey } from './damage';
 import { withUsableMoves } from './lockedMoves';
 import { rolesMemberOffense } from './offense';
-import { memberSpeed } from './speedArea';
+import { memberSpeed, priorityMoves } from './speedArea';
 import { outspeedShare, poolSpecies, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
 import { teamField } from './types';
 import { memoBySet } from './memo';
@@ -19,7 +19,8 @@ export type Family = 'attack' | 'defense' | 'support' | 'utility';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
   | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support' | 'speedControl'
   | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval'
-  | 'physicalAttacker' | 'specialAttacker';
+  | 'physicalAttacker' | 'specialAttacker'
+  | 'protect' | 'fakeOut' | 'spread' | 'redirector' | 'firstStrike';
 
 /** Le sotto-ruoli di ogni famiglia, nell'ordine della tabella della specifica. */
 export const FAMILIES: Record<Family, SubRole[]> = {
@@ -36,6 +37,36 @@ export const FAMILIES: Record<Family, SubRole[]> = {
  * niente carte, filtri o famiglia principale; come secondario segue gli attaccanti (secondaryRoles).
  */
 export const ATTACKER_ROLES: SubRole[] = ['physicalAttacker', 'specialAttacker'];
+
+/**
+ * I sotto-ruoli del doppio (2026-11-21): valgono 1 se il membro ha la mossa, e si calcolano solo nei formati col tipo
+ * unico (isOneType). Scelti sulle partite vere di National Dex Doubles: Protect (o simili), Fake Out, un attacco che
+ * colpisce più bersagli, la deviazione (solo Follow Me e Rage Powder) e chi colpisce per primo (Fake Out o un attacco
+ * con priorità). Fuori dalle famiglie, come ATTACKER_ROLES: niente carte, filtri o famiglia principale.
+ */
+export const DOUBLES_ROLES: SubRole[] = ['protect', 'fakeOut', 'spread', 'redirector', 'firstStrike'];
+const PROTECT = new Set(['protect', 'detect', 'spikyshield', 'kingsshield', 'banefulbunker', 'silktrap', 'burningbulwark', 'obstruct']);
+const REDIRECT = new Set(['followme', 'ragepowder']);
+/** Bersagli di una mossa che in doppio colpisce i due avversari o tutti i vicini. */
+export const SPREAD_TARGETS = new Set(['allAdjacentFoes', 'allAdjacent']);
+/** La mossa è un attacco che in doppio colpisce più bersagli (Earthquake, Heat Wave). */
+export const isSpreadMove = (move: { category: string; target: string } | undefined | null): boolean =>
+  !!move && move.category !== 'Status' && SPREAD_TARGETS.has(move.target);
+
+/** La mossa del set che dà il sotto-ruolo del doppio (la prima), o null. `priority`: gli attacchi con priorità del membro nel suo team. */
+function doublesSource(set: TeamSet, role: SubRole, priority: string[]): string | null {
+  const moves = set.moves.map(getMove).filter(isDefined);
+  const has = (list: Set<string>) => moves.find(m => list.has(m.id))?.name ?? null;
+  if (role === 'protect') return has(PROTECT);
+  if (role === 'fakeOut') return has(new Set(['fakeout']));
+  if (role === 'redirector') return has(REDIRECT);
+  if (role === 'spread') return moves.find(isSpreadMove)?.name ?? null;
+  if (role === 'firstStrike') return has(new Set(['fakeout'])) ?? priority[0] ?? null;
+  return null;
+}
+
+/** Il membro ha Fake Out o una mossa di deviazione (Follow Me, Rage Powder): in doppio un supporto così non è un membro debole. */
+export const hasDoublesRole = (set: TeamSet, role: 'fakeOut' | 'redirector'): boolean => doublesSource(set, role, []) !== null;
 
 /** Sotto-ruoli misurati: famiglia Attacco, muri e Recupero. */
 export const MEASURED: SubRole[] = [...FAMILIES.attack, 'physicalWall', 'specialWall', 'recovery'];
@@ -211,6 +242,12 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   if (ids.includes('knockoff')) put('itemRemoval', 1);
   if (ids.includes('trick') || ids.includes('switcheroo')) put('itemRemoval', item.startsWith('choice') ? 1 : 0.5);
 
+  // Doppio: i sotto-ruoli da mossa (qui la priorità è quella del solo set; nel team la decide measureWith)
+  if (isOneType(rules)) {
+    const priority = moves.filter(m => m.category !== 'Status' && m.priority > 0 && m.id !== 'upperhand').map(m => m.name);
+    for (const role of DOUBLES_ROLES) if (doublesSource(set, role, priority)) put(role, 1);
+  }
+
   return v;
 }
 
@@ -377,6 +414,11 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   for (const role of keep) if (base[role]) put(role, base[role]!, setSource(role, ids, ability, toID(set.item)));
   // I muri con l'indice reale e la soglia, per il motivo nella scheda
   const rules = rulesOf(data);
+  // Doppio: i sotto-ruoli da mossa, con la priorità come la conta la Velocità (Grassy Glide col campo erboso del team)
+  if (isOneType(rules)) {
+    const priority = priorityMoves(set, team);
+    for (const role of DOUBLES_ROLES) { const source = doublesSource(set, role, priority); if (source) put(role, 1, source); }
+  }
   const wall = wallIndex(set);
   if (base.physicalWall) put('physicalWall', base.physicalWall, 'wall');
   if (base.specialWall) put('specialWall', base.specialWall, 'wall');

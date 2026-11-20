@@ -5,7 +5,7 @@ import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
 import { creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
-import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, type Level, type LevelKey } from './roleLevels';
+import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, SECOND_KEYS, type Level, type LevelKey } from './roleLevels';
 import { t, type Lang } from '../i18n';
 
 /**
@@ -60,14 +60,14 @@ export const keyValue = (v: SubRoleValues, key: LevelKey): number => Math.max(0,
 /** Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni. */
 export const ownersOf = (team: TeamSet[], needs: Pick<TeamNeeds, 'credited' | 'members'>, need: Need): string[] => {
   const owners = team.filter((_, i) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
-  // Il secondo attaccante c'è solo con almeno due attaccanti
-  return need === 'secondAttacker' && owners.length < 2 ? [] : owners;
+  // Il secondo attaccante (e in doppio i due con Protect o con la priorità) c'è solo con almeno due membri
+  return SECOND_KEYS.has(need) && owners.length < 2 ? [] : owners;
 };
 
-/** Valore di team di una voce: il migliore dei membri; per il secondo attaccante il secondo migliore. */
+/** Valore di team di una voce: il migliore dei membri; per le voci da due membri (SECOND_KEYS) il secondo migliore. */
 const teamValue = (credited: SubRoleValues[], key: LevelKey): number => {
   const all = credited.map(m => keyValue(m, key)).sort((a, b) => b - a);
-  return Math.max(0, (key === 'secondAttacker' ? all[1] : all[0]) ?? 0);
+  return Math.max(0, (SECOND_KEYS.has(key) ? all[1] : all[0]) ?? 0);
 };
 
 /** `forced`: livelli e credito dei ruoli secondo quel tipo di team invece di quello riconosciuto. */

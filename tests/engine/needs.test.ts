@@ -194,7 +194,10 @@ describe('tabella dei livelli per archetipo', () => {
   it("le voci: i gruppi degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
     const { attack, defense, support, utility } = FAMILIES;
     // I gruppi degli attaccanti (Sweeper, Wallbreaker, fisico, speciale, Attaccante, 2° Attaccante) stanno davanti all'Attacco
-    expect(LEVEL_KEYS).toEqual(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
+    // Le voci del doppio (doublesRoles.test.ts) stanno in mezzo, nell'ordine in cui il doppio le mostra
+    const doubles = ['secondProtect', 'anyWall', 'spread', 'fakeOut', 'redirector', 'secondFirstStrike'];
+    expect(LEVEL_KEYS.filter(key => doubles.includes(key))).toEqual(doubles);
+    expect(LEVEL_KEYS.filter(key => !doubles.includes(key))).toEqual(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
   });
 
   it('HO tutto fisico: mancano "almeno uno speciale" (essenziale) e il malus "un solo stile" non si somma', () => {
