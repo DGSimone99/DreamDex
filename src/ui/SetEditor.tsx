@@ -221,6 +221,8 @@ interface Props {
   proposedSlot?: number;
   /** Strumento, abilità e mosse fuori regola: segnati sul loro campo, non solo sulla carta. */
   flags?: FieldFlags;
+  /** Telefono: apre l'editor su questa scheda (la Sfida, arrivando da "lascialo a"); `key` cambia a ogni richiesta. */
+  startTab?: { tab: 'set' | 'stats' | 'duel'; key: number } | null;
   onChange: (set: TeamSet) => void;
   /** Set cambiato per intero (preset, I miei set, spread più usati): chi lo riceve offre Annulla; se manca, va a `onChange`. */
   onSetChange?: (set: TeamSet) => void;
@@ -232,7 +234,7 @@ export type FieldFlag = { label: string; text: string; /** Sulle mosse: la mossa
 /** I campi fuori regola del membro: strumento, abilità e le quattro mosse (per posizione). */
 export type FieldFlags = { item?: FieldFlag; ability?: FieldFlag; moves?: (FieldFlag | undefined)[] };
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, onChange, onSetChange = onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, startTab, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -359,6 +361,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   // Telefono: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
   const phone = useMediaQuery('(max-width: 599px)');
   const [phoneTab, setPhoneTab] = useState<'set' | 'stats' | 'duel'>('set');
+  useEffect(() => { if (startTab) setPhoneTab(startTab.tab); }, [startTab?.key]); // eslint-disable-line react-hooks/exhaustive-deps
   const tabsId = useId();
   const phoneTabs: { id: 'set' | 'stats' | 'duel'; label: string }[] = [
     { id: 'set', label: t('editor.set') }, { id: 'stats', label: t('editor.stats') }, ...(duel ? [{ id: 'duel' as const, label: t('editor.duel') }] : []),

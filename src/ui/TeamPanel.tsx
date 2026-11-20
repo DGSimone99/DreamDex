@@ -20,6 +20,7 @@ import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
 import { SetEditor, type FieldFlag, type FieldFlags } from './SetEditor';
+import { handOffOpponent } from './duelHandoff';
 import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
@@ -185,6 +186,8 @@ interface SlotActions {
   setChange: (index: number, set: TeamSet) => void;
   /** Consiglio della Sfida applicato: con Annulla. */
   tip: (index: number, set: TeamSet, change: string) => void;
+  /** La Sfida passa la mano: apre il membro `index` con lo stesso avversario. */
+  openWith: (index: number, opponent: string) => void;
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
@@ -222,8 +225,10 @@ function EditorGrade({ grade }: { grade: EditorGradeShown }) {
   );
 }
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null }: {
+const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null, startTab = null }: {
   index: number;
+  /** Telefono: la scheda dell'editor da aprire (la Sfida, arrivando da "lascialo a" di un compagno). */
+  startTab?: { tab: 'duel'; key: number } | null;
   /** Il voto del team, solo per la carta aperta: il chip del telefono nella testata dell'editor. */
   grade?: EditorGradeShown | null;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
@@ -602,7 +607,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
       <div className="drawer" id={drawerId} inert={!open}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} /> : undefined}
+        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} onOpenMember={actions.openWith} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
@@ -654,6 +659,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         }
         proposedSlot={open && proposal ? proposal.slot : undefined}
         flags={open ? fieldFlags : undefined}
+        startTab={startTab}
         notice={open && proposal && (
           <div className="move-proposal" role="note">
             <Icon name="spark" />
@@ -743,6 +749,8 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
   // Il voto di quando si è aperto un membro (il primo voto che arriva, se in quel momento non c'era): il chip
   // dell'editor sul telefono dice di quanto è cambiato. Resta anche se il voto sparisce un attimo (EV oltre 510)
   const [gradeFrom, setGradeFrom] = useState<number | null>(null);
+  // "Lascialo a" della Sfida: il compagno si apre già sulla scheda Sfida (telefono)
+  const [startTab, setStartTab] = useState<{ index: number; tab: 'duel'; key: number } | null>(null);
   useEffect(() => { setGradeFrom(openIndex === null ? null : grade?.overall ?? null); }, [openIndex]);
   useEffect(() => { if (openIndex !== null && gradeFrom === null && grade) setGradeFrom(grade.overall); }, [openIndex, gradeFrom, grade]);
   const editorGrade = grade ? { ...grade, from: gradeFrom ?? grade.overall } : null;
@@ -923,6 +931,14 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
       else if (onSetChange) onSetChange(i, next);
       else onChange(team.map((s, j) => (j === i ? next : s)));
     },
+    openWith: (i, opponent) => {
+      const member = team[i];
+      if (!member) return;
+      handOffOpponent(member.species, opponent);
+      setStartTab({ index: i, tab: 'duel', key: Date.now() });
+      animated(() => setOpenIndex(i));
+      focusCard(i);
+    },
     remove: i => {
       setOpenIndex(null);
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
@@ -947,6 +963,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
     change: (i, next) => live.current.change(i, next),
     setChange: (i, next) => live.current.setChange(i, next),
     tip: (i, next, change) => live.current.tip(i, next, change),
+    openWith: (i, opponent) => live.current.openWith(i, opponent),
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
@@ -1074,6 +1091,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
             repeated={repeated.includes(i)}
             open={openIndex === i}
             grade={openIndex === i ? editorGrade : null}
+            startTab={startTab?.index === i ? startTab : null}
             actions={actions}
             collapsed={collapsed}
           />

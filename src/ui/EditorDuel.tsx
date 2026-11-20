@@ -28,6 +28,7 @@ import { MovePill } from './MovePill';
 import { StatIcon } from './StatIcon';
 import { Sprite, typeColor } from './Sprite';
 import { typeIconUrl } from './typeIcons';
+import { takeOpponent } from './duelHandoff';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
 interface OppSet { key: string; label: string; set: TeamSet; usage?: boolean }
@@ -83,17 +84,23 @@ function movePool(set: TeamSet, format: Format, data: EngineData): string[] {
  * suo tipo; a destra tre righe col risultato grande: il tuo colpo migliore, il suo che ti fa più male (barra dei PS che
  * restano a chi lo prende) e la Velocità, ognuna coi suoi consigli (mossa migliore, EV). Si aggiorna mentre si cambia il set.
  */
-export function EditorDuel({ set, team, data, format, onApply }: {
+export function EditorDuel({ set, team, data, format, onApply, onOpenMember }: {
   set: TeamSet; team: TeamSet[]; data: EngineData; format: Format;
   /** Applica di un consiglio: il set nuovo e il cambio in parole (per l'avviso Annulla). */
   onApply?: (next: TeamSet, change: string) => void;
+  /** "Lascialo a …": apre quel membro del team (posizione) con lo stesso avversario. */
+  onOpenMember?: (index: number, opponent: string) => void;
 }) {
   const t = useT();
   const lang = useLang();
   const me = useDeferredValue(set);
   // L'avversario scelto, per il membro aperto: all'inizio la sfida peggiore, poi resta quello (anche se cambi il set)
   // finché non ne scegli un altro
-  const [choice, setChoice] = useState<{ owner: string; name: string } | null>(null);
+  // (o quello lasciato da un compagno con "Lascialo a …")
+  const [choice, setChoice] = useState<{ owner: string; name: string } | null>(() => {
+    const handed = takeOpponent(set.species);
+    return handed ? { owner: set.species, name: handed } : null;
+  });
   const picked = choice && choice.owner === set.species ? choice.name : null;
   const setPicked = (name: string | null) => setChoice(name ? { owner: set.species, name } : null);
   const [setKey, setSetKey] = useState<string | null>(null);
@@ -198,6 +205,18 @@ export function EditorDuel({ set, team, data, format, onApply }: {
     speed: speedBuffs(me, opp, squad),
   } : null), [me, opp, squad, result]);
   const speed = useMemo(() => (opp ? duelSpeed(me, opp) : null), [me, opp]);
+  // Se nessun ritocco basta: il compagno del team che vince questo scontro (il più netto), o nessuno (index null)
+  const mate = useMemo<{ index: number | null } | null>(() => {
+    if (!opp || verdict === 'good') return null;
+    let index: number | null = null;
+    let score = -Infinity;
+    team.forEach((member, i) => {
+      if (member.species === set.species) return;
+      const m = matchup(member, opp);
+      if (m.verdict === 'good' && m.score > score) { index = i; score = m.score; }
+    });
+    return { index };
+  }, [team, set.species, opp, verdict]);
   const itemOptions = useMemo<ComboOption[]>(() => itemNames().map(name => ({
     value: name, label: gameName('item', name, lang), alias: name, icon: <ItemIcon item={name} />,
   })), [lang]);
@@ -283,13 +302,46 @@ export function EditorDuel({ set, team, data, format, onApply }: {
   };
 
   /**
+   * Cosa dire quando una riga non ha consigli, al posto di "nessuno": va già bene (KO in un colpo, non ti manda KO, sfida
+   * vinta) oppure nessun ritocco basta. In quel caso la riga del suo colpo (o la tua, se la sua va bene) passa la mano al
+   * compagno che vince lo scontro, con un clic che lo apre con lo stesso avversario; l'altra dice solo che non basta.
+   */
+  const needsHelp = (kind: 'mine' | 'theirs') => {
+    if (!result || verdict === 'good') return false;
+    if (kind === 'mine') return !result.mine || result.mine.hitsSure > 1;
+    return !!result.theirs && Number.isFinite(result.theirs.hitsMaybe);
+  };
+  const noTips = (kind: 'mine' | 'theirs'): ReactNode => {
+    if (!result) return null;
+    if (kind === 'mine' && result.mine?.hitsSure === 1) return <span className="duel-tips-none good">{t('duel.tipsKo')}</span>;
+    if (kind === 'theirs' && (!result.theirs || !Number.isFinite(result.theirs.hitsMaybe))) return <span className="duel-tips-none good">{t('duel.tipsSafe')}</span>;
+    if (!needsHelp(kind)) return <span className="duel-tips-none">{t('duel.tipsFine')}</span>;
+    const handsOff = kind === 'theirs' || !needsHelp('theirs');
+    if (!handsOff || !mate || !species) return <span className="duel-tips-none stuck">{t('duel.tipsStuck')}</span>;
+    if (mate.index === null) return <span className="duel-tips-none stuck">{t('duel.tipsNobody')}</span>;
+    const at = mate.index;
+    const member = team[at];
+    const name = member.name || member.species;
+    return (
+      <>
+        <span className="duel-tips-none">{t('duel.tipsMate')}</span>
+        <button type="button" className="duel-mate" aria-label={t('duel.tipsMateOpen', { name, opponent: species })}
+          onClick={() => onOpenMember?.(at, species)}>
+          <Icon name="swap" /><PokemonIcon name={member.species} /><span>{name}</span>
+        </button>
+      </>
+    );
+  };
+
+  /**
    * Una riga della scheda: il titolo col simbolo (spada, scudo, Velocità); sotto la mossa nella sua pillola (o le due
    * velocità) con gli interruttori dei potenziamenti; poi la barra dei PS che restano (col timbro KO sopra se va KO in un
    * colpo), il danno e di fianco i colpi; a destra, ferma, la Velocità; in fondo i consigli.
    */
   const line = (className: string, title: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode, chip?: ReactNode) => (
     <div className={`duel-row ${className}`}>
-      <span className="duel-title">{title}</span>
+      {/* Quando la Sfida ha poca altezza resta solo il simbolo: il titolo nel tooltip */}
+      <span className="duel-title tip" data-tip={t(className === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}>{title}</span>
       {chip}
       <span className="duel-label">{label}</span>
       {/* I colpi di fianco alla barra, poco dopo la percentuale */}
@@ -300,7 +352,7 @@ export function EditorDuel({ set, team, data, format, onApply }: {
   const hitLine = (kind: 'mine' | 'theirs', base: DuelHit | null) => {
     const title = <><Icon name={kind === 'mine' ? 'sword' : 'shield'} /><span className="duel-title-text">{t(kind === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}</span></>;
     // Due righe di consigli indipendenti: sotto il tuo colpo attacco, mossa e Velocità; sotto il suo la difesa
-    const tips = opp ? <DuelTips side={kind} me={me} opp={opp} quick={quick} result={full} onApply={onApply} /> : null;
+    const tips = opp ? <DuelTips side={kind} me={me} opp={opp} quick={quick} result={full} onApply={onApply} empty={noTips(kind)} /> : null;
     const chip = speedChip(kind);
     const list = kind === 'mine' ? buffs?.attack : buffs?.defense;
     const effect = effectOf(list);
