@@ -36,7 +36,8 @@ describe('gradeFor', () => {
 
 describe('pesi delle aree', () => {
   it('una tabella per tipo di team, ogni riga somma 100: ognuno si giudica su quello con cui vince', () => {
-    for (const row of Object.values(ARCHETYPE_WEIGHTS)) expect(Object.values(row).reduce((a, b) => a + b, 0)).toBe(100);
+    // Il doppio ha la sua riga a terzi (doublesType.test.ts)
+    for (const row of Object.entries(ARCHETYPE_WEIGHTS).filter(([type]) => type !== 'doubles').map(([, row]) => row)) expect(Object.values(row).reduce((a, b) => a + b, 0)).toBe(100);
     const { hyperOffense: ho, balance, stall } = ARCHETYPE_WEIGHTS;
     // L'hyper offense vince con Offesa e Velocità, lo stall con la Difesa; il balance sta nel mezzo
     expect(ho.strength).toBeGreaterThan(stall.strength);

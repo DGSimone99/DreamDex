@@ -516,7 +516,7 @@ export function primaryFamily(set: TeamSet, values: SubRoleValues): PrimaryFamil
 }
 
 /** Quanto conta un sotto-ruolo secondario nel valore di team, per archetipo (approvato dall'utente). */
-export const SECONDARY_CREDIT: Record<Archetype, number> = { hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0 };
+export const SECONDARY_CREDIT: Record<Archetype, number> = { hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0, doubles: 1 };
 
 /** Ruoli secondari del membro: i sotto-ruoli d'Attacco (con gli attaccanti di un lato) o dei muri della famiglia non principale. */
 export const secondaryRoles = (primary: PrimaryFamily | null): SubRole[] =>

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
+import type { FormatRules } from '../engine/formatRules';
 import { ARCHETYPE_WEIGHTS, GRADES, type AreaWeightTable } from '../engine/rating';
 import { isGroupKey, LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../engine/roleLevels';
 import type { MessageKey } from '../i18n';
@@ -27,7 +28,7 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  */
 /** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
 /** `incomplete`: meno di sei membri, il tipo non è ancora deciso ("in analisi"): nessuna scheda è segnata come il tuo team. */
-export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom?: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom?: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: FormatRules['typeRule'] }) {
   const t = useT();
   // Col team incompleto il tipo è ancora "in analisi": nessuna scheda è "il tuo team"
   const teamType: Archetype | null = incomplete ? null : judgedAs;
@@ -162,9 +163,9 @@ const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
  * il voto usa i pesi veri; un'area che non conta (peso 0) resta vuota.
  */
 const LADDER: Record<(typeof WEIGHT_AREAS)[number], Record<Archetype, number>> = {
-  defense: { hyperOffense: 1, bulkyOffense: 2, balance: 3, semiStall: 4, stall: 5 },
-  strength: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1 },
-  speed: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1 },
+  defense: { hyperOffense: 1, bulkyOffense: 2, balance: 3, semiStall: 4, stall: 5, doubles: 3 },
+  strength: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1, doubles: 3 },
+  speed: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1, doubles: 3 },
 };
 const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number =>
   weights[arch][area] <= 0 ? 0 : LADDER[area][arch] / 6;
@@ -181,7 +182,7 @@ function WeightBar({ weight, step }: { weight: number; step: number }) {
 }
 
 /** Un tipo di team: come vince, i pesi delle aree e le voci dei Ruoli per livello, letti dalle tabelle del motore. */
-function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: AreaWeightTable; typeRule?: FormatRules['typeRule'] }) {
   const t = useT();
   return (
     <>

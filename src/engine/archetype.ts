@@ -3,13 +3,15 @@ import { orbStatus } from './damage';
 import { memberPower } from './power';
 import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from './roles';
 import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesList, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
-import type { FormatRules } from './formatRules';
+import { isOneType, type FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
 import { isTank, TANK_BRAKE } from './tank';
 
-/** Archetipi di Smogon, dal più offensivo al più difensivo. */
-export type Archetype = 'hyperOffense' | 'bulkyOffense' | 'balance' | 'semiStall' | 'stall';
+/** Archetipi di Smogon, dal più offensivo al più difensivo; 'doubles' è il tipo unico del doppio (formatRules.ts, 'oneType'). */
+export type Archetype = 'hyperOffense' | 'bulkyOffense' | 'balance' | 'semiStall' | 'stall' | 'doubles';
+/** I cinque tipi del singolo: quelli che l'interfaccia elenca e fa scegliere. */
+export type SinglesArchetype = Exclude<Archetype, 'doubles'>;
 /** Stili: meteo e Trick Room (Webs, Volt-turn e Screens tolti: non dicevano niente di più dei ruoli). */
 export type TeamStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom';
 
@@ -155,6 +157,7 @@ export function typeMix(team: TeamSet[], rules: FormatRules): TypeMix | null {
 
 /** Archetipo dal numero di muri passivi (e dal recupero e dalla robustezza per distinguere i team offensivi). */
 function archetypeOf(team: TeamSet[], rules: FormatRules): Archetype {
+  if (isOneType(rules)) return 'doubles';
   if (rules.typeRule === 'recoverySpeed') return recoverySpeedArchetype(team, rules);
   if (isStall(team, rules)) return 'stall';
   const passive = team.filter(set => isPassive(set, rules)).length;
@@ -211,7 +214,7 @@ export function fitsArchetype(set: TeamSet, archetype: FitArchetype, rules: Form
 
 /** Il Pokémon aiuta a costruire un team del tipo dato: semi-stall vuole muri passivi, il balance accetta tutti. */
 export function fitsTeamType(set: TeamSet, archetype: Archetype, rules: FormatRules): boolean {
-  if (archetype === 'balance') return true;
+  if (archetype === 'balance' || archetype === 'doubles') return true;
   if (archetype === 'semiStall') return isPassive(set, rules);
   return fitsArchetype(set, archetype, rules);
 }
@@ -252,8 +255,9 @@ export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleVa
   return [...(main ? [main] : []), ...weather, ...support, ...setup, ...recovery].filter((role, i, all) => all.indexOf(role) === i).slice(0, 2);
 }
 
-/** Tipo di team con archetipo e stili, solo per un team completo. */
+/** Tipo di team con archetipo e stili, solo per un team completo; in doppio (tipo unico) per qualunque team non vuoto. */
 export function teamArchetype(team: TeamSet[], rules: FormatRules): TeamArchetype | null {
+  if (isOneType(rules)) return team.length ? { archetype: archetypeOf(team, rules), styles: conditionStyles(team).slice(0, MAX_STYLES) } : null;
   if (team.length < 6 || team.some(set => !battleSpecies(set))) return null;
   return { archetype: archetypeOf(team, rules), styles: conditionStyles(team).slice(0, MAX_STYLES) };
 }

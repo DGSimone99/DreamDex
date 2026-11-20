@@ -142,7 +142,7 @@ const FIT: Partial<Record<Archetype, FitArchetype>> = { stall: 'stall', semiStal
  * Balance 3, Offense nessuno. In National Dex OU il tipo si riconosce dal recupero e dalla velocità: la quota resta la
  * strada per costruire, e matchesChoice controlla il tipo con la regola del formato.
  */
-const PASSIVE_QUOTA: Record<Archetype, number> = { stall: 6, semiStall: 4, balance: 3, hyperOffense: 0, bulkyOffense: 0 };
+const PASSIVE_QUOTA: Record<Archetype, number> = { stall: 6, semiStall: 4, balance: 3, hyperOffense: 0, bulkyOffense: 0, doubles: 0 };
 /** Un Pokémon si distingue per forma in battaglia: Charizard, Charizard-Mega-X e Charizard-Mega-Y sono tre Pokémon. */
 export const formeId = (set: TeamSet) => toID(battleName(set));
 const sameGap = (a: Gap, b: Gap) => a.kind === b.kind && (a.kind !== 'weakness' || (b.kind === 'weakness' && a.type === b.type));

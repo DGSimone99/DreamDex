@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { teamArchetype, type Archetype } from '../engine/archetype';
+import { teamArchetype, type Archetype, type SinglesArchetype } from '../engine/archetype';
 import type { Gap } from '../engine/coherence';
 import type { EngineData } from '../engine/data';
 import { battleAbility, battleName } from '../engine/dex';
@@ -21,9 +21,9 @@ import { Sprite } from './Sprite';
 import { useMemberTip } from './MemberCard';
 import { streamFill } from './useRanking';
 
-const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
+const ARCHETYPES: SinglesArchetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 /** Le voci dei tipi, in ordine: "Il migliore" (nessun tipo) e i cinque archetipi. */
-const TYPES: (Archetype | null)[] = [null, ...ARCHETYPES];
+const TYPES: (SinglesArchetype | null)[] = [null, ...ARCHETYPES];
 const typeKey = (archetype: Archetype | null) => archetype ?? 'best';
 const FAVORITE_MODES: FavoriteMode[] = ['off', 'priority', 'only'];
 type Tab = 'proposals' | 'tournament';

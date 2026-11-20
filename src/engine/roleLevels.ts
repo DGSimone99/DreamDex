@@ -1,5 +1,8 @@
 import type { Archetype } from './archetype';
 import type { SubRole } from './subRoles';
+import type { FormatRules } from './formatRules';
+
+type TypeRule = FormatRules['typeRule'];
 
 /** Livello di un sotto-ruolo per l'archetipo: essenziale e importante (solo malus, di peso diverso), minore (solo +), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
@@ -128,12 +131,18 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
 ];
 const COLUMNS: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
+/** La colonna del doppio (tipo unico): un elenco a parte, uguale per ogni team. */
+const DOUBLES_LEVELS: Partial<Record<LevelKey, Level>> = {};
+
 /** Livelli per archetipo (bozza della specifica; le voci ignorate sono omesse). */
-export const ROLE_LEVELS: Record<Archetype, Partial<Record<LevelKey, Level>>> = Object.fromEntries(
-  COLUMNS.map((archetype, c) => [archetype, Object.fromEntries(
-    ROWS.filter(row => row[c + 1] !== X).map(row => [row[0], row[c + 1]]),
-  )]),
-) as Record<Archetype, Partial<Record<LevelKey, Level>>>;
+export const ROLE_LEVELS: Record<Archetype, Partial<Record<LevelKey, Level>>> = {
+  ...Object.fromEntries(
+    COLUMNS.map((archetype, c) => [archetype, Object.fromEntries(
+      ROWS.filter(row => row[c + 1] !== X).map(row => [row[0], row[c + 1]]),
+    )]),
+  ),
+  doubles: DOUBLES_LEVELS,
+} as Record<Archetype, Partial<Record<LevelKey, Level>>>;
 
 /** Righe toccate dall'interruttore: Attacco e muri (il gruppo degli attaccanti resta). */
 const SWITCHED = new Set<LevelKey>(['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalWall', 'specialWall']);
@@ -146,14 +155,14 @@ const SWITCHED = new Set<LevelKey>(['physicalSweeper', 'specialSweeper', 'physic
  * fino a 8 punti (Mega Sableye Recover → Foul Play 77 → 69); così 4 al massimo. I team Stall perdono in media 2,6 punti,
  * in linea con le partite vere (lo Stall vince il 32,5%, il peggiore); il resto del banco e le partite non cambiano.
  */
-export const rolesTypeOf = (archetype: Archetype, typeRule?: 'walls' | 'recoverySpeed'): Archetype =>
+export const rolesTypeOf = (archetype: Archetype, typeRule?: TypeRule): Archetype =>
   typeRule === 'recoverySpeed' && archetype === 'stall' ? 'semiStall' : archetype;
 
 /** Le voci degli attaccanti: in National Dex OU lo Stall le prende dalla sua colonna (tutte minori), il resto dal Semi-stall. */
 const ATTACK_ROWS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...ATTACKERS]);
 
 /** Livello della voce per il tipo di team nel formato: rolesTypeOf, tranne gli attaccanti dello Stall (2026-11-11). */
-export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: 'walls' | 'recoverySpeed'): Level =>
+export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: TypeRule): Level =>
   levelOf(archetype === 'stall' && ATTACK_ROWS.has(key) ? 'stall' : rolesTypeOf(archetype, typeRule), key);
 
 /** Livello della voce per l'archetipo, con l'interruttore applicato. */

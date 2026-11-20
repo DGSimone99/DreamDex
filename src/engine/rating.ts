@@ -9,7 +9,7 @@ import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
 export { BALANCE_SPAN, resistPoints, typeSafety };
 import { typeMix, type Archetype, type TypeMix } from './archetype';
 import { isPassive, isStall } from './roles';
-import { rulesOf, type FormatRules } from './formatRules';
+import { isOneType, rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
@@ -31,7 +31,7 @@ export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | '
  * La Coverage offensiva è una sottostatistica dell'Offesa (offense.ts); Robustezza, Coverage difensiva e Meta
  * sono parti della Difesa (defense.ts).
  */
-type BaseArea = Exclude<AreaKey, 'meta' | 'coverage' | 'bulk' | 'roles'>;
+export type BaseArea = Exclude<AreaKey, 'meta' | 'coverage' | 'bulk' | 'roles'>;
 /** Nell'ordine del pannello: Difesa, Offesa e Velocità (i Ruoli sono una lista: malus e bonus, rolesArea.ts). */
 const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'speed'];
 
@@ -56,6 +56,7 @@ export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   balance: { defense: 40, strength: 45, speed: 15 },
   semiStall: { defense: 57, strength: 33, speed: 10 },
   stall: { defense: 65, strength: 25, speed: 10 },
+  doubles: { defense: 1 / 3, strength: 1 / 3, speed: 1 / 3 },
 };
 
 export type AreaWeightTable = Record<Archetype, Record<BaseArea, number>>;
@@ -80,11 +81,24 @@ export const NATDEX_OU_WEIGHTS: AreaWeightTable = {
   // vince, Stall quando perde): contando ogni team una volta il semi-stall vince circa il 50% (controllo 2026-11-08).
   semiStall: { defense: 65, strength: 25, speed: 10 },
   stall: { defense: 65, strength: 25, speed: 10 },
+  doubles: { defense: 1 / 3, strength: 1 / 3, speed: 1 / 3 },
 };
 
-/** I pesi delle aree del formato: quelli di National Dex OU con la sua regola dei tipi, altrimenti quelli di sempre. */
+/**
+ * Doppio (2026-11-21): un tipo solo, le tre aree a un terzo ciascuna (scelta dell'autore: in doppio i team puntano tutti
+ * sull'equilibrio; sulle partite i tipi del singolo non separavano niente). Un set fisso: nessun riconoscimento di tipi,
+ * nessuna miscela.
+ */
+const DOUBLES_THIRDS: Record<BaseArea, number> = ARCHETYPE_WEIGHTS.doubles;
+let DOUBLES_WEIGHTS: AreaWeightTable = NATDEX_OU_WEIGHTS;
+/** Per test e bench (confronto dei pesi del doppio): `null` rimette i terzi. Non va cambiato a runtime nell'interfaccia. */
+export function setDoublesWeights(w: Record<BaseArea, number> | null): void {
+  DOUBLES_WEIGHTS = { ...NATDEX_OU_WEIGHTS, doubles: w ?? DOUBLES_THIRDS };
+}
+
+/** I pesi delle aree del formato: quelli di National Dex OU con la sua regola dei tipi, il set fisso del doppio, altrimenti quelli di sempre. */
 export const areaWeightTable = (rules: FormatRules): AreaWeightTable =>
-  rules.typeRule === 'recoverySpeed' ? NATDEX_OU_WEIGHTS : ARCHETYPE_WEIGHTS;
+  isOneType(rules) ? DOUBLES_WEIGHTS : rules.typeRule === 'recoverySpeed' ? NATDEX_OU_WEIGHTS : ARCHETYPE_WEIGHTS;
 
 
 
@@ -512,6 +526,8 @@ export function rateTeam(given: TeamSet[], data: EngineData, lang: Lang = 'it', 
   // Con EV oltre il massimo o una specie doppia niente voto (l'app lo dice); il resto si giudica come in partita (legalTeam.ts)
   if (blockedReason(given, data.formatId)) return null;
   const input = voteTeam(given, data.allowMultipleMegas);
+  // Col tipo unico (doppio) un tipo scelto a mano non ha senso: si ignora
+  if (isOneType(rulesOf(data))) opts = {};
   const own = rateTeamAs(input, data, lang, opts);
   if (!own || opts.archetype) return own;
   const mix = typeMix(input.map(withUsableMoves), rulesOf(data));
@@ -536,7 +552,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
 
   const rules = rulesOf(data);
   // Stall riconosciuto: cambia solo la forza mostrata dei membri passivi (sotto), non i pesi né i ruoli
-  const stallMode = opts.archetype ? opts.archetype === 'stall' : isStall(team, rules);
+  const stallMode = isOneType(rules) ? false : opts.archetype ? opts.archetype === 'stall' : isStall(team, rules);
   const archetype = stallMode ? 'stall' as const : null;
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map(set => isPassive(set, rules)) : [];

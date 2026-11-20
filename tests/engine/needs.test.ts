@@ -73,7 +73,8 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('stall', 'pivot')).toBe('ignored');
     // Gli hazard: importanti negli offensivi (90–92%), essenziali da balance in giù (99–100%); Speed Control ignorato
     // ovunque, gli schermi minori ovunque (2026-11-08)
-    for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
+    // I cinque tipi del singolo: il doppio ha il suo elenco (doublesRoles.test.ts)
+    for (const a of (Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]).filter(a => a !== 'doubles')) {
       expect(levelOf(a, 'screens')).toBe('minor');
       expect(levelOf(a, 'speedControl')).toBe('ignored');
     }

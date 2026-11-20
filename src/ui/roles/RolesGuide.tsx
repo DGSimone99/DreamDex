@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
+import type { FormatRules } from '../../engine/formatRules';
 import { MISSING_BELOW } from '../../engine/needs';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
 import { LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../../engine/roleLevels';
@@ -20,7 +21,7 @@ const LEVEL_TILES: Level[] = ['essential', 'important', 'minor', 'ignored'];
  * La guida dei Ruoli (schematica, senza i valori del team): come funziona l'area e i livelli di ogni voce per tipo di
  * team (la colonna del team in evidenza).
  */
-export function RolesGuideSection({ section, archetype, typeRule }: { section: RolesSection; archetype: Archetype; typeRule?: 'walls' | 'recoverySpeed' }) {
+export function RolesGuideSection({ section, archetype, typeRule }: { section: RolesSection; archetype: Archetype; typeRule?: FormatRules['typeRule'] }) {
   const t = useT();
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.roles.${key}` as Key, params);
 
@@ -95,6 +96,6 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
 }
 
 /** Le pagine della guida dei Ruoli dopo Come funziona: Ruoli per tipo di team. */
-export function rolesGuidePages(archetype: Archetype, t: ReturnType<typeof useT>, typeRule?: 'walls' | 'recoverySpeed'): { key: string; label: string; content: ReactNode }[] {
+export function rolesGuidePages(archetype: Archetype, t: ReturnType<typeof useT>, typeRule?: FormatRules['typeRule']): { key: string; label: string; content: ReactNode }[] {
   return [{ key: 'types', label: t('guide.roles.page.types'), content: <RolesGuideSection section="types" archetype={archetype} typeRule={typeRule} /> }];
 }

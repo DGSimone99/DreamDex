@@ -133,7 +133,8 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
 
   it('pesi di National Dex OU: somma 100, scala regolare (la Difesa sale, la Velocità scende da HO a stall)', () => {
     const order = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'] as const;
-    for (const row of Object.values(NATDEX_OU_WEIGHTS)) expect(row.defense + row.strength + row.speed).toBe(100);
+    // Il doppio ha la sua riga a terzi (doublesType.test.ts)
+    for (const row of order.map(t => NATDEX_OU_WEIGHTS[t])) expect(row.defense + row.strength + row.speed).toBe(100);
     expect(order.map(t => NATDEX_OU_WEIGHTS[t].defense)).toEqual([25, 30, 40, 65, 65]);
     expect(order.map(t => NATDEX_OU_WEIGHTS[t].speed)).toEqual([25, 20, 20, 10, 10]);
     expect(areaWeightTable(NATDEX_OU_RULES)).toBe(NATDEX_OU_WEIGHTS);
