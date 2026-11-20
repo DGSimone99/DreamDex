@@ -27,6 +27,8 @@
 .ftip.at-above { animation-name: ftip-in-up; }
 @keyframes ftip-in-up { from { opacity: 0; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .ftip { animation: none; } }
+/* Nello strato in cima (popover): via i valori del browser per i popover */
+.ftip[popover] { inset: auto; margin: 0; padding: 0; overflow: visible; color: var(--text); }
 
 .ftip-head { position: relative; display: flex; align-items: center; gap: var(--sp-4); padding: 7px var(--sp-5) 7px var(--sp-4);
   background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 38%, transparent), color-mix(in srgb, var(--tc) 8%, transparent));

@@ -18,6 +18,7 @@ import type { TeamSet } from './sets';
 import { collectGainJobs, computeGains, primeGains } from './teamGain';
 import { coachAdvice } from './coach';
 import { improveSets } from './bestPreset';
+import { duelTips } from './duelTips';
 import { fillProposals } from './fillProposals';
 
 const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans), loadGameDex().then(initGames)]);
@@ -79,6 +80,8 @@ function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' | 'fil
   }
   // Migliora i set: i set nuovi e il guadagno di ogni membro (qualche secondo la prima volta: qui non ferma la pagina)
   if (message.kind === 'improve') return { id: message.id, ok: true, kind: 'improve', changes: improveSets(message.team, engineData(message.data), message.genLimit) };
+  // I consigli della Sfida dell'editor: varianti, voti del team ed effetti sul meta
+  if (message.kind === 'duelTips') return { id: message.id, ok: true, kind: 'duelTips', result: duelTips(message.team, message.index, message.opp, message.pool, engineData(message.data)) };
   primeGains(message.primed);
   return { id: message.id, ok: true, kind: 'rank', result: rankCandidates(withTeam(message.params), engineData(message.data)) };
 }

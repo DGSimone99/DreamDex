@@ -8,6 +8,7 @@ import type { CoachAdvice, CoachProblem } from './coach';
 import type { Format } from './format';
 import type { TeamSet } from './sets';
 import type { SetChange } from './bestPreset';
+import type { DuelTipsResult } from './duelTips';
 import type { FillChoice, Proposal } from './fillProposals';
 
 /** I consigli del Coaching (coachAdvice) per un team: si calcolano in sottofondo come la lista dei candidati. */
@@ -38,6 +39,7 @@ export type WorkerRequest =
   | { kind: 'advicePlan'; id: number; params: AdviceParams; data: WorkerData }
   | { kind: 'advice'; id: number; params: AdviceParams; data: WorkerData; primed: [string, GainValue][] }
   | { kind: 'improve'; id: number; team: TeamSet[]; genLimit: number; data: WorkerData }
+  | { kind: 'duelTips'; id: number; team: TeamSet[]; index: number; opp: TeamSet; pool: string[]; data: WorkerData }
   | { kind: 'fill'; id: number; team: TeamSet[]; choice: FillChoice; shown: string[][]; format: Format; data: WorkerData; max?: number }
   | { kind: 'cancel'; id: number };
 
@@ -51,6 +53,7 @@ export type WorkerResponse =
   | { id: number; ok: true; kind: 'advicePlan'; jobs: GainJob[] }
   | { id: number; ok: true; kind: 'advice'; advice: CoachAdvice }
   | { id: number; ok: true; kind: 'improve'; changes: SetChange[] }
+  | { id: number; ok: true; kind: 'duelTips'; result: DuelTipsResult }
   | WorkerProgress
   | { id: number; ok: true; kind: 'fillDone'; shown: string[][]; exhausted: boolean }
   | { id: number; ok: false; error: string };

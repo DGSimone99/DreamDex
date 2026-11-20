@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
+import { supportsPopover } from './useAnchoredPop';
 
 /** Quanto aspetta prima di aprirsi: passando col mouse sopra la griglia non si accende a ogni casella. */
 const OPEN_DELAY = 140;
@@ -86,8 +87,14 @@ export function useFloatAnchor<K>(delay = OPEN_DELAY) {
  * finestra: per gli elementi alti, come le barre della Velocità. Anche senza `side`, se non c'è posto né sotto né sopra
  * si apre di lato.
  */
-export function FloatTip({ rect, tone, className = '', side = false, children }: { rect: DOMRect; tone: string; className?: string; side?: boolean | 'left'; children: ReactNode }) {
+export function FloatTip({ rect, tone, className = '', side = false, layer = false, children }: { rect: DOMRect; tone: string; className?: string; side?: boolean | 'left'; layer?: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  // `layer`: nello strato in cima alla pagina (popover), per i tooltip che partono da dentro una tendina o una scheda già lì
+  const top = layer && supportsPopover;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (top && el && !el.matches(':popover-open')) el.showPopover();
+  }, [top]);
   const [place, setPlace] = useState<{ left: number; top: number; arrow: number; at: 'below' | 'above' | 'right' | 'left' } | null>(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -115,7 +122,7 @@ export function FloatTip({ rect, tone, className = '', side = false, children }:
     setPlace({ left, top, arrow: Math.max(14, Math.min(center - left, width - 14)), at: above ? 'above' : 'below' });
   }, [rect, side]);
   return createPortal(
-    <div ref={ref} className={`ftip${place ? ` at-${place.at}` : ''} ${className}`} aria-hidden="true"
+    <div ref={ref} className={`ftip${place ? ` at-${place.at}` : ''} ${className}`} aria-hidden="true" popover={top ? 'manual' : undefined}
       style={{ '--tc': tone, left: place?.left ?? -9999, top: place?.top ?? 0, '--arrow': `${place?.arrow ?? 20}px`, visibility: place ? 'visible' : 'hidden' } as CSSProperties}>
       {children}
     </div>,

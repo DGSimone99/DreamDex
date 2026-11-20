@@ -74,6 +74,11 @@ function toDuelHit(hit: Hit | null): DuelHit | null {
   return { ...hit, category, hitsSure: hitsFor(hit.min), hitsMaybe: hitsFor(hit.max) };
 }
 
+/** I due colpi migliori della Sfida (il tuo e il suo), con le stesse regole delle righe. */
+export function duelHits(me: TeamSet, opp: TeamSet): { mine: DuelHit | null; theirs: DuelHit | null } {
+  return { mine: toDuelHit(bestHit(me, opp, optsFor(me, opp))), theirs: toDuelHit(bestHit(opp, me, optsFor(opp, me))) };
+}
+
 /** Il colpo con una mossa sola (per cercare le soglie senza ricalcolare le altre tre). */
 const single = (attacker: TeamSet, move: string, defender: TeamSet) => bestHit({ ...attacker, moves: [move] }, defender, optsFor(attacker, defender));
 
