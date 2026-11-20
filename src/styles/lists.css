@@ -723,14 +723,15 @@
  * ne sono) così la scheda non salta; il risultato grande a destra.
  */
 .duel-rows { grid-column: 2; position: relative; z-index: 2; display: grid; align-content: space-evenly; padding: var(--sp-4) var(--sp-6) var(--sp-5) var(--sp-8); }
-.duel-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-6); row-gap: 5px; align-items: center; padding: var(--sp-4) 0; }
+/* A destra una colonna fissa: in alto la Velocità (sempre allo stesso posto), sotto i colpi, vicini alla barra */
+.duel-row { display: grid; grid-template-columns: minmax(0, 1fr) 104px; column-gap: var(--sp-6); row-gap: 5px; align-items: center; padding: var(--sp-4) 0; }
 .duel-row + .duel-row { border-top: 1px solid #ffffff12; }
 .duel-title { grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 5px; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .duel-title svg { width: 13px; height: 13px; flex: none; }
 .duel-row.mine .duel-title svg { color: var(--accent); }
 .duel-row.theirs .duel-title svg { color: var(--bad); }
 /* L'etichetta della Velocità sul colpo, in fondo alla riga del titolo: verde chi muove prima, rossa l'altro, gialla pari */
-.duel-speed { --s: var(--muted); grid-column: 1; grid-row: 1; justify-self: end; display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px 0 4px; border-bottom: 0; border-radius: 3px; font: 600 var(--fs-caption)/1 var(--ui); color: var(--s); background: color-mix(in srgb, var(--s) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s) 40%, transparent); font-variant-numeric: tabular-nums; }
+.duel-speed { --s: var(--muted); grid-column: 2; grid-row: 1; justify-self: end; display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px 0 4px; border-bottom: 0; border-radius: 3px; font: 600 var(--fs-caption)/1 var(--ui); color: var(--s); background: color-mix(in srgb, var(--s) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s) 40%, transparent); font-variant-numeric: tabular-nums; }
 .duel-speed.first { --s: var(--good); }
 .duel-speed.second { --s: var(--bad); }
 .duel-speed.tie { --s: var(--warn); }
@@ -741,11 +742,9 @@
 .duel-speed.tip[data-tip]:is(:hover, :focus-visible)::after { left: auto; right: 0; }
 .duel-speed:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .duel-label { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font: 600 12px/1.1 var(--display); }
-/* La pillola piccola, senza la coda della potenza: qui conta il danno vero, scritto accanto alla barra */
-.duel-label .duel-mvp .mvp-tail { display: none; }
+/* La pillola piccola con la coda della potenza della mossa */
 /* Il nome della mossa come nel Set: 14px (la pillola piccola lo regge) */
 .duel-label .duel-mvp { font-size: var(--fs-section); }
-.duel-label .duel-mvp .mvp-nm { padding-right: var(--sp-6); }
 .duel-label .duel-mvp { flex: 0 1 auto; min-width: 0; }
 .duel-speed-vs { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .duel-none { font: 600 var(--fs-small)/1.1 var(--ui); color: var(--faint); }
@@ -764,11 +763,12 @@
 .duel-sub { grid-column: 1; grid-row: 3; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
 .duel-sub:empty { display: none; }
 /* display: la regola di Meta Coverage che nasconde la barra nei riquadri bassi (@container) qui non vale */
-.duel-sub .cm-hp.duel-bar { position: relative; display: flex; flex: none; width: 150px; margin: 0; }
+/* La barra si allunga fino ai colpi: percentuale e colpi restano vicini */
+.duel-sub .cm-hp.duel-bar { position: relative; display: flex; flex: 1 1 150px; margin: 0; }
 /* Il timbro KO sopra la barra (vuota), al centro della barra */
 .duel-sub .duel-ko { position: absolute; left: calc(50% + 9px); top: 50%; transform: translate(-50%, -50%); padding: 1px 7px; }
 .duel-range { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.duel-result { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.duel-result { grid-column: 2; grid-row: 2 / 4; align-self: start; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
 .duel-big { font: italic 800 var(--fs-title-l)/0.9 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .duel-unit { font: 700 var(--fs-caption)/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .duel-result.good .duel-big { color: var(--good); }
