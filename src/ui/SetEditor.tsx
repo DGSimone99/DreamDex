@@ -588,7 +588,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                   <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flags.moves[i]!.label}</span>
                   {/* La mossa proposta al posto: ⇄ e il nome, un clic la mette nel set */}
                   {flags.moves[i]!.swap && (
-                    <button type="button" className="field-swap" title={gameName('move', flags.moves[i]!.swap!, lang)}
+                    <button type="button" className="field-swap" data-move-tip={flags.moves[i]!.swap}
                       aria-label={t('editor.swapMove', { to: gameName('move', flags.moves[i]!.swap!, lang), from: gameName('move', move, lang) })}
                       onClick={() => { const next = [...moves]; next[i] = flags.moves![i]!.swap!; update({ moves: next }); }}>
                       <Icon name="swap" /><span>{gameName('move', flags.moves[i]!.swap!, lang)}</span>

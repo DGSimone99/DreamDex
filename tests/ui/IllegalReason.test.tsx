@@ -28,7 +28,7 @@ describe('membro non legale', () => {
     const { container } = render(<App initialLang="it" data={fixtureData} />);
     await user.click(container.querySelector<HTMLElement>('.slot-card')!);
     const swap = screen.getByRole('button', { name: /al posto di Spore$/ });
-    const to = swap.getAttribute('title')!;
+    const to = swap.getAttribute('data-move-tip')!;
     expect(set.moves).not.toContain(to);
     await user.click(swap);
     expect(screen.getByLabelText('Mossa 1')).toHaveValue(to);
