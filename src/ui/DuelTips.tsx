@@ -13,6 +13,8 @@ import { MovePill } from './MovePill';
 import { PokemonIcon } from './PokemonName';
 import { typeColor } from './Sprite';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { useMediaQuery } from './useMediaQuery';
+import { TOUCH_QUERY } from './TouchTips';
 
 /** Quanti Pokémon mostra il tooltip di un effetto sul meta prima di "e altri N". */
 export const META_TIP_ROWS = 8;
@@ -244,38 +246,56 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
 
 const UP: MetaEffect['kind'][] = ['takeMore', 'dealMore'];
 
-/** Una riga "Fai meno danni a 7 Pokémon del meta": il conto apre il tooltip con la lista (al massimo 8, poi "e altri N"). */
+/**
+ * Una riga "Fai meno danni a 7 Pokémon del meta": il conto apre la lista (al massimo 8, poi "e altri N"). Col mouse in
+ * un tooltip passandoci sopra; col dito (la scheda è un foglio dal basso, i tooltip non si aprono al tocco) un tocco la
+ * apre dentro la scheda, sotto la riga, e un altro la chiude. Col dito si tocca tutta la riga (alta almeno 44px), non
+ * solo il conto: il pulsante del conto resta per la tastiera e i lettori di schermo.
+ */
 function EffectLine({ fx }: { fx: MetaEffect }) {
   const t = useT();
   const lang = useLang();
   const tip = useFloatAnchor<string>();
+  const touch = useMediaQuery(TOUCH_QUERY);
+  const [listOpen, setListOpen] = useState(false);
+  const listId = useId();
   const up = UP.includes(fx.kind);
   const count = t('duel.fxCount', { n: fx.shifts.length });
   const hits = (n: number) => (Number.isFinite(n) ? String(n) : '—');
   const words = fx.shifts.map(s => `${s.species} ${t('duel.fxHits', { a: hits(s.before), b: hits(s.after) })}`).join(', ');
   const [before, after] = t(`duel.fx.${fx.kind}`, { n: '\u0000' }).split('\u0000');
   const shown = fx.shifts.slice(0, META_TIP_ROWS);
+  const list = (
+    <>
+      <ul>
+        {shown.map(s => (
+          <li key={s.species}>
+            <PokemonIcon name={s.species} /><span>{s.species}</span>
+            <span className="duel-fx-hits">{hits(s.before)} → <b className={up ? 'good' : 'bad'}>{hits(s.after)}</b> {t('editor.duelHitsUnit')}</span>
+          </li>
+        ))}
+      </ul>
+      {fx.shifts.length > META_TIP_ROWS && <div className="duel-fx-more">{t('duel.fxMore', { n: fx.shifts.length - META_TIP_ROWS })}</div>}
+    </>
+  );
   return (
-    <div className={`duel-tip-fxline ${up ? 'up' : 'down'}`}>
+    <div className={`duel-tip-fxline ${up ? 'up' : 'down'}`}
+      onClick={touch ? e => { if (!(e.target as Element).closest('.duel-tip-count, .duel-fx-inline')) setListOpen(o => !o); } : undefined}>
       <span className="duel-tip-arrow" aria-hidden="true"><Icon name="down" /></span>
       <span>
         {before}
-        <button type="button" className="duel-tip-count" aria-label={`${count}: ${words}`} {...tip.bind('list')}>{count}</button>
+        {touch
+          ? <button type="button" className="duel-tip-count" aria-label={`${count}: ${words}`} aria-expanded={listOpen} aria-controls={listId}
+              onClick={() => setListOpen(o => !o)}>{count}</button>
+          : <button type="button" className="duel-tip-count" aria-label={`${count}: ${words}`} {...tip.bind('list')}>{count}</button>}
         {after}
         {fx.type && <span className="duel-tip-type" style={{ background: typeColor(fx.type) }}>{typeName(fx.type, lang)}</span>}
+        {touch && listOpen && <span id={listId} className="duel-fx-inline" aria-hidden="true">{list}</span>}
       </span>
-      {tip.anchor && (
+      {!touch && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={up ? 'var(--good)' : 'var(--bad)'} side layer className="duel-fx-tip">
           <div className="duel-fx-tip-head">{t('duel.fxTipHead')}</div>
-          <ul>
-            {shown.map(s => (
-              <li key={s.species}>
-                <PokemonIcon name={s.species} /><span>{s.species}</span>
-                <span className="duel-fx-hits">{hits(s.before)} → <b className={up ? 'good' : 'bad'}>{hits(s.after)}</b> {t('editor.duelHitsUnit')}</span>
-              </li>
-            ))}
-          </ul>
-          {fx.shifts.length > META_TIP_ROWS && <div className="duel-fx-more">{t('duel.fxMore', { n: fx.shifts.length - META_TIP_ROWS })}</div>}
+          {list}
         </FloatTip>
       )}
     </div>

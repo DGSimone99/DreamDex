@@ -1,5 +1,6 @@
 import { bestHit, type FieldCondition, type Hit, type HitOptions } from './damage';
 import { getMove, toID } from './dex';
+import { AVOID_MOVES } from './generatedSet';
 import { hitsToKO } from './duel';
 import type { TeamSet } from './sets';
 import type { StatID } from '@pkmn/dex';
@@ -146,14 +147,15 @@ export const TIP_MAX_EVS = 160;
 
 /**
  * La mossa migliore fra quelle che il membro può imparare (pool) e non ha già: quella col danno atteso più alto, solo se
- * manda KO con meno colpi sicuri di oggi (o se oggi non ha colpi). Niente mosse OHKO: dipendono dalla precisione.
+ * manda KO con meno colpi sicuri di oggi (o se oggi non ha colpi). Niente mosse OHKO (dipendono dalla precisione) né
+ * mosse difficili da usare (AVOID_MOVES: Focus Punch, Dream Eater, Belch…), che vincerebbero solo per la potenza.
  */
 function moveTip(me: TeamSet, opp: TeamSet, mine: DuelHit | null, pool: readonly string[]): MoveTip | null {
   if (mine && mine.hitsSure <= 1) return null;
   const have = new Set(me.moves.map(toID));
   const moves = pool.filter(name => {
     const move = getMove(name);
-    return !!move && move.category !== 'Status' && !move.ohko && !have.has(move.id);
+    return !!move && move.category !== 'Status' && !move.ohko && !AVOID_MOVES.has(move.id) && !have.has(move.id);
   });
   if (!moves.length) return null;
   const hit = bestHit({ ...me, moves }, opp, optsFor(me, opp));

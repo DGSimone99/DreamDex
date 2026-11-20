@@ -9,6 +9,8 @@ import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
 import { isBannedName, pokedexOf } from '../engine/formats';
 import { legalMoves } from '../engine/learnsets';
+import { commonChoices } from '../engine/common';
+import { AVOID_MOVES } from '../engine/generatedSet';
 import { defaultSet, mostCommonSet, presetsFor, type TeamSet } from '../engine/sets';
 import { usageOf } from '../engine/stats';
 import { formatPercent, type Lang } from '../i18n';
@@ -56,12 +58,23 @@ function GenderMark({ species }: { species: string }) {
   );
 }
 
-/** Le mosse fra cui cercare un colpo migliore: quelle imparabili (tutte col Custom Skillset), senza quelle vietate. */
-function movePool(set: TeamSet, format: Format): string[] {
+/**
+ * Le mosse fra cui i consigli cercano un colpo migliore: quelle imparabili (tutte col Custom Skillset), senza quelle
+ * vietate né quelle difficili da usare (AVOID_MOVES: Focus Punch, Dream Eater, Belch…). Se il Pokémon ha dati d'uso
+ * (le più usate in cima alla tendina delle mosse: statistiche del formato, di un altro formato o set Smogon) solo
+ * quelle: niente mosse che nessuno usa; senza dati (Pokémon poco usati, giochi senza meta, hackrom) tutte le altre.
+ */
+function movePool(set: TeamSet, format: Format, data: EngineData): string[] {
   const legal = set.customSkillset ? null : legalMoves(set.species, format.genLimit, format.game);
   const sv = pokedexOf(format) === 'sv';
   const names = legal ? [...legal].map(id => getMove(id)?.name ?? id) : moveNames();
-  return names.filter(name => (!sv || !getMove(name)?.isNonstandard) && (format.ignoreBans || !isBannedName(format.formatId, 'moves', name)));
+  const usable = names.filter(name => {
+    const move = getMove(name);
+    return (!move || !AVOID_MOVES.has(move.id)) && (!sv || !move?.isNonstandard) && (format.ignoreBans || !isBannedName(format.formatId, 'moves', name));
+  });
+  const allowed = new Set(usable);
+  const used = commonChoices(data, set).moves.map(choice => choice.name).filter(name => allowed.has(name));
+  return used.length ? used : usable;
 }
 
 /**
@@ -167,7 +180,7 @@ export function EditorDuel({ set, team, data, format, onApply }: {
   const sets = useMemo(() => (species ? oppSets(data, species, format.genLimit, lang, t('editor.duelUsageSet'), t('editor.duelBaseSet')) : []),
     [data, species, format.genLimit, lang, t]);
   const chosen = sets.find(s => s.key === setKey) ?? sets[0] ?? null;
-  const pool = useMemo(() => movePool(me, format), [me.species, me.customSkillset, format]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pool = useMemo(() => movePool(me, format, data), [me.species, me.item, me.customSkillset, format, data]); // eslint-disable-line react-hooks/exhaustive-deps
   // L'avversario in campo: il set scelto con le modifiche fatte nelle Impostazioni
   const opp = useMemo<TeamSet | null>(() => (chosen
     ? { ...chosen.set, ...(edit.item !== undefined ? { item: edit.item } : {}), evs: { ...chosen.set.evs, ...edit.evs } }

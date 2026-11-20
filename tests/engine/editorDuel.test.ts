@@ -48,6 +48,11 @@ describe('sfida: una mossa migliore da mettere nel set', () => {
     const d = editorDuel(tusk, gholdengo, ['Headlong Rush', 'Earthquake']);
     if (d.mine!.hitsSure <= 1) expect(d.moveTip).toBeNull();
   });
+  it('mai una mossa difficile da usare (Mind Blown, Focus Punch, Steel Beam…), anche se colpisce più forte', () => {
+    // Mind Blown (Fuoco, 150, superefficace su Gholdengo) batterebbe Ice Spinner: non va proposta
+    expect(editorDuel(weak, gholdengo, ['Mind Blown', 'Focus Punch', 'Steel Beam', 'Dream Eater']).moveTip).toBeNull();
+    expect(editorDuel(weak, gholdengo, ['Mind Blown', 'Headlong Rush']).moveTip?.move).toBe('Headlong Rush');
+  });
 });
 
 describe('sfida: la Velocità', () => {
