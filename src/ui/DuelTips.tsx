@@ -9,6 +9,7 @@ import { useLang, useT } from '../i18n/react';
 import { Combobox } from './Combobox';
 import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
+import { MovePill } from './MovePill';
 import { PokemonIcon } from './PokemonName';
 import { typeColor } from './Sprite';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
@@ -198,7 +199,8 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
   let source: ReactNode = null;
   if (tip && option && tip.move) {
     source = (
-      <div className="duel-tip-source">
+      <div className="duel-tip-source replace">
+        <span aria-hidden="true">{t('duel.tipReplace')}</span>
         <Combobox label={t('duel.tipReplace')} value={String(pick)} restricted className="duel-tip-replace"
           options={tip.options.map((o, i) => ({ value: String(i), label: moveName(o.replaced ?? '') }))}
           onChange={value => onPick(Number(value))} />
@@ -220,7 +222,10 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
     <>
       <div className="duel-tip-head">
         <span className={`duel-tip-icon ${quick.id}`} aria-hidden="true"><Icon name={icon} /></span>
-        <span className="duel-tip-title">{title}</span>
+        {/* Una mossa: la sua pillola come nella Sfida (tipo, angoli alterni, linguetta con la potenza) */}
+        {tip?.move
+          ? <span className="duel-tip-title"><MovePill name={tip.move} size="sm" className="duel-tip-mvp" /></span>
+          : <span className="duel-tip-title">{title}</span>}
         <button type="button" className="duel-tip-close" aria-label={t('duel.tipClose')} onClick={onClose}><Icon name="close" /></button>
       </div>
       {compare}

@@ -119,4 +119,15 @@ describe('consigli della Sfida: chip e scheda', () => {
     renderIt(<DuelTips side="theirs" me={me} opp={gholdengo} quick={[{ id: 'move', label: 'Terremoto' }]} result={null} />);
     expect(screen.getByText(/nessuno/)).toBeInTheDocument();
   });
+
+  it('scheda di una mossa: in testata la pillola della mossa (tipo e linguetta con la potenza), come nella Sfida', async () => {
+    const user = userEvent.setup();
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={quick} result={fakeResult} />);
+    await user.click(screen.getByRole('button', { name: 'Terremoto' }));
+    const pill = screen.getByRole('dialog').querySelector('.duel-tip-head .mvp');
+    expect(pill).not.toBeNull();
+    expect(pill).toHaveTextContent('Earthquake');
+    expect(pill).toHaveTextContent('100');
+    expect(screen.getByRole('dialog').querySelector('.duel-tip-source')).toHaveTextContent(/^Al posto di/);
+  });
 });
