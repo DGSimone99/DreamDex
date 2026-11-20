@@ -2,7 +2,6 @@ import type { Item, Move, Species } from '@pkmn/dex';
 import { gen9Tier, isSelectable, natDexTier, toID } from './dex';
 import type { Format, FormatId } from './format';
 import { t, type Lang } from '../i18n';
-import { doublesEnabled } from './features';
 
 /** Da dove vengono Pokémon, mosse e strumenti: tutto il National Dex o solo Scarlatto/Violetto. */
 export type Pokedex = 'natdex' | 'sv';
@@ -33,9 +32,9 @@ const FORMATS: Record<FormatId, FormatDef> = {
 
 const FORMAT_IDS: FormatId[] = ['ou', 'ubers', 'uu', 'all', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9ag', 'natdexdoubles'];
 
-/** I formati per il menu, con le etichette nella lingua data (i doppi solo con l'interruttore acceso). */
+/** I formati per il menu, con le etichette nella lingua data. */
 export const formatOptions = (lang: Lang = 'it'): { id: FormatId; label: string }[] =>
-  FORMAT_IDS.filter(id => doublesEnabled() || battleOf(id) === 'singles').map(id => ({ id, label: t(lang, id === 'all' ? 'format.allOption' : `format.${id}`) }));
+  FORMAT_IDS.map(id => ({ id, label: t(lang, id === 'all' ? 'format.allOption' : `format.${id}`) }));
 
 export const formatLabel = (format: Format, lang: Lang = 'it'): string => t(lang, `format.${format.formatId}`);
 
@@ -74,9 +73,9 @@ export const dexOf = (formatId: FormatId): DexId => entryOf(formatId).dex;
 /** La lotta del formato (singolo o doppio). */
 export const battleOf = (formatId: FormatId): BattleId => entryOf(formatId).battle;
 
-/** I tier del Pokédex per quella lotta (vuoto se non c'è; i doppi solo con l'interruttore acceso). */
+/** I tier del Pokédex per quella lotta (vuoto se non c'è). */
 export const tiersOf = (dex: DexId, battle: BattleId = 'singles'): TierEntry[] =>
-  (battle === 'doubles' && !doublesEnabled() ? [] : DEX_TIERS[dex][battle]);
+  DEX_TIERS[dex][battle];
 
 /**
  * Il formato scelto cambiando Pokédex o lotta: lo stesso tier se c'è (OU resta OU), altrimenti il primo;

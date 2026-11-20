@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { getSpecies } from '../../src/engine/dex';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
-import { doublesEnabled } from '../../src/engine/features';
 import { battleOf, dataSource, dexOf, formatIn, formatLabel, formatOptions, isBannedIn, isLegalIn, pokedexOf, teraAllowed, tiersOf } from '../../src/engine/formats';
 import { sanitizeFormat } from '../../src/storage';
 import { candidatePool } from '../../src/engine/scoring';
@@ -64,19 +63,9 @@ describe('formati', () => {
     expect(formatIn('natdex', 'singles', 'natdexdoubles')).toBe('ou');
   });
 
-  it('interruttore spento: niente doppio nel menu né tra i formati', () => {
-    vi.stubEnv('DEV', false);
-    try {
-      expect(doublesEnabled()).toBe(false);
-      expect(tiersOf('natdex', 'doubles')).toEqual([]);
-      expect(formatOptions().map(o => o.id)).not.toContain('natdexdoubles');
-    } finally { vi.unstubAllEnvs(); }
-  });
-
-  it("un salvataggio in doppio con l'interruttore spento torna a National Dex OU", () => {
+  it('il doppio è nel menu e tra i formati, e un salvataggio in doppio resta in doppio', () => {
+    expect(tiersOf('natdex', 'doubles')).toEqual([{ formatId: 'natdexdoubles', tier: 'OU' }]);
+    expect(formatOptions().map(o => o.id)).toContain('natdexdoubles');
     expect(sanitizeFormat({ formatId: 'natdexdoubles' }).formatId).toBe('natdexdoubles');
-    vi.stubEnv('DEV', false);
-    try { expect(sanitizeFormat({ formatId: 'natdexdoubles' }).formatId).toBe('ou'); }
-    finally { vi.unstubAllEnvs(); }
   });
 });

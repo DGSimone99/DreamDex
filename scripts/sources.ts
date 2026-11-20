@@ -3,12 +3,12 @@ export const SOURCES = ['gen9nationaldex', 'gen9nationaldexubers', 'gen9national
 
 /**
  * Fonti del doppio: a parte, perché i loro set (Fake Out, Follow Me, Protect…) non devono mai diventare
- * set, preset o statistiche di riserva del singolo. Il doppio è acceso solo in sviluppo (features.ts).
+ * set, preset o statistiche di riserva del singolo.
  */
 export const DOUBLES_SOURCES = ['gen9nationaldexdoubles'];
 
-/** Le fonti del doppio da scaricare: nessuna per la pubblicazione (--strict), dove il doppio è spento; tutte a mano. */
-export const doublesToFetch = (strict: boolean): string[] => (strict ? [] : DOUBLES_SOURCES);
+/** Le fonti del doppio da scaricare: tutte, anche per la pubblicazione (il doppio è acceso per tutti dal 2026-11-20). */
+export const doublesToFetch = (): string[] => DOUBLES_SOURCES;
 
 /**
  * Altri formati usati solo per i set di riserva (Pokémon senza dati nel formato scelto),

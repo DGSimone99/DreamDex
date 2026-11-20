@@ -102,12 +102,9 @@ describe('dati per formato', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Statistiche National Dex Doubles non scaricate');
   });
 
-  it('interruttore spento: niente scelta Lotta', () => {
-    vi.stubEnv('DEV', false);
-    try {
-      render(<App initialLang="it" data={fixtureData} />);
-      expect(document.querySelector('input[name="format-battle"]')).toBeNull();
-    } finally { vi.unstubAllEnvs(); }
+  it('la scelta Lotta (Singolo | Doppio) c\'è per tutti', () => {
+    render(<App initialLang="it" data={fixtureData} />);
+    expect(document.querySelector('input[name="format-battle"][value="doubles"]')).not.toBeNull();
   });
 
   it("l'uso minimo dei suggerimenti non si sceglie più", () => {

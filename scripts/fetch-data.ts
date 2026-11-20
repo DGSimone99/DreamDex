@@ -126,7 +126,7 @@ async function main() {
   }
   if (downloaded.length === 0) process.exit(1);
   // Il doppio: scaricato a parte e mai usato per i dati di riserva del singolo; un errore non blocca niente
-  for (const source of doublesToFetch(STRICT)) {
+  for (const source of doublesToFetch()) {
     try {
       await fetchSource(source, months);
     } catch (error) {

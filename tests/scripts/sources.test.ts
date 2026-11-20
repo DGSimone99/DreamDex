@@ -13,8 +13,7 @@ describe('fonti dati', () => {
   });
 
   it('la pubblicazione (--strict) non scarica il doppio; lo scaricamento a mano sì', () => {
-    expect(doublesToFetch(true)).toEqual([]);
-    expect(doublesToFetch(false)).toEqual(['gen9nationaldexdoubles']);
+    expect(doublesToFetch()).toEqual(['gen9nationaldexdoubles']);
   });
 
   it('una fonte assente dà statistiche nulle', async () => {

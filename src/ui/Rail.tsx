@@ -1,7 +1,6 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import type { Format, FormatId } from '../engine/format';
-import { doublesEnabled } from '../engine/features';
 import { BATTLE_IDS, battleOf, DEX_IDS, dexOf, formatIn, tiersOf, type DexId } from '../engine/formats';
 import type { GameId } from '../engine/games';
 import { GameDialog } from './GameDialog';
@@ -122,8 +121,8 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
                 })}
               </div>
             </div>
-            {/* Singolo o doppio: solo con l'interruttore acceso; grigio dove il Pokédex non ha un doppio, senza testo */}
-            {doublesEnabled() && (
+            {/* Singolo o doppio; grigio dove il Pokédex non ha un doppio, senza testo */}
+            {(
               <div className="format-sec">
                 <p className="rail-label">{t('top.battle')}</p>
                 <div className="format-chips" role="radiogroup" aria-label={t('top.battleAria')}>
