@@ -1100,8 +1100,8 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
    ("?", Spread, la riga della velocità, i consigli della Sfida; la barra in alto si rivede a parte) cresce solo la zona che si tocca, con un
    ::after (::before sullo Spread, il cui ::after è la freccia) centrato e largo almeno 44px */
 @media (max-width: 1099px) {
-  :is(.grade-badge .help-button, .speed-line-anchor, .duel-tip-chip) { position: relative; }
-  :is(.grade-badge .help-button, .speed-line-anchor, .duel-tip-chip)::after,
+  :is(.grade-badge .help-button, .speed-line-anchor, .duel-tip-chip, .duel-mate) { position: relative; }
+  :is(.grade-badge .help-button, .speed-line-anchor, .duel-tip-chip, .duel-mate)::after,
   .set-editor .spread-toggle::before,
   .band:not(.collapsed) .grade-badge button.grade-area::after {
     content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%;
@@ -1142,9 +1142,13 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .editor-grade :is(.up, .down) { color: var(--muted); }
   .editor-grade .up > b { color: var(--good); }
   .editor-grade .down > b { color: var(--bad); }
+  /* Con poco contenuto (la scheda Sfida) Fatto scende comunque in fondo allo schermo */
+  .drawer:has(> .editor-done-bar) { display: flex; flex-direction: column; }
+  .drawer:has(> .editor-done-bar) > .set-editor { flex: none; margin-bottom: var(--sp-6); }
   .drawer .editor-done-bar {
     display: block; position: sticky; bottom: calc(-20px - var(--safe-b)); z-index: 7;
-    margin: var(--sp-6) calc(-1 * var(--sp-7)) calc(-20px - var(--safe-b));
+    /* In alto auto: con poco contenuto scende in fondo; lo spazio dal contenuto lo dà il margine dell'editor */
+    margin: auto calc(-1 * var(--sp-7)) calc(-20px - var(--safe-b));
     padding: var(--sp-5) var(--sp-7) calc(var(--sp-5) + var(--safe-b));
     background: var(--ground); box-shadow: 0 -1px 0 var(--line-soft);
   }
