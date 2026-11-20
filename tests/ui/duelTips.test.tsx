@@ -1,0 +1,78 @@
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import type { DuelTipsResult, MetaShift } from '../../src/engine/duelTips';
+import { DuelTips } from '../../src/ui/DuelTips';
+import { gholdengo, tusk } from '../fixtures/data';
+import { renderIt } from '../helpers/italian';
+
+const me = { ...tusk, evs: { hp: 4, atk: 252, spe: 252 }, moves: ['Headlong Rush', 'Ice Spinner', 'Rapid Spin', 'Bulk Up'] };
+const defSet = { ...me, evs: { hp: 4, atk: 220, spe: 252, spd: 32 } };
+const shifts: MetaShift[] = Array.from({ length: 11 }, (_, i) => ({ species: `Mon${i}`, before: 2, after: 3 }));
+const moveSet = (slot: number) => ({ ...me, moves: me.moves.map((m, i) => (i === slot ? 'Earthquake' : m)) });
+const fakeResult: DuelTipsResult = {
+  overall: 80,
+  tips: [
+    { id: 'def', row: 'theirs', add: { spd: 32 }, move: null, best: 0,
+      options: [{ set: defSet, taken: { atk: 32 }, replaced: null, overall: 79, effects: [{ kind: 'dealLess', shifts }] }] },
+    { id: 'move', row: 'mine', add: {}, move: 'Earthquake', best: 2,
+      options: [0, 1, 2, 3].map(slot => ({ set: moveSet(slot), taken: {}, replaced: me.moves[slot], overall: slot === 2 ? 81 : 77, effects: [] })) },
+  ],
+};
+const quick = [{ id: 'def' as const, label: '+32 DifSp' }, { id: 'move' as const, label: 'Terremoto' }];
+
+describe('consigli della Sfida: chip e scheda', () => {
+  it('senza consigli la riga resta, grigia', () => {
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={[]} result={{ overall: 80, tips: [] }} />);
+    expect(screen.getByText(/Consigli/)).toBeInTheDocument();
+    expect(screen.getByText(/nessuno/)).toBeInTheDocument();
+  });
+
+  it('un chip senza consiglio nel risultato sparisce', () => {
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={[...quick, { id: 'spe', label: '+12 Vel' }]} result={fakeResult} />);
+    expect(screen.queryByRole('button', { name: '+12 Vel' })).toBeNull();
+  });
+
+  it('clic sul chip: scheda con voto, Applica manda il set e il cambio', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={quick} result={fakeResult} onApply={onApply} />);
+    await user.click(screen.getByRole('button', { name: '+32 DifSp' }));
+    const card = screen.getByRole('dialog');
+    expect(within(card).getByText('80 → 79')).toBeInTheDocument();
+    expect(within(card).getByText(/Tolti da Att 252 → 220/)).toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Applica' }));
+    expect(onApply).toHaveBeenCalledWith(defSet, '+32 EV in DifSp, −32 in Att');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('il tooltip del meta mostra al massimo 8 Pokémon e "e altri N"', async () => {
+    const user = userEvent.setup();
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={quick} result={fakeResult} />);
+    await user.click(screen.getByRole('button', { name: '+32 DifSp' }));
+    await user.hover(screen.getByRole('button', { name: /11 Pokémon del meta/ }));
+    expect(await screen.findByText('e altri 3')).toBeInTheDocument();
+    expect(screen.getAllByText(/^Mon\d+$/)).toHaveLength(8);
+  });
+
+  it('mossa: parte dalla scelta migliore, cambiare la mossa da togliere cambia voto e cambio', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={quick} result={fakeResult} onApply={onApply} />);
+    await user.click(screen.getByRole('button', { name: 'Terremoto' }));
+    const card = screen.getByRole('dialog');
+    expect(within(card).getByText('80 → 81')).toBeInTheDocument();
+    await user.click(within(card).getByRole('combobox', { name: 'Al posto di' }));
+    await user.click(screen.getByRole('option', { name: /Ice Spinner/ }));
+    expect(within(card).getByText('80 → 77')).toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Applica' }));
+    expect(onApply).toHaveBeenCalledWith(moveSet(1), 'Ice Spinner → Earthquake');
+  });
+
+  it('mentre calcola: Applica disabilitato', async () => {
+    const user = userEvent.setup();
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={quick} result={null} />);
+    await user.click(screen.getByRole('button', { name: '+32 DifSp' }));
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Applica' })).toBeDisabled();
+  });
+});
