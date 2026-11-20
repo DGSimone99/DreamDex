@@ -234,6 +234,18 @@
 /* Mossa vuota: come le targhette vuote, filo ed etichetta gialli */
 .editor-group.moves .field.empty > .field-head { color: var(--warn); }
 .editor-group.moves .field.empty .move-combo input:not(:focus) { border-color: color-mix(in srgb, var(--warn) 70%, transparent); }
+/* Fuori regola (vietato dal formato in rosso, non legale per la specie in giallo): filo ed etichetta nel colore,
+   sulle mosse la parola breve al posto di potenza e precisione */
+.set-plate.flag-bad:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--bad); }
+.set-plate.flag-bad > .field-label { color: var(--bad); }
+.set-plate.flag-warn:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--warn); }
+.set-plate.flag-warn > .field-label { color: var(--warn); }
+.editor-group.moves .field.flag-bad > .field-head { color: var(--bad); }
+.editor-group.moves .field.flag-warn > .field-head { color: var(--warn); }
+.editor-group.moves .field.flag-bad .move-combo input:not(:focus) { border-color: var(--bad); }
+.editor-group.moves .field.flag-warn .move-combo input:not(:focus) { border-color: var(--warn); }
+.field-flag { display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: 600; }
+.field-flag .icon { width: 12px; height: 12px; }
 /* Nel menu Set, il preset da cui viene il set cambiato a mano */
 .set-menu-edited { flex: none; font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-style: italic; }
 .set-plate:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }

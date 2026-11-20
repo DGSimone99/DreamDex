@@ -1,7 +1,7 @@
 import type { EngineData } from '../engine/data';
 import { bannedTexts } from '../engine/coach';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
-import { formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
+import { bannedParts, formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
@@ -19,7 +19,7 @@ import { cancelPrepareFill, prepareFill, prepareImproveSets } from './useRanking
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
-import { SetEditor } from './SetEditor';
+import { SetEditor, type FieldFlag, type FieldFlags } from './SetEditor';
 import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
@@ -376,6 +376,29 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const missing = missingFormeItem(set);
   const illegalMovesText = illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null;
   const illegalAbilityText = illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null;
+  // Gli stessi problemi segnati sul campo dell'editor: vietato dal formato in rosso, non legale per la specie in giallo
+  const banned = bannedParts(set, format);
+  const where = formatLabel(format, lang);
+  const bad = (text: string): FieldFlag => ({ level: 'bad', label: tr('editor.flagBanned'), text });
+  const warn = (text: string, hintText: string): FieldFlag => ({ level: 'warn', label: tr('editor.flagIllegal'), text: `${text}. ${hintText}` });
+  // Nell'editor le mosse vietate stanno già nell'avviso rosso: in quello giallo solo quelle che la specie non impara
+  const unlearned = illegal.moves.filter(move => !banned.moves.includes(move));
+  const editorIllegal = [
+    unlearned.length ? tr('team.illegalMoves', { list: unlearned.map(m => gameName('move', m, lang)).join(', ') }) : null,
+    illegal.ability && !banned.ability ? illegalAbilityText : null,
+  ].filter(Boolean).join(' · ');
+  const fieldFlags: FieldFlags = {
+    item: banned.item ? bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })) : undefined,
+    ability: banned.ability ? bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) }))
+      : illegal.ability ? warn(illegalAbilityText!, tr('team.illegalAbilityHint')) : undefined,
+    moves: [0, 1, 2, 3].map(i => {
+      const move = set.moves[i];
+      if (!move) return undefined;
+      if (banned.moves.includes(move)) return bad(tr('team.bannedMoves', { format: where, list: gameName('move', move, lang) }));
+      if (illegal.moves.includes(move)) return warn(tr('team.illegalMoves', { list: gameName('move', move, lang) }), tr('team.illegalMovesHint'));
+      return undefined;
+    }),
+  };
   const warnings = [
     megaWarning,
     // Forma senza il suo strumento (Zacian-Crowned senza Rusted Sword): il voto la conta come la forma base
@@ -596,7 +619,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           </button>
         }
         proposedSlot={open && proposal ? proposal.slot : undefined}
-        notice={<>{open && proposal && (
+        flags={open ? fieldFlags : undefined}
+        // Gli avvisi in una colonna sola: sul computer l'editor ha una riga sola per loro
+        notice={open && (proposal || editorProblems.length > 0 || editorIllegal) && <div className="member-notes">{proposal && (
           <div className="move-proposal" role="note">
             <Icon name="spark" />
             <span>{proposal.from
@@ -605,14 +630,20 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
             <button type="button" className="apply" ref={applyRef} onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
             <button type="button" onClick={() => onProposalDone?.(false)}>{tr('team.moveProposalCancel')}</button>
           </div>
-        )}{open && editorProblems.length > 0 && (
+        )}{editorProblems.length > 0 && (
           // I problemi di legalità detti per esteso, con la via d'uscita
           <div className="member-problems" role="note">
             <Icon name="warning" />
             <span>{editorProblems.join(' · ')}</span>
             <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
           </div>
-        )}</>}
+        )}{editorIllegal && (
+          // Mosse o abilità che la specie non impara: in giallo come sulla carta, con le due vie d'uscita
+          <div className="member-problems warn" role="note">
+            <Icon name="warning" />
+            <span>{editorIllegal}<small>{tr(unlearned.length ? 'team.illegalMovesHint' : 'team.illegalAbilityHint')}</small></span>
+          </div>
+        )}</div>}
         textPanel={paste && (
     <div className="paste-panel" ref={pasteRef} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}

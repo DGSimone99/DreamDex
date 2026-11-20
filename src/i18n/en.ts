@@ -645,6 +645,8 @@ export const en = {
   'editor.none': "None",
   'editor.moves': "Moves",
   'editor.move': "Move {n}",
+  'editor.flagBanned': "Banned",
+  'editor.flagIllegal': "Not legal",
   'editor.stats': "Stats",
   'editor.sections': "Editor sections",
   'editor.mySets': "My sets",

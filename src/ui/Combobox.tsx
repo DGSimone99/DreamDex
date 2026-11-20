@@ -77,13 +77,15 @@ interface Props {
   /** Le spiegazioni delle voci non stanno in ogni riga ma in una riga fissa in fondo al menu, quella della voce attiva
    *  (più voci in vista: le mosse e gli strumenti). */
   descriptionFooter?: boolean;
+  /** Valore non valido (mossa vietata, non legale…): il motivo, detto ai lettori di schermo prima della descrizione. */
+  invalid?: string;
   /** Il tooltip ricco della voce attiva (sotto il mouse o raggiunta con le frecce), di lato al menu, al posto della riga
    *  in fondo e del title: `tone` il colore dell'alone, `content` il contenuto (es. la scheda della mossa). Non sul telefono. */
   optionTip?: (option: ComboOption) => { tone: string; content: ReactNode; className?: string } | null;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined, descriptionFooter = false, optionTip }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined, descriptionFooter = false, optionTip, invalid }: Props) {
   const t = useT();
   const listId = useId();
   // Si scrive nel campo: sempre senza `restricted`, e con `restricted` se è `searchable`
@@ -310,7 +312,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         ref={inputRef}
         role="combobox"
         aria-label={label}
-        aria-description={description}
+        aria-description={invalid ? [invalid, description].filter(Boolean).join('. ') : description}
+        aria-invalid={invalid ? true : undefined}
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
