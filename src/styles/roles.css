@@ -110,15 +110,12 @@
 .rl-pts { justify-self: end; }
 .rl-row.warn .rl-pts.malus { color: var(--warn); }
 
-/* Chi porta la voce: l'icona in un posto fisso (le icone stanno in colonna riga per riga), il nome se è l'unico, la
-   percentuale se non è pieno (accanto al nome, o sull'angolo dell'icona quando ce ne sono di più); secondario o
-   parziale più tenue */
+/* Chi porta la voce: l'icona in un posto fisso (le icone stanno in colonna riga per riga), il nome se è l'unico; niente
+   percentuali (o c'è o non c'è); il secondario più tenue */
 .rl-mon { position: relative; display: inline-flex; align-items: center; min-width: 0; cursor: help; }
 .rl-box { display: grid; place-items: center; flex: none; width: var(--rl-slot); height: 30px; }
 .rl-box .mon-icon { image-rendering: pixelated; }
 .rl-mon-name { min-width: 0; margin-left: var(--sp-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); font-weight: 600; color: var(--text); }
-.rl-val { margin-left: var(--sp-2); font: 600 var(--fs-label)/1 var(--ui); color: var(--warn); font-variant-numeric: tabular-nums; }
-.rl-mon:not(.named) .rl-val { position: absolute; right: -2px; bottom: -2px; margin: 0; padding: 1px var(--sp-1); border-radius: 2px; background: var(--panel); }
 .rl-mon.weak .rl-box { opacity: 0.45; filter: grayscale(0.6); }
 .rl-mon.weak .rl-mon-name { color: var(--muted); }
 

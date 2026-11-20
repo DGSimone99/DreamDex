@@ -18,7 +18,7 @@ import type { Archetype } from './archetype';
 export type Family = 'attack' | 'defense' | 'support' | 'utility';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
   | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support' | 'speedControl'
-  | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval'
+  | 'dot' | 'disruptor' | 'phazer' | 'itemRemoval'
   | 'physicalAttacker' | 'specialAttacker';
 
 /** Le sotto-ruoli di ogni famiglia, nell'ordine della tabella della specifica. */
@@ -26,8 +26,10 @@ export const FAMILIES: Record<Family, SubRole[]> = {
   attack: ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker'],
   defense: ['physicalWall', 'specialWall', 'recovery'],
   // 'support' il sotto-ruolo è il Cleric (Wish, Healing Wish, Heal Bell…); 'support' la famiglia è tutto ciò che aiuta i compagni
-  support: ['support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer'],
-  utility: ['hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval'],
+  support: ['support', 'removal', 'screens', 'speedControl', 'phazer'],
+  // Disruptor (2026-11-20, utente): paralisi, sonno, Yawn, Taunt ed Encore in una voce sola (prima Debuff, Taunt ed
+  // Encore, ignorati in ogni tipo di team); il flinch no (dura un turno e chiede di essere più veloci)
+  utility: ['hazards', 'pivot', 'dot', 'disruptor', 'itemRemoval'],
 };
 
 /**
@@ -46,7 +48,7 @@ export type SubRoleValues = Partial<Record<SubRole, number>>;
 export interface StatusSource {
   move: string;
   dot: number;
-  debuff: number;
+  disruptor: number;
   status: 'tox' | 'brn' | 'psn' | 'par' | 'slp' | 'yawn' | 'trap' | 'salt' | 'seed';
 }
 
@@ -74,12 +76,21 @@ export function wallIndex(set: TeamSet): { physical: number; special: number } {
   return { physical: value('hp') * value('def') * def, special: value('hp') * value('spd') * spd };
 }
 
-/** Valore di ogni stato: danno nel tempo e debuff, prima di probabilità e immunità. */
-const STATUS_TABLE: Record<StatusSource['status'], { dot: number; debuff: number }> = {
-  tox: { dot: 1, debuff: 0 }, brn: { dot: 0.5, debuff: 0.25 }, psn: { dot: 0.5, debuff: 0 },
-  par: { dot: 0, debuff: 0.25 }, slp: { dot: 0, debuff: 1 }, yawn: { dot: 0, debuff: 0.5 },
-  trap: { dot: 0.25, debuff: 0 }, salt: { dot: 1, debuff: 0 }, seed: { dot: 0.5, debuff: 0 },
+/**
+ * Valore di ogni stato: danno nel tempo e Disruptor, prima di probabilità e immunità. 2026-11-20 (utente): la scottatura
+ * conta piena nel DoT (era 0,5 più 0,25 di debuff); paralisi, sonno e Yawn pieni nel Disruptor (erano 0,25, 1 e 0,5).
+ */
+const STATUS_TABLE: Record<StatusSource['status'], { dot: number; disruptor: number }> = {
+  tox: { dot: 1, disruptor: 0 }, brn: { dot: 1, disruptor: 0 }, psn: { dot: 0.5, disruptor: 0 },
+  par: { dot: 0, disruptor: 1 }, slp: { dot: 0, disruptor: 1 }, yawn: { dot: 0, disruptor: 1 },
+  trap: { dot: 0.25, disruptor: 0 }, salt: { dot: 1, disruptor: 0 }, seed: { dot: 0.5, disruptor: 0 },
 };
+
+/**
+ * Il DoT si somma come probabilità (2026-11-20, utente): "almeno una fonte riesce", 1 − (1 − a)(1 − b)…, dentro il
+ * membro e fra i membri del team (needs.ts). Tre Scald coprono la voce, due no; Toxic basta da sola.
+ */
+export const combineChances = (values: number[]): number => 1 - values.reduce((miss, v) => miss * (1 - Math.min(1, Math.max(0, v))), 1);
 const VOLATILE_STATUS: Record<string, StatusSource['status']> = {
   yawn: 'yawn', leechseed: 'seed', saltcure: 'salt', partiallytrapped: 'trap',
 };
@@ -97,7 +108,7 @@ export function statusSources(set: TeamSet): StatusSource[] {
   const add = (move: string, status: StatusSource['status'] | undefined, chance: number, accuracy: number) => {
     if (!status || !STATUS_TABLE[status]) return;
     const k = chance * (status === 'slp' ? accuracy : 1);
-    out.push({ move, status, dot: STATUS_TABLE[status].dot * k, debuff: STATUS_TABLE[status].debuff * k });
+    out.push({ move, status, dot: STATUS_TABLE[status].dot * k, disruptor: STATUS_TABLE[status].disruptor * k });
   };
   for (const m of set.moves.map(getMove).filter(isDefined)) {
     const accuracy = m.accuracy === true ? 1 : (m.accuracy ?? 100) / 100;
@@ -201,13 +212,11 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   else if (reflect || lightScreen || veil) put('screens', 0.6 * clay);
 
   // Disturbo
-  for (const s of statusSources(set)) {
-    put('dot', Math.min(1, s.dot));
-    put('debuff', Math.min(1, s.debuff));
-  }
+  const sources = statusSources(set);
+  put('dot', combineChances(sources.map(s => s.dot)));
+  for (const s of sources) put('disruptor', Math.min(1, s.disruptor));
   if (ids.some(id => PHAZER.has(id)) || ability === 'unaware') put('phazer', 1);
-  if (ids.includes('taunt')) put('taunt', 1);
-  if (ids.includes('encore')) put('encore', 1);
+  if (ids.includes('taunt') || ids.includes('encore')) put('disruptor', 1);
   if (ids.includes('knockoff')) put('itemRemoval', 1);
   if (ids.includes('trick') || ids.includes('switcheroo')) put('itemRemoval', item.startsWith('choice') ? 1 : 0.5);
 
@@ -428,17 +437,21 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   const open = ability === 'prankster'
     ? 1 - share(r => r.types.includes('Dark'))
     : outspeedShare(speedStat(set).value, speeds, set.species);
-  if (ids.includes('taunt')) put('taunt', open, 'Taunt', open);
-  if (ids.includes('encore')) put('encore', open, 'Encore', open);
-  if (ability === 'prankster') for (const r of reasons) if (r.role === 'taunt' || r.role === 'encore') r.prankster = true;
+  if (ids.includes('taunt')) put('disruptor', open, 'Taunt', open);
+  if (ids.includes('encore')) put('disruptor', open, 'Encore', open);
+  if (ability === 'prankster') for (const r of reasons) if (r.role === 'disruptor') r.prankster = true;
 
-  // Stati: valore x quota del gruppo che li può subire
+  // Stati: valore x quota del gruppo che li può subire; il DoT somma le fonti come probabilità, la fonte è la migliore
   const corrosion = ability === 'corrosion';
+  const dots: { move: string; value: number; share: number }[] = [];
   for (const src of statusSources(set)) {
     const s = share(r => affects(src, r, corrosion, ability === 'prankster'));
-    put('dot', Math.min(1, src.dot * s), src.move, s);
-    put('debuff', Math.min(1, src.debuff * s), src.move, s);
+    if (src.dot > 0) dots.push({ move: src.move, value: Math.min(1, src.dot * s), share: s });
+    // Uno stato che batte Taunt o Encore prende il posto del loro motivo (senza la nota di Prankster)
+    put('disruptor', Math.min(1, src.disruptor * s), src.move, s);
   }
+  const best = dots.reduce<(typeof dots)[number] | null>((a, d) => (!a || d.value > a.value ? d : a), null);
+  if (best) put('dot', combineChances(dots.map(d => d.value)), best.move, best.share);
   return { values, reasons };
 }
 

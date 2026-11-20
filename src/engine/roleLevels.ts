@@ -34,8 +34,8 @@ export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES
 export const LEVEL_KEYS: LevelKey[] = [
   'anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
   'physicalWall', 'specialWall', 'recovery',
-  'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer',
-  'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
+  'support', 'removal', 'screens', 'speedControl', 'phazer',
+  'hazards', 'pivot', 'dot', 'disruptor', 'itemRemoval',
 ];
 
 /**
@@ -56,7 +56,6 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * Calibrazione (Task 9): pivot minore in HO (i team HO da torneo spesso hanno lead con hazard e sweeper, senza pivot).
  * Oggi le voci importanti dell'HO e del Bulky Offense sono Hazard e Controllo Hazard (il vecchio gruppo "fieldSetup"
  * del 2026-10-24 non c'è più); dal 2026-11-02 i Ruoli sono una lista con malus e bonus (rolesArea.ts).
- * Il Debuff è minore anche in semi-stall e stall: paralisi o sonno aiutano, ma uno stall non ne ha bisogno (utente).
  */
 /**
  * Tabella 2026-11-01 (sera), dal censimento dei team da torneo del banco: 422 di Natdex OU (HO 39, BO 201, Balance 138,
@@ -116,14 +115,14 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Screens minori ovunque (utente 2026-11-08): un lavoro vero, +1 a chi li ha; le partite non dicono di più (vince ~48%)
   ['screens', M, M, M, M, M],
   ['speedControl', X, X, X, X, X],
-  ['debuff', X, X, X, X, X],
   ['phazer', X, X, M, I, E],
   // Utility
   ['hazards', I, I, E, E, E],
   ['pivot', M, M, M, M, X],
   ['dot', X, M, M, I, E],
-  ['taunt', X, X, X, X, X],
-  ['encore', X, X, X, X, X],
+  // Disruptor minore ovunque (utente 2026-11-20), anche dove i team da torneo di Natdex OU lo usano sotto il 30%
+  // (paralisi, sonno, Taunt, Encore: HO 60%, BO 43%, Balance 37%, Semi-stall 15%, Stall 0% di 5): solo +1, mai un malus
+  ['disruptor', M, M, M, M, M],
   ['itemRemoval', M, M, M, M, M],
 ];
 const COLUMNS: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];

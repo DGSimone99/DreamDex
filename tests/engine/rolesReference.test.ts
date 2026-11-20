@@ -19,7 +19,9 @@ import { REFERENCE_DIRS, ROLES_REFERENCE, type ReferenceFormat, type RoleExpecta
 const STRICT = process.env.ROLES_REFERENCE_STRICT === '1';
 const WRITE_REPORT = process.env.ROLES_REFERENCE_REPORT === '1';
 /** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146), più gli 8 controlli `primary` (Task 11); 2026-11-05: −5 per i set più usati senza mosse di stato bloccate (lockedMoves.ts); 2026-11-13: dati di ottobre 2026, 1095 su 1154 (i set più usati sono cambiati, il calcolo dei ruoli no). */
-const KNOWN_OK = 1095;
+// 2026-11-20: 1085 su 1145 (Debuff, Taunt ed Encore uniti nel Disruptor: le righe con due voci ne hanno una; la
+// scottatura passa dal Debuff al DoT)
+const KNOWN_OK = 1085;
 /** Discrepanze note e accettate (formato, specie, sotto-ruolo, tipo di controllo). */
 const KNOWN_MISMATCHES = new Set([
   'ubers Groudon-Primal physicalBreaker has',
@@ -35,7 +37,7 @@ const KNOWN_MISMATCHES = new Set([
   // un set misto che nessuno usa (Alomomola Assault Vest con Toxic, Gholdengo Scarf con Recover…)
   'ou Alomomola dot present',
   'ubers Gholdengo recovery has',
-  'uu Amoonguss debuff present',
+  'uu Amoonguss disruptor present',
   'gen9ou Dragapult dot present',
   'gen9ag Groudon hazards has',
   // Poison Heal con Toxic Orb conta come Recupero (2026-11-06): la tabella era stata scritta prima
@@ -46,13 +48,13 @@ const KNOWN_MISMATCHES = new Set([
   // il calcolo dei ruoli è lo stesso, cambia il set su cui si misura
   'ou Alomomola dot present',
   'ou Hatterene specialBreaker not',
-  'ou Hatterene debuff present',
+  'ou Hatterene disruptor present',
   'ou Gliscor recovery not',
   'ou Samurott-Hisui itemRemoval has',
-  'ou Slowking-Galar debuff present',
+  'ou Slowking-Galar disruptor present',
   'ubers Ho-Oh physicalWall has',
   'ubers Eternatus recovery has',
-  'ubers Arceus-Ground taunt present',
+  'ubers Arceus-Ground disruptor present',
   'ubers Chansey dot present',
   'uu Aerodactyl-Mega physicalBreaker has',
   'uu Aegislash physicalSweeper has',
@@ -68,20 +70,20 @@ const KNOWN_MISMATCHES = new Set([
   'uu Archaludon hazards has',
   'uu Archaludon phazer has',
   'uu Archaludon specialWall not',
-  'uu Archaludon debuff present',
+  'uu Archaludon disruptor present',
   'uu Mew hazards has',
   'uu Mew physicalSweeper not',
   'uu Mew physicalBreaker not',
   'uu Mew physicalWall not',
   'uu Mew specialWall not',
-  'uu Mew taunt present',
+  'uu Mew disruptor present',
   'uu Beedrill-Mega itemRemoval has',
   'uu Blissey pivot has',
-  'gen9ou Iron Valiant encore present',
+  'gen9ou Iron Valiant disruptor present',
   'gen9ou Slowking-Galar physicalWall has',
   'gen9ou Gliscor recovery not',
   'gen9ou Garchomp physicalWall not',
-  'gen9ou Hawlucha encore present',
+  'gen9ou Hawlucha disruptor present',
   'gen9uu Latios pivot has',
   'gen9uu Scizor physicalBreaker has',
   'gen9uu Arcanine-Hisui hazards has',

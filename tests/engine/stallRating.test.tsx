@@ -32,18 +32,18 @@ describe('team stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
     // da stall: muri, Recupero, Cleric, Anti-setup e Hazard essenziali ci sono, gli attaccanti non sono richiesti (solo minori);
-    // fra gli essenziali manca il Danno nel Tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic);
-    // il Controllo Hazard (importante) c'è; il Debuff è ignorato
+    // il Danno nel Tempo lo coprono insieme i due Toxic e Scald (2026-11-20: si somma); il Controllo Hazard (importante)
+    // c'è; il Disruptor è minore
     const needs = teamNeeds(stall, fixtureData);
-    expect(needs.essentialMissing).toEqual(['dot']);
+    expect(needs.essentialMissing).toEqual([]);
     // gli attaccanti sono solo minori (2026-11-11)
     expect(needs.levels.anySweeper).toBe('minor');
     expect(needs.levels.anyBreaker).toBe('minor');
     expect(needs.importantMissing).toEqual([]);
-    expect(needs.levels.debuff).toBe('ignored');
-    // Ruoli: una lista delle voci da stall; il Danno nel Tempo che manca è un malus essenziale (rolesArea.ts)
+    expect(needs.levels.disruptor).toBe('minor');
+    // Ruoli: una lista delle voci da stall; nessun essenziale manca, quindi nessun malus essenziale (rolesArea.ts)
     expect(rating.roles.total).toBe(LEVEL_KEYS.filter(k => needs.levels[k] !== 'ignored').length);
-    expect(rating.roles.failures.filter(f => f.catalog === 'essentialRole')).toEqual([expect.objectContaining({ points: ESSENTIAL_POINTS })]);
+    expect(rating.roles.failures.filter(f => f.catalog === 'essentialRole')).toEqual([]);
     expect(rating.areas.some(a => a.key === 'roles')).toBe(false);
     // Nello stall la Velocità conta poco (10%) ma conta: nessuna area è inattiva
     const speed = rating.areas.find(a => a.key === 'speed')!;
