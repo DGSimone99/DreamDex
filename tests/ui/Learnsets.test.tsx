@@ -49,10 +49,11 @@ describe('mosse e abilità legali nel team', () => {
     const bad = within(team()).getByLabelText('Mossa 1');
     expect(bad).toHaveAttribute('aria-invalid', 'true');
     expect(bad).toHaveAccessibleDescription(expect.stringContaining('Mosse non legali in questo formato: Dragon Darts'));
-    expect(bad.closest('.field')).toHaveClass('flag-warn');
+    expect(bad.closest('.field')).toHaveClass('flagged');
     expect(within(team()).getByLabelText('Mossa 2')).not.toHaveAttribute('aria-invalid');
-    // L'avviso giallo sotto la testata, con la via d'uscita
-    expect(team().querySelector('.member-problems.warn')).toHaveTextContent('Cambiale o attiva Custom Skillset');
+    // Solo il campo in rosso, niente avvisi a tutta larghezza; la via d'uscita nella descrizione
+    expect(bad).toHaveAccessibleDescription(expect.stringContaining('Cambiale o attiva Custom Skillset'));
+    expect(team().querySelector('.slot.open [role=note]')).toBeNull();
   });
 
   it('Custom Skillset: sblocca solo quel Pokémon, con tooltip e badge', async () => {

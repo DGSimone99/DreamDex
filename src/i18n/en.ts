@@ -610,7 +610,6 @@ export const en = {
   'team.notLegalTier': "Tier too high for {format}",
   'team.notLegalBanned': "Banned in {format}",
   'team.notInPokedex': "Not in the {format} Pokédex",
-  'team.findReplacement': "Find a replacement",
   'team.moveProposal': "Coach proposal: {to} instead of {from} · {n}",
   'team.moveProposalEmpty': "Coach proposal: {to} in the free slot · {n}",
   'team.moveProposalApply': "Apply",

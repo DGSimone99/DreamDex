@@ -226,9 +226,9 @@ interface Props {
   onSetChange?: (set: TeamSet) => void;
 }
 
-/** Un campo fuori regola: 'bad' vietato dal formato (rosso), 'warn' non legale per la specie (giallo, come sulla carta);
+/** Un campo fuori regola (vietato dal formato o non legale per la specie), segnato in rosso:
  *  `label` la parola breve sul campo, `text` la frase intera per i lettori di schermo. */
-export type FieldFlag = { level: 'bad' | 'warn'; label: string; text: string };
+export type FieldFlag = { label: string; text: string };
 /** I campi fuori regola del membro: strumento, abilità e le quattro mosse (per posizione). */
 export type FieldFlags = { item?: FieldFlag; ability?: FieldFlag; moves?: (FieldFlag | undefined)[] };
 
@@ -379,10 +379,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     pickTab(phoneTabs[next].id, true);
   };
   // Vuota (niente strumento, abilità o natura): filo ed etichetta gialli, come i segni "da controllare" del team
-  // Fuori regola (vietato o non legale): filo ed etichetta rossi o gialli, la parola breve dopo l'etichetta
+  // Fuori regola (vietato o non legale): filo ed etichetta rossi
   const plate = (label: string, control: ReactNode, empty = false, flag?: FieldFlag) => (
     // La targhetta intera (etichetta compresa) fa da campo: il menu si apre largo quanto lei
-    <div className={`set-plate${empty ? ' empty' : ''}${flag ? ` flag-${flag.level}` : ''}`} data-pop-anchor>
+    <div className={`set-plate${empty ? ' empty' : ''}${flag ? ' flagged' : ''}`} data-pop-anchor>
       <span className="field-label" aria-hidden="true">{label}</span>{control}
     </div>
   );
@@ -579,7 +579,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* Le mosse nello stesso riquadro Set (un gruppo col suo nome per i lettori di schermo) */}
         <div className="editor-group moves" role="group" aria-label={t('editor.moves')}>
         {moves.map((move, i) => (
-          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}${flags?.moves?.[i] ? ` flag-${flags.moves[i]!.level}` : ''}`} data-move-tip={move || undefined}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}${flags?.moves?.[i] ? ' flagged' : ''}`} data-move-tip={move || undefined}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
               {/* Fuori regola: al posto di potenza e precisione (stanno nel tooltip) la parola breve, nel colore del problema */}

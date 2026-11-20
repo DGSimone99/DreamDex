@@ -612,7 +612,6 @@ export const it: Record<keyof typeof en, string> = {
   'team.notLegalTier': "Tier troppo alto per {format}",
   'team.notLegalBanned': "Bannato in {format}",
   'team.notInPokedex': "Non c'è nel Pokédex di {format}",
-  'team.findReplacement': "Cerca un sostituto",
   'team.moveProposal': "Proposta del coach: {to} al posto di {from} · {n}",
   'team.moveProposalEmpty': "Proposta del coach: {to} nello slot libero · {n}",
   'team.moveProposalApply': "Applica",

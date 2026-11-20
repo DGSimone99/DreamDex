@@ -254,16 +254,6 @@
   .set-editor .editor-group { gap: var(--sp-3) var(--sp-6); }
   .editor-title .species-tag { bottom: calc(100% + 2px); }
 }
-/* Gli avvisi del membro (proposta di mossa, problemi) in una colonna: una riga sola nella griglia dell'editor */
-.member-notes { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--sp-4); }
-/* Problemi del membro detti per esteso, con la via d'uscita */
-.member-problems { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-4) var(--sp-6); border: 1px solid color-mix(in srgb, var(--bad) 55%, transparent); background: var(--bad-bg); color: var(--bad); font-size: var(--fs-small); }
-.member-problems .icon { flex: none; }
-.member-problems span { flex: 1; min-width: 0; color: var(--text); }
-.member-problems button { flex: none; height: 30px; white-space: nowrap; }
-/* Mosse o abilità che la specie non impara: giallo come il triangolo sulla carta; la via d'uscita dopo, più quieta */
-.member-problems.warn { border-color: color-mix(in srgb, var(--warn) 55%, transparent); background: var(--warn-bg); color: var(--warn); }
-.member-problems small { display: inline; margin-left: var(--sp-4); color: var(--muted); font-size: inherit; }
 /* Testate dentro l'editor: targhette neutre come tutti i titoli (--plate), il magenta resta a "sei qui" e "fai questo" */
 /* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
 .shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
