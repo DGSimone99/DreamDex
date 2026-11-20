@@ -221,6 +221,8 @@ interface Props {
   proposedSlot?: number;
   /** Strumento, abilità e mosse fuori regola: segnati sul loro campo, non solo sulla carta. */
   flags?: FieldFlags;
+  /** Strumento vietato nel formato: nel menu in fondo, con l'etichetta Vietato. */
+  itemBanned?: (name: string) => boolean;
   /** Telefono: apre l'editor su questa scheda (la Sfida, arrivando da "lascialo a"); `key` cambia a ogni richiesta. */
   startTab?: { tab: 'set' | 'stats' | 'duel'; key: number } | null;
   onChange: (set: TeamSet) => void;
@@ -234,7 +236,7 @@ export type FieldFlag = { label: string; text: string; /** Sulle mosse: la mossa
 /** I campi fuori regola del membro: strumento, abilità e le quattro mosse (per posizione). */
 export type FieldFlags = { item?: FieldFlag; ability?: FieldFlag; moves?: (FieldFlag | undefined)[] };
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, startTab, onChange, onSetChange = onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, startTab, itemBanned, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -276,11 +278,28 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       .filter(name => pokedex !== 'sv' || !getMove(name)?.isNonstandard);
     return withCommon(names.map(name => moveOption(name, lang)), common?.moves);
   }, [custom, set.species, genLimit, pokedex, game, lang, commonKey]);
-  const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS
-    .filter(name => pokedex !== 'sv' || !dex.items.get(name).isNonstandard)
-    .map(name => ({
-      value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
-    })), common?.items), [pokedex, lang, commonKey]);
+  // Strumenti: in ordine alfabetico nella lingua scelta; niente Megapietre, cristalli Z e strumenti di altri Pokémon
+  // (con Custom Skillset sì, e quello già nel set resta); quelli vietati nel formato in fondo, con l'etichetta Vietato
+  const forOthers = (name: string) => {
+    const users = dex.items.get(name).itemUser;
+    const me = getSpecies(set.species);
+    if (!users?.length || !me) return false;
+    return !users.some(user => user === me.name || getSpecies(user)?.baseSpecies === me.baseSpecies);
+  };
+  const itemOptions = useMemo<ComboOption[]>(() => {
+    const options = ITEMS
+      .filter(name => (pokedex !== 'sv' || !dex.items.get(name).isNonstandard) && (custom || name === set.item || !forOthers(name)))
+      .map(name => {
+        const banned = !!itemBanned?.(name);
+        return {
+          value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
+          ...(banned ? { detail: <span className="opt-banned">{t('editor.flagBannedItem')}</span> } : {}), banned,
+        };
+      })
+      .sort((a, b) => Number(a.banned) - Number(b.banned) || a.label.localeCompare(b.label, lang))
+      .map(({ banned: _banned, ...option }) => option);
+    return withCommon(options, common?.items);
+  }, [pokedex, lang, commonKey, set.species, custom, set.item, itemBanned]); // eslint-disable-line react-hooks/exhaustive-deps
   const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
     const label = natureName(name, lang);
@@ -388,6 +407,24 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     <div className={`set-plate${empty ? ' empty' : ''}${flag ? ' flagged' : ''}`} data-pop-anchor>
       <span className="field-label" aria-hidden="true">{label}</span>{control}
     </div>
+  );
+
+  /**
+   * La testa di un campo fuori regola, uguale per mosse, strumento e abilità: ⚠ e la parola breve (Vietata, Non legale)
+   * e, se c'è, ⇄ con cosa mettere al posto (un clic lo mette nel set; passandoci sopra il suo tooltip).
+   */
+  const flagHead = (kind: 'move' | 'item' | 'ability', flag: FieldFlag, current: string, apply: (to: string) => void) => (
+    <span className="field-flags">
+      <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flag.label}</span>
+      {flag.swap && (
+        <button type="button" className={`field-swap${kind === 'move' ? '' : ' tip'}`}
+          {...(kind === 'move' ? { 'data-move-tip': flag.swap } : { 'data-tip': gameDesc(kind, flag.swap, lang) ?? describe[kind](flag.swap, lang) })}
+          aria-label={t('editor.swapMove', { to: gameName(kind, flag.swap, lang), from: gameName(kind, current, lang) })}
+          onClick={() => apply(flag.swap!)}>
+          <Icon name="swap" /><span>{gameName(kind, flag.swap, lang)}</span>
+        </button>
+      )}
+    </span>
   );
 
   return (
@@ -561,6 +598,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         </label>
         <div className="editor-group set-plates">
         <div className="field" data-tip={itemDesc}>
+          {/* Fuori regola: sopra la targhetta la parola breve e ⇄ lo strumento da mettere al posto, come sulle mosse */}
+          {flags?.item && <span className="field-head">{flagHead('item', flags.item, set.item, item => update({ item }))}</span>}
           {plate(t('editor.item'), (
             <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
               leading={set.item ? <ItemIcon item={set.item} /> : undefined} invalid={flags?.item?.text}
@@ -568,6 +607,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           ), !set.item, flags?.item)}
         </div>
         <div className="field" data-tip={abilityDesc}>
+          {!megaAbility && flags?.ability && <span className="field-head">{flagHead('ability', flags.ability, set.ability, ability => update({ ability }))}</span>}
           {plate(t('editor.ability'), megaAbility ? (
             <span className="plate-lock" title={t('editor.megaAbility')}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
@@ -587,17 +627,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               {t('editor.move', { n: i + 1 })}
               {/* Fuori regola: al posto di potenza e precisione (stanno nel tooltip) la parola breve, nel colore del problema */}
               {flags?.moves?.[i] ? (
-                <span className="field-flags">
-                  <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flags.moves[i]!.label}</span>
-                  {/* La mossa proposta al posto: ⇄ e il nome, un clic la mette nel set */}
-                  {flags.moves[i]!.swap && (
-                    <button type="button" className="field-swap" data-move-tip={flags.moves[i]!.swap}
-                      aria-label={t('editor.swapMove', { to: gameName('move', flags.moves[i]!.swap!, lang), from: gameName('move', move, lang) })}
-                      onClick={() => { const next = [...moves]; next[i] = flags.moves![i]!.swap!; update({ moves: next }); }}>
-                      <Icon name="swap" /><span>{gameName('move', flags.moves[i]!.swap!, lang)}</span>
-                    </button>
-                  )}
-                </span>
+                flagHead('move', flags.moves[i]!, move, to => { const next = [...moves]; next[i] = to; update({ moves: next }); })
               ) : <MoveDetail name={move} inField />}
             </span>
             <Combobox

@@ -365,6 +365,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   // togli) al posto dei pulsantini sulla carta; il suggerimento del trascinamento (col dito non si trascina) non serve
   const touch = useMediaQuery(TOUCH_QUERY);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shrunk, setShrunk] = useState(false);
+  useEffect(() => { if (!open) setShrunk(false); }, [open]);
   const menuRef = useRef<HTMLDivElement>(null);
   const hold = useRef<{ x: number; y: number; timer: number } | null>(null);
   const held = useRef(false);
@@ -425,10 +427,19 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     if (pick) taken.add(toID(pick));
     return pick;
   };
+  // Strumento e abilità: il più usato del Pokémon che sia permesso (e legale, per l'abilità) e diverso da quello di ora
+  const itemSwap = () => common.items.find(({ name }) => toID(name) !== toID(set.item) && !bannedParts({ ...set, item: name }, format).item)?.name;
+  // (senza dati d'uso le abilità della specie, nell'ordine del Pokédex)
+  const abilitySwap = () => [...common.abilities.map(c => c.name), ...Object.values(species?.abilities ?? {})].find(name => {
+    if (toID(name) === toID(set.ability)) return false;
+    const probe = { ...set, ability: name };
+    return !bannedParts(probe, format).ability && !illegalParts(probe, format.genLimit, pokedexOf(format)).ability;
+  });
+  const itemBannedIn = useCallback((name: string) => !!bannedParts({ moves: [], ability: '', item: name }, format).item, [format]);
   const fieldFlags: FieldFlags = {
-    item: banned.item ? bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })) : undefined,
-    ability: banned.ability ? bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) }))
-      : illegal.ability ? warn(illegalAbilityText!, tr('team.illegalAbilityHint')) : undefined,
+    item: banned.item ? { ...bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })), label: tr('editor.flagBannedItem'), swap: itemSwap() } : undefined,
+    ability: banned.ability ? { ...bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) })), swap: abilitySwap() }
+      : illegal.ability ? { ...warn(illegalAbilityText!, tr('team.illegalAbilityHint')), swap: abilitySwap() } : undefined,
     moves: [0, 1, 2, 3].map(i => {
       const move = set.moves[i];
       if (!move) return undefined;
@@ -606,7 +617,15 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
-      <div className="drawer" id={drawerId} inert={!open}>
+      {/* Telefono: scorrendo l'editor la testata (il riepilogo del membro) si stringe a una riga */}
+      <div className={`drawer${shrunk ? ' shrunk' : ''}`} id={drawerId} inert={!open} onScroll={e => {
+        const el = e.currentTarget;
+        const top = el.scrollTop;
+        // Soglie diverse per stringere e riallargare: la testata che cambia altezza non fa tremare la scelta. Si stringe
+        // solo se resta da scorrere anche dopo (la testata stretta è circa 200 px più bassa), se no torna subito su
+        if (!shrunk && top > 80 && el.scrollHeight - el.clientHeight > 260) setShrunk(true);
+        else if (shrunk && top < 8) setShrunk(false);
+      }}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
         duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} onOpenMember={actions.openWith} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
@@ -660,6 +679,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         }
         proposedSlot={open && proposal ? proposal.slot : undefined}
         flags={open ? fieldFlags : undefined}
+        itemBanned={open ? itemBannedIn : undefined}
         startTab={startTab}
         notice={open && proposal && (
           <div className="move-proposal" role="note">
