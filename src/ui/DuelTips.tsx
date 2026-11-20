@@ -92,7 +92,8 @@ export function DuelTips({ me, opp, quick, result, onApply }: {
   const openQuick = open ? chips.find(c => c.id === open) ?? null : null;
 
   return (
-    <div className="duel-tips" ref={lineRef}>
+    // Esc con il fuoco sul chip (o nella scheda) chiude solo la scheda: non arriva alla carta del team, che chiuderebbe l'editor
+    <div className="duel-tips" ref={lineRef} onKeyDown={e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(); } }}>
       <b>{t('editor.duelTips')}</b>
       {chips.length === 0 && <span className="duel-tips-none">{t('duel.tipsNone')}, {noneReason(me, opp, t)}</span>}
       {chips.map((chip, i) => {
@@ -160,12 +161,14 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
   let compare: ReactNode = <p className="duel-tip-busy">{t('duel.tipBusy')}</p>;
   if (tip && option) {
     if (tip.id === 'spe') {
+      const theirs = battleSpeed(opp);
+      const place = (n: number) => t(n > theirs ? 'editor.duelSpeedFirst' : n < theirs ? 'editor.duelSpeedSecond' : 'editor.duelSpeedEven');
       const a = battleSpeed(me);
       const b = battleSpeed(option.set);
       compare = (
         <div className="duel-tip-ba">
-          <span className="duel-tip-what">{t('editor.duelSpeed')}</span>
-          <span className="now big">{a}</span><Icon name="arrow" /><span className="new big">{b}</span>
+          <span className="duel-tip-what">{t('editor.duelSpeed')} · {opp.species} {theirs}</span>
+          <span className="now big">{place(a)} {a}</span><Icon name="arrow" /><span className="new big">{place(b)} {b}</span>
         </div>
       );
     } else {

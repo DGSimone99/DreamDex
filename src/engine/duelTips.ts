@@ -94,6 +94,31 @@ const speedRank = (me: TeamSet, opp: TeamSet) => {
   return SPEED_RANK[a > b ? 'mine' : a < b ? 'theirs' : 'tie'];
 };
 
+/** La variante fa davvero quello che promette il consiglio (togliere EV ai PS può annullare quelli messi in difesa). */
+function improves(id: TipId, me: TeamSet, next: TeamSet, opp: TeamSet): boolean {
+  if (id === 'spe') return battleSpeed(next) > battleSpeed(opp);
+  const was = duelHits(me, opp);
+  const now = duelHits(next, opp);
+  if (id === 'def') return (now.theirs?.hitsMaybe ?? Infinity) > (was.theirs?.hitsMaybe ?? Infinity);
+  return (now.mine?.hitsSure ?? Infinity) < (was.mine?.hitsSure ?? Infinity);
+}
+
+/**
+ * I chip dei consigli subito, senza voti: i consigli della Sfida che si possono pagare (almeno un modo di prendere gli EV
+ * che migliora davvero la sua riga). Gli stessi, nello stesso ordine, di duelTips.
+ */
+export function quickTips(me: TeamSet, opp: TeamSet, pool: readonly string[]): { id: TipId; add: EvMap; move: string | null }[] {
+  const duel = editorDuel(me, opp, pool);
+  const speed = duelSpeed(me, opp);
+  const ok = (id: TipId, add: EvMap) => evSources(me, add).some(v => improves(id, me, v.set, opp));
+  return [
+    ...(duel.defTip && ok('def', duel.defTip.add) ? [{ id: 'def' as const, add: duel.defTip.add, move: null }] : []),
+    ...(duel.atkTip && ok('atk', duel.atkTip.add) ? [{ id: 'atk' as const, add: duel.atkTip.add, move: null }] : []),
+    ...(speed.tip && ok('spe', { spe: speed.tip.evs }) ? [{ id: 'spe' as const, add: { spe: speed.tip.evs }, move: null }] : []),
+    ...(duel.moveTip ? [{ id: 'move' as const, add: {}, move: duel.moveTip.move }] : []),
+  ];
+}
+
 /** Il consiglio non peggiora le altre righe della Sfida (il tuo KO, i colpi che reggi, chi muove primo). */
 function keepsOthers(id: TipId, me: TeamSet, next: TeamSet, opp: TeamSet): boolean {
   const was = duelHits(me, opp);
@@ -121,7 +146,8 @@ export function duelTips(team: TeamSet[], index: number, opp: TeamSet, pool: rea
   const tips: DuelTip[] = [];
 
   const evTip = (id: TipId, row: DuelTip['row'], add: EvMap) => {
-    const options = evSources(me, add).map(v => ({ ...v, replaced: null, overall: rate(v.set), effects: metaEffects(me, v.set, threats) }));
+    const options = evSources(me, add).filter(v => improves(id, me, v.set, opp))
+      .map(v => ({ ...v, replaced: null, overall: rate(v.set), effects: metaEffects(me, v.set, threats) }));
     if (!options.length) return;
     const keeps = options.map(o => keepsOthers(id, me, o.set, opp));
     const left = (o: TipOption) => STATS.reduce((acc, stat) => acc + (o.taken[stat] ? ev(o.set.evs, stat) : 0), 0);

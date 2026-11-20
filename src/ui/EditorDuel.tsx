@@ -21,6 +21,7 @@ import { PokemonIcon } from './PokemonName';
 import { useMemberTip } from './MemberCard';
 import { DuelTips, type QuickTip } from './DuelTips';
 import { useDuelTips } from './useDuelTips';
+import { quickTips } from '../engine/duelTips';
 import { MovePill } from './MovePill';
 import { StatIcon } from './StatIcon';
 import { Sprite, typeColor } from './Sprite';
@@ -206,12 +207,9 @@ export function EditorDuel({ set, team, data, format, onApply }: {
   const evShort = (add: Partial<Record<StatID, number>>) => (Object.entries(add) as [StatID, number][])
     .map(([stat, n]) => `+${n} ${statShort(stat, lang)}`).join(' ');
   // I chip dei consigli subito (dal calcolo della Sfida); i consigli completi arrivano dal calcolo in sottofondo
-  const quick: QuickTip[] = [
-    ...(result?.defTip ? [{ id: 'def' as const, label: evShort(result.defTip.add) }] : []),
-    ...(result?.atkTip ? [{ id: 'atk' as const, label: evShort(result.atkTip.add) }] : []),
-    ...(speed?.tip ? [{ id: 'spe' as const, label: evShort({ spe: speed.tip.evs }) }] : []),
-    ...(result?.moveTip ? [{ id: 'move' as const, label: gameName('move', result.moveTip.move, lang) }] : []),
-  ];
+  const quick: QuickTip[] = useMemo(() => (opp ? quickTips(me, opp, pool) : []).map(q => ({
+    id: q.id, label: q.move ? gameName('move', q.move, lang) : evShort(q.add),
+  })), [me, opp, pool, lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const meIndex = squad.findIndex(member => member.species === set.species);
   const full = useDuelTips(meIndex >= 0 ? squad : [me], Math.max(0, meIndex), opp, pool, data);
 

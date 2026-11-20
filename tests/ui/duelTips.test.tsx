@@ -75,4 +75,29 @@ describe('consigli della Sfida: chip e scheda', () => {
     await user.click(screen.getByRole('button', { name: '+32 DifSp' }));
     expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Applica' })).toBeDisabled();
   });
+
+  it('Esc sul chip chiude solo la scheda (non arriva a chi sta sopra, cioè all editor)', async () => {
+    const user = userEvent.setup();
+    const outer = vi.fn();
+    renderIt(<div onKeyDown={e => { if (e.key === 'Escape') outer(); }}><DuelTips me={me} opp={gholdengo} quick={quick} result={fakeResult} /></div>);
+    const chip = screen.getByRole('button', { name: '+32 DifSp' });
+    await user.click(chip);
+    expect(chip).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(outer).not.toHaveBeenCalled();
+    expect(chip).toHaveFocus();
+  });
+
+  it('Velocità: prima → dopo dice chi muove primo', async () => {
+    const user = userEvent.setup();
+    const slow = { ...me, item: 'Leftovers', nature: 'Brave', evs: { hp: 4, atk: 252, def: 252 } };
+    const fast = { ...slow, item: 'Choice Scarf', evs: { hp: 4, atk: 252, spe: 252 } };
+    const result: DuelTipsResult = { overall: 80, tips: [{ id: 'spe', row: 'speed', add: { spe: 100 }, move: null, best: 0,
+      options: [{ set: fast, taken: { def: 252 }, replaced: null, overall: 80, effects: [] }] }] };
+    renderIt(<DuelTips me={slow} opp={gholdengo} quick={[{ id: 'spe', label: '+100 Vel' }]} result={result} />);
+    await user.click(screen.getByRole('button', { name: '+100 Vel' }));
+    const card = screen.getByRole('dialog');
+    expect(card).toHaveTextContent(/Secondo \d+.*Primo \d+/);
+  });
 });
