@@ -1182,4 +1182,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .set-editor .field-swap { height: 28px; padding: 0 var(--sp-4); }
   .set-editor .field-swap::before { inset: -9px 0; }
   .set-editor :is(.field.flagged, .field:has(> .set-plate.flagged)) > .field-head { min-height: 28px; margin-bottom: var(--sp-3); }
+  /* Sul telefono (una colonna) la riga sopra strumento e abilità c'è solo con l'avviso: niente spazio vuoto */
+  .set-editor .editor-group.set-plates .field > .field-head:empty { display: none; }
 }

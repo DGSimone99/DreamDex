@@ -599,7 +599,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         <div className="editor-group set-plates">
         <div className="field" data-tip={itemDesc}>
           {/* Fuori regola: sopra la targhetta la parola breve e ⇄ lo strumento da mettere al posto, come sulle mosse */}
-          {flags?.item && <span className="field-head">{flagHead('item', flags.item, set.item, item => update({ item }))}</span>}
+          {/* La riga sopra c'è sempre (vuota se va tutto bene): quando compare l'avviso niente si sposta */}
+          <span className="field-head">{flags?.item && flagHead('item', flags.item, set.item, item => update({ item }))}</span>
           {plate(t('editor.item'), (
             <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
               leading={set.item ? <ItemIcon item={set.item} /> : undefined} invalid={flags?.item?.text}
@@ -607,7 +608,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           ), !set.item, flags?.item)}
         </div>
         <div className="field" data-tip={abilityDesc}>
-          {!megaAbility && flags?.ability && <span className="field-head">{flagHead('ability', flags.ability, set.ability, ability => update({ ability }))}</span>}
+          <span className="field-head">{!megaAbility && flags?.ability && flagHead('ability', flags.ability, set.ability, ability => update({ ability }))}</span>
           {plate(t('editor.ability'), megaAbility ? (
             <span className="plate-lock" title={t('editor.megaAbility')}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
