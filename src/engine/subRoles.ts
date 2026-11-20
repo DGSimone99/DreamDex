@@ -42,7 +42,8 @@ export const ATTACKER_ROLES: SubRole[] = ['physicalAttacker', 'specialAttacker']
  * I sotto-ruoli del doppio (2026-11-21): valgono 1 se il membro ha la mossa, e si calcolano solo nei formati col tipo
  * unico (isOneType). Scelti sulle partite vere di National Dex Doubles: Protect (o simili), Fake Out, un attacco che
  * colpisce più bersagli, la deviazione (solo Follow Me e Rage Powder) e chi colpisce per primo (Fake Out o un attacco
- * con priorità). Fuori dalle famiglie, come ATTACKER_ROLES: niente carte, filtri o famiglia principale.
+ * con priorità). Fuori dalle famiglie, come ATTACKER_ROLES, e mai famiglia principale; in doppio però sono loro i ruoli
+ * mostrati di un membro (carte, filtri, somiglianza, "Porta / Toglie"): la lista è DOUBLES_LIST, vedi rolesListFor.
  */
 export const DOUBLES_ROLES: SubRole[] = ['protect', 'fakeOut', 'spread', 'redirector', 'firstStrike'];
 const PROTECT = new Set(['protect', 'detect', 'spikyshield', 'kingsshield', 'banefulbunker', 'silktrap', 'burningbulwark', 'obstruct']);
@@ -83,6 +84,24 @@ const ORDER: SubRole[] = (Object.values(FAMILIES) as SubRole[][]).flat();
 
 /** I sotto-ruoli con valore almeno `min`, nell'ordine delle famiglie. */
 export const rolesList = (v: SubRoleValues, min = 0.5): SubRole[] => ORDER.filter(r => (v[r] ?? 0) >= min);
+
+/**
+ * I ruoli di un membro in doppio, nell'ordine in cui si elencano: attacco, muri, poi le voci del voto del doppio (Fake
+ * Out, Redirector, mossa a più bersagli, priorità, pivot, hazard) e Protect per ultimo (lo ha quasi metà dei Pokémon).
+ * Rimozione, recupero, schermi, stati e gli altri ruoli del singolo in doppio non si mostrano: il voto non li chiede.
+ */
+export const DOUBLES_LIST: SubRole[] = [
+  'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalAttacker', 'specialAttacker',
+  'physicalWall', 'specialWall', 'fakeOut', 'redirector', 'spread', 'firstStrike', 'pivot', 'hazards', 'protect',
+];
+
+/**
+ * La lista dei ruoli di un membro secondo il formato: nel singolo quella delle famiglie (rolesList), in doppio quella
+ * del doppio (DOUBLES_LIST; gli attaccanti di un lato ci sono solo coi valori misurati nel team). L'unico punto che
+ * sceglie fra le due: chi mostra o confronta i ruoli passa di qui.
+ */
+export const rolesListFor = (v: SubRoleValues, rules: FormatRules, min = 0.5): SubRole[] =>
+  (isOneType(rules) ? DOUBLES_LIST.filter(r => (v[r] ?? 0) >= min) : rolesList(v, min));
 
 /** Indice di muro: PS x Dif e PS x DifSp sulle statistiche reali (livello 100), con i moltiplicatori di strumento e abilità. */
 export function wallIndex(set: TeamSet): { physical: number; special: number } {

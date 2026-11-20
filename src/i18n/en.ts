@@ -59,6 +59,8 @@ export const en = {
   'roleDesc.spread': "Has an attack that hits both opponents",
   'roleDesc.redirector': "Draws the hits aimed at its partner onto itself",
   'roleDesc.firstStrike': "Strikes first with Fake Out or a priority attack",
+  'roleDesc.anyAttacker': "Deals serious damage: the team relies on it to knock out opponents",
+  'roleDesc.anyWall': "Takes hits well and stays on the field for a long time",
   'roleDesc.setup': "Has a move that boosts it before attacking",
   'family.attack': "Attackers",
   'family.defense': "Defenders",

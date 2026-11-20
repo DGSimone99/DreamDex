@@ -61,6 +61,8 @@ export const it: Record<keyof typeof en, string> = {
   'roleDesc.spread': "Ha un attacco che colpisce tutti e due gli avversari",
   'roleDesc.redirector': "Attira su di sé i colpi diretti al compagno",
   'roleDesc.firstStrike': "Colpisce per primo con Fake Out o un attacco con priorità",
+  'roleDesc.anyAttacker': "Fa danni seri: il team conta su di lui per mettere KO gli avversari",
+  'roleDesc.anyWall': "Regge bene i colpi e resta in campo a lungo",
   'roleDesc.setup': "Ha una mossa che lo potenzia prima di attaccare",
   'family.attack': "Attaccanti",
   'family.defense': "Difensori",

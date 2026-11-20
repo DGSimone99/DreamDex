@@ -1,8 +1,8 @@
 import { battleAbility, battleSpecies, getMove, toID } from './dex';
 import { orbStatus } from './damage';
 import { memberPower } from './power';
-import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from './roles';
-import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesList, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
+import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles, shownRoles, type ShownRole } from './roles';
+import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesListFor, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
 import { isOneType, type FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { benefits, enables, usesCondition, type Condition } from './synergy';
@@ -245,8 +245,8 @@ export function fitsTeamType(set: TeamSet, archetype: Archetype, rules: FormatRu
   return fitsArchetype(set, archetype, rules);
 }
 
-/** Ruoli della carta del team: i sotto-ruoli del motore, più il meteo e il setup, che compaiono solo lì. */
-export type CardRole = SubRole | 'weather' | 'setup';
+/** Ruoli della carta del team: i ruoli mostrati (in doppio anche "Attaccante" e "Muro"), più il meteo e il setup, che compaiono solo lì. */
+export type CardRole = ShownRole | 'weather' | 'setup';
 const WEATHERS: Condition[] = ['rain', 'sun', 'sand', 'snow'];
 
 /** Il meteo che il membro porta, con abilità o mossa (non la neve di passaggio di Chilly Reception). */
@@ -260,9 +260,11 @@ export function weatherOf(set: TeamSet): { condition: Condition; via: string } |
  * muri, primaryFamily, la stessa decisione dei bisogni), altrimenti il primo di Campo e Disturbo; poi il meteo, gli altri supporti, il Recupero (mai
  * principale se c'è altro: lo hanno quasi tutti) e il setup, che si salta per uno sweeper, che lo implica.
  * `measured`: i sotto-ruoli misurati del membro nel team (gli stessi del voto); senza, quelli del solo set.
+ * In doppio (doublesCardRoles): "Attaccante" o "Muro", poi le voci del doppio, con Protect per ultimo.
  */
 export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleValues): CardRole[] {
-  const roles = measured ? rolesList(measured) : detectRoles(set, rules);
+  const roles = measured ? rolesListFor(measured, rules) : detectRoles(set, rules);
+  if (isOneType(rules)) return doublesCardRoles(set, roles, measured ?? setSubRoles(set, rules), rules);
   // Liste costruite qui e non al caricamento: subRoles.ts e questo modulo si importano a vicenda
   const walls: SubRole[] = ['physicalWall', 'specialWall'];
   // Famiglia principale: la stessa decisione dei bisogni (primaryFamily: verdetto degli EV, poi il valore migliore)
@@ -279,6 +281,33 @@ export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleVa
   const supportMember = !order.includes(main as SubRole);
   const recovery: CardRole[] = supportMember && roles.includes('recovery') ? ['recovery'] : [];
   return [...(main ? [main] : []), ...weather, ...support, ...setup, ...recovery].filter((role, i, all) => all.indexOf(role) === i).slice(0, 2);
+}
+
+/**
+ * La carta in doppio: il principale è "Attaccante" o "Muro" (la stessa decisione primaryFamily; se il membro non ha
+ * quello, l'altro), poi nell'ordine Fake Out, Redirector, il meteo che porta, mossa a più bersagli, priorità (non per
+ * chi mostra già Fake Out, che la implica), pivot, hazard, setup (non per uno sweeper) e Protect per ultimo: lo ha
+ * quasi metà dei Pokémon, sulla carta dice poco.
+ */
+function doublesCardRoles(set: TeamSet, roles: SubRole[], values: SubRoleValues, rules: FormatRules): CardRole[] {
+  const shown = shownRoles(roles, rules);
+  const primary = primaryFamily(set, values);
+  const mains: ShownRole[] = primary === 'wall' ? ['anyWall', 'anyAttacker'] : ['anyAttacker', 'anyWall'];
+  const main = mains.find(role => shown.includes(role));
+  const sweeper = roles.includes('physicalSweeper') || roles.includes('specialSweeper');
+  const has = (role: SubRole) => roles.includes(role);
+  const rest: CardRole[] = [
+    ...(has('fakeOut') ? ['fakeOut' as const] : []),
+    ...(has('redirector') ? ['redirector' as const] : []),
+    ...(weatherOf(set) ? ['weather' as const] : []),
+    ...(has('spread') ? ['spread' as const] : []),
+    ...(has('firstStrike') && !has('fakeOut') ? ['firstStrike' as const] : []),
+    ...(has('pivot') ? ['pivot' as const] : []),
+    ...(has('hazards') ? ['hazards' as const] : []),
+    ...(hasSetup(set) && !sweeper ? ['setup' as const] : []),
+    ...(has('protect') ? ['protect' as const] : []),
+  ];
+  return [...(main ? [main] : []), ...rest].slice(0, 2);
 }
 
 /** Tipo di team con archetipo e stili, solo per un team completo; in doppio (tipo unico) per qualunque team non vuoto. */
