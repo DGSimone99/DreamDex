@@ -157,7 +157,6 @@
 .editor-actions .editor-close { width: 36px; padding: 0; justify-content: center; }
 .editor-actions .editor-close:hover { border-color: var(--bad); color: var(--bad); }
 /* L'elenco degli spread si apre sotto la targhetta Spread */
-.set-editor .evs .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
 /* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
    tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
@@ -185,12 +184,12 @@
 .editor-title .nickname strong { font: 800 var(--fs-display)/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
-/* La matita del soprannome: compare col mouse o col fuoco (come FORMATO ✎ nella barra a sinistra); al tocco resta sempre, tenue */
-.editor-title .nickname { display: inline-flex; align-items: center; gap: var(--sp-3); }
-.nickname-pencil { flex: none; display: grid; place-items: center; color: var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); }
+/* La matita del soprannome solo al tocco (tenue, in alto a destra del nome, senza occupare spazio); col mouse basta la
+   sottolineatura a puntini del nome: i tipi restano vicini al nome */
+.editor-title .nickname { position: relative; display: inline-flex; align-items: center; }
+.nickname-pencil { display: none; position: absolute; left: calc(100% + 1px); top: -4px; place-items: center; pointer-events: none; }
 .nickname-pencil .icon { width: 15px; height: 15px; }
-.editor-title .nickname:hover .nickname-pencil, .editor-title .nickname:focus-visible .nickname-pencil { opacity: 1; }
-@media (hover: none) { .nickname-pencil { opacity: 0.6; color: var(--muted); } }
+@media (hover: none) { .nickname-pencil { display: grid; opacity: 0.6; color: var(--muted); } }
 .editor-title .species-tag {
   position: absolute;
   left: 0;
@@ -255,11 +254,6 @@
   .set-editor .editor-group { gap: var(--sp-3) var(--sp-6); }
   .editor-title .species-tag { bottom: calc(100% + 2px); }
 }
-/* Problemi del membro detti per esteso, con la via d'uscita */
-.member-problems { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-4) var(--sp-6); border: 1px solid color-mix(in srgb, var(--bad) 55%, transparent); background: var(--bad-bg); color: var(--bad); font-size: var(--fs-small); }
-.member-problems .icon { flex: none; }
-.member-problems span { flex: 1; min-width: 0; color: var(--text); }
-.member-problems button { flex: none; height: 30px; white-space: nowrap; }
 /* Testate dentro l'editor: targhette neutre come tutti i titoli (--plate), il magenta resta a "sei qui" e "fai questo" */
 /* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
 .shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
@@ -363,6 +357,11 @@
 /* Schermi bassi (un portatile 1366×768 con Chrome massimizzato lascia circa 1366×657): la fascia del team si abbassa,
    carte alte 160 px (prima ~214) e carta del voto più compatta, così la lista dei candidati ha l'altezza per sprite ben
    visibili. Sulla carta restano sprite, strumento, nome, tipi e ruolo (l'abilità è nell'editor) */
+/* Schermi bassi ma larghi (es. 1286×791, Windows al 150%): le carte restano larghe anche togliendo un po' a ognuna,
+   il voto si allarga e le barre delle aree si leggono */
+@media (min-width: 1250px) and (max-height: 799px) {
+  .band { grid-template-columns: minmax(0, 1fr) 212px; }
+}
 @media (min-width: 1100px) and (max-height: 799px) {
   .band { padding-top: var(--sp-4); padding-bottom: var(--sp-9); }
   .team-head { margin-bottom: var(--sp-3); }
@@ -661,13 +660,11 @@
 .duel-settings svg { width: 15px; height: 15px; transition: transform 0.3s var(--ease); }
 .duel-settings[aria-expanded='true'] svg { transform: rotate(60deg); }
 .duel-settings:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.duel-settings-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: 320px; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); animation: tip 0.14s var(--ease); }
+.duel-settings-pop { position: fixed; z-index: 40; inset: auto; margin: 0; overflow-y: auto; overscroll-behavior: contain; color: var(--text); width: 320px; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); animation: tip 0.14s var(--ease); }
 .duel-settings-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: var(--sp-4); }
 .duel-settings-label { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
-.duel-settings-pop.up { top: auto; bottom: calc(100% + 6px); }
 .duel-settings-pop .combobox input { height: 32px; }
 /* Le tendine del pannello larghe quanto il loro selettore */
-.duel-settings-pop .combobox [role="listbox"] { width: 100%; }
 /* Il badge del set ricostruito dall'uso (non è per forza un preset Smogon) */
 .duel-usage-badge { flex: none; padding: 2px 6px; border-radius: 3px; font: 700 10px/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; color: var(--accent-ink); background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent); }
 .duel-set .combobox-display { gap: var(--sp-3); }
@@ -687,6 +684,20 @@
 .duel-reset { align-self: flex-start; padding: 0; border: 0; background: none; font: 600 var(--fs-caption)/1 var(--ui); color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .duel-settings-pop { animation: none; } .duel-settings svg { transition: none; } }
 .duel-name .duel-species { flex: 0 1 auto; min-width: 0; }
+/* Il giudizio sopra il nome: una targhetta inclinata nel colore dell'esito (rossa la peggiore e le sfavorevoli, gialla
+   alla pari, verde favorevole); come si decide nel tooltip */
+.duel-verdict { --v: var(--bad); align-self: flex-start; margin: 0 0 calc(-1 * var(--sp-2)) var(--sp-1); padding: 3px 10px 2px; cursor: help;
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+  background: color-mix(in srgb, var(--v) 30%, #0b0d14cc); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v) 55%, transparent);
+  font: 700 var(--fs-caption)/1.1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: color-mix(in srgb, var(--v) 70%, #fff); }
+.duel-verdict.worst { background: color-mix(in srgb, var(--v) 62%, #0b0d14); color: #fff; }
+.duel-verdict.even { --v: var(--warn); }
+.duel-verdict.good { --v: var(--good); }
+.duel-verdict:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Lo stesso giudizio, corto, nelle voci del meta della lista degli avversari */
+.duel-verdict-chip { font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--bad); }
+.duel-verdict-chip.even { color: var(--warn); }
+.duel-verdict-chip.good { color: var(--good); }
 .duel-species input { field-sizing: content; min-width: 4ch; max-width: 100%; height: 30px; padding: 0 22px 0 2px; border: 0; border-radius: 0; background: transparent; font: italic 800 20px/1 var(--display); letter-spacing: -0.005em; color: #fff; text-shadow: 0 2px 0 #00000073; text-overflow: ellipsis; cursor: pointer; }
 .duel-species::after { right: 6px; border-color: #ffffffcc; }
 /* I nomi lunghi più piccoli (come nelle carte del team), così il nome intero resta leggibile */
@@ -705,35 +716,34 @@
  * ne sono) così la scheda non salta; il risultato grande a destra.
  */
 .duel-rows { grid-column: 2; position: relative; z-index: 2; display: grid; align-content: space-evenly; padding: var(--sp-4) var(--sp-6) var(--sp-5) var(--sp-8); }
-.duel-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-6); row-gap: 5px; align-items: center; padding: var(--sp-4) 0; }
+/* A destra una colonna fissa per la Velocità (sempre allo stesso posto); i colpi stanno di fianco alla barra */
+.duel-row { display: grid; grid-template-columns: minmax(0, 1fr) 104px; column-gap: var(--sp-6); row-gap: 5px; align-items: center; padding: var(--sp-4) 0; }
 .duel-row + .duel-row { border-top: 1px solid #ffffff12; }
 .duel-title { grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 5px; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .duel-title svg { width: 13px; height: 13px; flex: none; }
 .duel-row.mine .duel-title svg { color: var(--accent); }
 .duel-row.theirs .duel-title svg { color: var(--bad); }
 /* L'etichetta della Velocità sul colpo, in fondo alla riga del titolo: verde chi muove prima, rossa l'altro, gialla pari */
-.duel-speed { --s: var(--muted); grid-column: 1; grid-row: 1; justify-self: end; display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px 0 4px; border-bottom: 0; border-radius: 3px; font: 600 var(--fs-caption)/1 var(--ui); color: var(--s); background: color-mix(in srgb, var(--s) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s) 40%, transparent); font-variant-numeric: tabular-nums; }
+.duel-speed { --s: var(--muted); grid-column: 2; grid-row: 1; justify-self: end; display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px 0 4px; border-bottom: 0; border-radius: 3px; font: 600 var(--fs-caption)/1 var(--ui); color: var(--s); background: color-mix(in srgb, var(--s) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s) 40%, transparent); font-variant-numeric: tabular-nums; }
 .duel-speed.first { --s: var(--good); }
 .duel-speed.second { --s: var(--bad); }
 .duel-speed.tie { --s: var(--warn); }
-.duel-speed b { font: italic 800 var(--fs-caption)/1 var(--display); }
+.duel-speed b { font: italic 800 var(--fs-caption)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
 .duel-speed svg { width: 11px; height: 11px; }
 .duel-speed.tip { cursor: help; }
 /* Il tooltip si apre verso sinistra: l'etichetta sta sul bordo destro e il tooltip uscirebbe dalla pagina */
 .duel-speed.tip[data-tip]:is(:hover, :focus-visible)::after { left: auto; right: 0; }
 .duel-speed:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .duel-label { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font: 600 12px/1.1 var(--display); }
-/* La pillola piccola, senza la coda della potenza: qui conta il danno vero, scritto accanto alla barra */
-.duel-label .duel-mvp .mvp-tail { display: none; }
+/* La pillola piccola con la coda della potenza della mossa */
 /* Il nome della mossa come nel Set: 14px (la pillola piccola lo regge) */
 .duel-label .duel-mvp { font-size: var(--fs-section); }
-.duel-label .duel-mvp .mvp-nm { padding-right: var(--sp-6); }
 .duel-label .duel-mvp { flex: 0 1 auto; min-width: 0; }
 .duel-speed-vs { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .duel-none { font: 600 var(--fs-small)/1.1 var(--ui); color: var(--faint); }
 /* Gli interruttori dei potenziamenti: la casellina si spunta e la riga si ricalcola. Verde la danza, azzurro il team,
    rosso quello dell'avversario; acceso, il fondo si fa pieno del suo colore */
-.duel-buff { --b: var(--good); flex: none; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 5px; border: 0; border-radius: 3px; font: 700 var(--fs-caption)/1 var(--ui); white-space: nowrap; color: var(--b); background: color-mix(in srgb, var(--b) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--b) 40%, transparent); cursor: pointer; transition: background 0.15s, box-shadow 0.15s; }
+.duel-buff { --b: var(--good); flex: none; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 7px 0 5px; border: 0; border-radius: 3px; font: 700 var(--fs-caption)/1 var(--ui); white-space: nowrap; color: var(--b); background: color-mix(in srgb, var(--b) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--b) 40%, transparent); cursor: pointer; transition: background 0.15s, box-shadow 0.15s; }
 .duel-buff.team { --b: var(--accent-ink); }
 .duel-buff.against { --b: var(--bad); }
 .duel-buff:hover { box-shadow: inset 0 0 0 1px var(--b); }
@@ -746,22 +756,125 @@
 .duel-sub { grid-column: 1; grid-row: 3; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
 .duel-sub:empty { display: none; }
 /* display: la regola di Meta Coverage che nasconde la barra nei riquadri bassi (@container) qui non vale */
-.duel-sub .cm-hp.duel-bar { position: relative; display: flex; flex: none; width: 150px; margin: 0; }
+.duel-sub .cm-hp.duel-bar { position: relative; display: flex; flex: 0 1 160px; min-width: 80px; margin: 0; }
 /* Il timbro KO sopra la barra (vuota), al centro della barra */
 .duel-sub .duel-ko { position: absolute; left: calc(50% + 9px); top: 50%; transform: translate(-50%, -50%); padding: 1px 7px; }
 .duel-range { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.duel-result { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.duel-result { display: inline-flex; align-items: baseline; gap: 4px; margin-left: var(--sp-4); white-space: nowrap; }
 .duel-big { font: italic 800 var(--fs-title-l)/0.9 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .duel-unit { font: 700 var(--fs-caption)/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .duel-result.good .duel-big { color: var(--good); }
 .duel-result.bad .duel-big { color: var(--bad); }
 .duel-result.warn .duel-big { color: var(--warn); }
 .duel-result.none .duel-big { color: var(--faint); }
-/* La riga dei consigli: corta a vista ("Consigli: Brave Bird · +236 EV in AttSp"), per intero nel tooltip */
-.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--accent-2-ink); }
-.duel-tips.tip { overflow: visible; border-bottom: 0; text-decoration: underline dotted color-mix(in srgb, var(--accent-2-ink) 55%, transparent); text-underline-offset: 3px; }
-.duel-tips b { font-weight: 700; }
-.duel-tips:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* La riga dei consigli: sempre presente in fondo alla Sfida (grigia senza consigli); ogni consiglio è un chip che apre la
+   sua scheda. Etichetta nel ciano del lavoro (il magenta resta raro). Due righe indipendenti: sotto il tuo colpo attacco,
+   mossa e Velocità; sotto il suo la difesa. */
+.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; }
+.duel-tips { position: relative; display: flex; align-items: center; gap: var(--sp-3); overflow: hidden; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--text); }
+.duel-tips > b { flex: none; font-weight: 700; color: var(--accent-ink); }
+.duel-tips-none { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--faint); }
+.duel-tips:has(.duel-tips-none) > b { color: var(--faint); }
+/* Perché non ci sono consigli: va già bene (verde), nessun ritocco basta (giallo), o il compagno a cui lasciarlo */
+.duel-tips-none.good { color: var(--good); }
+.duel-tips-none.stuck { color: var(--warn); }
+.duel-tips:has(.duel-mate) .duel-tips-none { flex: none; color: var(--warn); }
+/* Il compagno che vince lo scontro: un clic lo apre con lo stesso avversario (ciano del lavoro, come i chip) */
+.duel-mate { flex: 0 1 auto; display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; height: 20px; padding: 0 var(--sp-4) 0 var(--sp-3); border: 0; border-radius: 3px; cursor: pointer;
+  font: 600 12px/1 var(--ui); color: var(--text); background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: background 0.15s, box-shadow 0.15s; }
+.duel-mate:hover { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.duel-mate > .icon { flex: none; width: 12px; height: 12px; color: var(--accent-ink); }
+.duel-mate > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.duel-mate .mon-icon { flex: none; }
+.duel-tip-chip { flex: none; display: inline-flex; align-items: center; height: 20px; padding: 0 var(--sp-4); border: 0; border-radius: 3px; cursor: pointer;
+  font: 600 12px/1 var(--ui); color: var(--text); background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s; }
+.duel-tip-chip:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+.duel-tip-chip.on { color: var(--on-accent); background: var(--accent); box-shadow: none; }
+.duel-tip-chip.more { color: var(--muted); background: transparent; box-shadow: inset 0 0 0 1px var(--control-line); }
+.duel-tip-chip.out { visibility: hidden; position: absolute; }
+.duel-tip-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* La scheda di un consiglio: come le tendine (Ground, 6px, ombra Menu), bordo ciano come il chip acceso */
+.duel-tip-card { margin: 0; padding: 0; width: 324px; overflow: auto; color: var(--text); background: var(--ground); border: 1px solid var(--accent); border-radius: 6px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.55); white-space: normal; animation: tip 0.14s var(--ease); }
+.duel-tip-head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-6); border-bottom: 1px solid var(--line-soft); }
+.duel-tip-icon { display: inline-flex; width: 14px; height: 14px; }
+.duel-tip-icon svg { width: 14px; height: 14px; }
+.duel-tip-icon.def { color: var(--bad); }
+.duel-tip-icon.atk, .duel-tip-icon.move { color: var(--accent-ink); }
+.duel-tip-icon.spe { color: var(--warn); }
+.duel-tip-title { flex: 1 1 auto; min-width: 0; font: 600 var(--fs-section)/1.2 var(--ui); }
+.duel-tip-title .duel-tip-mvp { max-width: 100%; }
+.duel-tip-close { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--faint); cursor: pointer; }
+.duel-tip-close svg { width: 14px; height: 14px; }
+.duel-tip-close:hover { color: var(--text); background: var(--raised); }
+.duel-tip-close:focus-visible, .duel-tip-apply:focus-visible, .duel-tip-count:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.duel-tip-busy { margin: 0; padding: var(--sp-6); font: 500 12px/1.3 var(--ui); color: var(--faint); }
+/* Prima → dopo: oggi barrato, il nuovo in ciano; i colpi grandi in corsivo come nella Sfida */
+.duel-tip-ba { display: grid; grid-template-columns: auto auto auto 1fr; align-items: baseline; gap: 3px var(--sp-5); padding: var(--sp-5) var(--sp-6) var(--sp-2); font: 500 12px/1.2 var(--ui); color: var(--muted); }
+.duel-tip-what { grid-column: 1 / -1; color: var(--muted); }
+.duel-tip-ba > svg { width: 13px; height: 13px; align-self: center; color: var(--faint); }
+.duel-tip-ba .now { grid-column: 1; color: var(--faint); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--faint) 60%, transparent); }
+.duel-tip-ba .new { grid-column: 3; color: var(--accent-ink); font-weight: 600; }
+.duel-tip-ba .big { font: italic 800 var(--fs-title-l)/1 var(--display); white-space: nowrap; }
+.duel-tip-ba .big small { display: inline; margin-left: 3px; font: 700 11px/1 var(--ui); font-style: normal; text-transform: uppercase; letter-spacing: 0.04em; }
+.duel-tip-source.replace { display: flex; align-items: center; gap: var(--sp-4); padding-top: var(--sp-3); }
+.duel-tip-source.replace > .combobox { flex: 0 1 200px; min-width: 0; }
+.duel-tip-source { margin: 0; padding: var(--sp-2) var(--sp-6) 0; font: 500 12px/1.35 var(--ui); color: var(--faint); }
+/* Contro il resto del meta: il conto sottolineato a puntini apre la lista */
+.duel-tip-fx { display: grid; gap: var(--sp-3); margin: var(--sp-5) var(--sp-6) 0; padding-top: var(--sp-4); border-top: 1px solid var(--line-soft); }
+.duel-tip-label { font: 700 11px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.duel-tip-fxline { display: grid; grid-template-columns: 14px 1fr; gap: var(--sp-3); align-items: start; font: 500 12px/1.35 var(--ui); color: var(--muted); }
+.duel-tip-arrow { display: inline-flex; margin-top: 2px; }
+.duel-tip-arrow svg { width: 12px; height: 12px; }
+/* Verso l'alto: si gira solo il disegno (girare il riquadro, più alto della freccia, la farebbe scendere sotto la riga) */
+.duel-tip-fxline.up .duel-tip-arrow { color: var(--good); }
+.duel-tip-fxline.up .duel-tip-arrow svg { transform: rotate(180deg); }
+.duel-tip-fxline.down .duel-tip-arrow { color: var(--bad); }
+.duel-tip-count { padding: 0; border: 0; background: none; cursor: help; font: 600 12px/1.35 var(--ui); color: var(--text);
+  text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 3px; }
+.duel-tip-count:hover { color: var(--accent-ink); text-decoration-color: var(--accent); }
+.duel-tip-type { display: inline-block; margin-left: var(--sp-3); padding: 2px 5px 1px; border-radius: 3px; vertical-align: 1px;
+  font: 700 11px/1 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; color: #10142b; }
+/* Il voto del team: la lettera grande nel colore del voto (S magenta, A verde, B ciano, C giallo, D rosso), "80 → 79",
+   la targhetta del cambio; Applica a destra */
+.duel-tip-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); margin-top: var(--sp-5); padding: var(--sp-4) var(--sp-5) var(--sp-5) var(--sp-6); border-top: 1px solid var(--line-soft); }
+.duel-tip-grade { display: flex; align-items: center; gap: var(--sp-5); }
+.duel-tip-letter { --grade: var(--accent-ink); font: italic 800 34px/0.8 var(--display); color: var(--grade); text-shadow: 0 2px 0 rgb(0 0 0 / 0.35); }
+.duel-tip-letter.grade-S { --grade: var(--accent-2-ink); }
+.duel-tip-letter.grade-A { --grade: var(--good); }
+.duel-tip-letter.grade-C { --grade: var(--warn); }
+.duel-tip-letter.grade-D { --grade: var(--bad); }
+.duel-tip-score { display: flex; flex-direction: column; gap: 3px; }
+.duel-tip-nums { font: italic 800 var(--fs-title-l)/1 var(--display); font-variant-numeric: tabular-nums; }
+.duel-tip-diff { align-self: flex-start; padding: 3px 6px 2px; border-radius: 6px 2px 6px 2px; font: italic 800 13px/1 var(--display); }
+.duel-tip-diff.up { color: var(--good); background: var(--good-bg); }
+.duel-tip-diff.down { color: var(--bad); background: var(--bad-bg); }
+.duel-tip-diff.same { color: var(--muted); background: var(--raised); }
+.duel-tip-apply { flex: none; height: 30px; padding: 0 var(--sp-6); border: 0; border-radius: 9px 2px 9px 2px; cursor: pointer;
+  font: 700 12px/1 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); }
+.duel-tip-apply:hover { filter: brightness(1.1); }
+.duel-tip-apply:disabled { cursor: default; color: var(--faint); background: var(--raised); filter: none; }
+/* Il tooltip della lista: una riga per Pokémon, "2 → 3 colpi" */
+.duel-fx-tip { width: 236px; padding-bottom: var(--sp-3); }
+.duel-fx-tip-head { padding: var(--sp-4) var(--sp-5) var(--sp-3); font: 700 11px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.duel-fx-tip ul { display: grid; gap: 1px; margin: 0; padding: 0 var(--sp-5); list-style: none; }
+/* Col dito la stessa lista si apre dentro la scheda, sotto la riga: un riquadro scuro incassato, righe come nel tooltip */
+.duel-fx-inline { display: block; margin-top: var(--sp-3); padding: var(--sp-3) 0; border-radius: 4px; background: var(--field); box-shadow: var(--slot-inset); }
+.duel-fx-inline ul { display: grid; gap: 1px; margin: 0; padding: 0 var(--sp-4); list-style: none; }
+.duel-fx-inline .duel-fx-more { margin-inline: var(--sp-4); }
+/* Col dito si tocca tutta la riga: 44px con lo spazio sopra e sotto il testo (freccia e testo restano allineati anche
+   con la lista aperta); il conto si accende quando la lista è aperta */
+html.touch-tips .duel-tip-fxline { padding-block: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+html.touch-tips .duel-tip-fx { gap: 0; }
+html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink); text-decoration-color: var(--accent); }
+.duel-fx-tip li, .duel-fx-inline li { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: var(--sp-2); height: 24px; font: 600 12px/1.2 var(--ui); }
+.duel-fx-hits { font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.duel-fx-hits b.bad { color: var(--bad); }
+.duel-fx-hits b.good { color: var(--good); }
+.duel-fx-more { margin: var(--sp-2) var(--sp-5) 0; padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); font: 600 12px/1 var(--ui); color: var(--muted); }
 .duel-empty { grid-column: 2; position: relative; z-index: 2; align-self: center; margin: 0; padding: 0 var(--sp-6) 0 var(--sp-8); font-size: var(--fs-small); color: var(--faint); }
 @media (min-width: 1100px) {
   /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
@@ -800,11 +913,11 @@
   .duel-row { grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: var(--sp-3); padding: var(--sp-1) 0; }
   .duel-title { grid-column: 1; grid-row: 2; }
   .duel-title-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .duel-label { grid-column: 2; grid-row: 2; }
+  .duel-label { grid-column: 2 / -1; grid-row: 2; }
   .duel-sub { grid-column: 2; grid-row: 3; }
-  .duel-result { grid-column: 3; grid-row: 2 / 4; }
   .duel-tips { grid-column: 2 / -1; grid-row: 4; line-height: 1.15; }
-  .duel-speed { grid-column: 2; grid-row: 3; }
+  /* La Velocità a destra, sulla riga della barra (la mossa resta intera) */
+  .duel-speed { grid-column: 3; grid-row: 3; }
   .duel-stage { --stage-scale: 1.15; }
 }
 @container duel (max-height: 175px) {

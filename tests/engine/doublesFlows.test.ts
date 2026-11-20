@@ -37,7 +37,7 @@ describe('doppio: le voci dei Ruoli per formato', () => {
       const keys = levelKeysFor(rule);
       for (const key of ['secondProtect', 'anyWall', 'spread', 'fakeOut', 'redirector', 'secondFirstStrike'] as const) expect(keys).not.toContain(key);
       expect(keys).toContain('removal');
-      expect(keys).toHaveLength(26);
+      expect(keys).toHaveLength(24);
     }
   });
 });

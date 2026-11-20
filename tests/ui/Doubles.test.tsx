@@ -317,7 +317,7 @@ describe('doppio: filtri e carte dei candidati', () => {
   it('in singolo i filtri per ruolo restano quelli di sempre', () => {
     renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={NATDEX_OU_RULES} />);
     const names = chips();
-    expect(names).toHaveLength(21);
+    expect(names).toHaveLength(19);
     expect(names).not.toContain('Fake Out');
     expect(names).not.toContain('Attaccante');
   });

@@ -59,7 +59,7 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
                 {group.map(item => (
                   <li key={item.text} className="dash-role-tag">
                     <Icon name={side === 'gain' ? 'check' : 'close'} />
-                    <span className="visually-hidden">{side === 'gain' ? '+' : '−'}</span>{item.text}
+                    <span className="visually-hidden">{side === 'gain' ? '+' : '−'}</span><span className="dash-role-name">{item.text}</span>
                   </li>
                 ))}
               </ul>

@@ -598,7 +598,7 @@ const STATES: Record<string, State> = {
     await wait(500);
     const input = await p.$('.slot.open .duel-species input');
     if (!input) return 'no duel';
-    await input.click({ clickCount: 3 });
+    await input.click({ count: 3 });
     const opp = process.env.DUEL_OPP ?? 'Gholdengo';
     await input.type(opp);
     await wait(600);
@@ -611,6 +611,35 @@ const STATES: Record<string, State> = {
     if (!picked) return 'no option';
     await wait(1200);
     console.log(await p.evaluate(() => `duel=${[...document.querySelectorAll('.slot.open .duel-row')].map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | ')}`));
+    return true;
+  } },
+  'editor-duel-tip': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(500);
+    const input = await p.$('.slot.open .duel-species input');
+    if (!input) return 'no duel';
+    await input.click({ count: 3 });
+    const opp = process.env.DUEL_OPP ?? 'Gholdengo';
+    await input.type(opp);
+    await wait(600);
+    const picked = await p.evaluate((name: string) => {
+      const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-species [role="option"]')].find(o => (o.textContent ?? '').includes(name));
+      option?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      option?.click();
+      return !!option;
+    }, opp);
+    if (!picked) return 'no option';
+    await wait(1200);
+    // Il primo consiglio aperto, coi voti arrivati (Applica attivo)
+    const chip = await p.$('.slot.open .duel-tip-chip:not(.out)');
+    if (!chip) return 'no tip';
+    await chip.click();
+    await wait(1500);
+    console.log(await p.evaluate(() => {
+      const card = document.querySelector('.duel-tip-card');
+      const r = card?.getBoundingClientRect();
+      return `tipCard=${r ? `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)} vh=${innerHeight} vw=${innerWidth}` : 'none'} apply=${(card?.querySelector('.duel-tip-apply') as HTMLButtonElement | null)?.disabled === false} text=${(card?.textContent ?? '').replace(/\s+/g, ' ').slice(0, 160)}`;
+    }));
     return true;
   } },
   'editor-undo': { run: async p => {

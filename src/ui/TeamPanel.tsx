@@ -1,7 +1,7 @@
 import type { EngineData } from '../engine/data';
 import { bannedTexts } from '../engine/coach';
-import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
-import { formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
+import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, withinGen } from '../engine/dex';
+import { bannedParts, formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
@@ -19,7 +19,8 @@ import { cancelPrepareFill, prepareFill, prepareImproveSets } from './useRanking
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
-import { SetEditor } from './SetEditor';
+import { SetEditor, type FieldFlag, type FieldFlags } from './SetEditor';
+import { handOffOpponent } from './duelHandoff';
 import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
@@ -38,6 +39,9 @@ import { SMALL, useBackClose } from './useBackClose';
 import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
+import { useMediaQuery } from './useMediaQuery';
+import { TOUCH_QUERY } from './TouchTips';
+import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
 import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
@@ -46,10 +50,17 @@ import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 
+/** Il voto del team, per il chip nella testata dell'editor sul telefono (lì il voto grande è coperto). */
+export interface EditorGradeInfo { letter: string; overall: number; illegal: boolean }
+/** Il chip dell'editor: il voto di adesso e quello di quando si è aperto il membro. */
+type EditorGradeShown = EditorGradeInfo & { from: number };
+
 interface Props {
   team: TeamSet[];
   format: Format;
   data: EngineData;
+  /** Il voto del team (null senza voto): sul telefono un chip nell'editor dice di quanto cambia mentre modifichi. */
+  grade?: EditorGradeInfo | null;
   onChange: (team: TeamSet[]) => void;
   onAdd: (set: TeamSet) => void;
   onReplace: (index: number) => void;
@@ -72,6 +83,8 @@ interface Props {
   onPaste?: (index: number, set: TeamSet) => void;
   /** Set intero cambiato nell'editor (preset Smogon, I miei set, spread più usati), annullabile; se manca, si aggiorna solo il team. */
   onSetChange?: (index: number, set: TeamSet) => void;
+  /** Applica di un consiglio della Sfida: il set nuovo e il cambio in parole (per l'avviso Annulla). */
+  onTipApply?: (index: number, set: TeamSet, change: string) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
   onBulk?: (kind: 'presets' | 'fill' | 'clear' | 'tournament', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
@@ -171,6 +184,10 @@ interface SlotActions {
   change: (index: number, set: TeamSet) => void;
   /** Set intero cambiato (preset, I miei set, spread): con Annulla. */
   setChange: (index: number, set: TeamSet) => void;
+  /** Consiglio della Sfida applicato: con Annulla. */
+  tip: (index: number, set: TeamSet, change: string) => void;
+  /** La Sfida passa la mano: apre il membro `index` con lo stesso avversario. */
+  openWith: (index: number, opponent: string) => void;
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
@@ -189,8 +206,31 @@ const typesOverflow = (el: HTMLElement) =>
 /** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
 const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
+/**
+ * Telefono: il voto nella testata dell'editor, perché lì il voto grande è coperto. Lettera e punteggio; appena cambia,
+ * "74 → 76" col cambio in verde o rosso (il punto di partenza è il voto quando si è aperto il membro).
+ */
+function EditorGrade({ grade }: { grade: EditorGradeShown }) {
+  const tr = useT();
+  const { from } = grade;
+  const delta = grade.overall - from;
+  return (
+    <span className={`editor-grade grade-${grade.letter}${grade.illegal ? ' illegal' : ''}`}>
+      <span className="visually-hidden">{tr('editor.gradeLabel')} </span>
+      <b>{grade.letter}</b>
+      {delta === 0 ? <span>{grade.overall}</span> : (
+        <span className={delta > 0 ? 'up' : 'down'}>{from}<Icon name="next" /><b>{grade.overall}</b></span>
+      )}
+    </span>
+  );
+}
+
+const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null, startTab = null }: {
   index: number;
+  /** Telefono: la scheda dell'editor da aprire (la Sfida, arrivando da "lascialo a" di un compagno). */
+  startTab?: { tab: 'duel'; key: number } | null;
+  /** Il voto del team, solo per la carta aperta: il chip del telefono nella testata dell'editor. */
+  grade?: EditorGradeShown | null;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
   collapsed?: boolean;
   /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
@@ -221,6 +261,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const onIgnoreWarning = actions.ignoreWarning;
   const onChange = (next: TeamSet) => actions.change(index, next);
   const onSetChange = (next: TeamSet) => actions.setChange(index, next);
+  const onTip = (next: TeamSet, change: string) => actions.tip(index, next, change);
   const onRemove = () => actions.remove(index);
   const onReplace = () => actions.replace(index);
   const onProposalDone = actions.proposalDone;
@@ -240,11 +281,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const onBestIndex = () => actions.bestIndex(index);
   // Apre il riquadro del testo del set (assegnato più sotto, dove c'è il suo stato)
   const textOpen = useRef<() => void>(() => undefined);
-  const live = useRef({ onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
-  live.current = { onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
+  const live = useRef({ onChange, onSetChange, onTip, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
+  live.current = { onChange, onSetChange, onTip, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
     onSetChange: (next: TeamSet) => live.current.onSetChange(next),
+    onTip: (next: TeamSet, change: string) => live.current.onTip(next, change),
     onReplace: () => live.current.onReplace(),
     onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
@@ -318,9 +360,19 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   };
   const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
   // Nell'editor gli EV di troppo li dice già "EV usati" (590 / 510 · 80 di troppo: voto bloccato): l'avviso li salta
-  const evOverText = evTotal(set.evs) > EV_TOTAL ? tr('team.evOver', { n: evTotal(set.evs) }) : null;
-  const editorProblems = problems.filter(p => p !== evOverText);
   const memberTip = useMemberTip(500, '.slot-card');
+  // Col dito: tenendo premuta la carta si apre dal basso il menu del membro (modifica, blocca, sposta, sostituisci,
+  // togli) al posto dei pulsantini sulla carta; il suggerimento del trascinamento (col dito non si trascina) non serve
+  const touch = useMediaQuery(TOUCH_QUERY);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [shrunk, setShrunk] = useState(false);
+  useEffect(() => { if (!open) setShrunk(false); }, [open]);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const hold = useRef<{ x: number; y: number; timer: number } | null>(null);
+  const held = useRef(false);
+  useAnchoredPop(card, menuRef, menuOpen, { sheet: true, width: 280, onDismiss: () => setMenuOpen(false) });
+  const endHold = () => { if (hold.current) window.clearTimeout(hold.current.timer); hold.current = null; };
+  const menuDo = (run: () => void) => { setMenuOpen(false); run(); };
   // La punta sotto la carta aperta: al centro della carta, misurato (le carte cambiano larghezza con la finestra)
   const pointer = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -357,6 +409,45 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const missing = missingFormeItem(set);
   const illegalMovesText = illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null;
   const illegalAbilityText = illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null;
+  // Gli stessi problemi segnati sul campo dell'editor, in rosso (niente avvisi a tutta larghezza): la parola breve dice
+  // se è vietato dal formato o se la specie non lo impara
+  const banned = bannedParts(set, format);
+  const where = formatLabel(format, lang);
+  const bad = (text: string): FieldFlag => ({ label: tr('editor.flagBanned'), text });
+  const warn = (text: string, hintText: string): FieldFlag => ({ label: tr('editor.flagIllegal'), text: `${text}. ${hintText}` });
+  // Al posto di una mossa fuori regola, la più usata del Pokémon che sia legale, permessa e non già nel set (una diversa
+  // per ogni mossa da cambiare); senza dati d'uso nessuna proposta
+  const taken = new Set(set.moves.filter(Boolean).map(toID));
+  const swapFor = () => {
+    const pick = common.moves.find(({ name }) => {
+      if (taken.has(toID(name))) return false;
+      const probe = { ...set, moves: [name] };
+      return !illegalParts(probe, format.genLimit, pokedexOf(format)).moves.length && !bannedParts(probe, format).moves.length;
+    })?.name;
+    if (pick) taken.add(toID(pick));
+    return pick;
+  };
+  // Strumento e abilità: il più usato del Pokémon che sia permesso (e legale, per l'abilità) e diverso da quello di ora
+  const itemSwap = () => common.items.find(({ name }) => toID(name) !== toID(set.item) && !bannedParts({ ...set, item: name }, format).item)?.name;
+  // (senza dati d'uso le abilità della specie, nell'ordine del Pokédex)
+  const abilitySwap = () => [...common.abilities.map(c => c.name), ...Object.values(species?.abilities ?? {})].find(name => {
+    if (toID(name) === toID(set.ability)) return false;
+    const probe = { ...set, ability: name };
+    return !bannedParts(probe, format).ability && !illegalParts(probe, format.genLimit, pokedexOf(format)).ability;
+  });
+  const itemBannedIn = useCallback((name: string) => !!bannedParts({ moves: [], ability: '', item: name }, format).item, [format]);
+  const fieldFlags: FieldFlags = {
+    item: banned.item ? { ...bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })), label: tr('editor.flagBannedItem'), swap: itemSwap() } : undefined,
+    ability: banned.ability ? { ...bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) })), swap: abilitySwap() }
+      : illegal.ability ? { ...warn(illegalAbilityText!, tr('team.illegalAbilityHint')), swap: abilitySwap() } : undefined,
+    moves: [0, 1, 2, 3].map(i => {
+      const move = set.moves[i];
+      if (!move) return undefined;
+      if (banned.moves.includes(move)) return { ...bad(tr('team.bannedMoves', { format: where, list: gameName('move', move, lang) })), swap: swapFor() };
+      if (illegal.moves.includes(move)) return { ...warn(tr('team.illegalMoves', { list: gameName('move', move, lang) }), tr('team.illegalMovesHint')), swap: swapFor() };
+      return undefined;
+    }),
+  };
   const warnings = [
     megaWarning,
     // Forma senza il suo strumento (Zacian-Crowned senza Rusted Sword): il voto la conta come la forma base
@@ -390,10 +481,22 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         className="slot-card"
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
-        title={collapsed ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
-        {...(collapsed && !open ? memberTip.bind(set, roles[0]) : {})}
+        title={collapsed || touch ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
+        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
+        data-own-hold={touch || undefined}
+        onPointerDown={e => {
+          if (!touch || e.pointerType === 'mouse' || (e.target as Element).closest('button:not(.slot-toggle), a, input')) return;
+          held.current = false;
+          endHold();
+          hold.current = { x: e.clientX, y: e.clientY, timer: window.setTimeout(() => { held.current = true; hold.current = null; setMenuOpen(true); }, 450) };
+        }}
+        onPointerMove={e => { if (hold.current && Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 10) endHold(); }}
+        onPointerUp={endHold}
+        onPointerCancel={endHold}
         // Clic su tutta la carta (il pulsante della carta lo prende da tastiera e dai lettori di schermo)
         onClick={e => {
+          // Dopo il tocco lungo (menu del membro) il clic non apre l'editor
+          if (held.current) { held.current = false; e.preventDefault(); return; }
           // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
           const hit = (e.target as HTMLElement).closest('button, a, input, [tabindex]');
           if (hit && hit !== card.current) return;
@@ -429,7 +532,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         <span className="mini-icon" aria-hidden="true">
           <PokemonIcon name={name} />
           {(dangers.length > 0 || warns.length > 0) && (
-            <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`} title={[...dangers, ...warns].map(a => a.text).join(' · ')}>
+            // Il perché sta nella carta del Pokémon che si apre passandoci sopra
+            <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`}>
               <span className="visually-hidden">{tr(dangers.length ? 'alert.danger' : 'alert.warn')}</span>
             </span>
           )}
@@ -496,16 +600,40 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
         {roles.length > 0 && <small className="roles" title={rolesTitle} aria-hidden="true">{roles[0]}</small>}
       </div>
+      {menuOpen && (
+        <div className="member-menu" ref={menuRef} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={tr('team.memberMenu', { species: name })}
+          onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMenuOpen(false); card.current?.focus(); } }}>
+          <p className="member-menu-head" aria-hidden="true"><Sprite species={set.species} item={set.item} shiny={!!set.shiny} size={48} /><strong>{set.name || name}</strong></p>
+          <button type="button" role="menuitem" onClick={() => menuDo(() => onToggle(true))}><Icon name="edit" />{tr('team.editSet')}</button>
+          <button type="button" role="menuitem" onClick={() => menuDo(() => onChange({ ...set, favorite: !set.favorite }))}>
+            <Icon name="lock" filled={!!set.favorite} /><span>{tr(set.favorite ? 'team.unlock' : 'team.lock')}<small>{tr('team.lockNote')}</small></span>
+          </button>
+          <button type="button" role="menuitem" disabled={index === 0} onClick={() => menuDo(() => onMove(-1))}><Icon name="prev" />{tr('team.moveLeft')}</button>
+          <button type="button" role="menuitem" disabled={index >= total - 1} onClick={() => menuDo(() => onMove(1))}><Icon name="next" />{tr('team.moveRight')}</button>
+          <button type="button" role="menuitem" onClick={() => menuDo(onReplace)}><Icon name="swap" />{tr('team.replaceButton')}</button>
+          <button type="button" role="menuitem" className="danger" onClick={() => menuDo(onRemove)}><Icon name="close" />{tr('team.removeShort')}</button>
+        </div>
+      )}
       {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
-      <div className="drawer" id={drawerId}>
+      {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
+      {/* Telefono: scorrendo l'editor la testata (il riepilogo del membro) si stringe a una riga */}
+      <div className={`drawer${shrunk ? ' shrunk' : ''}`} id={drawerId} inert={!open} onScroll={e => {
+        const el = e.currentTarget;
+        const top = el.scrollTop;
+        // Soglie diverse per stringere e riallargare: la testata che cambia altezza non fa tremare la scelta. Si stringe
+        // solo se resta da scorrere anche dopo (la testata stretta è circa 200 px più bassa), se no torna subito su
+        if (!shrunk && top > 80 && el.scrollHeight - el.clientHeight > 260) setShrunk(true);
+        else if (shrunk && top < 8) setShrunk(false);
+      }}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} /> : undefined}
+        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} onOpenMember={actions.openWith} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
         onBest={stable.applyBest}
         onText={stable.openText}
+        onCopy={() => copyText(exportShowdown([set], { tera: teraAllowed(format) }))}
         smogonLink={<SmogonLink species={name} format={format} presets={presets} />}
         title={open && (
           <div className="editor-title">
@@ -529,6 +657,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
               </button>
             )}
             <span className="types" aria-hidden="true">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
+            {/* Telefono: la testata dell'editor come il riepilogo di un gioco, lo sprite grande a destra sul colore del tipo
+                (sul computer non c'è: lo sprite animato sta già nella carta aperta) */}
+            <span className="editor-hero" aria-hidden="true"
+              style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as CSSProperties}>
+              <Sprite species={set.species} item={set.item} shiny={!!set.shiny} />
+            </span>
+            {grade && <EditorGrade grade={grade} />}
             <Hint label={tr('team.shiny')}>
               <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')}
                 onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
@@ -543,7 +678,10 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           </button>
         }
         proposedSlot={open && proposal ? proposal.slot : undefined}
-        notice={<>{open && proposal && (
+        flags={open ? fieldFlags : undefined}
+        itemBanned={open ? itemBannedIn : undefined}
+        startTab={startTab}
+        notice={open && proposal && (
           <div className="move-proposal" role="note">
             <Icon name="spark" />
             <span>{proposal.from
@@ -552,14 +690,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
             <button type="button" className="apply" ref={applyRef} onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
             <button type="button" onClick={() => onProposalDone?.(false)}>{tr('team.moveProposalCancel')}</button>
           </div>
-        )}{open && editorProblems.length > 0 && (
-          // I problemi di legalità detti per esteso, con la via d'uscita
-          <div className="member-problems" role="note">
-            <Icon name="warning" />
-            <span>{editorProblems.join(' · ')}</span>
-            <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
-          </div>
-        )}</>}
+        )}
         textPanel={paste && (
     <div className="paste-panel" ref={pasteRef} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
@@ -624,12 +755,20 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onTipApply, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Il voto di quando si è aperto un membro (il primo voto che arriva, se in quel momento non c'era): il chip
+  // dell'editor sul telefono dice di quanto è cambiato. Resta anche se il voto sparisce un attimo (EV oltre 510)
+  const [gradeFrom, setGradeFrom] = useState<number | null>(null);
+  // "Lascialo a" della Sfida: il compagno si apre già sulla scheda Sfida (telefono)
+  const [startTab, setStartTab] = useState<{ index: number; tab: 'duel'; key: number } | null>(null);
+  useEffect(() => { setGradeFrom(openIndex === null ? null : grade?.overall ?? null); }, [openIndex]);
+  useEffect(() => { if (openIndex !== null && gradeFrom === null && grade) setGradeFrom(grade.overall); }, [openIndex, gradeFrom, grade]);
+  const editorGrade = grade ? { ...grade, from: gradeFrom ?? grade.overall } : null;
   useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
   useEffect(() => () => setEditing(null), []);
   // Il team si accorcia da fuori (import, Annulla, team salvato): un membro aperto che non c'è più si chiude
@@ -751,6 +890,18 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   }, [team, data, format]);
   // Completa team: pannello con le proposte e i team da torneo
   const [filling, setFilling] = useState(false);
+  // Telefono: Team salvati, Importa, Esporta, link e Svuota in un menu "…" che si apre dal basso, ognuna col suo nome.
+  // Le voci premono i pulsanti veri (nascosti a vista ma vivi), così i loro pannelli si aprono come sempre
+  const phoneMenu = useMediaQuery(SHEET_QUERY);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreButton = useRef<HTMLButtonElement>(null);
+  const moreSheet = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
+  useAnchoredPop(moreButton, moreSheet, moreOpen, { sheet: true, onDismiss: () => setMoreOpen(false) });
+  const pressReal = (selector: string) => {
+    setMoreOpen(false);
+    requestAnimationFrame(() => headRef.current?.querySelector<HTMLElement>(selector)?.click());
+  };
   const fillToggle = useRef<HTMLButtonElement>(null);
   // Chiudendo il pannello il focus torna al pulsante
   const closeFill = useCallback(() => { setFilling(false); fillToggle.current?.focus(); }, []);
@@ -790,6 +941,19 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     ignoreWarning: onAllowMultipleMegas,
     change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
     setChange: (i, next) => { if (onSetChange) onSetChange(i, next); else onChange(team.map((s, j) => (j === i ? next : s))); },
+    tip: (i, next, change) => {
+      if (onTipApply) onTipApply(i, next, change);
+      else if (onSetChange) onSetChange(i, next);
+      else onChange(team.map((s, j) => (j === i ? next : s)));
+    },
+    openWith: (i, opponent) => {
+      const member = team[i];
+      if (!member) return;
+      handOffOpponent(member.species, opponent);
+      setStartTab({ index: i, tab: 'duel', key: Date.now() });
+      animated(() => setOpenIndex(i));
+      focusCard(i);
+    },
     remove: i => {
       setOpenIndex(null);
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
@@ -813,6 +977,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     ignoreWarning: () => live.current.ignoreWarning(),
     change: (i, next) => live.current.change(i, next),
     setChange: (i, next) => live.current.setChange(i, next),
+    tip: (i, next, change) => live.current.tip(i, next, change),
+    openWith: (i, opponent) => live.current.openWith(i, opponent),
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
@@ -821,7 +987,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const title = t(lang, 'team.title', { n: team.length });
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
-      <div className="team-head">
+      <div className="team-head" ref={headRef}>
         {/* La targa del team: la parola Team, quanti sono e il nome del team salvato in uso (i team salvati hanno la loro
             linguetta a destra) */}
         <div className="team-plate">
@@ -880,6 +1046,23 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
+        {phoneMenu && (
+          <div className="team-more">
+            <button type="button" className="team-more-button" ref={moreButton} aria-label={t(lang, 'team.more')} aria-haspopup="menu"
+              aria-expanded={moreOpen} onClick={() => setMoreOpen(open => !open)}><Icon name="dots" /></button>
+            {moreOpen && (
+              <div className="team-more-sheet" ref={moreSheet} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={t(lang, 'team.more')}
+                onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMoreOpen(false); moreButton.current?.focus(); } }}>
+                <p className="team-more-title" aria-hidden="true">Team</p>
+                {saved && <button type="button" role="menuitem" data-saved onClick={() => pressReal('.team-saved .popover > summary')}><Icon name="box" />{t(lang, 'saved.label')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .popover > summary')}><Icon name="paste" />{t(lang, 'showdown.import')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-main')}><Icon name="copy" />{t(lang, 'showdown.quickCopy')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-link')}><Icon name="link" />{t(lang, 'showdown.copyLink')}</button>}
+                {team.length > 0 && <button type="button" role="menuitem" className="danger" onClick={() => pressReal('.clear-team')}><Icon name="trash" />{t(lang, 'team.clear')}</button>}
+              </div>
+            )}
+          </div>
+        )}
         {/* Scorciatoie, sempre allo stesso posto a destra: Importa, Esporta e il link in un gruppo, poi Svuota a parte */}
         <div className="team-quick">
           {io && <div className="team-io">{io}</div>}
@@ -922,6 +1105,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             warning={warningFor(set, i)}
             repeated={repeated.includes(i)}
             open={openIndex === i}
+            grade={openIndex === i ? editorGrade : null}
+            startTab={startTab?.index === i ? startTab : null}
             actions={actions}
             collapsed={collapsed}
           />

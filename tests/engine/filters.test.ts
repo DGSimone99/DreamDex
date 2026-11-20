@@ -165,7 +165,7 @@ describe('filtri per ruolo secondo il formato', () => {
   it('nel singolo le voci sono quelle di sempre', () => {
     expect(filterRolesFor(ou)).toEqual([
       'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalWall', 'specialWall', 'recovery',
-      'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer', 'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
+      'support', 'removal', 'screens', 'speedControl', 'phazer', 'hazards', 'pivot', 'dot', 'disruptor', 'itemRemoval',
       'priority', 'setup',
     ]);
   });

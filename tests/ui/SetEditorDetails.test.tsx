@@ -25,8 +25,10 @@ describe('editor del set', () => {
     expect(screen.getByLabelText('Natura')).toHaveValue('Modest');
     await user.click(screen.getByLabelText('Natura'));
     const list = screen.getByRole('listbox', { name: 'Natura: opzioni' });
-    expect(within(list).getByRole('option', { name: 'Modest (+AttSp, −Att)' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(list).getByRole('option', { name: 'Timid (+Vel, −Att)' })).toBeInTheDocument();
     expect(within(list).getByRole('option', { name: 'Hardy (neutra)' })).toBeInTheDocument();
+    // La natura scelta è il campo stesso (la lista ne continua il rombo): non si ripete fra le voci
+    expect(within(list).queryByRole('option', { name: 'Modest (+AttSp, −Att)' })).not.toBeInTheDocument();
   });
 
   it('Tera: menu con i chip dei tipi', async () => {
@@ -50,13 +52,15 @@ describe('editor del set', () => {
     const field = (label: string) => screen.getByLabelText(label).closest('.field');
     expect(field('Strumento')).toHaveAttribute('data-tip', expect.stringMatching(/Sunny Day/));
     expect(field('Abilità')).toHaveAttribute('data-tip', expect.stringMatching(/Sunny Day/));
-    expect(field('Mossa 1')).toHaveAttribute('data-tip', '10% chance to burn the target.');
+    // La mossa ha il suo tooltip ricco (MoveTipHost): categoria, potenza, precisione, bersaglio e descrizione
+    expect(field('Mossa 1')).toHaveAttribute('data-move-tip', 'Flamethrower');
+    expect(field('Mossa 1')).not.toHaveAttribute('data-tip');
     // Sopra: l'icona della categoria (la potenza solo per i lettori di schermo) e la precisione; tipo e potenza nella pillola
     expect(field('Mossa 1')!.querySelector('.move-meta')).toHaveTextContent('Speciale, potenza 90precisione 100%');
     expect(field('Mossa 1')!.querySelector('.combobox-leading .mvp-ic img')).not.toBeNull();
     expect(field('Mossa 1')!.querySelector('.combobox-trailing')).toHaveTextContent('90');
     expect(field('Mossa 1')!.querySelector('.combobox-trailing .mvp-cat.cat-special')).not.toBeNull();
-    expect(field('Mossa 3')).not.toHaveAttribute('data-tip');
+    expect(field('Mossa 3')).not.toHaveAttribute('data-move-tip');
   });
 
   it('il menu delle mosse: categoria, potenza, precisione, tipo e descrizione; Invio sceglie', async () => {
@@ -67,8 +71,9 @@ describe('editor del set', () => {
     const list = screen.getByRole('listbox', { name: 'Mossa 3: opzioni' });
     const fireBlast = within(list).getAllByRole('option').find(o => o.querySelector('strong')?.textContent === 'Fire Blast')!;
     expect(fireBlast.querySelector('.move-meta')).toHaveTextContent('Speciale, potenza 110precisione 85%Fire');
-    expect(fireBlast).toHaveAttribute('title', expect.stringMatching(/burn/));
-    expect(fireBlast.getAttribute('title')).not.toMatch(/Potenza|precisione/);
+    // La descrizione: per i lettori di schermo sulla voce; a vista nel tooltip della mossa di lato al menu (niente title)
+    expect(fireBlast).toHaveAttribute('aria-description', expect.stringMatching(/burn/));
+    expect(fireBlast).not.toHaveAttribute('title');
     expect(fireBlast.querySelector('strong')!.getAttribute('style')).toMatch(/color: rgb/);
     await user.keyboard('{Enter}');
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ moves: ['Flamethrower', 'Will-O-Wisp', 'Fire Blast', ''] }));
@@ -131,7 +136,7 @@ describe('menu Set: preset Smogon', () => {
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Flamethrower');
     await user.tab();
-    expect(screen.getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Personalizzato$/);
+    expect(screen.getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Modificato$/);
     menu = await openMenu(user);
     expect(within(menu).getByRole('button', { name: /^Sun Sweeper/ })).not.toHaveAttribute('aria-current');
   });

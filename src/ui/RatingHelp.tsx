@@ -9,6 +9,8 @@ import { useT } from '../i18n/react';
 import { EeveePeek } from './EeveePeek';
 import { ModalLock } from './ModalLock';
 import { Icon } from './icons';
+import { useMediaQuery } from './useMediaQuery';
+import { SHEET_QUERY } from './useAnchoredPop';
 
 type Topic = 'general' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
@@ -44,10 +46,13 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
   const button = useRef<HTMLButtonElement>(null);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const titleId = useId();
+  // Telefono: prima il tipo del tuo team, poi una lista (come funziona, gli altri tipi) che apre la sua pagina con Indietro
+  const phone = useMediaQuery(SHEET_QUERY);
+  const [page, setPage] = useState<Topic | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    tabs.current[topics.indexOf(topic)]?.focus();
+    if (!phone) tabs.current[topics.indexOf(topic)]?.focus();
     const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -71,7 +76,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
   return (
     <>
       <button ref={button} type="button" className="help-button" aria-label={t('help.button')} title={t('help.button')}
-        onClick={e => { e.preventDefault(); e.stopPropagation(); setTopic('general'); setOpen(true); }}>
+        onClick={e => { e.preventDefault(); e.stopPropagation(); setTopic('general'); setPage(null); setOpen(true); }}>
         <Icon name="help" />
       </button>
       {/* Nel body della pagina: sopra tutto, senza ereditare gli stili del pannello in cui sta il "?" */}
@@ -86,6 +91,42 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
               <h3 id={titleId}>{t('help.title')}</h3>
               <button type="button" className="help-close" aria-label={t('help.close')} onClick={close}><Icon name="close" /></button>
             </header>
+            {phone ? (
+              // Una chiave per pagina: aprendone una (o tornando) si riparte dall'alto
+              <div className="help-body help-phone" key={page ?? 'home'}>
+                {page ? (
+                  <section className={`help-panel${page === 'general' ? ' help-general' : ''}`} aria-labelledby={`${titleId}-page`}>
+                    {/* Indietro sulla riga del titolo, dalla parte opposta: non prende spazio in altezza */}
+                    <div className="help-page-head">
+                      <h4 id={`${titleId}-page`}>{t(topicLabel(page))}</h4>
+                      <button type="button" className="help-back" onClick={() => setPage(null)}><Icon name="prev" />{t('help.back')}</button>
+                    </div>
+                    {page === 'general' ? <GeneralTopic teamType={teamType} weights={weights} doubles={doubles} /> : <TypeTopic type={page} weights={weights} typeRule={typeRule} />}
+                  </section>
+                ) : (
+                  <>
+                    {/* Si apre su come funziona il voto (senza la tabella dei pesi: ogni tipo ha i suoi nella sua pagina) */}
+                    <section className="help-panel help-general" aria-labelledby={`${titleId}-general`}>
+                      <h4 id={`${titleId}-general`}>{t('help.general')}</h4>
+                      <GeneralTopic teamType={teamType} weights={weights} doubles={doubles} table={false} />
+                    </section>
+                    {/* Sotto, i tipi di team: il tuo per primo, contornato d'azzurro; ognuno apre la sua pagina */}
+                    <h5 className="help-list-title">{t('help.general.type')}</h5>
+                    <nav className="help-list" aria-label={t('help.nav')}>
+                      {(doubles ? (['doubles'] as Archetype[]) : [...ARCHETYPES]).sort((a, b) => Number(b === teamType) - Number(a === teamType)).map(item => (
+                        <button key={item} type="button" className={item === teamType ? 'yours' : undefined} aria-current={item === teamType || undefined} onClick={() => setPage(item)}>
+                          <span>
+                            <span className="help-list-name">{t(topicLabel(item))}{item === teamType && <em className="help-yours-tag">{t('help.yourTeam')}</em>}</span>
+                            <small>{t(`archetype.${item}.note`)}</small>
+                          </span>
+                          <Icon name="next" />
+                        </button>
+                      ))}
+                    </nav>
+                  </>
+                )}
+              </div>
+            ) : (
             <div className="help-body">
               <nav className="help-nav" role="tablist" aria-orientation="vertical" aria-label={t('help.nav')}>
                 {topics.map((item, i) => (
@@ -104,6 +145,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
                 {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} doubles={doubles} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
+            )}
           </div>
           </div>
         </div>,
@@ -114,7 +156,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, weights, doubles }: { teamType: Archetype | null; weights: AreaWeightTable; doubles: boolean }) {
+function GeneralTopic({ teamType, weights, doubles, table = true }: { teamType: Archetype | null; weights: AreaWeightTable; doubles: boolean; table?: boolean }) {
   const t = useT();
   // In doppio la tabella ha la sola riga del tipo unico
   const types: Archetype[] = doubles ? ['doubles'] : ARCHETYPES;
@@ -134,6 +176,7 @@ function GeneralTopic({ teamType, weights, doubles }: { teamType: Archetype | nu
       <p>{t(doubles ? 'help.general.2.doubles' : 'help.general.2')}</p>
       {/* Trick Room solo qui, in Come funziona, non nelle schede dei tipi (scelta dell'utente, confermata 2026-11-13) */}
       <p>{t('help.type.trickRoom')}</p>
+      {table && (
       <div className="help-table-wrap">
         <table className="help-weights">
           <thead>
@@ -143,12 +186,13 @@ function GeneralTopic({ teamType, weights, doubles }: { teamType: Archetype | nu
             {types.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar weight={shareOf(weights, arch, area)} step={stepOf(weights, arch, area)} /></td>)}
+                {WEIGHT_AREAS.map(area => <td key={area} data-label={t(`area.${area}`)}><WeightBar weight={shareOf(weights, arch, area)} step={stepOf(weights, arch, area)} /></td>)}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      )}
     </>
   );
 }

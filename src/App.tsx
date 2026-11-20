@@ -37,10 +37,14 @@ import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
+import { TouchTips } from './ui/TouchTips';
+import { MoveTipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
 import { SHORT_SCREEN, useMediaQuery } from './ui/useMediaQuery';
+import { SHEET_QUERY } from './ui/useAnchoredPop';
+import { AutoBand } from './ui/AutoBand';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -200,7 +204,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto il team non si riduce e non si riapre a mano: aperto sugli schermi normali (l'editor ha la sua
   // altezza giusta), compresso su quelli bassi (se no l'editor non ci sta); chiuso l'editor torna la scelta salvata
   const editingOpen = editingIndex !== null;
+  // Telefono: niente tasto, il team si riduce scorrendo la pagina e torna grande in cima (useAutoCollapse)
+  const phone = useMediaQuery(SHEET_QUERY);
+  const bandControl = useRef<(() => void) | null>(null);
+  // Fuori dal telefono; sul telefono decide AutoBand (le sezioni lo vedono sempre grande: lì la pagina scorre)
   const collapsed = editingOpen ? short : savedCollapsed;
+  const sectionsCollapsed = phone ? false : collapsed;
   const toggleCollapsed = () => {
     if (editingOpen) return;
     setCollapsed(c => {
@@ -215,6 +224,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [improveSignal, setImproveSignal] = useState(0);
   // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
   const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };
+  // Dalla barra delle sezioni (e dal voto): sul telefono la sezione si apre dall'inizio, col team ridotto
+  const navTo = (next: TabId) => { bandControl.current?.(); openTab(next); };
   // L'editor copre l'area della sezione: gli serve la sua altezza
   const mainRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -273,6 +284,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     const name = (move: string) => (move ? gameName('move', move, lang) : '—');
     remember({ kind: 'move', from: battleName(set), to: `${name(from)} → ${name(to)}` }, after);
     return true;
+  };
+  // Un consiglio della Sfida applicato (EV o mossa): annullabile, l'avviso dice cosa è cambiato ("+32 EV in DifSp, −32 in Att")
+  const applyTip = (index: number, set: TeamSet, change: string) => {
+    const before = team[index];
+    if (!before) return;
+    const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
+    remember({ kind: 'move', from: battleName(before), to: change }, after);
   };
   const finishProposal = (applied: boolean) => {
     if (!applied || !moveProposal || !applyMove(moveProposal)) setMoveProposal(null);
@@ -414,7 +432,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         onSettings={() => setSettingsOpen(true)}
         onCredits={() => setCreditsOpen(true)}
         onFeedback={() => setFeedbackOpen(true)}
-        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={withEditing([
+        tabs={<Tabs orientation="vertical" active={shownTab} onChange={navTo} tabs={withEditing([
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
           status: replaceIndex !== null && team[replaceIndex]
@@ -448,25 +466,26 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <p>{t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}</p>
         </div>
       )}
-      <div className={`band${collapsed ? ' collapsed' : ''}`}>
+      <AutoBand phone={phone} collapsed={collapsed} control={bandControl}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
+          grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           plateName={<SavedPlateName team={team} />}
-          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onBulk={bulk} onAddClick={startAdd}
+          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onTipApply={applyTip} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
-          incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
+          incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { navTo('analysis'); setAnalysisView(area); }} />
         {/* Niente freccia mentre l'editor è aperto: lì il team ha una posizione fissa */}
-        {!editingOpen && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
+        {!editingOpen && !phone && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />
         </button>}
-      </div>
+      </>)}</AutoBand>
       <div className={`workspace${editingIndex !== null ? ' editing' : ''}${fillOpen ? ' fill-open' : ''}`} ref={workspaceRef}>
       <main className="tab-body">
         <TabPanel id="pokemon" active={shownTab}>
@@ -484,7 +503,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focusSearch={searchRequest}
             listSprite={listSprite}
             onListSpriteChange={changeListSprite}
-            teamCollapsed={collapsed}
+            teamCollapsed={sectionsCollapsed}
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
@@ -492,7 +511,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             jump={analysisJump}
             onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
             onExport={exportTeam} onImproveSets={() => setImproveSignal(n => n + 1)}
-            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
+            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={sectionsCollapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
           <MetaTab team={team} data={rated} rating={rating}
@@ -500,7 +519,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
               setAnalysisJump(j => ({ view: side === 'defense' ? 'defense' : 'strength', sub: 'coverageMeta', focus: { kind: 'threat', side, species }, nonce: (j?.nonce ?? 0) + 1 }));
               setTab('analysis');
             }}
-            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={collapsed} />
+            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={sectionsCollapsed} />
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}
@@ -514,6 +533,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
       {feedbackOpen && <FeedbackDialog team={team} format={format} onClose={closeFeedback} />}
       {/* Il team copiato per Showdown: sta dove sta l'avviso di Annulla, che intanto aspetta (torna quando questo si chiude) */}
+      <TouchTips />
+      {/* Il tooltip delle mosse: uno per tutta l'app, su ogni pillola o campo con data-move-tip */}
+      <MoveTipHost />
       {done && <DoneToast note={done} onClose={() => setDone(null)} />}
       {!done && listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, ...listUndo.undo }} onClose={() => setListUndo(null)}

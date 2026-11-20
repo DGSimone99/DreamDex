@@ -8,7 +8,7 @@ import { gameOf, obtainableIn } from './games';
 import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
-import { keyValue, LEVEL_WEIGHT, MISSING_BELOW } from './needs';
+import { keyValue, LEVEL_WEIGHT, MISSING_BELOW, withCandidateValue } from './needs';
 import { LEVEL_KEYS } from './roleLevels';
 import { creditedValues, primaryFamily, setSubRoles } from './subRoles';
 import { defaultSet, type TeamSet } from './sets';
@@ -163,7 +163,7 @@ export function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
     const room = Math.max(0, 1 - values[key]);
     if (levels[key] === 'minor') minorRoom += weight * room;
     else required += weight * room;
-    gained += weight * Math.min(room, Math.max(0, keyValue(candidate, key) - values[key]));
+    gained += weight * Math.min(room, Math.max(0, withCandidateValue(key, values[key], keyValue(candidate, key)) - values[key]));
   }
   // Senza voci essenziali o importanti scoperte il margine è quello delle minori
   const total = required > 0 ? required : minorRoom;

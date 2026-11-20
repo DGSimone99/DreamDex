@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { presetSet } from '../engine/bestPreset';
 import { formatName, sameSet, STAT_IDS, type Preset, type TeamSet } from '../engine/sets';
+import { toID } from '../engine/dex';
 import type { Lang } from '../i18n';
 import { gameName, natureName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
@@ -38,6 +40,24 @@ interface Props {
   onText?: () => void;
   /** Il link alla pagina Smogon del Pokémon, in fondo al menu. */
   smogonLink?: ReactNode;
+  /** Copia il set (sul telefono sta qui, nel computer è il pulsante accanto al Set): vero se è riuscito. */
+  onCopy?: () => Promise<boolean>;
+}
+
+/** Il preset da cui sembra venire un set cambiato a mano: almeno 2 mosse in comune, poi strumento, abilità, natura ed EV. */
+export function nearestPreset(set: TeamSet, presets: Preset[]): number {
+  const moves = new Set(set.moves.filter(Boolean).map(toID));
+  const evs = (s: TeamSet) => STAT_IDS.map(stat => s.evs[stat] ?? 0).join(',');
+  let best = -1;
+  let bestScore = -1;
+  presets.forEach((preset, i) => {
+    const shared = preset.set.moves.filter(move => move && moves.has(toID(move))).length;
+    if (shared < 2) return;
+    const score = shared * 10 + Number(toID(preset.set.item) === toID(set.item)) + Number(toID(preset.set.ability) === toID(set.ability))
+      + Number(preset.set.nature === set.nature) + Number(evs(preset.set) === evs(set));
+    if (score > bestScore) { best = i; bestScore = score; }
+  });
+  return best;
 }
 
 /**
@@ -45,13 +65,14 @@ interface Props {
  * segnato) e I miei set (applica, rinomina, elimina); in fondo Incolla testo, Salva come… e Apri su Smogon.
  * Esc o un clic fuori lo chiudono e il fuoco torna al pulsante; le schede si cambiano con le frecce.
  */
-export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smogonLink }: Props) {
+export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onCopy, smogonLink }: Props) {
   const t = useT();
   const lang = useLang();
   const species = set.species;
   const mine = useMySets(species);
   const current = mySetIndex(mine, set);
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<Tab>('smogon');
   const [best, setBest] = useState<number | null>(null);
   // Salva come…: il campo del nome compare in cima a I miei set
@@ -64,6 +85,9 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
+  // Sotto il pulsante, allineato a destra; sopra se sotto non c'è posto, sempre dentro la finestra
+  useAnchoredPop(button, pop, open, { width: 410, align: 'end', gap: 6, sheet: true, onDismiss: () => close(false) });
   const id = useId();
   const tabId = (which: Tab) => `${id}-tab-${which}`;
   const panelId = `${id}-panel`;
@@ -120,7 +144,11 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
   const order = presets.map((_, i) => i)
     .sort((a, b) => (a === best ? -1 : b === best ? 1 : formatOrder.indexOf(presets[a].format) - formatOrder.indexOf(presets[b].format)));
   const applied = presets.findIndex(p => sameSet(p.set, set));
-  const currentLabel = applied >= 0 ? presets[applied].name : current >= 0 ? mine[current].name : t('editor.setCustom');
+  // Cambiato a mano: il preset da cui sembra venire, se ha in comune almeno 2 mosse su 4 (a parità di mosse vince chi ha
+  // più cose uguali fra strumento, abilità, natura ed EV); sotto quella soglia è un altro set e resta solo "Modificato"
+  const nearest = applied >= 0 || current >= 0 ? -1 : nearestPreset(set, presets);
+  const currentLabel = applied >= 0 ? presets[applied].name : current >= 0 ? mine[current].name
+    : nearest >= 0 ? t('editor.setEditedFrom', { name: presets[nearest].name }) : t('editor.setCustom');
   // Da dove viene il set in uso: Smogon o uno dei miei set (Custom); cambiato a mano, nessuna linguetta
   const source = applied >= 0 ? t('editor.setFromSmogon') : current >= 0 ? t('editor.setFromMine') : null;
   const apply = (i: number) => {
@@ -147,6 +175,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
           <span className="set-menu-text">
             <span className="set-menu-name">
               <strong>{preset.name}</strong>
+              {i === nearest && <span className="set-menu-edited">{t('editor.setEditedTag')}</span>}
               {i === best && <span className="set-menu-best"><Icon name="star" filled />{t('editor.bestForTeam')}</span>}
               {/* Il formato: a vista solo sul migliore (fuori dai gruppi), le altre righe stanno sotto la loro intestazione */}
               {byFormat && (i === best
@@ -180,7 +209,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
         </span>
       </button>
       {open && (
-        <div className="set-menu-pop" id={panelId} role="dialog" aria-label={t('editor.setMenu')}>
+        <div className="set-menu-pop" ref={pop} popover={supportsPopover ? 'manual' : undefined} id={panelId} role="dialog" aria-label={t('editor.setMenu')}>
           <div className="set-menu-tabs" role="tablist" aria-label={t('editor.setMenu')}>
             <button type="button" role="tab" id={tabId('smogon')} aria-selected={tab === 'smogon'} aria-controls={`${panelId}-list`}
               tabIndex={tab === 'smogon' ? 0 : -1} onClick={() => setTab('smogon')} onKeyDown={onTabKey}>{t('editor.setMenuSmogon')}</button>
@@ -241,6 +270,11 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, smo
             )}
           </div>
           <div className="set-menu-foot">
+            {onCopy && (
+              <button type="button" className={`set-menu-copy${copied ? ' done' : ''}`} onClick={async () => {
+                if (await onCopy()) { setCopied(true); setTimeout(() => { setCopied(false); close(false); }, 900); }
+              }}><Icon name={copied ? 'check' : 'copy'} />{t(copied ? 'team.copied' : 'team.copySet')}</button>
+            )}
             {onText && <button type="button" onClick={() => { close(false); onText(); }}><Icon name="paste" />{t('editor.pasteText')}</button>}
             <button type="button" aria-expanded={saving} onClick={() => { setTab('mine'); setSaving(s => !s); }}><Icon name="save" />{t('editor.saveAs')}</button>
             {smogonLink}

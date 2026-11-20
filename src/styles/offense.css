@@ -316,8 +316,8 @@
 /* Coverage meta: sotto il danno la barra dei PS che restano al bersaglio (stile gioco: etichetta "PS" gialla, colori
    verde oltre metà, giallo fino a 1/5, rosso sotto); in un colpo il timbro rosso "KO" al posto del numero */
 .cm-hp { display: flex; align-items: center; gap: 3px; width: 72%; margin: var(--sp-3) auto 0; }
-/* L'etichetta "PS" del gioco, disegnata dal CSS (non è testo della casella) */
-.cm-hp::before { content: "PS"; font: 800 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
+/* L'etichetta del gioco ("HP" in inglese, "PS" in italiano), disegnata dal CSS dal data-hp (non è testo della casella) */
+.cm-hp::before { content: attr(data-hp); font: 800 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.02em; color: #f0b33a; }
 .cm-hp-bar { position: relative; flex: 1; height: 5px; border-radius: 3px; background: #15171f; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12); overflow: hidden; }
 .cm-hp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--good); }
 .cm-hp-bar i.warn { background: var(--warn); }

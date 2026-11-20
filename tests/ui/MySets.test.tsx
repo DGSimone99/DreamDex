@@ -45,8 +45,8 @@ describe('I miei set', () => {
     await user.type(within(menu).getByLabelText('Nome del set'), 'Spinner');
     await user.click(within(menu).getByRole('button', { name: 'Salva in I miei set' }));
     expect(loadMySets()['Great Tusk'].map(s => s.name)).toEqual(['Spinner']);
-    // Il pulsante Set ora dice il nome del set salvato, segnato Custom
-    expect(within(slot).getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Spinner, Custom$/);
+    // Il pulsante Set ora dice il nome del set salvato, segnato Mio
+    expect(within(slot).getByRole('button', { name: /^Set:/ })).toHaveTextContent(/^Set:Spinner, Mio$/);
   });
 
   it('un nome già usato trasforma il salvataggio in sovrascrittura, annullabile', async () => {

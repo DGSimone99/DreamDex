@@ -3,7 +3,8 @@ import type { Archetype } from '../../engine/archetype';
 import type { FormatRules } from '../../engine/formatRules';
 import { MISSING_BELOW } from '../../engine/needs';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
-import { levelFor, levelKeysFor, type Level } from '../../engine/roleLevels';
+import { levelFor, levelKeysFor, type Level, type LevelKey } from '../../engine/roleLevels';
+import { FAMILIES } from '../../engine/subRoles';
 import { useT } from '../../i18n/react';
 import { keyLabel, LevelTag } from './RoleParts';
 import { FAMILY_ORDER, familyOf } from './rolesRows';
@@ -37,7 +38,7 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
         <h4>{g('what')}</h4>
         <ul className="guide-lines">
           <li>{g('what.level', { archetype: t(`archetype.${archetype}`) })}</li>
-          <li>{g('what.value', { pct: Math.round(100 * MISSING_BELOW) })}</li>
+          <li>{g('what.value')}</li>
           <li>{g('what.points')}</li>
         </ul>
         <h4>{g('levels')}</h4>
@@ -53,12 +54,13 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
     );
   }
 
-  // Ruoli per tipo di team: le voci che contano almeno in un tipo di team, per famiglia; quelle che non contano mai in una riga sotto
+  // Ruoli per tipo di team: le voci che contano almeno in un tipo di team, per famiglia; quelle che non contano mai in una riga sotto.
+  // Sweeper e Wallbreaker fisici e speciali non vanno nella riga (utente, 2026-11-20): contano dentro i gruppi degli attaccanti
   // In doppio c'è un tipo solo: una colonna, con le sole voci del doppio
   const types = typeRule === 'oneType' ? [{ key: 'doubles' as const, short: t('archetype.doubles') }] : ARCHETYPES;
   const keys = levelKeysFor(typeRule);
   const counts = keys.filter(key => types.some(a => levelFor(a.key, key, typeRule) !== 'ignored'));
-  const never = keys.filter(key => !counts.includes(key));
+  const never = keys.filter(key => !counts.includes(key) && !FAMILIES.attack.includes(key as never));
   return (
     <>
       <table className="rl-types">
