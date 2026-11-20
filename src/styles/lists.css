@@ -817,7 +817,9 @@
 .duel-tip-fxline { display: grid; grid-template-columns: 14px 1fr; gap: var(--sp-3); align-items: start; font: 500 12px/1.35 var(--ui); color: var(--muted); }
 .duel-tip-arrow { display: inline-flex; margin-top: 2px; }
 .duel-tip-arrow svg { width: 12px; height: 12px; }
-.duel-tip-fxline.up .duel-tip-arrow { color: var(--good); transform: rotate(180deg); }
+/* Verso l'alto: si gira solo il disegno (girare il riquadro, più alto della freccia, la farebbe scendere sotto la riga) */
+.duel-tip-fxline.up .duel-tip-arrow { color: var(--good); }
+.duel-tip-fxline.up .duel-tip-arrow svg { transform: rotate(180deg); }
 .duel-tip-fxline.down .duel-tip-arrow { color: var(--bad); }
 .duel-tip-count { padding: 0; border: 0; background: none; cursor: help; font: 600 12px/1.35 var(--ui); color: var(--text);
   text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 3px; }
@@ -847,7 +849,16 @@
 .duel-fx-tip { width: 236px; padding-bottom: var(--sp-3); }
 .duel-fx-tip-head { padding: var(--sp-4) var(--sp-5) var(--sp-3); font: 700 11px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
 .duel-fx-tip ul { display: grid; gap: 1px; margin: 0; padding: 0 var(--sp-5); list-style: none; }
-.duel-fx-tip li { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: var(--sp-2); height: 24px; font: 600 12px/1.2 var(--ui); }
+/* Col dito la stessa lista si apre dentro la scheda, sotto la riga: un riquadro scuro incassato, righe come nel tooltip */
+.duel-fx-inline { display: block; margin-top: var(--sp-3); padding: var(--sp-3) 0; border-radius: 4px; background: var(--field); box-shadow: var(--slot-inset); }
+.duel-fx-inline ul { display: grid; gap: 1px; margin: 0; padding: 0 var(--sp-4); list-style: none; }
+.duel-fx-inline .duel-fx-more { margin-inline: var(--sp-4); }
+/* Col dito si tocca tutta la riga: 44px con lo spazio sopra e sotto il testo (freccia e testo restano allineati anche
+   con la lista aperta); il conto si accende quando la lista è aperta */
+html.touch-tips .duel-tip-fxline { padding-block: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+html.touch-tips .duel-tip-fx { gap: 0; }
+html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink); text-decoration-color: var(--accent); }
+.duel-fx-tip li, .duel-fx-inline li { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: var(--sp-2); height: 24px; font: 600 12px/1.2 var(--ui); }
 .duel-fx-hits { font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .duel-fx-hits b.bad { color: var(--bad); }
 .duel-fx-hits b.good { color: var(--good); }
