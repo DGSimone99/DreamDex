@@ -29,10 +29,12 @@ export interface QuickTip { id: TipId; label: string }
  * del meta (il conto, la lista nel tooltip), il voto del team e Applica. `quick` sono i chip subito (da editorDuel);
  * `result` i consigli completi dal calcolo in sottofondo (null mentre calcola).
  */
-export function DuelTips({ side, me, opp, quick, result, onApply }: {
+export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
   /** Quale riga: sotto il suo colpo solo la difesa, sotto il tuo attacco, mossa e Velocità (senza: tutti). */
   side?: 'mine' | 'theirs';
   me: TeamSet; opp: TeamSet; quick: QuickTip[]; result: DuelTipsResult | null; onApply?: (next: TeamSet, change: string) => void;
+  /** Senza consigli, al posto di "nessuno": perché (va già bene, nessun ritocco basta, il compagno a cui lasciarlo). */
+  empty?: ReactNode;
 }) {
   const t = useT();
   const lang = useLang();
@@ -100,7 +102,7 @@ export function DuelTips({ side, me, opp, quick, result, onApply }: {
     // Esc con il fuoco sul chip (o nella scheda) chiude solo la scheda: non arriva alla carta del team, che chiuderebbe l'editor
     <div className="duel-tips" ref={lineRef} onKeyDown={e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(); } }}>
       <b>{t('editor.duelTips')}</b>
-      {chips.length === 0 && <span className="duel-tips-none">{t('duel.tipsNone')}</span>}
+      {chips.length === 0 && (empty ?? <span className="duel-tips-none">{t('duel.tipsNone')}</span>)}
       {chips.map((chip, i) => {
         const isHidden = rest.includes(chip);
         return (

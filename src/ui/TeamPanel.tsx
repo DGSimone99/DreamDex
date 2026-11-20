@@ -20,6 +20,7 @@ import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
 import { SetEditor, type FieldFlag, type FieldFlags } from './SetEditor';
+import { handOffOpponent } from './duelHandoff';
 import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
@@ -185,6 +186,8 @@ interface SlotActions {
   setChange: (index: number, set: TeamSet) => void;
   /** Consiglio della Sfida applicato: con Annulla. */
   tip: (index: number, set: TeamSet, change: string) => void;
+  /** La Sfida passa la mano: apre il membro `index` con lo stesso avversario. */
+  openWith: (index: number, opponent: string) => void;
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
@@ -602,7 +605,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
       <div className="drawer" id={drawerId} inert={!open}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} /> : undefined}
+        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} onOpenMember={actions.openWith} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
@@ -923,6 +926,13 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
       else if (onSetChange) onSetChange(i, next);
       else onChange(team.map((s, j) => (j === i ? next : s)));
     },
+    openWith: (i, opponent) => {
+      const member = team[i];
+      if (!member) return;
+      handOffOpponent(member.species, opponent);
+      animated(() => setOpenIndex(i));
+      focusCard(i);
+    },
     remove: i => {
       setOpenIndex(null);
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
@@ -947,6 +957,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
     change: (i, next) => live.current.change(i, next),
     setChange: (i, next) => live.current.setChange(i, next),
     tip: (i, next, change) => live.current.tip(i, next, change),
+    openWith: (i, opponent) => live.current.openWith(i, opponent),
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
