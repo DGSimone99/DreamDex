@@ -1657,6 +1657,8 @@ export const en = {
   'editor.duelTheirsTitle': "Their best hit",
   'duel.tipsNone': "none",
   'duel.tipsNoneKo': "you KO it in 1 hit and move first",
+  'duel.tipsNoneDef': "a small EV tweak won't let you take one more hit",
+  'duel.tipsNoneHarmless': "it can't hurt you",
   'duel.tipsNoneAny': "nothing small to tweak against this Pokémon",
   'duel.tipsMore': "{n} more",
   'duel.tipTaken': "Taken from {stat} {from} → {to}",

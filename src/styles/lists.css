@@ -773,9 +773,9 @@
 .duel-result.warn .duel-big { color: var(--warn); }
 .duel-result.none .duel-big { color: var(--faint); }
 /* La riga dei consigli: sempre presente in fondo alla Sfida (grigia senza consigli); ogni consiglio è un chip che apre la
-   sua scheda. Etichetta nel ciano del lavoro (il magenta resta raro). Sotto il tuo colpo resta lo spazio vuoto di prima. */
-.duel-tips, .duel-tips-gap { grid-column: 1 / -1; grid-row: 4; min-width: 0; }
-.duel-tips-gap { height: 15px; }
+   sua scheda. Etichetta nel ciano del lavoro (il magenta resta raro). Due righe indipendenti: sotto il tuo colpo attacco,
+   mossa e Velocità; sotto il suo la difesa. */
+.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; }
 .duel-tips { position: relative; display: flex; align-items: center; gap: var(--sp-3); overflow: hidden; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--text); }
 .duel-tips > b { flex: none; font-weight: 700; color: var(--accent-ink); }
 .duel-tips-none { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--faint); }
@@ -894,7 +894,7 @@
   .duel-title-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .duel-label { grid-column: 2 / -1; grid-row: 2; }
   .duel-sub { grid-column: 2; grid-row: 3; }
-  .duel-tips, .duel-tips-gap { grid-column: 2 / -1; grid-row: 4; line-height: 1.15; }
+  .duel-tips { grid-column: 2 / -1; grid-row: 4; line-height: 1.15; }
   /* La Velocità a destra, sulla riga della barra (la mossa resta intera) */
   .duel-speed { grid-column: 3; grid-row: 3; }
   .duel-stage { --stage-scale: 1.15; }

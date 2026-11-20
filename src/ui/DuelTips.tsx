@@ -26,7 +26,9 @@ export interface QuickTip { id: TipId; label: string }
  * del meta (il conto, la lista nel tooltip), il voto del team e Applica. `quick` sono i chip subito (da editorDuel);
  * `result` i consigli completi dal calcolo in sottofondo (null mentre calcola).
  */
-export function DuelTips({ me, opp, quick, result, onApply }: {
+export function DuelTips({ side, me, opp, quick, result, onApply }: {
+  /** Quale riga: sotto il suo colpo solo la difesa, sotto il tuo attacco, mossa e Velocità (senza: tutti). */
+  side?: 'mine' | 'theirs';
   me: TeamSet; opp: TeamSet; quick: QuickTip[]; result: DuelTipsResult | null; onApply?: (next: TeamSet, change: string) => void;
 }) {
   const t = useT();
@@ -40,7 +42,7 @@ export function DuelTips({ me, opp, quick, result, onApply }: {
   const anchor = useRef<HTMLElement | null>(null);
   const pop = useRef<HTMLDivElement>(null);
   const cardId = useId();
-  const chips = quick.filter(q => !result || result.tips.some(tip => tip.id === q.id));
+  const chips = quick.filter(q => (!side || (side === 'theirs') === (q.id === 'def')) && (!result || result.tips.some(tip => tip.id === q.id)));
   const key = chips.map(c => c.id).join(',');
 
   // Il set o l'avversario cambiano: la scelta a mano non vale più
@@ -95,7 +97,7 @@ export function DuelTips({ me, opp, quick, result, onApply }: {
     // Esc con il fuoco sul chip (o nella scheda) chiude solo la scheda: non arriva alla carta del team, che chiuderebbe l'editor
     <div className="duel-tips" ref={lineRef} onKeyDown={e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(); } }}>
       <b>{t('editor.duelTips')}</b>
-      {chips.length === 0 && <span className="duel-tips-none">{t('duel.tipsNone')}, {noneReason(me, opp, t)}</span>}
+      {chips.length === 0 && <span className="duel-tips-none">{t('duel.tipsNone')}, {noneReason(me, opp, t, side)}</span>}
       {chips.map((chip, i) => {
         const isHidden = rest.includes(chip);
         return (
@@ -127,9 +129,13 @@ export function DuelTips({ me, opp, quick, result, onApply }: {
 
 type Tr = ReturnType<typeof useT>;
 
-/** Perché non ci sono consigli: "lo mandi KO in 1 colpo e muovi primo" se è così, altrimenti la frase generica. */
-function noneReason(me: TeamSet, opp: TeamSet, t: Tr): string {
-  const { mine } = duelHits(me, opp);
+/**
+ * Perché una riga non ha consigli. Sotto il tuo colpo: "lo mandi KO in 1 colpo e muovi primo" se è così; sotto il suo:
+ * "non ti fa danni" o "un piccolo ritocco degli EV non basta"; altrimenti la frase generica.
+ */
+function noneReason(me: TeamSet, opp: TeamSet, t: Tr, side?: 'mine' | 'theirs'): string {
+  const { mine, theirs } = duelHits(me, opp);
+  if (side === 'theirs') return !theirs || !Number.isFinite(theirs.hitsMaybe) ? t('duel.tipsNoneHarmless') : t('duel.tipsNoneDef');
   return mine?.hitsSure === 1 && battleSpeed(me) > battleSpeed(opp) ? t('duel.tipsNoneKo') : t('duel.tipsNoneAny');
 }
 

@@ -286,10 +286,8 @@ export function EditorDuel({ set, team, data, format, onApply }: {
   );
   const hitLine = (kind: 'mine' | 'theirs', base: DuelHit | null) => {
     const title = <><Icon name={kind === 'mine' ? 'sword' : 'shield'} /><span className="duel-title-text">{t(kind === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}</span></>;
-    // La riga dei consigli è una sola, in fondo (sotto il suo colpo); sotto il tuo resta lo spazio vuoto di prima
-    const tips = kind === 'theirs' && opp
-      ? <DuelTips me={me} opp={opp} quick={quick} result={full} onApply={onApply} />
-      : <span className="duel-tips-gap" aria-hidden="true">{' '}</span>;
+    // Due righe di consigli indipendenti: sotto il tuo colpo attacco, mossa e Velocità; sotto il suo la difesa
+    const tips = opp ? <DuelTips side={kind} me={me} opp={opp} quick={quick} result={full} onApply={onApply} /> : null;
     const chip = speedChip(kind);
     const list = kind === 'mine' ? buffs?.attack : buffs?.defense;
     const effect = effectOf(list);

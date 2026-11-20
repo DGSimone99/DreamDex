@@ -100,4 +100,23 @@ describe('consigli della Sfida: chip e scheda', () => {
     const card = screen.getByRole('dialog');
     expect(card).toHaveTextContent(/Secondo \d+.*Primo \d+/);
   });
+
+  it('due righe indipendenti: sotto il suo colpo la difesa, sotto il tuo attacco, mossa e Velocità', () => {
+    const all = [...quick, { id: 'spe' as const, label: '+12 Vel' }];
+    const withSpe: DuelTipsResult = { ...fakeResult, tips: [...fakeResult.tips, { id: 'spe', row: 'speed', add: { spe: 12 }, move: null, best: 0, options: [] }] };
+    const { unmount } = renderIt(<DuelTips side="theirs" me={me} opp={gholdengo} quick={all} result={withSpe} />);
+    expect(screen.getByRole('button', { name: '+32 DifSp' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Terremoto' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '+12 Vel' })).toBeNull();
+    unmount();
+    renderIt(<DuelTips side="mine" me={me} opp={gholdengo} quick={all} result={withSpe} />);
+    expect(screen.getByRole('button', { name: 'Terremoto' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+12 Vel' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '+32 DifSp' })).toBeNull();
+  });
+
+  it('una riga senza consigli dice nessuno anche se l altra ne ha', () => {
+    renderIt(<DuelTips side="theirs" me={me} opp={gholdengo} quick={[{ id: 'move', label: 'Terremoto' }]} result={null} />);
+    expect(screen.getByText(/nessuno/)).toBeInTheDocument();
+  });
 });

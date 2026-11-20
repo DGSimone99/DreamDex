@@ -1660,6 +1660,8 @@ export const it: Record<keyof typeof en, string> = {
   'editor.duelTheirsTitle': "Il suo colpo migliore",
   'duel.tipsNone': "nessuno",
   'duel.tipsNoneKo': "lo mandi KO in 1 colpo e muovi primo",
+  'duel.tipsNoneDef': "un piccolo ritocco degli EV non ti fa reggere un colpo in più",
+  'duel.tipsNoneHarmless': "non ti fa danni",
   'duel.tipsNoneAny': "niente da ritoccare contro questo Pokémon",
   'duel.tipsMore': "Altri {n}",
   'duel.tipTaken': "Tolti da {stat} {from} → {to}",
