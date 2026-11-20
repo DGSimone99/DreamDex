@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react';
 import { battleAbility, battleName, battleSpecies, dex } from '../engine/dex';
 import type { StatID, TeamSet } from '../engine/sets';
@@ -118,7 +119,10 @@ export function MemberMoves({ set, was, movesLabel, className = '' }: { set: Tea
  * mosse. Solo a vista: chi la apre ha già il nome in parole. `was`: il set di prima (un set cambiato da Completa team o
  * dal Coaching): le parti diverse (strumento, abilità, natura, EV, mosse nuove) si accendono in azzurro.
  */
-export function MemberCard({ set, why, was }: { set: TeamSet; why?: ReactNode; was?: TeamSet }) {
+/** Un problema del membro (rosso non legale, giallo da controllare), detto nella carta: nel team compresso non c'è il triangolo. */
+export interface MemberAlert { level: 'danger' | 'warn'; text: string }
+
+export function MemberCard({ set, why, was, alerts }: { set: TeamSet; why?: ReactNode; was?: TeamSet; alerts?: MemberAlert[] }) {
   const species = battleSpecies(set);
   const types = (species?.types ?? []) as string[];
   return (
@@ -131,6 +135,11 @@ export function MemberCard({ set, why, was }: { set: TeamSet; why?: ReactNode; w
         </span>
         {why && <span className="mcard-why">{why}</span>}
       </div>
+      {!!alerts?.length && (
+        <ul className="mcard-alerts">
+          {alerts.map(alert => <li key={alert.text} className={alert.level}><Icon name="warning" />{alert.text}</li>)}
+        </ul>
+      )}
       <MemberKit set={set} was={was} />
       <MemberStatsMoves set={set} was={was} />
     </>
@@ -145,14 +154,14 @@ export function MemberCard({ set, why, was }: { set: TeamSet; why?: ReactNode; w
  * Analisi, così la carta non copre le righe sotto).
  */
 export function useMemberTip(delay?: number, near?: string, side?: boolean | 'left') {
-  const anchor = useFloatAnchor<{ set: TeamSet; why?: ReactNode; was?: TeamSet }>(delay);
-  const show = (set: TeamSet, why?: ReactNode, was?: TeamSet) => (e: MouseEvent<Element> | FocusEvent<Element>) =>
-    anchor.open({ set, why, was }, (near && e.currentTarget.closest(near)) || e.currentTarget);
-  const bind = (set: TeamSet, why?: ReactNode, was?: TeamSet) => ({ onMouseEnter: show(set, why, was), onMouseLeave: anchor.close, onFocus: show(set, why, was), onBlur: anchor.close });
+  const anchor = useFloatAnchor<{ set: TeamSet; why?: ReactNode; was?: TeamSet; alerts?: MemberAlert[] }>(delay);
+  const show = (set: TeamSet, why?: ReactNode, was?: TeamSet, alerts?: MemberAlert[]) => (e: MouseEvent<Element> | FocusEvent<Element>) =>
+    anchor.open({ set, why, was, alerts }, (near && e.currentTarget.closest(near)) || e.currentTarget);
+  const bind = (set: TeamSet, why?: ReactNode, was?: TeamSet, alerts?: MemberAlert[]) => ({ onMouseEnter: show(set, why, was, alerts), onMouseLeave: anchor.close, onFocus: show(set, why, was, alerts), onBlur: anchor.close });
   const current = anchor.anchor;
   const tip = current && (
     <FloatTip rect={current.rect} tone={typeColor((battleSpecies(current.key.set)?.types[0] as string | undefined) ?? '')} className="member" side={side}>
-      <MemberCard set={current.key.set} why={current.key.why} was={current.key.was} />
+      <MemberCard set={current.key.set} why={current.key.why} was={current.key.was} alerts={current.key.alerts} />
     </FloatTip>
   );
   return { bind, tip, close: anchor.close };

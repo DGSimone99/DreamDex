@@ -471,7 +471,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
         title={collapsed || touch ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
-        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0]) : {})}
+        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
         onPointerDown={e => {
           if (!touch || e.pointerType === 'mouse' || (e.target as Element).closest('button:not(.slot-toggle), a, input')) return;
@@ -521,7 +521,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         <span className="mini-icon" aria-hidden="true">
           <PokemonIcon name={name} />
           {(dangers.length > 0 || warns.length > 0) && (
-            <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`} title={[...dangers, ...warns].map(a => a.text).join(' · ')}>
+            // Il perché sta nella carta del Pokémon che si apre passandoci sopra
+            <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`}>
               <span className="visually-hidden">{tr(dangers.length ? 'alert.danger' : 'alert.warn')}</span>
             </span>
           )}
