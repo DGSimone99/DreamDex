@@ -75,6 +75,8 @@ interface Props {
   onPaste?: (index: number, set: TeamSet) => void;
   /** Set intero cambiato nell'editor (preset Smogon, I miei set, spread più usati), annullabile; se manca, si aggiorna solo il team. */
   onSetChange?: (index: number, set: TeamSet) => void;
+  /** Applica di un consiglio della Sfida: il set nuovo e il cambio in parole (per l'avviso Annulla). */
+  onTipApply?: (index: number, set: TeamSet, change: string) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
   onBulk?: (kind: 'presets' | 'fill' | 'clear' | 'tournament', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
@@ -174,6 +176,8 @@ interface SlotActions {
   change: (index: number, set: TeamSet) => void;
   /** Set intero cambiato (preset, I miei set, spread): con Annulla. */
   setChange: (index: number, set: TeamSet) => void;
+  /** Consiglio della Sfida applicato: con Annulla. */
+  tip: (index: number, set: TeamSet, change: string) => void;
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
@@ -224,6 +228,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const onIgnoreWarning = actions.ignoreWarning;
   const onChange = (next: TeamSet) => actions.change(index, next);
   const onSetChange = (next: TeamSet) => actions.setChange(index, next);
+  const onTip = (next: TeamSet, change: string) => actions.tip(index, next, change);
   const onRemove = () => actions.remove(index);
   const onReplace = () => actions.replace(index);
   const onProposalDone = actions.proposalDone;
@@ -243,11 +248,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const onBestIndex = () => actions.bestIndex(index);
   // Apre il riquadro del testo del set (assegnato più sotto, dove c'è il suo stato)
   const textOpen = useRef<() => void>(() => undefined);
-  const live = useRef({ onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
-  live.current = { onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
+  const live = useRef({ onChange, onSetChange, onTip, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
+  live.current = { onChange, onSetChange, onTip, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
     onSetChange: (next: TeamSet) => live.current.onSetChange(next),
+    onTip: (next: TeamSet, change: string) => live.current.onTip(next, change),
     onReplace: () => live.current.onReplace(),
     onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
@@ -540,7 +546,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
       <div className="drawer" id={drawerId} inert={!open}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} /> : undefined}
+        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
@@ -671,7 +677,7 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onTipApply, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -849,6 +855,11 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     ignoreWarning: onAllowMultipleMegas,
     change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
     setChange: (i, next) => { if (onSetChange) onSetChange(i, next); else onChange(team.map((s, j) => (j === i ? next : s))); },
+    tip: (i, next, change) => {
+      if (onTipApply) onTipApply(i, next, change);
+      else if (onSetChange) onSetChange(i, next);
+      else onChange(team.map((s, j) => (j === i ? next : s)));
+    },
     remove: i => {
       setOpenIndex(null);
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
@@ -872,6 +883,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     ignoreWarning: () => live.current.ignoreWarning(),
     change: (i, next) => live.current.change(i, next),
     setChange: (i, next) => live.current.setChange(i, next),
+    tip: (i, next, change) => live.current.tip(i, next, change),
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),

@@ -284,6 +284,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     remember({ kind: 'move', from: battleName(set), to: `${name(from)} → ${name(to)}` }, after);
     return true;
   };
+  // Un consiglio della Sfida applicato (EV o mossa): annullabile, l'avviso dice cosa è cambiato ("+32 EV in DifSp, −32 in Att")
+  const applyTip = (index: number, set: TeamSet, change: string) => {
+    const before = team[index];
+    if (!before) return;
+    const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
+    remember({ kind: 'move', from: battleName(before), to: change }, after);
+  };
   const finishProposal = (applied: boolean) => {
     if (!applied || !moveProposal || !applyMove(moveProposal)) setMoveProposal(null);
   };
@@ -463,7 +470,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           plateName={<SavedPlateName team={team} />}
-          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onBulk={bulk} onAddClick={startAdd}
+          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onTipApply={applyTip} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
