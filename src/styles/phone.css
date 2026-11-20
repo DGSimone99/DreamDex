@@ -1142,9 +1142,13 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .editor-grade :is(.up, .down) { color: var(--muted); }
   .editor-grade .up > b { color: var(--good); }
   .editor-grade .down > b { color: var(--bad); }
+  /* Con poco contenuto (la scheda Sfida) Fatto scende comunque in fondo allo schermo */
+  .drawer:has(> .editor-done-bar) { display: flex; flex-direction: column; }
+  .drawer:has(> .editor-done-bar) > .set-editor { flex: none; margin-bottom: var(--sp-6); }
   .drawer .editor-done-bar {
     display: block; position: sticky; bottom: calc(-20px - var(--safe-b)); z-index: 7;
-    margin: var(--sp-6) calc(-1 * var(--sp-7)) calc(-20px - var(--safe-b));
+    /* In alto auto: con poco contenuto scende in fondo; lo spazio dal contenuto lo dà il margine dell'editor */
+    margin: auto calc(-1 * var(--sp-7)) calc(-20px - var(--safe-b));
     padding: var(--sp-5) var(--sp-7) calc(var(--sp-5) + var(--safe-b));
     background: var(--ground); box-shadow: 0 -1px 0 var(--line-soft);
   }

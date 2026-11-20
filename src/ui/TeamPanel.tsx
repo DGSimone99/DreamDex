@@ -225,8 +225,10 @@ function EditorGrade({ grade }: { grade: EditorGradeShown }) {
   );
 }
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null }: {
+const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null, startTab = null }: {
   index: number;
+  /** Telefono: la scheda dell'editor da aprire (la Sfida, arrivando da "lascialo a" di un compagno). */
+  startTab?: { tab: 'duel'; key: number } | null;
   /** Il voto del team, solo per la carta aperta: il chip del telefono nella testata dell'editor. */
   grade?: EditorGradeShown | null;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
@@ -657,6 +659,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         }
         proposedSlot={open && proposal ? proposal.slot : undefined}
         flags={open ? fieldFlags : undefined}
+        startTab={startTab}
         notice={open && proposal && (
           <div className="move-proposal" role="note">
             <Icon name="spark" />
@@ -746,6 +749,8 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
   // Il voto di quando si è aperto un membro (il primo voto che arriva, se in quel momento non c'era): il chip
   // dell'editor sul telefono dice di quanto è cambiato. Resta anche se il voto sparisce un attimo (EV oltre 510)
   const [gradeFrom, setGradeFrom] = useState<number | null>(null);
+  // "Lascialo a" della Sfida: il compagno si apre già sulla scheda Sfida (telefono)
+  const [startTab, setStartTab] = useState<{ index: number; tab: 'duel'; key: number } | null>(null);
   useEffect(() => { setGradeFrom(openIndex === null ? null : grade?.overall ?? null); }, [openIndex]);
   useEffect(() => { if (openIndex !== null && gradeFrom === null && grade) setGradeFrom(grade.overall); }, [openIndex, gradeFrom, grade]);
   const editorGrade = grade ? { ...grade, from: gradeFrom ?? grade.overall } : null;
@@ -930,6 +935,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
       const member = team[i];
       if (!member) return;
       handOffOpponent(member.species, opponent);
+      setStartTab({ index: i, tab: 'duel', key: Date.now() });
       animated(() => setOpenIndex(i));
       focusCard(i);
     },
@@ -1085,6 +1091,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
             repeated={repeated.includes(i)}
             open={openIndex === i}
             grade={openIndex === i ? editorGrade : null}
+            startTab={startTab?.index === i ? startTab : null}
             actions={actions}
             collapsed={collapsed}
           />
