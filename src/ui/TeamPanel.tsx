@@ -365,6 +365,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   // togli) al posto dei pulsantini sulla carta; il suggerimento del trascinamento (col dito non si trascina) non serve
   const touch = useMediaQuery(TOUCH_QUERY);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shrunk, setShrunk] = useState(false);
+  useEffect(() => { if (!open) setShrunk(false); }, [open]);
   const menuRef = useRef<HTMLDivElement>(null);
   const hold = useRef<{ x: number; y: number; timer: number } | null>(null);
   const held = useRef(false);
@@ -615,7 +617,15 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
-      <div className="drawer" id={drawerId} inert={!open}>
+      {/* Telefono: scorrendo l'editor la testata (il riepilogo del membro) si stringe a una riga */}
+      <div className={`drawer${shrunk ? ' shrunk' : ''}`} id={drawerId} inert={!open} onScroll={e => {
+        const el = e.currentTarget;
+        const top = el.scrollTop;
+        // Soglie diverse per stringere e riallargare: la testata che cambia altezza non fa tremare la scelta. Si stringe
+        // solo se resta da scorrere anche dopo (la testata stretta è circa 200 px più bassa), se no torna subito su
+        if (!shrunk && top > 80 && el.scrollHeight - el.clientHeight > 260) setShrunk(true);
+        else if (shrunk && top < 8) setShrunk(false);
+      }}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
         duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} onOpenMember={actions.openWith} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
