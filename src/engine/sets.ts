@@ -3,6 +3,7 @@ import { t, type Lang } from '../i18n';
 import { Sets } from '@pkmn/sets';
 import { battleSpecies, dex, getMove, getSpecies, teamFormeOf, toID } from './dex';
 import type { EngineData } from './data';
+import { isOneType, rulesOf } from './formatRules';
 import { isBannedName, pokedexOfId } from './formats';
 import { isLearnable, isLegalAbility, legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
@@ -139,10 +140,35 @@ export function withAbility(set: TeamSet, data?: EngineData): TeamSet {
   return { ...set, ability: used ? dex.abilities.get(used).name : species?.abilities[0] ?? '' };
 }
 
+const ownData = new WeakMap<EngineData, Map<string, boolean>>();
+
+/**
+ * In doppio, la specie ha dati di doppio suoi (statistiche, preset o set del formato)? Allora non riceve mai set o
+ * preset del singolo: un set con Stealth Rock e senza Protect giudicato col voto del doppio non è un consiglio. Si
+ * guardano il nome dato, la specie base e le sue forme con la pietra (le statistiche di una Mega stanno sotto la Mega).
+ * Chi non ha nessun dato di doppio tiene le riserve del singolo, come sempre. Nel singolo è sempre falso.
+ */
+export function ownDataOnly(data: EngineData, speciesName: string): boolean {
+  if (!isOneType(rulesOf(data))) return false;
+  let known = ownData.get(data);
+  if (!known) ownData.set(data, (known = new Map()));
+  const hit = known.get(speciesName);
+  if (hit !== undefined) return hit;
+  const species = getSpecies(speciesName);
+  const base = species ? getSpecies(species.baseSpecies) : undefined;
+  const stoneFormes = (base?.otherFormes ?? []).filter(name => { const forme = getSpecies(name); return !!forme && isStoneForme(forme); });
+  const names = [...new Set([speciesName, ...(species ? [species.name] : []), ...(base ? [base.name] : []), ...stoneFormes])];
+  const own = names.some(name => !!statsEntry(data.stats, name) || !!findByName(data.presets ?? undefined, name) || !!findByName(data.sets ?? undefined, name));
+  known.set(speciesName, own);
+  return own;
+}
+
 /**
  * Set di riferimento: primo preset Smogon del formato (così l'editor lo riconosce) → statistiche del formato
  * → analisi → primo preset di un altro formato → riserva (il formato in cui è più popolare)
  * → set della forma base → set generato dalle mosse imparabili.
+ * In doppio, per chi ha dati di doppio (ownDataOnly), le fonti del singolo si saltano: preset, statistiche e analisi
+ * del doppio, poi il set generato (che in doppio parte da Protect).
  * Reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
  * È sempre una copia: chi la modifica non tocca i preset né le statistiche (e i voti dopo restano giusti).
  */
@@ -169,21 +195,24 @@ function referenceSet(data: EngineData, speciesName: string, genLimit: number): 
   const plain = (list: Preset[] | undefined) => list?.find(p => !stones.has(toID(p.set.item)))?.set;
   const noStone = (set: TeamSet | null | undefined) => (set && !stones.has(toID(set.item)) ? set : undefined);
   const statsSet = mostCommonSet(data.stats, speciesName);
+  // Doppio: chi ha dati di doppio non scende mai alle riserve del singolo
+  const own = ownDataOnly(data, speciesName);
+  const doubles = isOneType(rulesOf(data));
   const found = plain(findByName(data.presets ?? undefined, speciesName))
     ?? noStone(statsSet)
     ?? noStone(findByName(data.sets ?? undefined, speciesName))
-    ?? plain(findByName(data.fallbackPresets ?? undefined, speciesName))
-    ?? noStone(findByName(data.fallback ?? undefined, speciesName))
+    ?? (own ? undefined : plain(findByName(data.fallbackPresets ?? undefined, speciesName)))
+    ?? (own ? undefined : noStone(findByName(data.fallback ?? undefined, speciesName)))
     // Solo set con la pietra: si tiene il set e le si toglie la pietra
     ?? statsSet
-    ?? findByName(data.fallback ?? undefined, speciesName)
-    ?? baseFormeSet(data.fallback, speciesName);
+    ?? (own ? undefined : findByName(data.fallback ?? undefined, speciesName))
+    ?? (own ? undefined : baseFormeSet(data.fallback, speciesName));
   const base = found && withAbility(withoutStone(found, stones, data), data);
-  if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit, data.game ?? null);
+  if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit, data.game ?? null, doubles);
   const legal = makeLegal(base, data, genLimit);
   // Se le mosse illegali non hanno sostituti dalle statistiche, si completa con quelle generate
   if (legal.moves.length >= Math.min(4, base.moves.length)) return legal;
-  const extra = generatedSet(legal.species, genLimit, data.game ?? null).moves.filter(m => !legal.moves.includes(m));
+  const extra = generatedSet(legal.species, genLimit, data.game ?? null, doubles).moves.filter(m => !legal.moves.includes(m));
   return { ...legal, moves: [...legal.moves, ...extra].slice(0, 4) };
 }
 
@@ -329,6 +358,7 @@ function withoutStone(set: TeamSet, stones: Set<string>, data: EngineData): Team
 /**
  * I preset per un Pokémon, divisi per forma: una Mega o una Primal ha solo quelli con la sua pietra,
  * la forma base solo quelli senza. Prima quelli del formato scelto, poi quelli degli altri formati.
+ * In doppio, per chi ha dati di doppio (ownDataOnly), solo quelli del doppio: la lista può essere vuota.
  */
 export function presetsFor(data: EngineData, speciesName: string): Preset[] {
   const forme = getSpecies(speciesName);
@@ -362,7 +392,8 @@ function allPresetsFor(data: EngineData, speciesName: string): Preset[] {
       .map(p => ({ ...p, set: { ...p.set, ...teamFormeOf(p.set.species, p.set.evs) } }))
       .filter(p => p.set.species === species);
   const own = [...(findByName(data.presets ?? undefined, speciesName) ?? []), ...battleFormePresets(data.presets)];
-  const other = [...(findByName(data.fallbackPresets ?? undefined, speciesName) ?? []), ...battleFormePresets(data.fallbackPresets)];
+  // Doppio: mai i preset del singolo per chi ha dati di doppio ("Migliora i set", Completa team e il menu dei set li proverebbero)
+  const other = ownDataOnly(data, speciesName) ? [] : [...(findByName(data.fallbackPresets ?? undefined, speciesName) ?? []), ...battleFormePresets(data.fallbackPresets)];
   return (mergePresets([{ x: own }, { x: other }]).x ?? []).map(p => ({ ...p, set: withAbility(p.set, data) }));
 }
 
