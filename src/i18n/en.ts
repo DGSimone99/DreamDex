@@ -1675,7 +1675,7 @@ export const en = {
   'duel.tipsSafe': "it can't KO you",
   'duel.tipsFine': "nothing to tweak",
   'duel.tipsStuck': "no tweak is enough",
-  'duel.tipsNobody': "no tweak is enough, and nobody on your team beats it",
+  'duel.tipsNobody': "nobody on your team beats it",
   'duel.tipsMate': "leave it to",
   'duel.tipsMateOpen': "Open {name} against {opponent}",
   'duel.tipsMore': "{n} more",
