@@ -9,17 +9,18 @@ import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { createContext, memo, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
-import { bestPreset } from '../engine/bestPreset';
+import { bestPreset, bestPresetIndex } from '../engine/bestPreset';
 import { ImproveSetsDialog } from './ImproveSetsDialog';
 import { cancelPrepareFill, prepareFill, prepareImproveSets } from './useRanking';
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
 import { SetEditor } from './SetEditor';
+import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
@@ -37,6 +38,9 @@ import { SMALL, useBackClose } from './useBackClose';
 import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
+import { useMediaQuery } from './useMediaQuery';
+import { TOUCH_QUERY } from './TouchTips';
+import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
 import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
@@ -69,6 +73,8 @@ interface Props {
   onFillOpenChange?: (open: boolean) => void;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
+  /** Set intero cambiato nell'editor (preset Smogon, I miei set, spread più usati), annullabile; se manca, si aggiorna solo il team. */
+  onSetChange?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
   onBulk?: (kind: 'presets' | 'fill' | 'clear' | 'tournament', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
@@ -160,21 +166,40 @@ interface SlotActions {
   drag: (index: number, phase: 'start' | 'over' | 'drop' | 'end') => void;
   /** Set incollato; `review`: mosse non imparabili o nomi non trovati, da chiedere/dire dopo averlo applicato. */
   paste: (index: number, set: TeamSet, review?: ImportReview) => void;
-  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
+  /** Preset con il voto del team più alto per questo membro, completato e ritoccato (null se il membro non ne ha). */
   best: (index: number) => TeamSet | null;
+  /** Solo quale preset dà al team il voto più alto (posizione in presetsForSet), per segnarlo nel menu Set. */
+  bestIndex: (index: number) => number | null;
   ignoreWarning: () => void;
   change: (index: number, set: TeamSet) => void;
+  /** Set intero cambiato (preset, I miei set, spread): con Annulla. */
+  setChange: (index: number, set: TeamSet) => void;
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
 }
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
+/**
+ * Tipi nelle carte del team, a passi uguali per tutte le carte (TeamPanel misura la fila e scende di un passo appena
+ * una delle coppie del team non entra): 3 = una larghezza unica (il nome più lungo), 2 = tre larghezze fisse (nomi
+ * corti, medi, lunghi), 1 = larghezza che segue il nome (scritta più piccola nelle carte strette), 0 = solo le icone.
+ */
+const TypeTextContext = createContext(true);
+const TYPE_STEPS = ['icons', 'fit', 'sized', 'full'] as const;
+const typesOverflow = (el: HTMLElement) =>
+  [...el.querySelectorAll<HTMLElement>('.slot-card .types')].some(row => row.scrollWidth > row.clientWidth + 1);
+
+/** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
+const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
+
+const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
   index: number;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
   collapsed?: boolean;
   /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
   total: number;
+  /** Il team intero, solo per la carta aperta (la Sfida ne usa meteo, campi e Ventoincoda). */
+  team?: TeamSet[];
   /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
   proposal?: MoveProposal | null;
   /** Sotto-ruoli misurati del membro nel team (gli stessi del voto, già in cache): la carta li mostra. */
@@ -198,6 +223,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const onBest = () => actions.best(index);
   const onIgnoreWarning = actions.ignoreWarning;
   const onChange = (next: TeamSet) => actions.change(index, next);
+  const onSetChange = (next: TeamSet) => actions.setChange(index, next);
   const onRemove = () => actions.remove(index);
   const onReplace = () => actions.replace(index);
   const onProposalDone = actions.proposalDone;
@@ -214,35 +240,45 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
   const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
   // Gestori sempre aggiornati anche dentro l'editor memorizzato
-  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning, onBest });
-  live.current = { onChange, onReplace, onPaste, onIgnoreWarning, onBest };
+  const onBestIndex = () => actions.bestIndex(index);
+  // Apre il riquadro del testo del set (assegnato più sotto, dove c'è il suo stato)
+  const textOpen = useRef<() => void>(() => undefined);
+  const live = useRef({ onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
+  live.current = { onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
+    onSetChange: (next: TeamSet) => live.current.onSetChange(next),
     onReplace: () => live.current.onReplace(),
     onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
     onBest: () => live.current.onBest(),
+    onBestIndex: () => live.current.onBestIndex(),
+    // Il preset migliore del menu Set: completato e ritoccato, come faceva il pulsante "Preset migliore"
+    applyBest: () => {
+      const next = live.current.onBest();
+      if (next) live.current.onSetChange(next);
+    },
+    openText: () => textOpen.current(),
   }), []);
-  // Esito del pulsante Preset migliore, per un attimo: applicato o era già quello
-  const [best, setBest] = useState<'applied' | 'same' | null>(null);
-  const applyBest = () => {
-    const next = stable.onBest();
-    if (!next) return;
-    const same = JSON.stringify(next) === JSON.stringify(set);
-    if (!same) stable.onChange(next);
-    setBest(same ? 'same' : 'applied');
-    setTimeout(() => setBest(null), 1600);
-  };
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
-  // Tipi: due chip col nome se entrano nella carta, sennò le icone tonde dei tipi (il nome nel tooltip e per i lettori)
+  // Tipi: chip col nome finché entrano in tutte le carte, sennò le icone tonde dei tipi (il nome nel tooltip e per i
+  // lettori). Lo decide la fila del team (TypeTextContext), uguale per tutte le carte
   const typeList = species?.types ?? ['?'];
-  const typesRef = useRef<HTMLSpanElement>(null);
-  const typeText = useFitCount(typesRef, 1, `${lang}|${typeList.join('/')}`, undefined, true) > 0;
+  const typeText = useContext(TypeTextContext);
   // Nome: va a capo solo agli spazi e ai trattini; la larghezza vera della parte più lunga (in em) decide se e quanto si
   // rimpicciolisce (CSS --name-em)
-  const shownName = set.name || name;
+  // Il nome prima si rimpicciolisce (CSS); se intero verrebbe tagliato anche così, la carta mostra il nome senza forma
+  // ("Urshifu" per Urshifu-Rapid-Strike, "Charizard" per Charizard-Mega-X; un soprannome non si accorcia), e se nemmeno
+  // quello entra, una riga sola coi puntini. Il nome intero resta nel tooltip.
+  // Si misura sulla carta (watch): la sua misura non dipende dal nome mostrato
+  const nameRef = useRef<HTMLElement>(null);
+  const shortName = !set.name && species && species.baseSpecies !== name ? species.baseSpecies : null;
+  const nameSteps = shortName ? 2 : 1;
+  const nameStep = useFitCount(nameRef, nameSteps, `${set.name ?? ''}|${name}|${collapsed}`, card, false, nameCut);
+  const shownName = set.name || (shortName && nameStep < nameSteps ? shortName : name);
+  const nameDots = nameStep === 0;
   const nameEm = useNameEm(shownName);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
@@ -257,8 +293,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   // `blocked`: cosa ferma l'incolla (detto in una finestra); il testo resta nel riquadro da correggere
   const [paste, setPaste] = useState<{ text: string; original: string; blocked: ImportReview | null } | null>(null);
   const pasteArea = useRef<HTMLTextAreaElement>(null);
-  // Testo del set: il riquadro si apre sopra le Statistiche (Set e Mosse restano in vista) e si chiude cliccando fuori
-  const ioRef = useRef<HTMLSpanElement>(null);
+  // Testo del set (Incolla testo nel menu Set): il riquadro si apre sopra le Statistiche (Set e Mosse restano in vista) e si
+  // chiude cliccando fuori
   const pasteRef = useRef<HTMLDivElement>(null);
   const ioOpen = !!paste;
   useEffect(() => {
@@ -266,11 +302,15 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     // Un testo già modificato non si butta con un clic fuori: si chiude solo con Annulla o Esc
     const away = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (!ioRef.current?.contains(target) && !pasteRef.current?.contains(target)) setPaste(p => (p && p.text !== p.original ? p : null));
+      if (!pasteRef.current?.contains(target)) setPaste(p => (p && p.text !== p.original ? p : null));
     };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, [ioOpen]);
+  textOpen.current = () => {
+    const text = exportShowdown([set], { tera: teraAllowed(format) });
+    setPaste({ text, original: text, blocked: null });
+  };
   const applyPaste = () => {
     if (!paste) return;
     const result = importShowdown(paste.text, lang);
@@ -280,7 +320,37 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     stable.onPaste({ ...result.sets[0], favorite: set.favorite }, review.skill.length || review.info.length ? review : undefined);
   };
   const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
+  // Nell'editor gli EV di troppo li dice già "EV usati" (590 / 510 · 80 di troppo: voto bloccato): l'avviso li salta
+  const evOverText = evTotal(set.evs) > EV_TOTAL ? tr('team.evOver', { n: evTotal(set.evs) }) : null;
+  const editorProblems = problems.filter(p => p !== evOverText);
   const memberTip = useMemberTip(500, '.slot-card');
+  // Col dito: tenendo premuta la carta si apre dal basso il menu del membro (modifica, blocca, sposta, sostituisci,
+  // togli) al posto dei pulsantini sulla carta; il suggerimento del trascinamento (col dito non si trascina) non serve
+  const touch = useMediaQuery(TOUCH_QUERY);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const hold = useRef<{ x: number; y: number; timer: number } | null>(null);
+  const held = useRef(false);
+  useAnchoredPop(card, menuRef, menuOpen, { sheet: true, width: 280, onDismiss: () => setMenuOpen(false) });
+  const endHold = () => { if (hold.current) window.clearTimeout(hold.current.timer); hold.current = null; };
+  const menuDo = (run: () => void) => { setMenuOpen(false); run(); };
+  // La punta sotto la carta aperta: al centro della carta, misurato (le carte cambiano larghezza con la finestra)
+  const pointer = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const tip = pointer.current;
+      const box = card.current?.getBoundingClientRect();
+      const base = (tip?.offsetParent as HTMLElement | null)?.getBoundingClientRect();
+      if (!tip || !box || !base) return;
+      tip.style.left = `${box.left + box.width / 2 - base.left}px`;
+    };
+    place();
+    window.addEventListener('resize', place);
+    const watch = typeof ResizeObserver === 'function' ? new ResizeObserver(place) : null;
+    if (card.current) watch?.observe(card.current);
+    return () => { window.removeEventListener('resize', place); watch?.disconnect(); };
+  }, [open, collapsed, index, total]);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
   const shownRoles = cardRoles(set, rules, subRoles);
@@ -333,10 +403,22 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         className="slot-card"
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
-        title={collapsed ? undefined : tr('team.dragTitle')}
-        {...(collapsed && !open ? memberTip.bind(set, roles[0]) : {})}
+        title={collapsed || touch ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
+        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0]) : {})}
+        data-own-hold={touch || undefined}
+        onPointerDown={e => {
+          if (!touch || e.pointerType === 'mouse' || (e.target as Element).closest('button:not(.slot-toggle), a, input')) return;
+          held.current = false;
+          endHold();
+          hold.current = { x: e.clientX, y: e.clientY, timer: window.setTimeout(() => { held.current = true; hold.current = null; setMenuOpen(true); }, 450) };
+        }}
+        onPointerMove={e => { if (hold.current && Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 10) endHold(); }}
+        onPointerUp={endHold}
+        onPointerCancel={endHold}
         // Clic su tutta la carta (il pulsante della carta lo prende da tastiera e dai lettori di schermo)
         onClick={e => {
+          // Dopo il tocco lungo (menu del membro) il clic non apre l'editor
+          if (held.current) { held.current = false; e.preventDefault(); return; }
           // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
           const hit = (e.target as HTMLElement).closest('button, a, input, [tabindex]');
           if (hit && hit !== card.current) return;
@@ -365,8 +447,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
             warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
             tr('team.position', { n: index + 1, total }),
           ].filter(Boolean).join(', ')}
-          aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
-          title={tr('team.dragTitle')}
+          aria-keyshortcuts={`${index + 1} Alt+ArrowLeft Alt+ArrowRight`}
+          title={`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
         />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
         <span className="mini-icon" aria-hidden="true">
@@ -418,7 +500,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
@@ -428,7 +510,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         )}
         </span>
         <small className="ability" title={describe.ability(ability, lang)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
-        <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef} aria-hidden="true">
+        <span className={`types${typeText ? '' : ' as-icons'}`} aria-hidden="true">
           {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
             <span key={type} className="type-dot" title={typeName(type, lang)}>
               <img src={typeIconUrl(type)} alt="" draggable={false} />
@@ -439,16 +521,33 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
         {roles.length > 0 && <small className="roles" title={rolesTitle} aria-hidden="true">{roles[0]}</small>}
       </div>
-      <div className="drawer" id={drawerId}>
-      <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
-        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
-        presetAction={
-          <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}
-            aria-label={tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}>
-            <Icon name={best ? 'check' : 'spark'} /> <span className="btn-label">{tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}</span>
+      {menuOpen && (
+        <div className="member-menu" ref={menuRef} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={tr('team.memberMenu', { species: name })}
+          onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMenuOpen(false); card.current?.focus(); } }}>
+          <p className="member-menu-head" aria-hidden="true"><Sprite species={set.species} item={set.item} shiny={!!set.shiny} size={48} /><strong>{set.name || name}</strong></p>
+          <button type="button" role="menuitem" onClick={() => menuDo(() => onToggle(true))}><Icon name="edit" />{tr('team.editSet')}</button>
+          <button type="button" role="menuitem" onClick={() => menuDo(() => onChange({ ...set, favorite: !set.favorite }))}>
+            <Icon name="lock" filled={!!set.favorite} /><span>{tr(set.favorite ? 'team.unlock' : 'team.lock')}<small>{tr('team.lockNote')}</small></span>
           </button>
-        }
+          <button type="button" role="menuitem" disabled={index === 0} onClick={() => menuDo(() => onMove(-1))}><Icon name="prev" />{tr('team.moveLeft')}</button>
+          <button type="button" role="menuitem" disabled={index >= total - 1} onClick={() => menuDo(() => onMove(1))}><Icon name="next" />{tr('team.moveRight')}</button>
+          <button type="button" role="menuitem" onClick={() => menuDo(onReplace)}><Icon name="swap" />{tr('team.replaceButton')}</button>
+          <button type="button" role="menuitem" className="danger" onClick={() => menuDo(onRemove)}><Icon name="close" />{tr('team.removeShort')}</button>
+        </div>
+      )}
+      {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
+      {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
+      {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
+      <div className="drawer" id={drawerId} inert={!open}>
+      <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
+        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} /> : undefined}
+        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
+        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
+        bestIndex={stable.onBestIndex}
+        onBest={stable.applyBest}
+        onText={stable.openText}
+        onCopy={() => copyText(exportShowdown([set], { tera: teraAllowed(format) }))}
+        smogonLink={<SmogonLink species={name} format={format} presets={presets} />}
         title={open && (
           <div className="editor-title">
             {/* Con un soprannome, la specie resta sopra come piccola etichetta (come Statistiche, Set e Mosse) */}
@@ -471,6 +570,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
               </button>
             )}
             <span className="types" aria-hidden="true">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
+            {/* Telefono: la testata dell'editor come il riepilogo di un gioco, lo sprite grande a destra sul colore del tipo
+                (sul computer non c'è: lo sprite animato sta già nella carta aperta) */}
+            <span className="editor-hero" aria-hidden="true"
+              style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as CSSProperties}>
+              <Sprite species={set.species} item={set.item} shiny={!!set.shiny} />
+            </span>
             <Hint label={tr('team.shiny')}>
               <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')}
                 onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
@@ -494,33 +599,14 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
             <button type="button" className="apply" ref={applyRef} onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
             <button type="button" onClick={() => onProposalDone?.(false)}>{tr('team.moveProposalCancel')}</button>
           </div>
-        )}{open && problems.length > 0 && (
+        )}{open && editorProblems.length > 0 && (
           // I problemi di legalità detti per esteso, con la via d'uscita
           <div className="member-problems" role="note">
             <Icon name="warning" />
-            <span>{problems.join(' · ')}</span>
+            <span>{editorProblems.join(' · ')}</span>
             <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
           </div>
         )}</>}
-        smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
-        ioAction={
-          <span className="io-anchor" ref={ioRef}>
-            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIOTitle')}
-              onClick={() => setPaste(p => {
-                if (p) return null;
-                const text = exportShowdown([set], { tera: teraAllowed(format) });
-                return { text, original: text, blocked: null };
-              })}>
-              <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
-            </button>
-            <Hint label={tr('team.copySet')} done={copied ? tr('team.copied') : undefined}>
-              <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')}
-                onClick={async () => {
-                  if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
-                }}><Icon name={copied ? 'check' : 'copy'} /></button>
-            </Hint>
-          </span>
-        }
         textPanel={paste && (
     <div className="paste-panel" ref={pasteRef} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
@@ -535,6 +621,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     </div>
         )}
         actions={<>
+          {/* Copia il set a un clic, senza aprire niente (il testo intero si incolla o si guarda da Set › Incolla testo) */}
+          <Hint label={tr('team.copySet')} done={copied ? tr('team.copied') : undefined}>
+            <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')}
+              onClick={async () => {
+                if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+              }}><Icon name={copied ? 'check' : 'copy'} /></button>
+          </Hint>
           {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
           <Hint label={tr('team.closeEditor')} end>
             <button type="button" className="editor-close" aria-label={tr('team.closeEditor')}
@@ -578,7 +671,7 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -605,12 +698,36 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     // Conta solo il nonce: la proposta cambia a ogni modifica, ma si apre una volta per nonce (lastNonce)
   }, [proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   const slotsRef = useRef<HTMLDivElement>(null);
+  const typeKey = `${lang}|${collapsed}|${team.map(set => battleSpecies(set)?.types.join('/') ?? '?').join(',')}`;
+  const typeStep = useFitCount(slotsRef, 3, typeKey, undefined, true, typesOverflow);
   const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > .slot-card > .slot-toggle')[i]?.focus());
   const step = (from: number, delta: number) => {
     const to = (from + delta + team.length) % team.length;
     if (openIndex !== null) animated(() => setOpenIndex(to));
     focusCard(to);
   };
+  // Editor aperto: i tasti 1-6 aprono il membro in quella posizione (fuoco sulla sua carta, come con le frecce). Non mentre
+  // si scrive (campi, menu a tendina), con una finestra, un menu o una tendina aperti, né con Ctrl/Alt/Maiusc/Cmd
+  const openKey = useRef<(e: KeyboardEvent) => void>(() => undefined);
+  openKey.current = e => {
+    if (openIndex === null || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.isComposing) return;
+    const n = '123456'.indexOf(e.key);
+    if (n < 0 || e.key.length !== 1) return;
+    const target = e.target instanceof HTMLElement ? e.target : null;
+    if (target && (target.isContentEditable || target.closest('input, textarea, select, [role="combobox"], [role="textbox"], [contenteditable]'))) return;
+    if (document.querySelector('[aria-modal="true"], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], details.popover[open], details.spread-panel[open], dialog[open]')) return;
+    if (n >= team.length) return;
+    e.preventDefault();
+    if (n !== openIndex) animated(() => setOpenIndex(n));
+    focusCard(n);
+  };
+  const editorOpen = openIndex !== null;
+  useEffect(() => {
+    if (!editorOpen) return;
+    const onKey = (e: KeyboardEvent) => openKey.current(e);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [editorOpen]);
   // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione.
   // `from` -1: un candidato trascinato dalla lista Pokémon (teamDrag.ts); `over` oltre i membri = uno slot vuoto
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
@@ -681,6 +798,18 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   }, [team, data, format]);
   // Completa team: pannello con le proposte e i team da torneo
   const [filling, setFilling] = useState(false);
+  // Telefono: Team salvati, Importa, Esporta, link e Svuota in un menu "…" che si apre dal basso, ognuna col suo nome.
+  // Le voci premono i pulsanti veri (nascosti a vista ma vivi), così i loro pannelli si aprono come sempre
+  const phoneMenu = useMediaQuery(SHEET_QUERY);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreButton = useRef<HTMLButtonElement>(null);
+  const moreSheet = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
+  useAnchoredPop(moreButton, moreSheet, moreOpen, { sheet: true, onDismiss: () => setMoreOpen(false) });
+  const pressReal = (selector: string) => {
+    setMoreOpen(false);
+    requestAnimationFrame(() => headRef.current?.querySelector<HTMLElement>(selector)?.click());
+  };
   const fillToggle = useRef<HTMLButtonElement>(null);
   // Chiudendo il pannello il focus torna al pulsante
   const closeFill = useCallback(() => { setFilling(false); fillToggle.current?.focus(); }, []);
@@ -716,8 +845,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
       if (review) setAsk({ index: i, review });
     },
     best: i => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; },
+    bestIndex: i => bestPresetIndex(team, i, data, format.genLimit),
     ignoreWarning: onAllowMultipleMegas,
     change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
+    setChange: (i, next) => { if (onSetChange) onSetChange(i, next); else onChange(team.map((s, j) => (j === i ? next : s))); },
     remove: i => {
       setOpenIndex(null);
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
@@ -737,8 +868,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     drag: (i, phase) => live.current.drag(i, phase),
     paste: (i, next, review) => live.current.paste(i, next, review),
     best: i => live.current.best(i),
+    bestIndex: i => live.current.bestIndex(i),
     ignoreWarning: () => live.current.ignoreWarning(),
     change: (i, next) => live.current.change(i, next),
+    setChange: (i, next) => live.current.setChange(i, next),
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
@@ -747,7 +880,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const title = t(lang, 'team.title', { n: team.length });
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
-      <div className="team-head">
+      <div className="team-head" ref={headRef}>
         {/* La targa del team: la parola Team, quanti sono e il nome del team salvato in uso (i team salvati hanno la loro
             linguetta a destra) */}
         <div className="team-plate">
@@ -758,7 +891,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           </h2>
           {plateName}
         </div>
-        {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
+        {/* Una striscia sola, tutto alto e inclinato uguale: Team salvati accanto alla targa, poi la guida; a destra Importa,
+            Esporta e il link in un gruppo, e il cestino */}
+        {saved && <div className="team-saved">{saved}</div>}
+        {/* La guida: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
         <div className="team-guide-slot">
           {canFill ? (
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
@@ -803,13 +939,26 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati e Showdown (Importa / Esporta) come linguette
-            attaccate, poi Svuota a parte */}
-        <div className="team-quick">
-          <div className="team-tabs">
-            {saved}
-            {io}
+        {phoneMenu && (
+          <div className="team-more">
+            <button type="button" className="team-more-button" ref={moreButton} aria-label={t(lang, 'team.more')} aria-haspopup="menu"
+              aria-expanded={moreOpen} onClick={() => setMoreOpen(open => !open)}><Icon name="dots" /></button>
+            {moreOpen && (
+              <div className="team-more-sheet" ref={moreSheet} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={t(lang, 'team.more')}
+                onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMoreOpen(false); moreButton.current?.focus(); } }}>
+                <p className="team-more-title" aria-hidden="true">Team</p>
+                {saved && <button type="button" role="menuitem" data-saved onClick={() => pressReal('.team-saved .popover > summary')}><Icon name="box" />{t(lang, 'saved.label')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .popover > summary')}><Icon name="paste" />{t(lang, 'showdown.import')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-main')}><Icon name="copy" />{t(lang, 'showdown.quickCopy')}</button>}
+                {io && <button type="button" role="menuitem" onClick={() => pressReal('.team-io .export-link')}><Icon name="link" />{t(lang, 'showdown.copyLink')}</button>}
+                {team.length > 0 && <button type="button" role="menuitem" className="danger" onClick={() => pressReal('.clear-team')}><Icon name="trash" />{t(lang, 'team.clear')}</button>}
+              </div>
+            )}
           </div>
+        )}
+        {/* Scorciatoie, sempre allo stesso posto a destra: Importa, Esporta e il link in un gruppo, poi Svuota a parte */}
+        <div className="team-quick">
+          {io && <div className="team-io">{io}</div>}
           {/* Svuota: il cestino, staccato da Importa ed Esporta da una barretta; il fumetto come quello di Esporta */}
           {team.length > 0 && (
             <span className="clear-wrap">
@@ -829,15 +978,17 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
-      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
+      <div className={`slots types-${TYPE_STEPS[typeStep]}${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
         // Uscendo dalla fila del team lo slot evidenziato si spegne
         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrag(d => (d && d.over !== null ? { ...d, over: null } : d)); }}>
+        <TypeTextContext.Provider value={typeStep > 0}>
         {team.map((set, i) => (
           <TeamSlot
             key={keys[i]}
             index={i}
             total={team.length}
             set={set}
+            team={openIndex === i ? team : undefined}
             proposal={proposal?.index === i ? proposal : null}
             subRoles={subRoles[i]}
             dragging={drag?.from === i}
@@ -851,6 +1002,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             collapsed={collapsed}
           />
         ))}
+        </TypeTextContext.Provider>
         {Array.from({ length: 6 - team.length }, (_, i) => (
           <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }}
             dropTarget={drag?.from === -1 && drag.over === team.length + i}

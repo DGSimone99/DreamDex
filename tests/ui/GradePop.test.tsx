@@ -34,6 +34,17 @@ describe('voto del team ridotto: la tendina delle aree', () => {
     expect(screen.getByRole('button', { name: /^Offesa \d+, apri il dettaglio/ })).toBeInTheDocument();
   });
 
+  it('chiuso: le tre aree restano a vista come barrette (solo disegno), col numero di ognuna', () => {
+    const { rating } = setup();
+    const mini = document.querySelector('.grade-pop-toggle .grade-mini')!;
+    expect(mini).toHaveAttribute('aria-hidden', 'true');
+    const rows = [...mini.querySelectorAll('.grade-mini-row')];
+    expect(rows.map(r => r.querySelector('.grade-mini-label')?.textContent)).toEqual(['Off', 'Dif', 'Vel']);
+    const value = (key: string) => String(rating.areas.find(a => a.key === key)!.value);
+    expect(rows.map(r => r.querySelector('b')?.textContent)).toEqual([value('strength'), value('defense'), value('speed')]);
+    expect(toggle()).toBeInTheDocument();
+  });
+
   it('chiuso: niente righe; il pulsante dice cosa apre', () => {
     setup();
     const button = toggle();
@@ -104,5 +115,17 @@ describe('voto del team ridotto: la tendina delle aree', () => {
     await user.click(screen.getByRole('button', { name: 'Come funziona il voto' }));
     expect(screen.getByRole('dialog', { name: 'Voto delle aree' })).toBeInTheDocument();
     expect(document.querySelector('.help-dialog')).not.toBeNull();
+  });
+});
+
+describe('voto bloccato', () => {
+  it('EV oltre il massimo: il voto vecchio non compare nemmeno per un istante (niente lettera né avviso delle regole)', () => {
+    // Il voto nuovo arriva un attimo dopo il team: qui la carta riceve ancora il voto vecchio insieme al blocco
+    renderIt(<GradeBadge rating={rated()} blocked="ev" ruleIssues={['Corviknight: 760 EV, più del massimo di 510']} illegalCount={1} />);
+    const card = document.querySelector('.grade-badge')!;
+    expect(card).toHaveClass('none');
+    expect(card.querySelector('.letter')).toBeNull();
+    expect(card.querySelector('.grade-rules')).toBeNull();
+    expect(card.querySelector('.label')).toHaveTextContent(/EV/);
   });
 });

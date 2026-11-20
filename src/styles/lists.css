@@ -1,4 +1,4 @@
-/* Schermi stretti: l'etichetta dei preset resta solo come nome accessibile del menu */
+/* Schermi stretti: i pulsanti della testata dell'editor a sola icona */
 @media (max-width: 1400px) {
   /* Copia set e Sostituisci solo con l'icona (il nome resta nel tooltip e per i lettori di schermo) */
   .editor-actions .btn-label { display: none; }
@@ -58,8 +58,6 @@
   .slot .roles { font-size: var(--fs-label); }
   .slot .name { --name-fs: 15px; line-height: 1.1; }
   .slot .held, .slot .ability { font-size: var(--fs-caption); }
-  /* Tipi lunghi (Coleottero, Folletto): il chip si allarga invece di schiacciare il testo */
-  .slot .type-chip { width: auto; min-width: 52px; padding-inline: var(--sp-3); }
   .empty-ring { width: 44px; height: 44px; }
   .grade-badge .letter { font-size: 58px; }
   .grade-badge .overall { font-size: var(--fs-title-l); }
@@ -79,7 +77,6 @@
   /* Set: le due righe di voci a sinistra, le mosse 2×2 a destra (alte quanto le voci) */
   .detail .detail-sec.set-sec .detail-set { margin-bottom: 0; }
   .detail:not(.detail-empty) > .detail-actions { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
-  .detail .detail-points { gap: 0; line-height: 1.28; }
   .detail .detail-moves { gap: var(--sp-2); }
   .detail:not(.detail-empty) .detail-sec h4 { padding-top: var(--sp-1); padding-bottom: var(--sp-1); }
   .detail-roles li { padding: 0 7px; }
@@ -92,20 +89,24 @@
   position: absolute;
   z-index: 6;
   left: 50%;
-  bottom: -14px;
-  width: 28px;
-  height: 28px;
+  /* Una maniglia attaccata al bordo basso della fascia (stesso fondo e stesso filo), non un bottone che galleggia */
+  top: calc(100% - 1px);
+  width: 52px;
+  height: 16px;
   padding: 0;
   display: grid;
   place-items: center;
   transform: translateX(-50%);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--raised);
+  border: 1px solid var(--line-soft);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: var(--band);
   color: var(--muted);
 }
+/* La zona del clic resta di almeno 24px in altezza */
+.band-toggle::after { content: ''; position: absolute; inset: -4px -4px -6px; }
 .band-toggle:hover { border-color: var(--accent); color: var(--text); }
-.band-toggle .icon { transform: rotate(90deg); }
+.band-toggle .icon { width: 14px; height: 14px; transform: rotate(90deg); }
 .band.collapsed { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--sp-6); padding-top: var(--sp-4); padding-bottom: 20px; }
 .band.collapsed .team-head { display: none; }
 .band.collapsed .slots { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-4); }
@@ -113,13 +114,22 @@
 /* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
    stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
 .band.collapsed .slot > .slot-card > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: var(--sp-2); flex: 1; min-width: 0; margin: 0; }
-/* Nomi lunghi (Urshifu-Rapid-Strike, Ogerpon-Wellspring) su due righe, a capo dopo il trattino: nella pillola si leggono
-   interi; i puntini solo oltre la seconda riga */
-.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: var(--fs-small); line-height: 14px; white-space: normal; overflow-wrap: anywhere; overflow: hidden; }
-@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { font-size: var(--fs-caption); } }
+/* Nomi lunghi: a capo solo agli spazi e dopo i trattini (mai a metà parola), al massimo due righe. Se la parte più
+   lunga non entra, la scritta si rimpicciolisce quanto basta (fino a 11px; --name-em come nelle carte, la riga è la
+   pillola meno l'icona dello strumento); se il nome intero verrebbe tagliato, TeamPanel mette il nome senza forma;
+   i puntini solo per un nome ancora troppo lungo */
+.band.collapsed .slot > .slot-card > .name-line { container-type: inline-size; }
+.band.collapsed .slot .name-line .name { --name-fs: var(--fs-small); flex: 1; min-width: 0; font-size: min(var(--name-fs), max(11px, (100cqi - 24px) / var(--name-em, 5.6))); line-height: 14px; white-space: normal; overflow-wrap: normal; word-break: normal; overflow: hidden; }
+@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { --name-fs: var(--fs-caption); } }
+/* Sotto i 1600 px (portatili) la pillola è stretta: l'icona dello strumento lascia il posto al nome (lo strumento è
+   nell'editor e nel tooltip della pillola) */
+@media (max-width: 1599px) {
+  .band.collapsed .slot .name-line .name { font-size: min(var(--name-fs), max(11px, 100cqi / var(--name-em, 5.6))); }
+  .band.collapsed .slot .name-line .held { display: none; }
+}
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > .slot-card, .band.collapsed .slot.warn > .slot-card { outline: none; }
-.band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent); outline-offset: -2px; }
+.band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent-2); outline-offset: -2px; }
 .band.collapsed .slot > .slot-card > :not(.slot-toggle, .mini-icon, .remove, .name-line) { display: none; }
 .band.collapsed .slot.open > .slot-card { transform: translateY(-2px); }
 .band.collapsed .mini-icon { position: relative; flex: none; display: block; }
@@ -127,7 +137,8 @@
 .mini-alert { position: absolute; left: -4px; top: 0; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--panel); }
 .mini-alert.danger { background: var(--bad); }
 .mini-alert.warn { background: var(--warn); }
-.band.collapsed .slot .remove { top: -6px; right: -6px; width: 26px; height: 26px; border-radius: 50%; background: var(--raised); opacity: 0; transition: opacity 0.15s; }
+/* La × della pillola: dentro, a destra e centrata in altezza (sull'angolo toccava il bordo della pillola aperta) */
+.band.collapsed .slot .remove { top: 50%; right: var(--sp-3); width: 26px; height: 26px; transform: translateY(-50%); border-radius: 50%; background: var(--raised); box-shadow: 0 0 0 1px var(--line); opacity: 0; transition: opacity 0.15s; }
 .band.collapsed .slot > .slot-card:hover .remove, .band.collapsed .slot > .slot-card:focus-within .remove { opacity: 1; }
 .band.collapsed .slot.empty { min-height: 0; height: 48px; padding: 0; border-width: 1px; gap: 0; }
 .band.collapsed .slot.empty .empty-label { display: none; }
@@ -139,36 +150,13 @@
 .band.collapsed .grade-badge .grade-visual > :not(.letter, .overall) { display: none; }
 .band.collapsed .grade-badge .letter { font-size: 40px; }
 .band.collapsed .grade-badge .overall { font-size: var(--fs-title-l); }
-/* Editor del set: chiusura, linguette Set/Danni, I miei set, riga livello/spread, ruoli in fondo, colonne allineate in basso */
+/* Editor del set: chiusura, riga EV usati / spread, ruoli in fondo, colonne allineate in basso */
 .set-editor { align-items: stretch; row-gap: var(--sp-4); }
-/* Set in alto, Mosse in basso: il fondo delle Mosse coincide con quello delle Statistiche, senza spazio vuoto dentro */
+/* Set (con le mosse) in alto, la Sfida sotto */
 .set-editor .editor-side { grid-template-rows: auto auto; align-content: space-between; }
 .editor-actions .editor-close { width: 36px; padding: 0; justify-content: center; }
 .editor-actions .editor-close:hover { border-color: var(--bad); color: var(--bad); }
-.editor-tabs { display: flex; gap: var(--sp-2); margin-left: var(--sp-3); }
-.editor-tabs [role='tab'] { height: 30px; padding: 0 var(--sp-7); border: 1px solid var(--line); background: var(--panel); font: 700 var(--fs-section)/1 var(--display); font-style: italic; color: var(--muted); }
-.editor-tabs [role='tab'][aria-selected='true'] { border-color: var(--accent-2); color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); padding-right: 20px; }
-.editor-tabs [role='tab'][aria-disabled='true'] { color: var(--faint); cursor: not-allowed; }
-.editor-tabs [role='tab'] small { display: inline; margin-left: var(--sp-2); font: 500 var(--fs-label) var(--ui); font-style: normal; color: var(--faint); }
-.set-editor .my-sets-field { flex-direction: row; align-items: center; gap: var(--sp-6); width: 300px; min-width: 0; flex-shrink: 1; }
-.set-editor .my-sets-field .field-head { white-space: nowrap; }
-.set-editor .my-sets-field .combobox { flex: 1; }
-.set-editor .save-set, .set-editor .delete-set { height: 36px; white-space: nowrap; flex-shrink: 0; }
-.set-editor .delete-set { width: 36px; padding: 0; justify-content: center; }
-.set-editor .delete-set:hover { border-color: var(--bad); color: var(--bad); }
-/* Livello (due mezze pillole unite) a sinistra e Spread più usati a destra, staccati da titolo e righe */
-.set-editor .evs .stats-toolbar { display: flex; align-items: center; gap: var(--sp-6); margin: var(--sp-4) 0 var(--sp-1); }
-.set-editor .evs .stats-toolbar .spread-panel { display: block; margin-left: auto; }
-.set-editor .evs .level-toggle { position: static; display: inline-flex; align-items: center; gap: 0; }
-.set-editor .evs .level-toggle-label { margin-right: var(--sp-4); }
-.set-editor .evs .spread-panel > summary { position: static; }
-.level-toggle button { height: 26px; min-width: 44px; margin: 0; }
-.level-toggle button:first-of-type { border-radius: 13px 0 0 13px; }
-.level-toggle button:last-of-type { border-radius: 0 13px 13px 0; margin-left: -1px; }
-.set-editor .evs .stats-toolbar .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
-.editor-roles ul { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-3); }
-.editor-roles li { padding: 3px var(--sp-5); border: 1px solid var(--line); background: var(--raised); font-size: var(--fs-small); color: var(--text); }
-.editor-roles li.main { border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
+/* L'elenco degli spread si apre sotto la targhetta Spread */
 /* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
    tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
@@ -181,53 +169,9 @@
 /* Team compresso: il membro aperto saltella, come nel box dei giochi */
 @keyframes box-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
 .band.collapsed .slot.open .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }
-/* Testata dell'editor: nome, tipi e Sostituisci; poi preset Smogon (col link attaccato), I miei set (col salvataggio attaccato), Importa / Esporta */
+/* Testata dell'editor: nome, tipi e shiny; a destra Set, Copia il set e Chiudi */
 .set-editor .editor-top .member-replace { height: 32px; white-space: nowrap; }
 .set-editor .editor-head { align-items: flex-end; row-gap: var(--sp-5); }
-.set-editor .preset-field, .set-editor .my-sets-field { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
-.set-editor .preset-field { width: 300px; }
-.set-editor .my-sets-field { position: relative; width: 240px; }
-.set-editor .preset-field .field-head, .set-editor .my-sets-field .field-head { white-space: nowrap; }
-.joined { display: flex; align-items: stretch; min-width: 0; }
-.joined > .combobox, .joined > .my-sets-input { flex: 1; min-width: 0; }
-.joined > .combobox input, .joined > .my-sets-input input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.joined > a, .joined > button, .joined > .hint-wrap > a, .joined > .hint-wrap > button { width: 38px; height: auto; min-height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
-.smogon-link.icon-only { justify-content: center; }
-.my-sets-input { position: relative; display: flex; }
-.my-sets-input input { width: 100%; height: 36px; padding-right: 34px; }
-.my-sets-toggle { position: absolute; right: 2px; top: 2px; width: 30px; height: 32px; padding: 0; border: 0; background: none; color: var(--faint); display: grid; place-items: center; }
-.my-sets-toggle .icon { transform: rotate(90deg); transition: transform 0.15s; }
-.my-sets-toggle[aria-expanded='true'] .icon { transform: rotate(-90deg); }
-.my-sets-toggle:hover:not(:disabled) { color: var(--text); }
-.save-set.overwrite { border-color: var(--accent-2); color: var(--accent-2-ink); }
-.my-sets-list {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  margin: 0;
-  padding: var(--sp-2);
-  list-style: none;
-  background: var(--ground);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-}
-.my-sets-list { text-transform: none; letter-spacing: 0; font-size: var(--fs-section); font-weight: 400; color: var(--text); }
-.save-set.saved:disabled { opacity: 1; color: var(--good); }
-.my-sets-list li { display: grid; grid-template-columns: minmax(0, 1fr) 30px 30px; align-items: center; gap: var(--sp-1); border-bottom: 1px solid var(--line-soft); }
-.my-sets-list li:last-child { border-bottom: 0; }
-.my-sets-list li.current .my-set-option strong { color: var(--accent-ink); }
-.my-set-option { display: grid; gap: 1px; min-width: 0; width: 100%; height: auto; padding: var(--sp-3) var(--sp-4); cursor: pointer; border: 0; border-radius: 3px; background: none; color: inherit; text-align: left; font: inherit; }
-.my-set-option:hover, .my-set-option:focus-visible { background: var(--raised); }
-.my-set-option strong { font-weight: 600; }
-.my-set-option small { font-size: var(--fs-label); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.my-sets-list li > input { margin: var(--sp-2); height: 30px; }
-.my-set-rename, .my-set-delete { width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--faint); display: grid; place-items: center; }
-.my-set-rename:hover { color: var(--accent); }
-.my-set-delete:hover { color: var(--bad); }
-.set-editor .member-io { height: 36px; white-space: nowrap; }
 /* Apertura della carta: lo sprite cresce fino alla misura grande, come quando torna piccolo */
 @keyframes open-grow { from { transform: scale(0.72); opacity: 0.6; } }
 .band:not(.collapsed) .slot.open > .slot-card .sprite-wrap { animation: open-grow 0.35s var(--ease); }
@@ -240,12 +184,12 @@
 .editor-title .nickname strong { font: 800 var(--fs-display)/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
-/* La matita del soprannome: compare col mouse o col fuoco (come FORMATO ✎ nella barra a sinistra); al tocco resta sempre, tenue */
-.editor-title .nickname { display: inline-flex; align-items: center; gap: var(--sp-3); }
-.nickname-pencil { flex: none; display: grid; place-items: center; color: var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); }
+/* La matita del soprannome solo al tocco (tenue, in alto a destra del nome, senza occupare spazio); col mouse basta la
+   sottolineatura a puntini del nome: i tipi restano vicini al nome */
+.editor-title .nickname { position: relative; display: inline-flex; align-items: center; }
+.nickname-pencil { display: none; position: absolute; left: calc(100% + 1px); top: -4px; place-items: center; pointer-events: none; }
 .nickname-pencil .icon { width: 15px; height: 15px; }
-.editor-title .nickname:hover .nickname-pencil, .editor-title .nickname:focus-visible .nickname-pencil { opacity: 1; }
-@media (hover: none) { .nickname-pencil { opacity: 0.6; color: var(--muted); } }
+@media (hover: none) { .nickname-pencil { display: grid; opacity: 0.6; color: var(--muted); } }
 .editor-title .species-tag {
   position: absolute;
   left: 0;
@@ -261,76 +205,64 @@
 .nickname-input { width: 200px; height: 32px; font: 800 var(--fs-title-l)/1 var(--display); font-style: italic; }
 .shiny-toggle { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; color: var(--faint); }
 .shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
-/* Testo del set e Copia il set, attaccati */
-.io-anchor { position: relative; display: inline-flex; }
-/* Etichette dei preset più piccole e vicine ai menu; Custom Skillset sul bordo destro, la casella dopo il testo */
-.set-editor .preset-field .field-head, .set-editor .my-sets-field .field-head { font-size: var(--fs-label); line-height: 1; }
-.set-editor .preset-field, .set-editor .my-sets-field { gap: var(--sp-1); }
-.set-editor .custom-toggle { margin-left: auto; gap: var(--sp-4); }
 /* Statistiche un po' più basse: righe e campi più stretti, senza schiacciare i cursori */
-.stat-row { padding-top: 1.5px; padding-bottom: 1.5px; }
+.stat-row { padding-top: 4.5px; padding-bottom: 4.5px; }
+.set-editor .stat-rows { gap: 7px; }
+/* Schermi alti (1080 e oltre): le targhette delle statistiche più alte e più distanziate, c'è spazio */
+@media (min-width: 1100px) and (min-height: 1000px) {
+  .stat-row { padding-top: 8px; padding-bottom: 8px; }
+  .set-editor .stat-rows { gap: 9px; }
+  /* Campi di Set e Mosse più alti: lo spazio in più si riempie di contenuto, non di vuoto */
+  .set-editor .editor-side .combobox input { height: 40px; }
+  .set-editor .set-plates { --plate-h: 40px; }
+  .set-editor .move-combo { --mvp-h: 40px; --mvp-r: 12px; --mvp-cut: 13px; }
+  .set-editor .editor-side .field-head { font-size: var(--fs-caption); }
+}
 .set-editor .ev-input, .set-editor .iv-input { height: 27px; }
 .set-editor .evs { gap: var(--sp-4); }
-.set-editor .evs .speed-line { padding-top: var(--sp-4); }
 /* Ruoli in un riquadro su una riga; Sostituisci fuori, in basso a destra */
 .editor-foot { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: var(--sp-7); }
 .editor-foot .editor-roles { flex: 1; min-width: 0; }
-.editor-roles ul { flex-wrap: nowrap; overflow: hidden; }
-.editor-roles li { white-space: nowrap; }
 .editor-foot .member-replace { flex: none; height: 36px; white-space: nowrap; }
+/* Ruoli: linguette quiete a un taglio (etichette, non pulsanti: niente bordo, niente passaggio del mouse), il principale
+   in grassetto; davanti la piccola etichetta RUOLI. Sostituisci resta il solo pulsante della riga */
+.set-editor fieldset.editor-roles { display: flex; align-items: center; gap: var(--sp-5); min-width: 0; padding: 0 0 0 var(--sp-3); border: 0; background: none; }
+.editor-roles .roles-label { flex: none; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.editor-roles ul { list-style: none; display: flex; flex-wrap: nowrap; gap: var(--sp-3); min-width: 0; margin: 0; padding: 0; overflow: hidden; }
+.editor-roles li { flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--sp-9) 0 var(--sp-5); font: 500 var(--fs-caption)/1 var(--display); white-space: nowrap; color: var(--muted);
+  background: color-mix(in srgb, var(--raised) 70%, transparent); border-radius: 7px 0 0 2px; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+.editor-roles li.main-role { color: var(--text); font-weight: 700; }
 /* Riquadro Ruoli basso: una riga di etichette compatte */
-.set-editor fieldset.editor-roles { padding: var(--sp-1) var(--sp-6) var(--sp-4); }
-.editor-roles ul { margin-top: var(--sp-1); }
-.editor-roles li { padding: var(--sp-1) 9px; font-size: var(--fs-caption); }
 .set-editor .editor-head { row-gap: var(--sp-4); }
 /* Schermi alti meno di 900px (1536×864 e simili): righe delle statistiche un pelo più strette */
 @media (min-width: 1100px) and (max-height: 899px) {
-  .stat-row { padding-top: 0.5px; padding-bottom: 0.5px; }
+  .stat-row { padding-top: 3px; padding-bottom: 3px; }
+  .set-editor .stat-rows { gap: 5px; }
   .set-editor .ev-input, .set-editor .iv-input { height: 26px; }
   .set-editor .evs { gap: var(--sp-3); }
 }
-/* Schermi bassi (1366×768, 1280×720): l'editor resta senza barra di scorrimento (preset più stretti su una riga, righe delle statistiche compatte) */
+/* Schermi bassi (1366×768, 1280×720): l'editor resta senza barra di scorrimento (righe delle statistiche compatte) */
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .drawer { padding-top: var(--sp-9); padding-bottom: var(--sp-3); }
   .set-editor { gap: var(--sp-3) var(--sp-7); }
   .set-editor .editor-head { gap: var(--sp-5); row-gap: var(--sp-3); }
-  .set-editor .preset-field { width: 250px; }
-  .set-editor .my-sets-field { width: 210px; }
-  .stat-row { padding-top: 0; padding-bottom: 0; }
+  .stat-row { padding-top: 4.5px; padding-bottom: 4.5px; }
   .set-editor .ev-input, .set-editor .iv-input { height: 24px; }
   .set-editor .evs { gap: var(--sp-2); }
-  .set-editor .evs .stats-toolbar { margin: var(--sp-2) 0 0; }
-  .set-editor .stat-rows { gap: 1px; }
+  .set-editor .stat-rows { gap: 6px; }
   .set-editor fieldset { padding-bottom: var(--sp-4); }
-  .set-editor fieldset.editor-roles { padding: 0 var(--sp-5) var(--sp-3); }
   .set-editor .editor-group { gap: var(--sp-3) var(--sp-6); }
-  .set-editor .evs .speed-line { padding-top: var(--sp-2); }
   .editor-title .species-tag { bottom: calc(100% + 2px); }
 }
-/* Copia il set attaccato a Testo del set */
-.io-anchor .member-io { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.io-anchor .member-copy { width: 38px; height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 /* Problemi del membro detti per esteso, con la via d'uscita */
 .member-problems { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-4) var(--sp-6); border: 1px solid color-mix(in srgb, var(--bad) 55%, transparent); background: var(--bad-bg); color: var(--bad); font-size: var(--fs-small); }
 .member-problems .icon { flex: none; }
 .member-problems span { flex: 1; min-width: 0; color: var(--text); }
 .member-problems button { flex: none; height: 30px; white-space: nowrap; }
-/* Testata dell'editor in due gruppi: Preset (Smogon + Preset migliore) e I miei set (nome, salva, Importa/Esporta, Copia) */
-.editor-head .head-group { display: flex; align-items: flex-end; gap: var(--sp-4); min-width: 0; }
-.editor-head .head-group + .head-group { margin-left: var(--sp-6); padding-left: 20px; border-left: 1px solid var(--line-soft); }
-/* Testo del set: terzo gruppo, dopo la barretta (azioni sul testo, non una fonte del set) */
-.editor-head .set-text-group { align-self: flex-end; }
-/* Custom Skillset a destra nella testata, sopra Set e Mosse (le cambia entrambe) */
-.editor-head > .custom-toggle { margin-left: auto; align-self: flex-end; font-size: var(--fs-small); }
-/* Ruoli: tag piatti di sola lettura (non sembrano pulsanti); il principale in grassetto */
-.editor-roles li { border: 0; background: var(--raised); color: var(--muted); }
-.editor-roles li.main { border: 0; background: var(--raised); color: var(--text); font-weight: 700; }
 /* Testate dentro l'editor: targhette neutre come tutti i titoli (--plate), il magenta resta a "sei qui" e "fai questo" */
 /* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
 .shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .editor-actions .editor-close:hover { border-color: var(--accent); color: var(--accent); }
-.save-set.overwrite, .joined > .hint-wrap > .save-set.overwrite { width: auto; padding: 0 var(--sp-5); gap: var(--sp-3); display: inline-flex; align-items: center; border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
-.overwrite-label { font-size: var(--fs-small); font-weight: 600; }
 /* Voto vuoto: il messaggio a tutta larghezza, non spezzato in colonna */
 .grade-badge.none { display: flex; flex-direction: column; align-items: stretch; }
 .grade-badge.none .overall { font-size: var(--fs-title-l); }
@@ -370,24 +302,15 @@
 @media (min-width: 2200px) and (min-height: 1100px) {
   html { zoom: 1.25; }
   .app { height: calc(100dvh / 1.25); min-height: 0; }
-  /* Schermo largo: la carta del voto prende più larghezza (dalle carte del team) e scritte e barre un po' più grandi */
-  .band { grid-template-columns: minmax(0, 1fr) 330px; }
-  .grade-area { font-size: var(--fs-section); }
-  .grade-badge button.grade-area { font-size: var(--fs-section); grid-template-columns: 78px 1fr 28px 10px; }
-  .grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 28px 10px; }
-  .grade-badge button.grade-area.grade-roles { grid-template-columns: 78px 1fr 10px; }
-  .grade-area .meter { height: 9px; }
+  /* La carta del voto resta quella di sempre (già ingrandita con tutto il resto): niente larghezza né scritte in più */
 }
 @media (min-width: 3000px) and (min-height: 1500px) {
   html { zoom: 1.6; }
   .app { height: calc(100dvh / 1.6); min-height: 0; }
 }
-/* Il nome del preset Smogon su una riga sola (i puntini, il nome intero nel menu) */
-.preset-field .combobox-display > span:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Solo quando manca davvero larghezza (non per uno schermo basso): pulsanti della testata a sola icona */
 @media (min-width: 1100px) and (max-width: 1279px) {
   .set-editor .editor-head .btn-label { display: none; }
-  .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
 }
 /* Testata del team sotto i 1280 px: i pulsanti a sola icona (prima il testo andava su due righe); il nome resta per i
    lettori di schermo e nel tooltip. La guida tiene il suo nome: è l'azione principale */
@@ -398,10 +321,10 @@
 }
 /* Il tooltip di un avviso sulla carta passa sopra la freccia che comprime il team */
 .band:has(.slot .alert-mark:hover, .slot .alert-mark:focus-visible) .band-toggle { z-index: 1; }
+/* Un menu aperto nell'editor (le mosse si aprono verso l'alto) passa sopra il pulsante per ridurre il team */
+.band:has(.drawer .combobox.open) .band-toggle { z-index: 3; }
 /* Statistiche e Set un paio di px più giù: le loro etichette non toccano la testata */
 .set-editor > fieldset.evs, .set-editor > .editor-side { margin-top: 3px; }
-/* Preset Smogon alto quanto il suo pulsante (e quanto I miei set) */
-.joined > .combobox input { height: 36px; }
 /* Schermi grandi e alti (1920×1080 in su): carte più alte e sprite animato della carta aperta più grande */
 @media (min-width: 1600px) and (min-height: 1000px) {
   .slot > .slot-card, .slot.empty { min-height: 230px; }
@@ -439,6 +362,11 @@
 /* Schermi bassi (un portatile 1366×768 con Chrome massimizzato lascia circa 1366×657): la fascia del team si abbassa,
    carte alte 160 px (prima ~214) e carta del voto più compatta, così la lista dei candidati ha l'altezza per sprite ben
    visibili. Sulla carta restano sprite, strumento, nome, tipi e ruolo (l'abilità è nell'editor) */
+/* Schermi bassi ma larghi (es. 1286×791, Windows al 150%): le carte restano larghe anche togliendo un po' a ognuna,
+   il voto si allarga e le barre delle aree si leggono */
+@media (min-width: 1250px) and (max-height: 799px) {
+  .band { grid-template-columns: minmax(0, 1fr) 212px; }
+}
 @media (min-width: 1100px) and (max-height: 799px) {
   .band { padding-top: var(--sp-4); padding-bottom: var(--sp-9); }
   .team-head { margin-bottom: var(--sp-3); }
@@ -673,4 +601,231 @@
 }
 @media (pointer: coarse) {
   .dex-actions button { width: 36px; height: 36px; }
+}
+
+/*
+ * L'editor riempie il cassetto, ma in proporzione e con dei limiti: le righe delle statistiche crescono con lo schermo
+ * fino a 56px (non oltre: niente righe stirate), Set e Mosse si dividono lo spazio in proporzione a quanto contengono
+ * (2 a 3), non a metà. Le righe del contenitore senza gap: con l'avviso della proposta (che non sempre c'è) una riga
+ * vuota non lascia uno spazio in più.
+ */
+@media (min-width: 1100px) {
+  /* Riempie il cassetto fino a 580px (quanto basta alle righe al massimo): sugli schermi molto alti lo spazio oltre resta in fondo, non fra le righe */
+  .drawer > .set-editor { min-height: min(100%, 580px); --ed-gap: var(--sp-4); --stat-row-h: 40px; }
+  .set-editor { grid-template-rows: auto auto minmax(0, 1fr) auto; row-gap: 0; }
+  .set-editor > .editor-head { grid-row: 1; margin-bottom: var(--ed-gap); }
+  .set-editor > :not(.editor-head, .stats-cell, .editor-side, .editor-foot) { grid-row: 2; margin-bottom: var(--ed-gap); }
+  .set-editor > .stats-cell, .set-editor > .editor-side { grid-row: 3; }
+  .set-editor > .editor-foot { grid-row: 4; margin-top: var(--ed-gap); }
+  /* Statistiche: righe alternate attaccate (come in Champions), da 40px (36 su schermi bassi) fino a 56px */
+  .set-editor .stats-cell > .evs { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .set-editor .evs .stat-rows { flex: 1 1 auto; max-height: calc(6 * 56px + 36px); align-content: stretch; grid-template-rows: auto; grid-auto-rows: minmax(min-content, 1fr); gap: 0; }
+  .set-editor .evs .stat-rows > .stat-head { padding: var(--sp-4) var(--sp-5) var(--sp-2) var(--sp-4); }
+  /* Oltre il massimo delle righe, la riga della velocità resta attaccata al fondo del riquadro */
+  .set-editor .evs .speed-line { margin-top: auto; }
+  /* Senza Sfida il Set prende tutta l'altezza; dentro, i campi si distanziano in modo uguale */
+  .set-editor .editor-side { grid-template-rows: minmax(auto, 1fr); align-content: stretch; }
+  .set-editor .editor-side > .editor-group { align-content: space-evenly; }
+}
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .drawer > .set-editor { --ed-gap: var(--sp-3); --stat-row-h: 36px; }
+}
+
+/*
+ * Sfida nell'editor: una scheda tagliata in diagonale, come le carte di Masters. A sinistra il colore del primo tipo
+ * dell'avversario con il nome grande (dove lo si cerca), Set, Impostazioni e lo sprite che sborda in basso; a destra tre
+ * righe (il tuo colpo, il suo, la Velocità) col risultato grande a destra. Un bordo chiaro e la striscia dei due tipi in
+ * fondo girano attorno a tutto. Colori dai tipi dell'avversario (--t1, --t2).
+ */
+.set-editor .editor-group.duel { position: relative; display: flex; flex-direction: column; gap: var(--sp-3); }
+/* La legenda sopra il fondo della scheda (che parte dal bordo alto della Sfida) */
+.set-editor .editor-group.duel > legend { z-index: 1; }
+/* Un riquadro solo: la scheda non ha bordo né fondo suoi, arriva fino ai bordi della Sfida (sotto la legenda) e lascia
+   vedere il pannello; a sinistra la parte del tipo, trasparente, tagliata in diagonale con una riga sottile nel colore del
+   tipo; il fondo (.duel-art) si appoggia alla Sfida intera, dal bordo alto, così non c'è un taglio dritto sotto la legenda;
+   lo sprite è ritagliato dal bordo della Sfida */
+.duel-card { display: grid; grid-template-columns: 34% minmax(0, 1fr); min-height: 0;
+  margin: var(--sp-2) calc(var(--sp-7) * -1) calc(var(--sp-6) * -1); border-radius: 0 0 3px 3px; }
+.duel-art { position: absolute; inset: 0; z-index: 0; border-radius: 3px; overflow: hidden; }
+.duel-art::before, .duel-art::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  /* Il colore pieno in basso (dove c'è lo sprite) che si dissolve salendo: nessun taglio dritto sul bordo alto */
+  -webkit-mask-image: linear-gradient(to top, #000 0 38%, transparent 96%); mask-image: linear-gradient(to top, #000 0 38%, transparent 96%); }
+.duel-art::before { background: color-mix(in srgb, var(--t1) 65%, transparent); clip-path: polygon(36% 0, 36.5% 0, 24.5% 100%, 24% 100%); }
+.duel-art::after { background: var(--stripes), linear-gradient(170deg, color-mix(in srgb, var(--t1) 34%, transparent), color-mix(in srgb, var(--t1) 12%, transparent));
+  clip-path: polygon(0 0, 36% 0, 24% 100%, 0 100%); }
+.duel-stage { position: absolute; z-index: 5; cursor: help; left: 2px; bottom: 9px; width: 96px; height: 96px; transform: scale(var(--stage-scale, 1.5)); transform-origin: 0 100%; }
+.duel-stage > .sprite { display: block; width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 3px 3px #00000080); }
+/* La testa a sinistra: il nome comanda (grande, la freccetta subito dopo il testo), accanto il sesso e l'ingranaggio delle
+   Impostazioni, che apre un pannello sotto (Set Smogon; in arrivo strumento, EV, potenziamenti) */
+.duel-head { grid-column: 1; position: relative; z-index: 3; align-self: start; display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; padding: var(--sp-4) var(--sp-6) 0 var(--sp-5); }
+.duel-name { position: relative; display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.duel-settings { flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 7px 2px 7px 2px; background: color-mix(in srgb, var(--field) 55%, transparent); box-shadow: inset 0 0 0 1px #ffffff2e; color: #ffffffcc; cursor: pointer; transition: color 0.15s, box-shadow 0.15s, background 0.15s; }
+.duel-settings:hover { color: #fff; box-shadow: inset 0 0 0 1px #ffffff66; }
+.duel-settings[aria-expanded='true'] { color: var(--accent-ink); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.duel-settings svg { width: 15px; height: 15px; transition: transform 0.3s var(--ease); }
+.duel-settings[aria-expanded='true'] svg { transform: rotate(60deg); }
+.duel-settings:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.duel-settings-pop { position: fixed; z-index: 40; inset: auto; margin: 0; overflow-y: auto; overscroll-behavior: contain; color: var(--text); width: 320px; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); animation: tip 0.14s var(--ease); }
+.duel-settings-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: var(--sp-4); }
+.duel-settings-label { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
+.duel-settings-pop .combobox input { height: 32px; }
+/* Le tendine del pannello larghe quanto il loro selettore */
+/* Il badge del set ricostruito dall'uso (non è per forza un preset Smogon) */
+.duel-usage-badge { flex: none; padding: 2px 6px; border-radius: 3px; font: 700 10px/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; color: var(--accent-ink); background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent); }
+.duel-set .combobox-display { gap: var(--sp-3); }
+/* Gli EV dell'avversario: tre righe da due (PS e Vel, i due attacchi, le due difese), il totale in alto a destra */
+.duel-evs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-6); align-items: center; }
+.duel-evs > .duel-settings-label { grid-column: 1; }
+.duel-ev-total { grid-column: 2; justify-self: end; font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.duel-ev-total.over { color: var(--bad); }
+/* Il simbolo della statistica attaccato al nome, come in Statistiche */
+.duel-ev-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.duel-ev-name .stat-icon { flex: none; width: 16px; height: 16px; }
+.duel-settings-pop .duel-ev { display: grid; grid-template-columns: minmax(0, 1fr) 64px; align-items: center; gap: var(--sp-3); font: 700 var(--fs-caption)/1 var(--display); text-transform: uppercase; color: var(--muted); }
+.duel-ev .ev-input { height: 28px; padding: 0 var(--sp-3); font-variant-numeric: tabular-nums; text-align: center; background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--line); appearance: textfield; -moz-appearance: textfield; }
+.duel-ev .ev-input::-webkit-inner-spin-button, .duel-ev .ev-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.duel-ev .ev-input.zero:not(:focus) { color: var(--faint); }
+.duel-ev .ev-input:focus { border-color: var(--accent); }
+.duel-reset { align-self: flex-start; padding: 0; border: 0; background: none; font: 600 var(--fs-caption)/1 var(--ui); color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .duel-settings-pop { animation: none; } .duel-settings svg { transition: none; } }
+.duel-name .duel-species { flex: 0 1 auto; min-width: 0; }
+/* Il giudizio sopra il nome: una targhetta inclinata nel colore dell'esito (rossa la peggiore e le sfavorevoli, gialla
+   alla pari, verde favorevole); come si decide nel tooltip */
+.duel-verdict { --v: var(--bad); align-self: flex-start; margin: 0 0 calc(-1 * var(--sp-2)) var(--sp-1); padding: 3px 10px 2px; cursor: help;
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+  background: color-mix(in srgb, var(--v) 30%, #0b0d14cc); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v) 55%, transparent);
+  font: 700 var(--fs-caption)/1.1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: color-mix(in srgb, var(--v) 70%, #fff); }
+.duel-verdict.worst { background: color-mix(in srgb, var(--v) 62%, #0b0d14); color: #fff; }
+.duel-verdict.even { --v: var(--warn); }
+.duel-verdict.good { --v: var(--good); }
+.duel-verdict:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Lo stesso giudizio, corto, nelle voci del meta della lista degli avversari */
+.duel-verdict-chip { font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--bad); }
+.duel-verdict-chip.even { color: var(--warn); }
+.duel-verdict-chip.good { color: var(--good); }
+.duel-species input { field-sizing: content; min-width: 4ch; max-width: 100%; height: 30px; padding: 0 22px 0 2px; border: 0; border-radius: 0; background: transparent; font: italic 800 20px/1 var(--display); letter-spacing: -0.005em; color: #fff; text-shadow: 0 2px 0 #00000073; text-overflow: ellipsis; cursor: pointer; }
+.duel-species::after { right: 6px; border-color: #ffffffcc; }
+/* I nomi lunghi più piccoli (come nelle carte del team), così il nome intero resta leggibile */
+.duel-species.long input { font-size: 17px; }
+.duel-species.longer input { font-size: 14.5px; }
+.duel-species input:focus-visible { outline: none; }
+.duel-species:has(input:focus-visible) { box-shadow: inset 0 -2px 0 var(--accent); }
+.duel-species:hover input { text-decoration: underline 2px color-mix(in srgb, #fff 45%, transparent); text-underline-offset: 4px; }
+.duel-gender { flex: none; width: 17px; height: 17px; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 1px 1px #00000080); }
+.duel-gender.male { stroke: #6cb8ff; }
+.duel-gender.female { stroke: #ff86b0; }
+/*
+ * Le tre righe a destra. Ognuna: il titolo col simbolo (spada: il tuo colpo migliore, scudo: il suo, Velocità); la mossa
+ * nella sua pillola come nel Set (o le due velocità) con gli interruttori dei potenziamenti; la barra dei PS come in Meta
+ * Coverage, col timbro KO sopra quando va KO in un colpo; in fondo la riga dei consigli, che c'è sempre (vuota se non ce
+ * ne sono) così la scheda non salta; il risultato grande a destra.
+ */
+.duel-rows { grid-column: 2; position: relative; z-index: 2; display: grid; align-content: space-evenly; padding: var(--sp-4) var(--sp-6) var(--sp-5) var(--sp-8); }
+/* A destra una colonna fissa per la Velocità (sempre allo stesso posto); i colpi stanno di fianco alla barra */
+.duel-row { display: grid; grid-template-columns: minmax(0, 1fr) 104px; column-gap: var(--sp-6); row-gap: 5px; align-items: center; padding: var(--sp-4) 0; }
+.duel-row + .duel-row { border-top: 1px solid #ffffff12; }
+.duel-title { grid-column: 1; grid-row: 1; display: flex; align-items: center; gap: 5px; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.duel-title svg { width: 13px; height: 13px; flex: none; }
+.duel-row.mine .duel-title svg { color: var(--accent); }
+.duel-row.theirs .duel-title svg { color: var(--bad); }
+/* L'etichetta della Velocità sul colpo, in fondo alla riga del titolo: verde chi muove prima, rossa l'altro, gialla pari */
+.duel-speed { --s: var(--muted); grid-column: 2; grid-row: 1; justify-self: end; display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px 0 4px; border-bottom: 0; border-radius: 3px; font: 600 var(--fs-caption)/1 var(--ui); color: var(--s); background: color-mix(in srgb, var(--s) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s) 40%, transparent); font-variant-numeric: tabular-nums; }
+.duel-speed.first { --s: var(--good); }
+.duel-speed.second { --s: var(--bad); }
+.duel-speed.tie { --s: var(--warn); }
+.duel-speed b { font: italic 800 var(--fs-caption)/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
+.duel-speed svg { width: 11px; height: 11px; }
+.duel-speed.tip { cursor: help; }
+/* Il tooltip si apre verso sinistra: l'etichetta sta sul bordo destro e il tooltip uscirebbe dalla pagina */
+.duel-speed.tip[data-tip]:is(:hover, :focus-visible)::after { left: auto; right: 0; }
+.duel-speed:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.duel-label { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font: 600 12px/1.1 var(--display); }
+/* La pillola piccola con la coda della potenza della mossa */
+/* Il nome della mossa come nel Set: 14px (la pillola piccola lo regge) */
+.duel-label .duel-mvp { font-size: var(--fs-section); }
+.duel-label .duel-mvp { flex: 0 1 auto; min-width: 0; }
+.duel-speed-vs { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.duel-none { font: 600 var(--fs-small)/1.1 var(--ui); color: var(--faint); }
+/* Gli interruttori dei potenziamenti: la casellina si spunta e la riga si ricalcola. Verde la danza, azzurro il team,
+   rosso quello dell'avversario; acceso, il fondo si fa pieno del suo colore */
+.duel-buff { --b: var(--good); flex: none; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 7px 0 5px; border: 0; border-radius: 3px; font: 700 var(--fs-caption)/1 var(--ui); white-space: nowrap; color: var(--b); background: color-mix(in srgb, var(--b) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--b) 40%, transparent); cursor: pointer; transition: background 0.15s, box-shadow 0.15s; }
+.duel-buff.team { --b: var(--accent-ink); }
+.duel-buff.against { --b: var(--bad); }
+.duel-buff:hover { box-shadow: inset 0 0 0 1px var(--b); }
+.duel-buff.on { background: color-mix(in srgb, var(--b) 26%, transparent); box-shadow: inset 0 0 0 1px var(--b); }
+.duel-buff.tip { border-bottom: 0; cursor: pointer; }
+.duel-check { display: grid; place-items: center; width: 11px; height: 11px; border-radius: 2px; box-shadow: inset 0 0 0 1.5px currentColor; }
+.duel-buff.on .duel-check { background: currentColor; }
+.duel-check svg { width: 9px; height: 9px; color: var(--ground); stroke-width: 3; }
+.duel-buff:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.duel-sub { grid-column: 1; grid-row: 3; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
+.duel-sub:empty { display: none; }
+/* display: la regola di Meta Coverage che nasconde la barra nei riquadri bassi (@container) qui non vale */
+.duel-sub .cm-hp.duel-bar { position: relative; display: flex; flex: 0 1 160px; min-width: 80px; margin: 0; }
+/* Il timbro KO sopra la barra (vuota), al centro della barra */
+.duel-sub .duel-ko { position: absolute; left: calc(50% + 9px); top: 50%; transform: translate(-50%, -50%); padding: 1px 7px; }
+.duel-range { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.duel-result { display: inline-flex; align-items: baseline; gap: 4px; margin-left: var(--sp-4); white-space: nowrap; }
+.duel-big { font: italic 800 var(--fs-title-l)/0.9 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.duel-unit { font: 700 var(--fs-caption)/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.duel-result.good .duel-big { color: var(--good); }
+.duel-result.bad .duel-big { color: var(--bad); }
+.duel-result.warn .duel-big { color: var(--warn); }
+.duel-result.none .duel-big { color: var(--faint); }
+/* La riga dei consigli: corta a vista ("Consigli: Brave Bird · +236 EV in AttSp"), per intero nel tooltip */
+/* I consigli: testo normale con l'etichetta nel ciano del lavoro (il magenta resta raro: solo l'azione migliore) */
+.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--text); }
+.duel-tips.tip { overflow: visible; border-bottom: 0; text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 3px; }
+.duel-tips b { font-weight: 700; color: var(--accent-ink); }
+.duel-tips:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.duel-empty { grid-column: 2; position: relative; z-index: 2; align-self: center; margin: 0; padding: 0 var(--sp-6) 0 var(--sp-8); font-size: var(--fs-small); color: var(--faint); }
+@media (min-width: 1100px) {
+  /* Con la Sfida: Set e Mosse alti quanto il contenuto, la Sfida prende lo spazio che avanza */
+  /* Con la Sfida: il Set alto quanto il contenuto (spazi fissi: un po' d'aria sotto la fascia, 12px fra targhette e
+     mosse), la Sfida prende tutto il resto */
+  .set-editor .editor-side.with-duel { grid-template-rows: auto minmax(0, 1fr); }
+  .set-editor .editor-side.with-duel > .set-box { align-content: start; row-gap: var(--sp-6); padding-top: var(--sp-6); }
+  .set-editor .editor-side.with-duel > .set-box > .editor-group { align-content: start; }
+  .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-4); }
+  .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: flex-start; }
+  .set-editor .editor-side.with-duel .duel-card { flex: 1 1 auto; }
+  /* La Sfida prende l'altezza che resta nella colonna (non la impone): le sue righe si stringono a gradini */
+  .set-editor .editor-side.with-duel > .editor-group.duel { container: duel / size; }
+}
+/* Schermi bassi: la Sfida più fitta, così il cassetto non scorre */
+@media (min-width: 1100px) and (max-height: 700px) {
+  .set-editor .editor-group.duel { gap: var(--sp-1); }
+  .duel-card { margin-top: var(--sp-1); }
+  .duel-big { font-size: var(--fs-title-s); }
+  .duel-rows { padding-top: var(--sp-1); padding-bottom: var(--sp-4); }
+  .duel-row { padding: 1px 0; }
+  .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-2); }
+}
+
+/*
+ * La Sfida a gradini, secondo l'altezza che le resta (1440×800, 1536×864, 1280×800 ne lasciano poca): prima meno aria,
+ * poi del titolo resta il simbolo accanto alla mossa, poi lo sprite più piccolo e le righe più fitte. Lo sprite appoggia
+ * sempre sul fondo, coi piedi dentro.
+ */
+@container duel (max-height: 260px) {
+  .duel-rows { padding-top: var(--sp-2); padding-bottom: var(--sp-3); }
+  .duel-row { padding: var(--sp-2) 0; row-gap: 3px; }
+  .duel-stage { --stage-scale: 1.3; }
+}
+@container duel (max-height: 215px) {
+  .duel-row { grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: var(--sp-3); padding: var(--sp-1) 0; }
+  .duel-title { grid-column: 1; grid-row: 2; }
+  .duel-title-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .duel-label { grid-column: 2 / -1; grid-row: 2; }
+  .duel-sub { grid-column: 2; grid-row: 3; }
+  .duel-tips { grid-column: 2 / -1; grid-row: 4; line-height: 1.15; }
+  /* La Velocità a destra, sulla riga della barra (la mossa resta intera) */
+  .duel-speed { grid-column: 3; grid-row: 3; }
+  .duel-stage { --stage-scale: 1.15; }
+}
+@container duel (max-height: 175px) {
+  .duel-rows { padding-top: 0; padding-bottom: var(--sp-1); }
+  .duel-row { padding: 0; row-gap: 1px; }
+  .duel-big { font-size: var(--fs-title-s); }
+  .duel-stage { --stage-scale: 0.95; }
 }

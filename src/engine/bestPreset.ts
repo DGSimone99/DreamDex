@@ -124,6 +124,11 @@ function pickPreset(team: TeamSet[], index: number, data: EngineData, genLimit: 
   return best;
 }
 
+/** Solo quale preset dà al team il voto più alto (posizione in presetsForSet), senza completarlo né ritoccarlo: null se non ce ne sono. */
+export function bestPresetIndex(team: TeamSet[], index: number, data: EngineData, genLimit = 9): number | null {
+  return pickPreset(team, index, data, genLimit).index;
+}
+
 /** Il preset col voto del team più alto, poi ritoccato tra le mosse e le abilità più usate. */
 export function bestPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): BestPreset {
   const picked = pickPreset(team, index, data, genLimit);

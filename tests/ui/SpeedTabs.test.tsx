@@ -240,7 +240,8 @@ describe('Velocità: una scheda a barre', () => {
     expect(panel.querySelectorAll('.guide-rows > div')).toHaveLength(3);
     expect(panel.querySelectorAll('.guide-ask')).toHaveLength(3);
     expect(panel).not.toHaveTextContent(/×1,5|Shell Smash/);
-    const chips = () => [...document.querySelectorAll('.sp-gd-tip .sp-gd-chip')].map(c => c.textContent);
+    // Abilità e strumenti come etichette, le mosse come pillole (il nome, con la nota del tipo immune dentro)
+    const chips = () => [...document.querySelectorAll('.sp-gd-tip .sp-gd-chip, .sp-gd-tip .sp-gd-move .mvp-nm')].map(c => c.textContent);
     await user.hover(within(panel).getByRole('button', { name: 'Boost' }));
     await waitFor(() => expect(chips()).toContain('Shell Smash'));
     expect(chips()).toContain('Swift Swimpioggia');

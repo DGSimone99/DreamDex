@@ -1,0 +1,142 @@
+/*
+ * Pillola delle mosse (src/ui/MovePill.tsx), ispirata a Pokémon Champions nei colori scuri del sito: tessera del tipo
+ * a sinistra, nome, coda tagliata in diagonale più scura col numero. Angoli alternati: tondi in alto a sinistra e in
+ * basso a destra, quasi dritti negli altri due.
+ */
+.mvp {
+  --c: var(--line);
+  --mvp-h: 34px;
+  --mvp-r: 10px;
+  --mvp-q: 3px;
+  --mvp-cut: 11px;
+  --mvp-tail-w: 70px;
+  /* Corpo: più chiaro a sinistra, vicino al tipo, fino al nero pieno a destra */
+  --mvp-body: linear-gradient(90deg, color-mix(in srgb, var(--raised) 85%, white) 0%, var(--raised) 22%, var(--fade-end) var(--fade-stop));
+  display: inline-flex;
+  align-items: stretch;
+  min-width: 0;
+  height: var(--mvp-h);
+  overflow: hidden;
+  border-radius: var(--mvp-r) var(--mvp-q) var(--mvp-r) var(--mvp-q);
+  background: var(--mvp-body);
+  /* Solo il filo: le ombre restano a ciò che galleggia (tooltip, menu, finestre) */
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text);
+  font: 600 var(--fs-section)/1 var(--display);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+/* La tessera è quadrata e l'icona del tipo la riempie (ha già il suo fondo colorato) */
+.mvp-ic { flex: none; width: var(--mvp-h); background: var(--c); }
+.mvp-ic img { display: block; width: 100%; height: 100%; }
+.mvp-nm { flex: 1; min-width: 0; align-self: center; padding: 0 var(--sp-4) 0 var(--sp-5); overflow: hidden; text-overflow: ellipsis; }
+.mvp-tail {
+  flex: none;
+  /* Simbolo piccolo a sinistra, numero al centro dello spazio che resta; il simbolo da solo va al centro */
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  /* Sempre la stessa larghezza: le code di una colonna di mosse stanno in fila (ci sta "100%") */
+  width: var(--mvp-tail-w);
+  margin-left: calc(var(--mvp-cut) * -0.5);
+  padding: 0 var(--sp-6) 0 calc(var(--mvp-cut) + var(--sp-3));
+  /* Targhetta inclinata più chiara del nero in cui sfuma il corpo: il taglio si vede da solo */
+  background: linear-gradient(90deg, color-mix(in srgb, var(--raised) 80%, white), var(--raised) 60%);
+  clip-path: polygon(var(--mvp-cut) 0, 100% 0, 100% 100%, 0 100%);
+  font: 700 var(--fs-section)/1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+.mvp-none { color: var(--faint); font-weight: 600; }
+/* Mossa di stato (solo il simbolo): coda stretta attorno al simbolo, non la larghezza fissa delle code col numero */
+/* La coda stretta non deve toccare il nome: senza il rientro delle code larghe, un po' di spazio prima del taglio */
+.mvp-tail.st { width: auto; margin-left: var(--sp-2); padding: 0 var(--sp-5) 0 calc(var(--mvp-cut) + var(--sp-3)); }
+.mcp .mvp-tail.st { padding: 0 var(--sp-2); }
+/* Simbolo della categoria, piccolo, prima del numero (in fondo alla coda per le mosse di stato) */
+.mvp-cat { display: flex; }
+.mvp-num { grid-column: 2; justify-self: center; }
+.mvp-cat:only-child { grid-column: 1 / -1; justify-self: center; }
+/* Senza simbolo il numero va al centro di tutta la coda */
+.mvp-tail > .mvp-num:only-child { grid-column: 1 / -1; }
+.mvp-cat .cat-icon { display: block; width: 15px; height: 11px; }
+.mvp-cat.cat-physical { color: var(--move-physical); }
+.mvp-cat.cat-special { color: var(--move-special); }
+.mvp-cat.cat-status { color: var(--muted); }
+.mvp-sm .mvp-cat .cat-icon { width: 13px; height: 10px; }
+
+.mvp-sm { --mvp-h: 24px; --mvp-r: 7px; --mvp-q: 2px; --mvp-cut: 8px; --mvp-tail-w: 64px; font-size: var(--fs-caption); box-shadow: inset 0 0 0 1px var(--line); }
+.mvp-sm .mvp-nm { padding: 0 var(--sp-3) 0 var(--sp-4); }
+.mvp-sm .mvp-tail { padding-right: var(--sp-4); font-size: var(--fs-caption); }
+
+@media (forced-colors: active) {
+  .mvp { border: 1px solid CanvasText; }
+}
+
+/*
+ * Campo di una mossa nell'editor: lo stesso disegno sul campo dove si scrive. La tessera e la coda stanno sopra il
+ * campo, il testo scorre fra le due; la coda (con la freccia del menu dentro) si clicca come la freccia: apre il menu.
+ */
+.move-combo { --mvp-tail-w: 70px; --mvp-body: linear-gradient(90deg, color-mix(in srgb, var(--raised) 85%, white) 0%, var(--raised) 22%, var(--fade-end) var(--fade-stop)); --mvp-h: 34px; --mvp-r: 10px; --mvp-q: 3px; --mvp-cut: 11px; }
+.combobox.move-combo input {
+  height: var(--mvp-h);
+  padding: 0 calc(var(--mvp-tail-w) + 22px + var(--sp-3)) 0 calc(var(--mvp-h) + var(--sp-5));
+  border-radius: var(--mvp-r) var(--mvp-q) var(--mvp-r) var(--mvp-q);
+  border-color: var(--line);
+  background: var(--mvp-body);
+  font: 600 var(--fs-section)/1 var(--display);
+}
+.combobox.move-combo input:hover { border-color: var(--control-line); }
+.combobox.move-combo input:focus { border-color: var(--accent); }
+.combobox.move-combo .combobox-leading { left: 0; top: 0; bottom: 0; transform: none; display: block; overflow: hidden; border-radius: var(--mvp-r) 0 0 var(--mvp-q); }
+.move-combo .combobox-leading .mvp-ic { display: block; height: 100%; }
+/* Coda: dal taglio in diagonale fino al bordo destro; la freccia ci sta dentro, dopo il numero */
+.move-combo .combobox-trailing { position: absolute; top: 1px; bottom: 1px; right: 1px; display: flex; cursor: pointer; overflow: hidden; border-radius: 0 var(--mvp-q) calc(var(--mvp-r) - 1px) 0; }
+.move-combo .combobox-trailing .mvp-tail { width: calc(var(--mvp-tail-w) + 22px); margin: 0; padding-right: 30px; color: var(--text); }
+.move-combo::after { z-index: 1; }
+
+/*
+ * Offesa › Generale, sotto la barra dei colpi: pillole chiuse (tessera e numero dei bersagli, niente simbolo) con la coda
+ * dritta; passandoci sopra si allungano, il nome si apre e la coda prende il suo taglio in diagonale.
+ */
+.mcp { flex: none; cursor: help; transition: box-shadow 0.15s var(--ease); }
+.mcp .mvp-nm { max-width: 0; padding: 0; opacity: 0; transition: max-width 0.25s var(--ease), opacity 0.15s var(--ease), padding 0.25s var(--ease); }
+.mcp:hover .mvp-nm, .mcp:focus-visible .mvp-nm { max-width: 160px; padding: 0 var(--sp-3) 0 var(--sp-4); opacity: 1; }
+.mcp .mvp-tail {
+  width: 30px;
+  margin-left: 0;
+  padding: 0 var(--sp-2);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  transition: width 0.25s var(--ease), padding 0.25s var(--ease), clip-path 0.25s var(--ease);
+}
+.mcp:hover .mvp-tail, .mcp:focus-visible .mvp-tail {
+  width: calc(30px + var(--mvp-cut));
+  padding-left: calc(var(--mvp-cut) + var(--sp-2));
+  clip-path: polygon(var(--mvp-cut) 0, 100% 0, 100% 100%, 0 100%);
+}
+.mcp:hover, .mcp:focus-visible { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 70%, var(--line)); }
+.mcp:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* A 0 bersagli: spenta */
+.mcp.z { color: var(--faint); }
+.mcp.z .mvp-ic img { filter: grayscale(1) brightness(0.85); }
+.mcp.z .mvp-ic { background: var(--line); }
+@media (prefers-reduced-motion: reduce) {
+  .mcp .mvp-nm, .mcp .mvp-tail { transition: none; }
+}
+
+/* Guida della Velocità: la nota del tipo immune dentro la pillola, piccola */
+.sp-gd-move small { margin-left: var(--sp-2); font-weight: 500; color: var(--muted); }
+
+/* Nei tooltip la coda è più stretta: lo spazio va al nome */
+.ftip .mvp { --mvp-tail-w: 50px; }
+.ftip .mvp-tail { gap: 2px; padding: 0 var(--sp-3) 0 calc(var(--mvp-cut) + var(--sp-1)); }
+
+/* Il menu delle mosse è largo quanto la pillola: il nome (con la quota d'uso) sulla prima riga, categoria, potenza,
+   precisione e tipo sulla seconda */
+.move-combo [role='option'] .option-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-4); row-gap: 2px; }
+/* Voci più basse (la spiegazione è nella riga fissa in fondo): ne stanno di più anche sugli schermi bassi */
+.move-combo [role='option'] { padding-top: 6px; padding-bottom: 6px; }
+.move-combo [role='option'] .option-head > strong { line-height: 1.2; }
+.move-combo [role='option'] .type-chip { --tc-h: 18px; }
+.move-combo [role='option'] .option-head > strong { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-combo [role='option'] .option-head > .common-share { grid-column: 2; grid-row: 1; }
+.move-combo [role='option'] .option-head > .option-detail { grid-column: 1 / -1; grid-row: 2; margin-left: 0; justify-self: start; }

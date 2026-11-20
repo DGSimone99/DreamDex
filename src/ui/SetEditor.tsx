@@ -1,8 +1,7 @@
-import { presetSet } from '../engine/bestPreset';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames, toID } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
-import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
+import { formatName, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
 import type { Pokedex } from '../engine/formats';
 import type { GameId } from '../engine/games';
@@ -12,15 +11,21 @@ import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/gam
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
 import { describe } from './describe';
-import { SpeedLine } from './SpeedLine';
-import { speedStat, type SpeedTier } from '../engine/speed';
+import { SpeedMeta } from './SpeedLine';
+import type { SpeedTier } from '../engine/speed';
 import { EV_TOTAL, evTotal, ivOf, statLines } from '../engine/statCalc';
-import { setViewLevel, useViewLevel } from './viewLevel';
 import { TypeChip } from './Sprite';
+import { NatureArrow } from './NatureArrow';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
-import { MySetsField } from './MySetsField';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { SetMenu } from './SetMenu';
+import { useMediaQuery } from './useMediaQuery';
 import { typeTextColor } from './TypeText';
+import { MoveTail, moveTint } from './MovePill';
+import { CategoryIcon } from './CategoryIcon';
+import { StatIcon } from './StatIcon';
+import { typeIconUrl } from './typeIcons';
 
 function NatureEffect({ name }: { name: string }) {
   const lang = useLang();
@@ -28,26 +33,54 @@ function NatureEffect({ name }: { name: string }) {
   const { plus, minus } = dex.natures.get(name);
   if (!plus || !minus) return <span className="nature-fx neutral">{t('editor.neutral')}</span>;
   return (
+    // Le freccette di Pokémon Champions (su verde, giù rossa); il segno resta nel testo per chi legge senza vedere
     <span className="nature-fx">
-      <span className="up">+{statShort(plus as StatID, lang)}</span>, <span className="down">−{statShort(minus as StatID, lang)}</span>
+      <span className="up"><NatureArrow dir="up" /><span className="visually-hidden">+</span>{statShort(plus as StatID, lang)}</span>{' '}
+      <span className="down"><NatureArrow dir="down" /><span className="visually-hidden">−</span>{statShort(minus as StatID, lang)}</span>
     </span>
   );
 }
 
-const CATEGORY_ICONS = { Physical: 'physical', Special: 'special', Status: 'status' } as const;
 
 /** Casella IV (0–31): mentre scrivi tiene il testo (anche vuoto), lo applica subito; vuota torna a 31 uscendo. */
-function IvInput({ value, label, onChange }: { value: number; label: string; onChange: (raw: string) => void }) {
+/**
+ * La casella degli IV. A 31 (quasi sempre) è fuori dal giro del Tab, così il Tab passa da un EV all'altro: ci si arriva
+ * con la freccia destra dalla casella EV della riga (e la sinistra riporta lì). Un IV diverso da 31 resta nel giro.
+ */
+/**
+ * Una voce dell'intestazione con la sua spiegazione (EV, IV): sottolineata a puntini, il fumetto al passaggio del mouse.
+ * Solo a vista: per i lettori di schermo le caselle hanno già il loro nome.
+ */
+function HeadHelp({ text, className, end = false, children }: { text: string; className: string; end?: boolean; children: ReactNode }) {
+  const [shown, setShown] = useState(false);
+  return (
+    <span className={`head-help ${className}${end ? ' end' : ''}`} aria-hidden="true" onPointerEnter={() => setShown(true)} onPointerLeave={() => setShown(false)}>
+      {children}
+      <span className="hint-bubble help-bubble" hidden={!shown}>{text}</span>
+    </span>
+  );
+}
+
+function IvInput({ value, label, hint, onChange }: { value: number; label: string; hint: string; onChange: (raw: string) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <input
       type="number"
       inputMode="numeric"
-      className="iv-input"
+      // A 31 (il solito) il numero resta quieto, senza casella: si nota solo un IV cambiato
+      className={`iv-input${value === 31 && draft === null ? ' max' : ''}`}
       min={0}
       max={31}
       value={draft ?? value}
+      tabIndex={value === 31 && draft === null ? -1 : undefined}
       aria-label={label}
+      aria-keyshortcuts="ArrowLeft"
+      title={hint}
+      onKeyDown={e => {
+        if (e.key !== 'ArrowLeft' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        e.preventDefault();
+        e.currentTarget.closest('.stat-row')?.querySelector<HTMLInputElement>('.ev-input')?.focus();
+      }}
       onChange={e => { setDraft(e.target.value); if (e.target.value !== '') onChange(e.target.value); }}
       onBlur={() => { if (draft === '') onChange(''); setDraft(null); }}
     />
@@ -55,7 +88,11 @@ function IvInput({ value, label, onChange }: { value: number; label: string; onC
 }
 
 
-function MoveDetail({ name }: { name: string }) {
+/**
+ * Categoria, potenza, precisione e tipo di una mossa. `inField`: nella testata del campo, dove categoria, potenza e tipo
+ * li mostra già la pillola (tessera e coda): resta la precisione, categoria e potenza solo per i lettori di schermo.
+ */
+function MoveDetail({ name, inField = false }: { name: string; inField?: boolean }) {
   const t = useT();
   const move = getMove(name);
   if (!move) return null;
@@ -64,10 +101,13 @@ function MoveDetail({ name }: { name: string }) {
   return (
     <span className="move-meta">
       <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
-        <Icon name={CATEGORY_ICONS[move.category]} filled={move.category === 'Physical'} />
+        {/* Nel campo il simbolo sta nella coda della pillola: qui resta solo per i lettori di schermo */}
+        {!inField && <CategoryIcon category={move.category} />}
         {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
         {move.basePower > 0
-          ? <><span className="visually-hidden">{category}, {t('editor.power')} </span>{move.basePower}</>
+          ? (inField
+            ? <span className="visually-hidden">{category}, {t('editor.power')} {move.basePower}</span>
+            : <><span className="visually-hidden">{category}, {t('editor.power')} </span>{move.basePower}</>)
           : <span className="visually-hidden">{category}</span>}
       </span>
       {/* Mosse che non mancano mai: niente precisione invece di "—" */}
@@ -78,9 +118,16 @@ function MoveDetail({ name }: { name: string }) {
           {`${accuracy}%`}
         </span>
       )}
-      <TypeChip type={move.type} />
+      {!inField && <TypeChip type={move.type} />}
     </span>
   );
+}
+
+/** La tessera del tipo nel campo di una mossa (vuota e neutra senza mossa o con una mossa inventata). */
+function MoveTile({ name }: { name: string }) {
+  const type = getMove(name)?.type;
+  const icon = type ? typeIconUrl(type) : undefined;
+  return <span className="mvp-ic" style={{ '--c': moveTint(name) } as CSSProperties}>{icon && <img src={icon} alt="" draggable={false} />}</span>;
 }
 
 // Voci dei menu, calcolate una volta per lingua
@@ -116,9 +163,6 @@ const spreadText = (s: Pick<CommonSpread, 'evs'>, lang: Lang) =>
     .sort((a, b) => (s.evs[b] ?? 0) - (s.evs[a] ?? 0))
     .map(stat => `${s.evs[stat]} ${statShort(stat, lang)}`).join(' / ') || '—';
 
-/** Colore della statistica base, dal rosso (bassa) al verde-azzurro (altissima), come nei teambuilder. */
-const baseColor = (base: number) => `hsl(${Math.min(180, Math.max(0, (base - 30) * 1.2))} 80% 58%)`;
-
 /** Passo degli EV nei campi e nel cursore. */
 const EV_STEP = 2;
 
@@ -137,25 +181,32 @@ interface Props {
   game?: GameId | null;
   /** Scelte più usate del membro, mostrate in cima ai menu. */
   common?: CommonChoices;
-  /** Nome del formato se vieta il Tera: campo disattivato con la nota (il valore resta salvato). */
+  /** Nome del formato se vieta il Tera: niente lastra del Tera, la Natura prende la riga (il valore resta salvato). */
   teraBannedIn?: string;
   /** Velocità del membro tra i più usati del meta (null senza statistiche). */
   speed?: SpeedTier | null;
   /** Nome e tipi del membro, a sinistra nella riga in testa. */
-  title?: React.ReactNode;
-  /** Pulsanti a destra nella riga in testa (Copia set, Sostituisci). */
-  actions?: React.ReactNode;
-  /** Pulsante accanto al menu dei preset (Preset migliore). */
-  presetAction?: React.ReactNode;
-  /** Accanto al nome (Sostituisci), attaccato ai preset Smogon (link), accanto a I miei set (Importa / Esporta). */
-  memberAction?: React.ReactNode;
+  title?: ReactNode;
+  /** Pulsanti a destra nella riga in testa, dopo il pulsante Set (Copia il set, Chiudi). */
+  actions?: ReactNode;
+  /** Quale preset dà al team il voto più alto (posizione in `presets`), chiesto aprendo il menu Set. */
+  bestIndex?: () => number | null;
+  /** Applica il preset migliore completato e ritoccato (come faceva "Preset migliore"). */
+  onBest?: () => void;
+  /** Apre il riquadro del testo Showdown del set (Incolla testo nel menu Set). */
+  onText?: () => void;
+  /** Il link alla pagina Smogon, in fondo al menu Set. */
+  smogonLink?: ReactNode;
+  /** Accanto ai ruoli, in basso a destra (Sostituisci). */
+  memberAction?: ReactNode;
   /** Sotto la testata: i problemi del membro detti per esteso, con la via d'uscita. */
-  notice?: React.ReactNode;
-  smogonAction?: React.ReactNode;
-  /** Testo del set e Copia il set: un gruppo a sé nella testata. */
-  ioAction?: React.ReactNode;
+  notice?: ReactNode;
   /** Il riquadro del Testo del set, aperto: copre le Statistiche, così Set e Mosse restano in vista per confrontare. */
-  textPanel?: React.ReactNode;
+  textPanel?: ReactNode;
+  /** Copia il set negli appunti (testo Showdown): sul telefono sta nel menu Set; vero se è riuscito. */
+  onCopy?: () => Promise<boolean>;
+  /** Sotto le Mosse, la Sfida contro un avversario scelto (EditorDuel). */
+  duel?: ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
   roles?: string[];
   /** La spiegazione di ogni ruolo (stesso ordine di `roles`), nel tooltip. */
@@ -163,9 +214,11 @@ interface Props {
   /** Slot di mossa evidenziato perché il coach propone di cambiarlo. */
   proposedSlot?: number;
   onChange: (set: TeamSet) => void;
+  /** Set cambiato per intero (preset, I miei set, spread più usati): chi lo riceve offre Annulla; se manca, va a `onChange`. */
+  onSetChange?: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, textPanel, roles, roleTips, proposedSlot, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -237,28 +290,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     return others.size ? moveOptions.map(option => (others.has(toID(option.value)) ? { ...option, disabled: true } : option)) : moveOptions;
   }), [moveOptions, movesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
-  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello, altrimenti il campo resta vuoto.
-  // Con preset di più formati il menu li raggruppa sotto il nome del formato, nell'ordine in cui arrivano (prima il formato
-  // scelto, poi gli altri): due "Offensive Utility" non si confondono più. Il formato resta nel nome per i lettori di schermo.
-  const formatOrder = [...new Set(presets.map(p => p.format))];
-  const byFormat = formatOrder.length > 1;
-  const presetOptions: ComboOption[] = presets
-    .map((preset, i) => ({
-      value: String(i),
-      label: preset.name,
-      group: byFormat ? formatName(preset.format) : undefined,
-      detail: byFormat
-        ? <span className="visually-hidden">{formatName(preset.format)}</span>
-        : <span className="preset-format">{formatName(preset.format)}</span>,
-      description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
-    }))
-    .sort((a, b) => formatOrder.indexOf(presets[Number(a.value)].format) - formatOrder.indexOf(presets[Number(b.value)].format));
-
-  const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
-  const applyPreset = (key: string) => {
-    const preset = presets[Number(key)];
-    if (preset) onChange(presetSet(set, preset.set));
-  };
+  const [evMax, setEvMax] = useState(false);
+  const evMaxTimer = useRef(0);
+  const flashEvMax = () => { setEvMax(true); window.clearTimeout(evMaxTimer.current); evMaxTimer.current = window.setTimeout(() => setEvMax(false), 2500); };
+  useEffect(() => () => window.clearTimeout(evMaxTimer.current), []);
   const itemDesc = describe.item(set.item, lang);
   // Con la megapietra l'abilità è quella della Mega: si mostra bloccata, quella del set torna togliendo la pietra
   const forme = battleSpecies(set);
@@ -269,13 +304,17 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   // Tendina degli spread: sopra l'editor (non ne cambia l'altezza); si chiude scegliendo, con Esc o cliccando fuori
   const spreadMenu = useRef<HTMLDetailsElement>(null);
   const closeSpreads = () => { if (spreadMenu.current) spreadMenu.current.open = false; };
+  const spreadToggle = useRef<HTMLElement>(null);
+  const spreadList = useRef<HTMLDivElement>(null);
+  const [spreadsOpen, setSpreadsOpen] = useState(false);
+  // Sotto la targhetta Spread, allineato a destra e largo quanto serve agli EV; sopra se sotto non c'è posto
+  useAnchoredPop(spreadToggle, spreadList, spreadsOpen, { width: 'content', minWidth: 340, align: 'end', gap: 6, sheet: true, onDismiss: () => closeSpreads() });
   useEffect(() => {
     const away = (e: PointerEvent) => { if (!spreadMenu.current?.contains(e.target as Node)) closeSpreads(); };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, []);
-  const level = useViewLevel();
-  const lines = statLines(set, level);
+  const lines = statLines(set, 100);
   // IV: 31 se non indicato; nel set restano solo quelli diversi da 31
   const changeIv = (stat: StatID, raw: string) => {
     const value = Math.min(31, Math.max(0, Number.isFinite(Number(raw)) && raw !== '' ? Math.floor(Number(raw)) : 31));
@@ -284,112 +323,144 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     update({ ivs: Object.keys(ivs).length ? ivs : undefined });
   };
   const used = evTotal(set.evs);
+  // Lo Spread in uso: "Il più usato · 34%", "3° · 12%" (senza quota se viene dai preset) o Personalizzato
+  const spreadAt = common?.spreads.findIndex(spread => spreadKey(spread) === spreadKey(set)) ?? -1;
+  // Nel riquadro stretto la parte lunga ("Il più usato", "2° più usato") lascia il posto a "1°", "2°": la pastiglia sulla
+  // fascia non tocca il titolo
+  const spreadShare = spreadAt < 0 || !common || common.spreads[spreadAt].share === null ? '' : ` · ${formatPercent(lang, common.spreads[spreadAt].share!, 0)}`;
+  // Il posto in breve: "2nd" in inglese, "2°" in italiano
+  const ordinal = (n: number) => (lang === 'en' ? `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}` : t('editor.spreadRankShort', { n }));
+  const spreadLabel = spreadAt < 0 || !common ? t(used === 0 ? 'editor.spreadNone' : 'editor.spreadOwn') : (
+    <>
+      <span className="sp-wide">{spreadAt === 0 ? t('editor.spreadTop') : t('editor.spreadRank', { n: lang === 'en' ? ordinal(spreadAt + 1) : spreadAt + 1 })}</span>
+      <span className="sp-narrow" aria-hidden="true">{ordinal(spreadAt + 1)}</span>
+      {spreadShare}
+    </>
+  );
+
+  const customHint = t('editor.customTooltip');
+  const customHintId = `${uid}-custom`;
+  const [customShown, setCustomShown] = useState(false);
+  const [natureHelp, setNatureHelp] = useState(false);
+  // Telefono: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
+  const phone = useMediaQuery('(max-width: 599px)');
+  const [phoneTab, setPhoneTab] = useState<'set' | 'stats' | 'duel'>('set');
+  const tabsId = useId();
+  const phoneTabs: { id: 'set' | 'stats' | 'duel'; label: string }[] = [
+    { id: 'set', label: t('editor.set') }, { id: 'stats', label: t('editor.stats') }, ...(duel ? [{ id: 'duel' as const, label: t('editor.duel') }] : []),
+  ];
+  const pickTab = (id: 'set' | 'stats' | 'duel', focus = false) => {
+    setPhoneTab(id);
+    // La scheda nuova parte dall'alto (sotto la testata)
+    const drawer = document.getElementById(`${tabsId}-tabs`)?.closest('.drawer');
+    if (drawer) drawer.scrollTop = 0;
+    if (focus) requestAnimationFrame(() => document.getElementById(`${tabsId}-tab-${id}`)?.focus());
+  };
+  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const at = phoneTabs.findIndex(tab => tab.id === phoneTab);
+    const next = e.key === 'ArrowRight' ? (at + 1) % phoneTabs.length : e.key === 'ArrowLeft' ? (at - 1 + phoneTabs.length) % phoneTabs.length
+      : e.key === 'Home' ? 0 : e.key === 'End' ? phoneTabs.length - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    pickTab(phoneTabs[next].id, true);
+  };
+  // Vuota (niente strumento, abilità o natura): filo ed etichetta gialli, come i segni "da controllare" del team
+  const plate = (label: string, control: ReactNode, empty = false) => (
+    // La targhetta intera (etichetta compresa) fa da campo: il menu si apre largo quanto lei
+    <div className={`set-plate${empty ? ' empty' : ''}`} data-pop-anchor><span className="field-label" aria-hidden="true">{label}</span>{control}</div>
+  );
 
   return (
-    <div className="set-editor">
+    <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
-        {(title || actions) && (
-          <div className="editor-top">
-            {title}
-            {actions && <div className="editor-actions">{actions}</div>}
+        <div className="editor-top">
+          {title}
+          {/* La Tera accanto a nome e tipi: cambia il tipo, quindi sta coi tipi (solo nei formati che la usano) */}
+          {!teraBannedIn && (
+            <div className="editor-tera set-plates">
+              {plate(t('editor.tera'), (
+                <Combobox label={t('editor.tera')} commonLabel={commonLabel(common?.teraTypes)} value={set.teraType ?? ''} options={teraOptions} restricted
+                  display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">{t('editor.none')}</span>}
+                  onChange={tera => update({ teraType: tera || undefined })} />
+              ))}
+            </div>
+          )}
+          {/* A destra: il menu Set (preset Smogon e I miei set), poi Copia il set e Chiudi */}
+          <div className="editor-actions">
+            <SetMenu set={set} presets={presets} bestIndex={bestIndex} onBest={onBest} onChange={onSetChange} onText={onText} onCopy={onCopy} smogonLink={smogonLink} />
+            {actions}
+          </div>
+        </div>
+        {phone && (
+          <div className="editor-tabs" role="tablist" id={`${tabsId}-tabs`} aria-label={t('editor.sections')}>
+            {phoneTabs.map(tab => (
+              <button key={tab.id} type="button" role="tab" id={`${tabsId}-tab-${tab.id}`} aria-selected={phoneTab === tab.id}
+                tabIndex={phoneTab === tab.id ? 0 : -1} onClick={() => pickTab(tab.id)} onKeyDown={onTabKey}>{tab.label}</button>
+            ))}
           </div>
         )}
-        <div className="head-group">
-        <div className="field preset-field preset-group">
-          <span className="field-head">{t('editor.presets')}</span>
-          <div className="joined">
-          <Combobox
-            label={t('editor.presets')}
-            value={appliedIndex >= 0 ? String(appliedIndex) : ''}
-            options={presetOptions}
-            restricted
-            disabled={presets.length === 0}
-            placeholder={presets.length ? t('editor.presetsPlaceholder') : t('editor.noPresets')}
-            display={appliedIndex >= 0
-              ? <><span>{presets[appliedIndex].name}</span><span className="preset-format">{formatName(presets[appliedIndex].format)}</span></>
-              : undefined}
-            onChange={applyPreset}
-          />
-          {smogonAction}
-          </div>
-        </div>
-        {presets.length > 0 && presetAction}
-        </div>
-        <div className="head-group">
-        <MySetsField set={set} onApply={saved => onChange(presetSet(set, saved))} />
-        </div>
-        {ioAction && <div className="head-group set-text-group">{ioAction}</div>}
-        {/* Fuori dai riquadri: cambia le scelte sia del Set sia delle Mosse */}
-        <label className={`custom-toggle${custom ? ' on' : ''}`} title={t('editor.customTooltip')}>
-          <span className="custom-text">
-            <b>{t('editor.customLabel')}</b>
-            <small>{custom ? t('editor.customOn') : t('editor.customOff')}</small>
-          </span>
-          <input
-            type="checkbox"
-            className="switch"
-            aria-label={t('editor.custom', { species: set.species })}
-            checked={custom}
-            onChange={e => update({ customSkillset: e.target.checked || undefined })}
-          />
-        </label>
       </div>
       {notice}
+      {/* Sul telefono il riquadro del testo del set sta sopra le schede, visibile in ognuna */}
+      {phone && textPanel}
       {/* Le Statistiche e, sopra di loro, il riquadro del Testo del set quando è aperto */}
       <div className="stats-cell">
       <fieldset className="evs">
         <legend>{t('editor.stats')}</legend>
-        {/* Livello a sinistra (due mezze pillole unite), "Spread più usati" a destra, sulla stessa riga */}
-        <div className="stats-toolbar">
-        <div className="level-toggle" role="group" aria-label={t('editor.level')}>
-          <span className="level-toggle-label" aria-hidden="true">{t('editor.levelShort')}</span>
-          {([50, 100] as const).map(n => (
-            <button key={n} type="button" aria-pressed={level === n} aria-label={t('editor.levelN', { n })}
-              onClick={() => setViewLevel(n)}>{n}</button>
-          ))}
-        </div>
+        {/* Spread sulla fascia delle Statistiche, a destra (come Custom Skillset su quella del Set): dice a quale degli spread
+            più usati corrisponde il set (o Personalizzato) e apre l'elenco; uno spread è natura più EV */}
         {!!common?.spreads.length && (
-          // Chiuso di norma
-          <details className="spread-panel" ref={spreadMenu}
+          <details className="spread-panel" ref={spreadMenu} onToggle={e => setSpreadsOpen(e.currentTarget.open)}
             onKeyDown={e => { if (e.key === 'Escape' && spreadMenu.current?.open) { e.stopPropagation(); closeSpreads(); spreadMenu.current.querySelector('summary')?.focus(); } }}>
-          <summary>{t('editor.spreads')}</summary>
-          <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
-            {common.spreads.map(spread => (
-              <button
-                key={spreadKey(spread)}
-                type="button"
-                aria-pressed={spreadKey(spread) === spreadKey(set)}
-                onClick={() => { update({ nature: spread.nature, evs: { ...spread.evs } }); closeSpreads(); }}
-              >
-                <Icon name="check" />
-                <strong>{natureName(spread.nature, lang)}</strong>
-                <span className="spread-evs">{spreadText(spread, lang)}</span>
-                <span className="common-share" title={spread.share === null ? t('combobox.presetTitle') : undefined}>{shareLabel(spread)}</span>
-              </button>
-            ))}
-          </div>
+            <summary className="spread-toggle" ref={spreadToggle} title={t('editor.spreadTip')}>
+              <span className="spread-name">{t('editor.spread')}<span className="visually-hidden">:</span></span>
+              <span className="spread-value">{spreadLabel}</span>
+            </summary>
+            <div className="spread-presets" ref={spreadList} popover={supportsPopover ? 'manual' : undefined} role="group" aria-label={t('editor.spreads')}>
+              {common.spreads.map(spread => (
+                <button
+                  key={spreadKey(spread)}
+                  type="button"
+                  aria-pressed={spreadKey(spread) === spreadKey(set)}
+                  onClick={() => { onSetChange({ ...set, nature: spread.nature, evs: { ...spread.evs } }); closeSpreads(); }}
+                >
+                  <Icon name="check" />
+                  <strong>{natureName(spread.nature, lang)}</strong>
+                  <span className="spread-evs">{spreadText(spread, lang)}</span>
+                  <span className="common-share" title={spread.share === null ? t('combobox.presetTitle') : undefined}>{shareLabel(spread)}</span>
+                </button>
+              ))}
+            </div>
           </details>
         )}
-        </div>
         <div className="stat-rows">
-          {/* Intestazione delle colonne */}
+          {/* Intestazione delle colonne: niente titolo sopra i valori (il numero grande si spiega da solo); EV sopra i
+              cursori, il totale 508 / 510 sopra le caselle degli EV, IV sopra gli IV. EV e IV hanno la loro spiegazione al
+              passaggio del mouse. Oltre 510 compare il messaggio (quanti di troppo, voto bloccato) */}
           <div className="stat-row stat-head">
             <span />
-            <span>{t('editor.baseHead')}</span>
             <span />
-            <span className="stat-head-num">{t('editor.evs')}</span>
-            <span className="stat-head-num">{t('editor.ivHead')}</span>
-            <span className="stat-head-final">{t('editor.finalHead')}</span>
+            <span />
+            {/* Oltre 510 rosso; 8 o più EV ancora da spendere (2 punti di statistica) giallo, col tooltip che lo dice */}
+            <p className={`stat-head-ev ev-total${used > EV_TOTAL ? ' over' : EV_TOTAL - used >= 8 ? ' under' : ''}`}
+              title={used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : EV_TOTAL - used >= 8 ? t('editor.evUnder', { n: EV_TOTAL - used }) : undefined}>
+              <HeadHelp className="ev-head" text={t('editor.evHelp')}>{t('editor.evs')}</HeadHelp>
+              <span className="visually-hidden">{t('editor.evTotal')}</span>
+              <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
+              {used > EV_TOTAL && <span className="ev-left">{t('editor.evOverShort', { n: used - EV_TOTAL })}</span>}
+              {evMax && used <= EV_TOTAL && <span className="ev-left ev-max" role="status">{t('editor.evMax')}</span>}
+            </p>
+            <HeadHelp className="stat-head-num" text={t('editor.ivHelp')} end>{t('editor.ivHead')}</HeadHelp>
           </div>
           {lines.map(line => (
             <div key={line.stat} className={`stat-row${line.nature ? ` nature-${line.nature}` : ''}`}>
-              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}>{statShort(line.stat, lang).toUpperCase()}</label>
-              <span className="stat-base" title={t('editor.base', { n: line.base })}>
-                <span className="stat-base-n">{line.base}</span>
-                <span className="stat-base-bar" aria-hidden="true">
-                  <span style={{ width: `${Math.min(100, line.base / 1.8)}%`, background: baseColor(line.base) }} />
-                </span>
-              </span>
+              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}>
+                <StatIcon stat={line.stat} />{statShort(line.stat, lang).toUpperCase()}
+              </label>
+              {/* La freccetta della natura attaccata al numero, come nel riepilogo di Champions (solo disegnata); la colonna
+                  stretta prima resta vuota, così le righe restano in colonna */}
+              <span className="stat-arrow" />
+              <strong className="stat-final" data-testid={`final-${line.stat}`}>{line.nature && <NatureArrow dir={line.nature} />}{line.value}</strong>
               <input
                 type="range"
                 className="ev-slider"
@@ -400,85 +471,107 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                 step={EV_STEP}
                 value={line.ev}
                 aria-label={t('editor.evSlider', { stat: statShort(line.stat, lang) })}
-                style={{ '--fill': `${(line.ev / 252) * 100}%` } as React.CSSProperties}
+                style={{ '--fill': `${(line.ev / 252) * 100}%` } as CSSProperties}
                 onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
               />
               <input
                 id={`ev-${uid}-${line.stat}`}
                 type="number"
                 inputMode="numeric"
-                className="ev-input"
+                // A 0 il numero è spento: a colpo d'occhio si vedono solo gli EV messi
+                className={`ev-input${line.ev ? '' : ' zero'}`}
                 min={0}
                 max={252}
                 step={EV_STEP}
                 value={line.ev}
-                onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
+                aria-keyshortcuts="ArrowRight"
+                title={t('editor.evToIv')}
+                onKeyDown={e => {
+                  // Freccia destra: all'IV della riga (fuori dal Tab quando vale 31)
+                  if (e.key !== 'ArrowRight' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+                  e.preventDefault();
+                  e.currentTarget.closest('.stat-row')?.querySelector<HTMLInputElement>('.iv-input')?.focus();
+                }}
+                onChange={e => {
+                  // Oltre 252 il numero si ferma a 252: per un attimo la testa degli EV dice perché
+                  if (Number(e.target.value) > 252) flashEvMax();
+                  update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } });
+                }}
               />
-              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })}
+              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} hint={t('editor.ivToEv')}
                 onChange={raw => changeIv(line.stat, raw)} />
-              <strong className="stat-final" data-testid={`final-${line.stat}`} title={t('editor.finalAt', { n: level })}>{line.value}</strong>
             </div>
           ))}
         </div>
-        <p className={`ev-total${used > EV_TOTAL ? ' over' : ''}`}>
-          <span>{t('editor.evTotal')}</span>
-          <span className="ev-meter" aria-hidden="true"><span style={{ width: `${Math.min(100, (used / EV_TOTAL) * 100)}%` }} /></span>
-          <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
-          <span className="ev-left">{used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : t('editor.evLeft', { n: EV_TOTAL - used })}</span>
-        </p>
-        {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
+        {/* La Natura sotto le righe, centrata, a rombo come in Champions: cambia le statistiche di sopra (le freccette) */}
+        {/* La spiegazione della natura sta fuori dalla testa (che è ritagliata a rombo e la taglierebbe) */}
+        <div className="nature-diamond set-plates">
+          <div className={`set-plate${set.nature ? '' : ' empty'}`} data-pop-anchor>
+            <span className="field-label" aria-hidden="true" onPointerEnter={() => setNatureHelp(true)} onPointerLeave={() => setNatureHelp(false)}>{t('editor.nature')}</span>
+            <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted menuJoined={2}
+              display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
+              onChange={nature => update({ nature })} />
+          </div>
+          <span className="hint-bubble help-bubble" aria-hidden="true" hidden={!natureHelp}>{t('editor.natureHelp')}</span>
+        </div>
+        {/* Il posto della Velocità nel meta, sotto le righe; passandoci sopra il tooltip della scheda Velocità */}
+        {speed && <SpeedMeta set={set} tier={speed} />}
       </fieldset>
-      {textPanel}
+      {!phone && textPanel}
       </div>
-      <div className="editor-side">
-      <fieldset className="editor-group">
+      <div className={`editor-side${duel ? ' with-duel' : ''}`}>
+      <fieldset className="editor-group set-box">
         <legend>{t('editor.set')}</legend>
+        {/* Custom Skillset a destra nella fascia del Set: cosa fa solo nel fumetto e per i lettori di schermo */}
+        <label className={`custom-toggle${custom ? ' on' : ''}`}
+          onPointerEnter={() => setCustomShown(true)} onPointerLeave={() => setCustomShown(false)}>
+          <span className="custom-text">{t('editor.customLabel')}</span>
+          <input
+            type="checkbox"
+            className="switch"
+            aria-label={t('editor.custom', { species: set.species })}
+            aria-describedby={customHintId}
+            checked={custom}
+            onFocus={() => setCustomShown(true)}
+            onBlur={() => setCustomShown(false)}
+            onKeyDown={e => { if (e.key === 'Escape') setCustomShown(false); }}
+            onChange={e => update({ customSkillset: e.target.checked || undefined })}
+          />
+          <span className="hint-bubble" id={customHintId} hidden={!customShown}>{customHint}</span>
+        </label>
+        <div className="editor-group set-plates">
         <div className="field" data-tip={itemDesc}>
-          <span className="field-head">{t('editor.item')}</span>
-          <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc}
-            leading={set.item ? <ItemIcon item={set.item} /> : undefined}
-            onChange={item => update({ item })} />
+          {plate(t('editor.item'), (
+            <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
+              leading={set.item ? <ItemIcon item={set.item} /> : undefined}
+              onChange={item => update({ item })} />
+          ), !set.item)}
         </div>
         <div className="field" data-tip={abilityDesc}>
-          <span className="field-head">
-            {t('editor.ability')}
-            {megaAbility && <small className="field-note">{t('editor.megaAbilityNote')}</small>}
-          </span>
-          {megaAbility ? (
-            <span title={t('editor.megaAbility')}>
+          {plate(t('editor.ability'), megaAbility ? (
+            <span className="plate-lock" title={t('editor.megaAbility')}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
                 description={abilityDesc} onChange={() => undefined} />
             </span>
           ) : (
             <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom}
               description={abilityDesc} onChange={ability => update({ ability })} />
-          )}
+          ), !megaAbility && !set.ability)}
         </div>
-        <div className="field">
-          <span className="field-head">{t('editor.nature')}</span>
-          <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted
-            display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
-            onChange={nature => update({ nature })} />
         </div>
-        <div className="field">
-          <span className="field-head">
-            {t('editor.tera')}
-            {teraBannedIn && <small className="field-note">{t('editor.teraBanned', { format: teraBannedIn })}</small>}
-          </span>
-          <Combobox label={t('editor.tera')} commonLabel={commonLabel(common?.teraTypes)} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
-            display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">{t('editor.none')}</span>}
-            onChange={tera => update({ teraType: tera || undefined })} />
-        </div>
-      </fieldset>
-      <fieldset className="editor-group moves">
-        <legend>{t('editor.moves')}</legend>
+        {/* Le mosse nello stesso riquadro Set (un gruppo col suo nome per i lettori di schermo) */}
+        <div className="editor-group moves" role="group" aria-label={t('editor.moves')}>
         {moves.map((move, i) => (
-          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}`} data-tip={describe.move(move, lang)}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}`} data-tip={describe.move(move, lang)}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
-              <MoveDetail name={move} />
+              <MoveDetail name={move} inField />
             </span>
             <Combobox
+              className="move-combo"
+              descriptionFooter
+              leading={<MoveTile name={move} />}
+              trailing={<MoveTail name={move} />}
               label={t('editor.move', { n: i + 1 })}
               value={move}
               options={moveOptionsFor[i]}
@@ -492,16 +585,20 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
             />
           </div>
         ))}
+        </div>
       </fieldset>
+      {duel}
       </div>
       {(!!roles?.length || memberAction) && (
-        // Ruoli e, fuori dal riquadro in basso a destra, l'azione sul membro (Sostituisci)
+        // Ruoli e, in basso a destra, l'azione sul membro (Sostituisci)
         <div className="editor-foot">
           {!!roles?.length && (
             <fieldset className="editor-roles">
-              <legend>{t('editor.roles')}</legend>
+              {/* Il titolo resta per i lettori di schermo; a vista una piccola etichetta e i ruoli come linguette, non pulsanti */}
+              <legend className="visually-hidden">{t('editor.roles')}</legend>
+              <span className="roles-label" aria-hidden="true">{t('editor.roles')}</span>
               <ul>
-                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined} title={roleTips?.[i]}>{role}</li>)}
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main-role' : undefined} title={roleTips?.[i]}>{role}</li>)}
               </ul>
             </fieldset>
           )}

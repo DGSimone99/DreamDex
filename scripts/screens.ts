@@ -1,7 +1,7 @@
 /**
  * Foto della pagina negli stati del restyle (sezioni, editor, modali, popover, tooltip), a più dimensioni.
  * Serve il server di sviluppo su http://localhost:5173 (npx vite).
- *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730]
+ *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv]
  * Per ogni foto stampa pageScroll = quanto la pagina scorre oltre la finestra (0 = una schermata).
  */
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -513,6 +513,21 @@ const STATES: Record<string, State> = {
   'pokemon-sheet': { run: async p => { await tab(p, 'pokemon'); await wait(1500); const picks = await p.$$('.suggestions .pick'); await picks[1]?.evaluate(el => (el as HTMLElement).click()); await wait(500); return picks.length > 1; } },
   // Carta sotto il mouse (la prima è selezionata: la seconda in alto, la prima in basso, l'ultima): stampa quanto esce dalla lista (cut = px tagliati)
   'pokemon-hover': { run: async p => hoverCard(p, 1) },
+  // Modo Sostituisci: il dettaglio con Porta e Toglie a gruppi (ruoli a riquadri, scudo, spada, VS)
+  'pokemon-replace': { run: async p => {
+    await tab(p, 'pokemon');
+    await wait(400);
+    if (!await clickText(p, '.mode-switch button, .toolbar button', /^Sostituisci$/)) return 'no replace button';
+    await wait(1500);
+    // Allineamento: per ogni gruppo, la base della scritta dell'etichetta e quella della prima riga delle voci (stessa = 0)
+    // (codice come stringa: tsx aggiunge __name alle funzioni con nome, che nella pagina non esiste)
+    console.log(`bringAlign=${await p.evaluate(`[...document.querySelectorAll('.detail .bring-group')].map(g => {
+      const textOf = el => { if (!el) return null; const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: n => n.textContent.trim() ? 1 : 3 }); return walker.nextNode(); };
+      const bottom = el => { const n = textOf(el); if (!n) return NaN; const r = document.createRange(); r.selectNodeContents(n); const b = r.getClientRects()[0]; return b ? b.bottom : NaN; };
+      return g.classList[1] + ':' + (bottom(g.querySelector('.bring-label')) - bottom(g.querySelector('li'))).toFixed(1);
+    }).join(' ')`)}`);
+    return (await p.evaluate(() => !!document.querySelector('.detail .bring-groups.loss, .detail .loses'))) || 'no Toglie';
+  } },
   'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
   'pokemon-hover-last': { run: async p => hoverCard(p, 5) },
   // Lista candidati in stile Menu (pillole), team aperto e nascosto
@@ -544,10 +559,156 @@ const STATES: Record<string, State> = {
   'pokemon-long': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long-en': { hash: hash(LONG), lang: 'en', run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
-  editor: { run: async p => clickText(p, '.slot.filled > .slot-card', /./) },
+  editor: { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(400);
+    // L'editor sta nel cassetto senza scorrere: quanto supera (0 = ci sta tutto)
+    // Punta magenta sotto la carta aperta (centro carta vs punta), lastre del Set tagliate, Custom Skillset sopra la fascia
+    // Mosse, la riga della Velocità e le colonne EV (intestazione sopra barra + numero)
+    console.log(await p.evaluate(() => {
+      const [card, ptr, drawer, tog, leg, head, slider, evIn, speed, roles] = ['.slot.open > .slot-card', '.slot-pointer', '.slot.open .drawer',
+        '.slot.open .set-box > .custom-toggle', '.slot.open .set-box > legend', '.slot.open .stat-head-ev', '.slot.open .stat-row:not(.stat-head) .ev-slider',
+        '.slot.open .stat-row:not(.stat-head) .ev-input', '.slot.open .speed-line', '.slot.open .editor-foot'].map(q => document.querySelector(q)?.getBoundingClientRect());
+      const cut = [...document.querySelectorAll<HTMLElement>('.slot.open .set-plate')].map(pl => {
+        const label = pl.querySelector('.field-label')?.textContent;
+        const disp = pl.querySelector<HTMLElement>('.combobox-display') ?? pl.querySelector<HTMLInputElement>('input');
+        const over = disp ? disp.scrollWidth - disp.clientWidth : -1;
+        return `${label}:${Math.round(pl.getBoundingClientRect().width)}w${over > 0 ? ` CUT${over}` : ''}`;
+      }).join(',');
+      return `pointer=${ptr && card ? Math.round(ptr.left + ptr.width / 2 - (card.left + card.width / 2)) : 'none'} ptrBottom-drawerTop=${ptr && drawer ? Math.round(ptr.bottom - drawer.top) : '-'} plates=${cut} custom=${tog ? `${Math.round(tog.left)}-${Math.round(tog.right)} top=${Math.round(tog.top)} legendTop=${leg ? Math.round(leg.top) : '-'}` : 'none'} evHead=${head ? `${Math.round(head.left)}-${Math.round(head.right)}` : '-'} evCtl=${slider && evIn ? `${Math.round(slider.left)}-${Math.round(evIn.right)}` : '-'} speedLine=${speed ? Math.round(speed.height) : 'none'} foot=${roles ? Math.round(roles.height) : '-'} roles=${[...document.querySelectorAll('.slot.open .editor-roles li')].map(li => { const b = li.getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(li); const t = rg.getBoundingClientRect(); return `y${Math.round(b.top)}h${Math.round(b.height)}t${Math.round(t.top - b.top)}-${Math.round(b.bottom - t.bottom)}`; }).join(',')} chipX=${(() => { const c = document.querySelector('.band.collapsed .slot.open > .slot-card')?.getBoundingClientRect(); const x = document.querySelector('.band.collapsed .slot.open .remove')?.getBoundingClientRect(); return c && x ? `top${Math.round(x.top - c.top)} right${Math.round(c.right - x.right)} bottom${Math.round(c.bottom - x.bottom)}` : '-'; })()}`;
+    }));
+    console.log(`drawerOver=${await p.evaluate(() => { const d = document.querySelector('.drawer'); return d ? d.scrollHeight - d.clientHeight : -1; })} drawerFree=${await p.evaluate(() => { const d = document.querySelector('.drawer'); const e = d?.querySelector('.set-editor'); if (!d || !e) return -1; const cs = getComputedStyle(d); return Math.round(d.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom) - e.getBoundingClientRect().bottom); })} statRow=${await p.evaluate(() => Math.round(document.querySelectorAll('.stat-row:not(.stat-head)')[0]?.getBoundingClientRect().height ?? 0))} rows=${await p.evaluate(() => { const e = document.querySelector('.drawer .set-editor') as HTMLElement | null; if (!e) return ''; return getComputedStyle(e).gridTemplateRows + ' | ' + [...e.children].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',') + ' | ' + ['.stats-cell > *', '.editor-side > *', '.evs > *'].map(q => [...e.querySelectorAll(q)].map(c => `${c.className || c.tagName}:${Math.round(c.getBoundingClientRect().height)}`).join(',')).join(' / '); })}`);
+    return true;
+  } },
+  // Annulla dopo un preset applicato dal menu Set: l'avviso non deve coprire i comandi dell'editor (stampa le sovrapposizioni)
+  // La Sfida contro Gholdengo (col set più usato c'è un consiglio di EV piccolo)
+  // Gen 9 OU: la Tera nella testata dell'editor, accanto a nome e tipi
+  'editor-gen9': { hash: hashWith(TEAM, { formatId: 'gen9ou' }), run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(500);
+    console.log(await p.evaluate(() => {
+      const [tera, title, acts] = ['.slot.open .editor-tera', '.slot.open .editor-title', '.slot.open .editor-actions'].map(q => document.querySelector(q)?.getBoundingClientRect());
+      const drawer = document.querySelector('.slot.open .drawer');
+      return `tera=${tera ? `${Math.round(tera.left)}-${Math.round(tera.right)} h${Math.round(tera.height)}` : 'none'} titleR=${Math.round(title?.right ?? 0)} actsL=${Math.round(acts?.left ?? 0)} drawerOver=${drawer ? drawer.scrollHeight - drawer.clientHeight : -1}`;
+    }));
+    return true;
+  } },
+  'editor-duel': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(500);
+    const input = await p.$('.slot.open .duel-species input');
+    if (!input) return 'no duel';
+    await input.click({ count: 3 });
+    const opp = process.env.DUEL_OPP ?? 'Gholdengo';
+    await input.type(opp);
+    await wait(600);
+    const picked = await p.evaluate((name: string) => {
+      const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-species [role="option"]')].find(o => (o.textContent ?? '').includes(name));
+      option?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      option?.click();
+      return !!option;
+    }, opp);
+    if (!picked) return 'no option';
+    await wait(1200);
+    console.log(await p.evaluate(() => `duel=${[...document.querySelectorAll('.slot.open .duel-row')].map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | ')}`));
+    return true;
+  } },
+  'editor-undo': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
+    await wait(400);
+    if (!await clickText(p, '.slot.open .set-menu-button', /./)) return false;
+    await wait(300);
+    if (!await p.evaluate(() => { const row = document.querySelector<HTMLElement>('.slot.open .set-menu-row:not(.current)'); row?.click(); return !!row; })) return false;
+    await wait(500);
+    console.log(await p.evaluate(() => {
+      const box = document.querySelector('.undo-toast')?.getBoundingClientRect();
+      if (!box) return 'toast=none';
+      const hits = [...document.querySelectorAll<HTMLElement>('.slot.open .drawer :is(button, input, [role="combobox"], summary, a)')]
+        .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom; })
+        .map(el => el.getAttribute('aria-label') || el.className || el.tagName);
+      return `toast=${Math.round(box.left)},${Math.round(box.top)} ${Math.round(box.width)}x${Math.round(box.height)} covers=${hits.length ? hits.join('|') : 'nothing'}`;
+    }));
+    return true;
+  } },
+  // La punta magenta segue la carta aperta: apre una carta dopo l'altra e stampa quanto la punta è lontana dal centro della carta
+  'editor-pointer': { run: async p => {
+    const offs: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      await p.evaluate(n => document.querySelectorAll<HTMLElement>('.slot.filled > .slot-card')[n]?.click(), i);
+      await wait(500);
+      offs.push(await p.evaluate(() => {
+        const [card, ptr] = ['.slot.open > .slot-card', '.slot-pointer'].map(q => document.querySelector(q)?.getBoundingClientRect());
+        return card && ptr && ptr.width ? String(Math.round(ptr.left + ptr.width / 2 - (card.left + card.width / 2))) : 'hidden';
+      }));
+    }
+    console.log(`pointerOffsets=${offs.join(',')}`);
+    return true;
+  } },
+  // EV oltre il massimo: il totale in alto dice quanti di troppo e che il voto è bloccato, senza l'avviso rosso nell'editor
+  'editor-ev-over': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
+    await wait(500);
+    const hp = await p.$('.drawer .ev-input');
+    if (!hp) return 'no ev input';
+    await hp.click({ count: 3 });
+    await hp.type('252');
+    await p.keyboard.press('Tab');
+    await wait(400);
+    console.log(`evOver=${await p.evaluate(() => { const e = document.querySelector('.ev-total.over'); const t = document.querySelector('.stat-head'); return e ? `${e.textContent} toolbarH=${Math.round(t!.getBoundingClientRect().height)} cut=${(e.querySelector('.ev-left') as HTMLElement).scrollWidth > (e.querySelector('.ev-left') as HTMLElement).clientWidth} note=${!!document.querySelector('.drawer .member-problems')}` : 'none'; })}`);
+    return true;
+  } },
+  // La riga "Più veloce del X% del meta" sotto le statistiche col mouse sopra: il tooltip di Analisi › Velocità
+  'editor-speed-tip': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
+    await wait(500);
+    const line = await p.$('.speed-line-anchor');
+    if (!line) return 'no speed line';
+    await line.hover();
+    await wait(500);
+    console.log(`speedTip=${await p.evaluate(() => { const t = document.querySelector('.ftip.speed')?.getBoundingClientRect(); return t ? `${Math.round(t.left)},${Math.round(t.top)},${Math.round(t.right)},${Math.round(t.bottom)} vw=${innerWidth} vh=${innerHeight}` : 'none'; })}`);
+    return true;
+  } },
+  // Riga delle statistiche col mouse sopra: targhetta col bordo ciano, triangolino, tacca della barra EV
+  'editor-stat-hover': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
+    await wait(500);
+    const row = (await p.$$('.stat-row:not(.stat-head)'))[1];
+    if (!row) return 'no stat row';
+    await row.hover();
+    await wait(300);
+    return true;
+  } },
+  // Menu di una mossa aperto dalla freccia: la mano sulla freccia, il menu sopra il pulsante che riduce il team
+  'editor-move-menu': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
+    await wait(500);
+    const arrow = await p.$('.editor-group.moves .field:nth-of-type(1) .combobox-trailing');
+    if (!arrow) return 'no move tail';
+    await arrow.click();
+    await wait(400);
+    console.log(await p.evaluate(() => {
+      const tail = document.querySelector('.editor-group.moves .combobox-trailing')!;
+      // La freccia che riduce il team c'è solo a editor chiuso: senza, niente da coprire
+      const toggle = document.querySelector('.band-toggle')?.getBoundingClientRect();
+      const top = toggle ? document.elementFromPoint(toggle.left + toggle.width / 2, toggle.top + toggle.height / 2) : null;
+      const tails = [...document.querySelectorAll('.move-combo .mvp-tail')].map(t => `${t.textContent}:${Math.round(t.getBoundingClientRect().width)}`).join(',');
+      return `tails=${tails} menuOpen=${!!document.querySelector('.editor-group.moves .combobox.open [role=listbox]')} cursor=${getComputedStyle(tail).cursor} overToggle=${!top ? 'no toggle' : top.closest('[role=listbox]') ? 'menu' : top.className}`;
+    }));
+    return true;
+  } },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
   'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
+  // Carta del membro (tooltip) passando sul primo Pokémon della tabella dell'Offesa: le mosse come pillole piccole
+  'card-tip': { run: async p => {
+    if (await gradeRow(p, /^Offesa/) !== true) return 'no offense';
+    await wait(500);
+    const mon = await p.$('.def-mon-name');
+    if (!mon) return 'no member';
+    await mon.hover();
+    await wait(1200);
+    return (await p.evaluate(() => !!document.querySelector('.ftip .mcard-move'))) || 'no card tip';
+  } },
   // Difesa: una scheda per sotto-scheda (SIX), con meta, senza meta, a team chiuso e con nomi lunghi
   ...DEFENSE_STATES,
   ...OFFENSE_STATES,
@@ -759,6 +920,21 @@ const STATES: Record<string, State> = {
     await wait(800);
     return true;
   } },
+  // Offesa › Generale col team chiuso: le pillole delle mosse sotto le barre, la prima col mouse sopra (si apre, coda in diagonale)
+  'offense-chips-hover': { hash: hash(SIX), run: async p => {
+    if (await gradeRow(p, /^Offesa/) !== true) return 'no offense';
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(900);
+    const size = () => p.evaluate(() => { const c = document.querySelector('.mcs .mcp:not(.z)'); return c ? `${Math.round(c.getBoundingClientRect().width)}/${getComputedStyle(c.querySelector('.mvp-tail')!).clipPath.slice(0, 18)}` : 'none'; });
+    const before = await size();
+    const chip = await p.$('.mcs .mcp:not(.z)');
+    if (!chip) return 'no chips';
+    await chip.hover();
+    await wait(600);
+    console.log(`chip closed=${before} open=${await size()} symbols=${await p.evaluate(() => document.querySelectorAll('.mcs .mvp-cat').length)}`);
+    return true;
+  } },
   // Il "?" del tipo di team aperto
   'team-type-help': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
@@ -846,7 +1022,9 @@ const STATES: Record<string, State> = {
   'grade-delta': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Iron Valiant/)) return 'no card';
     await wait(600);
-    return clickText(p, '.slot.open button.best-preset', /./);
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    return clickText(p, '.slot.open .set-menu-row', /./);
   } },
   'editor-alert': { hash: hash(MOVE), run: async p => {
     // La prima carta con un avviso (Great Tusk con una mossa che non impara)
@@ -856,18 +1034,43 @@ const STATES: Record<string, State> = {
   } },
   // Nomi lunghi con l'editor aperto: la carta aperta tiene il nome; nella barra compressa i nomi vanno su due righe
   'editor-long': { hash: hash(LONG), run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Urshifu/)) return 'no card'; await wait(600); return true; } },
-  // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu dei preset aperto e il riquadro Testo del set
+  // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu Set aperto e il riquadro del testo del set
   'editor-head': { run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card'; await wait(600); return editorHead(p); } },
+  // Il pulsante Set dopo aver scelto il primo preset Smogon: "SET  <nome>  SMOGON"
+  'editor-preset-applied': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    if (!await clickText(p, '.slot.open .set-menu-row', /./)) return 'no preset';
+    await wait(500);
+    console.log(await p.evaluate(() => {
+      const b = document.querySelector<HTMLElement>('.slot.open .set-menu-button');
+      const cur = b?.querySelector<HTMLElement>('.set-menu-current');
+      return `setButton="${b?.textContent}" w=${Math.round(b?.getBoundingClientRect().width ?? 0)} nameCut=${cur ? cur.scrollWidth - cur.clientWidth : -1}`;
+    }));
+    return true;
+  } },
   'editor-presets': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
     await wait(600);
-    return clickText(p, '.slot.open .preset-field [role="combobox"]', /./);
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    console.log(await p.evaluate(() => {
+      const pop = document.querySelector('.slot.open .set-menu-pop')?.getBoundingClientRect();
+      const drawer = document.querySelector('.slot.open .drawer');
+      if (!pop || !drawer) return 'no menu';
+      const d = drawer.getBoundingClientRect();
+      const rows = [...document.querySelectorAll('.slot.open .set-menu-row')].map(r => r.querySelector('strong')?.textContent + (r.querySelector('.set-menu-best') ? '*' : '')).join(',');
+      return `setMenu=${Math.round(pop.left)},${Math.round(pop.top)} ${Math.round(pop.width)}x${Math.round(pop.height)} inDrawer=${pop.bottom <= d.bottom && pop.left >= d.left ? 1 : 0} drawerOver=${drawer.scrollHeight - drawer.clientHeight} rows=${rows}`;
+    }));
+    return true;
   } },
   // Fumetti delle icone della testata col fuoco (dove cadono, se escono dalla finestra), matita del nome, contrasto di "N liberi"
   'editor-hints': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
     await wait(600);
-    for (const sel of ['.shiny-toggle', '.smogon-link', '.save-set', '.member-copy', '.editor-close', '.nickname']) {
+    for (const sel of ['.shiny-toggle', '.member-copy', '.editor-close', '.nickname']) {
       await focus(p, `.slot.open ${sel}`);
       await wait(200);
       console.log(await p.evaluate(s => {
@@ -893,9 +1096,27 @@ const STATES: Record<string, State> = {
   'editor-paste': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
     await wait(600);
-    if (!await clickText(p, '.slot.open button.member-io', /./)) return 'no set text button';
+    if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    if (!await clickText(p, '.slot.open .set-menu-foot button', /Incolla|Paste/)) return 'no paste button';
     await wait(300);
     return editorHead(p);
+  } },
+  // Barra del team (striscia unica): altezza, alto e basso di ogni pezzo, distanze, se esce o va a capo; la freccia che riduce il team
+  'team-bar': { run: async p => {
+    await tab(p, 'pokemon');
+    await wait(300);
+    console.log(await p.evaluate(() => {
+      const head = document.querySelector('.team-head')!.getBoundingClientRect();
+      const parts = [...document.querySelectorAll<HTMLElement>('.team-plate, .team-saved summary, .team-guide, .team-io, .clear-team')].map(e => {
+        const b = e.getBoundingClientRect();
+        return `${(e.className || e.tagName).toString().split(' ')[0]}:${Math.round(b.left)}-${Math.round(b.right)} y${Math.round(b.top)}h${Math.round(b.height)}`;
+      });
+      const tog = document.querySelector('.band-toggle')?.getBoundingClientRect();
+      const band = document.querySelector('.band')?.getBoundingClientRect();
+      return `teamBar head=${Math.round(head.left)}-${Math.round(head.right)} ${parts.join(' ')} out=${head.right > innerWidth ? 1 : 0} toggle=${tog ? `${Math.round(tog.top)}-${Math.round(tog.bottom)} bandBottom=${Math.round(band!.bottom)}` : 'none'}`;
+    }));
+    return true;
   } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
@@ -943,6 +1164,16 @@ const STATES: Record<string, State> = {
   'clear-hover': { run: async p => { await p.hover('.team-head .clear-team'); await wait(300); return true; } },
   cleared: { run: async p => { await p.click('.team-head .clear-team'); await wait(1200); return toastClear(p); } },
   'removed-toast': { run: async p => { if (!await clickText(p, 'button.remove', /Rimuovi/)) return false; await wait(1200); return toastClear(p); } },
+  // Triangolo rosso della carta del voto (team fuori regola) col mouse sopra: il tooltip resta dentro lo schermo
+  'grade-alert-hover': { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]), run: async p => {
+    await wait(800);
+    const mark = await p.$('.grade-tools .alert-mark');
+    if (!mark) return 'no alert mark';
+    await mark.hover();
+    await wait(400);
+    console.log(`gradeAlert=${await p.evaluate(`(() => { const t = document.querySelector('.alert-pop.alert-float'); if (!t) return 'none'; const r = t.getBoundingClientRect(); return Math.round(r.left) + '..' + Math.round(r.right) + ' vw=' + innerWidth + ' out=' + (r.right > innerWidth || r.left < 0); })()`)}`);
+    return true;
+  } },
   illegal: { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]) },
 };
 // Il controllo del testo (--scan) come stringa: dentro page.evaluate niente funzioni con nome (tsx aggiunge __name)
@@ -993,6 +1224,9 @@ for (const [w, h] of sizes) {
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
     await wait(800);
+    // --palette sv: la palette di Scarlatto/Violetto (accento arancione) sulla pagina, per controllare i colori
+    const palette = arg('palette');
+    if (palette) { await page.evaluate(p => { document.documentElement.dataset.palette = p; }, palette); await wait(300); }
     // --add-class "sel:classe": aggiunge una classe prima della foto (per provare una variante non attiva nell'app)
     const addClass = arg('add-class');
     if (addClass) { const [sel, cls] = addClass.split(':'); await page.evaluate((s, c) => { document.querySelectorAll(s).forEach(e => e.classList.add(c)); }, sel, cls); await wait(300); }

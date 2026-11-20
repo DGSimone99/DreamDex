@@ -63,9 +63,11 @@
 .fill-keep:hover { border-color: var(--accent); }
 .fill-keep .mon-icon { margin: -10px -6px -8px -6px; }
 .fill-keep-name { font: 700 var(--fs-section)/1 var(--display); font-style: italic; white-space: nowrap; }
-/* Set lasciato libero: la matita ciano, la stessa che segna i set cambiati nelle proposte */
-.fill-keep.is-free { border-style: dashed; border-color: var(--accent); background: var(--accent-wash); }
-.fill-keep .icon { width: 14px; height: 14px; color: var(--accent); }
+/* Il lucchetto: aperto e grigio (il set può migliorare), chiuso e ciano col bordo ciano (il set resta com'è) */
+.fill-keep .icon { width: 14px; height: 14px; color: var(--faint); }
+.fill-keep.is-locked { border-color: var(--accent); background: var(--accent-wash); }
+.fill-keep.is-locked .icon { color: var(--accent); }
+.fill-keep:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .fill-side { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-8); align-content: start; }
 .fill-group { min-width: 0; }
@@ -214,10 +216,15 @@
 /* Tendina degli spread: sopra il blocco statistiche, come i menu dell'editor */
 .spread-panel { position: relative; }
 .spread-presets {
-  position: absolute;
+  /* Posto e lato da useAnchoredPop (strato in cima, dentro la finestra) */
+  position: fixed;
   z-index: 40;
-  top: 22px;
-  right: 0;
+  inset: auto;
+  margin: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  max-height: 420px;
+  color: var(--text);
   width: max-content;
   min-width: 340px;
   display: grid;
@@ -230,7 +237,6 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   animation: tip 0.12s var(--ease);
 }
-.set-editor .evs .spread-panel .spread-presets { top: 20px; right: 14px; }
 .spread-presets button {
   grid-column: 1 / -1;
   display: grid;
@@ -264,9 +270,11 @@
 .move-meta { display: inline-flex; align-items: center; gap: var(--sp-5); text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: var(--fs-caption); }
 .move-stat { display: inline-flex; align-items: center; gap: 3px; min-width: 38px; font-variant-numeric: tabular-nums; }
 .move-stat .icon { width: 13px; height: 13px; }
-.move-stat.cat-physical .icon { color: var(--move-physical); }
-.move-stat.cat-special .icon { color: var(--move-special); }
-.move-stat.cat-status .icon { color: var(--faint); }
+/* Simboli delle categorie come in Champions (CategoryIcon, 4:3) */
+.move-stat .cat-icon { width: 16px; height: 12px; flex: none; }
+.move-stat.cat-physical .cat-icon { color: var(--move-physical); }
+.move-stat.cat-special .cat-icon { color: var(--move-special); }
+.move-stat.cat-status .cat-icon { color: var(--faint); }
 .move-stat.accuracy .icon { color: var(--faint); }
 .nature-fx { font-size: var(--fs-caption); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .nature-fx .up { color: var(--good); }

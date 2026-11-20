@@ -26,14 +26,41 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
  * stesse righe (GradeAreaRows) e il "?"; col team aperto la carta resta com'è.
  * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
+export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
   const t = useT();
+  // Voto bloccato (EV oltre il massimo, specie sconosciuta): si sa subito dal team, mentre il voto nuovo arriva un attimo
+  // dopo. Nel frattempo il voto vecchio non si mostra, se no per un istante comparirebbe con l'avviso delle regole sotto
+  // e la carta si allungherebbe
+  const rating = blocked ? null : computed;
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
   const [since, setSince] = useState<number | null>(null);
   const overall = rating?.overall ?? null;
-  useEffect(() => { setSince(editing === null ? null : overall); }, [editing]);
   const delta = rating && since !== null ? rating.overall - since : 0;
+  // Chiudendo l'editor, di quanto è cambiato il voto resta a vista un attimo (sale, poi sparisce): il risultato del lavoro.
+  // Se è cambiata anche la lettera, la lettera fa un piccolo salto. `lastEdit` è il voto di partenza e il cambio
+  // dell'ultimo giro nell'editor (letto al render, prima che `since` si azzeri)
+  const lastEdit = useRef<{ from: number; delta: number } | null>(null);
+  if (editing !== null && since !== null && rating) lastEdit.current = { from: since, delta };
+  const [flash, setFlash] = useState<{ from: number; delta: number; letter: boolean; key: number } | null>(null);
+  useEffect(() => {
+    setSince(editing === null ? null : overall);
+    const last = lastEdit.current;
+    lastEdit.current = null;
+    if (editing !== null) { setFlash(null); return; }
+    if (!last || last.delta === 0 || overall === null) return;
+    const letterOf = (v: number) => GRADES.find(g => v >= g.min)?.grade;
+    setFlash({ ...last, letter: letterOf(last.from) !== letterOf(overall), key: Date.now() });
+    const id = setTimeout(() => setFlash(null), 2600);
+    return () => clearTimeout(id);
+  }, [editing]);
+  // Il cambio da mostrare: quello in corso mentre modifichi, o quello appena chiuso
+  const shown = editing !== null ? delta : flash?.delta ?? 0;
+  const deltaChip = (where: string) => rating && shown !== 0 && (
+    <span key={flash?.key ?? 'live'} className={`grade-delta ${where} ${shown > 0 ? 'up' : 'down'}${editing === null ? ' flash' : ''}`} aria-hidden="true">
+      {t('rating.since', { from: since ?? flash?.from ?? 0, delta: `${shown > 0 ? '+' : '−'}${Math.abs(shown)}` })}
+    </span>
+  );
   // Team ridotto: la tendina delle aree sotto lettera e punteggio
   const [popOpen, setPopOpen] = useState(false);
   const popId = useId();
@@ -47,7 +74,6 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
   const broken = ruleIssues.length > 0;
   // Nella carta (stretta) la scritta corta; il formato è nel tooltip e nella frase per i lettori di schermo
   const notLegal = broken ? t('rating.notLegalIn', { format: formatName, n: Math.max(1, illegalCount) }) : '';
-  const notLegalShort = broken ? t('rating.notLegalShort', { n: Math.max(1, illegalCount) }) : '';
   // Il tipo di team come nel Riassunto: senza tipo "Incompleto · 5/6" finché mancano membri, a team completo "Misto"
   const pending = members < 6;
   const typeLabel = teamType ? t(`archetype.${teamType}`) : pending ? t('sum.archBuilding', { n: members }) : t('sum.archMixed');
@@ -64,23 +90,25 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
     <span className="grade-head">{t('rating.badgeHead')}</span>
     {rating && <span className="letter">{rating.grade}</span>}
     {!rating && !blocked && <EeveeMoment pose="wave" />}
-    <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
+    <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}{withPop && deltaChip('in-strip')}</span>
     <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}
       {/* Il tipo di team sulla riga del giudizio, come testo semplice (non una targa): la carta non diventa più alta */}
       {rating && <span className="grade-type" title={typeNote}>{typeLabel}</span>}
     </span>
-    {rating && broken && <span className="grade-rules" title={[notLegal, who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegalShort}</span>}
     </span>
     </>
   );
   return (
-    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}`}>
+    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}${flash?.letter ? ' letter-changed' : ''}`}>
       {withPop ? (
         // Team ridotto: lettera e punteggio aprono la tendina con le righe delle aree (stessa frase per i lettori di schermo)
         <button ref={popButton} type="button" className="grade-pop-toggle" aria-haspopup="dialog" aria-expanded={popOpen}
           aria-controls={popOpen ? popId : undefined} onClick={() => setPopOpen(o => !o)}
           onKeyDown={e => { if (e.key === 'Escape' && popOpen) { e.preventDefault(); e.stopPropagation(); closePop(true); } }}>
           {face}
+          {/* Le tre aree sempre visibili anche col team ridotto (mentre modifichi un membro): barrette senza scritte, nel
+              colore della lettera che varrebbero da sole; i numeri e il resto nella tendina */}
+          <GradeMini rating={rating} />
           <span className="grade-pop-caret" aria-hidden="true"><Icon name="next" /></span>
         </button>
       ) : face}
@@ -88,15 +116,14 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
       {(rating || blocked) && (
         <span className="grade-tools">
           {/* Di quanto è cambiato il voto da quando si è aperto l'editor: la prima della fila, così non va mai sotto i segni */}
-          {rating && since !== null && delta !== 0 && (
-            <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`} aria-hidden="true">
-              {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}
-            </span>
-          )}
+          {deltaChip('in-card')}
           {/* In giallo il voto provvisorio (membro senza mosse, specie, mossa o strumento sconosciuti); le regole sono la
               scritta sotto il giudizio (senza voto, quando il voto è bloccato, restano qui in rosso) */}
-          {((!rating && ruleIssues.length > 0) || !!rating?.notes.length) && <AlertMark alerts={[
+          {/* Regole infrante: il triangolo rosso col perché (in quale formato, chi, il motivo); niente scritta sotto il
+              giudizio, che allungava la carta. Col voto c'è anche il grigio */}
+          {(ruleIssues.length > 0 || !!rating?.notes.length) && <AlertMark floating alerts={[
             ...(!rating && ruleIssues.length ? [{ level: 'danger' as const, text: t('rating.rulesBroken') }, ...ruleIssues.map(text => ({ level: 'danger' as const, text }))] : []),
+            ...(rating && broken ? [{ level: 'danger' as const, text: notLegal }, ...(who ? [{ level: 'danger' as const, text: who }] : []), ...ruleIssues.map(text => ({ level: 'danger' as const, text }))] : []),
             ...(rating?.notes.length ? [{ level: 'warn' as const, text: t('rating.provisional') }] : []),
             ...(rating?.notes ?? []).map(text => ({ level: 'warn' as const, text })),
           ]} />}
@@ -112,10 +139,31 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
           <GradeAreaRows rating={rating} onOpen={area => { onOpen?.(area); closePop(true); }} />
         </GradePopover>
       )}
+      {/* Per i lettori di schermo, alla chiusura dell'editor: da quanto a quanto è passato il voto */}
+      <span className="visually-hidden grade-change-sr" aria-live="polite">
+        {flash && rating ? t('rating.changedSr', { from: flash.from, to: rating.overall, grade: rating.grade }) : ''}
+      </span>
     </div>
   );
 }
 
+
+/** Le tre aree (Offesa, Difesa, Velocità) come barrette impilate, per il voto del team ridotto. Solo disegno. */
+function GradeMini({ rating }: { rating: TeamRating }) {
+  const t = useT();
+  const areas = [...rating.areas].sort((a, b) => ANALYSIS_VIEWS.indexOf(a.key as TabView) - ANALYSIS_VIEWS.indexOf(b.key as TabView));
+  return (
+    <span className="grade-mini" aria-hidden="true">
+      {areas.map(area => (
+        <span key={area.key} className={`grade-mini-row band-${GRADES.find(g => (area.value ?? 0) >= g.min)!.grade}${area.inactive ? ' inactive' : ''}`}>
+          <span className="grade-mini-label">{t(`area.${area.key}Short` as 'area.strengthShort')}</span>
+          <span className="meter"><span style={{ width: `${area.value ?? 0}%` }} /></span>
+          <b>{area.value ?? '—'}</b>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 /**
  * Le righe delle aree della carta del voto: le tre aree con barra e numero, i Ruoli "8/8 +2" e Bonus/Malus "+6"; ogni

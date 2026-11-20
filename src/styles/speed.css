@@ -1,43 +1,21 @@
-/* Velocità finale e posto nel meta, sotto gli EV; i vicini nel tooltip */
-.speed-line { grid-column: 1 / -1; margin: var(--sp-1) 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-4); font-size: var(--fs-small); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
-.speed-line strong { font: 700 var(--fs-title-s)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
-.speed-scarf { font-size: var(--fs-label); color: var(--faint); }
-.speed-rank { position: relative; color: var(--text); border-bottom: 1px dotted var(--faint); cursor: help; }
-.speed-rank:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-bottom-color: var(--accent); }
-.speed-pop {
-  position: absolute;
-  z-index: 60;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 260px;
-  flex-direction: column;
-  gap: var(--sp-4);
-  padding: var(--sp-6) var(--sp-7);
-  background: var(--ground);
-  border: 1px solid var(--line);
-  border-top: 2px solid var(--accent);
-  border-radius: 4px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-  cursor: default;
-}
-.speed-pop { display: flex; animation: tip 0.15s var(--ease); }
-.speed-pop.up { top: auto; bottom: calc(100% + 8px); border-top: 1px solid var(--line); border-bottom: 2px solid var(--accent); }
-.speed-group { display: flex; flex-direction: column; gap: 3px; }
-.speed-group-title { font: 700 var(--fs-caption)/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: var(--sp-1); }
-.speed-rival { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-small); color: var(--text); }
-.speed-rival .mon-icon { margin: -8px -4px -6px -6px; }
-.speed-rival-value { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-.speed-self { margin: 0 -8px; padding: 3px var(--sp-4); background: var(--accent-soft); border-radius: 3px; font-weight: 700; }
-.speed-note { font-size: var(--fs-label); color: var(--faint); }
-
 /* Velocità: la scheda a barre (una per membro) e il modale del membro. La scala sotto le barre (16px, 12 sugli schermi
    bassi) si toglie dall'altezza delle righe con --def-tail, così le sei righe e quella del team stanno come prima */
 :is(.def-frame, .def-frame.roomy).sp-general { --sp-val: 132px; --sp-bar-h: 22px; --sp-scale-h: 16px; --def-tail: calc(4px + var(--sp-scale-h) + var(--def-sp)); }
+/* La riga del team qui è più bassa (una barra sola): lo spazio della scala si prende da lì, così le righe dei membri sono
+   alte come in Offesa e Difesa e passando da una scheda all'altra non saltano */
+@media (min-height: 700px) { :is(.def-frame, .def-frame.roomy).sp-general { --def-top: calc(50px - var(--sp-scale-h) - var(--def-sp)); } }
+/* La riga della scala non è un membro: niente striscia */
+.def-frame .def-members tbody tr.sp-scale > * { background: none; }
 .sp-general .def-members thead th:nth-child(2) { text-align: left; }
 /* La testata della colonna delle barre: a sinistra cosa dice la barra, a destra "Velocità" sopra il totale (stessa griglia del bottone) */
 .sp-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: var(--sp-6); padding-right: var(--sp-2); }
 .sp-head > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sp-head-val { text-align: right; }
+/* Sopra le barre la fascia di Pokémon Champions, come Tipi e Meta in Offesa e Difesa; il numero a destra resta scritto */
+.sp-head > span:first-child { position: relative; display: block; padding: 7px 0 6px; text-align: center; color: var(--text);
+  background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
+.sp-head > span:first-child::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
+.sp-head { align-items: end; }
 .sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; align-items: center; gap: var(--sp-6); width: 100%; padding: 3px var(--sp-2) 3px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 /* Un solo hover, quello della riga (come nelle altre tabelle); la freccia da cliccare si accende e si sposta un poco */
 .sp-team { cursor: default; }

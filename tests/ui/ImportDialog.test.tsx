@@ -27,7 +27,8 @@ async function pasteInMember(text: string) {
   const { container } = render(<App initialLang="it" data={fixtureData} />);
   await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
   const slot = () => container.querySelector<HTMLElement>('.slot.open')!;
-  await user.click(within(slot()).getByRole('button', { name: 'Testo del set' }));
+  await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
+  await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
   const area = within(slot()).getByLabelText('Set in testo Showdown');
   await user.clear(area);
   await user.click(area);

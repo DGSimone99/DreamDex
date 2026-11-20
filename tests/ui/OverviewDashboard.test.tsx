@@ -526,7 +526,8 @@ describe('Riassunto', () => {
     const { onView } = mount({ summary: summaryOf({ hazards: [{ member: 'Ferrothorn', moves: ['Stealth Rock', 'Spikes'] }] }) });
     const row = within(section('Trappole')).getByRole('button');
     expect(row).toHaveTextContent('Ferrothorn');
-    expect([...row.querySelectorAll('.sum-tag')].map(c => c.textContent)).toEqual(['Levitoroccia', 'Punte']);
+    // Le mosse come pillole: il nome tradotto, la potenza nella coda ("—" per le mosse di stato)
+    expect([...row.querySelectorAll('.mvp .mvp-nm')].map(c => c.textContent)).toEqual(['Levitoroccia', 'Punte']);
     await user.click(row);
     expect(onView).toHaveBeenCalledWith('roles');
     cleanup();

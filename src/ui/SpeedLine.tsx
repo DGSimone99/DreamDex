@@ -1,60 +1,54 @@
-import { useId, useRef, useState } from 'react';
-import type { SpeedRival, SpeedTier } from '../engine/speed';
+import { useId } from 'react';
+import { battleSpecies } from '../engine/dex';
+import { laneNear, speedItem, type SpeedLane } from '../engine/overviewDashboard';
+import type { TeamSet } from '../engine/sets';
+import type { SpeedTier } from '../engine/speed';
 import { formatPercent } from '../i18n';
 import { useLang, useT } from '../i18n/react';
-import { PokemonIcon } from './PokemonName';
+import { SpeedTip } from './dashboard/SpeedTip';
+import { FloatTip, useFloatAnchor } from './FloatTip';
+import { Icon } from './icons';
 
-/** Altezza del tooltip con i vicini (3 sopra, 3 sotto, nota). */
-const POP_HEIGHT = 340;
-
-/** Velocità finale del membro e il suo posto tra i più usati del meta; i vicini nel tooltip. */
-export function SpeedLine({ name, tier, scarf }: { name: string; tier: SpeedTier; scarf: boolean }) {
+/**
+ * La riga sotto le statistiche dell'editor: "Più veloce del 64% del meta", che cambia con gli EV. Passandoci sopra (o col
+ * fuoco) si apre lo stesso tooltip delle barre di Analisi › Velocità: chi ti supera, tu, chi superi. Per i lettori di
+ * schermo la frase resta il testo della riga; il confronto per intero e i vicini sono la sua descrizione.
+ */
+export function SpeedMeta({ set, tier }: { set: TeamSet; tier: SpeedTier }) {
   const t = useT();
   const lang = useLang();
   const id = useId();
-  // L'elenco dei vicini esiste solo mentre lo guardi: le card chiuse non ripetono i nomi
-  const [shown, setShown] = useState(false);
-  // Si apre sopra quando sotto non c'è spazio (riga in fondo alla finestra)
-  const [up, setUp] = useState(false);
-  const anchor = useRef<HTMLSpanElement>(null);
-  const show = () => {
-    const rect = anchor.current?.getBoundingClientRect();
-    setUp(!!rect && window.innerHeight - rect.bottom < POP_HEIGHT && rect.top > POP_HEIGHT);
-    setShown(true);
+  const tip = useFloatAnchor<0>();
+  const name = battleSpecies(set)?.name ?? set.species;
+  const lane: SpeedLane = {
+    species: name, speed: tier.speed, share: tier.outspeeds, above: tier.outspeeds > 0.5, near: laneNear(tier), item: speedItem(set),
   };
-  const group = (title: string, rivals: SpeedRival[]) => rivals.length > 0 && (
-    <span className="speed-group">
-      <span className="speed-group-title">{title}</span>
-      {rivals.map(r => (
-        <span key={`${r.species}-${r.scarf}-${!!r.booster}`} className="speed-rival">
-          <PokemonIcon name={r.species} />
-          <span className="speed-rival-name">{r.species}</span>
-          {r.scarf && <span className="speed-scarf">{t('editor.scarf')}</span>}
-          {r.booster && <span className="speed-scarf">{t('editor.booster')}</span>}
-          <span className="speed-rival-value">{r.value}</span>
-        </span>
-      ))}
-    </span>
-  );
+  const pct = formatPercent(lang, tier.outspeeds, 0);
+  const text = t(tier.vsMeta ? 'editor.speedLine' : 'editor.speedLineTier', { pct });
+  // Il numero in grassetto dentro la frase
+  const [before, after] = text.includes(pct) ? [text.slice(0, text.indexOf(pct)), text.slice(text.indexOf(pct) + pct.length)] : [text, ''];
+  const rank = t(tier.vsMeta ? 'editor.speedRank' : 'editor.speedRankTier', { pct, n: tier.total });
+  const names = (list: { species: string; value: number }[]) => list.map(r => `${r.species} ${r.value}`).join(', ');
+  const description = [
+    rank,
+    `${t('editor.speed')} ${tier.speed}`,
+    tier.faster.length ? `${t('editor.speedFaster')}: ${names([...tier.faster].reverse())}` : '',
+    tier.ties.length ? `${t('editor.speedTies')}: ${names(tier.ties)}` : '',
+    tier.slower.length ? `${t('editor.speedSlower')}: ${names(tier.slower)}` : '',
+  ].filter(Boolean).join('. ');
   return (
-    <p className="speed-line">
-      <span>{t('editor.speed')} <strong>{tier.speed}</strong>{scarf && <> <span className="speed-scarf">{t('editor.scarf')}</span></>}</span>
-      <span aria-hidden="true">·</span>
-      <span className="speed-rank" tabIndex={0} aria-describedby={shown ? id : undefined} ref={anchor}
-        onMouseEnter={show} onMouseLeave={() => setShown(false)} onFocus={show} onBlur={() => setShown(false)}>
-        {t(tier.vsMeta ? 'editor.speedRank' : 'editor.speedRankTier', { pct: formatPercent(lang, tier.outspeeds, 0), n: tier.total })}
-        {shown && <span id={id} role="tooltip" className={`speed-pop${up ? ' up' : ''}`}>
-          {group(t('editor.speedFaster'), [...tier.faster].reverse())}
-          {group(t('editor.speedTies'), tier.ties)}
-          <span className="speed-rival speed-self">
-            <PokemonIcon name={name} />
-            <span className="speed-rival-name">{name}</span>
-            <span className="speed-rival-value">{tier.speed}</span>
-          </span>
-          {group(t('editor.speedSlower'), tier.slower)}
-          <span className="speed-note">{t('editor.speedNote')}</span>
-        </span>}
+    <div className="speed-line">
+      <span className="speed-line-anchor" tabIndex={0} data-testid="speed-line" aria-describedby={id} {...tip.bind(0)}>
+        <Icon name="speed" />
+        <span>{before}<b>{pct}</b>{after}</span>
       </span>
-    </p>
+      <span className="speed-line-hint" aria-hidden="true">{t('editor.speedLineHint')}</span>
+      <span id={id} className="visually-hidden">{description}</span>
+      {tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="speed">
+          <SpeedTip lane={lane} vsMeta={tier.vsMeta} />
+        </FloatTip>
+      )}
+    </div>
   );
 }

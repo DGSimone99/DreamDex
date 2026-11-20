@@ -26,8 +26,10 @@ describe('Carta del Pokémon (tooltip DreamDex)', () => {
     const moves = [...container.querySelectorAll('.mcard-move')];
     expect(moves).toHaveLength(4);
     expect(moves[0]).toHaveTextContent(/Headlong Rush\s*120/);
-    // Una mossa di stato: niente potenza, "stato"
-    expect(moves[3]).toHaveTextContent(/Bulk Up\s*stato/);
+    // Una mossa di stato: nella coda solo il simbolo della categoria, niente numero
+    expect(moves[3]).toHaveTextContent(/^Bulk Up$/);
+    expect(moves[3].querySelector('.mvp-cat.cat-status')).not.toBeNull();
+    expect(moves[0].querySelector('.mvp-cat.cat-physical')).not.toBeNull();
   });
 
   it('senza il perché la lastra non c\'è', () => {

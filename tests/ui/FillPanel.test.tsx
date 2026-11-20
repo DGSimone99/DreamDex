@@ -182,14 +182,14 @@ const favorites = (names: string[]) => ({
 });
 
 describe('Completa team: Tieni il set e preferiti', () => {
-  it('ogni membro ha "Tieni il set", spuntato; togliendolo le proposte si rifanno', async () => {
+  it('ogni membro ha il lucchetto "Fissa il set", aperto; fissandolo le proposte si rifanno', async () => {
     const user = userEvent.setup();
     panel([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }]);
-    const keep = screen.getByRole('checkbox', { name: 'Tieni il set di Great Tusk' });
-    expect(keep).toBeChecked();
+    const keep = screen.getByRole('checkbox', { name: 'Fissa il set di Great Tusk' });
+    expect(keep).not.toBeChecked();
     await addButtons();
     await user.click(keep);
-    expect(keep).not.toBeChecked();
+    expect(keep).toBeChecked();
     expect(screen.getByText('Calcolo delle proposte…')).toBeInTheDocument();
     await vi.waitFor(idle, WAIT);
     expect((await addButtons()).length).toBeGreaterThan(0);
