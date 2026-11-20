@@ -1678,7 +1678,7 @@ export const it: Record<keyof typeof en, string> = {
   'duel.tipsSafe': "non ti manda KO",
   'duel.tipsFine': "niente da ritoccare",
   'duel.tipsStuck': "nessun ritocco basta",
-  'duel.tipsNobody': "nessun ritocco basta, e nessuno nel team lo batte",
+  'duel.tipsNobody': "nessuno nel team lo batte",
   'duel.tipsMate': "lascialo a",
   'duel.tipsMateOpen': "Apri {name} contro {opponent}",
   'duel.tipsMore': "Altri {n}",

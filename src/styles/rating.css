@@ -129,7 +129,7 @@
 .grade-pop .help-button { position: relative; }
 .grade-pop .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; translate: -50% -50%; }
 /* Team ridotto (mentre modifichi un membro): le tre aree sempre a vista accanto al punteggio, barrette con sigla e numero */
-.grade-mini { align-self: center; display: grid; grid-template-columns: auto 36px auto; align-items: center; column-gap: var(--sp-2); row-gap: 3px; font: 600 10px/1 var(--ui); color: var(--muted); }
+.grade-mini { align-self: center; display: grid; grid-template-columns: auto 36px auto; align-items: center; column-gap: var(--sp-2); row-gap: 3px; font: 600 var(--fs-label)/1 var(--ui); color: var(--muted); }
 .grade-mini-row { display: contents; }
 .grade-mini-label { letter-spacing: 0.04em; text-transform: uppercase; }
 .grade-mini .meter { height: 4px; }
