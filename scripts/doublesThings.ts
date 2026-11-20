@@ -199,3 +199,19 @@ export function levelJump(rows: { rating: number; value: number }[]): LevelJump 
     lowCount: low.n, highCount: high.n,
   };
 }
+
+/**
+ * Ogni team una volta sola per fascia di livello (sotto LOW_BELOW, in mezzo, da HIGH_FROM): pochi team giocano centinaia
+ * di partite, e contati a ogni partita tirerebbero la media dalla loro parte e stringerebbero il margine di `levelJump`
+ * (le partite dello stesso team non sono indipendenti). Resta la prima comparsa.
+ */
+export function oncePerTeam<T extends { key: string; rating: number }>(rows: T[]): T[] {
+  const band = (rating: number) => (rating < LOW_BELOW ? 'low' : rating >= HIGH_FROM ? 'high' : 'mid');
+  const seen = new Set<string>();
+  return rows.filter(row => {
+    const id = `${band(row.rating)}|${row.key}`;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}

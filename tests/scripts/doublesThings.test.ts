@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { CONTROLS, levelJump, pairResults, thingResults, THINGS, type BenchGame } from '../../scripts/doublesThings';
+import { CONTROLS, levelJump, oncePerTeam, pairResults, thingResults, THINGS, type BenchGame } from '../../scripts/doublesThings';
 
 const mon = (species: string, moves: string[] = [], extra: Partial<TeamSet> = {}): TeamSet => ({ ...emptySet(species), moves, ...extra });
 /** Un team da 6: i membri dati più riempitivi senza mosse (ogni chiamata con `fill` diverso è un team diverso). */
@@ -158,5 +158,21 @@ describe('levelJump', () => {
     const jump = levelJump([{ rating: 1300, value: 60 }, { rating: 1600, value: 70 }]);
     expect(jump.jump).toBe(10);
     expect(jump.margin).toBeNaN();
+  });
+});
+
+describe('oncePerTeam', () => {
+  it('lo stesso team conta una volta sola per fascia di livello, anche se gioca cento partite', () => {
+    const rows = [
+      { key: 'a', rating: 1300, value: 60 }, { key: 'a', rating: 1350, value: 60 }, { key: 'a', rating: 1380, value: 60 },
+      { key: 'b', rating: 1320, value: 70 },
+      // Lo stesso team salito di livello conta anche fra gli alti (un'altra fascia)
+      { key: 'a', rating: 1600, value: 60 }, { key: 'a', rating: 1650, value: 60 },
+      { key: 'c', rating: 1450, value: 50 }, { key: 'c', rating: 1460, value: 50 },
+    ];
+    expect(oncePerTeam(rows).map(r => [r.key, r.rating])).toEqual([['a', 1300], ['b', 1320], ['a', 1600], ['c', 1450]]);
+    // Il salto si misura sui team, non sulle partite: sotto 1400 la media è (60 + 70) / 2, non tirata dal team ripetuto
+    expect(levelJump(oncePerTeam(rows)).low).toBe(65);
+    expect(levelJump(rows).low).toBe(62.5);
   });
 });

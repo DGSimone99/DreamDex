@@ -38,7 +38,7 @@ import { defaultSet, type TeamSet } from '../src/engine/sets';
 import { dex, getMove, toID } from '../src/engine/dex';
 import { lockedStatusMoves } from '../src/engine/lockedMoves';
 import { statsEntry } from '../src/engine/stats';
-import { controlResults, HIGH_FROM, levelJump, LOW_BELOW, pairResults, thingResults, type BenchGame, type ThingResult } from './doublesThings';
+import { controlResults, HIGH_FROM, levelJump, LOW_BELOW, oncePerTeam, pairResults, thingResults, type BenchGame, type ThingResult } from './doublesThings';
 import type { Game as RealGame, Revealed } from './fetch-games';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 
@@ -386,13 +386,13 @@ function realGames(doubles = false) {
     // Partite contate, coi due team: per il conto "ogni team al massimo REPEAT_CAP volte" e per il margine a gruppi di team
     const counted: { keys: [string, string]; right: boolean }[] = [];
     // Doppio: ogni team contato col rating della sua partita, per il salto del voto col livello (secondo metro)
-    const byLevel: { rating: number; rated: TeamRating }[] = [];
+    const byLevel: { key: string; rating: number; rated: TeamRating }[] = [];
     for (const g of list) {
       if (mega && !(showsMega(g.p1) && showsMega(g.p2))) { noMega++; continue; }
       const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
       if (!a || !b) { skipped++; continue; }
       const [ra, rb] = [rateTeam(a, DATA[fmt])!, rateTeam(b, DATA[fmt])!];
-      if (doubles) byLevel.push({ rating: g.rating, rated: ra }, { rating: g.rating, rated: rb });
+      if (doubles) byLevel.push({ key: sideKey(g.p1), rating: g.rating, rated: ra }, { key: sideKey(g.p2), rating: g.rating, rated: rb });
       const diff = ra.overall - rb.overall;
       const bin = bins.findIndex(([lo, hi]) => Math.abs(diff) >= lo && Math.abs(diff) <= hi);
       if (bin < 0) continue;
@@ -417,9 +417,11 @@ function realGames(doubles = false) {
     bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
     // Il secondo metro (solo doppio, sul blocco con tutte le partite): il voto e le tre aree salgono col livello dei giocatori?
     if (doubles && !mega) {
+      // Ogni team una volta sola per fascia: il salto e il suo margine si misurano sui team, non sulle partite
+      const teams = oncePerTeam(byLevel);
       const area = (rated: TeamRating, key: string) => rated.areas.find(x => x.key === key)?.value ?? 0;
       const line = (name: string, value: (rated: TeamRating) => number) => {
-        const j = levelJump(byLevel.map(row => ({ rating: row.rating, value: value(row.rated) })));
+        const j = levelJump(teams.map(row => ({ rating: row.rating, value: value(row.rated) })));
         console.log(`    ${name.padEnd(10)} ${j.low.toFixed(2)} → ${j.high.toFixed(2)}   salto ${j.jump >= 0 ? '+' : ''}${j.jump.toFixed(2)} ± ${j.margin.toFixed(2)}`);
         return j;
       };
@@ -428,7 +430,7 @@ function realGames(doubles = false) {
       line('Offesa', rated => area(rated, 'strength'));
       line('Difesa', rated => area(rated, 'defense'));
       line('Velocità', rated => area(rated, 'speed'));
-      console.log(`    (${vote.lowCount} team sotto ${LOW_BELOW}, ${vote.highCount} da ${HIGH_FROM} in su${DOUBLES_WEIGHTS ? `; pesi delle aree Offesa/Difesa/Velocità ${DOUBLES_WEIGHTS.join(' / ')}` : '; pesi delle aree a un terzo'})`);
+      console.log(`    (ogni team una volta sola per fascia: ${vote.lowCount} team sotto ${LOW_BELOW}, ${vote.highCount} da ${HIGH_FROM} in su${DOUBLES_WEIGHTS ? `; pesi delle aree Offesa/Difesa/Velocità ${DOUBLES_WEIGHTS.join(' / ')}` : '; pesi delle aree a un terzo'})`);
     }
   }
 }
