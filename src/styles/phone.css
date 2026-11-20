@@ -456,3 +456,640 @@
   .band:has(.fill-panel, .team-head details[open]) .band-toggle { visibility: hidden; }
   .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: var(--sp-4); }
 }
+
+/* ── Editor sul telefono (2026-11-19): tre schede sotto la testata ferma ────────────────────────────────── */
+/* I riquadri non si allargano oltre lo schermo per il loro contenuto (i fieldset di base non scendono sotto il contenuto) */
+.set-editor fieldset { min-inline-size: 0; }
+@media (max-width: 599px) {
+  /* La testata intera (nome, tipi, Set, copia, chiudi e le schede) resta ferma in alto mentre la scheda scorre */
+  .drawer .set-editor .editor-head { display: block; position: sticky; top: -12px; z-index: 6; margin: -12px -14px 0; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
+  .drawer .set-editor .editor-top { position: static; margin: 0; border-bottom: 0; flex-wrap: wrap; row-gap: var(--sp-4); column-gap: var(--sp-4); padding: var(--sp-5) var(--sp-6) var(--sp-4); }
+  /* Riga 1: nome (intero, si rimpicciolisce), tipi e shiny; riga 2: Set largo, copia e chiudi */
+  .set-editor .editor-title { flex: 1 1 100%; flex-wrap: wrap; row-gap: var(--sp-2); margin-right: 0; }
+  .set-editor .editor-title .nickname strong { font-size: 22px; }
+  /* Riga 1 nome e shiny, riga 2 i tipi (a sinistra sotto il nome): un nome lungo non spinge fuori i tipi né lo shiny */
+  .set-editor .editor-title > .types { order: 3; flex-basis: 100%; }
+  .set-editor .editor-title .types .type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); }
+  .set-editor .editor-title .shiny-toggle { width: 40px; height: 40px; }
+  .set-editor .editor-actions { flex: 1 1 100%; margin-left: 0; flex-wrap: nowrap; }
+  .set-editor .editor-actions .set-menu { flex: 1; min-width: 0; }
+  .set-editor .editor-actions .set-menu-button { width: 100%; height: 44px; }
+  .set-editor .editor-actions .set-menu-current { flex: 1; max-width: none; text-align: left; }
+  .set-editor .editor-actions :is(.member-copy, .editor-close) { width: 44px; height: 44px; }
+  .set-editor .editor-tera { flex: 1 1 100%; }
+  /* Le schede: tre linguette larghe uguali, quella aperta sottolineata nel ciano del lavoro */
+  .editor-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-top: 1px solid var(--line-soft); }
+  .editor-tabs [role='tab'] { height: 44px; padding: 0; border: 0; border-radius: 0; background: none; font: 600 var(--fs-section)/1 var(--display); color: var(--muted); justify-content: center; }
+  .editor-tabs [role='tab'][aria-selected='true'] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .editor-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* Una scheda alla volta */
+  .set-editor[data-tab='set'] .stats-cell, .set-editor[data-tab='set'] .editor-side > .duel { display: none; }
+  .set-editor[data-tab='stats'] .editor-side, .set-editor[data-tab='stats'] .editor-foot { display: none; }
+  .set-editor[data-tab='duel'] .stats-cell, .set-editor[data-tab='duel'] .set-box, .set-editor[data-tab='duel'] .editor-foot { display: none; }
+  /* Statistiche a tutta larghezza: nome, freccia, valore, EV, IV (i cursori non ci sono: gli EV si scrivono) */
+  .set-editor .stat-row { grid-template-columns: minmax(0, 1fr) 14px 48px 64px 48px; gap: var(--sp-4); padding: var(--sp-2) var(--sp-3); }
+  .set-editor .stat-row :is(.ev-input, .iv-input) { height: 40px; font-size: var(--fs-section); }
+  /* Intestazione: EV e il totale sopra valore e casella degli EV, IV sopra gli IV (la terza cella vuota non serve) */
+  .set-editor .stat-head > span:nth-child(3) { display: none; }
+  .set-editor .stat-head .ev-total { grid-column: 3 / 5; grid-template-columns: minmax(0, 1fr) auto; }
+  .set-editor .stat-head .ev-total .ev-used { grid-column: 2; }
+  .set-editor .stat-head .ev-total .ev-head { grid-column: 1; justify-self: start; }
+  /* Il riquadro non si allarga per il contenuto: la colonna si ferma alla larghezza dello schermo */
+  .set-editor .stats-cell, .set-editor .evs { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+  /* La riga della Velocità: la frase va a capo, il rimando (che apre la lista con un tocco sulla frase) non serve */
+  .set-editor .speed-line { flex-wrap: wrap; }
+  .set-editor .speed-line-hint { display: none; }
+  /* Sfida in colonna: in alto l'avversario (giudizio, nome, ingranaggio) col suo sprite a destra sul fondo del suo tipo,
+     sotto i due colpi a tutta larghezza */
+  .set-editor .duel-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
+  .set-editor .duel-art { inset: 0 0 auto 0; height: 124px; border-radius: 3px 3px 0 0; }
+  .set-editor .duel-art::before { display: none; }
+  .set-editor .duel-art::after { clip-path: none; -webkit-mask-image: linear-gradient(to left, #000 0 30%, transparent 100%); mask-image: linear-gradient(to left, #000 0 30%, transparent 100%); }
+  .set-editor .duel-head { grid-column: 1; grid-row: 1; min-height: 124px; justify-content: center; padding: var(--sp-5) 128px var(--sp-5) var(--sp-6); }
+  .set-editor .duel-verdict { white-space: nowrap; }
+  .set-editor .duel-settings { width: 40px; height: 40px; }
+  .set-editor .duel-stage { left: auto; right: var(--sp-5); top: 14px; bottom: auto; transform: none; }
+  .set-editor .duel-rows { grid-column: 1; grid-row: 2; padding: var(--sp-3) var(--sp-6) var(--sp-5); }
+  .set-editor .duel-buff { height: 32px; }
+}
+
+/* ── Fogli dal basso sul telefono (tendine, menu Set, Spread, Impostazioni della Sfida) ─────────────────── */
+@media (max-width: 599px) {
+  /* Posto, larghezza e altezza da useAnchoredPop (sopra la tastiera, tre quarti dello schermo al massimo) */
+  [popover][data-sheet] { box-sizing: border-box; border: 1px solid var(--line); border-bottom: 0; border-radius: 14px 14px 0 0;
+    padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom)); background: var(--ground); color: var(--text);
+    /* L'ombra enorme fa da sfondo scuro su tutto il resto dello schermo */
+    box-shadow: 0 0 0 100vmax rgb(4 5 9 / 0.62), 0 -14px 36px rgba(0, 0, 0, 0.55); overflow-y: auto; overscroll-behavior: contain; animation: sheet-up 0.22s var(--ease); }
+  /* La maniglia in cima: dice che è un foglio */
+  [popover][data-sheet]::before { content: ''; display: block; width: 40px; height: 4px; margin: var(--sp-3) auto var(--sp-2); border-radius: 2px; background: var(--control-line); }
+  .combo-sheet { display: flex; flex-direction: column; overflow: hidden; }
+  .combo-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: 0 var(--sp-3) 0 var(--sp-7);
+    font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .combo-sheet-close { width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; color: var(--muted); }
+  .combo-sheet-search { flex: none; margin: var(--sp-2) var(--sp-6) var(--sp-4); height: 44px; font-size: 16px; }
+  .combo-sheet > ul[role='listbox'][id] { position: static; inset: auto; flex: 1; min-height: 0; width: auto; max-height: none; margin: 0; padding: 0 var(--sp-4) var(--sp-2);
+    overflow-y: auto; overscroll-behavior: contain; border: 0; border-radius: 0; background: none; box-shadow: none; animation: none; clip-path: none; }
+  .combo-sheet [role='option'] { display: flex; flex-direction: column; justify-content: center; min-height: 48px; }
+  .combo-sheet .option-footer { position: static; margin: 0; }
+  /* Menu Set e Impostazioni della Sfida dentro il foglio: niente bordo e ombra loro */
+  .set-menu-pop[data-sheet], .duel-settings-pop[data-sheet], .spread-presets[data-sheet] { min-width: 0; max-width: none; }
+  .set-menu-pop[data-sheet] .set-menu-body { max-height: none; }
+  .set-menu-pop[data-sheet] .set-menu-row { min-height: 52px; }
+  .spread-presets[data-sheet] button { min-height: 48px; }
+}
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [popover][data-sheet] { animation: none; } }
+
+/* ── Team sul telefono (2026-11-19) ─────────────────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+  /* Riga 1: la targa del team e la guida (l'azione principale); riga 2: team salvati e scorciatoie a icona (il nome
+     resta per i lettori di schermo e nel tooltip), bersagli da dito */
+  .team-head .team-guide-slot { order: 1; }
+  .team-head .team-saved { order: 2; margin-left: auto; }
+  .team-head .team-quick { order: 3; flex: 1 1 100%; justify-content: space-between; gap: var(--sp-4); }
+  .team-head .team-quick::before { display: none; }
+  /* Team salvati: solo l'icona (il nome per i lettori di schermo e nel tooltip), così la prima riga ci sta */
+  .team-head .team-saved .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .team-head .team-saved .saved-count { display: none; }
+}
+/* L'avviso con Annulla sotto i 1100 px: una striscia di una riga (frase, Annulla, ×) sopra la barra delle sezioni,
+   non un riquadro grande in mezzo allo schermo */
+@media (max-width: 1099px) {
+  .undo-toast { display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) 44px var(--sp-4) var(--sp-6); }
+  .undo-toast .undo-text { flex: 1; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .undo-toast .undo-actions { margin-top: 0; flex: none; }
+  .undo-toast .undo-button { min-height: 40px; }
+  .undo-toast .undo-close { top: 50%; translate: 0 -50%; width: 40px; height: 40px; display: grid; place-items: center; right: 2px; }
+  .done-toast { padding: var(--sp-5) 44px var(--sp-5) var(--sp-6); }
+}
+/* Barra in alto sul telefono: gioco e formato su una riga sola (il nome lungo finisce coi puntini, intero nel menu) */
+@media (max-width: 599px) {
+  .rail :is(.game-card, .format-card) .format-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-caption); }
+  /* Il gioco largo quanto il suo nome (al massimo un terzo), il formato prende il resto */
+  .rail button.game-card { flex: 0 1 auto; max-width: 34%; }
+  .rail .game-card > .format-summary { padding: 0 var(--sp-4); }
+  .rail .popover.format-card { flex: 1 1 0; }
+  .rail .format-card .format-tier { padding: 0 var(--sp-4); }
+  .rail .rail-foot .lang-switch button { padding: 0 var(--sp-3); }
+  .rail { gap: var(--sp-3); }
+}
+/* Editor col dito (telefono, tablet, telefono girato): campi e pulsanti alti 44 px, i numeri degli EV e IV 40 */
+@media (pointer: coarse) and (max-width: 1099px) {
+  .set-editor { --plate-h: 44px; }
+  .set-editor .move-combo { --mvp-h: 44px; --mvp-r: 12px; --mvp-cut: 13px; }
+  .set-editor .editor-actions :is(.member-copy, .editor-close) { width: 44px; height: 44px; }
+  .set-editor .editor-actions .set-menu-button { height: 44px; }
+  .set-editor .shiny-toggle { width: 40px; height: 40px; }
+  .set-editor .spread-toggle { height: 32px; }
+  .set-editor .stat-row :is(.ev-input, .iv-input) { height: 40px; }
+  .set-editor .custom-toggle { min-height: 40px; }
+  .set-editor .editor-tera .combobox input { height: 44px; }
+  .band:not(.collapsed) .grade-badge button.grade-area { min-height: 32px; }
+  .band .team-head :is(.team-plate, .team-guide, .team-io, .team-io .export-tab, .team-saved .popover > summary, .clear-team) { height: 40px; }
+  .band .team-head .team-io > .popover { height: 100%; display: flex; }
+  .band .team-head .team-io :is(.popover > summary, .export-tab > button) { height: 100%; }
+  .band .team-head .team-saved .popover > summary, .band .team-head .clear-team { min-width: 52px; justify-content: center; }
+  .band .grade-badge .help-button { width: 36px; height: 36px; }
+  .set-editor .duel-settings { width: 40px; height: 40px; }
+  .set-editor .duel-buff { height: 32px; }
+  .set-editor .duel-species input { height: 40px; }
+}
+/* Telefono: il titolo dei riquadri ripete la scheda aperta; la fascia resta (ci stanno Spread e Custom Skillset), la scritta no */
+@media (max-width: 599px) {
+  .set-editor[data-tab] fieldset > legend:not(.visually-hidden) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .set-editor[data-tab] fieldset { padding: 0; border: 0; background: none; }
+  .set-editor[data-tab] .evs > .spread-panel, .set-editor[data-tab] .set-box > .custom-toggle { position: static; justify-self: end; align-self: end; margin: 0 0 var(--sp-2); }
+  .set-editor[data-tab='set'] .set-box { display: grid; gap: var(--sp-5); }
+  .set-editor[data-tab] .duel-card { margin: 0; border-radius: 4px; overflow: hidden; }
+  .set-editor[data-tab] .stats-cell, .set-editor[data-tab] .editor-side { margin-top: var(--sp-4); }
+}
+
+/* ── Voto sul telefono e sul tablet: compatto e ordinato ───────────────────────────────────────────────── */
+@media (max-width: 1099px) {
+  /* La fascia "Voto" alta 36: il "?" ci sta dentro, a destra, non sotto */
+  .band:not(.collapsed) .grade-badge .grade-head { min-height: 36px; display: flex; align-items: center; padding-top: 0; padding-bottom: 0; }
+  .band:not(.collapsed) .grade-badge .grade-tools { top: 0; right: 14px; height: 36px; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 28px; height: 28px; }
+  /* Le aree: righe da 30, e Ruoli e Bonus/Malus col valore allineato a destra come i numeri delle altre */
+  .band:not(.collapsed) .grade-badge button.grade-area { min-height: 30px; }
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-roles, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm { grid-template-columns: minmax(0, 1fr) auto 10px; }
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b { grid-column: 2; text-align: right; }
+}
+/* La matita del soprannome staccata dal nome (il corsivo sporge a destra) */
+.editor-title .nickname { column-gap: var(--sp-4); }
+
+/* ── Telefono, direzione A (2026-11-19): riepilogo da gioco ─────────────────────────────────────────────── */
+/* Sul computer la testata da gioco dell'editor non c'è */
+.editor-hero { display: none; }
+@media (max-width: 599px) {
+  /* Voto: una striscia sola. Lettera grande, punteggio e giudizio, e le aree in barrette in colonne (tocco = dettagli) */
+  .band:not(.collapsed) .grade-badge { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 0 var(--sp-6); align-items: center;
+    margin: 0 var(--sp-7); padding: var(--sp-5) var(--sp-6) var(--sp-4); border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .band:not(.collapsed) .grade-badge .grade-head { display: none; }
+  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; font-size: 58px; }
+  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; font-size: 22px; }
+  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 2; align-self: start; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px var(--sp-4); font-size: var(--fs-section); }
+  .band:not(.collapsed) .grade-badge .grade-rules { grid-column: 1 / -1; grid-row: 4; }
+  .band:not(.collapsed) .grade-badge .grade-tools { top: var(--sp-3); right: var(--sp-3); height: auto; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 32px; height: 32px; }
+  /* Le aree sotto: Attacco, Difesa e Velocità con la barretta; Ruoli e Bonus/Malus col solo valore */
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-5); margin: var(--sp-5) 0 0; }
+  .band:not(.collapsed) .grade-badge button.grade-area { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 6px; row-gap: 5px; min-height: 40px; margin: 0; padding: var(--sp-2) var(--sp-2); }
+  .band:not(.collapsed) .grade-badge button.grade-area > span:first-child { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .band:not(.collapsed) .grade-badge button.grade-area > b { grid-column: 2; grid-row: 1; text-align: right; }
+  .band:not(.collapsed) .grade-badge button.grade-area > .meter { grid-column: 1 / -1; grid-row: 2; width: 100%; }
+  .band:not(.collapsed) .grade-badge button.grade-area > svg { display: none; }
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-roles, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto; min-height: 32px; }
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 2; grid-row: 1; }
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b { grid-column: 2; grid-row: 1; }
+
+  /* Testata del team: targa, guida e il menu "…"; le scorciatoie vere restano vive ma fuori vista (le apre il menu) */
+  .team-head { flex-wrap: nowrap; }
+  .team-head .team-guide-slot { order: 0; }
+  .team-head :is(.team-saved, .team-quick) { position: absolute; width: 0; height: 0; margin: 0; overflow: visible; visibility: hidden; }
+  .team-head :is(.team-saved, .team-quick) :is(details[open] > :not(summary), .export-note) { visibility: visible; }
+  .team-more { margin-left: auto; flex: none; }
+  .team-more-button { width: 44px; height: 40px; padding: 0; justify-content: center; border-radius: 8px 2px 8px 2px; background: var(--raised); border: 1px solid var(--line); color: var(--muted); }
+  .team-more-button[aria-expanded='true'] { color: var(--accent-ink); border-color: var(--accent); }
+  .team-more-sheet { display: flex; flex-direction: column; }
+  .team-more-title { margin: 0; padding: 0 var(--sp-7) var(--sp-3); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .team-more-sheet [role='menuitem'] { display: flex; align-items: center; gap: var(--sp-6); height: 52px; padding: 0 var(--sp-7); justify-content: flex-start; border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; font: 600 var(--fs-body)/1 var(--ui); color: var(--text); }
+  .team-more-sheet [role='menuitem'] .icon { width: 20px; height: 20px; color: var(--accent); }
+  .team-more-sheet [role='menuitem'].danger, .team-more-sheet [role='menuitem'].danger .icon { color: var(--bad); }
+
+  /* Le sei carte tutte in vista, griglia 3×2 (niente scorrimento di lato), vuote tratteggiate con "Aggiungi" */
+  .band:not(.collapsed) .slots { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; scroll-snap-type: none; gap: var(--sp-4); }
+  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { height: 128px; }
+
+  /* Editor: la testata è il riepilogo del membro (non resta ferma: le schede scorrono con lei) */
+  .drawer .set-editor .editor-head { position: relative; top: auto; border-bottom: 0; background: none; }
+  .drawer .set-editor .editor-top { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); padding: 0; row-gap: 0; }
+  .set-editor .editor-title { position: relative; min-height: 150px; display: grid; align-content: end; justify-items: start; gap: var(--sp-4); padding: 56px 132px var(--sp-7) var(--sp-7);
+    border-bottom: 3px solid var(--accent-2); overflow: hidden; }
+  .set-editor .editor-title > .types { order: 0; flex-basis: auto; display: flex; gap: var(--sp-3); }
+  .set-editor .editor-title .nickname strong { font-size: 28px; text-shadow: 0 2px 0 #0008; }
+  .set-editor .editor-title .species-tag { position: static; order: -1; }
+  .editor-hero { display: block; position: absolute; inset: 0; z-index: -1;
+    background: radial-gradient(130% 120% at 88% 30%, color-mix(in srgb, var(--t1) 42%, transparent), transparent 62%), var(--stripes), var(--panel); }
+  .editor-hero > .sprite { position: absolute; right: var(--sp-6); bottom: var(--sp-3); width: 112px; height: 112px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0008); }
+  .set-editor .editor-title { isolation: isolate; }
+  /* Shiny, Copia e Chiudi in alto a destra sulla testata; il Set sotto, largo */
+  .set-editor .editor-actions { display: contents; }
+  .set-editor .editor-actions .set-menu { margin: var(--sp-6) var(--sp-7) 0; }
+  .set-editor .editor-actions :is(.member-copy, .editor-close) { position: absolute; top: var(--sp-5); z-index: 2; background: color-mix(in srgb, var(--field) 70%, transparent); }
+  /* I contenitori dei tooltip non fanno da riferimento: i pulsanti si posizionano sulla testata */
+  .set-editor .editor-actions > .hint-wrap { position: static; }
+  .set-editor .editor-actions .editor-close { right: var(--sp-6); }
+  .set-editor .editor-actions .member-copy { right: calc(var(--sp-6) + 52px); }
+  .set-editor .editor-title .shiny-toggle { position: absolute; top: var(--sp-5); left: var(--sp-6); z-index: 2; }
+  .set-editor .editor-title > .hint-wrap, .set-editor .editor-title > span:has(> .shiny-toggle) { position: static; }
+  .set-editor .editor-tera { margin: var(--sp-5) var(--sp-7) 0; }
+  /* Le schede come un selettore a tre */
+  .editor-tabs { margin: var(--sp-6) var(--sp-7) 0; padding: 3px; border: 0; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .editor-tabs [role='tab'] { height: 38px; border-radius: 6px; }
+  .editor-tabs [role='tab'][aria-selected='true'] { background: var(--raised); }
+}
+/* ── Telefono: testata del team più ariosa, pallino delle modifiche sul menu, team compresso (2026-11-19) ── */
+@media (max-width: 599px) {
+  /* Il nome del team salvato non sta sulla targa (resta per i lettori di schermo): la targa dice solo quanti sono */
+  .team-head .plate-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .team-head { gap: var(--sp-6); padding-right: var(--sp-8); }
+  .team-more { margin-left: auto; padding-left: var(--sp-4); }
+  /* Team salvato cambiato e non risalvato: il pallino giallo sul menu "…" (dove c'è Team salvati) e sulla sua voce */
+  .team-more-button { position: relative; }
+  .team-head:has(.plate-dot) .team-more-button::after, .team-head:has(.plate-dot) .team-more-sheet [data-saved]::after {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--ground); }
+  .team-head:has(.plate-dot) .team-more-button::after { position: absolute; top: -3px; right: -3px; }
+  .team-head:has(.plate-dot) .team-more-sheet [data-saved]::after { margin-left: auto; }
+
+  /* Team compresso: le sei carte in fila larghe uguali (solo lo sprite e la striscia del tipo), il voto compatto a destra */
+  .band.collapsed { gap: var(--sp-5); align-items: center; padding: var(--sp-4) var(--sp-7) var(--sp-8); }
+  .band.collapsed > .team { flex: 1 1 0; min-width: 0; }
+  .band.collapsed .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; gap: var(--sp-3); padding: 0; overflow: visible; scroll-snap-type: none; }
+  .band.collapsed .slot > .slot-card, .band.collapsed .slot.empty { height: 48px; min-width: 0; padding: 0; justify-content: center; align-items: center; }
+  .band.collapsed .slot > .slot-card .mini-icon { margin: 0 auto; }
+  .band.collapsed .slot.empty .empty-ring { width: 26px; height: 26px; }
+  .band.collapsed > .grade-badge { flex: none; margin: 0; }
+  .band.collapsed .grade-badge .grade-mini { display: none; }
+  .band.collapsed .grade-badge .grade-pop-toggle { height: 48px; gap: var(--sp-4); padding: 0 var(--sp-4) 0 var(--sp-5); border-radius: 8px 2px 8px 2px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .band.collapsed .grade-badge .letter { font-size: 34px; }
+  .band.collapsed .grade-badge .overall { font-size: var(--fs-section); }
+}
+@media (max-width: 599px) {
+  /* Il voto compresso: lettera e punteggio sulla stessa riga, largo quanto serve */
+  .band.collapsed > .grade-badge { width: auto; min-width: 0; }
+  .band.collapsed .grade-badge .grade-pop-toggle { width: auto; align-items: center; }
+  .band.collapsed .grade-badge .overall { position: static; align-self: center; margin: 0; }
+}
+@media (max-width: 599px) {
+  /* Team compresso col dito: il voto in colonna (lettera sopra, punteggio sotto) lascia alle carte almeno 44 px di larghezza */
+  .band.collapsed { gap: var(--sp-4); }
+  .band.collapsed .slots { gap: var(--sp-2); }
+  .band.collapsed .grade-badge .grade-pop-toggle { flex-direction: column; justify-content: center; gap: 2px; min-width: 56px; padding: 0 var(--sp-4); }
+  .band.collapsed .grade-badge .letter { font-size: 26px; line-height: 0.9; }
+  .band.collapsed .grade-badge .overall { font-size: var(--fs-caption); white-space: nowrap; }
+  .band.collapsed .grade-badge .grade-pop-caret { display: none; }
+  /* La maniglia per comprimere e riaprire il team: più grande, e la zona del tocco alta 44 px */
+  .band { margin-bottom: var(--sp-8); }
+  .band-toggle { width: 88px; height: 24px; border-radius: 0 0 12px 12px; }
+  .band-toggle::after { inset: -12px -12px -8px; }
+  .band-toggle .icon { width: 16px; height: 16px; }
+}
+
+/* ── Tooltip col dito (TouchTips, 2026-11-19): niente tooltip al tocco, si aprono tenendo premuto ──────── */
+/* Col dito i tooltip che si aprono "passando sopra" restano spenti: col tocco comparirebbero e resterebbero lì */
+html.touch-tips :is(.tip, .field)[data-tip]::after { display: none; }
+html.touch-tips .hint-bubble:not(.done) { display: none; }
+html.touch-tips .ftip:not([data-tip-sheet]) { display: none; }
+/* Il punteggiato sotto le parole con la spiegazione resta: dice che tenendo premuto c'è qualcosa da leggere */
+html.touch-tips :is(button, a, [role='tab'], [role='option'], .slot-card, .tip) { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* Lo sfondo scuro dietro il foglio */
+.tip-sheet-shade { position: fixed; inset: 0; z-index: 1100; background: rgb(4 5 9 / 0.62); animation: fade-in 0.15s var(--ease); }
+@keyframes fade-in { from { opacity: 0; } }
+/* Il foglio del tooltip di testo: dal basso, la spiegazione e la × */
+.tip-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1101; display: flex; align-items: flex-start; gap: var(--sp-5);
+  max-height: 70dvh; overflow-y: auto; padding: var(--sp-8) var(--sp-4) max(var(--sp-8), env(safe-area-inset-bottom)) var(--sp-8);
+  border: 1px solid var(--line); border-bottom: 0; border-radius: 14px 14px 0 0; background: var(--ground); box-shadow: 0 -14px 36px rgba(0, 0, 0, 0.55);
+  animation: sheet-up 0.22s var(--ease); }
+.tip-sheet::before { content: ''; position: absolute; top: var(--sp-3); left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--control-line); }
+.tip-sheet p { flex: 1; margin: var(--sp-3) 0 0; white-space: pre-line; font: 400 var(--fs-body)/1.45 var(--ui); color: var(--text); }
+.tip-sheet-close { flex: none; width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; color: var(--muted); }
+.tip-sheet-close .icon { width: 20px; height: 20px; }
+/* Il tooltip ricco diventa il foglio: largo quanto lo schermo, in fondo, sopra lo sfondo scuro; la × sopra di lui a destra */
+html.touch-tips .ftip[data-tip-sheet] { position: fixed !important; left: 0 !important; right: 0; top: auto !important; bottom: 0; z-index: 1101; width: auto !important; max-width: none;
+  max-height: 75dvh; overflow-y: auto; border-radius: 14px 14px 0 0; padding-bottom: max(var(--sp-6), env(safe-area-inset-bottom)); pointer-events: auto; visibility: visible !important; animation: sheet-up 0.22s var(--ease); }
+html.touch-tips .ftip[data-tip-sheet]::before, html.touch-tips .ftip[data-tip-sheet]::after { display: none; }
+.tip-sheet-close.floating { position: fixed; right: var(--sp-5); z-index: 1102; border-radius: 50%; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line), 0 6px 16px rgba(0, 0, 0, 0.5); color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .tip-sheet, .tip-sheet-shade, html.touch-tips .ftip[data-tip-sheet] { animation: none; } }
+
+/* ── Menu del membro col dito (2026-11-19): tenendo premuta una carta del team ──────────────────────── */
+/* Sulla carta niente pulsantini (× e lucchetto): si fa dal menu. Il lucchetto resta come segno se il membro è fissato */
+html.touch-tips .band .slot > .slot-card > .remove { display: none; }
+html.touch-tips .band .slot > .slot-card > .favorite:not([aria-pressed='true']) { display: none; }
+html.touch-tips .band .slot > .slot-card > .favorite[aria-pressed='true'] { pointer-events: none; }
+html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.member-menu { display: flex; flex-direction: column; color: var(--text); }
+/* Fuori dal foglio (tablet): un menu accanto alla carta, coi colori dei menu */
+.member-menu:not([data-sheet]) { position: fixed; inset: auto; margin: 0; padding: var(--sp-2) 0; border: 1px solid var(--line); border-radius: 6px; background: var(--ground); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); }
+.member-menu-head { display: flex; align-items: center; gap: var(--sp-5); margin: 0; padding: 0 var(--sp-7) var(--sp-3); }
+.member-menu-head .sprite { width: 48px; height: 48px; image-rendering: pixelated; }
+.member-menu-head strong { font: italic 800 var(--fs-heading)/1 var(--display); }
+.member-menu [role='menuitem'] { display: flex; align-items: center; gap: var(--sp-6); min-height: 52px; padding: var(--sp-3) var(--sp-7); justify-content: flex-start; text-align: left;
+  border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; font: 600 var(--fs-body)/1.2 var(--ui); color: var(--text); }
+.member-menu [role='menuitem'] > span { display: grid; gap: 2px; }
+.member-menu [role='menuitem'] small { font: 400 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
+.member-menu [role='menuitem'] .icon { flex: none; width: 20px; height: 20px; color: var(--accent); }
+.member-menu [role='menuitem']:disabled { opacity: 0.4; }
+.member-menu [role='menuitem'].danger, .member-menu [role='menuitem'].danger .icon { color: var(--bad); }
+
+/* ── Editor sul telefono: testata ferma che si stringe scorrendo, pulsanti tondi (2026-11-19) ───────────── */
+@media (max-width: 599px) {
+  /* La testata (riepilogo, Set e schede) resta ferma in alto mentre la scheda scorre */
+  .drawer .set-editor .editor-head { position: sticky; top: -12px; z-index: 6; background: var(--ground); box-shadow: 0 1px 0 var(--line-soft); }
+  .set-editor .editor-tabs { margin-bottom: var(--sp-5); }
+  /* × a sinistra (chiude), shiny e copia insieme a destra: cerchi uguali da 40, semitrasparenti sul colore del tipo */
+  .set-editor :is(.editor-actions .member-copy, .editor-actions .editor-close, .editor-title .shiny-toggle) {
+    position: absolute; z-index: 3; top: var(--sp-5); width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%;
+    border: 1px solid color-mix(in srgb, #fff 18%, transparent); background: color-mix(in srgb, var(--ground) 55%, transparent);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+  .set-editor .editor-actions .editor-close { left: var(--sp-6); right: auto; }
+  .set-editor .editor-title .shiny-toggle { left: auto; right: calc(var(--sp-6) + 48px); }
+  .set-editor .editor-actions .member-copy { right: var(--sp-6); }
+  .set-editor .editor-title .shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+  .set-editor :is(.member-copy, .editor-close, .shiny-toggle) .icon { width: 18px; height: 18px; }
+  .set-editor .editor-title { transition: min-height 0.2s var(--ease), padding 0.2s var(--ease); }
+  .set-editor .editor-title .nickname strong { transition: font-size 0.2s var(--ease); }
+  .editor-hero > .sprite { transition: all 0.2s var(--ease); }
+
+}
+@media (max-width: 599px) and (prefers-reduced-motion: reduce) {
+  .set-editor .editor-title, .set-editor .editor-title .nickname strong, .editor-hero > .sprite { transition: none; }
+}
+
+/* ── Testata dell'editor sul telefono, giro 3 (2026-11-19): × e shiny senza cerchi, Copia nel menu Set ────── */
+/* Copia nel menu Set solo sul telefono (sul computer resta il pulsante accanto al Set) */
+.set-menu-copy { display: none; }
+@media (max-width: 599px) {
+  .set-menu-pop .set-menu-copy { display: inline-flex; }
+  .set-menu-copy.done { color: var(--good); }
+  .set-editor .editor-actions .hint-wrap:has(> .member-copy) { display: none; }
+  /* × in alto a destra e shiny in basso a sinistra dello sprite: senza cerchio né fondo, solo un alone scuro leggero
+     che li stacca dal colore del tipo; la zona del tocco resta 44 px */
+  .set-editor :is(.editor-actions .editor-close, .editor-title .shiny-toggle) {
+    width: 44px; height: 44px; border: 0; border-radius: 50%; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+    background: radial-gradient(closest-side, rgb(5 6 10 / 0.38), transparent); color: var(--text); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6)); }
+  .set-editor .editor-actions .editor-close { top: var(--sp-3); right: var(--sp-3); left: auto; }
+  .set-editor .editor-title .shiny-toggle { top: auto; bottom: var(--sp-3); right: calc(var(--sp-6) + 92px); left: auto; }
+  .set-editor .editor-title .shiny-toggle[aria-pressed='true'] { color: var(--warn); background: radial-gradient(closest-side, color-mix(in srgb, var(--warn) 22%, transparent), transparent); }
+  .set-editor :is(.editor-close, .shiny-toggle) .icon { width: 20px; height: 20px; }
+  /* Il riepilogo senza la fila dei pulsanti in alto: il nome sale un po' */
+  .set-editor .editor-title { padding-top: 44px; min-height: 150px; }
+  /* Un nome lungo va a capo (Urshifu-Rapid- / Strike) invece di tagliarsi */
+  .set-editor .editor-title .nickname strong { white-space: normal; line-height: 1.05; text-align: left; }
+}
+/* Telefono: niente piede dell'editor (Ruoli e Sostituisci). Sostituisci sta nel menu del membro (tenendo premuta la carta) */
+@media (max-width: 599px) {
+  .set-editor .editor-foot { display: none; }
+}
+
+/* ── Barra delle sezioni in basso, rifatta (2026-11-19) ─────────────────────────────────────────────────── */
+/* Come le barre dei telefoni: icona sopra e nome sotto, larghe uguali; la sezione aperta ha l'icona in una capsula
+   magenta ("sei qui") e il nome bianco, senza linguetta inclinata (stretta e tagliata non si leggeva). La riga di
+   stato solo dove ci sta (tablet); il numero degli avvisi è un distintivo sull'icona */
+@media (max-width: 1099px) {
+  .rail-sections { padding: 0 max(var(--sp-2), env(safe-area-inset-right)) var(--safe-b) max(var(--sp-2), env(safe-area-inset-left)); background: var(--band); box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.4); }
+  .tabs.vertical { gap: 0; }
+  .tabs.vertical [role='tab'], .tabs.vertical [role='tab'][aria-selected='true'] {
+    position: relative; width: auto; height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    padding: var(--sp-2) var(--sp-1); margin: 0; clip-path: none; background: none; color: var(--muted); }
+  .tabs.vertical .tab-icon, .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon, .tabs.vertical [role='tab']:hover:not([aria-selected='true']) .tab-icon {
+    position: relative; display: grid; place-items: center; width: 56px; height: 30px; border-radius: 15px; background: none; color: var(--muted);
+    transition: background 0.2s var(--ease), color 0.2s var(--ease); }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon { background: var(--accent-2); color: var(--on-accent-2); }
+  .tabs.vertical .tab-icon .icon { width: 20px; height: 20px; }
+  .tabs.vertical .tab-text { width: 100%; justify-items: center; gap: 1px; }
+  .tabs.vertical .tab-name { font: 700 var(--fs-caption)/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: inherit; }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-name { color: var(--text); }
+  .tabs.vertical .tab-status { max-width: 100%; font-size: var(--fs-label); }
+  /* Riga di stato della sezione aperta: grigia come le altre, il voto e gli avvisi nei loro colori */
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-status { color: var(--muted); }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-status * { color: inherit; }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .grade { color: var(--good); }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-status :is(.grade-C, .warn) { color: var(--warn); }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-status :is(.grade-D, .serious) { color: var(--bad); }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-status :is(.minor, .info) { color: var(--text); }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .grade.illegal { color: var(--faint); }
+  .tabs.vertical [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; border-radius: 8px; }
+  /* Il numero degli avvisi: un distintivo in alto a destra dell'icona */
+  .tabs.vertical .tab-count, .tabs.vertical [role='tab'][aria-selected='true'] .tab-count { position: absolute; top: 4px; left: calc(50% + 12px); right: auto; margin: 0; min-width: 18px; padding: 2px 5px; border-radius: 9px; font-size: var(--fs-label); text-align: center; box-shadow: 0 0 0 2px var(--band); }
+}
+@media (max-width: 599px) {
+  /* Sul telefono la riga di stato non ci sta: solo icona e nome */
+  .tabs.vertical .tab-status { display: none; }
+}
+@media (max-width: 1099px) and (prefers-reduced-motion: reduce) { .tabs.vertical .tab-icon { transition: none; } }
+/* Telefono: Completa team dritto, con gli angoli alterni come il menu "…" accanto (la targa del team resta inclinata);
+   fondo ciano scuro e bordo ciano tenue: è l'azione principale della riga */
+@media (max-width: 599px) {
+  .band .team-head .team-guide-slot .team-guide { height: 40px; padding: 0 var(--sp-8); color: var(--text); }
+  .band .team-head .team-guide-slot .team-guide::before { inset: 0; transform: none; border-radius: 8px 2px 8px 2px;
+    background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, var(--line)); }
+  .band .team-head .team-guide-slot .team-guide:hover::before, .band .team-head .team-guide-slot .team-guide[aria-expanded='true']::before { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .band .team-head .team-guide-slot .team-guide:focus-visible { outline-offset: 2px; border-radius: 8px 2px 8px 2px; }
+}
+
+/* ── Completa team e "Come funziona il voto" sul telefono (2026-11-19) ──────────────────────────────────── */
+/* La × e il titolo di Completa team solo sul telefono (altrove si chiude col suo pulsante, fuori o con Esc) */
+.fill-title, .fill-close { display: none; }
+@media (max-width: 599px) {
+  /* A tutto schermo; in testa titolo, voto di adesso e ×; sotto le due schede, metà e metà */
+  .fill-panel { top: 0; height: 100dvh; max-height: 100dvh; border-radius: 0; padding-top: 0; }
+  .fill-top { position: sticky; top: 0; z-index: 3; flex-wrap: wrap; row-gap: 0; column-gap: var(--sp-4); padding: var(--sp-3) var(--sp-3) 0 var(--sp-7); background: var(--panel); }
+  .fill-title { display: block; order: 0; flex: 1; margin: 0; font: italic 800 var(--fs-heading)/1 var(--display); }
+  .fill-now { order: 1; margin: 0; }
+  .fill-close { display: inline-flex; order: 2; width: 44px; height: 44px; padding: 0; justify-content: center; border: 0; background: none; color: var(--muted); }
+  .fill-close .icon { width: 20px; height: 20px; }
+  .fill-tabs { order: 3; flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; margin: var(--sp-2) 0 0 calc(-1 * var(--sp-4)); }
+  .fill-tab { justify-content: center; align-items: center; padding: var(--sp-5) var(--sp-3) var(--sp-4); white-space: nowrap; font-size: var(--fs-section); }
+  /* I tipi di team vanno a capo (prima uscivano dallo schermo a destra) */
+  .fill-types { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; gap: var(--sp-3); }
+  .fill-types .fill-option { max-width: none; }
+  /* Usa col dito */
+  .fill-panel .fill-add { min-height: 44px; min-width: 64px; }
+
+  /* Come funziona il voto: la tabella dei pesi diventa una scheda per tipo di team, le aree in colonna col loro nome */
+  .help-table-wrap { overflow: visible; }
+  .help-weights, .help-weights tbody, .help-weights tr, .help-weights th, .help-weights td { display: block; }
+  .help-weights thead { display: none; }
+  .help-weights tbody { display: grid; gap: var(--sp-4); }
+  .help-weights tr { padding: var(--sp-4) var(--sp-5); border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel); }
+  .help-weights tr.current { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .help-weights th[scope='row'] { padding: 0 0 var(--sp-3); border: 0; font: 700 var(--fs-section)/1.2 var(--display); color: var(--text); }
+  .help-weights td { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: var(--sp-4); padding: 3px 0; border: 0; }
+  .help-weights td::before { content: attr(data-label); font-size: var(--fs-caption); color: var(--muted); }
+  .help-weights .help-wbar { min-width: 0; }
+}
+
+/* ── Completa team: impostazioni nel foglio; Come funziona il voto: prima il tuo team (telefono, 2026-11-19) ── */
+.fill-settings { display: contents; }
+@media (max-width: 599px) {
+  /* Le impostazioni fuori dalla pagina finché non si apre il foglio; sopra le proposte il loro riassunto */
+  .fill-settings:not([data-sheet]) { display: none; }
+  .fill-settings[data-sheet] { display: grid; align-content: start; gap: var(--sp-6); padding: 0 var(--sp-7) max(var(--sp-8), env(safe-area-inset-bottom)); }
+  .fill-settings-head { display: flex; align-items: center; justify-content: space-between; margin-right: calc(-1 * var(--sp-4)); }
+  .fill-settings-head strong { font: italic 800 var(--fs-heading)/1 var(--display); }
+  .fill-settings-head .fill-close { display: inline-flex; order: 0; }
+  .fill-settings .fill-side { display: grid; gap: var(--sp-6); }
+  /* Nel foglio i blocchi non tengono il posto che hanno nella griglia del computer: uno sotto l'altro */
+  .fill-settings[data-sheet] > :is(.fill-mine, .fill-side) { grid-area: auto; }
+  .fill-settings .fill-mine { padding-bottom: var(--sp-5); }
+  .fill-summary { display: flex; align-items: center; gap: var(--sp-5); margin: 0 0 var(--sp-5); }
+  .fill-summary-text { flex: 1; min-width: 0; font: 500 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
+  .fill-settings-button { flex: none; height: 40px; gap: var(--sp-3); padding: 0 var(--sp-6); border-radius: 20px; background: var(--panel); border: 1px solid var(--line); color: var(--text); font: 600 var(--fs-section)/1 var(--ui); }
+  .fill-settings-button .icon { width: 16px; height: 16px; color: var(--accent); }
+  .fill-settings-button[aria-expanded='true'] { border-color: var(--accent); }
+
+  /* Come funziona il voto: in cima il tuo team, poi la lista che apre le pagine (con Indietro) */
+  .help-phone { display: block; overflow-y: auto; padding: var(--sp-5) var(--sp-6) var(--sp-8); }
+  .help-phone .help-panel { padding: 0; overflow: visible; }
+  .help-phone .help-yours { padding: var(--sp-6); border-radius: 8px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+    background: radial-gradient(120% 120% at 100% 0, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%), var(--panel); }
+  .help-phone .help-yours-k { margin: 0 0 var(--sp-2); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
+  .help-phone .help-yours h4 { margin-top: 0; }
+  .help-list { display: grid; margin-top: var(--sp-6); border-radius: 6px; border: 1px solid var(--line-soft); background: var(--panel); overflow: hidden; }
+  .help-list button { display: flex; align-items: center; gap: var(--sp-5); min-height: 56px; padding: var(--sp-4) var(--sp-6); justify-content: space-between; text-align: left;
+    border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; color: var(--text); font: 600 var(--fs-body)/1.2 var(--ui); }
+  .help-list button:first-child { border-top: 0; }
+  .help-list button > span { display: grid; gap: 2px; }
+  .help-list small { font: 400 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
+  .help-list .icon { flex: none; width: 16px; height: 16px; color: var(--faint); }
+  .help-back { display: inline-flex; align-items: center; gap: var(--sp-2); height: 40px; margin: 0 0 var(--sp-3) calc(-1 * var(--sp-3)); padding: 0 var(--sp-3); border: 0; background: none; color: var(--accent-ink); font: 600 var(--fs-section)/1 var(--ui); }
+  .help-back .icon { width: 16px; height: 16px; }
+}
+
+/* ── Finestre: la pagina sotto ferma; guida del voto sul telefono, giro 2 (2026-11-19) ───────────────────── */
+html.modal-open { overflow: hidden; }
+/* Col dito: dove la finestra non scorre (testata, Eevee, sfondo) il trascinamento non arriva alla pagina sotto;
+   le parti che scorrono scorrono e si fermano ai bordi senza passare la spinta alla pagina */
+.help-backdrop { overscroll-behavior: contain; touch-action: none; }
+.help-backdrop :is(.help-body, .help-panel, .help-nav, .help-phone, .help-frame, .help-dialog) { touch-action: pan-y; overscroll-behavior: contain; }
+@media (max-width: 599px) {
+  .help-list-title { margin: var(--sp-8) 0 var(--sp-4); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .help-phone .help-list { margin-top: 0; gap: var(--sp-3); border: 0; background: none; overflow: visible; }
+  .help-phone .help-list button { border: 1px solid var(--line-soft); border-radius: 6px; background: var(--panel); }
+  .help-phone .help-list button:first-child { border-top: 1px solid var(--line-soft); }
+  .help-phone .help-list button.yours { border-color: color-mix(in srgb, var(--accent) 70%, var(--line)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+    background: radial-gradient(120% 140% at 100% 0, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%), var(--panel); }
+  .help-phone .help-list .help-yours-tag { margin-left: var(--sp-4); font: 700 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-ink); }
+  .help-phone .help-general h4 { margin-top: 0; }
+}
+/* Il nome del tipo e "il tuo team" sulla stessa riga */
+.help-list-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--sp-4); }
+.help-phone .help-list .help-yours-tag { margin-left: 0; }
+/* Col dito niente riquadro azzurro del tocco del browser (Eevee, carte, pulsanti): gli stati li disegna l'app */
+html { -webkit-tap-highlight-color: transparent; }
+.peek-head, .peek-head *, .eevee-peek, .eevee-peek * { outline: none; }
+@media (max-width: 599px) {
+  /* Pesi delle aree in una riga sola: tre colonne strette, solo nome e barra */
+  .help-weights-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+  .help-weights-row > div { min-width: 0; gap: var(--sp-3); padding: var(--sp-4) var(--sp-4) var(--sp-5); }
+  .help-weights-row .help-wbar { min-width: 0; width: 100%; }
+  .help-weights-row .help-inactive-note { font-size: var(--fs-label); }
+}
+
+/* ── Guida: Indietro accanto al titolo; Completa team: lucchetti in fila e carte più semplici (telefono) ──── */
+@media (max-width: 599px) {
+  .help-page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); margin-bottom: var(--sp-3); }
+  .help-page-head h4 { margin: 0; }
+  .help-page-head .help-back { margin: 0 calc(-1 * var(--sp-3)) 0 0; flex: none; }
+  /* I tuoi Pokémon: solo l'icona e il lucchetto, tutti in una fila (sei ci stanno anche a 360) */
+  .fill-settings .fill-mine-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .fill-settings .fill-keep { min-height: 44px; justify-content: center; gap: var(--sp-1); padding: 0 var(--sp-2); }
+  .fill-settings .fill-keep-name { display: none; }
+  /* La carta della proposta: i sei Pokémon, poi a sinistra il tipo di team e a destra voto e Usa (niente riga dei
+     guadagni: il voto li riassume) */
+  .fill-row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; align-items: center; }
+  .fill-about { justify-items: start; }
+  .fill-proposal .fill-why { display: none; }
+  .fill-result { justify-items: end; text-align: right; }
+}
+
+/* ── Telefono: guida più alta, lucchetto in alto a destra, editor senza striscia, team proposti a colori (2026-11-20) ── */
+@media (max-width: 599px) {
+  /* Come funziona il voto: la finestra sale fin dove lo spazio sopra Eevee lo permette */
+  .help-backdrop { padding: var(--sp-3) var(--sp-3) var(--sp-4); }
+  .help-frame.with-peek { --peek: 120px; }
+  .help-dialog.rating-help, .help-frame.with-peek > .help-dialog.rating-help {
+    height: calc(100dvh - var(--peek-room) - 20px); max-height: calc(100dvh - var(--peek-room) - 20px); }
+  /* Il lucchetto di un membro fissato, in alto a destra sulla carta */
+  html.touch-tips .band:not(.collapsed) .slot > .slot-card > .favorite[aria-pressed='true'] { top: 2px; right: 2px; width: 30px; height: 30px; }
+  /* L'editor: niente striscia azzurra in alto (c'è già il filo magenta sotto la testata) */
+  .drawer { border-top: 0; }
+  /* Completa team, i team proposti: i Pokémon nuovi in caselle nel colore del loro tipo con la striscia dei tipi sotto
+     (come le carte del team), i tuoi su un fondo quieto; lo sprite più grande; il voto grande nel suo colore */
+  .fill-proposal { padding: var(--sp-5); border-radius: 6px; background: var(--panel); border: 1px solid var(--line-soft); }
+  .fill-proposal .fill-mons { gap: var(--sp-2); }
+  .fill-proposal .fill-mon { position: relative; height: 62px; padding: 0; align-content: center; overflow: hidden; border-radius: 4px;
+    background: linear-gradient(165deg, color-mix(in srgb, var(--t1) 22%, var(--field)), var(--field) 80%); }
+  .fill-proposal .fill-mon.is-new { background: linear-gradient(165deg, color-mix(in srgb, var(--t1) 48%, var(--panel)), color-mix(in srgb, var(--t1) 14%, var(--panel)) 75%); }
+  .fill-proposal .fill-mon.is-new::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); }
+  .fill-proposal .fill-mon-sprite { height: 56px; }
+  .fill-proposal .fill-mon .sprite { width: 56px; height: 56px; }
+  .fill-proposal .fill-grade strong { font-size: 28px; }
+  .fill-proposal .fill-grade.grade-S strong { color: var(--accent-2-ink); }
+  .fill-proposal .fill-grade.grade-A strong { color: var(--good); }
+  .fill-proposal .fill-grade.grade-B strong { color: var(--accent-ink); }
+  .fill-proposal .fill-grade.grade-C strong { color: var(--warn); }
+  .fill-proposal .fill-grade.grade-D strong { color: var(--bad); }
+  .fill-proposal .fill-grade { font-size: var(--fs-section); color: var(--text); }
+  .fill-proposal .fill-kind { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-caption); }
+}
+
+/* ── Completa team sul telefono, carte "Masters" asciutte (2026-11-20) ──────────────────────────────────── */
+/* Il colore di ogni tipo di team (anche nella sua etichetta) */
+.fill-proposal { --k: var(--accent); }
+.fill-proposal.arch-hyperOffense { --k: #ff7a4d; }
+.fill-proposal.arch-bulkyOffense { --k: #ffb04d; }
+.fill-proposal.arch-balance { --k: var(--accent); }
+.fill-proposal.arch-semiStall { --k: var(--good); }
+.fill-proposal.arch-stall { --k: var(--room); }
+.fill-think { display: none; }
+@media (max-width: 599px) {
+  /* Una carta per proposta: fondo nel colore del suo tipo di team con le righe; in alto tipo, voto e Usa su una riga,
+     sotto i sei Pokémon in fila sul fondo della carta (i nuovi con una tacca ciano); la prima col bordo magenta */
+  .fill-proposal { position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'kind result action' 'mons mons mons' 'gaps gaps gaps'; row-gap: var(--sp-3); align-items: center;
+    padding: var(--sp-4) var(--sp-5) var(--sp-3); border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--line-soft); background: var(--panel);
+    /* Il filo del tipo di team in cima: una striscia dentro la carta (un bordo spesso si piegherebbe sugli angoli tondi) */
+    box-shadow: inset 0 3px 0 var(--k); }
+  .fill-proposal.is-best { border: 1px solid color-mix(in srgb, var(--accent-2) 70%, var(--line)); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4); }
+  .fill-proposal .fill-about { align-self: center; justify-self: start; justify-items: start; text-align: left; }
+  .fill-proposal .fill-kind { padding: 0; background: none; font: italic 800 var(--fs-heading)/1.1 var(--display); white-space: normal; color: var(--text); }
+  .fill-proposal .fill-result { grid-area: result; display: flex; align-items: baseline; gap: var(--sp-2); }
+  .fill-proposal .fill-grade { font: 600 var(--fs-section)/1 var(--ui); }
+  .fill-proposal .fill-grade strong { font-size: 30px; margin-right: 2px; }
+  .fill-proposal .fill-delta { font: 700 var(--fs-caption)/1 var(--ui); }
+  /* Usa: più piccolo e centrato; quello della migliore col solo contorno magenta (non pieno) */
+  .fill-proposal .fill-add { min-height: 34px; min-width: 64px; height: 34px; padding: 0 var(--sp-6); justify-content: center; text-align: center;
+    border-radius: 8px 2px 8px 2px; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; }
+  .fill-proposal .fill-add.primary { background: color-mix(in srgb, var(--accent-2) 10%, transparent); border: 1.5px solid var(--accent-2); color: var(--accent-2-ink); box-shadow: none; }
+  .fill-proposal .fill-add.primary:hover { background: color-mix(in srgb, var(--accent-2) 20%, transparent); }
+  /* I Pokémon sul fondo della carta, senza caselle; il nuovo con la tacca ciano sotto */
+  .fill-proposal .fill-mons { gap: 0; }
+  .fill-proposal .fill-mon, .fill-proposal .fill-mon.is-new { height: auto; padding: 0 0 var(--sp-2); background: none; border-radius: 0; overflow: visible; }
+  .fill-proposal .fill-mon::after, .fill-proposal .fill-mon.is-new::after { display: none; }
+  .fill-proposal .fill-mon.is-new::before { content: ''; position: absolute; left: 22%; right: 22%; bottom: 0; height: 3px; border-radius: 2px; background: var(--accent); }
+  .fill-proposal .fill-mon-sprite { height: 58px; }
+  .fill-proposal .fill-mon .sprite { width: 58px; height: 58px; filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.5)); }
+  /* Niente righe grigie da riempire: mentre calcola una riga sola con Eevee che ci pensa */
+  .fill-row.fill-skeleton, .fill-row.fill-placeholder { display: none; }
+  .fill-think { display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-5); border: 1px dashed var(--line); border-radius: 6px; color: var(--muted); font: 500 var(--fs-small)/1.3 var(--ui); }
+  .fill-think .eevee-moment { position: static; width: 56px; height: auto; margin: 0; animation: none; }
+}
+
+/* La carta del set tenuta premuta: lo sprite può uscire dal foglio, in alto (la carta non è alta: niente scorrimento) */
+html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: none; }
+
+/* Completa team, carte: i Pokémon su una fascia scura e uniforme (si staccano bene), il tipo di team scritto nel suo colore */
+@media (max-width: 599px) {
+  .fill-proposal .fill-mons { padding: var(--sp-2) var(--sp-2) 0; border-radius: 4px; background: var(--field); }
+  .fill-proposal .fill-kind { color: color-mix(in srgb, var(--k) 70%, var(--text)); }
+  .fill-proposal.is-best { box-shadow: inset 0 3px 0 var(--k), 0 10px 26px rgba(0, 0, 0, 0.4); }
+  .fill-proposal .fill-mon { cursor: pointer; }
+}
+
+/* ── Telefono: il team si riduce da solo scorrendo e resta fermo sotto la barra in alto (2026-11-20) ─────── */
+@media (max-width: 599px) {
+  .band.auto.collapsed { position: sticky; top: var(--top-h); z-index: 30; box-shadow: 0 6px 16px rgb(0 0 0 / 0.35); animation: band-drop 0.2s ease-out; }
+  .band.auto.collapsed:has(details[open], .slot.open, .fill-panel) { z-index: 50; }
+}
+@keyframes band-drop { from { transform: translateY(-100%); } }
+/* Tornando grande il team compare con una dissolvenza (la pagina non si muove, cambia solo lui); niente ancoraggio
+   automatico dello scorrimento: la pagina la sposta useAutoCollapse, di quanto il team è cambiato */
+@media (max-width: 599px) {
+  html { overflow-anchor: none; }
+  .band.auto:not(.collapsed) > :is(.team, .grade-badge) { animation: band-show 0.24s ease-out; }
+}
+@keyframes band-show { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .band.auto.collapsed, .band.auto:not(.collapsed) > :is(.team, .grade-badge) { animation: none; } }

@@ -1,6 +1,8 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { toID } from '../engine/dex';
-import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { useMediaQuery } from './useMediaQuery';
+import { Icon } from './icons';
 import { useT } from '../i18n/react';
 
 export interface ComboOption {
@@ -87,6 +89,11 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const [query, setQuery] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
+  // Telefono: il menu è un foglio dal basso (titolo, ✕, ricerca, voci grandi); il campo si tocca soltanto
+  const sheetScreen = useMediaQuery(SHEET_QUERY);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  // Il menu attaccato al campo (il rombo della Natura) solo sul computer: sul telefono è un foglio come gli altri
+  const joined = menuJoined !== undefined && !sheetScreen;
   const inputRef = useRef<HTMLInputElement>(null);
   // Campi in cui non si scrive (Natura, Tera): le lettere digitate di fila saltano alla prima voce che inizia così
   const typeahead = useRef({ text: '', at: 0 });
@@ -97,10 +104,14 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const setRoot = (node: HTMLDivElement | null) => { anchorRef.current = node ? node.closest<HTMLElement>('[data-pop-anchor]') ?? node : null; };
   // Da che lato si apre il menu: aperto sopra il campo, le voci più vicine al campo sono quelle in fondo
   const [side, setSide] = useState<'below' | 'above'>('below');
-  const up = side === 'above';
-  useAnchoredPop(anchorRef, listRef, open, {
+  const up = side === 'above' && !sheetScreen;
+  /** Chiude il foglio (✕, sfondo, Esc): salva quello che hai scritto e il fuoco torna al campo. */
+  const closeSheet = () => { commit(); setOpen(false); setQuery(null); inputRef.current?.focus({ preventScroll: true }); };
+  useAnchoredPop(anchorRef, sheetScreen ? sheetRef : listRef, open, {
     minWidth: menuMinWidth,
-    ...(menuJoined !== undefined ? { gap: 0, bleed: menuJoined, overlap: 0.5 } : {}),
+    sheet: true,
+    onDismiss: () => closeSheet(),
+    ...(joined ? { gap: 0, bleed: menuJoined, overlap: 0.5 } : {}),
     onSide: next => {
       setSide(next);
       // La voce scelta resta quella attiva anche se l'ordine si capovolge
@@ -115,8 +126,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   // Le più usate vicino al campo, anche mentre cerchi: in cima se il menu si apre sotto, in fondo se si apre sopra
   // (tutte le altre restano in ordine alfabetico)
   // Menu attaccato al campo: la voce scelta è il campo stesso (l'ultima voce, o la prima), non si ripete nella lista
-  const joined = menuJoined !== undefined;
-  const listed = useMemo(() => (menuJoined !== undefined ? options.filter(o => o.value !== value) : options), [options, menuJoined, value]);
+  const listed = useMemo(() => (joined ? options.filter(o => o.value !== value) : options), [options, joined, value]);
   const common = useMemo(() => listed.filter(o => o.common), [listed]);
   const others = useMemo(() => listed.filter(o => !o.common), [listed]);
   const byside = (which: 'below' | 'above') => (which === 'above' ? [...others, ...common] : [...common, ...others]);
@@ -217,6 +227,51 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     reveal(next);
   };
 
+  /** Tasti del campo (e della ricerca nel foglio del telefono): lettere, frecce, Invio, Esc. */
+  const onKeys = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!typing && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key !== ' ' || typeahead.current.text)) {
+      const now = Date.now();
+      const text = (now - typeahead.current.at < 800 ? typeahead.current.text : '') + e.key;
+      typeahead.current = { text, at: now };
+      const q = searchID(text);
+      const index = q ? ordered.findIndex(o => !o.disabled && [o.label ?? o.value, o.alias ?? ''].some(n => searchID(n).startsWith(q))) : -1;
+      if (index < 0 || index >= MAX_SHOWN) return;
+      e.preventDefault();
+      setActive(index);
+      // Chiuso: si apre e la lista parte da quella voce (vedi onSide); aperto: la si porta in vista
+      if (!open) { jumpTo.current = ordered[index].value; setOpen(true); setQuery(null); }
+      else requestAnimationFrame(() => reveal(index, true));
+    }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter' && open && shown[active]) { e.preventDefault(); pick(shown[active]); }
+    // Invio senza voci da scegliere: si salva il testo libero
+    else if (e.key === 'Enter' && query !== null) { e.preventDefault(); commit(); setOpen(false); setQuery(null); }
+    // Esc butta la bozza: torna il valore di prima (scrivere di nuovo lo sostituisce)
+    else if (e.key === 'Escape' && (open || query !== null)) {
+      e.stopPropagation(); if (sheetScreen) { closeSheet(); return; } setOpen(false); setQuery(null);
+      const input = e.currentTarget;
+      if (typing) requestAnimationFrame(() => input.setSelectionRange(input.value.length, input.value.length));
+    }
+  };
+
+  /** Sul telefono la lista sta in un foglio dal basso: il nome del campo, ✕, la ricerca (se si può scrivere) e la lista. */
+  const wrap = (list: ReactNode) => (!sheetScreen ? list : (
+    <div className="combo-sheet" ref={sheetRef} popover={supportsPopover ? 'manual' : undefined} role="dialog" aria-label={label}>
+      <div className="combo-sheet-head">
+        <strong>{label}</strong>
+        <button type="button" className="combo-sheet-close" aria-label={t('combobox.close')} onClick={closeSheet}><Icon name="close" /></button>
+      </div>
+      {typing && (
+        <input className="combo-sheet-search" type="search" enterKeyHint="done" spellCheck={false} autoComplete="off"
+          aria-label={t('combobox.search', { label })} placeholder={t('combobox.search', { label })} aria-controls={listId}
+          aria-activedescendant={shown[active] ? `${listId}-${active}` : undefined}
+          value={query ?? ''} onChange={e => setQuery(e.target.value)} onKeyDown={onKeys} />
+      )}
+      {list}
+    </div>
+  ));
+
   /** Clic sulla freccia o sulla coda: il fuoco va al campo (senza perderlo) e il menu si apre o si chiude. */
   const toggleFromArrow = (e: MouseEvent) => {
     if (disabled) return;
@@ -245,7 +300,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         spellCheck={false}
         autoComplete="off"
         aria-activedescendant={open && shown[active] ? `${listId}-${active}` : undefined}
-        readOnly={!typing}
+        readOnly={!typing || sheetScreen}
         disabled={disabled}
         placeholder={placeholder}
         // Mentre scrivi si vede il testo digitato; l'etichetta del valore torna quando esci dal campo
@@ -257,9 +312,9 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           const input = e.currentTarget;
           input.setSelectionRange(input.value.length, input.value.length);
         }}
-        onClick={() => (open ? setOpen(false) : show())}
+        onClick={() => (open ? (sheetScreen ? undefined : setOpen(false)) : show())}
         // Uscendo dal campo si salva quello che hai scritto (se hai scritto qualcosa)
-        onBlur={() => { commit(); setOpen(false); setQuery(null); }}
+        onBlur={() => { if (sheetScreen) return; commit(); setOpen(false); setQuery(null); }}
         onChange={e => {
           // Mentre scrivi è solo una bozza: il set cambia con Invio, con una voce scelta o uscendo dal campo.
           // Il primo tasto sostituisce il valore mostrato (non si aggiunge in coda); cancellare lo svuota
@@ -270,35 +325,10 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           } else setQuery(next);
           setOpen(true);
         }}
-        onKeyDown={e => {
-          if (!typing && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key !== ' ' || typeahead.current.text)) {
-            const now = Date.now();
-            const text = (now - typeahead.current.at < 800 ? typeahead.current.text : '') + e.key;
-            typeahead.current = { text, at: now };
-            const q = searchID(text);
-            const index = q ? ordered.findIndex(o => !o.disabled && [o.label ?? o.value, o.alias ?? ''].some(n => searchID(n).startsWith(q))) : -1;
-            if (index < 0 || index >= MAX_SHOWN) return;
-            e.preventDefault();
-            setActive(index);
-            // Chiuso: si apre e la lista parte da quella voce (vedi onSide); aperto: la si porta in vista
-            if (!open) { jumpTo.current = ordered[index].value; setOpen(true); setQuery(null); }
-            else requestAnimationFrame(() => reveal(index, true));
-          }
-          else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
-          else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
-          else if (e.key === 'Enter' && open && shown[active]) { e.preventDefault(); pick(shown[active]); }
-          // Invio senza voci da scegliere: si salva il testo libero
-          else if (e.key === 'Enter' && query !== null) { e.preventDefault(); commit(); setOpen(false); setQuery(null); }
-          // Esc butta la bozza: torna il valore di prima (scrivere di nuovo lo sostituisce)
-          else if (e.key === 'Escape' && (open || query !== null)) {
-            e.stopPropagation(); setOpen(false); setQuery(null);
-            const input = e.currentTarget;
-            if (typing) requestAnimationFrame(() => input.setSelectionRange(input.value.length, input.value.length));
-          }
-        }}
+        onKeyDown={onKeys}
       />
-      {open && (
-        <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef} popover={supportsPopover ? 'manual' : undefined}>
+      {open && wrap(
+        <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef} popover={!sheetScreen && supportsPopover ? 'manual' : undefined}>
           {shown.map((option, i) => [
             !query && hasCommon && option.common && (i === 0 || !shown[i - 1].common)
               ? <li key="common-head" role="presentation" className="group-head common-head">{commonLabel ?? t('combobox.common')}</li> : null,

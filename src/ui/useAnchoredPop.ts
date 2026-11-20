@@ -7,6 +7,10 @@ export const supportsPopover = typeof HTMLElement !== 'undefined' && 'showPopove
 const EDGE = 8;
 const GAP = 4;
 
+/** Telefono: le tendine diventano fogli che salgono dal fondo dello schermo, larghi quanto lo schermo. */
+export const SHEET_QUERY = '(max-width: 599px)';
+export const isSheetScreen = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(SHEET_QUERY).matches;
+
 interface Options {
   /** Larghezza minima (il menu resta largo quanto il campo, o di più se il campo è stretto). */
   minWidth?: number;
@@ -24,6 +28,10 @@ interface Options {
   bleed?: number;
   /** Avvisa da che lato si è aperta (sotto o sopra), ogni volta che cambia. */
   onSide?: (side: 'below' | 'above') => void;
+  /** Sul telefono diventa un foglio dal basso (con lo sfondo scuro dietro: toccarlo chiude, vedi onDismiss). */
+  sheet?: boolean;
+  /** Tocco sullo sfondo scuro dietro il foglio: va chiuso. */
+  onDismiss?: () => void;
 }
 
 /**
@@ -36,10 +44,14 @@ export function useAnchoredPop(anchor: RefObject<HTMLElement | null>, pop: RefOb
   const { minWidth = 0, width, align = 'start', prefer = 'below', gap: baseGap = GAP, bleed = 0, overlap = 0 } = options;
   const onSide = useRef(options.onSide);
   onSide.current = options.onSide;
+  const onDismiss = useRef(options.onDismiss);
+  onDismiss.current = options.onDismiss;
+  const sheet = !!options.sheet;
   useLayoutEffect(() => {
     const el = pop.current;
     if (!open || !el) return;
     if (supportsPopover && el.hasAttribute('popover') && !el.matches(':popover-open')) el.showPopover();
+    if (sheet && isSheetScreen()) return openSheet(el, () => onDismiss.current?.());
     // L'altezza massima del CSS (es. 340px): la tendina non supera mai quella, anche con tanto spazio
     el.style.maxHeight = '';
     const cssMax = parseFloat(getComputedStyle(el).maxHeight) || Infinity;
@@ -115,5 +127,53 @@ export function useAnchoredPop(anchor: RefObject<HTMLElement | null>, pop: RefOb
       if (anchor.current) delete anchor.current.dataset.popSide;
       if (supportsPopover && el.isConnected && el.matches(':popover-open')) el.hidePopover();
     };
-  }, [open, anchor, pop, minWidth, width, align, prefer, baseGap, bleed, overlap]);
+  }, [open, anchor, pop, minWidth, width, align, prefer, baseGap, bleed, overlap, sheet]);
+}
+
+/**
+ * Il foglio dal basso del telefono: largo quanto lo schermo, appoggiato sopra la tastiera quando c'è (la parte visibile
+ * della pagina, visualViewport), alto al massimo tre quarti di quello che si vede. Lo sfondo scuro lo disegna il foglio
+ * (un'ombra grande quanto lo schermo); un tocco fuori da ogni foglio lo chiude e non arriva a quello che c'è sotto.
+ */
+function openSheet(el: HTMLElement, dismiss: () => void): () => void {
+  el.dataset.sheet = '';
+  const vv = window.visualViewport;
+  const place = () => {
+    const visible = vv ? vv.height : window.innerHeight;
+    const keyboard = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+    el.style.position = 'fixed';
+    el.style.inset = 'auto 0 auto 0';
+    el.style.margin = '0';
+    el.style.width = '100%';
+    el.style.bottom = `${Math.round(keyboard)}px`;
+    el.style.maxHeight = `${Math.round(Math.min(visible * 0.78, visible - 48))}px`;
+  };
+  place();
+  // Il clic che segue il tocco sullo sfondo non deve attivare quello che c'è sotto (un'altra tendina, un pulsante)
+  let swallowUntil = 0;
+  const away = (e: PointerEvent) => {
+    const target = e.target as Element | null;
+    // Dentro un foglio (questo o uno aperto sopra, es. lo Strumento nelle Impostazioni della Sfida): niente da chiudere
+    if (target?.closest?.('[data-sheet]')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    swallowUntil = Date.now() + 600;
+    dismiss();
+  };
+  const swallow = (e: Event) => { if (Date.now() < swallowUntil) { e.preventDefault(); e.stopPropagation(); swallowUntil = 0; } };
+  document.addEventListener('pointerdown', away, true);
+  document.addEventListener('click', swallow, true);
+  vv?.addEventListener('resize', place);
+  vv?.addEventListener('scroll', place);
+  window.addEventListener('resize', place);
+  return () => {
+    document.removeEventListener('pointerdown', away, true);
+    // Il clic del tocco arriva subito dopo: lo si lascia ancora intercettare per un attimo
+    setTimeout(() => document.removeEventListener('click', swallow, true), 650);
+    vv?.removeEventListener('resize', place);
+    vv?.removeEventListener('scroll', place);
+    window.removeEventListener('resize', place);
+    delete el.dataset.sheet;
+    if (supportsPopover && el.isConnected && el.matches(':popover-open')) el.hidePopover();
+  };
 }

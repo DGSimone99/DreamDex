@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames, toID } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
@@ -20,6 +20,7 @@ import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SetMenu } from './SetMenu';
+import { useMediaQuery } from './useMediaQuery';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
 import { CategoryIcon } from './CategoryIcon';
@@ -202,6 +203,8 @@ interface Props {
   notice?: ReactNode;
   /** Il riquadro del Testo del set, aperto: copre le Statistiche, così Set e Mosse restano in vista per confrontare. */
   textPanel?: ReactNode;
+  /** Copia il set negli appunti (testo Showdown): sul telefono sta nel menu Set; vero se è riuscito. */
+  onCopy?: () => Promise<boolean>;
   /** Sotto le Mosse, la Sfida contro un avversario scelto (EditorDuel). */
   duel?: ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
@@ -215,7 +218,7 @@ interface Props {
   onSetChange?: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -305,7 +308,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const spreadList = useRef<HTMLDivElement>(null);
   const [spreadsOpen, setSpreadsOpen] = useState(false);
   // Sotto la targhetta Spread, allineato a destra e largo quanto serve agli EV; sopra se sotto non c'è posto
-  useAnchoredPop(spreadToggle, spreadList, spreadsOpen, { width: 'content', minWidth: 340, align: 'end', gap: 6 });
+  useAnchoredPop(spreadToggle, spreadList, spreadsOpen, { width: 'content', minWidth: 340, align: 'end', gap: 6, sheet: true, onDismiss: () => closeSpreads() });
   useEffect(() => {
     const away = (e: PointerEvent) => { if (!spreadMenu.current?.contains(e.target as Node)) closeSpreads(); };
     document.addEventListener('pointerdown', away);
@@ -339,6 +342,28 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const customHintId = `${uid}-custom`;
   const [customShown, setCustomShown] = useState(false);
   const [natureHelp, setNatureHelp] = useState(false);
+  // Telefono: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
+  const phone = useMediaQuery('(max-width: 599px)');
+  const [phoneTab, setPhoneTab] = useState<'set' | 'stats' | 'duel'>('set');
+  const tabsId = useId();
+  const phoneTabs: { id: 'set' | 'stats' | 'duel'; label: string }[] = [
+    { id: 'set', label: t('editor.set') }, { id: 'stats', label: t('editor.stats') }, ...(duel ? [{ id: 'duel' as const, label: t('editor.duel') }] : []),
+  ];
+  const pickTab = (id: 'set' | 'stats' | 'duel', focus = false) => {
+    setPhoneTab(id);
+    // La scheda nuova parte dall'alto (sotto la testata)
+    const drawer = document.getElementById(`${tabsId}-tabs`)?.closest('.drawer');
+    if (drawer) drawer.scrollTop = 0;
+    if (focus) requestAnimationFrame(() => document.getElementById(`${tabsId}-tab-${id}`)?.focus());
+  };
+  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const at = phoneTabs.findIndex(tab => tab.id === phoneTab);
+    const next = e.key === 'ArrowRight' ? (at + 1) % phoneTabs.length : e.key === 'ArrowLeft' ? (at - 1 + phoneTabs.length) % phoneTabs.length
+      : e.key === 'Home' ? 0 : e.key === 'End' ? phoneTabs.length - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    pickTab(phoneTabs[next].id, true);
+  };
   // Vuota (niente strumento, abilità o natura): filo ed etichetta gialli, come i segni "da controllare" del team
   const plate = (label: string, control: ReactNode, empty = false) => (
     // La targhetta intera (etichetta compresa) fa da campo: il menu si apre largo quanto lei
@@ -346,7 +371,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   );
 
   return (
-    <div className="set-editor">
+    <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
         <div className="editor-top">
           {title}
@@ -362,12 +387,22 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           )}
           {/* A destra: il menu Set (preset Smogon e I miei set), poi Copia il set e Chiudi */}
           <div className="editor-actions">
-            <SetMenu set={set} presets={presets} bestIndex={bestIndex} onBest={onBest} onChange={onSetChange} onText={onText} smogonLink={smogonLink} />
+            <SetMenu set={set} presets={presets} bestIndex={bestIndex} onBest={onBest} onChange={onSetChange} onText={onText} onCopy={onCopy} smogonLink={smogonLink} />
             {actions}
           </div>
         </div>
+        {phone && (
+          <div className="editor-tabs" role="tablist" id={`${tabsId}-tabs`} aria-label={t('editor.sections')}>
+            {phoneTabs.map(tab => (
+              <button key={tab.id} type="button" role="tab" id={`${tabsId}-tab-${tab.id}`} aria-selected={phoneTab === tab.id}
+                tabIndex={phoneTab === tab.id ? 0 : -1} onClick={() => pickTab(tab.id)} onKeyDown={onTabKey}>{tab.label}</button>
+            ))}
+          </div>
+        )}
       </div>
       {notice}
+      {/* Sul telefono il riquadro del testo del set sta sopra le schede, visibile in ognuna */}
+      {phone && textPanel}
       {/* Le Statistiche e, sopra di loro, il riquadro del Testo del set quando è aperto */}
       <div className="stats-cell">
       <fieldset className="evs">
@@ -482,7 +517,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {/* Il posto della Velocità nel meta, sotto le righe; passandoci sopra il tooltip della scheda Velocità */}
         {speed && <SpeedMeta set={set} tier={speed} />}
       </fieldset>
-      {textPanel}
+      {!phone && textPanel}
       </div>
       <div className={`editor-side${duel ? ' with-duel' : ''}`}>
       <fieldset className="editor-group set-box">

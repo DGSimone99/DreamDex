@@ -186,7 +186,9 @@
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
 /* La matita del soprannome: compare col mouse o col fuoco (come FORMATO ✎ nella barra a sinistra); al tocco resta sempre, tenue */
 .editor-title .nickname { display: inline-flex; align-items: center; gap: var(--sp-3); }
-.nickname-pencil { flex: none; display: grid; place-items: center; color: var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); }
+.nickname-pencil { flex: none; display: grid; place-items: center; color: var(--accent); opacity: 0; transition: opacity 0.15s var(--ease);
+  /* Il nome ha margini negativi (per non tagliare il corsivo): la matita scende al centro della scritta, non del pulsante */
+  transform: translateY(0.45em); }
 .nickname-pencil .icon { width: 15px; height: 15px; }
 .editor-title .nickname:hover .nickname-pencil, .editor-title .nickname:focus-visible .nickname-pencil { opacity: 1; }
 @media (hover: none) { .nickname-pencil { opacity: 0.6; color: var(--muted); } }
