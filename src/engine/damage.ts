@@ -34,7 +34,20 @@ export interface HitOptions {
    * o FIRST_HIT_SHARE_RECOVERY se il difensore torna a PS pieni (`firstHitShare` in defense.ts). Air Balloon sempre un quarto.
    */
   firstHitShare?: number;
+  /**
+   * Lotta in doppio: un attacco che colpisce i due avversari o tutti i vicini fa SPREAD_SHARE del danno su ciascuno
+   * (il danno vero del doppio). Lo passa il voto nei formati di doppio (formatRules.ts hitRules); la Sfida no.
+   */
+  doubles?: boolean;
 }
+
+/** Bersagli di una mossa che in doppio colpisce i due avversari o tutti i vicini. */
+export const SPREAD_TARGETS = new Set(['allAdjacentFoes', 'allAdjacent']);
+/**
+ * In doppio una mossa a più bersagli fa il 75% del danno su ciascuno (2026-11-21, scelta dell'autore: il danno dev'essere
+ * quello vero; il premio per averla è il ruolo "Mossa a più bersagli"). Contarla di più peggiorava il voto sulle partite.
+ */
+export const SPREAD_SHARE = 0.75;
 
 /**
  * Effetti che valgono solo a PS pieni o fino al primo colpo: Multiscale e Shadow Shield dimezzano il danno, Tera Shell lo
@@ -336,6 +349,8 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
     if (options.priorityOnly && !(movePriority(attacker, data) > 0 || grassyGlide)) continue;
     // Una mossa Z non manca mai (2026-11-08: prima teneva la precisione della mossa di base)
     const useZ = !!options.z && !data.ohko && zPowered(attacker, data);
+    // Doppio: una mossa a più bersagli fa meno danno su ciascuno (la mossa Z che ne nasce colpisce un bersaglio solo)
+    const spread = options.doubles && !useZ && SPREAD_TARGETS.has(data.target) ? SPREAD_SHARE : 1;
     const accuracy = useZ || data.accuracy === true ? 1 : data.ohko
       ? (toID(battleAbility(attacker)) === 'noguard' ? 1 : data.accuracy / 100)
       : modifiedAccuracy(weatherAccuracy(data.id, data.accuracy / 100, options.conditions ?? [], defender.item), attacker, defender, data.category);
@@ -376,7 +391,7 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       const hpScaled = !useZ && HP_SCALED.has(data.id) ? HP_SCALED_SHARE : 1;
       // Supreme Overlord a metà partita, Protean/Libero con lo STAB in più a metà (vedi OVERLORD_SHARE, PROTEAN_STAB)
       const ability = overlordScale(attacker) * proteanScale(attacker, results[0].move.type, !!options.tera && !!attacker.teraType);
-      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn * hpScaled * ability, min: (low / hp) * charge * hpScaled * ability, max: (high / hp) * charge * ability };
+      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn * hpScaled * ability * spread, min: (low / hp) * charge * hpScaled * ability * spread, max: (high / hp) * charge * ability * spread };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta

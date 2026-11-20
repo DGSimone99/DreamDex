@@ -67,3 +67,9 @@ export function formatRules(formatId: FormatId | undefined): FormatRules {
 
 /** Le regole del formato dei dati (impostato dall'app; senza, quelle di sempre). */
 export const rulesOf = (data: EngineData): FormatRules => formatRules(data.formatId);
+
+/**
+ * Le opzioni dei colpi che dipendono dal formato, da aggiungere a ogni `bestHit` del voto e del coach: in doppio le
+ * mosse a più bersagli fanno meno danno (damage.ts SPREAD_SHARE). La Sfida non le usa.
+ */
+export const hitRules = (data: EngineData): { doubles?: boolean } => (isOneType(rulesOf(data)) ? { doubles: true } : {});

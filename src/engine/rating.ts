@@ -9,7 +9,7 @@ import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
 export { BALANCE_SPAN, resistPoints, typeSafety };
 import { typeMix, type Archetype, type TypeMix } from './archetype';
 import { isPassive, isStall } from './roles';
-import { isOneType, rulesOf, type FormatRules } from './formatRules';
+import { hitRules, isOneType, rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, hasDoublesRole, type SubRoleValues } from './subRoles';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
@@ -377,9 +377,9 @@ export const UNANSWERED_POINTS = 4;
 export const UNANSWERED_META_POINTS = 2;
 
 /** I tipi né retti né battuti, e i Pokémon del meta che nessuno regge né batte prima (`best`: 0 nessuno, 0.5 a pari velocità). */
-export function unanswered(team: TeamSet[], offense: TeamOffense, defense: TeamDefense): { types: string[]; threats: DuelRow[] } {
+export function unanswered(team: TeamSet[], offense: TeamOffense, defense: TeamDefense, data?: EngineData): { types: string[]; threats: DuelRow[] } {
   const types = defense.coverageTypes.weak.filter(type => offense.types.holes.includes(type));
-  const threats = unheldDuels(team, defense).filter(row => row.best < 1);
+  const threats = unheldDuels(team, defense, data ? hitRules(data) : {}).filter(row => row.best < 1);
   return { types, threats };
 }
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
@@ -634,7 +634,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const holeKeys = new Set(holeItems.map(i => `sharedWeak:${i.key.slice('defenseHole:'.length)}`));
   const redundantItems = redundant.items.filter(i => !i.key || !holeKeys.has(i.key));
   // Senza risposta (né retto né battuto, solo team di 6): sul tipo prende il posto del Buco in Difesa
-  const open = complete ? unanswered(team, offense, defense) : { types: [], threats: [] };
+  const open = complete ? unanswered(team, offense, defense, data) : { types: [], threats: [] };
   const unansweredItems = [
     ...open.types.map(type => ({ text: t(lang, 'rating.redundancy.unansweredType', { type: typeName(type, lang) }), points: UNANSWERED_POINTS, catalog: 'unanswered' as const, key: `unanswered:type:${type}` })),
     ...open.threats.map(row => ({

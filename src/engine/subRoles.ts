@@ -5,7 +5,7 @@ import { statLines } from './statCalc';
 import { attackStyle, SPEED_ABILITIES } from './roles';
 import type { EngineData } from './data';
 import { usesMeta } from './analysis';
-import { orbStatus, setKey } from './damage';
+import { orbStatus, setKey, SPREAD_TARGETS } from './damage';
 import { withUsableMoves } from './lockedMoves';
 import { rolesMemberOffense } from './offense';
 import { memberSpeed, priorityMoves } from './speedArea';
@@ -47,8 +47,6 @@ export const ATTACKER_ROLES: SubRole[] = ['physicalAttacker', 'specialAttacker']
 export const DOUBLES_ROLES: SubRole[] = ['protect', 'fakeOut', 'spread', 'redirector', 'firstStrike'];
 const PROTECT = new Set(['protect', 'detect', 'spikyshield', 'kingsshield', 'banefulbunker', 'silktrap', 'burningbulwark', 'obstruct']);
 const REDIRECT = new Set(['followme', 'ragepowder']);
-/** Bersagli di una mossa che in doppio colpisce i due avversari o tutti i vicini. */
-export const SPREAD_TARGETS = new Set(['allAdjacentFoes', 'allAdjacent']);
 /** La mossa è un attacco che in doppio colpisce più bersagli (Earthquake, Heat Wave). */
 export const isSpreadMove = (move: { category: string; target: string } | undefined | null): boolean =>
   !!move && move.category !== 'Status' && SPREAD_TARGETS.has(move.target);

@@ -1,5 +1,5 @@
 import type { EngineData } from './data';
-import { isOneType, rulesOf, type FormatRules } from './formatRules';
+import { hitRules, isOneType, rulesOf, type FormatRules } from './formatRules';
 import { battleAbility, battleSpecies, dex, getMove, movePriority, toID } from './dex';
 import { softScore } from './scale';
 import { bestHit, setKey } from './damage';
@@ -381,7 +381,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   if (totalWeight && hasPriority) {
     pool.forEach((r, i) => {
       if (!weights[i] || r.value < speed) return;
-      const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions });
+      const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions, ...hitRules(data) });
       if (!hit) return;
       const first = (r.value === speed ? 0.5 : 1) * Math.min(1, hit.expected / PRIORITY_FULL);
       priorityExtra[i] = conditionQuota('priority', rules) * first;

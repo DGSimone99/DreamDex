@@ -1,4 +1,4 @@
-import { bestHit, setKey } from './damage';
+import { bestHit, setKey, type HitOptions } from './damage';
 import { battleSpecies } from './dex';
 import type { TeamDefense } from './defense';
 import { conditionsOf } from './offense';
@@ -29,12 +29,12 @@ const threatSpeed = (threat: TeamSet): number => fieldSpeed(threat, [threat]);
  * Il duello di un membro con una minaccia. `incoming`: il danno della minaccia sul membro (lo stesso della Coverage meta
  * della Difesa, frazione dei PS).
  */
-export function duel(member: TeamSet, team: TeamSet[], threat: TeamSet, incoming: number): DuelOutcome {
+export function duel(member: TeamSet, team: TeamSet[], threat: TeamSet, incoming: number, rules: Pick<HitOptions, 'doubles'> = {}): DuelOutcome {
   const conditions = conditionsOf(member, team).all;
-  const out = bestHit(member, threat, { conditions })?.expected ?? 0;
+  const out = bestHit(member, threat, { conditions, ...rules })?.expected ?? 0;
   const kIn = hitsToKO(incoming);
   // Con la priorità colpisce sempre per primo
-  const prio = bestHit(member, threat, { conditions, priorityOnly: true })?.expected ?? 0;
+  const prio = bestHit(member, threat, { conditions, priorityOnly: true, ...rules })?.expected ?? 0;
   if (hitsToKO(prio) <= kIn) return 1;
   const kOut = hitsToKO(out);
   if (kOut === Infinity) return 0;
@@ -56,7 +56,7 @@ export interface DuelRow {
 }
 
 /** Per ogni minaccia del meta che nessuno regge (Coverage meta della Difesa): chi la batte nel duello. */
-export function unheldDuels(team: TeamSet[], defense: TeamDefense): DuelRow[] {
+export function unheldDuels(team: TeamSet[], defense: TeamDefense, rules: Pick<HitOptions, 'doubles'> = {}): DuelRow[] {
   const known = team.filter(set => !!battleSpecies(set));
   // Il Coaching rifà il voto di centinaia di team simili: un duello dipende dal membro, dal meteo e dai campi del team
   // e dalla sua velocità in campo, non dal resto del team
@@ -67,9 +67,9 @@ export function unheldDuels(team: TeamSet[], defense: TeamDefense): DuelRow[] {
     .map(row => {
       const outcomes = known.map((member, m) => {
         const pct = row.hits?.[m]?.pct ?? 0;
-        const key = `${memberKeys[m]}|${setKey(row.set)}|${pct}`;
+        const key = `${memberKeys[m]}|${setKey(row.set)}|${pct}|${!!rules.doubles}`;
         let outcome = cache.get(key);
-        if (outcome === undefined) cache.set(key, outcome = duel(member, known, row.set, pct / 100));
+        if (outcome === undefined) cache.set(key, outcome = duel(member, known, row.set, pct / 100, rules));
         return outcome;
       });
       const best = Math.max(0, ...outcomes) as DuelOutcome;
