@@ -510,6 +510,8 @@
   .set-editor .duel-settings { width: 40px; height: 40px; }
   .set-editor .duel-stage { left: auto; right: var(--sp-5); top: 14px; bottom: auto; transform: none; }
   .set-editor .duel-rows { grid-column: 1; grid-row: 2; padding: var(--sp-3) var(--sp-6) var(--sp-5); }
+  /* La colonna dei colpi più stretta: la mossa e il suo interruttore ci stanno interi (la Velocità sborda a sinistra, sopra c'è solo il titolo) */
+  .set-editor .duel-row { grid-template-columns: minmax(0, 1fr) 64px; }
   .set-editor .duel-buff { height: 32px; }
 }
 
