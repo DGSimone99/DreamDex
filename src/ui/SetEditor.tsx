@@ -221,6 +221,8 @@ interface Props {
   proposedSlot?: number;
   /** Strumento, abilità e mosse fuori regola: segnati sul loro campo, non solo sulla carta. */
   flags?: FieldFlags;
+  /** Strumento vietato nel formato: nel menu in fondo, con l'etichetta Vietato. */
+  itemBanned?: (name: string) => boolean;
   /** Telefono: apre l'editor su questa scheda (la Sfida, arrivando da "lascialo a"); `key` cambia a ogni richiesta. */
   startTab?: { tab: 'set' | 'stats' | 'duel'; key: number } | null;
   onChange: (set: TeamSet) => void;
@@ -234,7 +236,7 @@ export type FieldFlag = { label: string; text: string; /** Sulle mosse: la mossa
 /** I campi fuori regola del membro: strumento, abilità e le quattro mosse (per posizione). */
 export type FieldFlags = { item?: FieldFlag; ability?: FieldFlag; moves?: (FieldFlag | undefined)[] };
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, startTab, onChange, onSetChange = onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, startTab, itemBanned, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -276,11 +278,28 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       .filter(name => pokedex !== 'sv' || !getMove(name)?.isNonstandard);
     return withCommon(names.map(name => moveOption(name, lang)), common?.moves);
   }, [custom, set.species, genLimit, pokedex, game, lang, commonKey]);
-  const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS
-    .filter(name => pokedex !== 'sv' || !dex.items.get(name).isNonstandard)
-    .map(name => ({
-      value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
-    })), common?.items), [pokedex, lang, commonKey]);
+  // Strumenti: in ordine alfabetico nella lingua scelta; niente Megapietre, cristalli Z e strumenti di altri Pokémon
+  // (con Custom Skillset sì, e quello già nel set resta); quelli vietati nel formato in fondo, con l'etichetta Vietato
+  const forOthers = (name: string) => {
+    const users = dex.items.get(name).itemUser;
+    const me = getSpecies(set.species);
+    if (!users?.length || !me) return false;
+    return !users.some(user => user === me.name || getSpecies(user)?.baseSpecies === me.baseSpecies);
+  };
+  const itemOptions = useMemo<ComboOption[]>(() => {
+    const options = ITEMS
+      .filter(name => (pokedex !== 'sv' || !dex.items.get(name).isNonstandard) && (custom || name === set.item || !forOthers(name)))
+      .map(name => {
+        const banned = !!itemBanned?.(name);
+        return {
+          value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
+          ...(banned ? { detail: <span className="opt-banned">{t('editor.flagBannedItem')}</span> } : {}), banned,
+        };
+      })
+      .sort((a, b) => Number(a.banned) - Number(b.banned) || a.label.localeCompare(b.label, lang))
+      .map(({ banned: _banned, ...option }) => option);
+    return withCommon(options, common?.items);
+  }, [pokedex, lang, commonKey, set.species, custom, set.item, itemBanned]); // eslint-disable-line react-hooks/exhaustive-deps
   const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
     const label = natureName(name, lang);

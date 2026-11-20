@@ -433,6 +433,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     const probe = { ...set, ability: name };
     return !bannedParts(probe, format).ability && !illegalParts(probe, format.genLimit, pokedexOf(format)).ability;
   });
+  const itemBannedIn = useCallback((name: string) => !!bannedParts({ moves: [], ability: '', item: name }, format).item, [format]);
   const fieldFlags: FieldFlags = {
     item: banned.item ? { ...bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })), label: tr('editor.flagBannedItem'), swap: itemSwap() } : undefined,
     ability: banned.ability ? { ...bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) })), swap: abilitySwap() }
@@ -668,6 +669,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         }
         proposedSlot={open && proposal ? proposal.slot : undefined}
         flags={open ? fieldFlags : undefined}
+        itemBanned={open ? itemBannedIn : undefined}
         startTab={startTab}
         notice={open && proposal && (
           <div className="move-proposal" role="note">

@@ -504,3 +504,5 @@
 }
 /* Il chip del voto e Fatto servono solo sul telefono (phone.css): sul computer il voto grande resta in vista */
 .editor-grade, .editor-done-bar { display: none; }
+/* Nel menu degli strumenti: quelli vietati nel formato, in fondo, con l'etichetta rossa */
+.opt-banned { flex: none; padding: 1px var(--sp-3); border-radius: 3px; font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--bad); background: var(--bad-bg); }
