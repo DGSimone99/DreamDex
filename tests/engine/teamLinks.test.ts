@@ -80,3 +80,24 @@ describe('teamLinks', () => {
     expect(teamLinks([mk('Blissey', ['Wish']), mk('Clefable', ['Wish'])], []).map(l => l.kind)).toEqual(['wish', 'wish']);
   });
 });
+
+describe('teamLinks in doppio: solo i pivot', () => {
+  // Due pivot, un Wish, Baton Pass, hazard + phazer
+  const team = [
+    mk('Scizor', ['U-turn']), mk('Landorus-Therian', ['U-turn', 'Stealth Rock']), mk('Alomomola', ['Wish']),
+    mk('Skarmory', ['Whirlwind']), mk('Ninjask', ['Baton Pass']), mk('Garchomp', ['Earthquake']),
+  ];
+
+  it('col terzo argomento resta solo il legame dei pivot', () => {
+    expect(teamLinks(team, ['Garchomp'], true)).toEqual([
+      { kind: 'pivot', from: ['Scizor', 'Landorus-Therian'], to: ['Garchomp'], move: 'U-turn' },
+    ]);
+    // Senza pivot: niente
+    expect(teamLinks(team.slice(2), ['Garchomp'], true)).toEqual([]);
+  });
+
+  it('senza il terzo argomento i legami sono quelli di sempre', () => {
+    expect(teamLinks(team, ['Garchomp']).map(link => link.kind)).toEqual(['pivot', 'batonpass', 'wish', 'phazer']);
+    expect(teamLinks(team, ['Garchomp'], false)).toEqual(teamLinks(team, ['Garchomp']));
+  });
+});

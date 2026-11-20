@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import type { EngineData } from '../../src/engine/data';
-import { chooseDex, chooseTier, chosen, tierNames } from '../helpers/format';
+import { chooseBattle, chooseDex, chooseTier, chosen, tierNames } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -67,6 +67,44 @@ describe('dati per formato', () => {
     // Tornando a National Dex si riparte da OU
     await chooseDex(user, 'natdex');
     expect(chosen('format-tier')).toBe('ou');
+  });
+
+  it('Lotta: Doppio in National Dex carica National Dex Doubles e mostra la pastiglia Doppio', async () => {
+    const loadSource = vi.fn(async () => fixtureData);
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={loadSource} />);
+    expect(chosen('format-battle')).toBe('singles');
+    await chooseBattle(user, 'doubles');
+    expect(chosen('format-battle')).toBe('doubles');
+    expect(chosen('format-tier')).toBe('natdexdoubles');
+    expect(tierNames()).toEqual(['OU']);
+    expect(loadSource).toHaveBeenCalledWith('gen9nationaldexdoubles');
+    expect(document.querySelector('.format-pills')).toHaveTextContent(/^Doppio/);
+    // Tornando al Singolo si riparte da National Dex OU
+    await chooseBattle(user, 'singles');
+    expect(chosen('format-tier')).toBe('ou');
+  });
+
+  it('Lotta: Doppio grigio in Gen 9; da Doppio a Gen 9 si va a Gen 9 OU in Singolo', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    await chooseBattle(user, 'doubles');
+    await chooseDex(user, 'gen9');
+    expect(chosen('format-tier')).toBe('gen9ou');
+    expect(chosen('format-battle')).toBe('singles');
+    expect(document.querySelector<HTMLInputElement>('input[name="format-battle"][value="doubles"]')!.disabled).toBe(true);
+  });
+
+  it('Doppio senza dati: il banner col nome del formato', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => NO_DATA} />);
+    await chooseBattle(user, 'doubles');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Statistiche National Dex Doubles non scaricate');
+  });
+
+  it('la scelta Lotta (Singolo | Doppio) c\'è per tutti', () => {
+    render(<App initialLang="it" data={fixtureData} />);
+    expect(document.querySelector('input[name="format-battle"][value="doubles"]')).not.toBeNull();
   });
 
   it("l'uso minimo dei suggerimenti non si sceglie più", () => {

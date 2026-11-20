@@ -70,6 +70,7 @@ export function resolveBans(name: string, rules: Rule[]): { names: string[]; cla
 export const SHOWDOWN_FORMATS: Record<string, string> = {
   ou: '[Gen 9] National Dex', ubers: '[Gen 9] National Dex Ubers', uu: '[Gen 9] National Dex UU',
   gen9ou: '[Gen 9] OU', gen9ubers: '[Gen 9] Ubers', gen9uu: '[Gen 9] UU', gen9ag: '[Gen 9] Anything Goes',
+  natdexdoubles: '[Gen 9] National Dex Doubles',
 };
 
 /**

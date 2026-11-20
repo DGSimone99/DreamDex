@@ -1,4 +1,5 @@
 import { battleSpecies, toID } from '../../engine/dex';
+import { formatRules, isOneType } from '../../engine/formatRules';
 import type { TeamSpeed } from '../../engine/speedArea';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 import { SpeedGeneral } from './SpeedGeneral';
@@ -12,6 +13,6 @@ export const roomSetters = (ctx: AreaContext): string[] =>
 export function speedTabs(speed: TeamSpeed, meta: boolean, t: T, ctx: AreaContext): DetailTab[] {
   const roomBy = roomSetters(ctx);
   return [
-    { key: 'general', label: t('detail.tab.general'), value: speed.value, roomBy, panel: <SpeedGeneral speed={speed} meta={meta} ctx={ctx} room={!!ctx.trickRoom && roomBy.length > 0} />, help: <SpeedGuideSection speed={speed} meta={meta} /> },
+    { key: 'general', label: t('detail.tab.general'), value: speed.value, roomBy, panel: <SpeedGeneral speed={speed} meta={meta} ctx={ctx} room={!!ctx.trickRoom && roomBy.length > 0} />, help: <SpeedGuideSection speed={speed} meta={meta} doubles={isOneType(formatRules(ctx.formatId))} /> },
   ];
 }

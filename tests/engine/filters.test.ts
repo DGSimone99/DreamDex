@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { activeFilterCount, EMPTY_FILTERS, hasFilterRole, isFiltering, normalizeTypes, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, filtersFor, hasFilterRole, isFiltering, normalizeTypes, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
 import { getSpecies } from '../../src/engine/dex';
 import { formatRules } from '../../src/engine/formatRules';
 import { emptySet, mostCommonSet } from '../../src/engine/sets';
@@ -153,5 +153,50 @@ describe('filtri', () => {
   it('ordinati per adattamento al team', () => {
     const scores = searchCandidates([tusk], DEFAULT_FORMAT, fixtureData, { ...EMPTY_FILTERS, ...common }).map(s => s.score);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
+  });
+});
+
+describe('filtri per ruolo secondo il formato', () => {
+  const ou = formatRules('ou');
+  const doubles = formatRules('natdexdoubles');
+  const incineroar = { ...emptySet('Incineroar'), ability: 'Intimidate', moves: ['Fake Out', 'Flare Blitz', 'Knock Off', 'Parting Shot'], nature: 'Adamant', evs: { hp: 252, atk: 252 } };
+  const amoonguss = { ...emptySet('Amoonguss'), ability: 'Regenerator', moves: ['Rage Powder', 'Spore', 'Pollen Puff', 'Protect'] };
+
+  it('nel singolo le voci sono quelle di sempre', () => {
+    expect(filterRolesFor(ou)).toEqual([
+      'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalWall', 'specialWall', 'recovery',
+      'support', 'removal', 'screens', 'speedControl', 'phazer', 'hazards', 'pivot', 'dot', 'disruptor', 'itemRemoval',
+      'priority', 'setup',
+    ]);
+  });
+
+  it('in doppio le voci sono quelle del doppio, con una sola Priorità', () => {
+    const roles = filterRolesFor(doubles);
+    expect(roles).toEqual(['anyAttacker', 'anyWall', 'fakeOut', 'redirector', 'spread', 'protect', 'pivot', 'hazards', 'priority', 'setup']);
+    for (const gone of ['removal', 'recovery', 'firstStrike']) expect(roles).not.toContain(gone);
+  });
+
+  it('in doppio trova Fake Out, Redirector e Attaccante', () => {
+    expect(hasFilterRole(incineroar, 'fakeOut', doubles)).toBe(true);
+    expect(hasFilterRole(amoonguss, 'fakeOut', doubles)).toBe(false);
+    expect(hasFilterRole(amoonguss, 'redirector', doubles)).toBe(true);
+    expect(hasFilterRole(amoonguss, 'protect', doubles)).toBe(true);
+    expect(hasFilterRole(incineroar, 'anyAttacker', doubles)).toBe(true);
+    expect(hasFilterRole(amoonguss, 'anyAttacker', doubles)).toBe(false);
+  });
+
+  it('un ruolo che il formato non offre si ignora: non svuota la lista e non resta acceso', () => {
+    // Scelto nel singolo, poi si passa al doppio
+    expect(hasFilterRole(incineroar, 'removal', doubles)).toBe(true);
+    expect(hasFilterRole(amoonguss, 'removal', doubles)).toBe(true);
+    // E il contrario
+    expect(hasFilterRole(amoonguss, 'fakeOut', ou)).toBe(true);
+    // Nel singolo la rimozione filtra come sempre
+    expect(hasFilterRole(amoonguss, 'removal', ou)).toBe(false);
+    const chosen: CandidateFilters = { ...EMPTY_FILTERS, roles: ['removal', 'pivot'] };
+    expect(filtersFor(chosen, doubles).roles).toEqual(['pivot']);
+    expect(activeFilterCount(filtersFor({ ...EMPTY_FILTERS, roles: ['removal'] }, doubles))).toBe(0);
+    // Niente da togliere: lo stesso oggetto (la lista non si ricalcola)
+    expect(filtersFor(chosen, ou)).toBe(chosen);
   });
 });

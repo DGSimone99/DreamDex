@@ -1,3 +1,4 @@
+import { formatRules, isOneType } from '../../engine/formatRules';
 import type { ReactNode } from 'react';
 import type { TeamDefense } from '../../engine/defense';
 import { DEFENSE_DEPTH, DEFENSE_SHARES } from '../../engine/defense';
@@ -41,7 +42,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
         <h4>{t('guide.off.test')}</h4>
         <Rows compact rows={[
           // Sotto la regola, a capo e senza titolo: quello che conta meno
-          [t('guide.off.power.hit'), <>{g('how.hit.rule')}<span className="guide-sub">{g('how.less')}</span></>],
+          [t('guide.off.power.hit'), <>{g('how.hit.rule')}<span className="guide-sub">{g('how.less')}</span>{isOneType(formatRules(formatId)) && <span className="guide-sub">{t('guide.off.doubles.spread')}</span>}</>],
         ]} />
 
         <h4>{g('how.value')}</h4>

@@ -1,13 +1,13 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useMediaQuery } from './useMediaQuery';
 import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
-import { teamArchetype, type Archetype } from '../engine/archetype';
+import { teamArchetype, type Archetype, type SinglesArchetype } from '../engine/archetype';
 import type { Gap } from '../engine/coherence';
 import type { EngineData } from '../engine/data';
 import { battleAbility, battleName, battleSpecies } from '../engine/dex';
-import { FILL_STYLES, PROPOSALS_PER_ROUND, proposalOrder, type FavoriteMode, type FillChoice, type FillStyle, type Proposal } from '../engine/fillProposals';
+import { fillStylesFor, PROPOSALS_PER_ROUND, proposalOrder, type FavoriteMode, type FillChoice, type FillStyle, type Proposal } from '../engine/fillProposals';
 import type { Format } from '../engine/format';
-import { formatRules } from '../engine/formatRules';
+import { formatRules, isOneType } from '../engine/formatRules';
 import { isUserFavorite } from '../engine/lists';
 import { rateTeam } from '../engine/rating';
 import { bannedInPool } from '../engine/scoring';
@@ -25,9 +25,9 @@ import type { CSSProperties } from 'react';
 import { useMemberTip } from './MemberCard';
 import { streamFill } from './useRanking';
 
-const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
+const ARCHETYPES: SinglesArchetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 /** Le voci dei tipi, in ordine: "Il migliore" (nessun tipo) e i cinque archetipi. */
-const TYPES: (Archetype | null)[] = [null, ...ARCHETYPES];
+const TYPES: (SinglesArchetype | null)[] = [null, ...ARCHETYPES];
 const typeKey = (archetype: Archetype | null) => archetype ?? 'best';
 const FAVORITE_MODES: FavoriteMode[] = ['off', 'priority', 'only'];
 type Tab = 'proposals' | 'tournament';
@@ -84,8 +84,13 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const [keepState, setKeepState] = useState(() => ({ team, keep: startKeep() }));
   const keep = keepState.team === team ? keepState.keep : startKeep();
   const keepKey = keep.map(k => (k ? 1 : 0)).join('');
-  const choice = useMemo<FillChoice>(() => ({ ...pickState, favorites, keepSets: keep }),
-    [pickState, favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Doppio: un tipo di team solo, quindi niente scelta del tipo (e un tipo rimasto nello stato non conta)
+  const oneType = isOneType(formatRules(format.formatId));
+  // Gli stili del formato: in doppio anche i campi e Tailwind (uno stile che il formato non offre non conta)
+  const styles = fillStylesFor(formatRules(format.formatId));
+  const pickedStyle = pickState.style && styles.includes(pickState.style) ? pickState.style : null;
+  const choice = useMemo<FillChoice>(() => ({ ...pickState, style: pickedStyle, archetype: oneType ? null : pickState.archetype, favorites, keepSets: keep }),
+    [pickState, pickedStyle, oneType, favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [round, setRound] = useState(0);
   // Le proposte di ogni giro già calcolato (l'ultimo può essere ancora in corso): le frecce le sfogliano senza ricalcolare
   const [pages, setPages] = useState<Proposal[][]>([[]]);
@@ -171,7 +176,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
       lastChecks.current = checksKey;
       setAvailable({});
     }
-    if (checksReady !== checksKey) return;
+    if (checksReady !== checksKey || oneType) return;
     let live = true;
     let cancel: () => void = () => undefined;
     let index = 0;
@@ -214,7 +219,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     return () => { document.removeEventListener('pointerdown', away); document.removeEventListener('keydown', escape, true); };
   }, [onClose]);
   // All'apertura il focus va sul tipo scelto
-  useEffect(() => { root.current?.querySelector<HTMLElement>('.fill-types [aria-checked="true"]')?.focus(); }, []);
+  useEffect(() => { root.current?.querySelector<HTMLElement>('.fill-types [aria-checked="true"], .fill-styles [aria-checked="true"]')?.focus(); }, []);
 
   const pick = (next: { archetype: Archetype | null; style: FillStyle | null }) => {
     if (next.archetype === pickState.archetype && next.style === pickState.style) return;
@@ -308,8 +313,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   // Il riassunto delle scelte sul telefono: "The best · Any · Favourites first", e quanti dei tuoi hai fissato (se ce n'è)
   const locked = keep.filter(Boolean).length;
   const summary = [
-    pickState.archetype ? t(`archetype.${pickState.archetype}`) : t('fill.best'),
-    pickState.style ? t(`teamStyle.${pickState.style}`) : t('fill.noStyle'),
+    // Doppio: un tipo solo, la riga non lo nomina
+    ...(oneType ? [] : [pickState.archetype ? t(`archetype.${pickState.archetype}`) : t('fill.best')]),
+    pickedStyle ? t(`teamStyle.${pickedStyle}`) : t('fill.noStyle'),
     t(`fill.fav.${favorites}`),
     ...(locked ? [t('fill.locked', { n: locked })] : []),
   ].join(' · ');
@@ -378,6 +384,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           )}
 
           <div className="fill-side">
+            {!oneType && (
             <div className="fill-group">
               <span className="fill-head" aria-hidden="true">{t('fill.type')}</span>
               <div className="fill-types" role="radiogroup" aria-label={t('fill.type')}>
@@ -388,11 +395,12 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                   available[typeKey(archetype)] === false && pickState.archetype !== archetype))}
               </div>
             </div>
+            )}
             <div className="fill-group">
               <span className="fill-head" aria-hidden="true">{t('fill.style')}</span>
               <div className="fill-styles" role="radiogroup" aria-label={t('fill.style')}>
-                {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
-                {FILL_STYLES.map((style: FillStyle) => radio(style, pickState.style === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
+                {radio('none', pickedStyle === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
+                {styles.map((style: FillStyle) => radio(style, pickedStyle === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
               </div>
             </div>
             <div className="fill-group">

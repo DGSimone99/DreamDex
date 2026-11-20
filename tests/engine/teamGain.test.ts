@@ -3,7 +3,9 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { suggest } from '../../src/engine/scoring';
 import { emptySet } from '../../src/engine/sets';
-import { areaDrops, bestSwaps, extrasDelta, rankByTeamGain, rolesDelta, withCandidate } from '../../src/engine/teamGain';
+import { areaDrops, bestSwaps, collectGainJobs, DOUBLES_SWAPS_PER_MEMBER, extrasDelta, rankByTeamGain, rolesDelta, SWAPS_PER_MEMBER, swapsPerMember, withCandidate } from '../../src/engine/teamGain';
+import { formatRules } from '../../src/engine/formatRules';
+import { getSpecies } from '../../src/engine/dex';
 import { improveReplacements } from '../../src/engine/replace';
 import { fixtureData } from '../fixtures/data';
 
@@ -112,5 +114,32 @@ describe('cosa spiega il cambio di voto oltre alle aree', () => {
     const before = rating(0, 0, [['defense', 70], ['strength', 80], ['roles', 60], ['speed', 50, true]]);
     const after = rating(0, 0, [['defense', 73], ['strength', 79], ['roles', 55], ['speed', 40, true]]);
     expect(areaDrops(before, after)).toEqual([{ key: 'roles', label: 'roles', change: -5 }, { key: 'strength', label: 'strength', change: -1 }]);
+  });
+});
+
+describe('quanti sostituti per membro si valutano col voto', () => {
+  it('nel singolo 15 come sempre, in doppio di più', () => {
+    expect(swapsPerMember(formatRules('ou'))).toBe(15);
+    expect(swapsPerMember(formatRules(undefined))).toBe(SWAPS_PER_MEMBER);
+    expect(swapsPerMember(formatRules('natdexdoubles'))).toBe(DOUBLES_SWAPS_PER_MEMBER);
+    expect(DOUBLES_SWAPS_PER_MEMBER).toBeGreaterThan(SWAPS_PER_MEMBER);
+  });
+
+  it('bestSwaps valuta al massimo quel numero per membro, anche se i candidati sono di più', () => {
+    const team = ['Great Tusk', 'Gholdengo', 'Kingambit'].map(name => ({ ...emptySet(name), moves: ['Protect'] }));
+    // 40 candidati finti per membro, tutti diversi e fuori dal team
+    const names = ['Garchomp', 'Dragonite', 'Tyranitar', 'Salamence', 'Metagross', 'Blissey', 'Skarmory', 'Gengar', 'Alakazam', 'Machamp',
+      'Snorlax', 'Lapras', 'Vaporeon', 'Jolteon', 'Flareon', 'Zapdos', 'Moltres', 'Articuno', 'Gyarados', 'Arcanine',
+      'Scizor', 'Heracross', 'Umbreon', 'Espeon', 'Blaziken', 'Swampert', 'Sceptile', 'Gardevoir', 'Breloom', 'Milotic',
+      'Lucario', 'Togekiss', 'Gliscor', 'Weavile', 'Rotom-Wash', 'Excadrill', 'Volcarona', 'Hydreigon', 'Ferrothorn', 'Conkeldurr'];
+    expect(names.every(name => !!getSpecies(name))).toBe(true);
+    const many = () => names.map((name, i) => ({ species: name, set: { ...emptySet(name), moves: ['Protect'] }, score: 100 - i }));
+    const count = (formatId: 'ou' | 'natdexdoubles') => {
+      const data = { ...fixtureData, formatId };
+      const jobs = collectGainJobs(() => { bestSwaps(team, data, 'it', many); });
+      return [0, 1, 2].map(index => jobs.filter(job => job.replaceIndex === index).length);
+    };
+    expect(count('ou')).toEqual([15, 15, 15]);
+    expect(count('natdexdoubles')).toEqual([DOUBLES_SWAPS_PER_MEMBER, DOUBLES_SWAPS_PER_MEMBER, DOUBLES_SWAPS_PER_MEMBER]);
   });
 });

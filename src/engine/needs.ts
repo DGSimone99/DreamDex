@@ -5,7 +5,7 @@ import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
 import { combineChances, creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
-import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, type Level, type LevelKey } from './roleLevels';
+import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, SECOND_KEYS, type Level, type LevelKey } from './roleLevels';
 import { t, type Lang } from '../i18n';
 
 /**
@@ -70,15 +70,15 @@ export const ownersOf = (team: TeamSet[], needs: Pick<TeamNeeds, 'credited' | 'm
   if (!owners.length && isSummedKey(need) && combineChances(team.map((_, i) => value(i))) >= MISSING_BELOW) {
     owners = team.filter((_, i) => value(i) > 0).map(set => battleName(set));
   }
-  // Il secondo attaccante c'è solo con almeno due attaccanti
-  return need === 'secondAttacker' && owners.length < 2 ? [] : owners;
+  // Il secondo attaccante (e in doppio i due con Protect o con la priorità) c'è solo con almeno due membri
+  return SECOND_KEYS.has(need) && owners.length < 2 ? [] : owners;
 };
 
-/** Valore di team di una voce: il migliore dei membri; per il secondo attaccante il secondo migliore; il DoT sommato. */
+/** Valore di team di una voce: il migliore dei membri; per le voci da due membri (SECOND_KEYS) il secondo migliore; il DoT sommato. */
 export const teamValue = (credited: SubRoleValues[], key: LevelKey): number => {
   const all = credited.map(m => keyValue(m, key)).sort((a, b) => b - a);
   if (isSummedKey(key)) return combineChances(all);
-  return Math.max(0, (key === 'secondAttacker' ? all[1] : all[0]) ?? 0);
+  return Math.max(0, (SECOND_KEYS.has(key) ? all[1] : all[0]) ?? 0);
 };
 
 /** Valore della voce col candidato in più (per i punteggi): il migliore dei due, o la somma per il DoT. */

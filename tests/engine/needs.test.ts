@@ -72,7 +72,8 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('stall', 'pivot')).toBe('ignored');
     // Gli hazard: importanti negli offensivi (90–92%), essenziali da balance in giù (99–100%); Speed Control ignorato
     // ovunque, gli schermi minori ovunque (2026-11-08)
-    for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
+    // I cinque tipi del singolo: il doppio ha il suo elenco (doublesRoles.test.ts)
+    for (const a of (Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]).filter(a => a !== 'doubles')) {
       expect(levelOf(a, 'screens')).toBe('minor');
       expect(levelOf(a, 'speedControl')).toBe('ignored');
     }
@@ -192,7 +193,10 @@ describe('tabella dei livelli per archetipo', () => {
   it("le voci: i gruppi degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
     const { attack, defense, support, utility } = FAMILIES;
     // I gruppi degli attaccanti (Sweeper, Wallbreaker, fisico, speciale, Attaccante, 2° Attaccante) stanno davanti all'Attacco
-    expect(LEVEL_KEYS).toEqual(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
+    // Le voci del doppio (doublesRoles.test.ts) stanno in mezzo, nell'ordine in cui il doppio le mostra
+    const doubles = ['secondProtect', 'anyWall', 'spread', 'fakeOut', 'redirector', 'secondFirstStrike'];
+    expect(LEVEL_KEYS.filter(key => doubles.includes(key))).toEqual(doubles);
+    expect(LEVEL_KEYS.filter(key => !doubles.includes(key))).toEqual(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
   });
 
   it('HO tutto fisico: mancano "almeno uno speciale" (essenziale) e il malus "un solo stile" non si somma', () => {

@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { SOURCES } from '../../scripts/sources';
+import { DOUBLES_SOURCES, doublesToFetch, SOURCES } from '../../scripts/sources';
 import { readSource } from '../../src/data/load';
 
 describe('fonti dati', () => {
-  it('lo script scarica le 4 fonti', () => {
+  it('lo script scarica le fonti', () => {
     expect(SOURCES).toEqual(['gen9nationaldex', 'gen9nationaldexubers', 'gen9nationaldexuu', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9anythinggoes']);
+  });
+
+  it('il doppio non entra fra le fonti del singolo (set, preset e statistiche di riserva)', () => {
+    expect(SOURCES).not.toContain('gen9nationaldexdoubles');
+    expect(DOUBLES_SOURCES).toEqual(['gen9nationaldexdoubles']);
+  });
+
+  it('la pubblicazione (--strict) non scarica il doppio; lo scaricamento a mano sì', () => {
+    expect(doublesToFetch()).toEqual(['gen9nationaldexdoubles']);
   });
 
   it('una fonte assente dà statistiche nulle', async () => {

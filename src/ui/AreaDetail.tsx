@@ -122,8 +122,8 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang, ctx: AreaContext): 
     // Il "?" della scheda sta qui, nella testata dell'area, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
     help: t('help.view.bonusMalus').split(/\n/).map(line => <p key={line}>{line}</p>),
     guidePages: [
-      { key: 'bonus', label: t('catalogue.allBonus'), content: <CatalogueList lang={lang} kind="bonus" /> },
-      { key: 'malus', label: t('catalogue.allMalus'), content: <CatalogueList lang={lang} kind="malus" /> },
+      { key: 'bonus', label: t('catalogue.allBonus'), content: <CatalogueList lang={lang} kind="bonus" rules={rating.needs.rules} /> },
+      { key: 'malus', label: t('catalogue.allMalus'), content: <CatalogueList lang={lang} kind="malus" rules={rating.needs.rules} /> },
     ],
   }, rolesTab(rating, t, ctx)];
 }

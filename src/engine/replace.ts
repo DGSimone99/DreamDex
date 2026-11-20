@@ -4,7 +4,7 @@ import type { EngineData } from './data';
 import { battleName, battleSpecies } from './dex';
 import type { Format } from './format';
 import { formatRules, type FormatRules } from './formatRules';
-import { detectRoles, type Role } from './roles';
+import { detectRoles, shownRoles, type ShownRole } from './roles';
 import type { Lang } from '../i18n';
 import { scoreCandidates, scoreSets, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
@@ -12,9 +12,9 @@ import { neededConditions, providesAll } from './synergy';
 import { lostResistances } from './swapGuard';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 
-/** Cosa un membro porta al team: ruoli mancanti, tipi scoperti che colpisce, debolezze che resiste. */
+/** Cosa un membro porta al team: ruoli mancanti (in doppio quelli del doppio, con "Attaccante" e "Muro" come voci uniche), tipi scoperti che colpisce, debolezze che resiste. */
 export interface Contribution {
-  roles: Role[];
+  roles: ShownRole[];
   covers: TypeName[];
   resists: TypeName[];
 }
@@ -70,7 +70,7 @@ export function similarity(a: TeamSet, b: TeamSet, rules: FormatRules): number {
 
 function contribution(set: TeamSet, analysis: TeamAnalysis): Contribution {
   return {
-    roles: detectRoles(set, analysis.needs.rules).filter(role => analysis.needs.missingRoles.includes(role)),
+    roles: shownRoles(detectRoles(set, analysis.needs.rules).filter(role => analysis.needs.missingRoles.includes(role)), analysis.needs.rules),
     covers: analysis.coverage
       .filter(row => row.hitters.length === 0 && superEffectiveMove(set, row.type) !== null)
       .map(row => row.type),

@@ -65,7 +65,7 @@ function GainTip({ title, rows, grouped, foot }: { title: string; rows: Row[]; g
  * riga e il "?" col dettaglio nel tooltip: mosse, abilità, moltiplicatori dalle tabelle del motore), dal membro al team.
  * Schematica e senza quote né pesi: le fonti aggiungono un bonus.
  */
-export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boolean }) {
+export function SpeedGuideSection({ speed, meta, doubles = false }: { speed: TeamSpeed; meta: boolean; doubles?: boolean }) {
   const t = useT();
   const lang = useLang();
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.speed.${key}` as Key, params);
@@ -103,8 +103,9 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
       rows: [
         { group: g('d.ctrl.long'), label: getMove('stickyweb')?.name ?? 'Sticky Web', value: '−1', text: g('d.ctrl.web.rule') },
         { label: getMove('trickroom')?.name ?? 'Trick Room', text: g('d.ctrl.room.rule') },
-        { group: g('d.ctrl.short'), label: getMove('tailwind')?.name ?? 'Tailwind', value: times(2), text: g('d.ctrl.tail.rule') },
-        { label: g('d.ctrl.para'), value: '×½', chips: moveChips(PARALYSIS, immune), text: g('d.ctrl.para.rule') },
+        // In doppio Tailwind conta come Trick Room (un compagno lo mette mentre l'altro attacca); in singolo fra i brevi
+        { ...(!doubles && { group: g('d.ctrl.short') }), label: getMove('tailwind')?.name ?? 'Tailwind', value: times(2), text: g('d.ctrl.tail.rule') },
+        { ...(doubles && { group: g('d.ctrl.short') }), label: g('d.ctrl.para'), value: '×½', chips: moveChips(PARALYSIS, immune), text: g('d.ctrl.para.rule') },
         { label: g('d.ctrl.drop'), value: '×⅔', chips: moveChips(SPEED_DROP, immune) },
       ],
       foot: g('d.ctrl.foot'),

@@ -25,6 +25,12 @@ const UTILITY = [
   'willowisp', 'thunderwave', 'toxic', 'knockoff', 'protect',
 ];
 
+/**
+ * In doppio Protect è la prima scelta (lo porta quasi metà dei Pokémon) e le trappole di Stealth Rock non si propongono:
+ * il resto della lista resta com'è.
+ */
+const DOUBLES_UTILITY = ['protect', ...UTILITY.filter(id => id !== 'stealthrock' && id !== 'protect')];
+
 interface Candidate {
   name: string;
   type: TypeName;
@@ -43,8 +49,9 @@ function strength(move: NonNullable<ReturnType<typeof getMove>>, types: readonly
 /**
  * Un set ragionevole per un Pokémon senza dati in nessun formato: le STAB più forti, una copertura
  * che colpisce più tipi possibili, una mossa di supporto; natura, EV e strumento dalle statistiche base.
+ * `doubles`: la mossa di supporto si sceglie dalla lista del doppio (Protect per prima).
  */
-export function generatedSet(speciesName: string, genLimit = 9, game: GameId | null = null): TeamSet {
+export function generatedSet(speciesName: string, genLimit = 9, game: GameId | null = null, doubles = false): TeamSet {
   const species = getSpecies(speciesName);
   const empty: TeamSet = { species: speciesName, item: '', ability: '', moves: [], nature: 'Serious', evs: {} };
   if (!species) return empty;
@@ -81,7 +88,7 @@ export function generatedSet(speciesName: string, genLimit = 9, game: GameId | n
   }
   const names = moves.map(m => m.name);
   // Supporto, poi eventuali altri attacchi per arrivare a 4
-  const utility = UTILITY.find(id => legal?.has(id));
+  const utility = (doubles ? DOUBLES_UTILITY : UTILITY).find(id => legal?.has(id));
   if (utility) names.push(getMove(utility)!.name);
   for (const c of attacks) {
     if (names.length >= 4) break;

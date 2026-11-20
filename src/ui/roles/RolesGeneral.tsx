@@ -1,6 +1,7 @@
 import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import type { TeamRating } from '../../engine/rating';
-import type { Level } from '../../engine/roleLevels';
+import { SECOND_KEYS, type Level } from '../../engine/roleLevels';
+import { MISSING_BELOW } from '../../engine/needs';
 import { useT } from '../../i18n/react';
 import { signed, type AreaContext, type T } from '../AreaDetail';
 import { Icon } from '../icons';
@@ -110,13 +111,19 @@ function RoleRow({ line, full, rating, ctx }: { line: RoleLine; full: boolean; r
   const state = rowState(line.level, line.missing);
   const one = line.by.length === 1 && !line.together;
   const list = line.by.map(h => (h.source && h.source !== 'set' ? `${h.species} (${h.source})` : h.species)).join(', ');
-  const partly = line.missing && line.by.length > 0 ? t('rdetail.partly', { list }) : undefined;
+  // Una voce che chiede due membri (Protect, Priorità in doppio) con un membro solo: manca, ma si mostra chi ce l'ha
+  // Solo in doppio: nel singolo "2° Attaccante" con un attaccante solo resta com'era ("Nessuno")
+  const lone = rating.needs.rules.typeRule === 'oneType' && line.missing && SECOND_KEYS.has(line.key) ? line.by.filter(h => h.value >= MISSING_BELOW) : [];
+  const partly = lone.length === 1 ? t('rdetail.needTwo', { name: lone[0].species })
+    : line.missing && line.by.length > 0 ? t('rdetail.partly', { list }) : undefined;
   const together = line.together ? t('rdetail.together', { list }) : undefined;
   return (
     <li className={`rl-row${state ? ` ${state}` : ''}`} title={partly ?? together}>
       <span className="rl-name">{keyLabel(line.key, t)}</span>
       <span className="rl-by">
-        {line.missing || line.by.length === 0
+        {lone.length === 1
+          ? <RoleMon h={lone[0]} t={t} named why={partly} />
+          : line.missing || line.by.length === 0
           ? <span className="rl-nobody">{t('rdetail.nobody')}{partly && <span className="visually-hidden">; {partly}</span>}</span>
           : line.by.map(h => <RoleMon key={h.slot} h={h} t={t} named={one} why={holderReason(line.key, h, rating.roles, ctx.team, t)} />)}
           {together && <span className="visually-hidden">; {together}</span>}

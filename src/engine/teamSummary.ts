@@ -3,7 +3,7 @@ import type { Coaching } from './coach';
 import { heldByOf, teamCores, type Core } from './cores';
 import type { EngineData } from './data';
 import { battleName, getMove, toID } from './dex';
-import { rulesOf, type FormatRules } from './formatRules';
+import { isOneType, rulesOf, type FormatRules } from './formatRules';
 import type { DashboardData } from './overviewDashboard';
 import type { TeamRating } from './rating';
 import type { TeamSet } from './sets';
@@ -93,6 +93,7 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
     cores: teamCores(team, 2, heldByOf(rating.defense.coverageTypes.rows)),
     typedTaken: Object.fromEntries(rating.defense.typed.map(m => [m.species,
       Object.fromEntries(rating.defense.coverageTypes.rows.map((row, i) => [row.type, m.cells[i]?.pct ?? 0]))])),
-    links: teamLinks(team, attackers),
+    // Doppio: solo il legame dei pivot (Wish, Baton Pass e hazard + phazer sono cose da singolo)
+    links: teamLinks(team, attackers, isOneType(rules)),
   };
 }

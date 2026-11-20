@@ -9,9 +9,9 @@ import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
 export { BALANCE_SPAN, resistPoints, typeSafety };
 import { typeMix, type Archetype, type TypeMix } from './archetype';
 import { isPassive, isStall } from './roles';
-import { rulesOf, type FormatRules } from './formatRules';
+import { hitRules, isOneType, rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
-import { FAMILIES, type SubRoleValues } from './subRoles';
+import { FAMILIES, hasDoublesRole, type SubRoleValues } from './subRoles';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { usageOf } from './stats';
@@ -20,7 +20,7 @@ import { lockedStatusMoves, withUsableMoves } from './lockedMoves';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { teamField, TYPES } from './types';
-import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, sabotagedMembers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 import { heldByOf, teamCores, type Core, type HeldBy } from './cores';
 import { blockedReason, voteTeam } from './legalTeam';
 import { unheldDuels, type DuelRow } from './duel';
@@ -31,7 +31,7 @@ export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | '
  * La Coverage offensiva è una sottostatistica dell'Offesa (offense.ts); Robustezza, Coverage difensiva e Meta
  * sono parti della Difesa (defense.ts).
  */
-type BaseArea = Exclude<AreaKey, 'meta' | 'coverage' | 'bulk' | 'roles'>;
+export type BaseArea = Exclude<AreaKey, 'meta' | 'coverage' | 'bulk' | 'roles'>;
 /** Nell'ordine del pannello: Difesa, Offesa e Velocità (i Ruoli sono una lista: malus e bonus, rolesArea.ts). */
 const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'speed'];
 
@@ -56,6 +56,7 @@ export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   balance: { defense: 40, strength: 45, speed: 15 },
   semiStall: { defense: 57, strength: 33, speed: 10 },
   stall: { defense: 65, strength: 25, speed: 10 },
+  doubles: { defense: 1 / 3, strength: 1 / 3, speed: 1 / 3 },
 };
 
 export type AreaWeightTable = Record<Archetype, Record<BaseArea, number>>;
@@ -80,11 +81,24 @@ export const NATDEX_OU_WEIGHTS: AreaWeightTable = {
   // vince, Stall quando perde): contando ogni team una volta il semi-stall vince circa il 50% (controllo 2026-11-08).
   semiStall: { defense: 65, strength: 25, speed: 10 },
   stall: { defense: 65, strength: 25, speed: 10 },
+  doubles: { defense: 1 / 3, strength: 1 / 3, speed: 1 / 3 },
 };
 
-/** I pesi delle aree del formato: quelli di National Dex OU con la sua regola dei tipi, altrimenti quelli di sempre. */
+/**
+ * Doppio (2026-11-21): un tipo solo, le tre aree a un terzo ciascuna (scelta dell'autore: in doppio i team puntano tutti
+ * sull'equilibrio; sulle partite i tipi del singolo non separavano niente). Un set fisso: nessun riconoscimento di tipi,
+ * nessuna miscela.
+ */
+const DOUBLES_THIRDS: Record<BaseArea, number> = ARCHETYPE_WEIGHTS.doubles;
+let DOUBLES_WEIGHTS: AreaWeightTable = NATDEX_OU_WEIGHTS;
+/** Per test e bench (confronto dei pesi del doppio): `null` rimette i terzi. Non va cambiato a runtime nell'interfaccia. */
+export function setDoublesWeights(w: Record<BaseArea, number> | null): void {
+  DOUBLES_WEIGHTS = { ...NATDEX_OU_WEIGHTS, doubles: w ?? DOUBLES_THIRDS };
+}
+
+/** I pesi delle aree del formato: quelli di National Dex OU con la sua regola dei tipi, il set fisso del doppio, altrimenti quelli di sempre. */
 export const areaWeightTable = (rules: FormatRules): AreaWeightTable =>
-  rules.typeRule === 'recoverySpeed' ? NATDEX_OU_WEIGHTS : ARCHETYPE_WEIGHTS;
+  isOneType(rules) ? DOUBLES_WEIGHTS : rules.typeRule === 'recoverySpeed' ? NATDEX_OU_WEIGHTS : ARCHETYPE_WEIGHTS;
 
 
 
@@ -115,7 +129,7 @@ export interface RatingArea {
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
   | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'unanswered'
-  | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp';
+  | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'weatherSabotage';
 
 export interface Redundancy {
   text: string;
@@ -242,6 +256,25 @@ export function weakenedMoveNotes(team: TeamSet[], lang: Lang = 'it'): Redundanc
   }));
 }
 
+/**
+ * Doppio (2026-11-21): −2 per ogni membro sabotato dal meteo del team (il sole sull'Acqua, la pioggia sul Fuoco), anche
+ * se la mossa non è nel set ma è fra le più usate di quel Pokémon (synergy.ts sabotagedMembers). Sulle partite di doppio
+ * questi team vincono meno (41% contro 51%) e i giocatori forti li portano meno. In singolo resta solo l'avviso del coach.
+ */
+export const SABOTAGE_POINTS = 2;
+
+export function weatherSabotage(team: TeamSet[], data: EngineData, lang: Lang = 'it'): Redundancy[] {
+  const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  return sabotagedMembers(team, data).map(w => {
+    const parts = { condition: conditionLabel(w.condition, lang), setter: w.setter, type: typeName(w.type, lang), member: w.member };
+    return {
+      // Se la mossa non è nel set il testo lo dice: "di solito usa mosse…"
+      text: cap(t(lang, w.usual ? 'rating.redundancy.sabotageUsual' : 'rating.redundancy.sabotage', parts)), points: SABOTAGE_POINTS, catalog: 'weatherSabotage' as const,
+      key: `sabotage:${w.member}`, parts,
+    };
+  });
+}
+
 /** Trick Room rallenta un membro che supera da solo almeno questa quota del meta; il malus si ferma a −3. */
 export const TRICK_ROOM_FAST = 0.5;
 /** Ogni membro veloce sotto Trick Room costa 1 punto. */
@@ -276,6 +309,7 @@ export const WEAK_MEMBER_MAX = 12;
 /**
  * Membri deboli senza utilità chiave (−4 ciascuno, al massimo −12; non dipende dal meta: Pelipper che porta la pioggia è esente).
  * Ditto con Imposter è esente: copia l'avversario, le sue statistiche base non dicono nulla.
+ * In doppio un membro con Fake Out, Follow Me o Rage Powder non è mai debole: è un supporto vero (Clefairy, Hitmontop).
  * Lo squilibrio degli attaccanti si vede nei Ruoli: le voci Attaccante fisico e Attaccante speciale (rolesArea.ts).
  */
 export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Redundancy[] {
@@ -284,6 +318,7 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
   let total = 0;
   for (const [i, set] of team.entries()) {
     if (toID(battleAbility(set)) === 'imposter') continue;
+    if (isOneType(rules) && (hasDoublesRole(set, 'fakeOut') || hasDoublesRole(set, 'redirector'))) continue;
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
     if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, needs.members[i] ?? {})) {
@@ -343,9 +378,9 @@ export const UNANSWERED_POINTS = 4;
 export const UNANSWERED_META_POINTS = 2;
 
 /** I tipi né retti né battuti, e i Pokémon del meta che nessuno regge né batte prima (`best`: 0 nessuno, 0.5 a pari velocità). */
-export function unanswered(team: TeamSet[], offense: TeamOffense, defense: TeamDefense): { types: string[]; threats: DuelRow[] } {
+export function unanswered(team: TeamSet[], offense: TeamOffense, defense: TeamDefense, data?: EngineData): { types: string[]; threats: DuelRow[] } {
   const types = defense.coverageTypes.weak.filter(type => offense.types.holes.includes(type));
-  const threats = unheldDuels(team, defense).filter(row => row.best < 1);
+  const threats = unheldDuels(team, defense, data ? hitRules(data) : {}).filter(row => row.best < 1);
   return { types, threats };
 }
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
@@ -456,7 +491,10 @@ export function weakCoveredBonus(team: TeamSet[], analysis: TeamAnalysis, lang: 
 export const CONDITION_USERS_MIN = 2;
 export const CONDITION_USED_POINTS = 1;
 
-/** +1 per ogni condizione portata da un membro e sfruttata da almeno due compagni: lo specchio di "attivatore inutilizzato". */
+/**
+ * +1 per ogni condizione portata da un membro e sfruttata da almeno due compagni: lo specchio di "attivatore inutilizzato".
+ * In doppio non si dà (rateTeamAs): sulle partite è l'unica voce che va al contrario (i giocatori forti ce l'hanno meno).
+ */
 export function conditionUsedBonus(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const items: Redundancy[] = [];
   const seen = new Set<Condition>();
@@ -512,6 +550,8 @@ export function rateTeam(given: TeamSet[], data: EngineData, lang: Lang = 'it', 
   // Con EV oltre il massimo o una specie doppia niente voto (l'app lo dice); il resto si giudica come in partita (legalTeam.ts)
   if (blockedReason(given, data.formatId)) return null;
   const input = voteTeam(given, data.allowMultipleMegas);
+  // Col tipo unico (doppio) un tipo scelto a mano non ha senso: si ignora
+  if (isOneType(rulesOf(data))) opts = {};
   const own = rateTeamAs(input, data, lang, opts);
   if (!own || opts.archetype) return own;
   const mix = typeMix(input.map(withUsableMoves), rulesOf(data));
@@ -536,7 +576,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
 
   const rules = rulesOf(data);
   // Stall riconosciuto: cambia solo la forza mostrata dei membri passivi (sotto), non i pesi né i ruoli
-  const stallMode = opts.archetype ? opts.archetype === 'stall' : isStall(team, rules);
+  const stallMode = isOneType(rules) ? false : opts.archetype ? opts.archetype === 'stall' : isStall(team, rules);
   const archetype = stallMode ? 'stall' as const : null;
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map(set => isPassive(set, rules)) : [];
@@ -595,7 +635,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const holeKeys = new Set(holeItems.map(i => `sharedWeak:${i.key.slice('defenseHole:'.length)}`));
   const redundantItems = redundant.items.filter(i => !i.key || !holeKeys.has(i.key));
   // Senza risposta (né retto né battuto, solo team di 6): sul tipo prende il posto del Buco in Difesa
-  const open = complete ? unanswered(team, offense, defense) : { types: [], threats: [] };
+  const open = complete ? unanswered(team, offense, defense, data) : { types: [], threats: [] };
   const unansweredItems = [
     ...open.types.map(type => ({ text: t(lang, 'rating.redundancy.unansweredType', { type: typeName(type, lang) }), points: UNANSWERED_POINTS, catalog: 'unanswered' as const, key: `unanswered:type:${type}` })),
     ...open.threats.map(row => ({
@@ -604,7 +644,10 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
     })),
   ];
   const shownHoles = holeItems.filter(i => !open.types.includes(i.key.slice('defenseHole:'.length)));
-  const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang)];
+  // Doppio: il sabotaggio del meteo è un malus, e il bonus "condizione usata" non si dà
+  const oneType = isOneType(rules);
+  const sabotageItems = oneType ? weatherSabotage(team, data, lang) : [];
+  const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang), ...sabotageItems];
   const allItems = [...redundantItems, ...extraItems];
   const penalty = { total: sum(allItems.map(i => i.points)), items: allItems };
   // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, ruoli minori).
@@ -612,7 +655,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // stesso modo (torneo 2,1, ladder 2,2) e il Tera si usa una volta sola, scelto in partita: troppe variabili
   const trios = coreTrios(team, heldByOf(defense.coverageTypes.rows));
   const bonusItems = [
-    ...coreTrioBonus(team, lang, undefined, trios), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...conditionUsedBonus(team, lang),
+    ...coreTrioBonus(team, lang, undefined, trios), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...(oneType ? [] : conditionUsedBonus(team, lang)),
     ...weatherBonus(team, lang).items, ...roles.bonuses,
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
@@ -638,21 +681,29 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'unanswered'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'weatherSabotage', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'unanswered'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
-/** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
-export function bonusMalusCatalog(lang: Lang): CatalogEntry[] {
+/** Voci che esistono solo in doppio, e voci del singolo che in doppio non ci sono. */
+const DOUBLES_ONLY = new Set<CatalogKey>(['weatherSabotage']);
+const SINGLES_ONLY = new Set<CatalogKey>(['conditionUsed']);
+
+/**
+ * Tutti i bonus e malus possibili nel formato (`rules`; senza, quelli del singolo), con il testo per il modale; i punti
+ * nei testi vengono dalle costanti.
+ */
+export function bonusMalusCatalog(lang: Lang, rules?: FormatRules): CatalogEntry[] {
+  const doubles = !!rules && isOneType(rules);
   const values = {
     shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unanswered: UNANSWERED_POINTS, unansweredMeta: UNANSWERED_META_POINTS, unansweredTie: UNANSWERED_META_POINTS / 2, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
-    used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN,
+    used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN, sabotage: SABOTAGE_POINTS,
   };
-  return CATALOG_ORDER.map(({ key, kind }) => ({
+  return CATALOG_ORDER.filter(({ key }) => !(doubles ? SINGLES_ONLY : DOUBLES_ONLY).has(key)).map(({ key, kind }) => ({
     key, kind,
     name: t(lang, `catalog.${key}.name`, values),
     when: t(lang, `catalog.${key}.when`, values),
