@@ -54,6 +54,8 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
       const band = bandRef.current;
       if (!band || blocked() || pending.current !== null || performance.now() < ignoreUntil.current) { lastY = y; return; }
       if (!collapsedRef.current) {
+        // Il margine dopo la riapertura vale solo sul confine: risalendo oltre si toglie, la volta dopo si riduce al punto giusto
+        if (y < armY.current - 96) armY.current = -Infinity;
         if (y > lastY && y > armY.current && band.getBoundingClientRect().bottom <= topH() + stripH.current) resize(true);
       } else if (y <= 2 && lastY > 2) {
         // Arrivati in cima risalendo: torna grande sopra la pagina, che scende di altrettanto (si vede la sua parte bassa)
