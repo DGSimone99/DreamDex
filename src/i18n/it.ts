@@ -649,7 +649,6 @@ export const it: Record<keyof typeof en, string> = {
   'editor.flagBanned': "Vietata",
   'editor.flagIllegal': "Non legale",
   'editor.flagBannedItem': "Vietato",
-  'editor.done': "Fatto",
   'editor.gradeLabel': "Voto del team",
   'editor.swapMove': "Metti {to} al posto di {from}",
   'editor.stats': "Statistiche",
