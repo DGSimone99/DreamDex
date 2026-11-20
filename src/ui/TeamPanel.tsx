@@ -1,6 +1,6 @@
 import type { EngineData } from '../engine/data';
 import { bannedTexts } from '../engine/coach';
-import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
+import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, withinGen } from '../engine/dex';
 import { bannedParts, formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
@@ -380,6 +380,18 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const where = formatLabel(format, lang);
   const bad = (text: string): FieldFlag => ({ label: tr('editor.flagBanned'), text });
   const warn = (text: string, hintText: string): FieldFlag => ({ label: tr('editor.flagIllegal'), text: `${text}. ${hintText}` });
+  // Al posto di una mossa fuori regola, la più usata del Pokémon che sia legale, permessa e non già nel set (una diversa
+  // per ogni mossa da cambiare); senza dati d'uso nessuna proposta
+  const taken = new Set(set.moves.filter(Boolean).map(toID));
+  const swapFor = () => {
+    const pick = common.moves.find(({ name }) => {
+      if (taken.has(toID(name))) return false;
+      const probe = { ...set, moves: [name] };
+      return !illegalParts(probe, format.genLimit, pokedexOf(format)).moves.length && !bannedParts(probe, format).moves.length;
+    })?.name;
+    if (pick) taken.add(toID(pick));
+    return pick;
+  };
   const fieldFlags: FieldFlags = {
     item: banned.item ? bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })) : undefined,
     ability: banned.ability ? bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) }))
@@ -387,8 +399,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     moves: [0, 1, 2, 3].map(i => {
       const move = set.moves[i];
       if (!move) return undefined;
-      if (banned.moves.includes(move)) return bad(tr('team.bannedMoves', { format: where, list: gameName('move', move, lang) }));
-      if (illegal.moves.includes(move)) return warn(tr('team.illegalMoves', { list: gameName('move', move, lang) }), tr('team.illegalMovesHint'));
+      if (banned.moves.includes(move)) return { ...bad(tr('team.bannedMoves', { format: where, list: gameName('move', move, lang) })), swap: swapFor() };
+      if (illegal.moves.includes(move)) return { ...warn(tr('team.illegalMoves', { list: gameName('move', move, lang) }), tr('team.illegalMovesHint')), swap: swapFor() };
       return undefined;
     }),
   };

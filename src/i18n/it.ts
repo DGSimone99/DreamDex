@@ -648,6 +648,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.move': "Mossa {n}",
   'editor.flagBanned': "Vietata",
   'editor.flagIllegal': "Non legale",
+  'editor.swapMove': "Metti {to} al posto di {from}",
   'editor.stats': "Statistiche",
   'editor.sections': "Parti dell'editor",
   'editor.mySets': "I miei set",

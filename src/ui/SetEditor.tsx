@@ -228,7 +228,7 @@ interface Props {
 
 /** Un campo fuori regola (vietato dal formato o non legale per la specie), segnato in rosso:
  *  `label` la parola breve sul campo, `text` la frase intera per i lettori di schermo. */
-export type FieldFlag = { label: string; text: string };
+export type FieldFlag = { label: string; text: string; /** Sulle mosse: la mossa da mettere al posto (un clic la scambia). */ swap?: string };
 /** I campi fuori regola del membro: strumento, abilità e le quattro mosse (per posizione). */
 export type FieldFlags = { item?: FieldFlag; ability?: FieldFlag; moves?: (FieldFlag | undefined)[] };
 
@@ -583,7 +583,19 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
               {/* Fuori regola: al posto di potenza e precisione (stanno nel tooltip) la parola breve, nel colore del problema */}
-              {flags?.moves?.[i] ? <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flags.moves[i]!.label}</span> : <MoveDetail name={move} inField />}
+              {flags?.moves?.[i] ? (
+                <span className="field-flags">
+                  <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flags.moves[i]!.label}</span>
+                  {/* La mossa proposta al posto: ⇄ e il nome, un clic la mette nel set */}
+                  {flags.moves[i]!.swap && (
+                    <button type="button" className="field-swap" title={gameName('move', flags.moves[i]!.swap!, lang)}
+                      aria-label={t('editor.swapMove', { to: gameName('move', flags.moves[i]!.swap!, lang), from: gameName('move', move, lang) })}
+                      onClick={() => { const next = [...moves]; next[i] = flags.moves![i]!.swap!; update({ moves: next }); }}>
+                      <Icon name="swap" /><span>{gameName('move', flags.moves[i]!.swap!, lang)}</span>
+                    </button>
+                  )}
+                </span>
+              ) : <MoveDetail name={move} inField />}
             </span>
             <Combobox
               className="move-combo"
