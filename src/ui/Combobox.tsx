@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type Keyb
 import { toID } from '../engine/dex';
 import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { useMediaQuery } from './useMediaQuery';
+import { FloatTip } from './FloatTip';
 import { Icon } from './icons';
 import { useT } from '../i18n/react';
 
@@ -76,10 +77,13 @@ interface Props {
   /** Le spiegazioni delle voci non stanno in ogni riga ma in una riga fissa in fondo al menu, quella della voce attiva
    *  (più voci in vista: le mosse e gli strumenti). */
   descriptionFooter?: boolean;
+  /** Il tooltip ricco della voce attiva (sotto il mouse o raggiunta con le frecce), di lato al menu, al posto della riga
+   *  in fondo e del title: `tone` il colore dell'alone, `content` il contenuto (es. la scheda della mossa). Non sul telefono. */
+  optionTip?: (option: ComboOption) => { tone: string; content: ReactNode; className?: string } | null;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined, descriptionFooter = false }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined, descriptionFooter = false, optionTip }: Props) {
   const t = useT();
   const listId = useId();
   // Si scrive nel campo: sempre senza `restricted`, e con `restricted` se è `searchable`
@@ -123,6 +127,14 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     },
   });
 
+  // Il tooltip della voce attiva: solo dopo un gesto nella lista (mouse sopra una voce, frecce, scrivere), non appena si apre
+  const tips = !!optionTip && !sheetScreen;
+  const [tipOn, setTipOn] = useState(false);
+  const [tipRect, setTipRect] = useState<DOMRect | null>(null);
+  // Scorrendo la lista la voce si sposta: il tooltip la segue
+  const [tipTick, setTipTick] = useState(0);
+  useEffect(() => { if (!open) setTipOn(false); }, [open]);
+
   // Le più usate vicino al campo, anche mentre cerchi: in cima se il menu si apre sotto, in fondo se si apre sopra
   // (tutte le altre restano in ordine alfabetico)
   // Menu attaccato al campo: la voce scelta è il campo stesso (l'ultima voce, o la prima), non si ripete nella lista
@@ -160,6 +172,12 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const shown = up ? matches.slice(-MAX_SHOWN) : matches.slice(0, MAX_SHOWN);
   // Il campo mostra l'etichetta del valore (es. il nome italiano); il valore salvato resta quello della voce
   const shownValue = options.find(o => o.value === value)?.label ?? value;
+  useLayoutEffect(() => {
+    if (!tips || !open || !tipOn || active < 0) { setTipRect(null); return; }
+    const item = document.getElementById(`${listId}-${active}`);
+    setTipRect(item ? item.getBoundingClientRect() : null);
+  }, [tips, open, tipOn, active, listId, tipTick, shown.length, side]);
+  const activeTip = tips && open && tipRect && shown[active] ? optionTip!(shown[active]) : null;
   /** Porta la voce in vista scorrendo solo la lista, non la pagina. */
   const reveal = (index: number, center = false) => {
     const list = listRef.current;
@@ -242,8 +260,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
       if (!open) { jumpTo.current = ordered[index].value; setOpen(true); setQuery(null); }
       else requestAnimationFrame(() => reveal(index, true));
     }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); if (open) setTipOn(true); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (open) setTipOn(true); move(-1); }
     else if (e.key === 'Enter' && open && shown[active]) { e.preventDefault(); pick(shown[active]); }
     // Invio senza voci da scegliere: si salva il testo libero
     else if (e.key === 'Enter' && query !== null) { e.preventDefault(); commit(); setOpen(false); setQuery(null); }
@@ -324,11 +342,13 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
             setQuery(next.startsWith(before) ? next.slice(before.length) : next.length < before.length ? '' : next);
           } else setQuery(next);
           setOpen(true);
+          setTipOn(true);
         }}
         onKeyDown={onKeys}
       />
       {open && wrap(
-        <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef} popover={!sheetScreen && supportsPopover ? 'manual' : undefined}>
+        <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef} popover={!sheetScreen && supportsPopover ? 'manual' : undefined}
+          onScroll={tips ? () => setTipTick(n => n + 1) : undefined}>
           {shown.map((option, i) => [
             !query && hasCommon && option.common && (i === 0 || !shown[i - 1].common)
               ? <li key="common-head" role="presentation" className="group-head common-head">{commonLabel ?? t('combobox.common')}</li> : null,
@@ -344,9 +364,10 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
               aria-disabled={option.disabled || undefined}
               aria-label={option.ariaLabel}
               className={[i === active ? 'active' : '', option.common ? 'common' : ''].filter(Boolean).join(' ') || undefined}
-              title={option.description}
+              title={tips ? undefined : option.description}
+              aria-description={tips ? option.description : undefined}
               onMouseDown={e => { e.preventDefault(); pick(option); }}
-              onMouseEnter={() => setActive(i)}
+              onMouseEnter={() => { setActive(i); if (tips) setTipOn(true); }}
             >
               <span className="option-head">
                 {option.icon}
@@ -360,13 +381,16 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           {shown.length === 0 && <li className="empty" aria-disabled="true">{t("combobox.none")}</li>}
           {/* La spiegazione della voce attiva (o di quella sotto il mouse), sempre in fondo e sempre alta uguale: la lista
               non salta. Per i lettori di schermo la spiegazione è già nel title della voce */}
-          {descriptionFooter && shown.length > 0 && (
+          {descriptionFooter && !tips && shown.length > 0 && (
             <li className="option-footer" role="presentation" aria-hidden="true">{shown[active]?.description ?? ''}</li>
           )}
           {matches.length > MAX_SHOWN && (
             <li className="empty" aria-disabled="true">{t("combobox.more", { n: matches.length - MAX_SHOWN })}</li>
           )}
         </ul>
+      )}
+      {activeTip && tipRect && (
+        <FloatTip rect={tipRect} tone={activeTip.tone} className={activeTip.className} side layer>{activeTip.content}</FloatTip>
       )}
     </div>
   );

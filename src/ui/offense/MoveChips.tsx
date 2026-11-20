@@ -59,7 +59,7 @@ export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
         // Raggiungibile con le frecce (data-nav, nel gruppo della tabella): col fuoco si apre il tooltip, i bersagli nella descrizione
         const desc = `${id}-${toID(move)}`;
         return (
-          <MovePill key={move} name={move} size="sm" value={n} symbol={false} className={`mcp${n === 0 ? ' z' : ''}`}
+          <MovePill key={move} name={move} size="sm" value={n} symbol={false} className={`mcp${n === 0 ? ' z' : ''}`} tip={false}
             data-nav="" role="img" {...tip.bind(move)} aria-describedby={n ? desc : undefined}
             aria-label={`${name} ${n}${reason ? `, ${reason}` : ''}`}
             after={n > 0 && <HiddenText id={desc}>{targets.map(x => (x.kind === 'type' ? typeName(x.label as TypeName, lang) : x.label)).join(', ')}</HiddenText>} />
