@@ -41,7 +41,7 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
     // Con un pannello a tutto schermo aperto la pagina sotto non conta
     const blocked = () => html.classList.contains('modal-open');
     // Si riduce un po' prima che la fascia grande esca: quando ne resta in vista poco più della striscia ridotta
-    const EARLY = 32;
+    const EARLY = 132;
     let lastY = window.scrollY;
     const resize = (next: boolean) => {
       const band = bandRef.current;
