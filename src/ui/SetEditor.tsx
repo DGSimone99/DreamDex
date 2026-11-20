@@ -219,12 +219,20 @@ interface Props {
   roleTips?: (string | undefined)[];
   /** Slot di mossa evidenziato perché il coach propone di cambiarlo. */
   proposedSlot?: number;
+  /** Strumento, abilità e mosse fuori regola: segnati sul loro campo, non solo sulla carta. */
+  flags?: FieldFlags;
   onChange: (set: TeamSet) => void;
   /** Set cambiato per intero (preset, I miei set, spread più usati): chi lo riceve offre Annulla; se manca, va a `onChange`. */
   onSetChange?: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
+/** Un campo fuori regola (vietato dal formato o non legale per la specie), segnato in rosso:
+ *  `label` la parola breve sul campo, `text` la frase intera per i lettori di schermo. */
+export type FieldFlag = { label: string; text: string; /** Sulle mosse: la mossa da mettere al posto (un clic la scambia). */ swap?: string };
+/** I campi fuori regola del membro: strumento, abilità e le quattro mosse (per posizione). */
+export type FieldFlags = { item?: FieldFlag; ability?: FieldFlag; moves?: (FieldFlag | undefined)[] };
+
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -371,9 +379,12 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     pickTab(phoneTabs[next].id, true);
   };
   // Vuota (niente strumento, abilità o natura): filo ed etichetta gialli, come i segni "da controllare" del team
-  const plate = (label: string, control: ReactNode, empty = false) => (
+  // Fuori regola (vietato o non legale): filo ed etichetta rossi
+  const plate = (label: string, control: ReactNode, empty = false, flag?: FieldFlag) => (
     // La targhetta intera (etichetta compresa) fa da campo: il menu si apre largo quanto lei
-    <div className={`set-plate${empty ? ' empty' : ''}`} data-pop-anchor><span className="field-label" aria-hidden="true">{label}</span>{control}</div>
+    <div className={`set-plate${empty ? ' empty' : ''}${flag ? ' flagged' : ''}`} data-pop-anchor>
+      <span className="field-label" aria-hidden="true">{label}</span>{control}
+    </div>
   );
 
   return (
@@ -549,9 +560,9 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         <div className="field" data-tip={itemDesc}>
           {plate(t('editor.item'), (
             <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
-              leading={set.item ? <ItemIcon item={set.item} /> : undefined}
+              leading={set.item ? <ItemIcon item={set.item} /> : undefined} invalid={flags?.item?.text}
               onChange={item => update({ item })} />
-          ), !set.item)}
+          ), !set.item, flags?.item)}
         </div>
         <div className="field" data-tip={abilityDesc}>
           {plate(t('editor.ability'), megaAbility ? (
@@ -561,17 +572,30 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
             </span>
           ) : (
             <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom}
-              description={abilityDesc} onChange={ability => update({ ability })} />
-          ), !megaAbility && !set.ability)}
+              description={abilityDesc} invalid={flags?.ability?.text} onChange={ability => update({ ability })} />
+          ), !megaAbility && !set.ability, megaAbility ? undefined : flags?.ability)}
         </div>
         </div>
         {/* Le mosse nello stesso riquadro Set (un gruppo col suo nome per i lettori di schermo) */}
         <div className="editor-group moves" role="group" aria-label={t('editor.moves')}>
         {moves.map((move, i) => (
-          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}`} data-move-tip={move || undefined}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}${flags?.moves?.[i] ? ' flagged' : ''}`} data-move-tip={move || undefined}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
-              <MoveDetail name={move} inField />
+              {/* Fuori regola: al posto di potenza e precisione (stanno nel tooltip) la parola breve, nel colore del problema */}
+              {flags?.moves?.[i] ? (
+                <span className="field-flags">
+                  <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flags.moves[i]!.label}</span>
+                  {/* La mossa proposta al posto: ⇄ e il nome, un clic la mette nel set */}
+                  {flags.moves[i]!.swap && (
+                    <button type="button" className="field-swap" data-move-tip={flags.moves[i]!.swap}
+                      aria-label={t('editor.swapMove', { to: gameName('move', flags.moves[i]!.swap!, lang), from: gameName('move', move, lang) })}
+                      onClick={() => { const next = [...moves]; next[i] = flags.moves![i]!.swap!; update({ moves: next }); }}>
+                      <Icon name="swap" /><span>{gameName('move', flags.moves[i]!.swap!, lang)}</span>
+                    </button>
+                  )}
+                </span>
+              ) : <MoveDetail name={move} inField />}
             </span>
             <Combobox
               className="move-combo"
@@ -584,6 +608,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               commonLabel={commonLabel(common?.moves)}
               description={describe.move(move, lang)}
               optionTip={moveTipOf}
+              invalid={flags?.moves?.[i]?.text}
               onChange={value => {
                 const next = [...moves];
                 next[i] = value;
