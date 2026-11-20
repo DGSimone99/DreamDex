@@ -1095,3 +1095,27 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 }
 @keyframes band-show { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .band.auto.collapsed, .band.auto:not(.collapsed) > :is(.team, .grade-badge) { animation: none; } }
+
+/* Tocchi da 44px (telefono e tablet). Dove c'è posto il controllo cresce a 44; dove a vista deve restare piccolo
+   (lingua, "?", Spread, la riga della velocità, i consigli della Sfida) cresce solo la zona che si tocca, con un
+   ::after (::before sullo Spread, il cui ::after è la freccia) centrato e largo almeno 44px */
+@media (max-width: 1099px) {
+  .rail .format-card, .rail .format-card > summary { min-height: 44px; }
+  .rail-settings { width: 44px; }
+  :is(.rail-foot .lang-switch button, .rail-settings, .grade-badge .help-button, .speed-line-anchor, .duel-tip-chip) { position: relative; }
+  :is(.rail-foot .lang-switch button, .rail-settings, .grade-badge .help-button, .speed-line-anchor, .duel-tip-chip)::after,
+  .set-editor .spread-toggle::before,
+  .band:not(.collapsed) .grade-badge button.grade-area::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%;
+  }
+  .set-editor .spread-toggle { position: relative; }
+  /* Righe del voto, pulsanti del team, schede dell'editor, campi e menu: 44 a vista */
+  .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { min-height: 44px; }
+  .band .team-head :is(.team-plate, .team-guide, .team-io, .team-io .export-tab, .team-saved .popover > summary, .clear-team), .team-more-button { height: 44px; }
+  .editor-tabs [role='tab'] { height: 44px; }
+  .set-editor .stat-row :is(.ev-input, .iv-input) { height: 44px; }
+  .set-editor .duel-settings { width: 44px; height: 44px; }
+  .set-editor .duel-species input { height: 44px; }
+  .spread-presets button { min-height: 44px; }
+  .set-editor label:has(> input.switch) { min-height: 44px; }
+}
