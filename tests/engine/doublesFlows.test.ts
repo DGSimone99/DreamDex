@@ -28,6 +28,7 @@ const full: TeamSet[] = [
 
 const doubles: Format = { ...DEFAULT_FORMAT, formatId: 'natdexdoubles' };
 const doublesData = { ...fixtureData, formatId: 'natdexdoubles' as const };
+const ouData = { ...fixtureData, formatId: 'ou' as const };
 
 describe('doppio: le voci dei Ruoli per formato', () => {
   it('in doppio le nove voci, in singolo tutte le altre (nessuna del doppio)', () => {
@@ -103,5 +104,20 @@ describe('doppio: coach, Panoramica e riassunto', () => {
     expect(summary.archetype).toBe('doubles');
     expect(summary.typeRule).toBe('oneType');
     expect(summary.styles).toEqual(['sun']);
+  });
+
+  it('il riassunto in doppio mostra solo il legame dei pivot; in singolo anche Wish', () => {
+    const team = [
+      mk('Incineroar', 'Sitrus Berry', 'Intimidate', ['Fake Out', 'Flare Blitz', 'Knock Off', 'Parting Shot'], 'Adamant', { hp: 252, atk: 252, spd: 4 }),
+      mk('Landorus-Therian', 'Life Orb', 'Intimidate', ['Earthquake', 'Rock Slide', 'U-turn', 'Protect'], 'Jolly'),
+      mk('Alomomola', 'Leftovers', 'Regenerator', ['Wish', 'Scald', 'Protect', 'Helping Hand'], 'Bold', { hp: 252, def: 252, spd: 4 }),
+    ];
+    const kinds = (data: typeof doublesData | typeof ouData, format: Format) => {
+      const coaching = coachTeam(team, format, data);
+      const rating = rateTeam(team, data)!;
+      return teamSummary(team, rating, coaching, dashboardData(team, analyzeTeam(team, data), rating, coaching.problems, data, 'it'), data).links.map(link => link.kind);
+    };
+    expect(kinds(doublesData, doubles)).toEqual(['pivot']);
+    expect(kinds(ouData, DEFAULT_FORMAT)).toEqual(['pivot', 'wish']);
   });
 });
