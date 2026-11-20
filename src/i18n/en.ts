@@ -646,6 +646,7 @@ export const en = {
   'editor.move': "Move {n}",
   'editor.flagBanned': "Banned",
   'editor.flagIllegal': "Not legal",
+  'editor.flagBannedItem': "Banned",
   'editor.done': "Done",
   'editor.gradeLabel': "Team grade",
   'editor.swapMove': "Use {to} instead of {from}",

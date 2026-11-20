@@ -1158,3 +1158,28 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .editor-done .icon { width: 16px; height: 16px; color: var(--accent-ink); }
   .editor-done:active { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 }
+
+/* Telefono: scorrendo l'editor il riepilogo del membro si stringe a una riga (sprite piccolo, nome, voto, ×): Set e
+   schede restano sotto, ferme, e le righe hanno più posto (anche con la tastiera aperta) */
+@media (max-width: 599px) {
+  /* La testata parte 12px sopra il bordo dello schermo: 68 per averne 56 a vista */
+  .drawer.shrunk .set-editor .editor-title { min-height: 68px; padding: 12px 140px 0 64px; align-content: center; }
+  .drawer.shrunk .set-editor .editor-title :is(.species-tag, .types, .shiny-toggle, .nickname-pencil) { display: none; }
+  .drawer.shrunk .set-editor .editor-title .nickname strong { font-size: var(--fs-title-l); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drawer.shrunk .set-editor .editor-title .nickname { max-width: 100%; min-width: 0; }
+  .drawer.shrunk .editor-hero > .sprite { right: auto; left: var(--sp-4); bottom: 4px; width: 52px; height: 52px; }
+  .drawer.shrunk .set-editor .editor-title .editor-grade { top: calc(50% + 6px); left: auto; right: 56px; translate: 0 -50%; }
+  .drawer.shrunk .set-editor .editor-title:has(.editor-grade) { padding-top: 0; }
+  .drawer.shrunk .set-editor .editor-actions .editor-close { top: 12px; }
+}
+
+/* Telefono, Statistiche: "EV" accanto al totale, sopra le caselle (non sopra i valori); EV a 0 e IV a 31 col
+   riquadro leggero anche senza mouse, così si vede che si toccano. ⇄ più alto (28) con la zona da 44 che non entra
+   nel campo della mossa sotto */
+@media (max-width: 599px) {
+  .set-editor .stat-head .ev-total .ev-head { justify-self: end; margin-right: var(--sp-3); }
+  .set-editor .stat-row .ev-input.zero:not(:focus), .set-editor .stat-row .iv-input.max { border-color: var(--line-soft); }
+  .set-editor .field-swap { height: 28px; padding: 0 var(--sp-4); }
+  .set-editor .field-swap::before { inset: -9px 0; }
+  .set-editor :is(.field.flagged, .field:has(> .set-plate.flagged)) > .field-head { min-height: 28px; margin-bottom: var(--sp-3); }
+}
