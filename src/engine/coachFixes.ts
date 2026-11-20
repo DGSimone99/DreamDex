@@ -8,7 +8,8 @@ import type { Format } from './format';
 import { improveReplacements, type Replacement } from './replace';
 import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
-import { dataKey, idOf, isCollectingGains, rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type AreaSnapshot, type SwapReport, type TeamGain } from './teamGain';
+import { rulesOf } from './formatRules';
+import { dataKey, idOf, isCollectingGains, rankByTeamGain, swapsPerMember, withCandidate, type AreaSnapshot, type SwapReport, type TeamGain } from './teamGain';
 
 /** Un cambio proposto dal Coaching: sostituzione di un membro o aggiunta a un team incompleto. */
 export interface CoachFix {
@@ -146,7 +147,7 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
     // I preferiti non si propongono come membri da sostituire; niente doppioni (stesse regole di bestSwaps)
     if (member.favorite) return;
     const others = new Set(team.filter((_, i) => i !== index).map(base));
-    const ranked = rankedReplacements(team, index, format, data, SWAPS_PER_MEMBER, lang, archetype)
+    const ranked = rankedReplacements(team, index, format, data, swapsPerMember(rulesOf(data)), lang, archetype)
       .filter(c => !others.has(base(c.set)) && forme(c.set) !== forme(member));
     const delta = (x: (typeof ranked)[number]) => changes(withCandidate(team, x.set, index));
     const kept = keepSwaps(ranked, delta, FIXES_PER_MEMBER);

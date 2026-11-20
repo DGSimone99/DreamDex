@@ -12,7 +12,7 @@ export type ComponentKey = keyof typeof WEIGHTS;
 export const COMPONENT_KEYS = Object.keys(WEIGHTS) as ComponentKey[];
 
 /**
- * Pesi del punteggio che ordina i candidati (somma 1): il Coaching prova col voto vero solo i primi 15 per membro.
+ * Pesi del punteggio che ordina i candidati (somma 1): il Coaching prova col voto vero solo i primi per membro (teamGain.ts swapsPerMember: 15, di più in doppio).
  * `power` è la forza del membro (power.ts memberPower, 0–100), la stessa del malus "membro debole".
  * Tarati il 2026-11-10 (controllo 2 punto 3.12) su 41 team National Dex OU: lo scambio migliore fra i primi 100 finisce
  * nei primi 15 nel 77% dei membri (era il 57%), il migliore di tutto il team nell'85% dei team (era il 50%).

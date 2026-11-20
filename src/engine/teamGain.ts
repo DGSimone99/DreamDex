@@ -3,7 +3,7 @@ import { fitsArchetype, fitsTeamType, teamArchetype, type Archetype } from './ar
 import { isPassive } from './roles';
 import type { EngineData } from './data';
 import { battleSpecies } from './dex';
-import { rulesOf } from './formatRules';
+import { isOneType, rulesOf, type FormatRules } from './formatRules';
 import { rateTeam, type TeamRating } from './rating';
 import { rolesTally } from './rolesArea';
 import type { TeamSet } from './sets';
@@ -203,7 +203,7 @@ export const dataKey = (data: EngineData) => [data.stats, data.sets, data.fallba
   .map(idOf).join(',') + `|${data.formatId ?? ''}|${!!data.ignoreMeta}`;
 
 /**
- * Voti dei singoli candidati già calcolati: il Coaching valuta i primi 15 sostituti di un membro, la vista per membro
+ * Voti dei singoli candidati già calcolati: il Coaching valuta i primi sostituti di un membro (swapsPerMember), la vista per membro
  * i primi 100; così la seconda valuta solo quelli in più. Chiave: team (per identità), membro, dati, lingua, tipo di
  * team, ordine e il set del candidato. Oltre il limite si svuota.
  */
@@ -365,6 +365,14 @@ export interface SwapOption {
 
 /** Candidati per membro su cui si calcola il voto: i migliori per punteggio. */
 export const SWAPS_PER_MEMBER = 15;
+/**
+ * In doppio se ne valutano di più: il punteggio veloce che li ordina è tarato sul singolo, e su 40 team veri di doppio
+ * il migliore per voto restava fuori dai primi 15 più di una volta su tre (2026-11-21). Con 30 si perdeva molto meno
+ * ma l'attesa della lista quasi raddoppiava: 20 è la via di mezzo scelta dall'utente.
+ */
+export const DOUBLES_SWAPS_PER_MEMBER = 20;
+/** Quanti sostituti per membro si valutano col voto nel formato. */
+export const swapsPerMember = (rules: FormatRules): number => (isOneType(rules) ? DOUBLES_SWAPS_PER_MEMBER : SWAPS_PER_MEMBER);
 
 /**
  * Raccomandazioni libere: per ogni membro (tranne i preferiti) i migliori sostituti per punteggio, valutati col voto
@@ -403,7 +411,7 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
     const candidates = candidatesFor(index)
       .filter(c => !others.has(base(c.set)) && forme(c.set) !== forme(member))
       .filter(c => !similar || (c.similarity ?? 0) >= threshold)
-      .slice(0, SWAPS_PER_MEMBER);
+      .slice(0, swapsPerMember(rulesOf(data)));
     for (const candidate of candidates) {
       const gain = gainOf(index, candidate.set);
       if (gain === 'excluded' && report) report.excluded += 1;
