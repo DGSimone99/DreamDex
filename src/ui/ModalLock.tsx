@@ -21,9 +21,11 @@ export function ModalLock() {
     const root = document.getElementById('root');
     open += 1;
     root?.setAttribute('inert', '');
+    // La pagina sotto non scorre (col dito lo scorrimento passava alla pagina dove la finestra non scorre)
+    document.documentElement.classList.add('modal-open');
     return () => {
       open = Math.max(0, open - 1);
-      if (open === 0) root?.removeAttribute('inert');
+      if (open === 0) { root?.removeAttribute('inert'); document.documentElement.classList.remove('modal-open'); }
     };
   }, []);
   useLayoutEffect(() => {
