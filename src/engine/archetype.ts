@@ -5,19 +5,23 @@ import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from '
 import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesList, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
 import { isOneType, type FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
-import { benefits, enables, type Condition } from './synergy';
+import { benefits, enables, usesCondition, type Condition } from './synergy';
 import { isTank, TANK_BRAKE } from './tank';
 
 /** Archetipi di Smogon, dal più offensivo al più difensivo; 'doubles' è il tipo unico del doppio (formatRules.ts, 'oneType'). */
 export type Archetype = 'hyperOffense' | 'bulkyOffense' | 'balance' | 'semiStall' | 'stall' | 'doubles';
 /** I cinque tipi del singolo: quelli che l'interfaccia elenca e fa scegliere. */
 export type SinglesArchetype = Exclude<Archetype, 'doubles'>;
-/** Stili: meteo e Trick Room (Webs, Volt-turn e Screens tolti: non dicevano niente di più dei ruoli). */
-export type TeamStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom';
+/**
+ * Stili: meteo e Trick Room (Webs, Volt-turn e Screens tolti: non dicevano niente di più dei ruoli). I quattro campi e
+ * Tailwind sono stili solo in doppio (doublesStyle).
+ */
+export type TeamStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom'
+  | 'grassyterrain' | 'psychicterrain' | 'electricterrain' | 'mistyterrain' | 'tailwind';
 
 export interface TeamArchetype {
   archetype: Archetype;
-  /** Al massimo MAX_STYLES stili (meteo, Trick Room). */
+  /** Al massimo MAX_STYLES stili (meteo, Trick Room); in doppio al massimo uno (anche un campo o Tailwind). */
   styles: TeamStyle[];
 }
 
@@ -174,16 +178,38 @@ function archetypeOf(team: TeamSet[], rules: FormatRules): Archetype {
   return 'bulkyOffense';
 }
 
-/** Meteo e Trick Room contano come stile solo se qualcun altro li sfrutta (due membri lenti per Trick Room). */
+/**
+ * Quanti membri portano o sfruttano la condizione, se è uno stile; altrimenti 0. Meteo e Trick Room contano come stile
+ * solo se qualcun altro li sfrutta (due membri lenti per Trick Room). `terrain`: chi sfrutta un campo è chi lo usa
+ * davvero (usesCondition: anche chi attacca a terra col tipo che il campo potenzia).
+ */
+function styleMembers(team: TeamSet[], condition: Condition, terrain = false): number {
+  const setters = team.filter(set => enables(set).some(e => e.condition === condition && toID(e.via) !== 'chillyreception'));
+  const users = team.filter(set => !setters.includes(set)
+    && (terrain ? usesCondition(set, condition) : benefits(set).some(b => b.condition === condition && toID(b.via) !== 'weatherball')));
+  return setters.length > 0 && users.length >= (condition === 'trickroom' ? 2 : 1) ? setters.length + users.length : 0;
+}
+
 function conditionStyles(team: TeamSet[]): TeamStyle[] {
-  return CONDITION_STYLES
-    .filter(([condition]) => {
-      const setters = team.filter(set => enables(set).some(e => e.condition === condition && toID(e.via) !== 'chillyreception'));
-      const users = team.filter(set => !setters.includes(set)
-        && benefits(set).some(b => b.condition === condition && toID(b.via) !== 'weatherball'));
-      return setters.length > 0 && users.length >= (condition === 'trickroom' ? 2 : 1);
-    })
-    .map(([, style]) => style);
+  return CONDITION_STYLES.filter(([condition]) => styleMembers(team, condition) > 0).map(([, style]) => style);
+}
+
+/** Gli stili del doppio nell'ordine che decide i pari merito: meteo, campi, Trick Room, Tailwind. */
+const DOUBLES_STYLES: TeamStyle[] = ['sun', 'rain', 'sand', 'snow', 'grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain', 'trickroom', 'tailwind'];
+
+/**
+ * Doppio (2026-11-21): una sola etichetta di stile, quella con più membri che la portano o la sfruttano; a pari merito
+ * il meteo, poi il campo, poi Trick Room, poi Tailwind. Uno stile esiste con la regola di sempre (chi lo porta più
+ * almeno un altro che lo sfrutta); Tailwind esiste appena un membro ha la mossa e conta solo chi la porta, così compare
+ * quando non c'è altro.
+ */
+function doublesStyle(team: TeamSet[]): TeamStyle[] {
+  const count = (style: TeamStyle): number =>
+    style === 'tailwind' ? team.filter(set => set.moves.some(m => toID(m) === 'tailwind')).length : styleMembers(team, style, style.endsWith('terrain'));
+  const counts = DOUBLES_STYLES.map(style => ({ style, n: count(style) })).filter(s => s.n > 0);
+  // Il primo col conto più alto: l'ordine della lista decide i pari merito
+  const best = counts.reduce<{ style: TeamStyle; n: number } | null>((a, s) => (!a || s.n > a.n ? s : a), null);
+  return best ? [best.style] : [];
 }
 
 /** Archetipi per cui ha senso cercare un singolo Pokémon (Balance: ci rientrerebbero quasi tutti). */
@@ -257,7 +283,7 @@ export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleVa
 
 /** Tipo di team con archetipo e stili, solo per un team completo; in doppio (tipo unico) per qualunque team non vuoto. */
 export function teamArchetype(team: TeamSet[], rules: FormatRules): TeamArchetype | null {
-  if (isOneType(rules)) return team.length ? { archetype: archetypeOf(team, rules), styles: conditionStyles(team).slice(0, MAX_STYLES) } : null;
+  if (isOneType(rules)) return team.length ? { archetype: archetypeOf(team, rules), styles: doublesStyle(team) } : null;
   if (team.length < 6 || team.some(set => !battleSpecies(set))) return null;
   return { archetype: archetypeOf(team, rules), styles: conditionStyles(team).slice(0, MAX_STYLES) };
 }
