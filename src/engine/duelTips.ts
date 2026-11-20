@@ -1,5 +1,9 @@
 import type { StatID } from '@pkmn/dex';
-import { duelHits } from './editorDuel';
+import { metaThreats } from './attackers';
+import type { EngineData } from './data';
+import { getMove, toID } from './dex';
+import { battleSpeed, duelHits, duelSpeed, editorDuel } from './editorDuel';
+import { rateTeam } from './rating';
 import type { TeamSet } from './sets';
 
 /**
@@ -67,4 +71,92 @@ export function metaEffects(before: TeamSet, after: TeamSet, threats: { set: Tea
     kind,
     shifts: found.get(kind)!.sort((a, b) => gap(b.shift) - gap(a.shift) || b.weight - a.weight).map(x => x.shift),
   }));
+}
+
+export type TipId = 'def' | 'atk' | 'spe' | 'move';
+export interface TipOption {
+  set: TeamSet;
+  /** EV tolti per pagare il consiglio (vuoto se bastano quelli liberi). */
+  taken: EvMap;
+  /** La mossa tolta (solo consigli di mossa; '' = slot vuoto). */
+  replaced: string | null;
+  /** Voto del team con questa variante; null se il voto è bloccato. */
+  overall: number | null;
+  effects: MetaEffect[];
+}
+export interface DuelTip { id: TipId; row: 'mine' | 'theirs' | 'speed'; add: EvMap; move: string | null; options: TipOption[]; best: number }
+export interface DuelTipsResult { overall: number | null; tips: DuelTip[] }
+
+const SPEED_RANK = { theirs: 0, tie: 1, mine: 2 } as const;
+const speedRank = (me: TeamSet, opp: TeamSet) => {
+  const a = battleSpeed(me);
+  const b = battleSpeed(opp);
+  return SPEED_RANK[a > b ? 'mine' : a < b ? 'theirs' : 'tie'];
+};
+
+/** Il consiglio non peggiora le altre righe della Sfida (il tuo KO, i colpi che reggi, chi muove primo). */
+function keepsOthers(id: TipId, me: TeamSet, next: TeamSet, opp: TeamSet): boolean {
+  const was = duelHits(me, opp);
+  const now = duelHits(next, opp);
+  const mineOk = (now.mine?.hitsSure ?? Infinity) <= (was.mine?.hitsSure ?? Infinity);
+  const theirsOk = (now.theirs?.hitsMaybe ?? Infinity) >= (was.theirs?.hitsMaybe ?? Infinity);
+  const speedOk = speedRank(next, opp) >= speedRank(me, opp);
+  if (id === 'def') return mineOk && speedOk;
+  if (id === 'atk') return theirsOk && speedOk;
+  return mineOk && theirsOk;
+}
+
+/**
+ * I consigli della Sfida con le loro varianti: EV per reggere un colpo in più (def), per un KO con un colpo in meno (atk),
+ * per superarlo in Velocità (spe), una mossa migliore (move). Per gli EV la variante scelta è quella che non peggiora le
+ * altre righe, poi col voto più alto, poi con più EV rimasti; per la mossa quella col voto più alto (a pari voto lo slot vuoto).
+ */
+export function duelTips(team: TeamSet[], index: number, opp: TeamSet, pool: readonly string[], data: EngineData): DuelTipsResult {
+  const me = team[index];
+  const rate = (set: TeamSet) => rateTeam(team.map((s, i) => (i === index ? set : s)), data)?.overall ?? null;
+  const skip = new Set([toID(me.species), toID(opp.species)]);
+  const threats = metaThreats(data).filter(t => !skip.has(toID(t.set.species)));
+  const duel = editorDuel(me, opp, pool);
+  const speed = duelSpeed(me, opp);
+  const tips: DuelTip[] = [];
+
+  const evTip = (id: TipId, row: DuelTip['row'], add: EvMap) => {
+    const options = evSources(me, add).map(v => ({ ...v, replaced: null, overall: rate(v.set), effects: metaEffects(me, v.set, threats) }));
+    if (!options.length) return;
+    const keeps = options.map(o => keepsOthers(id, me, o.set, opp));
+    const left = (o: TipOption) => STATS.reduce((acc, stat) => acc + (o.taken[stat] ? ev(o.set.evs, stat) : 0), 0);
+    let best = 0;
+    options.forEach((o, i) => {
+      const b = options[best];
+      const better = Number(keeps[i]) - Number(keeps[best]) || (o.overall ?? -1) - (b.overall ?? -1) || left(o) - left(b);
+      if (better > 0) best = i;
+    });
+    tips.push({ id, row, add, move: null, options, best });
+  };
+  if (duel.defTip) evTip('def', 'theirs', duel.defTip.add);
+  if (duel.atkTip) evTip('atk', 'mine', duel.atkTip.add);
+  if (speed.tip) evTip('spe', 'speed', { spe: speed.tip.evs });
+
+  if (duel.moveTip) {
+    const move = duel.moveTip.move;
+    const slots = [0, 1, 2, 3].map(i => me.moves[i] ?? '');
+    const options = slots.map((replaced, slot): TipOption => {
+      const moves = [...slots];
+      moves[slot] = move;
+      const set = { ...me, moves };
+      const effects = metaEffects(me, set, threats).map(fx => {
+        const type = fx.kind === 'dealMore' ? getMove(move)?.type : fx.kind === 'dealLess' && replaced ? getMove(replaced)?.type : undefined;
+        return type ? { ...fx, type } : fx;
+      });
+      return { set, taken: {}, replaced, overall: rate(set), effects };
+    });
+    let best = 0;
+    options.forEach((o, i) => {
+      const b = options[best];
+      const better = (o.overall ?? -1) - (b.overall ?? -1) || Number(!o.replaced) - Number(!b.replaced);
+      if (better > 0) best = i;
+    });
+    tips.push({ id: 'move', row: 'mine', add: {}, move, options, best });
+  }
+  return { overall: rate(me), tips };
 }

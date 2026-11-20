@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { evSources, metaEffects } from '../../src/engine/duelTips';
+import { duelTips, evSources, metaEffects } from '../../src/engine/duelTips';
+import { editorDuel } from '../../src/engine/editorDuel';
+import { rateTeam } from '../../src/engine/rating';
+import { fixtureData } from '../fixtures/data';
 import { gholdengo, tusk } from '../fixtures/data';
 
 const sum = (evs: Record<string, number | undefined>) => Object.values(evs).reduce<number>((a, n) => a + (n ?? 0), 0);
@@ -48,5 +51,50 @@ describe('consigli della Sfida: cosa cambia contro il resto del meta', () => {
 
   it('nessuna minaccia: nessun effetto', () => {
     expect(metaEffects(tusk, { ...tusk, evs: { ...tusk.evs, spd: 252 } }, [])).toEqual([]);
+  });
+});
+
+describe('consigli della Sfida: i consigli completi', () => {
+  const team = [tusk, gholdengo];
+
+  it('il voto di adesso è quello di rateTeam', () => {
+    expect(duelTips(team, 0, gholdengo, [], fixtureData).overall).toBe(rateTeam(team, fixtureData)?.overall ?? null);
+  });
+
+  it('ogni opzione EV sposta davvero la soglia e resta entro 510', () => {
+    const me = { ...tusk, evs: { hp: 4, atk: 252, spe: 252 } };
+    const tips = duelTips([me, gholdengo], 0, gholdengo, [], fixtureData).tips.filter(t => t.id !== 'move');
+    expect(tips.length).toBeGreaterThan(0);
+    const before = editorDuel(me, gholdengo);
+    for (const tip of tips) {
+      for (const o of tip.options) expect(sum(o.set.evs)).toBeLessThanOrEqual(510);
+      const after = editorDuel(tip.options[tip.best].set, gholdengo);
+      if (tip.id === 'def') expect(after.theirs!.hitsMaybe).toBeGreaterThan(before.theirs!.hitsMaybe);
+      if (tip.id === 'atk') expect(after.mine!.hitsSure).toBeLessThan(before.mine!.hitsSure);
+    }
+  });
+
+  it('mossa: 4 opzioni, la scelta ha il voto più alto, lo slot vuoto vince a pari voto', () => {
+    const me = { ...tusk, moves: ['Rapid Spin', 'Bulk Up', 'Ice Spinner', ''] };
+    const tip = duelTips([me, gholdengo], 0, gholdengo, ['Headlong Rush', 'Earthquake'], fixtureData).tips.find(t => t.id === 'move')!;
+    expect(tip.options).toHaveLength(4);
+    expect(tip.options.map(o => o.replaced)).toEqual(['Rapid Spin', 'Bulk Up', 'Ice Spinner', '']);
+    const top = Math.max(...tip.options.map(o => o.overall ?? -1));
+    expect(tip.options[tip.best].overall ?? -1).toBe(top);
+    if (tip.options[3].overall === top) expect(tip.best).toBe(3);
+    expect(tip.options[tip.best].set.moves).toContain(tip.move);
+  });
+
+  it('voto bloccato: overall null, i consigli ci sono lo stesso', () => {
+    const illegal = { ...tusk, evs: { hp: 252, atk: 252, def: 252 } };
+    const r = duelTips([illegal, gholdengo], 0, gholdengo, ['Headlong Rush', 'Earthquake'], fixtureData);
+    expect(r.overall).toBeNull();
+    for (const t of r.tips) for (const o of t.options) expect(o.overall).toBeNull();
+  });
+
+  it('senza meta: nessun effetto', () => {
+    const me = { ...tusk, evs: { hp: 4, atk: 252, spe: 252 } };
+    const r = duelTips([me, gholdengo], 0, gholdengo, [], { ...fixtureData, ignoreMeta: true });
+    for (const t of r.tips) for (const o of t.options) expect(o.effects).toEqual([]);
   });
 });
