@@ -1,5 +1,6 @@
 import { bestHit, type FieldCondition, type Hit, type HitOptions } from './damage';
 import { getMove, toID } from './dex';
+import { AVOID_MOVES } from './generatedSet';
 import { hitsToKO } from './duel';
 import type { TeamSet } from './sets';
 import type { StatID } from '@pkmn/dex';
@@ -60,7 +61,7 @@ export interface EditorDuel {
   theirs: DuelHit | null;
   /** Il consiglio di EV più piccolo fra attacco e difesa (a parità, la difesa). */
   tip: EvTip | null;
-  /** I consigli di EV per lato, ognuno solo se è un ritocco. */
+  /** I consigli di EV per lato: l'attacco fino a 252 nella statistica, la difesa (PS + una difesa) solo se è un ritocco. */
   atkTip: EvTip | null;
   defTip: EvTip | null;
   moveTip: MoveTip | null;
@@ -141,19 +142,23 @@ function attackTip(me: TeamSet, opp: TeamSet, mine: DuelHit): EvTip | null {
   return n === null ? null : { add: { [stat]: n }, total: n, hits: target, side: 'attack' };
 }
 
-/** Oltre questi EV in più non è un ritocco ma un altro spread: niente consiglio. */
+/**
+ * Il consiglio di Difesa (PS e una difesa insieme) oltre questi EV in più non è un ritocco ma un altro spread: niente
+ * consiglio. Attacco e Velocità (una statistica sola) non hanno tetto: basta che la statistica resti entro 252.
+ */
 export const TIP_MAX_EVS = 160;
 
 /**
  * La mossa migliore fra quelle che il membro può imparare (pool) e non ha già: quella col danno atteso più alto, solo se
- * manda KO con meno colpi sicuri di oggi (o se oggi non ha colpi). Niente mosse OHKO: dipendono dalla precisione.
+ * manda KO con meno colpi sicuri di oggi (o se oggi non ha colpi). Niente mosse OHKO (dipendono dalla precisione) né
+ * mosse difficili da usare (AVOID_MOVES: Focus Punch, Dream Eater, Belch…), che vincerebbero solo per la potenza.
  */
 function moveTip(me: TeamSet, opp: TeamSet, mine: DuelHit | null, pool: readonly string[]): MoveTip | null {
   if (mine && mine.hitsSure <= 1) return null;
   const have = new Set(me.moves.map(toID));
   const moves = pool.filter(name => {
     const move = getMove(name);
-    return !!move && move.category !== 'Status' && !move.ohko && !have.has(move.id);
+    return !!move && move.category !== 'Status' && !move.ohko && !AVOID_MOVES.has(move.id) && !have.has(move.id);
   });
   if (!moves.length) return null;
   const hit = bestHit({ ...me, moves }, opp, optsFor(me, opp));
@@ -163,17 +168,18 @@ function moveTip(me: TeamSet, opp: TeamSet, mine: DuelHit | null, pool: readonly
 }
 
 /**
- * La sfida: i due colpi, i consigli di EV per lato (solo se sono un ritocco) e, se si passa l'elenco delle mosse
+ * La sfida: i due colpi, i consigli di EV per lato (la difesa solo se è un ritocco, vedi TIP_MAX_EVS) e, se si passa l'elenco delle mosse
  * imparabili, una mossa migliore da mettere nel set.
  */
 export function editorDuel(me: TeamSet, opp: TeamSet, pool: readonly string[] = []): EditorDuel {
   const mine = toDuelHit(bestHit(me, opp, optsFor(me, opp)));
   const theirs = toDuelHit(bestHit(opp, me, optsFor(opp, me)));
-  const small = (t: EvTip | null) => (t && t.total <= TIP_MAX_EVS ? t : null);
-  const defTip = small(theirs && defenseTip(me, opp, theirs));
-  const atkTip = small(mine && attackTip(me, opp, mine));
-  const tip = [defTip, atkTip].filter((t): t is EvTip => !!t).sort((a, b) => a.total - b.total)[0] ?? null;
-  return { mine, theirs, tip, atkTip, defTip, moveTip: pool.length ? moveTip(me, opp, mine, pool) : null };
+  const defTip = (theirs && defenseTip(me, opp, theirs)) as EvTip | null;
+  const small = defTip && defTip.total <= TIP_MAX_EVS ? defTip : null;
+  // L'attacco tocca una statistica sola: nessun tetto oltre i 252 della statistica (Ninetales a 0 SpA: +212 per l'OHKO)
+  const atkTip = mine && attackTip(me, opp, mine);
+  const tip = [small, atkTip].filter((t): t is EvTip => !!t).sort((a, b) => a.total - b.total)[0] ?? null;
+  return { mine, theirs, tip, atkTip, defTip: small, moveTip: pool.length ? moveTip(me, opp, mine, pool) : null };
 }
 
 /** Come va lo scontro uno contro uno: vinci, perdi, o dipende dai tiri del danno (o dalla Velocità pari). */
@@ -238,7 +244,7 @@ export interface DuelSpeed {
   theirs: number;
   /** Chi muove per primo (senza mosse con priorità): 'pari' = 50% a testa. */
   order: 'mine' | 'theirs' | 'tie';
-  /** Se sei più lento o pari: quanti EV in più in Velocità servono per superarlo (solo se è un ritocco). */
+  /** Se sei più lento o pari: quanti EV in più in Velocità servono per superarlo (fino a 252 nella statistica). */
   tip: { evs: number } | null;
 }
 
@@ -250,7 +256,7 @@ export function duelSpeed(me: TeamSet, opp: TeamSet): DuelSpeed {
   let tip: DuelSpeed['tip'] = null;
   if (order !== 'mine') {
     const n = smallest(252 - ev(me, 'spe'), add => battleSpeed(withEvs(me, { spe: add })) > theirs);
-    if (n !== null && n <= TIP_MAX_EVS) tip = { evs: n };
+    if (n !== null) tip = { evs: n };
   }
   return { mine, theirs, order, tip };
 }

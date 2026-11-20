@@ -4,8 +4,11 @@ import type { StatID, TeamSet } from './sets';
 import type { GameId } from './games';
 import { effectiveness, TYPES, type TypeName } from './types';
 
-/** Mosse d'attacco da non proporre in un set generato: si ricaricano, si esauriscono o dipendono da condizioni. */
-const AVOID = new Set([
+/**
+ * Mosse d'attacco difficili da usare, da non proporre mai (set generati, consigli della Sfida): si ricaricano, si
+ * esauriscono, mandano KO chi le usa o dipendono da condizioni (Focus Punch, Dream Eater, Belch, Last Resort…).
+ */
+export const AVOID_MOVES: ReadonlySet<string> = new Set([
   'hyperbeam', 'gigaimpact', 'blastburn', 'frenzyplant', 'hydrocannon', 'rockwrecker', 'roaroftime', 'prismaticlaser',
   'eternabeam', 'meteorassault', 'selfdestruct', 'explosion', 'mistyexplosion', 'finalgambit', 'memento',
   'focuspunch', 'solarbeam', 'solarblade', 'skyattack', 'razorwind', 'skullbash', 'futuresight', 'doomdesire',
@@ -54,7 +57,7 @@ export function generatedSet(speciesName: string, genLimit = 9, game: GameId | n
 
   // Attacchi: dello stile del Pokémon (con un margine per i misti), escluse le mosse problematiche
   const attacks: Candidate[] = learnable
-    .filter(m => m.category !== 'Status' && m.basePower > 0 && !AVOID.has(m.id) && !m.flags.charge && !m.flags.recharge)
+    .filter(m => m.category !== 'Status' && m.basePower > 0 && !AVOID_MOVES.has(m.id) && !m.flags.charge && !m.flags.recharge)
     .filter(m => Math.abs(atk - spa) < 15 || (m.category === 'Physical') === physical)
     .map(m => ({ name: m.name, type: m.type as TypeName, power: strength(m, types, atk, spa) }))
     .sort((a, b) => b.power - a.power);
