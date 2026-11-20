@@ -237,7 +237,8 @@
 /* Fuori regola (vietato dal formato o non legale per la specie): filo ed etichetta rossi,
    sulle mosse la parola breve al posto di potenza e precisione */
 .set-plate.flagged:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--bad); }
-.set-plate.flagged > .field-label { color: var(--bad); }
+.set-plate.flagged > .field-label { color: var(--bad); background: var(--bad-bg); }
+.set-plates .field:has(> .set-plate.flagged) > .field-head { color: var(--bad); }
 .editor-group.moves .field.flagged > .field-head { color: var(--bad); }
 .editor-group.moves .field.flagged .move-combo input:not(:focus) { border-color: var(--bad); }
 .field-flag { display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: 600; }

@@ -425,10 +425,18 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     if (pick) taken.add(toID(pick));
     return pick;
   };
+  // Strumento e abilità: il più usato del Pokémon che sia permesso (e legale, per l'abilità) e diverso da quello di ora
+  const itemSwap = () => common.items.find(({ name }) => toID(name) !== toID(set.item) && !bannedParts({ ...set, item: name }, format).item)?.name;
+  // (senza dati d'uso le abilità della specie, nell'ordine del Pokédex)
+  const abilitySwap = () => [...common.abilities.map(c => c.name), ...Object.values(species?.abilities ?? {})].find(name => {
+    if (toID(name) === toID(set.ability)) return false;
+    const probe = { ...set, ability: name };
+    return !bannedParts(probe, format).ability && !illegalParts(probe, format.genLimit, pokedexOf(format)).ability;
+  });
   const fieldFlags: FieldFlags = {
-    item: banned.item ? bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })) : undefined,
-    ability: banned.ability ? bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) }))
-      : illegal.ability ? warn(illegalAbilityText!, tr('team.illegalAbilityHint')) : undefined,
+    item: banned.item ? { ...bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })), label: tr('editor.flagBannedItem'), swap: itemSwap() } : undefined,
+    ability: banned.ability ? { ...bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) })), swap: abilitySwap() }
+      : illegal.ability ? { ...warn(illegalAbilityText!, tr('team.illegalAbilityHint')), swap: abilitySwap() } : undefined,
     moves: [0, 1, 2, 3].map(i => {
       const move = set.moves[i];
       if (!move) return undefined;

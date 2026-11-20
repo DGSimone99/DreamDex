@@ -390,6 +390,24 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     </div>
   );
 
+  /**
+   * La testa di un campo fuori regola, uguale per mosse, strumento e abilità: ⚠ e la parola breve (Vietata, Non legale)
+   * e, se c'è, ⇄ con cosa mettere al posto (un clic lo mette nel set; passandoci sopra il suo tooltip).
+   */
+  const flagHead = (kind: 'move' | 'item' | 'ability', flag: FieldFlag, current: string, apply: (to: string) => void) => (
+    <span className="field-flags">
+      <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flag.label}</span>
+      {flag.swap && (
+        <button type="button" className={`field-swap${kind === 'move' ? '' : ' tip'}`}
+          {...(kind === 'move' ? { 'data-move-tip': flag.swap } : { 'data-tip': gameDesc(kind, flag.swap, lang) ?? describe[kind](flag.swap, lang) })}
+          aria-label={t('editor.swapMove', { to: gameName(kind, flag.swap, lang), from: gameName(kind, current, lang) })}
+          onClick={() => apply(flag.swap!)}>
+          <Icon name="swap" /><span>{gameName(kind, flag.swap, lang)}</span>
+        </button>
+      )}
+    </span>
+  );
+
   return (
     <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
@@ -561,6 +579,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         </label>
         <div className="editor-group set-plates">
         <div className="field" data-tip={itemDesc}>
+          {/* Fuori regola: sopra la targhetta la parola breve e ⇄ lo strumento da mettere al posto, come sulle mosse */}
+          {flags?.item && <span className="field-head">{flagHead('item', flags.item, set.item, item => update({ item }))}</span>}
           {plate(t('editor.item'), (
             <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
               leading={set.item ? <ItemIcon item={set.item} /> : undefined} invalid={flags?.item?.text}
@@ -568,6 +588,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           ), !set.item, flags?.item)}
         </div>
         <div className="field" data-tip={abilityDesc}>
+          {!megaAbility && flags?.ability && <span className="field-head">{flagHead('ability', flags.ability, set.ability, ability => update({ ability }))}</span>}
           {plate(t('editor.ability'), megaAbility ? (
             <span className="plate-lock" title={t('editor.megaAbility')}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
@@ -587,17 +608,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               {t('editor.move', { n: i + 1 })}
               {/* Fuori regola: al posto di potenza e precisione (stanno nel tooltip) la parola breve, nel colore del problema */}
               {flags?.moves?.[i] ? (
-                <span className="field-flags">
-                  <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flags.moves[i]!.label}</span>
-                  {/* La mossa proposta al posto: ⇄ e il nome, un clic la mette nel set */}
-                  {flags.moves[i]!.swap && (
-                    <button type="button" className="field-swap" data-move-tip={flags.moves[i]!.swap}
-                      aria-label={t('editor.swapMove', { to: gameName('move', flags.moves[i]!.swap!, lang), from: gameName('move', move, lang) })}
-                      onClick={() => { const next = [...moves]; next[i] = flags.moves![i]!.swap!; update({ moves: next }); }}>
-                      <Icon name="swap" /><span>{gameName('move', flags.moves[i]!.swap!, lang)}</span>
-                    </button>
-                  )}
-                </span>
+                flagHead('move', flags.moves[i]!, move, to => { const next = [...moves]; next[i] = to; update({ moves: next }); })
               ) : <MoveDetail name={move} inField />}
             </span>
             <Combobox
