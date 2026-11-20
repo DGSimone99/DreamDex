@@ -110,11 +110,11 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
       rows: [
         { key: 'hazards', level: 'essential', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] },
         { key: 'removal', level: 'important', value: 0, by: [] },
-        { key: 'taunt', level: 'minor', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Taunt' }] },
+        { key: 'disruptor', level: 'minor', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Taunt' }] },
       ],
       failures: [{ text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS }],
-      bonuses: [{ text: 'Taunt: ruolo minore coperto', points: MINOR_POINTS }],
-      members: [{ species: 'Gliscor', values: { hazards: 1, taunt: 1 }, primary: null, reasons: [] }],
+      bonuses: [{ text: 'Disruptor: ruolo minore coperto', points: MINOR_POINTS }],
+      members: [{ species: 'Gliscor', values: { hazards: 1, disruptor: 1 }, primary: null, reasons: [] }],
     };
     renderIt(<AreaView rating={{ ...base, roles }} area="bonusMalus" picked="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     const tab = screen.getByRole('tab', { name: 'Ruoli' });
@@ -182,8 +182,10 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     expect(within(table).getByRole('columnheader', { name: 'Balance' })).toHaveClass('now');
     const hazard = within(table).getByRole('row', { name: /^Hazard/ });
     expect([...hazard.querySelectorAll('td')].map(td => td.textContent)).toEqual(['Importante', 'Importante', 'Essenziale', 'Essenziale', 'Essenziale']);
-    // Le voci che non contano mai stanno sotto la tabella
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Non contano in nessun tipo di team: .*Taunt/);
+    // Le voci che non contano mai stanno sotto la tabella: solo Speed Control (Sweeper e Wallbreaker fisici e speciali
+    // contano dentro i gruppi degli attaccanti, Taunt ed Encore stanno nel Disruptor)
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Non contano in nessun tipo di team: Speed Control\./);
+    expect(within(dialog).getByRole('row', { name: /^Disruptor/ })).toBeInTheDocument();
   });
 
   it('la riga Ruoli del voto: lo stesso conteggio della sottoscheda (essenziali e importanti coperte, poi i punti), senza barra', async () => {
@@ -217,14 +219,14 @@ describe('le fasce dei Ruoli', () => {
       { key: 'anySweeper', level: 'essential', value: 0, by: [] },
       { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Zapdos', value: 1, source: 'U-turn' }, { species: 'Gliscor', value: 1, source: 'U-turn' }] },
       { key: 'removal', level: 'important', value: 0, by: [] },
-      { key: 'taunt', level: 'minor', value: 0.8, by: [{ species: 'Zapdos', value: 0.8, source: 'Taunt' }] },
-      { key: 'encore', level: 'minor', value: 0, by: [] },
+      { key: 'disruptor', level: 'minor', value: 0.8, by: [{ species: 'Zapdos', value: 0.8, source: 'Taunt' }] },
+      { key: 'dot', level: 'minor', value: 0, by: [] },
     ],
     failures: [{ text: 'Balance senza Sweeper', points: 4 }, { text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS }],
-    bonuses: [{ text: 'Taunt: ruolo minore coperto', points: MINOR_POINTS }],
+    bonuses: [{ text: 'Disruptor: ruolo minore coperto', points: MINOR_POINTS }],
     members: [
       { species: 'Gliscor', values: { hazards: 1, pivot: 1 }, primary: null, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }, { role: 'pivot', value: 1, source: 'U-turn' }] },
-      { species: 'Zapdos', values: { taunt: 0.8, pivot: 1 }, primary: null, reasons: [{ role: 'taunt', value: 0.8, source: 'Taunt', share: 0.8 }, { role: 'pivot', value: 1, source: 'U-turn' }] },
+      { species: 'Zapdos', values: { disruptor: 0.8, pivot: 1 }, primary: null, reasons: [{ role: 'disruptor', value: 0.8, source: 'Taunt', share: 0.8 }, { role: 'pivot', value: 1, source: 'U-turn' }] },
       { species: 'Clefable', values: {}, primary: null, reasons: [] },
       ...sixMembers,
     ],
@@ -240,7 +242,7 @@ describe('le fasce dei Ruoli', () => {
     const band = (name: string) => within(panel).getByRole('region', { name });
     expect(namesOf(band('Essenziali'))).toEqual(['Sweeper', 'Hazard']);
     expect(namesOf(band('Importanti'))).toEqual(['Controllo Hazard', 'Pivot']);
-    expect(namesOf(band('Minori'))).toEqual(['Encore', 'Taunt']);
+    expect(namesOf(band('Minori'))).toEqual(['Danno nel Tempo', 'Disruptor']);
     // Il titolo di ogni fascia: solo il nome e il suo valore, niente regola
     expect(panel.querySelector('.rl-band-head small')).toBeNull();
     expect(panel).not.toHaveTextContent(/se manca|se c'è/);
@@ -264,13 +266,13 @@ describe('le fasce dei Ruoli', () => {
     expect(removal).toHaveClass('warn');
     expect(ptsOf(removal)).toBe(`−${IMPORTANT_POINTS}`);
     expect(removal.querySelector('.rl-pts')).toHaveClass('malus');
-    const taunt = rowOf('Taunt', panel)!;
-    expect(ptsOf(taunt)).toBe(`+${MINOR_POINTS}`);
-    expect(taunt.querySelector('.rl-pts')).toHaveClass('bonus');
-    const encore = rowOf('Encore', panel)!;
-    expect(encore).toHaveClass('off');
-    expect(ptsOf(encore)).toBe('0');
-    expect(encore.querySelector('.rl-pts')).toHaveClass('zero');
+    const disruptor = rowOf('Disruptor', panel)!;
+    expect(ptsOf(disruptor)).toBe(`+${MINOR_POINTS}`);
+    expect(disruptor.querySelector('.rl-pts')).toHaveClass('bonus');
+    const dot = rowOf('Danno nel Tempo', panel)!;
+    expect(dot).toHaveClass('off');
+    expect(ptsOf(dot)).toBe('0');
+    expect(dot.querySelector('.rl-pts')).toHaveClass('zero');
     // In testa i punti dei Ruoli (−4 −2 +1 = −5), in rosso; niente più l'equazione delle fasce
     expect(panel.querySelector('.rl-net')).toHaveTextContent('Ruoli −5');
     expect(panel.querySelector('.rl-net')).toHaveClass('bad');
@@ -279,18 +281,21 @@ describe('le fasce dei Ruoli', () => {
     expect(panel.querySelector('.rl-incomplete')).toBeNull();
   });
 
-  it("chi copre: uno solo con icona e nome, più d'uno solo le icone; il parziale in percentuale, anche per lo screen reader", () => {
+  it("chi copre: uno solo con icona e nome, più d'uno solo le icone; niente percentuali, né a schermo né nei tooltip", () => {
     const panel = renderSix();
     const hazard = rowOf('Hazard', panel)!;
     expect(monsOf(hazard)).toEqual(['Gliscor']);
     expect(hazard.querySelector('.rl-mon-name')).toHaveTextContent('Gliscor');
-    expect(hazard.querySelector('.rl-mon')).toHaveAttribute('title', 'Gliscor · Stealth Rock · 100%');
+    expect(hazard.querySelector('.rl-mon')).toHaveAttribute('title', 'Gliscor · Stealth Rock');
     const pivot = rowOf('Pivot', panel)!;
     expect(monsOf(pivot)).toEqual(['Gliscor', 'Zapdos']);
     expect(pivot.querySelector('.rl-mon-name')).toBeNull();
-    const taunt = rowOf('Taunt', panel)!;
-    expect(taunt.querySelector('.rl-val')).toHaveTextContent('80%');
-    expect(taunt.querySelector('.rl-mon .visually-hidden')).toHaveTextContent('Zapdos 80%');
+    // Un Taunt all'80% è coperto e basta: o c'è o non c'è
+    const disruptor = rowOf('Disruptor', panel)!;
+    expect(disruptor.querySelector('.rl-mon')).toHaveAttribute('title', 'Zapdos · Taunt');
+    expect(disruptor.querySelector('.rl-mon .visually-hidden')).toHaveTextContent(/^Zapdos$/);
+    expect(panel).not.toHaveTextContent('%');
+    expect([...panel.querySelectorAll('[title]')].some(e => e.getAttribute('title')!.includes('%'))).toBe(false);
   });
 
   it('team incompleto: giudicato come Balance; chi manca dice "manca", senza malus', () => {
@@ -329,13 +334,13 @@ describe('le fasce dei Ruoli', () => {
     renderIt(<AreaView rating={rating} area="bonusMalus" picked="roles" team={stall} analysis={analyzeTeam(stall, fixtureData)} problems={[]} />);
     const panel = screen.getByRole('tabpanel');
     expect(panel.querySelector('.rl-type')).toHaveTextContent('Stall');
-    // Essenziali dello stall: i due muri, Recupero, Cleric, Anti-setup, Hazard e Danno nel Tempo (qui mancante: il meta
-    // del fixture è pieno di Acciaio e Veleno, immuni a Toxic), il mancante per primo col suo −4
+    // Essenziali dello stall: i due muri, Recupero, Cleric, Anti-setup, Hazard e Danno nel Tempo. Il DoT nessuno lo
+    // porta da solo (il meta del fixture è pieno di Acciaio e Veleno, immuni a Toxic): lo coprono insieme i tre Toxic e
+    // Scald (anche dentro Toxapex, Toxic e Scald si sommano)
     const essential = within(panel).getByRole('region', { name: 'Essenziali' });
     expect(rows(essential)).toHaveLength(7);
-    expect(rows(essential).filter(r => r.classList.contains('bad'))).toHaveLength(1);
-    expect(rows(essential)[0]).toHaveClass('bad');
-    expect(ptsOf(rows(essential)[0])).toBe('−4');
+    expect(rows(essential).filter(r => r.classList.contains('bad'))).toHaveLength(0);
+    expect(rowOf('Danno nel Tempo', panel)).not.toHaveClass('bad');
     expect(namesOf(within(panel).getByRole('region', { name: 'Minori' }))).toContain('Sweeper');
     for (const name of ['Velocità', 'Priorità']) expect(rowOf(name, panel)).toBeUndefined();
   });
@@ -363,11 +368,11 @@ describe('note e secondario nelle righe', () => {
     const team = [corv, pult, mixed];
     renderIt(<AreaView rating={{ ...base, roles }} area="bonusMalus" picked="roles" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
     const titles = (name: string) => [...rowOf(name)!.querySelectorAll('.rl-mon')].map(m => m.getAttribute('title'));
-    expect(titles('Pivot')).toEqual(['Corviknight · U-turn · difensivo · 100%', 'Dragapult · U-turn · offensivo · 100%', 'Infernape · U-turn · offensivo · 100%']);
-    expect(titles('Wallbreaker')).toEqual(['Dragapult · Draco Meteor · 100%', 'Infernape · Close Combat · misto · 100%']);
+    expect(titles('Pivot')).toEqual(['Corviknight · U-turn · difensivo', 'Dragapult · U-turn · offensivo', 'Infernape · U-turn · offensivo']);
+    expect(titles('Wallbreaker')).toEqual(['Dragapult · Draco Meteor', 'Infernape · Close Combat · misto']);
   });
 
-  it('chi ha un muro secondario: segnato, tenue, col valore accreditato in percentuale', () => {
+  it('chi ha un muro secondario: segnato e tenue, senza percentuale', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
       covered: 1, total: 1, bonuses: [],
@@ -380,13 +385,13 @@ describe('note e secondario nelle righe', () => {
       }],
     };
     renderIt(<AreaView rating={{ ...base, roles }} area="bonusMalus" picked="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
-    const mon = within(screen.getByRole('tabpanel')).getByText('Great Tusk (secondario) 50%').closest('.rl-mon')!;
+    const mon = within(screen.getByRole('tabpanel')).getByText('Great Tusk (secondario)').closest('.rl-mon')!;
     expect(mon).toHaveClass('weak');
-    expect(mon.querySelector('.rl-val')).toHaveTextContent('50%');
     expect(mon.getAttribute('title')).toContain('Regge bene i colpi fisici');
+    expect(mon.getAttribute('title')).not.toContain('%');
   });
 
-  it("accanto all'icona il valore compare solo quando non è pieno (sotto 100)", () => {
+  it("niente numero accanto all'icona, neanche nel tooltip", () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
       covered: 1, total: 1, bonuses: [],
@@ -395,13 +400,13 @@ describe('note e secondario nelle righe', () => {
       members: [{ species: 'Great Tusk', primary: 'attack', values: { physicalWall: 1 }, credited: { physicalWall: 1 }, reasons: [] }],
     };
     renderIt(<AreaView rating={{ ...base, roles }} area="bonusMalus" picked="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
-    // Il muro di un attaccante è secondario (tenue), ma pieno: niente numero, il 100% resta nel tooltip
+    // Il muro di un attaccante è secondario (tenue): niente numero né a schermo né nel tooltip
     const mon = within(screen.getByRole('tabpanel')).getByText('Great Tusk (secondario)').closest('.rl-mon')!;
     expect(mon.querySelector('.rl-val')).toBeNull();
-    expect(mon.getAttribute('title')).toMatch(/· 100%$/);
+    expect(mon.getAttribute('title')).toBe('Great Tusk · secondario');
   });
 
-  it('un ruolo scoperto dice "Nessuno" anche se qualcuno lo copre poco: chi lo copre in parte sta nel tooltip e nel testo nascosto', () => {
+  it('un DoT scoperto dice "Nessuno" anche se qualcuno lo porta un po\': chi contribuisce alla somma sta nel tooltip e nel testo nascosto, senza %', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
       covered: 0, total: 1, bonuses: [],
@@ -416,9 +421,9 @@ describe('note e secondario nelle righe', () => {
     const row = rowOf('Danno nel Tempo')!;
     expect(row).toHaveClass('off');
     expect(row.querySelector('.rl-mon')).toBeNull();
-    expect(row.querySelector('.rl-nobody')).toHaveTextContent(/^Nessuno; in parte: Garchomp 11%, Toxapex 5%$/);
-    expect(row.querySelector('.rl-nobody .visually-hidden')).toHaveTextContent('in parte: Garchomp 11%, Toxapex 5%');
-    expect(row).toHaveAttribute('title', 'in parte: Garchomp 11%, Toxapex 5%');
+    expect(row.querySelector('.rl-nobody')).toHaveTextContent(/^Nessuno; in parte: Garchomp \(Toxic\), Toxapex \(Toxic\)$/);
+    expect(row.querySelector('.rl-nobody .visually-hidden')).toHaveTextContent('in parte: Garchomp (Toxic), Toxapex (Toxic)');
+    expect(row).toHaveAttribute('title', 'in parte: Garchomp (Toxic), Toxapex (Toxic)');
     expect(ptsOf(row)).toBe('0');
   });
 });

@@ -40,11 +40,11 @@ describe('sotto-ruoli misurati', () => {
     expect(v.physicalWall).toBeUndefined();
   });
 
-  it('Deoxys-Speed Life Orb: wallbreaker speciale e taunt', () => {
+  it('Deoxys-Speed Life Orb: wallbreaker speciale e Disruptor (Taunt)', () => {
     const s = set('Deoxys-Speed', ['Psycho Boost', 'Taunt', 'Ice Beam', 'Thunderbolt'], 'Life Orb', 'Pressure', { spa: 252, spe: 252 }, 'Timid');
     const v = measuredSubRoles(s, [s], fixtureData);
     expect(v.specialBreaker).toBe(1);
-    expect(v.taunt).toBeGreaterThan(0.5);
+    expect(v.disruptor).toBeGreaterThan(0.5);
   });
 
   it('Hatterene non è wallbreaker', () => {
@@ -55,18 +55,17 @@ describe('sotto-ruoli misurati', () => {
   it('Taunt: quota del pool superato', () => {
     const s = set('Gliscor', ['Taunt', 'Earthquake'], '', '', { spe: 252 }, 'Jolly');
     const v = measuredSubRoles(s, [s], fixtureData);
-    expect(v.taunt).toBeCloseTo(outspeedShare(speedStat(s).value, speedPool(fixtureData), s.species), 10);
+    expect(v.disruptor).toBeCloseTo(outspeedShare(speedStat(s).value, speedPool(fixtureData), s.species), 10);
   });
 
   it('RF5 Prankster: 1 meno la quota Dark del pool', () => {
     const s = set('Grimmsnarl', ['Taunt', 'Encore'], '', 'Prankster');
     const pool = [rival('A', ['Dark']), rival('B', ['Dark']), rival('C', ['Dark', 'Fairy']), rival('D', ['Water'])];
     const { values, reasons } = measureWith(s, [s], fixtureData, pool, speedPool(fixtureData));
-    expect(values.taunt).toBeCloseTo(0.25, 10);
-    expect(values.encore).toBeCloseTo(0.25, 10);
-    expect(reasons.find(r => r.role === 'taunt')).toMatchObject({ source: 'Taunt', share: 0.25, prankster: true });
+    expect(values.disruptor).toBeCloseTo(0.25, 10);
+    expect(reasons.find(r => r.role === 'disruptor')).toMatchObject({ source: 'Taunt', share: 0.25, prankster: true });
     const allDark = measureWith(s, [s], fixtureData, [rival('A', ['Dark'])], []).values;
-    expect(allDark.taunt).toBeUndefined();
+    expect(allDark.disruptor).toBeUndefined();
   });
 
   it('Toxic non tocca Steel e Poison', () => {

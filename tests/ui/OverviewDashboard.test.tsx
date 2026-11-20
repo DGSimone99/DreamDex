@@ -131,7 +131,7 @@ const manyRoles: DashboardData['roles'] = {
   chips: [
     ...(['hazards', 'removal', 'pivot', 'recovery'] as const).map(need => ({ need, level: 'essential' as const, covered: true, owners: ['Great Tusk'], soft: false })),
     ...(['screens', 'phazer'] as const).map(need => ({ need, level: 'important' as const, covered: false, owners: [], soft: false })),
-    { need: 'taunt', level: 'minor', covered: false, owners: [], soft: true },
+    { need: 'disruptor', level: 'minor', covered: false, owners: [], soft: true },
   ],
   members: ['Great Tusk'],
   value: '4/6',
@@ -764,7 +764,7 @@ describe('Cruscotto: misure', () => {
     // Una voce essenziale, una importante, sette minori: 9 righe in una card da 9 righe stanno tutte.
     // Con le fasce alte un terzo ciascuna i minori finivano in un "+N" accanto a fasce vuote.
     stubLayout({ 'dash-roles': { box: 270, item: 30 } });
-    const minors = (['screens', 'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'] as const).map(need => ({ need, level: 'minor' as const, covered: false, owners: [], soft: true }));
+    const minors = (['screens', 'dot', 'disruptor', 'phazer', 'support', 'speedControl', 'itemRemoval'] as const).map(need => ({ need, level: 'minor' as const, covered: false, owners: [], soft: true }));
     const chips: DashboardData['roles']['chips'] = [
       { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'], soft: false },
       { need: 'pivot', level: 'important', covered: true, owners: ['Corviknight'], soft: false },

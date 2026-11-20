@@ -26,16 +26,16 @@ describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => 
     expect(cardRoles(kartana, DEFAULT_RULES)[0]).not.toBe('physicalWall');
   });
 
-  it('senza attacco né muro: il principale viene da Support e Utility; il Recupero è solo secondario', () => {
+  it('senza attacco né muro: il principale viene da Support e Utility (Thunder Wave dà Disruptor, prima del Recupero)', () => {
     const clefable = set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast', 'Soft-Boiled', 'Stealth Rock', 'Thunder Wave']);
-    expect(cardRoles(clefable, DEFAULT_RULES)).toEqual(['hazards', 'recovery']);
+    expect(cardRoles(clefable, DEFAULT_RULES)).toEqual(['hazards', 'disruptor']);
   });
 
   it('con i valori misurati del team la carta usa quelli (come il voto)', () => {
     const clefable = set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast', 'Soft-Boiled', 'Stealth Rock', 'Thunder Wave']);
     expect(cardRoles(clefable, DEFAULT_RULES, { specialWall: 1, recovery: 1, hazards: 1 })).toEqual(['specialWall', 'hazards']);
     // Un Taunt sotto 0,5 (meta per lo più più veloce) non compare
-    expect(cardRoles(clefable, DEFAULT_RULES, { taunt: 0.3, recovery: 1 })).toEqual(['recovery']);
+    expect(cardRoles(clefable, DEFAULT_RULES, { disruptor: 0.3, recovery: 1 })).toEqual(['recovery']);
   });
 
   it('la famiglia principale va prima: Great Tusk offensivo attacca, Corviknight difensivo fa il muro', () => {
