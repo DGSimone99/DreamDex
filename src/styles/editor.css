@@ -500,7 +500,7 @@
 /* Col dito il bottone resta piccolo a vista ma si tocca su 44px di altezza */
 @media (pointer: coarse) {
   .field-swap { position: relative; }
-  .field-swap::after { content: ''; position: absolute; inset: -13px 0; }
+  .field-swap::before { content: ''; position: absolute; inset: -13px 0; }
 }
 /* Il chip del voto e Fatto servono solo sul telefono (phone.css): sul computer il voto grande resta in vista */
 .editor-grade, .editor-done-bar { display: none; }

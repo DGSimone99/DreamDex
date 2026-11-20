@@ -1172,3 +1172,14 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .drawer.shrunk .set-editor .editor-title:has(.editor-grade) { padding-top: 0; }
   .drawer.shrunk .set-editor .editor-actions .editor-close { top: 12px; }
 }
+
+/* Telefono, Statistiche: "EV" accanto al totale, sopra le caselle (non sopra i valori); EV a 0 e IV a 31 col
+   riquadro leggero anche senza mouse, così si vede che si toccano. ⇄ più alto (28) con la zona da 44 che non entra
+   nel campo della mossa sotto */
+@media (max-width: 599px) {
+  .set-editor .stat-head .ev-total .ev-head { justify-self: end; margin-right: var(--sp-3); }
+  .set-editor .stat-row .ev-input.zero:not(:focus), .set-editor .stat-row .iv-input.max { border-color: var(--line-soft); }
+  .set-editor .field-swap { height: 28px; padding: 0 var(--sp-4); }
+  .set-editor .field-swap::before { inset: -9px 0; }
+  .set-editor :is(.field.flagged, .field:has(> .set-plate.flagged)) > .field-head { min-height: 28px; margin-bottom: var(--sp-3); }
+}
