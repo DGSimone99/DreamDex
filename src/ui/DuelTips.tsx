@@ -98,7 +98,7 @@ export function DuelTips({ side, me, opp, quick, result, onApply }: {
     // Esc con il fuoco sul chip (o nella scheda) chiude solo la scheda: non arriva alla carta del team, che chiuderebbe l'editor
     <div className="duel-tips" ref={lineRef} onKeyDown={e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(); } }}>
       <b>{t('editor.duelTips')}</b>
-      {chips.length === 0 && <span className="duel-tips-none">{t('duel.tipsNone')}, {noneReason(me, opp, t, side)}</span>}
+      {chips.length === 0 && <span className="duel-tips-none">{t('duel.tipsNone')}</span>}
       {chips.map((chip, i) => {
         const isHidden = rest.includes(chip);
         return (
@@ -129,16 +129,6 @@ export function DuelTips({ side, me, opp, quick, result, onApply }: {
 }
 
 type Tr = ReturnType<typeof useT>;
-
-/**
- * Perché una riga non ha consigli. Sotto il tuo colpo: "lo mandi KO in 1 colpo e muovi primo" se è così; sotto il suo:
- * "non ti fa danni" o "un piccolo ritocco degli EV non basta"; altrimenti la frase generica.
- */
-function noneReason(me: TeamSet, opp: TeamSet, t: Tr, side?: 'mine' | 'theirs'): string {
-  const { mine, theirs } = duelHits(me, opp);
-  if (side === 'theirs') return !theirs || !Number.isFinite(theirs.hitsMaybe) ? t('duel.tipsNoneHarmless') : t('duel.tipsNoneDef');
-  return mine?.hitsSure === 1 && battleSpeed(me) > battleSpeed(opp) ? t('duel.tipsNoneKo') : t('duel.tipsNoneAny');
-}
 
 const hitsText = (hit: DuelHit | null) => {
   if (!hit || !Number.isFinite(hit.hitsMaybe)) return '—';

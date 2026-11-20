@@ -130,4 +130,9 @@ describe('consigli della Sfida: chip e scheda', () => {
     expect(pill).toHaveTextContent('100');
     expect(screen.getByRole('dialog').querySelector('.duel-tip-source')).toHaveTextContent(/^Al posto di/);
   });
+
+  it('senza consigli la riga dice solo nessuno, senza motivo', () => {
+    const { container } = renderIt(<DuelTips side="mine" me={me} opp={gholdengo} quick={[]} result={{ overall: 80, tips: [] }} />);
+    expect(container.querySelector('.duel-tips')).toHaveTextContent(/^Consigli:\s*nessuno$/);
+  });
 });
