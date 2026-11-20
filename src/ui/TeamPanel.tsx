@@ -49,10 +49,17 @@ import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 
+/** Il voto del team, per il chip nella testata dell'editor sul telefono (lì il voto grande è coperto). */
+export interface EditorGradeInfo { letter: string; overall: number; illegal: boolean }
+/** Il chip dell'editor: il voto di adesso e quello di quando si è aperto il membro. */
+type EditorGradeShown = EditorGradeInfo & { from: number };
+
 interface Props {
   team: TeamSet[];
   format: Format;
   data: EngineData;
+  /** Il voto del team (null senza voto): sul telefono un chip nell'editor dice di quanto cambia mentre modifichi. */
+  grade?: EditorGradeInfo | null;
   onChange: (team: TeamSet[]) => void;
   onAdd: (set: TeamSet) => void;
   onReplace: (index: number) => void;
@@ -196,8 +203,29 @@ const typesOverflow = (el: HTMLElement) =>
 /** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
 const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
+/**
+ * Telefono: il voto nella testata dell'editor, perché lì il voto grande è coperto. Lettera e punteggio; appena cambia,
+ * "74 → 76" col cambio in verde o rosso (il punto di partenza è il voto quando si è aperto il membro).
+ */
+function EditorGrade({ grade }: { grade: EditorGradeShown }) {
+  const tr = useT();
+  const { from } = grade;
+  const delta = grade.overall - from;
+  return (
+    <span className={`editor-grade grade-${grade.letter}${grade.illegal ? ' illegal' : ''}`}>
+      <span className="visually-hidden">{tr('editor.gradeLabel')} </span>
+      <b>{grade.letter}</b>
+      {delta === 0 ? <span>{grade.overall}</span> : (
+        <span className={delta > 0 ? 'up' : 'down'}>{from}<Icon name="next" /><b>{grade.overall}</b></span>
+      )}
+    </span>
+  );
+}
+
+const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null }: {
   index: number;
+  /** Il voto del team, solo per la carta aperta: il chip del telefono nella testata dell'editor. */
+  grade?: EditorGradeShown | null;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
   collapsed?: boolean;
   /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
@@ -610,6 +638,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
               style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as CSSProperties}>
               <Sprite species={set.species} item={set.item} shiny={!!set.shiny} />
             </span>
+            {grade && <EditorGrade grade={grade} />}
             <Hint label={tr('team.shiny')}>
               <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')}
                 onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
@@ -662,6 +691,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
               onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
           </Hint>
         </>} />
+      {/* Telefono: Fatto in fondo, dove arriva il pollice (la × sta in alto); chiude come la × */}
+      {open && (
+        <div className="editor-done-bar">
+          <button type="button" className="editor-done" onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="check" />{tr('editor.done')}</button>
+        </div>
+      )}
       </div>
       {!open && memberTip.tip}
     </div>
@@ -699,12 +734,18 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onTipApply, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onTipApply, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Il voto di quando si è aperto un membro (il primo voto che arriva, se in quel momento non c'era): il chip
+  // dell'editor sul telefono dice di quanto è cambiato. Resta anche se il voto sparisce un attimo (EV oltre 510)
+  const [gradeFrom, setGradeFrom] = useState<number | null>(null);
+  useEffect(() => { setGradeFrom(openIndex === null ? null : grade?.overall ?? null); }, [openIndex]);
+  useEffect(() => { if (openIndex !== null && gradeFrom === null && grade) setGradeFrom(grade.overall); }, [openIndex, gradeFrom, grade]);
+  const editorGrade = grade ? { ...grade, from: gradeFrom ?? grade.overall } : null;
   useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
   useEffect(() => () => setEditing(null), []);
   // Il team si accorcia da fuori (import, Annulla, team salvato): un membro aperto che non c'è più si chiude
@@ -1032,6 +1073,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             warning={warningFor(set, i)}
             repeated={repeated.includes(i)}
             open={openIndex === i}
+            grade={openIndex === i ? editorGrade : null}
             actions={actions}
             collapsed={collapsed}
           />
