@@ -171,3 +171,31 @@ export function pairResults(games: BenchGame[], top = 20): ThingResult[] {
     return measure(games, kept, { key, label: key, has });
   });
 }
+
+/** Fasce del livello dei giocatori per `levelJump`: sotto LOW_BELOW i bassi, da HIGH_FROM gli alti (in mezzo non conta). */
+export const LOW_BELOW = 1400;
+export const HIGH_FROM = 1500;
+
+export interface LevelJump { low: number; high: number; jump: number; margin: number; lowCount: number; highCount: number }
+
+/**
+ * Il secondo metro del voto del doppio: il valore medio (voto o area) dei team nelle partite da HIGH_FROM in su meno
+ * quello sotto LOW_BELOW. Se sale, il voto riconosce i team costruiti meglio (i giocatori forti li portano di più).
+ * `margin`: margine al 95% della differenza (1,96 × errore standard). Una fascia vuota dà NaN.
+ */
+export function levelJump(rows: { rating: number; value: number }[]): LevelJump {
+  const band = (keep: (rating: number) => boolean) => {
+    const values = rows.filter(r => keep(r.rating)).map(r => r.value);
+    const n = values.length;
+    const mean = n ? values.reduce((a, b) => a + b, 0) / n : NaN;
+    // Varianza campionaria (n − 1): con una riga sola non si può stimare
+    const variance = n > 1 ? values.reduce((a, v) => a + (v - mean) ** 2, 0) / (n - 1) : NaN;
+    return { n, mean, variance };
+  };
+  const low = band(rating => rating < LOW_BELOW), high = band(rating => rating >= HIGH_FROM);
+  return {
+    low: low.mean, high: high.mean, jump: high.mean - low.mean,
+    margin: 1.96 * Math.sqrt(low.variance / low.n + high.variance / high.n),
+    lowCount: low.n, highCount: high.n,
+  };
+}

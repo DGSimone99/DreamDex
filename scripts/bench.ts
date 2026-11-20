@@ -9,7 +9,9 @@
  *                            (nei formati con le Mega solo le partite dove tutti e due i lati la mostrano), col margine
  *                            a gruppi di team e il conto con ogni team al massimo 3 volte (pochi team giocano centinaia di partite)
  *   npm run bench -- --games --doppio   lo stesso sulle partite di doppio (scripts/bench/games-doubles.json), due volte:
- *                            tutte le partite, e solo quelle con la Mega vista da tutti e due i lati; --min=1500 per il solo alto livello
+ *                            tutte le partite, e solo quelle con la Mega vista da tutti e due i lati; --min=1500 per il solo alto livello;
+ *                            sotto il primo blocco il salto del voto e delle aree col livello dei giocatori; --pesi=0.5,0.3,0.2
+ *                            (Offesa, Difesa, Velocità) prova altri pesi delle aree del doppio
  *   npm run bench -- --doppio-cose   doppio: per ogni cosa (Fake Out, Tailwind, Trick Room…) quanto vince chi ce l'ha
  *                            contro chi non ce l'ha, e le coppie di compagni più viste (scripts/doublesThings.ts)
  *   npm run bench -- --replays partite vere (scripts/bench/replays.json di alto livello e, se c'è, ladder.json dei medi):
@@ -26,7 +28,7 @@ import type { EngineData } from '../src/engine/data';
 import { initTiers } from '../src/engine/dex';
 import { DEFAULT_FORMAT, type FormatId } from '../src/engine/format';
 import { formatRules } from '../src/engine/formatRules';
-import { rateTeam, type TeamRating } from '../src/engine/rating';
+import { rateTeam, setDoublesWeights, type TeamRating } from '../src/engine/rating';
 // Il voto v1 congelato (legacy/voto-v1): solo per --confronta
 import { initTiers as initTiersV1 } from '../legacy/voto-v1/engine/dex';
 import { rateTeam as rateTeamV1 } from '../legacy/voto-v1/engine/rating';
@@ -36,7 +38,7 @@ import { defaultSet, type TeamSet } from '../src/engine/sets';
 import { dex, getMove, toID } from '../src/engine/dex';
 import { lockedStatusMoves } from '../src/engine/lockedMoves';
 import { statsEntry } from '../src/engine/stats';
-import { controlResults, pairResults, thingResults, type BenchGame, type ThingResult } from './doublesThings';
+import { controlResults, HIGH_FROM, levelJump, LOW_BELOW, pairResults, thingResults, type BenchGame, type ThingResult } from './doublesThings';
 import type { Game as RealGame, Revealed } from './fetch-games';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 
@@ -364,7 +366,15 @@ function clusterInterval(counted: { keys: [string, string]; right: boolean }[], 
 /** --games: le partite coi set veri (scripts/bench/games.json, da scripts/fetch-games.ts): quante ne vince il voto più alto.
  *  Nei formati con le Mega contano solo le partite dove tutti e due i lati mostrano la Mega: chi vince spesso non manda
  *  in campo la sua, e il team che perde sembrerebbe più forte (Mega vista in 2179 team che perdono, 1986 che vincono). */
+/** --pesi=0.5,0.3,0.2 (Offesa, Difesa, Velocità): i pesi delle aree del doppio per questo giro, al posto dei terzi. */
+const DOUBLES_WEIGHTS = process.argv.find(a => a.startsWith('--pesi='))?.slice(7).split(',').map(Number) ?? null;
+
 function realGames(doubles = false) {
+  if (DOUBLES_WEIGHTS) {
+    if (DOUBLES_WEIGHTS.length !== 3 || DOUBLES_WEIGHTS.some(w => !(w >= 0)) || !(DOUBLES_WEIGHTS.reduce((a, b) => a + b, 0) > 0)) { console.error('--pesi vuole tre numeri: Offesa,Difesa,Velocità (es. --pesi=0.5,0.3,0.2)'); return; }
+    const [strength, defense, speed] = DOUBLES_WEIGHTS;
+    setDoublesWeights({ strength, defense, speed });
+  }
   const games = readRealGames(doubles ? DOUBLES_GAMES : 'games.json');
   if (!games.length) { console.error(MIN_GAME_RATING ? `Nessuna partita da ${MIN_GAME_RATING} in su` : doubles ? MISSING_DOUBLES : 'Mancano le partite: lancia npx tsx scripts/fetch-games.ts'); return; }
   const bins = [[1, 4], [5, 9], [10, 100]] as const;
@@ -375,11 +385,15 @@ function realGames(doubles = false) {
     const list = games.filter(g => GAMES_FORMAT[g.format] === fmt);
     // Partite contate, coi due team: per il conto "ogni team al massimo REPEAT_CAP volte" e per il margine a gruppi di team
     const counted: { keys: [string, string]; right: boolean }[] = [];
+    // Doppio: ogni team contato col rating della sua partita, per il salto del voto col livello (secondo metro)
+    const byLevel: { rating: number; rated: TeamRating }[] = [];
     for (const g of list) {
       if (mega && !(showsMega(g.p1) && showsMega(g.p2))) { noMega++; continue; }
       const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
       if (!a || !b) { skipped++; continue; }
-      const diff = rateTeam(a, DATA[fmt])!.overall - rateTeam(b, DATA[fmt])!.overall;
+      const [ra, rb] = [rateTeam(a, DATA[fmt])!, rateTeam(b, DATA[fmt])!];
+      if (doubles) byLevel.push({ rating: g.rating, rated: ra }, { rating: g.rating, rated: rb });
+      const diff = ra.overall - rb.overall;
       const bin = bins.findIndex(([lo, hi]) => Math.abs(diff) >= lo && Math.abs(diff) <= hi);
       if (bin < 0) continue;
       stats[bin].total++;
@@ -401,6 +415,21 @@ function realGames(doubles = false) {
     });
     console.log(`  ogni team al massimo ${REPEAT_CAP} volte: ${pct({ right: capped.filter(c => c.right).length, total: capped.length })}  (${new Set(counted.flatMap(c => c.keys)).size} team diversi)`);
     bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
+    // Il secondo metro (solo doppio, sul blocco con tutte le partite): il voto e le tre aree salgono col livello dei giocatori?
+    if (doubles && !mega) {
+      const area = (rated: TeamRating, key: string) => rated.areas.find(x => x.key === key)?.value ?? 0;
+      const line = (name: string, value: (rated: TeamRating) => number) => {
+        const j = levelJump(byLevel.map(row => ({ rating: row.rating, value: value(row.rated) })));
+        console.log(`    ${name.padEnd(10)} ${j.low.toFixed(2)} → ${j.high.toFixed(2)}   salto ${j.jump >= 0 ? '+' : ''}${j.jump.toFixed(2)} ± ${j.margin.toFixed(2)}`);
+        return j;
+      };
+      console.log(`  il voto sale col livello dei giocatori (media dei team sotto ${LOW_BELOW} → da ${HIGH_FROM} in su):`);
+      const vote = line('voto', rated => rated.overall);
+      line('Offesa', rated => area(rated, 'strength'));
+      line('Difesa', rated => area(rated, 'defense'));
+      line('Velocità', rated => area(rated, 'speed'));
+      console.log(`    (${vote.lowCount} team sotto ${LOW_BELOW}, ${vote.highCount} da ${HIGH_FROM} in su${DOUBLES_WEIGHTS ? `; pesi delle aree Offesa/Difesa/Velocità ${DOUBLES_WEIGHTS.join(' / ')}` : '; pesi delle aree a un terzo'})`);
+    }
   }
 }
 

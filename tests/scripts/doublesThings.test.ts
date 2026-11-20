@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { CONTROLS, pairResults, thingResults, THINGS, type BenchGame } from '../../scripts/doublesThings';
+import { CONTROLS, levelJump, pairResults, thingResults, THINGS, type BenchGame } from '../../scripts/doublesThings';
 
 const mon = (species: string, moves: string[] = [], extra: Partial<TeamSet> = {}): TeamSet => ({ ...emptySet(species), moves, ...extra });
 /** Un team da 6: i membri dati più riempitivi senza mosse (ogni chiamata con `fill` diverso è un team diverso). */
@@ -126,5 +126,37 @@ describe('CONTROLS (quello che un lato mostra)', () => {
   it('almeno 11 mosse viste', () => {
     expect(has('moves11', FILL.slice(0, 6).map(s => mon(s, ['Protect', 'Tackle'])))).toBe(true);
     expect(has('moves11', FILL.slice(0, 6).map(s => mon(s, ['Protect'])))).toBe(false);
+  });
+});
+
+describe('levelJump', () => {
+  it('media sotto 1400, media da 1500, differenza e margine al 95%', () => {
+    const jump = levelJump([
+      { rating: 1300, value: 60 }, { rating: 1399, value: 64 },
+      { rating: 1500, value: 70 }, { rating: 1700, value: 74 },
+      // Fra 1400 e 1499 non entra in nessuna delle due fasce
+      { rating: 1450, value: 0 },
+    ]);
+    expect(jump.low).toBe(62);
+    expect(jump.high).toBe(72);
+    expect(jump.jump).toBe(10);
+    // Varianza campionaria 8 in tutte e due le fasce, 2 righe ciascuna: errore standard √(8/2 + 8/2)
+    expect(jump.margin).toBeCloseTo(1.96 * Math.sqrt(8), 10);
+    expect([jump.lowCount, jump.highCount]).toEqual([2, 2]);
+  });
+
+  it('una fascia vuota dà NaN, non un errore', () => {
+    const jump = levelJump([{ rating: 1300, value: 60 }, { rating: 1350, value: 62 }]);
+    expect(jump.low).toBe(61);
+    expect(jump.high).toBeNaN();
+    expect(jump.jump).toBeNaN();
+    expect(jump.margin).toBeNaN();
+    expect(levelJump([]).jump).toBeNaN();
+  });
+
+  it('con una riga sola in una fascia il margine non si può stimare', () => {
+    const jump = levelJump([{ rating: 1300, value: 60 }, { rating: 1600, value: 70 }]);
+    expect(jump.jump).toBe(10);
+    expect(jump.margin).toBeNaN();
   });
 });
