@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties
 import { t as translate, type Lang } from '../i18n';
 import { typeName } from '../i18n/game';
 import type { Core } from '../engine/cores';
+import type { FormatRules } from '../engine/formatRules';
 import { bonusMalusCatalog, CORE_TRIO_POINTS, type CatalogEntry, type CatalogKey, type Redundancy, type TeamRating } from '../engine/rating';
 import { useT } from '../i18n/react';
 import { CoreArt } from './dashboard/CoreTriangle';
@@ -134,7 +135,7 @@ export interface BonusMalusPiece { key: string; name: string; points: number; ki
  * punti insieme; a parità di peso prima i malus, come nella scheda, poi l'ordine del catalogo.
  */
 export function bonusMalusLine(rating: TeamRating, lang: Lang): { net: number; pieces: BonusMalusPiece[] } {
-  const catalog = bonusMalusCatalog(lang);
+  const catalog = bonusMalusCatalog(lang, rating.needs.rules);
   const rows = orderedRows(catalog, rating, lang);
   const cores = rating.bonus.items.filter(i => i.catalog === 'coreTrio').reduce((n, i) => n + i.points, 0);
   const coreCount = Math.round(cores / CORE_TRIO_POINTS);
@@ -199,10 +200,10 @@ function rankedCores(rating: TeamRating): { core: Core; held: number }[] {
 }
 
 /** Il contenuto della guida: tutte le voci di un tipo (bonus o malus) con quando scattano e quanto valgono. */
-export function CatalogueList({ lang, kind }: { lang: Lang; kind: CatalogEntry['kind'] }) {
+export function CatalogueList({ lang, kind, rules }: { lang: Lang; kind: CatalogEntry['kind']; rules?: FormatRules }) {
   return (
     <ul className="bm-cat">
-      {bonusMalusCatalog(lang).filter(entry => entry.kind === kind).map(entry => (
+      {bonusMalusCatalog(lang, rules).filter(entry => entry.kind === kind).map(entry => (
         <li key={entry.key}>
           <Medal entry={entry} />
           <span className="bm-cat-tx"><b>{entry.name}</b><span>{entry.when}</span></span>
@@ -458,7 +459,7 @@ function MoreEntries({ hidden, t }: { hidden: ActiveRow[]; t: T }) {
  * nella sottoscheda Ruoli.
  */
 export function BonusMalusView({ rating, lang, t, onCatalogue }: { rating: TeamRating; lang: Lang; t: T; onCatalogue?: () => void }) {
-  const rows = orderedRows(bonusMalusCatalog(lang), rating, lang);
+  const rows = orderedRows(bonusMalusCatalog(lang, rating.needs.rules), rating, lang);
   const totals = bonusMalusTotals(rating);
   const net = totals.net;
   const nothing = totals.bonus === 0 && totals.malus === 0;

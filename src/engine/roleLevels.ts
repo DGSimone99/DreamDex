@@ -184,6 +184,16 @@ const ATTACK_ROWS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'sweeperOrBre
 export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: TypeRule): Level =>
   levelOf(archetype === 'stall' && ATTACK_ROWS.has(key) ? 'stall' : rolesTypeOf(archetype, typeRule), key);
 
+/** Le voci che esistono solo in doppio: nel singolo non compaiono da nessuna parte (né fra quelle che "non contano"). */
+const DOUBLES_ONLY = new Set<LevelKey>(['secondProtect', 'anyWall', 'spread', 'fakeOut', 'redirector', 'secondFirstStrike']);
+
+/**
+ * Le voci da mostrare nel formato (schede, guide): in doppio solo quelle della sua colonna, nel singolo tutte le altre.
+ * Il motore usa sempre LEVEL_KEYS (le voci dell'altro formato sono ignorate); questo elenco serve a non mostrarle.
+ */
+export const levelKeysFor = (typeRule?: TypeRule): LevelKey[] =>
+  (typeRule === 'oneType' ? LEVEL_KEYS.filter(key => DOUBLES_LEVELS[key]) : LEVEL_KEYS.filter(key => !DOUBLES_ONLY.has(key)));
+
 /** Livello della voce per l'archetipo, con l'interruttore applicato. */
 export function levelOf(archetype: Archetype, key: LevelKey): Level {
   const level = ROLE_LEVELS[archetype][key] ?? 'ignored';

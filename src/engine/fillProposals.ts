@@ -5,7 +5,7 @@ import type { EngineData } from './data';
 import { applyFavorites, isUserFavorite } from './lists';
 import { battleAbility, battleName, battleSpecies, isMega, toID } from './dex';
 import type { Format } from './format';
-import { formatRules } from './formatRules';
+import { formatRules, isOneType } from './formatRules';
 import { pokedexOf } from './formats';
 import { rateTeam, type RatingArea } from './rating';
 import { detectRoles, isPassive } from './roles';
@@ -126,9 +126,11 @@ export function proposalOrder(a: Proposal, b: Proposal, mode: FavoriteMode): num
 
 /** Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). */
 export function matchesChoice(team: TeamSet[], choice: FillChoice, format: Format): boolean {
-  const found = teamArchetype(team, formatRules(format.formatId));
+  const rules = formatRules(format.formatId);
+  const found = teamArchetype(team, rules);
   if (!found) return false;
-  if (choice.archetype && found.archetype !== choice.archetype) return false;
+  // Col tipo unico (doppio) un tipo scelto, anche rimasto da prima, non conta
+  if (!isOneType(rules) && choice.archetype && found.archetype !== choice.archetype) return false;
   return !choice.style || found.styles.includes(choice.style);
 }
 
@@ -169,6 +171,8 @@ export function* fillProposals(
 ): Generator<Proposal | null, FillEnd, undefined> {
   if (!data.stats || team.length >= 6) return 'exhausted';
   const rules = formatRules(format.formatId);
+  // Col tipo unico (doppio) non c'è un tipo da scegliere: una scelta rimasta da prima si ignora
+  if (isOneType(rules) && choice.archetype) choice = { ...choice, archetype: null };
   // Primo giro: nessuna proposta mostrata, nessun Pokémon nuovo si ripete
   const strict = shown.length === 0;
   // Tutti i Pokémon nuovi già mostrati (anche in questo giro)

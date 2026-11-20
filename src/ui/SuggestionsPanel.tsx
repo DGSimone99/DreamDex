@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import type { Archetype } from '../engine/archetype';
+import { formatRules, isOneType } from '../engine/formatRules';
 import { ActiveFilters } from './ActiveFilters';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
@@ -125,7 +126,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const view: View = replacing ? 'member' : team.length >= 2 && (scope === 'all' || team.length >= 6) ? 'all' : 'add';
   // Tipo di team per giudicare i cambi: Qualunque (il voto vero del team) finché non lo scegli a mano
   const [pickedType, setPickedType] = useState<Archetype | null>(null);
-  const typeChoice = pickedType;
+  // Doppio: un tipo di team solo, la scelta non c'è (e un tipo scelto prima di cambiare formato non conta)
+  const oneType = isOneType(formatRules(format.formatId));
+  const typeChoice = oneType ? null : pickedType;
   // Vale in tutte le modalità: aggiungendo cerca chi aiuta a costruire quel tipo, migliorando chi lo raggiunge o lo mantiene
   const archetype = typeChoice ?? undefined;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
@@ -360,13 +363,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         </span>
       </div>
       {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca) */}
-      <label className="team-type" title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}>
-        <span aria-hidden="true">{tr('suggest.teamTypeShort')}</span>
-        <select aria-label={tr('suggest.teamType')} value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
-          <option value="">{tr('suggest.anyType')}</option>
-          {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
-        </select>
-      </label>
+      {!oneType && (
+        <label className="team-type" title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}>
+          <span aria-hidden="true">{tr('suggest.teamTypeShort')}</span>
+          <select aria-label={tr('suggest.teamType')} value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
+            <option value="">{tr('suggest.anyType')}</option>
+            {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
+          </select>
+        </label>
+      )}
       <FilterBar filters={filters} onChange={setFilters} game={!!format.game} />
     </>
   );
