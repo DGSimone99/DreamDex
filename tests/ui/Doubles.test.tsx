@@ -237,6 +237,18 @@ describe('doppio: Completa team', () => {
     panel('ou');
     expect(within(screen.getByRole('radiogroup', { name: 'Tipo di team' })).getAllByRole('radio')).toHaveLength(6);
   });
+
+  const styleNames = () => texts(within(screen.getByRole('radiogroup', { name: 'Condizione' })).getAllByRole('radio'));
+
+  it('in doppio le condizioni sono dieci: meteo, campi, Trick Room, Tailwind', () => {
+    panel('natdexdoubles');
+    expect(styleNames().slice(1)).toEqual(['Pioggia', 'Sole', 'Sabbia', 'Neve', 'Campo Erboso', 'Campo Psichico', 'Campo Elettrico', 'Campo Nebbioso', 'Trick Room', 'Tailwind']);
+  });
+
+  it('in singolo le condizioni restano le cinque di sempre', () => {
+    panel('ou');
+    expect(styleNames().slice(1)).toEqual(['Pioggia', 'Sole', 'Sabbia', 'Neve', 'Trick Room']);
+  });
 });
 
 describe("doppio: nell'app", () => {

@@ -1,23 +1,30 @@
-import { fitsArchetype, teamArchetype, type Archetype, type FitArchetype, type TeamStyle } from './archetype';
+import { doublesStyles, fitsArchetype, teamArchetype, type Archetype, type FitArchetype, type TeamStyle } from './archetype';
 import { alignMoves, bestCoherentPreset } from './bestPreset';
 import { coherenceGaps, contradictorySet, type Gap } from './coherence';
 import type { EngineData } from './data';
 import { applyFavorites, isUserFavorite } from './lists';
 import { battleAbility, battleName, battleSpecies, isMega, toID } from './dex';
 import type { Format } from './format';
-import { formatRules, isOneType } from './formatRules';
+import { formatRules, isOneType, type FormatRules } from './formatRules';
 import { pokedexOf } from './formats';
 import { rateTeam, type RatingArea } from './rating';
 import { detectRoles, isPassive } from './roles';
 import { defensiveMultiplier, type TypeName } from './types';
 import { scoreSets, suggest, type Suggestion } from './scoring';
-import { asSetter, asUser, stylePool } from './styleSets';
+import { asSetter, asUser, setsUp, stylePool, uses } from './styleSets';
 import { presetsForSet, type TeamSet } from './sets';
-import { benefits, enables, opposesWeather, type Condition } from './synergy';
+import { benefits, enables, opposesWeather } from './synergy';
 
-/** Stili che si possono chiedere a Completa team: meteo e Trick Room (il "motore" del team). */
-export type FillStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom';
+/**
+ * Stili che si possono chiedere a Completa team (il "motore" del team): nel singolo meteo e Trick Room; in doppio anche
+ * i quattro campi e Tailwind, gli stessi che l'etichetta di stile del doppio riconosce.
+ */
+export type FillStyle = TeamStyle;
 export const FILL_STYLES: FillStyle[] = ['rain', 'sun', 'sand', 'snow', 'trickroom'];
+/** In doppio: meteo, campi, Trick Room, Tailwind. */
+export const DOUBLES_FILL_STYLES: FillStyle[] = ['rain', 'sun', 'sand', 'snow', 'grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain', 'trickroom', 'tailwind'];
+/** Gli stili che Completa team offre nel formato. */
+export const fillStylesFor = (rules: FormatRules): FillStyle[] => (isOneType(rules) ? DOUBLES_FILL_STYLES : FILL_STYLES);
 
 /**
  * Preferiti dell'utente tra i Pokémon nuovi: 'off' nessuna precedenza, 'priority' passano davanti a voto quasi pari,
@@ -124,19 +131,23 @@ export function proposalOrder(a: Proposal, b: Proposal, mode: FavoriteMode): num
   return key(b) - key(a) || b.favorites - a.favorites || b.overall - a.overall;
 }
 
-/** Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). */
+/**
+ * Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). In doppio lo stile chiesto basta che sia fra
+ * TUTTI gli stili del team (doublesStyles), non solo quello dell'etichetta, che ne mostra uno: un team di pioggia a
+ * cui si chiede il Campo Erboso lo ha anche se l'etichetta resta "Pioggia".
+ */
 export function matchesChoice(team: TeamSet[], choice: FillChoice, format: Format): boolean {
   const rules = formatRules(format.formatId);
   const found = teamArchetype(team, rules);
   if (!found) return false;
   // Col tipo unico (doppio) un tipo scelto, anche rimasto da prima, non conta
-  if (!isOneType(rules) && choice.archetype && found.archetype !== choice.archetype) return false;
+  if (isOneType(rules)) return !choice.style || doublesStyles(team).includes(choice.style);
+  if (choice.archetype && found.archetype !== choice.archetype) return false;
   return !choice.style || found.styles.includes(choice.style);
 }
 
-// Chi porta la condizione e chi la sfrutta, con le stesse eccezioni di teamArchetype
-const setsUp = (set: TeamSet, condition: Condition) => enables(set).some(e => e.condition === condition && toID(e.via) !== 'chillyreception');
-const uses = (set: TeamSet, condition: Condition) => benefits(set).some(b => b.condition === condition && toID(b.via) !== 'weatherball');
+/** Il set porta o sfrutta un meteo diverso da quello chiesto (campi, Trick Room e Tailwind non si escludono con niente). */
+const opposes = (set: TeamSet, style: FillStyle) => style !== 'tailwind' && opposesWeather(set, style);
 const FIT: Partial<Record<Archetype, FitArchetype>> = { stall: 'stall', semiStall: 'stall', hyperOffense: 'hyperOffense', bulkyOffense: 'bulkyOffense' };
 
 /**
@@ -261,7 +272,7 @@ export function* fillProposals(
     // Dalla pagina 2, solo chi lascia la proposta abbastanza diversa da ognuna delle già mostrate
     const added = current.slice(team.length);
     const all: Suggestion[] = sensibleAll(suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)) && !(style && opposesWeather(s.set, style)) && allowed(s.set)
+      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)) && !(style && opposes(s.set, style)) && allowed(s.set)
         && differs([...added, s.set])));
     const pool = all.filter(s => !hard.has(formeId(s.set)));
     const narrow = (list: Suggestion[], keep: (set: TeamSet) => boolean) => {
@@ -291,9 +302,10 @@ export function* fillProposals(
       const style = choice.style;
       const needSetter = !current.some(s => setsUp(s, style));
       // Trick Room: dopo chi la porta, tutti lenti; meteo: almeno WEATHER_USERS che lo sfruttino
-      const needUsers = !needSetter && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < WEATHER_USERS);
+      // Tailwind: basta chi lo porta, ne beneficiano tutti
+      const needUsers = !needSetter && style !== 'tailwind' && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < WEATHER_USERS);
       // Slot libero di un team meteo: chi lo sfrutta (anche fuori dal meta) entra tra i candidati, senza restringere la lista
-      const freeWeatherSlot = !needSetter && !needUsers && style !== 'trickroom';
+      const freeWeatherSlot = !needSetter && !needUsers && style !== 'trickroom' && style !== 'tailwind';
       if (needSetter || needUsers || freeWeatherSlot) {
         // Oltre al meta, tutto il Pokédex: chi può portare o sfruttare lo stile, col set adattato
         const adapt = needSetter ? asSetter : asUser;
@@ -302,7 +314,7 @@ export function* fillProposals(
         const inMeta = new Set(all.map(s => formeId(s.set)));
         const usable = stylePool(current, style, format, data)
           .filter(set => !inMeta.has(formeId(set)) && !taken.has(formeId(set)) && !deadEnds.has(formeId(set))
-            && !opposesWeather(set, style) && allowed(set) && differs([...added, set]) && adapt(set, style, format.genLimit) !== null);
+            && !opposes(set, style) && allowed(set) && differs([...added, set]) && adapt(set, style, format.genLimit) !== null);
         const seen = (set: TeamSet) => exclude.has(formeId(set));
         // Per sfruttarlo, dalla pagina 2 anche i già mostrati, dopo i mai mostrati
         const wanted = [
@@ -388,7 +400,7 @@ export function* fillProposals(
   // nessuno è già mostrato; dopo, i già mostrati possono tornare)
   let pool: TeamSet[] | null = null;
   const roundPool = () => (pool ??= sensibleAll(suggest(team, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-    .filter(s => !(choice.style && opposesWeather(s.set, choice.style)) && allowed(s.set)))
+    .filter(s => !(choice.style && opposes(s.set, choice.style)) && allowed(s.set)))
     .map(s => s.set));
   const resists = (set: TeamSet, type: TypeName) => defensiveMultiplier(type, set) < 1;
   /**

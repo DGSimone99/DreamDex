@@ -3,7 +3,7 @@ import { teamArchetype, type Archetype, type SinglesArchetype } from '../engine/
 import type { Gap } from '../engine/coherence';
 import type { EngineData } from '../engine/data';
 import { battleAbility, battleName } from '../engine/dex';
-import { FILL_STYLES, PROPOSALS_PER_ROUND, proposalOrder, type FavoriteMode, type FillChoice, type FillStyle, type Proposal } from '../engine/fillProposals';
+import { fillStylesFor, PROPOSALS_PER_ROUND, proposalOrder, type FavoriteMode, type FillChoice, type FillStyle, type Proposal } from '../engine/fillProposals';
 import type { Format } from '../engine/format';
 import { formatRules, isOneType } from '../engine/formatRules';
 import { isUserFavorite } from '../engine/lists';
@@ -74,8 +74,11 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const keepKey = keep.map(k => (k ? 1 : 0)).join('');
   // Doppio: un tipo di team solo, quindi niente scelta del tipo (e un tipo rimasto nello stato non conta)
   const oneType = isOneType(formatRules(format.formatId));
-  const choice = useMemo<FillChoice>(() => ({ ...pickState, archetype: oneType ? null : pickState.archetype, favorites, keepSets: keep }),
-    [pickState, oneType, favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Gli stili del formato: in doppio anche i campi e Tailwind (uno stile che il formato non offre non conta)
+  const styles = fillStylesFor(formatRules(format.formatId));
+  const pickedStyle = pickState.style && styles.includes(pickState.style) ? pickState.style : null;
+  const choice = useMemo<FillChoice>(() => ({ ...pickState, style: pickedStyle, archetype: oneType ? null : pickState.archetype, favorites, keepSets: keep }),
+    [pickState, pickedStyle, oneType, favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [round, setRound] = useState(0);
   // Le proposte di ogni giro già calcolato (l'ultimo può essere ancora in corso): le frecce le sfogliano senza ricalcolare
   const [pages, setPages] = useState<Proposal[][]>([[]]);
@@ -352,8 +355,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           <div className="fill-group">
             <span className="fill-head" aria-hidden="true">{t('fill.style')}</span>
             <div className="fill-styles" role="radiogroup" aria-label={t('fill.style')}>
-              {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
-              {FILL_STYLES.map((style: FillStyle) => radio(style, pickState.style === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
+              {radio('none', pickedStyle === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
+              {styles.map((style: FillStyle) => radio(style, pickedStyle === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
             </div>
           </div>
           <div className="fill-group">

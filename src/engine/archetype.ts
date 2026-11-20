@@ -195,7 +195,7 @@ function conditionStyles(team: TeamSet[]): TeamStyle[] {
 }
 
 /** Gli stili del doppio nell'ordine che decide i pari merito: meteo, campi, Trick Room, Tailwind. */
-const DOUBLES_STYLES: TeamStyle[] = ['sun', 'rain', 'sand', 'snow', 'grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain', 'trickroom', 'tailwind'];
+export const DOUBLES_STYLES: TeamStyle[] = ['sun', 'rain', 'sand', 'snow', 'grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain', 'trickroom', 'tailwind'];
 
 /**
  * Doppio (2026-11-21): una sola etichetta di stile, quella con più membri che la portano o la sfruttano; a pari merito
@@ -204,13 +204,24 @@ const DOUBLES_STYLES: TeamStyle[] = ['sun', 'rain', 'sand', 'snow', 'grassyterra
  * quando non c'è altro.
  */
 function doublesStyle(team: TeamSet[]): TeamStyle[] {
-  const count = (style: TeamStyle): number =>
-    style === 'tailwind' ? team.filter(set => set.moves.some(m => toID(m) === 'tailwind')).length : styleMembers(team, style, style.endsWith('terrain'));
-  const counts = DOUBLES_STYLES.map(style => ({ style, n: count(style) })).filter(s => s.n > 0);
+  const counts = doublesStyleCounts(team);
   // Il primo col conto più alto: l'ordine della lista decide i pari merito
   const best = counts.reduce<{ style: TeamStyle; n: number } | null>((a, s) => (!a || s.n > a.n ? s : a), null);
   return best ? [best.style] : [];
 }
+
+/** Quanti membri contano per ogni stile del doppio che il team ha (almeno uno), nell'ordine di DOUBLES_STYLES. */
+function doublesStyleCounts(team: TeamSet[]): { style: TeamStyle; n: number }[] {
+  const count = (style: TeamStyle): number =>
+    style === 'tailwind' ? team.filter(set => set.moves.some(m => toID(m) === 'tailwind')).length : styleMembers(team, style, style.endsWith('terrain'));
+  return DOUBLES_STYLES.map(style => ({ style, n: count(style) })).filter(s => s.n > 0);
+}
+
+/**
+ * Doppio: TUTTI gli stili che il team ha, non solo quello dell'etichetta (un team di pioggia con Tailwind li ha tutti
+ * e due). Lo usa Completa team per dire se il team ha lo stile chiesto; l'etichetta mostrata resta una (doublesStyle).
+ */
+export const doublesStyles = (team: TeamSet[]): TeamStyle[] => doublesStyleCounts(team).map(s => s.style);
 
 /** Archetipi per cui ha senso cercare un singolo Pokémon (Balance: ci rientrerebbero quasi tutti). */
 export type FitArchetype = 'stall' | 'hyperOffense' | 'bulkyOffense';
