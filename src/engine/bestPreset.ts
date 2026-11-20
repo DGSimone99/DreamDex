@@ -4,7 +4,7 @@ import type { EngineData } from './data';
 import { battleSpecies, getSpecies, toID } from './dex';
 import { isLearnable, legalAbilities, legalMoves } from './learnsets';
 import { rateTeam } from './rating';
-import { presetsForSet, type TeamSet } from './sets';
+import { defaultSet, ownDataOnly, presetsForSet, type TeamSet } from './sets';
 import type { GameId } from './games';
 
 /** Modifiche al massimo per membro: il set resta riconoscibile. */
@@ -107,6 +107,11 @@ export interface BestPreset {
   set: TeamSet;
   /** Voto del team con quel preset. */
   overall: number;
+  /**
+   * Doppio, membro con dati di doppio ma senza preset: il set viene dal set di riferimento del doppio (o resta quello
+   * di adesso, se vale di più) e si ritocca lo stesso. `index` resta null: nel menu dei set non c'è niente da segnare.
+   */
+  reference?: boolean;
 }
 
 /** Il preset con il voto del team più alto per il membro `index`; a pari voto vince il primo in ordine. */
@@ -121,8 +126,20 @@ function pickPreset(team: TeamSet[], index: number, data: EngineData, genLimit: 
     const overall = rateTeam(team.map((s, j) => (j === index ? set : s)), data, 'en')?.overall ?? -Infinity;
     if (overall > best.overall) best = { index: i, set, overall };
   });
-  return best;
+  if (best.index !== null || !referenceOnly(data, member)) return best;
+  // Niente preset del doppio (quelli del singolo lì non si usano): il set di adesso contro quello di riferimento del doppio
+  const forme = battleSpecies(member);
+  const overallOf = (set: TeamSet) => rateTeam(team.map((s, j) => (j === index ? set : s)), data, 'en')?.overall ?? -Infinity;
+  const options = [member, presetSet(member, defaultSet(data, forme && forme.name !== member.species && member.item ? forme.name : member.species, genLimit))].filter(accept);
+  if (!options.length) return best;
+  const rated = options.map(set => ({ set, overall: overallOf(set) }));
+  const top = rated.reduce((a, b) => (b.overall > a.overall ? b : a));
+  return { index: null, set: top.set, overall: top.overall, reference: true };
 }
+
+/** Doppio: il membro ha dati di doppio ma nessun preset (i preset del singolo non gli si danno, sets.ts ownDataOnly). */
+const referenceOnly = (data: EngineData, member: TeamSet): boolean =>
+  !member.customSkillset && ownDataOnly(data, battleSpecies(member)?.name ?? member.species) && !presetsForSet(data, member).length;
 
 /** Solo quale preset dà al team il voto più alto (posizione in presetsForSet), senza completarlo né ritoccarlo: null se non ce ne sono. */
 export function bestPresetIndex(team: TeamSet[], index: number, data: EngineData, genLimit = 9): number | null {
@@ -132,7 +149,7 @@ export function bestPresetIndex(team: TeamSet[], index: number, data: EngineData
 /** Il preset col voto del team più alto, poi ritoccato tra le mosse e le abilità più usate. */
 export function bestPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): BestPreset {
   const picked = pickPreset(team, index, data, genLimit);
-  if (picked.index === null) return picked;
+  if (picked.index === null && !picked.reference) return picked;
   // Il preset scelto con le mosse quasi obbligatorie che gli mancano
   const complete = withCoreMoves(picked.set, data, genLimit);
   const best = complete === picked.set ? picked
@@ -151,7 +168,7 @@ export function bestPreset(team: TeamSet[], index: number, data: EngineData, gen
 export function bestCoherentPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): TeamSet {
   const fine = (set: TeamSet) => !contradictorySet(set);
   const picked = pickPreset(team, index, data, genLimit, fine);
-  if (picked.index === null) return team[index];
+  if (picked.index === null && !picked.reference) return team[index];
   const completed = withCoreMoves(picked.set, data, genLimit);
   const complete = fine(completed) ? completed : picked.set;
   const tuned = tuneSet(team.map((s, j) => (j === index ? complete : s)), index, data, genLimit);
@@ -168,7 +185,7 @@ export function bestPresets(team: TeamSet[], data: EngineData, genLimit = 9): Te
     let changed = false;
     current.forEach((_, i) => {
       const best = pickPreset(current, i, data, genLimit);
-      if (best.index !== null && best.set !== current[i]) {
+      if ((best.index !== null || best.reference) && best.set !== current[i]) {
         const before = JSON.stringify(current[i]);
         current = current.map((s, j) => (j === i ? best.set : s));
         if (JSON.stringify(best.set) !== before) changed = true;
@@ -178,7 +195,7 @@ export function bestPresets(team: TeamSet[], data: EngineData, genLimit = 9): Te
   }
   // Un solo ritocco per membro, alla fine, con i preset degli altri già scelti
   current.forEach((_, i) => {
-    if (!presetsForSet(data, current[i]).length) return;
+    if (!presetsForSet(data, current[i]).length && !referenceOnly(data, current[i])) return;
     const tuned = tuneSet(current, i, data, genLimit);
     if (tuned !== current[i]) current = current.map((s, j) => (j === i ? tuned : s));
   });

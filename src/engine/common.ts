@@ -1,6 +1,6 @@
 import type { EngineData } from './data';
 import { battleName, dex, getMove, getSpecies } from './dex';
-import { parseSpread, presetsForSet, STAT_IDS, type StatID, type TeamSet } from './sets';
+import { ownDataOnly, parseSpread, presetsForSet, STAT_IDS, type StatID, type TeamSet } from './sets';
 import { findByName, statsEntry } from './stats';
 
 /** Una scelta frequente: quota d'uso nel formato, o null se viene dai preset Smogon. */
@@ -73,7 +73,8 @@ export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
   // Prima il formato scelto; poi quello in cui il Pokémon è più giocato (forma in battaglia, specie, forma base)
   const own = statsEntry(data.stats, battleName(set)) ?? statsEntry(data.stats, set.species);
   const base = getSpecies(set.species)?.baseSpecies ?? set.species;
-  const other = own ? undefined
+  // Doppio: per chi ha dati di doppio mai le più usate di un altro formato (sets.ts ownDataOnly)
+  const other = own || ownDataOnly(data, battleName(set)) ? undefined
     : [battleName(set), set.species, base].map(name => findByName(data.fallbackStats ?? undefined, name)).find(Boolean);
   const entry = own ?? other;
   const source = other?.format ?? null;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { improveSets } from '../../src/engine/bestPreset';
+import { bestPresetIndex, improveSets } from '../../src/engine/bestPreset';
+import { commonChoices } from '../../src/engine/common';
 import type { EngineData } from '../../src/engine/data';
 import { generatedSet } from '../../src/engine/generatedSet';
 import { defaultSet, ownDataOnly, presetsFor, presetsForSet, type Preset, type TeamSet } from '../../src/engine/sets';
@@ -111,5 +112,84 @@ describe('doppio: Migliora i set senza preset', () => {
     const garchomp = changes[0].after ?? changes[0].before;
     for (const move of ['Stealth Rock', 'Dragon Tail', 'Spikes']) expect(garchomp.moves).not.toContain(move);
     expect(garchomp.item).not.toBe('Rocky Helmet');
+  });
+});
+
+describe('doppio: Migliora i set lavora anche senza preset', () => {
+  it('un set scadente di chi ha solo statistiche di doppio migliora verso il set del doppio', () => {
+    const team: TeamSet[] = [
+      { ...mk('Garchomp', '', 'Rough Skin', ['Sand Attack', 'Cut', 'Rock Smash', 'Strength']), evs: {} },
+      mk('Incineroar', 'Sitrus Berry', 'Intimidate', ['Fake Out', 'Flare Blitz', 'Knock Off', 'Parting Shot']),
+    ];
+    const [garchomp] = improveSets(team, doubles, 9);
+    expect(garchomp.changed).toBe(true);
+    expect(garchomp.gain).toBeGreaterThan(0);
+    expect(garchomp.after.moves).toEqual(expect.arrayContaining(['Earthquake', 'Protect']));
+    expect(garchomp.after.moves).not.toContain('Stealth Rock');
+    // Nel menu dei set non c'è nessun preset da segnare
+    expect(bestPresetIndex(team, 0, doubles, 9)).toBeNull();
+  });
+
+  it('un set già buono non peggiora: resta quello di adesso se vale di più', () => {
+    const good = defaultSet(doubles, 'Garchomp');
+    const team = [good, mk('Incineroar', 'Sitrus Berry', 'Intimidate', ['Fake Out', 'Flare Blitz', 'Knock Off', 'Parting Shot'])];
+    expect(improveSets(team, doubles, 9)[0].gain).toBeGreaterThanOrEqual(0);
+  });
+
+  it('nel singolo, senza preset, il membro resta com\'è (come sempre)', () => {
+    const noPresets: EngineData = { stats, sets: {}, presets: {}, formatId: 'ou' };
+    const team: TeamSet[] = [
+      { ...mk('Garchomp', '', 'Rough Skin', ['Sand Attack', 'Cut', 'Rock Smash', 'Strength']), evs: {} },
+      mk('Incineroar', 'Sitrus Berry', 'Intimidate', ['Fake Out', 'Flare Blitz', 'Knock Off', 'Parting Shot']),
+    ];
+    expect(improveSets(team, noPresets, 9)[0].changed).toBe(false);
+  });
+});
+
+describe('doppio: quali forme contano come "con dati di doppio"', () => {
+  const formes: EngineData = { ...doubles, stats: { ...stats, pokemon: {
+    ...stats.pokemon,
+    'Slowbro-Mega': entry(0.05, 'slowbronite', 'shellarmor', ['scald', 'psychic', 'protect', 'trickroom'], SPEC),
+    Metagross: entry(0.05, 'assaultvest', 'clearbody', ['meteormash', 'zenheadbutt', 'bulletpunch', 'stompingtantrum'], PHYS),
+    Maushold: entry(0.05, 'widelens', 'friendguard', ['followme', 'populationbomb', 'protect', 'beatup'], PHYS),
+  } } };
+
+  it('un\'altra forma (Slowbro-Galar) non eredita i dati della Mega della base: tiene le riserve del singolo', () => {
+    expect(ownDataOnly(formes, 'Slowbro')).toBe(true);
+    expect(ownDataOnly(formes, 'Slowbro-Mega')).toBe(true);
+    expect(ownDataOnly(formes, 'Slowbro-Galar')).toBe(false);
+    expect(ownDataOnly(formes, 'Deoxys-Attack')).toBe(false);
+  });
+
+  it('una Mega senza statistiche sue, con la base che le ha: parte dal set di doppio della base, con la pietra', () => {
+    expect(ownDataOnly(formes, 'Metagross-Mega')).toBe(true);
+    const mega = defaultSet(formes, 'Metagross-Mega');
+    expect(mega.item).toBe('Metagrossite');
+    expect(mega.moves).toEqual(expect.arrayContaining(['Meteor Mash', 'Bullet Punch']));
+  });
+
+  it('una forma solo estetica usa i dati di doppio della base', () => {
+    expect(ownDataOnly(formes, 'Maushold-Four')).toBe(true);
+    expect(defaultSet(formes, 'Maushold-Four').moves).toEqual(expect.arrayContaining(['Follow Me', 'Protect']));
+  });
+});
+
+describe('doppio: le "più usate" non vengono dal singolo per chi ha dati di doppio', () => {
+  const singlesStats = { Garchomp: { ...entry(0.3, 'rockyhelmet', 'roughskin', ['stealthrock', 'spikes', 'dragontail', 'earthquake'], PHYS), format: 'gen9nationaldex' },
+    Dragonite: { ...entry(0.3, 'heavydutyboots', 'multiscale', ['dragondance', 'extremespeed', 'earthquake', 'roost'], PHYS), format: 'gen9nationaldex' } };
+  const preset: Preset = { name: 'Doppio', format: 'gen9nationaldexdoubles', set: mk('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Rock Slide', 'Protect', 'Swords Dance']) };
+  // Garchomp ha un preset di doppio ma nessuna statistica di doppio
+  const noStats = { ...stats, pokemon: { Incineroar: stats.pokemon.Incineroar } };
+  const data = (formatId: 'natdexdoubles' | 'ou'): EngineData => ({ stats: noStats, sets: {}, presets: { Garchomp: [preset] }, fallbackStats: singlesStats, formatId });
+  const moves = (d: EngineData, set: TeamSet) => commonChoices(d, set).moves.map(m => m.name);
+
+  it('Garchomp con dati di doppio: niente Stealth Rock dalle statistiche del singolo', () => {
+    expect(moves(data('natdexdoubles'), preset.set)).not.toContain('Stealth Rock');
+    expect(moves(data('ou'), preset.set)).toContain('Stealth Rock');
+  });
+
+  it('una specie senza dati di doppio le prende ancora dal formato in cui è più giocata', () => {
+    const dragonite = mk('Dragonite', 'Heavy-Duty Boots', 'Multiscale', ['Dragon Dance', 'Extreme Speed']);
+    expect(moves(data('natdexdoubles'), dragonite)).toContain('Roost');
   });
 });

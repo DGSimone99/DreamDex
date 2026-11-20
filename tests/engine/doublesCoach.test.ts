@@ -72,6 +72,13 @@ describe('doppio: il meteo contro nel coach', () => {
     expect(dry.some(p => p.text.includes('Incineroar'))).toBe(false);
   });
 
+  it('senza voto (EV oltre il massimo) resta la nota delle mosse indebolite, come prima', () => {
+    const over = { ...incineroar, evs: { hp: 252, atk: 252, spe: 252 } };
+    const team = [pelipper, kingdra, over];
+    expect(rateTeam(team, doublesData)).toBeNull();
+    expect(conditions(team).some(p => p.text.includes('Incineroar'))).toBe(true);
+  });
+
   it('cambiare solo la mossa non risolve se il Pokémon di solito la usa; sostituire lui o chi porta il meteo sì', () => {
     const team = [pelipper, kingdra, incineroar];
     const changes = problemChanges(team, doubles, doublesData, problems(team), 'it');

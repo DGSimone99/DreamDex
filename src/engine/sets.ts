@@ -1,7 +1,7 @@
 import type { Species } from '@pkmn/dex';
 import { t, type Lang } from '../i18n';
 import { Sets } from '@pkmn/sets';
-import { battleSpecies, dex, getMove, getSpecies, teamFormeOf, toID } from './dex';
+import { battleSpecies, dex, getMove, getSpecies, isCosmeticForme, teamFormeOf, toID } from './dex';
 import type { EngineData } from './data';
 import { isOneType, rulesOf } from './formatRules';
 import { isBannedName, pokedexOfId } from './formats';
@@ -127,6 +127,15 @@ function baseFormeSet(sets: SetsData | null | undefined, speciesName: string): T
   return { ...base, species: species.name, item: species.requiredItem ?? base.item };
 }
 
+/** Doppio: il set più usato della specie base nelle statistiche del formato, per una forma che non ne ha di sue (con lo strumento della forma). */
+function ownBaseFormeSet(data: EngineData, speciesName: string): TeamSet | undefined {
+  const species = getSpecies(speciesName);
+  if (!species || species.baseSpecies === species.name) return undefined;
+  const base = mostCommonSet(data.stats, species.baseSpecies) ?? findByName(data.sets ?? undefined, species.baseSpecies);
+  // L'abilità della base non vale per una Mega: la sceglie withAbility
+  return base ? { ...base, species: species.name, item: species.requiredItem ?? base.item, ability: isStoneForme(species) ? '' : base.ability } : undefined;
+}
+
 /**
  * Molti preset e analisi non scrivono l'abilità: si mette la più usata della specie nelle statistiche del formato
  * (o del formato in cui è più giocata), altrimenti la prima della specie. Ninetales prende Drought, non Flash Fire.
@@ -135,7 +144,8 @@ export function withAbility(set: TeamSet, data?: EngineData): TeamSet {
   if (set.ability) return set;
   const species = getSpecies(set.species);
   const own = Object.values(species?.abilities ?? {}).map(toID);
-  const entry = data && (statsEntry(data.stats, set.species) ?? findByName(data.fallbackStats ?? undefined, set.species));
+  // Doppio: per chi ha dati di doppio mai le statistiche di un altro formato
+  const entry = data && (statsEntry(data.stats, set.species) ?? (ownDataOnly(data, set.species) ? undefined : findByName(data.fallbackStats ?? undefined, set.species)));
   const used = entry ? sortedKeys(entry.abilities).find(id => own.includes(toID(id))) : undefined;
   return { ...set, ability: used ? dex.abilities.get(used).name : species?.abilities[0] ?? '' };
 }
@@ -145,8 +155,10 @@ const ownData = new WeakMap<EngineData, Map<string, boolean>>();
 /**
  * In doppio, la specie ha dati di doppio suoi (statistiche, preset o set del formato)? Allora non riceve mai set o
  * preset del singolo: un set con Stealth Rock e senza Protect giudicato col voto del doppio non è un consiglio. Si
- * guardano il nome dato, la specie base e le sue forme con la pietra (le statistiche di una Mega stanno sotto la Mega).
- * Chi non ha nessun dato di doppio tiene le riserve del singolo, come sempre. Nel singolo è sempre falso.
+ * guarda il nome dato; per una Mega o una Primal anche la specie base, per la specie base anche le sue forme con la
+ * pietra (le statistiche di una Mega stanno sotto la Mega), per una forma solo estetica (Maushold-Four) la specie base.
+ * Le altre forme (Slowbro-Galar, Deoxys-Attack) contano solo coi dati loro: senza, tengono le riserve del singolo come
+ * ogni specie senza dati di doppio. Nel singolo è sempre falso.
  */
 export function ownDataOnly(data: EngineData, speciesName: string): boolean {
   if (!isOneType(rulesOf(data))) return false;
@@ -156,8 +168,10 @@ export function ownDataOnly(data: EngineData, speciesName: string): boolean {
   if (hit !== undefined) return hit;
   const species = getSpecies(speciesName);
   const base = species ? getSpecies(species.baseSpecies) : undefined;
-  const stoneFormes = (base?.otherFormes ?? []).filter(name => { const forme = getSpecies(name); return !!forme && isStoneForme(forme); });
-  const names = [...new Set([speciesName, ...(species ? [species.name] : []), ...(base ? [base.name] : []), ...stoneFormes])];
+  const isBase = !!species && species.baseSpecies === species.name;
+  const stoneFormes = isBase ? (species.otherFormes ?? []).filter(name => { const forme = getSpecies(name); return !!forme && isStoneForme(forme); }) : [];
+  const viaBase = !!species && !!base && !isBase && (isStoneForme(species) || isCosmeticForme(species));
+  const names = [...new Set([speciesName, ...(species ? [species.name] : []), ...(viaBase ? [base.name] : []), ...stoneFormes])];
   const own = names.some(name => !!statsEntry(data.stats, name) || !!findByName(data.presets ?? undefined, name) || !!findByName(data.sets ?? undefined, name));
   known.set(speciesName, own);
   return own;
@@ -206,7 +220,8 @@ function referenceSet(data: EngineData, speciesName: string, genLimit: number): 
     // Solo set con la pietra: si tiene il set e le si toglie la pietra
     ?? statsSet
     ?? (own ? undefined : findByName(data.fallback ?? undefined, speciesName))
-    ?? (own ? undefined : baseFormeSet(data.fallback, speciesName));
+    // Doppio: una forma senza dati suoi (Mega la cui specie base ha statistiche, forma estetica) parte dal set di doppio della base
+    ?? (own ? ownBaseFormeSet(data, speciesName) : baseFormeSet(data.fallback, speciesName));
   const base = found && withAbility(withoutStone(found, stones, data), data);
   if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit, data.game ?? null, doubles);
   const legal = makeLegal(base, data, genLimit);

@@ -212,7 +212,8 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // Doppio: il meteo contro è un malus del voto (weatherSabotage), anche quando la mossa non è nel set ma il Pokémon di
   // solito la usa: un problema per ogni membro che il voto conta, con lo stesso testo e gli stessi punti, al posto della
   // nota delle mosse indebolite (che vede solo le mosse del set e farebbe un doppione).
-  const sabotage = isOneType(analysis.needs.rules);
+  // Senza voto (bloccato, es. EV oltre il massimo) resta la nota di sempre
+  const sabotage = isOneType(analysis.needs.rules) && !!rating;
   for (const item of [...weatherClashes(usable, lang), ...(sabotage ? [] : weakenedMoveNotes(usable, lang))]) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
   if (sabotage) for (const item of rating?.penalty.items.filter(i => i.catalog === 'weatherSabotage') ?? []) add('conditions', false, item.text, [], `conditions:${item.key}`, item.points);
 
