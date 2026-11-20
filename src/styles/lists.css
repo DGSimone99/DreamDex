@@ -364,6 +364,11 @@
 /* Schermi bassi (un portatile 1366×768 con Chrome massimizzato lascia circa 1366×657): la fascia del team si abbassa,
    carte alte 160 px (prima ~214) e carta del voto più compatta, così la lista dei candidati ha l'altezza per sprite ben
    visibili. Sulla carta restano sprite, strumento, nome, tipi e ruolo (l'abilità è nell'editor) */
+/* Schermi bassi ma larghi (es. 1286×791, Windows al 150%): le carte restano larghe anche togliendo un po' a ognuna,
+   il voto si allarga e le barre delle aree si leggono */
+@media (min-width: 1250px) and (max-height: 799px) {
+  .band { grid-template-columns: minmax(0, 1fr) 212px; }
+}
 @media (min-width: 1100px) and (max-height: 799px) {
   .band { padding-top: var(--sp-4); padding-bottom: var(--sp-9); }
   .team-head { margin-bottom: var(--sp-3); }
