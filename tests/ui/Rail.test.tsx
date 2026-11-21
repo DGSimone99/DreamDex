@@ -56,4 +56,34 @@ describe('Barra laterale', () => {
     expect(count).not.toHaveClass('warn');
     expect(count).not.toHaveClass('serious');
   });
+
+  it('passando sopra una sezione il fumetto dice cosa conta il numero', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Toxapex']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    expect(document.querySelector('#tab-pokemon')).toHaveAttribute('data-hint', '2 di 6 nel team');
+    expect(document.querySelector('#tab-analysis')!.getAttribute('data-hint')).toMatch(/problemi$/);
+  });
+
+  it('chiudendo la finestra del formato la tastiera torna sulla targa', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    const plate = screen.getByRole('button', { name: /^Formato / });
+    plate.focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('dialog', { name: 'Scegli il formato' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Formato / }));
+  });
+
+  it('prima di confermare la finestra dice quanti Pokémon del team non sarebbero ammessi', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    await user.click(screen.getByRole('button', { name: /^Formato / }));
+    const dialog = screen.getByRole('dialog', { name: 'Scegli il formato' });
+    expect(dialog).not.toHaveTextContent('non ammess');
+    await user.click(document.querySelector<HTMLInputElement>('input[name="format-tier"][value="uu"]')!);
+    expect(dialog).toHaveTextContent('1 Pokémon del team non ammesso in National Dex UU');
+  });
 });

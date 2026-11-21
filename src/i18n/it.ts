@@ -409,6 +409,8 @@ export const it: Record<keyof typeof en, string> = {
   'rail.pillLegendaries': "Leggendari",
   'formatDialog.title': "Scegli il formato",
   'formatDialog.use': "Usa {format}",
+  'formatDialog.notAllowedOne': "{n} Pokémon del team non ammesso in {format}",
+  'formatDialog.notAllowedMany': "{n} Pokémon del team non ammessi in {format}",
   'formatDialog.unsaved': "modifiche non confermate",
   'formatDialog.cancel': "Annulla",
   'formatDialog.familyAria': "Famiglia del formato",

@@ -25,11 +25,11 @@
 .rail-label { margin: 0; font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 /* Formato: una targa azzurra a righine a tutta larghezza (icona della famiglia, nome in grande, freccina) e sotto una riga
    scura col riassunto e la famiglia. Tutto è un pulsante che apre la finestra Scegli il formato */
-.rail-format { display: flex; flex-direction: column; gap: 0; width: 100%; height: auto; padding: 0; border: 0; border-block: 1px solid var(--line); border-radius: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.rail-format { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0; width: 100%; height: auto; padding: 0; border: 0; border-block: 1px solid var(--line); border-radius: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .rail-format-plate { display: grid; grid-template-columns: 20px minmax(0, 1fr) 16px; align-items: center; gap: var(--sp-5); padding: var(--sp-5) var(--sp-7) var(--sp-5) var(--sp-9); background: var(--stripes), linear-gradient(100deg, #5fe6ff, var(--accent) 50%, #00a9d1); color: var(--on-accent); }
 .rail-format-plate .icon { width: 20px; height: 20px; stroke-width: 2.3; }
 .rail-format-plate .icon:last-child { width: 16px; height: 16px; stroke-width: 2.6; transition: translate 0.15s var(--ease); }
-.rail-format-name { font: 800 var(--fs-title-l)/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; }
+.rail-format-name { font: 800 var(--fs-title-l)/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; text-wrap: balance; }
 .rail-format-sub { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-1) var(--sp-4); padding: var(--sp-4) var(--sp-7) var(--sp-4) var(--sp-9); background: var(--field); }
 .rail-format-summary { display: flex; flex-wrap: wrap; gap: 0 var(--sp-3); min-width: 0; white-space: nowrap; color: var(--muted); font: 500 var(--fs-caption)/1.35 var(--ui); }
 .rail-format-summary span + span::before { content: '·'; margin-right: var(--sp-3); color: var(--faint); }
@@ -129,8 +129,10 @@
 /* Misure fisse: passando da una linguetta all'altra la finestra non cambia forma; il contenuto scorre dentro */
 .help-dialog.format-dialog { width: min(840px, 100%); height: min(840px, calc(100vh - 32px)); max-height: none; }
 .format-dialog .fmt-body { flex: 1; min-height: 0; align-content: start; }
-.fmt-actions { display: flex; justify-content: flex-end; gap: var(--sp-5); padding: var(--sp-6) var(--sp-9); border-top: 1px solid var(--line); background: var(--panel); }
+.fmt-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-5); padding: var(--sp-6) var(--sp-9); border-top: 1px solid var(--line); background: var(--panel); }
 .fmt-actions button { min-width: 110px; padding: var(--sp-4) var(--sp-8); font-weight: 600; text-transform: none; }
+/* Avviso prima di confermare: i membri del team che il formato scelto non ammette */
+.fmt-warning { margin: 0 auto 0 0; color: var(--warn); font: 600 var(--fs-small)/1.3 var(--ui); }
 /* La scheda con modifiche non confermate: un puntino magenta accanto al nome */
 .fmt-dirty { display: inline-block; width: 7px; height: 7px; margin-left: var(--sp-3); border-radius: 50%; background: var(--accent-2); vertical-align: 2px; }
 .fmt-families label.on .fmt-dirty { background: var(--on-accent); }
@@ -156,10 +158,16 @@
 /* Le scelte non ancora pronte: grigie e a tratteggio, senza reazioni al mouse */
 .fmt-tile.off { opacity: 0.5; cursor: not-allowed; background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.035) 0 6px, transparent 6px 12px), var(--panel); }
 .fmt-art { display: flex; align-items: center; justify-content: center; gap: var(--sp-4); min-width: 0; overflow: hidden; height: 64px; margin-bottom: var(--sp-3); padding: var(--sp-3); border-radius: 3px; background: var(--field); }
-.fmt-game .fmt-art, .fmt-sources .fmt-art { height: 96px; }
+.fmt-game .fmt-art { height: 96px; }
+/* Le fonti in una striscia compatta: logo a sinistra, nome e nota a destra (oggi c'è solo Smogon) */
+.fmt-sources .fmt-tile { grid-template-columns: 64px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--sp-5); align-items: center; padding: var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-3); }
+.fmt-sources .fmt-art { grid-row: 1 / span 2; height: 52px; margin: 0; padding: var(--sp-2); }
+.fmt-sources .fmt-tile b { align-self: end; }
+.fmt-sources .fmt-tile small { align-self: start; }
 .fmt-game.game-sv .fmt-art { background: linear-gradient(100deg, #5a1a14 0 50%, #33195c 50% 100%); }
 .fmt-logo { display: block; flex: 1 1 0; min-width: 0; height: 100%; object-fit: contain; }
 .fmt-logo-text { font: 800 var(--fs-section)/1 var(--display); font-style: italic; text-transform: uppercase; color: var(--text); text-align: center; }
+.fmt-past-label.first { margin-top: 0; }
 .fmt-past-label { margin: var(--sp-6) 0 var(--sp-3); color: var(--faint); font: 600 var(--fs-caption)/1.2 var(--ui); }
 .fmt-soon { margin-left: var(--sp-3); padding: 1px var(--sp-3); border-radius: 3px; background: var(--raised); color: var(--muted); font: 700 var(--fs-label)/1.3 var(--display); font-style: italic; }
 .fmt-scale { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }

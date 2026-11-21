@@ -405,6 +405,8 @@ export const en = {
   'rail.pillLegendaries': "Legendaries",
   'formatDialog.title': "Choose the format",
   'formatDialog.use': "Use {format}",
+  'formatDialog.notAllowedOne': "{n} team Pokémon not allowed in {format}",
+  'formatDialog.notAllowedMany': "{n} team Pokémon not allowed in {format}",
   'formatDialog.unsaved': "unsaved changes",
   'formatDialog.cancel': "Cancel",
   'formatDialog.familyAria': "Format family",

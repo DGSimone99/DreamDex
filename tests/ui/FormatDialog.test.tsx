@@ -49,6 +49,26 @@ describe('finestra Scegli il formato', () => {
     expect(radio('format-family', 'free').closest('label')!).not.toHaveTextContent('modifiche non confermate');
   });
 
+  it('Lotta e Tier vengono subito dopo la generazione, prima delle generazioni passate', () => {
+    open();
+    const tier = radio('format-tier', 'ou');
+    const battle = radio('format-battle', 'singles');
+    const past = screen.getByRole('radio', { name: /Gen 7/ });
+    const natdex = radio('format-gen', 'natdex');
+    expect(natdex.compareDocumentPosition(battle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(battle.compareDocumentPosition(tier) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(tier.compareDocumentPosition(past) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('il Tab resta dentro la finestra', async () => {
+    const user = userEvent.setup();
+    const { dialog } = open();
+    for (let i = 0; i < 40; i++) {
+      await user.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+  });
+
   it('Annulla chiude senza cambiare il formato', async () => {
     const user = userEvent.setup();
     const { onPick, onClose } = open();

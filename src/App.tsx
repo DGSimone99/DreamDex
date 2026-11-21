@@ -404,7 +404,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         main.focus();
         main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
       }}>{t(lang, 'app.skipToContent')}</a>
-      <Rail choice={choice} memory={memory} onPick={setChoice} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
+      <Rail choice={choice} memory={memory} onPick={setChoice} team={team} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
         onCredits={() => setCreditsOpen(true)}
         onFeedback={() => setFeedbackOpen(true)}
@@ -413,12 +413,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         // Sul computer la riga mostra solo il numero a destra (count); lo stato intero resta la descrizione della scheda
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
           count: team.length ? { text: `${team.length}/6`, level: 'info' } : null,
+          hint: t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }),
           status: replaceIndex !== null && team[replaceIndex]
             ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].name || battleName(team[replaceIndex]) })}</span>
             : t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }) },
         { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
           // Col team incompleto il numero resta neutro: giallo o rosso solo a team completo (un team a metà non è «rotto»)
           count: problems.length ? { text: String(problems.length), level: team.length < 6 ? 'info' : problems.some(p => p.severity === 'serious') ? 'serious' : 'warn' } : null,
+          hint: rating ? [`${rating.grade} ${rating.overall}`, ...(problems.length ? [t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })] : [])].join(' · ') : t(lang, 'rail.noGrade'),
           status: rating ? <>
             {/* Team non legale nel formato: il voto in grigio, come nella carta del voto */}
             <b className={`grade grade-${rating.grade}${problems.some(p => p.category === 'rules') ? ' illegal' : ''}`}>{rating.grade} {rating.overall}</b>
@@ -434,6 +436,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           count: userLists.favorites.size || userLists.bans.size
             ? { text: [userLists.favorites.size, userLists.bans.size].filter(Boolean).length === 2 ? `${userLists.favorites.size}·${userLists.bans.size}` : String(userLists.favorites.size || userLists.bans.size), level: 'info' }
             : null,
+          hint: userLists.favorites.size || userLists.bans.size ? [
+            userLists.favorites.size ? t(lang, userLists.favorites.size === 1 ? 'rail.favOne' : 'rail.favMany', { n: userLists.favorites.size }) : null,
+            userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,
+          ].filter(Boolean).join(' · ') : t(lang, 'rail.listsEmpty'),
           status: userLists.favorites.size || userLists.bans.size ? [
             userLists.favorites.size ? t(lang, userLists.favorites.size === 1 ? 'rail.favOne' : 'rail.favMany', { n: userLists.favorites.size }) : null,
             userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,

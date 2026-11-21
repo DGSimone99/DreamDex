@@ -1,6 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import type { Family, FormatChoice, FormatMemory } from '../engine/formatChoice';
+import type { TeamSet } from '../engine/sets';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
@@ -17,6 +18,8 @@ interface Props {
   /** L'ultima scelta di ogni famiglia. */
   memory: FormatMemory;
   onPick: (choice: FormatChoice) => void;
+  /** Il team, per l'avviso dei membri non ammessi nella finestra del formato. */
+  team?: TeamSet[];
   meta: StatsMeta | null;
   lang: Lang;
   onLangChange: (lang: Lang) => void;
@@ -42,7 +45,7 @@ function monthLabel(month: string): string {
  * finestra Scegli il formato), le sezioni come tessere con una riga di stato, e in fondo lingua, impostazioni e mese dei dati.
  * Importa/Esporta e Team salvati stanno sopra la squadra (TeamPanel).
  */
-export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
+export function Rail({ choice, memory, onPick, team, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
   const t = useT();
   // La finestra del formato e la famiglia su cui si apre (aprirla non cambia il formato)
   const [open, setOpen] = useState<Family | null>(null);
@@ -71,7 +74,7 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
           <span className="rail-format-family">{family}</span>
         </span>
       </button>
-      {open && <FormatDialog choice={choice} memory={memory} family={open} onPick={onPick} onClose={close} />}
+      {open && <FormatDialog choice={choice} memory={memory} family={open} team={team} onPick={onPick} onClose={close} />}
       <div className="rail-sections">{tabs}</div>
       <div className="rail-foot">
         <div className="rail-foot-row">

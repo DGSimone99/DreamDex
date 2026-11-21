@@ -1,12 +1,15 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  FAMILIES, normalizeCompetitive, tiersFor,
+  FAMILIES, normalizeCompetitive, rulesOf, tiersFor,
   type CompetitiveChoice, type CompetitiveGen, type Family, type FormatChoice, type FormatMemory, type FreeChoice, type GameChoice,
 } from '../engine/formatChoice';
 import { BATTLE_IDS } from '../engine/formats';
 import { GAME_GEN, GAME_IDS, gameReady, type GameId } from '../engine/games';
 import { useT } from '../i18n/react';
+import { getSpecies } from '../engine/dex';
+import { illegalReason } from '../engine/formats';
+import type { TeamSet } from '../engine/sets';
 import { choiceName } from './formatName';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
@@ -54,8 +57,10 @@ function Toggle({ label, note, checked, onChange }: { label: string; note?: stri
  * cambia solo con Conferma, e diventa la scelta della linguetta aperta. ×, Esc, Annulla o il clic fuori chiudono senza cambiare.
  * La finestra ha misure fisse: passando da una linguetta all'altra non cambia forma.
  */
-export function FormatDialog({ choice, memory, family, onPick, onClose }: {
+export function FormatDialog({ choice, memory, family, team = [], onPick, onClose }: {
   choice: FormatChoice;
+  /** Il team, per dire prima di confermare quanti membri non sarebbero ammessi. */
+  team?: TeamSet[];
   memory: FormatMemory;
   /** La famiglia mostrata all'apertura (aprire non cambia il formato). */
   family: Family;
@@ -68,10 +73,26 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
   const [shown, setShown] = useState<Family>(family === 'game' && !GAME_IDS.some(gameReady) ? 'competitive' : family);
   const body = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    // Alla chiusura la tastiera torna dove era prima (la targa del formato)
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     body.current?.querySelector<HTMLInputElement>('input[name="format-family"]:checked')?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      // Il Tab resta dentro la finestra: dall'ultimo elemento si torna al primo e viceversa
+      if (e.key !== 'Tab' || !body.current) return;
+      const items = [...body.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)')]
+        .filter(el => el.tabIndex >= 0 && !(el instanceof HTMLInputElement && el.type === 'radio' && !el.checked));
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      const inside = body.current.contains(document.activeElement);
+      if (e.shiftKey && (document.activeElement === first || !inside)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus(); }
+    };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (opener?.isConnected) opener.focus();
+    };
   }, [onClose]);
   const gamesReady = GAME_IDS.some(gameReady);
   // La bozza di ogni famiglia: quella attiva parte dal formato di adesso, le altre dall'ultima scelta fatta lì
@@ -85,6 +106,9 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
   const setGame = (next: GameChoice) => setDrafts(d => ({ ...d, game: next }));
   const setFree = (next: FreeChoice) => setDrafts(d => ({ ...d, free: next }));
   const confirm = () => { onPick(drafts[shown]); onClose(); };
+  // Quanti membri del team non sarebbero ammessi col formato che si sta per usare
+  const target = rulesOf(drafts[shown]);
+  const notAllowed = team.filter(set => { const species = getSpecies(set.species); return species && illegalReason(species, target); }).length;
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
@@ -134,16 +158,6 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                   </label>
                 ))}
               </div>
-              <p className="fmt-past-label">{t('formatDialog.pastGens')} <span className="fmt-soon">{t('top.soon')}</span></p>
-              <div className="fmt-scale">
-                {PAST_GENS.map(([n, abbr]) => (
-                  <label key={n} className="off">
-                    <input type="radio" className="visually-hidden" name="format-gen" value={String(n)} disabled
-                      aria-label={t('formatDialog.pastGenAria', { n, abbr })} />
-                    <b>{n}</b><small>{abbr}</small>
-                  </label>
-                ))}
-              </div>
             </section>
             <section className="fmt-sec">
               <p className="rail-label">{t('top.battle')}</p>
@@ -168,6 +182,19 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                     <input type="radio" className="visually-hidden" name="format-tier" value={x.formatId} checked={x.tier === competitive.tier}
                       onChange={() => pickCompetitive({ tier: x.tier })} />
                     {x.tier}
+                  </label>
+                ))}
+              </div>
+            </section>
+            {/* Le generazioni Smogon passate, non ancora pronte: dopo le scelte che si usano davvero */}
+            <section className="fmt-sec">
+              <p className="fmt-past-label first">{t('formatDialog.pastGens')} <span className="fmt-soon">{t('top.soon')}</span></p>
+              <div className="fmt-scale">
+                {PAST_GENS.map(([n, abbr]) => (
+                  <label key={n} className="off">
+                    <input type="radio" className="visually-hidden" name="format-gen" value={String(n)} disabled
+                      aria-label={t('formatDialog.pastGenAria', { n, abbr })} />
+                    <b>{n}</b><small>{abbr}</small>
                   </label>
                 ))}
               </div>
@@ -238,6 +265,8 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
           <p className="note">{t('formatDialog.logosCredit')}</p>
         </div>
         <footer className="fmt-actions">
+          {notAllowed > 0 && <p className="fmt-warning" role="status">
+            {t(notAllowed === 1 ? 'formatDialog.notAllowedOne' : 'formatDialog.notAllowedMany', { n: notAllowed, format: choiceName(drafts[shown], t) })}</p>}
           <button type="button" onClick={onClose}>{t('formatDialog.cancel')}</button>
           {/* Il pulsante dice quale formato userà: la scelta della scheda aperta */}
           <button type="button" className="primary" onClick={confirm}>{t('formatDialog.use', { format: choiceName(drafts[shown], t) })}</button>

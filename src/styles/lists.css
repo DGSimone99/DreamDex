@@ -39,6 +39,8 @@
   .rail-logo { padding: 0 var(--sp-7); }
   .rail-format-plate, .rail-format-sub { padding-left: var(--sp-7); padding-right: var(--sp-6); }
   .rail-format-name { font-size: var(--fs-title); }
+  /* Barra stretta: la famiglia la dice già l'icona della targa */
+  .rail-format-family { display: none; }
   .tabs.vertical { gap: var(--sp-2); }
   .tabs.vertical [role='tab'] { grid-template-columns: 32px minmax(0, 1fr) auto; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-7); }
   .tabs.vertical .tab-icon { width: 32px; height: 32px; }
