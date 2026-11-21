@@ -167,7 +167,6 @@
   /* Il tipo di team sotto il giudizio (non accanto): la colonna del voto resta stretta e le aree hanno spazio */
   .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: column; align-items: flex-start; gap: 3px; }
   .band:not(.collapsed) .grade-badge .grade-type { font-size: var(--fs-caption); }
-  .band:not(.collapsed) .grade-badge .grade-rules { grid-column: 2; grid-row: 4; align-self: start; margin-top: var(--sp-2); }
   .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 2 / span 4; gap: 1px; margin: 0; }
   .band:not(.collapsed) .grade-badge button.grade-area { grid-template-columns: 60px minmax(0, 1fr) 28px 10px; box-sizing: border-box; min-height: 22px; margin: 0; }
 
@@ -631,7 +630,6 @@
   .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; font-size: 58px; }
   .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; font-size: 22px; }
   .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 2; align-self: start; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px var(--sp-4); font-size: var(--fs-section); }
-  .band:not(.collapsed) .grade-badge .grade-rules { grid-column: 1 / -1; grid-row: 4; }
   .band:not(.collapsed) .grade-badge .grade-tools { top: var(--sp-3); right: var(--sp-3); height: auto; }
   .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 32px; height: 32px; }
   /* Le aree sotto: Attacco, Difesa e Velocità con la barretta; Ruoli e Bonus/Malus col solo valore */

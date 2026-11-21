@@ -35,9 +35,6 @@
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .app { grid-template-columns: 190px minmax(0, 1fr); }
   .undo-toast { --rail-w: 190px; }
-  /* Carta del voto stretta: "Non legale: n Pokémon" su una riga sola, senza il triangolo */
-  .grade-badge .grade-rules { padding-inline: 5px; }
-  .grade-badge .grade-rules svg { display: none; }
   .rail { gap: var(--sp-5); padding-top: var(--sp-6); }
   .rail-logo { padding: 0 var(--sp-7); }
   .format-card { margin: 0 var(--sp-7); }
@@ -377,7 +374,6 @@
   .grade-badge .letter { font-size: 46px; }
   .grade-badge .overall { font-size: var(--fs-title); }
   .grade-badge .label { font-size: var(--fs-caption); }
-  .grade-badge .grade-rules { margin-top: var(--sp-1); }
   .grade-badge .grade-areas { gap: 0; margin-top: var(--sp-1); padding-top: var(--sp-1); }
   .grade-badge button.grade-area { padding-top: 1px; padding-bottom: 1px; }
   /* Meno margini sopra e sotto la sezione: l'altezza va alla lista */
