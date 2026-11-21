@@ -68,6 +68,10 @@ function build(key: CatalogKey, list: Parts[], lang: Lang): string | null {
       return t(lang, 'catalogue.short.weakCovered');
     case 'pivotLink':
       return list.map(parts => t(lang, parts.kind === 'slow' ? 'catalogue.short.pivotSlow' : parts.count === '1' ? 'catalogue.short.pivotCoverOne' : 'catalogue.short.pivotCover', parts)).join(' · ');
+    case 'knockOff':
+      return t(lang, 'catalogue.short.knockOff', list[0]);
+    case 'tauntEncore':
+      return t(lang, 'catalogue.short.tauntEncore', list[0]);
     default:
       // Tipi vari ("11 tipi diversi nel team") è già corto; core e ruoli non sono medaglie
       return null;

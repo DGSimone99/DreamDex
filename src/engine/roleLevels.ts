@@ -106,6 +106,8 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
 /*
  * 2026-11-21 (utente): i minori non danno più punti, né nel singolo né in doppio (rolesArea.ts): le righe "minore" dicono
  * solo quali voci compaiono nella lista dei Ruoli del tipo di team. I "+1" nelle note sopra raccontano com'era.
+ * Lo stesso giorno (utente): Knock Off e Taunt/Encore hanno un bonus loro, +1 ciascuno una volta sola, fra i bonus del
+ * voto e non nei Ruoli (moveBonus.ts); le voci Rimozione Strumenti e Disruptor restano minori senza punti.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Attaccanti: i gruppi (le righe singole restano minori o ignorate)

@@ -21,7 +21,7 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 type Family = 'types' | 'roles' | 'hazards' | 'conditions' | 'members' | 'core';
 const FAMILY: Record<CatalogKey, Family> = {
   sharedWeak: 'types', sameType: 'types', defenseHole: 'types', unanswered: 'types', weakCovered: 'types', typeVariety: 'types',
-  essentialRole: 'roles', importantRole: 'roles', pivotLink: 'roles',
+  essentialRole: 'roles', importantRole: 'roles', pivotLink: 'roles', knockOff: 'roles', tauntEncore: 'roles',
   hazardDuplicate: 'hazards',
   weatherClash: 'conditions', weatherSabotage: 'conditions', unmetCondition: 'conditions', unusedEnabler: 'conditions', conditionUsed: 'conditions', weatherHelp: 'conditions', trickRoomFast: 'conditions',
   weakMember: 'members', lockedStatus: 'members',

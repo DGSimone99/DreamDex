@@ -21,6 +21,7 @@ import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
 import { moveFixes, type MoveFix } from './moveFixes';
 import { PIVOT_POINTS } from './pivotBonus';
+import { KNOCK_OFF_POINTS, TAUNT_ENCORE_POINTS } from './moveBonus';
 import type { ScoredArea, TeamGain, TypeShift } from './teamGain';
 import { teamOffense } from './offense';
 import { DEFENSE_DEPTH } from './defense';
@@ -395,11 +396,16 @@ export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lan
   const pivot = (kind: 'gained' | 'lost') => (gain?.pivot === kind
     ? [{ text: t(lang, kind === 'gained' ? 'diff.pivotGained' : 'diff.pivotLost'), area: 'roles' as const, fixed: kind === 'gained' ? PIVOT_POINTS : -PIVOT_POINTS }]
     : []);
+  // Lo stesso per i bonus di Knock Off e di Taunt/Encore
+  const MOVE_POINTS = { knockOff: KNOCK_OFF_POINTS, tauntEncore: TAUNT_ENCORE_POINTS };
+  const moves = (kind: 'gained' | 'lost') => (gain?.moves ?? []).filter(m => m.change === kind).map(m => ({
+    text: t(lang, `diff.${m.catalog}.${kind}`), area: 'roles' as const, fixed: kind === 'gained' ? MOVE_POINTS[m.catalog] : -MOVE_POINTS[m.catalog],
+  }));
   return {
-    pros: side(diff.gains, true, pivot('gained')),
+    pros: side(diff.gains, true, [...pivot('gained'), ...moves('gained')]),
     cons: side(diff.losses, false, [
       ...(diff.lostResists.length ? [{ text: t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang)), area: 'defense' as const }] : []),
-      ...pivot('lost'),
+      ...pivot('lost'), ...moves('lost'),
     ]),
   };
 }

@@ -400,7 +400,7 @@ describe('Bonus/Malus', () => {
     const dialog = screen.getByRole('dialog', { name: /Ruoli e Bonus/ });
     expect(within(dialog).getByRole('tab', { name: 'Tutti i bonus' })).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(panel).getAllByRole('listitem')).toHaveLength(8);
     expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
     expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('+3 per ogni core');
     await user.click(within(dialog).getByRole('tab', { name: 'Tutti i malus' }));
