@@ -1311,3 +1311,45 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .editor-hero > .sprite { width: 104px; height: 104px; }
   html:has(.band:not(.collapsed) .slot.open) { overflow: visible; }
 }
+
+/* ── Tablet, giro 2 (2026-11-21): voto e azione principale più piccoli in entrambi i versi ──────────────────────────
+   Il pulsante della guida (Completa team / Migliora i set) alto 34 come la targa e il menu Team: è l'azione principale
+   per il colore, non per la misura. La zona del tocco resta 44 (::after della testata) */
+@media (min-width: 600px) and (max-width: 1099px) {
+  .band:not(.collapsed) .team-head .team-guide-slot button.team-guide { height: 34px; padding: 0 var(--sp-9) 0 var(--sp-10); font-size: var(--fs-caption); }
+  .band .team-head .team-guide-slot .team-guide .icon { width: 14px; height: 14px; }
+  .band:not(.collapsed) .team-head div.team-plate, .band:not(.collapsed) .team-head button.team-more-button { height: 34px; }
+  .band .team-head .team-more-button { font-size: var(--fs-small); padding: 0 var(--sp-5) 0 var(--sp-6); }
+}
+/* A · verticale: il voto in una riga bassa (lettera, punteggio, aree con valore accanto al nome e una barretta sottile) */
+@media (min-width: 600px) and (max-width: 1099px) and (not ((orientation: landscape) and (min-width: 760px) and (min-height: 501px))) {
+  .band:not(.collapsed) .grade-badge { gap: 0 var(--sp-6); padding: var(--sp-3) 76px var(--sp-3) var(--sp-6); }
+  .band:not(.collapsed) .grade-badge .letter { font-size: 40px; }
+  .band:not(.collapsed) .grade-badge .overall { font-size: var(--fs-title); }
+  .band:not(.collapsed) .grade-badge:not(.none) .label { gap: 0; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 28px; height: 28px; }
+  /* Ruoli (8/8 +2) e Bonus/Malus hanno più da scrivere: le loro caselle un po' più larghe */
+  .band:not(.collapsed) .grade-badge .grade-areas { gap: var(--sp-2); grid-template-columns: repeat(3, minmax(0, 0.88fr)) minmax(0, 1.12fr) minmax(0, 1.25fr); }
+  .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) {
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 3px; align-content: center; row-gap: 4px; min-height: 0; padding: var(--sp-2) var(--sp-4); }
+  .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { grid-template-rows: auto; }
+  .band:not(.collapsed) .grade-badge button.grade-area > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b,
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 2; grid-row: 1; text-align: right; font: italic 800 var(--fs-section)/1 var(--display); }
+  .band:not(.collapsed) .grade-badge button.grade-area > .meter { grid-column: 1 / -1; grid-row: 2; height: 3px; }
+  .band:not(.collapsed) { gap: var(--sp-5); padding-top: var(--sp-6); }
+}
+/* C · orizzontale: il voto compatto in cima alla colonna */
+@media (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px) {
+  .band:not(.collapsed) .grade-badge { gap: 0 var(--sp-4); padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+  .band:not(.collapsed) .grade-badge .letter { font-size: 38px; }
+  .band:not(.collapsed) .grade-badge .overall { font-size: var(--fs-title); }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 26px; height: 26px; }
+  .band:not(.collapsed) .grade-badge .grade-areas { margin-top: var(--sp-3); }
+  .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { row-gap: 2px; padding: 3px var(--sp-3); }
+  .band:not(.collapsed) .grade-badge button.grade-area > .meter { height: 3px; }
+  .band:not(.collapsed) .team-head { row-gap: var(--sp-3); margin-bottom: var(--sp-4); }
+}
+/* Tablet stretto in verticale: le aree del voto su due righe (tre e due), come prima */
+@media (min-width: 600px) and (max-width: 759px) {
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
