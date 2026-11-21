@@ -54,7 +54,7 @@ const ptsOf = (row: HTMLElement) => {
 const monsOf = (el: HTMLElement) => [...el.querySelectorAll('.rl-mon')].map(m => m.querySelector('.visually-hidden')!.textContent!.replace(/ \d+%$/, ''));
 
 describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
-  it('la riga Ruoli del voto apre Ruoli e Bonus sulla sottoscheda Ruoli: tre fasce in ordine, niente filtri', async () => {
+  it('la riga Ruoli del voto apre Ruoli e Bonus sulla sottoscheda Ruoli: due fasce in ordine, niente filtri', async () => {
     const { view } = await openRoles();
     // La scheda aperta in Analisi è Ruoli e Bonus (i Ruoli non hanno più una scheda loro)
     const views = within(document.getElementById('panel-analysis')!).getByRole('tablist', { name: "Sezioni dell'Analisi" });
@@ -65,8 +65,8 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
     // La sottoscheda Ruoli porta i Ruoli coperti sul totale, come la riga del voto (detti ai lettori di schermo)
     expect(tabs[1]).toHaveAccessibleDescription(/^\d+ di \d+ ruoli essenziali e importanti coperti/);
-    // Le fasce: Essenziali, Importanti, Minori; Non contano sta solo nella guida
-    expect(bandTitles(view)).toEqual(['Essenziali', 'Importanti', 'Minori']);
+    // Le fasce: Essenziali e Importanti (i minori non ci sono più); Non contano sta solo nella guida
+    expect(bandTitles(view)).toEqual(['Essenziali', 'Importanti']);
     expect(within(view).queryByRole('region', { name: 'Non contano' })).toBeNull();
     expect(within(view).queryByRole('group', { name: 'Quali ruoli mostrare' })).toBeNull();
     // Il team incompleto si giudica come Balance: cinque essenziali (Sweeper o Wallbreaker è una voce sola dal 2026-11-13)
@@ -154,7 +154,7 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
   it('in inglese', async () => {
     const { view } = await openRoles('en');
     expect(tabNames(view)).toEqual(['Bonus/Malus', 'Roles']);
-    expect(bandTitles(view)).toEqual(['Essential', 'Important', 'Minor']);
+    expect(bandTitles(view)).toEqual(['Essential', 'Important']);
     expect(within(view).getByRole('button', { name: 'Roles table' })).toBeInTheDocument();
     // In testa il tipo di team sulla sua targa (team incompleto accanto) e i punti dei Ruoli; niente regole nei titoli
     expect(view.querySelector('.rl-type')).toHaveTextContent('Balance');
@@ -181,10 +181,14 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     expect(within(table).getByRole('columnheader', { name: 'Balance' })).toHaveClass('now');
     const hazard = within(table).getByRole('row', { name: /^Hazard/ });
     expect([...hazard.querySelectorAll('td')].map(td => td.textContent)).toEqual(['Importante', 'Importante', 'Essenziale', 'Essenziale', 'Essenziale']);
-    // Le voci che non contano mai stanno sotto la tabella: solo Speed Control (Sweeper e Wallbreaker fisici e speciali
-    // contano dentro i gruppi degli attaccanti, Taunt ed Encore stanno nel Disruptor)
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Non contano in nessun tipo di team: Speed Control\./);
-    expect(within(dialog).getByRole('row', { name: /^Disruptor/ })).toBeInTheDocument();
+    // Le voci che non tolgono mai punti stanno sotto la tabella, minori compresi (Sweeper e Wallbreaker fisici e speciali
+    // contano dentro i gruppi degli attaccanti); il Pivot ha la sua frase
+    const foot = within(dialog).getByRole('tabpanel').querySelector('.guide-foot')!;
+    expect(foot).toHaveTextContent(/^Non contano in nessun tipo di team: .+\. Il Pivot ha un bonus suo quando il team lo sfrutta\.$/);
+    for (const name of ['Speed Control', 'Disruptor', 'Pivot', 'Rimozione Strumenti']) expect(foot).toHaveTextContent(name);
+    expect(within(dialog).queryByRole('row', { name: /^Disruptor/ })).toBeNull();
+    // Nella tabella nessuna casella "Minore"
+    expect(table).not.toHaveTextContent('Minore');
   });
 
   it('la riga Ruoli del voto: lo stesso conteggio della sottoscheda (essenziali e importanti coperte, poi i punti), senza barra', async () => {
@@ -210,7 +214,7 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
 describe('le fasce dei Ruoli', () => {
   const base = () => rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
   const sixMembers = ['Toxapex', 'Corviknight', 'Dondozo'].map(species => ({ species, values: {}, primary: null, reasons: [] }));
-  // Team di 6 con malus: un essenziale e un importante mancano, un minore coperto (all'80%) e uno no
+  // Team di 6 con malus: un essenziale e un importante mancano; due minori (uno coperto, uno no) che la lista non mostra
   const sixRoles = (): TeamRoles => ({
     covered: 3, total: 6,
     rows: [
@@ -234,23 +238,23 @@ describe('le fasce dei Ruoli', () => {
     return screen.getByRole('tabpanel');
   };
 
-  it('tre fasce in ordine (Essenziali, Importanti, Minori), in ogni fascia prima quelle che mancano', () => {
+  it('due fasce in ordine (Essenziali, Importanti), in ogni fascia prima quelle che mancano; i minori non ci sono', () => {
     const panel = renderSix();
-    expect(bandTitles(panel)).toEqual(['Essenziali', 'Importanti', 'Minori']);
+    expect(bandTitles(panel)).toEqual(['Essenziali', 'Importanti']);
     const band = (name: string) => within(panel).getByRole('region', { name });
     expect(namesOf(band('Essenziali'))).toEqual(['Sweeper', 'Hazard']);
     expect(namesOf(band('Importanti'))).toEqual(['Controllo Hazard', 'Pivot']);
-    expect(namesOf(band('Minori'))).toEqual(['Danno nel Tempo', 'Disruptor']);
+    // I minori (Disruptor coperto, Danno nel Tempo no) non stanno nella lista
+    expect(within(panel).queryByRole('region', { name: 'Minori' })).toBeNull();
+    for (const name of ['Danno nel Tempo', 'Disruptor']) expect(rowOf(name, panel)).toBeUndefined();
     // Il titolo di ogni fascia: solo il nome e il suo valore, niente regola
     expect(panel.querySelector('.rl-band-head small')).toBeNull();
     expect(panel).not.toHaveTextContent(/se manca|se c'è/);
     expect(band('Essenziali').querySelector('.rl-band-head .rl-mark')).toHaveTextContent('−4');
     expect(band('Importanti').querySelector('.rl-band-head .rl-mark')).toHaveTextContent('−2');
-    // Nel singolo i minori non danno punti: la fascia non ha un valore
-    expect(band('Minori').querySelector('.rl-band-head .rl-mark')).toBeNull();
   });
 
-  it('i punti di ogni voce: ✓ verde se coperta, −4 / −2 se manca (team di 6); un minore ✓ se coperto, – se no (non dà punti)', () => {
+  it('i punti di ogni voce: ✓ verde se coperta, −4 / −2 se manca (team di 6)', () => {
     const panel = renderSix();
     const hazard = rowOf('Hazard', panel)!;
     expect(hazard.querySelector('.rl-pts')).toHaveClass('ok');
@@ -265,14 +269,6 @@ describe('le fasce dei Ruoli', () => {
     expect(removal).toHaveClass('warn');
     expect(ptsOf(removal)).toBe(`−${IMPORTANT_POINTS}`);
     expect(removal.querySelector('.rl-pts')).toHaveClass('malus');
-    const disruptor = rowOf('Disruptor', panel)!;
-    expect(disruptor.querySelector('.rl-pts')).toHaveClass('ok');
-    expect(disruptor.querySelector('.rl-pts svg')).not.toBeNull();
-    const dot = rowOf('Danno nel Tempo', panel)!;
-    expect(dot).toHaveClass('off');
-    expect(ptsOf(dot)).toBe('–');
-    expect(dot.querySelector('.rl-pts')).toHaveClass('none');
-    expect(dot.querySelector('.rl-pts')).toHaveTextContent('non coperto');
     // In testa i punti dei Ruoli (−4 −2 = −6), in rosso; niente più l'equazione delle fasce
     expect(panel.querySelector('.rl-net')).toHaveTextContent('Ruoli −6');
     expect(panel.querySelector('.rl-net')).toHaveClass('bad');
@@ -290,10 +286,6 @@ describe('le fasce dei Ruoli', () => {
     const pivot = rowOf('Pivot', panel)!;
     expect(monsOf(pivot)).toEqual(['Gliscor', 'Zapdos']);
     expect(pivot.querySelector('.rl-mon-name')).toBeNull();
-    // Un Taunt all'80% è coperto e basta: o c'è o non c'è
-    const disruptor = rowOf('Disruptor', panel)!;
-    expect(disruptor.querySelector('.rl-mon')).toHaveAttribute('title', 'Zapdos · Taunt');
-    expect(disruptor.querySelector('.rl-mon .visually-hidden')).toHaveTextContent(/^Zapdos$/);
     expect(panel).not.toHaveTextContent('%');
     expect([...panel.querySelectorAll('[title]')].some(e => e.getAttribute('title')!.includes('%'))).toBe(false);
   });
@@ -321,7 +313,7 @@ describe('le fasce dei Ruoli', () => {
     expect(screen.getByRole('tab', { name: 'Ruoli' })).toHaveAccessibleDescription(/mancanti/);
   });
 
-  it("per uno stall i gruppi degli attaccanti sono minori; velocità e priorità non sono ruoli", () => {
+  it("per uno stall i gruppi degli attaccanti sono minori e non stanno nella lista; velocità e priorità non sono ruoli", () => {
     const stall = [
       { ...tusk, species: 'Toxapex', item: 'Black Sludge', ability: 'Regenerator', moves: ['Scald', 'Toxic', 'Recover', 'Haze'] },
       { ...tusk, species: 'Blissey', item: 'Leftovers', ability: 'Natural Cure', moves: ['Seismic Toss', 'Soft-Boiled', 'Toxic', 'Wish'] },
@@ -341,7 +333,8 @@ describe('le fasce dei Ruoli', () => {
     expect(rows(essential)).toHaveLength(7);
     expect(rows(essential).filter(r => r.classList.contains('bad'))).toHaveLength(0);
     expect(rowOf('Danno nel Tempo', panel)).not.toHaveClass('bad');
-    expect(namesOf(within(panel).getByRole('region', { name: 'Minori' }))).toContain('Sweeper');
+    expect(within(panel).queryByRole('region', { name: 'Minori' })).toBeNull();
+    expect(rowOf('Sweeper', panel)).toBeUndefined();
     for (const name of ['Velocità', 'Priorità']) expect(rowOf(name, panel)).toBeUndefined();
   });
 });
@@ -410,7 +403,7 @@ describe('note e secondario nelle righe', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
       covered: 0, total: 1,
-      rows: [{ key: 'dot', level: 'minor', value: 0.11, by: [{ species: 'Garchomp', value: 0.11, source: 'Toxic' }, { species: 'Toxapex', value: 0.05, source: 'Toxic' }] }],
+      rows: [{ key: 'dot', level: 'important', value: 0.11, by: [{ species: 'Garchomp', value: 0.11, source: 'Toxic' }, { species: 'Toxapex', value: 0.05, source: 'Toxic' }] }],
       failures: [],
       members: [
         { species: 'Garchomp', primary: 'attack', values: { dot: 0.11 }, reasons: [] },
@@ -419,12 +412,13 @@ describe('note e secondario nelle righe', () => {
     };
     renderIt(<AreaView rating={{ ...base, roles }} area="bonusMalus" picked="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     const row = rowOf('Danno nel Tempo')!;
-    expect(row).toHaveClass('off');
+    expect(row).toHaveClass('warn');
     expect(row.querySelector('.rl-mon')).toBeNull();
     expect(row.querySelector('.rl-nobody')).toHaveTextContent(/^Nessuno; in parte: Garchomp \(Toxic\), Toxapex \(Toxic\)$/);
     expect(row.querySelector('.rl-nobody .visually-hidden')).toHaveTextContent('in parte: Garchomp (Toxic), Toxapex (Toxic)');
     expect(row).toHaveAttribute('title', 'in parte: Garchomp (Toxic), Toxapex (Toxic)');
-    expect(ptsOf(row)).toBe('–');
+    // Team incompleto: manca, ma senza malus
+    expect(ptsOf(row)).toBe('manca');
   });
 });
 

@@ -16,7 +16,10 @@ const ARCHETYPES: { key: Archetype; short: string }[] = [
   { key: 'hyperOffense', short: 'HO' }, { key: 'bulkyOffense', short: 'BO' }, { key: 'balance', short: 'Balance' },
   { key: 'semiStall', short: 'Semi-stall' }, { key: 'stall', short: 'Stall' },
 ];
-const LEVEL_TILES: Level[] = ['essential', 'important', 'minor', 'ignored'];
+type Shown = Exclude<Level, 'minor'>;
+const LEVEL_TILES: Shown[] = ['essential', 'important', 'ignored'];
+/** Il livello come lo mostra la guida: un minore non dà e non toglie punti, per chi legge non conta (2026-11-22, utente). */
+const shownLevel = (level: Level): Shown => (level === 'minor' ? 'ignored' : level);
 
 /**
  * La guida dei Ruoli (schematica, senza i valori del team): come funziona l'area e i livelli di ogni voce per tipo di
@@ -27,11 +30,9 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.roles.${key}` as Key, params);
 
   if (section === 'general') {
-    const tile: Record<Level, { value: string; rule: string }> = {
+    const tile: Record<Shown, { value: string; rule: string }> = {
       essential: { value: `−${ESSENTIAL_POINTS}`, rule: g('essential.rule') },
       important: { value: `−${IMPORTANT_POINTS}`, rule: g('important.rule') },
-      // I minori non danno punti: stanno nella lista
-      minor: { value: '0', rule: g('minor.rule') },
       ignored: { value: '0', rule: g('ignored.rule') },
     };
     return (
@@ -60,7 +61,7 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
   // In doppio c'è un tipo solo: una colonna, con le sole voci del doppio
   const types = typeRule === 'oneType' ? [{ key: 'doubles' as const, short: t('archetype.doubles') }] : ARCHETYPES;
   const keys = levelKeysFor(typeRule);
-  const counts = keys.filter(key => types.some(a => levelFor(a.key, key, typeRule) !== 'ignored'));
+  const counts = keys.filter(key => types.some(a => shownLevel(levelFor(a.key, key, typeRule)) !== 'ignored'));
   const never = keys.filter(key => !counts.includes(key) && !FAMILIES.attack.includes(key as never));
   return (
     <>
@@ -83,7 +84,7 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
                 <tr key={key}>
                   <th scope="row">{keyLabel(key, t)}</th>
                   {types.map(a => {
-                    const level = levelFor(a.key, key, typeRule);
+                    const level = shownLevel(levelFor(a.key, key, typeRule));
                     return (
                       <td key={a.key} className={a.key === archetype ? 'now' : undefined}>
                         {level === 'ignored' ? <span className="rl-dash" aria-label={t('rdetail.level.ignored')}>—</span> : <LevelTag level={level} t={t} />}
@@ -96,7 +97,7 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
           );
         })}
       </table>
-      {never.length > 0 && <p className="guide-foot">{g('types.never', { list: never.map(key => keyLabel(key, t)).join(', ') })}</p>}
+      {never.length > 0 && <p className="guide-foot">{g('types.never', { list: never.map(key => keyLabel(key, t)).join(', ') })}{typeRule !== 'oneType' && never.includes('pivot') && ` ${g('types.pivot')}`}</p>}
     </>
   );
 }
