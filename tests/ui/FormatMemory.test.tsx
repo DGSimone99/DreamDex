@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
-import { chooseDex, chooseTier, openFormat } from '../helpers/format';
+import { chooseDex, chooseTier, confirmFormat, openFormat } from '../helpers/format';
 
 const memory = (initial: Record<string, string> = {}) => {
   const values = { ...initial };
@@ -17,6 +17,7 @@ const formatButton = () => screen.getByRole('button', { name: /^Formato / });
 const pickFamily = async (user: ReturnType<typeof userEvent.setup>, value: string) => {
   await openFormat(user);
   await user.click(document.querySelector<HTMLInputElement>(`input[name="format-family"][value="${value}"]`)!);
+  await confirmFormat(user);
 };
 
 describe('memoria del formato per famiglia', () => {
@@ -29,7 +30,6 @@ describe('memoria del formato per famiglia', () => {
     await chooseTier(user, 'uu');
     await pickFamily(user, 'free');
     expect(formatButton()).toHaveAccessibleName(/No Format/);
-    await user.keyboard('{Escape}');
     unmount();
     render(<App initialLang="it" data={fixtureData} storage={storage} loadSource={async () => fixtureData} />);
     await pickFamily(user, 'competitive');

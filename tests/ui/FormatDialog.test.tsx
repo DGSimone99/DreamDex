@@ -19,17 +19,41 @@ const open = (choice: FormatChoice = DEFAULT_CHOICE, family = choice.family) => 
 const radio = (name: string, value: string) => document.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`)!;
 
 describe('finestra Scegli il formato', () => {
-  it('una linguetta cambia subito il formato con l’ultima scelta di quella famiglia', async () => {
+  it('cambiare linguetta non cambia il formato; Conferma prende la scelta della linguetta aperta e chiude', async () => {
+    const user = userEvent.setup();
+    const { onPick, onClose } = open();
+    await user.click(radio('format-family', 'free'));
+    expect(onPick).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Conferma' }));
+    expect(onPick).toHaveBeenCalledWith(DEFAULT_MEMORY.free);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('Annulla chiude senza cambiare il formato', async () => {
+    const user = userEvent.setup();
+    const { onPick, onClose } = open();
+    await user.click(radio('format-tier', 'ubers'));
+    await user.click(screen.getByRole('button', { name: 'Annulla' }));
+    expect(onPick).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('le scelte di una linguetta restano passando a un\'altra e tornando', async () => {
     const user = userEvent.setup();
     const { onPick } = open();
+    await user.click(radio('format-tier', 'uu'));
     await user.click(radio('format-family', 'free'));
-    expect(onPick).toHaveBeenCalledWith(DEFAULT_MEMORY.free);
+    await user.click(radio('format-family', 'competitive'));
+    await user.click(screen.getByRole('button', { name: 'Conferma' }));
+    expect(onPick).toHaveBeenCalledWith({ ...DEFAULT_CHOICE, tier: 'UU' });
   });
 
   it('il tier cambia il formato', async () => {
     const user = userEvent.setup();
     const { onPick } = open();
     await user.click(radio('format-tier', 'ubers'));
+    expect(onPick).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Conferma' }));
     expect(onPick).toHaveBeenCalledWith({ ...DEFAULT_CHOICE, tier: 'Ubers' });
   });
 
@@ -37,6 +61,7 @@ describe('finestra Scegli il formato', () => {
     const user = userEvent.setup();
     const { onPick } = open({ ...DEFAULT_CHOICE, battle: 'doubles' });
     await user.click(radio('format-gen', '9'));
+    await user.click(screen.getByRole('button', { name: 'Conferma' }));
     expect(onPick).toHaveBeenCalledWith({ ...DEFAULT_CHOICE, gen: 9, battle: 'singles' });
   });
 
@@ -66,6 +91,7 @@ describe('finestra Scegli il formato', () => {
     const { onPick, dialog } = open(game);
     expect(within(dialog).getByRole('img', { name: 'Pokémon Scarlatto' })).toBeInTheDocument();
     await user.click(within(dialog).getByRole('checkbox', { name: 'Tutto il Pokédex' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Conferma' }));
     expect(onPick).toHaveBeenCalledWith({ ...game, allPokedex: true });
   });
 
@@ -76,6 +102,7 @@ describe('finestra Scegli il formato', () => {
     expect(dialog).toHaveTextContent('Tutto ammesso: niente tier, niente ban, niente meta.');
     expect(dialog).not.toHaveTextContent(/hackrom/i);
     await user.click(radio('format-genlimit', '7'));
+    await user.click(within(dialog).getByRole('button', { name: 'Conferma' }));
     expect(onPick).toHaveBeenCalledWith({ ...free, genLimit: 7 });
   });
 

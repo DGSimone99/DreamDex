@@ -404,6 +404,8 @@ export const en = {
   'rail.pillAllPokedex': "Whole Pokédex",
   'rail.pillLegendaries': "Legendaries",
   'formatDialog.title': "Choose the format",
+  'formatDialog.confirm': "Confirm",
+  'formatDialog.cancel': "Cancel",
   'formatDialog.familyAria': "Format family",
   'family.competitive': "Competitive",
   'family.game': "Games",

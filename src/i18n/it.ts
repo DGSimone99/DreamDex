@@ -408,6 +408,8 @@ export const it: Record<keyof typeof en, string> = {
   'rail.pillAllPokedex': "Tutto il Pokédex",
   'rail.pillLegendaries': "Leggendari",
   'formatDialog.title': "Scegli il formato",
+  'formatDialog.confirm': "Conferma",
+  'formatDialog.cancel': "Annulla",
   'formatDialog.familyAria': "Famiglia del formato",
   'family.competitive': "Competitivo",
   'family.game': "Giochi",

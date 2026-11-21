@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import type { EngineData } from '../../src/engine/data';
-import { chooseBattle, chooseDex, chooseTier, chosen, openFormat, tierNames } from '../helpers/format';
+import { chooseBattle, chooseDex, chooseTier, chosen, confirmFormat, openFormat, tierNames } from '../helpers/format';
 
 const formatButton = () => screen.getByRole('button', { name: /^Formato / });
 import { fixtureData } from '../fixtures/data';
@@ -63,12 +63,15 @@ describe('dati per formato', () => {
     expect(chosen('format-tier')).toBe('ou');
     expect(tierNames()).toEqual(['OU', 'Ubers', 'UU']);
     await chooseDex(user, 'gen9');
+    await openFormat(user);
     expect(chosen('format-tier')).toBe('gen9ou');
     expect(tierNames()).toEqual(['OU', 'Ubers', 'UU', 'Anything Goes']);
     await chooseDex(user, 'nolimits');
+    await openFormat(user);
     expect(within(screen.getByRole('dialog')).queryByRole('radiogroup', { name: 'Tier del formato' })).toBeNull();
     // Tornando a National Dex si riparte da OU
     await chooseDex(user, 'natdex');
+    await openFormat(user);
     expect(chosen('format-tier')).toBe('ou');
   });
 
@@ -79,6 +82,7 @@ describe('dati per formato', () => {
     await openFormat(user);
     expect(chosen('format-battle')).toBe('singles');
     await chooseBattle(user, 'doubles');
+    await openFormat(user);
     expect(chosen('format-battle')).toBe('doubles');
     expect(chosen('format-tier')).toBe('natdexdoubles');
     expect(tierNames()).toEqual(['OU']);
@@ -86,6 +90,7 @@ describe('dati per formato', () => {
     expect(formatButton()).toHaveAccessibleName(/Smogon, Doppio/);
     // Tornando al Singolo si riparte da National Dex OU
     await chooseBattle(user, 'singles');
+    await openFormat(user);
     expect(chosen('format-tier')).toBe('ou');
   });
 
@@ -94,6 +99,7 @@ describe('dati per formato', () => {
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     await chooseBattle(user, 'doubles');
     await chooseDex(user, 'gen9');
+    await openFormat(user);
     expect(chosen('format-tier')).toBe('gen9ou');
     expect(chosen('format-battle')).toBe('singles');
     expect(document.querySelector<HTMLInputElement>('input[name="format-battle"][value="doubles"]')!.disabled).toBe(true);
@@ -134,6 +140,7 @@ describe('pannello Avanzate', () => {
     expect(formatButton()).toHaveAccessibleName('Formato National Dex OU, Competitivo, Smogon, Singolo: cambia');
     await user.click(screen.getByRole('checkbox', { name: 'Ignora ban' }));
     await user.click(screen.getByRole('checkbox', { name: 'Più Mega ammesse' }));
+    await confirmFormat(user);
     expect(formatButton()).toHaveAccessibleName('Formato National Dex OU, Competitivo, Smogon, Singolo, Ban ignorati, Più Mega: cambia');
   });
 
@@ -151,7 +158,7 @@ describe('pannello Avanzate', () => {
     render(<App initialLang="it" data={fixtureData} />);
     await openFormat(user);
     await user.click(screen.getByRole('checkbox', { name: 'Ignora ban' }));
-    await user.keyboard('{Escape}');
+    await confirmFormat(user);
     await add(user, 'Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
     await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));

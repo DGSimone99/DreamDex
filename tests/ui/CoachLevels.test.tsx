@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
-import { openFormat } from '../helpers/format';
+import { confirmFormat, openFormat } from '../helpers/format';
 
 describe('interruttore "Più Mega ammesse"', () => {
   const WARNING = 'Seconda Mega: in National Dex se ne può usare una sola, il voto la conta senza pietra';
@@ -12,12 +12,15 @@ describe('interruttore "Più Mega ammesse"', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Lopunny-Mega', 'Charizard-Mega-Y']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const toggle = () => screen.getByRole('checkbox', { name: 'Più Mega ammesse' });
     await openFormat(user);
-    const toggle = screen.getByRole('checkbox', { name: 'Più Mega ammesse' });
-    expect(toggle).not.toBeChecked();
-    await user.click(toggle);
+    expect(toggle()).not.toBeChecked();
+    await user.click(toggle());
+    await confirmFormat(user);
     expect(screen.queryByText(WARNING)).toBeNull();
-    await user.click(toggle);
+    await openFormat(user);
+    await user.click(toggle());
+    await confirmFormat(user);
     expect(screen.getByText(WARNING)).toBeInTheDocument();
   });
 

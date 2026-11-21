@@ -49,7 +49,9 @@ function Toggle({ label, note, checked, onChange }: { label: string; note?: stri
 
 /**
  * Scegli il formato: tre linguette (Competitivo, Giochi, No Format) e sotto le scelte della famiglia mostrata.
- * Ogni scelta vale subito, anche una linguetta (porta all'ultima scelta di quella famiglia). Si chiude con ×, Esc o fuori.
+ * Le scelte sono una bozza (una per famiglia, partendo dal formato attivo o dall'ultima scelta di quella famiglia): il formato
+ * cambia solo con Conferma, e diventa la scelta della linguetta aperta. ×, Esc, Annulla o il clic fuori chiudono senza cambiare.
+ * La finestra ha misure fisse: passando da una linguetta all'altra non cambia forma.
  */
 export function FormatDialog({ choice, memory, family, onPick, onClose }: {
   choice: FormatChoice;
@@ -71,13 +73,14 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
   const gamesReady = GAME_IDS.some(gameReady);
-  // Le scelte partono da quella attiva se la famiglia è la sua, altrimenti dall'ultima scelta di quella famiglia
-  const competitive: CompetitiveChoice = choice.family === 'competitive' ? choice : memory.competitive;
-  const game: GameChoice = choice.family === 'game' ? choice : memory.game;
-  const free: FreeChoice = choice.family === 'free' ? choice : memory.free;
-  const pickCompetitive = (patch: Partial<CompetitiveChoice>) => onPick(normalizeCompetitive({ ...competitive, ...patch }));
-  // Una scelta già segnata (l'ultima della famiglia) ma con la famiglia non attiva: il clic la rende attiva
-  const activate = (patch: Partial<CompetitiveChoice>) => () => { if (choice.family !== 'competitive') pickCompetitive(patch); };
+  // La bozza di ogni famiglia: quella attiva parte dal formato di adesso, le altre dall'ultima scelta fatta lì
+  const [drafts, setDrafts] = useState<FormatMemory>(() => ({ ...memory, [choice.family]: choice }));
+  const { competitive, game, free } = drafts;
+  const pickCompetitive = (patch: Partial<CompetitiveChoice>) =>
+    setDrafts(d => ({ ...d, competitive: normalizeCompetitive({ ...d.competitive, ...patch }) }));
+  const setGame = (next: GameChoice) => setDrafts(d => ({ ...d, game: next }));
+  const setFree = (next: FreeChoice) => setDrafts(d => ({ ...d, free: next }));
+  const confirm = () => { onPick(drafts[shown]); onClose(); };
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
@@ -93,8 +96,7 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
             return (
               <label key={f} className={`${shown === f ? 'on' : ''}${choice.family === f ? ' active' : ''}${off ? ' off' : ''}`.trim() || undefined}>
                 <input type="radio" className="visually-hidden" name="format-family" value={f} checked={shown === f} disabled={off}
-                  onChange={() => {}}
-                  onClick={() => { setShown(f); if (choice.family !== f) onPick(memory[f]); }} />
+                  onChange={() => setShown(f)} />
                 {t(`family.${f}`)}
               </label>
             );
@@ -119,9 +121,9 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
               <p className="rail-label" id={`${titleId}-gen`}>{t('formatDialog.gen')}</p>
               <div className="fmt-gens" role="radiogroup" aria-labelledby={`${titleId}-gen`}>
                 {(['natdex', 9] as CompetitiveGen[]).map(gen => (
-                  <label key={gen} className={`fmt-tile${competitive.gen === gen && choice.family === 'competitive' ? ' on' : ''}`}>
+                  <label key={gen} className={`fmt-tile${competitive.gen === gen ? ' on' : ''}`}>
                     <input type="radio" className="visually-hidden" name="format-gen" value={String(gen)} checked={competitive.gen === gen}
-                      onChange={() => pickCompetitive({ gen })} onClick={activate({ gen })} />
+                      onChange={() => pickCompetitive({ gen })} />
                     <b>{gen === 'natdex' ? t('dex.natdex') : t('dex.gen9')}</b>
                     <small>{gen === 'natdex' ? t('formatDialog.natdexNote') : t('formatDialog.gen9Note')}</small>
                   </label>
@@ -146,7 +148,7 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                   return (
                     <label key={id} className={`${id === competitive.battle ? 'on' : ''}${none ? ' soon' : ''}`.trim() || undefined}>
                       <input type="radio" className="visually-hidden" name="format-battle" value={id} checked={id === competitive.battle} disabled={none}
-                        onChange={() => pickCompetitive({ battle: id })} onClick={activate({ battle: id })} />
+                        onChange={() => pickCompetitive({ battle: id })} />
                       {t(`battle.${id}`)}
                     </label>
                   );
@@ -159,7 +161,7 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                 {tiersFor(competitive.gen, competitive.battle).map(x => (
                   <label key={x.formatId} className={x.tier === competitive.tier ? 'on' : undefined}>
                     <input type="radio" className="visually-hidden" name="format-tier" value={x.formatId} checked={x.tier === competitive.tier}
-                      onChange={() => pickCompetitive({ tier: x.tier })} onClick={activate({ tier: x.tier })} />
+                      onChange={() => pickCompetitive({ tier: x.tier })} />
                     {x.tier}
                   </label>
                 ))}
@@ -178,9 +180,9 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                 <p className="rail-label">{t('formatDialog.gameGen', { n: gen })}</p>
                 <div className="fmt-games" role="radiogroup" aria-label={t('formatDialog.gameGen', { n: gen })}>
                   {GAME_IDS.filter(id => GAME_GEN[id] === gen).map(id => (
-                    <label key={id} className={`fmt-tile fmt-game game-${id}${choice.family === 'game' && game.game === id ? ' on' : ''}${gameReady(id) ? '' : ' off'}`}>
+                    <label key={id} className={`fmt-tile fmt-game game-${id}${game.game === id ? ' on' : ''}${gameReady(id) ? '' : ' off'}`}>
                       <input type="radio" className="visually-hidden" name="format-game" value={id} checked={game.game === id} disabled={!gameReady(id)}
-                        aria-label={t(`game.${id}`)} onChange={() => {}} onClick={() => onPick({ ...game, game: id })} />
+                        aria-label={t(`game.${id}`)} onChange={() => setGame({ ...game, game: id })} />
                       <span className="fmt-art">
                         {GAME_LOGOS[id].map(logo => (
                           <Logo key={logo.file} src={asset(`games/${logo.file}`)} alt={t(`game.logoAlt.${logo.version}`)}
@@ -204,8 +206,8 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
             ))}
             <section className="fmt-sec">
               <p className="rail-label">{t('rail.gameOptions')}</p>
-              <Toggle label={t('top.allPokedex')} note={t('top.allPokedexNote')} checked={game.allPokedex} onChange={on => onPick({ ...game, allPokedex: on })} />
-              <Toggle label={t('top.legendaries')} note={t('top.legendariesNote')} checked={game.legendaries} onChange={on => onPick({ ...game, legendaries: on })} />
+              <Toggle label={t('top.allPokedex')} note={t('top.allPokedexNote')} checked={game.allPokedex} onChange={on => setGame({ ...game, allPokedex: on })} />
+              <Toggle label={t('top.legendaries')} note={t('top.legendariesNote')} checked={game.legendaries} onChange={on => setGame({ ...game, legendaries: on })} />
             </section>
           </>}
 
@@ -217,8 +219,7 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                 {GEN_LIMITS.map(n => (
                   <label key={n} className={n === free.genLimit ? 'on' : n < free.genLimit ? 'in' : undefined}>
                     <input type="radio" className="visually-hidden" name="format-genlimit" value={n} checked={n === free.genLimit}
-                      aria-label={t('formatDialog.genLimitAria', { n })} onChange={() => onPick({ ...free, genLimit: n })}
-                      onClick={() => { if (choice.family !== 'free') onPick({ ...free, genLimit: n }); }} />
+                      aria-label={t('formatDialog.genLimitAria', { n })} onChange={() => setFree({ ...free, genLimit: n })} />
                     {n}
                   </label>
                 ))}
@@ -226,11 +227,15 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
             </section>
             <section className="fmt-sec">
               <p className="rail-label">{t('top.advanced')}</p>
-              <Toggle label={t('top.multipleMegas')} note={t('top.multipleMegasNote')} checked={free.multipleMegas} onChange={on => onPick({ ...free, multipleMegas: on })} />
+              <Toggle label={t('top.multipleMegas')} note={t('top.multipleMegasNote')} checked={free.multipleMegas} onChange={on => setFree({ ...free, multipleMegas: on })} />
             </section>
           </>}
           <p className="note">{t('formatDialog.logosCredit')}</p>
         </div>
+        <footer className="fmt-actions">
+          <button type="button" onClick={onClose}>{t('formatDialog.cancel')}</button>
+          <button type="button" className="primary" onClick={confirm}>{t('formatDialog.confirm')}</button>
+        </footer>
       </div>
     </div>,
     document.body,

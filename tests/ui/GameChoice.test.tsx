@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { initGames } from '../../src/engine/games';
-import { chooseGame, chooseTier, chosen, openFormat } from '../helpers/format';
+import { chooseGame, chooseTier, chosen, confirmFormat, openFormat } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
@@ -18,7 +18,7 @@ async function pickGame(user: ReturnType<typeof userEvent.setup>, id: string) {
 async function backToCompetitive(user: ReturnType<typeof userEvent.setup>) {
   await openFormat(user);
   await user.click(document.querySelector<HTMLInputElement>('input[name="format-family"][value="competitive"]')!);
-  await user.keyboard('{Escape}');
+  await confirmFormat(user);
 }
 const formatButton = () => screen.getByRole('button', { name: /^Formato / });
 const memoryStorage = (): Storage => {

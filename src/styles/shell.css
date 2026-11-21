@@ -126,7 +126,11 @@
 
 /* Finestra Scegli il formato: le tre famiglie come linguette oblique su una fascia, sotto le scelte della famiglia mostrata
    (una colonna). Ogni scelta vale subito. Tessere coi loghi per fonti e giochi; le generazioni Smogon passate in una scala */
-.help-dialog.format-dialog { width: min(560px, 100%); max-height: min(720px, calc(100vh - 48px)); }
+/* Misure fisse: passando da una linguetta all'altra la finestra non cambia forma; il contenuto scorre dentro */
+.help-dialog.format-dialog { width: min(660px, 100%); height: min(740px, calc(100vh - 48px)); max-height: none; }
+.format-dialog .fmt-body { flex: 1; min-height: 0; align-content: start; }
+.fmt-actions { display: flex; justify-content: flex-end; gap: var(--sp-5); padding: var(--sp-6) var(--sp-9); border-top: 1px solid var(--line); background: var(--panel); }
+.fmt-actions button { min-width: 110px; padding: var(--sp-4) var(--sp-8); font-weight: 600; }
 .fmt-families { display: flex; gap: var(--sp-1); padding: var(--sp-4) var(--sp-9) 0; background: var(--band); border-bottom: 1px solid var(--line); }
 .fmt-families label { position: relative; padding: var(--sp-3) var(--sp-9) var(--sp-3) var(--sp-6); font: 800 var(--fs-section)/1.2 var(--display); font-style: italic; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); cursor: pointer; transition: color 0.15s var(--ease), background-color 0.15s var(--ease); }
 .fmt-families label:hover:not(.on, .off) { color: var(--text); background: var(--raised); }

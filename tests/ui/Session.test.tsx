@@ -63,6 +63,7 @@ describe('sessione salvata', () => {
     await user.click(screen.getByRole('button', { name: 'Salva team' }));
     await chooseTier(user, 'ou');
     await user.click(screen.getByRole('button', { name: 'Ubers team' }));
+    await openFormat(user);
     expect(chosen('format-tier')).toBe('ubers');
   });
 });
