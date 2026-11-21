@@ -391,7 +391,7 @@
   .rail { position: relative; }
 }
 /* Completa team: anche lui sale dal basso (nella fila delle azioni, che scorre, verrebbe tagliato) */
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   .fill-panel {
     position: fixed;
     z-index: 61;
@@ -411,7 +411,7 @@
   }
 }
 
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   /* Le colonne una sotto l'altra: i tuoi Pokémon, le scelte, le proposte */
   .fill-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'mine' 'side' 'main'; }
   .fill-top { position: sticky; top: 0; z-index: 1; background: var(--ground); }
@@ -421,10 +421,12 @@
   .fill-types { display: flex; gap: var(--sp-3); overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 var(--sp-7); }
   .fill-types .fill-option { flex: none; width: auto; max-width: 200px; }
   .fill-side { gap: var(--sp-6); }
-  .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
   .fill-cards { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 1099px) {
+  .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
+}
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   .fill-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: var(--sp-3) var(--sp-5); }
   .fill-mons { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .fill-mon-name { display: none; }
@@ -434,7 +436,7 @@
   .fill-foot { flex-wrap: wrap; }
   .fill-pager .step { width: 44px; height: 44px; }
 }
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   .band:has(.fill-panel, .team-head details[open]) .band-toggle { visibility: hidden; }
   .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: var(--sp-4); }
 }
@@ -861,7 +863,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 
 /* ── Completa team e "Come funziona il voto" sul telefono (2026-11-19) ──────────────────────────────────── */
 /* (Titolo e × di Completa team: sul computer nella fascia della finestra, fill.css; su telefono e tablet qui sotto) */
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   /* A tutto schermo; in testa titolo, voto di adesso e ×; sotto le due schede, metà e metà */
   .fill-panel { top: 0; height: 100dvh; max-height: 100dvh; border-radius: 0; padding-top: 0; }
   .fill-top { position: sticky; top: 0; z-index: 3; flex-wrap: wrap; row-gap: 0; column-gap: var(--sp-4); padding: var(--sp-3) var(--sp-3) 0 var(--sp-7); background: var(--panel); }
@@ -894,7 +896,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 
 /* ── Completa team: impostazioni nel foglio; Come funziona il voto: prima il tuo team (telefono, 2026-11-19) ── */
 .fill-settings { display: contents; }
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   /* Le impostazioni fuori dalla pagina finché non si apre il foglio; sopra le proposte il loro riassunto */
   .fill-settings:not([data-sheet]) { display: none; }
   .fill-settings[data-sheet] { display: grid; align-content: start; gap: var(--sp-6); padding: 0 var(--sp-7) max(var(--sp-8), env(safe-area-inset-bottom)); }
@@ -968,7 +970,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .help-page-head .help-back { margin: 0 calc(-1 * var(--sp-3)) 0 0; flex: none; }
 }
 /* Le carte delle proposte e le impostazioni di Completa team come sul telefono, anche sul tablet */
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   /* I tuoi Pokémon: solo l'icona e il lucchetto, tutti in una fila (sei ci stanno anche a 360) */
   .fill-settings .fill-mine-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
   .fill-settings .fill-keep { min-height: 44px; justify-content: center; gap: var(--sp-1); padding: 0 var(--sp-2); }
@@ -1021,7 +1023,7 @@ html { -webkit-tap-highlight-color: transparent; }
 .fill-proposal.arch-semiStall { --k: var(--good); }
 .fill-proposal.arch-stall { --k: var(--room); }
 .fill-think { display: none; }
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   /* Una carta per proposta: fondo nel colore del suo tipo di team con le righe; in alto tipo, voto e Usa su una riga,
      sotto i sei Pokémon in fila sul fondo della carta (i nuovi con una tacca ciano); la prima col bordo magenta */
   .fill-proposal { position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1063,7 +1065,7 @@ html { -webkit-tap-highlight-color: transparent; }
 html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: none; }
 
 /* Completa team, carte: i Pokémon su una fascia scura e uniforme (si staccano bene), il tipo di team scritto nel suo colore */
-@media (max-width: 1099px) {
+@media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   .fill-proposal .fill-mons { padding: var(--sp-2) var(--sp-2) 0; border-radius: 4px; background: var(--field); }
   .fill-proposal .fill-kind { color: color-mix(in srgb, var(--k) 70%, var(--text)); }
   .fill-proposal.is-best { box-shadow: inset 0 3px 0 var(--k), 0 10px 26px rgba(0, 0, 0, 0.4); }
@@ -1481,5 +1483,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .fill-settings select.fill-favorites { min-height: 44px; }
   label.improve-col-head { min-height: 44px; cursor: pointer; }
   .improve-actions button { height: 44px; }
+  .detail-actions > :is(button, a) { min-height: 44px; min-width: 44px; justify-content: center; }
 }
 label.improve-col-head { cursor: pointer; }
