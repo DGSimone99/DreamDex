@@ -1181,3 +1181,10 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .set-editor[data-tab] :is(.stats-cell, .editor-side) { margin-top: 0; }
   .set-editor[data-tab] .set-box > .custom-toggle { margin-bottom: 0; }
 }
+
+/* Telefono: il potenziamento della Sfida (es. "Granfisico") resta piccolo a vista, la zona da toccare è 44 (::before: il
+   suo ::after è il tooltip) */
+@media (max-width: 1099px) {
+  .set-editor .duel-buff { position: relative; }
+  .set-editor .duel-buff::before { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%; }
+}

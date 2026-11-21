@@ -432,6 +432,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     </span>
   );
 
+  const flagCount = (flags?.item ? 1 : 0) + (flags?.ability ? 1 : 0) + (flags?.moves?.filter(Boolean).length ?? 0);
+
   return (
     <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
@@ -546,6 +548,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                 max={252}
                 step={EV_STEP}
                 value={line.ev}
+                aria-label={t('editor.evFor', { stat: statShort(line.stat, lang).toUpperCase() })}
                 aria-keyshortcuts="ArrowRight"
                 {...hint(t('editor.evToIv'))}
                 onKeyDown={e => {
@@ -583,7 +586,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       </div>
       <div className={`editor-side${duel ? ' with-duel' : ''}`}>
       <fieldset className="editor-group set-box">
-        <legend>{t('editor.set')}</legend>
+        {/* Campi fuori regola: sulla fascia del Set il triangolo rosso e quanti sono, come sulla carta (da dove partire) */}
+        <legend>{t('editor.set')}{flagCount > 0 && (
+          <span className="legend-flag"><Icon name="warning" />{flagCount}<span className="visually-hidden"> {t('editor.setFlags', { n: flagCount })}</span></span>
+        )}</legend>
         {/* Custom Skillset a destra nella fascia del Set: cosa fa solo nel fumetto e per i lettori di schermo */}
         <label className={`custom-toggle${custom ? ' on' : ''}`}
           onPointerEnter={() => setCustomShown(true)} onPointerLeave={() => setCustomShown(false)}>

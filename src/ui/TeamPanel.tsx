@@ -485,8 +485,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       <div
         className="slot-card"
         draggable
-        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
-        {...(collapsed || touch ? {} : bubble(`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`))}
+        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…")
+        {...(collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
+${tr('team.slotKey', { n: index + 1 })}`))}
         {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
         onPointerDown={e => {
@@ -531,7 +532,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
             tr('team.position', { n: index + 1, total }),
           ].filter(Boolean).join(', ')}
           aria-keyshortcuts={`${index + 1} Alt+ArrowLeft Alt+ArrowRight`}
-          {...bubble(`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`)}
+          {...bubble(`${tr('team.dragTitle')}
+${tr('team.slotKey', { n: index + 1 })}`)}
         />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
         <span className="mini-icon" aria-hidden="true">
@@ -544,7 +546,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           )}
         </span>
         {/* Sulla sprite, a carta chiusa: dopo mezzo secondo la carta del Pokémon sotto la carta del team (il set intero senza aprirlo) */}
-        <span className="sprite-wrap" {...(open || collapsed ? {} : memberTip.bind(set, roles[0]))}>
+        {/* data-hint vuoto: sullo sprite niente fumetto "Trascina…", lì si apre la carta del Pokémon (si sovrapponevano) */}
+        <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set, roles[0]), 'data-hint': '' })}>
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
         {index === 0 && (
