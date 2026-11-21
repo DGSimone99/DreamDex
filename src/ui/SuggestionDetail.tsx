@@ -16,7 +16,6 @@ import type { Format } from '../engine/format';
 import { typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
-import type { ListSprite } from './theme';
 import { Icon } from './icons';
 import { hint } from './MoveTip';
 import { BoxIcon, bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
@@ -85,7 +84,7 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * sale il voto, cosa porta e cosa toglie, l'effetto sul team area per area (una riga), il set consigliato (griglia,
  * esagono, pillole delle mosse), le azioni.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal', teamCollapsed = false, sheet = false }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, teamCollapsed = false, sheet = false }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -103,7 +102,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   actionLabel: string;
   onAction: () => void;
   /** Lo sprite della lista: il dettaglio mostra l'altro (lista Normale → icona box, lista Icona box → sprite animato). */
-  listSprite?: ListSprite;
   /** Team chiuso: c'è altezza per la sezione Meta. */
   teamCollapsed?: boolean;
   /** Telefono: il dettaglio copre la lista come una finestra (il resto della pagina è inerte finché è aperto). */
@@ -183,7 +181,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
       <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
         <span className="detail-sprite">
-          {listSprite === 'box' ? <Sprite species={item.species} item={set.item} size={144} animated /> : <BoxIcon set={set} />}
+          <BoxIcon set={set} />
         </span>
         <div className="detail-id">
           <h3>
@@ -216,7 +214,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <span className="visually-hidden">{tr('suggest.outFor', { member: battleName(team[replaceIndex]) })}</span>
             <span className="detail-swap-mark" aria-hidden="true"><Icon name="swap" /></span>
             <span aria-hidden="true" className="detail-sprite out">
-              {listSprite === 'box' ? <Sprite species={team[replaceIndex].species} item={team[replaceIndex].item} size={144} /> : <BoxIcon set={team[replaceIndex]} />}
+              <BoxIcon set={team[replaceIndex]} />
             </span>
           </span>
         )}

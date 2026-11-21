@@ -27,12 +27,10 @@ import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
 import { SuggestionDetail } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { BanMark, BoxIcon, ExclusiveMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
-import type { ListSprite } from './theme';
+import { BanMark, ExclusiveMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import { useLang, useT } from '../i18n/react';
 import { usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
-import { ListViewMenu } from './ListViewMenu';
 import { ModeSwitch } from './ModeSwitch';
 
 /** Candidati in tutto: MAX (candidateRanking.ts). Per pagina: misurato (PAGE senza misura). */
@@ -58,10 +56,6 @@ interface Props {
   focusSearch?: number;
   /** Candidato da mostrare (dal Coaching): a ogni `nonce` nuovo si va alla sua pagina e lo si apre nel dettaglio. */
   focus?: CandidateFocus;
-  /** Sprite della lista (impostazioni): normale o icona box. */
-  listSprite?: ListSprite;
-  /** Cambia lo sprite dalla fascia "Candidati" (la stessa impostazione del dialogo). */
-  onListSpriteChange?: (sprite: ListSprite) => void;
   /** Team nascosto: la lista ha più spazio, il numero per pagina resta quello a team aperto. */
   teamCollapsed?: boolean;
 }
@@ -88,7 +82,7 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listSprite = 'normal', onListSpriteChange, teamCollapsed = false }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
   const [pageState, setPage] = useState(0);
@@ -437,10 +431,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               rank: page * perPage + i + 1,
               item,
               reasons: reasonsOf(item, reasons, usage, format, lang),
-              // Icona del box: mai la GIF (sotto il mouse saltella col CSS)
-              sprite: animated => listSprite === 'box'
-                ? <BoxIcon set={item.set} big={teamCollapsed} />
-                : <Sprite species={item.species} item={item.set.item} size={96} animated={animated} />,
+              sprite: animated => <Sprite species={item.species} item={item.set.item} size={96} animated={animated} />,
               usage,
               out,
               picked: page * perPage + i === pickedIndex,
@@ -498,7 +489,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
               {headFit > 0 && <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
               {pager}
-              {onListSpriteChange && <ListViewMenu listSprite={listSprite} onListSpriteChange={onListSpriteChange} />}
             </div>
           )}
           {body}
@@ -534,7 +524,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             banMark={<><BanMark species={selected.species} format={format} /><ExclusiveMark species={battleName(selected.set)} format={format} /></>}
             actionLabel={actionLabelOf(selected)}
             onAction={() => act(selected)}
-            listSprite={listSprite}
             teamCollapsed={teamCollapsed}
             sheet={sheetModal}
           />

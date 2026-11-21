@@ -279,7 +279,7 @@
   .band .slot :is(.favorite, .remove) { width: 44px; height: 44px; }
   .band .slot .favorite { right: 44px; }
   .list-head { --pager-h: 44px; }
-  .pager .step, .list-view-toggle { width: 44px; height: 44px; }
+  .pager .step { width: 44px; height: 44px; }
   .search-field .clear { right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
 }
 

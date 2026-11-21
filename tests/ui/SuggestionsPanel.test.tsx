@@ -704,46 +704,32 @@ describe('stile Carte', () => {
   });
 });
 
-describe('sprite Icona box', () => {
-  it('Icona box: la lista usa le icone del box', async () => {
-    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
-    const { renderIt } = await import('../helpers/italian');
-    const { tusk } = await import('../fixtures/data');
-    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="box" />);
-    const tiles = list().querySelectorAll('.card');
-    expect(tiles.length).toBeGreaterThan(0);
-    for (const tile of tiles) {
-      expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
-      expect(tile.querySelector('img.sprite')).toBeNull();
-    }
-  });
-
-  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato; con l’icona box mai la GIF', async () => {
+describe('sprite animato delle carte', () => {
+  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     const { fireEvent } = await import('@testing-library/react');
-    for (const listSprite of ['normal', 'box'] as const) {
+    {
       const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite={listSprite} />);
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
       const cards = [...list().querySelectorAll<HTMLElement>('.card')];
       expect(cards.length).toBeGreaterThan(1);
       const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
       // A riposo solo la selezionata (la prima)
       expect(cards[0].classList.contains('selected')).toBe(true);
-      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+      expect(animated()).toEqual([cards[0]]);
       vi.useFakeTimers();
       try {
         // Sotto il mouse lo sprite esce (e parte la GIF) solo dopo CARD_WAKE_MS fermi sulla carta
         fireEvent.mouseEnter(cards[1]);
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(animated()).toEqual([cards[0]]);
         expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
         act(() => { vi.advanceTimersByTime(CARD_WAKE_MS); });
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
+        expect(animated()).toEqual([cards[0], cards[1]]);
         expect(cards[1].querySelector('.card-sprite.popped')).not.toBeNull();
         fireEvent.mouseLeave(cards[1]);
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(animated()).toEqual([cards[0]]);
         expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
       } finally {
         vi.useRealTimers();
@@ -812,7 +798,7 @@ describe('sprite Icona box', () => {
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="normal" />);
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
     const slab = detail.querySelector('.detail-hero .detail-why')!;
     const roles = slab.getAttribute('aria-label')!.replace('Ruoli del set: ', '').split(', ');

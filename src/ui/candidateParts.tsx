@@ -30,8 +30,8 @@ import { typeName } from '../i18n/game';
 export type Item = (Suggestion | Replacement) & { teamGain?: TeamGain; replaces?: number; alternatives?: SwapOption[] };
 
 /** Sprite "Icona box": l'icona della forma da battaglia (Mega con la pietra), più grande col team nascosto. */
-export function BoxIcon({ set, big = false }: { set: TeamSet; big?: boolean }) {
-  return <span className={`box-icon${big ? ' big' : ''}`}><PokemonIcon name={battleName(set)} /></span>;
+export function BoxIcon({ set }: { set: TeamSet }) {
+  return <span className="box-icon"><PokemonIcon name={battleName(set)} /></span>;
 }
 
 /** I motivi sotto il nome: bonus (col "+" verde) o, senza bonus, una frase sola. */

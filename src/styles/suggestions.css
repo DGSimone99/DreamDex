@@ -96,17 +96,6 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .pager .step .icon { width: 14px; height: 14px; }
 /* La pagina come numero, "3/9", a ogni misura (scelta dell'utente: niente trattini) */
 .pager-count { min-width: 34px; padding: 0 var(--sp-1); font: 600 var(--fs-caption)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; white-space: nowrap; }
-/* Vista della lista: in fondo alla fascia, dopo la paginazione; il riquadro scende sopra la lista */
-.list-view { position: relative; flex: none; margin-left: auto; }
-.pager ~ .list-view { margin-left: var(--sp-1); }
-.list-view-toggle { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); }
-.list-view-toggle:hover, .list-view-toggle[aria-expanded='true'] { color: var(--text); background: var(--accent-soft); }
-.list-view-toggle .icon { width: 14px; height: 14px; }
-.list-view-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: grid; gap: var(--sp-6); min-width: 190px; padding: var(--sp-6) var(--sp-7);
-  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
-.list-view-pop fieldset { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-7); margin: 0; padding: 0; border: 0; }
-.list-view-pop legend { width: 100%; margin: 0 0 var(--sp-3); padding: 0; font: 600 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
-.list-view-pop label { display: inline-flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-small); color: var(--text); white-space: nowrap; cursor: pointer; }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
