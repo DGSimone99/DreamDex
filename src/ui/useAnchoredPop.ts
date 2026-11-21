@@ -9,8 +9,8 @@ const GAP = 4;
 
 /** Telefono: le tendine diventano fogli che salgono dal fondo dello schermo, larghi quanto lo schermo. */
 export const SHEET_QUERY = '(max-width: 599px)';
-/** Tendine e menu come fogli dal basso: telefono e tablet in verticale (sul tablet in orizzontale restano a tendina). */
-export const PICK_SHEET_QUERY = '(max-width: 599px), (max-width: 1099px) and (orientation: portrait)';
+/** Tendine e menu come fogli dal basso: telefono e tablet in verticale col dito (in orizzontale, e col mouse, restano a tendina). */
+export const PICK_SHEET_QUERY = '(max-width: 599px), (max-width: 1099px) and (orientation: portrait) and (pointer: coarse)';
 export const isSheetScreen = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(PICK_SHEET_QUERY).matches;
 /** Larghezza massima di un foglio: sul tablet una colonna comoda al centro, non tutto lo schermo. */
 const SHEET_MAX_W = 600;
