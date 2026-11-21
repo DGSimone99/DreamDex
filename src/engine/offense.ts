@@ -131,10 +131,8 @@ export interface TypeRow {
 
 export interface CoverageDetail {
   value: number;
-  /** Bersagli che nessuno manda KO in due colpi né avvelena. */
+  /** Bersagli che nessuno manda KO in due colpi. */
   holes: string[];
-  /** Bersagli che nessuno manda KO in due colpi ma qualcuno avvelena e regge (wear.ts): coperti in parte. */
-  worn: string[];
   /** Per ogni bersaglio: tipi, Pokémon, peso, quanto è coperto e chi lo copre (con quale mossa). */
   rows: CoverageRow[];
 }
@@ -544,7 +542,7 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     attackers: { physical: styles.filter(s => s === 'physical').length, special: styles.filter(s => s === 'special').length, mixed: styles.filter(s => s === 'mixed').length },
     value,
     types: { value: typesValue, rows, holes: labels.filter((_, i) => !members.some(m => m.hits[i].pct >= 100 * HOLE_HIT)) },
-    coverageMeta: metaCoverage && { value: metaCoverage.value, holes: metaCoverage.holes, worn: metaCoverage.worn, rows: metaCoverage.rows },
+    coverageMeta: metaCoverage && { value: metaCoverage.value, holes: metaCoverage.holes, rows: metaCoverage.rows },
     setupGain: value - withoutSetup,
     setters: members.filter(m => m.setupMove).map(m => ({ species: m.species, move: m.setupMove! })),
     members,
@@ -562,8 +560,7 @@ function memberShares(members: MemberOffense[], targets: number, metaRows: Cover
   for (let i = 0; i < targets; i++) depthShares(members.map(m => m.hits[i].credit), OFFENSE_DEPTH).forEach((x, k) => { typePart[k] += (100 * x) / targets; });
   const metaPart = members.map(() => 0);
   for (const row of metaRows ?? []) {
-    // Il bersaglio avvelenato (nessuno lo manda KO in due colpi): il credito è di chi lo avvelena
-    const credits = members.map(m => row.coveredBy.find(c => c.species === m.species)?.credit ?? (row.wornBy[0]?.species === m.species ? row.wornBy[0].credit : 0));
+    const credits = members.map(m => row.coveredBy.find(c => c.species === m.species)?.credit ?? 0);
     depthShares(credits, META_DEPTH).forEach((x, k) => { metaPart[k] += 100 * row.weight * x; });
   }
   const raw = members.map((_, k) => (metaRows ? OFFENSE_SHARES.types * typePart[k] + OFFENSE_SHARES.meta * metaPart[k] : typePart[k]));

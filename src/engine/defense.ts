@@ -524,16 +524,6 @@ function threatHitsOf(member: TeamSet, data: EngineData, team: TeamSet[] = [memb
 }
 
 /**
- * Il membro regge questo Pokémon (il suo colpo migliore vero gli toglie meno di metà PS), con gli schermi e il meteo del
- * team come nella Coverage meta della Difesa. Per il veleno nell'Offesa (wear.ts): il bersaglio non è sempre fra le minacce.
- */
-export function holdsThreat(member: TeamSet, threat: TeamSet, team: TeamSet[], data: EngineData): boolean {
-  const hit = threatHit(threat, member, data, conditionsOf(member, team).all, firstHitShare(member, team));
-  if (!hit) return true;
-  return screenFactor(teamScreens(team), getMove(hit.move)?.category ?? 'Status') * hit.expected < HOLD_FULL;
-}
-
-/**
  * Quanto vale chi regge un colpo o una minaccia, dal primo al terzo: 70/20/10 (2026-11-13, era 50/30/20), come la Coverage
  * meta dell'Offesa. Il 50/30/20 serviva quando il punto fisso per membro portava metà dei team forti fra 95 e 100.
  */

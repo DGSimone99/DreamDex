@@ -39,12 +39,7 @@ export interface TeamGain {
   after?: AreaSnapshot;
   /** Il bonus "Pivot sfruttato" che il cambio fa guadagnare o perdere al team (assente se non cambia). */
   pivot?: 'gained' | 'lost';
-  /** I bonus di Knock Off e di Taunt/Encore che il cambio fa guadagnare o perdere (assente se non cambiano). */
-  moves?: { catalog: MoveBonusKey; change: 'gained' | 'lost' }[];
 }
-
-export type MoveBonusKey = 'knockOff' | 'tauntEncore';
-const MOVE_BONUSES: MoveBonusKey[] = ['knockOff', 'tauntEncore'];
 
 /**
  * I valori delle aree di un voto come li mostra l'app: Offesa, Difesa e Velocità (0–100, null senza valore), il netto di
@@ -95,10 +90,6 @@ const ROLE_CATALOG = new Set(['essentialRole', 'importantRole']);
 const notRole = (item: { catalog?: string }) => !item.catalog || !ROLE_CATALOG.has(item.catalog);
 
 const hasPivotBonus = (rating: TeamRating) => rating.bonus.items.some(i => i.catalog === 'pivotLink');
-const hasBonus = (rating: TeamRating, catalog: MoveBonusKey) => rating.bonus.items.some(i => i.catalog === catalog);
-const moveBonusChanges = (before: TeamRating, after: TeamRating) => MOVE_BONUSES
-  .filter(catalog => hasBonus(before, catalog) !== hasBonus(after, catalog))
-  .map(catalog => ({ catalog, change: hasBonus(after, catalog) ? 'gained' as const : 'lost' as const }));
 
 /** Il netto di Bonus/Malus senza i ruoli, come la scheda Bonus/Malus e la carta del voto. */
 const bonusMalusNet = (rating: TeamRating) =>
@@ -197,7 +188,6 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         typeShift: typeShiftOf(before, rating),
         after: areaSnapshot(rating),
         ...(hasPivotBonus(rating) !== hasPivotBonus(before) && { pivot: hasPivotBonus(rating) ? 'gained' as const : 'lost' as const }),
-        ...(moveBonusChanges(before, rating).length > 0 && { moves: moveBonusChanges(before, rating) }),
       },
     };
   };

@@ -14,8 +14,6 @@ import { topThreats, usageOf } from './stats';
 import { softScore } from './scale';
 import { FIELD_SHARE, MOVE_FIELD_SHARE, SETUP_SHARE } from './offense';
 import { moveAttackMultiplier, TYPES } from './types';
-// Import circolare (wear.ts → subRoles.ts → offense.ts → qui): si usa solo una funzione, chiamata dopo il caricamento
-import { wearers, type Wearer } from './wear';
 
 /** Quanti Pokémon del meta, dal più usato, danno le combinazioni di tipi da coprire. */
 const TARGET_SCAN = 40;
@@ -138,10 +136,8 @@ export function coverageTargets(data: EngineData, kind: CoverageKind = usesMeta(
 export interface TeamCoverage {
   /** 0–100: quota pesata dei bersagli coperti, con la profondità 70/20/10 nei tipi e nel meta. */
   value: number;
-  /** Bersagli scoperti: nei tipi chi nessuno porta al 33%; nel meta chi nessuno manda KO in due colpi né avvelena (wear.ts). */
+  /** Bersagli che nessuno porta al 33%. */
   holes: string[];
-  /** Solo nel meta: i bersagli che nessuno manda KO in due colpi ma qualcuno avvelena e regge (coperti in parte). */
-  worn: string[];
   /** Quota pesata (0–100) dei bersagli che ogni membro manda KO in due colpi (nell'ordine del team). */
   perMember: number[];
   /** Per ogni bersaglio: tipi, il Pokémon che lo rappresenta, il peso, quanto è coperto e chi lo copre (con quale mossa). */
@@ -153,15 +149,10 @@ export interface CoverageRow {
   species: string;
   weight: number;
   /**
-   * Quanto è coperto (0–100). Nel meta: i danni di chi lo manda KO in due colpi (0 sotto il 50%) coi pesi 70/20/10,
-   * o il credito del veleno se nessuno ci arriva (`wornBy`); nei tipi: 0, 70, 90 o 100 (1°, 2° e 3° membro che lo copre).
+   * Quanto è coperto (0–100). Nel meta: i danni di chi lo manda KO in due colpi (0 sotto il 50%) coi pesi 70/20/10;
+   * nei tipi: 0, 70, 90 o 100 (1°, 2° e 3° membro che lo copre).
    */
   level: number;
-  /**
-   * Solo nel meta e solo se nessuno lo manda KO in due colpi: chi lo avvelena e lo regge (wear.ts), dal credito più alto.
-   * Vuoto altrimenti. Nel livello entra il primo.
-   */
-  wornBy: Wearer[];
   /** `partial`: superefficace ma solo da 3HKO (fra il 33% e il 50%): copre a metà (mai nel meta). */
   /** `credit`: quanto conta il colpo nella profondità (nel meta il danno stesso, al massimo 1; nei tipi 1 o 0,5). */
   coveredBy: { species: string; move: string; pct: number; partial: boolean; credit: number }[];
@@ -272,16 +263,11 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
   const hits = team.map(set => hitsOf(set, data, targets, kind, team));
   let value = 0;
   const holes: string[] = [];
-  const worn: string[] = [];
   // Nel meta è un buco chi nessuno manda KO in due colpi; nei tipi chi nessuno porta al 33% super efficace
   const holeBelow = kind === 'meta' ? COVER_HIT : HOLE_HIT;
-  // Nel meta, chi nessuno manda KO in due colpi ma qualcuno avvelena e regge: il credito del veleno al posto dei colpi
-  const wornBy = targets.map((target, i) => (kind === 'meta' && Math.max(0, ...hits.map(h => h[i].x)) < COVER_HIT ? wearers(team, target.set as TeamSet, data) : []));
-  const levelOf = (i: number) => depthOf([...hits.map(h => creditOf(h[i].x, kind)), ...wornBy[i].slice(0, 1).map(w => w.credit)], kind);
   targets.forEach((target, i) => {
-    value += target.weight * levelOf(i);
-    if (wornBy[i].length) worn.push(target.label);
-    else if (Math.max(0, ...hits.map(h => h[i].x)) < holeBelow) holes.push(target.label);
+    value += target.weight * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind);
+    if (Math.max(0, ...hits.map(h => h[i].x)) < holeBelow) holes.push(target.label);
   });
   const known = team.map(set => !!battleSpecies(set));
   const pctOf = (x: number) => Math.floor(100 * Math.min(1, x));
@@ -289,7 +275,6 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
     // Lineare: ogni bersaglio coperto tre volte vale 100
     value: softScore(value),
     holes,
-    worn,
     perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + creditOf(h[i].x, kind) * target.weight, 0))),
     rows: targets.map((target, i) => {
       const coveredBy = team.flatMap((set, m) => (creditOf(hits[m][i].x, kind) > 0
@@ -304,7 +289,7 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
             comboPct: h[i].combo === null ? null : pctOf(h[i].combo), comboMove: h[i].comboMove }
           : { pct: -1, setupPct: null, mult: null, move: null, teamPct: null, teamVia: null, teamMove: null, comboPct: null, comboMove: null }))
         : null;
-      return { label: target.label, species: target.set.species, set: target.set, weight: target.weight, level: Math.round(100 * levelOf(i)), coveredBy, wornBy: wornBy[i], cells };
+      return { label: target.label, species: target.set.species, set: target.set, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
     }),
   };
 }

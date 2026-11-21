@@ -91,7 +91,7 @@ describe('doppio: le mosse a più bersagli al 75%', () => {
 
   it('in singolo il voto non cambia', () => {
     const benchTeams = JSON.parse(readFileSync('scripts/bench/teams.json', 'utf8')) as { team: TeamSet[] }[];
-    const expected: [number, number][] = [[0, 81], [8, 76], [11, 67]];
+    const expected: [number, number][] = [[0, 79], [8, 75], [11, 65]];
     for (const [index, overall] of expected) expect(rateTeam(benchTeams[index].team, ouData)!.overall).toBe(overall);
   });
 });

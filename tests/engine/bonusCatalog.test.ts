@@ -35,9 +35,9 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 21 voci, 13 malus prima, niente Tera né "Vicino a un altro tipo"', () => {
+  it('catalogo IT: 19 voci, 13 malus prima, niente Tera né "Vicino a un altro tipo"', () => {
     const none = bonusMalusCatalog('it');
-    expect(none).toHaveLength(21);
+    expect(none).toHaveLength(19);
     expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
     expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.map(e => e.key as string)).not.toContain('typeBlend');

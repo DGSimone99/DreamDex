@@ -79,8 +79,6 @@ export interface StatusSource {
   move: string;
   dot: number;
   disruptor: number;
-  /** Probabilità che lo stato arrivi (Serene Grace compresa; per il sonno anche la precisione), prima delle immunità. */
-  chance: number;
   status: 'tox' | 'brn' | 'psn' | 'par' | 'slp' | 'yawn' | 'trap' | 'salt' | 'seed';
 }
 
@@ -158,7 +156,7 @@ export function statusSources(set: TeamSet): StatusSource[] {
   const add = (move: string, status: StatusSource['status'] | undefined, chance: number, accuracy: number) => {
     if (!status || !STATUS_TABLE[status]) return;
     const k = chance * (status === 'slp' ? accuracy : 1);
-    out.push({ move, status, dot: STATUS_TABLE[status].dot * k, disruptor: STATUS_TABLE[status].disruptor * k, chance: k });
+    out.push({ move, status, dot: STATUS_TABLE[status].dot * k, disruptor: STATUS_TABLE[status].disruptor * k });
   };
   for (const m of set.moves.map(getMove).filter(isDefined)) {
     const accuracy = m.accuracy === true ? 1 : (m.accuracy ?? 100) / 100;
@@ -326,7 +324,7 @@ const IMMUNE_TYPE: Partial<Record<StatusSource['status'], string>> = { brn: 'Fir
  * Il rivale può subire lo stato di questa fonte? `corrosion`: chi avvelena ignora Acciaio e Veleno. `prankster`: le mosse
  * di stato con priorità di Prankster falliscono sui tipi Buio.
  */
-export function affects(src: StatusSource, rival: Omit<StatusRival, 'species' | 'weight'>, corrosion: boolean, prankster = false): boolean {
+function affects(src: StatusSource, rival: StatusRival, corrosion: boolean, prankster = false): boolean {
   const move = getMove(src.move);
   const ability = toID(rival.ability);
   const types = rival.types;
