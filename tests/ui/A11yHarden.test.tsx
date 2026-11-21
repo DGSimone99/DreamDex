@@ -21,10 +21,10 @@ describe('accessibilità di team e voto', () => {
     expect(badge.querySelector('.visually-hidden')!.textContent).toMatch(/^Voto [A-D], \d+ su 100, .+$/);
   });
 
-  it('la carta ha un nome breve: nome, Lead, tipi, strumento', () => {
+  it('la carta ha un nome breve: nome, tipi, strumento (niente Lead: il primo in campo si sceglie a ogni partita)', () => {
     const { container } = withTeam();
     const [first, second] = container.querySelectorAll('.slot-toggle');
-    expect(first.getAttribute('aria-label')).toMatch(/^Great Tusk, Lead, (Terra\/Lotta|Ground\/Fighting), .+$/);
+    expect(first.getAttribute('aria-label')).toMatch(/^Great Tusk, (Terra\/Lotta|Ground\/Fighting), .+$/);
     expect(second.getAttribute('aria-label')).not.toMatch(/Lead/);
   });
 

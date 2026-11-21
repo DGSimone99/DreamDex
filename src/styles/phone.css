@@ -123,7 +123,6 @@
   .band .slot .name { --name-fs: 14px; }
   .band .slot .name-line { gap: var(--sp-2); margin-top: var(--sp-1); }
   .band .slot .name-line .held, .band .slot .name-line .held .item-icon { width: 18px; height: 18px; }
-  .band .slot .slot-lead { left: 5px; top: 5px; font-size: var(--fs-label); }
   .band .slot .favorite { right: 30px; }
   .band .slot :is(.favorite, .remove) { top: 0; width: 30px; height: 30px; }
   .band .slot.empty { gap: var(--sp-3); }
