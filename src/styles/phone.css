@@ -1474,3 +1474,12 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .team-more-sheet[data-sheet] [role='menuitem'] { height: 52px; }
   .team-more-sheet:not([data-sheet]) [role='menuitem'] { height: 44px; }
 }
+/* Col dito, secondo giro (critique 2026-11-21): le scelte di Completa team (Tipo di team, Condizione, Pokémon preferiti)
+   e Migliora i set (la testata della colonna è l'etichetta della casella; Applica, Annulla e Mostra cambiamenti) da 44 */
+@media (pointer: coarse) and (max-width: 1099px) {
+  .fill-types [role='radio'], .fill-styles [role='radio'] { min-height: 44px; }
+  .fill-settings select.fill-favorites { min-height: 44px; }
+  label.improve-col-head { min-height: 44px; cursor: pointer; }
+  .improve-actions button { height: 44px; }
+}
+label.improve-col-head { cursor: pointer; }
