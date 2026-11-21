@@ -129,7 +129,8 @@ export function EditorDuel({ set, team, data, format, onApply, onOpenMember }: {
       input.style.fontSize = '';
       if (!canvas || !input.value) return;
       const cs = getComputedStyle(input);
-      const others = [...root.children].filter(child => !child.contains(input))
+      // (L'ingranaggio spostato sulla riga del giudizio, nella Sfida stretta, non toglie posto al nome)
+      const others = [...root.children].filter(child => !child.contains(input) && getComputedStyle(child).position !== 'absolute')
         .reduce((sum, child) => sum + (child as HTMLElement).getBoundingClientRect().width, 0);
       const gap = parseFloat(getComputedStyle(root).columnGap) || 0;
       const room = root.clientWidth - others - gap * (root.children.length - 1) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;

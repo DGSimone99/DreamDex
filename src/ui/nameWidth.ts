@@ -33,32 +33,33 @@ const fontReady = (font: string) => {
 const parts = (name: string) => name.split(/\s+|(?<=-)/).filter(Boolean);
 
 /** La stima di prima (lettere × 0.7em): serve senza canvas e finché il font non c'è. */
-export const estimateEm = (name: string) => Math.max(1, ...parts(name).map(p => p.length)) * 0.7;
+export const estimateEm = (name: string, whole = false) => Math.max(1, ...(whole ? [name] : parts(name)).map(p => p.length)) * 0.7;
 
 /** Larghezza in em della parte più lunga del nome, misurata se si può (null = non si può ancora). */
-export function measureEm(name: string, font = NAME_FONT): number | null {
-  const key = `${font}|${name}`;
+export function measureEm(name: string, font = NAME_FONT, whole = false): number | null {
+  const key = `${font}|${whole ? '1|' : ''}${name}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
   const c = context();
   if (!c || !fontReady(font)) return null;
   c.font = font;
   const size = parseFloat(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? '16');
-  const em = Math.max(...parts(name).map(p => c.measureText(p).width / size + p.length * SPACING)) + SLANT;
+  const em = Math.max(...(whole ? [name] : parts(name)).map(p => c.measureText(p).width / size + p.length * SPACING)) + SLANT;
   if (!Number.isFinite(em) || em <= 0) return null;
   cache.set(key, em);
   return em;
 }
 
 /** --name-em della carta: la misura vera quando il font è pronto (la carta si ridisegna appena il font arriva). */
-export function useNameEm(name: string): number {
+/** `whole`: la larghezza del nome intero (il nome su una riga sola, carte del team aperto), non della parte più lunga. */
+export function useNameEm(name: string, whole = false): number {
   const [, setReady] = useState(0);
-  const em = measureEm(name);
+  const em = measureEm(name, NAME_FONT, whole);
   useEffect(() => {
     if (em !== null || !context() || typeof document === 'undefined' || !document.fonts?.load) return;
     let alive = true;
     document.fonts.load(NAME_FONT).then(() => { if (alive) setReady(n => n + 1); }, () => {});
     return () => { alive = false; };
   }, [em]);
-  return em ?? estimateEm(name);
+  return em ?? estimateEm(name, whole);
 }
