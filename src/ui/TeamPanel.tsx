@@ -204,7 +204,8 @@ const typesOverflow = (el: HTMLElement) =>
   [...el.querySelectorAll<HTMLElement>('.slot-card .types')].some(row => row.scrollWidth > row.clientWidth + 1);
 
 /** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
-const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
+// In larghezza 1px di tolleranza (la pendenza del corsivo): il nome su una riga sola tagliato di 2px si vede
+const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 1;
 
 /**
  * Telefono: il voto nella testata dell'editor, perché lì il voto grande è coperto. Lettera e punteggio; appena cambia,
@@ -312,7 +313,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   // rimpicciolisce (CSS --name-em)
   // Il nome prima si rimpicciolisce (CSS); se intero verrebbe tagliato anche così, la carta mostra il nome senza forma
   // ("Urshifu" per Urshifu-Rapid-Strike, "Charizard" per Charizard-Mega-X; un soprannome non si accorcia), e se nemmeno
-  // quello entra, una riga sola coi puntini. Il nome intero resta nel tooltip.
+  // quello entra, una riga sola coi puntini. Il nome intero resta nel tooltip. Nel team aperto il nome sta sempre su una
+  // riga sul computer (carte alte uguali): andare a capo conta come non entrare, e conta la misura del nome intero
+  // (--name-em-whole; --name-em, la parte più lunga, serve dove il nome può andare a capo)
   // Si misura sulla carta (watch): la sua misura non dipende dal nome mostrato
   const nameRef = useRef<HTMLElement>(null);
   const shortName = !set.name && species && species.baseSpecies !== name ? species.baseSpecies : null;
@@ -321,6 +324,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const shownName = set.name || (shortName && nameStep < nameSteps ? shortName : name);
   const nameDots = nameStep === 0;
   const nameEm = useNameEm(shownName);
+  const nameEmWhole = useNameEm(shownName, true);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
   // Soprannome: si scrive cliccando il nome nell'editor; vuoto = il nome della specie
@@ -587,7 +591,7 @@ ${tr('team.slotKey', { n: index + 1 })}`)}
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" {...bubble(set.name ? `${set.name} (${name})` : name)} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" {...bubble(set.name ? `${set.name} (${name})` : name)} style={{ '--name-em': nameEm.toFixed(3), '--name-em-whole': nameEmWhole.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">

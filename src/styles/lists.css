@@ -360,7 +360,7 @@
    visibili. Sulla carta restano sprite, strumento, nome, tipi e ruolo (l'abilità è nell'editor) */
 /* Schermi bassi ma larghi (es. 1286×791, Windows al 150%): le carte restano larghe anche togliendo un po' a ognuna,
    il voto si allarga e le barre delle aree si leggono */
-@media (min-width: 1250px) and (max-height: 799px) {
+@media (min-width: 1500px) and (max-height: 799px) {
   .band { grid-template-columns: minmax(0, 1fr) 212px; }
 }
 @media (min-width: 1100px) and (max-height: 799px) {
@@ -953,4 +953,33 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
   .duel-row { padding: 0; row-gap: 1px; }
   .duel-big { font-size: var(--fs-title-s); }
   .duel-stage { --stage-scale: 0.95; }
+}
+
+/*
+ * Carte del team prima del voto: quando manca larghezza cede la carta del voto, non le carte dei Pokémon.
+ * Da 1500 px in giù il voto si stringe piano piano (196 → 160 px a 1250, barre più corte); sotto i 1250 px niente barre:
+ * lettera, punteggio e i numeri delle aree in 132 px. Il nome sulla carta sta su una riga: si rimpicciolisce fino a 13px,
+ * poi resta il nome senza forma (TeamPanel), i puntini solo per ultimi.
+ */
+@media (min-width: 1100px) {
+  .band:not(.collapsed) .slot .name { -webkit-line-clamp: 1; white-space: nowrap;
+    font-size: min(var(--name-fs), max(13px, (100cqi - var(--name-room, 26px) - 3px) / var(--name-em-whole, var(--name-em, 5.6)))); }
+}
+@media (min-width: 1100px) and (max-width: 1499px) {
+  .band:not(.collapsed) { grid-template-columns: minmax(0, 1fr) clamp(160px, 14.4vw - 20px, 196px); }
+}
+@media (min-width: 1100px) and (max-width: 1249px) {
+  .band:not(.collapsed) { grid-template-columns: minmax(0, 1fr) 132px; }
+  /* Carte strette: l'icona dello strumento lascia il posto al nome (come nella barra compressa; lo strumento è
+     nell'editor e nel fumetto della carta) */
+  .band:not(.collapsed) .slot .name-line .held { display: none; }
+  .band:not(.collapsed) .slot .name { --name-room: 0px; }
+  .band:not(.collapsed) .grade-badge { column-gap: var(--sp-4); padding-left: var(--sp-5); padding-right: var(--sp-5); }
+  .band:not(.collapsed) .grade-head { margin-left: -10px; margin-right: -10px; }
+  .band:not(.collapsed) .grade-badge .letter { font-size: 48px; }
+  .band:not(.collapsed) .grade-badge .overall { font-size: var(--fs-title); }
+  .band:not(.collapsed) .grade-badge .label { font-size: var(--fs-caption); }
+  .band:not(.collapsed) .grade-badge .grade-type { font-size: var(--fs-caption); }
+  .band:not(.collapsed) .grade-badge .grade-area .meter { display: none; }
+  .band:not(.collapsed) .grade-badge button.grade-area:not(.grade-roles) { grid-template-columns: minmax(0, 1fr) 24px 10px; }
 }
