@@ -64,7 +64,8 @@ const evsText = (set: TeamSet, lang: Lang) =>
 export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: Props) {
   // Telefono: le impostazioni in un foglio unico che si apre dal basso (sopra le proposte resta il loro riassunto)
   // Telefono e tablet: il pannello a tutto schermo con le proposte prima e le impostazioni in un foglio
-  const phone = useMediaQuery('(max-width: 1099px)');
+  // (Col mouse da 900 px, a mezzo schermo accanto a Showdown, è la finestra centrata del computer)
+  const phone = useMediaQuery('(max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine)))');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButton = useRef<HTMLButtonElement>(null);
   const settingsSheet = useRef<HTMLDivElement>(null);

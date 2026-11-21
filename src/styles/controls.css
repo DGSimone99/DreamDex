@@ -55,11 +55,13 @@ meter::-webkit-meter-bar { background: var(--line-soft); border: 0; border-radiu
 meter::-webkit-meter-optimum-value { background: var(--accent); border-radius: 2px; }
 meter::-moz-meter-bar { background: var(--accent); border-radius: 2px; }
 
-/* Completa team aperto: un solo magenta sullo schermo, l'azione migliore del pannello. Le azioni principali della pagina
-   dietro (Aggiungi al team, Applica della prima proposta) tornano neutre, Raised come gli altri pulsanti */
+/* Completa team o una finestra aperti: un solo magenta sullo schermo, quello della finestra. Le azioni principali della
+   pagina dietro (Aggiungi al team, Applica della prima proposta) tornano neutre, Raised come gli altri pulsanti */
 .workspace.fill-open button.primary,
 .workspace.fill-open .detail.first .detail-actions .go,
-.workspace.fill-open .coach-apply.is-primary { background: var(--raised); border-color: var(--line); color: var(--text); }
+.workspace.fill-open .coach-apply.is-primary,
+body:has(.help-backdrop) .workspace button.primary,
+body:has(.help-backdrop) .workspace .coach-apply.is-primary { background: var(--raised); border-color: var(--line); color: var(--text); }
 .workspace.fill-open button.primary:hover,
 .workspace.fill-open .detail.first .detail-actions .go:hover,
 .workspace.fill-open .coach-apply.is-primary:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }

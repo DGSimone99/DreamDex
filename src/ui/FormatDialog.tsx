@@ -269,7 +269,8 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
           {/* Quanti nella riga; chi, nel fumetto dell'app */}
           {notAllowed > 0 && <p className="fmt-warning" role="status" data-hint={notAllowedNames.join(', ')}>
             {t(notAllowed === 1 ? 'formatDialog.notAllowedOne' : 'formatDialog.notAllowedMany', { n: notAllowed, format: choiceName(drafts[shown], t) })}</p>}
-          <button type="button" onClick={onClose}>{t('formatDialog.cancel')}</button>
+          {/* Senza modifiche Annulla e Chiudi farebbero la stessa cosa: resta solo «Chiudi» */}
+          {!unchanged && <button type="button" onClick={onClose}>{t('formatDialog.cancel')}</button>}
           {/* Il pulsante dice quale formato userà (la scelta della scheda aperta); senza modifiche è un semplice «Chiudi» */}
           {unchanged
             ? <button type="button" className="fmt-main" onClick={confirm} aria-label={t('formatDialog.closeUnchanged')}>{t('formatDialog.close')}</button>

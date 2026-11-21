@@ -55,6 +55,11 @@ function SetBrief({ set, than, label, className }: { set: TeamSet; than?: TeamSe
   );
 }
 
+/** Testata di una colonna: un'etichetta (tocca e cambia la casella) se c'è un cambio, se no un riquadro semplice. */
+function ColHead({ changed, children }: { changed: boolean; children: ReactNode }) {
+  return changed ? <label className="improve-col-head">{children}</label> : <div className="improve-col-head">{children}</div>;
+}
+
 /**
  * Migliora i set: prima una conferma rapida col risultato (voto prima → dopo); "Controlla cambiamenti" allarga la
  * finestra e mostra un Pokémon per colonna, il set di adesso, la freccia e il set nuovo (in verde ciò che cambia), quanto
@@ -150,7 +155,9 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                   const on = picked.has(i);
                   return (
                     <li key={i} className={`improve-col${!change.changed ? ' same' : on ? '' : ' off'}`}>
-                      <div className="improve-col-head">
+                      {/* Con un cambio la testata intera è l'etichetta della casella: si tocca tutta (col dito la casella da sola
+                          sarebbe 18px) */}
+                      <ColHead changed={change.changed}>
                         {change.changed
                           ? <input type="checkbox" checked={on} onChange={() => toggle(i)} aria-label={t('improve.include', { name })} />
                           : <span className="improve-check-spacer" aria-hidden="true" />}
@@ -161,7 +168,7 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                             title={change.gain === 0 ? t('improve.gainZero') : t('improve.gainTitle', { name, n: change.gain > 0 ? `+${change.gain}` : String(change.gain) })}>
                             {change.gain > 0 ? `+${change.gain}` : change.gain === 0 ? '±0' : change.gain}</span>
                           : <span className="improve-gain same">{t('improve.sameShort')}</span>}
-                      </div>
+                      </ColHead>
                       <SetBrief set={change.before} label={t('improve.now')} className="is-before" />
                       {change.changed ? <>
                         <span className="improve-down" aria-hidden="true"><Icon name="arrow" /> {t('improve.after')}</span>
