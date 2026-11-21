@@ -12,12 +12,12 @@ import { SPRITE_TIP } from '../spriteSizes';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
-const LEVELS = ['essential', 'important', 'minor'] as const;
+const LEVELS = ['essential', 'important'] as const;
 
 /** Prima i mancanti, così un problema non finisce mai in fondo o nel "+N". */
 const missingFirst = (chips: RoleChip[]) => [...chips].sort((a, b) => Number(a.covered) - Number(b.covered));
 
-/** ✓ tenue se coperto, ✕ rosso pieno se manca (essenziali e importanti), tratteggiato se è un minore. */
+/** ✓ tenue se coperto, ✕ rosso pieno se manca; tratteggiato se la mancanza non toglie punti (team incompleto). */
 const stateOf = (chip: RoleChip) => (chip.covered ? 'ok' : chip.soft ? 'soft' : 'bad');
 
 /** Il nome accessibile di un ruolo: "Hazard, coperto da Garchomp" / "Rimozione Strumenti, mancante". */
@@ -31,7 +31,7 @@ function useRoleText(chip: RoleChip) {
 
 /**
  * Il tooltip DreamDex di un ruolo: il nome col suo livello e solo le sprite di chi lo copre (niente percentuali);
- * se manca, "Nessuno lo copre" in rosso (in grigio se è un minore).
+ * se manca, "Nessuno lo copre" in rosso (in grigio se non toglie punti).
  */
 function RoleTip({ chip }: { chip: RoleChip }) {
   const t = useT();
@@ -70,7 +70,7 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
   const tip = useRoleTip(chip);
   return (
     // Raggiungibile con le frecce (data-nav: le fasce sono un posto solo nel giro del Tab); col fuoco il tooltip
-    <li data-fit data-nav="" className={`dash-role ${stateOf(chip)}${chip.level === 'minor' ? ' minor' : ''}`} {...tip.bind}>
+    <li data-fit data-nav="" className={`dash-role ${stateOf(chip)}`} {...tip.bind}>
       {tip.node}
       <span className="dash-role-tag">
         <Icon name={chip.covered ? 'check' : 'close'} />
@@ -101,9 +101,9 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
 }
 
 /**
- * Stretto e normale: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto.
- * Quanti ruoli stanno si misura una volta per tutta la card, in ordine (essenziali, importanti, minori; in ogni fascia
- * prima i mancanti): se manca spazio cedono prima i minori, mai un problema prima di un coperto, e ogni fascia
+ * Stretto e normale: due fasce una sotto l'altra (Essenziali, Importanti), compatte in alto.
+ * Quanti ruoli stanno si misura una volta per tutta la card, in ordine (essenziali, importanti; in ogni fascia
+ * prima i mancanti): se manca spazio cedono prima gli importanti, mai un problema prima di un coperto, e ogni fascia
  * tagliata chiude col suo "+N". Mai un "+N" in una fascia mentre un'altra ha spazio vuoto.
  */
 function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; density: Density; titles: Record<(typeof LEVELS)[number], string> }) {
@@ -133,7 +133,7 @@ function RoleTableRow({ chip, members }: { chip: RoleChip; members: string[] }) 
   const { label, detail } = useRoleText(chip);
   return (
     // Col team ridotto la tabella dice già chi copre ogni ruolo (pallini sotto le sprite): niente tooltip, solo la riga che si accende
-    <tr className={`dash-role-row ${stateOf(chip)}${chip.level === 'minor' ? ' is-minor' : ''}`}>
+    <tr className={`dash-role-row ${stateOf(chip)}`}>
       <th scope="row">
         <Icon name={chip.covered ? 'check' : 'close'} />
         <span>{label}<span className="visually-hidden">, {detail}</span></span>
@@ -149,8 +149,8 @@ function RoleTableRow({ chip, members }: { chip: RoleChip; members: string[] }) 
 
 /**
  * Ampio: tabella ruoli × membri con tutti i livelli. In testa gli sprite dei membri, una riga per ruolo (le fasce sono
- * intestazioni tra le righe) e un pallino dove il membro lo copre; un essenziale o importante mancante è una riga rossa,
- * i minori sono più tenui. La tabella si stira fino in fondo alla card: con pochi ruoli le righe sono più alte.
+ * intestazioni tra le righe) e un pallino dove il membro lo copre; un essenziale o importante mancante è una riga rossa.
+ * La tabella si stira fino in fondo alla card: con pochi ruoli le righe sono più alte.
  */
 function RoleTable({ roles, titles }: { roles: DashboardData['roles']; titles: Record<(typeof LEVELS)[number], string> }) {
   const t = useT();
@@ -196,7 +196,7 @@ export const roleTableNeed = (roles: DashboardData['roles']) => {
  */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
-  const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
+  const titles = { essential: t('analysis.essential'), important: t('analysis.important') };
   const card = useRef<HTMLDivElement>(null);
   // Altezza della card (0: non misurata, come nei test senza layout: la tabella)
   const [height, setHeight] = useState(0);

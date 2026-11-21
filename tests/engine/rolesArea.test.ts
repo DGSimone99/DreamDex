@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { rateTeam } from '../../src/engine/rating';
 import { MISSING_BELOW, teamNeeds } from '../../src/engine/needs';
-import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea } from '../../src/engine/rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, teamRolesArea } from '../../src/engine/rolesArea';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -57,14 +57,12 @@ describe('Ruoli come lista: coperti, malus e bonus', () => {
     expect(teamRolesArea(physical, fixtureData, 'it').failures.length).toBeGreaterThan(0);
   });
 
-  it('+1 per ogni minore coperta, senza tetto, anche con meno di 6 membri', () => {
+  it('le minori coperte restano nella lista ma non danno punti', () => {
     for (const team of [physical, stall, physical.slice(0, 4)]) {
       const roles = teamRolesArea(team, fixtureData, 'it');
       const minors = roles.rows.filter(r => r.level === 'minor' && r.value >= MISSING_BELOW);
-      expect(roles.bonuses).toHaveLength(minors.length);
-      expect(roles.bonuses.every(b => b.points === MINOR_POINTS && b.catalog === 'minorRole')).toBe(true);
-      const rating = rateTeam(team, fixtureData)!;
-      for (const b of roles.bonuses) expect(rating.bonus.items).toContainEqual(b);
+      expect(minors.length).toBeGreaterThan(0);
+      expect(rateTeam(team, fixtureData)!.bonus.items.map(i => i.text).join(' ')).not.toMatch(/ruolo extra/);
     }
   });
 
@@ -92,7 +90,7 @@ describe('Ruoli come lista: coperti, malus e bonus', () => {
   });
 
   it('team vuoto: lista vuota (RF3)', () => {
-    expect(teamRolesArea([], fixtureData, 'it')).toMatchObject({ covered: 0, total: 0, members: [], failures: [], bonuses: [] });
+    expect(teamRolesArea([], fixtureData, 'it')).toMatchObject({ covered: 0, total: 0, members: [], failures: [] });
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 });

@@ -228,7 +228,7 @@ Bold Nature
 const fakeRating = (penalty: [string, number][], bonus: [string, number][], penaltyTotal?: number): TeamRating => ({
   teamType: 'balance', trickRoom: false, grade: 'B', overall: 70, label: 'Buono', archetype: 'balance', meta: false, areas: [],
   // Bonus/Malus ha anche la sottoscheda Ruoli (coperti/totale e la guida del tipo di team)
-  roles: { covered: 0, total: 0, rows: [], failures: [], bonuses: [], members: [] }, needs: { archetype: 'balance', rules: {} },
+  roles: { covered: 0, total: 0, rows: [], failures: [], members: [] }, needs: { archetype: 'balance', rules: {} },
   penalty: { total: penaltyTotal ?? penalty.reduce((n, [, p]) => n + p, 0), items: penalty.map(([text, points]) => ({ text, points })) },
   bonus: { total: bonus.reduce((n, [, p]) => n + p, 0), items: bonus.map(([text, points]) => ({ text, points })) },
 }) as unknown as TeamRating;

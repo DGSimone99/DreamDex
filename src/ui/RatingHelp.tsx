@@ -20,7 +20,7 @@ const DOUBLES_TOPICS: Topic[] = ['general', 'doubles'];
 /** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (spiegati nel loro modale). */
 /** Offesa prima di Difesa, come nel riquadro del voto (scelta dell'utente, 2026-11-13). */
 const WEIGHT_AREAS = ['strength', 'defense', 'speed'] as const;
-const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
+const LEVELS: Exclude<Level, 'ignored' | 'minor'>[] = ['essential', 'important'];
 
 const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
 /** Etichetta di una voce della tabella dei livelli ("almeno uno Sweeper / un Wallbreaker" sono gruppi). */

@@ -26,8 +26,8 @@ export interface TypeCell {
   hits: { species: string; move: string | null; pct: number }[];
   members: { species: string; mult: number; pct: number | null }[];
 }
-/** soft: una mancanza che non toglie punti (voce minore, o team con meno di 6 membri). */
-export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | 'minor'; covered: boolean; owners: string[]; soft: boolean }
+/** soft: una mancanza che non toglie punti (team con meno di 6 membri). I minori non si mostrano più (2026-11-22, utente). */
+export interface RoleChip { need: LevelKey; level: 'essential' | 'important'; covered: boolean; owners: string[]; soft: boolean }
 /** Un rivale vicino per velocità: specie, velocità effettiva e cosa la alza (Sciarpa o Booster), per il tooltip della barra. */
 export interface SpeedNeighbour { species: string; speed: number; scarf: boolean; booster: boolean }
 /** `near`: i rivali del meta (o del tier) appena più veloci e appena più lenti, dal più vicino, e quelli a pari velocità. */
@@ -177,13 +177,13 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
     };
   });
 
-  // Ruoli: tutti i livelli tranne gli ignorati
+  // Ruoli: essenziali e importanti (i minori non danno e non tolgono punti: non stanno nella lista)
   const chips: RoleChip[] = [];
   for (const need of LEVEL_KEYS) {
     const level = analysis.needs.levels[need];
-    if (level === 'ignored') continue;
+    if (level === 'ignored' || level === 'minor') continue;
     const owners = ownersOf(team, analysis.needs, need);
-    chips.push({ need, level, covered: owners.length > 0, owners, soft: level === 'minor' || rating.provisional });
+    chips.push({ need, level, covered: owners.length > 0, owners, soft: rating.provisional });
   }
 
   // Velocità: corsie dal più veloce

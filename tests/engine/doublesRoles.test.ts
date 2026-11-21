@@ -29,7 +29,8 @@ const rating = (team: TeamSet[]) => rateTeam(team, doublesData)!;
 const roles = (team: TeamSet[]) => rating(team).roles;
 const row = (team: TeamSet[], key: string) => roles(team).rows.find(r => r.key === key)!;
 const lost = (team: TeamSet[], catalog: string) => roles(team).failures.filter(f => f.catalog === catalog).map(f => [f.text, f.points]);
-const gained = (team: TeamSet[]) => roles(team).bonuses.map(b => b.text);
+/** Le voci minori coperte (dal 2026-11-21 senza punti: stanno solo nella lista). */
+const minors = (team: TeamSet[]) => roles(team).rows.filter(r => r.level === 'minor' && r.value >= 0.5).map(r => r.key);
 
 describe('i Ruoli del doppio', () => {
   it('le voci del doppio sono le nove della tabella, coi loro livelli', () => {
@@ -39,9 +40,10 @@ describe('i Ruoli del doppio', () => {
     ]);
   });
 
-  it('il team base copre tutto: nessun malus dai ruoli e quattro minori', () => {
+  it('il team base copre tutto: nessun malus dai ruoli e quattro minori coperti, che non danno punti', () => {
     expect(roles(full).failures).toEqual([]);
-    expect(roles(full).bonuses).toHaveLength(4);
+    expect(minors(full)).toHaveLength(4);
+    expect(rating(full).bonus.items.map(i => i.text).join(' ')).not.toMatch(/ruolo extra/);
     expect(rating(full).needs.essentialMissing).toEqual([]);
   });
 
@@ -74,19 +76,19 @@ describe('i Ruoli del doppio', () => {
     expect(lost(noWall, 'importantRole')).toEqual([['Doppio senza Muro (importante)', 2]]);
   });
 
-  it('Redirector è solo Follow Me o Rage Powder (Wide Guard no): +1', () => {
-    expect(gained(full)).toContain('Redirector: ruolo extra');
+  it('Redirector è solo Follow Me o Rage Powder (Wide Guard no)', () => {
+    expect(minors(full)).toContain('redirector');
     const wide = swap('Amoonguss', ['Wide Guard', 'Spore', 'Pollen Puff', 'Protect']);
-    expect(gained(wide)).not.toContain('Redirector: ruolo extra');
+    expect(minors(wide)).not.toContain('redirector');
     const follow = swap('Amoonguss', ['Follow Me', 'Spore', 'Pollen Puff', 'Protect']);
-    expect(gained(follow)).toContain('Redirector: ruolo extra');
+    expect(minors(follow)).toContain('redirector');
   });
 
-  it('Priorità: Fake Out su un membro e Sucker Punch su un altro danno +1; tutti e due sullo stesso no', () => {
-    expect(gained(full)).toContain('Priorità (2 membri): ruolo extra');
+  it('Priorità: Fake Out su un membro e Sucker Punch su un altro la coprono; tutti e due sullo stesso no', () => {
+    expect(minors(full)).toContain('secondFirstStrike');
     const same = swap('Kingambit', ['Fake Out', 'Sucker Punch', 'Iron Head', 'Swords Dance'], swap('Incineroar', ['Protect', 'Flare Blitz', 'Knock Off', 'Parting Shot']));
     expect(row(same, 'secondFirstStrike').value).toBeLessThan(0.5);
-    expect(gained(same)).not.toContain('Priorità (2 membri): ruolo extra');
+    expect(minors(same)).not.toContain('secondFirstStrike');
   });
 
   it('Earthquake e Dazzling Gleam sono mosse a più bersagli, Moonblast no', () => {
