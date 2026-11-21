@@ -28,6 +28,7 @@ describe('editor del set', () => {
     const before = status().textContent;
     await openFirst(user, container);
     expect(status()).toHaveTextContent(`Modifica: ${tusk.species}`);
+    expect(container.querySelector('#tab-pokemon')).toHaveAttribute('data-hint', `Modifica: ${tusk.species}`);
     await user.click(container.querySelector<HTMLElement>('.slot.open .editor-close')!);
     expect(status().textContent).toBe(before);
   });

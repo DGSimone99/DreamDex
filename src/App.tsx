@@ -388,8 +388,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione),
   // col nome che ha sulla carta (il soprannome, o la forma Mega)
   const editing = editingIndex !== null ? team[editingIndex] : undefined;
-  const withEditing = <T extends { id: string; status?: React.ReactNode }>(tabs: T[]): T[] => editing
-    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.name || battleName(editing) })}</span> } : tab))
+  const withEditing = <T extends { id: string; status?: React.ReactNode; hint?: string }>(tabs: T[]): T[] => editing
+    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.name || battleName(editing) })}</span>, hint: t(lang, 'rail.editing', { species: editing.name || battleName(editing) }) } : tab))
     : tabs;
   return (
     <LangProvider lang={lang}>
@@ -428,6 +428,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
               {t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })}</span></>}
           </> : t(lang, 'rail.noGrade') },
         { id: 'meta', label: t(lang, 'tabs.meta'), icon: 'globe', disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
+          hint: !metaOn ? t(lang, 'rail.metaOff') : team.length > 0 && metaAverage !== null ? t(lang, 'meta.average', { pct: formatPercent(lang, metaAverage) }) : t(lang, 'rail.metaUsage'),
           status: !metaOn ? t(lang, 'rail.metaOff')
             : team.length === 0 ? t(lang, 'rail.metaUsage')
             : metaAverage !== null ? t(lang, 'meta.average', { pct: formatPercent(lang, metaAverage) })

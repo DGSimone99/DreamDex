@@ -128,7 +128,9 @@
    (una colonna). Ogni scelta vale subito. Tessere coi loghi per fonti e giochi; le generazioni Smogon passate in una scala */
 /* Misure fisse: passando da una linguetta all'altra la finestra non cambia forma; il contenuto scorre dentro */
 .help-dialog.format-dialog { width: min(840px, 100%); height: min(840px, calc(100vh - 32px)); max-height: none; }
-.format-dialog .fmt-body { flex: 1; min-height: 0; align-content: start; }
+/* Il corpo in colonna: i crediti dei loghi scendono in fondo, sopra i pulsanti */
+.format-dialog .fmt-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.format-dialog .fmt-body > .note { margin-top: auto; }
 .fmt-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-5); padding: var(--sp-6) var(--sp-9); border-top: 1px solid var(--line); background: var(--panel); }
 .fmt-actions button { min-width: 110px; padding: var(--sp-4) var(--sp-8); font-weight: 600; text-transform: none; }
 /* Avviso prima di confermare: i membri del team che il formato scelto non ammette */

@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import type { Family, FormatChoice, FormatMemory } from '../engine/formatChoice';
 import type { TeamSet } from '../engine/sets';
@@ -49,7 +49,28 @@ export function Rail({ choice, memory, onPick, team, meta, lang, onLangChange, t
   const t = useT();
   // La finestra del formato e la famiglia su cui si apre (aprirla non cambia il formato)
   const [open, setOpen] = useState<Family | null>(null);
-  const close = useCallback(() => setOpen(null), []);
+  const plate = useRef<HTMLButtonElement>(null);
+  // Chiusa la finestra (in qualunque modo, anche aperta col tasto F), la tastiera torna sulla targa del formato; dopo un
+  // attimo, quando la pagina non è più bloccata («inert», tolto da ModalLock): prima il browser ignorerebbe il fuoco
+  const close = useCallback(() => {
+    setOpen(null);
+    setTimeout(() => plate.current?.focus(), 0);
+  }, []);
+  // «F» (fuori da un campo di testo, senza finestre o menu aperti, senza Ctrl/Alt/Cmd) apre la finestra del formato
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== 'f' && e.key !== 'F') || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || e.isComposing) return;
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (target && (target.isContentEditable || target.closest('input, textarea, select, [role="combobox"], [role="textbox"], [contenteditable]'))) return;
+      // Finestre o menu aperti (non la copia ferma che fa l'animazione di chiusura, nascosta ai lettori di schermo)
+      const blocking = document.querySelectorAll('[aria-modal="true"], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], details[open], dialog[open]');
+      if ([...blocking].some(el => !el.closest('[aria-hidden="true"]'))) return;
+      e.preventDefault();
+      setOpen(choice.family);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [choice.family]);
   const name = choiceName(choice, t);
   const summary = choiceSummary(choice, t);
   const family = t(`family.${choice.family}`);
@@ -62,7 +83,7 @@ export function Rail({ choice, memory, onPick, team, meta, lang, onLangChange, t
       </h1>
       {/* Il formato come targa azzurra a tutta larghezza (icona della famiglia, nome, freccina) e sotto una riga scura col
           riassunto e la famiglia; il clic apre la finestra Scegli il formato sulla famiglia attiva */}
-      <button type="button" className="rail-format" onClick={() => setOpen(choice.family)}
+      <button ref={plate} type="button" className="rail-format" onClick={() => setOpen(choice.family)} aria-keyshortcuts="F" data-hint={t('rail.formatKey')}
         aria-label={t('rail.formatAria', { format: name, summary: [family, ...summary].join(', ') })}>
         <span className="rail-format-plate">
           <Icon name={FAMILY_ICON[choice.family]} />

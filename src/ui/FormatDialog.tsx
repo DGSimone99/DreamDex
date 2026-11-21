@@ -73,9 +73,9 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
   const [shown, setShown] = useState<Family>(family === 'game' && !GAME_IDS.some(gameReady) ? 'competitive' : family);
   const body = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    // Alla chiusura la tastiera torna dove era prima (la targa del formato)
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    body.current?.querySelector<HTMLInputElement>('input[name="format-family"]:checked')?.focus();
+    // Si parte dalla scelta che si cambia più spesso: il tier (in Competitivo), altrimenti la linguetta della famiglia
+    (body.current?.querySelector<HTMLInputElement>('input[name="format-tier"]:checked')
+      ?? body.current?.querySelector<HTMLInputElement>('input[name="format-family"]:checked'))?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return; }
       // Il Tab resta dentro la finestra: dall'ultimo elemento si torna al primo e viceversa
@@ -89,10 +89,7 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
       else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      if (opener?.isConnected) opener.focus();
-    };
+    return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
   const gamesReady = GAME_IDS.some(gameReady);
   // La bozza di ogni famiglia: quella attiva parte dal formato di adesso, le altre dall'ultima scelta fatta lì
@@ -105,10 +102,14 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
     setDrafts(d => ({ ...d, competitive: normalizeCompetitive({ ...d.competitive, ...patch }) }));
   const setGame = (next: GameChoice) => setDrafts(d => ({ ...d, game: next }));
   const setFree = (next: FreeChoice) => setDrafts(d => ({ ...d, free: next }));
-  const confirm = () => { onPick(drafts[shown]); onClose(); };
+  // Niente da cambiare: il pulsante principale chiude e basta
+  const unchanged = JSON.stringify(drafts[shown]) === JSON.stringify(choice);
+  const confirm = () => { if (!unchanged) onPick(drafts[shown]); onClose(); };
   // Quanti membri del team non sarebbero ammessi col formato che si sta per usare
   const target = rulesOf(drafts[shown]);
-  const notAllowed = team.filter(set => { const species = getSpecies(set.species); return species && illegalReason(species, target); }).length;
+  const notAllowedNames = team.filter(set => { const species = getSpecies(set.species); return species && illegalReason(species, target); })
+    .map(set => set.species);
+  const notAllowed = notAllowedNames.length;
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
@@ -265,11 +266,14 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
           <p className="note">{t('formatDialog.logosCredit')}</p>
         </div>
         <footer className="fmt-actions">
-          {notAllowed > 0 && <p className="fmt-warning" role="status">
+          {/* Quanti nella riga; chi, nel fumetto dell'app */}
+          {notAllowed > 0 && <p className="fmt-warning" role="status" data-hint={notAllowedNames.join(', ')}>
             {t(notAllowed === 1 ? 'formatDialog.notAllowedOne' : 'formatDialog.notAllowedMany', { n: notAllowed, format: choiceName(drafts[shown], t) })}</p>}
           <button type="button" onClick={onClose}>{t('formatDialog.cancel')}</button>
-          {/* Il pulsante dice quale formato userà: la scelta della scheda aperta */}
-          <button type="button" className="primary" onClick={confirm}>{t('formatDialog.use', { format: choiceName(drafts[shown], t) })}</button>
+          {/* Il pulsante dice quale formato userà (la scelta della scheda aperta); senza modifiche è un semplice «Chiudi» */}
+          {unchanged
+            ? <button type="button" className="fmt-main" onClick={confirm} aria-label={t('formatDialog.closeUnchanged')}>{t('formatDialog.close')}</button>
+            : <button type="button" className="primary fmt-main" onClick={confirm}>{t('formatDialog.use', { format: choiceName(drafts[shown], t) })}</button>}
         </footer>
       </div>
     </div>,

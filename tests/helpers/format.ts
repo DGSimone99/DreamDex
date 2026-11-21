@@ -16,7 +16,9 @@ const radio = (name: string, value: string) => {
   return input;
 };
 /** Conferma la finestra aperta col pulsante «Usa <formato>» (il formato cambia e la finestra si chiude). */
-export const confirmFormat = (user: UserEvent) => user.click(screen.getByRole('button', { name: /^Usa / }));
+// Nella finestra vera (dopo una chiusura resta un attimo la sua copia ferma, nascosta, per l'animazione)
+export const confirmFormat = (user: UserEvent) =>
+  user.click(screen.getByRole('dialog', { name: 'Scegli il formato' }).querySelector<HTMLElement>('.fmt-actions .fmt-main')!);
 const pick = async (user: UserEvent, name: string, value: string) => {
   await openFormat(user);
   await user.click(radio(name, value));

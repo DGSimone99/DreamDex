@@ -32,7 +32,8 @@ describe('finestra Scegli il formato', () => {
   it('il pulsante di conferma dice quale formato userà', async () => {
     const user = userEvent.setup();
     open();
-    expect(screen.getByRole('button', { name: 'Usa National Dex OU' })).toBeInTheDocument();
+    // Senza modifiche il pulsante chiude e basta
+    expect(screen.getByRole('button', { name: 'Chiudi senza cambiare il formato' })).toBeInTheDocument();
     await user.click(radio('format-tier', 'ubers'));
     expect(screen.getByRole('button', { name: 'Usa National Dex Ubers' })).toBeInTheDocument();
     await user.click(radio('format-family', 'free'));

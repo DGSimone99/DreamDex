@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
@@ -65,15 +65,44 @@ describe('Barra laterale', () => {
     expect(document.querySelector('#tab-analysis')!.getAttribute('data-hint')).toMatch(/problemi$/);
   });
 
-  it('chiudendo la finestra del formato la tastiera torna sulla targa', async () => {
+  it('chiudendo la finestra del formato la tastiera torna sulla targa (anche col resto della pagina bloccato mentre è aperta)', async () => {
+    // Come nel browser: un elemento dentro una parte «inert» non prende il fuoco (jsdom non lo fa da solo)
+    const focus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions) { if (!this.closest('[inert]')) focus.call(this, options); };
+    const root = document.createElement('div');
+    root.id = 'root';
+    document.body.appendChild(root);
+    try {
+      const user = userEvent.setup();
+      const { unmount } = render(<App initialLang="it" data={fixtureData} />, { container: root });
+      onTestFinished(() => unmount());
+      const plate = screen.getByRole('button', { name: /^Formato / });
+      plate.focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getByRole('dialog', { name: 'Scegli il formato' })).toBeInTheDocument();
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Formato / })));
+    } finally {
+      HTMLElement.prototype.focus = focus;
+      root.remove();
+    }
+  });
+
+  it('il tasto F apre la finestra del formato, col cursore sul tier scelto', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    const plate = screen.getByRole('button', { name: /^Formato / });
-    plate.focus();
-    await user.keyboard('{Enter}');
+    // Fuori da un campo di testo (all'avvio il cursore può essere nella ricerca, dove la F si scrive)
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard('f');
     expect(screen.getByRole('dialog', { name: 'Scegli il formato' })).toBeInTheDocument();
-    await user.keyboard('{Escape}');
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Formato / }));
+    expect(document.activeElement).toBe(document.querySelector('input[name="format-tier"]:checked'));
+  });
+
+  it('anche Meta ha il fumetto', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    expect(document.querySelector('#tab-meta')!.getAttribute('data-hint')).toBeTruthy();
   });
 
   it('prima di confermare la finestra dice quanti Pokémon del team non sarebbero ammessi', async () => {
@@ -85,5 +114,7 @@ describe('Barra laterale', () => {
     expect(dialog).not.toHaveTextContent('non ammess');
     await user.click(document.querySelector<HTMLInputElement>('input[name="format-tier"][value="uu"]')!);
     expect(dialog).toHaveTextContent('1 Pokémon del team non ammesso in National Dex UU');
+    // I nomi stanno nel fumetto della riga, non nella riga
+    expect(dialog.querySelector('.fmt-warning')).toHaveAttribute('data-hint', 'Great Tusk');
   });
 });
