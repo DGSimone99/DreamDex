@@ -26,13 +26,15 @@
 .meta-grid { container: meta-grid / inline-size; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-4); margin: 0; padding: var(--sp-5) var(--sp-1) var(--sp-6); list-style: none; }
 .meta-card { --tile-h: 170px; --reasons: 1; }
 .meta-card .who { gap: 1px; }
+/* Il piede delle carte è centrato: la riga dell'uso resta larga quanto la carta, così la barra si vede */
+.meta-card .meta-use { align-self: stretch; }
 .meta-use { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); }
 .meta-use b { flex: none; font: 700 var(--fs-small)/16px var(--display); font-style: italic; color: var(--text); font-variant-numeric: tabular-nums; }
 /* La barra dell'uso come quella di Champions: fessura incassata, angoli dritti, riempimento con un filo chiaro in alto */
 .meta-use i { flex: 1; height: 7px; background: var(--field); box-shadow: var(--slot-inset); overflow: hidden; }
 .meta-use i::before { content: ''; display: block; width: var(--w); height: 100%; background: linear-gradient(var(--slot-shine) 0 1px, transparent 1px), var(--accent); }
-/* "Tuo" sul bordo alto della targhetta del nome, a sinistra (a destra può esserci la forma: MEGA, THERIAN…) */
-.meta-mine { position: absolute; z-index: 1; top: -10px; left: 8px; padding: 1px var(--sp-3); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+/* "Tuo" sul bordo basso del palco, a sinistra, alto come la forma (MEGA, THERIAN…) che sta a destra */
+.meta-mine { position: absolute; z-index: 1; top: -22px; left: 8px; padding: 1px var(--sp-3); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
   border-radius: 3px; background: var(--ground); color: var(--accent-ink); font: 700 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; }
 /* Sulle tue carte con una forma (Landorus THERIAN, Urshifu RAPID STRIKE) la forma lascia posto a "Tuo" e si accorcia coi puntini */
 .meta-card { --mine-w: 56px; }
