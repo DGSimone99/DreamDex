@@ -58,7 +58,7 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
       <h4>{g('test')}</h4>
       <Rows compact rows={[
         // Sotto la regola, a capo e senza titolo: quello che conta meno
-        [g('power.hit'), <>{g('power.hit.rule')}<span className="guide-sub">{g('less.rule', { extra: oneUse })}</span>{doubles && <span className="guide-sub">{g('doubles.spread')}</span>}</>],
+        [g('power.hit'), <>{g('power.hit.rule')}<span className="guide-sub">{g('less.rule', { extra: oneUse })}</span>{doubles && <span className="guide-sub">{g('doubles.spread')}</span>}{!doubles && offense.coverageMeta && <span className="guide-sub">{g('poison.rule')}</span>}</>],
       ]} />
 
       <h4>{g('cov.depth')}</h4>

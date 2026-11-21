@@ -1369,6 +1369,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.off.less.tera': " e il Tera",
   'guide.off.less.oneuse': ", il Tera e le mosse Z",
   'guide.off.less.rule': "Band, Specs e simili, e i boost da Setup, meteo o campo{extra} contano meno (pieni se il meteo o il campo lo porta il membro stesso).",
+  'guide.off.poison.rule': "Nella Coverage meta, chi nessuno manda KO in due colpi conta coperto in parte se un membro lo avvelena (con una mossa che riesce almeno una volta su due) e lo regge.",
   'guide.off.doubles.spread': "In doppio una mossa che colpisce più bersagli fa meno danno su ciascuno.",
   'guide.off.targets.typesTitle': "Il Pokémon medio dei 18 tipi",
   'guide.off.targets.metaTitle': "I {n} Pokémon più usati",

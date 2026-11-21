@@ -78,11 +78,12 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const sorted = order === 'usage' ? byUsage(all) : byThreat(all, coveredCount);
   const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))]
     : threat ? [...sorted.filter(r => r.species === threat), ...sorted.filter(r => r.species !== threat)] : sorted;
-  const covered = rows.filter(r => r.level > 0).length;
+  // Coperto: qualcuno lo manda KO in due colpi (il livello conta anche il veleno, wear.ts: qui non entra)
+  const covered = rows.filter(r => r.coveredBy.length > 0).length;
   // Per i lettori di schermo, prima della tabella: chi nessuno manda KO in due colpi (di tutte le pagine)
   const summaryId = useId();
   const open = sorted.filter(r => coveredCount(r) === 0).map(r => r.species);
-  const only3 = rows.filter(r => r.level === 0 && (r.cells ?? []).some(c => c.pct >= 34)).length;
+  const only3 = rows.filter(r => r.coveredBy.length === 0 && (r.cells ?? []).some(c => c.pct >= 34)).length;
   const summary = (
     <>
       <span>{t('odetail.cm.targets', { n: rows.length })}</span>

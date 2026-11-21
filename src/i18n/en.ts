@@ -1367,6 +1367,7 @@ export const en = {
   'guide.off.less.tera': " and Tera",
   'guide.off.less.oneuse': ", Tera and Z-moves",
   'guide.off.less.rule': "Band, Specs and similar, and boosts from setup, weather or terrain{extra} count less (fully if the member brings the weather or terrain itself).",
+  'guide.off.poison.rule': "In Meta coverage, a Pokémon nobody 2HKOs counts as partly covered if a member poisons it (with a move that works at least half the time) and can take its hits.",
   'guide.off.doubles.spread': "In doubles a move that hits several targets deals less damage to each.",
   'guide.off.targets.typesTitle': "The average Pokémon of the 18 types",
   'guide.off.targets.metaTitle': "The {n} most used Pokémon",
