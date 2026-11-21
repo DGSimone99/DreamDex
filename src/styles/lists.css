@@ -47,6 +47,9 @@
   .tabs.vertical .tab-icon .icon { width: 18px; height: 18px; }
   .tabs.vertical .tab-name { font-size: var(--fs-title-s); }
   .rail-foot { padding: 0 var(--sp-7); }
+  /* Barra stretta: EN | IT e Impostazioni stanno nei 190 px senza uscire dal bordo */
+  .rail-foot .lang-switch button { padding: 5px var(--sp-4); }
+  .rail-foot-row .rail-settings { margin-left: auto; padding-right: 0; gap: var(--sp-2); }
   .band { padding: var(--sp-5) var(--sp-8) 20px; gap: var(--sp-6); grid-template-columns: minmax(0, 1fr) 168px; }
   .team-head { margin-bottom: var(--sp-4); }
   .slots { gap: var(--sp-4); }
@@ -604,6 +607,9 @@
 @media (min-width: 1100px) {
   /* Riempie il cassetto fino a 580px (quanto basta alle righe al massimo): sugli schermi molto alti lo spazio oltre resta in fondo, non fra le righe */
   .drawer > .set-editor { min-height: min(100%, 580px); --ed-gap: var(--sp-4); --stat-row-h: 40px; }
+  /* Con la Sfida l'editor riempie tutto il cassetto: l'altezza in più va alla Sfida (titoli, sprite grande), non resta
+     vuota in fondo; Ruoli e Sostituisci stanno sul fondo */
+  .drawer > .set-editor:has(> .editor-side.with-duel) { min-height: 100%; }
   .set-editor { grid-template-rows: auto auto minmax(0, 1fr) auto; row-gap: 0; }
   .set-editor > .editor-head { grid-row: 1; margin-bottom: var(--ed-gap); }
   .set-editor > :not(.editor-head, .stats-cell, .editor-side, .editor-foot) { grid-row: 2; margin-bottom: var(--ed-gap); }
@@ -621,6 +627,12 @@
 }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .drawer > .set-editor { --ed-gap: var(--sp-3); --stat-row-h: 36px; }
+}
+/* Schermi alti (1920×1080 in su): le righe delle Statistiche fino a 64px e l'aria che resta divisa sopra e sotto la
+   Natura, non tutta in un buco sopra la riga della Velocità */
+@media (min-width: 1100px) and (min-height: 1000px) {
+  .set-editor .evs .stat-rows { max-height: calc(6 * 64px + 36px); }
+  .set-editor .evs .nature-diamond { margin-block: auto; }
 }
 
 /*
@@ -901,6 +913,25 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
  * poi del titolo resta il simbolo accanto alla mossa, poi lo sprite più piccolo e le righe più fitte. Lo sprite appoggia
  * sempre sul fondo, coi piedi dentro.
  */
+/* La Sfida stretta (sotto i 640px: portatili e 1440×900): la colonna della Velocità prende quanto le serve, così la mossa resta
+   leggibile */
+@container duel (max-width: 639px) {
+  .duel-row { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-4); }
+  .duel-rows { padding-left: var(--sp-6); padding-right: var(--sp-5); }
+  /* Il nome dell'avversario prende tutta la riga (Charizard-Mega-Y intero): l'ingranaggio sale a destra del giudizio */
+  .duel-head { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+  .duel-name .duel-settings { position: absolute; right: 0; bottom: calc(100% + 3px); }
+  /* La mossa senza la coda della potenza (il danno lo dicono la barra e i colpi): resta il nome intero */
+  .duel-label .mvp-tail { display: none; }
+}
+/* La più stretta (1100-1279 px): la parte del tipo cede qualche pixel alla mossa */
+@container duel (max-width: 579px) {
+  .duel-card { grid-template-columns: 30% minmax(0, 1fr); }
+}
+/* Sfida alta (schermi alti): lo sprite più grande, riempie la parte del tipo */
+@container duel (min-height: 330px) {
+  .duel-stage { --stage-scale: 1.85; }
+}
 @container duel (max-height: 260px) {
   .duel-rows { padding-top: var(--sp-2); padding-bottom: var(--sp-3); }
   .duel-row { padding: var(--sp-2) 0; row-gap: 3px; }

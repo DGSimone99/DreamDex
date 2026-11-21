@@ -389,6 +389,17 @@
    lastre ("Capsula energetica") restano interi */
 @media (min-width: 1100px) and (max-width: 1439px) {
   .set-editor { grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr); }
+  /* Strumento un po' più largo dell'Abilità: i nomi degli strumenti sono i più lunghi ("Capsula energetica") */
+  .set-editor .set-box .set-plates { grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr); }
+}
+/* Sotto i 1280 px il Set e la Sfida hanno bisogno di ogni pixel (mosse e strumento interi, la mossa della Sfida leggibile):
+   le Statistiche tengono solo quanto serve alle righe (nome, valore, EV, IV) */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .set-editor { grid-template-columns: minmax(330px, 0.62fr) minmax(0, 1.38fr); }
+  .set-editor .move-combo { --mvp-tail-w: 60px; }
+  /* Teste delle targhette più strette */
+  .set-editor .set-box .set-plates { column-gap: var(--sp-5); }
+  .set-editor .set-box .set-plate > .field-label { padding-right: var(--sp-6); letter-spacing: 0.01em; }
 }
 
 /* Tera nella testata, accanto a nome e tipi: una targhetta corta (testa TERA, la pastiglia del tipo) */
@@ -456,6 +467,16 @@
   .spread-toggle .sp-wide { display: none; }
   .spread-toggle .spread-value { font-size: var(--fs-label); }
   .spread-toggle .sp-narrow { display: inline; }
+}
+/* Riquadro stretto (sotto 460px): il titolo va a sinistra, così non finisce sotto lo Spread a destra; sotto 420px niente
+   cursori (resterebbero di pochi pixel: gli EV si scrivono nella casella) e niente frase "Chi superi…", che sta nel tooltip */
+@container stats (max-width: 459px) {
+  .set-editor .evs > legend:not(.visually-hidden) { width: auto; margin: 0 auto 0 var(--sp-6); padding-right: var(--sp-10); text-align: left; }
+}
+@container stats (max-width: 419px) {
+  .stat-row:not(.stat-head) .ev-slider { visibility: hidden; }
+  .stat-head .ev-total .ev-head { visibility: hidden; }
+  .speed-line-hint { display: none; }
 }
 /* Oltre 510: "250 di troppo" in rosso sopra i cursori (la frase intera nel tooltip), al posto della scritta EV */
 .stat-head .ev-total.over .ev-head { display: none; }
