@@ -8,16 +8,18 @@ import { Icon } from '../icons';
 import { holderReason, keyLabel, RoleMon } from './RoleParts';
 import { missingFirst, roleLines, rolePoints, rolesMalusOn, type RoleLine } from './rolesRows';
 
-/** Le tre fasce della sottoscheda, in quest'ordine; le voci che non contano stanno solo nella guida. */
-export const BANDS = ['essential', 'important', 'minor'] as const;
+/**
+ * Le due fasce della sottoscheda, in quest'ordine. I minori non ci sono più (2026-11-22, utente): non danno punti e non
+ * tolgono punti, la lista non li mostra. Le voci che non contano stanno solo nella guida.
+ */
+export const BANDS = ['essential', 'important'] as const;
 type Band = (typeof BANDS)[number];
 
-/** Il segno di una fascia: ✓ se non manca niente, −N di malus, "N mancano" senza malus (meno di 6), +N / 0 dei minori. */
-interface BandSum { kind: 'ok' | 'malus' | 'missing' | 'bonus' | 'zero'; points: number; missing: number }
-function bandSum(level: Band, lines: RoleLine[], full: boolean): BandSum {
+/** Il segno di una fascia: ✓ se non manca niente, −N di malus, "N mancano" senza malus (meno di 6). */
+interface BandSum { kind: 'ok' | 'malus' | 'missing'; points: number; missing: number }
+function bandSum(lines: RoleLine[], full: boolean): BandSum {
   const missing = lines.filter(l => l.missing).length;
   const points = lines.reduce((n, l) => n + rolePoints(l, full).points, 0);
-  if (level === 'minor') return { kind: points > 0 ? 'bonus' : 'zero', points, missing };
   return { kind: missing === 0 ? 'ok' : full ? 'malus' : 'missing', points, missing };
 }
 
@@ -31,9 +33,9 @@ function SumMark({ sum, t }: { sum: BandSum; t: T }) {
 /**
  * La sottoscheda Ruoli di Ruoli e Bonus, in una schermata senza filtri. In alto il tipo di team con cui si giudica (sulla
  * sua targa, come nella carta del voto; "team incompleto" accanto se mancano membri), i punti dei Ruoli e il link "Tabella dei
- * ruoli" alla pagina della guida Ruoli per tipo di team. Sotto tre fasce, Essenziali, Importanti e Minori (una fascia senza voci per
+ * ruoli" alla pagina della guida Ruoli per tipo di team. Sotto due fasce, Essenziali e Importanti (una fascia senza voci per
  * questo tipo di team non c'è), ognuna col suo titolo e il suo valore, e le voci su due colonne, prima quelle che mancano. Ogni voce: nome, chi la
- * copre (uno solo: icona e nome; di più: solo le icone) e i punti (✓ / −4 / −2 / +1 / 0).
+ * copre (uno solo: icona e nome; di più: solo le icone) e i punti (✓ / −4 / −2).
  * Con meno di 6 membri un ruolo che manca non toglie punti (rolesArea): si scrive "manca", non il malus.
  * Una griglia sola per tutte le fasce: colonne uguali, e dentro ogni voce le stesse piste (nome largo quanto il nome più
  * lungo di tutte le fasce, chi la copre, punti a larghezza fissa), così nomi, icone e punti stanno in colonna dappertutto.
@@ -47,9 +49,9 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
   const lines = roleLines(rating);
   const bands = BANDS.map(level => {
     const rows = lines.filter(l => l.level === level);
-    return { level, rows: missingFirst(rows), sum: bandSum(level, rows, full) };
+    return { level, rows: missingFirst(rows), sum: bandSum(rows, full) };
   }).filter(b => b.rows.length > 0);
-  const net = roles.bonuses.reduce((n, b) => n + b.points, 0) - roles.failures.reduce((n, f) => n + f.points, 0);
+  const net = -roles.failures.reduce((n, f) => n + f.points, 0);
   const archetype = t(`archetype.${needs.archetype}`);
   const frame = useRef<HTMLDivElement>(null);
   const three = useRolesLayout(frame, `${t('area.roles')}|${lines.map(l => `${l.key}${l.level}${l.missing}${l.by.length}`).join()}`);
@@ -97,7 +99,7 @@ function RoleBand({ level, rows, sum, full, rating, ctx }: { level: Band; rows: 
   );
 }
 
-/** Lo stato di una riga per il colore: essenziale che manca rossa, importante gialla, minore scoperto spento. */
+/** Lo stato di una riga per il colore: essenziale che manca rossa, importante gialla. */
 const rowState = (level: Level, missing: boolean) => (!missing ? '' : level === 'essential' ? 'bad' : level === 'important' ? 'warn' : 'off');
 
 /**
@@ -132,8 +134,8 @@ function RoleRow({ line, full, rating, ctx }: { line: RoleLine; full: boolean; r
         {kind === 'ok' && <><Icon name="check" /><span className="visually-hidden">{t('rdetail.pts.covered')}</span></>}
         {kind === 'malus' && <><span className="visually-hidden">{t('rdetail.pts.missing')} </span>{signed(points)}</>}
         {kind === 'missing' && t('rdetail.pts.missing')}
-        {kind === 'bonus' && <><span className="visually-hidden">{t('rdetail.pts.covered')} </span>{signed(points)}</>}
         {kind === 'zero' && <><span className="visually-hidden">{t('rdetail.pts.notCovered')} </span>0</>}
+        {kind === 'none' && <><span className="visually-hidden">{t('rdetail.pts.notCovered')}</span><span aria-hidden="true">–</span></>}
       </span>
     </li>
   );

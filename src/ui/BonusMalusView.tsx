@@ -21,7 +21,7 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 type Family = 'types' | 'roles' | 'hazards' | 'conditions' | 'members' | 'core';
 const FAMILY: Record<CatalogKey, Family> = {
   sharedWeak: 'types', sameType: 'types', defenseHole: 'types', unanswered: 'types', weakCovered: 'types', typeVariety: 'types',
-  essentialRole: 'roles', importantRole: 'roles', minorRole: 'roles',
+  essentialRole: 'roles', importantRole: 'roles', pivotLink: 'roles',
   hazardDuplicate: 'hazards',
   weatherClash: 'conditions', weatherSabotage: 'conditions', unmetCondition: 'conditions', unusedEnabler: 'conditions', conditionUsed: 'conditions', weatherHelp: 'conditions', trickRoomFast: 'conditions',
   weakMember: 'members', lockedStatus: 'members',
@@ -86,7 +86,7 @@ interface ActiveRow { key: string; entry: CatalogEntry; points: number; details:
  * Le voci dei Ruoli nel catalogo: nella scheda Bonus/Malus non ci sono (hanno i loro punti nella sottoscheda Ruoli, qui
  * sembrerebbero contare due volte); il catalogo della guida le elenca ancora.
  */
-const ROLE_KEYS = new Set<CatalogKey>(['essentialRole', 'importantRole', 'minorRole']);
+const ROLE_KEYS = new Set<CatalogKey>(['essentialRole', 'importantRole']);
 const notRole = (item: Redundancy) => !item.catalog || !ROLE_KEYS.has(item.catalog);
 
 /**
@@ -104,7 +104,7 @@ export function bonusMalusTotals(rating: Pick<TeamRating, 'bonus' | 'penalty'>):
 function detailOf(item: Redundancy, name: string): string {
   const prefix = `${name}:`.toLowerCase();
   const text = item.text.toLowerCase().startsWith(prefix) ? item.text.slice(prefix.length).trim().replace(/^./, c => c.toUpperCase()) : item.text;
-  // E senza il nome dietro ("Pivot: ruolo extra" → "Pivot")
+  // E senza il nome dietro (una voce scritta "X: nome" → "X")
   const at = text.lastIndexOf(': ');
   return at > 0 && text.slice(at + 2).toLowerCase() === name.toLowerCase() ? text.slice(0, at) : text;
 }

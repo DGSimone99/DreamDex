@@ -64,8 +64,8 @@ describe('doppio: un tipo di team solo', () => {
   });
 
   it('il singolo non cambia: stesso tipo e stesso voto di prima per tre team OU', () => {
-    // Valori letti prima di toccare il codice (2026-11-20), coi dati di prova; aggiornati ai voti di develop dopo l'unione (2026-11-21)
-    const expected: [number, number, string][] = [[0, 81, 'hyperOffense'], [8, 77, 'balance'], [11, 68, 'stall']];
+    // Valori letti prima di toccare il codice (2026-11-20), coi dati di prova; aggiornati ai voti di develop dopo l'unione (2026-11-21) e a quelli senza i punti dei ruoli minori, col bonus del pivot (2026-11-21)
+    const expected: [number, number, string][] = [[0, 79, 'hyperOffense'], [8, 75, 'balance'], [11, 65, 'stall']];
     for (const [index, overall, type] of expected) {
       const r = rateTeam(benchTeams[index].team, ouData)!;
       expect([benchTeams[index].name, r.overall, r.teamType]).toEqual([benchTeams[index].name, overall, type]);

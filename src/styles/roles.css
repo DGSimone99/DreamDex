@@ -46,7 +46,7 @@
   font: 800 var(--fs-title-s)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--faint);
 }
 .rl-mark .icon, .rl-pts .icon { width: 18px; height: 18px; stroke-width: 2.6; }
-.rl-mark.ok, .rl-mark.bonus, .rl-pts.ok, .rl-pts.bonus { color: var(--good); }
+.rl-mark.ok, .rl-pts.ok { color: var(--good); }
 .rl-mark.malus, .rl-pts.malus { color: var(--bad); }
 .rl-mark.missing, .rl-pts.missing { font: 600 var(--fs-caption)/1 var(--ui); cursor: help; }
 

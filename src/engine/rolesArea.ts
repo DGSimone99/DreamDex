@@ -9,34 +9,35 @@ import { t, type Lang } from '../i18n';
 
 /**
  * I Ruoli sono una lista, non un voto: per il tipo di team ogni voce è coperta (un membro col valore di team almeno
- * MISSING_BELOW) o manca. Nel voto entrano solo i malus delle mancanze (team di 6) e il bonus dei minori coperti.
+ * MISSING_BELOW) o manca. Nel voto entrano solo i malus delle mancanze (team di 6). I minori non danno punti (utente,
+ * 2026-11-21): erano +1 l'uno senza tetto, in media +2,8 ai team da torneo e +3,2 ai medi (National Dex OU), un regalo che
+ * non distingueva; in doppio le partite vere non cambiano (50,1% → 49,5%, nel rumore). Restano nella lista; il pivot ha
+ * il suo bonus, solo se il team lo sfrutta (pivotBonus.ts).
  * Calibrazione 2026-11-02 (banco): partite vere 50,4% → 52,4% (alto livello) e 53,1% → 55,8% (ladder).
  */
 /** Malus di ogni voce essenziale mancante (solo team di 6 specie riconosciute). */
 export const ESSENTIAL_POINTS = 4;
 /** Malus di ogni voce importante mancante (solo team di 6 specie riconosciute). */
 export const IMPORTANT_POINTS = 2;
-/** Bonus di ogni voce minore coperta, senza tetto (le minori per tipo: HO 3, BO 4, Balance 5, Semi-stall 5, Stall 2). */
-export const MINOR_POINTS = 1;
 
 /**
  * Il conteggio dei Ruoli, uguale ovunque (Panoramica, Coaching, sottoscheda Ruoli, carta del voto): coperti sul totale
- * delle sole essenziali e importanti (le minori non sono un difetto se mancano) e i punti dei Ruoli sul voto (bonus dei
- * minori meno i malus delle mancanze), es. "8/8 +2".
+ * delle sole essenziali e importanti (le minori non sono un difetto se mancano) e i punti dei Ruoli sul voto (i malus
+ * delle mancanze), es. "6/8 −6".
  */
 export function rolesTally(roles: TeamRoles) {
   const counted = roles.rows.filter(r => r.level === 'essential' || r.level === 'important');
   const missingEssential = counted.filter(r => r.level === 'essential' && r.value < MISSING_BELOW).length;
   const missingImportant = counted.filter(r => r.level === 'important' && r.value < MISSING_BELOW).length;
   const missing = missingEssential + missingImportant;
-  const points = roles.bonuses.reduce((n, b) => n + b.points, 0) - roles.failures.reduce((n, f) => n + f.points, 0);
+  const points = -roles.failures.reduce((n, f) => n + f.points, 0);
   return { covered: counted.length - missing, total: counted.length, missing, missingEssential, missingImportant, points };
 }
 
-/** I punti col segno (− tipografico), vuoto se 0: la coda del conteggio ("8/8 +2"). */
+/** I punti col segno (− tipografico), vuoto se 0: la coda del conteggio ("6/8 −6"). */
 export const rolesPointsLabel = (points: number): string => (points > 0 ? `+${points}` : points < 0 ? `−${-points}` : '');
 
-/** Il conteggio in testo: "8/8 +2", "6/8 −6", "8/8". */
+/** Il conteggio in testo: "6/8 −6", "8/8". */
 export const rolesValue = (roles: TeamRoles): string => {
   const { covered, total, points } = rolesTally(roles);
   return [`${covered}/${total}`, rolesPointsLabel(points)].filter(Boolean).join(' ');
@@ -62,8 +63,6 @@ export interface TeamRoles {
   rows: RoleRow[];
   /** Mancanze essenziali e importanti come malus (solo team di 6 specie riconosciute). */
   failures: Redundancy[];
-  /** Voci minori coperte come bonus. */
-  bonuses: Redundancy[];
   /**
    * Valori grezzi e motivi di ogni membro (per le schede delle famiglie), la famiglia principale e i valori col
    * credito del secondario (senza: uguali ai grezzi).
@@ -86,9 +85,9 @@ function roleFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redundancy
   ];
 }
 
-/** Ruoli: la lista delle voci del tipo di team coi valori del team; le mancanze sono malus, i minori coperti bonus. */
+/** Ruoli: la lista delle voci del tipo di team coi valori del team; le mancanze di essenziali e importanti sono malus. */
 export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, given?: TeamNeeds): TeamRoles {
-  if (team.length === 0) return { covered: 0, total: 0, rows: [], failures: [], bonuses: [], members: [] };
+  if (team.length === 0) return { covered: 0, total: 0, rows: [], failures: [], members: [] };
   const needs = given ?? teamNeeds(team, data);
   const reasons = team.map(set => subRoleReasons(set, team, data));
   const rows: RoleRow[] = LEVEL_KEYS.filter(key => needs.levels[key] !== 'ignored').map(key => {
@@ -107,7 +106,6 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
   return {
     covered: covered.length, total: rows.length, rows,
     failures: roleFailures(team, needs, lang),
-    bonuses: covered.filter(r => r.level === 'minor').map(r => ({ text: t(lang, 'rating.bonus.minorRole', { role: needLabel(r.key, lang) }), points: MINOR_POINTS, catalog: 'minorRole' as const })),
     members: team.map((set, i) => ({
       species: battleName(set), values: needs.members[i] ?? {}, reasons: reasons[i],
       primary: needs.primary[i] ?? null, credited: needs.credited[i] ?? needs.members[i] ?? {},

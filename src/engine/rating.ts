@@ -12,7 +12,8 @@ import { isPassive, isStall } from './roles';
 import { hitRules, isOneType, rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, hasDoublesRole, type SubRoleValues } from './subRoles';
-import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
+import { PIVOT_POINTS, pivotLinks, type PivotParts } from './pivotBonus';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
@@ -129,7 +130,7 @@ export interface RatingArea {
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
   | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'unanswered'
-  | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'weatherSabotage';
+  | 'coreTrio' | 'pivotLink' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'weatherSabotage';
 
 export interface Redundancy {
   text: string;
@@ -487,6 +488,18 @@ export function weakCoveredBonus(team: TeamSet[], analysis: TeamAnalysis, lang: 
     : [];
 }
 
+/**
+ * +1 (una volta sola, anche con più pivot) se una mossa pivot è sfruttata dal team (pivotBonus.ts): un pivot lento e
+ * difensivo che fa entrare un attaccante fragile, o un pivot non lento con chi para ogni sua debolezza. In doppio non si dà.
+ */
+export function pivotBonus(team: TeamSet[], parts: PivotParts, lang: Lang = 'it'): Redundancy[] {
+  const link = pivotLinks(team, parts)[0];
+  if (!link) return [];
+  const values = { pivot: link.pivot, move: link.move, list: link.partners.join(', ') };
+  const text = link.kind === 'slow' ? 'rating.bonus.pivotSlow' : link.partners.length === 1 ? 'rating.bonus.pivotCoverOne' : 'rating.bonus.pivotCover';
+  return [{ text: t(lang, text, values), points: PIVOT_POINTS, catalog: 'pivotLink', key: 'pivotLink', parts: { ...values, kind: link.kind, count: String(link.partners.length) } }];
+}
+
 /** Compagni (non il portatore) che devono sfruttare un meteo, un campo o Trick Room perché valga il bonus. */
 export const CONDITION_USERS_MIN = 2;
 export const CONDITION_USED_POINTS = 1;
@@ -581,7 +594,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map(set => isPassive(set, rules)) : [];
 
-  // Ruoli: base delle voci importanti ed extra delle minori sui valori del team (rolesArea.ts)
+  // Ruoli: la lista delle voci del tipo di team, coi malus delle mancanze (rolesArea.ts)
   const roles = teamRolesArea(team, data, lang, analysis.needs);
   const power = teamPower(team, passive, rules);
   const offense = teamOffense(team, data);
@@ -650,13 +663,13 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang), ...sabotageItems];
   const allItems = [...redundantItems, ...extraItems];
   const penalty = { total: sum(allItems.map(i => i.points)), items: allItems };
-  // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, ruoli minori).
+  // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, pivot sfruttato).
   // 2026-11-07: tolto il bonus Tera (+1 per debolezza coperta da un Tera, fino a +3): lo prendevano quasi tutti allo
   // stesso modo (torneo 2,1, ladder 2,2) e il Tera si usa una volta sola, scelto in partita: troppe variabili
   const trios = coreTrios(team, heldByOf(defense.coverageTypes.rows));
   const bonusItems = [
     ...coreTrioBonus(team, lang, undefined, trios), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...(oneType ? [] : conditionUsedBonus(team, lang)),
-    ...weatherBonus(team, lang).items, ...roles.bonuses,
+    ...weatherBonus(team, lang).items, ...(oneType ? [] : pivotBonus(team, { offense, defense, speed, roles }, lang)),
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
   // 2026-11-13: via il punto fisso per membro (+6 a un team completo, non mostrato). Lo sostituiscono le quote di Offesa e
@@ -683,12 +696,12 @@ export interface CatalogEntry {
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
   ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'weatherSabotage', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'unanswered'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
-  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
+  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'pivotLink'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
 /** Voci che esistono solo in doppio, e voci del singolo che in doppio non ci sono. */
 const DOUBLES_ONLY = new Set<CatalogKey>(['weatherSabotage']);
-const SINGLES_ONLY = new Set<CatalogKey>(['conditionUsed']);
+const SINGLES_ONLY = new Set<CatalogKey>(['conditionUsed', 'pivotLink']);
 
 /**
  * Tutti i bonus e malus possibili nel formato (`rules`; senza, quelli del singolo), con il testo per il modale; i punti
@@ -698,10 +711,10 @@ export function bonusMalusCatalog(lang: Lang, rules?: FormatRules): CatalogEntry
   const doubles = !!rules && isOneType(rules);
   const values = {
     shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unanswered: UNANSWERED_POINTS, unansweredMeta: UNANSWERED_META_POINTS, unansweredTie: UNANSWERED_META_POINTS / 2, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
-    essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
+    essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
-    used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN, sabotage: SABOTAGE_POINTS,
+    pivot: PIVOT_POINTS, used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN, sabotage: SABOTAGE_POINTS,
   };
   return CATALOG_ORDER.filter(({ key }) => !(doubles ? SINGLES_ONLY : DOUBLES_ONLY).has(key)).map(({ key, kind }) => ({
     key, kind,
