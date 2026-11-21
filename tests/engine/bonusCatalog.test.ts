@@ -42,10 +42,10 @@ describe('catalogo bonus e malus', () => {
     expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.map(e => e.key as string)).not.toContain('typeBlend');
     expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'pivotLink']));
-    // Nel singolo i ruoli minori non danno più punti: la voce "Ruolo extra" c'è solo in doppio, il pivot sfruttato solo nel singolo
-    expect(none.map(e => e.key)).not.toContain('minorRole');
-    const doubles = bonusMalusCatalog('it', DOUBLES_RULES).map(e => e.key);
-    expect(doubles).toContain('minorRole');
+    // I ruoli minori non danno più punti: la voce "Ruolo extra" non c'è più; il pivot sfruttato c'è solo nel singolo
+    expect(none.map(e => e.key as string)).not.toContain('minorRole');
+    const doubles = bonusMalusCatalog('it', DOUBLES_RULES).map(e => e.key as string);
+    expect(doubles).not.toContain('minorRole');
     expect(doubles).not.toContain('pivotLink');
     expect(none.map(e => e.key as string)).not.toContain('tera');
     expect(none.map(e => e.key as string)).not.toContain('removers');

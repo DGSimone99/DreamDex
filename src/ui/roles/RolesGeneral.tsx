@@ -2,7 +2,6 @@ import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type RefO
 import type { TeamRating } from '../../engine/rating';
 import { SECOND_KEYS, type Level } from '../../engine/roleLevels';
 import { MISSING_BELOW } from '../../engine/needs';
-import { minorPointsFor } from '../../engine/rolesArea';
 import { useT } from '../../i18n/react';
 import { signed, type AreaContext, type T } from '../AreaDetail';
 import { Icon } from '../icons';
@@ -14,14 +13,14 @@ export const BANDS = ['essential', 'important', 'minor'] as const;
 type Band = (typeof BANDS)[number];
 
 /**
- * Il segno di una fascia: ✓ se non manca niente, −N di malus, "N mancano" senza malus (meno di 6), +N / 0 dei minori
- * dove danno punti (in doppio); nel singolo i minori non hanno un segno ('none').
+ * Il segno di una fascia: ✓ se non manca niente, −N di malus, "N mancano" senza malus (meno di 6); i minori non danno
+ * punti e la loro fascia non ha un segno ('none').
  */
-interface BandSum { kind: 'ok' | 'malus' | 'missing' | 'bonus' | 'zero' | 'none'; points: number; missing: number }
-function bandSum(level: Band, lines: RoleLine[], full: boolean, minor: number): BandSum {
+interface BandSum { kind: 'ok' | 'malus' | 'missing' | 'none'; points: number; missing: number }
+function bandSum(level: Band, lines: RoleLine[], full: boolean): BandSum {
   const missing = lines.filter(l => l.missing).length;
-  const points = lines.reduce((n, l) => n + rolePoints(l, full, minor).points, 0);
-  if (level === 'minor') return { kind: minor === 0 ? 'none' : points > 0 ? 'bonus' : 'zero', points, missing };
+  const points = lines.reduce((n, l) => n + rolePoints(l, full).points, 0);
+  if (level === 'minor') return { kind: 'none', points, missing };
   return { kind: missing === 0 ? 'ok' : full ? 'malus' : 'missing', points, missing };
 }
 
@@ -52,9 +51,9 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
   const lines = roleLines(rating);
   const bands = BANDS.map(level => {
     const rows = lines.filter(l => l.level === level);
-    return { level, rows: missingFirst(rows), sum: bandSum(level, rows, full, minorPointsFor(needs.archetype)) };
+    return { level, rows: missingFirst(rows), sum: bandSum(level, rows, full) };
   }).filter(b => b.rows.length > 0);
-  const net = roles.bonuses.reduce((n, b) => n + b.points, 0) - roles.failures.reduce((n, f) => n + f.points, 0);
+  const net = -roles.failures.reduce((n, f) => n + f.points, 0);
   const archetype = t(`archetype.${needs.archetype}`);
   const frame = useRef<HTMLDivElement>(null);
   const three = useRolesLayout(frame, `${t('area.roles')}|${lines.map(l => `${l.key}${l.level}${l.missing}${l.by.length}`).join()}`);
@@ -112,7 +111,7 @@ const rowState = (level: Level, missing: boolean) => (!missing ? '' : level === 
  */
 function RoleRow({ line, full, rating, ctx }: { line: RoleLine; full: boolean; rating: TeamRating; ctx: AreaContext }) {
   const t = useT();
-  const { kind, points } = rolePoints(line, full, minorPointsFor(rating.needs.archetype));
+  const { kind, points } = rolePoints(line, full);
   const state = rowState(line.level, line.missing);
   const one = line.by.length === 1 && !line.together;
   const list = line.by.map(h => (h.source && h.source !== 'set' ? `${h.species} (${h.source})` : h.species)).join(', ');
@@ -137,7 +136,6 @@ function RoleRow({ line, full, rating, ctx }: { line: RoleLine; full: boolean; r
         {kind === 'ok' && <><Icon name="check" /><span className="visually-hidden">{t('rdetail.pts.covered')}</span></>}
         {kind === 'malus' && <><span className="visually-hidden">{t('rdetail.pts.missing')} </span>{signed(points)}</>}
         {kind === 'missing' && t('rdetail.pts.missing')}
-        {kind === 'bonus' && <><span className="visually-hidden">{t('rdetail.pts.covered')} </span>{signed(points)}</>}
         {kind === 'zero' && <><span className="visually-hidden">{t('rdetail.pts.notCovered')} </span>0</>}
         {kind === 'none' && <><span className="visually-hidden">{t('rdetail.pts.notCovered')}</span><span aria-hidden="true">–</span></>}
       </span>

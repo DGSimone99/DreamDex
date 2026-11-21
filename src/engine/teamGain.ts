@@ -86,7 +86,7 @@ export type ScoredArea = 'defense' | 'strength' | 'roles' | 'speed';
 const SCORED_AREAS: ScoredArea[] = ['defense', 'strength', 'roles', 'speed'];
 
 /** Le voci dei ruoli fra bonus e malus del voto: hanno i loro punti nei Ruoli, non in Bonus/Malus. */
-const ROLE_CATALOG = new Set(['essentialRole', 'importantRole', 'minorRole']);
+const ROLE_CATALOG = new Set(['essentialRole', 'importantRole']);
 const notRole = (item: { catalog?: string }) => !item.catalog || !ROLE_CATALOG.has(item.catalog);
 
 const hasPivotBonus = (rating: TeamRating) => rating.bonus.items.some(i => i.catalog === 'pivotLink');
@@ -95,9 +95,9 @@ const hasPivotBonus = (rating: TeamRating) => rating.bonus.items.some(i => i.cat
 const bonusMalusNet = (rating: TeamRating) =>
   rating.bonus.items.filter(notRole).reduce((n, i) => n + i.points, 0) - rating.penalty.items.filter(notRole).reduce((n, i) => n + i.points, 0);
 
-/** I punti dei Ruoli: le mancanze di essenziali e importanti (in doppio più i minori coperti), come la sottoscheda Ruoli. */
+/** I punti dei Ruoli: le mancanze di essenziali e importanti, come la sottoscheda Ruoli (mai sopra zero). */
 export const rolesNet = (rating: TeamRating) =>
-  rating.roles.bonuses.reduce((a, i) => a + i.points, 0) - rating.roles.failures.reduce((a, i) => a + i.points, 0);
+  -rating.roles.failures.reduce((a, i) => a + i.points, 0);
 
 /**
  * Quanto cambiano bonus e malus (problemi risolti o nuovi, meteo, Tera) SENZA i ruoli: la parte del voto che le aree non
@@ -142,7 +142,7 @@ export function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Rec
     if (was === null || now === null) continue;
     points[key] = Math.round((now - was) * (after.weights[key] ?? 0) * 10) / 10;
   }
-  // I Ruoli non sono più un'area del voto: i loro punti sono i malus delle mancanze (in doppio anche il bonus dei minori coperti)
+  // I Ruoli non sono più un'area del voto: i loro punti sono i malus delle mancanze
   points.roles = rolesDelta(before, after);
   return points;
 }

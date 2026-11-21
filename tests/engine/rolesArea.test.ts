@@ -57,13 +57,12 @@ describe('Ruoli come lista: coperti, malus e bonus', () => {
     expect(teamRolesArea(physical, fixtureData, 'it').failures.length).toBeGreaterThan(0);
   });
 
-  it('nel singolo le minori coperte restano nella lista ma non danno punti', () => {
+  it('le minori coperte restano nella lista ma non danno punti', () => {
     for (const team of [physical, stall, physical.slice(0, 4)]) {
       const roles = teamRolesArea(team, fixtureData, 'it');
       const minors = roles.rows.filter(r => r.level === 'minor' && r.value >= MISSING_BELOW);
       expect(minors.length).toBeGreaterThan(0);
-      expect(roles.bonuses).toEqual([]);
-      expect(rateTeam(team, fixtureData)!.bonus.items.filter(i => i.catalog === 'minorRole')).toEqual([]);
+      expect(rateTeam(team, fixtureData)!.bonus.items.map(i => i.text).join(' ')).not.toMatch(/ruolo extra/);
     }
   });
 
@@ -91,7 +90,7 @@ describe('Ruoli come lista: coperti, malus e bonus', () => {
   });
 
   it('team vuoto: lista vuota (RF3)', () => {
-    expect(teamRolesArea([], fixtureData, 'it')).toMatchObject({ covered: 0, total: 0, members: [], failures: [], bonuses: [] });
+    expect(teamRolesArea([], fixtureData, 'it')).toMatchObject({ covered: 0, total: 0, members: [], failures: [] });
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 });

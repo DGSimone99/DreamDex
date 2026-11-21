@@ -9,7 +9,7 @@ import { AnalysisPanel } from '../../src/ui/AnalysisPanel';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, importShowdown, type TeamSet } from '../../src/engine/sets';
 import { GradeBadge } from '../../src/ui/RatingPanel';
-import { IMPORTANT_POINTS, MINOR_POINTS, type TeamRoles } from '../../src/engine/rolesArea';
+import { IMPORTANT_POINTS, type TeamRoles } from '../../src/engine/rolesArea';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -91,7 +91,7 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     const counted = rating.roles.rows.filter(r => r.level === 'essential' || r.level === 'important');
     const missing = counted.filter(r => r.value < MISSING_BELOW);
     expect(missing.length).toBeGreaterThan(0);
-    const points = rating.roles.bonuses.reduce((n, b) => n + b.points, 0) - rating.roles.failures.reduce((n, f) => n + f.points, 0);
+    const points = -rating.roles.failures.reduce((n, f) => n + f.points, 0);
     const label = points > 0 ? `+${points}` : `−${-points}`;
     const tab = screen.getByRole('tab', { name: 'Ruoli' });
     expect(tab).toHaveTextContent(/^Ruoli$/);
@@ -113,7 +113,6 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
         { key: 'disruptor', level: 'minor', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Taunt' }] },
       ],
       failures: [{ text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS }],
-      bonuses: [],
       members: [{ species: 'Gliscor', values: { hazards: 1, disruptor: 1 }, primary: null, reasons: [] }],
     };
     renderIt(<AreaView rating={{ ...base, roles }} area="bonusMalus" picked="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
@@ -124,7 +123,7 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
   it('niente che manca: la descrizione dice solo i coperti, la targhetta con la spunta', () => {
     const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      covered: 1, total: 1, bonuses: [],
+      covered: 1, total: 1,
       rows: [{ key: 'hazards', level: 'essential', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] }],
       failures: [],
       members: [{ species: 'Gliscor', values: { hazards: 1 }, primary: null, reasons: [] }],
@@ -223,7 +222,6 @@ describe('le fasce dei Ruoli', () => {
       { key: 'dot', level: 'minor', value: 0, by: [] },
     ],
     failures: [{ text: 'Balance senza Sweeper', points: 4 }, { text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS }],
-    bonuses: [],
     members: [
       { species: 'Gliscor', values: { hazards: 1, pivot: 1 }, primary: null, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }, { role: 'pivot', value: 1, source: 'U-turn' }] },
       { species: 'Zapdos', values: { disruptor: 0.8, pivot: 1 }, primary: null, reasons: [{ role: 'disruptor', value: 0.8, source: 'Taunt', share: 0.8 }, { role: 'pivot', value: 1, source: 'U-turn' }] },
@@ -355,7 +353,7 @@ describe('note e secondario nelle righe', () => {
     const pult: TeamSet = { ...emptySet('Dragapult'), item: 'Choice Specs', ability: 'Infiltrator', nature: 'Timid', evs: { spa: 252, spe: 252 }, moves: ['Draco Meteor', 'Shadow Ball', 'U-turn', 'Flamethrower'] };
     const mixed: TeamSet = { ...emptySet('Infernape'), item: 'Life Orb', ability: 'Blaze', nature: 'Naive', evs: { atk: 128, spa: 128, spe: 252 }, moves: ['Close Combat', 'Fire Blast', 'U-turn', 'Grass Knot'] };
     const roles: TeamRoles = {
-      covered: 2, total: 2, bonuses: [],
+      covered: 2, total: 2,
       rows: [
         { key: 'anyBreaker', level: 'essential', value: 1, by: [{ species: 'Infernape', value: 1, source: 'Close Combat' }, { species: 'Dragapult', value: 1, source: 'Draco Meteor' }] },
         { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Corviknight', value: 1, source: 'U-turn' }, { species: 'Dragapult', value: 1, source: 'U-turn' }, { species: 'Infernape', value: 1, source: 'U-turn' }] },
@@ -377,7 +375,7 @@ describe('note e secondario nelle righe', () => {
   it('chi ha un muro secondario: segnato e tenue, senza percentuale', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      covered: 1, total: 1, bonuses: [],
+      covered: 1, total: 1,
       rows: [{ key: 'physicalWall', level: 'essential', value: 0.5, by: [{ species: 'Great Tusk', value: 0.5, source: 'wall', secondary: true }] }],
       failures: [],
       members: [{
@@ -396,7 +394,7 @@ describe('note e secondario nelle righe', () => {
   it("niente numero accanto all'icona, neanche nel tooltip", () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      covered: 1, total: 1, bonuses: [],
+      covered: 1, total: 1,
       rows: [{ key: 'physicalWall', level: 'essential', value: 1, by: [{ species: 'Great Tusk', value: 1, source: 'wall' }] }],
       failures: [],
       members: [{ species: 'Great Tusk', primary: 'attack', values: { physicalWall: 1 }, credited: { physicalWall: 1 }, reasons: [] }],
@@ -411,7 +409,7 @@ describe('note e secondario nelle righe', () => {
   it('un DoT scoperto dice "Nessuno" anche se qualcuno lo porta un po\': chi contribuisce alla somma sta nel tooltip e nel testo nascosto, senza %', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      covered: 0, total: 1, bonuses: [],
+      covered: 0, total: 1,
       rows: [{ key: 'dot', level: 'minor', value: 0.11, by: [{ species: 'Garchomp', value: 0.11, source: 'Toxic' }, { species: 'Toxapex', value: 0.05, source: 'Toxic' }] }],
       failures: [],
       members: [
@@ -438,8 +436,7 @@ describe('Bonus/Malus senza i ruoli', () => {
       { text: 'Balance senza Hazard (importante)', points: IMPORTANT_POINTS, catalog: 'importantRole' as const },
       { text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS, catalog: 'importantRole' as const },
     ];
-    const bonus = [{ text: 'Taunt: ruolo minore coperto', points: MINOR_POINTS, catalog: 'minorRole' as const }];
-    return { ...base, cores: [], penalty: { total: 8, items: penalty }, bonus: { total: 1, items: bonus } };
+    return { ...base, cores: [], penalty: { total: 8, items: penalty }, bonus: { total: 0, items: [] } };
   };
 
   it('le voci dei ruoli non ci sono e i totali non le contano: netto, bonus e malus, medaglie e la sottoscheda grande', () => {
@@ -448,7 +445,7 @@ describe('Bonus/Malus senza i ruoli', () => {
     expect(screen.getByRole('tab', { name: 'Bonus/Malus' })).toHaveAccessibleDescription('−4');
     expect(document.querySelector('.bm-net')).toHaveTextContent('−4');
     expect(document.querySelector('.bm-parts')).toHaveTextContent('Bonus 0·Malus −4');
-    // Una medaglia sola: il minore dei ruoli non c'è
+    // Una medaglia sola: le voci dei ruoli non ci sono
     const cards = [...document.querySelectorAll<HTMLElement>('.bm-list > .bm-row')];
     expect(cards.map(c => c.querySelector('.bm-row-tx b')!.textContent)).toEqual(['Tipi doppioni']);
     expect(cards[0].querySelector('.bm-row-pts')).toHaveTextContent('−4');
@@ -457,7 +454,7 @@ describe('Bonus/Malus senza i ruoli', () => {
 
   it('solo malus dei ruoli: la scheda Bonus/Malus è vuota (zero, nessuna voce)', () => {
     const r = rated();
-    const only = { ...r, penalty: { total: 4, items: r.penalty.items.filter(i => i.catalog === 'importantRole') }, bonus: { total: 1, items: r.bonus.items } };
+    const only = { ...r, penalty: { total: 4, items: r.penalty.items.filter(i => i.catalog === 'importantRole') }, bonus: { total: 0, items: r.bonus.items } };
     renderIt(<AreaView rating={only} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     expect(screen.getByRole('tab', { name: 'Bonus/Malus' })).toHaveAccessibleDescription('0');
     expect(document.querySelector('.bm-net')).toHaveTextContent('0');
@@ -467,7 +464,7 @@ describe('Bonus/Malus senza i ruoli', () => {
 
   it('la carta del voto: Bonus/Malus senza i ruoli, Ruoli coi loro punti; il voto non cambia', () => {
     const rating = rated();
-    const roles = rating.roles.bonuses.reduce((n, b) => n + b.points, 0) - rating.roles.failures.reduce((n, f) => n + f.points, 0);
+    const roles = -rating.roles.failures.reduce((n, f) => n + f.points, 0);
     renderIt(<GradeBadge rating={rating} onOpen={() => {}} />);
     const bm = screen.getByRole('button', { name: /^Apri Bonus\/Malus/ });
     expect(bm.querySelector('b')).toHaveTextContent('−4');

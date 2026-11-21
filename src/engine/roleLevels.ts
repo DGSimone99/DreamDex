@@ -4,7 +4,7 @@ import type { FormatRules } from './formatRules';
 
 type TypeRule = FormatRules['typeRule'];
 
-/** Livello di un sotto-ruolo per l'archetipo: essenziale e importante (solo malus, di peso diverso), minore (nella lista senza punti; +1 solo in doppio), ignorato. */
+/** Livello di un sotto-ruolo per l'archetipo: essenziale e importante (solo malus, di peso diverso), minore (nella lista, senza punti), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
 /**
  * Una voce della tabella: un sotto-ruolo, o un gruppo di attaccanti: "anySweeper" = uno sweeper fisico o speciale,
@@ -104,8 +104,8 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * attacca è letto Semi-stall e pagava ruoli che non gli servono.
  */
 /*
- * 2026-11-21 (utente): nel singolo i minori non danno più punti (rolesArea.ts): le righe "minore" qui sotto dicono solo
- * quali voci compaiono nella lista dei Ruoli del tipo di team. I "+1" nelle note sopra raccontano com'era.
+ * 2026-11-21 (utente): i minori non danno più punti, né nel singolo né in doppio (rolesArea.ts): le righe "minore" dicono
+ * solo quali voci compaiono nella lista dei Ruoli del tipo di team. I "+1" nelle note sopra raccontano com'era.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Attaccanti: i gruppi (le righe singole restano minori o ignorate)

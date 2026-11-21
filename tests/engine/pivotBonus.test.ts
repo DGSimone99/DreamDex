@@ -71,23 +71,33 @@ describe('Pivot sfruttato: la regola', () => {
     expect(result).toEqual([{ kind: 'slow', pivot: 'Blissey', move: 'Teleport', partners: ['Weavile'] }]);
   });
 
-  it('veloce: ogni debolezza di tipo ha un compagno che la para', () => {
+  it('ingresso sicuro (pivot veloce): ogni debolezza di tipo ha un compagno che la para', () => {
     const cover: Spec = { species: 'Ting-Lu', blocks: ['Electric', 'Rock'], metaHold: 60 };
     const ice: Spec = { species: 'Heatran', blocks: ['Ice'], metaHold: 50 };
-    expect(links([tornadus, cover, ice])).toEqual([{ kind: 'fast', pivot: 'Tornadus-Therian', move: 'U-turn', partners: ['Ting-Lu', 'Heatran'] }]);
+    expect(links([tornadus, cover, ice])).toEqual([{ kind: 'cover', pivot: 'Tornadus-Therian', move: 'U-turn', partners: ['Ting-Lu', 'Heatran'] }]);
     // Una debolezza scoperta (Ghiaccio): niente
     expect(links([tornadus, cover])).toEqual([]);
   });
 
-  it('veloce: nel testo solo i compagni che bastano', () => {
+  it('ingresso sicuro: nel testo solo i compagni che bastano', () => {
     const all: Spec = { species: 'Ting-Lu', blocks: ['Electric', 'Rock', 'Ice'], metaHold: 60 };
     const one: Spec = { species: 'Heatran', blocks: ['Ice'], metaHold: 50 };
     expect(links([tornadus, one, all])[0].partners).toEqual(['Ting-Lu']);
   });
 
-  it('né lento né veloce: niente', () => {
+  it('né lento né veloce: vale l\'ingresso sicuro, non "regge il colpo"', () => {
     const cover: Spec = { species: 'Ting-Lu', blocks: ['Electric', 'Rock', 'Ice'], metaHold: 60 };
-    expect(links([{ ...tornadus, speed: 0.4 }, cover, weavile])).toEqual([]);
+    const middle = { ...tornadus, speed: 0.4 };
+    expect(links([middle, cover, weavile])).toEqual([{ kind: 'cover', pivot: 'Tornadus-Therian', move: 'U-turn', partners: ['Ting-Lu'] }]);
+    // Robusto e con un fragile accanto, ma senza chi para le sue debolezze: niente (non è lento)
+    expect(links([{ ...middle, metaHold: 50 }, weavile])).toEqual([]);
+  });
+
+  it('un pivot lento non prende l\'ingresso sicuro: gli serve reggere il colpo e un fragile da far entrare', () => {
+    // Alomomola (Acqua) è debole a Erba ed Elettro, tutte e due parate: ma è lento
+    const cover: Spec = { species: 'Ferrothorn', blocks: ['Grass', 'Electric'], metaHold: 60 };
+    expect(links([alomomola, cover])).toEqual([]);
+    expect(links([alomomola, cover, weavile]).map(l => l.kind)).toEqual(['slow']);
   });
 
   it('senza meta conta quanto regge i colpi di tipo', () => {
@@ -97,9 +107,9 @@ describe('Pivot sfruttato: la regola', () => {
     expect(links([noMeta(alomomola, 50), noMeta(weavile, 25)])).toEqual([]);
   });
 
-  it('prima i lenti, poi i veloci', () => {
+  it('prima i lenti e difensivi, poi gli ingressi sicuri', () => {
     const cover: Spec = { species: 'Ting-Lu', blocks: ['Electric', 'Rock', 'Ice'], metaHold: 60 };
-    expect(links([tornadus, cover, alomomola, weavile]).map(l => l.kind)).toEqual(['slow', 'fast']);
+    expect(links([tornadus, cover, alomomola, weavile]).map(l => l.kind)).toEqual(['slow', 'cover']);
   });
 });
 
@@ -130,7 +140,7 @@ describe('Pivot sfruttato: nel voto', () => {
   it('i ruoli minori coperti non danno più punti', () => {
     const rating = rateTeam(team, fixtureData)!;
     expect(rating.roles.rows.some(r => r.level === 'minor' && r.value >= 0.5)).toBe(true);
-    expect(rating.bonus.items.filter(i => i.catalog === 'minorRole')).toEqual([]);
+    expect(rating.bonus.items.map(i => i.text).join(' ')).not.toMatch(/ruolo extra/);
   });
 });
 
