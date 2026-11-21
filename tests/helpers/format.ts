@@ -15,8 +15,8 @@ const radio = (name: string, value: string) => {
   if (!input) throw new Error(`Nessuna scelta ${name}=${value}`);
   return input;
 };
-/** Conferma la finestra aperta (il formato cambia e la finestra si chiude). */
-export const confirmFormat = (user: UserEvent) => user.click(screen.getByRole('button', { name: 'Conferma' }));
+/** Conferma la finestra aperta col pulsante «Usa <formato>» (il formato cambia e la finestra si chiude). */
+export const confirmFormat = (user: UserEvent) => user.click(screen.getByRole('button', { name: /^Usa / }));
 const pick = async (user: UserEvent, name: string, value: string) => {
   await openFormat(user);
   await user.click(radio(name, value));

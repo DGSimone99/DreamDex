@@ -417,7 +417,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].name || battleName(team[replaceIndex]) })}</span>
             : t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }) },
         { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
-          count: problems.length ? { text: String(problems.length), level: problems.some(p => p.severity === 'serious') ? 'serious' : 'warn' } : null,
+          // Col team incompleto il numero resta neutro: giallo o rosso solo a team completo (un team a metà non è «rotto»)
+          count: problems.length ? { text: String(problems.length), level: team.length < 6 ? 'info' : problems.some(p => p.severity === 'serious') ? 'serious' : 'warn' } : null,
           status: rating ? <>
             {/* Team non legale nel formato: il voto in grigio, come nella carta del voto */}
             <b className={`grade grade-${rating.grade}${problems.some(p => p.category === 'rules') ? ' illegal' : ''}`}>{rating.grade} {rating.overall}</b>

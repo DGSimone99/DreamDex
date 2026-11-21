@@ -24,9 +24,29 @@ describe('finestra Scegli il formato', () => {
     const { onPick, onClose } = open();
     await user.click(radio('format-family', 'free'));
     expect(onPick).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Conferma' }));
+    await user.click(screen.getByRole('button', { name: /^Usa / }));
     expect(onPick).toHaveBeenCalledWith(DEFAULT_MEMORY.free);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('il pulsante di conferma dice quale formato userà', async () => {
+    const user = userEvent.setup();
+    open();
+    expect(screen.getByRole('button', { name: 'Usa National Dex OU' })).toBeInTheDocument();
+    await user.click(radio('format-tier', 'ubers'));
+    expect(screen.getByRole('button', { name: 'Usa National Dex Ubers' })).toBeInTheDocument();
+    await user.click(radio('format-family', 'free'));
+    expect(screen.getByRole('button', { name: 'Usa No Format' })).toBeInTheDocument();
+  });
+
+  it('una scheda con modifiche non confermate ha il segno', async () => {
+    const user = userEvent.setup();
+    open();
+    const tab = () => radio('format-family', 'competitive').closest('label')!;
+    expect(tab()).not.toHaveTextContent('modifiche non confermate');
+    await user.click(radio('format-tier', 'uu'));
+    expect(tab()).toHaveTextContent('modifiche non confermate');
+    expect(radio('format-family', 'free').closest('label')!).not.toHaveTextContent('modifiche non confermate');
   });
 
   it('Annulla chiude senza cambiare il formato', async () => {
@@ -44,7 +64,7 @@ describe('finestra Scegli il formato', () => {
     await user.click(radio('format-tier', 'uu'));
     await user.click(radio('format-family', 'free'));
     await user.click(radio('format-family', 'competitive'));
-    await user.click(screen.getByRole('button', { name: 'Conferma' }));
+    await user.click(screen.getByRole('button', { name: /^Usa / }));
     expect(onPick).toHaveBeenCalledWith({ ...DEFAULT_CHOICE, tier: 'UU' });
   });
 
@@ -53,7 +73,7 @@ describe('finestra Scegli il formato', () => {
     const { onPick } = open();
     await user.click(radio('format-tier', 'ubers'));
     expect(onPick).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Conferma' }));
+    await user.click(screen.getByRole('button', { name: /^Usa / }));
     expect(onPick).toHaveBeenCalledWith({ ...DEFAULT_CHOICE, tier: 'Ubers' });
   });
 
@@ -61,7 +81,7 @@ describe('finestra Scegli il formato', () => {
     const user = userEvent.setup();
     const { onPick } = open({ ...DEFAULT_CHOICE, battle: 'doubles' });
     await user.click(radio('format-gen', '9'));
-    await user.click(screen.getByRole('button', { name: 'Conferma' }));
+    await user.click(screen.getByRole('button', { name: /^Usa / }));
     expect(onPick).toHaveBeenCalledWith({ ...DEFAULT_CHOICE, gen: 9, battle: 'singles' });
   });
 
@@ -91,7 +111,7 @@ describe('finestra Scegli il formato', () => {
     const { onPick, dialog } = open(game);
     expect(within(dialog).getByRole('img', { name: 'Pokémon Scarlatto' })).toBeInTheDocument();
     await user.click(within(dialog).getByRole('checkbox', { name: 'Tutto il Pokédex' }));
-    await user.click(within(dialog).getByRole('button', { name: 'Conferma' }));
+    await user.click(within(dialog).getByRole('button', { name: /^Usa / }));
     expect(onPick).toHaveBeenCalledWith({ ...game, allPokedex: true });
   });
 
@@ -102,7 +122,7 @@ describe('finestra Scegli il formato', () => {
     expect(dialog).toHaveTextContent('Tutto ammesso: niente tier, niente ban, niente meta.');
     expect(dialog).not.toHaveTextContent(/hackrom/i);
     await user.click(radio('format-genlimit', '7'));
-    await user.click(within(dialog).getByRole('button', { name: 'Conferma' }));
+    await user.click(within(dialog).getByRole('button', { name: /^Usa / }));
     expect(onPick).toHaveBeenCalledWith({ ...free, genLimit: 7 });
   });
 

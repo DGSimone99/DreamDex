@@ -45,4 +45,15 @@ describe('Barra laterale', () => {
     expect(container.querySelector('.workspace')).not.toContainElement(banner);
   });
 
+
+  it('col team incompleto il numero dei problemi è neutro (non giallo né rosso)', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Toxapex']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const count = document.querySelector('#tab-analysis .tab-count');
+    expect(count).not.toBeNull();
+    expect(count).toHaveClass('info');
+    expect(count).not.toHaveClass('warn');
+    expect(count).not.toHaveClass('serious');
+  });
 });

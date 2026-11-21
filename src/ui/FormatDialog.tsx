@@ -7,6 +7,7 @@ import {
 import { BATTLE_IDS } from '../engine/formats';
 import { GAME_GEN, GAME_IDS, gameReady, type GameId } from '../engine/games';
 import { useT } from '../i18n/react';
+import { choiceName } from './formatName';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
 
@@ -75,6 +76,9 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
   const gamesReady = GAME_IDS.some(gameReady);
   // La bozza di ogni famiglia: quella attiva parte dal formato di adesso, le altre dall'ultima scelta fatta lì
   const [drafts, setDrafts] = useState<FormatMemory>(() => ({ ...memory, [choice.family]: choice }));
+  // Com'era ogni famiglia all'apertura: una scheda diversa da così ha modifiche non confermate
+  const [initial] = useState(drafts);
+  const changed = (f: Family) => JSON.stringify(drafts[f]) !== JSON.stringify(initial[f]);
   const { competitive, game, free } = drafts;
   const pickCompetitive = (patch: Partial<CompetitiveChoice>) =>
     setDrafts(d => ({ ...d, competitive: normalizeCompetitive({ ...d.competitive, ...patch }) }));
@@ -98,6 +102,7 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                 <input type="radio" className="visually-hidden" name="format-family" value={f} checked={shown === f} disabled={off}
                   onChange={() => setShown(f)} />
                 {t(`family.${f}`)}
+                {changed(f) && <span className="fmt-dirty"><span className="visually-hidden">{t('formatDialog.unsaved')}</span></span>}
               </label>
             );
           })}
@@ -129,7 +134,7 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
                   </label>
                 ))}
               </div>
-              <p className="fmt-past-label">{t('formatDialog.pastGens')}</p>
+              <p className="fmt-past-label">{t('formatDialog.pastGens')} <span className="fmt-soon">{t('top.soon')}</span></p>
               <div className="fmt-scale">
                 {PAST_GENS.map(([n, abbr]) => (
                   <label key={n} className="off">
@@ -234,7 +239,8 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
         </div>
         <footer className="fmt-actions">
           <button type="button" onClick={onClose}>{t('formatDialog.cancel')}</button>
-          <button type="button" className="primary" onClick={confirm}>{t('formatDialog.confirm')}</button>
+          {/* Il pulsante dice quale formato userà: la scelta della scheda aperta */}
+          <button type="button" className="primary" onClick={confirm}>{t('formatDialog.use', { format: choiceName(drafts[shown], t) })}</button>
         </footer>
       </div>
     </div>,

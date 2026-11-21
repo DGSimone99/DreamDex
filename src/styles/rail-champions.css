@@ -42,7 +42,8 @@
   .rail .tabs.vertical [role='tab'][aria-selected='true'] {
     width: 100%;
     border-bottom-color: transparent;
-    background: var(--stripes), linear-gradient(100deg, #ff5aa5, var(--accent-2) 55%, #d81f74);
+    /* Magenta scuro (testo bianco almeno 4,5:1 su tutta la fascia) */
+    background: var(--stripes), linear-gradient(100deg, #d81f72, #c41767 60%, #ad115b);
     clip-path: none;
     color: #ffe1ee;
   }
@@ -55,12 +56,13 @@
   /* ── Fondo: suggerimenti dei tasti ──────────────────────────── */
   .rail-foot { padding-top: var(--sp-6); border-top: 1px solid var(--soft); }
   .rail-foot .lang-switch { gap: 2px; padding: 0; border: 0; background: none; }
-  .rail-foot .lang-switch button { min-width: 26px; height: 22px; padding: 0 var(--sp-3); border: 0; border-radius: 11px; background: none; color: var(--muted); font: 700 var(--fs-caption)/1 var(--display); font-style: italic; }
+  .rail-foot .lang-switch button { min-width: 34px; height: 28px; padding: 0 var(--sp-3); border: 0; border-radius: 14px; background: none; color: var(--muted); font: 700 var(--fs-caption)/1 var(--display); font-style: italic; }
   .rail-foot .lang-switch button[aria-pressed='true'] { background: linear-gradient(180deg, #e6e9f7, var(--muted)); color: var(--panel); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); }
   .rail-foot .lang-switch button:hover:not([aria-pressed='true']) { color: var(--text); }
-  .rail-settings { display: inline-flex; align-items: center; gap: var(--sp-3); width: auto; height: 26px; margin-left: var(--sp-2); padding: 0 var(--sp-4) 0 2px; border: 0; border-radius: 13px; background: none; color: var(--muted); font: 600 var(--fs-small)/1 var(--display); font-style: italic; }
+  .rail-settings { display: inline-flex; align-items: center; gap: var(--sp-3); width: auto; height: 30px; margin-left: var(--sp-2); padding: 0 var(--sp-4) 0 2px; border: 0; border-radius: 13px; background: none; color: var(--muted); font: 600 var(--fs-small)/1 var(--display); font-style: italic; }
   .rail-settings .icon { width: 20px; height: 20px; padding: 3px; border-radius: 50%; background: linear-gradient(180deg, #e6e9f7, var(--muted)); color: var(--panel); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); }
   .rail-settings:hover { color: var(--text); }
+  .rail-foot .rail-credits { min-height: 28px; display: inline-flex; align-items: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rail .tabs.vertical [role='tab'] { transition: none; }
