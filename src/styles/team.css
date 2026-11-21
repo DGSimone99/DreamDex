@@ -258,20 +258,26 @@
   gap: 3px;
 }
 .slot > .slot-card {
+  /* Carta Pedana (pedana.css), sempre accesa; il palco arriva fino ai piedi dello sprite (per la luce dall'alto) */
+  --lit: 1;
+  --sprite-w: 96px;
+  --stage-top: 0px;
+  --stage-h: 112px;
   cursor: pointer;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 42%, var(--panel)) 0%, var(--panel) 50%);
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--line-soft);
   transition: transform 0.3s var(--ease), box-shadow 0.2s;
 }
-/* Riflesso diagonale, come nelle schede di Masters EX */
-.slot > .slot-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(115deg, transparent 38%, #ffffff14 39%, transparent 54%);
-  pointer-events: none;
-}
-/* Striscia dei tipi in fondo: metà e metà per i doppi tipi */
+.slot > .slot-card .pedana-beam { z-index: -1; }
+/* Carta aperta: lo sprite grande riempie la carta, la luce scende fin sotto i suoi piedi */
+.slot.open > .slot-card { --stage-h: calc(100% - 40px); }
+/* La pedana sotto i piedi dello sprite (circa al 90% del riquadro): dietro lo sprite */
+.slot > .slot-card .sprite-wrap .pedana-disc { bottom: 2px; z-index: 0; }
+.slot > .slot-card .sprite-wrap > .sprite { position: relative; z-index: 1; }
+.slot > .slot-card .sprite-wrap > .sprite-ani { z-index: 1; }
+.slot > .slot-card .sprite { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
+/* In fondo, solo sulla carta aperta: la riga magenta ("sei qui") */
 .slot > .slot-card::after {
   content: '';
   position: absolute;
@@ -279,7 +285,7 @@
   right: 0;
   bottom: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%);
+  background: transparent;
 }
 .slot > .slot-card:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .slot.open > .slot-card { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
@@ -300,11 +306,10 @@
     box-shadow: inset 0 0 0 1px var(--line), 0 6px 14px rgba(0, 0, 0, 0.35);
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
   }
-  .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover::after { height: 4px; filter: brightness(1.25); }
   .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover .sprite { transform-origin: 50% 92%; transform: scale(1.05); transition: transform 0.15s ease-out; }
 }
 @media (hover: hover) and (prefers-reduced-motion: reduce) {
-  /* Niente movimento: resta solo la striscia dei tipi più accesa */
+  /* Niente movimento: resta solo il bordo più chiaro */
   .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover { transform: none; box-shadow: inset 0 0 0 1px var(--line); }
   .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover .sprite { transform: none; }
 }
@@ -594,3 +599,5 @@
   .team-head :is(.team-saved .popover > summary, .team-io .popover > summary, .team-io .export-tab > button) { width: auto; padding: 0 var(--sp-8); }
   .team-head .team-io :is(.popover > summary, .export-tab > button) { padding: 0 var(--sp-6); }
 }
+/* Team ridotto: la pillola tiene la riga dei tipi in fondo (la carta grande l'ha in cima) */
+.band.collapsed .slot:not(.open) > .slot-card::after { background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); }

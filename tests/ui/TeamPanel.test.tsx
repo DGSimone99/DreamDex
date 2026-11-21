@@ -24,6 +24,25 @@ async function editorRoles(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('TeamPanel', () => {
+  it('carta Pedana: pedana sotto lo sprite, luce solo sulla carta aperta nell’editor', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await addPokemon(user, 'Great Tusk');
+    await addPokemon(user, 'Gholdengo');
+    const cards = () => [...teamRegion().querySelectorAll<HTMLElement>('.slot.filled > .slot-card')];
+    expect(cards()).toHaveLength(2);
+    for (const card of cards()) {
+      expect(card.querySelector('.pedana-disc')).not.toBeNull();
+      expect(card.querySelector('.pedana-beam')).not.toBeNull();
+    }
+    // Aggiungere apre l'editor dell'ultimo: chiuso, nessuna luce
+    const toggles = () => [...teamRegion().querySelectorAll<HTMLElement>('.slot-toggle')];
+    if (teamRegion().querySelector('.slot.open')) await user.click(teamRegion().querySelector<HTMLElement>('.slot.open .slot-toggle')!);
+    expect(cards().some(card => card.classList.contains('beam-on'))).toBe(false);
+    await user.click(toggles()[0]);
+    expect(cards().map(card => card.classList.contains('beam-on'))).toEqual([true, false]);
+  });
+
   it('aggiunge un Pokémon dalla ricerca con il set più comune', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);

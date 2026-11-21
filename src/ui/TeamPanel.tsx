@@ -487,7 +487,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       }}
     >
       <div
-        className="slot-card"
+        className={`slot-card pedana-face${open ? ' beam-on' : ''}`}
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…"). Carta aperta: niente
         // fumetto (col mouse ancora sopra, ridisegnando la pagina si riapriva sopra l'editor)
@@ -551,7 +551,11 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         </span>
         {/* Sulla sprite, a carta chiusa: dopo mezzo secondo la carta del Pokémon sotto la carta del team (il set intero senza aprirlo) */}
         {/* data-hint vuoto: sullo sprite niente fumetto "Trascina…", lì si apre la carta del Pokémon (si sovrapponevano) */}
+        {/* Carta Pedana (pedana.css): la riga dei tipi in cima, la luce dall'alto solo sulla carta aperta, la pedana sotto lo sprite */}
+        <span className="pedana-stripe" aria-hidden="true" />
+        <span className="pedana-beam" aria-hidden="true" />
         <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set, roles[0]), 'data-hint': '' })}>
+          <span className="pedana-disc" aria-hidden="true" />
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
         {set.customSkillset && (
