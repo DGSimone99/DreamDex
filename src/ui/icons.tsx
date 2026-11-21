@@ -28,6 +28,8 @@ const paths = {
   speed: 'M13 2.5 5.5 13.5H11l-1 8 7.5-11H12z',
   status: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 3c-2.5 2.5-2.5 6.5 0 9s2.5 6.5 0 9',
   // Shiny: le due stelle a quattro punte dei giochi
+  /* Mega e Primal sulle carte: una goccia in un cerchio (disegno nostro, non il simbolo ufficiale) */
+  mega: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 6.5c-2.6 3.1-3.7 5.2-3.7 7.2a3.7 3.7 0 0 0 7.4 0c0-2-1.1-4.1-3.7-7.2z',
   shiny: 'M10 6.5Q10.9 12.1 16.5 13Q10.9 13.9 10 19.5Q9.1 13.9 3.5 13Q9.1 12.1 10 6.5zM18 2.5Q18.5 5.5 21.5 6Q18.5 6.5 18 9.5Q17.5 6.5 14.5 6Q17.5 5.5 18 2.5z',
   // Salvare, sovrascrivere, rinominare un set
   save: 'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',

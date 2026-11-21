@@ -435,10 +435,11 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(min(130px, 100%), 1fr)); gap: var(--sp-4); padding: var(--sp-7); align-content: center; }
 .suggestions.cards > li + li { border-top: 0; }
 .card {
-  /* Piede (nome e motivi) alto uguale in ogni carta, dai motivi che entrano: nome 18 + 4 + 16 per motivo + 8. Sulle
+  /* Piede (nome e motivi) alto uguale in ogni carta, dai motivi che entrano: nome 18 + 4 + 16 per motivo + 12 (sopra la
+     riga dei tipi in fondo). Sulle
      carte alte (oltre 180 px) il piede prende fino a 24 px d'aria in più, sopra il nome e fra i motivi: lo sprite sale */
   --foot-air: clamp(0px, calc((var(--tile-h, 220px) - 180px) / 2), 24px);
-  --foot-h: calc(30px + 16px * var(--reasons, 2) + var(--foot-air));
+  --foot-h: calc(34px + 16px * var(--reasons, 2) + var(--foot-air));
   /* Palco: dal bordo alto (sotto targhetta e riga dei tipi) fino al piede; lo sprite ci sta dentro, al massimo 112 px */
   --stage-top: 16px;
   --stage-h: calc(var(--tile-h, 220px) - var(--foot-h) - var(--stage-top));
@@ -533,7 +534,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
 .card .who { position: relative; z-index: 2; flex: none; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: calc(var(--sp-2) + var(--foot-air) / 4);
-  box-sizing: border-box; height: var(--foot-h); padding: calc(var(--foot-air) * 0.4) var(--sp-4) var(--sp-5); text-align: center; }
+  box-sizing: border-box; height: var(--foot-h); padding: calc(var(--foot-air) * 0.4) var(--sp-4) calc(var(--sp-5) + 4px); text-align: center; }
 .card .name-line { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); max-width: 100%; min-width: 0; height: 18px; }
 .card .name-line > :not(.pick) { flex: none; }
 .card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: center; }
@@ -543,12 +544,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Nome con la forma (Charizard + MEGA Y): la specie base intera, la forma un'etichetta che cede per prima */
 .pick-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .pick-name b { flex: none; font: 800 var(--fs-body)/1.15 var(--display); font-style: italic; white-space: nowrap; }
-.pick-name .forme { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 1px 5px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink); font: 700 var(--fs-label)/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; }
-.card.first .pick-name .forme { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-/* Sulle carte la forma sta sul bordo alto della targhetta del nome, a destra (spazio libero sotto lo sprite): il nome e
-   le icone tengono la loro riga e la forma si legge sempre intera */
-.card .pick-name .forme { position: absolute; z-index: 1; top: -22px; right: 8px; max-width: calc(100% - 16px); padding: 1px var(--sp-3); background: var(--ground); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
-.card.first .pick-name .forme { background: var(--ground); }
+/* Sulle carte niente etichetta della forma (sta nel dettaglio e nel fumetto): solo Mega e Primal col loro simbolo, e la
+   lettera quando le Mega sono due (Charizard X / Y) */
+.pick-name .mega-mark { display: inline-flex; flex: none; align-items: center; gap: 1px; color: var(--accent-ink); font: 800 var(--fs-label)/1 var(--display); font-style: italic; }
+.pick-name .mega-mark .icon { width: 14px; height: 14px; }
 .card .who small { display: flex; flex-direction: column; align-items: stretch; gap: calc(2px + var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }
 .card .reason { display: block; max-width: 100%; min-width: 0; text-align: left; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
@@ -602,8 +601,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    zona dell'immagine, targhetta in basso), senza colore di tipo, con la luce che passa piano come in Completa team */
 .card-skel { cursor: default; pointer-events: none; }
 .card-skel { display: flex; flex-direction: column; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); overflow: hidden; }
-.card-skel-art { flex: 1; background: radial-gradient(42% 9% at 50% 88%, color-mix(in srgb, var(--raised) 80%, transparent), transparent 70%), var(--panel); border-top: 3px solid var(--line-soft); }
-.card-skel-plate { display: grid; justify-items: center; align-content: start; gap: var(--sp-3); height: var(--foot-h); padding: 0 var(--sp-5); }
+.card-skel-art { flex: 1; background: radial-gradient(42% 9% at 50% 88%, color-mix(in srgb, var(--raised) 80%, transparent), transparent 70%), var(--panel); }
+.card-skel-plate { display: grid; justify-items: center; align-content: start; gap: var(--sp-3); height: var(--foot-h); padding: 0 var(--sp-5); box-shadow: inset 0 -3px 0 var(--line-soft); }
 .card-skel-line { display: block; width: 62%; height: 12px; border-radius: 3px; background: var(--raised); }
 .card-skel-line.short { width: 40%; height: 10px; }
 .card-skel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.05) 50%, transparent 70%);

@@ -1,9 +1,9 @@
 /* Carta "Pedana" (lista dei candidati, team, Meta): il Pokémon in piedi su un'ellisse del colore del suo primo tipo,
-   su una carta scura e squadrata, con la riga dei due tipi in cima. La carta mette le variabili:
+   su una carta scura e squadrata, con la riga dei due tipi in fondo, come base (dentro la cornice, se c'è: --fw). La carta mette le variabili:
    --t1, --t2 (colori dei tipi), --lit (0..1: quanto è accesa), --stage-top e --stage-h (il palco), --sprite-w.
    La luce dall'alto (.pedana-beam) si vede solo con .beam-on: la carta scelta nella lista o nel Meta, quella aperta nel team. */
 .pedana-face { background: linear-gradient(180deg, color-mix(in srgb, var(--t1) calc(20% * var(--lit, 1)), var(--panel)) 0%, var(--panel) 64%); }
-.pedana-stripe { position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 3px; pointer-events: none;
+.pedana-stripe { position: absolute; left: 0; right: 0; bottom: var(--fw, 0px); z-index: 2; height: 3px; pointer-events: none;
   background: linear-gradient(90deg, var(--t1) 0 50%, var(--t2, var(--t1)) 50%); opacity: calc(0.35 + 0.65 * var(--lit, 1)); }
 .pedana-stage { position: absolute; left: 0; right: 0; top: var(--stage-top); height: var(--stage-h); pointer-events: none; }
 .pedana-disc { position: absolute; left: 50%; bottom: 0; width: min(118px, 84%); height: clamp(14px, calc(var(--sprite-w) * 0.27), 30px);

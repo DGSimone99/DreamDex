@@ -33,13 +33,10 @@
 /* La barra dell'uso come quella di Champions: fessura incassata, angoli dritti, riempimento con un filo chiaro in alto */
 .meta-use i { flex: 1; height: 7px; background: var(--field); box-shadow: var(--slot-inset); overflow: hidden; }
 .meta-use i::before { content: ''; display: block; width: var(--w); height: 100%; background: linear-gradient(var(--slot-shine) 0 1px, transparent 1px), var(--accent); }
-/* "Tuo" sul bordo basso del palco, a sinistra, alto come la forma (MEGA, THERIAN…) che sta a destra */
+/* "Tuo" sul bordo basso del palco, a sinistra */
 .meta-mine { position: absolute; z-index: 1; top: -22px; left: 8px; padding: 1px var(--sp-3); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
   border-radius: 3px; background: var(--ground); color: var(--accent-ink); font: 700 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; }
-/* Sulle tue carte con una forma (Landorus THERIAN, Urshifu RAPID STRIKE) la forma lascia posto a "Tuo" e si accorcia coi puntini */
-.meta-card { --mine-w: 56px; }
-.meta-mine { max-width: var(--mine-w); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.meta-card.mine .pick-name .forme { max-width: calc(100% - 16px - var(--mine-w) - 6px); }
+.meta-mine { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Podio: oro, argento, bronzo sulla targhetta della posizione e sulla cornice; restano al loro posto */
 .meta-card.medal-1 { --medal: #ffc93c; --on-medal: #2a1d00; }
 .meta-card.medal-2 { --medal: #cfd6e6; --on-medal: #161a26; }

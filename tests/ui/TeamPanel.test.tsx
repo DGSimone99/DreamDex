@@ -172,4 +172,14 @@ describe('carta del team', () => {
     const css = readFileSync(resolve(__dirname, '../../src/styles/team.css'), 'utf8');
     expect(css.match(/\.slot \.types \{[^}]*\}/)![0]).toContain('justify-content: center');
   });
+
+  it('la riga dei tipi fa da base alla carta (in fondo); aperta diventa magenta, una riga sola', () => {
+    const pedana = readFileSync(resolve(__dirname, '../../src/styles/pedana.css'), 'utf8');
+    const stripe = pedana.match(/\.pedana-stripe \{[^}]*\}/)![0];
+    expect(stripe).toContain('bottom: var(--fw, 0px)');
+    expect(stripe).not.toMatch(/top: 0/);
+    const team = readFileSync(resolve(__dirname, '../../src/styles/team.css'), 'utf8');
+    expect(team).toMatch(/\.slot\.open > \.slot-card \.pedana-stripe \{[^}]*var\(--accent-2\)/);
+    expect(team).not.toMatch(/^\.slot\.open > \.slot-card::after \{ background: var\(--accent-2\)/m);
+  });
 });

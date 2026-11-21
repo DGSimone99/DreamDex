@@ -277,7 +277,7 @@
 .slot > .slot-card .sprite-wrap > .sprite { position: relative; z-index: 1; }
 .slot > .slot-card .sprite-wrap > .sprite-ani { z-index: 1; }
 .slot > .slot-card .sprite { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
-/* In fondo, solo sulla carta aperta: la riga magenta ("sei qui") */
+/* Team ridotto: la riga in fondo della pillola (tipi, o magenta se aperta). La carta grande usa .pedana-stripe */
 .slot > .slot-card::after {
   content: '';
   position: absolute;
@@ -289,7 +289,9 @@
 }
 .slot > .slot-card:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .slot.open > .slot-card { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
-.slot.open > .slot-card::after { background: var(--accent-2); }
+.band.collapsed .slot.open > .slot-card::after { background: var(--accent-2); }
+/* Carta aperta: la riga dei tipi in fondo diventa magenta ("sei qui"), una riga sola */
+.slot.open > .slot-card .pedana-stripe { background: var(--accent-2); opacity: 1; }
 /* La punta magenta: sotto la carta aperta, appoggiata sul filo magenta dell'editor (left misurato in TeamPanel). Con il team
    compresso basta il contorno magenta della pillola */
 .slot-pointer { display: none; }

@@ -386,13 +386,26 @@ export function formeParts(species: string): { base: string; forme: string } | n
   return { base: found.baseSpecies, forme: found.forme.replace(/-/g, ' ') };
 }
 
+/** Mega e Primal: forme uniche (una per team), che sulle carte hanno il loro simbolo; "X"/"Y" quando ce ne sono due. */
+export function megaOf(forme: string): { letter: string } | null {
+  const m = /^(?:Mega|Primal)(?: ([XYZ]))?$/.exec(forme);
+  return m ? { letter: m[1] ?? '' } : null;
+}
+
 export function PickButton({ rank, species, selected, onSelect }: { rank: number; species: string; selected: boolean; onSelect: () => void }) {
   const parts = formeParts(species);
+  const mega = parts ? megaOf(parts.forme) : null;
   return (
     <button type="button" className="pick" aria-pressed={selected} title={parts ? species : undefined} onClick={e => { e.stopPropagation(); onSelect(); }}>
-      {/* Il nome intero per lettori di schermo (e test); a vista la specie base e la forma come etichetta */}
+      {/* Il nome intero per lettori di schermo (e test); a vista solo la specie base: la forma sta nel dettaglio e nel
+          fumetto. Mega e Primal hanno il loro simbolo (con X/Y quando servono) */}
       <strong className={parts ? 'visually-hidden' : undefined}><span className="visually-hidden">{rank}. </span>{species}</strong>
-      {parts && <span className="pick-name" aria-hidden="true"><b>{parts.base}</b><i className="forme">{parts.forme}</i></span>}
+      {parts && (
+        <span className="pick-name" aria-hidden="true">
+          <b>{parts.base}</b>
+          {mega && <span className="mega-mark"><Icon name="mega" />{mega.letter}</span>}
+        </span>
+      )}
     </button>
   );
 }
