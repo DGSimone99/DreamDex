@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -162,5 +164,12 @@ describe('TeamPanel', () => {
     await chooseGen(user, '4');
     expect(within(teamRegion()).getByText('Oltre la Gen 4')).toBeInTheDocument();
     expect(within(teamRegion()).getByText('Great Tusk')).toBeInTheDocument();
+  });
+});
+
+describe('carta del team', () => {
+  it('i tipi centrati sotto il nome', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/team.css'), 'utf8');
+    expect(css.match(/\.slot \.types \{[^}]*\}/)![0]).toContain('justify-content: center');
   });
 });

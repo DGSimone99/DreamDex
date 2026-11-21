@@ -904,13 +904,21 @@ describe('carta Pedana', () => {
 });
 
 describe('motivi delle carte', () => {
-  it('una riga di motivi troppo larga resta allineata all’inizio (centro "sicuro"): non perde il segno né l’inizio della parola', () => {
+  it('i motivi partono da sinistra, con 2 px fra una riga e l’altra; una riga troppo larga finisce coi puntini', () => {
     const css = readFileSync(resolve(__dirname, '../../src/styles/suggestions.css'), 'utf8');
     const rule = css.match(/\.reason\.has-sym \{[^}]*\}/)![0];
-    expect(rule).toContain('justify-content: safe center');
-    // Anche il contenitore dei motivi: una riga più larga della carta parte dal bordo sinistro, non esce dai due lati
+    expect(rule).toContain('justify-content: flex-start');
     const box = css.match(/\.card \.who small \{[^}]*\}/)![0];
-    expect(box).toContain('align-items: safe center');
+    expect(box).toContain('align-items: stretch');
+    expect(box).toContain('gap: calc(2px + var(--foot-air) / 4)');
     expect(css).toMatch(/\.card \.reason \{[^}]*max-width: 100%/);
+    expect(css).toMatch(/\.card \.reason \{[^}]*text-align: left/);
+  });
+
+  it('chi esce (Sostituisci): l’icona del box a grandezza vera, nitida', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/suggestions.css'), 'utf8');
+    const icon = css.match(/\.card \.tag \.out-mon \.mon-icon \{[^}]*\}/)![0];
+    expect(icon).not.toContain('scale(');
+    expect(icon).toContain('image-rendering: pixelated');
   });
 });

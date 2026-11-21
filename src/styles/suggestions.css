@@ -522,8 +522,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    rimpicciolita dentro un riquadro 20×16: la targhetta cresce solo a destra quanto basta */
 .card .tag .out { display: flex; align-items: center; gap: var(--sp-1); height: 15px; margin-left: 1px; }
 .card .tag .out > .icon { width: 13px; height: 13px; vertical-align: 0; opacity: 0.72; }
-.card .tag .out-mon { position: relative; flex: none; width: 20px; height: 16px; overflow: hidden; }
-.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -54%) scale(0.56); image-rendering: auto; }
+/* L'icona di chi esce a grandezza vera (40×30, la pixel art rimpicciolita sbava e non si riconosce): il riquadro di 28×22
+   taglia solo il bordo vuoto dell'icona */
+.card .tag .out-mon { position: relative; flex: none; width: 28px; height: 22px; margin: -4px 0; overflow: hidden; }
+.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -56%); image-rendering: pixelated; }
 /* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: var(--sp-2); }
 .card .card-types img { width: 20px; height: 20px; box-shadow: none; }
@@ -547,8 +549,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    le icone tengono la loro riga e la forma si legge sempre intera */
 .card .pick-name .forme { position: absolute; z-index: 1; top: -22px; right: 8px; max-width: calc(100% - 16px); padding: 1px var(--sp-3); background: var(--ground); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .card.first .pick-name .forme { background: var(--ground); }
-.card .who small { display: flex; flex-direction: column; align-items: safe center; gap: calc(var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }
-.card .reason { display: block; max-width: 100%; min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .who small { display: flex; flex-direction: column; align-items: stretch; gap: calc(2px + var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }
+.card .reason { display: block; max-width: 100%; min-width: 0; text-align: left; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 
 /* Motivi a segni: ⚔️ chip dei tipi colpiti, 🛡️ chip dei tipi retti (gli immuni con la parola), "vs" chi
@@ -559,7 +561,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    ancora le liste di Pokémon fermati, quindi restano a segni */
 .suggestions > li { container: cand / inline-size; }
 .reason.has-sym .words { display: none; }
-.reason.has-sym { display: flex; align-items: center; justify-content: safe center; max-width: 100%; overflow: visible; text-overflow: clip; }
+.reason.has-sym { display: flex; align-items: center; justify-content: flex-start; max-width: 100%; overflow: visible; text-overflow: clip; }
 .reason.has-sym > b { flex: none; }
 .reason .syms { display: contents; }
 @container cand (min-width: 560px) {

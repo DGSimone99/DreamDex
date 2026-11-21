@@ -352,7 +352,7 @@
 /* Nome troppo lungo anche rimpicciolito e senza forma (TeamPanel): una riga sola coi puntini */
 .slot .name.dots { display: block; white-space: nowrap; text-overflow: ellipsis; }
 /* Altezza riga in px interi: con 12px × 1.45 (17.4px) i tipi sopra finivano a mezzo pixel e la scritta saliva verso il bordo alto */
-.slot .types { display: flex; gap: var(--sp-2); flex-wrap: nowrap; margin: var(--sp-1) 0; }
+.slot .types { display: flex; justify-content: center; gap: var(--sp-2); flex-wrap: nowrap; margin: var(--sp-1) 0; }
 /* I chip devono stare dentro la carta: la fila è larga quanto la carta e, se due chip col nome non entrano, TeamPanel
    mostra le icone tonde dei tipi (come sulle carte dei candidati) */
 .band:not(.collapsed) .slot .types { align-self: stretch; height: 19px; overflow: hidden; }
