@@ -250,7 +250,7 @@
   position: relative;
   isolation: isolate;
   /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
-  min-height: 200px;
+  min-height: 220px;
   padding: var(--sp-4) var(--sp-6) 20px;
   display: flex;
   flex-direction: column;
