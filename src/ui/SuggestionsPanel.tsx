@@ -88,7 +88,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const [pageState, setPage] = useState(0);
   // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
   const listRef = useRef<HTMLOListElement>(null);
-  const { perPage, columns, tileHeight, reasons } = usePerPage(listRef, teamCollapsed);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const { perPage, columns, tileHeight, reasons, listWidth } = usePerPage(listRef, pickerRef, teamCollapsed);
   const [chosenFilters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // I ruoli scelti in un formato che questo non offre (singolo → doppio) qui non valgono: né accesi né contati
   const filterRules = useMemo(() => formatRules(format.formatId), [format.formatId]);
@@ -303,7 +304,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const select = (item: Item) => { setSelectedName(item.species); setSheetOpen(true); };
   // Sul telefono la scheda è una finestra: il fuoco ci entra, Esc la chiude, la lista sotto non si raggiunge
   const phone = useMediaQuery(PHONE);
-  const pickerRef = useRef<HTMLDivElement>(null);
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;
