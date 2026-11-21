@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
@@ -9,7 +9,7 @@ import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 afterEach(() => window.history.replaceState(null, '', '/'));
 
 const withTeam = () => {
-  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
+  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_CHOICE)}`);
   return render(<App initialLang="it" data={fixtureData} />);
 };
 

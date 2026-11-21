@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Format } from '../engine/format';
+import type { FormatChoice } from '../engine/formatChoice';
 import { shareUrl } from '../share';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { copyText } from './clipboard';
@@ -9,7 +10,7 @@ import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 import { hint as bubble } from './MoveTip';
 
-export function ShowdownPanel({ team, format, tera = true, onImport, onExport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
+export function ShowdownPanel({ team, format, choice, tera = true, onImport, onExport }: { team: TeamSet[]; format: Format; /** La scelta del formato, per il link */ choice: FormatChoice; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
   onImport: (team: TeamSet[], again?: boolean) => void;
   /** Esporta il testo per Showdown e dice "team pronto" con l'avviso (DoneToast, lo stesso del Coaching); senza, copia e basta */
   onExport?: () => Promise<boolean> }) {
@@ -25,7 +26,7 @@ export function ShowdownPanel({ team, format, tera = true, onImport, onExport }:
   const [hint, setHint] = useState<'text' | 'link' | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const copy = async (kind: 'text' | 'link') => {
-    const ok = kind === 'text' && onExport ? await onExport() : await copyText(kind === 'text' ? exportShowdown(team, { tera }) : shareUrl(team, format));
+    const ok = kind === 'text' && onExport ? await onExport() : await copyText(kind === 'text' ? exportShowdown(team, { tera }) : shareUrl(team, choice));
     if (!ok) return;
     setCopied(kind);
     clearTimeout(timer.current);

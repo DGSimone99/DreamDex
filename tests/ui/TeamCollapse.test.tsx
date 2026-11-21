@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
 import { loadTeamCollapsed } from '../../src/storage';
@@ -19,7 +19,7 @@ const memory = (initial: Record<string, string> = {}) => {
 afterEach(() => window.history.replaceState(null, '', '/'));
 
 function renderTeam(storage?: Storage) {
-  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
+  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_CHOICE)}`);
   return render(<App initialLang="it" data={fixtureData} storage={storage} />);
 }
 
@@ -61,7 +61,7 @@ describe('team compresso', () => {
   it('compresso, un membro con un problema mostra il puntino di avviso', async () => {
     const user = userEvent.setup();
     const kyogre = { ...tusk, species: 'Kyogre', item: '', ability: 'Drizzle' };
-    window.history.replaceState(null, '', `/#team=${encodeShare([tusk, kyogre], DEFAULT_FORMAT)}`);
+    window.history.replaceState(null, '', `/#team=${encodeShare([tusk, kyogre], DEFAULT_CHOICE)}`);
     const { container } = render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     const cards = [...container.querySelectorAll<HTMLElement>('.slot-card')];

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import type { Format } from '../engine/format';
+import { rulesOf, type FormatChoice } from '../engine/formatChoice';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { encodeShare } from '../share';
@@ -20,9 +20,9 @@ type Status = 'idle' | 'sending' | 'sent' | 'error';
  * e versione). Parte con Web3Forms, così l'indirizzo di chi riceve non si vede mai; senza la chiave del servizio, o se
  * l'invio non va, resta la strada di GitHub.
  */
-export function FeedbackDialog({ team, format, onClose, accessKey = import.meta.env.VITE_WEB3FORMS_KEY, send = fetch }: {
+export function FeedbackDialog({ team, choice, onClose, accessKey = import.meta.env.VITE_WEB3FORMS_KEY, send = fetch }: {
   team: TeamSet[];
-  format: Format;
+  choice: FormatChoice;
   onClose: () => void;
   /** Chiave di Web3Forms (di solito dalla build; i test la passano). */
   accessKey?: string;
@@ -48,7 +48,7 @@ export function FeedbackDialog({ team, format, onClose, accessKey = import.meta.
     e.preventDefault();
     if (!accessKey || !message.trim() || status === 'sending') return;
     setStatus('sending');
-    const link = attach && team.length ? `${location.origin}${location.pathname}#team=${encodeShare(team, format)}` : '';
+    const link = attach && team.length ? `${location.origin}${location.pathname}#team=${encodeShare(team, choice)}` : '';
     try {
       const response = await send(ENDPOINT, {
         method: 'POST',
@@ -60,7 +60,7 @@ export function FeedbackDialog({ team, format, onClose, accessKey = import.meta.
           ...(email.trim() && { email: email.trim() }),
           tipo: kind,
           messaggio: message.trim(),
-          ...(link && { team: link, formato: format.formatId }),
+          ...(link && { team: link, formato: rulesOf(choice).formatId }),
           versione: __APP_VERSION__,
           lingua: lang,
           botcheck: false,

@@ -5,8 +5,8 @@ import type { CoachFix } from './engine/coachFixes';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { gameReady, withGame, type GameId } from './engine/games';
-import { dataSource, formatLabel, teraAllowed } from './engine/formats';
+import { DEFAULT_MEMORY, remember as rememberChoice, rulesOf, withMultipleMegas, type FormatChoice } from './engine/formatChoice';
+import { battleOf, dataSource, dexOf, formatLabel, teraAllowed, tiersOf } from './engine/formats';
 import { battleName } from './engine/dex';
 import { DoneToast, UndoToast, type DoneNote, type ListUndo, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
@@ -27,7 +27,7 @@ import type { MoveFix } from './engine/moveFixes';
 import { Rail } from './ui/Rail';
 import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadListSprite, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
+import { loadLang, loadListSprite, loadLists, loadPalette, loadFormatMemory, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveFormatMemory, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { CreditsDialog } from './ui/CreditsDialog';
 import { FeedbackDialog } from './ui/FeedbackDialog';
@@ -79,38 +79,24 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [session] = useState(() => (storage ? loadSession(storage) : null));
   // Un link con un team (#team=...) vince sulla sessione salvata; quella resta recuperabile con Annulla
   const [shared] = useState(takeSharedTeam);
-  // Un gioco salvato senza i suoi dati (Pokédex non scaricato) non si può usare: si riparte senza gioco, il team resta
-  const [format, setFormat] = useState<Format>(() => {
-    const saved = shared?.format ?? session?.format ?? DEFAULT_FORMAT;
-    return saved.game && !gameReady(saved.game) ? DEFAULT_FORMAT : saved;
-  });
-  // Il formato di prima del gioco: con "Qualsiasi gioco" si torna lì
-  const [beforeGame, setBeforeGame] = useState<Format | null>(null);
-  /**
-   * Il formato di un team caricato (team salvati, Annulla). Col gioco: il gioco col suo blocco, se i suoi dati ci sono
-   * (si ricorda il formato di prima per "Qualsiasi gioco"); senza gioco: quel formato col meta di adesso, come prima
-   * (uscendo da un gioco, il meta del formato di prima del gioco).
-   */
-  const adoptFormat = (next: Format) => {
-    if (next.game && gameReady(next.game)) {
-      if (!format.game) setBeforeGame(format);
-      setFormat(withGame(next, next.game));
-      return;
-    }
-    const meta = format.game ? (beforeGame ?? DEFAULT_FORMAT).meta : format.meta;
-    if (format.game) setBeforeGame(null);
-    setFormat({ ...withGame(next, null), meta });
+  // La scelta del formato (una delle tre famiglie): un gioco senza i suoi dati torna già al formato di base (sanitizeChoice)
+  const [choice, setChoice] = useState<FormatChoice>(() => shared?.choice ?? session?.choice ?? DEFAULT_MEMORY.competitive);
+  // Le regole che leggono motore e schede
+  const format = useMemo(() => rulesOf(choice), [choice]);
+  // L'ultima scelta di ogni famiglia: qualunque cosa cambi il formato (finestra, team salvato, link, Annulla) la aggiorna
+  const [memory, setMemory] = useState(() => (storage ? loadFormatMemory(storage) : DEFAULT_MEMORY));
+  useEffect(() => { setMemory(m => rememberChoice(m, choice)); }, [choice]);
+  useEffect(() => { if (storage) saveFormatMemory(memory, storage); }, [memory, storage]);
+  // TEMPORANEO fino alla nuova barra (Task 4): la barra di oggi lavora sulle regole
+  const choiceOfRules = (f: Format): FormatChoice => {
+    if (f.game) return { family: 'game', game: f.game, allPokedex: f.allPokedex, legendaries: f.legendaries };
+    if (f.formatId === 'all') return { family: 'free', genLimit: f.genLimit, multipleMegas: f.allowMultipleMegas };
+    const dex = dexOf(f.formatId);
+    const battle = battleOf(f.formatId);
+    const tier = tiersOf(dex, battle).find(x => x.formatId === f.formatId)!.tier;
+    return { ...DEFAULT_MEMORY.competitive, gen: dex === 'gen9' ? 9 : 'natdex', battle, tier, ignoreBans: f.ignoreBans, multipleMegas: f.allowMultipleMegas };
   };
-  const changeGame = (game: GameId | null) => {
-    if (game === format.game) return;
-    if (game) {
-      if (!format.game) setBeforeGame(format);
-      setFormat(withGame(format, game));
-    } else {
-      setFormat(withGame(beforeGame ?? DEFAULT_FORMAT, null));
-      setBeforeGame(null);
-    }
-  };
+  const changeGame = (game: 'sv' | null) => setChoice(game ? memory.game : memory.competitive);
   // Colori di versione: seguono il gioco del formato (o la palette fissata nelle impostazioni)
   const [palette, setPalette] = useState<PaletteSetting>(() => (storage ? loadPalette(storage) : null) ?? 'auto');
   const changePalette = (next: PaletteSetting) => {
@@ -185,8 +171,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
   const [team, setTeam] = useState<TeamSet[]>(initialTeam);
   useEffect(() => {
-    if (storage) saveSession({ team, format }, storage);
-  }, [team, format, storage]);
+    if (storage) saveSession({ team, choice }, storage);
+  }, [team, choice, storage]);
   // Scheda aperta sotto il team: col team vuoto si parte dai Pokémon, poi vale l'ultima scelta
   // Cosa mostra Analisi: la Panoramica o un'area del voto (il riquadro Voto apre le aree)
   const [analysisView, setAnalysisView] = useState<AnalysisView>('overview');
@@ -349,9 +335,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   };
   // Rimozioni e sostituzioni si possono annullare per qualche secondo
   // (vale finché il team resta quello lasciato dall'azione: un'altra modifica chiude l'avviso)
-  const [undo, setUndo] = useState<(UndoAction & { before: TeamSet[]; after: TeamSet[]; format?: Format }) | null>(() =>
+  const [undo, setUndo] = useState<(UndoAction & { before: TeamSet[]; after: TeamSet[]; choice?: FormatChoice }) | null>(() =>
     shared && session?.team.length
-      ? { id: 0, kind: 'load', from: '', before: session.team, after: initialTeam, format: session.format }
+      ? { id: 0, kind: 'load', from: '', before: session.team, after: initialTeam, choice: session.choice }
       : null);
   const undoId = useRef(0);
   // Esporta (barra del team e Coaching): il testo per Showdown negli appunti e il momento "team pronto" col voto
@@ -394,14 +380,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   };
   // Team importato o caricato dai team salvati: si annulla come le altre modifiche (con il formato di prima).
   // A team vuoto non c'è niente da riavere: niente avviso
-  const loadTeam = (next: TeamSet[], action: Omit<UndoAction, 'id'>, nextFormat?: Format, again = false) => {
+  const loadTeam = (next: TeamSet[], action: Omit<UndoAction, 'id'>, nextChoice?: FormatChoice, again = false) => {
     // Lo stesso import ritoccato (Custom Skillset sbloccato): l'Annulla resta quello del team di prima dell'import
     const chained = again && undo && undo.kind === 'import' && undo.after === team ? undo : null;
     if (again && !chained) { changeTeam(next); return; }
     const before = chained ? chained.before : team;
     const after = changeTeam(next);
-    if (nextFormat) adoptFormat(nextFormat);
-    if (before.length) setUndo({ ...action, id: ++undoId.current, before, after, format: chained ? chained.format : nextFormat ? format : undefined });
+    if (nextChoice) setChoice(nextChoice);
+    if (before.length) setUndo({ ...action, id: ++undoId.current, before, after, choice: chained ? chained.choice : nextChoice ? choice : undefined });
     else setUndo(null);
   };
   const removeAt = (index: number) => {
@@ -428,7 +414,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         main.focus();
         main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
       }}>{t(lang, 'app.skipToContent')}</a>
-      <Rail format={format} onFormatChange={setFormat} onGameChange={changeGame} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
+      <Rail format={format} onFormatChange={f => setChoice(choiceOfRules(f))} onGameChange={changeGame} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
         onCredits={() => setCreditsOpen(true)}
         onFeedback={() => setFeedbackOpen(true)}
@@ -469,13 +455,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       <AutoBand phone={phone} collapsed={collapsed} control={bandControl}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
           grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
-          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
-          saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
+          io={<ShowdownPanel team={team} format={format} choice={choice} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
+          saved={<SavedTeams team={team} choice={choice} onLoad={(saved, savedChoice, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedChoice)} />}
           plateName={<SavedPlateName team={team} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onTipApply={applyTip} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
-          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
+          onAllowMultipleMegas={() => setChoice(withMultipleMegas)} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
@@ -531,7 +517,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         onCredits={() => { setSettingsOpen(false); setCreditsOpen(true); }}
         onFeedback={() => { setSettingsOpen(false); setFeedbackOpen(true); }} onClose={closeSettings} />}
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
-      {feedbackOpen && <FeedbackDialog team={team} format={format} onClose={closeFeedback} />}
+      {feedbackOpen && <FeedbackDialog team={team} choice={choice} onClose={closeFeedback} />}
       {/* Il team copiato per Showdown: sta dove sta l'avviso di Annulla, che intanto aspetta (torna quando questo si chiude) */}
       <TouchTips />
       {/* Il tooltip delle mosse: uno per tutta l'app, su ogni pillola o campo con data-move-tip */}
@@ -543,7 +529,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       {!done && undo && undo.after === team && (
         <UndoToast action={undo} docked={editingIndex !== null} onClose={() => setUndo(null)}
-          onUndo={() => { changeTeam(undo.before); if (undo.format) adoptFormat(undo.format); setUndo(null); }} />
+          onUndo={() => { changeTeam(undo.before); if (undo.choice) setChoice(undo.choice); setUndo(null); }} />
       )}
     </div>
     </LangProvider>

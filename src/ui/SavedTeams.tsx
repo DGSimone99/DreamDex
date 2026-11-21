@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { Format } from '../engine/format';
+import { rulesOf, type FormatChoice } from '../engine/formatChoice';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Icon } from './icons';
@@ -55,10 +55,10 @@ export function SavedPlateName({ team }: { team: TeamSet[] }) {
  * Team salvati: una linguetta della barra del team (accanto a Importa ed Esporta) che apre il menu: salva il team attuale,
  * salva le modifiche al team caricato, e la lista dei team salvati (si caricano col clic, × li elimina con Annulla).
  */
-export function SavedTeams({ team, format, onLoad }: {
+export function SavedTeams({ team, choice, onLoad }: {
   team: TeamSet[];
-  format: Format;
-  onLoad: (team: TeamSet[], format: Format | undefined, name: string) => void;
+  choice: FormatChoice;
+  onLoad: (team: TeamSet[], choice: FormatChoice | undefined, name: string) => void;
 }) {
   const t = useT();
   const [saved, setSaved] = useState<SavedTeam[]>(() => loadSavedTeams());
@@ -95,7 +95,7 @@ export function SavedTeams({ team, format, onLoad }: {
   const store = (trimmed: string) => {
     const favorites = team.flatMap((set, i) => (set.favorite ? [i] : []));
     const custom = team.flatMap((set, i) => (set.customSkillset ? [i] : []));
-    if (update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text, favorites, custom, format }])) {
+    if (update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text, favorites, custom, choice }])) {
       setCurrent({ name: trimmed, text });
       setDone(Date.now());
       clearTimeout(doneTimer.current);
@@ -159,7 +159,7 @@ export function SavedTeams({ team, format, onLoad }: {
                     const loaded = exportShowdown(sets);
                     beforeLoad.current = { current, text, loaded };
                     setCurrent({ name: entry.name, text: loaded });
-                    onLoad(sets, entry.format, entry.name);
+                    onLoad(sets, entry.choice, entry.name);
                   }}>
                     {/* Solo i Pokémon che il team ha (niente caselle vuote); quanti sono lo dice "n/6" accanto al nome */}
                     <span className="saved-sprites" aria-hidden="true">
@@ -169,7 +169,7 @@ export function SavedTeams({ team, format, onLoad }: {
                       <span className="saved-name">{entry.name}</span>
                       <span className="saved-meta">
                         <span className="saved-size" aria-hidden="true">{members.get(entry.name)?.length ?? 0}/6</span>
-                        {entry.format && <span className="saved-format">{entry.format.game ? t(`game.${entry.format.game}`) : t(`format.${entry.format.formatId}`)}</span>}
+                        {entry.choice && <span className="saved-format">{entry.choice.family === 'game' ? t(`game.${entry.choice.game}`) : t(`format.${rulesOf(entry.choice).formatId}`)}</span>}
                       </span>
                     </span>
                   </button>

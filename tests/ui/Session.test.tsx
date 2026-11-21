@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE, type FormatChoice } from '../../src/engine/formatChoice';
 import { loadSession, saveSession } from '../../src/storage';
 import { chooseTier, chosen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
@@ -23,12 +23,14 @@ describe('sessione salvata', () => {
   it('round-trip e dati non validi', () => {
     const storage = memory();
     const tusk = { species: 'Great Tusk', item: '', ability: '', moves: [], nature: 'Jolly', evs: {}, favorite: true };
-    expect(saveSession({ team: [tusk], format: { ...DEFAULT_FORMAT, formatId: 'uu' } }, storage)).toBe(true);
-    expect(loadSession(storage)).toEqual({ team: [tusk], format: { ...DEFAULT_FORMAT, formatId: 'uu' } });
+    const free: FormatChoice = { family: 'free', genLimit: 6, multipleMegas: false };
+    expect(saveSession({ team: [tusk], choice: free }, storage)).toBe(true);
+    expect(loadSession(storage)).toEqual({ team: [tusk], choice: free });
     expect(loadSession(memory({ 'dreamdex.session': '{rotto' }))).toBeNull();
-    expect(loadSession(memory({ 'dreamdex.session': JSON.stringify({ team: 'x', format: {} }) }))).toBeNull();
-    const weird = loadSession(memory({ 'dreamdex.session': JSON.stringify({ team: [tusk], format: { formatId: 'zzz', genLimit: 'x' } }) }));
-    expect(weird?.format).toEqual(DEFAULT_FORMAT);
+    expect(loadSession(memory({ 'dreamdex.session': JSON.stringify({ team: 'x', choice: {} }) }))).toBeNull();
+    const weird = loadSession(memory({ 'dreamdex.session': JSON.stringify({ team: [tusk], format: { formatId: 'gen9ou' } }) }));
+    expect(weird?.team).toEqual([tusk]);
+    expect(weird?.choice).toEqual(DEFAULT_CHOICE);
     expect(loadSession(undefined)).toBeNull();
   });
 

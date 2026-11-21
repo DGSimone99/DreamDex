@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { getSpecies } from '../../src/engine/dex';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { battleOf, dataSource, dexOf, formatIn, formatLabel, formatOptions, isBannedIn, isLegalIn, pokedexOf, teraAllowed, tiersOf } from '../../src/engine/formats';
-import { sanitizeFormat } from '../../src/storage';
+import { DEFAULT_CHOICE, rulesOf, sanitizeChoice } from '../../src/engine/formatChoice';
 import { candidatePool } from '../../src/engine/scoring';
 import { fixtureData, tusk } from '../fixtures/data';
 
@@ -66,6 +66,6 @@ describe('formati', () => {
   it('il doppio è nel menu e tra i formati, e un salvataggio in doppio resta in doppio', () => {
     expect(tiersOf('natdex', 'doubles')).toEqual([{ formatId: 'natdexdoubles', tier: 'OU' }]);
     expect(formatOptions().map(o => o.id)).toContain('natdexdoubles');
-    expect(sanitizeFormat({ formatId: 'natdexdoubles' }).formatId).toBe('natdexdoubles');
+    expect(rulesOf(sanitizeChoice({ ...DEFAULT_CHOICE, battle: 'doubles' })).formatId).toBe('natdexdoubles');
   });
 });

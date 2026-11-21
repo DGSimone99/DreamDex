@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { emptySet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { fixtureData } from '../fixtures/data';
@@ -19,9 +19,9 @@ describe('aprire un link con un team', () => {
   it('carica team e formato, toglie il link e permette di annullare', async () => {
     const user = userEvent.setup();
     const storage = memoryStorage();
-    storage.setItem('dreamdex.session', JSON.stringify({ team: [emptySet('Great Tusk')], format: DEFAULT_FORMAT }));
+    storage.setItem('dreamdex.session', JSON.stringify({ team: [emptySet('Great Tusk')], choice: DEFAULT_CHOICE }));
     const shared = [{ ...emptySet('Garchomp'), ability: 'Rough Skin' }, { ...emptySet('Gholdengo'), ability: 'Good as Gold' }];
-    window.history.replaceState(null, '', `/#team=${encodeShare(shared, { ...DEFAULT_FORMAT, formatId: 'ubers' })}`);
+    window.history.replaceState(null, '', `/#team=${encodeShare(shared, { ...DEFAULT_CHOICE, tier: 'Ubers' })}`);
     render(<App data={fixtureData} storage={storage} initialLang="it" />);
     expect(names()).toEqual(['Garchomp', 'Gholdengo']);
     expect(window.location.hash).toBe('');
@@ -31,7 +31,7 @@ describe('aprire un link con un team', () => {
   });
 
   it('senza team precedente nessun avviso', () => {
-    window.history.replaceState(null, '', `/#team=${encodeShare([emptySet('Garchomp')], DEFAULT_FORMAT)}`);
+    window.history.replaceState(null, '', `/#team=${encodeShare([emptySet('Garchomp')], DEFAULT_CHOICE)}`);
     render(<App data={fixtureData} initialLang="it" />);
     expect(names()).toEqual(['Garchomp']);
     expect(screen.queryByRole('status')).toBeNull();

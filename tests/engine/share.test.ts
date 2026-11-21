@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE, type FormatChoice } from '../../src/engine/formatChoice';
 import { emptySet } from '../../src/engine/sets';
 import { decodeShare, encodeShare } from '../../src/share';
 
@@ -7,13 +7,18 @@ const team = [
   { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Earthquake', 'Stealth Rock'], nature: 'Jolly', evs: { atk: 252, spe: 252, hp: 4 } },
   { ...emptySet('Flabébé'), ability: 'Flower Veil', moves: ['Moonblast'], customSkillset: true },
 ];
-const format = { ...DEFAULT_FORMAT, formatId: 'ubers' as const };
+const choice: FormatChoice = { ...DEFAULT_CHOICE, tier: 'Ubers' };
 
 describe('team nel link', () => {
   it('andata e ritorno: team (anche con accenti) e formato', () => {
-    const code = encodeShare(team, format);
+    const code = encodeShare(team, choice);
     expect(code).toMatch(/^[A-Za-z0-9_-]+$/);
-    expect(decodeShare(`#team=${code}`)).toEqual({ team, format });
+    expect(decodeShare(`#team=${code}`)).toEqual({ team, choice });
+  });
+
+  it('un link vecchio (col formato di prima) torna al formato di base', () => {
+    const old = btoa(JSON.stringify({ team: [{ species: 'Garchomp', moves: [] }], format: { formatId: 'uu' } }));
+    expect(decodeShare(`#team=${old}`)?.choice).toEqual(DEFAULT_CHOICE);
   });
 
   it('link rotto o assente: null', () => {

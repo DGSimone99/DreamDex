@@ -8,7 +8,7 @@ import { EMPTY_FILTERS, searchPool } from '../../src/engine/filters';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { rateTeam } from '../../src/engine/rating';
 import { moveFixes } from '../../src/engine/moveFixes';
-import { sanitizeFormat } from '../../src/storage';
+import { DEFAULT_CHOICE, rulesOf, sanitizeChoice } from '../../src/engine/formatChoice';
 
 describe('gioco nel formato', () => {
   it('il gioco blocca il formato su Gen 9 senza meta', () => {
@@ -20,9 +20,10 @@ describe('gioco nel formato', () => {
   });
 
   it('un gioco salvato rimette il suo blocco', () => {
-    expect(sanitizeFormat({ formatId: 'ou', meta: true, game: 'sv', allPokedex: true, legendaries: 'x' }))
+    initGames({ sv: { dex: ['sprigatito'] } });
+    expect(rulesOf(sanitizeChoice({ family: 'game', game: 'sv', allPokedex: true, legendaries: 'x' })))
       .toMatchObject({ game: 'sv', formatId: 'gen9ag', meta: false, allPokedex: true, legendaries: false });
-    expect(sanitizeFormat({ formatId: 'ou', game: 'pippo' })).toMatchObject({ game: null, formatId: 'ou', allPokedex: false, legendaries: false });
+    expect(sanitizeChoice({ family: 'game', game: 'pippo' })).toEqual(DEFAULT_CHOICE);
   });
 });
 
