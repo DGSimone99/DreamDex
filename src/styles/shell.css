@@ -22,54 +22,21 @@
 }
 .rail-logo { margin: 0; padding: 0 var(--sp-8); color: var(--text); }
 .rail-logo-art svg { display: block; width: 100%; height: auto; }
-.rail-field { display: grid; gap: var(--sp-2); }
 .rail-label { margin: 0; font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-.rail-field select { width: 100%; font-weight: 500; }
-/* Carta del formato: il Pokédex in grande, il tier in una fascia azzurra, le regole in una riga di testo; il clic apre il
-   menu. Il bordo sottile tinto d'azzurro la distingue dalle tessere delle sezioni; sotto il mouse o aperta è azzurro pieno */
-.format-card { margin: 0 var(--sp-8); }
-/* Gioco sopra il formato: due carte uguali, una sotto l'altra */
-.game-card { margin-bottom: var(--sp-4); }
-.game-card .format-dex { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-/* Il nome del gioco è lungo ("Scarlatto e Violetto"): va a capo invece di essere tagliato */
-.game-card .format-name { white-space: normal; font-size: var(--fs-title); }
-.popover.format-card > summary, .format-card.locked > .format-summary, .game-card > .format-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: 'key tier' 'name name' 'pills pills';
-  align-items: center;
-  gap: var(--sp-2) var(--sp-4);
-  width: 100%;
-  padding: var(--sp-5) var(--sp-5) var(--sp-5) var(--sp-6);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
-  border-radius: 4px;
-  background: var(--raised);
-  text-align: left;
-  cursor: pointer;
-}
-.format-key { grid-area: key; display: flex; align-items: center; gap: var(--sp-3); font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-.format-key .icon { width: 13px; height: 13px; color: var(--muted); }
-/* Formato bloccato dal gioco: stessa carta, bordo neutro, niente clic; sotto la nota "Lo decide il gioco" */
-.format-card.locked > .format-summary { grid-template-areas: 'key tier' 'name name' 'pills pills' 'lock lock'; border-color: var(--line); cursor: default; }
-.format-lock { grid-area: lock; color: var(--faint); font: 500 var(--fs-caption)/1.4 var(--ui); }
-.format-card > summary:hover .format-key .icon, .format-card[open] .format-key .icon { color: var(--accent); }
-.format-tier { grid-area: tier; padding: var(--sp-1) var(--sp-6) var(--sp-1) var(--sp-4); font: 800 var(--fs-body)/1.2 var(--display); font-style: italic; color: var(--on-accent); background: var(--accent); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-.format-name { grid-area: name; overflow: hidden; font: 800 var(--fs-plate)/1.1 var(--display); font-style: italic; color: var(--text); white-space: nowrap; text-overflow: ellipsis; }
-.format-pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: 0 var(--sp-3); color: var(--muted); font: 500 var(--fs-caption)/1.4 var(--ui); }
-/* Le regole sono uno stato, non pulsanti: testo semplice separato da puntini */
-.format-pills span + span::before { content: '·'; margin-right: var(--sp-3); color: var(--faint); }
-/* Il menu del formato: testata inclinata come i pannelli, poi le scelte come schede, pulsanti e interruttori */
-.popover.format-card[open] > .format-menu { width: 340px; padding: 0; overflow: hidden; }
-.format-menu-head { margin: 0 120px 0 0; padding: 7px 26px 7px var(--sp-7); font: 700 var(--fs-body)/1.2 var(--display); font-style: italic; color: var(--on-plate); background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
-.format-menu-body { display: grid; gap: var(--sp-7); padding: var(--sp-6) var(--sp-7) var(--sp-7); }
-.format-sec > .rail-label { margin-bottom: var(--sp-3); }
-.format-dex { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
-.format-dex-opt { display: grid; align-content: start; gap: 3px; padding: var(--sp-4); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer; }
-.format-dex-opt b { font: 700 var(--fs-section)/1.1 var(--display); font-style: italic; color: var(--text); }
-.format-dex-opt small { color: var(--muted); font-size: var(--fs-label); line-height: 1.25; }
-.format-dex-opt.on { border-color: var(--accent); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
-.format-dex-opt.soon, .format-chips label.soon { opacity: 0.5; cursor: not-allowed; }
-.format-dex-opt:hover:not(.on, .soon), .format-chips label:hover:not(.on, .soon), .format-gens label:hover:not(.on) { border-color: var(--accent); }
+/* Formato: una targa azzurra a righine a tutta larghezza (icona della famiglia, nome in grande, freccina) e sotto una riga
+   scura col riassunto e la famiglia. Tutto è un pulsante che apre la finestra Scegli il formato */
+.rail-format { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0; width: 100%; height: auto; padding: 0; border: 0; border-block: 1px solid var(--line); border-radius: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.rail-format-plate { display: grid; grid-template-columns: 20px minmax(0, 1fr) 16px; align-items: center; gap: var(--sp-5); padding: var(--sp-5) var(--sp-7) var(--sp-5) var(--sp-9); background: var(--stripes), linear-gradient(100deg, #5fe6ff, var(--accent) 50%, #00a9d1); color: var(--on-accent); }
+.rail-format-plate .icon { width: 20px; height: 20px; stroke-width: 2.3; }
+.rail-format-plate .icon:last-child { width: 16px; height: 16px; stroke-width: 2.6; transition: translate 0.15s var(--ease); }
+.rail-format-name { font: 800 var(--fs-title-l)/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; text-wrap: balance; }
+.rail-format-sub { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-1) var(--sp-4); padding: var(--sp-4) var(--sp-7) var(--sp-4) var(--sp-9); background: var(--field); }
+.rail-format-summary { display: flex; flex-wrap: wrap; gap: 0 var(--sp-3); min-width: 0; white-space: nowrap; color: var(--muted); font: 500 var(--fs-caption)/1.35 var(--ui); }
+.rail-format-summary span + span::before { content: '·'; margin-right: var(--sp-3); color: var(--faint); }
+.rail-format-family { flex: none; color: var(--accent); font: 700 var(--fs-caption)/1.2 var(--display); font-style: italic; }
+.rail-format:hover .rail-format-plate { background: var(--stripes), linear-gradient(100deg, #8af0ff, #33dcff 50%, var(--accent)); }
+.rail-format:hover .rail-format-plate .icon:last-child { translate: 3px 0; }
+.rail-format:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .format-chips { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .format-chips label { min-width: 44px; padding: 5px var(--sp-5); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--muted); font: 700 var(--fs-section)/1.2 var(--display); font-style: italic; text-align: center; cursor: pointer; }
 .format-chips label.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
@@ -77,14 +44,9 @@
 .format-gens label { padding: 5px 0; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--faint); font: 700 var(--fs-small)/1.2 var(--ui); text-align: center; cursor: pointer; }
 .format-gens label.in { border-color: var(--accent-soft); background: var(--accent-wash); color: var(--text); }
 .format-gens label.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-/* Il fuoco della tastiera sulle scelte (i pulsanti radio veri sono nascosti) */
-.format-menu label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.format-sec .segmented { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
-.format-sec .segmented button { padding: 7px var(--sp-4); font-weight: 600; }
-.format-sec .segmented button:disabled { cursor: not-allowed; opacity: 0.6; }
-.format-note { margin: var(--sp-3) 0 0; color: var(--muted); font-size: var(--fs-caption); line-height: 1.35; }
+.format-chips label.soon { opacity: 0.5; cursor: not-allowed; }
+.format-chips label:hover:not(.on, .soon), .format-gens label:hover:not(.on) { border-color: var(--accent); }
 .format-toggle { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--sp-1) var(--sp-6); padding: var(--sp-4) 0; border-top: 1px solid var(--line-soft); cursor: pointer; }
-.format-sec > .rail-label + .format-toggle { padding-top: 0; border-top: 0; }
 .format-toggle b { font: 600 var(--fs-small) var(--ui); color: var(--text); }
 .format-toggle small { grid-column: 1; color: var(--muted); font-size: var(--fs-caption); line-height: 1.3; }
 /* Interruttore: la casella vera, disegnata come una levetta */
@@ -159,33 +121,64 @@
 .skip-link:focus { transform: none; }
 .main:focus { outline: none; }
 
-/* Carta del gioco: un pulsante che apre il modale, con lo stesso aspetto della carta del formato */
-button.game-card { display: block; width: calc(100% - 32px); padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.game-card > .format-summary:hover, .game-card:focus-visible > .format-summary { border-color: var(--accent); }
-.game-card:hover .format-key .icon { color: var(--accent); }
 
-/* Modale del gioco: tessere coi loghi (due versioni affiancate), poi le opzioni del gioco scelto */
-.game-dialog { width: min(820px, 100%); }
-.game-body { display: grid; gap: var(--sp-8); padding: var(--sp-8) var(--sp-9) var(--sp-9); overflow-y: auto; }
-/* Tessere larghe: due loghi interi affiancati (le versioni vanno in coppia) */
-.game-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: var(--sp-6); }
-.game-tile { display: grid; grid-template-rows: 130px auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow: hidden; cursor: pointer; transition: border-color 0.15s var(--ease), transform 0.15s var(--ease); }
-.game-tile:hover { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); transform: translateY(-2px); }
-.game-tile.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.game-tile:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.game-tile.off { opacity: 0.45; cursor: not-allowed; }
-.game-tile.off:hover { transform: none; border-color: var(--line); }
-.game-art { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-items: center; justify-items: center; gap: var(--sp-5); padding: var(--sp-6) var(--sp-7); background: var(--field); }
-.game-tile.none .game-art { grid-auto-flow: row; color: var(--faint); }
-.game-tile.none .game-art .icon { width: 40px; height: 40px; }
 /* Scarlatto e Violetto: metà rossa e metà viola dietro i due loghi */
-.game-tile.game-sv .game-art { background: linear-gradient(100deg, #5a1a14 0 50%, #33195c 50% 100%); }
-.game-logo { display: block; width: 100%; height: 100%; max-height: 106px; object-fit: contain; }
-.game-logo-text { font: 800 italic var(--fs-heading)/1 var(--display); text-align: center; text-transform: uppercase; letter-spacing: 0.02em; }
-.game-logo-text.scarlet { color: #ffb3a3; }
-.game-logo-text.violet { color: #d7c2ff; }
-.game-caption { display: grid; gap: var(--sp-1); padding: var(--sp-5) var(--sp-6) var(--sp-6); }
-.game-caption b { font: 700 italic var(--fs-title-s)/1.2 var(--display); color: var(--text); }
-.game-caption small { color: var(--muted); font: 500 var(--fs-caption)/1.4 var(--ui); }
-.game-options { display: grid; }
-.game-options > .rail-label + .format-toggle { border-top: 0; }
+
+/* Finestra Scegli il formato: le tre famiglie come linguette oblique su una fascia, sotto le scelte della famiglia mostrata
+   (una colonna). Ogni scelta vale subito. Tessere coi loghi per fonti e giochi; le generazioni Smogon passate in una scala */
+/* Misure fisse: passando da una linguetta all'altra la finestra non cambia forma; il contenuto scorre dentro */
+.help-dialog.format-dialog { width: min(840px, 100%); height: min(840px, calc(100vh - 32px)); max-height: none; }
+/* Il corpo in colonna: i crediti dei loghi scendono in fondo, sopra i pulsanti */
+.format-dialog .fmt-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.format-dialog .fmt-body > .note { margin-top: auto; }
+.fmt-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-5); padding: var(--sp-6) var(--sp-9); border-top: 1px solid var(--line); background: var(--panel); }
+.fmt-actions button { min-width: 110px; padding: var(--sp-4) var(--sp-8); font-weight: 600; text-transform: none; }
+/* Avviso prima di confermare: i membri del team che il formato scelto non ammette */
+.fmt-warning { margin: 0 auto 0 0; color: var(--warn); font: 600 var(--fs-small)/1.3 var(--ui); }
+/* La scheda con modifiche non confermate: un puntino magenta accanto al nome */
+.fmt-dirty { display: inline-block; width: 7px; height: 7px; margin-left: var(--sp-3); border-radius: 50%; background: var(--accent-2); vertical-align: 2px; }
+.fmt-families label.on .fmt-dirty { background: var(--on-accent); }
+.fmt-families { display: flex; gap: var(--sp-1); padding: var(--sp-4) var(--sp-9) 0; background: var(--band); border-bottom: 1px solid var(--line); }
+.fmt-families label { position: relative; padding: var(--sp-3) var(--sp-9) var(--sp-3) var(--sp-6); font: 800 var(--fs-section)/1.2 var(--display); font-style: italic; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); cursor: pointer; transition: color 0.15s var(--ease), background-color 0.15s var(--ease); }
+.fmt-families label:hover:not(.on, .off) { color: var(--text); background: var(--raised); }
+.fmt-families label.on { color: var(--on-accent); background: var(--accent); }
+/* La famiglia del formato attivo, quando se ne guarda un'altra: testo pieno e un filo d'accento sotto */
+.fmt-families label.active:not(.on) { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.fmt-families label.off { opacity: 0.45; cursor: not-allowed; }
+.fmt-body { display: grid; gap: var(--sp-8); padding: var(--sp-8) var(--sp-9) var(--sp-9); overflow-y: auto; }
+.fmt-sec > .rail-label { margin-bottom: var(--sp-4); }
+.fmt-sec > .rail-label + .format-toggle { padding-top: 0; border-top: 0; }
+.fmt-sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
+.fmt-gens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+/* Al massimo tre giochi per generazione (Gen 3 e Gen 4): tre tessere per riga */
+.fmt-games { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-5); }
+.fmt-tile { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; min-width: 0; gap: 3px; padding: var(--sp-4) var(--sp-5) var(--sp-5); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer; transition: border-color 0.15s var(--ease); }
+.fmt-tile b { font: 700 var(--fs-section)/1.15 var(--display); font-style: italic; color: var(--text); }
+.fmt-tile small { color: var(--muted); font: 500 var(--fs-caption)/1.3 var(--ui); }
+.fmt-tile:hover:not(.on, .off) { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.fmt-tile.on { border-color: var(--accent); background: var(--accent-wash); box-shadow: inset 0 -3px 0 var(--accent); }
+/* Le scelte non ancora pronte: grigie e a tratteggio, senza reazioni al mouse */
+.fmt-tile.off { opacity: 0.5; cursor: not-allowed; background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.035) 0 6px, transparent 6px 12px), var(--panel); }
+.fmt-art { display: flex; align-items: center; justify-content: center; gap: var(--sp-4); min-width: 0; overflow: hidden; height: 64px; margin-bottom: var(--sp-3); padding: var(--sp-3); border-radius: 3px; background: var(--field); }
+.fmt-game .fmt-art { height: 96px; }
+/* Le fonti in una striscia compatta: logo a sinistra, nome e nota a destra (oggi c'è solo Smogon) */
+.fmt-sources .fmt-tile { grid-template-columns: 64px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--sp-5); align-items: center; padding: var(--sp-3) var(--sp-5) var(--sp-3) var(--sp-3); }
+.fmt-sources .fmt-art { grid-row: 1 / span 2; height: 52px; margin: 0; padding: var(--sp-2); }
+.fmt-sources .fmt-tile b { align-self: end; }
+.fmt-sources .fmt-tile small { align-self: start; }
+.fmt-game.game-sv .fmt-art { background: linear-gradient(100deg, #5a1a14 0 50%, #33195c 50% 100%); }
+.fmt-logo { display: block; flex: 1 1 0; min-width: 0; height: 100%; object-fit: contain; }
+.fmt-logo-text { font: 800 var(--fs-section)/1 var(--display); font-style: italic; text-transform: uppercase; color: var(--text); text-align: center; }
+.fmt-past-label.first { margin-top: 0; }
+.fmt-past-label { margin: var(--sp-6) 0 var(--sp-3); color: var(--faint); font: 600 var(--fs-caption)/1.2 var(--ui); }
+.fmt-soon { margin-left: var(--sp-3); padding: 1px var(--sp-3); border-radius: 3px; background: var(--raised); color: var(--muted); font: 700 var(--fs-label)/1.3 var(--display); font-style: italic; }
+.fmt-scale { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.fmt-scale label { display: grid; justify-items: center; gap: 2px; padding: var(--sp-3) 0; border-left: 1px solid var(--line-soft); background: var(--panel); }
+.fmt-scale label:first-child { border-left: 0; }
+.fmt-scale b { font: 700 var(--fs-title-s)/1 var(--display); color: var(--muted); }
+.fmt-scale small { font: 600 var(--fs-label)/1 var(--ui); color: var(--faint); }
+.fmt-scale label.off { cursor: not-allowed; background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.035) 0 6px, transparent 6px 12px), var(--panel); }
+.fmt-scale label.off b, .fmt-scale label.off small { opacity: 0.6; }
+.fmt-note { margin: 0; color: var(--muted); font: 500 var(--fs-small)/1.45 var(--ui); }
+.format-dialog label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.format-dialog .note { margin: 0; color: var(--faint); font-size: var(--fs-caption); }

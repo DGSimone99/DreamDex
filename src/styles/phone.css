@@ -31,26 +31,14 @@
   .rail-logo { flex: none; padding: 0; }
   .rail-logo-art { display: block; width: 125px; height: 28px; overflow: hidden; }
   .rail-logo-art svg { width: auto; height: 28px; }
-  .format-card { flex: 1; min-width: 0; margin: 0; }
-  .popover.format-card > summary {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-4);
-    height: 40px;
-    padding: 0 var(--sp-5) 0 0;
-    border-left-width: 1px;
-    overflow: hidden;
-  }
-  .format-card .format-key, .format-card .format-pills { display: none; }
-  .format-card .format-tier { flex: none; align-self: stretch; display: grid; place-items: center; padding: 0 var(--sp-7) 0 var(--sp-5); font-size: var(--fs-section); }
-  .format-card .format-name { flex: 1; min-width: 0; font-size: var(--fs-body); }
-  .format-card > summary::after { content: ''; flex: none; width: 7px; height: 7px; margin: -3px var(--sp-1) 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; rotate: 45deg; }
-  /* Col gioco: la sua carta prende il posto del formato (bloccato, si nasconde); senza tier il nome parte col margine */
-  .format-card.locked { display: none; }
-  .game-card { margin: 0; }
-  button.game-card { width: auto; flex: 1; min-width: 0; }
-  .game-card > .format-summary { display: flex; align-items: center; gap: var(--sp-4); height: 40px; padding: 0 var(--sp-5); overflow: hidden; }
-  .game-card .format-key, .game-card .format-pills { display: none; }
+  /* Formato compatto: solo la targa (icona, nome, freccina) alta come la barra; il riassunto è nella finestra */
+  .rail-format { flex: 1; min-width: 0; height: 40px; overflow: hidden; border: 0; border-radius: 4px; }
+  .rail-format-plate { height: 100%; padding: 0 var(--sp-5); gap: var(--sp-4); }
+  .rail-format-name { overflow: hidden; font-size: var(--fs-body); white-space: nowrap; text-overflow: ellipsis; }
+  .rail-format-sub { display: none; }
+  .rail-settings-text { display: none; }
+  /* I numeri delle sezioni servono solo sul computer: qui c'è la riga di stato */
+  .rail .tabs.vertical .tab-count { display: none; }
   .rail-foot { flex: none; padding: 0; }
   .rail-foot .meta, .rail-links { display: none; }
   .rail-foot .lang-switch button { height: 36px; padding: 0 var(--sp-5); }
@@ -214,8 +202,7 @@
     background: rgba(6, 7, 12, 0.6);
   }
   .rail .popover[open] > :not(summary),
-  .popover[open] > :not(summary),
-  .popover.format-card[open] > .format-menu {
+  .popover[open] > :not(summary) {
     position: fixed;
     z-index: 61;
     left: 0;
@@ -231,7 +218,6 @@
     border-bottom: 0;
     animation: sheet-up 0.22s var(--ease);
   }
-  .popover.format-card[open] > .format-menu { padding: 0 0 var(--safe-b); }
   /* Il team è un livello a sé: con un suo menu aperto passa sopra le sezioni in basso */
   .band:has(details[open], .slot.open, .fill-panel) { z-index: 50; }
   .toolbar .filters[open]::details-content {
@@ -247,13 +233,12 @@
     animation: sheet-up 0.22s var(--ease);
   }
   .toolbar .filters .filter-controls, .toolbar .filters .type-filters, .filters .filter-switches { grid-template-columns: minmax(0, 1fr); }
-  .format-menu-head { margin-right: 40%; }
-  .format-dex { grid-template-columns: minmax(0, 1fr); }
   .format-gens label, .format-chips label { padding-block: var(--sp-5); }
 
   /* ── Finestre: quasi a tutto schermo ──────────────────────────── */
   .help-backdrop { padding: var(--sp-6); place-items: end center; }
   .help-dialog, .help-frame { width: 100% !important; max-height: calc(100dvh - 24px); }
+  .help-dialog.format-dialog { height: calc(100dvh - 24px); }
   /* Qui la finestra sta in fondo allo schermo: niente spazio sotto per centrarla */
   .help-frame.with-peek { margin-bottom: 0; }
   .help-dialog.rating-help, .help-frame.with-peek > .help-dialog.rating-help { height: calc(100dvh - 24px); }
@@ -278,9 +263,10 @@
   .tab-body { padding-inline: var(--sp-9); }
   .tabs.vertical { max-width: 640px; margin: 0 auto; }
   /* Menu e finestre dal basso, ma non più larghi di una colonna comoda */
-  .popover[open] > :not(summary), .popover.format-card[open] > .format-menu, .rail .popover[open] > :not(summary) { left: 50%; right: auto; width: min(560px, 100vw); translate: -50% 0; }
+  .popover[open] > :not(summary), .rail .popover[open] > :not(summary) { left: 50%; right: auto; width: min(560px, 100vw); translate: -50% 0; }
   .help-backdrop { place-items: center; padding: 24px; }
   .help-dialog, .help-frame { width: min(720px, 100%) !important; }
+  .help-dialog.format-dialog { width: min(840px, 100%) !important; }
 }
 /* Telefono girato: poca altezza, le barre si fanno più basse */
 @media (max-width: 1099px) and (max-height: 500px) {
@@ -563,14 +549,9 @@
   .undo-toast .undo-close { top: 50%; translate: 0 -50%; width: 40px; height: 40px; display: grid; place-items: center; right: 2px; }
   .done-toast { padding: var(--sp-5) 44px var(--sp-5) var(--sp-6); }
 }
-/* Barra in alto sul telefono: gioco e formato su una riga sola (il nome lungo finisce coi puntini, intero nel menu) */
+/* Barra in alto sul telefono: il formato su una riga sola (il nome lungo finisce coi puntini, intero nella finestra) */
 @media (max-width: 599px) {
-  .rail :is(.game-card, .format-card) .format-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-caption); }
-  /* Il gioco largo quanto il suo nome (al massimo un terzo), il formato prende il resto */
-  .rail button.game-card { flex: 0 1 auto; max-width: 34%; }
-  .rail .game-card > .format-summary { padding: 0 var(--sp-4); }
-  .rail .popover.format-card { flex: 1 1 0; }
-  .rail .format-card .format-tier { padding: 0 var(--sp-4); }
+  .rail-format-name { font-size: var(--fs-small); }
   .rail .rail-foot .lang-switch button { padding: 0 var(--sp-3); }
   .rail { gap: var(--sp-3); }
 }

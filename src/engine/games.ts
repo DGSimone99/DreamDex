@@ -5,6 +5,8 @@ import type { Format } from './format';
 /** Giochi della serie principale che si possono scegliere (per ora Scarlatto e Violetto, in coppia). */
 export type GameId = 'sv';
 export const GAME_IDS: GameId[] = ['sv'];
+/** La generazione di ogni gioco. */
+export const GAME_GEN: Record<GameId, number> = { sv: 9 };
 
 /** Pokédex del gioco preparato da fetch-data (`data/_games/<gioco>.json`): id delle specie dei Pokédex regionali, in ordine regionale. */
 export interface GameDexFile { dex: string[] }

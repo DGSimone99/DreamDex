@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
 import { loadMySets } from '../../src/storage';
@@ -12,7 +12,7 @@ beforeEach(() => { window.localStorage.clear(); resetMySetsCache(); });
 afterEach(() => window.history.replaceState(null, '', '/'));
 
 function renderTeam() {
-  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
+  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_CHOICE)}`);
   return render(<App initialLang="it" data={fixtureData} />);
 }
 const openFirst = async (user: ReturnType<typeof userEvent.setup>, container: HTMLElement) => {
@@ -28,6 +28,7 @@ describe('editor del set', () => {
     const before = status().textContent;
     await openFirst(user, container);
     expect(status()).toHaveTextContent(`Modifica: ${tusk.species}`);
+    expect(container.querySelector('#tab-pokemon')).toHaveAttribute('data-hint', `Modifica: ${tusk.species}`);
     await user.click(container.querySelector<HTMLElement>('.slot.open .editor-close')!);
     expect(status().textContent).toBe(before);
   });

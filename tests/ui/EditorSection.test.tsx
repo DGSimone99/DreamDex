@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { mostCommonSet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
@@ -11,7 +11,7 @@ afterEach(() => window.history.replaceState(null, '', '/'));
 
 const third = mostCommonSet(fixtureStats, Object.keys(fixtureStats.pokemon).find(s => s !== 'Great Tusk' && s !== 'Gholdengo')!)!;
 function renderTeam() {
-  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo, third], DEFAULT_FORMAT)}`);
+  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo, third], DEFAULT_CHOICE)}`);
   return render(<App initialLang="it" data={fixtureData} />);
 }
 const workspace = (container: HTMLElement) => container.querySelector('.workspace')!;

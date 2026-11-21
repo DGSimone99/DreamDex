@@ -2,22 +2,25 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { initGames, withGame } from '../../src/engine/games';
-import { chooseTier, chosen } from '../helpers/format';
+import { initGames } from '../../src/engine/games';
+import { chooseGame, chooseTier, chosen, confirmFormat, openFormat } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
 vi.setConfig({ testTimeout: 60000 });
 
-/** Apre il modale del gioco dalla carta, sceglie e lo chiude (Esc). */
-async function chooseGame(user: ReturnType<typeof userEvent.setup>, id: string) {
-  await user.click(screen.getByRole('button', { name: /^Gioco / }));
-  await user.click(document.querySelector<HTMLInputElement>(`input[name="game"][value="${id}"]`)!);
+/** Sceglie un gioco nella finestra del formato e la chiude (Esc). */
+async function pickGame(user: ReturnType<typeof userEvent.setup>, id: string) {
+  await chooseGame(user, id);
   await user.keyboard('{Escape}');
 }
-/** Apre il modale del gioco e lascia aperto (per gli interruttori). */
-const openGame = (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('button', { name: /^Gioco / }));
+/** Torna a Competitivo (all'ultima scelta di quella famiglia) e chiude. */
+async function backToCompetitive(user: ReturnType<typeof userEvent.setup>) {
+  await openFormat(user);
+  await user.click(document.querySelector<HTMLInputElement>('input[name="format-family"][value="competitive"]')!);
+  await confirmFormat(user);
+}
+const formatButton = () => screen.getByRole('button', { name: /^Formato / });
 const memoryStorage = (): Storage => {
   const map = new Map<string, string>();
   return { getItem: k => map.get(k) ?? null, setItem: (k, v) => void map.set(k, v), removeItem: k => void map.delete(k), clear: () => map.clear(), key: () => null, get length() { return map.size; } };
@@ -26,15 +29,15 @@ const memoryStorage = (): Storage => {
 afterEach(() => initGames(null));
 
 describe('scelta del gioco', () => {
-  it('Scarlatto e Violetto blocca il formato, cambia i colori e mostra le opzioni del gioco', async () => {
+  it('Scarlatto e Violetto impone le sue regole, cambia i colori e mostra le opzioni del gioco', async () => {
     initGames({ sv: { dex: ['sprigatito'] } });
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
-    await chooseGame(user, 'sv');
+    await pickGame(user, 'sv');
     expect(document.documentElement.dataset.palette).toBe('sv');
-    expect(screen.getByText('Lo decide il gioco')).toBeInTheDocument();
+    expect(formatButton()).toHaveAccessibleName('Formato Scarlatto e Violetto, Giochi, Gen 9: cambia');
+    await openFormat(user);
     expect(document.querySelector('input[name="format-tier"]')).toBeNull();
-    await openGame(user);
     const all = screen.getByRole('checkbox', { name: 'Tutto il Pokédex' });
     expect(all).not.toBeChecked();
     await user.click(all);
@@ -42,33 +45,30 @@ describe('scelta del gioco', () => {
     expect(screen.getByRole('checkbox', { name: 'Leggendari e post-game' })).not.toBeChecked();
   });
 
-  it('senza gioco la carta dice "Qualsiasi gioco" (non suona come un errore) e la barra non mostra Confronto', () => {
+  it('la barra non mostra Confronto', () => {
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
-    expect(screen.getByRole('button', { name: /^Gioco Qualsiasi gioco/ })).toHaveTextContent('Qualsiasi gioco');
-    expect(screen.queryByText('Nessun gioco')).toBeNull();
     expect(screen.queryByRole('tab', { name: /Confronto/ })).toBeNull();
   });
 
-  it('"Qualsiasi gioco" rimette il formato di prima, col meta', async () => {
+  it('tornando a Competitivo si ritrova il formato di prima, col meta', async () => {
     initGames({ sv: { dex: ['sprigatito'] } });
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     await chooseTier(user, 'ubers');
-    await chooseGame(user, 'sv');
-    await chooseGame(user, 'none');
-    expect(chosen('format-tier')).toBe('ubers');
-    expect(document.querySelector('.format-card:not(.game-card) .format-pills')).toHaveTextContent('Meta');
-    expect(screen.queryByText('Lo decide il gioco')).toBeNull();
+    await user.keyboard('{Escape}');
+    await pickGame(user, 'sv');
+    await backToCompetitive(user);
+    expect(formatButton()).toHaveAccessibleName(/^Formato National Dex Ubers/);
+    expect(screen.getByRole('tab', { name: /Meta/ })).not.toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('senza i dati del gioco la voce è spenta e una sessione col gioco riparte senza', async () => {
+  it('senza i dati del gioco la linguetta Giochi è spenta e una sessione col gioco riparte dal formato di base', async () => {
     const storage = memoryStorage();
-    storage.setItem('dreamdex.session', JSON.stringify({ team: [], format: withGame(DEFAULT_FORMAT, 'sv') }));
+    storage.setItem('dreamdex.session', JSON.stringify({ team: [], choice: { family: 'game', game: 'sv', allPokedex: false, legendaries: false } }));
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} storage={storage} />);
-    await openGame(userEvent.setup());
-    expect(document.querySelector<HTMLInputElement>('input[name="game"][value="sv"]')).toBeDisabled();
-    expect(document.querySelector<HTMLInputElement>('input[name="game"][value="none"]')).toBeChecked();
-    expect(screen.queryByText('Lo decide il gioco')).toBeNull();
+    expect(formatButton()).toHaveAccessibleName(/^Formato National Dex OU/);
+    await openFormat(userEvent.setup());
+    expect(document.querySelector<HTMLInputElement>('input[name="format-family"][value="game"]')).toBeDisabled();
   });
 
   it('un team salvato col gioco mostra il nome del gioco', async () => {
@@ -76,28 +76,28 @@ describe('scelta del gioco', () => {
     window.localStorage.clear();
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
-    await chooseGame(user, 'sv');
+    await pickGame(user, 'sv');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.type(screen.getByLabelText('Nome team'), 'Storia{Enter}');
     expect(document.querySelector('.saved-format')).toHaveTextContent('Scarlatto e Violetto');
   });
 
-  it('caricare un team salvato col gioco rimette il gioco col suo blocco; "Qualsiasi gioco" torna al formato di prima', async () => {
+  it('caricare un team salvato col gioco rimette il gioco; tornando a Competitivo si ritrova il formato di prima', async () => {
     initGames({ sv: { dex: ['sprigatito'] } });
     window.localStorage.clear();
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} storage={window.localStorage} />);
-    await chooseGame(user, 'sv');
+    await pickGame(user, 'sv');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.type(screen.getByLabelText('Nome team'), 'Storia{Enter}');
-    await chooseGame(user, 'none');
+    await backToCompetitive(user);
     await chooseTier(user, 'ubers');
+    await user.keyboard('{Escape}');
     await user.click(screen.getByRole('button', { name: 'Storia' }));
-    const pills = () => [...document.querySelectorAll('.format-card.locked .format-pills > span')].map(el => el.textContent);
-    expect(screen.getByText('Lo decide il gioco')).toBeInTheDocument();
-    expect(pills()).toContain('Senza meta');
-    expect(pills()).not.toContain('Meta');
-    await chooseGame(user, 'none');
+    expect(formatButton()).toHaveAccessibleName(/^Formato Scarlatto e Violetto/);
+    expect(screen.getByRole('tab', { name: /Meta/ })).toHaveAttribute('aria-disabled', 'true');
+    await backToCompetitive(user);
+    await openFormat(user);
     expect(chosen('format-tier')).toBe('ubers');
   });
 
@@ -107,7 +107,7 @@ describe('scelta del gioco', () => {
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     // Senza gioco a team vuoto le schede mostrano l'uso nel meta
     expect(await screen.findAllByText(/%/)).not.toHaveLength(0);
-    await chooseGame(user, 'sv');
+    await pickGame(user, 'sv');
     // Al posto dell'uso, il voto che il Pokémon mette da solo: "+N" sulla scheda e nel dettaglio
     await waitFor(() => expect(document.querySelector('.card .result strong')?.textContent).toMatch(/^\+\d+$/));
     const first = document.querySelector('.card .result strong')!.textContent;
