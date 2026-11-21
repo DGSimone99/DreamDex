@@ -410,9 +410,7 @@
     animation: sheet-up 0.22s var(--ease);
   }
 }
-@media (min-width: 600px) and (max-width: 1099px) {
-  .fill-panel { left: 50%; right: auto; width: min(640px, 100vw); translate: -50% 0; }
-}
+
 @media (max-width: 1099px) {
   /* Le colonne una sotto l'altra: i tuoi Pokémon, le scelte, le proposte */
   .fill-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'mine' 'side' 'main'; }
@@ -426,7 +424,7 @@
   .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
   .fill-cards { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 599px) {
+@media (max-width: 1099px) {
   .fill-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: var(--sp-3) var(--sp-5); }
   .fill-mons { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .fill-mon-name { display: none; }
@@ -864,7 +862,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 /* ── Completa team e "Come funziona il voto" sul telefono (2026-11-19) ──────────────────────────────────── */
 /* La × e il titolo di Completa team solo sul telefono (altrove si chiude col suo pulsante, fuori o con Esc) */
 .fill-title, .fill-close { display: none; }
-@media (max-width: 599px) {
+@media (max-width: 1099px) {
   /* A tutto schermo; in testa titolo, voto di adesso e ×; sotto le due schede, metà e metà */
   .fill-panel { top: 0; height: 100dvh; max-height: 100dvh; border-radius: 0; padding-top: 0; }
   .fill-top { position: sticky; top: 0; z-index: 3; flex-wrap: wrap; row-gap: 0; column-gap: var(--sp-4); padding: var(--sp-3) var(--sp-3) 0 var(--sp-7); background: var(--panel); }
@@ -880,6 +878,8 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   /* Usa col dito */
   .fill-panel .fill-add { min-height: 44px; min-width: 64px; }
 
+}
+@media (max-width: 599px) {
   /* Come funziona il voto: la tabella dei pesi diventa una scheda per tipo di team, le aree in colonna col loro nome */
   .help-table-wrap { overflow: visible; }
   .help-weights, .help-weights tbody, .help-weights tr, .help-weights th, .help-weights td { display: block; }
@@ -895,7 +895,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 
 /* ── Completa team: impostazioni nel foglio; Come funziona il voto: prima il tuo team (telefono, 2026-11-19) ── */
 .fill-settings { display: contents; }
-@media (max-width: 599px) {
+@media (max-width: 1099px) {
   /* Le impostazioni fuori dalla pagina finché non si apre il foglio; sopra le proposte il loro riassunto */
   .fill-settings:not([data-sheet]) { display: none; }
   .fill-settings[data-sheet] { display: grid; align-content: start; gap: var(--sp-6); padding: 0 var(--sp-7) max(var(--sp-8), env(safe-area-inset-bottom)); }
@@ -912,6 +912,8 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .fill-settings-button .icon { width: 16px; height: 16px; color: var(--accent); }
   .fill-settings-button[aria-expanded='true'] { border-color: var(--accent); }
 
+}
+@media (max-width: 599px) {
   /* Come funziona il voto: in cima il tuo team, poi la lista che apre le pagine (con Indietro) */
   .help-phone { display: block; overflow-y: auto; padding: var(--sp-5) var(--sp-6) var(--sp-8); }
   .help-phone .help-panel { padding: 0; overflow: visible; }
@@ -1017,7 +1019,7 @@ html { -webkit-tap-highlight-color: transparent; }
 .fill-proposal.arch-semiStall { --k: var(--good); }
 .fill-proposal.arch-stall { --k: var(--room); }
 .fill-think { display: none; }
-@media (max-width: 599px) {
+@media (max-width: 1099px) {
   /* Una carta per proposta: fondo nel colore del suo tipo di team con le righe; in alto tipo, voto e Usa su una riga,
      sotto i sei Pokémon in fila sul fondo della carta (i nuovi con una tacca ciano); la prima col bordo magenta */
   .fill-proposal { position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1055,7 +1057,7 @@ html { -webkit-tap-highlight-color: transparent; }
 html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: none; }
 
 /* Completa team, carte: i Pokémon su una fascia scura e uniforme (si staccano bene), il tipo di team scritto nel suo colore */
-@media (max-width: 599px) {
+@media (max-width: 1099px) {
   .fill-proposal .fill-mons { padding: var(--sp-2) var(--sp-2) 0; border-radius: 4px; background: var(--field); }
   .fill-proposal .fill-kind { color: color-mix(in srgb, var(--k) 70%, var(--text)); }
   .fill-proposal.is-best { box-shadow: inset 0 3px 0 var(--k), 0 10px 26px rgba(0, 0, 0, 0.4); }
@@ -1365,5 +1367,8 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .team-head .team-guide-slot button.team-guide::before { inset: 0; transform: none; border-radius: 0;
     clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 100%, 0 100%); }
   /* Il filo del bordo segue i lati obliqui: lo disegna un'ombra sotto (drop-shadow), non il riquadro */
-  .band:not(.collapsed) .team-head .team-guide-slot { filter: drop-shadow(0 0 0.6px color-mix(in srgb, var(--accent) 70%, transparent)); }
+  /* (Sul pulsante, non sul suo contenitore: un filtro lì terrebbe il pannello di Completa team dentro la colonna) */
+  .band:not(.collapsed) .team-head .team-guide-slot button.team-guide { filter: drop-shadow(0 0 0.6px color-mix(in srgb, var(--accent) 70%, transparent)); }
+  /* Con Completa team (o un menu) aperto la colonna passa sopra le barre, come la fascia sul telefono */
+  .main > .band:has(.fill-panel, details[open]) { z-index: 50; }
 }

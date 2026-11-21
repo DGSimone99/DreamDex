@@ -32,8 +32,9 @@ interface Options {
   bleed?: number;
   /** Avvisa da che lato si è aperta (sotto o sopra), ogni volta che cambia. */
   onSide?: (side: 'below' | 'above') => void;
-  /** Sul telefono diventa un foglio dal basso (con lo sfondo scuro dietro: toccarlo chiude, vedi onDismiss). */
-  sheet?: boolean;
+  /** Sul telefono (e sul tablet in verticale) diventa un foglio dal basso (con lo sfondo scuro dietro: toccarlo chiude,
+   *  vedi onDismiss); 'always': foglio a ogni misura in cui è aperto (es. le Impostazioni di Completa team su telefono e tablet). */
+  sheet?: boolean | 'always';
   /** Tocco sullo sfondo scuro dietro il foglio: va chiuso. */
   onDismiss?: () => void;
 }
@@ -50,12 +51,12 @@ export function useAnchoredPop(anchor: RefObject<HTMLElement | null>, pop: RefOb
   onSide.current = options.onSide;
   const onDismiss = useRef(options.onDismiss);
   onDismiss.current = options.onDismiss;
-  const sheet = !!options.sheet;
+  const sheet = options.sheet ?? false;
   useLayoutEffect(() => {
     const el = pop.current;
     if (!open || !el) return;
     if (supportsPopover && el.hasAttribute('popover') && !el.matches(':popover-open')) el.showPopover();
-    if (sheet && isSheetScreen()) return openSheet(el, () => onDismiss.current?.());
+    if (sheet === 'always' || (sheet && isSheetScreen())) return openSheet(el, () => onDismiss.current?.());
     // L'altezza massima del CSS (es. 340px): la tendina non supera mai quella, anche con tanto spazio
     el.style.maxHeight = '';
     const cssMax = parseFloat(getComputedStyle(el).maxHeight) || Infinity;
