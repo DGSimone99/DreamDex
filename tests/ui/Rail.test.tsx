@@ -5,21 +5,27 @@ import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
 describe('Barra laterale', () => {
-  it('contiene formato, regole e sezioni', () => {
+  it('contiene la fascia del formato (tre famiglie, nome e riassunto) e le sezioni; niente pulsanti del meta', () => {
     render(<App initialLang="it" data={fixtureData} />);
     const rail = within(screen.getByRole('complementary', { name: 'Barra laterale' }));
-    expect(rail.getByRole('radiogroup', { name: 'Pokédex' })).toBeInTheDocument();
-    expect(rail.getByRole('radiogroup', { name: 'Tier del formato' })).toBeInTheDocument();
-    expect(rail.getByRole('radiogroup', { name: 'Generazione massima' })).toBeInTheDocument();
-    // La carta del formato riassume tutto: Pokédex, tier e le regole come pastiglie
-    expect(document.querySelector('.format-card:not(.game-card) > summary')).toHaveTextContent('National Dex');
-    expect(document.querySelector('.format-tier')).toHaveTextContent('OU');
-    expect(document.querySelector('.format-pills')).toHaveTextContent('MetaGen 9');
-    expect(rail.getByRole('button', { name: 'Col meta' })).toBeInTheDocument();
-    expect(rail.getByRole('button', { name: 'Senza meta' })).toBeInTheDocument();
-    expect(rail.getByRole('checkbox', { name: 'Ignora ban' })).toBeInTheDocument();
-    expect(rail.getByRole('checkbox', { name: 'Più Mega ammesse' })).toBeInTheDocument();
+    const band = within(rail.getByRole('group', { name: 'Formato' }));
+    expect(band.getByRole('button', { name: 'Competitivo' })).toHaveAttribute('aria-current', 'true');
+    expect(band.getByRole('button', { name: 'Giochi' })).not.toHaveAttribute('aria-current');
+    expect(band.getByRole('button', { name: 'No Format' })).toBeInTheDocument();
+    expect(band.getByRole('button', { name: /^Formato National Dex OU, Smogon, Singolo/ })).toBeInTheDocument();
+    expect(rail.queryByRole('button', { name: 'Col meta' })).toBeNull();
+    expect(rail.queryByRole('button', { name: 'Senza meta' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(rail.getByRole('tablist', { name: 'Sezioni' })).toHaveAttribute('aria-orientation', 'vertical');
+  });
+
+  it('una famiglia nella fascia apre la finestra su di lei senza cambiare il formato', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.click(screen.getByRole('button', { name: 'No Format' }));
+    const dialog = screen.getByRole('dialog', { name: 'Scegli il formato' });
+    expect(within(dialog).getByText('Tutto ammesso: niente tier, niente ban, niente meta.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Competitivo' })).toHaveAttribute('aria-current', 'true');
   });
 
   it('le frecce su e giù scorrono le sezioni', async () => {

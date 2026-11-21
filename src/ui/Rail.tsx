@@ -1,21 +1,19 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
-import type { Format, FormatId } from '../engine/format';
-import { BATTLE_IDS, battleOf, DEX_IDS, dexOf, formatIn, tiersOf, type DexId } from '../engine/formats';
-import type { GameId } from '../engine/games';
-import { GameDialog } from './GameDialog';
+import { FAMILIES, type Family, type FormatChoice, type FormatMemory } from '../engine/formatChoice';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
+import { FormatDialog } from './FormatDialog';
+import { choiceName, choiceSummary } from './formatName';
 import { Icon } from './icons';
 
-const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
 interface Props {
-  format: Format;
-  onFormatChange: (format: Format) => void;
-  /** Sceglie il gioco (null = nessuno): il gioco blocca il formato. */
-  onGameChange?: (game: GameId | null) => void;
+  /** Il formato scelto (una delle tre famiglie). */
+  choice: FormatChoice;
+  /** L'ultima scelta di ogni famiglia. */
+  memory: FormatMemory;
+  onPick: (choice: FormatChoice) => void;
   meta: StatsMeta | null;
   lang: Lang;
   onLangChange: (lang: Lang) => void;
@@ -37,32 +35,17 @@ function monthLabel(month: string): string {
 }
 
 /**
- * Barra laterale: il logo, la carta del formato (Pokédex, tier e regole si cambiano tutti dal suo menu), le sezioni come
- * tessere del menu del gioco con una riga di stato, e in fondo lingua, impostazioni e mese dei dati Smogon.
+ * Barra laterale: il logo, la fascia del formato (le tre famiglie, il nome in grande e un riassunto; ogni parte apre la
+ * finestra Scegli il formato), le sezioni come tessere con una riga di stato, e in fondo lingua, impostazioni e mese dei dati.
  * Importa/Esporta e Team salvati stanno sopra la squadra (TeamPanel).
  */
-export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
+export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
   const t = useT();
-  const dex = dexOf(format.formatId);
-  const battle = battleOf(format.formatId);
-  const tiers = tiersOf(dex, battle);
-  const tier = tiers.find(x => x.formatId === format.formatId)?.tier ?? '';
-  // Le regole in breve, come pastiglie: Meta (o Senza meta), Gen 9 e le avanzate accese
-  const pills = [
-    ...(battle === 'doubles' ? [t('battle.doubles')] : []),
-    t(meta && format.meta ? 'rail.pillMeta' : 'rail.pillNoMeta'),
-    t('rail.pillGen', { n: format.genLimit }),
-    ...(format.ignoreBans ? [t('rail.pillNoBans')] : []),
-    ...(format.allowMultipleMegas ? [t('rail.pillMegas')] : []),
-  ];
-  const game = format.game;
-  const [gameOpen, setGameOpen] = useState(false);
-  const closeGame = useCallback(() => setGameOpen(false), []);
-  // Le opzioni del gioco accese, come pastiglie
-  const gamePills = [
-    ...(format.allPokedex ? [t('rail.pillAllPokedex')] : []),
-    ...(format.legendaries ? [t('rail.pillLegendaries')] : []),
-  ];
+  // La finestra del formato e la famiglia su cui si apre (aprirla non cambia il formato)
+  const [open, setOpen] = useState<Family | null>(null);
+  const close = useCallback(() => setOpen(null), []);
+  const name = choiceName(choice, t);
+  const summary = choiceSummary(choice, t);
   return (
     <aside className="rail" aria-label={t('rail.label')}>
       <h1 className="rail-logo">
@@ -70,134 +53,22 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
         {/* Il logo a fascia del kit: le due D nei colori della versione (--accent, --accent-2), la scritta nel colore del testo */}
         <span className="rail-logo-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: logo }} />
       </h1>
-      {/* Il gioco: una carta come quella del formato; il clic apre il modale coi giochi come loghi */}
-      <button type="button" className="format-card game-card" onClick={() => setGameOpen(true)}
-        aria-label={t('rail.gameAria', { game: t(game ? `game.${game}` : 'game.none'), summary: gamePills.length ? `, ${gamePills.join(', ')}` : '' })}>
-        <span className="format-summary">
-          <span className="format-key">{t('rail.game')} <Icon name="edit" /></span>
-          <span className="format-name">{t(game ? `game.${game}` : 'game.none')}</span>
-          {gamePills.length > 0 && <span className="format-pills">{gamePills.map(pill => <span key={pill}>{pill}</span>)}</span>}
-        </span>
-      </button>
-      {gameOpen && <GameDialog format={format} onGameChange={onGameChange} onFormatChange={onFormatChange} onClose={closeGame} />}
-      {game ? (
-        // Col gioco il formato lo decide il gioco: si vede, ma non si cambia
-        <div className="format-card locked" aria-label={t('rail.formatAria', { format: `${t(`dex.${dex}`)} ${tier}`.trim(), summary: pills.join(', ') })}>
-          <div className="format-summary">
-            <span className="format-key">{t('rail.format')}</span>
-            {/* Il tier lungo ("Anything Goes") non sta nella fascia accanto alla chiave: va fra le regole (la generazione è già nel nome) */}
-            <span className="format-name">{t(`dex.${dex}`)}</span>
-            <span className="format-pills">{[tier, t(meta && format.meta ? 'rail.pillMeta' : 'rail.pillNoMeta')].filter(Boolean).map(pill => <span key={pill}>{pill}</span>)}</span>
-            <span className="format-lock">{t('rail.formatByGame')}</span>
-          </div>
+      <div className="rail-format" role="group" aria-label={t('rail.format')}>
+        <div className="rail-families">
+          {FAMILIES.map(f => (
+            <button key={f} type="button" className="rail-family" aria-current={choice.family === f ? 'true' : undefined} onClick={() => setOpen(f)}>
+              {t(`family.${f}`)}
+            </button>
+          ))}
         </div>
-      ) : (
-      <details className="popover format-card">
-        <summary aria-label={t('rail.formatAria', { format: `${t(`dex.${dex}`)} ${tier}`.trim(), summary: pills.join(', ') })}>
-          <span className="format-key">{t('rail.format')} <Icon name="edit" /></span>
-          {tier && <span className="format-tier">{tier}</span>}
-          <span className="format-name">{t(`dex.${dex}`)}</span>
-          <span className="format-pills">{pills.map(pill => <span key={pill}>{pill}</span>)}</span>
-        </summary>
-        <div className="format-menu">
-          <p className="format-menu-head">{t('rail.format')}</p>
-          <div className="format-menu-body">
-            <div className="format-sec">
-              <p className="rail-label" id="format-dex-label">{t('top.dex')}</p>
-              <div className="format-dex" role="radiogroup" aria-labelledby="format-dex-label">
-                {DEX_IDS.map(id => {
-                  const soon = tiersOf(id).length === 0;
-                  return (
-                    <label key={id} className={`format-dex-opt${id === dex ? ' on' : ''}${soon ? ' soon' : ''}`}>
-                      <input type="radio" className="visually-hidden" name="format-dex" value={id} checked={id === dex} disabled={soon}
-                        onChange={() => {
-                          const formatId = formatIn(id, battleOf(format.formatId), format.formatId);
-                          if (formatId) onFormatChange({ ...format, formatId });
-                        }} />
-                      <b>{t(`dex.${id}`)}</b>
-                      <small>{soon ? t('top.soon') : t(`rail.dexNote.${id}`)}</small>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-            {/* Singolo o doppio; grigio dove il Pokédex non ha un doppio, senza testo */}
-            {(
-              <div className="format-sec">
-                <p className="rail-label">{t('top.battle')}</p>
-                <div className="format-chips" role="radiogroup" aria-label={t('top.battleAria')}>
-                  {BATTLE_IDS.map(id => {
-                    const none = tiersOf(dex, id).length === 0;
-                    return (
-                      <label key={id} className={`${id === battle ? 'on' : ''}${none ? ' soon' : ''}`.trim() || undefined}>
-                        <input type="radio" className="visually-hidden" name="format-battle" value={id} checked={id === battle} disabled={none}
-                          onChange={() => {
-                            const formatId = formatIn(dex, id, format.formatId);
-                            if (formatId) onFormatChange({ ...format, formatId });
-                          }} />
-                        {t(`battle.${id}`)}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {/* Senza limiti ha un solo formato senza nome di tier: niente scelta */}
-            {tiers.some(x => x.tier) && (
-              <div className="format-sec">
-                <p className="rail-label">{t('top.tier')}</p>
-                <div className="format-chips" role="radiogroup" aria-label={t('top.tierAria')}>
-                  {tiers.map(x => (
-                    <label key={x.formatId} className={x.formatId === format.formatId ? 'on' : undefined}>
-                      <input type="radio" className="visually-hidden" name="format-tier" value={x.formatId} checked={x.formatId === format.formatId}
-                        onChange={() => onFormatChange({ ...format, formatId: x.formatId as FormatId })} />
-                      {x.tier}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="format-sec">
-              <p className="rail-label">{t('top.genLimitLong')}</p>
-              <div className="format-gens" role="radiogroup" aria-label={t('top.genLimitAria')}>
-                {GENERATIONS.map(gen => (
-                  <label key={gen} className={gen === format.genLimit ? 'on' : gen < format.genLimit ? 'in' : undefined}>
-                    <input type="radio" className="visually-hidden" name="format-gen" value={gen} checked={gen === format.genLimit}
-                      onChange={() => onFormatChange({ ...format, genLimit: gen })} />
-                    {gen}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="format-sec rating-mode">
-              <p className="rail-label" id="rating-mode-label">{t('top.rating')}</p>
-              <div role="group" aria-labelledby="rating-mode-label" className="segmented" title={meta ? undefined : t('top.metaUnavailable')}>
-                <button type="button" aria-pressed={!!meta && format.meta} disabled={!meta} title={t('top.withMetaTip')}
-                  onClick={() => onFormatChange({ ...format, meta: true })}>{t('top.withMeta')}</button>
-                <button type="button" aria-pressed={!meta || !format.meta} disabled={!meta} title={t('top.withoutMetaTip')}
-                  onClick={() => onFormatChange({ ...format, meta: false })}>{t('top.withoutMeta')}</button>
-              </div>
-              <p className="format-note">{t('top.ratingNote')}</p>
-            </div>
-            <div className="format-sec">
-              <p className="rail-label">{t('top.advanced')}</p>
-              <label className="format-toggle">
-                <input type="checkbox" className="switch" aria-label={t('top.ignoreBans')} checked={format.ignoreBans}
-                  onChange={e => onFormatChange({ ...format, ignoreBans: e.target.checked })} />
-                <b>{t('top.ignoreBans')}</b>
-                <small>{t('top.ignoreBansNote')}</small>
-              </label>
-              <label className="format-toggle">
-                <input type="checkbox" className="switch" aria-label={t('top.multipleMegas')} checked={format.allowMultipleMegas}
-                  onChange={e => onFormatChange({ ...format, allowMultipleMegas: e.target.checked })} />
-                <b>{t('top.multipleMegas')}</b>
-                <small>{t('top.multipleMegasNote')}</small>
-              </label>
-            </div>
-          </div>
-        </div>
-      </details>
-      )}
+        <button type="button" className="rail-format-main" onClick={() => setOpen(choice.family)}
+          aria-label={t('rail.formatAria', { format: name, summary: summary.join(', ') })}>
+          <span className="rail-format-name">{name}</span>
+          <span className="rail-format-summary">{summary.map(part => <span key={part}>{part}</span>)}</span>
+          <Icon name="edit" />
+        </button>
+      </div>
+      {open && <FormatDialog choice={choice} memory={memory} family={open} onPick={onPick} onClose={close} />}
       <div className="rail-sections">{tabs}</div>
       <div className="rail-foot">
         <div className="rail-foot-row">

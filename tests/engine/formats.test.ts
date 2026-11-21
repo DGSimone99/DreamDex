@@ -12,7 +12,7 @@ const sp = (name: string) => getSpecies(name)!;
 describe('formati', () => {
   it('etichette e fonti dati', () => {
     expect(formatLabel(DEFAULT_FORMAT)).toBe('National Dex OU');
-    expect(formatLabel(f({ formatId: 'all' }))).toBe('Tutti i Pokémon');
+    expect(formatLabel(f({ formatId: 'all' }))).toBe('No Format');
     expect(dataSource(f({}))).toBe('gen9nationaldex');
     expect(dataSource(f({ formatId: 'uu' }))).toBe('gen9nationaldexuu');
     expect(dataSource(f({ formatId: 'all' }))).toBe('gen9nationaldexubers');

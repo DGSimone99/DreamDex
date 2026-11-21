@@ -21,7 +21,7 @@ describe('App: struttura', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await chooseGen(user, '4');
-    expect(chosen('format-gen')).toBe('4');
+    expect(chosen('format-genlimit')).toBe('4');
   });
 
   it('la palette segue il gioco del formato', async () => {

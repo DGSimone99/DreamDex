@@ -6,7 +6,7 @@ import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { DEFAULT_MEMORY, remember as rememberChoice, rulesOf, withMultipleMegas, type FormatChoice } from './engine/formatChoice';
-import { battleOf, dataSource, dexOf, formatLabel, teraAllowed, tiersOf } from './engine/formats';
+import { dataSource, formatLabel, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
 import { DoneToast, UndoToast, type DoneNote, type ListUndo, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
@@ -87,16 +87,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [memory, setMemory] = useState(() => (storage ? loadFormatMemory(storage) : DEFAULT_MEMORY));
   useEffect(() => { setMemory(m => rememberChoice(m, choice)); }, [choice]);
   useEffect(() => { if (storage) saveFormatMemory(memory, storage); }, [memory, storage]);
-  // TEMPORANEO fino alla nuova barra (Task 4): la barra di oggi lavora sulle regole
-  const choiceOfRules = (f: Format): FormatChoice => {
-    if (f.game) return { family: 'game', game: f.game, allPokedex: f.allPokedex, legendaries: f.legendaries };
-    if (f.formatId === 'all') return { family: 'free', genLimit: f.genLimit, multipleMegas: f.allowMultipleMegas };
-    const dex = dexOf(f.formatId);
-    const battle = battleOf(f.formatId);
-    const tier = tiersOf(dex, battle).find(x => x.formatId === f.formatId)!.tier;
-    return { ...DEFAULT_MEMORY.competitive, gen: dex === 'gen9' ? 9 : 'natdex', battle, tier, ignoreBans: f.ignoreBans, multipleMegas: f.allowMultipleMegas };
-  };
-  const changeGame = (game: 'sv' | null) => setChoice(game ? memory.game : memory.competitive);
   // Colori di versione: seguono il gioco del formato (o la palette fissata nelle impostazioni)
   const [palette, setPalette] = useState<PaletteSetting>(() => (storage ? loadPalette(storage) : null) ?? 'auto');
   const changePalette = (next: PaletteSetting) => {
@@ -414,7 +404,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         main.focus();
         main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
       }}>{t(lang, 'app.skipToContent')}</a>
-      <Rail format={format} onFormatChange={f => setChoice(choiceOfRules(f))} onGameChange={changeGame} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
+      <Rail choice={choice} memory={memory} onPick={setChoice} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
         onCredits={() => setCreditsOpen(true)}
         onFeedback={() => setFeedbackOpen(true)}

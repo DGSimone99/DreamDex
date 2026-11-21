@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { DEFAULT_CHOICE, type FormatChoice } from '../../src/engine/formatChoice';
 import { loadSession, saveSession } from '../../src/storage';
-import { chooseTier, chosen } from '../helpers/format';
+import { chooseTier, chosen, openFormat } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 const memory = (initial: Record<string, string> = {}) => {
@@ -45,6 +45,7 @@ describe('sessione salvata', () => {
     render(<App initialLang="it" data={fixtureData} storage={storage} />);
     expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Fisso Great Tusk' })).toHaveAttribute('aria-pressed', 'true');
+    await openFormat(user);
     expect(chosen('format-tier')).toBe('uu');
   });
 
