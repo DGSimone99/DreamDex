@@ -12,6 +12,8 @@ export interface TabInfo {
   disabled?: boolean;
   /** Perché la scheda è disattivata. */
   note?: string;
+  /** Il fumetto dell'app sulla scheda: cosa conta il numero a destra. */
+  hint?: string;
   /** Nella barra laterale: l'icona della sezione e una riga di stato sotto il nome (tessere del menu del gioco). */
   icon?: IconName;
   status?: ReactNode;
@@ -52,6 +54,7 @@ export function Tabs({ tabs, active, onChange, orientation = 'horizontal' }: {
             aria-disabled={tab.disabled || undefined}
             tabIndex={selected ? 0 : -1}
             title={tab.note}
+            data-hint={tab.hint}
             // Tessere: il nome della scheda è solo il nome, la riga di stato ne è la descrizione
             aria-labelledby={tab.icon ? `tab-${tab.id}-name` : undefined}
             aria-describedby={tab.icon && tab.status ? `tab-${tab.id}-status` : undefined}

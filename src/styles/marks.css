@@ -24,7 +24,6 @@
 /* Custom Skillset: etichetta del membro, a sinistra sopra l'inizio del nome */
 .alert-mark.slot-custom { position: absolute; left: 14px; top: 8px; padding: var(--sp-1); }
 .alert-mark.slot-custom .icon { width: 16px; height: 16px; }
-.slot:first-child .alert-mark.slot-custom { left: 50px; top: 5px; }
 .alert-pop {
   position: absolute;
   z-index: 60;

@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { toID } from '../engine/dex';
-import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { PICK_SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { useMediaQuery } from './useMediaQuery';
 import { FloatTip } from './FloatTip';
 import { Icon } from './icons';
@@ -96,7 +96,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
   // Telefono: il menu è un foglio dal basso (titolo, ✕, ricerca, voci grandi); il campo si tocca soltanto
-  const sheetScreen = useMediaQuery(SHEET_QUERY);
+  const sheetScreen = useMediaQuery(PICK_SHEET_QUERY);
   const sheetRef = useRef<HTMLDivElement>(null);
   // Il menu attaccato al campo (il rombo della Natura) solo sul computer: sul telefono è un foglio come gli altri
   const joined = menuJoined !== undefined && !sheetScreen;

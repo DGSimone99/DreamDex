@@ -21,7 +21,7 @@ import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SetMenu } from './SetMenu';
-import { useMediaQuery } from './useMediaQuery';
+import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
 import { CategoryIcon } from './CategoryIcon';
@@ -382,8 +382,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const customHintId = `${uid}-custom`;
   const [customShown, setCustomShown] = useState(false);
   const [natureHelp, setNatureHelp] = useState(false);
-  // Telefono: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
-  const phone = useMediaQuery('(max-width: 599px)');
+  // Telefono e tablet in verticale: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
+  const phone = useMediaQuery(EDITOR_TABS_QUERY);
   const [phoneTab, setPhoneTab] = useState<'set' | 'stats' | 'duel'>('set');
   useEffect(() => { if (startTab) setPhoneTab(startTab.tab); }, [startTab?.key]); // eslint-disable-line react-hooks/exhaustive-deps
   const tabsId = useId();

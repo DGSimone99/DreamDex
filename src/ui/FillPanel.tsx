@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useMediaQuery } from './useMediaQuery';
-import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { teamArchetype, type Archetype, type SinglesArchetype } from '../engine/archetype';
 import type { Gap } from '../engine/coherence';
 import type { EngineData } from '../engine/data';
@@ -63,11 +63,13 @@ const evsText = (set: TeamSet, lang: Lang) =>
  */
 export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: Props) {
   // Telefono: le impostazioni in un foglio unico che si apre dal basso (sopra le proposte resta il loro riassunto)
-  const phone = useMediaQuery(SHEET_QUERY);
+  // Telefono e tablet: il pannello a tutto schermo con le proposte prima e le impostazioni in un foglio
+  // (Col mouse da 900 px, a mezzo schermo accanto a Showdown, è la finestra centrata del computer)
+  const phone = useMediaQuery('(max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine)))');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButton = useRef<HTMLButtonElement>(null);
   const settingsSheet = useRef<HTMLDivElement>(null);
-  useAnchoredPop(settingsButton, settingsSheet, phone && settingsOpen, { sheet: true, onDismiss: () => setSettingsOpen(false) });
+  useAnchoredPop(settingsButton, settingsSheet, phone && settingsOpen, { sheet: 'always', onDismiss: () => setSettingsOpen(false) });
   const t = useT();
   const lang = useLang();
   // Passando su un Pokémon di una proposta o di un team da torneo: la sua carta (set, statistiche, mosse)

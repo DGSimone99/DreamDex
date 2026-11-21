@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { loadLists, loadSavedTeams, saveLists, saveTeams } from '../../src/storage';
+import { loadFormatMemory, loadLists, loadSavedTeams, saveFormatMemory, saveLists, saveTeams } from '../../src/storage';
+import { DEFAULT_CHOICE, DEFAULT_MEMORY, remember } from '../../src/engine/formatChoice';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from '../../src/engine/lists';
 
 const throwing = {
@@ -33,8 +34,17 @@ describe('storage', () => {
   });
 
   it('formato di un team salvato non valido: torna ai valori di default', () => {
-    const saved = loadSavedTeams(memory(JSON.stringify([{ name: 'X', text: 'Great Tusk', format: { formatId: 'zzz' } }])));
-    expect(saved[0].format?.formatId).toBe('ou');
+    const saved = loadSavedTeams(memory(JSON.stringify([{ name: 'X', text: 'Great Tusk', choice: { family: 'zzz' } }])));
+    expect(saved[0].choice).toEqual(DEFAULT_CHOICE);
+  });
+
+  it('memoria del formato per famiglia: round-trip, dati rotti → default', () => {
+    const storage = memory(null);
+    const next = remember(DEFAULT_MEMORY, { family: 'free', genLimit: 5, multipleMegas: true });
+    expect(saveFormatMemory(next, storage)).toBe(true);
+    expect(loadFormatMemory(storage)).toEqual(next);
+    expect(loadFormatMemory(memory('{rotto'))).toEqual(DEFAULT_MEMORY);
+    expect(loadFormatMemory(throwing)).toEqual(DEFAULT_MEMORY);
   });
 
   it('storage assente', () => {

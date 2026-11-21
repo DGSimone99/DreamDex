@@ -12,7 +12,7 @@ export interface Format {
   allowMultipleMegas: boolean;
   /** Se true, nessun Pokémon è bannato nel formato scelto. */
   ignoreBans: boolean;
-  /** Se true, il voto usa il meta del formato (tipi pesati per uso, minacce, uso dei membri); se false, tutti i tipi pesano uguale. */
+  /** Se true, il voto usa il meta del formato (tipi pesati per uso, minacce, uso dei membri); se false (Giochi, No Format), tutti i tipi pesano uguale. Lo decide la famiglia del formato (formatChoice.ts). */
   meta: boolean;
   /** Gioco scelto (blocca il formato, vedi games.ts); null = nessun gioco. */
   game: GameId | null;

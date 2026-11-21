@@ -140,7 +140,7 @@ export interface DashboardData {
   /** members: i membri in ordine di team (le colonne della tabella dei ruoli), scritti come gli owners. */
   roles: { chips: RoleChip[]; members: string[]; value: string };
   speed: { lanes: SpeedLane[]; median: number | null; vsMeta: boolean; control: { condition: SpeedCondition; move: string; by: string[] }[]; value: string };
-  /** metaOff: meta spento dall'utente (altrimenti, se non disponibile, mancano le statistiche). */
+  /** metaOff: il formato non usa il meta (Giochi, No Format); altrimenti, se non disponibile, mancano le statistiche. */
   /** `list`: le minacce gestite peggio per la carta della Panoramica (metaThreats). */
   threats: { pods: ThreatPod[]; list: MetaThreat[]; total: number; available: boolean; metaOff: boolean };
 }

@@ -41,7 +41,7 @@ import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
 import { useMediaQuery } from './useMediaQuery';
 import { TOUCH_QUERY } from './TouchTips';
-import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
 import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
@@ -204,7 +204,8 @@ const typesOverflow = (el: HTMLElement) =>
   [...el.querySelectorAll<HTMLElement>('.slot-card .types')].some(row => row.scrollWidth > row.clientWidth + 1);
 
 /** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
-const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
+// In larghezza 1px di tolleranza (la pendenza del corsivo): il nome su una riga sola tagliato di 2px si vede
+const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 1;
 
 /**
  * Telefono: il voto nella testata dell'editor, perché lì il voto grande è coperto. Lettera e punteggio; appena cambia,
@@ -312,7 +313,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   // rimpicciolisce (CSS --name-em)
   // Il nome prima si rimpicciolisce (CSS); se intero verrebbe tagliato anche così, la carta mostra il nome senza forma
   // ("Urshifu" per Urshifu-Rapid-Strike, "Charizard" per Charizard-Mega-X; un soprannome non si accorcia), e se nemmeno
-  // quello entra, una riga sola coi puntini. Il nome intero resta nel tooltip.
+  // quello entra, una riga sola coi puntini. Il nome intero resta nel tooltip. Nel team aperto il nome sta sempre su una
+  // riga sul computer (carte alte uguali): andare a capo conta come non entrare, e conta la misura del nome intero
+  // (--name-em-whole; --name-em, la parte più lunga, serve dove il nome può andare a capo)
   // Si misura sulla carta (watch): la sua misura non dipende dal nome mostrato
   const nameRef = useRef<HTMLElement>(null);
   const shortName = !set.name && species && species.baseSpecies !== name ? species.baseSpecies : null;
@@ -321,6 +324,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const shownName = set.name || (shortName && nameStep < nameSteps ? shortName : name);
   const nameDots = nameStep === 0;
   const nameEm = useNameEm(shownName);
+  const nameEmWhole = useNameEm(shownName, true);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
   // Soprannome: si scrive cliccando il nome nell'editor; vuoto = il nome della specie
@@ -485,8 +489,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       <div
         className="slot-card"
         draggable
-        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…")
-        {...(collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
+        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…"). Carta aperta: niente
+        // fumetto (col mouse ancora sopra, ridisegnando la pagina si riapriva sopra l'editor)
+        {...(open || collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
 ${tr('team.slotKey', { n: index + 1 })}`))}
         {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
@@ -521,10 +526,9 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           ref={card}
           aria-expanded={open}
           aria-controls={drawerId}
-          // Un nome breve per la carta: nome, lead, tipi, strumento, problemi, posizione
+          // Un nome breve per la carta: nome, tipi, strumento, problemi, posizione
           aria-label={[
             set.name ? `${set.name} (${name})` : name,
-            index === 0 ? tr('team.lead') : null,
             species?.types.map(type => typeName(type, lang)).join('/'),
             set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
             dangers.length ? tr(dangers.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: dangers.length }) : null,
@@ -532,8 +536,8 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
             tr('team.position', { n: index + 1, total }),
           ].filter(Boolean).join(', ')}
           aria-keyshortcuts={`${index + 1} Alt+ArrowLeft Alt+ArrowRight`}
-          {...bubble(`${tr('team.dragTitle')}
-${tr('team.slotKey', { n: index + 1 })}`)}
+          {...(open ? {} : bubble(`${tr('team.dragTitle')}
+${tr('team.slotKey', { n: index + 1 })}`))}
         />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
         <span className="mini-icon" aria-hidden="true">
@@ -550,10 +554,6 @@ ${tr('team.slotKey', { n: index + 1 })}`)}
         <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set, roles[0]), 'data-hint': '' })}>
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
-        {index === 0 && (
-          // Il primo slot è quello che va in campo per primo
-          <small className="slot-lead" {...bubble(tr('team.leadTitle'))} aria-hidden="true">{tr('team.lead')}</small>
-        )}
         {set.customSkillset && (
           // Non è un problema: piccolo, nell'angolo in alto a sinistra
           <AlertMark icon="unlock" className="slot-custom"
@@ -587,7 +587,7 @@ ${tr('team.slotKey', { n: index + 1 })}`)}
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" {...bubble(set.name ? `${set.name} (${name})` : name)} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" {...bubble(set.name ? `${set.name} (${name})` : name)} style={{ '--name-em': nameEm.toFixed(3), '--name-em-whole': nameEmWhole.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
@@ -898,14 +898,15 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
   }, [team, data, format]);
   // Completa team: pannello con le proposte e i team da torneo
   const [filling, setFilling] = useState(false);
-  // Telefono: Team salvati, Importa, Esporta, link e Svuota in un menu "…" che si apre dal basso, ognuna col suo nome.
+  // Telefono e tablet: Team salvati, Importa, Esporta, link e Svuota in un solo menu (sul telefono "…", sul tablet "Team ▾"),
+  // ognuna col suo nome; dal basso col tablet in verticale e sul telefono, a tendina col tablet in orizzontale.
   // Le voci premono i pulsanti veri (nascosti a vista ma vivi), così i loro pannelli si aprono come sempre
-  const phoneMenu = useMediaQuery(SHEET_QUERY);
+  const phoneMenu = useMediaQuery('(max-width: 1099px)');
   const [moreOpen, setMoreOpen] = useState(false);
   const moreButton = useRef<HTMLButtonElement>(null);
   const moreSheet = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
-  useAnchoredPop(moreButton, moreSheet, moreOpen, { sheet: true, onDismiss: () => setMoreOpen(false) });
+  useAnchoredPop(moreButton, moreSheet, moreOpen, { sheet: true, width: 260, align: 'end', gap: 6, onDismiss: () => setMoreOpen(false) });
   const pressReal = (selector: string) => {
     setMoreOpen(false);
     requestAnimationFrame(() => headRef.current?.querySelector<HTMLElement>(selector)?.click());
@@ -1057,7 +1058,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
         {phoneMenu && (
           <div className="team-more">
             <button type="button" className="team-more-button" ref={moreButton} aria-label={t(lang, 'team.more')} aria-haspopup="menu"
-              aria-expanded={moreOpen} onClick={() => setMoreOpen(open => !open)}><Icon name="dots" /></button>
+              aria-expanded={moreOpen} onClick={() => setMoreOpen(open => !open)}><Icon name="dots" /><span className="team-more-label" aria-hidden="true">Team</span></button>
             {moreOpen && (
               <div className="team-more-sheet" ref={moreSheet} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={t(lang, 'team.more')}
                 onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMoreOpen(false); moreButton.current?.focus(); } }}>

@@ -1,18 +1,18 @@
-import type { Format } from './engine/format';
+import { sanitizeChoice, type FormatChoice } from './engine/formatChoice';
 import type { TeamSet } from './engine/sets';
-import { isTeamSet, sanitizeFormat } from './storage';
+import { isTeamSet } from './storage';
 
 /** Team e formato condivisi in un link (`#team=...`): niente server, sta tutto nell'indirizzo. */
 export interface SharedTeam {
   team: TeamSet[];
-  format: Format;
+  choice: FormatChoice;
 }
 
 const PREFIX = '#team=';
 
 /** JSON → UTF-8 → base64 per URL (senza +, / e =). */
-export function encodeShare(team: TeamSet[], format: Format): string {
-  const bytes = new TextEncoder().encode(JSON.stringify({ team, format }));
+export function encodeShare(team: TeamSet[], choice: FormatChoice): string {
+  const bytes = new TextEncoder().encode(JSON.stringify({ team, choice }));
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -22,17 +22,17 @@ export function decodeShare(hash: string): SharedTeam | null {
   try {
     const base64 = hash.slice(PREFIX.length).replace(/-/g, '+').replace(/_/g, '/');
     const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-    const parsed = JSON.parse(new TextDecoder().decode(bytes)) as { team?: unknown; format?: unknown };
+    const parsed = JSON.parse(new TextDecoder().decode(bytes)) as { team?: unknown; choice?: unknown };
     if (!Array.isArray(parsed.team) || !parsed.team.length || !parsed.team.every(isTeamSet)) return null;
-    return { team: parsed.team.slice(0, 6), format: sanitizeFormat(parsed.format) };
+    return { team: parsed.team.slice(0, 6), choice: sanitizeChoice(parsed.choice) };
   } catch {
     return null;
   }
 }
 
 /** Indirizzo dell'app con il team. */
-export function shareUrl(team: TeamSet[], format: Format): string {
-  return `${window.location.origin}${window.location.pathname}${PREFIX}${encodeShare(team, format)}`;
+export function shareUrl(team: TeamSet[], choice: FormatChoice): string {
+  return `${window.location.origin}${window.location.pathname}${PREFIX}${encodeShare(team, choice)}`;
 }
 
 /** Legge il team dall'indirizzo una volta sola e lo toglie, così ricaricando non si reimporta. */
