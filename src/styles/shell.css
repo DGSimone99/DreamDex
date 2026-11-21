@@ -189,3 +189,42 @@ button.game-card { display: block; width: calc(100% - 32px); padding: 0; border:
 .game-caption small { color: var(--muted); font: 500 var(--fs-caption)/1.4 var(--ui); }
 .game-options { display: grid; }
 .game-options > .rail-label + .format-toggle { border-top: 0; }
+
+/* Finestra Scegli il formato: le tre famiglie come linguette oblique su una fascia, sotto le scelte della famiglia mostrata
+   (una colonna). Ogni scelta vale subito. Tessere coi loghi per fonti e giochi; le generazioni Smogon passate in una scala */
+.format-dialog { width: min(560px, 100%); max-height: min(720px, calc(100vh - 48px)); }
+.fmt-families { display: flex; gap: var(--sp-1); padding: var(--sp-4) var(--sp-9) 0; background: var(--band); border-bottom: 1px solid var(--line); }
+.fmt-families label { position: relative; padding: var(--sp-3) var(--sp-9) var(--sp-3) var(--sp-6); font: 800 var(--fs-section)/1.2 var(--display); font-style: italic; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); cursor: pointer; transition: color 0.15s var(--ease), background-color 0.15s var(--ease); }
+.fmt-families label:hover:not(.on, .off) { color: var(--text); background: var(--raised); }
+.fmt-families label.on { color: var(--on-accent); background: var(--accent); }
+/* La famiglia del formato attivo, quando se ne guarda un'altra: testo pieno e un filo d'accento sotto */
+.fmt-families label.active:not(.on) { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.fmt-families label.off { opacity: 0.45; cursor: not-allowed; }
+.fmt-body { display: grid; gap: var(--sp-8); padding: var(--sp-8) var(--sp-9) var(--sp-9); overflow-y: auto; }
+.fmt-sec > .rail-label { margin-bottom: var(--sp-4); }
+.fmt-sec > .rail-label + .format-toggle { padding-top: 0; border-top: 0; }
+.fmt-sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
+.fmt-gens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+.fmt-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--sp-4); }
+.fmt-tile { display: grid; align-content: start; gap: 3px; padding: var(--sp-4) var(--sp-5) var(--sp-5); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer; transition: border-color 0.15s var(--ease); }
+.fmt-tile b { font: 700 var(--fs-section)/1.15 var(--display); font-style: italic; color: var(--text); }
+.fmt-tile small { color: var(--muted); font: 500 var(--fs-caption)/1.3 var(--ui); }
+.fmt-tile:hover:not(.on, .off) { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.fmt-tile.on { border-color: var(--accent); background: var(--accent-wash); box-shadow: inset 0 -3px 0 var(--accent); }
+.fmt-tile.off { opacity: 0.45; cursor: not-allowed; }
+.fmt-art { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-items: center; justify-items: center; gap: var(--sp-4); height: 64px; margin-bottom: var(--sp-3); padding: var(--sp-3); border-radius: 3px; background: var(--field); }
+.fmt-game .fmt-art { height: 84px; }
+.fmt-game.game-sv .fmt-art { background: linear-gradient(100deg, #5a1a14 0 50%, #33195c 50% 100%); }
+.fmt-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
+.fmt-logo-text { font: 800 var(--fs-section)/1 var(--display); font-style: italic; text-transform: uppercase; color: var(--text); text-align: center; }
+.fmt-past-label { margin: var(--sp-6) 0 var(--sp-3); color: var(--faint); font: 600 var(--fs-caption)/1.2 var(--ui); }
+.fmt-scale { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.fmt-scale label { display: grid; justify-items: center; gap: 2px; padding: var(--sp-3) 0; border-left: 1px solid var(--line-soft); background: var(--panel); }
+.fmt-scale label:first-child { border-left: 0; }
+.fmt-scale b { font: 700 var(--fs-title-s)/1 var(--display); color: var(--muted); }
+.fmt-scale small { font: 600 var(--fs-label)/1 var(--ui); color: var(--faint); }
+.fmt-scale label.off { cursor: not-allowed; }
+.fmt-scale label.off b, .fmt-scale label.off small { opacity: 0.6; }
+.fmt-note { margin: 0; color: var(--muted); font: 500 var(--fs-small)/1.45 var(--ui); }
+.format-dialog label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.format-dialog .note { margin: 0; color: var(--faint); font-size: var(--fs-caption); }
