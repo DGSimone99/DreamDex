@@ -411,3 +411,17 @@
   background: var(--ground); box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); font: 500 var(--fs-caption)/1.35 var(--ui); white-space: pre-line;
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
+
+/* Il set consigliato si misura da sé (critique 2026-11-21): in un dettaglio stretto (tablet, sotto i 560px) l'esagono va
+   sopra, centrato, e mosse e dati del set hanno tutta la larghezza; prima le mosse restavano in 146px e i nomi si
+   riducevano a una lettera */
+.detail-sec.set-sec { container: setsec / inline-size; }
+@container setsec (max-width: 559px) {
+  .set-row { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+  .set-row .mcard-hex { justify-self: center; }
+}
+/* Ancora più stretto (sotto i 420px): le mosse una per riga e i dati del set su due colonne (nome e valore) */
+@container setsec (max-width: 419px) {
+  .set-row .set-moves { grid-template-columns: minmax(0, 1fr); }
+  .set-row .mcard-kit { grid-template-columns: auto minmax(0, 1fr); }
+}
