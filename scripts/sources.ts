@@ -2,6 +2,15 @@
 export const SOURCES = ['gen9nationaldex', 'gen9nationaldexubers', 'gen9nationaldexuu', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9anythinggoes'];
 
 /**
+ * Fonti del doppio: a parte, perché i loro set (Fake Out, Follow Me, Protect…) non devono mai diventare
+ * set, preset o statistiche di riserva del singolo.
+ */
+export const DOUBLES_SOURCES = ['gen9nationaldexdoubles'];
+
+/** Le fonti del doppio da scaricare: tutte, anche per la pubblicazione (il doppio è acceso per tutti dal 2026-11-20). */
+export const doublesToFetch = (): string[] => DOUBLES_SOURCES;
+
+/**
  * Altri formati usati solo per i set di riserva (Pokémon senza dati nel formato scelto),
  * da data.pkmn.cc. Statistiche: si sceglie il formato in cui il Pokémon è in più squadre.
  */

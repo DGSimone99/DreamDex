@@ -87,7 +87,7 @@ describe('ruolo principale e secondario', () => {
   });
 
   it('crediti approvati per archetipo', () => {
-    expect(SECONDARY_CREDIT).toEqual({ hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0 });
+    expect(SECONDARY_CREDIT).toEqual({ hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0, doubles: 1 });
   });
 
   it('semi-stall col solo Great Tusk offensivo: muro fisico 0.5', () => {

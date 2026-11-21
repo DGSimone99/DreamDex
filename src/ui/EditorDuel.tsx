@@ -3,12 +3,14 @@ import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
 import { getMove, getSpecies, itemNames, moveNames, toID } from '../engine/dex';
-import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, matchup, mergeEffects, orderOf, rankMatchups, speedBuffs, type DuelBuff, type MatchupVerdict, type DuelHit, type EvTip } from '../engine/editorDuel';
+import { attackBuffs, buffedHit, defenseBuffs, duelSpeed, editorDuel, matchup, mergeEffects, orderOf, rankMatchups, speedBuffs, type DuelBuff, type MatchupVerdict, type DuelHit } from '../engine/editorDuel';
 import { metaThreats } from '../engine/attackers';
 import { dexPool } from '../engine/coverage';
 import type { Format } from '../engine/format';
 import { isBannedName, pokedexOf } from '../engine/formats';
 import { legalMoves } from '../engine/learnsets';
+import { commonChoices } from '../engine/common';
+import { AVOID_MOVES } from '../engine/generatedSet';
 import { defaultSet, mostCommonSet, presetsFor, type TeamSet } from '../engine/sets';
 import { usageOf } from '../engine/stats';
 import { formatPercent, type Lang } from '../i18n';
@@ -19,10 +21,15 @@ import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { PokemonIcon } from './PokemonName';
 import { useMemberTip } from './MemberCard';
+import { DuelTips, type QuickTip } from './DuelTips';
+import { useDuelTips } from './useDuelTips';
+import { quickTips } from '../engine/duelTips';
 import { MovePill } from './MovePill';
 import { StatIcon } from './StatIcon';
 import { Sprite, typeColor } from './Sprite';
 import { typeIconUrl } from './typeIcons';
+import { takeOpponent } from './duelHandoff';
+import { hint, KitTipBody, kitTip } from './MoveTip';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
 interface OppSet { key: string; label: string; set: TeamSet; usage?: boolean }
@@ -53,12 +60,23 @@ function GenderMark({ species }: { species: string }) {
   );
 }
 
-/** Le mosse fra cui cercare un colpo migliore: quelle imparabili (tutte col Custom Skillset), senza quelle vietate. */
-function movePool(set: TeamSet, format: Format): string[] {
+/**
+ * Le mosse fra cui i consigli cercano un colpo migliore: quelle imparabili (tutte col Custom Skillset), senza quelle
+ * vietate né quelle difficili da usare (AVOID_MOVES: Focus Punch, Dream Eater, Belch…). Se il Pokémon ha dati d'uso
+ * (le più usate in cima alla tendina delle mosse: statistiche del formato, di un altro formato o set Smogon) solo
+ * quelle: niente mosse che nessuno usa; senza dati (Pokémon poco usati, giochi senza meta, hackrom) tutte le altre.
+ */
+function movePool(set: TeamSet, format: Format, data: EngineData): string[] {
   const legal = set.customSkillset ? null : legalMoves(set.species, format.genLimit, format.game);
   const sv = pokedexOf(format) === 'sv';
   const names = legal ? [...legal].map(id => getMove(id)?.name ?? id) : moveNames();
-  return names.filter(name => (!sv || !getMove(name)?.isNonstandard) && (format.ignoreBans || !isBannedName(format.formatId, 'moves', name)));
+  const usable = names.filter(name => {
+    const move = getMove(name);
+    return (!move || !AVOID_MOVES.has(move.id)) && (!sv || !move?.isNonstandard) && (format.ignoreBans || !isBannedName(format.formatId, 'moves', name));
+  });
+  const allowed = new Set(usable);
+  const used = commonChoices(data, set).moves.map(choice => choice.name).filter(name => allowed.has(name));
+  return used.length ? used : usable;
 }
 
 /**
@@ -67,13 +85,23 @@ function movePool(set: TeamSet, format: Format): string[] {
  * suo tipo; a destra tre righe col risultato grande: il tuo colpo migliore, il suo che ti fa più male (barra dei PS che
  * restano a chi lo prende) e la Velocità, ognuna coi suoi consigli (mossa migliore, EV). Si aggiorna mentre si cambia il set.
  */
-export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: TeamSet[]; data: EngineData; format: Format }) {
+export function EditorDuel({ set, team, data, format, onApply, onOpenMember }: {
+  set: TeamSet; team: TeamSet[]; data: EngineData; format: Format;
+  /** Applica di un consiglio: il set nuovo e il cambio in parole (per l'avviso Annulla). */
+  onApply?: (next: TeamSet, change: string) => void;
+  /** "Lascialo a …": apre quel membro del team (posizione) con lo stesso avversario. */
+  onOpenMember?: (index: number, opponent: string) => void;
+}) {
   const t = useT();
   const lang = useLang();
   const me = useDeferredValue(set);
   // L'avversario scelto, per il membro aperto: all'inizio la sfida peggiore, poi resta quello (anche se cambi il set)
   // finché non ne scegli un altro
-  const [choice, setChoice] = useState<{ owner: string; name: string } | null>(null);
+  // (o quello lasciato da un compagno con "Lascialo a …")
+  const [choice, setChoice] = useState<{ owner: string; name: string } | null>(() => {
+    const handed = takeOpponent(set.species);
+    return handed ? { owner: set.species, name: handed } : null;
+  });
   const picked = choice && choice.owner === set.species ? choice.name : null;
   const setPicked = (name: string | null) => setChoice(name ? { owner: set.species, name } : null);
   const [setKey, setSetKey] = useState<string | null>(null);
@@ -160,7 +188,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const sets = useMemo(() => (species ? oppSets(data, species, format.genLimit, lang, t('editor.duelUsageSet'), t('editor.duelBaseSet')) : []),
     [data, species, format.genLimit, lang, t]);
   const chosen = sets.find(s => s.key === setKey) ?? sets[0] ?? null;
-  const pool = useMemo(() => movePool(me, format), [me.species, me.customSkillset, format]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pool = useMemo(() => movePool(me, format, data), [me.species, me.item, me.customSkillset, format, data]); // eslint-disable-line react-hooks/exhaustive-deps
   // L'avversario in campo: il set scelto con le modifiche fatte nelle Impostazioni
   const opp = useMemo<TeamSet | null>(() => (chosen
     ? { ...chosen.set, ...(edit.item !== undefined ? { item: edit.item } : {}), evs: { ...chosen.set.evs, ...edit.evs } }
@@ -178,6 +206,18 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
     speed: speedBuffs(me, opp, squad),
   } : null), [me, opp, squad, result]);
   const speed = useMemo(() => (opp ? duelSpeed(me, opp) : null), [me, opp]);
+  // Se nessun ritocco basta: il compagno del team che vince questo scontro (il più netto), o nessuno (index null)
+  const mate = useMemo<{ index: number | null } | null>(() => {
+    if (!opp || verdict === 'good') return null;
+    let index: number | null = null;
+    let score = -Infinity;
+    team.forEach((member, i) => {
+      if (member.species === set.species) return;
+      const m = matchup(member, opp);
+      if (m.verdict === 'good' && m.score > score) { index = i; score = m.score; }
+    });
+    return { index };
+  }, [team, set.species, opp, verdict]);
   const itemOptions = useMemo<ComboOption[]>(() => itemNames().map(name => ({
     value: name, label: gameName('item', name, lang), alias: name, icon: <ItemIcon item={name} />,
   })), [lang]);
@@ -196,22 +236,15 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const usageBadge = <span className="duel-usage-badge">{t('editor.duelUsageSet')}</span>;
   const evTotal = opp ? Object.values(opp.evs).reduce((acc, n) => acc + (n ?? 0), 0) : 0;
 
-  const free = 510 - Object.values(set.evs).reduce((acc, n) => acc + (n ?? 0), 0);
-  /** "+84 EV in PS e +20 in Dif": la versione corta va nella riga dei consigli, quella intera nel tooltip. */
-  const evParts = (tip: EvTip) => (Object.entries(tip.add) as [StatID, number][])
-    .map(([stat, n], i) => t(i === 0 ? 'editor.duelTipEvs' : 'editor.duelTipEvsMore', { n, stat: statShort(stat, lang) })).join(' ');
-  const evText = (tip: EvTip | null) => {
-    if (!tip) return null;
-    const parts = evParts(tip);
-    const text = tip.side === 'defense'
-      ? t('editor.duelTipDef', { evs: parts, n: tip.hits })
-      : t(tip.hits === 1 ? 'editor.duelTipAtkOne' : 'editor.duelTipAtk', { evs: parts, n: tip.hits });
-    return tip.total > free ? `${text} ${t('editor.duelTipElsewhere')}` : text;
-  };
-  const moveTip = result?.moveTip;
-  const moveText = moveTip
-    ? t(moveTip.hits === 1 ? 'editor.duelTipMoveOne' : 'editor.duelTipMove', { move: gameName('move', moveTip.move, lang), n: moveTip.hits })
-    : null;
+  /** L'etichetta corta di un consiglio di EV, per il chip: "+32 DifSp", "+84 PS +28 DifSp". */
+  const evShort = (add: Partial<Record<StatID, number>>) => (Object.entries(add) as [StatID, number][])
+    .map(([stat, n]) => `+${n} ${statShort(stat, lang)}`).join(' ');
+  // I chip dei consigli subito (dal calcolo della Sfida); i consigli completi arrivano dal calcolo in sottofondo
+  const quick: QuickTip[] = useMemo(() => (opp ? quickTips(me, opp, pool) : []).map(q => ({
+    id: q.id, label: q.move ? gameName('move', q.move, lang) : evShort(q.add),
+  })), [me, opp, pool, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  const meIndex = squad.findIndex(member => member.species === set.species);
+  const full = useDuelTips(meIndex >= 0 ? squad : [me], Math.max(0, meIndex), opp, pool, data);
 
   /** Il nome di chi dà un potenziamento: una mossa (Swords Dance) o un'abilità (Drought); "Sun + Terrain" diviso. */
   const sourceName = (source: string) => source.split(' + ')
@@ -251,9 +284,6 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   const speedEffect = speedOn.length ? mergeEffects(speedOn.map(b => b.apply)) : null;
   const speeds = speed ? { mine: Math.floor(speed.mine * (speedEffect?.mine ?? 1)), theirs: Math.floor(speed.theirs * (speedEffect?.theirs ?? 1)) } : null;
   const order = speeds ? orderOf(speeds.mine, speeds.theirs) : null;
-  const speedTip = speed?.tip
-    ? `${t('editor.duelTipSpe', { n: speed.tip.evs })}${speed.tip.evs > free ? ` ${t('editor.duelTipElsewhere')}` : ''}`
-    : null;
   /** L'etichetta della Velocità sul colpo: "» 1° · 328" verde per chi muove prima, rossa per l'altro, gialla se pari. */
   const speedChip = (kind: 'mine' | 'theirs') => {
     if (!speeds || !order) return null;
@@ -273,18 +303,35 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   };
 
   /**
-   * La riga dei consigli c'è sempre (vuota se non ce ne sono): la scheda non salta quando compaiono. Corta a vista
-   * ("Consigli: Brave Bird · +236 EV in AttSp"), per intero nel tooltip (con quanti colpi servono).
+   * Cosa dire quando una riga non ha consigli, al posto di "nessuno": va già bene (KO in un colpo, non ti manda KO, sfida
+   * vinta) oppure nessun ritocco basta. In quel caso la riga del suo colpo (o la tua, se la sua va bene) passa la mano al
+   * compagno che vince lo scontro, con un clic che lo apre con lo stesso avversario; l'altra dice solo che non basta.
    */
-  const tipsLine = (short: (string | null)[], long: (string | null)[]) => {
-    const shown = short.filter((x): x is string => !!x);
-    const full = long.filter((x): x is string => !!x);
-    return shown.length
-      ? <span className="duel-tips tip" data-tip={full.join('\n')}>
-          <b>{t(shown.length === 1 ? 'editor.duelTip' : 'editor.duelTips')}</b> <span aria-hidden="true">{shown.join(' · ')}</span>
-          <span className="visually-hidden">{full.join('. ')}</span>
-        </span>
-      : <span className="duel-tips" aria-hidden="true">{' '}</span>;
+  const needsHelp = (kind: 'mine' | 'theirs') => {
+    if (!result || verdict === 'good') return false;
+    if (kind === 'mine') return !result.mine || result.mine.hitsSure > 1;
+    return !!result.theirs && Number.isFinite(result.theirs.hitsMaybe);
+  };
+  const noTips = (kind: 'mine' | 'theirs'): ReactNode => {
+    if (!result) return null;
+    if (kind === 'mine' && result.mine?.hitsSure === 1) return <span className="duel-tips-none good">{t('duel.tipsKo')}</span>;
+    if (kind === 'theirs' && (!result.theirs || !Number.isFinite(result.theirs.hitsMaybe))) return <span className="duel-tips-none good">{t('duel.tipsSafe')}</span>;
+    if (!needsHelp(kind)) return <span className="duel-tips-none">{t('duel.tipsFine')}</span>;
+    const handsOff = kind === 'theirs' || !needsHelp('theirs');
+    if (!handsOff || !mate || !species) return <span className="duel-tips-none stuck">{t('duel.tipsStuck')}</span>;
+    if (mate.index === null) return <span className="duel-tips-none stuck">{t('duel.tipsNobody')}</span>;
+    const at = mate.index;
+    const member = team[at];
+    const name = member.name || member.species;
+    return (
+      <>
+        <span className="duel-tips-none">{t('duel.tipsMate')}</span>
+        <button type="button" className="duel-mate" aria-label={t('duel.tipsMateOpen', { name, opponent: species })}
+          onClick={() => onOpenMember?.(at, species)}>
+          <Icon name="swap" /><PokemonIcon name={member.species} /><span>{name}</span>
+        </button>
+      </>
+    );
   };
 
   /**
@@ -294,7 +341,8 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
    */
   const line = (className: string, title: ReactNode, label: ReactNode, big: string, unit: string, resultClass: string, sub: ReactNode, tips: ReactNode, chip?: ReactNode) => (
     <div className={`duel-row ${className}`}>
-      <span className="duel-title">{title}</span>
+      {/* Quando la Sfida ha poca altezza resta solo il simbolo: il titolo nel tooltip */}
+      <span className="duel-title tip" data-tip={t(className === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}>{title}</span>
       {chip}
       <span className="duel-label">{label}</span>
       {/* I colpi di fianco alla barra, poco dopo la percentuale */}
@@ -304,13 +352,8 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
   );
   const hitLine = (kind: 'mine' | 'theirs', base: DuelHit | null) => {
     const title = <><Icon name={kind === 'mine' ? 'sword' : 'shield'} /><span className="duel-title-text">{t(kind === 'mine' ? 'editor.duelMineTitle' : 'editor.duelTheirsTitle')}</span></>;
-    const tips = kind === 'mine'
-      ? tipsLine([
-        moveTip ? gameName('move', moveTip.move, lang) : null,
-        result?.atkTip ? evParts(result.atkTip) : null,
-        speed?.tip ? t('editor.duelTipEvShort', { n: speed.tip.evs, stat: statShort('spe', lang) }) : null,
-      ], [moveText, evText(result?.atkTip ?? null), speedTip])
-      : tipsLine([result?.defTip ? evParts(result.defTip) : null], [evText(result?.defTip ?? null)]);
+    // Due righe di consigli indipendenti: sotto il tuo colpo attacco, mossa e Velocità; sotto il suo la difesa
+    const tips = opp ? <DuelTips side={kind} me={me} opp={opp} quick={quick} result={full} onApply={onApply} empty={noTips(kind)} /> : null;
     const chip = speedChip(kind);
     const list = kind === 'mine' ? buffs?.attack : buffs?.defense;
     const effect = effectOf(list);
@@ -362,7 +405,7 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
             {species && <GenderMark species={species} />}
             {species && (
               <button type="button" className="duel-settings" aria-haspopup="dialog" aria-expanded={settingsOpen} aria-controls={settingsId}
-                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={toggleSettings}>
+                aria-label={t('editor.duelSettings')} {...hint(t('editor.duelSettings'))} onClick={toggleSettings}>
                 <Icon name="gear" />
               </button>
             )}
@@ -390,9 +433,10 @@ export function EditorDuel({ set, team, data, format }: { set: TeamSet; team: Te
                 )}
                 {opp && (
                   <>
-                    <div className="duel-settings-row">
+                    <div className="duel-settings-row" {...kitTip('item', opp.item)}>
                       <span className="duel-settings-label">{t('editor.item')}</span>
                       <Combobox label={t('editor.duelItem')} value={opp.item} options={itemOptions} className="duel-item"
+                        optionTip={option => (option.value ? { tone: 'var(--accent)', content: <KitTipBody kind="item" name={option.value} />, className: 'move kit' } : null)}
                         leading={opp.item ? <ItemIcon item={opp.item} /> : undefined}
                         onChange={item => setEdit(e => ({ ...e, item }))} />
                     </div>

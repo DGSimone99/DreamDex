@@ -9,6 +9,7 @@ import { useLang, useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
 import { MovePill } from '../MovePill';
 import { Ask } from '../offense/TargetsTip';
+import { kitTip } from '../MoveTip';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
 /** Le tre fonti di velocità in più. */
@@ -48,7 +49,7 @@ function GainTip({ title, rows, grouped, foot }: { title: string; rows: Row[]; g
                   // Le mosse come pillole (nome tradotto, potenza nella coda); la nota sul tipo immune dentro, piccola
                   ? <MovePill key={chip.name} name={chip.name} size="sm" className="sp-gd-move"
                     label={chip.note ? <>{gameName('move', chip.name, lang)}<small>{chip.note}</small></> : undefined} />
-                  : <span key={chip.name} className="sp-gd-chip">{chip.name}{chip.note && <small>{chip.note}</small>}</span>))}
+                  : <span key={chip.name} className="sp-gd-chip" {...kitTip(dex.items.get(chip.name).exists ? 'item' : 'ability', chip.name)}>{chip.name}{chip.note && <small>{chip.note}</small>}</span>))}
                 {row.text && <span className="sp-gd-text">{row.text}</span>}
               </span>
             </div>
@@ -65,7 +66,7 @@ function GainTip({ title, rows, grouped, foot }: { title: string; rows: Row[]; g
  * riga e il "?" col dettaglio nel tooltip: mosse, abilità, moltiplicatori dalle tabelle del motore), dal membro al team.
  * Schematica e senza quote né pesi: le fonti aggiungono un bonus.
  */
-export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boolean }) {
+export function SpeedGuideSection({ speed, meta, doubles = false }: { speed: TeamSpeed; meta: boolean; doubles?: boolean }) {
   const t = useT();
   const lang = useLang();
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.speed.${key}` as Key, params);
@@ -103,8 +104,9 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
       rows: [
         { group: g('d.ctrl.long'), label: getMove('stickyweb')?.name ?? 'Sticky Web', value: '−1', text: g('d.ctrl.web.rule') },
         { label: getMove('trickroom')?.name ?? 'Trick Room', text: g('d.ctrl.room.rule') },
-        { group: g('d.ctrl.short'), label: getMove('tailwind')?.name ?? 'Tailwind', value: times(2), text: g('d.ctrl.tail.rule') },
-        { label: g('d.ctrl.para'), value: '×½', chips: moveChips(PARALYSIS, immune), text: g('d.ctrl.para.rule') },
+        // In doppio Tailwind conta come Trick Room (un compagno lo mette mentre l'altro attacca); in singolo fra i brevi
+        { ...(!doubles && { group: g('d.ctrl.short') }), label: getMove('tailwind')?.name ?? 'Tailwind', value: times(2), text: g('d.ctrl.tail.rule') },
+        { ...(doubles && { group: g('d.ctrl.short') }), label: g('d.ctrl.para'), value: '×½', chips: moveChips(PARALYSIS, immune), text: g('d.ctrl.para.rule') },
         { label: g('d.ctrl.drop'), value: '×⅔', chips: moveChips(SPEED_DROP, immune) },
       ],
       foot: g('d.ctrl.foot'),

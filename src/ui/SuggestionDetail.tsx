@@ -4,7 +4,7 @@ import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
 import { cardRoles, type Archetype } from '../engine/archetype';
-import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
+import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
 import { areaDrops, extrasDelta, rolesDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
@@ -142,7 +142,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     mates,
     top: mates[0]?.share || 1,
   } : null;
-  const setRoles = [...(mainRole ? [mainRole] : []), ...detectRoles(set, rulesOf(data)).filter(role => role !== mainRole)];
+  const setRoles = [...(mainRole ? [mainRole] : []), ...shownRoles(detectRoles(set, rulesOf(data)), rulesOf(data)).filter(role => role !== mainRole)];
   const roleName = (role: (typeof setRoles)[number]) => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang));
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
   const loses: Bring[] = [

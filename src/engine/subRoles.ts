@@ -1,14 +1,14 @@
 import { battleAbility, battleSpecies, getMove, getSpecies, hasPriorityAttack, isDefined, STAT_ABILITIES, toID } from './dex';
-import { rulesOf, type FormatRules } from './formatRules';
+import { isOneType, rulesOf, type FormatRules } from './formatRules';
 import { mostCommonSet, type TeamSet } from './sets';
 import { statLines } from './statCalc';
 import { attackStyle, SPEED_ABILITIES } from './roles';
 import type { EngineData } from './data';
 import { usesMeta } from './analysis';
-import { orbStatus, setKey } from './damage';
+import { orbStatus, setKey, SPREAD_TARGETS } from './damage';
 import { withUsableMoves } from './lockedMoves';
 import { rolesMemberOffense } from './offense';
-import { memberSpeed } from './speedArea';
+import { memberSpeed, priorityMoves } from './speedArea';
 import { outspeedShare, poolSpecies, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
 import { teamField } from './types';
 import { memoBySet } from './memo';
@@ -18,16 +18,19 @@ import type { Archetype } from './archetype';
 export type Family = 'attack' | 'defense' | 'support' | 'utility';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
   | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support' | 'speedControl'
-  | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval'
-  | 'physicalAttacker' | 'specialAttacker';
+  | 'dot' | 'disruptor' | 'phazer' | 'itemRemoval'
+  | 'physicalAttacker' | 'specialAttacker'
+  | 'protect' | 'fakeOut' | 'spread' | 'redirector' | 'firstStrike';
 
 /** Le sotto-ruoli di ogni famiglia, nell'ordine della tabella della specifica. */
 export const FAMILIES: Record<Family, SubRole[]> = {
   attack: ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker'],
   defense: ['physicalWall', 'specialWall', 'recovery'],
   // 'support' il sotto-ruolo è il Cleric (Wish, Healing Wish, Heal Bell…); 'support' la famiglia è tutto ciò che aiuta i compagni
-  support: ['support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer'],
-  utility: ['hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval'],
+  support: ['support', 'removal', 'screens', 'speedControl', 'phazer'],
+  // Disruptor (2026-11-20, utente): paralisi, sonno, Yawn, Taunt ed Encore in una voce sola (prima Debuff, Taunt ed
+  // Encore, ignorati in ogni tipo di team); il flinch no (dura un turno e chiede di essere più veloci)
+  utility: ['hazards', 'pivot', 'dot', 'disruptor', 'itemRemoval'],
 };
 
 /**
@@ -36,6 +39,35 @@ export const FAMILIES: Record<Family, SubRole[]> = {
  * niente carte, filtri o famiglia principale; come secondario segue gli attaccanti (secondaryRoles).
  */
 export const ATTACKER_ROLES: SubRole[] = ['physicalAttacker', 'specialAttacker'];
+
+/**
+ * I sotto-ruoli del doppio (2026-11-21): valgono 1 se il membro ha la mossa, e si calcolano solo nei formati col tipo
+ * unico (isOneType). Scelti sulle partite vere di National Dex Doubles: Protect (o simili), Fake Out, un attacco che
+ * colpisce più bersagli, la deviazione (solo Follow Me e Rage Powder) e chi colpisce per primo (Fake Out o un attacco
+ * con priorità). Fuori dalle famiglie, come ATTACKER_ROLES, e mai famiglia principale; in doppio però sono loro i ruoli
+ * mostrati di un membro (carte, filtri, somiglianza, "Porta / Toglie"): la lista è DOUBLES_LIST, vedi rolesListFor.
+ */
+export const DOUBLES_ROLES: SubRole[] = ['protect', 'fakeOut', 'spread', 'redirector', 'firstStrike'];
+const PROTECT = new Set(['protect', 'detect', 'spikyshield', 'kingsshield', 'banefulbunker', 'silktrap', 'burningbulwark', 'obstruct']);
+const REDIRECT = new Set(['followme', 'ragepowder']);
+/** La mossa è un attacco che in doppio colpisce più bersagli (Earthquake, Heat Wave). */
+export const isSpreadMove = (move: { category: string; target: string } | undefined | null): boolean =>
+  !!move && move.category !== 'Status' && SPREAD_TARGETS.has(move.target);
+
+/** La mossa del set che dà il sotto-ruolo del doppio (la prima), o null. `priority`: gli attacchi con priorità del membro nel suo team. */
+function doublesSource(set: TeamSet, role: SubRole, priority: string[]): string | null {
+  const moves = set.moves.map(getMove).filter(isDefined);
+  const has = (list: Set<string>) => moves.find(m => list.has(m.id))?.name ?? null;
+  if (role === 'protect') return has(PROTECT);
+  if (role === 'fakeOut') return has(new Set(['fakeout']));
+  if (role === 'redirector') return has(REDIRECT);
+  if (role === 'spread') return moves.find(isSpreadMove)?.name ?? null;
+  if (role === 'firstStrike') return has(new Set(['fakeout'])) ?? priority[0] ?? null;
+  return null;
+}
+
+/** Il membro ha Fake Out o una mossa di deviazione (Follow Me, Rage Powder): in doppio un supporto così non è un membro debole. */
+export const hasDoublesRole = (set: TeamSet, role: 'fakeOut' | 'redirector'): boolean => doublesSource(set, role, []) !== null;
 
 /** Sotto-ruoli misurati: famiglia Attacco, muri e Recupero. */
 export const MEASURED: SubRole[] = [...FAMILIES.attack, 'physicalWall', 'specialWall', 'recovery'];
@@ -46,7 +78,7 @@ export type SubRoleValues = Partial<Record<SubRole, number>>;
 export interface StatusSource {
   move: string;
   dot: number;
-  debuff: number;
+  disruptor: number;
   status: 'tox' | 'brn' | 'psn' | 'par' | 'slp' | 'yawn' | 'trap' | 'salt' | 'seed';
 }
 
@@ -54,6 +86,24 @@ const ORDER: SubRole[] = (Object.values(FAMILIES) as SubRole[][]).flat();
 
 /** I sotto-ruoli con valore almeno `min`, nell'ordine delle famiglie. */
 export const rolesList = (v: SubRoleValues, min = 0.5): SubRole[] => ORDER.filter(r => (v[r] ?? 0) >= min);
+
+/**
+ * I ruoli di un membro in doppio, nell'ordine in cui si elencano: attacco, muri, poi le voci del voto del doppio (Fake
+ * Out, Redirector, mossa a più bersagli, priorità, pivot, hazard) e Protect per ultimo (lo ha quasi metà dei Pokémon).
+ * Rimozione, recupero, schermi, stati e gli altri ruoli del singolo in doppio non si mostrano: il voto non li chiede.
+ */
+export const DOUBLES_LIST: SubRole[] = [
+  'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalAttacker', 'specialAttacker',
+  'physicalWall', 'specialWall', 'fakeOut', 'redirector', 'spread', 'firstStrike', 'pivot', 'hazards', 'protect',
+];
+
+/**
+ * La lista dei ruoli di un membro secondo il formato: nel singolo quella delle famiglie (rolesList), in doppio quella
+ * del doppio (DOUBLES_LIST; gli attaccanti di un lato ci sono solo coi valori misurati nel team). L'unico punto che
+ * sceglie fra le due: chi mostra o confronta i ruoli passa di qui.
+ */
+export const rolesListFor = (v: SubRoleValues, rules: FormatRules, min = 0.5): SubRole[] =>
+  (isOneType(rules) ? DOUBLES_LIST.filter(r => (v[r] ?? 0) >= min) : rolesList(v, min));
 
 /** Indice di muro: PS x Dif e PS x DifSp sulle statistiche reali (livello 100), con i moltiplicatori di strumento e abilità. */
 export function wallIndex(set: TeamSet): { physical: number; special: number } {
@@ -74,12 +124,21 @@ export function wallIndex(set: TeamSet): { physical: number; special: number } {
   return { physical: value('hp') * value('def') * def, special: value('hp') * value('spd') * spd };
 }
 
-/** Valore di ogni stato: danno nel tempo e debuff, prima di probabilità e immunità. */
-const STATUS_TABLE: Record<StatusSource['status'], { dot: number; debuff: number }> = {
-  tox: { dot: 1, debuff: 0 }, brn: { dot: 0.5, debuff: 0.25 }, psn: { dot: 0.5, debuff: 0 },
-  par: { dot: 0, debuff: 0.25 }, slp: { dot: 0, debuff: 1 }, yawn: { dot: 0, debuff: 0.5 },
-  trap: { dot: 0.25, debuff: 0 }, salt: { dot: 1, debuff: 0 }, seed: { dot: 0.5, debuff: 0 },
+/**
+ * Valore di ogni stato: danno nel tempo e Disruptor, prima di probabilità e immunità. 2026-11-20 (utente): la scottatura
+ * conta piena nel DoT (era 0,5 più 0,25 di debuff); paralisi, sonno e Yawn pieni nel Disruptor (erano 0,25, 1 e 0,5).
+ */
+const STATUS_TABLE: Record<StatusSource['status'], { dot: number; disruptor: number }> = {
+  tox: { dot: 1, disruptor: 0 }, brn: { dot: 1, disruptor: 0 }, psn: { dot: 0.5, disruptor: 0 },
+  par: { dot: 0, disruptor: 1 }, slp: { dot: 0, disruptor: 1 }, yawn: { dot: 0, disruptor: 1 },
+  trap: { dot: 0.25, disruptor: 0 }, salt: { dot: 1, disruptor: 0 }, seed: { dot: 0.5, disruptor: 0 },
 };
+
+/**
+ * Il DoT si somma come probabilità (2026-11-20, utente): "almeno una fonte riesce", 1 − (1 − a)(1 − b)…, dentro il
+ * membro e fra i membri del team (needs.ts). Tre Scald coprono la voce, due no; Toxic basta da sola.
+ */
+export const combineChances = (values: number[]): number => 1 - values.reduce((miss, v) => miss * (1 - Math.min(1, Math.max(0, v))), 1);
 const VOLATILE_STATUS: Record<string, StatusSource['status']> = {
   yawn: 'yawn', leechseed: 'seed', saltcure: 'salt', partiallytrapped: 'trap',
 };
@@ -97,7 +156,7 @@ export function statusSources(set: TeamSet): StatusSource[] {
   const add = (move: string, status: StatusSource['status'] | undefined, chance: number, accuracy: number) => {
     if (!status || !STATUS_TABLE[status]) return;
     const k = chance * (status === 'slp' ? accuracy : 1);
-    out.push({ move, status, dot: STATUS_TABLE[status].dot * k, debuff: STATUS_TABLE[status].debuff * k });
+    out.push({ move, status, dot: STATUS_TABLE[status].dot * k, disruptor: STATUS_TABLE[status].disruptor * k });
   };
   for (const m of set.moves.map(getMove).filter(isDefined)) {
     const accuracy = m.accuracy === true ? 1 : (m.accuracy ?? 100) / 100;
@@ -201,15 +260,19 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   else if (reflect || lightScreen || veil) put('screens', 0.6 * clay);
 
   // Disturbo
-  for (const s of statusSources(set)) {
-    put('dot', Math.min(1, s.dot));
-    put('debuff', Math.min(1, s.debuff));
-  }
+  const sources = statusSources(set);
+  put('dot', combineChances(sources.map(s => s.dot)));
+  for (const s of sources) put('disruptor', Math.min(1, s.disruptor));
   if (ids.some(id => PHAZER.has(id)) || ability === 'unaware') put('phazer', 1);
-  if (ids.includes('taunt')) put('taunt', 1);
-  if (ids.includes('encore')) put('encore', 1);
+  if (ids.includes('taunt') || ids.includes('encore')) put('disruptor', 1);
   if (ids.includes('knockoff')) put('itemRemoval', 1);
   if (ids.includes('trick') || ids.includes('switcheroo')) put('itemRemoval', item.startsWith('choice') ? 1 : 0.5);
+
+  // Doppio: i sotto-ruoli da mossa (qui la priorità è quella del solo set; nel team la decide measureWith)
+  if (isOneType(rules)) {
+    const priority = moves.filter(m => m.category !== 'Status' && m.priority > 0 && m.id !== 'upperhand').map(m => m.name);
+    for (const role of DOUBLES_ROLES) if (doublesSource(set, role, priority)) put(role, 1);
+  }
 
   return v;
 }
@@ -377,6 +440,11 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   for (const role of keep) if (base[role]) put(role, base[role]!, setSource(role, ids, ability, toID(set.item)));
   // I muri con l'indice reale e la soglia, per il motivo nella scheda
   const rules = rulesOf(data);
+  // Doppio: i sotto-ruoli da mossa, con la priorità come la conta la Velocità (Grassy Glide col campo erboso del team)
+  if (isOneType(rules)) {
+    const priority = priorityMoves(set, team);
+    for (const role of DOUBLES_ROLES) { const source = doublesSource(set, role, priority); if (source) put(role, 1, source); }
+  }
   const wall = wallIndex(set);
   if (base.physicalWall) put('physicalWall', base.physicalWall, 'wall');
   if (base.specialWall) put('specialWall', base.specialWall, 'wall');
@@ -428,17 +496,21 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   const open = ability === 'prankster'
     ? 1 - share(r => r.types.includes('Dark'))
     : outspeedShare(speedStat(set).value, speeds, set.species);
-  if (ids.includes('taunt')) put('taunt', open, 'Taunt', open);
-  if (ids.includes('encore')) put('encore', open, 'Encore', open);
-  if (ability === 'prankster') for (const r of reasons) if (r.role === 'taunt' || r.role === 'encore') r.prankster = true;
+  if (ids.includes('taunt')) put('disruptor', open, 'Taunt', open);
+  if (ids.includes('encore')) put('disruptor', open, 'Encore', open);
+  if (ability === 'prankster') for (const r of reasons) if (r.role === 'disruptor') r.prankster = true;
 
-  // Stati: valore x quota del gruppo che li può subire
+  // Stati: valore x quota del gruppo che li può subire; il DoT somma le fonti come probabilità, la fonte è la migliore
   const corrosion = ability === 'corrosion';
+  const dots: { move: string; value: number; share: number }[] = [];
   for (const src of statusSources(set)) {
     const s = share(r => affects(src, r, corrosion, ability === 'prankster'));
-    put('dot', Math.min(1, src.dot * s), src.move, s);
-    put('debuff', Math.min(1, src.debuff * s), src.move, s);
+    if (src.dot > 0) dots.push({ move: src.move, value: Math.min(1, src.dot * s), share: s });
+    // Uno stato che batte Taunt o Encore prende il posto del loro motivo (senza la nota di Prankster)
+    put('disruptor', Math.min(1, src.disruptor * s), src.move, s);
   }
+  const best = dots.reduce<(typeof dots)[number] | null>((a, d) => (!a || d.value > a.value ? d : a), null);
+  if (best) put('dot', combineChances(dots.map(d => d.value)), best.move, best.share);
   return { values, reasons };
 }
 
@@ -516,7 +588,7 @@ export function primaryFamily(set: TeamSet, values: SubRoleValues): PrimaryFamil
 }
 
 /** Quanto conta un sotto-ruolo secondario nel valore di team, per archetipo (approvato dall'utente). */
-export const SECONDARY_CREDIT: Record<Archetype, number> = { hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0 };
+export const SECONDARY_CREDIT: Record<Archetype, number> = { hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0, doubles: 1 };
 
 /** Ruoli secondari del membro: i sotto-ruoli d'Attacco (con gli attaccanti di un lato) o dei muri della famiglia non principale. */
 export const secondaryRoles = (primary: PrimaryFamily | null): SubRole[] =>

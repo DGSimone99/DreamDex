@@ -4,8 +4,11 @@ import type { StatID, TeamSet } from './sets';
 import type { GameId } from './games';
 import { effectiveness, TYPES, type TypeName } from './types';
 
-/** Mosse d'attacco da non proporre in un set generato: si ricaricano, si esauriscono o dipendono da condizioni. */
-const AVOID = new Set([
+/**
+ * Mosse d'attacco difficili da usare, da non proporre mai (set generati, consigli della Sfida): si ricaricano, si
+ * esauriscono, mandano KO chi le usa o dipendono da condizioni (Focus Punch, Dream Eater, Belch, Last Resort…).
+ */
+export const AVOID_MOVES: ReadonlySet<string> = new Set([
   'hyperbeam', 'gigaimpact', 'blastburn', 'frenzyplant', 'hydrocannon', 'rockwrecker', 'roaroftime', 'prismaticlaser',
   'eternabeam', 'meteorassault', 'selfdestruct', 'explosion', 'mistyexplosion', 'finalgambit', 'memento',
   'focuspunch', 'solarbeam', 'solarblade', 'skyattack', 'razorwind', 'skullbash', 'futuresight', 'doomdesire',
@@ -21,6 +24,12 @@ const UTILITY = [
   'recover', 'roost', 'slackoff', 'softboiled', 'moonlight', 'synthesis', 'morningsun', 'shoreup', 'strengthsap',
   'willowisp', 'thunderwave', 'toxic', 'knockoff', 'protect',
 ];
+
+/**
+ * In doppio Protect è la prima scelta (lo porta quasi metà dei Pokémon) e le trappole di Stealth Rock non si propongono:
+ * il resto della lista resta com'è.
+ */
+const DOUBLES_UTILITY = ['protect', ...UTILITY.filter(id => id !== 'stealthrock' && id !== 'protect')];
 
 interface Candidate {
   name: string;
@@ -40,8 +49,9 @@ function strength(move: NonNullable<ReturnType<typeof getMove>>, types: readonly
 /**
  * Un set ragionevole per un Pokémon senza dati in nessun formato: le STAB più forti, una copertura
  * che colpisce più tipi possibili, una mossa di supporto; natura, EV e strumento dalle statistiche base.
+ * `doubles`: la mossa di supporto si sceglie dalla lista del doppio (Protect per prima).
  */
-export function generatedSet(speciesName: string, genLimit = 9, game: GameId | null = null): TeamSet {
+export function generatedSet(speciesName: string, genLimit = 9, game: GameId | null = null, doubles = false): TeamSet {
   const species = getSpecies(speciesName);
   const empty: TeamSet = { species: speciesName, item: '', ability: '', moves: [], nature: 'Serious', evs: {} };
   if (!species) return empty;
@@ -54,7 +64,7 @@ export function generatedSet(speciesName: string, genLimit = 9, game: GameId | n
 
   // Attacchi: dello stile del Pokémon (con un margine per i misti), escluse le mosse problematiche
   const attacks: Candidate[] = learnable
-    .filter(m => m.category !== 'Status' && m.basePower > 0 && !AVOID.has(m.id) && !m.flags.charge && !m.flags.recharge)
+    .filter(m => m.category !== 'Status' && m.basePower > 0 && !AVOID_MOVES.has(m.id) && !m.flags.charge && !m.flags.recharge)
     .filter(m => Math.abs(atk - spa) < 15 || (m.category === 'Physical') === physical)
     .map(m => ({ name: m.name, type: m.type as TypeName, power: strength(m, types, atk, spa) }))
     .sort((a, b) => b.power - a.power);
@@ -78,7 +88,7 @@ export function generatedSet(speciesName: string, genLimit = 9, game: GameId | n
   }
   const names = moves.map(m => m.name);
   // Supporto, poi eventuali altri attacchi per arrivare a 4
-  const utility = UTILITY.find(id => legal?.has(id));
+  const utility = (doubles ? DOUBLES_UTILITY : UTILITY).find(id => legal?.has(id));
   if (utility) names.push(getMove(utility)!.name);
   for (const c of attacks) {
     if (names.length >= 4) break;

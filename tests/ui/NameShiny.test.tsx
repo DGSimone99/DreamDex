@@ -43,7 +43,7 @@ describe('testata dell\'editor', () => {
     expect(slot().querySelector('.editor-title .species-tag')).toHaveTextContent('Great Tusk');
     // Sulla carta il soprannome, con la specie nel tooltip
     expect(slot().querySelector('.slot-card .name')).toHaveTextContent('Tusky');
-    expect(slot().querySelector('.slot-card .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
+    expect(slot().querySelector('.slot-card .name')).toHaveAttribute('data-hint', 'Tusky (Great Tusk)');
     await user.click(within(slot()).getByRole('button', { name: /^Set:/ }));
     await user.click(within(slot()).getByRole('button', { name: 'Incolla testo' }));
     expect((within(slot()).getByLabelText('Set in testo Showdown') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);

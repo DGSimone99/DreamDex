@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Typed } from './TypeText';
 import { Icon, type IconName } from './icons';
 import { useT } from '../i18n/react';
+import { hint } from './MoveTip';
 
 export interface Alert {
   /** danger: non legale (rosso); warn: da controllare, es. seconda Mega (giallo); info: solo informativo (blu). */
@@ -10,6 +11,8 @@ export interface Alert {
   text: string;
   /** Suggerimento al passaggio del mouse su questa riga (es. come risolvere). */
   title?: string;
+  /** Testo con nomi di mosse o abilità ("Dragon Darts"): niente colori dei tipi anche se è un problema rosso. */
+  plain?: boolean;
 }
 
 /** Larghezza massima del tooltip (come in marks.css), per tenerlo dentro la finestra. */
@@ -29,7 +32,7 @@ export function AlertMark({ alerts, className = '', icon = 'warning', floating =
   const level = alerts.some(a => a.level === 'danger') ? 'danger' : alerts.some(a => a.level === 'warn') ? 'warn' : 'info';
   const lines = alerts.map(alert => (
     // Nomi di mosse come "Dragon Darts" non vanno colorati come tipi: solo i problemi di legalità
-    <span key={alert.text} className={`alert-line ${alert.level}`} title={alert.title}>{alert.level === 'danger' ? <Typed text={alert.text} /> : alert.text}</span>
+    <span key={alert.text} className={`alert-line ${alert.level}`} {...hint(alert.title)}>{alert.level === 'danger' && !alert.plain ? <Typed text={alert.text} /> : alert.text}</span>
   ));
   const show = (e: SyntheticEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect();

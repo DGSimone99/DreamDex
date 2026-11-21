@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import type { Archetype } from '../engine/archetype';
+import { formatRules, isOneType } from '../engine/formatRules';
 import { ActiveFilters } from './ActiveFilters';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
@@ -17,7 +18,7 @@ import { statsEntry } from '../engine/stats';
 import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
-import { EMPTY_FILTERS, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
+import { EMPTY_FILTERS, filtersFor, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
@@ -94,7 +95,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
   const listRef = useRef<HTMLOListElement>(null);
   const { perPage, columns, tileHeight, reasons } = usePerPage(listRef, teamCollapsed);
-  const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
+  const [chosenFilters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
+  // I ruoli scelti in un formato che questo non offre (singolo → doppio) qui non valgono: né accesi né contati
+  const filterRules = useMemo(() => formatRules(format.formatId), [format.formatId]);
+  const filters = useMemo(() => filtersFor(chosenFilters, filterRules), [chosenFilters, filterRules]);
   // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
   const applied = useDebounced(filters, SEARCH_DELAY);
   const filtering = isFiltering(applied);
@@ -125,7 +129,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const view: View = replacing ? 'member' : team.length >= 2 && (scope === 'all' || team.length >= 6) ? 'all' : 'add';
   // Tipo di team per giudicare i cambi: Qualunque (il voto vero del team) finché non lo scegli a mano
   const [pickedType, setPickedType] = useState<Archetype | null>(null);
-  const typeChoice = pickedType;
+  // Doppio: un tipo di team solo, la scelta non c'è (e un tipo scelto prima di cambiare formato non conta)
+  const oneType = isOneType(formatRules(format.formatId));
+  const typeChoice = oneType ? null : pickedType;
   // Vale in tutte le modalità: aggiungendo cerca chi aiuta a costruire quel tipo, migliorando chi lo raggiunge o lo mantiene
   const archetype = typeChoice ?? undefined;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
@@ -360,14 +366,16 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         </span>
       </div>
       {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca) */}
-      <label className="team-type" title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}>
-        <span aria-hidden="true">{tr('suggest.teamTypeShort')}</span>
-        <select aria-label={tr('suggest.teamType')} value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
-          <option value="">{tr('suggest.anyType')}</option>
-          {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
-        </select>
-      </label>
-      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} />
+      {!oneType && (
+        <label className="team-type" title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}>
+          <span aria-hidden="true">{tr('suggest.teamTypeShort')}</span>
+          <select aria-label={tr('suggest.teamType')} value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
+            <option value="">{tr('suggest.anyType')}</option>
+            {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
+          </select>
+        </label>
+      )}
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} />
     </>
   );
 

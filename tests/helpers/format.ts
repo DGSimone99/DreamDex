@@ -8,6 +8,7 @@ const radio = (name: string, value: string) => {
 };
 export const chooseDex = (user: UserEvent, id: string) => user.click(radio('format-dex', id));
 export const chooseTier = (user: UserEvent, id: string) => user.click(radio('format-tier', id));
+export const chooseBattle = (user: UserEvent, id: 'singles' | 'doubles') => user.click(radio('format-battle', id));
 export const chooseGen = (user: UserEvent, gen: string | number) => user.click(radio('format-gen', String(gen)));
 /** Il valore scelto: 'format-dex', 'format-tier' o 'format-gen'. */
 export const chosen = (name: string) => document.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ?? null;

@@ -6,7 +6,7 @@ import type { TeamSet } from '../../engine/sets';
 import { ATTACKER_ROLES, FAMILIES, type SubRoleReason } from '../../engine/subRoles';
 import type { T } from '../AreaDetail';
 import { PokemonIcon } from '../PokemonName';
-import { points, type RoleHolder } from './rolesRows';
+import type { RoleHolder } from './rolesRows';
 
 /** Nome della voce: il sotto-ruolo, o il gruppo degli attaccanti ("Sweeper", "Attaccante fisico"…). */
 export const keyLabel = (key: LevelKey, t: T) => (isGroupKey(key) ? t(`need.${key}`) : t(`role.${key}`));
@@ -14,11 +14,9 @@ export const keyLabel = (key: LevelKey, t: T) => (isGroupKey(key) ? t(`need.${ke
 const thousands = (n: number) => `${Math.round(n / 1000)}k`;
 const ATTACK_KEYS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
 
-/** Il motivo di un sotto-ruolo in parole: quota del gruppo per Taunt, Encore e stati, indice per i muri, colpo per l'Attacco. */
-export function reasonText(r: SubRoleReason, pool: string, t: T): string {
-  const pct = Math.round(100 * (r.share ?? 0));
-  if (r.role === 'taunt' || r.role === 'encore') return t(r.prankster ? 'rdetail.reason.prankster' : 'rdetail.reason.outspeed', { move: r.source, pct, pool });
-  if ((r.role === 'dot' || r.role === 'debuff') && r.share !== undefined) return t('rdetail.reason.status', { move: r.source, pct, pool });
+/** Il motivo di un sotto-ruolo in parole, senza percentuali (2026-11-20, utente): la mossa, Prankster, il muro, il colpo per l'Attacco. */
+export function reasonText(r: SubRoleReason, t: T): string {
+  if (r.role === 'disruptor' && r.prankster) return t('rdetail.reason.prankster', { move: r.source });
   if ((r.role === 'physicalWall' || r.role === 'specialWall') && r.index !== undefined) {
     return t(r.role === 'physicalWall' ? 'rdetail.reason.wall.physical' : 'rdetail.reason.wall.special', { index: thousands(r.index), threshold: thousands(r.threshold ?? 0) });
   }
@@ -40,8 +38,8 @@ export function kindNote(key: LevelKey, h: RoleHolder, roles: TeamRoles, team: T
 }
 
 /** Motivo completo di chi porta la voce: il motivo misurato (o la fonte) e la nota. */
-export function holderReason(key: LevelKey, h: RoleHolder, roles: TeamRoles, team: TeamSet[], pool: string, t: T): string {
-  const why = h.reason ? reasonText(h.reason, pool, t) : h.source === 'set' || h.source === 'wall' ? '' : h.source;
+export function holderReason(key: LevelKey, h: RoleHolder, roles: TeamRoles, team: TeamSet[], t: T): string {
+  const why = h.reason ? reasonText(h.reason, t) : h.source === 'set' || h.source === 'wall' ? '' : h.source;
   return [why, kindNote(key, h, roles, team, t)].filter(Boolean).join(' · ');
 }
 
@@ -51,20 +49,16 @@ export function LevelTag({ level, t }: { level: Level; t: T }) {
 }
 
 /**
- * Chi porta la voce: l'icona del box e, quando non è pieno (sotto 100), il valore in percentuale ("75%"); con `named`
- * (l'unico che la porta) anche il nome accanto. Il secondario e chi la porta solo in parte più tenui. Nome, valore e
- * motivo per lo screen reader e nel tooltip.
+ * Chi porta la voce: l'icona del box; con `named` (l'unico che la porta) anche il nome accanto. Niente percentuali
+ * (2026-11-20, utente): o la porta o no. Il secondario più tenue. Nome e motivo per lo screen reader e nel tooltip.
  */
 export function RoleMon({ h, why, t, named = false }: { h: RoleHolder; why?: string; t: T; named?: boolean }) {
-  const weak = h.secondary || h.value < 1;
-  const value = points(h.value);
-  const title = [h.species, h.secondary && t('rdetail.secondary'), why, `${value}%`].filter(Boolean).join(' · ');
+  const title = [h.species, h.secondary && t('rdetail.secondary'), why].filter(Boolean).join(' · ');
   return (
-    <span className={`rl-mon${weak ? ' weak' : ''}${h.value < MISSING_BELOW ? ' partial' : ''}${named ? ' named' : ''}`} title={title}>
+    <span className={`rl-mon${h.secondary ? ' weak' : ''}${named ? ' named' : ''}`} title={title}>
       <span className="rl-box"><PokemonIcon name={h.species} /></span>
       {named && <b className="rl-mon-name" aria-hidden="true">{h.species}</b>}
-      {value < 100 && <small className="rl-val" aria-hidden="true">{value}%</small>}
-      <span className="visually-hidden">{h.species}{h.secondary ? ` (${t('rdetail.secondary')})` : ''}{value < 100 ? ` ${value}%` : ''}</span>
+      <span className="visually-hidden">{h.species}{h.secondary ? ` (${t('rdetail.secondary')})` : ''}</span>
     </span>
   );
 }

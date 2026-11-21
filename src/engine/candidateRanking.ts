@@ -11,7 +11,8 @@ import { GAMES, gameOf, obtainableIn, pokedexRank } from './games';
 import { isUserBanned } from './lists';
 import { defaultSet } from './sets';
 import type { TeamSet } from './sets';
-import { aloneGains, bestSwaps, rankByTeamGain, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from './teamGain';
+import { rulesOf } from './formatRules';
+import { aloneGains, bestSwaps, rankByTeamGain, swapsPerMember, type SwapOption, type SwapReport, type TeamGain } from './teamGain';
 
 /** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. */
 export const MAX = 50;
@@ -74,7 +75,7 @@ export function rankCandidates(params: RankingParams, data: EngineData): Ranking
       // Raccomandazioni libere: per ogni candidato, il membro che conviene di più sostituire
       const pool = filtering ? searchPool(team, format, data, applied) : undefined;
       if (!pool && !data.stats) return [];
-      return bestSwaps(team, data, lang, index => improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang, archetype), { archetype, report }).slice(0, MAX);
+      return bestSwaps(team, data, lang, index => improveReplacements(team, index, format, data, swapsPerMember(rulesOf(data)), pool, lang, archetype), { archetype, report }).slice(0, MAX);
     }
     if (replaceIndex !== null) {
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche

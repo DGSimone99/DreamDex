@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
+import type { FormatRules } from '../../engine/formatRules';
 import { MISSING_BELOW } from '../../engine/needs';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
-import { LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../../engine/roleLevels';
+import { levelFor, levelKeysFor, type Level, type LevelKey } from '../../engine/roleLevels';
+import { FAMILIES } from '../../engine/subRoles';
 import { useT } from '../../i18n/react';
 import { keyLabel, LevelTag } from './RoleParts';
 import { FAMILY_ORDER, familyOf } from './rolesRows';
@@ -20,7 +22,7 @@ const LEVEL_TILES: Level[] = ['essential', 'important', 'minor', 'ignored'];
  * La guida dei Ruoli (schematica, senza i valori del team): come funziona l'area e i livelli di ogni voce per tipo di
  * team (la colonna del team in evidenza).
  */
-export function RolesGuideSection({ section, archetype, typeRule }: { section: RolesSection; archetype: Archetype; typeRule?: 'walls' | 'recoverySpeed' }) {
+export function RolesGuideSection({ section, archetype, typeRule }: { section: RolesSection; archetype: Archetype; typeRule?: FormatRules['typeRule'] }) {
   const t = useT();
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.roles.${key}` as Key, params);
 
@@ -36,7 +38,7 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
         <h4>{g('what')}</h4>
         <ul className="guide-lines">
           <li>{g('what.level', { archetype: t(`archetype.${archetype}`) })}</li>
-          <li>{g('what.value', { pct: Math.round(100 * MISSING_BELOW) })}</li>
+          <li>{g('what.value')}</li>
           <li>{g('what.points')}</li>
         </ul>
         <h4>{g('levels')}</h4>
@@ -52,16 +54,20 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
     );
   }
 
-  // Ruoli per tipo di team: le voci che contano almeno in un tipo di team, per famiglia; quelle che non contano mai in una riga sotto
-  const counts = LEVEL_KEYS.filter(key => ARCHETYPES.some(a => levelFor(a.key, key, typeRule) !== 'ignored'));
-  const never = LEVEL_KEYS.filter(key => !counts.includes(key));
+  // Ruoli per tipo di team: le voci che contano almeno in un tipo di team, per famiglia; quelle che non contano mai in una riga sotto.
+  // Sweeper e Wallbreaker fisici e speciali non vanno nella riga (utente, 2026-11-20): contano dentro i gruppi degli attaccanti
+  // In doppio c'è un tipo solo: una colonna, con le sole voci del doppio
+  const types = typeRule === 'oneType' ? [{ key: 'doubles' as const, short: t('archetype.doubles') }] : ARCHETYPES;
+  const keys = levelKeysFor(typeRule);
+  const counts = keys.filter(key => types.some(a => levelFor(a.key, key, typeRule) !== 'ignored'));
+  const never = keys.filter(key => !counts.includes(key) && !FAMILIES.attack.includes(key as never));
   return (
     <>
       <table className="rl-types">
         <thead>
           <tr>
             <th scope="col">{t('rdetail.role')}</th>
-            {ARCHETYPES.map(a => (
+            {types.map(a => (
               <th key={a.key} scope="col" title={t(`archetype.${a.key}`)} className={a.key === archetype ? 'now' : undefined}>{a.short}</th>
             ))}
           </tr>
@@ -71,11 +77,11 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
           if (!rows.length) return null;
           return (
             <tbody key={family}>
-              <tr className="rl-fam"><th scope="rowgroup" colSpan={6}>{t(`family.${family}`)}</th></tr>
+              <tr className="rl-fam"><th scope="rowgroup" colSpan={types.length + 1}>{t(`family.${family}`)}</th></tr>
               {rows.map(key => (
                 <tr key={key}>
                   <th scope="row">{keyLabel(key, t)}</th>
-                  {ARCHETYPES.map(a => {
+                  {types.map(a => {
                     const level = levelFor(a.key, key, typeRule);
                     return (
                       <td key={a.key} className={a.key === archetype ? 'now' : undefined}>
@@ -89,12 +95,12 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
           );
         })}
       </table>
-      <p className="guide-foot">{g('types.never', { list: never.map(key => keyLabel(key, t)).join(', ') })}</p>
+      {never.length > 0 && <p className="guide-foot">{g('types.never', { list: never.map(key => keyLabel(key, t)).join(', ') })}</p>}
     </>
   );
 }
 
 /** Le pagine della guida dei Ruoli dopo Come funziona: Ruoli per tipo di team. */
-export function rolesGuidePages(archetype: Archetype, t: ReturnType<typeof useT>, typeRule?: 'walls' | 'recoverySpeed'): { key: string; label: string; content: ReactNode }[] {
+export function rolesGuidePages(archetype: Archetype, t: ReturnType<typeof useT>, typeRule?: FormatRules['typeRule']): { key: string; label: string; content: ReactNode }[] {
   return [{ key: 'types', label: t('guide.roles.page.types'), content: <RolesGuideSection section="types" archetype={archetype} typeRule={typeRule} /> }];
 }

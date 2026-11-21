@@ -15,6 +15,7 @@ import { Sprite } from './Sprite';
 import { EeveeMoment } from './EeveeMoment';
 import { PokemonIcon } from './PokemonName';
 import { MoveName } from './TypeText';
+import { kitTip } from './MoveTip';
 
 const evsText = (set: TeamSet, lang: ReturnType<typeof useLang>) =>
   STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
@@ -36,10 +37,10 @@ function SetBrief({ set, than, label, className }: { set: TeamSet; than?: TeamSe
       {/* Il nome della parte (Adesso / Dopo) per i lettori di schermo: a vista lo dicono il posto e la freccia */}
       <span className="visually-hidden">{label}</span>
       <span className="improve-line"><Part fresh={!!than && than.item !== set.item}>
-        {set.item ? <><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</> : t('improve.noItem')}
+        {set.item ? <span {...kitTip('item', set.item)}><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span> : t('improve.noItem')}
       </Part></span>
       <span className="improve-line">
-        {ability && <Part fresh={!!than && battleAbility(than) !== ability}>{gameName('ability', ability, lang)}</Part>}
+        {ability && <Part fresh={!!than && battleAbility(than) !== ability}><span {...kitTip('ability', ability)}>{gameName('ability', ability, lang)}</span></Part>}
         {set.nature && <>{ability && ' · '}<Part fresh={!!than && than.nature !== set.nature}>{natureName(set.nature, lang)}</Part></>}
       </span>
       <span className="improve-line improve-evs"><Part fresh={!!than && !sameEvs(than, set)}>{evsText(set, lang) || '—'}</Part></span>
@@ -157,7 +158,7 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                         <span className="improve-name" title={name}>{name}</span>
                         {change.changed
                           ? <span className={`improve-gain${change.gain > 0 ? ' up' : change.gain < 0 ? ' down' : ''}`}
-                            title={t('improve.gainTitle', { name, n: change.gain > 0 ? `+${change.gain}` : String(change.gain) })}>
+                            title={change.gain === 0 ? t('improve.gainZero') : t('improve.gainTitle', { name, n: change.gain > 0 ? `+${change.gain}` : String(change.gain) })}>
                             {change.gain > 0 ? `+${change.gain}` : change.gain === 0 ? '±0' : change.gain}</span>
                           : <span className="improve-gain same">{t('improve.sameShort')}</span>}
                       </div>

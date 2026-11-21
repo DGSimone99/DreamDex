@@ -1,12 +1,12 @@
 import type { EngineData } from '../engine/data';
 import { bannedTexts } from '../engine/coach';
-import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
-import { formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
+import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, withinGen } from '../engine/dex';
+import { bannedParts, formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
-import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
+import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
-import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
+import { measuredSubRoles, rolesListFor, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
 import { createContext, memo, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
@@ -19,10 +19,11 @@ import { cancelPrepareFill, prepareFill, prepareImproveSets } from './useRanking
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
-import { SetEditor } from './SetEditor';
+import { SetEditor, type FieldFlag, type FieldFlags } from './SetEditor';
+import { handOffOpponent } from './duelHandoff';
 import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
-import { describe } from './describe';
+import { hint as bubble, kitTip } from './MoveTip';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
@@ -49,10 +50,17 @@ import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 
+/** Il voto del team, per il chip nella testata dell'editor sul telefono (lì il voto grande è coperto). */
+export interface EditorGradeInfo { letter: string; overall: number; illegal: boolean }
+/** Il chip dell'editor: il voto di adesso e quello di quando si è aperto il membro. */
+type EditorGradeShown = EditorGradeInfo & { from: number };
+
 interface Props {
   team: TeamSet[];
   format: Format;
   data: EngineData;
+  /** Il voto del team (null senza voto): sul telefono un chip nell'editor dice di quanto cambia mentre modifichi. */
+  grade?: EditorGradeInfo | null;
   onChange: (team: TeamSet[]) => void;
   onAdd: (set: TeamSet) => void;
   onReplace: (index: number) => void;
@@ -75,6 +83,8 @@ interface Props {
   onPaste?: (index: number, set: TeamSet) => void;
   /** Set intero cambiato nell'editor (preset Smogon, I miei set, spread più usati), annullabile; se manca, si aggiorna solo il team. */
   onSetChange?: (index: number, set: TeamSet) => void;
+  /** Applica di un consiglio della Sfida: il set nuovo e il cambio in parole (per l'avviso Annulla). */
+  onTipApply?: (index: number, set: TeamSet, change: string) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
   onBulk?: (kind: 'presets' | 'fill' | 'clear' | 'tournament', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
@@ -174,6 +184,10 @@ interface SlotActions {
   change: (index: number, set: TeamSet) => void;
   /** Set intero cambiato (preset, I miei set, spread): con Annulla. */
   setChange: (index: number, set: TeamSet) => void;
+  /** Consiglio della Sfida applicato: con Annulla. */
+  tip: (index: number, set: TeamSet, change: string) => void;
+  /** La Sfida passa la mano: apre il membro `index` con lo stesso avversario. */
+  openWith: (index: number, opponent: string) => void;
   remove: (index: number) => void;
   replace: (index: number) => void;
   proposalDone: (applied: boolean) => void;
@@ -192,8 +206,33 @@ const typesOverflow = (el: HTMLElement) =>
 /** Nome tagliato: righe in più della seconda o puntini. Qualche px di tolleranza: il corsivo sborda un poco a destra. */
 const nameCut = (el: HTMLElement) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 4;
 
-const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false }: {
+/**
+ * Telefono: il voto nella testata dell'editor, perché lì il voto grande è coperto. Lettera e punteggio; appena cambia,
+ * "74 → 76" col cambio in verde o rosso (il punto di partenza è il voto quando si è aperto il membro).
+ */
+function EditorGrade({ grade }: { grade: EditorGradeShown }) {
+  const tr = useT();
+  const { from } = grade;
+  const delta = grade.overall - from;
+  return (
+    <span className={`editor-grade grade-${grade.letter}${grade.illegal ? ' illegal' : ''}`}>
+      <span className="visually-hidden">{tr('editor.gradeLabel')} </span>
+      {/* Team non legale: il triangolo rosso delle carte prima della lettera grigia (il grigio da solo sembra "spento") */}
+      {grade.illegal && <span className="editor-grade-alert"><Icon name="warning" /><span className="visually-hidden">{tr('editor.flagIllegal')}: </span></span>}
+      <b>{grade.letter}</b>
+      {delta === 0 ? <span>{grade.overall}</span> : (
+        <span className={delta > 0 ? 'up' : 'down'}>{from}<Icon name="next" /><b>{grade.overall}</b></span>
+      )}
+    </span>
+  );
+}
+
+const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null, startTab = null }: {
   index: number;
+  /** Telefono: la scheda dell'editor da aprire (la Sfida, arrivando da "lascialo a" di un compagno). */
+  startTab?: { tab: 'duel'; key: number } | null;
+  /** Il voto del team, solo per la carta aperta: il chip del telefono nella testata dell'editor. */
+  grade?: EditorGradeShown | null;
   /** Team ridotto: la carta del Pokémon si apre su tutta la carta del team, non solo sulla sprite. */
   collapsed?: boolean;
   /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
@@ -224,6 +263,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const onIgnoreWarning = actions.ignoreWarning;
   const onChange = (next: TeamSet) => actions.change(index, next);
   const onSetChange = (next: TeamSet) => actions.setChange(index, next);
+  const onTip = (next: TeamSet, change: string) => actions.tip(index, next, change);
   const onRemove = () => actions.remove(index);
   const onReplace = () => actions.replace(index);
   const onProposalDone = actions.proposalDone;
@@ -243,11 +283,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const onBestIndex = () => actions.bestIndex(index);
   // Apre il riquadro del testo del set (assegnato più sotto, dove c'è il suo stato)
   const textOpen = useRef<() => void>(() => undefined);
-  const live = useRef({ onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
-  live.current = { onChange, onSetChange, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
+  const live = useRef({ onChange, onSetChange, onTip, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex });
+  live.current = { onChange, onSetChange, onTip, onReplace, onPaste, onIgnoreWarning, onBest, onBestIndex };
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
     onSetChange: (next: TeamSet) => live.current.onSetChange(next),
+    onTip: (next: TeamSet, change: string) => live.current.onTip(next, change),
     onReplace: () => live.current.onReplace(),
     onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
@@ -321,13 +362,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   };
   const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
   // Nell'editor gli EV di troppo li dice già "EV usati" (590 / 510 · 80 di troppo: voto bloccato): l'avviso li salta
-  const evOverText = evTotal(set.evs) > EV_TOTAL ? tr('team.evOver', { n: evTotal(set.evs) }) : null;
-  const editorProblems = problems.filter(p => p !== evOverText);
   const memberTip = useMemberTip(500, '.slot-card');
   // Col dito: tenendo premuta la carta si apre dal basso il menu del membro (modifica, blocca, sposta, sostituisci,
   // togli) al posto dei pulsantini sulla carta; il suggerimento del trascinamento (col dito non si trascina) non serve
   const touch = useMediaQuery(TOUCH_QUERY);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shrunk, setShrunk] = useState(false);
+  useEffect(() => { if (!open) setShrunk(false); }, [open]);
   const menuRef = useRef<HTMLDivElement>(null);
   const hold = useRef<{ x: number; y: number; timer: number } | null>(null);
   const held = useRef(false);
@@ -353,41 +394,83 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   }, [open, collapsed, index, total]);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
-  const shownRoles = cardRoles(set, rules, subRoles);
+  const onCard = cardRoles(set, rules, subRoles);
   const weather = weatherOf(set);
-  const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
-  // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri
-  const allRoles = [...shownRoles, ...(subRoles ? rolesList(subRoles) : detectRoles(set, rules)).filter(role => !shownRoles.includes(role))];
+  const roles = onCard.map(role => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
+  // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri (in doppio quelli del doppio)
+  const allRoles = [...onCard, ...shownRoles(subRoles ? rolesListFor(subRoles, rules) : detectRoles(set, rules), rules).filter(role => !onCard.includes(role))];
   const roleLabels = allRoles.map(role => (role === 'weather' && weather
     ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
   const roleTips = allRoles.map(role => (role === 'weather' ? undefined : roleDescription(role, lang)));
-  const rolesTitle = [roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0], ...roleLabels.slice(1)].join(' · ');
+  // Sulla carta solo il ruolo principale, con la sua spiegazione
+  const roleTitle = roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0];
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
   const missing = missingFormeItem(set);
   const illegalMovesText = illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null;
   const illegalAbilityText = illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null;
+  // Gli stessi problemi segnati sul campo dell'editor, in rosso (niente avvisi a tutta larghezza): la parola breve dice
+  // se è vietato dal formato o se la specie non lo impara
+  const banned = bannedParts(set, format);
+  const where = formatLabel(format, lang);
+  const bad = (text: string): FieldFlag => ({ label: tr('editor.flagBanned'), text });
+  const warn = (text: string, hintText: string): FieldFlag => ({ label: tr('editor.flagIllegal'), text: `${text}. ${hintText}` });
+  // Al posto di una mossa fuori regola, la più usata del Pokémon che sia legale, permessa e non già nel set (una diversa
+  // per ogni mossa da cambiare); senza dati d'uso nessuna proposta
+  const taken = new Set(set.moves.filter(Boolean).map(toID));
+  const swapFor = () => {
+    const pick = common.moves.find(({ name }) => {
+      if (taken.has(toID(name))) return false;
+      const probe = { ...set, moves: [name] };
+      return !illegalParts(probe, format.genLimit, pokedexOf(format)).moves.length && !bannedParts(probe, format).moves.length;
+    })?.name;
+    if (pick) taken.add(toID(pick));
+    return pick;
+  };
+  // Strumento e abilità: il più usato del Pokémon che sia permesso (e legale, per l'abilità) e diverso da quello di ora
+  const itemSwap = () => common.items.find(({ name }) => toID(name) !== toID(set.item) && !bannedParts({ ...set, item: name }, format).item)?.name;
+  // (senza dati d'uso le abilità della specie, nell'ordine del Pokédex)
+  const abilitySwap = () => [...common.abilities.map(c => c.name), ...Object.values(species?.abilities ?? {})].find(name => {
+    if (toID(name) === toID(set.ability)) return false;
+    const probe = { ...set, ability: name };
+    return !bannedParts(probe, format).ability && !illegalParts(probe, format.genLimit, pokedexOf(format)).ability;
+  });
+  const itemBannedIn = useCallback((name: string) => !!bannedParts({ moves: [], ability: '', item: name }, format).item, [format]);
+  const fieldFlags: FieldFlags = {
+    item: banned.item ? { ...bad(tr('team.bannedItem', { format: where, name: gameName('item', banned.item, lang) })), label: tr('editor.flagBannedItem'), swap: itemSwap() } : undefined,
+    ability: banned.ability ? { ...bad(tr('team.bannedAbility', { format: where, name: gameName('ability', banned.ability, lang) })), swap: abilitySwap() }
+      : illegal.ability ? { ...warn(illegalAbilityText!, tr('team.illegalAbilityHint')), swap: abilitySwap() } : undefined,
+    moves: [0, 1, 2, 3].map(i => {
+      const move = set.moves[i];
+      if (!move) return undefined;
+      if (banned.moves.includes(move)) return { ...bad(tr('team.bannedMoves', { format: where, list: gameName('move', move, lang) })), swap: swapFor() };
+      if (illegal.moves.includes(move)) return { ...warn(tr('team.illegalMoves', { list: gameName('move', move, lang) }), tr('team.illegalMovesHint')), swap: swapFor() };
+      return undefined;
+    }),
+  };
   const warnings = [
     megaWarning,
     // Forma senza il suo strumento (Zacian-Crowned senza Rusted Sword): il voto la conta come la forma base
     missing ? tr('team.formeItem', { item: gameName('item', missing.item, lang), base: missing.base.name }) : null,
-    illegalMovesText,
-    illegalAbilityText,
     locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
   ].filter((w): w is string => !!w);
-  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti in alto sulla carta, il dettaglio nei tooltip
-  const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
-  // Mosse o abilità non legali: come risolvere sta nel tooltip della riga, non nel testo
-  const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
-  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text, title: hint(text) }));
+  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti in alto sulla carta, il dettaglio nei tooltip.
+  // Mosse o abilità che la specie non impara sono rosse come nell'editor (senza Custom Skillset non sono legali); come
+  // risolvere sta nel tooltip della riga, non nel testo
+  const unlearnable: Alert[] = [
+    ...(illegalMovesText ? [{ level: 'danger' as const, text: illegalMovesText, title: tr('team.illegalMovesHint'), plain: true }] : []),
+    ...(illegalAbilityText ? [{ level: 'danger' as const, text: illegalAbilityText, title: tr('team.illegalAbilityHint'), plain: true }] : []),
+  ];
+  const dangers: Alert[] = [...problems.map(text => ({ level: 'danger' as const, text })), ...unlearnable];
+  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text }));
   return (
     // La carta non è un <details>: il clic apre l'editor (stato del team), e lucchetto, × e avvisi stanno accanto al
     // pulsante della carta, non dentro (niente controlli dentro un altro controllo)
     <div
-      className={`slot filled${open ? ' open' : ''}${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
+      className={`slot filled${open ? ' open' : ''}${dangers.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
       style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? ''), '--vt': `slot-${index}` } as React.CSSProperties}
       onKeyDown={e => {
         // Esc chiude l'editor e torna sulla card; le frecce sulla card passano al membro accanto
@@ -402,9 +485,10 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       <div
         className="slot-card"
         draggable
-        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
-        title={collapsed || touch ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
-        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0]) : {})}
+        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…")
+        {...(collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
+${tr('team.slotKey', { n: index + 1 })}`))}
+        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
         onPointerDown={e => {
           if (!touch || e.pointerType === 'mouse' || (e.target as Element).closest('button:not(.slot-toggle), a, input')) return;
@@ -443,29 +527,32 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
             index === 0 ? tr('team.lead') : null,
             species?.types.map(type => typeName(type, lang)).join('/'),
             set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
-            problems.length ? tr(problems.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: problems.length }) : null,
+            dangers.length ? tr(dangers.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: dangers.length }) : null,
             warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
             tr('team.position', { n: index + 1, total }),
           ].filter(Boolean).join(', ')}
           aria-keyshortcuts={`${index + 1} Alt+ArrowLeft Alt+ArrowRight`}
-          title={`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
+          {...bubble(`${tr('team.dragTitle')}
+${tr('team.slotKey', { n: index + 1 })}`)}
         />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
         <span className="mini-icon" aria-hidden="true">
           <PokemonIcon name={name} />
           {(dangers.length > 0 || warns.length > 0) && (
-            <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`} title={[...dangers, ...warns].map(a => a.text).join(' · ')}>
+            // Il perché sta nella carta del Pokémon che si apre passandoci sopra
+            <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`}>
               <span className="visually-hidden">{tr(dangers.length ? 'alert.danger' : 'alert.warn')}</span>
             </span>
           )}
         </span>
         {/* Sulla sprite, a carta chiusa: dopo mezzo secondo la carta del Pokémon sotto la carta del team (il set intero senza aprirlo) */}
-        <span className="sprite-wrap" {...(open || collapsed ? {} : memberTip.bind(set, roles[0]))}>
+        {/* data-hint vuoto: sullo sprite niente fumetto "Trascina…", lì si apre la carta del Pokémon (si sovrapponevano) */}
+        <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set, roles[0]), 'data-hint': '' })}>
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
         {index === 0 && (
           // Il primo slot è quello che va in campo per primo
-          <small className="slot-lead" title={tr('team.leadTitle')} aria-hidden="true">{tr('team.lead')}</small>
+          <small className="slot-lead" {...bubble(tr('team.leadTitle'))} aria-hidden="true">{tr('team.lead')}</small>
         )}
         {set.customSkillset && (
           // Non è un problema: piccolo, nell'angolo in alto a sinistra
@@ -477,7 +564,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           className="favorite"
           aria-label={tr('team.favorite', { species: name })}
           aria-pressed={!!set.favorite}
-          title={tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff')}
+          {...bubble(tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff'))}
           onClick={() => onChange({ ...set, favorite: !set.favorite })}
         >
           <Icon name="lock" filled={!!set.favorite} />
@@ -486,7 +573,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           type="button"
           className="remove"
           aria-label={tr('team.remove', { species: name })}
-          title={tr('team.removeTitle')}
+          {...bubble(tr('team.removeTitle'))}
           onClick={onRemove}
         >
           <Icon name="close" />
@@ -494,13 +581,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
         {/* Strumento e nome li dice già il pulsante della carta; gli avvisi in fondo alla riga del nome restano leggibili */}
         <span className="name-line">
-          <small className="held" aria-hidden="true" title={set.item ? `${gameName('item', set.item, lang)}: ${describe.item(set.item, lang)}` : tr('team.noItem')}>
+          <small className="held" aria-hidden="true" {...(set.item ? kitTip('item', set.item) : bubble(tr('team.noItem')))}>
             <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" {...bubble(set.name ? `${set.name} (${name})` : name)} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
@@ -509,17 +596,17 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           </span>
         )}
         </span>
-        <small className="ability" title={describe.ability(ability, lang)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
+        <small className="ability" {...kitTip('ability', ability)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className={`types${typeText ? '' : ' as-icons'}`} aria-hidden="true">
           {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
-            <span key={type} className="type-dot" title={typeName(type, lang)}>
+            <span key={type} className="type-dot" {...bubble(typeName(type, lang))}>
               <img src={typeIconUrl(type)} alt="" draggable={false} />
               <span className="visually-hidden">{typeName(type, lang)}</span>
             </span>
           ))}
         </span>
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
-        {roles.length > 0 && <small className="roles" title={rolesTitle} aria-hidden="true">{roles[0]}</small>}
+        {roles.length > 0 && <small className="roles" {...bubble(roleTitle)} aria-hidden="true">{roles[0]}</small>}
       </div>
       {menuOpen && (
         <div className="member-menu" ref={menuRef} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={tr('team.memberMenu', { species: name })}
@@ -538,9 +625,17 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       {/* La punta magenta sotto la carta aperta: indica l'editor (sul suo filo magenta), segue la carta in ogni posto */}
       {open && <span className="slot-pointer" ref={pointer} aria-hidden="true" />}
       {/* Gli editor chiusi restano montati (alti 0) ma inerti: niente fuoco né lettori di schermo dentro */}
-      <div className="drawer" id={drawerId} inert={!open}>
+      {/* Telefono: scorrendo l'editor la testata (il riepilogo del membro) si stringe a una riga */}
+      <div className={`drawer${shrunk ? ' shrunk' : ''}`} id={drawerId} inert={!open} onScroll={e => {
+        const el = e.currentTarget;
+        const top = el.scrollTop;
+        // Soglie diverse per stringere e riallargare: la testata che cambia altezza non fa tremare la scelta. Si stringe
+        // solo se resta da scorrere anche dopo (la testata stretta è circa 200 px più bassa), se no torna subito su
+        if (!shrunk && top > 80 && el.scrollHeight - el.clientHeight > 260) setShrunk(true);
+        else if (shrunk && top < 8) setShrunk(false);
+      }}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} /> : undefined}
+        duel={open ? <EditorDuel set={set} team={team ?? [set]} data={data} format={format} onApply={stable.onTip} onOpenMember={actions.openWith} /> : undefined}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} game={format.game} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange} onSetChange={stable.onSetChange}
         bestIndex={stable.onBestIndex}
@@ -562,7 +657,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
                 }} />
             ) : (
               // Il nome arriva via CSS (data-name): non è un secondo testo uguale a quello della carta
-              <button type="button" className="nickname" aria-label={tr('team.nickname', { species: name })} title={tr('team.nicknameTitle')}
+              <button type="button" className="nickname" aria-label={tr('team.nickname', { species: name })} {...bubble(tr('team.nicknameTitle'))}
                 onClick={() => setNaming(true)}>
                 <strong data-name={set.name || name} />
                 {/* La matita compare col mouse o col fuoco: il nome si può cambiare */}
@@ -576,6 +671,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
               style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as CSSProperties}>
               <Sprite species={set.species} item={set.item} shiny={!!set.shiny} />
             </span>
+            {grade && <EditorGrade grade={grade} />}
             <Hint label={tr('team.shiny')}>
               <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')}
                 onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
@@ -585,12 +681,15 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           </div>
         )}
         memberAction={
-          <button type="button" className="member-replace" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}>
+          <button type="button" className="member-replace" aria-label={tr('team.replace', { species: name })} onClick={stable.onReplace}>
             <Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span>
           </button>
         }
         proposedSlot={open && proposal ? proposal.slot : undefined}
-        notice={<>{open && proposal && (
+        flags={open ? fieldFlags : undefined}
+        itemBanned={open ? itemBannedIn : undefined}
+        startTab={startTab}
+        notice={open && proposal && (
           <div className="move-proposal" role="note">
             <Icon name="spark" />
             <span>{proposal.from
@@ -599,14 +698,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
             <button type="button" className="apply" ref={applyRef} onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
             <button type="button" onClick={() => onProposalDone?.(false)}>{tr('team.moveProposalCancel')}</button>
           </div>
-        )}{open && editorProblems.length > 0 && (
-          // I problemi di legalità detti per esteso, con la via d'uscita
-          <div className="member-problems" role="note">
-            <Icon name="warning" />
-            <span>{editorProblems.join(' · ')}</span>
-            <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
-          </div>
-        )}</>}
+        )}
         textPanel={paste && (
     <div className="paste-panel" ref={pasteRef} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
@@ -661,22 +753,30 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   };
   const cls = `slot empty${quiet ? ' quiet' : ''}${dropTarget ? ' drop-target' : ''}`;
   if (quiet) {
-    return <button type="button" className={cls} aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop} />;
+    return <button type="button" className={cls} aria-label={tr('team.emptyAdd')} {...bubble(tr('team.emptyAddTitle'))} onClick={onClick} {...drop} />;
   }
   return (
-    <button type="button" className={cls} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop}>
+    <button type="button" className={cls} {...bubble(tr('team.emptyAddTitle'))} onClick={onClick} {...drop}>
       <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
       <span className="empty-label">{tr('team.emptyAdd')}</span>
     </button>
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
+export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onTipApply, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Il voto di quando si è aperto un membro (il primo voto che arriva, se in quel momento non c'era): il chip
+  // dell'editor sul telefono dice di quanto è cambiato. Resta anche se il voto sparisce un attimo (EV oltre 510)
+  const [gradeFrom, setGradeFrom] = useState<number | null>(null);
+  // "Lascialo a" della Sfida: il compagno si apre già sulla scheda Sfida (telefono)
+  const [startTab, setStartTab] = useState<{ index: number; tab: 'duel'; key: number } | null>(null);
+  useEffect(() => { setGradeFrom(openIndex === null ? null : grade?.overall ?? null); }, [openIndex]);
+  useEffect(() => { if (openIndex !== null && gradeFrom === null && grade) setGradeFrom(grade.overall); }, [openIndex, gradeFrom, grade]);
+  const editorGrade = grade ? { ...grade, from: gradeFrom ?? grade.overall } : null;
   useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
   useEffect(() => () => setEditing(null), []);
   // Il team si accorcia da fuori (import, Annulla, team salvato): un membro aperto che non c'è più si chiude
@@ -849,6 +949,19 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     ignoreWarning: onAllowMultipleMegas,
     change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
     setChange: (i, next) => { if (onSetChange) onSetChange(i, next); else onChange(team.map((s, j) => (j === i ? next : s))); },
+    tip: (i, next, change) => {
+      if (onTipApply) onTipApply(i, next, change);
+      else if (onSetChange) onSetChange(i, next);
+      else onChange(team.map((s, j) => (j === i ? next : s)));
+    },
+    openWith: (i, opponent) => {
+      const member = team[i];
+      if (!member) return;
+      handOffOpponent(member.species, opponent);
+      setStartTab({ index: i, tab: 'duel', key: Date.now() });
+      animated(() => setOpenIndex(i));
+      focusCard(i);
+    },
     remove: i => {
       setOpenIndex(null);
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
@@ -872,6 +985,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     ignoreWarning: () => live.current.ignoreWarning(),
     change: (i, next) => live.current.change(i, next),
     setChange: (i, next) => live.current.setChange(i, next),
+    tip: (i, next, change) => live.current.tip(i, next, change),
+    openWith: (i, opponent) => live.current.openWith(i, opponent),
     remove: i => live.current.remove(i),
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
@@ -900,7 +1015,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
             <span className="fill-anchor">
               <button type="button" className="team-guide" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
-                title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}
+                {...bubble(t(lang, 'team.fillTitle'))} onClick={() => setFilling(open => !open)}
                 // Il calcolo parte già quando ci si avvicina al pulsante: al clic le proposte sono spesso già pronte
                 onPointerEnter={() => prepareFill(team, format, data)} onFocus={() => prepareFill(team, format, data)}>
                 <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.fill')}</span>
@@ -919,7 +1034,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             </span>
           ) : team.length > 0 && (
             <button type="button" className="team-guide" ref={presetsButton}
-              aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}
+              aria-haspopup="dialog" {...bubble(t(lang, 'team.bestPresetsTitle'))} onClick={() => setConfirmPresets(true)}
               // Il calcolo parte già quando ci si avvicina al pulsante: al clic la finestra è spesso già pronta
               onPointerEnter={() => prepareImproveSets(team, data, format.genLimit)} onFocus={() => prepareImproveSets(team, data, format.genLimit)}>
               <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.bestPresets')}</span>
@@ -998,6 +1113,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             warning={warningFor(set, i)}
             repeated={repeated.includes(i)}
             open={openIndex === i}
+            grade={openIndex === i ? editorGrade : null}
+            startTab={startTab?.index === i ? startTab : null}
             actions={actions}
             collapsed={collapsed}
           />

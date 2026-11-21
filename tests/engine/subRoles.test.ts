@@ -57,16 +57,20 @@ describe('subRoles', () => {
   it('tabella degli status', () => {
     const v = (moves: string[], ability = '') => roles(set('Toxapex', moves, '', ability));
     expect(v(['Toxic'])).toMatchObject({ dot: 1 });
-    expect(v(['Toxic']).debuff).toBeUndefined();
-    expect(v(['Will-O-Wisp'])).toMatchObject({ dot: 0.5, debuff: 0.25 });
-    expect(v(['Scald'])).toMatchObject({ dot: 0.15 });
-    expect(v(['Scald']).debuff).toBeCloseTo(0.075);
-    expect(v(['Scald'], 'Serene Grace').dot).toBeCloseTo(0.3);
-    expect(v(['Scald'], 'Serene Grace').debuff).toBeCloseTo(0.15);
+    expect(v(['Toxic']).disruptor).toBeUndefined();
+    // 2026-11-20: scottatura piena nel DoT, niente più debuff
+    expect(v(['Will-O-Wisp'])).toMatchObject({ dot: 1 });
+    expect(v(['Will-O-Wisp']).disruptor).toBeUndefined();
+    expect(v(['Scald']).dot).toBeCloseTo(0.3);
+    expect(v(['Scald'], 'Serene Grace').dot).toBeCloseTo(0.6);
     expect(v(['Leech Seed'])).toMatchObject({ dot: 0.5, recovery: 0.25 });
-    expect(v(['Hypnosis']).debuff).toBeCloseTo(0.6);
-    expect(v(['Yawn'])).toMatchObject({ debuff: 0.5 });
+    // Paralisi, sonno e Yawn pieni nel Disruptor (il sonno per la precisione)
+    expect(v(['Thunder Wave'])).toMatchObject({ disruptor: 1 });
+    expect(v(['Hypnosis']).disruptor).toBeCloseTo(0.6);
+    expect(v(['Yawn'])).toMatchObject({ disruptor: 1 });
     expect(v(['Toxic', 'Will-O-Wisp'])).toMatchObject({ dot: 1 });
+    // Il DoT si somma come probabilità anche dentro il membro: Scald 0,3 e Leech Seed 0,5 → 1 − 0,7 × 0,5
+    expect(v(['Scald', 'Leech Seed']).dot).toBeCloseTo(0.65);
     expect(statusSources(set('Toxapex', ['Toxic', 'Will-O-Wisp'])).map(s => s.status)).toEqual(['tox', 'brn']);
   });
 
@@ -74,9 +78,9 @@ describe('subRoles', () => {
     const claw = statusSources(set('Sneasler', ['Dire Claw']));
     expect(claw.map(s => s.status)).toEqual(['psn', 'par', 'slp']);
     expect(roles(set('Sneasler', ['Dire Claw'])).dot).toBeCloseTo(0.5 * 0.5 / 3);
-    expect(roles(set('Sneasler', ['Dire Claw'])).debuff).toBeCloseTo(0.5 / 3);
+    expect(roles(set('Sneasler', ['Dire Claw'])).disruptor).toBeCloseTo(0.5 / 3);
     expect(statusSources(set('Porygon2', ['Tri Attack'])).map(s => s.status)).toEqual(['brn', 'par']);
-    expect(roles(set('Togekiss', ['Tri Attack'], '', 'Serene Grace')).dot).toBeCloseTo(0.5 * 0.4 / 3);
+    expect(roles(set('Togekiss', ['Tri Attack'], '', 'Serene Grace')).dot).toBeCloseTo(0.4 / 3);
   });
 
   it("Photon Geyser e simili: il lato dell'attacco segue la statistica più alta", () => {
@@ -128,10 +132,10 @@ describe('subRoles', () => {
     expect(roles(set('Toxapex', ['Haze'])).phazer).toBe(1);
   });
 
-  it('Taunt ed Encore presenti valgono 1; rolesList in ordine di famiglia', () => {
-    const v = roles(set('Grimmsnarl', ['Taunt', 'Encore', 'Reflect']));
-    expect(v).toMatchObject({ taunt: 1, encore: 1 });
-    expect(rolesList({ taunt: 1, screens: 0.4, hazards: 0.5 })).toEqual(['hazards', 'taunt']);
+  it('Taunt ed Encore danno Disruptor 1; rolesList in ordine di famiglia', () => {
+    expect(roles(set('Grimmsnarl', ['Taunt', 'Reflect']))).toMatchObject({ disruptor: 1 });
+    expect(roles(set('Grimmsnarl', ['Encore', 'Reflect']))).toMatchObject({ disruptor: 1 });
+    expect(rolesList({ disruptor: 1, screens: 0.4, hazards: 0.5 })).toEqual(['hazards', 'disruptor']);
   });
 
   it('attaccanti: sweeper fisico veloce, breaker lento', () => {

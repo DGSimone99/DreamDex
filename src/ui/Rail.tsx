@@ -1,7 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import type { Format, FormatId } from '../engine/format';
-import { DEX_IDS, dexOf, formatInDex, tiersOf, type DexId } from '../engine/formats';
+import { BATTLE_IDS, battleOf, DEX_IDS, dexOf, formatIn, tiersOf, type DexId } from '../engine/formats';
 import type { GameId } from '../engine/games';
 import { GameDialog } from './GameDialog';
 import type { StatsMeta } from '../engine/stats';
@@ -44,10 +44,12 @@ function monthLabel(month: string): string {
 export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
   const t = useT();
   const dex = dexOf(format.formatId);
-  const tiers = tiersOf(dex);
+  const battle = battleOf(format.formatId);
+  const tiers = tiersOf(dex, battle);
   const tier = tiers.find(x => x.formatId === format.formatId)?.tier ?? '';
   // Le regole in breve, come pastiglie: Meta (o Senza meta), Gen 9 e le avanzate accese
   const pills = [
+    ...(battle === 'doubles' ? [t('battle.doubles')] : []),
     t(meta && format.meta ? 'rail.pillMeta' : 'rail.pillNoMeta'),
     t('rail.pillGen', { n: format.genLimit }),
     ...(format.ignoreBans ? [t('rail.pillNoBans')] : []),
@@ -109,7 +111,7 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
                     <label key={id} className={`format-dex-opt${id === dex ? ' on' : ''}${soon ? ' soon' : ''}`}>
                       <input type="radio" className="visually-hidden" name="format-dex" value={id} checked={id === dex} disabled={soon}
                         onChange={() => {
-                          const formatId = formatInDex(id, format.formatId);
+                          const formatId = formatIn(id, battleOf(format.formatId), format.formatId);
                           if (formatId) onFormatChange({ ...format, formatId });
                         }} />
                       <b>{t(`dex.${id}`)}</b>
@@ -119,6 +121,27 @@ export function Rail({ format, onFormatChange, onGameChange = () => {}, meta, la
                 })}
               </div>
             </div>
+            {/* Singolo o doppio; grigio dove il Pokédex non ha un doppio, senza testo */}
+            {(
+              <div className="format-sec">
+                <p className="rail-label">{t('top.battle')}</p>
+                <div className="format-chips" role="radiogroup" aria-label={t('top.battleAria')}>
+                  {BATTLE_IDS.map(id => {
+                    const none = tiersOf(dex, id).length === 0;
+                    return (
+                      <label key={id} className={`${id === battle ? 'on' : ''}${none ? ' soon' : ''}`.trim() || undefined}>
+                        <input type="radio" className="visually-hidden" name="format-battle" value={id} checked={id === battle} disabled={none}
+                          onChange={() => {
+                            const formatId = formatIn(dex, id, format.formatId);
+                            if (formatId) onFormatChange({ ...format, formatId });
+                          }} />
+                        {t(`battle.${id}`)}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {/* Senza limiti ha un solo formato senza nome di tier: niente scelta */}
             {tiers.some(x => x.tier) && (
               <div className="format-sec">

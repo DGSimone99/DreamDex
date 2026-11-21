@@ -64,6 +64,9 @@
    chiara che sfuma ai due lati e un filo sotto che sfuma uguale */
 .set-editor legend:not(.visually-hidden) { position: relative; width: 60%; margin: 0 auto; padding: 4px 0; text-align: center; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text);
   background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
+/* Fuori regola: il triangolo rosso e il numero accanto a "Set" */
+.set-editor legend .legend-flag { display: inline-flex; align-items: center; gap: var(--sp-1); margin-left: var(--sp-4); vertical-align: -2px; font: 700 var(--fs-label)/1 var(--ui); color: var(--bad); }
+.set-editor legend .legend-flag .icon { width: 14px; height: 14px; }
 .set-editor legend:not(.visually-hidden)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-7); }
 .set-editor .field-note { font-size: var(--fs-label); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
@@ -234,6 +237,26 @@
 /* Mossa vuota: come le targhette vuote, filo ed etichetta gialli */
 .editor-group.moves .field.empty > .field-head { color: var(--warn); }
 .editor-group.moves .field.empty .move-combo input:not(:focus) { border-color: color-mix(in srgb, var(--warn) 70%, transparent); }
+/* Fuori regola (vietato dal formato o non legale per la specie): filo ed etichetta rossi,
+   sulle mosse la parola breve al posto di potenza e precisione */
+.set-plate.flagged:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--bad); }
+.set-plate.flagged > .field-label { color: var(--bad); background: var(--bad-bg); }
+.set-plates .field:has(> .set-plate.flagged) > .field-head { color: var(--bad); }
+/* La riga dell'avviso sopra strumento e abilità è sempre riservata (alta come la testa delle mosse) */
+.editor-group.set-plates .field > .field-head { min-height: 18px; }
+.editor-group.moves .field.flagged > .field-head { color: var(--bad); }
+.editor-group.moves .field.flagged .move-combo input:not(:focus) { border-color: var(--bad); }
+.field-flag { display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: 600; }
+.field-flag .icon { width: 12px; height: 12px; }
+.field-flags { display: inline-flex; align-items: center; gap: var(--sp-4); min-width: 0; }
+.field-flags .field-flag { flex: none; }
+/* La mossa proposta al posto di quella fuori regola: piccolo bottone ciano (lavoro), il nome si accorcia coi puntini */
+.field-swap { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; height: 18px; padding: 0 var(--sp-3);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: var(--alt-r-sm); background: var(--accent-wash);
+  color: var(--accent-ink); font: 600 var(--fs-caption)/1 var(--ui); cursor: pointer; }
+.field-swap span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field-swap .icon { flex: none; width: 12px; height: 12px; }
+.field-swap:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 /* Nel menu Set, il preset da cui viene il set cambiato a mano */
 .set-menu-edited { flex: none; font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-style: italic; }
 .set-plate:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -479,3 +502,12 @@
   clip-path: polygon(0 0, 100% 0, 100% 100%, calc(100% - var(--nd-tip)) calc(100% - var(--notch)), var(--nd-tip) calc(100% - var(--notch)), 0 100%); }
 .nature-diamond .combobox [role='listbox'][data-side='below'] { border-top: 0; border-radius: 0 0 4px 4px; padding: var(--notch) var(--sp-2) var(--sp-2);
   clip-path: polygon(0 0, var(--nd-tip) var(--notch), calc(100% - var(--nd-tip)) var(--notch), 100% 0, 100% 100%, 0 100%); }
+/* Col dito il bottone resta piccolo a vista ma si tocca su 44px di altezza */
+@media (pointer: coarse) {
+  .field-swap { position: relative; }
+  .field-swap::before { content: ''; position: absolute; inset: -13px 0; }
+}
+/* Il chip del voto serve solo sul telefono (phone.css): sul computer il voto grande resta in vista */
+.editor-grade { display: none; }
+/* Nel menu degli strumenti: quelli vietati nel formato, in fondo, con l'etichetta rossa */
+.opt-banned { flex: none; padding: 1px var(--sp-3); border-radius: 3px; font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--bad); background: var(--bad-bg); }

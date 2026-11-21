@@ -1,5 +1,8 @@
 import type { Archetype } from './archetype';
 import type { SubRole } from './subRoles';
+import type { FormatRules } from './formatRules';
+
+type TypeRule = FormatRules['typeRule'];
 
 /** Livello di un sotto-ruolo per l'archetipo: essenziale e importante (solo malus, di peso diverso), minore (solo +), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
@@ -10,8 +13,11 @@ export type Level = 'essential' | 'important' | 'minor' | 'ignored';
  * "sweeperOrBreaker" = uno sweeper o un wallbreaker, fisico o speciale (il Balance ne chiede uno dei due),
  * "anyAttacker" = un attaccante fisico o speciale, "secondAttacker" = un secondo membro, diverso, che attacca anche lui
  * (fisico o speciale: il suo valore è il secondo migliore del team, needs.ts).
+ * Doppio: "anyWall" = un muro fisico o speciale; "secondProtect" = almeno due membri con Protect o simili;
+ * "secondFirstStrike" = almeno due membri con Fake Out o un attacco con priorità.
  */
-export type GroupKey = 'anySweeper' | 'anyBreaker' | 'sweeperOrBreaker' | 'anyPhysical' | 'anySpecial' | 'anyAttacker' | 'secondAttacker';
+export type GroupKey = 'anySweeper' | 'anyBreaker' | 'sweeperOrBreaker' | 'anyPhysical' | 'anySpecial' | 'anyAttacker' | 'secondAttacker'
+  | 'anyWall' | 'secondProtect' | 'secondFirstStrike';
 const ATTACKERS: SubRole[] = ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalAttacker', 'specialAttacker'];
 export type LevelKey = SubRole | GroupKey;
 /** I sotto-ruoli dietro ogni gruppo (scritti per esteso: subRoles.ts è in un ciclo di import). */
@@ -24,7 +30,12 @@ export const GROUP_ROLES: Record<GroupKey, SubRole[]> = {
   anySpecial: ['specialSweeper', 'specialBreaker', 'specialAttacker'],
   anyAttacker: ATTACKERS,
   secondAttacker: ATTACKERS,
+  anyWall: ['physicalWall', 'specialWall'],
+  secondProtect: ['protect'],
+  secondFirstStrike: ['firstStrike'],
 };
+/** Voci che chiedono due membri diversi: il valore di team è il secondo migliore (needs.ts). */
+export const SECOND_KEYS = new Set<LevelKey>(['secondAttacker', 'secondProtect', 'secondFirstStrike']);
 export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES;
 
 /**
@@ -32,10 +43,10 @@ export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES
  * Scritte per esteso: subRoles.ts è in un ciclo di import e qui servono già al caricamento del modulo.
  */
 export const LEVEL_KEYS: LevelKey[] = [
-  'anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
-  'physicalWall', 'specialWall', 'recovery',
-  'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer',
-  'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
+  'anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', 'secondProtect', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
+  'physicalWall', 'specialWall', 'anyWall', 'spread', 'fakeOut', 'recovery',
+  'support', 'removal', 'screens', 'speedControl', 'phazer', 'redirector',
+  'hazards', 'pivot', 'dot', 'disruptor', 'itemRemoval', 'secondFirstStrike',
 ];
 
 /**
@@ -56,7 +67,6 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * Calibrazione (Task 9): pivot minore in HO (i team HO da torneo spesso hanno lead con hazard e sweeper, senza pivot).
  * Oggi le voci importanti dell'HO e del Bulky Offense sono Hazard e Controllo Hazard (il vecchio gruppo "fieldSetup"
  * del 2026-10-24 non c'è più); dal 2026-11-02 i Ruoli sono una lista con malus e bonus (rolesArea.ts).
- * Il Debuff è minore anche in semi-stall e stall: paralisi o sonno aiutano, ma uno stall non ne ha bisogno (utente).
  */
 /**
  * Tabella 2026-11-01 (sera), dal censimento dei team da torneo del banco: 422 di Natdex OU (HO 39, BO 201, Balance 138,
@@ -116,24 +126,41 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Screens minori ovunque (utente 2026-11-08): un lavoro vero, +1 a chi li ha; le partite non dicono di più (vince ~48%)
   ['screens', M, M, M, M, M],
   ['speedControl', X, X, X, X, X],
-  ['debuff', X, X, X, X, X],
   ['phazer', X, X, M, I, E],
   // Utility
   ['hazards', I, I, E, E, E],
   ['pivot', M, M, M, M, X],
   ['dot', X, M, M, I, E],
-  ['taunt', X, X, X, X, X],
-  ['encore', X, X, X, X, X],
+  // Disruptor minore ovunque (utente 2026-11-20), anche dove i team da torneo di Natdex OU lo usano sotto il 30%
+  // (paralisi, sonno, Taunt, Encore: HO 60%, BO 43%, Balance 37%, Semi-stall 15%, Stall 0% di 5): solo +1, mai un malus
+  ['disruptor', M, M, M, M, M],
   ['itemRemoval', M, M, M, M, M],
 ];
 const COLUMNS: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
+/**
+ * La colonna del doppio (tipo unico, 2026-11-21): un elenco solo, uguale per ogni team, scelto sulle partite vere di
+ * National Dex Doubles. Essenziali un attaccante (un ruolo unico: sweeper, wallbreaker o attaccante, fisico o speciale) e
+ * due membri con Protect; importanti un muro (fisico o speciale), una mossa a più bersagli e Fake Out; minori il
+ * Redirector (Follow Me, Rage Powder), il pivot, gli hazard (l'unico ruolo "da singolo" rimasto) e due membri con Fake
+ * Out o un attacco con priorità. Controllo hazard, recupero, schermi, anti-setup, danno nel tempo e gli altri del
+ * singolo in doppio non contano (non li usa quasi nessuno, o non separano chi vince); lo speed control lo misura la Velocità.
+ */
+const DOUBLES_LEVELS: Partial<Record<LevelKey, Level>> = {
+  anyAttacker: E, secondProtect: E,
+  anyWall: I, spread: I, fakeOut: I,
+  redirector: M, pivot: M, hazards: M, secondFirstStrike: M,
+};
+
 /** Livelli per archetipo (bozza della specifica; le voci ignorate sono omesse). */
-export const ROLE_LEVELS: Record<Archetype, Partial<Record<LevelKey, Level>>> = Object.fromEntries(
-  COLUMNS.map((archetype, c) => [archetype, Object.fromEntries(
-    ROWS.filter(row => row[c + 1] !== X).map(row => [row[0], row[c + 1]]),
-  )]),
-) as Record<Archetype, Partial<Record<LevelKey, Level>>>;
+export const ROLE_LEVELS: Record<Archetype, Partial<Record<LevelKey, Level>>> = {
+  ...Object.fromEntries(
+    COLUMNS.map((archetype, c) => [archetype, Object.fromEntries(
+      ROWS.filter(row => row[c + 1] !== X).map(row => [row[0], row[c + 1]]),
+    )]),
+  ),
+  doubles: DOUBLES_LEVELS,
+} as Record<Archetype, Partial<Record<LevelKey, Level>>>;
 
 /** Righe toccate dall'interruttore: Attacco e muri (il gruppo degli attaccanti resta). */
 const SWITCHED = new Set<LevelKey>(['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalWall', 'specialWall']);
@@ -146,20 +173,31 @@ const SWITCHED = new Set<LevelKey>(['physicalSweeper', 'specialSweeper', 'physic
  * fino a 8 punti (Mega Sableye Recover → Foul Play 77 → 69); così 4 al massimo. I team Stall perdono in media 2,6 punti,
  * in linea con le partite vere (lo Stall vince il 32,5%, il peggiore); il resto del banco e le partite non cambiano.
  */
-export const rolesTypeOf = (archetype: Archetype, typeRule?: 'walls' | 'recoverySpeed'): Archetype =>
+export const rolesTypeOf = (archetype: Archetype, typeRule?: TypeRule): Archetype =>
   typeRule === 'recoverySpeed' && archetype === 'stall' ? 'semiStall' : archetype;
 
 /** Le voci degli attaccanti: in National Dex OU lo Stall le prende dalla sua colonna (tutte minori), il resto dal Semi-stall. */
 const ATTACK_ROWS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...ATTACKERS]);
 
 /** Livello della voce per il tipo di team nel formato: rolesTypeOf, tranne gli attaccanti dello Stall (2026-11-11). */
-export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: 'walls' | 'recoverySpeed'): Level =>
+export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: TypeRule): Level =>
   levelOf(archetype === 'stall' && ATTACK_ROWS.has(key) ? 'stall' : rolesTypeOf(archetype, typeRule), key);
+
+/** Le voci che esistono solo in doppio: nel singolo non compaiono da nessuna parte (né fra quelle che "non contano"). */
+const DOUBLES_ONLY = new Set<LevelKey>(['secondProtect', 'anyWall', 'spread', 'fakeOut', 'redirector', 'secondFirstStrike']);
+
+/**
+ * Le voci da mostrare nel formato (schede, guide): in doppio solo quelle della sua colonna, nel singolo tutte le altre.
+ * Il motore usa sempre LEVEL_KEYS (le voci dell'altro formato sono ignorate); questo elenco serve a non mostrarle.
+ */
+export const levelKeysFor = (typeRule?: TypeRule): LevelKey[] =>
+  (typeRule === 'oneType' ? LEVEL_KEYS.filter(key => DOUBLES_LEVELS[key]) : LEVEL_KEYS.filter(key => !DOUBLES_ONLY.has(key)));
 
 /** Livello della voce per l'archetipo, con l'interruttore applicato. */
 export function levelOf(archetype: Archetype, key: LevelKey): Level {
   const level = ROLE_LEVELS[archetype][key] ?? 'ignored';
-  if (ROLES_COUNT_MEASURED) return level;
+  // L'interruttore riguarda le colonne del singolo: quella del doppio resta com'è
+  if (ROLES_COUNT_MEASURED || archetype === 'doubles') return level;
   // Il ruolo Recupero lo misura già la sottoscheda Recupero della Difesa: resta solo dove la tabella lo chiede come essenziale (Balance, semi-stall, stall)
   if (key === 'recovery') return level === 'essential' ? 'essential' : 'ignored';
   if (SWITCHED.has(key) && level === 'minor') return 'ignored';

@@ -1,7 +1,7 @@
 import { battleAbility, battleSpecies, effectiveStats, getMove, hasPriorityAttack, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
-import type { FormatRules } from './formatRules';
-import { rolesList, setSubRoles, type Family, type SubRole } from './subRoles';
+import { isOneType, type FormatRules } from './formatRules';
+import { rolesListFor, setSubRoles, type Family, type SubRole } from './subRoles';
 import { memoBySet } from './memo';
 import { memberPower } from './power';
 import { t, type Lang } from '../i18n';
@@ -22,14 +22,37 @@ const LEGACY_ORDER: LegacyRole[] = [
   'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall',
 ];
 
+/**
+ * Un ruolo come lo si mostra: i sotto-ruoli, più "Attaccante" e "Muro", le due voci uniche del doppio (lì sweeper,
+ * wallbreaker, fisico e speciale non si distinguono, come nel voto).
+ */
+export type ShownRole = SubRole | 'anyAttacker' | 'anyWall';
+const isGrouped = (role: ShownRole | 'setup' | 'priority'): role is 'anyAttacker' | 'anyWall' => role === 'anyAttacker' || role === 'anyWall';
+const SHOWN_ATTACK: SubRole[] = ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalAttacker', 'specialAttacker'];
+const SHOWN_WALL: SubRole[] = ['physicalWall', 'specialWall'];
+
+/**
+ * I ruoli da mostrare: nel singolo la lista com'è; in doppio tutti i sotto-ruoli d'attacco diventano un solo
+ * "Attaccante" e i due muri un solo "Muro", al posto del primo trovato. Gli altri restano dove sono.
+ */
+export function shownRoles(roles: readonly SubRole[], rules: FormatRules): ShownRole[] {
+  if (!isOneType(rules)) return [...roles];
+  const out: ShownRole[] = [];
+  for (const role of roles) {
+    const shown: ShownRole = SHOWN_ATTACK.includes(role) ? 'anyAttacker' : SHOWN_WALL.includes(role) ? 'anyWall' : role;
+    if (!out.includes(shown)) out.push(shown);
+  }
+  return out;
+}
+
 /** Nome del ruolo nella lingua data (anche il setup, che compare sulle carte ma non è un ruolo del voto). */
-export const roleLabel = (role: Role | 'setup', lang: Lang = 'it'): string => t(lang, `role.${role}`);
+export const roleLabel = (role: ShownRole | 'setup' | 'priority', lang: Lang = 'it'): string => (isGrouped(role) ? t(lang, `need.${role}`) : t(lang, `role.${role}`));
 
 /** Il ruolo spiegato in una frase semplice, per i tooltip (Sweeper Fisico: "Veloce o potenziato, travolge…"). */
-export const roleDescription = (role: Role | 'setup' | 'priority', lang: Lang = 'it'): string => t(lang, `roleDesc.${role}`);
+export const roleDescription = (role: ShownRole | 'setup' | 'priority', lang: Lang = 'it'): string => t(lang, `roleDesc.${role}`);
 
 /** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
-export const roleShortLabel = (role: Role | 'setup', lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
+export const roleShortLabel = (role: ShownRole | 'setup', lang: Lang = 'it'): string => (isGrouped(role) ? t(lang, `need.${role}`) : t(lang, `roleShort.${role}`));
 
 /** Nome della famiglia (Attacco, Difesa, Campo, Disturbo). */
 export const familyLabel = (family: Family, lang: Lang = 'it'): string => t(lang, `family.${family}`);
@@ -89,8 +112,8 @@ const SPEED_MOVES = new Set(['thunderwave', 'glare', 'nuzzle', 'stunspore', 'sti
 export const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
-/** Sotto-ruoli del set (valore almeno 0,5), nell'ordine delle famiglie. */
-export const detectRoles = memoBySet((set: TeamSet, rules: FormatRules): Role[] => rolesList(setSubRoles(set, rules)));
+/** Sotto-ruoli del set (valore almeno 0,5): nel singolo nell'ordine delle famiglie, in doppio la lista del doppio (rolesListFor). */
+export const detectRoles = memoBySet((set: TeamSet, rules: FormatRules): Role[] => rolesListFor(setSubRoles(set, rules), rules));
 
 /** Il muro legacy (statistiche di base): lo usano i difensori del formato, da cui dipendono i numeri dell'Offesa. */
 export const legacyWall = (set: TeamSet, rules: FormatRules): boolean => legacyRoles(set, rules).some(r => WALLS.includes(r));

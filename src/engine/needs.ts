@@ -4,8 +4,8 @@ import { roleLabel } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
-import { creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
-import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, type Level, type LevelKey } from './roleLevels';
+import { combineChances, creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
+import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, SECOND_KEYS, type Level, type LevelKey } from './roleLevels';
 import { t, type Lang } from '../i18n';
 
 /**
@@ -57,18 +57,33 @@ export const keyRoles = (key: LevelKey): SubRole[] => (isGroupKey(key) ? GROUP_R
 /** Valore di una voce per un membro (o un candidato): il miglior sotto-ruolo dietro la voce. */
 export const keyValue = (v: SubRoleValues, key: LevelKey): number => Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0));
 
-/** Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni. */
+/** Le voci che si sommano fra i membri come probabilità invece di prendere il migliore: solo il DoT (2026-11-20, utente). */
+export const isSummedKey = (key: LevelKey): boolean => key === 'dot';
+
+/**
+ * Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni.
+ * Per il DoT, se nessuno basta da solo ma la somma copre la voce, tutti quelli che ci contribuiscono (insieme).
+ */
 export const ownersOf = (team: TeamSet[], needs: Pick<TeamNeeds, 'credited' | 'members'>, need: Need): string[] => {
-  const owners = team.filter((_, i) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
-  // Il secondo attaccante c'è solo con almeno due attaccanti
-  return need === 'secondAttacker' && owners.length < 2 ? [] : owners;
+  const value = (i: number) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need);
+  let owners = team.filter((_, i) => value(i) >= MISSING_BELOW).map(set => battleName(set));
+  if (!owners.length && isSummedKey(need) && combineChances(team.map((_, i) => value(i))) >= MISSING_BELOW) {
+    owners = team.filter((_, i) => value(i) > 0).map(set => battleName(set));
+  }
+  // Il secondo attaccante (e in doppio i due con Protect o con la priorità) c'è solo con almeno due membri
+  return SECOND_KEYS.has(need) && owners.length < 2 ? [] : owners;
 };
 
-/** Valore di team di una voce: il migliore dei membri; per il secondo attaccante il secondo migliore. */
-const teamValue = (credited: SubRoleValues[], key: LevelKey): number => {
+/** Valore di team di una voce: il migliore dei membri; per le voci da due membri (SECOND_KEYS) il secondo migliore; il DoT sommato. */
+export const teamValue = (credited: SubRoleValues[], key: LevelKey): number => {
   const all = credited.map(m => keyValue(m, key)).sort((a, b) => b - a);
-  return Math.max(0, (key === 'secondAttacker' ? all[1] : all[0]) ?? 0);
+  if (isSummedKey(key)) return combineChances(all);
+  return Math.max(0, (SECOND_KEYS.has(key) ? all[1] : all[0]) ?? 0);
 };
+
+/** Valore della voce col candidato in più (per i punteggi): il migliore dei due, o la somma per il DoT. */
+export const withCandidateValue = (key: LevelKey, current: number, candidate: number): number =>
+  (isSummedKey(key) ? combineChances([current, candidate]) : Math.max(current, candidate));
 
 /** `forced`: livelli e credito dei ruoli secondo quel tipo di team invece di quello riconosciuto. */
 export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleValues[], forced?: Archetype): TeamNeeds {

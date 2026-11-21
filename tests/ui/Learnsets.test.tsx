@@ -36,11 +36,24 @@ async function optionsOf(user: ReturnType<typeof userEvent.setup>, label: string
 describe('mosse e abilità legali nel team', () => {
   beforeEach(() => window.localStorage.clear());
 
-  it('mosse non legali: avviso giallo, non cancellate', async () => {
+  it("mosse non legali: problema rosso come nell'editor, non cancellate", async () => {
     await importTeam('Drakloak\nAbility: Infiltrator\n- Dragon Darts\n- U-turn');
     expect(within(team()).getByText('Mosse non legali in questo formato: Dragon Darts')).toBeInTheDocument();
-    expect(within(team()).getByText('Drakloak').closest('.slot')).toHaveClass('warn');
+    expect(within(team()).getByText('Drakloak').closest('.slot')).toHaveClass('invalid');
     expect(within(team()).getByLabelText('Mossa 1')).toHaveValue('Dragon Darts');
+  });
+
+  it('editor aperto: la mossa non legale è segnata sul suo campo e detta ai lettori di schermo', async () => {
+    const user = await importTeam('Drakloak\nAbility: Infiltrator\n- Dragon Darts\n- U-turn');
+    await user.click(team().querySelector<HTMLElement>('.slot-card .name')!);
+    const bad = within(team()).getByLabelText('Mossa 1');
+    expect(bad).toHaveAttribute('aria-invalid', 'true');
+    expect(bad).toHaveAccessibleDescription(expect.stringContaining('Mosse non legali in questo formato: Dragon Darts'));
+    expect(bad.closest('.field')).toHaveClass('flagged');
+    expect(within(team()).getByLabelText('Mossa 2')).not.toHaveAttribute('aria-invalid');
+    // Solo il campo in rosso, niente avvisi a tutta larghezza; la via d'uscita nella descrizione
+    expect(bad).toHaveAccessibleDescription(expect.stringContaining('Cambiale o attiva Custom Skillset'));
+    expect(team().querySelector('.slot.open [role=note]')).toBeNull();
   });
 
   it('Custom Skillset: sblocca solo quel Pokémon, con tooltip e badge', async () => {

@@ -7,14 +7,15 @@ import type { Pokedex } from '../engine/formats';
 import type { GameId } from '../engine/games';
 import type { CommonChoice, CommonChoices, CommonSpread } from '../engine/common';
 import { formatPercent, type Lang } from '../i18n';
-import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
+import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
+import { hint, KitTipBody, kitTip, MoveTipBody } from './MoveTip';
 import { describe } from './describe';
 import { SpeedMeta } from './SpeedLine';
 import type { SpeedTier } from '../engine/speed';
 import { EV_TOTAL, evTotal, ivOf, statLines } from '../engine/statCalc';
-import { TypeChip } from './Sprite';
+import { TypeChip, typeColor } from './Sprite';
 import { NatureArrow } from './NatureArrow';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
@@ -61,7 +62,7 @@ function HeadHelp({ text, className, end = false, children }: { text: string; cl
   );
 }
 
-function IvInput({ value, label, hint, onChange }: { value: number; label: string; hint: string; onChange: (raw: string) => void }) {
+function IvInput({ value, label, tip, onChange }: { value: number; label: string; tip: string; onChange: (raw: string) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <input
@@ -75,7 +76,7 @@ function IvInput({ value, label, hint, onChange }: { value: number; label: strin
       tabIndex={value === 31 && draft === null ? -1 : undefined}
       aria-label={label}
       aria-keyshortcuts="ArrowLeft"
-      title={hint}
+      {...hint(tip)}
       onKeyDown={e => {
         if (e.key !== 'ArrowLeft' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
         e.preventDefault();
@@ -100,7 +101,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
   const category = t(`editor.category.${move.category}`);
   return (
     <span className="move-meta">
-      <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
+      <span className={`move-stat cat-${move.category.toLowerCase()}`} {...(inField ? {} : hint(category))}>
         {/* Nel campo il simbolo sta nella coda della pillola: qui resta solo per i lettori di schermo */}
         {!inField && <CategoryIcon category={move.category} />}
         {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
@@ -112,7 +113,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
       </span>
       {/* Mosse che non mancano mai: niente precisione invece di "—" */}
       {accuracy !== null && (
-        <span className="move-stat accuracy" title={t('editor.accuracy')}>
+        <span className="move-stat accuracy" {...(inField ? {} : hint(t('editor.accuracy')))}>
           <Icon name="target" />
           <span className="visually-hidden">{t('editor.accuracyShort')} </span>
           {`${accuracy}%`}
@@ -150,6 +151,16 @@ function moveOption(name: string, lang: Lang): ComboOption {
   return option;
 }
 const ALL_MOVES = moveNames();
+/** Il tooltip di una voce del menu di strumenti o abilità (di lato alla voce attiva), come quello delle mosse. */
+const kitTipOf = (kind: 'item' | 'ability') => (option: ComboOption) =>
+  (option.value ? { tone: 'var(--accent)', content: <KitTipBody kind={kind} name={option.value} />, className: 'move kit' } : null);
+const itemTipOf = kitTipOf('item');
+const abilityTipOf = kitTipOf('ability');
+/** Il tooltip di una voce del menu delle mosse (di lato alla voce attiva). */
+const moveTipOf = (option: ComboOption) => {
+  const move = getMove(option.value);
+  return move ? { tone: typeColor(move.type), content: <MoveTipBody name={move.name} />, className: 'move' } : null;
+};
 const ITEMS = itemNames();
 const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstandard).map(a => a.name).sort();
 const abilityOption = (name: string, lang: Lang): ComboOption =>
@@ -213,12 +224,24 @@ interface Props {
   roleTips?: (string | undefined)[];
   /** Slot di mossa evidenziato perché il coach propone di cambiarlo. */
   proposedSlot?: number;
+  /** Strumento, abilità e mosse fuori regola: segnati sul loro campo, non solo sulla carta. */
+  flags?: FieldFlags;
+  /** Strumento vietato nel formato: nel menu in fondo, con l'etichetta Vietato. */
+  itemBanned?: (name: string) => boolean;
+  /** Telefono: apre l'editor su questa scheda (la Sfida, arrivando da "lascialo a"); `key` cambia a ogni richiesta. */
+  startTab?: { tab: 'set' | 'stats' | 'duel'; key: number } | null;
   onChange: (set: TeamSet) => void;
   /** Set cambiato per intero (preset, I miei set, spread più usati): chi lo riceve offre Annulla; se manca, va a `onChange`. */
   onSetChange?: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, onChange, onSetChange = onChange }: Props) {
+/** Un campo fuori regola (vietato dal formato o non legale per la specie), segnato in rosso:
+ *  `label` la parola breve sul campo, `text` la frase intera per i lettori di schermo. */
+export type FieldFlag = { label: string; text: string; /** Sulle mosse: la mossa da mettere al posto (un clic la scambia). */ swap?: string };
+/** I campi fuori regola del membro: strumento, abilità e le quattro mosse (per posizione). */
+export type FieldFlags = { item?: FieldFlag; ability?: FieldFlag; moves?: (FieldFlag | undefined)[] };
+
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', game = null, common, teraBannedIn, speed, title, actions, bestIndex, onBest, onText, onCopy, smogonLink, memberAction, notice, textPanel, duel, roles, roleTips, proposedSlot, flags, startTab, itemBanned, onChange, onSetChange = onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -260,11 +283,28 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       .filter(name => pokedex !== 'sv' || !getMove(name)?.isNonstandard);
     return withCommon(names.map(name => moveOption(name, lang)), common?.moves);
   }, [custom, set.species, genLimit, pokedex, game, lang, commonKey]);
-  const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS
-    .filter(name => pokedex !== 'sv' || !dex.items.get(name).isNonstandard)
-    .map(name => ({
-      value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
-    })), common?.items), [pokedex, lang, commonKey]);
+  // Strumenti: in ordine alfabetico nella lingua scelta; niente Megapietre, cristalli Z e strumenti di altri Pokémon
+  // (con Custom Skillset sì, e quello già nel set resta); quelli vietati nel formato in fondo, con l'etichetta Vietato
+  const forOthers = (name: string) => {
+    const users = dex.items.get(name).itemUser;
+    const me = getSpecies(set.species);
+    if (!users?.length || !me) return false;
+    return !users.some(user => user === me.name || getSpecies(user)?.baseSpecies === me.baseSpecies);
+  };
+  const itemOptions = useMemo<ComboOption[]>(() => {
+    const options = ITEMS
+      .filter(name => (pokedex !== 'sv' || !dex.items.get(name).isNonstandard) && (custom || name === set.item || !forOthers(name)))
+      .map(name => {
+        const banned = !!itemBanned?.(name);
+        return {
+          value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
+          ...(banned ? { detail: <span className="opt-banned">{t('editor.flagBannedItem')}</span> } : {}), banned,
+        };
+      })
+      .sort((a, b) => Number(a.banned) - Number(b.banned) || a.label.localeCompare(b.label, lang))
+      .map(({ banned: _banned, ...option }) => option);
+    return withCommon(options, common?.items);
+  }, [pokedex, lang, commonKey, set.species, custom, set.item, itemBanned]); // eslint-disable-line react-hooks/exhaustive-deps
   const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
     const label = natureName(name, lang);
@@ -345,6 +385,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   // Telefono: l'editor in tre schede (Set, Statistiche, Sfida) sotto la testata fissa, una cosa alla volta
   const phone = useMediaQuery('(max-width: 599px)');
   const [phoneTab, setPhoneTab] = useState<'set' | 'stats' | 'duel'>('set');
+  useEffect(() => { if (startTab) setPhoneTab(startTab.tab); }, [startTab?.key]); // eslint-disable-line react-hooks/exhaustive-deps
   const tabsId = useId();
   const phoneTabs: { id: 'set' | 'stats' | 'duel'; label: string }[] = [
     { id: 'set', label: t('editor.set') }, { id: 'stats', label: t('editor.stats') }, ...(duel ? [{ id: 'duel' as const, label: t('editor.duel') }] : []),
@@ -365,10 +406,33 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     pickTab(phoneTabs[next].id, true);
   };
   // Vuota (niente strumento, abilità o natura): filo ed etichetta gialli, come i segni "da controllare" del team
-  const plate = (label: string, control: ReactNode, empty = false) => (
+  // Fuori regola (vietato o non legale): filo ed etichetta rossi
+  const plate = (label: string, control: ReactNode, empty = false, flag?: FieldFlag) => (
     // La targhetta intera (etichetta compresa) fa da campo: il menu si apre largo quanto lei
-    <div className={`set-plate${empty ? ' empty' : ''}`} data-pop-anchor><span className="field-label" aria-hidden="true">{label}</span>{control}</div>
+    <div className={`set-plate${empty ? ' empty' : ''}${flag ? ' flagged' : ''}`} data-pop-anchor>
+      <span className="field-label" aria-hidden="true">{label}</span>{control}
+    </div>
   );
+
+  /**
+   * La testa di un campo fuori regola, uguale per mosse, strumento e abilità: ⚠ e la parola breve (Vietata, Non legale)
+   * e, se c'è, ⇄ con cosa mettere al posto (un clic lo mette nel set; passandoci sopra il suo tooltip).
+   */
+  const flagHead = (kind: 'move' | 'item' | 'ability', flag: FieldFlag, current: string, apply: (to: string) => void) => (
+    <span className="field-flags">
+      <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flag.label}</span>
+      {flag.swap && (
+        <button type="button" className="field-swap"
+          {...(kind === 'move' ? { 'data-move-tip': flag.swap } : kitTip(kind, flag.swap))}
+          aria-label={t('editor.swapMove', { to: gameName(kind, flag.swap, lang), from: gameName(kind, current, lang) })}
+          onClick={() => apply(flag.swap!)}>
+          <Icon name="swap" /><span>{gameName(kind, flag.swap, lang)}</span>
+        </button>
+      )}
+    </span>
+  );
+
+  const flagCount = (flags?.item ? 1 : 0) + (flags?.ability ? 1 : 0) + (flags?.moves?.filter(Boolean).length ?? 0);
 
   return (
     <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
@@ -412,7 +476,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {!!common?.spreads.length && (
           <details className="spread-panel" ref={spreadMenu} onToggle={e => setSpreadsOpen(e.currentTarget.open)}
             onKeyDown={e => { if (e.key === 'Escape' && spreadMenu.current?.open) { e.stopPropagation(); closeSpreads(); spreadMenu.current.querySelector('summary')?.focus(); } }}>
-            <summary className="spread-toggle" ref={spreadToggle} title={t('editor.spreadTip')}>
+            <summary className="spread-toggle" ref={spreadToggle} {...hint(t('editor.spreadTip'))}>
               <span className="spread-name">{t('editor.spread')}<span className="visually-hidden">:</span></span>
               <span className="spread-value">{spreadLabel}</span>
             </summary>
@@ -427,7 +491,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                   <Icon name="check" />
                   <strong>{natureName(spread.nature, lang)}</strong>
                   <span className="spread-evs">{spreadText(spread, lang)}</span>
-                  <span className="common-share" title={spread.share === null ? t('combobox.presetTitle') : undefined}>{shareLabel(spread)}</span>
+                  <span className="common-share" {...hint(spread.share === null ? t('combobox.presetTitle') : undefined)}>{shareLabel(spread)}</span>
                 </button>
               ))}
             </div>
@@ -443,7 +507,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
             <span />
             {/* Oltre 510 rosso; 8 o più EV ancora da spendere (2 punti di statistica) giallo, col tooltip che lo dice */}
             <p className={`stat-head-ev ev-total${used > EV_TOTAL ? ' over' : EV_TOTAL - used >= 8 ? ' under' : ''}`}
-              title={used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : EV_TOTAL - used >= 8 ? t('editor.evUnder', { n: EV_TOTAL - used }) : undefined}>
+              {...hint(used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : EV_TOTAL - used >= 8 ? t('editor.evUnder', { n: EV_TOTAL - used }) : undefined)}>
               <HeadHelp className="ev-head" text={t('editor.evHelp')}>{t('editor.evs')}</HeadHelp>
               <span className="visually-hidden">{t('editor.evTotal')}</span>
               <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
@@ -484,8 +548,9 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                 max={252}
                 step={EV_STEP}
                 value={line.ev}
+                aria-label={t('editor.evFor', { stat: statShort(line.stat, lang).toUpperCase() })}
                 aria-keyshortcuts="ArrowRight"
-                title={t('editor.evToIv')}
+                {...hint(t('editor.evToIv'))}
                 onKeyDown={e => {
                   // Freccia destra: all'IV della riga (fuori dal Tab quando vale 31)
                   if (e.key !== 'ArrowRight' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
@@ -498,7 +563,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                   update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } });
                 }}
               />
-              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} hint={t('editor.ivToEv')}
+              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} tip={t('editor.ivToEv')}
                 onChange={raw => changeIv(line.stat, raw)} />
             </div>
           ))}
@@ -521,7 +586,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       </div>
       <div className={`editor-side${duel ? ' with-duel' : ''}`}>
       <fieldset className="editor-group set-box">
-        <legend>{t('editor.set')}</legend>
+        {/* Campi fuori regola: sulla fascia del Set il triangolo rosso e quanti sono, come sulla carta (da dove partire) */}
+        <legend>{t('editor.set')}{flagCount > 0 && (
+          <span className="legend-flag"><Icon name="warning" />{flagCount}<span className="visually-hidden"> {t('editor.setFlags', { n: flagCount })}</span></span>
+        )}</legend>
         {/* Custom Skillset a destra nella fascia del Set: cosa fa solo nel fumetto e per i lettori di schermo */}
         <label className={`custom-toggle${custom ? ' on' : ''}`}
           onPointerEnter={() => setCustomShown(true)} onPointerLeave={() => setCustomShown(false)}>
@@ -540,43 +608,52 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           <span className="hint-bubble" id={customHintId} hidden={!customShown}>{customHint}</span>
         </label>
         <div className="editor-group set-plates">
-        <div className="field" data-tip={itemDesc}>
+        <div className="field" {...kitTip('item', set.item)}>
+          {/* Fuori regola: sopra la targhetta la parola breve e ⇄ lo strumento da mettere al posto, come sulle mosse */}
+          {/* La riga sopra c'è sempre (vuota se va tutto bene): quando compare l'avviso niente si sposta */}
+          <span className="field-head">{flags?.item && flagHead('item', flags.item, set.item, item => update({ item }))}</span>
           {plate(t('editor.item'), (
-            <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
-              leading={set.item ? <ItemIcon item={set.item} /> : undefined}
+            <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter optionTip={itemTipOf}
+              leading={set.item ? <ItemIcon item={set.item} /> : undefined} invalid={flags?.item?.text}
               onChange={item => update({ item })} />
-          ), !set.item)}
+          ), !set.item, flags?.item)}
         </div>
-        <div className="field" data-tip={abilityDesc}>
+        <div className="field" {...kitTip('ability', shownAbility)}>
+          <span className="field-head">{!megaAbility && flags?.ability && flagHead('ability', flags.ability, set.ability, ability => update({ ability }))}</span>
           {plate(t('editor.ability'), megaAbility ? (
-            <span className="plate-lock" title={t('editor.megaAbility')}>
+            <span className="plate-lock" {...hint(t('editor.megaAbility'))}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
                 description={abilityDesc} onChange={() => undefined} />
             </span>
           ) : (
-            <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom}
-              description={abilityDesc} onChange={ability => update({ ability })} />
-          ), !megaAbility && !set.ability)}
+            <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom} optionTip={abilityTipOf}
+              description={abilityDesc} invalid={flags?.ability?.text} onChange={ability => update({ ability })} />
+          ), !megaAbility && !set.ability, megaAbility ? undefined : flags?.ability)}
         </div>
         </div>
         {/* Le mosse nello stesso riquadro Set (un gruppo col suo nome per i lettori di schermo) */}
         <div className="editor-group moves" role="group" aria-label={t('editor.moves')}>
         {moves.map((move, i) => (
-          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}`} data-tip={describe.move(move, lang)}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}${move ? '' : ' empty'}${flags?.moves?.[i] ? ' flagged' : ''}`} data-move-tip={move || undefined}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
-              <MoveDetail name={move} inField />
+              {/* Fuori regola: al posto di potenza e precisione (stanno nel tooltip) la parola breve, nel colore del problema */}
+              {flags?.moves?.[i] ? (
+                flagHead('move', flags.moves[i]!, move, to => { const next = [...moves]; next[i] = to; update({ moves: next }); })
+              ) : <MoveDetail name={move} inField />}
             </span>
             <Combobox
               className="move-combo"
               descriptionFooter
               leading={<MoveTile name={move} />}
-              trailing={<MoveTail name={move} />}
+              trailing={<MoveTail name={move} titled={false} />}
               label={t('editor.move', { n: i + 1 })}
               value={move}
               options={moveOptionsFor[i]}
               commonLabel={commonLabel(common?.moves)}
               description={describe.move(move, lang)}
+              optionTip={moveTipOf}
+              invalid={flags?.moves?.[i]?.text}
               onChange={value => {
                 const next = [...moves];
                 next[i] = value;
@@ -598,7 +675,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               <legend className="visually-hidden">{t('editor.roles')}</legend>
               <span className="roles-label" aria-hidden="true">{t('editor.roles')}</span>
               <ul>
-                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main-role' : undefined} title={roleTips?.[i]}>{role}</li>)}
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main-role' : undefined} {...hint(roleTips?.[i])}>{role}</li>)}
               </ul>
             </fieldset>
           )}

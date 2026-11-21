@@ -1,7 +1,8 @@
 import { memo, useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type RefObject } from 'react';
 import type { EngineData } from '../engine/data';
 import { battleName, getSpecies, toID } from '../engine/dex';
-import { activeFilterCount, EMPTY_FILTERS, searchPool, type CandidateFilters } from '../engine/filters';
+import { formatRules } from '../engine/formatRules';
+import { activeFilterCount, EMPTY_FILTERS, filtersFor, searchPool, type CandidateFilters } from '../engine/filters';
 import type { Format } from '../engine/format';
 import { formatLabel } from '../engine/formats';
 import {
@@ -272,7 +273,10 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   };
 
   // ── Ricerca, filtri e ordine del Pokédex ──
-  const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
+  const [chosenFilters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
+  // I ruoli che questo formato non offre (scelti nel singolo, poi doppio) qui non valgono
+  const filterRules = useMemo(() => formatRules(format.formatId), [format.formatId]);
+  const filters = useMemo(() => filtersFor(chosenFilters, filterRules), [chosenFilters, filterRules]);
   const [order, setOrder] = useState<DexOrder>('national');
   const all = useMemo(() => pokedexSpecies(format), [format]);
   const filtered = useMemo(() => {
@@ -419,7 +423,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
         <div className="dex-head">
           <h3>{tr('lists.pokedex')}</h3>
           <OrderMenu order={order} onOrder={setOrder} usageLabel={usageLabel} hasUsage={hasUsage} />
-          <FilterBar filters={filters} onChange={setFilters} context="lists" />
+          <FilterBar filters={filters} onChange={setFilters} context="lists" rules={filterRules} />
           <span className="dex-count">
             {tr('lists.dexCount', { n: shown.length })}
             <span className="dex-key" aria-hidden="true"><Icon name="heart" /> {tr('lists.hintFav')} <Icon name="ban" /> {tr('lists.hintBan')}</span>

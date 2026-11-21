@@ -4,6 +4,7 @@ import type { EngineData } from '../engine/data';
 import type { AdviceParams, GainValue, WorkerData, WorkerProgress, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
 import { coachAdvice, type CoachAdvice } from '../engine/coach';
 import { improveSets, type SetChange } from '../engine/bestPreset';
+import { duelTips, type DuelTipsResult } from '../engine/duelTips';
 import type { TeamSet } from '../engine/sets';
 import { defaultChoice, fillProposals, formeId, type FillChoice, type FillEnd, type Proposal } from '../engine/fillProposals';
 import type { Format } from '../engine/format';
@@ -181,6 +182,18 @@ class RankingClient {
     } catch {
       this.broken = true;
       return improveSets(team, given, genLimit);
+    }
+  }
+
+  /** I consigli della Sfida in sottofondo, sull'ultimo calcolo come Migliora i set. */
+  async duelTips(team: TeamSet[], index: number, opp: TeamSet, pool: string[], given: EngineData): Promise<DuelTipsResult> {
+    if (this.broken) return duelTips(team, index, opp, pool, given);
+    try {
+      const { result } = await this.workers[this.workers.length - 1].call<'duelTips'>({ kind: 'duelTips', team, index, opp, pool, data: this.wire(given) });
+      return result;
+    } catch {
+      this.broken = true;
+      return duelTips(team, index, opp, pool, given);
     }
   }
 
@@ -362,6 +375,13 @@ let lastImprove: { key: string; data: EngineData; result: Promise<SetChange[]> }
 /** Prepara Migliora i set in anticipo, solo se c'è il calcolo in sottofondo (senza, fermerebbe la pagina a ogni modifica). */
 export function prepareImproveSets(team: TeamSet[], data: EngineData, genLimit: number): void {
   if (rankingClient()) void improveSetsLater(team, data, genLimit).catch(() => undefined);
+}
+
+/** I consigli della Sfida senza fermare la pagina: col worker in sottofondo; senza (test, browser vecchi) qui, dopo un attimo. */
+export function duelTipsLater(team: TeamSet[], index: number, opp: TeamSet, pool: string[], data: EngineData): Promise<DuelTipsResult> {
+  const worker = rankingClient();
+  return worker ? worker.duelTips(team, index, opp, pool, data)
+    : new Promise<DuelTipsResult>(resolve => setTimeout(() => resolve(duelTips(team, index, opp, pool, data)), 30));
 }
 
 /** Come è finita una richiesta di Completa team. */

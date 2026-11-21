@@ -1,5 +1,5 @@
 import { getMove, isDefined, toID } from './dex';
-import type { FormatRules } from './formatRules';
+import { isOneType, type FormatRules } from './formatRules';
 import { detectRoles } from './roles';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier, TYPES, type TypeName } from './types';
@@ -14,13 +14,16 @@ export type Gap =
  * Controlli di coerenza di un team completo: nessuno mette le trappole, nessuno le toglie,
  * tre o più membri deboli allo stesso tipo senza nessuno che lo resista o ne sia immune.
  * Ha senso solo con 6 membri: con meno restituisce [].
+ * In doppio (tipo unico) le trappole non sono un buco: il controllo hazard lì non conta e gli hazard sono solo un ruolo minore.
  */
 export function coherenceGaps(team: TeamSet[], rules: FormatRules): Gap[] {
   if (team.length < 6) return [];
   const gaps: Gap[] = [];
   const roles = team.map(s => detectRoles(s, rules) as string[]);
-  if (!roles.some(r => r.includes('hazards'))) gaps.push({ kind: 'hazards' });
-  if (!roles.some(r => r.includes('removal'))) gaps.push({ kind: 'removal' });
+  if (!isOneType(rules)) {
+    if (!roles.some(r => r.includes('hazards'))) gaps.push({ kind: 'hazards' });
+    if (!roles.some(r => r.includes('removal'))) gaps.push({ kind: 'removal' });
+  }
   for (const type of TYPES) {
     const mults = team.map(s => defensiveMultiplier(type, s));
     const count = mults.filter(m => m > 1).length;

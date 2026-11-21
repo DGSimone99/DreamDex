@@ -57,23 +57,23 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('semiStall', 'secondAttacker')).toBe('minor');
     for (const key of ['anySweeper', 'anyBreaker', 'anyAttacker', 'secondAttacker'] as const) expect(levelOf('stall', key)).toBe('minor');
     for (const a of ['hyperOffense', 'bulkyOffense', 'balance'] as const) expect(levelOf(a, 'anyAttacker')).toBe('ignored');
-    // HO: Hazard e Controllo Hazard importanti; muri, Recupero, Pivot e Rimozione Strumenti minori, Taunt ed Encore ignorati
-    // BO (201 BO da torneo di Natdex OU, 95 / 70 / 30): sotto il 30% Taunt, Anti-setup, Cleric, Debuff ed Encore sono ignorati
-    expect(levelOf('bulkyOffense', 'taunt')).toBe('ignored');
+    // HO: Hazard e Controllo Hazard importanti; muri, Recupero, Pivot e Rimozione Strumenti minori
+    // BO (201 BO da torneo di Natdex OU, 95 / 70 / 30): sotto il 30% Anti-setup e Cleric sono ignorati
+    // Disruptor minore in ogni tipo di team (utente, 2026-11-20)
+    for (const a of ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'] as const) expect(levelOf(a, 'disruptor')).toBe('minor');
     expect(levelOf('bulkyOffense', 'phazer')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'dot')).toBe('minor');
     expect(levelOf('hyperOffense', 'physicalWall')).toBe('minor');
     expect(levelOf('balance', 'physicalWall')).toBe('essential');
     expect(levelOf('hyperOffense', 'recovery')).toBe('minor');
     expect(levelOf('hyperOffense', 'itemRemoval')).toBe('minor');
-    expect(levelOf('hyperOffense', 'taunt')).toBe('ignored');
-    expect(levelOf('hyperOffense', 'encore')).toBe('ignored');
     // 2026-11-03: Pivot e Rimozione Strumenti minori ovunque (il censimento dice che non distinguono i team da torneo dal ladder)
     expect(levelOf('semiStall', 'pivot')).toBe('minor');
     expect(levelOf('stall', 'pivot')).toBe('ignored');
     // Gli hazard: importanti negli offensivi (90–92%), essenziali da balance in giù (99–100%); Speed Control ignorato
     // ovunque, gli schermi minori ovunque (2026-11-08)
-    for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
+    // I cinque tipi del singolo: il doppio ha il suo elenco (doublesRoles.test.ts)
+    for (const a of (Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]).filter(a => a !== 'doubles')) {
       expect(levelOf(a, 'screens')).toBe('minor');
       expect(levelOf(a, 'speedControl')).toBe('ignored');
     }
@@ -193,7 +193,10 @@ describe('tabella dei livelli per archetipo', () => {
   it("le voci: i gruppi degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
     const { attack, defense, support, utility } = FAMILIES;
     // I gruppi degli attaccanti (Sweeper, Wallbreaker, fisico, speciale, Attaccante, 2° Attaccante) stanno davanti all'Attacco
-    expect(LEVEL_KEYS).toEqual(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
+    // Le voci del doppio (doublesRoles.test.ts) stanno in mezzo, nell'ordine in cui il doppio le mostra
+    const doubles = ['secondProtect', 'anyWall', 'spread', 'fakeOut', 'redirector', 'secondFirstStrike'];
+    expect(LEVEL_KEYS.filter(key => doubles.includes(key))).toEqual(doubles);
+    expect(LEVEL_KEYS.filter(key => !doubles.includes(key))).toEqual(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
   });
 
   it('HO tutto fisico: mancano "almeno uno speciale" (essenziale) e il malus "un solo stile" non si somma', () => {
@@ -283,9 +286,9 @@ describe('bisogni del team dai sotto-ruoli', () => {
 
   it('il valore del team è il migliore dei membri; senza attaccanti manca il gruppo', () => {
     const team = [stall[1], stall[3]];
-    const needs = teamNeeds(team, fixtureData, [{ specialWall: 1, recovery: 0.5 }, { physicalWall: 1, recovery: 1, taunt: 0.3 }]);
+    const needs = teamNeeds(team, fixtureData, [{ specialWall: 1, recovery: 0.5 }, { physicalWall: 1, recovery: 1, disruptor: 0.3 }]);
     expect(needs.values.recovery).toBe(1);
-    expect(needs.values.taunt).toBe(0.3);
+    expect(needs.values.disruptor).toBe(0.3);
     // Due muri col Recupero: manca Sweeper o Wallbreaker e gli Hazard (essenziali nel Balance)
     expect(needs.essentialMissing).toEqual(['sweeperOrBreaker', 'hazards']);
     expect(needs.importantMissing.slice(0, 2)).toEqual(['anyPhysical', 'anySpecial']);
@@ -295,9 +298,12 @@ describe('bisogni del team dai sotto-ruoli', () => {
   it('senza valori dei membri li misura (come nel voto)', () => {
     const needs = teamNeeds(stall, fixtureData);
     expect(needs.archetype).toBe('stall');
-    // Da stall gli attaccanti sono solo minori; fra gli essenziali manca solo il Danno nel Tempo (misurato sul meta del
-    // fixture, pieno di Acciaio e Veleno immuni a Toxic): muri, Recupero, Cleric, Anti-setup e Hazard ci sono
-    expect(needs.essentialMissing).toEqual(['dot']);
+    // Da stall gli attaccanti sono solo minori; muri, Recupero, Cleric, Anti-setup e Hazard ci sono. Il Danno nel Tempo,
+    // che nessuno porta da solo (il meta del fixture è pieno di Acciaio e Veleno immuni a Toxic), lo coprono insieme i due
+    // Toxic e Scald: dal 2026-11-20 il DoT si somma come probabilità
+    expect(needs.essentialMissing).toEqual([]);
+    expect(needs.values.dot).toBeGreaterThanOrEqual(0.5);
+    expect(needs.credited.every(m => (m.dot ?? 0) < 0.5)).toBe(true);
     expect(needs.importantMissing).toEqual([]);
     expect(needs.levels.anySweeper).toBe('minor');
     expect(needs.levels.anyBreaker).toBe('minor');
@@ -329,8 +335,8 @@ describe('voto e coach seguono i livelli dell\'archetipo', () => {
   it('lo stall non riceve "Ruoli mancanti" per gli attaccanti (formati con la regola dei muri)', () => {
     const texts = coachTeam(stall, { ...DEFAULT_FORMAT, formatId: 'gen9ou' }, { ...fixtureData, formatId: 'gen9ou' }).problems.map(p => p.text).join(' | ');
     expect(texts).not.toMatch(/Ruoli mancanti:[^|]*(Sweeper|Wallbreaker|attaccante)/);
-    // L'unico essenziale da stall che manca a questo team è il Danno nel Tempo (vedi "senza valori dei membri li misura")
-    expect(texts).toMatch(/Ruoli mancanti: Danno nel Tempo( \||$)/);
+    // Il Danno nel Tempo lo coprono insieme i due Toxic e Scald (vedi "senza valori dei membri li misura")
+    expect(texts).not.toMatch(/Ruoli mancanti: Danno nel Tempo/);
   });
 
   it('in National Dex OU lo stall chiede i ruoli del Semi-stall tranne gli attaccanti (minori): non mancano', () => {

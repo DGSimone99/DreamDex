@@ -22,8 +22,11 @@ function firstMove(m: Member, pool: Iterable<string>): { id: string; name: strin
   return { id: m.ids[i], name: getMove(m.moves[i])?.name ?? m.moves[i] };
 }
 
-/** Legami del team: ciclo di pivot, Baton Pass/Shed Tail, Wish, hazard + phazer; ordine fisso. */
-export function teamLinks(team: TeamSet[], attackers: string[]): TeamLink[] {
+/**
+ * Legami del team: ciclo di pivot, Baton Pass/Shed Tail, Wish, hazard + phazer; ordine fisso.
+ * `pivotOnly` (il doppio): resta solo il ciclo di pivot, che lì è un ruolo; gli altri tre sono legami da singolo.
+ */
+export function teamLinks(team: TeamSet[], attackers: string[], pivotOnly = false): TeamLink[] {
   const members: Member[] = team
     .filter(set => set.species)
     .map(set => ({ name: battleName(set), ids: set.moves.map(toID), moves: set.moves }));
@@ -48,6 +51,8 @@ export function teamLinks(team: TeamSet[], attackers: string[]): TeamLink[] {
     const target = attackers.find(a => !names.includes(a));
     links.push({ kind: 'pivot', from: names, to: target ? [target] : [], move: best!.name });
   }
+
+  if (pivotOnly) return links;
 
   // Baton Pass / Shed Tail: ogni membro che la usa passa al primo attaccante diverso da sé
   for (const m of members) {

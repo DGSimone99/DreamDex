@@ -68,10 +68,12 @@ describe('editor del set', () => {
     const slot = await openFirst(user, container);
     const roles = within(slot).getByRole('group', { name: 'Ruoli' });
     const items = within(roles).getAllByRole('listitem').map(li => li.textContent);
-    const all = container.querySelector('.slot .roles')!.getAttribute('title')!.split(' · ').map(part => part.split(': ')[0]);
-    expect(items).toEqual(all);
+    // Il primo è quello della carta (che nel fumetto spiega solo lui)
+    expect(items[0]).toBe(container.querySelector('.slot .roles')!.textContent);
+    expect(container.querySelector('.slot .roles')!.getAttribute('data-hint')).toMatch(new RegExp(`^${items[0]}: `));
+    expect(items.length).toBeGreaterThan(1);
     // Ogni ruolo spiegato nel tooltip
-    expect(within(roles).getAllByRole('listitem')[0]).toHaveAttribute('title', expect.stringMatching(/\S/));
+    expect(within(roles).getAllByRole('listitem')[0]).toHaveAttribute('data-hint', expect.stringMatching(/\S/));
   });
 
   it('testata su una riga: nome, poi Set (preset Smogon e I miei set), Copia il set e Chiudi; Custom Skillset nella fascia delle Mosse', async () => {

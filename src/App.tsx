@@ -38,6 +38,7 @@ import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { TouchTips } from './ui/TouchTips';
+import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
@@ -284,6 +285,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     remember({ kind: 'move', from: battleName(set), to: `${name(from)} → ${name(to)}` }, after);
     return true;
   };
+  // Un consiglio della Sfida applicato (EV o mossa): annullabile, l'avviso dice cosa è cambiato ("+32 EV in DifSp, −32 in Att")
+  const applyTip = (index: number, set: TeamSet, change: string) => {
+    const before = team[index];
+    if (!before) return;
+    const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
+    remember({ kind: 'move', from: battleName(before), to: change }, after);
+  };
   const finishProposal = (applied: boolean) => {
     if (!applied || !moveProposal || !applyMove(moveProposal)) setMoveProposal(null);
   };
@@ -460,10 +468,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <AutoBand phone={phone} collapsed={collapsed} control={bandControl}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
+          grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
           io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           plateName={<SavedPlateName team={team} />}
-          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onBulk={bulk} onAddClick={startAdd}
+          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onDropSet={(i, set) => (i === null ? addSet(set) : replaceAt(i, set))} onPaste={pasteAt} onSetChange={setChangeAt} onTipApply={applyTip} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
@@ -525,6 +534,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       {feedbackOpen && <FeedbackDialog team={team} format={format} onClose={closeFeedback} />}
       {/* Il team copiato per Showdown: sta dove sta l'avviso di Annulla, che intanto aspetta (torna quando questo si chiude) */}
       <TouchTips />
+      {/* Il tooltip delle mosse: uno per tutta l'app, su ogni pillola o campo con data-move-tip */}
+      <TipHost />
       {done && <DoneToast note={done} onClose={() => setDone(null)} />}
       {!done && listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, ...listUndo.undo }} onClose={() => setListUndo(null)}

@@ -8,6 +8,7 @@ import { gameName, natureName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { MY_SETS_MAX } from '../storage';
 import { Icon } from './icons';
+import { hint } from './MoveTip';
 import { ItemIcon } from './ItemIcon';
 import {
   deleteMySet, mySetByName, mySetIndex, mySetsOf, overwriteMySet, renameMySet, saveMySet, setMySets, useMySets,
@@ -184,7 +185,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onC
             </span>
             <small>{setSummary(preset.set, lang)}</small>
           </span>
-          <ItemIcon item={preset.set.item} size={22} />
+          <ItemIcon item={preset.set.item} size={22} tip />
           {i === applied && <Icon name="check" />}
         </button>
       </li>,
@@ -197,7 +198,8 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onC
       // Il fuoco esce dal menu (Tab oltre l'ultimo pulsante): si chiude
       onBlur={e => { if (open && e.relatedTarget && !root.current?.contains(e.relatedTarget as Node)) close(false); }}>
       <button type="button" className="set-menu-button" ref={button} aria-haspopup="dialog" aria-expanded={open}
-        aria-controls={open ? panelId : undefined} title={`${currentLabel}${source ? ` (${source})` : ''} · ${t('editor.setMenuTitle')}`}
+        aria-controls={open ? panelId : undefined} {...hint(`${currentLabel}${source ? ` (${source})` : ''}
+${t('editor.setMenuTitle')}`)}
         onClick={() => (open ? close() : show())}>
         {/* Come la pillola di una mossa: testa "SET" tagliata a "/", il nome sul corpo che sfuma nel nero, la coda tagliata a "/"
             con la provenienza (Smogon o Custom, cioè uno dei miei set; niente se cambiato a mano) e la freccia del menu */}
@@ -254,7 +256,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onC
                               <span className="set-menu-name"><strong>{saved.name}</strong></span>
                               <small>{setSummary(saved.set, lang)}</small>
                             </span>
-                            <ItemIcon item={saved.set.item} size={22} />
+                            <ItemIcon item={saved.set.item} size={22} tip />
                             {i === current && <Icon name="check" />}
                           </button>
                         )}

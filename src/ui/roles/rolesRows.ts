@@ -1,23 +1,29 @@
 import type { TeamRating } from '../../engine/rating';
-import { keyRoles, keyValue, MISSING_BELOW } from '../../engine/needs';
-import { LEVEL_KEYS, type Level, type LevelKey } from '../../engine/roleLevels';
+import { isSummedKey, keyRoles, keyValue, MISSING_BELOW } from '../../engine/needs';
+import { levelKeysFor, type Level, type LevelKey } from '../../engine/roleLevels';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, type TeamRoles } from '../../engine/rolesArea';
 import { FAMILIES, secondaryRoles, type Family, type SubRoleReason } from '../../engine/subRoles';
 
 /** Chi porta una voce: valore (col credito del secondario), fonte e motivo del sotto-ruolo migliore dietro la voce. */
 export interface RoleHolder { species: string; slot: number; value: number; source: string; secondary: boolean; reason?: SubRoleReason }
 
-/** Una voce dei Ruoli per la vista: livello, famiglia, valore di team, chi la porta (dal migliore), se manca. */
-export interface RoleLine { key: LevelKey; level: Level; family: Family; value: number; missing: boolean; by: RoleHolder[] }
+/**
+ * Una voce dei Ruoli per la vista: livello, famiglia, valore di team, chi la porta (dal migliore), se manca.
+ * `together`: il DoT coperto solo dalla somma di più membri (nessuno basta da solo).
+ */
+export interface RoleLine { key: LevelKey; level: Level; family: Family; value: number; missing: boolean; by: RoleHolder[]; together: boolean }
 
 export const FAMILY_ORDER: Family[] = ['attack', 'defense', 'support', 'utility'];
 export const LEVEL_ORDER: Level[] = ['essential', 'important', 'minor', 'ignored'];
 
+/** Le famiglie delle voci del doppio che non sono sotto-ruoli delle famiglie. */
+const DOUBLES_FAMILY: Partial<Record<LevelKey, Family>> = {
+  anyWall: 'defense', secondProtect: 'support', redirector: 'support', fakeOut: 'utility', spread: 'attack', secondFirstStrike: 'attack',
+};
+
 /** La famiglia di una voce: i gruppi degli attaccanti stanno con gli Attaccanti. */
 export const familyOf = (key: LevelKey): Family =>
-  FAMILY_ORDER.find(f => (FAMILIES[f] as LevelKey[]).includes(key)) ?? 'attack';
-
-export const points = (x: number) => Math.round(100 * x);
+  DOUBLES_FAMILY[key] ?? FAMILY_ORDER.find(f => (FAMILIES[f] as LevelKey[]).includes(key)) ?? 'attack';
 
 /**
  * Tutte le voci della tabella (anche quelle che non contano) coi valori del voto: livello dalle righe del voto, chi la
@@ -26,7 +32,8 @@ export const points = (x: number) => Math.round(100 * x);
  */
 export function roleLines(rating: TeamRating): RoleLine[] {
   const { roles } = rating;
-  return LEVEL_KEYS.map(key => {
+  // Solo le voci del formato: in singolo nessuna voce del doppio, in doppio solo le sue
+  return levelKeysFor(rating.needs.rules.typeRule).map(key => {
     // Le righe del voto sono tutte le voci che contano: le altre sono ignorate per questo tipo di team
     const row = roles.rows.find(r => r.key === key);
     const level: Level = row?.level ?? 'ignored';
@@ -40,7 +47,11 @@ export function roleLines(rating: TeamRating): RoleLine[] {
       return { species: m.species, slot, value: keyValue(values, key), source, secondary, reason };
     }).filter(h => h.value > 0).sort((a, b) => b.value - a.value || Number(a.secondary) - Number(b.secondary));
     const value = row?.value ?? Math.max(0, ...by.map(h => h.value));
-    return { key, level, family: familyOf(key), value, missing: value < MISSING_BELOW, by };
+    // O c'è o non c'è (2026-11-20, utente): chi la porta solo in parte non si vede; nel DoT, se nessuno basta da solo,
+    // restano tutti quelli che contribuiscono alla somma
+    const full = by.filter(h => h.value >= MISSING_BELOW);
+    const summed = isSummedKey(key) && full.length === 0 && by.length > 0;
+    return { key, level, family: familyOf(key), value, missing: value < MISSING_BELOW, by: summed ? by : full, together: summed && value >= MISSING_BELOW };
   });
 }
 

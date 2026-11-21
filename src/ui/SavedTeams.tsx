@@ -7,6 +7,7 @@ import { Sprite } from './Sprite';
 import { UndoToast, type UndoAction } from './UndoToast';
 import { loadSavedTeams, saveTeams, type SavedTeam } from '../storage';
 import { useT } from '../i18n/react';
+import { hint } from './MoveTip';
 
 /** Il team caricato o salvato per ultimo: il nome va nella targa, il testo serve a capire se è stato cambiato dopo. */
 type Current = { name: string; text: string };
@@ -46,7 +47,7 @@ export function SavedPlateName({ team }: { team: TeamSet[] }) {
   const { shown, changed } = useShown(team);
   if (!shown) return null;
   return (
-    <span className="plate-name">{shown.name}{changed && <span className="plate-dot" title={t('saved.changed')}><span className="visually-hidden">{t('saved.changed')}</span></span>}</span>
+    <span className="plate-name">{shown.name}{changed && <span className="plate-dot" {...hint(t('saved.changed'))}><span className="visually-hidden">{t('saved.changed')}</span></span>}</span>
   );
 }
 
@@ -119,7 +120,7 @@ export function SavedTeams({ team, format, onLoad }: {
     <>
       <details className="popover saved-menu">
         {/* Il nome per i lettori di schermo dice anche quanti sono ("Team salvati (2)"); a vista la parola e il numero a parte */}
-        <summary title={t('saved.title', { n: saved.length })}>
+        <summary {...hint(t('saved.title', { n: saved.length }))}>
           <span className="visually-hidden">{t('saved.title', { n: saved.length })}</span>
           <Icon name="box" /><span className="btn-label" aria-hidden="true">{t('saved.label')}</span>
           {saved.length > 0 && <span className="saved-count" aria-hidden="true">{saved.length}</span>}

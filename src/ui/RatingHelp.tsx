@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
+import type { FormatRules } from '../engine/formatRules';
 import { ARCHETYPE_WEIGHTS, GRADES, type AreaWeightTable } from '../engine/rating';
 import { isGroupKey, LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../engine/roleLevels';
 import type { MessageKey } from '../i18n';
@@ -14,6 +15,8 @@ import { SHEET_QUERY } from './useAnchoredPop';
 type Topic = 'general' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 const TOPICS: Topic[] = ['general', ...ARCHETYPES];
+/** In doppio c'è un tipo di team solo: gli argomenti sono due. */
+const DOUBLES_TOPICS: Topic[] = ['general', 'doubles'];
 /** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (spiegati nel loro modale). */
 /** Offesa prima di Difesa, come nel riquadro del voto (scelta dell'utente, 2026-11-13). */
 const WEIGHT_AREAS = ['strength', 'defense', 'speed'] as const;
@@ -29,10 +32,13 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  */
 /** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
 /** `incomplete`: meno di sei membri, il tipo non è ancora deciso ("in analisi"): nessuna scheda è segnata come il tuo team. */
-export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom?: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom?: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: FormatRules['typeRule'] }) {
   const t = useT();
   // Col team incompleto il tipo è ancora "in analisi": nessuna scheda è "il tuo team"
-  const teamType: Archetype | null = incomplete ? null : judgedAs;
+  const doubles = typeRule === 'oneType';
+  // In doppio il tipo è sempre Doppio, anche a team incompleto
+  const teamType: Archetype | null = incomplete && !doubles ? null : judgedAs;
+  const topics = doubles ? DOUBLES_TOPICS : TOPICS;
   const weights = shownWeights(realWeights);
   const [open, setOpen] = useState(false);
   // Si apre sempre su come funziona in generale; il tipo del team ha la sua scritta "il tuo team" nella lista a sinistra
@@ -46,7 +52,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
 
   useEffect(() => {
     if (!open) return;
-    if (!phone) tabs.current[TOPICS.indexOf(topic)]?.focus();
+    if (!phone) tabs.current[topics.indexOf(topic)]?.focus();
     const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -62,8 +68,8 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
     const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
     if (!step) return;
     e.preventDefault();
-    const next = (index + step + TOPICS.length) % TOPICS.length;
-    setTopic(TOPICS[next]);
+    const next = (index + step + topics.length) % topics.length;
+    setTopic(topics[next]);
     tabs.current[next]?.focus();
   };
 
@@ -95,19 +101,19 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
                       <h4 id={`${titleId}-page`}>{t(topicLabel(page))}</h4>
                       <button type="button" className="help-back" onClick={() => setPage(null)}><Icon name="prev" />{t('help.back')}</button>
                     </div>
-                    {page === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={page} weights={weights} typeRule={typeRule} />}
+                    {page === 'general' ? <GeneralTopic teamType={teamType} weights={weights} doubles={doubles} /> : <TypeTopic type={page} weights={weights} typeRule={typeRule} />}
                   </section>
                 ) : (
                   <>
                     {/* Si apre su come funziona il voto (senza la tabella dei pesi: ogni tipo ha i suoi nella sua pagina) */}
                     <section className="help-panel help-general" aria-labelledby={`${titleId}-general`}>
                       <h4 id={`${titleId}-general`}>{t('help.general')}</h4>
-                      <GeneralTopic teamType={teamType} weights={weights} table={false} />
+                      <GeneralTopic teamType={teamType} weights={weights} doubles={doubles} table={false} />
                     </section>
                     {/* Sotto, i tipi di team: il tuo per primo, contornato d'azzurro; ognuno apre la sua pagina */}
                     <h5 className="help-list-title">{t('help.general.type')}</h5>
                     <nav className="help-list" aria-label={t('help.nav')}>
-                      {[...ARCHETYPES].sort((a, b) => Number(b === teamType) - Number(a === teamType)).map(item => (
+                      {(doubles ? (['doubles'] as Archetype[]) : [...ARCHETYPES]).sort((a, b) => Number(b === teamType) - Number(a === teamType)).map(item => (
                         <button key={item} type="button" className={item === teamType ? 'yours' : undefined} aria-current={item === teamType || undefined} onClick={() => setPage(item)}>
                           <span>
                             <span className="help-list-name">{t(topicLabel(item))}{item === teamType && <em className="help-yours-tag">{t('help.yourTeam')}</em>}</span>
@@ -123,7 +129,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
             ) : (
             <div className="help-body">
               <nav className="help-nav" role="tablist" aria-orientation="vertical" aria-label={t('help.nav')}>
-                {TOPICS.map((item, i) => (
+                {topics.map((item, i) => (
                   <button key={item} ref={el => { tabs.current[i] = el; }} type="button" role="tab" id={`help-tab-${item}`}
                     aria-selected={item === topic} aria-current={item === teamType || undefined} aria-controls="help-panel" tabIndex={item === topic ? 0 : -1}
                     title={item === teamType ? t('help.general.yours', { type: t(`archetype.${item}`) }) : undefined}
@@ -136,7 +142,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
               </nav>
               <section className={`help-panel${topic === 'general' ? ' help-general' : ''}`} id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
+                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} doubles={doubles} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
             )}
@@ -150,8 +156,10 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, weights, table = true }: { teamType: Archetype | null; weights: AreaWeightTable; table?: boolean }) {
+function GeneralTopic({ teamType, weights, doubles, table = true }: { teamType: Archetype | null; weights: AreaWeightTable; doubles: boolean; table?: boolean }) {
   const t = useT();
+  // In doppio la tabella ha la sola riga del tipo unico
+  const types: Archetype[] = doubles ? ['doubles'] : ARCHETYPES;
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
     <>
@@ -165,7 +173,7 @@ function GeneralTopic({ teamType, weights, table = true }: { teamType: Archetype
         ))}
       </ul>
       <p>{t('help.general.1')}</p>
-      <p>{t('help.general.2')}</p>
+      <p>{t(doubles ? 'help.general.2.doubles' : 'help.general.2')}</p>
       {/* Trick Room solo qui, in Come funziona, non nelle schede dei tipi (scelta dell'utente, confermata 2026-11-13) */}
       <p>{t('help.type.trickRoom')}</p>
       {table && (
@@ -175,10 +183,10 @@ function GeneralTopic({ teamType, weights, table = true }: { teamType: Archetype
             <tr><th scope="col">{t('help.general.type')}</th>{WEIGHT_AREAS.map(area => <th key={area} scope="col">{t(`area.${area}`)}</th>)}</tr>
           </thead>
           <tbody>
-            {ARCHETYPES.map(arch => (
+            {types.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area} data-label={t(`area.${area}`)}><WeightBar weight={weights[arch][area]} step={stepOf(weights, arch, area)} /></td>)}
+                {WEIGHT_AREAS.map(area => <td key={area} data-label={t(`area.${area}`)}><WeightBar weight={shareOf(weights, arch, area)} step={stepOf(weights, arch, area)} /></td>)}
               </tr>
             ))}
           </tbody>
@@ -206,12 +214,17 @@ const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
  * il voto usa i pesi veri; un'area che non conta (peso 0) resta vuota.
  */
 const LADDER: Record<(typeof WEIGHT_AREAS)[number], Record<Archetype, number>> = {
-  defense: { hyperOffense: 1, bulkyOffense: 2, balance: 3, semiStall: 4, stall: 5 },
-  strength: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1 },
-  speed: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1 },
+  defense: { hyperOffense: 1, bulkyOffense: 2, balance: 3, semiStall: 4, stall: 5, doubles: 3 },
+  strength: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1, doubles: 3 },
+  speed: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1, doubles: 3 },
 };
 const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number =>
   weights[arch][area] <= 0 ? 0 : LADDER[area][arch] / 6;
+/** Il peso dell'area su 100 (le righe del singolo sommano già 100, quella del doppio 1). */
+const shareOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
+  const total = WEIGHT_AREAS.reduce((sum, a) => sum + weights[arch][a], 0);
+  return total > 0 ? (100 * weights[arch][area]) / total : 0;
+};
 /** Il peso di un'area come barra in sesti, senza numeri (stepOf); la parola dal peso vero solo per i lettori di schermo (scelta dell'utente, 2026-11-13). */
 function WeightBar({ weight, step }: { weight: number; step: number }) {
   const t = useT();
@@ -225,7 +238,7 @@ function WeightBar({ weight, step }: { weight: number; step: number }) {
 }
 
 /** Un tipo di team: come vince, i pesi delle aree e le voci dei Ruoli per livello, letti dalle tabelle del motore. */
-function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: AreaWeightTable; typeRule?: FormatRules['typeRule'] }) {
   const t = useT();
   return (
     <>
@@ -238,7 +251,7 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
           return (
             <div key={area} className={inactive ? 'inactive' : undefined}>
               <dt>{t(`area.${area}`)}</dt>
-              <dd><WeightBar weight={weights[type][area]} step={stepOf(weights, type, area)} /></dd>
+              <dd><WeightBar weight={shareOf(weights, type, area)} step={stepOf(weights, type, area)} /></dd>
               {inactive && <dd className="help-inactive-note">{t('rating.notCounted')}</dd>}
             </div>
           );
@@ -251,7 +264,7 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
         return (
           <div key={level} className="help-levels">
             <h6>{t(`rdetail.group.${level}`)}</h6>
-            <ul className={`help-points ${level}`}>{keys.map(key => <li key={key} title={isGroupKey(key) ? undefined : t(`roleDesc.${key}`)}>{t(keyLabel(key))}</li>)}</ul>
+            <ul className={`help-points ${level}`}>{keys.map(key => <li key={key} title={t(`roleBrief.${key}`)}>{t(keyLabel(key))}</li>)}</ul>
           </div>
         );
       })}
