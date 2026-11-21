@@ -1416,3 +1416,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .fmt-actions button { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 48px; padding: 0 var(--sp-5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .fmt-actions .fmt-main { flex-grow: 1.6; }
 }
+/* Il nome "Team" del menu c'è solo sul tablet ("Team ▾"): sul telefono il menu resta il tondo "…" */
+@media (max-width: 599px) {
+  .team-more-label { display: none; }
+}
