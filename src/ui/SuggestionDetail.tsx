@@ -84,7 +84,14 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * sale il voto, cosa porta e cosa toglie, l'effetto sul team area per area (una riga), il set consigliato (griglia,
  * esagono, pillole delle mosse), le azioni.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, teamCollapsed = false, sheet = false }: {
+/** Versioni del dettaglio, dalla più ricca: 0 con aree e Meta, 1 con le aree (solo a team chiuso), 2 normale, 3 testata
+ *  bassa e niente esagono, 4 testata bassa e due linguette (Porta e Toglie · Set consigliato). */
+export type DetailLevel = 0 | 1 | 2 | 3 | 4;
+export type DetailTab = 'brings' | 'set';
+/** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
+const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
+
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, teamCollapsed = false, sheet = false, tab: tabProp, onTab }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -104,6 +111,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   /** Lo sprite della lista: il dettaglio mostra l'altro (lista Normale → icona box, lista Icona box → sprite animato). */
   /** Team chiuso: c'è altezza per la sezione Meta. */
   teamCollapsed?: boolean;
+  /** Linguetta aperta quando il dettaglio è a linguette (la tiene il pannello, così resta cambiando candidato). */
+  tab?: DetailTab;
+  onTab?: (tab: DetailTab) => void;
   /** Telefono: il dettaglio copre la lista come una finestra (il resto della pagina è inerte finché è aperto). */
   sheet?: boolean;
 }) {
@@ -157,24 +167,36 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso
   const showLoses = replacing || loses.length > 0;
 
-  // Se il contenuto non ci sta (molte voci in Porta e Toglie, schermo basso) il set si stringe da solo: niente esagono e
-  // mosse su due colonne. Si rimisura col candidato nuovo e quando la finestra cambia misura
+  // La versione più ricca che ci sta senza scorrere (solo su desktop: sul telefono il foglio scorre): si parte dalla più
+  // ricca ammessa e, finché il corpo non entra, si scende di una. Si riparte col candidato nuovo, col team aperto o chiuso
+  // e quando la finestra cambia misura
   const bodyRef = useRef<HTMLDivElement>(null);
-  const [tight, setTight] = useState(false);
-  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}`;
-  useLayoutEffect(() => setTight(false), [fitKey]);
+  const start: DetailLevel = teamCollapsed ? 0 : 2;
+  const [level, setLevel] = useState<DetailLevel>(start);
+  const [ownTab, setOwnTab] = useState<DetailTab>('brings');
+  const tab = tabProp ?? ownTab;
+  const chooseTab = onTab ?? setOwnTab;
+  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${start}`;
+  useLayoutEffect(() => setLevel(start), [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
-    if (!tight && body && body.scrollHeight - body.clientHeight > 1) setTight(true);
+    if (level < 4 && wideScreen() && body && body.scrollHeight - body.clientHeight > 1) setLevel((level + 1) as DetailLevel);
   });
+  const startRef = useRef(start);
+  startRef.current = start;
   useEffect(() => {
-    const reset = () => setTight(false);
+    const reset = () => setLevel(startRef.current);
     window.addEventListener('resize', reset);
     return () => window.removeEventListener('resize', reset);
   }, []);
+  const showAreas = teamCollapsed && level <= 1;
+  const showMeta = teamCollapsed && level === 0;
+  const tabs = level === 4;
+  const showBrings = !tabs || tab === 'brings';
+  const showSet = !tabs || tab === 'set';
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}${tight ? ' tight' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 3 ? ' tight compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
@@ -239,11 +261,23 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
       </header>
 
       <div className="detail-body" ref={bodyRef}>
+        {/* Schermo basso: Porta e Toglie da una parte, il set dall'altra, una alla volta */}
+        {tabs && (
+          <div className="detail-tabs" role="tablist" aria-label={tr('detail.region', { species: item.species })}>
+            {(['brings', 'set'] as const).map(key => (
+              <button key={key} type="button" role="tab" id={`detail-tab-${key}`} aria-selected={tab === key} aria-controls="detail-tabpanel"
+                className={tab === key ? 'on' : undefined} onClick={() => chooseTab(key)}>{tr(`detail.tab.${key}`)}</button>
+            ))}
+          </div>
+        )}
+        <div className="detail-panel" {...(tabs ? { role: 'tabpanel', id: 'detail-tabpanel', 'aria-labelledby': `detail-tab-${tab}` } : {})}>
+        {showBrings && (
         <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
           <h4>{tr('detail.brings')}</h4>
           <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
         </section>
-        {showLoses && (
+        )}
+        {showBrings && showLoses && (
           <section className="detail-sec loses">
             <h4>{tr('detail.loses')}</h4>
             <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
@@ -251,7 +285,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         )}
 
         {/* La riga per area solo nella versione estesa (team chiuso): i gruppi di Porta e Toglie dicono già dove si sale */}
-        {after && teamCollapsed && (
+        {after && showAreas && (
           <section className="detail-sec wide effect">
             {/* Sotto Porta e Toglie, senza etichetta visibile (ne è il risultato; col primo Pokémon resta "Voto con lui da
                 solo"): una riga, per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
@@ -290,6 +324,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
 
         {/* Il set consigliato come nella carta del tooltip: griglia (strumento, natura, abilità, EV, Tera), statistiche a
             esagono e mosse come pillole */}
+        {showSet && (
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
           {/* Una fascia sola, come la schermata riassunto dei giochi: a sinistra l'esagono, a destra le mosse 2 per 2 e sotto
@@ -302,11 +337,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             </div>
           </div>
         </section>
+        )}
 
         {/* Meta, solo col team chiuso (c'è l'altezza): a sinistra l'uso nel meta e il posto in classifica, a destra i 5
             compagni più frequenti come una classifica a barre (lunghe quanto la quota, rispetto al primo; colore del tipo);
             chi è già nel team in ciano con la spunta. Senza statistiche la sezione non c'è */}
-        {teamCollapsed && meta && (
+        {showMeta && meta && (
           <section className="detail-sec wide meta-sec">
             <h4>{tr('detail.meta')}</h4>
             <div className="detail-meta">
@@ -336,6 +372,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             </div>
           </section>
         )}
+        </div>
       </div>
 
       <div className="detail-actions">

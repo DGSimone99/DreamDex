@@ -1703,6 +1703,8 @@ export const en = {
   'detail.losesNothing': "Nothing notable",
   'detail.teamAlone': "Grade with it alone",
   'detail.set': "Suggested set",
+  'detail.tab.brings': "Brings and costs",
+  'detail.tab.set': "Suggested set",
   'detail.roles': "Set roles",
   'detail.rolesTitle': "Roles",
   'detail.meta': "Meta",

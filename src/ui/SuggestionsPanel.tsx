@@ -25,7 +25,7 @@ import { conditionLabel, neededConditions, providesAll, viaName } from '../engin
 import { Sprite } from './Sprite';
 import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
-import { SuggestionDetail } from './SuggestionDetail';
+import { SuggestionDetail, type DetailTab } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
 import { BanMark, ExclusiveMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import { useLang, useT } from '../i18n/react';
@@ -89,6 +89,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
   const listRef = useRef<HTMLOListElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  // Linguetta del dettaglio a linguette (schermi bassi): resta cambiando candidato
+  const [detailTab, setDetailTab] = useState<DetailTab>('brings');
   const { perPage, columns, tileHeight, reasons, listWidth } = usePerPage(listRef, pickerRef, teamCollapsed);
   const [chosenFilters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // I ruoli scelti in un formato che questo non offre (singolo → doppio) qui non valgono: né accesi né contati
@@ -526,6 +528,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             actionLabel={actionLabelOf(selected)}
             onAction={() => act(selected)}
             teamCollapsed={teamCollapsed}
+            tab={detailTab}
+            onTab={setDetailTab}
             sheet={sheetModal}
           />
         )}
