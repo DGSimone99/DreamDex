@@ -368,9 +368,9 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   #panel-pokemon.active { overflow: hidden; }
   .suggestions-panel { height: 100%; min-height: 0; padding-bottom: var(--sp-6); }
   .picker { flex: 1; min-height: 0; }
-  /* Lista circa 2/5, scheda del candidato 3/5. La lista non scende sotto i 436 px in cui stanno 3 carte da 130 (3 × 130 +
-     spazi 2 × 8 + margini 2 × 14 + bordo 2), finché alla scheda restano almeno 520 px: sotto, le carte vanno su 2 colonne */
-  .picker.has-detail { grid-template-columns: minmax(min(436px, calc(100% - 532px)), 2fr) minmax(0, 3fr); gap: var(--sp-8); align-items: stretch; height: 100%; }
+  /* Box + scheda laterale: la lista è larga quanto le sue colonne (--list-w da usePerPage: 3-5 carte da 140-150 px),
+     la scheda del candidato prende il resto. Prima della misura: circa 3/5 alla lista; dopo, il dettaglio prende tutto il resto (2fr da solo) */
+  .picker.has-detail { grid-template-columns: var(--list-w, minmax(0, 3fr)) minmax(0, 2fr); gap: var(--sp-8); align-items: stretch; height: 100%; }
   .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   /* La lista prende lo spazio che resta: la sua altezza dice quanti candidati per pagina (niente scrollbar) */
   .picker-list > .suggestions { flex: 1 1 0; min-height: 0; overflow: hidden; }

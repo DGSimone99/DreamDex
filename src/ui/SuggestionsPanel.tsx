@@ -482,7 +482,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <p className="visually-hidden" aria-live="polite">{cursorText}</p>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {notes}
-      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`} ref={pickerRef}>
+      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`} ref={pickerRef}
+        style={listWidth ? { '--list-w': `${listWidth}px` } as CSSProperties : undefined}>
         <div className="picker-list" ref={pickerListRef}>
           {!full && items.length > 0 && (
             <div className="list-head" ref={headRef}>
