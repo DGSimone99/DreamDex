@@ -8,7 +8,10 @@
 /* Area da almeno 24×24 per mouse e dita, oltre il disegno (il segno resta piccolo) */
 .alert-mark::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
 /* Avvisi della carta del team: in fondo alla riga del nome, sotto lo sprite (non lo coprono); nella barra compressa c'è il puntino */
-.slot-alerts { position: relative; display: flex; flex: none; gap: var(--sp-2); margin: -2px 0 -1px auto; }
+/* Fuori dalla riga del nome, nell'angolo in basso a destra dello sprite: il nome resta largo uguale (prima andava su
+   due righe e lo sprite saliva quando compariva un avviso) */
+.slot .name-line { position: relative; }
+.slot-alerts { position: absolute; z-index: 3; right: 0; bottom: calc(100% + var(--sp-2)); display: flex; gap: var(--sp-2); margin: 0; }
 .band.collapsed .slot-alerts { display: none; }
 .alert-mark.on-card {
   padding: 3px;
