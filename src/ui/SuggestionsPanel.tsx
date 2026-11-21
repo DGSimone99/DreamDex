@@ -453,6 +453,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             };
             return <CandidateCard key={item.species} {...candidate} />;
           })}
+          {/* Prima lista in calcolo: le sagome delle carte al loro posto (la griglia vera), non un riquadro vuoto */}
+          {stale && pageItems.length === 0 && Array.from({ length: perPage }, (_, i) => (
+            <li key={`skel-${i}`} className="card card-skel" aria-hidden="true">
+              <span className="card-skel-art" />
+              <span className="card-skel-plate"><span className="card-skel-line" /><span className="card-skel-line short" /></span>
+            </li>
+          ))}
         </ol>
       </>
     );

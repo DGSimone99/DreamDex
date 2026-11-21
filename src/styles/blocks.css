@@ -545,3 +545,15 @@
   .improve-down { height: 22px; }
   .improve-total { min-height: 44px; padding-block: 5px; }
 }
+
+/* Migliora i set (critique 2026-11-21): le colonne secondo la larghezza vera della finestra, non dello schermo (sul tablet
+   la finestra è larga 720 anche su uno schermo da 1024: sei colonne da 107px tagliavano nomi, EV e strumenti).
+   Sotto i 1000px tre colonne per due righe, sotto i 480 una sola */
+.improve-body { container: improve / inline-size; }
+@container improve (max-width: 999px) {
+  .improve-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .improve-mini { display: none; }
+}
+@container improve (max-width: 479px) {
+  .improve-cols { grid-template-columns: minmax(0, 1fr); }
+}

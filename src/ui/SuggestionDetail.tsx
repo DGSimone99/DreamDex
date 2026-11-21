@@ -18,6 +18,7 @@ import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
 import type { ListSprite } from './theme';
 import { Icon } from './icons';
+import { hint } from './MoveTip';
 import { BoxIcon, bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
 import { PokemonIcon } from './PokemonName';
 import { battleName, toID } from '../engine/dex';
@@ -341,7 +342,10 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
 
       <div className="detail-actions">
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
-        <button type="button" onClick={() => copyText(exportShowdown([set]))}>{tr('suggest.copySet')}</button>
+        {/* Nel dettaglio stretto (tablet, mezzo schermo) resta l'icona: il nome per i lettori di schermo e nel fumetto */}
+        <button type="button" className="detail-copy" onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
+          <Icon name="copy" /> <span className="btn-label">{tr('suggest.copySet')}</span>
+        </button>
         <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} />
       </div>
     </aside>
