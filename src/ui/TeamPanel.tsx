@@ -489,8 +489,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       <div
         className="slot-card"
         draggable
-        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…")
-        {...(collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
+        // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…"). Carta aperta: niente
+        // fumetto (col mouse ancora sopra, ridisegnando la pagina si riapriva sopra l'editor)
+        {...(open || collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
 ${tr('team.slotKey', { n: index + 1 })}`))}
         {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
@@ -535,8 +536,8 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
             tr('team.position', { n: index + 1, total }),
           ].filter(Boolean).join(', ')}
           aria-keyshortcuts={`${index + 1} Alt+ArrowLeft Alt+ArrowRight`}
-          {...bubble(`${tr('team.dragTitle')}
-${tr('team.slotKey', { n: index + 1 })}`)}
+          {...(open ? {} : bubble(`${tr('team.dragTitle')}
+${tr('team.slotKey', { n: index + 1 })}`))}
         />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
         <span className="mini-icon" aria-hidden="true">
