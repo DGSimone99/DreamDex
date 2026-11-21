@@ -107,7 +107,9 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
   return {
     covered: covered.length, total: rows.length, rows,
     failures: roleFailures(team, needs, lang),
-    bonuses: covered.filter(r => r.level === 'minor').map(r => ({ text: t(lang, 'rating.bonus.minorRole', { role: needLabel(r.key, lang) }), points: MINOR_POINTS, catalog: 'minorRole' as const })),
+    // 2026-11-21 (utente): i ruoli minori non danno più punti (erano +1 l'uno: in media +2,8 ai team da torneo e +3,2 ai
+    // medi, un regalo che non distingueva); restano nella lista. Il pivot ha il suo bonus, solo se sfruttato (pivotBonus.ts)
+    bonuses: [],
     members: team.map((set, i) => ({
       species: battleName(set), values: needs.members[i] ?? {}, reasons: reasons[i],
       primary: needs.primary[i] ?? null, credited: needs.credited[i] ?? needs.members[i] ?? {},

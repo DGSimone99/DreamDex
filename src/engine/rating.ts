@@ -12,6 +12,7 @@ import { isPassive, isStall } from './roles';
 import { hitRules, isOneType, rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, hasDoublesRole, type SubRoleValues } from './subRoles';
+import { PIVOT_POINTS, pivotLinks, type PivotParts } from './pivotBonus';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { usageOf } from './stats';
@@ -129,7 +130,7 @@ export interface RatingArea {
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
   | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'unanswered'
-  | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'weatherSabotage';
+  | 'coreTrio' | 'minorRole' | 'pivotLink' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'weatherSabotage';
 
 export interface Redundancy {
   text: string;
@@ -487,6 +488,17 @@ export function weakCoveredBonus(team: TeamSet[], analysis: TeamAnalysis, lang: 
     : [];
 }
 
+/**
+ * +1 (una volta sola, anche con più pivot) se una mossa pivot è sfruttata dal team (pivotBonus.ts): un pivot lento e
+ * difensivo che fa entrare un attaccante fragile, o un pivot veloce con chi para ogni sua debolezza. In doppio non si dà.
+ */
+export function pivotBonus(team: TeamSet[], parts: PivotParts, lang: Lang = 'it'): Redundancy[] {
+  const link = pivotLinks(team, parts)[0];
+  if (!link) return [];
+  const values = { pivot: link.pivot, move: link.move, list: link.partners.join(', ') };
+  return [{ text: t(lang, link.kind === 'slow' ? 'rating.bonus.pivotSlow' : 'rating.bonus.pivotFast', values), points: PIVOT_POINTS, catalog: 'pivotLink', key: 'pivotLink', parts: values }];
+}
+
 /** Compagni (non il portatore) che devono sfruttare un meteo, un campo o Trick Room perché valga il bonus. */
 export const CONDITION_USERS_MIN = 2;
 export const CONDITION_USED_POINTS = 1;
@@ -656,7 +668,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const trios = coreTrios(team, heldByOf(defense.coverageTypes.rows));
   const bonusItems = [
     ...coreTrioBonus(team, lang, undefined, trios), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...(oneType ? [] : conditionUsedBonus(team, lang)),
-    ...weatherBonus(team, lang).items, ...roles.bonuses,
+    ...weatherBonus(team, lang).items, ...roles.bonuses, ...(oneType ? [] : pivotBonus(team, { offense, defense, speed, roles }, lang)),
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
   // 2026-11-13: via il punto fisso per membro (+6 a un team completo, non mostrato). Lo sostituiscono le quote di Offesa e
@@ -683,12 +695,12 @@ export interface CatalogEntry {
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
   ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'weatherSabotage', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'unanswered'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
-  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
+  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'pivotLink', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
 /** Voci che esistono solo in doppio, e voci del singolo che in doppio non ci sono. */
 const DOUBLES_ONLY = new Set<CatalogKey>(['weatherSabotage']);
-const SINGLES_ONLY = new Set<CatalogKey>(['conditionUsed']);
+const SINGLES_ONLY = new Set<CatalogKey>(['conditionUsed', 'pivotLink']);
 
 /**
  * Tutti i bonus e malus possibili nel formato (`rules`; senza, quelli del singolo), con il testo per il modale; i punti
@@ -701,7 +713,7 @@ export function bonusMalusCatalog(lang: Lang, rules?: FormatRules): CatalogEntry
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
-    used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN, sabotage: SABOTAGE_POINTS,
+    pivot: PIVOT_POINTS, used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN, sabotage: SABOTAGE_POINTS,
   };
   return CATALOG_ORDER.filter(({ key }) => !(doubles ? SINGLES_ONLY : DOUBLES_ONLY).has(key)).map(({ key, kind }) => ({
     key, kind,
