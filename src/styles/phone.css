@@ -966,6 +966,9 @@ html { -webkit-tap-highlight-color: transparent; }
   .help-page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); margin-bottom: var(--sp-3); }
   .help-page-head h4 { margin: 0; }
   .help-page-head .help-back { margin: 0 calc(-1 * var(--sp-3)) 0 0; flex: none; }
+}
+/* Le carte delle proposte e le impostazioni di Completa team come sul telefono, anche sul tablet */
+@media (max-width: 1099px) {
   /* I tuoi Pokémon: solo l'icona e il lucchetto, tutti in una fila (sei ci stanno anche a 360) */
   .fill-settings .fill-mine-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
   .fill-settings .fill-keep { min-height: 44px; justify-content: center; gap: var(--sp-1); padding: 0 var(--sp-2); }
@@ -1046,8 +1049,12 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-proposal .fill-mon.is-new::before { content: ''; position: absolute; left: 22%; right: 22%; bottom: 0; height: 3px; border-radius: 2px; background: var(--accent); }
   .fill-proposal .fill-mon-sprite { height: 58px; }
   .fill-proposal .fill-mon .sprite { width: 58px; height: 58px; filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.5)); }
-  /* Niente righe grigie da riempire: mentre calcola una riga sola con Eevee che ci pensa */
-  .fill-row.fill-skeleton, .fill-row.fill-placeholder { display: none; }
+  /* Mentre calcola: in cima la riga con Eevee che ci pensa, sotto la sagoma di tre proposte (il tuo team già al suo posto,
+     i nuovi ancora da arrivare), così lo schermo non resta vuoto; finito il calcolo, niente righe vuote */
+  .fill-row.fill-placeholder { display: none; }
+  .fill-row.fill-skeleton ~ .fill-row.fill-skeleton ~ .fill-row.fill-skeleton ~ .fill-row.fill-skeleton { display: none; }
+  .fill-main { display: flex; flex-direction: column; gap: var(--sp-5); }
+  .fill-main > .fill-think { order: -1; }
   .fill-think { display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-5); border: 1px dashed var(--line); border-radius: 6px; color: var(--muted); font: 500 var(--fs-small)/1.3 var(--ui); }
   .fill-think .eevee-moment { position: static; width: 56px; height: auto; margin: 0; animation: none; }
 }
