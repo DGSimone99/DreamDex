@@ -410,11 +410,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         onFeedback={() => setFeedbackOpen(true)}
         tabs={<Tabs orientation="vertical" active={shownTab} onChange={navTo} tabs={withEditing([
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
+        // Sul computer la riga mostra solo il numero a destra (count); lo stato intero resta la descrizione della scheda
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
+          count: team.length ? { text: `${team.length}/6`, level: 'info' } : null,
           status: replaceIndex !== null && team[replaceIndex]
             ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].name || battleName(team[replaceIndex]) })}</span>
             : t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }) },
         { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
+          count: problems.length ? { text: String(problems.length), level: problems.some(p => p.severity === 'serious') ? 'serious' : 'warn' } : null,
           status: rating ? <>
             {/* Team non legale nel formato: il voto in grigio, come nella carta del voto */}
             <b className={`grade grade-${rating.grade}${problems.some(p => p.category === 'rules') ? ' illegal' : ''}`}>{rating.grade} {rating.overall}</b>
@@ -422,11 +425,15 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
               {t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })}</span></>}
           </> : t(lang, 'rail.noGrade') },
         { id: 'meta', label: t(lang, 'tabs.meta'), icon: 'globe', disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
+          count: metaOn && team.length > 0 && metaAverage !== null ? { text: formatPercent(lang, metaAverage), level: 'info' } : null,
           status: !metaOn ? t(lang, 'rail.metaOff')
             : team.length === 0 ? t(lang, 'rail.metaUsage')
             : metaAverage !== null ? t(lang, 'meta.average', { pct: formatPercent(lang, metaAverage) })
             : t(lang, 'rail.metaUsage') },
         { id: 'lists', label: t(lang, 'tabs.lists'), icon: 'star',
+          count: userLists.favorites.size || userLists.bans.size
+            ? { text: [userLists.favorites.size, userLists.bans.size].filter(Boolean).length === 2 ? `${userLists.favorites.size}·${userLists.bans.size}` : String(userLists.favorites.size || userLists.bans.size), level: 'info' }
+            : null,
           status: userLists.favorites.size || userLists.bans.size ? [
             userLists.favorites.size ? t(lang, userLists.favorites.size === 1 ? 'rail.favOne' : 'rail.favMany', { n: userLists.favorites.size }) : null,
             userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,

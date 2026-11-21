@@ -51,6 +51,8 @@
   .rail-format-main > .icon { display: block; }
   .rail-format-name { align-self: center; padding: 0; }
   .rail-settings-text { display: none; }
+  /* I numeri delle sezioni servono solo sul computer: qui c'è la riga di stato */
+  .rail .tabs.vertical .tab-count { display: none; }
   .rail-foot { flex: none; padding: 0; }
   .rail-foot .meta, .rail-links { display: none; }
   .rail-foot .lang-switch button { height: 36px; padding: 0 var(--sp-5); }
