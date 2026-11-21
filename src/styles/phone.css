@@ -363,7 +363,7 @@
   .editor-roles ul { flex-wrap: wrap; }
   .editor-foot .member-replace { height: 44px; }
 }
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   /* Statistiche senza cursori: col pollice sono imprecisi (~3 EV per pixel) e scorrendo l'editor li sposti senza volere.
      Gli EV si scrivono nel numero (tastierino numerico) o si prendono da Spread più usati */
   .stat-row { grid-template-columns: 52px 14px minmax(0, 1fr) 56px 40px; gap: var(--sp-4); padding: var(--sp-1) var(--sp-2); }
@@ -444,7 +444,7 @@
 /* ── Editor sul telefono (2026-11-19): tre schede sotto la testata ferma ────────────────────────────────── */
 /* I riquadri non si allargano oltre lo schermo per il loro contenuto (i fieldset di base non scendono sotto il contenuto) */
 .set-editor fieldset { min-inline-size: 0; }
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   /* La testata intera (nome, tipi, Set, copia, chiudi e le schede) resta ferma in alto mentre la scheda scorre */
   .drawer .set-editor .editor-head { display: block; position: sticky; top: -12px; z-index: 6; margin: -12px -14px 0; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
   .drawer .set-editor .editor-top { position: static; margin: 0; border-bottom: 0; flex-wrap: wrap; row-gap: var(--sp-4); column-gap: var(--sp-4); padding: var(--sp-5) var(--sp-6) var(--sp-4); }
@@ -576,7 +576,7 @@
   .set-editor .duel-species input { height: 40px; }
 }
 /* Telefono: il titolo dei riquadri ripete la scheda aperta; la fascia resta (ci stanno Spread e Custom Skillset), la scritta no */
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   .set-editor[data-tab] fieldset > legend:not(.visually-hidden) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .set-editor[data-tab] fieldset { padding: 0; border: 0; background: none; }
   .set-editor[data-tab] .evs > .spread-panel, .set-editor[data-tab] .set-box > .custom-toggle { position: static; justify-self: end; align-self: end; margin: 0 0 var(--sp-2); }
@@ -643,7 +643,7 @@
 
 }
 /* Editor a riepilogo da gioco: telefono e tablet in verticale */
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   /* Editor: la testata è il riepilogo del membro (non resta ferma: le schede scorrono con lei) */
   .drawer .set-editor .editor-head { position: relative; top: auto; border-bottom: 0; background: none; }
   .drawer .set-editor .editor-top { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); padding: 0; row-gap: 0; }
@@ -766,7 +766,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 .member-menu [role='menuitem'].danger, .member-menu [role='menuitem'].danger .icon { color: var(--bad); }
 
 /* ── Editor sul telefono: testata ferma che si stringe scorrendo, pulsanti tondi (2026-11-19) ───────────── */
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   /* La testata (riepilogo, Set e schede) resta ferma in alto mentre la scheda scorre */
   .drawer .set-editor .editor-head { position: sticky; top: -12px; z-index: 6; background: var(--ground); box-shadow: 0 1px 0 var(--line-soft); }
   .set-editor .editor-tabs { margin-bottom: var(--sp-5); }
@@ -785,14 +785,14 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .editor-hero > .sprite { transition: all 0.2s var(--ease); }
 
 }
-@media (max-width: 599px) and (prefers-reduced-motion: reduce), (max-width: 1099px) and (orientation: portrait) and (prefers-reduced-motion: reduce) {
+@media (max-width: 1099px) and (prefers-reduced-motion: reduce) {
   .set-editor .editor-title, .set-editor .editor-title .nickname strong, .editor-hero > .sprite { transition: none; }
 }
 
 /* ── Testata dell'editor sul telefono, giro 3 (2026-11-19): × e shiny senza cerchi, Copia nel menu Set ────── */
 /* Copia nel menu Set solo sul telefono (sul computer resta il pulsante accanto al Set) */
 .set-menu-copy { display: none; }
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   .set-menu-pop .set-menu-copy { display: inline-flex; }
   .set-menu-copy.done { color: var(--good); }
   .set-editor .editor-actions .hint-wrap:has(> .member-copy) { display: none; }
@@ -811,7 +811,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .set-editor .editor-title .nickname strong { white-space: normal; line-height: 1.05; text-align: left; }
 }
 /* Telefono: niente piede dell'editor (Ruoli e Sostituisci). Sostituisci sta nel menu del membro (tenendo premuta la carta) */
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   .set-editor .editor-foot { display: none; }
 }
 
@@ -1132,7 +1132,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 
 /* Telefono: scorrendo l'editor il riepilogo del membro si stringe a una riga (sprite piccolo, nome, voto, ×): Set e
    schede restano sotto, ferme, e le righe hanno più posto (anche con la tastiera aperta) */
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   /* La testata parte 12px sopra il bordo dello schermo: 68 per averne 56 a vista */
   .drawer.shrunk .set-editor .editor-title { min-height: 68px; padding: 12px 140px 0 64px; align-content: center; }
   .drawer.shrunk .set-editor .editor-title :is(.species-tag, .types, .shiny-toggle, .nickname-pencil) { display: none; }
@@ -1147,7 +1147,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 /* Telefono, Statistiche: "EV" accanto al totale, sopra le caselle (non sopra i valori); EV a 0 e IV a 31 col
    riquadro leggero anche senza mouse, così si vede che si toccano. ⇄ più alto (28) con la zona da 44 che non entra
    nel campo della mossa sotto */
-@media (max-width: 599px), (max-width: 1099px) and (orientation: portrait) {
+@media (max-width: 1099px) {
   .set-editor .stat-head .ev-total .ev-head { justify-self: end; margin-right: var(--sp-3); }
   .set-editor .stat-row .ev-input.zero:not(:focus), .set-editor .stat-row .iv-input.max { border-color: var(--line-soft); }
   .set-editor .field-swap { height: 28px; padding: 0 var(--sp-4); }
@@ -1172,77 +1172,142 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .set-editor .duel-buff::before { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%; }
 }
 
-/* ── Tablet (600–1099 px), 2026-11-21: la fascia del team come sul computer ─────────────────────────────────
-   Sei carte in fila e a destra il voto compatto senza barre (come il computer sotto i 1250 px): la fascia è alta
-   ~220 px e non metà schermo. La testata del team ha le scorciatoie a sola icona (il nome nel fumetto e per i lettori
-   di schermo), così non esce dallo schermo. */
+/* ══ Tablet (600–1099 px), 2026-11-21: verticale = carte orizzontali 3×2 e striscia del voto (A); orizzontale = la
+   squadra in una colonna a sinistra, come nei giochi (C) ══════════════════════════════════════════════════════════ */
 @media (min-width: 600px) and (max-width: 1099px) {
-  .band:not(.collapsed) { display: grid; grid-template-columns: minmax(0, 1fr) 136px; align-items: stretch; gap: var(--sp-6); padding: var(--sp-6) var(--sp-9) var(--sp-8); }
-  .band:not(.collapsed) > .team, .band:not(.collapsed) > .grade-badge { order: 0; margin: 0; }
-  .band:not(.collapsed) .team-head { padding-inline: 0; overflow: visible; margin-bottom: var(--sp-5); }
-  .band:not(.collapsed) .slots { padding: 0; gap: var(--sp-4); }
-  .band .team-head :not(.team-guide) > .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .band .team-head .team-action, .band .team-quick .popover > summary { width: 40px; padding: 0; justify-content: center; }
-  .band .team-quick .saved-count { display: none; }
-  /* Carte: sprite e nome; alte quanto il voto accanto (niente vuoto sotto). Carte strette: il nome può andare a capo
-     (agli spazi e ai trattini) e l'icona dello strumento gli lascia il posto (lo strumento è nell'editor e nel fumetto) */
-  .band:not(.collapsed) .slots { align-items: stretch; }
-  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { height: auto; min-height: 160px; }
-  .band:not(.collapsed) .slot .name-line .held { display: none; }
-  .band:not(.collapsed) .slot .name { --name-room: 0px; }
-  /* Lo sprite al centro dello spazio che resta sopra il nome (la carta è alta quanto il voto) */
-  .band:not(.collapsed) .slot > .slot-card .sprite-wrap { display: grid; place-items: center; }
-  /* Il voto come sul computer stretto: fascia, lettera, punteggio e giudizio, poi le aree in una colonna senza barre */
-  .band:not(.collapsed) .grade-badge { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; align-items: end; gap: 0 var(--sp-4); padding: 0 var(--sp-5) var(--sp-5); }
-  .band:not(.collapsed) .grade-badge .grade-head { grid-column: 1 / -1; grid-row: 1; margin: 0 -10px var(--sp-4); }
-  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 2 / span 2; align-self: end; font-size: 46px; }
-  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 2; font-size: var(--fs-title); }
-  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 3; }
-  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 1 / -1; grid-row: 4; grid-template-columns: minmax(0, 1fr); grid-auto-rows: min-content; align-content: end; align-self: end; gap: 0; margin-top: var(--sp-4); }
-  .band:not(.collapsed) .grade-badge .grade-area .meter { display: none; }
-  .band:not(.collapsed) .grade-badge button.grade-area:not(.grade-roles, .grade-bm) { grid-template-columns: minmax(0, 1fr) 24px 10px; }
-  /* Righe da 28 a vista (cinque da 44 farebbero il voto alto il doppio delle carte); la zona del tocco resta 44 (::after) */
-  .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { min-height: 28px; }
-}
-/* Tablet largo (da 900 px): carte più larghe, anche i tipi e il ruolo come sul computer */
-@media (min-width: 900px) and (max-width: 1099px) {
-  .band:not(.collapsed) > .grade-badge { min-width: 0; }
-  .band:not(.collapsed) { grid-template-columns: minmax(0, 1fr) 150px; }
-  .band:not(.collapsed) .slot > .slot-card > .types { display: flex; }
-  .band:not(.collapsed) .slot > .slot-card > .roles { display: block; }
-  /* Carte larghe: il nome su una riga (si rimpicciolisce fino a 13px, poi senza forma), torna l'icona dello strumento */
-  .band:not(.collapsed) .slot .name-line .held { display: grid; }
-  .band:not(.collapsed) .slot .name { --name-room: 26px; -webkit-line-clamp: 1; white-space: nowrap;
-    font-size: min(var(--name-fs), max(13px, (100cqi - var(--name-room) - 3px) / var(--name-em-whole, var(--name-em, 5.6)))); }
+  /* Testata del team per significato: chi è il team (targa col nome del team salvato), l'azione principale, un solo menu
+     "Team ▾" per i file (Team salvati, Importa, Esporta, link, Svuota). Le scorciatoie vere restano vive ma fuori vista */
+  .team-head { flex-wrap: nowrap; gap: var(--sp-5); }
+  .team-head :is(.team-saved, .team-quick) { position: absolute; width: 0; height: 0; margin: 0; overflow: visible; visibility: hidden; }
+  .team-head :is(.team-saved, .team-quick) :is(details[open] > :not(summary), .export-note) { visibility: visible; }
+  .team-head .team-plate { flex: 0 1 auto; min-width: 0; }
+  .team-head .team-guide-slot { order: 2; margin-left: auto; }
+  .team-more { order: 3; flex: none; }
+  .team-more-button { position: relative; display: inline-flex; align-items: center; gap: var(--sp-4); height: 40px; padding: 0 var(--sp-6) 0 var(--sp-7); border-radius: 9px 2px 9px 2px;
+    background: var(--raised); border: 1px solid var(--line); font: 600 var(--fs-body)/1 var(--ui); color: var(--text); }
+  .team-more-button > .icon { display: none; }
+  .team-more-button::before { content: ''; order: 2; width: 7px; height: 7px; margin-top: -4px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+  .team-more-button[aria-expanded='true'] { border-color: var(--accent); }
+  .team-head:has(.plate-dot) .team-more-button::after { content: ''; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--ground); }
+  /* Il menu: voci col nome e l'icona (dal basso in verticale, a tendina in orizzontale) */
+  .team-more-sheet { display: flex; flex-direction: column; padding: var(--sp-3) 0; background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgb(0 0 0 / 0.5); color: var(--text); }
+  .team-more-title { margin: 0; padding: var(--sp-3) var(--sp-7); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .team-more-sheet [role='menuitem'] { display: flex; align-items: center; gap: var(--sp-6); height: 48px; padding: 0 var(--sp-7); justify-content: flex-start; border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; font: 600 var(--fs-body)/1 var(--ui); color: var(--text); }
+  .team-more-sheet [role='menuitem']:hover { background: var(--raised); }
+  .team-more-sheet [role='menuitem'] .icon { width: 20px; height: 20px; color: var(--accent); }
+  .team-more-sheet [role='menuitem'].danger, .team-more-sheet [role='menuitem'].danger .icon { color: var(--bad); }
+  .team-head:has(.plate-dot) .team-more-sheet [data-saved]::after { content: ''; margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+  .band .team-head .team-guide { height: 40px; padding: 0 var(--sp-8); }
+  /* Il nome di ogni Pokémon sta su una riga: si rimpicciolisce fino a 13px, poi resta il nome senza forma */
+  .band:not(.collapsed) .slot .name { --name-fs: 16px; -webkit-line-clamp: 1; white-space: nowrap;
+    font-size: min(var(--name-fs), max(13px, (100cqi - var(--name-room, 26px) - 3px) / var(--name-em-whole, var(--name-em, 5.6)))); }
+  .slot-pointer, .band-toggle { display: none !important; }
 }
 
-/* ── Tablet in orizzontale: l'editor del computer a due colonne (Statistiche | Set e Sfida), tutto in una schermata ── */
-@media (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px) {
-  .drawer { padding: var(--sp-6) max(var(--sp-9), env(safe-area-inset-right)) var(--sp-7) max(var(--sp-9), env(safe-area-inset-left)); }
-  .set-editor { grid-template-columns: minmax(330px, 0.62fr) minmax(0, 1.38fr); }
-  .drawer .set-editor .editor-head { display: flex; }
-  .drawer .set-editor .editor-top { position: static; margin: 0; padding: 0; border-bottom: 0; background: none; }
-  /* Il voto del team accanto al nome (non sopra), come una targhetta */
-  .set-editor .editor-title:has(.editor-grade) { padding-top: 0; }
-  .set-editor .editor-title .editor-grade { position: static; order: -1; }
-  .editor-foot { flex-direction: row; align-items: center; }
-  .editor-roles ul { flex-wrap: nowrap; }
+/* ── A · Tablet in verticale (e orizzontale stretto): striscia del voto, poi la testata e le carte orizzontali 3×2 ── */
+@media (min-width: 600px) and (max-width: 1099px) and (not ((orientation: landscape) and (min-width: 760px) and (min-height: 501px))) {
+  .band:not(.collapsed) { display: flex; flex-direction: column; gap: var(--sp-6); padding: var(--sp-7) var(--sp-9) var(--sp-8); }
+  .band:not(.collapsed) > .grade-badge { order: 1; margin: 0; }
+  .band:not(.collapsed) > .team { order: 2; }
+  .band:not(.collapsed) .team-head { margin: 0 0 var(--sp-5); padding: 0; overflow: visible; }
+  /* Il voto in una striscia: lettera, punteggio e giudizio, poi le cinque aree affiancate (tocco = l'area in Analisi) */
+  .band:not(.collapsed) .grade-badge { display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: 0 var(--sp-7);
+    padding: var(--sp-5) 84px var(--sp-5) var(--sp-7); border-radius: 0; box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .band:not(.collapsed) .grade-badge .grade-head { display: none; }
+  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; align-self: center; font-size: 56px; }
+  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; font-size: var(--fs-headline); white-space: nowrap; }
+  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 2; align-self: start; font-size: var(--fs-caption); }
+  .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .band:not(.collapsed) .grade-badge .grade-tools { top: 50%; right: var(--sp-5); height: auto; translate: 0 -50%; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 32px; height: 32px; color: var(--muted); border-color: var(--line); }
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 1 / 3; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); margin: 0; }
+  .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) {
+    grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 4px; align-content: start; row-gap: 4px; min-height: 58px; margin: 0; padding: var(--sp-3) var(--sp-4); border-radius: 3px; background: var(--raised); }
+  .band:not(.collapsed) .grade-badge button.grade-area > span:first-child { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); }
+  .band:not(.collapsed) .grade-badge button.grade-area > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b,
+  .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 1; grid-row: 2; text-align: left; font: italic 800 var(--fs-title)/1 var(--display); }
+  .band:not(.collapsed) .grade-badge button.grade-area > .meter { display: block; grid-column: 1; grid-row: 3; width: 100%; height: 4px; }
+  .band:not(.collapsed) .grade-badge button.grade-area > svg { display: none; }
+  /* Le carte stese in larghezza: lo sprite a sinistra, a destra nome, abilità, tipi e ruolo; tre per riga */
+  .band:not(.collapsed) .slots { display: grid; grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-columns: auto; gap: var(--sp-5); padding: 0; overflow: visible; scroll-snap-type: none; }
+  .band:not(.collapsed) .slot > .slot-card { display: grid; grid-template-columns: 80px minmax(0, 1fr); grid-template-rows: 1fr auto auto auto auto 1fr; column-gap: var(--sp-4); row-gap: 3px;
+    height: 112px; min-height: 0; padding: var(--sp-3) var(--sp-6) var(--sp-5) var(--sp-2); align-items: center; }
+  .band:not(.collapsed) .slot.empty { height: 112px; min-height: 0; flex-direction: row; }
+  .band:not(.collapsed) .slot > .slot-card .sprite-wrap { grid-column: 1; grid-row: 1 / -1; flex: none; width: 80px; height: 80px; min-height: 0; display: grid; place-items: center; }
+  .band:not(.collapsed) .slot > .slot-card .sprite { width: 80px; height: 80px; }
+  .band:not(.collapsed) .slot > .slot-card > .name-line { grid-column: 2; grid-row: 2; margin: 0; padding-right: 22px; }
+  /* Lo strumento non sta accanto al nome (lo dice il fumetto della carta e l'editor): il nome ha tutta la riga */
+  .band:not(.collapsed) .slot .name-line .held { display: none; }
+  .band:not(.collapsed) .slot .name { --name-room: 0px; }
+  .band:not(.collapsed) .slot > .slot-card > .ability { grid-column: 2; grid-row: 3; display: block; font-size: var(--fs-caption); }
+  .band:not(.collapsed) .slot > .slot-card > .types { grid-column: 2; grid-row: 4; display: flex; margin: 0; }
+  .band:not(.collapsed) .slot > .slot-card > .roles { grid-column: 2; grid-row: 5; display: block; font-size: var(--fs-caption); line-height: 16px; }
+  .band:not(.collapsed) .slot :is(.favorite, .remove) { top: 0; }
+  .band:not(.collapsed) .slot .favorite { top: auto; bottom: 2px; right: 0; }
 }
-/* Tablet stretto (600–759 px): sei in fila sarebbero larghe 70 px; meglio tre per riga (3×2, come sul telefono), alte
-   insieme quanto il voto accanto */
+/* Tablet stretto in verticale (600–759): due carte per riga, sei in tre righe */
 @media (min-width: 600px) and (max-width: 759px) {
-  .band:not(.collapsed) .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { min-height: 118px; }
-  /* La testata del team non sta su una riga accanto al voto: le scorciatoie vanno sotto, a destra */
-  .band:not(.collapsed) .team-head { flex-wrap: wrap; row-gap: var(--sp-4); }
-  .band:not(.collapsed) .team-quick { flex: 1 1 100%; }
+  .band:not(.collapsed) .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-/* Tablet in verticale: l'editor a schede del telefono, ma con lo spazio del tablet: Strumento e Abilità affiancati,
-   mosse due per riga, lo sprite della testata più grande */
-@media (min-width: 600px) and (max-width: 1099px) and (orientation: portrait) {
-  .set-editor .editor-group { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .set-editor .editor-group.set-box, .set-editor .editor-group.duel { grid-template-columns: minmax(0, 1fr); }
-  .set-editor .editor-title { min-height: 176px; padding-right: 188px; }
-  .editor-hero > .sprite { width: 152px; height: 152px; right: var(--sp-9); }
-  .drawer.shrunk .editor-hero > .sprite { width: 52px; height: 52px; }
+
+/* ── C · Tablet in orizzontale: la squadra in una colonna a sinistra, la sezione (e l'editor) a destra ─────────────── */
+@media (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px) {
+  .main { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: start; }
+  .main > * { grid-column: 2; min-width: 0; }
+  .main > .band { grid-column: 1; grid-row: 1 / span 20; position: sticky; top: var(--top-h); z-index: 20;
+    height: calc(100dvh - var(--top-h) - var(--bottom-h) - var(--safe-b)); overflow-y: auto; overscroll-behavior: contain;
+    display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-6) var(--sp-6) var(--sp-7); border-right: 1px solid var(--line-soft); border-bottom: 0; }
+  .main > .band > .grade-badge { order: 1; margin: 0; }
+  .main > .band > .team { order: 2; display: flex; flex-direction: column; flex: 1 0 auto; }
+  /* Il voto compatto: lettera, punteggio e giudizio; sotto le aree in due righe (Offesa, Difesa, Velocità / Ruoli, Bonus/Malus) */
+  .band:not(.collapsed) .grade-badge { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto auto; align-items: center; gap: 0 var(--sp-5);
+    padding: var(--sp-4) var(--sp-5) var(--sp-5); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .band:not(.collapsed) .grade-badge .grade-head { display: none; }
+  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; font-size: 48px; }
+  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; font-size: var(--fs-title-l); white-space: nowrap; }
+  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 2; align-self: start; font-size: var(--fs-caption); }
+  .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: row; flex-wrap: wrap; gap: 0 var(--sp-3); }
+  .band:not(.collapsed) .grade-badge .grade-tools { top: var(--sp-3); right: var(--sp-3); height: auto; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 30px; height: 30px; color: var(--muted); border-color: var(--line); }
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-2); margin: var(--sp-4) 0 0; }
+  .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) {
+    grid-column: span 2; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 4px; row-gap: 3px; min-height: 0; margin: 0; padding: var(--sp-2) var(--sp-3); border-radius: 3px; background: var(--raised); }
+  .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { grid-column: span 3; grid-template-rows: auto; }
+  .band:not(.collapsed) .grade-badge button.grade-area > span:first-child { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); }
+  .band:not(.collapsed) .grade-badge button.grade-area > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 2; grid-row: 1; text-align: right; }
+  .band:not(.collapsed) .grade-badge button.grade-area > .meter { display: block; grid-column: 1 / -1; grid-row: 2; width: 100%; height: 4px; }
+  .band:not(.collapsed) .grade-badge button.grade-area > svg { display: none; }
+  /* Testata: targa e menu Team; sotto, larga, l'azione principale */
+  .band:not(.collapsed) .team-head { flex-wrap: wrap; row-gap: var(--sp-4); margin: 0 0 var(--sp-5); padding: 0; overflow: visible; }
+  .band:not(.collapsed) .team-head .team-plate { flex: 1 1 0; }
+  .band:not(.collapsed) .team-head .team-guide-slot { order: 4; flex: 1 1 100%; margin: 0; }
+  .band:not(.collapsed) .team-head .team-guide-slot .team-guide, .band:not(.collapsed) .team-head .fill-anchor { width: 100%; justify-content: center; }
+  /* Sei righe come la squadra nei giochi: sprite, nome, tipi e ruolo; × a destra */
+  .band:not(.collapsed) .slots { display: grid; grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); grid-auto-columns: auto; gap: var(--sp-2); padding: 0; overflow: visible; scroll-snap-type: none; }
+  .band:not(.collapsed) .slot > .slot-card { display: grid; grid-template-columns: 58px minmax(0, 1fr); grid-template-rows: 1fr auto auto 1fr; column-gap: var(--sp-4); row-gap: 3px;
+    height: 58px; min-height: 0; padding: 0 40px 0 var(--sp-1); align-items: center; border-radius: 2px 12px 2px 12px; }
+  .band:not(.collapsed) .slot > .slot-card::after { left: 0; right: auto; top: 0; bottom: 0; width: 3px; height: auto; background: linear-gradient(180deg, var(--t1) 50%, var(--t2) 50%); }
+  .band:not(.collapsed) .slot.open > .slot-card { transform: none; box-shadow: inset 0 0 0 2px var(--accent-2); }
+  .band:not(.collapsed) .slot.open > .slot-card::after { background: var(--accent-2); }
+  .band:not(.collapsed) .slot.empty { height: 58px; min-height: 0; flex-direction: row; border-radius: 2px 12px 2px 12px; }
+  .band:not(.collapsed) .slot.empty .empty-ring { width: 32px; height: 32px; }
+  .band:not(.collapsed) .slot > .slot-card .sprite-wrap { grid-column: 1; grid-row: 1 / -1; flex: none; width: 56px; height: 56px; min-height: 0; display: grid; place-items: center; }
+  .band:not(.collapsed) .slot > .slot-card .sprite { width: 56px; height: 56px; }
+  /* I tipi come icone (il nome nel fumetto): accanto c'è il ruolo */
+  .band:not(.collapsed) .slot > .slot-card .type-chip > span { display: none; }
+  .band:not(.collapsed) .slot > .slot-card .types { gap: 3px; }
+  .band:not(.collapsed) .slot > .slot-card > .name-line { grid-column: 2; grid-row: 2; margin: 0; }
+  .band:not(.collapsed) .slot > .slot-card > :is(.ability, .stats-badge) { display: none; }
+  .band:not(.collapsed) .slot > .slot-card > .types { grid-column: 2; grid-row: 3; display: flex; margin: 0; }
+  .band:not(.collapsed) .slot > .slot-card > .roles { grid-column: 2; grid-row: 3; display: block; margin-left: 46px; font-size: var(--fs-caption); line-height: 18px; }
+  .band:not(.collapsed) .slot .favorite { display: none; }
+  /* Il triangolo d'avviso in fondo alla riga del nome (non sopra la riga) */
+  .band:not(.collapsed) .slot .slot-alerts { position: static; margin-left: var(--sp-3); }
+  .band:not(.collapsed) .slot .remove { top: 50%; right: 2px; translate: 0 -50%; }
+  /* L'editor si apre a destra: il team resta in vista nella colonna */
+  .drawer { position: fixed; inset: var(--top-h) 0 calc(var(--bottom-h) + var(--safe-b)) 300px; border-top: 0; border-left: 3px solid var(--accent-2); }
+  .set-editor .editor-title { min-height: 120px; }
+  .editor-hero > .sprite { width: 104px; height: 104px; }
+  html:has(.band:not(.collapsed) .slot.open) { overflow: visible; }
 }

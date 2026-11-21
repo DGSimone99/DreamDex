@@ -42,7 +42,7 @@ import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
-import { SHORT_SCREEN, useMediaQuery } from './ui/useMediaQuery';
+import { SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
 import { SHEET_QUERY } from './ui/useAnchoredPop';
 import { AutoBand } from './ui/AutoBand';
 
@@ -184,7 +184,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const phone = useMediaQuery(SHEET_QUERY);
   const bandControl = useRef<(() => void) | null>(null);
   // Fuori dal telefono; sul telefono decide AutoBand (le sezioni lo vedono sempre grande: lì la pagina scorre)
-  const collapsed = editingOpen ? short : savedCollapsed;
+  // Tablet in orizzontale: il team è la colonna a sinistra, sempre intera (niente fascia da ridurre)
+  const tabletSide = useMediaQuery(TABLET_SIDE_QUERY);
+  const collapsed = tabletSide ? false : editingOpen ? short : savedCollapsed;
   const sectionsCollapsed = phone ? false : collapsed;
   const toggleCollapsed = () => {
     if (editingOpen) return;
@@ -471,7 +473,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
           incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { navTo('analysis'); setAnalysisView(area); }} />
         {/* Niente freccia mentre l'editor è aperto: lì il team ha una posizione fissa */}
-        {!editingOpen && !phone && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
+        {!editingOpen && !phone && !tabletSide && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />
         </button>}

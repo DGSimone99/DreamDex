@@ -1213,6 +1213,7 @@ STATES['format-menu-en'] = { ...STATES['format-menu'], lang: 'en' };
 const editorThen = (then: (p: Page) => Promise<boolean | string>): State => ({ run: async p => { const ok = await STATES.editor.run!(p); if (ok !== true) return ok; await wait(300); return then(p); } });
 STATES['editor-tab-stats'] = editorThen(p => clickText(p, '.editor-tabs [role="tab"]', /^(Statistiche|Stats)$/));
 STATES['editor-tab-duel'] = editorThen(p => clickText(p, '.editor-tabs [role="tab"]', /^(Sfida|Matchup)$/));
+STATES['team-menu'] = { run: async p => { const el = await p.$('.team-more-button'); if (!el) return false; await el.click(); await wait(500); return true; } };
 STATES['editor-item-menu'] = editorThen(async p => { const el = await p.$('.slot.open .drawer .set-box .set-plates .set-plate'); if (!el) return false; const b = await el.boundingBox(); if (!b) return 'no box'; await p.mouse.click(b.x + b.width * 0.6, b.y + b.height / 2); await wait(600); return true; });
 // Il controllo del testo (--scan) come stringa: dentro page.evaluate niente funzioni con nome (tsx aggiunge __name)
 const SCAN_TEXT = `(() => {

@@ -387,14 +387,14 @@
 .set-editor .set-box > .custom-toggle .hint-bubble { left: auto; right: 0; top: calc(100% + 4px); }
 /* Sotto i 1440 px le Statistiche (senza più la colonna della base) cedono un po' di larghezza a Set e Mosse: i valori delle
    lastre ("Capsula energetica") restano interi */
-@media (min-width: 1100px) and (max-width: 1439px), (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px) {
+@media (min-width: 1100px) and (max-width: 1439px) {
   .set-editor { grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr); }
   /* Strumento un po' più largo dell'Abilità: i nomi degli strumenti sono i più lunghi ("Capsula energetica") */
   .set-editor .set-box .set-plates { grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr); }
 }
 /* Sotto i 1280 px il Set e la Sfida hanno bisogno di ogni pixel (mosse e strumento interi, la mossa della Sfida leggibile):
    le Statistiche tengono solo quanto serve alle righe (nome, valore, EV, IV) */
-@media (min-width: 1100px) and (max-width: 1279px), (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px) {
+@media (min-width: 1100px) and (max-width: 1279px) {
   .set-editor { grid-template-columns: minmax(330px, 0.62fr) minmax(0, 1.38fr); }
   .set-editor .move-combo { --mvp-tail-w: 60px; }
   /* Teste delle targhette più strette */
@@ -440,7 +440,7 @@
  */
 .set-editor fieldset.evs { padding-top: var(--sp-8); }
 .set-editor .evs .speed-line { min-height: 36px; }
-@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)), (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px) {
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .set-editor fieldset.evs { padding-top: var(--sp-5); }
   .nature-diamond { margin: var(--sp-5) 0 var(--sp-3); }
   .set-editor .evs .speed-line { min-height: 32px; }

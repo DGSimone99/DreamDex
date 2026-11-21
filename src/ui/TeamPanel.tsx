@@ -41,7 +41,7 @@ import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
 import { useMediaQuery } from './useMediaQuery';
 import { TOUCH_QUERY } from './TouchTips';
-import { SHEET_QUERY, supportsPopover, useAnchoredPop } from './useAnchoredPop';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
 import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
@@ -897,14 +897,15 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
   }, [team, data, format]);
   // Completa team: pannello con le proposte e i team da torneo
   const [filling, setFilling] = useState(false);
-  // Telefono: Team salvati, Importa, Esporta, link e Svuota in un menu "…" che si apre dal basso, ognuna col suo nome.
+  // Telefono e tablet: Team salvati, Importa, Esporta, link e Svuota in un solo menu (sul telefono "…", sul tablet "Team ▾"),
+  // ognuna col suo nome; dal basso col tablet in verticale e sul telefono, a tendina col tablet in orizzontale.
   // Le voci premono i pulsanti veri (nascosti a vista ma vivi), così i loro pannelli si aprono come sempre
-  const phoneMenu = useMediaQuery(SHEET_QUERY);
+  const phoneMenu = useMediaQuery('(max-width: 1099px)');
   const [moreOpen, setMoreOpen] = useState(false);
   const moreButton = useRef<HTMLButtonElement>(null);
   const moreSheet = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
-  useAnchoredPop(moreButton, moreSheet, moreOpen, { sheet: true, onDismiss: () => setMoreOpen(false) });
+  useAnchoredPop(moreButton, moreSheet, moreOpen, { sheet: true, width: 260, align: 'end', gap: 6, onDismiss: () => setMoreOpen(false) });
   const pressReal = (selector: string) => {
     setMoreOpen(false);
     requestAnimationFrame(() => headRef.current?.querySelector<HTMLElement>(selector)?.click());
@@ -1056,7 +1057,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
         {phoneMenu && (
           <div className="team-more">
             <button type="button" className="team-more-button" ref={moreButton} aria-label={t(lang, 'team.more')} aria-haspopup="menu"
-              aria-expanded={moreOpen} onClick={() => setMoreOpen(open => !open)}><Icon name="dots" /></button>
+              aria-expanded={moreOpen} onClick={() => setMoreOpen(open => !open)}><Icon name="dots" /><span className="team-more-label" aria-hidden="true">Team</span></button>
             {moreOpen && (
               <div className="team-more-sheet" ref={moreSheet} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={t(lang, 'team.more')}
                 onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMoreOpen(false); moreButton.current?.focus(); } }}>
