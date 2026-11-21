@@ -526,7 +526,7 @@ const STATES: Record<string, State> = {
       const bottom = el => { const n = textOf(el); if (!n) return NaN; const r = document.createRange(); r.selectNodeContents(n); const b = r.getClientRects()[0]; return b ? b.bottom : NaN; };
       return g.classList[1] + ':' + (bottom(g.querySelector('.bring-label')) - bottom(g.querySelector('li'))).toFixed(1);
     }).join(' ')`)}`);
-    return (await p.evaluate(() => !!document.querySelector('.detail .bring-groups.loss, .detail .loses'))) || 'no Toglie';
+    return (await p.evaluate(() => !!document.querySelector('.detail .bring-groups.loss, .detail .loses, .detail #detail-tab-loses'))) || 'no Toglie';
   } },
   'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
   'pokemon-hover-last': { run: async p => hoverCard(p, 5) },

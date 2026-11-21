@@ -902,3 +902,15 @@ describe('carta Pedana', () => {
     }
   });
 });
+
+describe('motivi delle carte', () => {
+  it('una riga di motivi troppo larga resta allineata all’inizio (centro "sicuro"): non perde il segno né l’inizio della parola', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/suggestions.css'), 'utf8');
+    const rule = css.match(/\.reason\.has-sym \{[^}]*\}/)![0];
+    expect(rule).toContain('justify-content: safe center');
+    // Anche il contenitore dei motivi: una riga più larga della carta parte dal bordo sinistro, non esce dai due lati
+    const box = css.match(/\.card \.who small \{[^}]*\}/)![0];
+    expect(box).toContain('align-items: safe center');
+    expect(css).toMatch(/\.card \.reason \{[^}]*max-width: 100%/);
+  });
+});

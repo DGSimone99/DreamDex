@@ -85,9 +85,10 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * esagono, pillole delle mosse), le azioni.
  */
 /** Versioni del dettaglio, dalla più ricca: 0 con aree e Meta, 1 con le aree (solo a team chiuso), 2 normale, 3 testata
- *  bassa e niente esagono, 4 testata bassa e due linguette (Porta e Toglie · Set consigliato). */
-export type DetailLevel = 0 | 1 | 2 | 3 | 4;
-export type DetailTab = 'brings' | 'set';
+ *  bassa e niente esagono, 4 testata bassa e due linguette (Porta e Toglie · Set consigliato), 5 (solo se c'è Toglie)
+ *  tre linguette: Porta · Toglie · Set consigliato. */
+export type DetailLevel = 0 | 1 | 2 | 3 | 4 | 5;
+export type DetailTab = 'brings' | 'loses' | 'set';
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
 const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
 
@@ -172,6 +173,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // e quando la finestra cambia misura
   const bodyRef = useRef<HTMLDivElement>(null);
   const start: DetailLevel = teamCollapsed ? 0 : 2;
+  // Tre linguette solo se c'è un Toglie da separare
+  const lastLevel: DetailLevel = showLoses ? 5 : 4;
   const [level, setLevel] = useState<DetailLevel>(start);
   const [ownTab, setOwnTab] = useState<DetailTab>('brings');
   const tab = tabProp ?? ownTab;
@@ -180,7 +183,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   useLayoutEffect(() => setLevel(start), [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
-    if (level < 4 && wideScreen() && body && body.scrollHeight - body.clientHeight > 1) setLevel((level + 1) as DetailLevel);
+    if (level < lastLevel && wideScreen() && body && body.scrollHeight - body.clientHeight > 1) setLevel((level + 1) as DetailLevel);
   });
   const startRef = useRef(start);
   startRef.current = start;
@@ -191,9 +194,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   }, []);
   const showAreas = teamCollapsed && level <= 1;
   const showMeta = teamCollapsed && level === 0;
-  const tabs = level === 4;
-  const showBrings = !tabs || tab === 'brings';
-  const showSet = !tabs || tab === 'set';
+  const tabs = level >= 4;
+  // Tre linguette solo quando c'è Toglie e due non bastano; con due, "Toglie" sta con Porta
+  const tabKeys: DetailTab[] = level === 5 ? ['brings', 'loses', 'set'] : ['brings', 'set'];
+  const shownTab: DetailTab = tabKeys.includes(tab) ? tab : 'brings';
+  const showBrings = !tabs || shownTab === 'brings';
+  const showLosesPart = !tabs || shownTab === 'loses' || (level === 4 && shownTab === 'brings');
+  const showSet = !tabs || shownTab === 'set';
 
   return (
     <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 3 ? ' tight compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
@@ -264,20 +271,22 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         {/* Schermo basso: Porta e Toglie da una parte, il set dall'altra, una alla volta */}
         {tabs && (
           <div className="detail-tabs" role="tablist" aria-label={tr('detail.region', { species: item.species })}>
-            {(['brings', 'set'] as const).map(key => (
-              <button key={key} type="button" role="tab" id={`detail-tab-${key}`} aria-selected={tab === key} aria-controls="detail-tabpanel"
-                className={tab === key ? 'on' : undefined} onClick={() => chooseTab(key)}>{tr(`detail.tab.${key}`)}</button>
+            {tabKeys.map(key => (
+              <button key={key} type="button" role="tab" id={`detail-tab-${key}`} aria-selected={shownTab === key} aria-controls="detail-tabpanel"
+                className={shownTab === key ? 'on' : undefined} onClick={() => chooseTab(key)}>
+                {level === 5 && key === 'brings' ? tr('detail.brings') : level === 5 && key === 'loses' ? tr('detail.loses') : tr(`detail.tab.${key === 'loses' ? 'brings' : key}`)}
+              </button>
             ))}
           </div>
         )}
-        <div className="detail-panel" {...(tabs ? { role: 'tabpanel', id: 'detail-tabpanel', 'aria-labelledby': `detail-tab-${tab}` } : {})}>
+        <div className="detail-panel" {...(tabs ? { role: 'tabpanel', id: 'detail-tabpanel', 'aria-labelledby': `detail-tab-${shownTab}` } : {})}>
         {showBrings && (
         <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
           <h4>{tr('detail.brings')}</h4>
           <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
         </section>
         )}
-        {showBrings && showLoses && (
+        {showLosesPart && showLoses && (
           <section className="detail-sec loses">
             <h4>{tr('detail.loses')}</h4>
             <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />

@@ -545,8 +545,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    le icone tengono la loro riga e la forma si legge sempre intera */
 .card .pick-name .forme { position: absolute; z-index: 1; top: -22px; right: 8px; max-width: calc(100% - 16px); padding: 1px var(--sp-3); background: var(--ground); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .card.first .pick-name .forme { background: var(--ground); }
-.card .who small { display: flex; flex-direction: column; align-items: center; max-width: 100%; min-width: 0; }
-.card .reason { display: block; min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .who small { display: flex; flex-direction: column; align-items: safe center; width: 100%; max-width: 100%; min-width: 0; }
+.card .reason { display: block; max-width: 100%; min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 
 /* Motivi a segni: ⚔️ chip dei tipi colpiti, 🛡️ chip dei tipi retti (gli immuni con la parola), "vs" chi
@@ -557,7 +557,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    ancora le liste di Pokémon fermati, quindi restano a segni */
 .suggestions > li { container: cand / inline-size; }
 .reason.has-sym .words { display: none; }
-.reason.has-sym { display: flex; align-items: center; justify-content: center; max-width: 100%; overflow: visible; text-overflow: clip; }
+.reason.has-sym { display: flex; align-items: center; justify-content: safe center; max-width: 100%; overflow: visible; text-overflow: clip; }
 .reason.has-sym > b { flex: none; }
 .reason .syms { display: contents; }
 @container cand (min-width: 560px) {

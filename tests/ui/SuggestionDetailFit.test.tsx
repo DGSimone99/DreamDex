@@ -53,11 +53,21 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(aside.classList.contains('compact')).toBe(false);
   });
 
-  it('a linguette, in Sostituisci, Porta e Toglie mostra Toglie e chi esce', () => {
+  it('in Sostituisci, se due linguette non bastano, Porta, Toglie e Set hanno una linguetta ciascuno', async () => {
+    const user = userEvent.setup();
     panel({ team: [tusk, gholdengo] as never, replaceIndex: 1 });
     const aside = detail();
-    expect(within(aside).getByRole('tab', { name: 'Porta e Toglie' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(aside).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
+    const tabs = within(aside).getAllByRole('tab').map(tab => tab.textContent);
+    expect(tabs).toEqual(['Porta', 'Toglie', 'Set consigliato']);
     expect(within(aside).getByText(/al posto di Gholdengo/i)).toBeInTheDocument();
+    expect(within(aside).queryByRole('heading', { name: 'Toglie' })).toBeNull();
+    await user.click(within(aside).getByRole('tab', { name: 'Toglie' }));
+    expect(within(aside).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
+    expect(within(aside).queryByRole('heading', { name: 'Porta' })).toBeNull();
+  });
+
+  it('aggiungendo (niente Toglie) restano due linguette anche quando non entra', () => {
+    panel();
+    expect(within(detail()).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Porta e Toglie', 'Set consigliato']);
   });
 });
