@@ -18,9 +18,9 @@ const keyboardFocus = (el: Element): boolean => {
 };
 
 /**
- * Stile "Carte": una casella a forma di carta Masters. Targhetta col +N in alto a sinistra (#1 su magenta),
- * icone dei tipi in colonna a destra, sprite in alto al centro, nome e motivi in basso; chi esce nella targhetta, dopo il +N.
- * La carta ritagliata è `.card-face`: la sua cornice (anche selezionata) segue l'angolo tagliato.
+ * Carta "Pedana" (pedana.css): targhetta col +N in alto a sinistra, icone dei tipi in colonna a destra, lo sprite in piedi
+ * sulla pedana al centro, nome e motivi sotto; chi esce nella targhetta, dopo il +N. A riposo è spenta, sotto il mouse si
+ * accende un po', scelta si accende del tutto e ha la luce dall'alto (beam-on).
  */
 export function CandidateCard(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
@@ -52,10 +52,10 @@ export function CandidateCard(props: CandidateProps) {
   useEffect(() => { if (selected) closeTip(); }, [selected, closeTip]);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
-  const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
+  const className = ['card', isLead(rank, item) && 'first', selected && 'beam-on', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
-    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
+    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => { pointer.current = e.pointerType; }}
       // Uscendo dalla carta si chiude anche la carta del set
       onMouseEnter={e => { enter(); if (!selected) tipHandlers.onMouseEnter(e); }}
@@ -64,7 +64,10 @@ export function CandidateCard(props: CandidateProps) {
       draggable onDragStart={e => { leave(); memberTip.close(); startSetDrag(e, item.set); }} onDragEnd={endSetDrag}
       onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
-      <div className="card-face">
+      <div className="card-face pedana-face">
+        <span className="pedana-stripe" aria-hidden="true" />
+        <span className="pedana-beam" aria-hidden="true" />
+        <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
         {!popped && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
         <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
         <TypeIcons types={types} className="card-types" title={typeNames} />

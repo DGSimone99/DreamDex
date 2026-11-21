@@ -1,0 +1,21 @@
+/* Carta "Pedana" (lista dei candidati, team, Meta): il Pokémon in piedi su un'ellisse del colore del suo primo tipo,
+   su una carta scura e squadrata, con la riga dei due tipi in cima. La carta mette le variabili:
+   --t1, --t2 (colori dei tipi), --lit (0..1: quanto è accesa), --stage-top e --stage-h (il palco), --sprite-w.
+   La luce dall'alto (.pedana-beam) si vede solo con .beam-on: la carta scelta nella lista o nel Meta, quella aperta nel team. */
+.pedana-face { background: linear-gradient(180deg, color-mix(in srgb, var(--t1) calc(20% * var(--lit, 1)), var(--panel)) 0%, var(--panel) 64%); }
+.pedana-stripe { position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, var(--t1) 0 50%, var(--t2, var(--t1)) 50%); opacity: calc(0.35 + 0.65 * var(--lit, 1)); }
+.pedana-stage { position: absolute; left: 0; right: 0; top: var(--stage-top); height: var(--stage-h); pointer-events: none; }
+.pedana-disc { position: absolute; left: 50%; bottom: 0; width: min(118px, 84%); height: clamp(14px, calc(var(--sprite-w) * 0.27), 30px);
+  transform: translateX(-50%); border-radius: 50%; opacity: calc(0.5 + 0.5 * var(--lit, 1));
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--t1) 72%, transparent), color-mix(in srgb, var(--t1) 20%, transparent) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t1) 55%, transparent); }
+/* L'anello chiaro dentro la pedana */
+.pedana-disc::after { content: ''; position: absolute; inset: 22% 18%; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.35); opacity: 0.5; }
+/* La luce: un trapezio che scende dal bordo alto e si apre sulla pedana, nel colore del primo tipo */
+.pedana-beam { position: absolute; left: 50%; top: -10px; width: min(130px, 92%); height: calc(10px + var(--stage-top) + var(--stage-h));
+  transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity 0.25s ease-out;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--t1) 30%, transparent) 85%, transparent);
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); }
+.beam-on .pedana-beam { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .pedana-beam { transition: none; } }

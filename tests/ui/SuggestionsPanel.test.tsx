@@ -862,3 +862,43 @@ describe('nome dei candidati con la forma', () => {
     expect(formeParts('Great Tusk')).toBeNull();
   });
 });
+
+describe('carta Pedana', () => {
+  it('solo la carta selezionata ha la luce dall’alto, non quella sotto il mouse', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+    expect(cards.length).toBeGreaterThan(2);
+    expect(cards[0].classList.contains('beam-on')).toBe(true);
+    expect(cards.slice(1).some(card => card.classList.contains('beam-on'))).toBe(false);
+    vi.useFakeTimers();
+    try {
+      fireEvent.mouseEnter(cards[2]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS + 50); });
+      expect(cards[2].classList.contains('beam-on')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+    // Ogni carta ha la pedana e la luce (spenta) nel suo palco
+    for (const card of cards) {
+      expect(card.querySelector('.pedana-stage .pedana-disc')).not.toBeNull();
+      expect(card.querySelector('.pedana-beam')).not.toBeNull();
+    }
+  });
+
+  it('ogni carta ha i colori dei due tipi per la riga in cima', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    for (const card of list().querySelectorAll<HTMLElement>('.card')) {
+      expect(card.style.getPropertyValue('--t1')).not.toBe('');
+      expect(card.style.getPropertyValue('--t2')).not.toBe('');
+    }
+  });
+});
