@@ -860,8 +860,7 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 }
 
 /* ── Completa team e "Come funziona il voto" sul telefono (2026-11-19) ──────────────────────────────────── */
-/* La × e il titolo di Completa team solo sul telefono (altrove si chiude col suo pulsante, fuori o con Esc) */
-.fill-title, .fill-close { display: none; }
+/* (Titolo e × di Completa team: sul computer nella fascia della finestra, fill.css; su telefono e tablet qui sotto) */
 @media (max-width: 1099px) {
   /* A tutto schermo; in testa titolo, voto di adesso e ×; sotto le due schede, metà e metà */
   .fill-panel { top: 0; height: 100dvh; max-height: 100dvh; border-radius: 0; padding-top: 0; }
