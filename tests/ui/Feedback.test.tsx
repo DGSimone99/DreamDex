@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -11,7 +12,7 @@ const ok = () => vi.fn(async () => new Response(JSON.stringify({ success: true }
 
 function open(props: Partial<Parameters<typeof FeedbackDialog>[0]> = {}) {
   const onClose = vi.fn();
-  render(<LangProvider lang="it"><FeedbackDialog team={team} format={DEFAULT_FORMAT} onClose={onClose} accessKey="test-key" send={ok()} {...props} /></LangProvider>);
+  render(<LangProvider lang="it"><FeedbackDialog team={team} choice={DEFAULT_CHOICE} onClose={onClose} accessKey="test-key" send={ok()} {...props} /></LangProvider>);
   return onClose;
 }
 

@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
 import { fixtureData, tusk } from '../fixtures/data';
@@ -11,7 +11,7 @@ afterEach(() => window.history.replaceState(null, '', '/'));
 describe('menu degli strumenti', () => {
   it('in ordine alfabetico italiano, senza Megapietre di altri Pokémon', async () => {
     const user = userEvent.setup();
-    window.history.replaceState(null, '', `/#team=${encodeShare([tusk], DEFAULT_FORMAT)}`);
+    window.history.replaceState(null, '', `/#team=${encodeShare([tusk], DEFAULT_CHOICE)}`);
     const { container } = render(<App initialLang="it" data={fixtureData} />);
     await user.click(container.querySelector<HTMLElement>('.slot-card')!);
     await user.click(screen.getByLabelText('Strumento'));

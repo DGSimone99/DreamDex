@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
-import { chooseDex, chooseGen, chosen } from '../helpers/format';
+import { chooseDex, chooseGen, chosen, openFormat } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 describe('App: struttura', () => {
@@ -21,7 +21,8 @@ describe('App: struttura', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await chooseGen(user, '4');
-    expect(chosen('format-gen')).toBe('4');
+    await openFormat(user);
+    expect(chosen('format-genlimit')).toBe('4');
   });
 
   it('la palette segue il gioco del formato', async () => {

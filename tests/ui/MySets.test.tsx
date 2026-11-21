@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
 import { loadMySets } from '../../src/storage';
@@ -13,7 +13,7 @@ afterEach(() => window.history.replaceState(null, '', '/'));
 
 async function openEditor() {
   const user = userEvent.setup();
-  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
+  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_CHOICE)}`);
   const { container } = render(<App initialLang="it" data={fixtureData} />);
   await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
   return { user, slot: container.querySelector<HTMLElement>('.slot.open')! };

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import type { EngineData } from '../../src/engine/data';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { emptySet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { resetMySetsCache } from '../../src/ui/mySets';
@@ -20,7 +20,7 @@ afterEach(() => window.history.replaceState(null, '', '/'));
 
 async function openFirst(engine: EngineData = data) {
   const user = userEvent.setup();
-  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
+  window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_CHOICE)}`);
   const { container } = render(<App initialLang="it" data={engine} />);
   await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
   const slot = () => container.querySelector<HTMLElement>('.slot.open')!;

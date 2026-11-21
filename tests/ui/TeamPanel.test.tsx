@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { emptySet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
@@ -78,7 +78,7 @@ describe('TeamPanel', () => {
   it("chi porta il meteo: sulla carta il ruolo principale, il meteo fra i Ruoli dell'editor", async () => {
     const user = userEvent.setup();
     const pelipper = { ...emptySet('Pelipper'), item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane', 'Scald', 'U-turn', 'Roost'] };
-    window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_FORMAT)}`);
+    window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_CHOICE)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
     // Ruoli misurati come nel voto: il principale non è mai il Recupero; il meteo e il resto nel riquadro Ruoli
@@ -93,7 +93,7 @@ describe('TeamPanel', () => {
     const user = userEvent.setup();
     // Calibrazione (Task 9): Latias-Mega veloce con Calm Mind è uno sweeper (una sola etichetta); Defog dà la seconda
     const latias = { ...emptySet('Latias'), item: 'Latiasite', ability: 'Levitate', moves: ['Calm Mind', 'Mystical Fire', 'Mist Ball', 'Defog'] };
-    window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_FORMAT)}`);
+    window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_CHOICE)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent!.split(' · ')).toHaveLength(1);

@@ -1,6 +1,4 @@
-import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { formatOptions } from './engine/formats';
-import { GAME_IDS, withGame } from './engine/games';
+import { DEFAULT_MEMORY, sanitizeChoice, sanitizeMemory, type FormatChoice, type FormatMemory } from './engine/formatChoice';
 import type { TeamSet } from './engine/sets';
 import { isLang, type Lang } from './i18n';
 import { EMPTY_LISTS, sanitizeLists, type UserLists } from './engine/lists';
@@ -14,7 +12,7 @@ export interface SavedTeam {
   /** Posizioni dei membri con Custom Skillset. */
   custom?: number[];
   /** Formato in cui il team è stato salvato. */
-  format?: Format;
+  choice?: FormatChoice;
 }
 
 const KEY = 'dreamdex.savedTeams';
@@ -36,7 +34,7 @@ export function loadSavedTeams(storage: Storage | undefined = defaultStorage()):
   try {
     const parsed: unknown = JSON.parse(storage?.getItem(KEY) ?? '[]');
     return Array.isArray(parsed)
-      ? parsed.filter(isSavedTeam).map(t => (t.format === undefined ? t : { ...t, format: sanitizeFormat(t.format) }))
+      ? parsed.filter(isSavedTeam).map(t => (t.choice === undefined ? t : { ...t, choice: sanitizeChoice(t.choice) }))
       : [];
   } catch {
     return [];
@@ -77,29 +75,29 @@ export function saveLists(lists: UserLists, storage: Storage | undefined = defau
 
 export interface Session {
   team: TeamSet[];
-  format: Format;
+  choice: FormatChoice;
 }
 
 const SESSION_KEY = 'dreamdex.session';
+const FORMAT_MEMORY_KEY = 'dreamdex.formatMemory';
 
-/** Ricostruisce un formato valido da dati salvati (campi sconosciuti o errati tornano ai valori di default). */
-export function sanitizeFormat(raw: unknown): Format {
-  const f = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Format>;
-  const format: Format = {
-    formatId: formatOptions().some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
-    genLimit: typeof f.genLimit === 'number' && f.genLimit >= 1 && f.genLimit <= 9 ? f.genLimit : DEFAULT_FORMAT.genLimit,
-    // L'uso minimo dei suggerimenti non si sceglie più: vale sempre quello di default (anche nei salvataggi vecchi)
-    minUsage: DEFAULT_FORMAT.minUsage,
-    allowMultipleMegas: f.allowMultipleMegas === true,
-    ignoreBans: f.ignoreBans === true,
-    meta: f.meta !== false,
-    game: null,
-    allPokedex: f.allPokedex === true,
-    legendaries: f.legendaries === true,
-  };
-  // Un gioco salvato rimette il formato che impone
-  const game = GAME_IDS.find(id => id === f.game) ?? null;
-  return game ? withGame(format, game) : withGame(format, null);
+/** L'ultima scelta di ogni famiglia del formato; dati assenti o rotti: quelle di base. */
+export function loadFormatMemory(storage: Storage | undefined = defaultStorage()): FormatMemory {
+  try {
+    return sanitizeMemory(JSON.parse(storage?.getItem(FORMAT_MEMORY_KEY) ?? 'null'));
+  } catch {
+    return DEFAULT_MEMORY;
+  }
+}
+
+export function saveFormatMemory(memory: FormatMemory, storage: Storage | undefined = defaultStorage()): boolean {
+  try {
+    if (!storage) return false;
+    storage.setItem(FORMAT_MEMORY_KEY, JSON.stringify(memory));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export const isTeamSet = (value: unknown): value is TeamSet =>
@@ -111,9 +109,9 @@ export function loadSession(storage: Storage | undefined = defaultStorage()): Se
   try {
     const raw = storage?.getItem(SESSION_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { team?: unknown; format?: unknown };
+    const parsed = JSON.parse(raw) as { team?: unknown; choice?: unknown };
     if (!Array.isArray(parsed.team) || !parsed.team.every(isTeamSet)) return null;
-    return { team: parsed.team.slice(0, 6), format: sanitizeFormat(parsed.format) };
+    return { team: parsed.team.slice(0, 6), choice: sanitizeChoice(parsed.choice) };
   } catch {
     return null;
   }
