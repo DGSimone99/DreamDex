@@ -58,7 +58,7 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
         <span className="rail-logo-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: logo }} />
       </h1>
       <div className="rail-format" role="group" aria-label={t('rail.format')}>
-        {/* La famiglia attiva come linguetta col nome; le altre due solo icona (il nome nel fumetto): stanno nella barra stretta */}
+        {/* Le famiglie come etichette appoggiate sopra la pillola del formato (stile Champions); sul telefono solo l'icona dell'attiva */}
         <div className="rail-families">
           {FAMILIES.map(f => {
             const active = choice.family === f;
@@ -68,13 +68,15 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
               <button key={f} type="button" className="rail-family" aria-current={active ? 'true' : undefined} disabled={off}
                 aria-label={t(`family.${f}`)} data-hint={active ? undefined : t(`family.${f}`)} onClick={() => setOpen(f)}>
                 <Icon name={FAMILY_ICON[f]} />
-                {active && <span>{t(`family.${f}`)}</span>}
+                <span>{t(`family.${f}`)}</span>
               </button>
             );
           })}
         </div>
         <button type="button" className="rail-format-main" onClick={() => setOpen(choice.family)}
           aria-label={t('rail.formatAria', { format: name, summary: summary.join(', ') })}>
+          {/* La casella colorata a sinistra della pillola, con l'icona della famiglia */}
+          <span className="rail-format-box" aria-hidden="true"><Icon name={FAMILY_ICON[choice.family]} /></span>
           <span className="rail-format-name">{name}</span>
           <span className="rail-format-summary">{summary.map(part => <span key={part}>{part}</span>)}</span>
           <Icon name="edit" />
@@ -94,6 +96,7 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
           {onSettings && (
             <button type="button" className="rail-settings" aria-label={t('settings.open')} title={t('settings.open')} onClick={onSettings}>
               <Icon name="gear" />
+              <span className="rail-settings-text" aria-hidden="true">{t('settings.open')}</span>
             </button>
           )}
         </div>

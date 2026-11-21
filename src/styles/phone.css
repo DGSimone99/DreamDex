@@ -41,6 +41,16 @@
   .rail-format-name { flex: 1; min-width: 0; overflow: hidden; font-size: var(--fs-body); white-space: nowrap; text-overflow: ellipsis; }
   .rail-format-summary { display: none; }
   .rail-format-main > .icon { align-self: center; margin: 0; }
+  .rail-format { margin: 0; }
+  .rail-families { padding: 0; }
+  .rail-family .icon { display: block; }
+  .rail-family { min-height: 0; border-radius: 0; font-size: var(--fs-label); }
+  .rail-format-main { min-height: 0; border-radius: 0; box-shadow: none; background: none; }
+  .rail-format-main:hover { box-shadow: none; }
+  .rail-format-box { display: none; }
+  .rail-format-main > .icon { display: block; }
+  .rail-format-name { align-self: center; padding: 0; }
+  .rail-settings-text { display: none; }
   .rail-foot { flex: none; padding: 0; }
   .rail-foot .meta, .rail-links { display: none; }
   .rail-foot .lang-switch button { height: 36px; padding: 0 var(--sp-5); }

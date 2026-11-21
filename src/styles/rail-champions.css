@@ -1,0 +1,135 @@
+/*
+ * Barra laterale sul PC in stile Champions (il menu del gioco):
+ * - sezioni come pulsanti a parallelogramma col bordo chiaro (due strati tagliati in obliquo dietro al contenuto, così
+ *   l'etichetta di stato può sporgere sopra), nome in corsivo pesante a sinistra, icona in un emblema rotondo coi raggi
+ *   a destra; la sezione aperta è magenta con la freccia gialla del cursore accanto;
+ * - lo stato della sezione sta in un'etichetta appoggiata sopra il pulsante, come «Event Ongoing!» nel gioco;
+ * - in fondo lingua e impostazioni come i suggerimenti dei tasti.
+ * Sul telefono le sezioni sono la barra in basso (phone.css): qui solo da 1100px in su.
+ */
+@media (min-width: 1100px) {
+  .rail .tabs.vertical { gap: 24px; padding-top: var(--sp-6); }
+  .rail .tabs.vertical [role='tab'] {
+    --rim: var(--line);
+    --fill: linear-gradient(100deg, var(--raised), var(--panel));
+    --ray: rgba(255, 255, 255, 0.1);
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    width: auto;
+    height: 54px;
+    margin: 0 var(--sp-5) 0 var(--sp-7);
+    padding: 0 60px 0 22px;
+    background: none;
+    clip-path: none;
+    color: var(--text);
+    animation: none;
+  }
+  .rail .tabs.vertical [role='tab']::before,
+  .rail .tabs.vertical [role='tab']::after { content: ''; position: absolute; pointer-events: none; }
+  .rail .tabs.vertical [role='tab']::before { inset: 0; z-index: -2; background: var(--rim); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+  .rail .tabs.vertical [role='tab']::after { inset: 2px; z-index: -1; background: var(--fill); clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+  .rail .tabs.vertical .tab-text { display: block; min-width: 0; }
+  .rail .tabs.vertical .tab-name { font: 800 var(--fs-title-l)/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
+  .rail .tabs.vertical .tab-status {
+    position: absolute;
+    top: -12px;
+    left: var(--sp-6);
+    max-width: calc(100% - 24px);
+    padding: 2px var(--sp-4) 1px;
+    border-radius: 8px 8px 2px 2px;
+    background: var(--raised);
+    box-shadow: 0 0 0 1px var(--line);
+    color: var(--muted);
+    font: 700 var(--fs-label)/1.25 var(--display);
+    font-style: italic;
+  }
+  .rail .tabs.vertical .tab-icon {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    width: 30px;
+    height: 30px;
+    translate: 0 -50%;
+    border-radius: 50%;
+    background: var(--raised);
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1.5px var(--control-line), 0 2px 3px rgba(0, 0, 0, 0.35);
+  }
+  .rail .tabs.vertical .tab-icon .icon { width: 16px; height: 16px; }
+  /* I raggi dietro l'emblema */
+  .rail .tabs.vertical .tab-icon::before {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    z-index: -1;
+    border-radius: 50%;
+    background: repeating-conic-gradient(var(--ray) 0 7deg, transparent 7deg 20deg);
+    -webkit-mask: radial-gradient(circle, #000 35%, transparent 70%);
+    mask: radial-gradient(circle, #000 35%, transparent 70%);
+  }
+  .rail .tabs.vertical [role='tab']:hover:not([aria-selected='true'], [aria-disabled='true']) {
+    --fill: linear-gradient(100deg, var(--line), var(--raised));
+    --rim: color-mix(in srgb, var(--accent) 45%, var(--line));
+    background: none;
+  }
+  .rail .tabs.vertical [role='tab']:hover:not([aria-selected='true']) .tab-icon { background: var(--raised); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] {
+    --rim: var(--accent-2-ink);
+    --fill: var(--stripes), var(--accent-2);
+    --ray: rgba(255, 255, 255, 0.3);
+    width: auto;
+    margin-right: var(--sp-2);
+    color: var(--on-accent-2);
+    background: none;
+    clip-path: none;
+    animation: champ-pick 0.22s var(--ease) both;
+  }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon { background: var(--on-accent-2); color: var(--accent-2-ink); box-shadow: inset 0 0 0 1.5px var(--accent-2-ink), 0 2px 3px rgba(0, 0, 0, 0.35); }
+  /* La freccia del cursore, come nel gioco */
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-text::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -15px;
+    width: 13px;
+    height: 18px;
+    translate: 0 -50%;
+    background: var(--warn);
+    clip-path: polygon(0 0, 100% 50%, 0 100%, 32% 50%);
+  }
+  /* L'etichetta di stato resta scura anche sulla sezione aperta, coi suoi colori (voto, problemi) */
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status,
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status * { color: var(--muted); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status :is(.minor, .info) { color: var(--text); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .serious { color: var(--bad); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .warn { color: var(--warn); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .grade { color: var(--good); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .grade-C { color: var(--warn); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .grade-D { color: var(--bad); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-status .grade.illegal { color: var(--faint); }
+  .rail .tabs.vertical [role='tab'][aria-disabled='true'] { opacity: 0.5; }
+  .rail .tabs.vertical [role='tab']:focus-visible { outline: none; }
+  .rail .tabs.vertical [role='tab']:focus-visible::before { background: var(--accent); }
+
+  /* Fondo: lingua e impostazioni come i suggerimenti dei tasti in fondo al menu del gioco */
+  .rail-foot .lang-switch { gap: 2px; padding: 0; border: 0; background: none; }
+  .rail-foot .lang-switch button { min-width: 26px; height: 22px; padding: 0 var(--sp-3); border: 0; border-radius: 11px; background: none; color: var(--muted); font: 700 var(--fs-caption)/1 var(--display); font-style: italic; }
+  .rail-foot .lang-switch button[aria-pressed='true'] { background: var(--muted); color: var(--panel); }
+  .rail-foot .lang-switch button:hover:not([aria-pressed='true']) { color: var(--text); }
+  .rail-settings { display: inline-flex; align-items: center; gap: var(--sp-3); width: auto; height: 26px; margin-left: var(--sp-2); padding: 0 var(--sp-4) 0 2px; border: 0; border-radius: 13px; background: none; color: var(--muted); font: 600 var(--fs-small)/1 var(--display); font-style: italic; }
+  .rail-settings .icon { width: 20px; height: 20px; padding: 3px; border-radius: 50%; background: var(--muted); color: var(--panel); }
+  .rail-settings:hover { color: var(--text); }
+  .rail-settings:hover .icon { background: var(--text); }
+}
+@keyframes champ-pick { from { translate: -6px 0; } to { translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
+}
+/* Barra stretta (portatili bassi o stretti): pulsanti un po' più bassi */
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .rail .tabs.vertical { gap: 20px; }
+  .rail .tabs.vertical [role='tab'] { height: 48px; margin-left: var(--sp-6); padding-left: 18px; }
+  .rail .tabs.vertical .tab-name { font-size: var(--fs-title); }
+}
