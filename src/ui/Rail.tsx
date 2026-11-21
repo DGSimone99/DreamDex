@@ -8,6 +8,9 @@ import { FormatDialog } from './FormatDialog';
 import { choiceName, choiceSummary } from './formatName';
 import { Icon } from './icons';
 
+/** L'icona di ogni famiglia. */
+const FAMILY_ICON = { competitive: 'trophy', game: 'gamepad', free: 'unlock' } as const;
+
 interface Props {
   /** Il formato scelto (una delle tre famiglie). */
   choice: FormatChoice;
@@ -54,12 +57,18 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
         <span className="rail-logo-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: logo }} />
       </h1>
       <div className="rail-format" role="group" aria-label={t('rail.format')}>
+        {/* La famiglia attiva come linguetta col nome; le altre due solo icona (il nome nel fumetto): stanno nella barra stretta */}
         <div className="rail-families">
-          {FAMILIES.map(f => (
-            <button key={f} type="button" className="rail-family" aria-current={choice.family === f ? 'true' : undefined} onClick={() => setOpen(f)}>
-              {t(`family.${f}`)}
-            </button>
-          ))}
+          {FAMILIES.map(f => {
+            const active = choice.family === f;
+            return (
+              <button key={f} type="button" className="rail-family" aria-current={active ? 'true' : undefined}
+                aria-label={active ? undefined : t(`family.${f}`)} data-hint={active ? undefined : t(`family.${f}`)} onClick={() => setOpen(f)}>
+                <Icon name={FAMILY_ICON[f]} />
+                {active && <span>{t(`family.${f}`)}</span>}
+              </button>
+            );
+          })}
         </div>
         <button type="button" className="rail-format-main" onClick={() => setOpen(choice.family)}
           aria-label={t('rail.formatAria', { format: name, summary: summary.join(', ') })}>

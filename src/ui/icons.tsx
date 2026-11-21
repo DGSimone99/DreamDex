@@ -46,6 +46,9 @@ const paths = {
   shield: 'M4 4.5h4l1 1.5h6l1-1.5h4v5.5c0 5.2-3.6 8.8-8 11-4.4-2.2-8-5.8-8-11ZM12 7.5v11',
   // Spada lunga come quella di Zacian, simmetrica sul suo asse e girata in diagonale (punta in alto a destra)
   sword: 'M19.42 4.58L19.07 7.76L11.29 15.54L8.46 12.71L16.24 4.93ZM17.3 6.7L10.94 13.06M5.99 10.94L13.06 18.01M9.53 14.47L6.34 17.66M3.91 18.79a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0',
+  // Famiglie del formato: competitivo (coppa), giochi (controller)
+  trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 3.5M16 6h3a3 3 0 0 1-3 3.5M12 13v4M8.5 20h7M10 17h4',
+  gamepad: 'M7 8h10a4 4 0 0 1 4 4v1.5a3.5 3.5 0 0 1-6.3 2.1L14 14.5h-4l-.7 1.1A3.5 3.5 0 0 1 3 13.5V12a4 4 0 0 1 4-4zM7.5 10.5v3M6 12h3M15.5 11.5v.1M17.5 13v.1',
   gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6zM12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1',
   gavel: 'M13 4l7 7M10.5 6.5l7 7M8 9l5-5M15 16l5-5M11.7 11.7 4 19.5',
   globe: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',
