@@ -148,7 +148,14 @@ export function TipHost() {
     document.addEventListener('pointerdown', down, true);
     document.addEventListener('focusin', focusIn);
     document.addEventListener('focusout', focusOut);
+    // L'elemento perde il suo fumetto o sparisce (es. la carta del team aperta con Invio: l'editor si apre e la carta non
+    // ha più "Trascina…"): il fumetto si chiude invece di restare sopra l'editor
+    const gone = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => {
+      if (current && (!current.isConnected || !current.matches(TIP_SELECTOR))) { current = null; close(); }
+    }) : null;
+    gone?.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-hint', 'data-move-tip', 'data-item-tip', 'data-ability-tip'] });
     return () => {
+      gone?.disconnect();
       document.removeEventListener('mouseover', over);
       document.removeEventListener('mouseout', out);
       document.removeEventListener('pointerdown', down, true);

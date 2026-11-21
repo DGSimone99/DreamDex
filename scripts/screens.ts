@@ -1180,7 +1180,7 @@ const STATES: Record<string, State> = {
   'fill-tournament': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await clickText(p, '[role="tab"]', /Team da torneo/); await wait(800); return true; } },
   'fill-unlocked': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await p.evaluate(() => (document.querySelector('.fill-panel input[type="checkbox"]') as HTMLElement | null)?.click()); await wait(3500); return true; } },
   'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
-  'format-menu': { run: async p => { await p.click('.format-card > summary'); await wait(400); return true; } },
+  'format-menu': { run: async p => { await p.click('.rail-format'); await wait(500); return true; } },
   'saved-menu': { storage: { 'dreamdex.savedTeams': JSON.stringify([{ name: 'Pioggia NatDex', text: 'Pelipper' }, { name: 'Un nome di team davvero molto lungo per vedere se va a capo', text: 'Garchomp' }]) }, run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-empty': { hash: '', run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'team-three': { hash: hash(TEAM.slice(0, 3)) },
@@ -1205,6 +1205,17 @@ const STATES: Record<string, State> = {
   } },
   illegal: { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]) },
 };
+// Le stesse viste in inglese (testi più lunghi): editor, guida del voto e finestra del formato
+STATES['editor-en'] = { ...STATES.editor, lang: 'en' };
+STATES['rating-help-en'] = { ...STATES['rating-help'], lang: 'en' };
+STATES['format-menu-en'] = { ...STATES['format-menu'], lang: 'en' };
+// Tablet e telefono: le schede dell'editor (Statistiche, Sfida) e la tendina dello Strumento (foglio dal basso in verticale)
+const editorThen = (then: (p: Page) => Promise<boolean | string>): State => ({ run: async p => { const ok = await STATES.editor.run!(p); if (ok !== true) return ok; await wait(300); return then(p); } });
+STATES['editor-tab-stats'] = editorThen(p => clickText(p, '.editor-tabs [role="tab"]', /^(Statistiche|Stats)$/));
+STATES['editor-tab-duel'] = editorThen(p => clickText(p, '.editor-tabs [role="tab"]', /^(Sfida|Matchup)$/));
+STATES['fill-settings'] = { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await wait(800); const el = await p.$('.fill-settings-button'); if (!el) return false; await el.click(); await wait(600); return true; } };
+STATES['team-menu'] = { run: async p => { const el = await p.$('.team-more-button'); if (!el) return false; await el.click(); await wait(500); return true; } };
+STATES['editor-item-menu'] = editorThen(async p => { const el = await p.$('.slot.open .drawer .set-box .set-plates .set-plate'); if (!el) return false; const b = await el.boundingBox(); if (!b) return 'no box'; await p.mouse.click(b.x + b.width * 0.6, b.y + b.height / 2); await wait(600); return true; });
 // Il controllo del testo (--scan) come stringa: dentro page.evaluate niente funzioni con nome (tsx aggiunge __name)
 const SCAN_TEXT = `(() => {
   const parse = s => { const n = (s.match(/[\\d.]+/g) || []).map(Number); if (s.startsWith('color(')) return [n[0] * 255, n[1] * 255, n[2] * 255, n.length > 3 ? n[3] : 1]; return [n[0], n[1], n[2], n.length > 3 ? n[3] : 1]; };
@@ -1241,7 +1252,8 @@ for (const [w, h] of sizes) {
     const state = STATES[name];
     if (!state) { console.log(`skip ${name}: unknown state`); continue; }
     const page = await browser.newPage();
-    await page.setViewport({ width: w, height: h });
+    // --touch: telefono o tablet col dito (pointer: coarse, hover: none), per le regole dei tocchi da 44
+    await page.setViewport({ width: w, height: h, ...(process.argv.includes('--touch') ? { hasTouch: true, isMobile: true } : {}) });
     const lang = state.lang ?? 'it';
     await page.evaluateOnNewDocument((l, extra) => {
       localStorage.clear();
