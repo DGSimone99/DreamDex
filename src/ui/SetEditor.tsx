@@ -62,7 +62,7 @@ function HeadHelp({ text, className, end = false, children }: { text: string; cl
   );
 }
 
-function IvInput({ value, label, hint, onChange }: { value: number; label: string; hint: string; onChange: (raw: string) => void }) {
+function IvInput({ value, label, tip, onChange }: { value: number; label: string; tip: string; onChange: (raw: string) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <input
@@ -76,7 +76,7 @@ function IvInput({ value, label, hint, onChange }: { value: number; label: strin
       tabIndex={value === 31 && draft === null ? -1 : undefined}
       aria-label={label}
       aria-keyshortcuts="ArrowLeft"
-      title={hint}
+      {...hint(tip)}
       onKeyDown={e => {
         if (e.key !== 'ArrowLeft' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
         e.preventDefault();
@@ -101,7 +101,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
   const category = t(`editor.category.${move.category}`);
   return (
     <span className="move-meta">
-      <span className={`move-stat cat-${move.category.toLowerCase()}`} title={inField ? undefined : category}>
+      <span className={`move-stat cat-${move.category.toLowerCase()}`} {...(inField ? {} : hint(category))}>
         {/* Nel campo il simbolo sta nella coda della pillola: qui resta solo per i lettori di schermo */}
         {!inField && <CategoryIcon category={move.category} />}
         {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
@@ -113,7 +113,7 @@ function MoveDetail({ name, inField = false }: { name: string; inField?: boolean
       </span>
       {/* Mosse che non mancano mai: niente precisione invece di "—" */}
       {accuracy !== null && (
-        <span className="move-stat accuracy" title={inField ? undefined : t('editor.accuracy')}>
+        <span className="move-stat accuracy" {...(inField ? {} : hint(t('editor.accuracy')))}>
           <Icon name="target" />
           <span className="visually-hidden">{t('editor.accuracyShort')} </span>
           {`${accuracy}%`}
@@ -432,6 +432,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     </span>
   );
 
+  const flagCount = (flags?.item ? 1 : 0) + (flags?.ability ? 1 : 0) + (flags?.moves?.filter(Boolean).length ?? 0);
+
   return (
     <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
@@ -474,7 +476,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
         {!!common?.spreads.length && (
           <details className="spread-panel" ref={spreadMenu} onToggle={e => setSpreadsOpen(e.currentTarget.open)}
             onKeyDown={e => { if (e.key === 'Escape' && spreadMenu.current?.open) { e.stopPropagation(); closeSpreads(); spreadMenu.current.querySelector('summary')?.focus(); } }}>
-            <summary className="spread-toggle" ref={spreadToggle} title={t('editor.spreadTip')}>
+            <summary className="spread-toggle" ref={spreadToggle} {...hint(t('editor.spreadTip'))}>
               <span className="spread-name">{t('editor.spread')}<span className="visually-hidden">:</span></span>
               <span className="spread-value">{spreadLabel}</span>
             </summary>
@@ -489,7 +491,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                   <Icon name="check" />
                   <strong>{natureName(spread.nature, lang)}</strong>
                   <span className="spread-evs">{spreadText(spread, lang)}</span>
-                  <span className="common-share" title={spread.share === null ? t('combobox.presetTitle') : undefined}>{shareLabel(spread)}</span>
+                  <span className="common-share" {...hint(spread.share === null ? t('combobox.presetTitle') : undefined)}>{shareLabel(spread)}</span>
                 </button>
               ))}
             </div>
@@ -546,8 +548,9 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                 max={252}
                 step={EV_STEP}
                 value={line.ev}
+                aria-label={t('editor.evFor', { stat: statShort(line.stat, lang).toUpperCase() })}
                 aria-keyshortcuts="ArrowRight"
-                title={t('editor.evToIv')}
+                {...hint(t('editor.evToIv'))}
                 onKeyDown={e => {
                   // Freccia destra: all'IV della riga (fuori dal Tab quando vale 31)
                   if (e.key !== 'ArrowRight' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
@@ -560,7 +563,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
                   update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } });
                 }}
               />
-              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} hint={t('editor.ivToEv')}
+              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })} tip={t('editor.ivToEv')}
                 onChange={raw => changeIv(line.stat, raw)} />
             </div>
           ))}
@@ -583,7 +586,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
       </div>
       <div className={`editor-side${duel ? ' with-duel' : ''}`}>
       <fieldset className="editor-group set-box">
-        <legend>{t('editor.set')}</legend>
+        {/* Campi fuori regola: sulla fascia del Set il triangolo rosso e quanti sono, come sulla carta (da dove partire) */}
+        <legend>{t('editor.set')}{flagCount > 0 && (
+          <span className="legend-flag"><Icon name="warning" />{flagCount}<span className="visually-hidden"> {t('editor.setFlags', { n: flagCount })}</span></span>
+        )}</legend>
         {/* Custom Skillset a destra nella fascia del Set: cosa fa solo nel fumetto e per i lettori di schermo */}
         <label className={`custom-toggle${custom ? ' on' : ''}`}
           onPointerEnter={() => setCustomShown(true)} onPointerLeave={() => setCustomShown(false)}>
@@ -669,7 +675,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               <legend className="visually-hidden">{t('editor.roles')}</legend>
               <span className="roles-label" aria-hidden="true">{t('editor.roles')}</span>
               <ul>
-                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main-role' : undefined} title={roleTips?.[i]}>{role}</li>)}
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main-role' : undefined} {...hint(roleTips?.[i])}>{role}</li>)}
               </ul>
             </fieldset>
           )}

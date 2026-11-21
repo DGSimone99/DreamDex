@@ -64,6 +64,9 @@
    chiara che sfuma ai due lati e un filo sotto che sfuma uguale */
 .set-editor legend:not(.visually-hidden) { position: relative; width: 60%; margin: 0 auto; padding: 4px 0; text-align: center; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text);
   background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
+/* Fuori regola: il triangolo rosso e il numero accanto a "Set" */
+.set-editor legend .legend-flag { display: inline-flex; align-items: center; gap: var(--sp-1); margin-left: var(--sp-4); vertical-align: -2px; font: 700 var(--fs-label)/1 var(--ui); color: var(--bad); }
+.set-editor legend .legend-flag .icon { width: 14px; height: 14px; }
 .set-editor legend:not(.visually-hidden)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-7); }
 .set-editor .field-note { font-size: var(--fs-label); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }

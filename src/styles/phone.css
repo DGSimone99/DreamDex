@@ -1114,6 +1114,9 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .set-editor .duel-species input { height: 44px; }
   .spread-presets button { min-height: 44px; }
   .set-editor label:has(> input.switch) { min-height: 44px; }
+  /* Triangoli d'avviso (carte del team, voto) e soprannome nella testata: restano piccoli a vista, la zona da toccare è 44 */
+  .alert-mark::after { width: max(100%, 44px); height: max(100%, 44px); }
+  .editor-title .nickname::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: max(100%, 44px); translate: 0 -50%; }
 }
 
 /* Telefono: il voto del team nella testata dell'editor (lì il voto grande è coperto) */
@@ -1136,6 +1139,8 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .editor-grade > b:first-of-type { font: italic 800 var(--fs-title-l)/1 var(--display); color: var(--grade); }
   .editor-grade > span:not(.visually-hidden) { display: inline-flex; align-items: center; gap: var(--sp-2); }
   .editor-grade .icon { width: 12px; height: 12px; color: var(--muted); }
+  /* Team non legale: il triangolo rosso come sulle carte, prima della lettera grigia */
+  .editor-grade .editor-grade-alert .icon { width: 16px; height: 16px; color: var(--bad); }
   /* Da dove si parte in grigio, dove si arriva in verde (sale) o rosso (scende) */
   .editor-grade :is(.up, .down) { color: var(--muted); }
   .editor-grade .up > b { color: var(--good); }
@@ -1167,4 +1172,19 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .set-editor :is(.field.flagged, .field:has(> .set-plate.flagged)) > .field-head { min-height: 28px; margin-bottom: var(--sp-3); }
   /* Sul telefono (una colonna) la riga sopra strumento e abilità c'è solo con l'avviso: niente spazio vuoto */
   .set-editor .editor-group.set-plates .field > .field-head:empty { display: none; }
+}
+
+/* Telefono: meno aria tra la testata, le schede e il primo campo, così Strumento (e Statistiche, Sfida) salgono di una
+   ventina di px; la testata grande resta (sulla scheda Set tutto sta già nello schermo) */
+@media (max-width: 1099px) {
+  .set-editor .editor-tabs { margin-top: var(--sp-4); margin-bottom: var(--sp-3); }
+  .set-editor[data-tab] :is(.stats-cell, .editor-side) { margin-top: 0; }
+  .set-editor[data-tab] .set-box > .custom-toggle { margin-bottom: 0; }
+}
+
+/* Telefono: il potenziamento della Sfida (es. "Granfisico") resta piccolo a vista, la zona da toccare è 44 (::before: il
+   suo ::after è il tooltip) */
+@media (max-width: 1099px) {
+  .set-editor .duel-buff { position: relative; }
+  .set-editor .duel-buff::before { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%; }
 }

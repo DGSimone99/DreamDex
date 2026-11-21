@@ -73,7 +73,7 @@ describe('editor del set', () => {
     expect(container.querySelector('.slot .roles')!.getAttribute('data-hint')).toMatch(new RegExp(`^${items[0]}: `));
     expect(items.length).toBeGreaterThan(1);
     // Ogni ruolo spiegato nel tooltip
-    expect(within(roles).getAllByRole('listitem')[0]).toHaveAttribute('title', expect.stringMatching(/\S/));
+    expect(within(roles).getAllByRole('listitem')[0]).toHaveAttribute('data-hint', expect.stringMatching(/\S/));
   });
 
   it('testata su una riga: nome, poi Set (preset Smogon e I miei set), Copia il set e Chiudi; Custom Skillset nella fascia delle Mosse', async () => {
