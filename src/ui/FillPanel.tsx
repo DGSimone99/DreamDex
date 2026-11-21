@@ -370,7 +370,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
               <legend className="fill-head">{t('fill.mine')}</legend>
               <div className="fill-mine-row">
                 {team.map((set, i) => (
-                  <label key={`${set.species}#${i}`} className={`fill-keep${keep[i] ? ' is-locked' : ''}`} title={setTitle(set)}>
+                  <label key={`${set.species}#${i}`} className={`fill-keep${keep[i] ? ' is-locked' : ''}`} {...memberTip.bind(set)}>
                     {/* Una casella vera (tastiera, lettori di schermo), a vista il lucchetto chiuso o aperto */}
                     <input type="checkbox" className="visually-hidden" checked={keep[i]} aria-label={t('fill.keepN', { name: battleName(set) })} onChange={() => toggleKeep(i)} />
                     <PokemonIcon name={battleName(set)} />

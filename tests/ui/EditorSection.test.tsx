@@ -75,7 +75,7 @@ describe("L'editor del set prende il posto della sezione", () => {
     const { container } = renderTeam();
     await user.click(cards(container)[2]);
     expect(workspace(container)).toHaveClass('editing');
-    await user.click(screen.getByTitle('Incolla un team scritto per Showdown'));
+    await user.click(document.querySelector<HTMLElement>('[data-hint="Incolla un team scritto per Showdown"]')!);
     await user.type(screen.getByLabelText('Testo Showdown'), 'Great Tusk{Enter}Ability: Protosynthesis{Enter}- Earthquake');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     expect(cards(container)).toHaveLength(1);

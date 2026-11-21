@@ -8,7 +8,7 @@ describe('analisi in inglese', () => {
   it('schede, Panoramica e coaching', async () => {
     const user = userEvent.setup();
     render(<App data={fixtureData} initialLang="en" />);
-    await user.click(screen.getByTitle('Paste a team written for Showdown'));
+    await user.click(document.querySelector<HTMLElement>('[data-hint="Paste a team written for Showdown"]')!);
     await user.click(screen.getByLabelText('Showdown text'));
     await user.paste('Great Tusk\n\nGholdengo\n\nKingambit');
     await user.click(screen.getByRole('button', { name: 'Import' }));

@@ -23,7 +23,7 @@ import { SetEditor, type FieldFlag, type FieldFlags } from './SetEditor';
 import { handOffOpponent } from './duelHandoff';
 import { EditorDuel } from './EditorDuel';
 import { PokemonIcon } from './PokemonName';
-import { describe } from './describe';
+import { hint as bubble, kitTip } from './MoveTip';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
@@ -402,7 +402,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
   const roleTips = allRoles.map(role => (role === 'weather' ? undefined : roleDescription(role, lang)));
-  const rolesTitle = [roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0], ...roleLabels.slice(1)].join(' · ');
+  // Sulla carta solo il ruolo principale, con la sua spiegazione
+  const roleTitle = roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0];
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
@@ -556,7 +557,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           className="favorite"
           aria-label={tr('team.favorite', { species: name })}
           aria-pressed={!!set.favorite}
-          title={tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff')}
+          {...bubble(tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff'))}
           onClick={() => onChange({ ...set, favorite: !set.favorite })}
         >
           <Icon name="lock" filled={!!set.favorite} />
@@ -565,7 +566,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           type="button"
           className="remove"
           aria-label={tr('team.remove', { species: name })}
-          title={tr('team.removeTitle')}
+          {...bubble(tr('team.removeTitle'))}
           onClick={onRemove}
         >
           <Icon name="close" />
@@ -573,13 +574,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
         {/* Strumento e nome li dice già il pulsante della carta; gli avvisi in fondo alla riga del nome restano leggibili */}
         <span className="name-line">
-          <small className="held" aria-hidden="true" title={set.item ? `${gameName('item', set.item, lang)}: ${describe.item(set.item, lang)}` : tr('team.noItem')}>
+          <small className="held" aria-hidden="true" {...(set.item ? kitTip('item', set.item) : hint(tr('team.noItem')))}>
             <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className={`name${nameDots ? ' dots' : ''}`} ref={nameRef} aria-hidden="true" {...bubble(set.name ? `${set.name} (${name})` : name)} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
@@ -588,17 +589,17 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           </span>
         )}
         </span>
-        <small className="ability" title={describe.ability(ability, lang)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
+        <small className="ability" {...kitTip('ability', ability)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className={`types${typeText ? '' : ' as-icons'}`} aria-hidden="true">
           {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
-            <span key={type} className="type-dot" title={typeName(type, lang)}>
+            <span key={type} className="type-dot" {...bubble(typeName(type, lang))}>
               <img src={typeIconUrl(type)} alt="" draggable={false} />
               <span className="visually-hidden">{typeName(type, lang)}</span>
             </span>
           ))}
         </span>
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
-        {roles.length > 0 && <small className="roles" title={rolesTitle} aria-hidden="true">{roles[0]}</small>}
+        {roles.length > 0 && <small className="roles" {...bubble(roleTitle)} aria-hidden="true">{roles[0]}</small>}
       </div>
       {menuOpen && (
         <div className="member-menu" ref={menuRef} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={tr('team.memberMenu', { species: name })}
@@ -649,7 +650,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
                 }} />
             ) : (
               // Il nome arriva via CSS (data-name): non è un secondo testo uguale a quello della carta
-              <button type="button" className="nickname" aria-label={tr('team.nickname', { species: name })} title={tr('team.nicknameTitle')}
+              <button type="button" className="nickname" aria-label={tr('team.nickname', { species: name })} {...bubble(tr('team.nicknameTitle'))}
                 onClick={() => setNaming(true)}>
                 <strong data-name={set.name || name} />
                 {/* La matita compare col mouse o col fuoco: il nome si può cambiare */}
@@ -673,7 +674,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
           </div>
         )}
         memberAction={
-          <button type="button" className="member-replace" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}>
+          <button type="button" className="member-replace" aria-label={tr('team.replace', { species: name })} onClick={stable.onReplace}>
             <Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span>
           </button>
         }
@@ -745,10 +746,10 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
   };
   const cls = `slot empty${quiet ? ' quiet' : ''}${dropTarget ? ' drop-target' : ''}`;
   if (quiet) {
-    return <button type="button" className={cls} aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop} />;
+    return <button type="button" className={cls} aria-label={tr('team.emptyAdd')} {...bubble(tr('team.emptyAddTitle'))} onClick={onClick} {...drop} />;
   }
   return (
-    <button type="button" className={cls} title={tr('team.emptyAddTitle')} onClick={onClick} {...drop}>
+    <button type="button" className={cls} {...bubble(tr('team.emptyAddTitle'))} onClick={onClick} {...drop}>
       <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
       <span className="empty-label">{tr('team.emptyAdd')}</span>
     </button>
@@ -1007,7 +1008,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
             <span className="fill-anchor">
               <button type="button" className="team-guide" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
-                title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}
+                {...bubble(t(lang, 'team.fillTitle'))} onClick={() => setFilling(open => !open)}
                 // Il calcolo parte già quando ci si avvicina al pulsante: al clic le proposte sono spesso già pronte
                 onPointerEnter={() => prepareFill(team, format, data)} onFocus={() => prepareFill(team, format, data)}>
                 <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.fill')}</span>
@@ -1026,7 +1027,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
             </span>
           ) : team.length > 0 && (
             <button type="button" className="team-guide" ref={presetsButton}
-              aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}
+              aria-haspopup="dialog" {...bubble(t(lang, 'team.bestPresetsTitle'))} onClick={() => setConfirmPresets(true)}
               // Il calcolo parte già quando ci si avvicina al pulsante: al clic la finestra è spesso già pronta
               onPointerEnter={() => prepareImproveSets(team, data, format.genLimit)} onFocus={() => prepareImproveSets(team, data, format.genLimit)}>
               <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.bestPresets')}</span>

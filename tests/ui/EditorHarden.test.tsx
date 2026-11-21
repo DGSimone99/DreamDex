@@ -35,7 +35,7 @@ describe('editor: valori scritti a mano', () => {
     // Il totale dice anche quanti sono di troppo e che il voto è bloccato
     // Nell'intestazione la forma corta; la frase intera (voto bloccato) nel tooltip
     expect(document.querySelector('.ev-total')).toHaveTextContent('756/ 510246 di troppo');
-    expect(document.querySelector('.ev-total')).toHaveAttribute('title', '246 di troppo: voto bloccato');
+    expect(document.querySelector('.ev-total')).toHaveAttribute('data-hint', '246 di troppo: voto bloccato');
   });
 
   it('IV fuori scala: resta tra 0 e 31', () => {

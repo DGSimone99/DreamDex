@@ -264,7 +264,7 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
         return (
           <div key={level} className="help-levels">
             <h6>{t(`rdetail.group.${level}`)}</h6>
-            <ul className={`help-points ${level}`}>{keys.map(key => <li key={key} title={isGroupKey(key) ? undefined : t(`roleDesc.${key}`)}>{t(keyLabel(key))}</li>)}</ul>
+            <ul className={`help-points ${level}`}>{keys.map(key => <li key={key} title={t(`roleBrief.${key}`)}>{t(keyLabel(key))}</li>)}</ul>
           </div>
         );
       })}

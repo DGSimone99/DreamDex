@@ -61,7 +61,7 @@ interface Props extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
 }
 
 /**
- * Una mossa come pillola (passandoci sopra si apre il tooltip della mossa, MoveTipHost; `tip={false}` lo spegne): tessera del tipo a sinistra, nome che sfuma nel nero, e in fondo una coda tagliata in
+ * Una mossa come pillola (passandoci sopra si apre il tooltip della mossa, TipHost; `tip={false}` lo spegne): tessera del tipo a sinistra, nome che sfuma nel nero, e in fondo una coda tagliata in
  * diagonale, più chiara, col simbolo della categoria e il numero (di base la potenza). Angoli alternati: tondi in
  * alto a sinistra e in basso a destra.
  */

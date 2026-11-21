@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
@@ -35,9 +35,12 @@ describe('tooltip della card', () => {
     await user.paste('Garchomp @ Rocky Helmet\nAbility: Rough Skin\n- Earthquake');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const slot = screen.getByRole('region', { name: 'Team' }).querySelector('.slot')!;
-    // Lo strumento sulla carta è solo l'icona: nome e descrizione nel tooltip
-    expect(slot.querySelector('.held')!.getAttribute('title')).toMatch(/^\S.*: Danneggia chi attacca con un contatto\.$/);
-    expect(slot.querySelector('.ability')).toHaveAttribute('title', 'Ferisce chi attacca con un contatto.');
+    // Lo strumento sulla carta è solo l'icona: nome e descrizione nel tooltip DreamDex (TipHost)
+    fireEvent.mouseOver(slot.querySelector('.held')!);
+    await waitFor(() => expect(document.querySelector('.ftip.kit')).toHaveTextContent('Danneggia chi attacca con un contatto.'));
+    fireEvent.mouseOut(slot.querySelector('.held')!, { relatedTarget: document.body });
+    fireEvent.mouseOver(slot.querySelector('.ability')!);
+    await waitFor(() => expect(document.querySelector('.ftip.kit')).toHaveTextContent('Ferisce chi attacca con un contatto.'));
   });
 });
 

@@ -399,3 +399,15 @@
 .mtip-desc { margin: 0; padding: var(--sp-4) var(--sp-5) var(--sp-5); color: var(--text); text-wrap: pretty; }
 /* Senza descrizione: un po' d'aria sotto il bersaglio */
 .mtip-target:last-child { padding-bottom: var(--sp-4); }
+
+/* Strumenti e abilità: come il tooltip delle mosse (testata e descrizione), nel colore Accent; lo strumento con la sua icona */
+.ftip.kit .ktip-icon { display: grid; place-items: center; width: var(--ti-tip); height: var(--ti-tip); flex: none; border-radius: 50%;
+  background: color-mix(in srgb, var(--field) 70%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 55%, transparent); }
+.ftip.kit .ftip-head b { white-space: normal; }
+
+/* Il fumetto dell'app (data-hint): lo stesso del fumetto dei pulsanti a icona (Hint), ma nel body (mai tagliato dalle
+   carte) e su più righe quando il testo è lungo; senza alone né punta */
+.ftip.hint { width: max-content; max-width: min(300px, calc(100vw - 16px)); padding: 5px var(--sp-5); border: 0; border-radius: 4px;
+  background: var(--ground); box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); font: 500 var(--fs-caption)/1.35 var(--ui); white-space: pre-line;
+  text-wrap: pretty; animation-duration: 0.14s; }
+.ftip.hint::before { display: none; }

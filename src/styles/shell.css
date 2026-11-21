@@ -95,6 +95,8 @@
   width: 36px;
   height: 20px;
   margin: 0;
+  /* Niente bordo dei campi (controls.css): la pallina sta a 3px da ogni lato, centrata */
+  border: 0;
   border-radius: 10px;
   background: var(--line);
   appearance: none;
