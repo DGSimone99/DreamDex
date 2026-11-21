@@ -44,4 +44,14 @@ describe('Barra laterale', () => {
     expect(container.querySelector('.main')).toContainElement(banner);
     expect(container.querySelector('.workspace')).not.toContainElement(banner);
   });
+
+  it('senza i dati dei giochi la famiglia Giochi nella fascia è spenta (niente scelte di gioco senza Pokédex)', () => {
+    render(<App initialLang="it" data={fixtureData} />);
+    expect(screen.getByRole('button', { name: 'Giochi' })).toBeDisabled();
+  });
+
+  it('la famiglia attiva ha il nome anche quando il testo è nascosto (telefono)', () => {
+    render(<App initialLang="it" data={fixtureData} />);
+    expect(screen.getByRole('button', { name: 'Competitivo' })).toHaveAttribute('aria-label', 'Competitivo');
+  });
 });

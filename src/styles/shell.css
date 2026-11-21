@@ -29,7 +29,8 @@
 .rail-families { display: flex; align-items: stretch; gap: 0; padding: 0 var(--sp-4) 0 var(--sp-8); }
 .rail-family { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: 30px; padding: 0 7px; border: 0; border-radius: 3px; background: none; color: var(--faint); font: 800 var(--fs-label)/1 var(--display); font-style: italic; letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer; transition: color 0.15s var(--ease), background-color 0.15s var(--ease); }
 .rail-family .icon { width: 16px; height: 16px; }
-.rail-family:hover:not([aria-current]) { color: var(--text); background: var(--raised); }
+.rail-family:hover:not([aria-current], :disabled) { color: var(--text); background: var(--raised); }
+.rail-family:disabled { opacity: 0.4; border: 0; cursor: not-allowed; }
 .rail-family[aria-current] { margin-right: var(--sp-2); margin-left: calc(-1 * var(--sp-8)); padding: 0 15px 0 var(--sp-8); border-radius: 0; color: var(--on-accent); background: var(--accent); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
 .rail-format-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'name edit' 'sum sum'; align-items: center; gap: var(--sp-2) var(--sp-4); min-width: 0; padding: 0 var(--sp-7) 0 var(--sp-8); border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .rail-format-name { grid-area: name; font: 800 var(--fs-plate)/1.1 var(--display); font-style: italic; color: var(--text); overflow-wrap: anywhere; }

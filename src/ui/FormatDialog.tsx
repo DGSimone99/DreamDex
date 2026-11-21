@@ -61,7 +61,8 @@ export function FormatDialog({ choice, memory, family, onPick, onClose }: {
 }) {
   const t = useT();
   const titleId = useId();
-  const [shown, setShown] = useState<Family>(family);
+  // Giochi senza dati non si mostra: si parte da Competitivo
+  const [shown, setShown] = useState<Family>(family === 'game' && !GAME_IDS.some(gameReady) ? 'competitive' : family);
   const body = useRef<HTMLDivElement>(null);
   useEffect(() => {
     body.current?.querySelector<HTMLInputElement>('input[name="format-family"]:checked')?.focus();

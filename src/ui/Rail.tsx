@@ -1,6 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
 import { FAMILIES, type Family, type FormatChoice, type FormatMemory } from '../engine/formatChoice';
+import { GAME_IDS, gameReady } from '../engine/games';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
@@ -61,9 +62,11 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
         <div className="rail-families">
           {FAMILIES.map(f => {
             const active = choice.family === f;
+            // Giochi senza i Pokédex dei giochi: spenta (nella finestra non si potrebbe scegliere nessun gioco)
+            const off = f === 'game' && !GAME_IDS.some(gameReady);
             return (
-              <button key={f} type="button" className="rail-family" aria-current={active ? 'true' : undefined}
-                aria-label={active ? undefined : t(`family.${f}`)} data-hint={active ? undefined : t(`family.${f}`)} onClick={() => setOpen(f)}>
+              <button key={f} type="button" className="rail-family" aria-current={active ? 'true' : undefined} disabled={off}
+                aria-label={t(`family.${f}`)} data-hint={active ? undefined : t(`family.${f}`)} onClick={() => setOpen(f)}>
                 <Icon name={FAMILY_ICON[f]} />
                 {active && <span>{t(`family.${f}`)}</span>}
               </button>
