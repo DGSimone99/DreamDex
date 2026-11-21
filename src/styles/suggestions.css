@@ -435,8 +435,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(min(130px, 100%), 1fr)); gap: var(--sp-4); padding: var(--sp-7); align-content: center; }
 .suggestions.cards > li + li { border-top: 0; }
 .card {
-  /* Piede (nome e motivi) alto uguale in ogni carta, dai motivi che entrano: nome 18 + 4 + 16 per motivo + 8 */
-  --foot-h: calc(30px + 16px * var(--reasons, 2));
+  /* Piede (nome e motivi) alto uguale in ogni carta, dai motivi che entrano: nome 18 + 4 + 16 per motivo + 8. Sulle
+     carte alte (oltre 180 px) il piede prende fino a 24 px d'aria in più, sopra il nome e fra i motivi: lo sprite sale */
+  --foot-air: clamp(0px, calc((var(--tile-h, 220px) - 180px) / 2), 24px);
+  --foot-h: calc(30px + 16px * var(--reasons, 2) + var(--foot-air));
   /* Palco: dal bordo alto (sotto targhetta e riga dei tipi) fino al piede; lo sprite ci sta dentro, al massimo 112 px */
   --stage-top: 16px;
   --stage-h: calc(var(--tile-h, 220px) - var(--foot-h) - var(--stage-top));
@@ -528,8 +530,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .card .card-types img + img { margin: 0; }
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
-.card .who { position: relative; z-index: 2; flex: none; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: var(--sp-2);
-  box-sizing: border-box; height: var(--foot-h); padding: 0 var(--sp-4) var(--sp-5); text-align: center; }
+.card .who { position: relative; z-index: 2; flex: none; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: calc(var(--sp-2) + var(--foot-air) / 4);
+  box-sizing: border-box; height: var(--foot-h); padding: calc(var(--foot-air) * 0.4) var(--sp-4) var(--sp-5); text-align: center; }
 .card .name-line { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); max-width: 100%; min-width: 0; height: 18px; }
 .card .name-line > :not(.pick) { flex: none; }
 .card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: center; }
@@ -545,7 +547,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    le icone tengono la loro riga e la forma si legge sempre intera */
 .card .pick-name .forme { position: absolute; z-index: 1; top: -22px; right: 8px; max-width: calc(100% - 16px); padding: 1px var(--sp-3); background: var(--ground); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .card.first .pick-name .forme { background: var(--ground); }
-.card .who small { display: flex; flex-direction: column; align-items: safe center; width: 100%; max-width: 100%; min-width: 0; }
+.card .who small { display: flex; flex-direction: column; align-items: safe center; gap: calc(var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }
 .card .reason { display: block; max-width: 100%; min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 
