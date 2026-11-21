@@ -420,7 +420,6 @@
 .sprite.missing { display: block; width: 96px; height: 96px; }
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
 /* Piastrina scura dietro la scritta: il ciano resta leggibile (>=4.5:1) su ogni colore di tipo */
-.slot-lead { position: absolute; left: 8px; top: 7px; padding: 3px 5px 3px var(--sp-2); border-radius: 3px; background: color-mix(in srgb, var(--ground) 88%, transparent); font: 700 var(--fs-caption)/1 var(--display); font-style: italic; letter-spacing: 0.06em; color: var(--accent-ink); }
 
 /* Riordino trascinando */
 .slot.dragging > .slot-card { opacity: 0.45; }

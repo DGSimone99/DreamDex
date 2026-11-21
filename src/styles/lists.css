@@ -161,7 +161,7 @@
 /* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
    tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
-.slot.open > .slot-card > :not(.slot-toggle, .sprite-wrap, .name-line, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
+.slot.open > .slot-card > :not(.slot-toggle, .sprite-wrap, .name-line, .favorite, .remove, .slot-custom, .mini-icon) { display: none; }
 .band:not(.collapsed) .slot.open > .slot-card .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; }
 /* Statico e animato con la stessa scala, quanto lo spazio della carta: la GIF è il riquadro di 96px ritagliato sul Pokémon,
    quindi alta --ani-h/96 dello statico. Senza GIF (es. Urshifu Pluricolpo) lo statico resta grande uguale, non di più */

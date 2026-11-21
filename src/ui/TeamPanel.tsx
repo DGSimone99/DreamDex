@@ -525,10 +525,9 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           ref={card}
           aria-expanded={open}
           aria-controls={drawerId}
-          // Un nome breve per la carta: nome, lead, tipi, strumento, problemi, posizione
+          // Un nome breve per la carta: nome, tipi, strumento, problemi, posizione
           aria-label={[
             set.name ? `${set.name} (${name})` : name,
-            index === 0 ? tr('team.lead') : null,
             species?.types.map(type => typeName(type, lang)).join('/'),
             set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
             dangers.length ? tr(dangers.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: dangers.length }) : null,
@@ -554,10 +553,6 @@ ${tr('team.slotKey', { n: index + 1 })}`)}
         <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set, roles[0]), 'data-hint': '' })}>
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
-        {index === 0 && (
-          // Il primo slot è quello che va in campo per primo
-          <small className="slot-lead" {...bubble(tr('team.leadTitle'))} aria-hidden="true">{tr('team.lead')}</small>
-        )}
         {set.customSkillset && (
           // Non è un problema: piccolo, nell'angolo in alto a sinistra
           <AlertMark icon="unlock" className="slot-custom"
