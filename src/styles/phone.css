@@ -1371,3 +1371,48 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   /* Con Completa team (o un menu) aperto la colonna passa sopra le barre, come la fascia sul telefono */
   .main > .band:has(.fill-panel, details[open]) { z-index: 50; }
 }
+
+/* ── Scegli il formato sul telefono (2026-11-21): a tutto schermo, una cosa per riga, tocchi da 44 ─────────────────
+   Le tre famiglie come un selettore a tre (come le schede dell'editor); le fonti e i giochi una per riga (logo a
+   sinistra, nome e nota a destra), le scelte (Lotta, Tier) larghe quanto lo schermo, le generazioni passate in 4×2;
+   in fondo Annulla e Usa larghi metà ciascuno, sopra la barra del telefono */
+@media (max-width: 599px) {
+  .help-backdrop:has(> .format-dialog) { padding: 0; place-items: stretch; }
+  .help-dialog.format-dialog, .help-dialog.format-dialog.format-dialog { width: 100% !important; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; }
+  .format-dialog .help-head { padding: var(--sp-5) var(--sp-4) var(--sp-5) var(--sp-7); padding-top: max(var(--sp-5), env(safe-area-inset-top)); }
+  .format-dialog .help-close { width: 44px; height: 44px; }
+  /* Famiglie: tre parti uguali, quella aperta piena (ciano), le altre sul fondo del selettore */
+  .fmt-families { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: var(--sp-5) var(--sp-6) 0; padding: 3px;
+    border: 0; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .fmt-families label { display: grid; place-items: center; min-height: 40px; padding: 0 var(--sp-2); border-radius: 6px; clip-path: none;
+    font-size: var(--fs-caption); text-align: center; }
+  .fmt-families label.on { color: var(--on-accent); background: var(--accent); }
+  .fmt-families label.active:not(.on) { box-shadow: inset 0 -2px 0 var(--accent); }
+  .fmt-body { gap: var(--sp-7); padding: var(--sp-6) var(--sp-6) var(--sp-8); }
+  /* Fonti e giochi: una per riga, il logo a sinistra in un riquadro basso */
+  .fmt-sources, .fmt-games { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
+  .fmt-sources .fmt-tile, .fmt-games .fmt-tile { grid-template-columns: 84px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--sp-6); align-items: center;
+    min-height: 60px; padding: var(--sp-3) var(--sp-6) var(--sp-3) var(--sp-3); }
+  .fmt-sources .fmt-art, .fmt-games .fmt-art { grid-column: 1; grid-row: 1 / span 2; height: 48px; margin: 0; padding: var(--sp-2); }
+  .fmt-games .fmt-tile:not(:has(.fmt-art)) { grid-template-columns: minmax(0, 1fr); }
+  .fmt-sources .fmt-tile b, .fmt-games .fmt-tile b { grid-column: 2; align-self: end; }
+  .fmt-sources .fmt-tile small, .fmt-games .fmt-tile small { grid-column: 2; align-self: start; }
+  .fmt-games .fmt-tile:not(:has(.fmt-art)) :is(b, small) { grid-column: 1; }
+  .fmt-gens .fmt-tile { min-height: 56px; }
+  /* Lotta e Tier: le scelte larghe quanto lo schermo, alte 44 */
+  .format-dialog .format-chips { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-3); }
+  .format-dialog .format-chips label { display: grid; place-items: center; min-height: 44px; padding: 0 var(--sp-3); }
+  /* Generazioni passate (in arrivo) in due righe da quattro */
+  .fmt-scale { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .fmt-scale label { padding: var(--sp-4) 0; border-top: 1px solid var(--line-soft); }
+  .fmt-scale label:nth-child(-n + 4) { border-top: 0; }
+  .fmt-scale label:nth-child(4n + 1) { border-left: 0; }
+  /* Limite di generazione (No Format): tasti da 44 che vanno a capo */
+  .format-dialog .format-gens { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); }
+  .format-dialog .format-gens label { display: grid; place-items: center; min-height: 44px; padding: 0; }
+  /* In fondo: avviso sopra, poi Annulla e Usa metà e metà */
+  .fmt-actions { flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-5) var(--sp-6); padding-bottom: max(var(--sp-5), env(safe-area-inset-bottom)); }
+  .fmt-actions .fmt-warning { flex: 1 1 100%; margin: 0; }
+  .fmt-actions button { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 48px; padding: 0 var(--sp-5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fmt-actions .fmt-main { flex-grow: 1.6; }
+}
