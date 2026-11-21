@@ -5,27 +5,27 @@ import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
 describe('Barra laterale', () => {
-  it('contiene la fascia del formato (tre famiglie, nome e riassunto) e le sezioni; niente pulsanti del meta', () => {
+  it('contiene la targa del formato (nome, famiglia e riassunto) e le sezioni; niente famiglie né pulsanti del meta', () => {
     render(<App initialLang="it" data={fixtureData} />);
     const rail = within(screen.getByRole('complementary', { name: 'Barra laterale' }));
-    const band = within(rail.getByRole('group', { name: 'Formato' }));
-    expect(band.getByRole('button', { name: 'Competitivo' })).toHaveAttribute('aria-current', 'true');
-    expect(band.getByRole('button', { name: 'Giochi' })).not.toHaveAttribute('aria-current');
-    expect(band.getByRole('button', { name: 'No Format' })).toBeInTheDocument();
-    expect(band.getByRole('button', { name: /^Formato National Dex OU, Smogon, Singolo/ })).toBeInTheDocument();
+    const format = rail.getByRole('button', { name: 'Formato National Dex OU, Competitivo, Smogon, Singolo: cambia' });
+    expect(format).toHaveTextContent('National Dex OU');
+    expect(format).toHaveTextContent('Competitivo');
+    // Le famiglie si scelgono solo nella finestra
+    expect(rail.queryByRole('button', { name: 'Giochi' })).toBeNull();
+    expect(rail.queryByRole('button', { name: 'No Format' })).toBeNull();
     expect(rail.queryByRole('button', { name: 'Col meta' })).toBeNull();
     expect(rail.queryByRole('button', { name: 'Senza meta' })).toBeNull();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(rail.getByRole('tablist', { name: 'Sezioni' })).toHaveAttribute('aria-orientation', 'vertical');
   });
 
-  it('una famiglia nella fascia apre la finestra su di lei senza cambiare il formato', async () => {
+  it('la targa apre la finestra sulla famiglia del formato attivo', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    await user.click(screen.getByRole('button', { name: 'No Format' }));
+    await user.click(screen.getByRole('button', { name: /^Formato / }));
     const dialog = screen.getByRole('dialog', { name: 'Scegli il formato' });
-    expect(within(dialog).getByText('Tutto ammesso: niente tier, niente ban, niente meta.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Competitivo' })).toHaveAttribute('aria-current', 'true');
+    expect(within(dialog).getByRole('radio', { name: 'Competitivo' })).toBeChecked();
   });
 
   it('le frecce su e giù scorrono le sezioni', async () => {
@@ -45,13 +45,4 @@ describe('Barra laterale', () => {
     expect(container.querySelector('.workspace')).not.toContainElement(banner);
   });
 
-  it('senza i dati dei giochi la famiglia Giochi nella fascia è spenta (niente scelte di gioco senza Pokédex)', () => {
-    render(<App initialLang="it" data={fixtureData} />);
-    expect(screen.getByRole('button', { name: 'Giochi' })).toBeDisabled();
-  });
-
-  it('la famiglia attiva ha il nome anche quando il testo è nascosto (telefono)', () => {
-    render(<App initialLang="it" data={fixtureData} />);
-    expect(screen.getByRole('button', { name: 'Competitivo' })).toHaveAttribute('aria-label', 'Competitivo');
-  });
 });

@@ -1,6 +1,6 @@
 /*
  * Barra laterale sul PC (dalle bozze impeccable, "il diario" senza il voto):
- * - il formato è una pillola lucida con la casella azzurra della famiglia e le famiglie come etichette sopra;
+ * - il formato è una targa azzurra a tutta larghezza (shell.css);
  * - le sezioni sono righe compatte a tutta larghezza, separate da una linea: icona azzurra, nome in corsivo, a destra
  *   solo il numero che conta (5/6, problemi, preferiti·bannati); la sezione aperta è una fascia magenta
  *   a righine da bordo a bordo. Lo stato intero resta la descrizione della scheda per i lettori di schermo;
@@ -8,21 +8,6 @@
  * Sul telefono le sezioni sono la barra in basso (phone.css): qui solo da 1100px in su.
  */
 @media (min-width: 1100px) {
-  /* ── Formato: pillola lucida ────────────────────────────────── */
-  .rail .rail-family { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
-  .rail .rail-family[aria-current] { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45); }
-  .rail .rail-format-main {
-    position: relative;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0 48%, transparent 48%),
-      linear-gradient(100deg, #2f3452, var(--raised) 60%, #22263a);
-    box-shadow: inset 0 0 0 2px var(--control-line), 0 4px 8px rgba(0, 0, 0, 0.35);
-  }
-  .rail .rail-format-main:hover { box-shadow: inset 0 0 0 2px var(--accent), 0 4px 8px rgba(0, 0, 0, 0.35); }
-  .rail .rail-format-box { background: linear-gradient(180deg, #5fe6ff, var(--accent) 55%, #00a9d1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
-  .rail .rail-format-box .icon { width: 18px; height: 18px; stroke-width: 2.4; }
-  .rail .rail-format-name { text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
-
   /* ── Sezioni: righe a tutta larghezza ───────────────────────── */
   .rail .tabs.vertical { gap: 0; padding: 0; border-block: 1px solid var(--soft); }
   .rail .tabs.vertical [role='tab'] {

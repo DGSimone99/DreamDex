@@ -23,24 +23,20 @@
 .rail-logo { margin: 0; padding: 0 var(--sp-8); color: var(--text); }
 .rail-logo-art svg { display: block; width: 100%; height: auto; }
 .rail-label { margin: 0; font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-/* Formato in stile Champions: le tre famiglie come etichette appoggiate sopra una "pillola" (come la barra in alto del
-   menu del gioco), con a sinistra una casella azzurra tagliata in obliquo con l'icona della famiglia; tutto apre la finestra */
-.rail-format { display: grid; grid-template-columns: minmax(0, 1fr); margin: 0 var(--sp-6); }
-.rail-families { display: flex; gap: 2px; padding-left: var(--sp-3); }
-.rail-family { display: inline-flex; align-items: center; min-height: 20px; padding: 2px var(--sp-3) 1px; border: 0; border-radius: 8px 8px 2px 2px; background: var(--raised); color: var(--faint); font: 700 var(--fs-label)/1.2 var(--display); font-style: italic; letter-spacing: 0.01em; white-space: nowrap; cursor: pointer; transition: color 0.15s var(--ease), background-color 0.15s var(--ease); }
-.rail-family .icon { display: none; }
-.rail-family:hover:not([aria-current], :disabled) { color: var(--text); background: var(--line); }
-.rail-family[aria-current] { color: var(--on-accent); background: var(--accent); }
-.rail-family:disabled { opacity: 0.4; cursor: not-allowed; }
-.rail-format-main { display: grid; grid-template-columns: 38px minmax(0, 1fr); grid-template-areas: 'box name' 'box sum'; align-items: center; gap: 1px var(--sp-5); min-width: 0; min-height: 52px; padding: 0 var(--sp-6) 0 0; overflow: hidden; border: 0; border-radius: 26px; background: var(--raised); box-shadow: inset 0 0 0 2px var(--line); color: inherit; text-align: left; cursor: pointer; transition: box-shadow 0.15s var(--ease); }
-.rail-format-box { grid-area: box; align-self: stretch; display: grid; place-items: center; padding-right: 4px; background: var(--accent); color: var(--on-accent); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-.rail-format-box .icon { width: 17px; height: 17px; }
-.rail-format-name { grid-area: name; align-self: end; padding-top: var(--sp-3); font: 800 var(--fs-title)/1.1 var(--display); font-style: italic; color: var(--text); overflow-wrap: anywhere; }
-.rail-format-summary { grid-area: sum; align-self: start; display: flex; flex-wrap: wrap; gap: 0 var(--sp-3); padding-bottom: var(--sp-3); color: var(--muted); font: 500 var(--fs-caption)/1.35 var(--ui); }
+/* Formato: una targa azzurra a righine a tutta larghezza (icona della famiglia, nome in grande, freccina) e sotto una riga
+   scura col riassunto e la famiglia. Tutto è un pulsante che apre la finestra Scegli il formato */
+.rail-format { display: flex; flex-direction: column; gap: 0; width: 100%; height: auto; padding: 0; border: 0; border-block: 1px solid var(--line); border-radius: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.rail-format-plate { display: grid; grid-template-columns: 20px minmax(0, 1fr) 16px; align-items: center; gap: var(--sp-5); padding: var(--sp-5) var(--sp-7) var(--sp-5) var(--sp-9); background: var(--stripes), linear-gradient(100deg, #5fe6ff, var(--accent) 50%, #00a9d1); color: var(--on-accent); }
+.rail-format-plate .icon { width: 20px; height: 20px; stroke-width: 2.3; }
+.rail-format-plate .icon:last-child { width: 16px; height: 16px; stroke-width: 2.6; transition: translate 0.15s var(--ease); }
+.rail-format-name { font: 800 var(--fs-title-l)/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; }
+.rail-format-sub { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-1) var(--sp-4); padding: var(--sp-4) var(--sp-7) var(--sp-4) var(--sp-9); background: var(--field); }
+.rail-format-summary { display: flex; flex-wrap: wrap; gap: 0 var(--sp-3); min-width: 0; white-space: nowrap; color: var(--muted); font: 500 var(--fs-caption)/1.35 var(--ui); }
 .rail-format-summary span + span::before { content: '·'; margin-right: var(--sp-3); color: var(--faint); }
-.rail-format-main > .icon { display: none; }
-.rail-format-main:hover { box-shadow: inset 0 0 0 2px var(--accent); }
-.rail-format-main:focus-visible, .rail-family:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rail-format-family { flex: none; color: var(--accent); font: 700 var(--fs-caption)/1.2 var(--display); font-style: italic; }
+.rail-format:hover .rail-format-plate { background: var(--stripes), linear-gradient(100deg, #8af0ff, #33dcff 50%, var(--accent)); }
+.rail-format:hover .rail-format-plate .icon:last-child { translate: 3px 0; }
+.rail-format:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .format-chips { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .format-chips label { min-width: 44px; padding: 5px var(--sp-5); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--muted); font: 700 var(--fs-section)/1.2 var(--display); font-style: italic; text-align: center; cursor: pointer; }
 .format-chips label.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }

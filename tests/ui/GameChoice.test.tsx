@@ -35,8 +35,7 @@ describe('scelta del gioco', () => {
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     await pickGame(user, 'sv');
     expect(document.documentElement.dataset.palette).toBe('sv');
-    expect(formatButton()).toHaveAccessibleName('Formato Scarlatto e Violetto, Gen 9: cambia');
-    expect(screen.getByRole('button', { name: 'Giochi' })).toHaveAttribute('aria-current', 'true');
+    expect(formatButton()).toHaveAccessibleName('Formato Scarlatto e Violetto, Giochi, Gen 9: cambia');
     await openFormat(user);
     expect(document.querySelector('input[name="format-tier"]')).toBeNull();
     const all = screen.getByRole('checkbox', { name: 'Tutto il Pokédex' });

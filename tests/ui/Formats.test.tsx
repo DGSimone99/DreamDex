@@ -131,10 +131,10 @@ describe('pannello Avanzate', () => {
     await openFormat(user);
     expect(within(screen.getByRole('dialog')).getByText('Avanzate')).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Monotype' })).toBeNull();
-    expect(formatButton()).toHaveAccessibleName('Formato National Dex OU, Smogon, Singolo: cambia');
+    expect(formatButton()).toHaveAccessibleName('Formato National Dex OU, Competitivo, Smogon, Singolo: cambia');
     await user.click(screen.getByRole('checkbox', { name: 'Ignora ban' }));
     await user.click(screen.getByRole('checkbox', { name: 'Più Mega ammesse' }));
-    expect(formatButton()).toHaveAccessibleName('Formato National Dex OU, Smogon, Singolo, Ban ignorati, Più Mega: cambia');
+    expect(formatButton()).toHaveAccessibleName('Formato National Dex OU, Competitivo, Smogon, Singolo, Ban ignorati, Più Mega: cambia');
   });
 
   it('cambiando formato i membri illegali vengono segnalati, non rimossi', async () => {

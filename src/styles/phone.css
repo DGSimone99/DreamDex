@@ -31,25 +31,11 @@
   .rail-logo { flex: none; padding: 0; }
   .rail-logo-art { display: block; width: 125px; height: 28px; overflow: hidden; }
   .rail-logo-art svg { width: auto; height: 28px; }
-  /* Fascia del formato compatta: solo la famiglia attiva come linguetta e il nome; il tocco apre la finestra (dal basso) */
-  .rail-format { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0; height: 40px; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); }
-  .rail-families { flex: none; align-self: stretch; padding: 0; }
-  .rail-family:not([aria-current]) { display: none; }
-  .rail-family[aria-current] { margin: 0; height: 100%; padding: 0 var(--sp-7) 0 var(--sp-4); }
-  .rail-family[aria-current] span { display: none; }
-  .rail-format-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-4); height: 100%; padding: 0 var(--sp-5) 0 var(--sp-4); }
-  .rail-format-name { flex: 1; min-width: 0; overflow: hidden; font-size: var(--fs-body); white-space: nowrap; text-overflow: ellipsis; }
-  .rail-format-summary { display: none; }
-  .rail-format-main > .icon { align-self: center; margin: 0; }
-  .rail-format { margin: 0; }
-  .rail-families { padding: 0; }
-  .rail-family .icon { display: block; }
-  .rail-family { min-height: 0; border-radius: 0; font-size: var(--fs-label); }
-  .rail-format-main { min-height: 0; border-radius: 0; box-shadow: none; background: none; }
-  .rail-format-main:hover { box-shadow: none; }
-  .rail-format-box { display: none; }
-  .rail-format-main > .icon { display: block; }
-  .rail-format-name { align-self: center; padding: 0; }
+  /* Formato compatto: solo la targa (icona, nome, freccina) alta come la barra; il riassunto è nella finestra */
+  .rail-format { flex: 1; min-width: 0; height: 40px; overflow: hidden; border: 0; border-radius: 4px; }
+  .rail-format-plate { height: 100%; padding: 0 var(--sp-5); gap: var(--sp-4); }
+  .rail-format-name { overflow: hidden; font-size: var(--fs-body); white-space: nowrap; text-overflow: ellipsis; }
+  .rail-format-sub { display: none; }
   .rail-settings-text { display: none; }
   /* I numeri delle sezioni servono solo sul computer: qui c'è la riga di stato */
   .rail .tabs.vertical .tab-count { display: none; }

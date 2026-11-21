@@ -1,7 +1,6 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import logo from '../assets/brand/dreamdex-band-horizontal-app.svg?raw';
-import { FAMILIES, type Family, type FormatChoice, type FormatMemory } from '../engine/formatChoice';
-import { GAME_IDS, gameReady } from '../engine/games';
+import type { Family, FormatChoice, FormatMemory } from '../engine/formatChoice';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
@@ -50,6 +49,7 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
   const close = useCallback(() => setOpen(null), []);
   const name = choiceName(choice, t);
   const summary = choiceSummary(choice, t);
+  const family = t(`family.${choice.family}`);
   return (
     <aside className="rail" aria-label={t('rail.label')}>
       <h1 className="rail-logo">
@@ -57,31 +57,20 @@ export function Rail({ choice, memory, onPick, meta, lang, onLangChange, tabs, o
         {/* Il logo a fascia del kit: le due D nei colori della versione (--accent, --accent-2), la scritta nel colore del testo */}
         <span className="rail-logo-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: logo }} />
       </h1>
-      <div className="rail-format" role="group" aria-label={t('rail.format')}>
-        {/* Le famiglie come etichette appoggiate sopra la pillola del formato (stile Champions); sul telefono solo l'icona dell'attiva */}
-        <div className="rail-families">
-          {FAMILIES.map(f => {
-            const active = choice.family === f;
-            // Giochi senza i Pokédex dei giochi: spenta (nella finestra non si potrebbe scegliere nessun gioco)
-            const off = f === 'game' && !GAME_IDS.some(gameReady);
-            return (
-              <button key={f} type="button" className="rail-family" aria-current={active ? 'true' : undefined} disabled={off}
-                aria-label={t(`family.${f}`)} data-hint={active ? undefined : t(`family.${f}`)} onClick={() => setOpen(f)}>
-                <Icon name={FAMILY_ICON[f]} />
-                <span>{t(`family.${f}`)}</span>
-              </button>
-            );
-          })}
-        </div>
-        <button type="button" className="rail-format-main" onClick={() => setOpen(choice.family)}
-          aria-label={t('rail.formatAria', { format: name, summary: summary.join(', ') })}>
-          {/* La casella colorata a sinistra della pillola, con l'icona della famiglia */}
-          <span className="rail-format-box" aria-hidden="true"><Icon name={FAMILY_ICON[choice.family]} /></span>
+      {/* Il formato come targa azzurra a tutta larghezza (icona della famiglia, nome, freccina) e sotto una riga scura col
+          riassunto e la famiglia; il clic apre la finestra Scegli il formato sulla famiglia attiva */}
+      <button type="button" className="rail-format" onClick={() => setOpen(choice.family)}
+        aria-label={t('rail.formatAria', { format: name, summary: [family, ...summary].join(', ') })}>
+        <span className="rail-format-plate">
+          <Icon name={FAMILY_ICON[choice.family]} />
           <span className="rail-format-name">{name}</span>
+          <Icon name="next" />
+        </span>
+        <span className="rail-format-sub">
           <span className="rail-format-summary">{summary.map(part => <span key={part}>{part}</span>)}</span>
-          <Icon name="edit" />
-        </button>
-      </div>
+          <span className="rail-format-family">{family}</span>
+        </span>
+      </button>
       {open && <FormatDialog choice={choice} memory={memory} family={open} onPick={onPick} onClose={close} />}
       <div className="rail-sections">{tabs}</div>
       <div className="rail-foot">
