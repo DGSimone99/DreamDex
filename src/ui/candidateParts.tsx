@@ -5,7 +5,7 @@ import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
 import { rankedChanges } from '../engine/coach';
 import { detectRoles, roleLabel, shownRoles } from '../engine/roles';
-import { OFTEN_TOGETHER, type Suggestion } from '../engine/scoring';
+import type { Suggestion } from '../engine/scoring';
 import type { ScoredArea, SwapOption, TeamGain } from '../engine/teamGain';
 import type { TeamSet } from '../engine/sets';
 import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
@@ -174,12 +174,7 @@ function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
 
 /** I segni del candidato: ban del formato, liste dell'utente, avvisi, "spesso usati insieme" (tooltip, non etichette). */
 export function CandidateMarks({ item, format, lists }: { item: Item; format: Format; lists?: EffectiveLists }) {
-  const tr = useT();
   const warnings = item.facts.clashes.map(text => ({ level: 'warn' as const, text: text.replace(/^⚠\s*/, '') }));
-  const synergy = item.facts.synergy;
-  const together = synergy && synergy.pct >= OFTEN_TOGETHER
-    ? [{ level: 'info' as const, text: tr('tag.oftenTogether', { member: synergy.member, pct: Math.round(synergy.pct * 100) }) }]
-    : [];
   return (
     <>
       {/* Tooltip flottanti: la casella nasconde ciò che sporge e la lista sta accanto alla scheda */}
@@ -187,7 +182,6 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
       <ExclusiveMark compact species={battleName(item.set)} format={format} />
       <ListMarks set={item.set} lists={lists} />
       <AlertMark alerts={warnings} floating />
-      <AlertMark alerts={together} icon="spark" floating />
     </>
   );
 }

@@ -108,9 +108,10 @@ describe('SuggestionsPanel', () => {
     expect(slab.getAttribute('title')).toBeTruthy();
   });
 
-  it('mostra i tag sulle righe', async () => {
+  it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
     await setup('Great Tusk', 'Gholdengo');
-    expect(within(list()).getByText('Spesso usati insieme: Great Tusk (25%)')).toBeInTheDocument();
+    expect(within(list()).queryByText(/Spesso usati insieme/)).toBeNull();
+    expect(list().querySelector('.alert-mark .icon-spark, [data-icon="spark"]')).toBeNull();
   });
 
   it('Carte: pagine da 6, la seconda continua la numerazione', async () => {
