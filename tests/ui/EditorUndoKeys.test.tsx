@@ -89,7 +89,7 @@ describe('tasti 1-6 con l\'editor aperto', () => {
     const { user, container, slot } = await openFirst();
     const toggles = () => container.querySelectorAll<HTMLElement>('.slot-toggle');
     expect(toggles()[0]).toHaveAttribute('aria-keyshortcuts', expect.stringMatching(/^1 /));
-    expect(toggles()[1].getAttribute('title')).toContain('tasto 2');
+    expect(toggles()[1].getAttribute('data-hint')).toContain('tasto 2');
     await user.keyboard('2');
     expect(slot()).toContainElement(toggles()[1]);
     expect(toggles()[1]).toHaveFocus();

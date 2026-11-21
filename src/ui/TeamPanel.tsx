@@ -217,6 +217,8 @@ function EditorGrade({ grade }: { grade: EditorGradeShown }) {
   return (
     <span className={`editor-grade grade-${grade.letter}${grade.illegal ? ' illegal' : ''}`}>
       <span className="visually-hidden">{tr('editor.gradeLabel')} </span>
+      {/* Team non legale: il triangolo rosso delle carte prima della lettera grigia (il grigio da solo sembra "spento") */}
+      {grade.illegal && <span className="editor-grade-alert"><Icon name="warning" /><span className="visually-hidden">{tr('editor.flagIllegal')}: </span></span>}
       <b>{grade.letter}</b>
       {delta === 0 ? <span>{grade.overall}</span> : (
         <span className={delta > 0 ? 'up' : 'down'}>{from}<Icon name="next" /><b>{grade.overall}</b></span>
@@ -453,20 +455,22 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     megaWarning,
     // Forma senza il suo strumento (Zacian-Crowned senza Rusted Sword): il voto la conta come la forma base
     missing ? tr('team.formeItem', { item: gameName('item', missing.item, lang), base: missing.base.name }) : null,
-    illegalMovesText,
-    illegalAbilityText,
     locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
   ].filter((w): w is string => !!w);
-  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti in alto sulla carta, il dettaglio nei tooltip
-  const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
-  // Mosse o abilità non legali: come risolvere sta nel tooltip della riga, non nel testo
-  const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
-  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text, title: hint(text) }));
+  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti in alto sulla carta, il dettaglio nei tooltip.
+  // Mosse o abilità che la specie non impara sono rosse come nell'editor (senza Custom Skillset non sono legali); come
+  // risolvere sta nel tooltip della riga, non nel testo
+  const unlearnable: Alert[] = [
+    ...(illegalMovesText ? [{ level: 'danger' as const, text: illegalMovesText, title: tr('team.illegalMovesHint'), plain: true }] : []),
+    ...(illegalAbilityText ? [{ level: 'danger' as const, text: illegalAbilityText, title: tr('team.illegalAbilityHint'), plain: true }] : []),
+  ];
+  const dangers: Alert[] = [...problems.map(text => ({ level: 'danger' as const, text })), ...unlearnable];
+  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text }));
   return (
     // La carta non è un <details>: il clic apre l'editor (stato del team), e lucchetto, × e avvisi stanno accanto al
     // pulsante della carta, non dentro (niente controlli dentro un altro controllo)
     <div
-      className={`slot filled${open ? ' open' : ''}${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
+      className={`slot filled${open ? ' open' : ''}${dangers.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
       style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? ''), '--vt': `slot-${index}` } as React.CSSProperties}
       onKeyDown={e => {
         // Esc chiude l'editor e torna sulla card; le frecce sulla card passano al membro accanto
@@ -482,7 +486,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         className="slot-card"
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del tooltip "trascina" del browser)
-        title={collapsed || touch ? undefined : `${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
+        {...(collapsed || touch ? {} : bubble(`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`))}
         {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
         onPointerDown={e => {
@@ -522,12 +526,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
             index === 0 ? tr('team.lead') : null,
             species?.types.map(type => typeName(type, lang)).join('/'),
             set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
-            problems.length ? tr(problems.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: problems.length }) : null,
+            dangers.length ? tr(dangers.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: dangers.length }) : null,
             warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
             tr('team.position', { n: index + 1, total }),
           ].filter(Boolean).join(', ')}
           aria-keyshortcuts={`${index + 1} Alt+ArrowLeft Alt+ArrowRight`}
-          title={`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`}
+          {...bubble(`${tr('team.dragTitle')} ${tr('team.slotKey', { n: index + 1 })}`)}
         />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
         <span className="mini-icon" aria-hidden="true">
@@ -545,7 +549,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         </span>
         {index === 0 && (
           // Il primo slot è quello che va in campo per primo
-          <small className="slot-lead" title={tr('team.leadTitle')} aria-hidden="true">{tr('team.lead')}</small>
+          <small className="slot-lead" {...bubble(tr('team.leadTitle'))} aria-hidden="true">{tr('team.lead')}</small>
         )}
         {set.customSkillset && (
           // Non è un problema: piccolo, nell'angolo in alto a sinistra
@@ -574,7 +578,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
         {/* Strumento e nome li dice già il pulsante della carta; gli avvisi in fondo alla riga del nome restano leggibili */}
         <span className="name-line">
-          <small className="held" aria-hidden="true" {...(set.item ? kitTip('item', set.item) : hint(tr('team.noItem')))}>
+          <small className="held" aria-hidden="true" {...(set.item ? kitTip('item', set.item) : bubble(tr('team.noItem')))}>
             <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
