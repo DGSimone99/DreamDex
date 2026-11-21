@@ -5,6 +5,10 @@ import { useEffect, useState } from 'react';
  * altezza in su (es. 2K col ridimensionamento al 150%, 1707×780) team compatto ed editor stanno insieme: niente chiusura.
  */
 export const SHORT_SCREEN = '(min-width: 1100px) and (max-height: 759px)';
+/** Editor a schede (Set, Statistiche, Sfida) sotto la testata a riepilogo: telefono e tablet. */
+export const EDITOR_TABS_QUERY = '(max-width: 1099px)';
+/** Tablet in orizzontale: il team è una colonna a sinistra (come la squadra nei giochi), la sezione e l'editor a destra. */
+export const TABLET_SIDE_QUERY = '(min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px)';
 
 const matches = (query: string) => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
 

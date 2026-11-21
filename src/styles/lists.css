@@ -920,7 +920,8 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
   .duel-rows { padding-left: var(--sp-6); padding-right: var(--sp-5); }
   /* Il nome dell'avversario prende tutta la riga (Charizard-Mega-Y intero): l'ingranaggio sale a destra del giudizio */
   .duel-head { padding-left: var(--sp-4); padding-right: var(--sp-4); }
-  .duel-name .duel-settings { position: absolute; right: 0; bottom: calc(100% + 3px); }
+  .duel-name { position: static; }
+  .duel-name .duel-settings { position: absolute; top: 18px; right: var(--sp-4); translate: 0 -50%; }
   /* La mossa senza la coda della potenza (il danno lo dicono la barra e i colpi): resta il nome intero */
   .duel-label .mvp-tail { display: none; }
 }
