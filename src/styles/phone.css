@@ -1353,3 +1353,17 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 @media (min-width: 600px) and (max-width: 759px) {
   .band:not(.collapsed) .grade-badge .grade-areas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+/* Tablet, giro 3: in verticale l'azione principale subito dopo la targa del team (il menu Team resta a destra);
+   in orizzontale la guida è un trapezio /‾‾\ appoggiato sulle righe della squadra */
+@media (min-width: 600px) and (max-width: 1099px) and (not ((orientation: landscape) and (min-width: 760px) and (min-height: 501px))) {
+  .band:not(.collapsed) .team-head .team-guide-slot { margin-left: 0; }
+  .band:not(.collapsed) .team-head .team-more { margin-left: auto; }
+}
+@media (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px) {
+  /* Il fondo è il ::before (di solito un parallelogramma inclinato): qui dritto e tagliato a trapezio */
+  .band:not(.collapsed) .team-head .team-guide-slot button.team-guide { clip-path: none; }
+  .band:not(.collapsed) .team-head .team-guide-slot button.team-guide::before { inset: 0; transform: none; border-radius: 0;
+    clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 100%, 0 100%); }
+  /* Il filo del bordo segue i lati obliqui: lo disegna un'ombra sotto (drop-shadow), non il riquadro */
+  .band:not(.collapsed) .team-head .team-guide-slot { filter: drop-shadow(0 0 0.6px color-mix(in srgb, var(--accent) 70%, transparent)); }
+}
