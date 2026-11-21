@@ -184,7 +184,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onC
             </span>
             <small>{setSummary(preset.set, lang)}</small>
           </span>
-          <ItemIcon item={preset.set.item} size={22} />
+          <ItemIcon item={preset.set.item} size={22} tip />
           {i === applied && <Icon name="check" />}
         </button>
       </li>,
@@ -254,7 +254,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onC
                               <span className="set-menu-name"><strong>{saved.name}</strong></span>
                               <small>{setSummary(saved.set, lang)}</small>
                             </span>
-                            <ItemIcon item={saved.set.item} size={22} />
+                            <ItemIcon item={saved.set.item} size={22} tip />
                             {i === current && <Icon name="check" />}
                           </button>
                         )}

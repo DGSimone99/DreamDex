@@ -7,10 +7,10 @@ import type { Pokedex } from '../engine/formats';
 import type { GameId } from '../engine/games';
 import type { CommonChoice, CommonChoices, CommonSpread } from '../engine/common';
 import { formatPercent, type Lang } from '../i18n';
-import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
+import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
-import { MoveTipBody } from './MoveTip';
+import { hint, KitTipBody, kitTip, MoveTipBody } from './MoveTip';
 import { describe } from './describe';
 import { SpeedMeta } from './SpeedLine';
 import type { SpeedTier } from '../engine/speed';
@@ -151,6 +151,11 @@ function moveOption(name: string, lang: Lang): ComboOption {
   return option;
 }
 const ALL_MOVES = moveNames();
+/** Il tooltip di una voce del menu di strumenti o abilità (di lato alla voce attiva), come quello delle mosse. */
+const kitTipOf = (kind: 'item' | 'ability') => (option: ComboOption) =>
+  (option.value ? { tone: 'var(--accent)', content: <KitTipBody kind={kind} name={option.value} />, className: 'move kit' } : null);
+const itemTipOf = kitTipOf('item');
+const abilityTipOf = kitTipOf('ability');
 /** Il tooltip di una voce del menu delle mosse (di lato alla voce attiva). */
 const moveTipOf = (option: ComboOption) => {
   const move = getMove(option.value);
@@ -417,8 +422,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     <span className="field-flags">
       <span className="field-flag" aria-hidden="true"><Icon name="warning" />{flag.label}</span>
       {flag.swap && (
-        <button type="button" className={`field-swap${kind === 'move' ? '' : ' tip'}`}
-          {...(kind === 'move' ? { 'data-move-tip': flag.swap } : { 'data-tip': gameDesc(kind, flag.swap, lang) ?? describe[kind](flag.swap, lang) })}
+        <button type="button" className="field-swap"
+          {...(kind === 'move' ? { 'data-move-tip': flag.swap } : kitTip(kind, flag.swap))}
           aria-label={t('editor.swapMove', { to: gameName(kind, flag.swap, lang), from: gameName(kind, current, lang) })}
           onClick={() => apply(flag.swap!)}>
           <Icon name="swap" /><span>{gameName(kind, flag.swap, lang)}</span>
@@ -500,7 +505,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
             <span />
             {/* Oltre 510 rosso; 8 o più EV ancora da spendere (2 punti di statistica) giallo, col tooltip che lo dice */}
             <p className={`stat-head-ev ev-total${used > EV_TOTAL ? ' over' : EV_TOTAL - used >= 8 ? ' under' : ''}`}
-              title={used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : EV_TOTAL - used >= 8 ? t('editor.evUnder', { n: EV_TOTAL - used }) : undefined}>
+              {...hint(used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : EV_TOTAL - used >= 8 ? t('editor.evUnder', { n: EV_TOTAL - used }) : undefined)}>
               <HeadHelp className="ev-head" text={t('editor.evHelp')}>{t('editor.evs')}</HeadHelp>
               <span className="visually-hidden">{t('editor.evTotal')}</span>
               <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
@@ -597,25 +602,25 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
           <span className="hint-bubble" id={customHintId} hidden={!customShown}>{customHint}</span>
         </label>
         <div className="editor-group set-plates">
-        <div className="field" data-tip={itemDesc}>
+        <div className="field" {...kitTip('item', set.item)}>
           {/* Fuori regola: sopra la targhetta la parola breve e ⇄ lo strumento da mettere al posto, come sulle mosse */}
           {/* La riga sopra c'è sempre (vuota se va tutto bene): quando compare l'avviso niente si sposta */}
           <span className="field-head">{flags?.item && flagHead('item', flags.item, set.item, item => update({ item }))}</span>
           {plate(t('editor.item'), (
-            <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter
+            <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc} descriptionFooter optionTip={itemTipOf}
               leading={set.item ? <ItemIcon item={set.item} /> : undefined} invalid={flags?.item?.text}
               onChange={item => update({ item })} />
           ), !set.item, flags?.item)}
         </div>
-        <div className="field" data-tip={abilityDesc}>
+        <div className="field" {...kitTip('ability', shownAbility)}>
           <span className="field-head">{!megaAbility && flags?.ability && flagHead('ability', flags.ability, set.ability, ability => update({ ability }))}</span>
           {plate(t('editor.ability'), megaAbility ? (
-            <span className="plate-lock" title={t('editor.megaAbility')}>
+            <span className="plate-lock" {...hint(t('editor.megaAbility'))}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
                 description={abilityDesc} onChange={() => undefined} />
             </span>
           ) : (
-            <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom}
+            <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom} optionTip={abilityTipOf}
               description={abilityDesc} invalid={flags?.ability?.text} onChange={ability => update({ ability })} />
           ), !megaAbility && !set.ability, megaAbility ? undefined : flags?.ability)}
         </div>

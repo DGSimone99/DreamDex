@@ -16,6 +16,13 @@ async function addPokemon(user: ReturnType<typeof userEvent.setup>, name: string
   await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
 }
 
+/** I ruoli del primo membro nel riquadro Ruoli del suo editor. */
+async function editorRoles(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(teamRegion().querySelector<HTMLElement>('.slot-toggle')!);
+  const slot = teamRegion().querySelector<HTMLElement>('.slot.open')!;
+  return within(within(slot).getByRole('group', { name: 'Ruoli' })).getAllByRole('listitem').map(li => li.textContent!);
+}
+
 describe('TeamPanel', () => {
   it('aggiunge un Pokémon dalla ricerca con il set più comune', async () => {
     const user = userEvent.setup();
@@ -44,14 +51,14 @@ describe('TeamPanel', () => {
     check(5);
   });
 
-  it('la carta mostra solo il ruolo principale per esteso, con tutti i ruoli nel tooltip', async () => {
+  it('la carta mostra solo il ruolo principale, spiegato nel fumetto (solo lui)', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
-    // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
-    expect(roles.getAttribute('title')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico): [^·]+ · /);
+    // Il ruolo mostrato spiegato in una frase, gli altri no
+    expect(roles.getAttribute('data-hint')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico): [^·]+$/);
   });
 
   it('la carta non ha il badge Stats e mostra lo strumento come icona prima del nome (nome nel tooltip)', async () => {
@@ -62,32 +69,35 @@ describe('TeamPanel', () => {
     expect(card.querySelector('.stats-badge')).toBeNull();
     const held = card.querySelector('.name-line .held')!;
     expect(held.querySelector('.item-icon')).not.toBeNull();
-    expect(held.getAttribute('title')).toMatch(/^Booster Energy/);
+    // Passandoci sopra il tooltip DreamDex dello strumento
+    expect(held).toHaveAttribute('data-item-tip', 'Booster Energy');
     expect(held).toHaveTextContent('Booster Energy');
     expect(held.compareDocumentPosition(card.querySelector('.name')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('chi porta il meteo: sulla carta il ruolo principale, il meteo nel tooltip dei ruoli', () => {
+  it("chi porta il meteo: sulla carta il ruolo principale, il meteo fra i Ruoli dell'editor", async () => {
+    const user = userEvent.setup();
     const pelipper = { ...emptySet('Pelipper'), item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane', 'Scald', 'U-turn', 'Roost'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_FORMAT)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
-    // Ruoli misurati come nel voto: il principale non è mai il Recupero; il meteo e il resto nel tooltip
+    // Ruoli misurati come nel voto: il principale non è mai il Recupero; il meteo e il resto nel riquadro Ruoli
     expect(roles.textContent).not.toContain(' · ');
     expect(roles.textContent).not.toBe('Recupero');
-    const all = roles.getAttribute('title')!.split(' · ');
+    const all = await editorRoles(user);
     expect(all[1]).toMatch(/^Porta la pioggia \(.+\)$/);
     expect(all).toEqual(expect.arrayContaining(['Pivot', 'Recupero']));
   });
 
-  it('il tooltip dei ruoli elenca tutti i ruoli, non solo i due mostrati', () => {
+  it("i Ruoli dell'editor elencano tutti i ruoli, non solo quello della carta", async () => {
+    const user = userEvent.setup();
     // Calibrazione (Task 9): Latias-Mega veloce con Calm Mind è uno sweeper (una sola etichetta); Defog dà la seconda
     const latias = { ...emptySet('Latias'), item: 'Latiasite', ability: 'Levitate', moves: ['Calm Mind', 'Mystical Fire', 'Mist Ball', 'Defog'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_FORMAT)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent!.split(' · ')).toHaveLength(1);
-    const all = roles.getAttribute('title')!.split(' · ').map(part => part.split(': ')[0]);
+    const all = await editorRoles(user);
     expect(all.length).toBeGreaterThan(2);
     expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Controllo Hazard']);
     expect(all).toEqual(expect.arrayContaining(['Muro Speciale']));

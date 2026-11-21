@@ -29,6 +29,7 @@ import { StatIcon } from './StatIcon';
 import { Sprite, typeColor } from './Sprite';
 import { typeIconUrl } from './typeIcons';
 import { takeOpponent } from './duelHandoff';
+import { hint, KitTipBody, kitTip } from './MoveTip';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
 interface OppSet { key: string; label: string; set: TeamSet; usage?: boolean }
@@ -404,7 +405,7 @@ export function EditorDuel({ set, team, data, format, onApply, onOpenMember }: {
             {species && <GenderMark species={species} />}
             {species && (
               <button type="button" className="duel-settings" aria-haspopup="dialog" aria-expanded={settingsOpen} aria-controls={settingsId}
-                aria-label={t('editor.duelSettings')} title={t('editor.duelSettings')} onClick={toggleSettings}>
+                aria-label={t('editor.duelSettings')} {...hint(t('editor.duelSettings'))} onClick={toggleSettings}>
                 <Icon name="gear" />
               </button>
             )}
@@ -432,9 +433,10 @@ export function EditorDuel({ set, team, data, format, onApply, onOpenMember }: {
                 )}
                 {opp && (
                   <>
-                    <div className="duel-settings-row">
+                    <div className="duel-settings-row" {...kitTip('item', opp.item)}>
                       <span className="duel-settings-label">{t('editor.item')}</span>
                       <Combobox label={t('editor.duelItem')} value={opp.item} options={itemOptions} className="duel-item"
+                        optionTip={option => (option.value ? { tone: 'var(--accent)', content: <KitTipBody kind="item" name={option.value} />, className: 'move kit' } : null)}
                         leading={opp.item ? <ItemIcon item={opp.item} /> : undefined}
                         onChange={item => setEdit(e => ({ ...e, item }))} />
                     </div>

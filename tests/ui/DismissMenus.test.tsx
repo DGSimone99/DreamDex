@@ -5,13 +5,13 @@ import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
 const menu = (text: string) => screen.getByText(text).closest('details')!;
-const importMenu = () => screen.getByTitle('Incolla un team scritto per Showdown').closest('details')!;
+const importMenu = () => document.querySelector<HTMLElement>('[data-hint="Incolla un team scritto per Showdown"]')!.closest('details')!;
 
 describe('menu a tendina', () => {
   it('Importa si chiude con un clic fuori, non con un clic dentro', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    await user.click(screen.getByTitle('Incolla un team scritto per Showdown'));
+    await user.click(document.querySelector<HTMLElement>('[data-hint="Incolla un team scritto per Showdown"]')!);
     expect(importMenu()).toHaveAttribute('open');
     await user.click(screen.getByLabelText('Testo Showdown'));
     expect(importMenu()).toHaveAttribute('open');
@@ -22,7 +22,7 @@ describe('menu a tendina', () => {
   it('Importa con del testo scritto resta aperto al clic fuori; Annulla chiude e svuota; Importa spento a scatola vuota', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    await user.click(screen.getByTitle('Incolla un team scritto per Showdown'));
+    await user.click(document.querySelector<HTMLElement>('[data-hint="Incolla un team scritto per Showdown"]')!);
     const panel = within(importMenu());
     expect(panel.getByRole('button', { name: 'Importa' })).toBeDisabled();
     await user.type(panel.getByLabelText('Testo Showdown'), '   ');
@@ -34,13 +34,13 @@ describe('menu a tendina', () => {
     await user.click(panel.getByRole('button', { name: 'Annulla' }));
     expect(importMenu()).not.toHaveAttribute('open');
     expect(panel.getByLabelText('Testo Showdown')).toHaveValue('');
-    expect(screen.getByTitle('Incolla un team scritto per Showdown')).toHaveFocus();
+    expect(document.querySelector<HTMLElement>('[data-hint="Incolla un team scritto per Showdown"]')!).toHaveFocus();
   });
 
   it('aprirne un altro chiude il primo; Esc chiude e riporta il fuoco al pulsante', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    await user.click(screen.getByTitle('Incolla un team scritto per Showdown'));
+    await user.click(document.querySelector<HTMLElement>('[data-hint="Incolla un team scritto per Showdown"]')!);
     await user.click(screen.getByText('Team salvati (0)'));
     expect(importMenu()).not.toHaveAttribute('open');
     expect(menu('Team salvati (0)')).toHaveAttribute('open');

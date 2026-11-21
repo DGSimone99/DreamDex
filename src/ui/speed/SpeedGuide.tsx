@@ -9,6 +9,7 @@ import { useLang, useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
 import { MovePill } from '../MovePill';
 import { Ask } from '../offense/TargetsTip';
+import { kitTip } from '../MoveTip';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
 /** Le tre fonti di velocità in più. */
@@ -48,7 +49,7 @@ function GainTip({ title, rows, grouped, foot }: { title: string; rows: Row[]; g
                   // Le mosse come pillole (nome tradotto, potenza nella coda); la nota sul tipo immune dentro, piccola
                   ? <MovePill key={chip.name} name={chip.name} size="sm" className="sp-gd-move"
                     label={chip.note ? <>{gameName('move', chip.name, lang)}<small>{chip.note}</small></> : undefined} />
-                  : <span key={chip.name} className="sp-gd-chip">{chip.name}{chip.note && <small>{chip.note}</small>}</span>))}
+                  : <span key={chip.name} className="sp-gd-chip" {...kitTip(dex.items.get(chip.name).exists ? 'item' : 'ability', chip.name)}>{chip.name}{chip.note && <small>{chip.note}</small>}</span>))}
                 {row.text && <span className="sp-gd-text">{row.text}</span>}
               </span>
             </div>

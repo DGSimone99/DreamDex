@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { getMove } from '../engine/dex';
+import { dex, getMove } from '../engine/dex';
 import { gameName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { CategoryIcon } from './CategoryIcon';
 import { describe } from './describe';
 import { FloatTip, keyboardFocus, useFloatAnchor } from './FloatTip';
+import { ItemIcon } from './ItemIcon';
 import { typeColor } from './Sprite';
 import { typeIconUrl } from './typeIcons';
 
@@ -70,22 +71,58 @@ export function MoveTip({ name, rect, side = false, layer = false }: { name: str
   );
 }
 
+/** Il tooltip di uno strumento o di un'abilità: testata con l'icona dello strumento e il nome, sotto la descrizione. */
+export function KitTipBody({ kind, name }: { kind: 'item' | 'ability'; name: string }) {
+  const lang = useLang();
+  const desc = describe[kind](name, lang);
+  return (
+    <>
+      <div className="ftip-head">
+        {kind === 'item' && <span className="ktip-icon"><ItemIcon item={name} size={24} /></span>}
+        <b>{gameName(kind, name, lang)}</b>
+      </div>
+      {desc && <p className="mtip-desc">{desc}</p>}
+    </>
+  );
+}
+
+/** Uno strumento o un'abilità che esiste (niente tooltip per un nome inventato in una hackrom). */
+const known = (kind: 'item' | 'ability', name: string) => (kind === 'item' ? dex.items.get(name).exists : dex.abilities.get(name).exists);
+
+/** Gli attributi che aprono i tooltip della pagina: mossa, strumento, abilità, fumetto di testo. */
+const TIP_SELECTOR = '[data-move-tip], [data-item-tip], [data-ability-tip], [data-hint]';
+type TipKey = { kind: 'move' | 'item' | 'ability' | 'hint'; name: string; layer: boolean };
+const keyOf = (el: Element): TipKey | null => {
+  const layer = !!el.closest('[popover]');
+  const move = el.getAttribute('data-move-tip');
+  if (move) return getMove(move) ? { kind: 'move', name: move, layer } : null;
+  const item = el.getAttribute('data-item-tip');
+  if (item) return known('item', item) ? { kind: 'item', name: item, layer } : null;
+  const ability = el.getAttribute('data-ability-tip');
+  if (ability) return known('ability', ability) ? { kind: 'ability', name: ability, layer } : null;
+  const hint = el.getAttribute('data-hint');
+  // Col dito il fumetto di testo lo apre TouchTips (tenendo premuto), nel foglio dal basso
+  if (hint && !document.documentElement.classList.contains('touch-tips')) return { kind: 'hint', name: hint, layer };
+  return null;
+};
+
 /**
- * Il tooltip delle mosse per tutta l'app: un solo ascoltatore sulla pagina. Ogni elemento con `data-move-tip="<mossa>"`
- * (le pillole delle mosse, i campi mossa dell'editor) lo apre passandoci sopra col mouse, o col fuoco da tastiera se
- * l'elemento stesso si raggiunge col Tab. Non si apre dentro un altro tooltip, né su un campo col menu aperto; un clic
- * lo chiude. Col dito lo apre TouchTips (tenendo premuto), che manda all'elemento il passaggio del mouse.
+ * I tooltip per tutta l'app: un solo ascoltatore sulla pagina. Ogni elemento con `data-move-tip="<mossa>"` (pillole delle
+ * mosse, campi mossa dell'editor), `data-item-tip` / `data-ability-tip` (strumenti e abilità) o `data-hint="<testo>"` (il
+ * fumetto dell'app, al posto del tooltip del browser) lo apre passandoci sopra col mouse, o col fuoco da tastiera se
+ * l'elemento stesso si raggiunge col Tab. Vince l'elemento più vicino al mouse. Non si apre dentro un altro tooltip, né su
+ * un campo col menu aperto; un clic lo chiude. Col dito lo apre TouchTips (tenendo premuto).
  */
-export function MoveTipHost() {
-  const { anchor, open, close } = useFloatAnchor<{ name: string; layer: boolean }>();
+export function TipHost() {
+  const { anchor, open, close } = useFloatAnchor<TipKey>();
   useEffect(() => {
     let current: Element | null = null;
-    const find = (target: EventTarget | null) => (target instanceof Element ? target.closest('[data-move-tip]') : null);
+    const find = (target: EventTarget | null) => (target instanceof Element ? target.closest(TIP_SELECTOR) : null);
     const blocked = (el: Element) => !!el.closest('.ftip') || !!el.querySelector('[aria-expanded="true"]');
     const start = (el: Element) => {
-      const name = el.getAttribute('data-move-tip');
-      if (!name || !getMove(name) || blocked(el)) { close(); return; }
-      open({ name, layer: !!el.closest('[popover]') }, el);
+      const key = keyOf(el);
+      if (!key || blocked(el)) { close(); return; }
+      open(key, el);
     };
     const over = (e: MouseEvent) => {
       const el = find(e.target);
@@ -102,7 +139,7 @@ export function MoveTipHost() {
     };
     const down = () => { current = null; close(); };
     const focusIn = (e: FocusEvent) => {
-      const el = e.target instanceof Element && e.target.hasAttribute('data-move-tip') ? e.target : null;
+      const el = e.target instanceof Element && e.target.matches(TIP_SELECTOR) ? e.target : null;
       if (el && keyboardFocus(el)) { current = el; start(el); }
     };
     const focusOut = (e: FocusEvent) => { if (e.target === current) { current = null; close(); } };
@@ -119,5 +156,22 @@ export function MoveTipHost() {
       document.removeEventListener('focusout', focusOut);
     };
   }, [open, close]);
-  return anchor ? <MoveTip name={anchor.key.name} rect={anchor.rect} layer={anchor.key.layer} /> : null;
+  if (!anchor) return null;
+  const { kind, name, layer } = anchor.key;
+  if (kind === 'move') return <MoveTip name={name} rect={anchor.rect} layer={layer} />;
+  if (kind === 'hint') return <FloatTip rect={anchor.rect} tone="var(--line)" className="hint" layer={layer}>{name}</FloatTip>;
+  return (
+    <FloatTip rect={anchor.rect} tone="var(--accent)" className="move kit" layer={layer}>
+      <KitTipBody kind={kind} name={name} />
+    </FloatTip>
+  );
 }
+
+/**
+ * Il fumetto dell'app su un elemento (al posto di `title`): `{...hint(testo)}`. Senza testo, niente. `title=""` spegne il
+ * tooltip del browser di un contenitore (es. "Trascina…" della carta del team), che altrimenti comparirebbe insieme.
+ */
+export const hint = (text: string | undefined | null) => (text ? { 'data-hint': text, title: '' } : {});
+/** Il tooltip di uno strumento o di un'abilità su un elemento: `{...kitTip('item', nome)}`. Senza nome, niente. */
+export const kitTip = (kind: 'item' | 'ability', name: string | undefined | null) =>
+  (name ? { ...(kind === 'item' ? { 'data-item-tip': name } : { 'data-ability-tip': name }), title: '' } : {});

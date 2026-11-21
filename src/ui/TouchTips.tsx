@@ -10,10 +10,10 @@ export const TOUCH_QUERY = '(hover: none) and (pointer: coarse)';
 const HOLD_MS = 450;
 const SLOP = 10;
 
-/** Il testo del tooltip di un elemento o dei suoi contenitori: data-tip, il fumetto dei pulsanti a icona, title, descrizione. */
+/** Il testo del tooltip di un elemento o dei suoi contenitori: data-tip, data-hint, il fumetto dei pulsanti a icona, title, descrizione. */
 function textTipOf(start: Element): string | null {
   for (let el: Element | null = start; el && el !== document.body; el = el.parentElement) {
-    const tip = el.getAttribute('data-tip');
+    const tip = el.getAttribute('data-tip') ?? el.getAttribute('data-hint');
     if (tip) return tip;
     if (el.classList.contains('hint-wrap') || el.classList.contains('head-help')) {
       const bubble = el.querySelector(':scope > .hint-bubble:not(.done)');

@@ -9,6 +9,7 @@ import { MoreBelow } from '../MoreBelow';
 import { MovePill } from '../MovePill';
 import { Sprite, TypeChip, typeColor } from '../Sprite';
 import { MetaVersus } from './MetaVersus';
+import { kitTip } from '../MoveTip';
 
 /**
  * La scheda del Pokémon scelto nella scheda Meta: uso e posizione, strumento e abilità più usati con la loro %, le 4
@@ -56,8 +57,8 @@ export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCov
         </div>
       </div>
       <dl className="meta-kv">
-        {profile.item && <><dt>{t('meta.item')}</dt><dd>{gameName('item', profile.item.name, lang)} <small>{pct(profile.item.pct)}</small></dd></>}
-        {profile.ability && <><dt>{t('meta.ability')}</dt><dd>{gameName('ability', profile.ability.name, lang)} <small>{pct(profile.ability.pct)}</small></dd></>}
+        {profile.item && <><dt>{t('meta.item')}</dt><dd><span {...kitTip('item', profile.item.name)}>{gameName('item', profile.item.name, lang)}</span> <small>{pct(profile.item.pct)}</small></dd></>}
+        {profile.ability && <><dt>{t('meta.ability')}</dt><dd><span {...kitTip('ability', profile.ability.name)}>{gameName('ability', profile.ability.name, lang)}</span> <small>{pct(profile.ability.pct)}</small></dd></>}
       </dl>
       {profile.moves.length > 0 && shows('moves') && (
         <section className="meta-sub">
