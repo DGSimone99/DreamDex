@@ -18,7 +18,7 @@ import { TypeChip } from './Sprite';
 import type { ReasonSymbol } from '../engine/explain';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
-import { Icon } from './icons';
+import { Icon, MegaIcon } from './icons';
 import { formatPercent, t, type Lang } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { typeName } from '../i18n/game';
@@ -397,7 +397,7 @@ export function PickButton({ rank, species, selected, onSelect }: { rank: number
       {parts && (
         <span className="pick-name" aria-hidden="true">
           <b>{parts.base}</b>
-          {mega && <span className="mega-mark"><Icon name="mega" />{mega.letter}</span>}
+          {mega && <span className="mega-mark"><MegaIcon />{mega.letter}</span>}
         </span>
       )}
     </button>

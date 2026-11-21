@@ -547,7 +547,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Sulle carte niente etichetta della forma (sta nel dettaglio e nel fumetto): solo Mega e Primal col loro simbolo, e la
    lettera quando le Mega sono due (Charizard X / Y) */
 .pick-name .mega-mark { display: inline-flex; flex: none; align-items: center; gap: 1px; color: var(--accent-ink); font: 800 var(--fs-label)/1 var(--display); font-style: italic; }
-.pick-name .mega-mark .icon { width: 14px; height: 14px; }
+.pick-name .mega-mark .mega-icon { display: block; width: 15px; height: 15px; }
 .card .who small { display: flex; flex-direction: column; align-items: stretch; gap: calc(2px + var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }
 .card .reason { display: block; max-width: 100%; min-width: 0; text-align: left; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
