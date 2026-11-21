@@ -408,8 +408,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
   const roleTips = allRoles.map(role => (role === 'weather' ? undefined : roleDescription(role, lang)));
-  // Sulla carta solo il ruolo principale, con la sua spiegazione
-  const roleTitle = roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0];
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
@@ -610,7 +608,6 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           ))}
         </span>
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
-        {roles.length > 0 && <small className="roles" {...bubble(roleTitle)} aria-hidden="true">{roles[0]}</small>}
       </div>
       {menuOpen && (
         <div className="member-menu" ref={menuRef} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={tr('team.memberMenu', { species: name })}

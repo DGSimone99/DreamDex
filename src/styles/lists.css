@@ -56,7 +56,6 @@
   .slot > .slot-card, .slot.empty { min-height: 155px; padding: var(--sp-3) var(--sp-5) var(--sp-5); gap: 1px; }
   .slot > .slot-card .sprite { width: 56px; height: 56px; }
   .slot > .slot-card { --sprite-scale: 0.5833; }
-  .slot .roles { font-size: var(--fs-label); }
   .slot .name { --name-fs: 15px; line-height: 1.1; }
   .slot .held, .slot .ability { font-size: var(--fs-caption); }
   .empty-ring { width: 44px; height: 44px; }

@@ -70,14 +70,13 @@ describe('TeamPanel', () => {
     check(5);
   });
 
-  it('la carta mostra solo il ruolo principale, spiegato nel fumetto (solo lui)', async () => {
+  it('la carta non mostra i ruoli: stanno nel riquadro Ruoli dell’editor', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
-    const roles = teamRegion().querySelector('.slot .roles')!;
-    expect(roles.textContent).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
-    // Il ruolo mostrato spiegato in una frase, gli altri no
-    expect(roles.getAttribute('data-hint')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico): [^·]+$/);
+    expect(teamRegion().querySelector('.slot .roles')).toBeNull();
+    const all = await editorRoles(user);
+    expect(all[0]).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
   });
 
   it('la carta non ha il badge Stats e mostra lo strumento come icona prima del nome (nome nel tooltip)', async () => {
@@ -99,23 +98,19 @@ describe('TeamPanel', () => {
     const pelipper = { ...emptySet('Pelipper'), item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane', 'Scald', 'U-turn', 'Roost'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_CHOICE)}`);
     render(<App initialLang="it" data={fixtureData} />);
-    const roles = teamRegion().querySelector('.slot .roles')!;
     // Ruoli misurati come nel voto: il principale non è mai il Recupero; il meteo e il resto nel riquadro Ruoli
-    expect(roles.textContent).not.toContain(' · ');
-    expect(roles.textContent).not.toBe('Recupero');
     const all = await editorRoles(user);
+    expect(all[0]).not.toBe('Recupero');
     expect(all[1]).toMatch(/^Porta la pioggia \(.+\)$/);
     expect(all).toEqual(expect.arrayContaining(['Pivot', 'Recupero']));
   });
 
-  it("i Ruoli dell'editor elencano tutti i ruoli, non solo quello della carta", async () => {
+  it("i Ruoli dell'editor elencano tutti i ruoli", async () => {
     const user = userEvent.setup();
     // Calibrazione (Task 9): Latias-Mega veloce con Calm Mind è uno sweeper (una sola etichetta); Defog dà la seconda
     const latias = { ...emptySet('Latias'), item: 'Latiasite', ability: 'Levitate', moves: ['Calm Mind', 'Mystical Fire', 'Mist Ball', 'Defog'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_CHOICE)}`);
     render(<App initialLang="it" data={fixtureData} />);
-    const roles = teamRegion().querySelector('.slot .roles')!;
-    expect(roles.textContent!.split(' · ')).toHaveLength(1);
     const all = await editorRoles(user);
     expect(all.length).toBeGreaterThan(2);
     expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Controllo Hazard']);
