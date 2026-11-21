@@ -425,7 +425,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
               {t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })}</span></>}
           </> : t(lang, 'rail.noGrade') },
         { id: 'meta', label: t(lang, 'tabs.meta'), icon: 'globe', disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
-          count: metaOn && team.length > 0 && metaAverage !== null ? { text: formatPercent(lang, metaAverage), level: 'info' } : null,
           status: !metaOn ? t(lang, 'rail.metaOff')
             : team.length === 0 ? t(lang, 'rail.metaUsage')
             : metaAverage !== null ? t(lang, 'meta.average', { pct: formatPercent(lang, metaAverage) })
