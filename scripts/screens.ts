@@ -1252,7 +1252,8 @@ for (const [w, h] of sizes) {
     const state = STATES[name];
     if (!state) { console.log(`skip ${name}: unknown state`); continue; }
     const page = await browser.newPage();
-    await page.setViewport({ width: w, height: h });
+    // --touch: telefono o tablet col dito (pointer: coarse, hover: none), per le regole dei tocchi da 44
+    await page.setViewport({ width: w, height: h, ...(process.argv.includes('--touch') ? { hasTouch: true, isMobile: true } : {}) });
     const lang = state.lang ?? 'it';
     await page.evaluateOnNewDocument((l, extra) => {
       localStorage.clear();

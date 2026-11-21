@@ -1420,3 +1420,47 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 @media (max-width: 599px) {
   .team-more-label { display: none; }
 }
+
+/* ── Col dito (telefono e tablet), controllo 2026-11-21: ogni tasto almeno 44×44 da toccare ─────────────────────────
+   Dove la misura a vista resta più bassa (la guida e il menu Team da 34, le schede del formato sul tablet) la zona del
+   tocco la allarga un ::after trasparente di 44; gli altri tasti diventano alti 44 a vista */
+@media (pointer: coarse) and (max-width: 1099px) {
+  /* Barra in alto: formato, EN | IT e impostazioni alti 44 (la barra è 56) */
+  .rail-format { height: 44px; }
+  .rail .rail-foot .lang-switch button { min-width: 44px; height: 44px; }
+  .rail-settings { width: 44px; height: 44px; }
+  /* Testata del team sul tablet: a vista 34, da toccare 44 */
+  .band .team-head .team-guide-slot button.team-guide::after,
+  .team-head .team-more-button::after, .team-head:has(.plate-dot) .team-more-button::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%;
+    border-radius: 0; background: none; box-shadow: none; }
+  .band .team-head .team-guide-slot button.team-guide { position: relative; overflow: visible; }
+  /* Il pallino del team salvato cambiato passa sul contenitore del menu (il ::after del pulsante è la zona del tocco) */
+  .team-head .team-more { position: relative; }
+  .team-head:has(.plate-dot) .team-more::after { content: ''; position: absolute; z-index: 1; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--warn); box-shadow: 0 0 0 2px var(--ground); pointer-events: none; }
+  /* Scheda Pokémon: Aggiungi | Sostituisci, chi sostituire, Tipo di team, Filtri e la ricerca alti 44 */
+  .toolbar .mode-switch > .segmented > button, .toolbar .filters > summary, .toolbar .search-field input { min-height: 44px; }
+  /* Il campo vero (la tendina) è dentro il bordo: 46 fuori per averne 44 da toccare */
+  .toolbar .team-type { height: 46px; }
+  /* Completa team: schede, Impostazioni, Usa e Altre proposte da 44 */
+  .fill-panel .fill-tab { min-height: 44px; }
+  .fill-panel .fill-settings-button, .fill-panel .fill-more { min-height: 44px; }
+  .fill-panel .fill-add { min-height: 44px; }
+  /* Scegli il formato (centrata sul tablet, a tutto schermo sul telefono): famiglie, Lotta, Tier e i pulsanti in fondo da 44 */
+  .fmt-families label { display: grid; place-items: center; min-height: 44px; }
+  .format-dialog .format-chips label { display: grid; place-items: center; min-height: 44px; min-width: 44px; }
+  .fmt-actions button { min-height: 44px; }
+  .fmt-scale label { min-height: 44px; align-content: center; }
+}
+/* Coerenza (controllo 2026-11-21): sul telefono i margini laterali sono 14 ovunque (pagina, fogli, Completa team), anche
+   nella finestra del formato; le voci del menu Team alte 52 quando è un foglio (come sul telefono), 44 a tendina */
+@media (max-width: 599px) {
+  .fmt-families { margin-inline: var(--sp-7); }
+  .fmt-body { padding-inline: var(--sp-7); }
+  .fmt-actions { padding-inline: var(--sp-7); }
+}
+@media (min-width: 600px) and (max-width: 1099px) {
+  .team-more-sheet[data-sheet] [role='menuitem'] { height: 52px; }
+  .team-more-sheet:not([data-sheet]) [role='menuitem'] { height: 44px; }
+}
