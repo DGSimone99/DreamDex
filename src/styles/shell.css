@@ -127,7 +127,7 @@
 /* Finestra Scegli il formato: le tre famiglie come linguette oblique su una fascia, sotto le scelte della famiglia mostrata
    (una colonna). Ogni scelta vale subito. Tessere coi loghi per fonti e giochi; le generazioni Smogon passate in una scala */
 /* Misure fisse: passando da una linguetta all'altra la finestra non cambia forma; il contenuto scorre dentro */
-.help-dialog.format-dialog { width: min(660px, 100%); height: min(740px, calc(100vh - 48px)); max-height: none; }
+.help-dialog.format-dialog { width: min(840px, 100%); height: min(740px, calc(100vh - 48px)); max-height: none; }
 .format-dialog .fmt-body { flex: 1; min-height: 0; align-content: start; }
 .fmt-actions { display: flex; justify-content: flex-end; gap: var(--sp-5); padding: var(--sp-6) var(--sp-9); border-top: 1px solid var(--line); background: var(--panel); }
 .fmt-actions button { min-width: 110px; padding: var(--sp-4) var(--sp-8); font-weight: 600; }
@@ -143,7 +143,8 @@
 .fmt-sec > .rail-label + .format-toggle { padding-top: 0; border-top: 0; }
 .fmt-sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
 .fmt-gens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
-.fmt-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--sp-4); }
+/* Al massimo tre giochi per generazione (Gen 3 e Gen 4): tre tessere per riga */
+.fmt-games { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-5); }
 .fmt-tile { display: grid; align-content: start; gap: 3px; padding: var(--sp-4) var(--sp-5) var(--sp-5); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer; transition: border-color 0.15s var(--ease); }
 .fmt-tile b { font: 700 var(--fs-section)/1.15 var(--display); font-style: italic; color: var(--text); }
 .fmt-tile small { color: var(--muted); font: 500 var(--fs-caption)/1.3 var(--ui); }
@@ -151,7 +152,7 @@
 .fmt-tile.on { border-color: var(--accent); background: var(--accent-wash); box-shadow: inset 0 -3px 0 var(--accent); }
 .fmt-tile.off { opacity: 0.45; cursor: not-allowed; }
 .fmt-art { display: flex; align-items: center; justify-content: center; gap: var(--sp-4); height: 64px; margin-bottom: var(--sp-3); padding: var(--sp-3); border-radius: 3px; background: var(--field); }
-.fmt-game .fmt-art { height: 84px; }
+.fmt-game .fmt-art { height: 96px; }
 .fmt-game.game-sv .fmt-art { background: linear-gradient(100deg, #5a1a14 0 50%, #33195c 50% 100%); }
 .fmt-logo { display: block; flex: 1 1 0; min-width: 0; height: 100%; object-fit: contain; }
 .fmt-logo-text { font: 800 var(--fs-section)/1 var(--display); font-style: italic; text-transform: uppercase; color: var(--text); text-align: center; }

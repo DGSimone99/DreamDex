@@ -266,7 +266,7 @@
   .popover[open] > :not(summary), .rail .popover[open] > :not(summary) { left: 50%; right: auto; width: min(560px, 100vw); translate: -50% 0; }
   .help-backdrop { place-items: center; padding: 24px; }
   .help-dialog, .help-frame { width: min(720px, 100%) !important; }
-  .help-dialog.format-dialog { width: min(660px, 100%) !important; }
+  .help-dialog.format-dialog { width: min(840px, 100%) !important; }
 }
 /* Telefono girato: poca altezza, le barre si fanno più basse */
 @media (max-width: 1099px) and (max-height: 500px) {
