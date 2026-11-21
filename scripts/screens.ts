@@ -1209,6 +1209,11 @@ const STATES: Record<string, State> = {
 STATES['editor-en'] = { ...STATES.editor, lang: 'en' };
 STATES['rating-help-en'] = { ...STATES['rating-help'], lang: 'en' };
 STATES['format-menu-en'] = { ...STATES['format-menu'], lang: 'en' };
+// Tablet e telefono: le schede dell'editor (Statistiche, Sfida) e la tendina dello Strumento (foglio dal basso in verticale)
+const editorThen = (then: (p: Page) => Promise<boolean | string>): State => ({ run: async p => { const ok = await STATES.editor.run!(p); if (ok !== true) return ok; await wait(300); return then(p); } });
+STATES['editor-tab-stats'] = editorThen(p => clickText(p, '.editor-tabs [role="tab"]', /^(Statistiche|Stats)$/));
+STATES['editor-tab-duel'] = editorThen(p => clickText(p, '.editor-tabs [role="tab"]', /^(Sfida|Matchup)$/));
+STATES['editor-item-menu'] = editorThen(async p => { const el = await p.$('.slot.open .drawer .set-box .set-plates .set-plate'); if (!el) return false; const b = await el.boundingBox(); if (!b) return 'no box'; await p.mouse.click(b.x + b.width * 0.6, b.y + b.height / 2); await wait(600); return true; });
 // Il controllo del testo (--scan) come stringa: dentro page.evaluate niente funzioni con nome (tsx aggiunge __name)
 const SCAN_TEXT = `(() => {
   const parse = s => { const n = (s.match(/[\\d.]+/g) || []).map(Number); if (s.startsWith('color(')) return [n[0] * 255, n[1] * 255, n[2] * 255, n.length > 3 ? n[3] : 1]; return [n[0], n[1], n[2], n.length > 3 ? n[3] : 1]; };

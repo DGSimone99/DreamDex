@@ -9,7 +9,11 @@ const GAP = 4;
 
 /** Telefono: le tendine diventano fogli che salgono dal fondo dello schermo, larghi quanto lo schermo. */
 export const SHEET_QUERY = '(max-width: 599px)';
-export const isSheetScreen = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(SHEET_QUERY).matches;
+/** Tendine e menu come fogli dal basso: telefono e tablet in verticale (sul tablet in orizzontale restano a tendina). */
+export const PICK_SHEET_QUERY = '(max-width: 599px), (max-width: 1099px) and (orientation: portrait)';
+export const isSheetScreen = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(PICK_SHEET_QUERY).matches;
+/** Larghezza massima di un foglio: sul tablet una colonna comoda al centro, non tutto lo schermo. */
+const SHEET_MAX_W = 600;
 
 interface Options {
   /** Larghezza minima (il menu resta largo quanto il campo, o di più se il campo è stretto). */
@@ -142,9 +146,10 @@ function openSheet(el: HTMLElement, dismiss: () => void): () => void {
     const visible = vv ? vv.height : window.innerHeight;
     const keyboard = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
     el.style.position = 'fixed';
-    el.style.inset = 'auto 0 auto 0';
+    const w = Math.min(window.innerWidth, SHEET_MAX_W);
+    el.style.inset = `auto auto auto ${Math.round((window.innerWidth - w) / 2)}px`;
     el.style.margin = '0';
-    el.style.width = '100%';
+    el.style.width = `${w}px`;
     el.style.bottom = `${Math.round(keyboard)}px`;
     el.style.maxHeight = `${Math.round(Math.min(visible * 0.78, visible - 48))}px`;
   };
