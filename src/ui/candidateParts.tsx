@@ -88,7 +88,7 @@ export function bringsOf(item: Item, lang: Lang, rules: FormatRules): Bring[] {
   const diff = 'diff' in item ? item.diff : null;
   const changes = diff ? rankedChanges(diff, item.teamGain, lang) : null;
   // Una ragione che ripete un guadagno della stessa area ("Resiste a Volante" e "Resistente a Volante") si salta
-  const covered = new Set(changes?.pros.map(p => p.area));
+  const covered = new Set(changes?.pros.filter(p => !p.bonus).map(p => p.area));
   const reasons = item.reasons
     // Gli avvisi (peso negativo: meteo in conflitto, mosse indebolite) vanno in Toglie, non qui
     .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))

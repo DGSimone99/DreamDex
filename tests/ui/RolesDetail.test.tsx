@@ -103,7 +103,7 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
     ].join(', '));
   });
 
-  it('la sottoscheda Ruoli: mancano solo importanti; i punti dei Ruoli (minori meno mancanze) nella descrizione', () => {
+  it('la sottoscheda Ruoli: mancano solo importanti; i punti dei Ruoli (le mancanze) nella descrizione', () => {
     const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
       covered: 2, total: 3,
@@ -113,12 +113,12 @@ describe('Ruoli in Ruoli e Bonus: la sottoscheda Ruoli a fasce', () => {
         { key: 'disruptor', level: 'minor', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Taunt' }] },
       ],
       failures: [{ text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS }],
-      bonuses: [{ text: 'Disruptor: ruolo minore coperto', points: MINOR_POINTS }],
+      bonuses: [],
       members: [{ species: 'Gliscor', values: { hazards: 1, disruptor: 1 }, primary: null, reasons: [] }],
     };
     renderIt(<AreaView rating={{ ...base, roles }} area="bonusMalus" picked="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     const tab = screen.getByRole('tab', { name: 'Ruoli' });
-    expect(tab).toHaveAccessibleDescription(`1 di 2 ruoli essenziali e importanti coperti, 1 mancanti, punti −${IMPORTANT_POINTS - MINOR_POINTS}`);
+    expect(tab).toHaveAccessibleDescription(`1 di 2 ruoli essenziali e importanti coperti, 1 mancanti, punti −${IMPORTANT_POINTS}`);
   });
 
   it('niente che manca: la descrizione dice solo i coperti, la targhetta con la spunta', () => {
@@ -223,7 +223,7 @@ describe('le fasce dei Ruoli', () => {
       { key: 'dot', level: 'minor', value: 0, by: [] },
     ],
     failures: [{ text: 'Balance senza Sweeper', points: 4 }, { text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS }],
-    bonuses: [{ text: 'Disruptor: ruolo minore coperto', points: MINOR_POINTS }],
+    bonuses: [],
     members: [
       { species: 'Gliscor', values: { hazards: 1, pivot: 1 }, primary: null, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }, { role: 'pivot', value: 1, source: 'U-turn' }] },
       { species: 'Zapdos', values: { disruptor: 0.8, pivot: 1 }, primary: null, reasons: [{ role: 'disruptor', value: 0.8, source: 'Taunt', share: 0.8 }, { role: 'pivot', value: 1, source: 'U-turn' }] },
@@ -248,10 +248,11 @@ describe('le fasce dei Ruoli', () => {
     expect(panel).not.toHaveTextContent(/se manca|se c'è/);
     expect(band('Essenziali').querySelector('.rl-band-head .rl-mark')).toHaveTextContent('−4');
     expect(band('Importanti').querySelector('.rl-band-head .rl-mark')).toHaveTextContent('−2');
-    expect(band('Minori').querySelector('.rl-band-head .rl-mark')).toHaveTextContent('+1');
+    // Nel singolo i minori non danno punti: la fascia non ha un valore
+    expect(band('Minori').querySelector('.rl-band-head .rl-mark')).toBeNull();
   });
 
-  it('i punti di ogni voce: ✓ verde se coperta, −4 / −2 se manca (team di 6), +1 per un minore coperto, 0 grigio se no', () => {
+  it('i punti di ogni voce: ✓ verde se coperta, −4 / −2 se manca (team di 6); un minore ✓ se coperto, – se no (non dà punti)', () => {
     const panel = renderSix();
     const hazard = rowOf('Hazard', panel)!;
     expect(hazard.querySelector('.rl-pts')).toHaveClass('ok');
@@ -267,14 +268,15 @@ describe('le fasce dei Ruoli', () => {
     expect(ptsOf(removal)).toBe(`−${IMPORTANT_POINTS}`);
     expect(removal.querySelector('.rl-pts')).toHaveClass('malus');
     const disruptor = rowOf('Disruptor', panel)!;
-    expect(ptsOf(disruptor)).toBe(`+${MINOR_POINTS}`);
-    expect(disruptor.querySelector('.rl-pts')).toHaveClass('bonus');
+    expect(disruptor.querySelector('.rl-pts')).toHaveClass('ok');
+    expect(disruptor.querySelector('.rl-pts svg')).not.toBeNull();
     const dot = rowOf('Danno nel Tempo', panel)!;
     expect(dot).toHaveClass('off');
-    expect(ptsOf(dot)).toBe('0');
-    expect(dot.querySelector('.rl-pts')).toHaveClass('zero');
-    // In testa i punti dei Ruoli (−4 −2 +1 = −5), in rosso; niente più l'equazione delle fasce
-    expect(panel.querySelector('.rl-net')).toHaveTextContent('Ruoli −5');
+    expect(ptsOf(dot)).toBe('–');
+    expect(dot.querySelector('.rl-pts')).toHaveClass('none');
+    expect(dot.querySelector('.rl-pts')).toHaveTextContent('non coperto');
+    // In testa i punti dei Ruoli (−4 −2 = −6), in rosso; niente più l'equazione delle fasce
+    expect(panel.querySelector('.rl-net')).toHaveTextContent('Ruoli −6');
     expect(panel.querySelector('.rl-net')).toHaveClass('bad');
     expect(panel.querySelector('.rl-sum')).toBeNull();
     expect(panel.querySelector('.rl-type')).toHaveTextContent('Balance');
@@ -424,7 +426,7 @@ describe('note e secondario nelle righe', () => {
     expect(row.querySelector('.rl-nobody')).toHaveTextContent(/^Nessuno; in parte: Garchomp \(Toxic\), Toxapex \(Toxic\)$/);
     expect(row.querySelector('.rl-nobody .visually-hidden')).toHaveTextContent('in parte: Garchomp (Toxic), Toxapex (Toxic)');
     expect(row).toHaveAttribute('title', 'in parte: Garchomp (Toxic), Toxapex (Toxic)');
-    expect(ptsOf(row)).toBe('0');
+    expect(ptsOf(row)).toBe('–');
   });
 });
 

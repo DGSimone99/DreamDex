@@ -37,6 +37,8 @@ export interface TeamGain {
   typeShift?: TypeShift;
   /** I valori delle aree col cambio (Offesa, Difesa, Velocità, Bonus/Malus, Ruoli): il Coaching li mostra come "da → a". */
   after?: AreaSnapshot;
+  /** Il bonus "Pivot sfruttato" che il cambio fa guadagnare o perdere al team (assente se non cambia). */
+  pivot?: 'gained' | 'lost';
 }
 
 /**
@@ -87,11 +89,13 @@ const SCORED_AREAS: ScoredArea[] = ['defense', 'strength', 'roles', 'speed'];
 const ROLE_CATALOG = new Set(['essentialRole', 'importantRole', 'minorRole']);
 const notRole = (item: { catalog?: string }) => !item.catalog || !ROLE_CATALOG.has(item.catalog);
 
+const hasPivotBonus = (rating: TeamRating) => rating.bonus.items.some(i => i.catalog === 'pivotLink');
+
 /** Il netto di Bonus/Malus senza i ruoli, come la scheda Bonus/Malus e la carta del voto. */
 const bonusMalusNet = (rating: TeamRating) =>
   rating.bonus.items.filter(notRole).reduce((n, i) => n + i.points, 0) - rating.penalty.items.filter(notRole).reduce((n, i) => n + i.points, 0);
 
-/** I punti dei Ruoli: i minori coperti meno le mancanze di essenziali e importanti (la sottoscheda Ruoli). */
+/** I punti dei Ruoli: le mancanze di essenziali e importanti (in doppio più i minori coperti), come la sottoscheda Ruoli. */
 export const rolesNet = (rating: TeamRating) =>
   rating.roles.bonuses.reduce((a, i) => a + i.points, 0) - rating.roles.failures.reduce((a, i) => a + i.points, 0);
 
@@ -138,7 +142,7 @@ export function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Rec
     if (was === null || now === null) continue;
     points[key] = Math.round((now - was) * (after.weights[key] ?? 0) * 10) / 10;
   }
-  // I Ruoli non sono più un'area del voto: i loro punti sono i malus e i bonus dei ruoli (mancanze e minori coperti)
+  // I Ruoli non sono più un'area del voto: i loro punti sono i malus delle mancanze (in doppio anche il bonus dei minori coperti)
   points.roles = rolesDelta(before, after);
   return points;
 }
@@ -183,6 +187,7 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         roles: rolesDelta(before, rating),
         typeShift: typeShiftOf(before, rating),
         after: areaSnapshot(rating),
+        ...(hasPivotBonus(rating) !== hasPivotBonus(before) && { pivot: hasPivotBonus(rating) ? 'gained' as const : 'lost' as const }),
       },
     };
   };

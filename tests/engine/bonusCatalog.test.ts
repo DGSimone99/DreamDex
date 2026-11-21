@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TRICK_ROOM_FAST_POINTS, UNANSWERED_META_POINTS, UNANSWERED_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
+import { DOUBLES_RULES } from '../../src/engine/formatRules';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -40,7 +41,12 @@ describe('catalogo bonus e malus', () => {
     expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
     expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.map(e => e.key as string)).not.toContain('typeBlend');
-    expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'minorRole']));
+    expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'pivotLink']));
+    // Nel singolo i ruoli minori non danno più punti: la voce "Ruolo extra" c'è solo in doppio, il pivot sfruttato solo nel singolo
+    expect(none.map(e => e.key)).not.toContain('minorRole');
+    const doubles = bonusMalusCatalog('it', DOUBLES_RULES).map(e => e.key);
+    expect(doubles).toContain('minorRole');
+    expect(doubles).not.toContain('pivotLink');
     expect(none.map(e => e.key as string)).not.toContain('tera');
     expect(none.map(e => e.key as string)).not.toContain('removers');
   });

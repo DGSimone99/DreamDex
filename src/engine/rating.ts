@@ -496,7 +496,8 @@ export function pivotBonus(team: TeamSet[], parts: PivotParts, lang: Lang = 'it'
   const link = pivotLinks(team, parts)[0];
   if (!link) return [];
   const values = { pivot: link.pivot, move: link.move, list: link.partners.join(', ') };
-  return [{ text: t(lang, link.kind === 'slow' ? 'rating.bonus.pivotSlow' : 'rating.bonus.pivotFast', values), points: PIVOT_POINTS, catalog: 'pivotLink', key: 'pivotLink', parts: values }];
+  const text = link.kind === 'slow' ? 'rating.bonus.pivotSlow' : link.partners.length === 1 ? 'rating.bonus.pivotFastOne' : 'rating.bonus.pivotFast';
+  return [{ text: t(lang, text, values), points: PIVOT_POINTS, catalog: 'pivotLink', key: 'pivotLink', parts: { ...values, kind: link.kind, count: String(link.partners.length) } }];
 }
 
 /** Compagni (non il portatore) che devono sfruttare un meteo, un campo o Trick Room perché valga il bonus. */
@@ -593,7 +594,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map(set => isPassive(set, rules)) : [];
 
-  // Ruoli: base delle voci importanti ed extra delle minori sui valori del team (rolesArea.ts)
+  // Ruoli: la lista delle voci del tipo di team, coi malus delle mancanze (in doppio anche il bonus dei minori, rolesArea.ts)
   const roles = teamRolesArea(team, data, lang, analysis.needs);
   const power = teamPower(team, passive, rules);
   const offense = teamOffense(team, data);
@@ -662,7 +663,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const extraItems = [...unansweredItems, ...roles.failures, ...roomItems, ...shownHoles, ...lockedStatusIssues(input, lang), ...sabotageItems];
   const allItems = [...redundantItems, ...extraItems];
   const penalty = { total: sum(allItems.map(i => i.points)), items: allItems };
-  // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, ruoli minori).
+  // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, pivot sfruttato; in doppio i ruoli minori).
   // 2026-11-07: tolto il bonus Tera (+1 per debolezza coperta da un Tera, fino a +3): lo prendevano quasi tutti allo
   // stesso modo (torneo 2,1, ladder 2,2) e il Tera si usa una volta sola, scelto in partita: troppe variabili
   const trios = coreTrios(team, heldByOf(defense.coverageTypes.rows));
@@ -699,7 +700,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 ];
 
 /** Voci che esistono solo in doppio, e voci del singolo che in doppio non ci sono. */
-const DOUBLES_ONLY = new Set<CatalogKey>(['weatherSabotage']);
+const DOUBLES_ONLY = new Set<CatalogKey>(['weatherSabotage', 'minorRole']);
 const SINGLES_ONLY = new Set<CatalogKey>(['conditionUsed', 'pivotLink']);
 
 /**

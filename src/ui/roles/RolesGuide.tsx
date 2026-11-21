@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
 import type { FormatRules } from '../../engine/formatRules';
 import { MISSING_BELOW } from '../../engine/needs';
-import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, minorPointsFor } from '../../engine/rolesArea';
 import { levelFor, levelKeysFor, type Level, type LevelKey } from '../../engine/roleLevels';
 import { FAMILIES } from '../../engine/subRoles';
 import { useT } from '../../i18n/react';
@@ -27,10 +27,12 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.roles.${key}` as Key, params);
 
   if (section === 'general') {
+    const minor = minorPointsFor(archetype);
     const tile: Record<Level, { value: string; rule: string }> = {
       essential: { value: `−${ESSENTIAL_POINTS}`, rule: g('essential.rule') },
       important: { value: `−${IMPORTANT_POINTS}`, rule: g('important.rule') },
-      minor: { value: `+${MINOR_POINTS}`, rule: g('minor.rule') },
+      // Nel singolo i minori non danno punti (stanno nella lista); in doppio +1
+      minor: minor > 0 ? { value: `+${minor}`, rule: g('minor.rule') } : { value: '0', rule: g('minor.ruleNone') },
       ignored: { value: '0', rule: g('ignored.rule') },
     };
     return (
@@ -39,7 +41,7 @@ export function RolesGuideSection({ section, archetype, typeRule }: { section: R
         <ul className="guide-lines">
           <li>{g('what.level', { archetype: t(`archetype.${archetype}`) })}</li>
           <li>{g('what.value')}</li>
-          <li>{g('what.points')}</li>
+          <li>{g(minor > 0 ? 'what.points' : 'what.pointsNoMinor')}</li>
         </ul>
         <h4>{g('levels')}</h4>
         <ul className="guide-tiles rl-guide-tiles">

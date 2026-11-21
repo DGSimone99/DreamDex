@@ -1,6 +1,7 @@
 import type { EngineData } from './data';
 import { battleName, battleSpecies } from './dex';
 import { keyRoles, keyValue, MISSING_BELOW, needLabel, teamNeeds, type TeamNeeds } from './needs';
+import type { Archetype } from './archetype';
 import { LEVEL_KEYS, type Level, type LevelKey } from './roleLevels';
 import type { Redundancy } from './rating';
 import { secondaryRoles, subRoleReasons, type PrimaryFamily, type SubRoleReason, type SubRoleValues } from './subRoles';
@@ -9,20 +10,27 @@ import { t, type Lang } from '../i18n';
 
 /**
  * I Ruoli sono una lista, non un voto: per il tipo di team ogni voce è coperta (un membro col valore di team almeno
- * MISSING_BELOW) o manca. Nel voto entrano solo i malus delle mancanze (team di 6) e il bonus dei minori coperti.
+ * MISSING_BELOW) o manca. Nel voto entrano solo i malus delle mancanze (team di 6); in doppio anche il bonus dei minori coperti.
  * Calibrazione 2026-11-02 (banco): partite vere 50,4% → 52,4% (alto livello) e 53,1% → 55,8% (ladder).
  */
 /** Malus di ogni voce essenziale mancante (solo team di 6 specie riconosciute). */
 export const ESSENTIAL_POINTS = 4;
 /** Malus di ogni voce importante mancante (solo team di 6 specie riconosciute). */
 export const IMPORTANT_POINTS = 2;
-/** Bonus di ogni voce minore coperta, senza tetto (le minori per tipo: HO 3, BO 4, Balance 5, Semi-stall 5, Stall 2). */
+/**
+ * Bonus di ogni voce minore coperta, solo in doppio (le sue quattro minori sono scelte sulle partite vere del doppio).
+ * Nel singolo dal 2026-11-21 (utente) i minori non danno punti: erano +1 l'uno senza tetto, in media +2,8 ai team da
+ * torneo e +3,2 ai medi (National Dex OU), un regalo che non distingueva. Restano nella lista; il pivot ha il suo bonus,
+ * solo se il team lo sfrutta (pivotBonus.ts).
+ */
 export const MINOR_POINTS = 1;
+/** Quanto vale una voce minore coperta per il tipo di team: MINOR_POINTS in doppio, niente nel singolo. */
+export const minorPointsFor = (archetype: Archetype): number => (archetype === 'doubles' ? MINOR_POINTS : 0);
 
 /**
  * Il conteggio dei Ruoli, uguale ovunque (Panoramica, Coaching, sottoscheda Ruoli, carta del voto): coperti sul totale
- * delle sole essenziali e importanti (le minori non sono un difetto se mancano) e i punti dei Ruoli sul voto (bonus dei
- * minori meno i malus delle mancanze), es. "8/8 +2".
+ * delle sole essenziali e importanti (le minori non sono un difetto se mancano) e i punti dei Ruoli sul voto (i malus
+ * delle mancanze; in doppio anche il bonus dei minori), es. "6/8 −6".
  */
 export function rolesTally(roles: TeamRoles) {
   const counted = roles.rows.filter(r => r.level === 'essential' || r.level === 'important');
@@ -62,7 +70,7 @@ export interface TeamRoles {
   rows: RoleRow[];
   /** Mancanze essenziali e importanti come malus (solo team di 6 specie riconosciute). */
   failures: Redundancy[];
-  /** Voci minori coperte come bonus. */
+  /** Voci minori coperte come bonus: solo in doppio (minorPointsFor), nel singolo sempre vuoto. */
   bonuses: Redundancy[];
   /**
    * Valori grezzi e motivi di ogni membro (per le schede delle famiglie), la famiglia principale e i valori col
@@ -86,7 +94,7 @@ function roleFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redundancy
   ];
 }
 
-/** Ruoli: la lista delle voci del tipo di team coi valori del team; le mancanze sono malus, i minori coperti bonus. */
+/** Ruoli: la lista delle voci del tipo di team coi valori del team; le mancanze sono malus, in doppio i minori coperti bonus. */
 export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, given?: TeamNeeds): TeamRoles {
   if (team.length === 0) return { covered: 0, total: 0, rows: [], failures: [], bonuses: [], members: [] };
   const needs = given ?? teamNeeds(team, data);
@@ -107,9 +115,9 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
   return {
     covered: covered.length, total: rows.length, rows,
     failures: roleFailures(team, needs, lang),
-    // 2026-11-21 (utente): i ruoli minori non danno più punti (erano +1 l'uno: in media +2,8 ai team da torneo e +3,2 ai
-    // medi, un regalo che non distingueva); restano nella lista. Il pivot ha il suo bonus, solo se sfruttato (pivotBonus.ts)
-    bonuses: [],
+    bonuses: minorPointsFor(needs.archetype) > 0
+      ? covered.filter(r => r.level === 'minor').map(r => ({ text: t(lang, 'rating.bonus.minorRole', { role: needLabel(r.key, lang) }), points: minorPointsFor(needs.archetype), catalog: 'minorRole' as const }))
+      : [],
     members: team.map((set, i) => ({
       species: battleName(set), values: needs.members[i] ?? {}, reasons: reasons[i],
       primary: needs.primary[i] ?? null, credited: needs.credited[i] ?? needs.members[i] ?? {},

@@ -31,7 +31,7 @@ export interface PivotLink {
   /** Chi ha la mossa pivot e la mossa. */
   pivot: string;
   move: string;
-  /** Lento: gli attaccanti fragili che fa entrare. Veloce: i compagni che parano le sue debolezze. */
+  /** Lento: gli attaccanti fragili che fa entrare. Veloce: i compagni che parano le sue debolezze (i meno possibili). */
   partners: string[];
 }
 
@@ -40,6 +40,20 @@ export interface PivotParts {
   defense: TeamDefense;
   speed: TeamSpeed;
   roles: TeamRoles;
+}
+
+/** I nomi che bastano a coprire ogni lista: ogni volta chi ne copre di più fra quelle rimaste (a pari, il primo del team). */
+function fewest(lists: { name: string }[][]): string[] {
+  const picked: string[] = [];
+  let open = lists;
+  while (open.length) {
+    const names = [...new Set(open.flat().map(x => x.name))];
+    const count = (name: string) => open.filter(list => list.some(x => x.name === name)).length;
+    const best = names.reduce((a, b) => (count(b) > count(a) ? b : a));
+    picked.push(best);
+    open = open.filter(list => !list.some(x => x.name === best));
+  }
+  return picked;
 }
 
 /** I legami pivot del team, prima i lenti (nell'ordine del team). Vuoto se le liste dei membri non combaciano. */
@@ -75,9 +89,7 @@ export function pivotLinks(team: TeamSet[], { offense, defense, speed, roles }: 
       // Ogni debolezza di tipo deve avere un compagno che la para: prende meno di un terzo dei PS sul lato peggiore
       const weak = TYPES.map((type, i) => ({ type, i })).filter(({ type }) => defensiveMultiplier(type, m.set) > 1);
       const blockers = weak.map(({ i }) => others.filter(x => defense.typed[x.k].cells[i]?.band === 'four'));
-      if (weak.length && blockers.every(list => list.length)) {
-        fast.push({ kind: 'fast', pivot: m.name, move: m.move, partners: [...new Set(blockers.flat().map(x => x.name))] });
-      }
+      if (weak.length && blockers.every(list => list.length)) fast.push({ kind: 'fast', pivot: m.name, move: m.move, partners: fewest(blockers) });
     }
   }
   return [...slow, ...fast];
