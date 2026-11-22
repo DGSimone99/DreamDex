@@ -141,13 +141,14 @@
  * carte), il set in una riga sola: esagono, mosse una sotto l'altra, dati del set col nome sopra il valore.
  */
 .detail-sec.set-sec { --hex-w: 160px; }
-.detail .set-line { display: grid; grid-template-columns: var(--hex-w) minmax(0, 1.45fr) minmax(0, 1fr); align-items: center; gap: var(--sp-6); }
+.detail .set-line { --moves-w: 148px; display: grid; grid-template-columns: var(--hex-w) var(--moves-w) minmax(0, 1fr); align-items: center; gap: var(--sp-6); }
 .detail .set-line .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
 .detail .set-sec .mcard-hex .hx-l { font-size: 12px; }
 .detail .set-sec .mcard-hex .hx-v { font-size: 17px; }
 .detail .set-sec .mcard-moves { display: grid; gap: var(--sp-3); }
 /* La pillola piccola di sempre, con la coda del numero un po' più stretta: il nome della mossa resta intero */
-.detail .set-sec .mvp-sm { --mvp-tail-w: 54px; }
+.detail .set-sec .mvp-sm { --mvp-tail-w: 48px; }
+.detail .set-sec .mvp-sm .mvp-cat .cat-icon { width: 11px; height: 9px; }
 .detail .set-sec .mvp-sm .mvp-tail { gap: 2px; padding-right: var(--sp-3); }
 /* I dati del set in colonna, il nome piccolo sopra il valore */
 .detail .set-line .mcard-kit { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0; border: 0; font-size: var(--fs-small); }
