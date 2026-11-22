@@ -16,6 +16,7 @@ import { typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
 import { Icon } from './icons';
+import { useFitCount } from './useFit';
 import { hint } from './MoveTip';
 import { BoxIcon, bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
 import { PokemonIcon } from './PokemonName';
@@ -158,6 +159,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // ricca ammessa e, finché il corpo non entra, si scende di una. Si riparte col candidato nuovo, col team aperto o chiuso
   // e quando la finestra cambia misura
   const bodyRef = useRef<HTMLDivElement>(null);
+  // Azioni su una riga: se «Metti al posto di …» (nome lungo, inglese) non lascia posto, Copia set e Smogon restano icone
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const roomyActions = useFitCount(actionsRef, 1, `${lang}|${actionLabel}`, undefined, true) === 1;
   const start: DetailLevel = teamCollapsed ? 0 : 1;
   // Tre linguette solo se c'è un Toglie da separare
   const lastLevel: DetailLevel = showLoses ? 5 : 4;
@@ -375,7 +379,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         </div>
       </div>
 
-      <div className="detail-actions">
+      <div ref={actionsRef} className={roomyActions ? 'detail-actions' : 'detail-actions tight'}>
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
         {/* Nel dettaglio stretto (tablet, mezzo schermo) resta l'icona: il nome per i lettori di schermo e nel fumetto */}
         <button type="button" className="detail-copy" onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>

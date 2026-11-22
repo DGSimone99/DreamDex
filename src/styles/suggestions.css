@@ -712,6 +712,11 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   .detail-actions .detail-copy, .detail-actions .smogon-link { padding-inline: var(--sp-5); }
   .detail-actions :is(.detail-copy, .smogon-link) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
+/* Quando non basta lo spazio misurato (SuggestionDetail: «Metti al posto di …» lungo) vale lo stesso; e se il pulsante
+   principale non sta ancora, cede lui coi puntini invece di uscire dal dettaglio */
+.detail-actions.tight .detail-copy, .detail-actions.tight .smogon-link { padding-inline: var(--sp-5); }
+.detail-actions.tight :is(.detail-copy, .smogon-link) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.detail-actions.tight > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 /* Dettaglio che sceglie la versione che ci sta (SuggestionDetail, livelli 3-4 decisi dalla misura): testata bassa su
    una riga (icona, nome, ruolo, +N e voto) e, se ancora non basta, due linguette: Porta e Toglie · Set consigliato */
