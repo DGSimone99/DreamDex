@@ -81,7 +81,9 @@
 .mon-icon { display: inline-block; flex: none; margin: -10px -2px -8px -4px; image-rendering: pixelated; }
 /* Icone tonde dei tipi: la seconda scivola sotto la prima, staccata da un anello nel colore del pannello (isolation: lo z-index resta dentro, mai sopra la paginazione o i pannelli vicini) */
 .type-icons { display: inline-flex; flex: none; align-items: center; isolation: isolate; }
-.type-icons img { display: block; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
-.type-icons img:first-child { position: relative; z-index: 1; box-shadow: 0 0 0 1.5px var(--panel); }
-.type-icons img + img { margin-left: -5px; }
+.type-icons img { display: block; width: var(--ti-inline); height: var(--ti-inline); }
+/* Prova 2026-11-22: le icone dei tipi come quadretti alla Champions (il colore del tipo dietro l'icona tonda, angoli
+   appena smussati); i doppi tipi affiancati, non più sovrapposti */
+img.ti-sq { border-radius: 3px !important; background: var(--c); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.18); }
+.type-icons img + img { margin-left: 2px; }
 .mon-ref, .mon-name { white-space: nowrap; }
