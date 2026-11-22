@@ -233,7 +233,7 @@
 .dash {
   --dash-row2: 150px; --sum-row-min: 30px;
   flex: 1; min-height: max(300px, calc(8 * var(--sum-row-min) + 48px));
-  display: grid; grid-template-columns: minmax(min(300px, 34%), 30fr) minmax(0, 40fr) minmax(0, 30fr); grid-template-rows: auto minmax(var(--dash-row2), 1fr);
+  display: grid; grid-template-columns: minmax(clamp(min(300px, 34%), 34% + (100% - 880px) * 0.375, 360px), 30fr) minmax(0, 40fr) minmax(0, 30fr); grid-template-rows: auto minmax(var(--dash-row2), 1fr);
   gap: var(--sp-5); overflow: hidden;
 }
 .dash.tight { --sum-row-min: 24px; }

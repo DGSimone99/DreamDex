@@ -241,3 +241,19 @@
   .analysis .help-button { position: relative; }
   .analysis .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
 }
+
+/* ── Telefono e tablet: il cruscotto è alto quanto il contenuto, le Sinergie hanno un'altezza loro (sennò i triangoli,
+   misurati sull'altezza della sezione, restano minuscoli e senza titoli) ── */
+@media (max-width: 1099px) {
+  .dash-summary .sum-syn-sec { flex: none; }
+  .dash-summary .sum-syn-sec .sum-lines { flex: none; height: 150px; }
+  .dash-summary .sum-syn-sec .sum-lines:has(.sum-duo) { height: 190px; }
+}
+
+/* ── Col dito (anche il tablet orizzontale da 1180): l'interruttore Tipi | Meta e i link delle testate si toccano su 44 px,
+   senza cambiare come appaiono ── */
+@media (pointer: coarse) {
+  .dash-tabs [role='tab']::after, .analysis .dash-head:not(.is-link) .dash-link::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; translate: 0 -50%; }
+  /* Testata tutta cliccabile (Ruoli, Velocità): la zona sale e scende fino a 44 px */
+  .analysis .dash-head.is-link .dash-link::after { inset: min(0px, calc((100% - 44px) / 2)) 0; }
+}

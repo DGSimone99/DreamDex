@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import type { DashboardData } from '../engine/overviewDashboard';
 import type { TeamSummary } from '../engine/teamSummary';
 import type { TeamSet } from '../engine/sets';
@@ -74,8 +75,10 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
     observer.observe(box);
     return () => observer.disconnect();
   }, [forced]);
-  // Ampia col team ridotto o, col team aperto, sugli schermi alti (1920×1080 e su): lo spazio in più va ai contenuti
-  const density = forced ?? (teamCollapsed || height >= RICH_FROM ? 'roomy' : measured);
+  // Ampia col team ridotto o, col team aperto, sugli schermi alti del computer (1920×1080 e su): lo spazio in più va ai contenuti
+  // Telefono e tablet: il cruscotto è alto quanto il contenuto, la sua altezza non dice quanto spazio c'è
+  const stacked = useMediaQuery(EDITOR_TABS_QUERY);
+  const density = forced ?? (teamCollapsed || (!stacked && height >= RICH_FROM) ? 'roomy' : measured);
   // Riassunto ricco: ampio e abbastanza alto (densità imposta dai test: basta ampio)
   const rich = density === 'roomy' && (!!forced || height >= RICH_FROM);
   // Le minacce solo col meta (statistiche presenti e meta acceso)
