@@ -7,9 +7,6 @@ export type PaletteId = 'swsh' | 'sv';
 /** "auto" segue il gioco del formato; altrimenti una palette fissa scelta nelle impostazioni. */
 export type PaletteSetting = 'auto' | PaletteId;
 
-/** Sprite nella lista candidati: normale o icona box. */
-export type ListSprite = 'normal' | 'box';
-
 export const PALETTES: PaletteId[] = ['swsh', 'sv'];
 
 /** I colori di ogni gioco. */

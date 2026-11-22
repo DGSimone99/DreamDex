@@ -5,7 +5,7 @@ import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
 import { rankedChanges } from '../engine/coach';
 import { detectRoles, roleLabel, shownRoles } from '../engine/roles';
-import { OFTEN_TOGETHER, type Suggestion } from '../engine/scoring';
+import type { Suggestion } from '../engine/scoring';
 import type { ScoredArea, SwapOption, TeamGain } from '../engine/teamGain';
 import type { TeamSet } from '../engine/sets';
 import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
@@ -18,10 +18,11 @@ import { TypeChip } from './Sprite';
 import type { ReasonSymbol } from '../engine/explain';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
-import { Icon } from './icons';
+import { Icon, MegaIcon } from './icons';
 import { formatPercent, t, type Lang } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { typeName } from '../i18n/game';
+import { hint } from './MoveTip';
 
 /**
  * Candidato in lista, col voto che darebbe al team (assente col primo Pokémon).
@@ -30,8 +31,8 @@ import { typeName } from '../i18n/game';
 export type Item = (Suggestion | Replacement) & { teamGain?: TeamGain; replaces?: number; alternatives?: SwapOption[] };
 
 /** Sprite "Icona box": l'icona della forma da battaglia (Mega con la pietra), più grande col team nascosto. */
-export function BoxIcon({ set, big = false }: { set: TeamSet; big?: boolean }) {
-  return <span className={`box-icon${big ? ' big' : ''}`}><PokemonIcon name={battleName(set)} /></span>;
+export function BoxIcon({ set }: { set: TeamSet }) {
+  return <span className="box-icon"><PokemonIcon name={battleName(set)} /></span>;
 }
 
 /** I motivi sotto il nome: bonus (col "+" verde) o, senza bonus, una frase sola. */
@@ -174,12 +175,7 @@ function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
 
 /** I segni del candidato: ban del formato, liste dell'utente, avvisi, "spesso usati insieme" (tooltip, non etichette). */
 export function CandidateMarks({ item, format, lists }: { item: Item; format: Format; lists?: EffectiveLists }) {
-  const tr = useT();
   const warnings = item.facts.clashes.map(text => ({ level: 'warn' as const, text: text.replace(/^⚠\s*/, '') }));
-  const synergy = item.facts.synergy;
-  const together = synergy && synergy.pct >= OFTEN_TOGETHER
-    ? [{ level: 'info' as const, text: tr('tag.oftenTogether', { member: synergy.member, pct: Math.round(synergy.pct * 100) }) }]
-    : [];
   return (
     <>
       {/* Tooltip flottanti: la casella nasconde ciò che sporge e la lista sta accanto alla scheda */}
@@ -187,7 +183,6 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
       <ExclusiveMark compact species={battleName(item.set)} format={format} />
       <ListMarks set={item.set} lists={lists} />
       <AlertMark alerts={warnings} floating />
-      <AlertMark alerts={together} icon="spark" floating />
     </>
   );
 }
@@ -264,8 +259,9 @@ function useFitLimit(count: number, key: string) {
 }
 
 /**
- * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano diventano "+N"
- * subito dopo l'ultimo chip (mai un chip tagliato a metà; la lista intera è nel tooltip).
+ * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: se coi nomi non entrano tutti si
+ * mostrano solo le icone; quelli che nemmeno così entrano diventano "+N" subito dopo l'ultima (mai un chip tagliato a
+ * metà; la lista intera è nel tooltip).
  * Gli immuni per primi, senza segni in più (lo scudo davanti alla riga basta a dire che li regge); immune o resiste
  * a parole nel tooltip del chip.
  */
@@ -273,17 +269,26 @@ function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: re
   const tr = useT();
   const lang = useLang();
   const all = [...immune, ...types];
-  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti sono immuni e la lingua
-  const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
+  // Prima coi nomi; se non entrano tutti, solo le icone dei tipi (meglio vederli tutti che "FUOCO +1"); il "+N" solo se
+  // nemmeno le icone bastano. Si riparte coi nomi quando cambiano i tipi o la lingua
+  const base = `${lang}|${immune.length}|${all.join()}`;
+  const [icons, setIcons] = useState({ key: base, on: false });
+  if (icons.key !== base) setIcons({ key: base, on: false });
+  const iconsOnly = icons.key === base && icons.on;
+  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti sono immuni, la lingua e nomi o icone
+  const { row, limit } = useFitLimit(all.length, `${base}|${iconsOnly ? 'icons' : 'names'}`);
+  useLayoutEffect(() => {
+    if (!iconsOnly && limit < all.length) setIcons({ key: base, on: true });
+  }, [iconsOnly, limit, all.length, base]);
   return (
-    <span className="sym-chips" ref={row}>
+    <span className={`sym-chips${iconsOnly ? ' icons-only' : ''}`} ref={row}>
       {all.slice(0, limit).map((type, i) => (
         i < immune.length ? (
-          <span key={type} className="sym-chip immune" title={tr('reason.immuneTo', { type: typeName(type, lang) })}>
+          <span key={type} className="sym-chip immune" {...(iconsOnly ? hint(typeName(type, lang)) : { title: tr('reason.immuneTo', { type: typeName(type, lang) }) })}>
             <TypeChip type={type} />
           </span>
         ) : (
-          <span key={type} className="sym-chip"><TypeChip type={type} /></span>
+          <span key={type} className="sym-chip" {...(iconsOnly ? hint(typeName(type, lang)) : {})}><TypeChip type={type} /></span>
         )
       ))}
       <More total={all.length} shown={limit} />
@@ -386,13 +391,26 @@ export function formeParts(species: string): { base: string; forme: string } | n
   return { base: found.baseSpecies, forme: found.forme.replace(/-/g, ' ') };
 }
 
+/** Mega e Primal: forme uniche (una per team), che sulle carte hanno il loro simbolo; "X"/"Y" quando ce ne sono due. */
+export function megaOf(forme: string): { letter: string } | null {
+  const m = /^(?:Mega|Primal)(?: ([XYZ]))?$/.exec(forme);
+  return m ? { letter: m[1] ?? '' } : null;
+}
+
 export function PickButton({ rank, species, selected, onSelect }: { rank: number; species: string; selected: boolean; onSelect: () => void }) {
   const parts = formeParts(species);
+  const mega = parts ? megaOf(parts.forme) : null;
   return (
     <button type="button" className="pick" aria-pressed={selected} title={parts ? species : undefined} onClick={e => { e.stopPropagation(); onSelect(); }}>
-      {/* Il nome intero per lettori di schermo (e test); a vista la specie base e la forma come etichetta */}
+      {/* Il nome intero per lettori di schermo (e test); a vista solo la specie base: la forma sta nel dettaglio e nel
+          fumetto. Mega e Primal hanno il loro simbolo (con X/Y quando servono) */}
       <strong className={parts ? 'visually-hidden' : undefined}><span className="visually-hidden">{rank}. </span>{species}</strong>
-      {parts && <span className="pick-name" aria-hidden="true"><b>{parts.base}</b><i className="forme">{parts.forme}</i></span>}
+      {parts && (
+        <span className="pick-name" aria-hidden="true">
+          <b>{parts.base}</b>
+          {mega && <span className="mega-mark"><MegaIcon />{mega.letter}</span>}
+        </span>
+      )}
     </button>
   );
 }

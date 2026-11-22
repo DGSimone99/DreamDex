@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { MemberCard } from '../../src/ui/MemberCard';
+import { RulesContext } from '../../src/ui/rulesContext';
+import { formatRules } from '../../src/engine/formatRules';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { renderIt } from '../helpers/italian';
 
 const tusk = {
@@ -8,12 +11,15 @@ const tusk = {
 } as never;
 
 describe('Carta del Pokémon (tooltip DreamDex)', () => {
-  it('testata coi colori dei tipi, il perché, set in breve, statistiche a esagono e le quattro mosse', () => {
-    const { container } = renderIt(<MemberCard set={tusk} why="Attaccante · 82 in Offesa" />);
+  it('testata coi colori dei tipi, set in breve, statistiche a esagono, le quattro mosse e i ruoli in fondo', () => {
+    const { container } = renderIt(<RulesContext.Provider value={formatRules(DEFAULT_FORMAT.formatId)}><MemberCard set={tusk} /></RulesContext.Provider>);
     expect(container.querySelector('.mcard-name')).toHaveTextContent('Great Tusk');
     // Terra e Lotta: due icone di tipo nel nome
     expect(container.querySelectorAll('.mcard-name img')).toHaveLength(2);
-    expect(container.querySelector('.mcard-why')).toHaveTextContent('Attaccante · 82 in Offesa');
+    // Niente lastra azzurra: i ruoli sono una riga semplice in fondo, dopo le mosse
+    expect(container.querySelector('.mcard-why')).toBeNull();
+    expect(container.lastElementChild).toHaveClass('mcard-roles');
+    expect(container.querySelector('.mcard-roles')).toHaveTextContent(/^Ruoli\S/);
     const kit = container.querySelector('.mcard-kit')!;
     expect(kit).toHaveTextContent(/Strumento\s*Booster Energy/);
     expect(kit).toHaveTextContent(/Natura\s*Jolly\s*\+Vel −AttSp/);
@@ -32,8 +38,8 @@ describe('Carta del Pokémon (tooltip DreamDex)', () => {
     expect(moves[0].querySelector('.mvp-cat.cat-physical')).not.toBeNull();
   });
 
-  it('senza il perché la lastra non c\'è', () => {
+  it('senza le regole del formato la riga dei ruoli non c\'è', () => {
     const { container } = renderIt(<MemberCard set={tusk} />);
-    expect(container.querySelector('.mcard-why')).toBeNull();
+    expect(container.querySelector('.mcard-roles')).toBeNull();
   });
 });

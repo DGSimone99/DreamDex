@@ -442,8 +442,7 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
       {bmRoom && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {monTip.anchor && setOf(monTip.anchor.key.name) && (
         <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">
-          <MemberCard set={setOf(monTip.anchor.key.name)!} why={monTip.anchor.key.score === undefined ? undefined
-            : t(monTip.anchor.key.side === 'atk' ? 'mcard.whyAtk' : 'mcard.whyDef', { n: monTip.anchor.key.score })} />
+          <MemberCard set={setOf(monTip.anchor.key.name)!} />
           <TipGo place={places[monTip.anchor.key.side === 'atk' ? 'strength' : 'defense']} />
         </FloatTip>
       )}

@@ -3,20 +3,16 @@ import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
-import { PALETTES, type ListSprite, type PaletteSetting } from './theme';
+import { PALETTES, type PaletteSetting } from './theme';
 
 const CHOICES: PaletteSetting[] = ['auto', ...PALETTES];
-const LIST_SPRITES: ListSprite[] = ['normal', 'box'];
 
 /**
- * Impostazioni: la palette (segue il gioco o fissa) e gli sprite della lista candidati,
- * salvati nel browser. Quando ci saranno gli account passeranno lì.
+ * Impostazioni: la palette (segue il gioco o fissa), salvata nel browser. Quando ci saranno gli account passeranno lì.
  */
-export function SettingsDialog({ palette, onPaletteChange, listSprite, onListSpriteChange, onCredits, onFeedback, onClose }: {
+export function SettingsDialog({ palette, onPaletteChange, onCredits, onFeedback, onClose }: {
   palette: PaletteSetting;
   onPaletteChange: (palette: PaletteSetting) => void;
-  listSprite: ListSprite;
-  onListSpriteChange: (sprite: ListSprite) => void;
   /** Crediti e note legali (sul telefono la barra in fondo non c'è). */
   onCredits?: () => void;
   /** Segnala o suggerisci (sul telefono la barra in fondo non c'è). */
@@ -50,16 +46,6 @@ export function SettingsDialog({ palette, onPaletteChange, listSprite, onListSpr
                   checked={palette === choice} onChange={() => onPaletteChange(choice)} />
                 <span className="swatches" aria-hidden="true"><i /><i /></span>
                 <span>{label(choice)}</span>
-              </label>
-            ))}
-          </fieldset>
-          <fieldset className="settings-palette settings-pair">
-            <legend>{t('settings.listSprite')}</legend>
-            {LIST_SPRITES.map(choice => (
-              <label key={choice} className="palette-choice">
-                <input type="radio" name="listSprite" value={choice}
-                  checked={listSprite === choice} onChange={() => onListSpriteChange(choice)} />
-                <span>{t(`settings.listSprite.${choice}`)}</span>
               </label>
             ))}
           </fieldset>

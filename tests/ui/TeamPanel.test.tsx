@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -24,6 +26,25 @@ async function editorRoles(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('TeamPanel', () => {
+  it('carta Pedana: pedana sotto lo sprite, luce solo sulla carta aperta nell’editor', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await addPokemon(user, 'Great Tusk');
+    await addPokemon(user, 'Gholdengo');
+    const cards = () => [...teamRegion().querySelectorAll<HTMLElement>('.slot.filled > .slot-card')];
+    expect(cards()).toHaveLength(2);
+    for (const card of cards()) {
+      expect(card.querySelector('.pedana-disc')).not.toBeNull();
+      expect(card.querySelector('.pedana-beam')).not.toBeNull();
+    }
+    // Aggiungere apre l'editor dell'ultimo: chiuso, nessuna luce
+    const toggles = () => [...teamRegion().querySelectorAll<HTMLElement>('.slot-toggle')];
+    if (teamRegion().querySelector('.slot.open')) await user.click(teamRegion().querySelector<HTMLElement>('.slot.open .slot-toggle')!);
+    expect(cards().some(card => card.classList.contains('beam-on'))).toBe(false);
+    await user.click(toggles()[0]);
+    expect(cards().map(card => card.classList.contains('beam-on'))).toEqual([true, false]);
+  });
+
   it('aggiunge un Pokémon dalla ricerca con il set più comune', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
@@ -51,14 +72,13 @@ describe('TeamPanel', () => {
     check(5);
   });
 
-  it('la carta mostra solo il ruolo principale, spiegato nel fumetto (solo lui)', async () => {
+  it('la carta non mostra i ruoli: stanno nel riquadro Ruoli dell’editor', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
-    const roles = teamRegion().querySelector('.slot .roles')!;
-    expect(roles.textContent).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
-    // Il ruolo mostrato spiegato in una frase, gli altri no
-    expect(roles.getAttribute('data-hint')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico): [^·]+$/);
+    expect(teamRegion().querySelector('.slot .roles')).toBeNull();
+    const all = await editorRoles(user);
+    expect(all[0]).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
   });
 
   it('la carta non ha il badge Stats e mostra lo strumento come icona prima del nome (nome nel tooltip)', async () => {
@@ -80,23 +100,19 @@ describe('TeamPanel', () => {
     const pelipper = { ...emptySet('Pelipper'), item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane', 'Scald', 'U-turn', 'Roost'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_CHOICE)}`);
     render(<App initialLang="it" data={fixtureData} />);
-    const roles = teamRegion().querySelector('.slot .roles')!;
     // Ruoli misurati come nel voto: il principale non è mai il Recupero; il meteo e il resto nel riquadro Ruoli
-    expect(roles.textContent).not.toContain(' · ');
-    expect(roles.textContent).not.toBe('Recupero');
     const all = await editorRoles(user);
+    expect(all[0]).not.toBe('Recupero');
     expect(all[1]).toMatch(/^Porta la pioggia \(.+\)$/);
     expect(all).toEqual(expect.arrayContaining(['Pivot', 'Recupero']));
   });
 
-  it("i Ruoli dell'editor elencano tutti i ruoli, non solo quello della carta", async () => {
+  it("i Ruoli dell'editor elencano tutti i ruoli", async () => {
     const user = userEvent.setup();
     // Calibrazione (Task 9): Latias-Mega veloce con Calm Mind è uno sweeper (una sola etichetta); Defog dà la seconda
     const latias = { ...emptySet('Latias'), item: 'Latiasite', ability: 'Levitate', moves: ['Calm Mind', 'Mystical Fire', 'Mist Ball', 'Defog'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_CHOICE)}`);
     render(<App initialLang="it" data={fixtureData} />);
-    const roles = teamRegion().querySelector('.slot .roles')!;
-    expect(roles.textContent!.split(' · ')).toHaveLength(1);
     const all = await editorRoles(user);
     expect(all.length).toBeGreaterThan(2);
     expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Controllo Hazard']);
@@ -148,5 +164,22 @@ describe('TeamPanel', () => {
     await chooseGen(user, '4');
     expect(within(teamRegion()).getByText('Oltre la Gen 4')).toBeInTheDocument();
     expect(within(teamRegion()).getByText('Great Tusk')).toBeInTheDocument();
+  });
+});
+
+describe('carta del team', () => {
+  it('i tipi centrati sotto il nome', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/team.css'), 'utf8');
+    expect(css.match(/\.slot \.types \{[^}]*\}/)![0]).toContain('justify-content: center');
+  });
+
+  it('la riga dei tipi fa da base alla carta (in fondo); aperta diventa magenta, una riga sola', () => {
+    const pedana = readFileSync(resolve(__dirname, '../../src/styles/pedana.css'), 'utf8');
+    const stripe = pedana.match(/\.pedana-stripe \{[^}]*\}/)![0];
+    expect(stripe).toContain('bottom: var(--fw, 0px)');
+    expect(stripe).not.toMatch(/top: 0/);
+    const team = readFileSync(resolve(__dirname, '../../src/styles/team.css'), 'utf8');
+    expect(team).toMatch(/\.slot\.open > \.slot-card \.pedana-stripe \{[^}]*var\(--accent-2\)/);
+    expect(team).not.toMatch(/^\.slot\.open > \.slot-card::after \{ background: var\(--accent-2\)/m);
   });
 });
