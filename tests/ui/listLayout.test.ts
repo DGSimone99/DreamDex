@@ -33,7 +33,12 @@ describe('cardsLayout (Box)', () => {
     expect(cardsLayout(656, true, 1182)).toMatchObject({ rows: 3, perPage: 12, tileHeight: 204 });
     expect(cardsLayout(408, false, 1132)).toMatchObject({ rows: 2, perPage: 8, tileHeight: 186 });
     expect(cardsLayout(552, true, 1132)).toMatchObject({ rows: 2, perPage: 8, tileHeight: 232 });
-    expect(cardsLayout(260, false, 1046)).toMatchObject({ rows: 1, perPage: 4 });
+    // 1280×620 col team aperto: 2 file di carte basse senza motivi
+    expect(cardsLayout(278, false, 1046)).toMatchObject({ rows: 2, perPage: 8, reasons: 0, tileHeight: 121 });
+    // 1366×657: 2 file da 139
+    expect(cardsLayout(315, false, 1132)).toMatchObject({ rows: 2, reasons: 0, tileHeight: 139 });
+    // Troppo basso anche per 2 carte basse: una fila coi motivi
+    expect(cardsLayout(260, false, 1046)).toMatchObject({ rows: 1, perPage: 4, reasons: 2 });
     expect(cardsLayout(404, true, 1046)).toMatchObject({ rows: 2, perPage: 8, tileHeight: 184 });
   });
   it('mai più di 4 file, mai carte oltre 232 px; la quarta solo con carte da 196 px', () => {

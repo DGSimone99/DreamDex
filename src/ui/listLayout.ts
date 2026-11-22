@@ -27,7 +27,10 @@ export const CARDS_FOURTH_ROW_TILE = 196;
 export const CARDS_WIDE_W = 150;
 export const CARDS_NARROW_W = 140;
 
-/** Motivi sotto il nome delle carte: 2 col team aperto, 3 col team nascosto. */
+/** Carta bassa senza motivi (solo nome e sprite da 64 px): per avere 2 file dove ne entrerebbe una sola. */
+export const CARDS_SHORT_TILE = 120;
+
+/** Motivi sotto il nome delle carte: 2 col team aperto, 3 col team nascosto (0 sulle carte basse, vedi cardsLayout). */
 export const cardsReasons = (teamCollapsed: boolean): number => (teamCollapsed ? 3 : 2);
 
 /** Altezza minima di una carta: 18 sopra + sprite 72 + pedana 16 + nome 20 + 8 sotto, più 16 per motivo. */
@@ -52,13 +55,16 @@ export function cardsListWidth(pickerWidth: number): number {
 }
 
 /** Da 1 a 4 file che riempiono l'altezza della lista (la quarta solo con carte da 196 px in su); le carte fino a 232 px.
+ *  Se entra una fila sola ma ne entrano 2 di carte basse (120 px), carte senza motivi su 2 file.
  *  Senza misura 2 file e l'altezza al CSS. */
 export function cardsLayout(height: number, teamCollapsed: boolean, pickerWidth = 0): CardsLayout {
   const h = num(height);
-  const reasons = cardsReasons(teamCollapsed);
   const columns = cardsColumns(pickerWidth);
   const fit = (tile: number) => Math.floor((h - 2 * CARDS_PAD + CARDS_GAP) / (tile + CARDS_GAP));
-  const rows = h ? (fit(CARDS_FOURTH_ROW_TILE) >= 4 ? CARDS_MAX_ROWS : clamp(fit(cardsMinTile(reasons)), 1, 3)) : 2;
+  let reasons = cardsReasons(teamCollapsed);
+  let rows = h ? (fit(CARDS_FOURTH_ROW_TILE) >= 4 ? CARDS_MAX_ROWS : clamp(fit(cardsMinTile(reasons)), 1, 3)) : 2;
+  // Schermi bassi col team aperto: con i motivi entrerebbe una fila sola; senza, le carte si abbassano e le file sono 2
+  if (h && rows === 1 && fit(CARDS_SHORT_TILE) >= 2) { reasons = 0; rows = 2; }
   const tileHeight = h ? clamp(Math.floor((h - 2 * CARDS_PAD - (rows - 1) * CARDS_GAP) / rows), 0, CARDS_MAX_TILE) : 0;
   return { columns, rows, perPage: columns * rows, tileHeight, reasons, listWidth: cardsListWidth(pickerWidth) };
 }
