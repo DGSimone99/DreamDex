@@ -752,7 +752,8 @@ describe('sprite animato delle carte', () => {
         onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
       const cards = [...list().querySelectorAll<HTMLElement>('.card')];
       expect(cards.length).toBeGreaterThan(1);
-      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
+      // Animata = la GIF, o lo statico che "respira" per chi la GIF non ce l'ha
+      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani, .sprite.idle'));
       // A riposo solo la selezionata (la prima)
       expect(cards[0].classList.contains('selected')).toBe(true);
       expect(animated()).toEqual([cards[0]]);

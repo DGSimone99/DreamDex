@@ -1,15 +1,19 @@
 /**
  * Misura dove stanno i piedi di ogni sprite statico di Showdown (gen5, 96×96): la riga più in basso con un pixel non
- * trasparente. Gli sprite non hanno i piedi tutti alla stessa altezza (Joltik a 63, Kingambit a 90), quindi sulla pedana
- * i più piccoli sembravano fluttuare. Scrive src/ui/spriteFeet.ts, che Sprite usa per appoggiarli tutti allo stesso punto.
+ * trasparente, e il centro orizzontale del corpo; della GIF animata solo l'altezza (e se c'è). Gli sprite non hanno i piedi tutti alla stessa altezza (Joltik a 63, Kingambit a 90), quindi sulla pedana
+ * i più piccoli sembravano fluttuare, e molti sono spostati a destra o a sinistra. Scrive src/ui/spriteFeet.ts, che Sprite usa per appoggiarli tutti allo stesso punto.
  * Si rilancia solo quando arrivano Pokémon nuovi: npx tsx scripts/sprite-feet.ts
  */
 import { writeFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 import { dex, toID } from '../src/engine/dex';
 
-/** La riga più in basso con un pixel visibile (alfa > 40) di un PNG non interlacciato. */
-function lowestRow(buf: Buffer): number {
+/**
+ * I piedi di un PNG non interlacciato: la riga più in basso con un pixel visibile (alfa > 40) e il centro orizzontale di
+ * tutti i pixel visibili (il "peso" del corpo: i soli piedi sbagliano con chi tocca terra con una zampa o con la coda,
+ * come Metagross e Regieleki).
+ */
+function feetOf(buf: Buffer): { row: number; x: number; box: number } | null {
   let p = 8, w = 0, h = 0, depth = 8, ct = 6, interlace = 0;
   let trns: Buffer | null = null;
   const idat: Buffer[] = [];
@@ -45,34 +49,50 @@ function lowestRow(buf: Buffer): number {
     }
     return 255;
   };
-  for (let y = h - 1; y >= 0; y--) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) return y;
-  return -1;
+  let row = -1;
+  for (let y = h - 1; y >= 0 && row < 0; y--) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) { row = y; break; }
+  if (row < 0) return null;
+  let sum = 0, n = 0, minX = w, maxX = 0;
+  for (let y = 0; y <= row; y++) for (let x = 0; x < w; x++) if (alpha(x, y) > 40) { sum += x + 0.5; n++; minX = Math.min(minX, x); maxX = Math.max(maxX, x + 1); }
+  return { row, x: Math.round(sum / n), box: Math.round((minX + maxX) / 2) };
 }
 
 // Gli stessi id di Sprite.tsx (spriteId): "landorus-therian", "charizard-megay"
 const ids = [...new Set(dex.species.all().filter(s => s.exists && s.num > 0)
   .map(s => (s.forme ? `${toID(s.baseSpecies)}-${toID(s.forme)}` : toID(s.baseSpecies))))].sort();
 
-const feet: Record<string, number> = {};
+const feet: Record<string, { row: number; x: number; box: number }> = {};
+/** Altezza della GIF animata (gen5ani, ritagliata sul Pokémon), 0 se non c'è: bastano i primi byte (l'intestazione) */
+const aniH: Record<string, number> = {};
+async function gifHeight(id: string): Promise<number> {
+  const res = await fetch(`https://play.pokemonshowdown.com/sprites/gen5ani/${id}.gif`, { headers: { Range: 'bytes=0-15' } });
+  if (!res.ok) return 0;
+  const head = Buffer.from(await res.arrayBuffer());
+  return head.toString('ascii', 0, 3) === 'GIF' ? head.readUInt16LE(8) : 0;
+}
 let missing = 0, next = 0;
 async function worker() {
   while (next < ids.length) {
     const id = ids[next++];
     const res = await fetch(`https://play.pokemonshowdown.com/sprites/gen5/${id}.png`);
     if (!res.ok) { missing++; continue; }
-    const row = lowestRow(Buffer.from(await res.arrayBuffer()));
-    if (row >= 0) feet[id] = row;
+    const f = feetOf(Buffer.from(await res.arrayBuffer()));
+    if (f) { feet[id] = f; aniH[id] = await gifHeight(id); }
   }
 }
 await Promise.all(Array.from({ length: 12 }, worker));
 
-// Nel file solo chi non ha i piedi alla riga di riferimento (FEET_ROW): gli altri stanno già bene
-const FEET_ROW = 86;
-const entries = Object.keys(feet).sort().filter(id => feet[id] !== FEET_ROW).map(id => `${JSON.stringify(id)}:${feet[id]}`);
+// Il punto di riferimento: piedi alla riga FEET_ROW, corpo al centro FEET_X
+const FEET_ROW = 86, FEET_X = 48;
+const entries = Object.keys(feet).sort().map(id => `${JSON.stringify(id)}:[${feet[id].row},${feet[id].x},${feet[id].box},${aniH[id]}]`);
 writeFileSync('src/ui/spriteFeet.ts', `// Generato da scripts/sprite-feet.ts: non modificare a mano.
-/** La riga dei piedi a cui la pedana è tarata, nello sprite statico di 96 px. */
+/** Il punto dei piedi a cui la pedana è tarata, nello sprite statico di 96 px: riga e colonna (il centro). */
 export const FEET_ROW = ${FEET_ROW};
-/** Riga più in basso dello sprite statico (gen5, 96 px) di chi non ha i piedi a FEET_ROW. */
-export const SPRITE_FEET: Record<string, number> = {${entries.join(',')}};
+export const FEET_X = ${FEET_X};
+/**
+ * Per ogni sprite statico (gen5, 96 px): [riga più in basso, centro orizzontale del corpo, centro del riquadro che lo
+ * contiene, altezza della GIF animata (gen5ani) o 0 se Showdown non ce l'ha].
+ */
+export const SPRITE_FEET: Record<string, [number, number, number, number]> = {${entries.join(',')}};
 `);
-console.log(`${Object.keys(feet).length} sprite misurati, ${entries.length} fuori riga, ${missing} senza sprite`);
+console.log(`${Object.keys(feet).length} sprite misurati, ${Object.values(aniH).filter(h => !h).length} senza GIF, ${missing} senza sprite`);
