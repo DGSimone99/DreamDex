@@ -1601,3 +1601,10 @@ label.improve-col-head { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   .set-editor[data-tab].swiping > :not(.editor-head) { transform: none; }
 }
+
+/* Tablet in orizzontale (e computer a mezzo schermo): il voto grande resta in vista nella colonna del team, quindi
+   niente voto nella testata dell'editor; la testata si abbassa e tutto sale */
+@media (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px), (min-width: 900px) and (max-width: 1099px) and (pointer: fine) {
+  .set-editor .editor-title .editor-grade { display: none; }
+  .set-editor .editor-title, .set-editor .editor-title:has(.editor-grade) { min-height: 116px; padding-top: var(--sp-8); }
+}
