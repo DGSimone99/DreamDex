@@ -82,7 +82,7 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
   const threats = data.threats.available;
   return (
     <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}${threats ? ' has-threats' : ''}`} data-density={density}>
-      <SummarySection summary={summary} members={members} team={team} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
+      <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       <CoverageSection coverage={data.coverage} onView={onView} />
       {threats && <ThreatsSection threats={data.threats} onView={onView} />}
       <RolesSection roles={data.roles} density={density} onView={onView} />

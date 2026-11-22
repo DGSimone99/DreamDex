@@ -492,12 +492,12 @@
 /*
  * Riassunto, ritratto del team (come sinergie-v3): in alto l'eroe (tipo di team grande, chi lo rende tale su un piedistallo
  * luminoso), sotto le sezioni con intestazione in maiuscoletto e righe separate da --line-soft, come le fasce di Ruoli.
- * Niente riquadri scuri dentro la card. Misure per densità in variabili: --sum-big (sprite dell'eroe), --sum-small (sprite
+ * Niente riquadri scuri dentro la card. Misure per densità in variabili: --sum-small (sprite
  * delle righe), --sum-line (altezza minima di una riga). Ricca (team ridotto): sprite più grandi; le Sinergie prendono
  * l'altezza che resta e le loro righe crescono fino a un tetto, così sotto non resta un vuoto.
  */
-.dash-summary { --sum-big: 40px; --sum-small: 34px; --sum-mini: 28px; --sum-line: 36px; --sum-arch: 24px; }
-.dash.tight .dash-summary { --sum-big: 32px; --sum-small: 30px; --sum-mini: 24px; --sum-line: 32px; --sum-arch: 20px; }
+.dash-summary { --sum-small: 34px; --sum-mini: 28px; --sum-line: 36px; --sum-arch: 24px; }
+.dash.tight .dash-summary { --sum-small: 30px; --sum-mini: 24px; --sum-line: 32px; --sum-arch: 20px; }
 /* Cruscotto basso (portatili): sezioni più vicine e il triangolo delle sinergie più basso, così il Riassunto ci sta */
 .dash.tight .sum-sec { padding-top: 5px; }
 .dash.tight .sum-none, .dash.tight .sum-sec-more { top: 9px; }
@@ -519,7 +519,7 @@
   .dash.tight .sum-sec-h { padding-bottom: 3px; }
 }
 
-.dash.rich .dash-summary { --sum-big: 56px; --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
+.dash.rich .dash-summary { --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
 .sum-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 /* Eroe: righe diagonali leggere e una sfumatura dall'alto nel colore del voto del team (S magenta, A verde, B ciano,
@@ -548,32 +548,6 @@
 /* Tipo non ancora riconosciuto: la scritta c'è ma più tenue */
 .sum-arch.pending { color: var(--muted); }
 .sum-type .help-button { flex: none; }
-
-/* Chi rende il team tale: una riga di sprite (attaccanti, poi muri dopo una linea sottile); chi non sta va nel "+N" */
-.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: var(--sp-4); display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 var(--sp-1); clip-path: inset(-12px -6px 0 -6px); }
-.sum-type + .sum-crew { margin-top: var(--sp-5); }
-.sum-side { display: contents; }
-.sum-maker { flex: none; height: var(--crew-h); display: flex; align-items: flex-end; }
-.sum-maker.first { margin-left: var(--sp-4); padding-left: var(--sp-5); border-left: 1px solid var(--line); }
-.sum-maker.atk { --c: var(--accent-ink); --glow: color-mix(in srgb, var(--accent) 45%, transparent); }
-.sum-maker.def { --c: var(--good); --glow: color-mix(in srgb, var(--good) 42%, transparent); }
-.sum-mon { width: calc(var(--sum-big) + 2px); display: flex; flex-direction: column; align-items: center; padding: 0; color: inherit; background: none; border: 0; border-radius: 3px; }
-.sum-mon { position: relative; isolation: isolate; }
-.sum-mon:hover { background: none; }
-/* Al passaggio: dietro la sprite una luce sfumata nel colore del lato, senza bordi; closest-side la fa finire dentro il
-   riquadro, così il ritaglio della riga (sotto) non la taglia mai; la sprite si alza */
-.sum-mon::before { content: ""; position: absolute; inset: -4px -6px 0; z-index: -1; background: radial-gradient(closest-side at 50% 62%, color-mix(in srgb, var(--c) 32%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
-.sum-mon:hover::before { opacity: 1; }
-.sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: transform 0.18s var(--ease); }
-.sum-mon:hover .sprite { transform: translateY(-2px); }
-.sum-mon .sprite { margin-bottom: calc(var(--sum-big) * -0.12); }
-.sum-score { position: relative; display: flex; align-items: center; gap: 3px; font: 700 var(--fs-label)/1.2 var(--display); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--c); }
-.sum-score .icon { width: 10px; height: 10px; }
-.dash.rich .sum-score { font-size: var(--fs-label); }
-.dash.rich .sum-score .icon { width: 11px; height: 11px; }
-.sum-crew-more { flex: none; align-self: center; margin-left: var(--sp-3); }
-.sum-more { flex: none; font-size: var(--fs-caption); font-weight: 600; color: var(--faint); }
-.dash.rich .sum-more { font-size: var(--fs-section); }
 
 /* Sprite sul piedistallo: un'ellisse luminosa sotto i piedi, come nelle corsie della Velocità */
 .sum-plinth { position: relative; flex: none; display: flex; justify-content: center; }
@@ -611,7 +585,7 @@
 .sum-syn:hover .sum-tri-edges marker path { fill: color-mix(in srgb, var(--good) 70%, white); }
 .sum-tri-badge { transition: box-shadow 0.18s var(--ease); }
 .sum-syn:hover .sum-tri-badge { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 35%, transparent), 0 0 8px color-mix(in srgb, var(--good) 55%, transparent); }
-@media (prefers-reduced-motion: reduce) { .sum-mon .sprite, .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: none; } }
 .sum-line .sum-plinth { width: var(--sum-small); }
 .sum-line .sum-plinth .sprite { margin: calc(var(--sum-small) * -0.12) 0 calc(var(--sum-small) * -0.15); }
 .sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); font-weight: 600; }

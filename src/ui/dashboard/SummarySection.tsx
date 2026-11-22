@@ -3,8 +3,6 @@ import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
 import type { ConditionRow, HazardRow, TeamSummary } from '../../engine/teamSummary';
-import type { TeamSet } from '../../engine/sets';
-import { battleName, battleSpecies } from '../../engine/dex';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
@@ -275,7 +273,7 @@ function useBonusMalusRoom(card: RefObject<HTMLElement | null>, enabled: boolean
       const { bottom, height } = el.getBoundingClientRect();
       // Senza layout (test, scheda nascosta) non si sa: niente riga
       if (!height) { setRoom(false); return; }
-      if (el.querySelector('.sum-sec-more, .sum-more-below, .sum-crew-more')) { setRoom(false); return; }
+      if (el.querySelector('.sum-sec-more, .sum-more-below')) { setRoom(false); return; }
       const parts = el.querySelectorAll('.sum-hero, .sum-sec-h, .sum-none, .sum-lines > li > *');
       const last = Math.max(0, ...[...parts].map(p => p.getBoundingClientRect().bottom));
       setRoom(last + BM_GAP + BM_LINE <= bottom + 0.5);
@@ -318,12 +316,10 @@ function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: Bon
  * Il Riassunto della Panoramica, ritratto del team: in alto (eroe) il tipo di team e chi lo rende tale, sotto chi porta
  * meteo e campo, chi piazza le trappole e, in fondo, le Sinergie (core difensivi e legami), che prendono lo spazio che resta.
  */
-export function SummarySection({ summary, members, team = [], grade, density, rich = false, bonusMalus, onView, onShowAll }: {
+export function SummarySection({ summary, members, grade, density, rich = false, bonusMalus, onView, onShowAll }: {
   summary: TeamSummary; members: number;
   /** La riga Bonus/Malus in fondo, solo se c'è posto (useBonusMalusRoom); senza, non c'è. */
   bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
-  /** I set del team: la carta del Pokémon al passaggio su chi rende il team tale. */
-  team?: TeamSet[];
   /** La lettera del voto del team: il nome del tipo e la sfumatura dell'eroe ne prendono il colore (come la carta del voto). */
   grade?: string;
   /** Sprite e righe cambiano misura con la densità: le parti a misura si rimisurano. */
@@ -337,13 +333,13 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
   const t = useT();
   const lang = useLang();
   const { archetype, styles, attackers, walls, offenseOf, defenseOf, conditions, hazards, cores, links } = summary;
-  const count = (key: 'sum.moreMons' | 'sum.moreField' | 'sum.moreHazards' | 'sum.moreSyn', n: number) => t(`${key}${n === 1 ? 'One' : 'Many'}`, { n });
+  const count = (key: 'sum.moreField' | 'sum.moreHazards' | 'sum.moreSyn', n: number) => t(`${key}${n === 1 ? 'One' : 'Many'}`, { n });
   const synergyView = useSynergyView();
   const condTip = useFloatAnchor<ConditionRow>();
   const coreTip = useFloatAnchor<Core>();
   // Dove porta il clic degli elementi col tooltip (il piede TipGo), anche ai lettori di schermo: una descrizione per destinazione
-  const goIds = { strength: useId(), defense: useId(), roles: useId(), bonusMalus: useId() };
-  const places = { strength: t('area.strength'), defense: t('area.defense'), roles: t('area.roles'), bonusMalus: t('analysis.view.bonusMalus') };
+  const goIds = { roles: useId(), bonusMalus: useId() };
+  const places = { roles: t('area.roles'), bonusMalus: t('analysis.view.bonusMalus') };
   // Tutti i core: prima quelli da 3 (il primo col triangolo grande), poi quelli da 2 (riga piccola). Poi i legami, senza i pivot
   const trios = cores.filter(core => core.members.length === 3);
   // Due o più core a tre: i primi due affiancati in una riga (solo triangolo e titolo), così stanno entrambi nella card
@@ -355,7 +351,6 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
     ...links.filter(link => link.kind !== 'pivot').map(link => ({ link })),
   ];
   const keyOf = (parts: string[]) => `${lang}|${density}|${rich}|${parts.join()}`;
-  const big = rich ? 56 : 40;
   const small = rich ? 44 : 34;
   const mini = rich ? 38 : 28;
 

@@ -416,7 +416,8 @@ describe('Riassunto', () => {
     mount({ summary: summaryOf({ styles: ['rain'] }) });
     const arch = region().querySelector('.sum-arch')!;
     expect(arch).toHaveTextContent('Hyper Offense');
-    expect(arch).toHaveAttribute('title', 'Tutto attacco');
+    // La nota del tipo nel suggerimento DreamDex (con chi rende il team tale), non nel tooltip del browser
+    expect(arch.getAttribute('data-hint')).toContain('Tutto attacco');
     expect(region().querySelector('.sum-style')).toHaveTextContent('Pioggia');
     // Il tipo vicino non si mostra più ("quasi…" tolto il 2026-11-10)
     expect(region().querySelector('.sum-near')).toBeNull();
@@ -442,106 +443,18 @@ describe('Riassunto', () => {
     expect(region().querySelector('.sum-hero')!.className).toBe('sum-hero');
   });
 
-  it('eroe: chi rende il team tale, prima gli attaccanti (Offesa) poi i muri (Difesa)', () => {
+  it("eroe: chi rende il team tale sta nel suggerimento del tipo di team (attaccanti con l'Offesa, poi muri con la Difesa), non in una riga di sprite", () => {
     mount();
-    const attack = within(region()).getByRole('group', { name: 'Attaccano' });
-    const hold = within(region()).getByRole('group', { name: 'Reggono' });
-    expect(within(attack).getAllByRole('button').map(b => b.getAttribute('aria-label'))).toEqual(['Garchomp, Offesa 92', 'Zapdos, Offesa 86']);
-    expect(within(hold).getAllByRole('button').map(b => b.getAttribute('aria-label'))).toEqual(['Toxapex, Difesa 88']);
-    // Nell'ordine del documento: attaccanti, poi muri
-    expect([...region().querySelectorAll('.sum-mon')].map(b => b.getAttribute('aria-label')!.split(',')[0])).toEqual(['Garchomp', 'Zapdos', 'Toxapex']);
-    // Niente tooltip del browser: al passaggio la carta del Pokémon (tooltip DreamDex), quando il set è nel team
-    expect(region().querySelector('.sum-mon[title]')).toBeNull();
-    // Dove porta il clic (il piede TipGo del tooltip) anche nella descrizione: l'attaccante all'Offesa, il muro alla Difesa
-    const mons = [...region().querySelectorAll<HTMLElement>('.sum-mon')];
-    expect(mons[0]).toHaveAccessibleDescription('Clic: vai a Offesa');
-    expect(mons[mons.length - 1]).toHaveAccessibleDescription('Clic: vai a Difesa');
-    expect(region().querySelectorAll('.sum-hero .sprite')).toHaveLength(3);
-  });
-
-  it('eroe: clic su un attaccante porta a Offesa, su un muro a Difesa', async () => {
-    const user = userEvent.setup();
-    const { onView } = mount();
-    await user.click(within(region()).getByRole('button', { name: 'Garchomp, Offesa 92' }));
-    await user.click(within(region()).getByRole('button', { name: 'Toxapex, Difesa 88' }));
-    expect(onView.mock.calls.map(c => c[0])).toEqual(['strength', 'defense']);
-  });
-
-  it('con un solo Pokémon niente riga del tipo di team; attaccanti e muri restano', () => {
-    mount({ members: 1 });
-    expect(region().querySelector('.sum-arch')).toBeNull();
-    expect(within(region()).queryByRole('button', { name: 'Tipi di team: come si riconoscono' })).toBeNull();
-    expect(within(region()).getByRole('button', { name: 'Garchomp, Offesa 92' })).toBeInTheDocument();
-  });
-
-  it('Meteo e campo: chi lo porta, la condizione e chi ne approfitta; clic a Ruoli', async () => {
-    const user = userEvent.setup();
-    italianNames();
-    const { onView } = mount({ summary: summaryOf({ conditions: [{ member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [{ name: 'Barraskewda', via: 'Swift Swim' }, { name: 'Zapdos' }], via: 'Drizzle', item: 'Damp Rock' }] }) });
-    const row = within(section('Meteo e campo')).getByRole('button');
-    expect(row).toHaveTextContent('Pelipper');
-    expect(row.querySelector('.sum-tag')).toHaveTextContent('Pioggia');
-    const users = [...row.querySelectorAll<HTMLElement>('.sum-user')];
-    // Niente tooltip del browser sulle sprite: al loro posto il tooltip DreamDex della riga
-    expect(users.map(u => u.getAttribute('title'))).toEqual([null, null]);
-    expect(users[0].querySelector('.sprite')).not.toBeNull();
-    // I nomi letti anche dai lettori di schermo, con l'abilità o la mossa con cui la sfrutta, nella lingua dell'interfaccia
-    expect(row).toHaveAccessibleName(/Pelipper.*Pioggia.*Barraskewda · Nuotovelox.*Zapdos/);
-    // Passando sulla riga: la condizione, quanto dura, chi la porta, gli effetti per tutti e chi ne approfitta
-    await user.hover(row);
-    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cond'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip).toHaveAttribute('aria-hidden', 'true');
-    expect(tip.querySelector('.ctip-head')).toHaveClass('k-rain');
-    expect(tip.querySelector('.ctip-name')).toHaveTextContent('Pioggia');
-    expect(tip.querySelector('.ctip-sub')).toHaveTextContent(/^8 turni grazie a (Rocciaumida|Damp Rock)$/);
-    expect(tip.querySelector('.ctip-setter')).toHaveTextContent(/^(Piovischio|Drizzle)$/);
-    const plates = [...tip.querySelectorAll('.ctip-plate')];
-    expect(plates.map(p => p.className)).toEqual(['ctip-plate good', 'ctip-plate bad']);
-    expect(plates[0]).toHaveTextContent(/Mosse Acqua\s*per tutti\s*50%/);
-    const rows = [...tip.querySelectorAll('.ctip-user')];
-    expect(rows[0]).toHaveTextContent(/Barraskewda\s*Nuotovelox\s*Velocità ×2/);
-    // Senza abilità né mossa: chi si potenzia (qui un utente senza via)
-    expect(rows[1]).toHaveTextContent('Zapdos');
-    await user.unhover(row);
-    expect(document.querySelector('.ftip')).toBeNull();
-    await user.click(row);
-    expect(onView).toHaveBeenCalledWith('roles');
-  });
-
-  it('Meteo e campo vuoto: "Nessuno"', () => {
-    mount();
-    expect(section('Meteo e campo')).toHaveTextContent(/^Meteo e campoNessuno$/);
-    expect(within(section('Meteo e campo')).queryByRole('button')).toBeNull();
-  });
-
-  it('Trappole: una chip per mossa, nella lingua dell\'interfaccia; vuoto: "Nessuna"', async () => {
-    initGameNames({ moves: { stealthrock: { name: 'Levitoroccia' }, spikes: { name: 'Punte' } }, abilities: {}, items: {}, types: {}, natures: {} });
-    const user = userEvent.setup();
-    const { onView } = mount({ summary: summaryOf({ hazards: [{ member: 'Ferrothorn', moves: ['Stealth Rock', 'Spikes'] }] }) });
-    const row = within(section('Trappole')).getByRole('button');
-    expect(row).toHaveTextContent('Ferrothorn');
-    // Le mosse come pillole: il nome tradotto, la potenza nella coda ("—" per le mosse di stato)
-    expect([...row.querySelectorAll('.mvp .mvp-nm')].map(c => c.textContent)).toEqual(['Levitoroccia', 'Punte']);
-    await user.click(row);
-    expect(onView).toHaveBeenCalledWith('roles');
-    cleanup();
-    mount({ summary: summaryOf({ hazards: [] }) });
-    expect(section('Trappole')).toHaveTextContent(/^TrappoleNessuna$/);
-  });
-
-  it('le vecchie righe non ci sono più: niente Colpisce, Debole a, Ruoli, Minacce', () => {
-    mount();
-    for (const label of ['Colpisce', 'Debole a', 'Ruoli', 'Minacce']) expect(within(region()).queryByText(label)).toBeNull();
+    const arch = region().querySelector<HTMLElement>('.sum-arch')!;
+    expect(arch.getAttribute('data-hint')).toContain('Attaccano: Garchomp 92, Zapdos 86 · Reggono: Toxapex 88');
+    expect(region().querySelector('.sum-crew, .sum-mon')).toBeNull();
     expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campo', 'Trappole', 'Sinergie']);
   });
 
   it('in inglese: Offense / Defense, Weather & field, Hazards, None', () => {
     render(<LangProvider lang="en"><OverviewDashboard data={sample()} summary={summaryOf({ hazards: [] })} members={6} onView={vi.fn()} density="normal" /></LangProvider>);
     const summary = screen.getByRole('region', { name: 'Summary' });
-    expect(within(summary).getByRole('group', { name: 'Attack' })).toBeInTheDocument();
-    expect(within(summary).getByRole('group', { name: 'Hold' })).toBeInTheDocument();
-    expect(within(summary).getByRole('button', { name: 'Garchomp, Offense 92' })).toBeInTheDocument();
-    expect(within(summary).getByRole('button', { name: 'Toxapex, Defense 88' })).toBeInTheDocument();
+    expect(summary.querySelector('.sum-arch')!.getAttribute('data-hint')).toContain('Attack: Garchomp 92, Zapdos 86 · Hold: Toxapex 88');
     expect(within(summary).getByRole('heading', { name: 'Weather & field' }).closest('.sum-sec')).toHaveTextContent(/None$/);
     expect(within(summary).getByRole('heading', { name: 'Hazards' }).closest('.sum-sec')).toHaveTextContent(/None$/);
   });
@@ -603,12 +516,12 @@ describe('Riassunto', () => {
     expect(core).toHaveAccessibleDescription('Garchomp blocks Fire for Scizor, Scizor blocks Steel for Iron Valiant, Iron Valiant blocks Dragon for Garchomp Click: go to Roles & Bonus');
   });
 
-  it('ricco (team ridotto): sprite più grandi nell\'eroe', () => {
+  it('ricco (team ridotto): sprite più grandi nelle righe', () => {
     mount({ density: 'roomy' });
-    expect(region().querySelector('.sum-hero .sprite')).toHaveAttribute('width', '56');
+    expect(region().querySelector('.sum-line .sum-plinth .sprite')).toHaveAttribute('width', '44');
     cleanup();
     mount();
-    expect(region().querySelector('.sum-hero .sprite')).toHaveAttribute('width', '40');
+    expect(region().querySelector('.sum-line .sum-plinth .sprite')).toHaveAttribute('width', '34');
   });
 });
 
@@ -712,12 +625,12 @@ describe('Cruscotto: misure', () => {
     renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} teamCollapsed />);
     const dash = document.querySelector('.dash')!;
     expect(dash).toHaveClass('rich');
-    expect(dash.querySelector('.sum-hero .sprite')).toHaveAttribute('width', '56');
+    expect(dash.querySelector('.sum-line .sum-plinth .sprite')).toHaveAttribute('width', '44');
     size.height = RICH_FROM - 1;
     fire();
     expect(dash).not.toHaveClass('rich');
     expect(dash).toHaveAttribute('data-density', 'roomy');
-    expect(dash.querySelector('.sum-hero .sprite')).toHaveAttribute('width', '40');
+    expect(dash.querySelector('.sum-line .sum-plinth .sprite')).toHaveAttribute('width', '34');
     cleanup();
     // Team aperto: mai ricco, a ogni altezza
     size.height = 2000;
@@ -804,18 +717,6 @@ describe('Cruscotto: misure', () => {
     size.height = 500;
     fire();
     expect(within(roles).getByText('+3')).toBeInTheDocument();
-  });
-
-  it('Riassunto: chi non sta nella riga dell\'eroe va nel "+N", letto per intero', () => {
-    stubSumFit(() => 2);
-    const six = ['Garchomp', 'Zapdos', 'Kingambit', 'Dragapult', 'Gholdengo', 'Great Tusk'];
-    mount({ summary: summaryOf({ attackers: six, walls: ['Toxapex', 'Corviknight', 'Skarmory'] }) });
-    const crew = screen.getByRole('region', { name: 'Riassunto' }).querySelector<HTMLElement>('.sum-crew')!;
-    expect(crew.querySelectorAll('.sprite')).toHaveLength(2);
-    expect(crew.querySelector('.sum-more')).toHaveTextContent('+7');
-    expect(crew.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Altri 7 Pokémon$/);
-    // I muri sono tutti nel "+N": il loro gruppo non c'è
-    expect(within(crew).queryByRole('group', { name: 'Reggono' })).toBeNull();
   });
 
   it('Riassunto: le righe di una sezione che non stanno vanno nel "+N" (al singolare per una)', () => {

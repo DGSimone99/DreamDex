@@ -90,13 +90,6 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Copertura' }).querySelector('.dash-head')).not.toHaveClass('is-link');
   });
 
-  it("il Riassunto: un attaccante dell'eroe porta a Offesa", async () => {
-    const user = await setup();
-    const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    await user.click(within(within(summary).getByRole('group', { name: 'Attaccano' })).getAllByRole('button')[0]);
-    expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
-  });
-
   it('un membro solo: niente "nessun problema", l\'invito ad aggiungerne', async () => {
     await setup(['Great Tusk']);
     expect(panel().querySelector('.overview-headline')).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
