@@ -86,8 +86,9 @@
    appena smussati); i doppi tipi affiancati, non più sovrapposti */
 img.ti-sq { border-radius: 3px !important; background: var(--c); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.18); }
 .type-icons img + img { margin-left: 2px; }
-/* Accanto al nome di un Pokémon (VS Tapu Lele, Ferma…) i due tipi restano mezzi sovrapposti, come prima: il primo sopra
-   con un filo del colore del fondo, il secondo scivola sotto */
-.type-dot img:first-child { position: relative; z-index: 1; box-shadow: 0 0 0 1.5px var(--panel); }
-.type-dot img + img { margin-left: -6px; }
+/* Accanto al nome di un Pokémon (VS Tapu Lele, Ferma…) i due tipi sono una tessera sola divisa in due: quadretti interi,
+   attaccati, angoli smussati solo all'esterno (sovrapposti il secondo si vedeva poco) */
+.type-dot img + img { margin-left: 0; }
+.type-dot img.ti-sq:not(:only-child):first-child { border-radius: 3px 0 0 3px !important; }
+.type-dot img.ti-sq:not(:only-child):last-child { border-radius: 0 3px 3px 0 !important; }
 .mon-ref, .mon-name { white-space: nowrap; }
