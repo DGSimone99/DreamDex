@@ -30,7 +30,7 @@ const pct = (v: number, of: number) => `${(v / of) * 100}%`;
 
 /** Il nome di un core: per membro i suoi tipi che parano, uniti col trattino; i membri separati da " / ". */
 /** I tipi di ogni membro ("Buio-Acciaio"), uno per membro: nel titolo vanno a capo solo fra un membro e l'altro */
-const coreParts = (core: Core, lang: Lang) => core.names.map(types => types.map(type => typeName(type, lang)).join('-'));
+export const coreParts = (core: Core, lang: Lang) => core.names.map(types => types.map(type => typeName(type, lang)).join('-'));
 export const coreTitle = (core: Core, lang: Lang) => coreParts(core, lang).join(' / ');
 
 /** Il solo disegno del triangolo (sprite, frecce e icone dei tipi), decorativo: lo usa anche la scheda Bonus/Malus. */

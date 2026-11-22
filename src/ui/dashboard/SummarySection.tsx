@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
@@ -17,7 +17,7 @@ import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreTip } from './CoreTip';
-import { CoreTriangle, coreTitle } from './CoreTriangle';
+import { CoreArt, CoreTriangle, coreParts, coreTitle } from './CoreTriangle';
 import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
@@ -115,7 +115,9 @@ const joinList = (items: string[], lang: string) => {
 type FieldRow = { cond: ConditionRow; haz?: undefined } | { haz: HazardRow; cond?: undefined };
 
 /** Una sinergia: un core difensivo (da 2 o 3) o un legame tra membri. */
-type Synergy = { core: Core; link?: undefined } | { link: TeamLink; core?: undefined };
+type Synergy = { core: Core; link?: undefined; duo?: undefined } | { link: TeamLink; core?: undefined; duo?: undefined }
+  /** Due core a tre affiancati in una riga sola: solo triangolo e titolo, chi para cosa nel tooltip. */
+  | { duo: [Core, Core]; core?: undefined; link?: undefined };
 
 /** Colore dell'etichetta e dell'anello: core verde, pivot e Baton Pass azzurro, Desiderio Accent Ink (azzurro come i link), trappole giallo. */
 const LINK_COLOR: Record<TeamLink['kind'], string> = {
@@ -129,6 +131,12 @@ function useSynergyView() {
   const t = useT();
   const lang = useLang();
   return (syn: Synergy): SynergyView => {
+    if (syn.duo) {
+      return {
+        key: `duo:${syn.duo.map(core => core.members.join('+')).join('|')}`, tag: t('sum.link.core'), color: 'var(--good)',
+        title: syn.duo.map(core => coreTitle(core, lang)).join(' · '), text: '', mons: [], trio: true,
+      };
+    }
     if (syn.core) {
       const { core } = syn;
       return {
@@ -190,6 +198,28 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
             </span>
           </>
         )}
+    </button>
+  );
+}
+
+/**
+ * Un core a tre nella riga dei due core affiancati: il triangolo e sotto il titolo, senza le righe "Nome para Tipo" (sono nel
+ * tooltip del core e, a parole, nella descrizione per i lettori di schermo).
+ */
+function DuoCore({ core, goId, onClick, hover }: { core: Core; goId: string; onClick: () => void; hover: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void } }) {
+  const t = useT();
+  const lang = useLang();
+  const desc = useId();
+  const title = coreTitle(core, lang);
+  return (
+    <button type="button" className="sum-syn trio sum-duo-core" style={{ '--c': 'var(--good)' } as CSSProperties}
+      aria-label={`${t('sum.link.core')} ${title}`} aria-describedby={`${desc} ${goId}`} onClick={onClick} {...hover}>
+      <CoreArt core={core} />
+      {/* A capo solo fra un membro e l'altro: "/" resta in fondo alla riga (spazio fisso prima), ogni "Terra-Acciaio" intero */}
+      <span className="sum-duo-title" aria-hidden="true">{coreParts(core, lang).map((part, i) => <Fragment key={i}>{i > 0 && '\u00a0/ '}<span className="sum-core-part">{part}</span></Fragment>)}</span>
+      <span id={desc} className="visually-hidden">
+        {core.sides.map(side => t('sum.parryTo', { name: side.from, type: typeName(side.type, lang), to: side.to })).join(', ')}
+      </span>
     </button>
   );
 }
@@ -318,8 +348,11 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
   const places = { strength: t('area.strength'), defense: t('area.defense'), roles: t('area.roles'), bonusMalus: t('analysis.view.bonusMalus') };
   // Tutti i core: prima quelli da 3 (il primo col triangolo grande), poi quelli da 2 (riga piccola). Poi i legami, senza i pivot
   const trios = cores.filter(core => core.members.length === 3);
+  // Due o più core a tre: i primi due affiancati in una riga (solo triangolo e titolo), così stanno entrambi nella card
+  const duo: Synergy[] = trios.length >= 2 ? [{ duo: [trios[0], trios[1]] }] : [];
   const synergies: Synergy[] = [
-    ...trios.map(core => ({ core })),
+    ...duo,
+    ...trios.slice(duo.length * 2).map(core => ({ core })),
     ...cores.filter(core => core.members.length !== 3).map(core => ({ core })),
     ...links.filter(link => link.kind !== 'pivot').map(link => ({ link })),
   ];
@@ -468,6 +501,16 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
           }).join('; ')}`}
           onMore={onShowAll}
           render={syn => {
+            if (syn.duo) {
+              return (
+                <div className="sum-duo">
+                  {syn.duo.map(core => (
+                    <DuoCore key={core.members.join('+')} core={core} goId={goIds.bonusMalus} onClick={() => onView('bonusMalus')}
+                      hover={{ onMouseEnter: e => coreTip.open(core, e.currentTarget), onMouseLeave: coreTip.close }} />
+                  ))}
+                </div>
+              );
+            }
             const view = synergyView(syn);
             // Sul core a tre: il tooltip con quanto regge chi para ogni tipo e chi protegge
             const hover = syn.core && syn.core.members.length === 3
