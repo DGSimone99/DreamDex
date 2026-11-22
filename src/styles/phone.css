@@ -306,6 +306,19 @@
   .search-field .clear { right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
 }
 
+/* Dito su uno schermo largo (tablet in orizzontale da 1100 px: layout del desktop). A vista resta tutto com'è, cresce
+   solo la zona che si tocca (::after centrato, almeno 44 px); i pulsanti del dettaglio crescono a 44 anche a vista.
+   Le righe del voto, una sopra l'altra, restano a 24 (44 si sovrapporrebbero) */
+@media (pointer: coarse) and (min-width: 1100px) {
+  :is(.rail .lang-switch button, .rail-credits, .rail-settings, .grade-badge .help-button, .stats-badge,
+    .team-head :is(.team-saved .popover > summary, .team-guide, .team-io .popover > summary, .team-io .export-tab > button, .clear-team)) { position: relative; }
+  :is(.rail .lang-switch button, .rail-credits, .rail-settings, .grade-badge .help-button, .stats-badge,
+    .team-head :is(.team-saved .popover > summary, .team-guide, .team-io .popover > summary, .team-io .export-tab > button, .clear-team))::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%; }
+  .band-toggle::after { inset: -15px -8px -15px; }
+  .detail-actions > :is(button, a) { min-height: 44px; min-width: 44px; justify-content: center; }
+}
+
 @media (max-width: 599px) {
   /* Solo il simbolo del logo: lo spazio va al formato */
   .rail-logo-art { width: 33px; }
@@ -393,8 +406,6 @@
 }
 @media (prefers-reduced-motion: reduce) { .picker.sheet-open > :is(.detail, .sheet-back, .sheet-scrim) { animation: none; } }
 @media (max-width: 1099px) {
-  /* Scheda: il set su una colonna, l'azione principale larga e le altre accanto */
-  .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions > * { min-height: 44px; margin: 0; white-space: nowrap; }
   .picker.sheet-open > .detail .detail-actions .go { font-size: var(--fs-body); }
@@ -422,7 +433,6 @@
   .set-editor .editor-group { grid-template-columns: minmax(0, 1fr); }
   .editor-actions { margin-left: 0; flex-wrap: wrap; }
 }
-
 
 /* Tablet: la lista a tutta larghezza (la scheda si apre toccando la carta), tre carte per riga sul tablet stretto e
    da 4 a 2 da 760 px (secondo la larghezza della lista); la barra degli strumenti su una riga sola (senza "al posto di:", tipo di team più stretto) */
@@ -1565,4 +1575,16 @@ label.improve-col-head { cursor: pointer; }
   .grade-fold .icon { width: 18px; height: 18px; transition: transform 0.18s var(--ease); }
   .grade-badge.areas-open .grade-fold .icon { transform: rotate(180deg); }
   .grade-badge.foldable:hover .grade-fold { color: var(--text); }
+}
+
+/* Telefono: la lista si scorre (niente pagine); l'ultimo elemento, invisibile, fa arrivare le carte successive */
+.suggestions .list-more { grid-column: 1 / -1; height: 1px; list-style: none; }
+
+/* Telefono (critique 2026-11-22): meno vuoto fra il team ridotto e i comandi, così sopra la piega entra una fila di carte
+   in più; sotto 380 px il nome del formato va su due righe ("National Dex / OU" intero, non "National D…") */
+@media (max-width: 599px) {
+  .band.collapsed { margin-bottom: 0; }
+}
+@media (max-width: 379px) {
+  .rail-format-name { white-space: normal; overflow: visible; font-size: var(--fs-small); line-height: 1.05; }
 }
