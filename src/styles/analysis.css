@@ -892,19 +892,44 @@
 .dash-tabs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
 .dash-tabs [role='tab']:focus-visible { outline-offset: -2px; }
 .dash-tab-n { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-label)/1.4 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
-/* Scheda Meta: in testa l'icona del Box della minaccia (40×30), con un filo sotto nel colore del caso */
-.dash .dash-matrix.meta thead th { padding: 0; }
-.dash .dash-thr-box { display: grid; place-items: center; height: 24px; overflow: visible; }
-.dash .dash-thr-box .mon-icon { image-rendering: pixelated; transform: scale(0.85); margin-top: -3px; }
-.dash .dash-thr-head { box-shadow: inset 0 -2px 0 var(--warn); }
-.dash .dash-thr-head.open { box-shadow: inset 0 -2px 0 var(--bad); }
-.dash .dash-thr-more { height: 24px; font: 700 var(--fs-caption)/1 var(--display); color: var(--muted); border: 1px dashed var(--line); border-radius: 3px; cursor: pointer; }
-.dash .dash-thr-more:hover { color: var(--text); border-color: var(--control-line); }
-.dash .dash-cell.go { cursor: pointer; }
-.dash .dash-cell.empty, .dash .dash-cell.more { border: 0; background: none; cursor: default; }
+/* Copertura più alta (come le piastrelle della scheda Meta): icone dei tipi e caselle più grandi, per densità */
+.dash .dash-coverage { --cov-icon: 26px; --cov-cell: 28px; --cov-h: 92px; }
+.dash.tight .dash-coverage { --cov-icon: 22px; --cov-cell: 24px; --cov-h: 80px; }
+.dash.roomy .dash-coverage { --cov-icon: 28px; --cov-cell: 32px; --cov-h: 102px; }
+.dash .dash-coverage .dash-type { width: var(--cov-icon); height: var(--cov-icon); }
+.dash .dash-coverage .dash-cell { height: var(--cov-cell); }
+.dash .dash-coverage .dash-cell .icon { width: 13px; height: 13px; }
+
+/* Scheda Meta: le minacce come piastrelle in fila (Pedane): l'icona del Box su un piedistallo rosso (scoperta) o giallo
+   (a fatica), il nome sotto, in alto a destra lo scudo (Difesa) e la spada (Offesa) nel colore di quel lato; il "+N"
+   tratteggiato. Alte quanto la griglia dei Tipi (--cov-h), così cambiando scheda non si muove niente */
+.cov-tiles { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 6px; height: var(--cov-h); margin: 0; padding: 0; list-style: none; }
+.cov-tiles > li { display: flex; min-width: 0; }
+.cov-tile { --k: var(--warn); position: relative; isolation: isolate; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
+  padding: 0 var(--sp-2) var(--sp-3); border: 0; border-radius: var(--alt-r-sm); color: var(--text); font: inherit; cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--k) 16%, var(--raised)), color-mix(in srgb, var(--raised) 60%, var(--panel))); transition: transform 0.15s var(--ease); }
+.cov-tile.open { --k: var(--bad); }
+.cov-tile:hover { transform: translateY(-2px); background: linear-gradient(180deg, color-mix(in srgb, var(--k) 26%, var(--raised)), color-mix(in srgb, var(--raised) 70%, var(--panel))); }
+.cov-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Il piedistallo: un'ellisse luminosa nel colore del caso sotto l'icona */
+.cov-mon { position: relative; display: grid; place-items: center; width: 40px; height: 30px; margin-bottom: var(--sp-2); }
+.cov-mon::before { content: ""; position: absolute; left: 50%; bottom: -3px; z-index: -1; width: 48px; height: 11px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--k) 60%, transparent), transparent 70%); }
+.cov-mon .mon-icon { transform: scale(1.2); transform-origin: 50% 70%; image-rendering: pixelated; }
+.cov-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic var(--fs-small)/1.15 var(--display); }
+.dash.tight .cov-name { font-size: var(--fs-caption); }
+.cov-sides { position: absolute; top: 5px; right: 6px; display: flex; gap: 2px; }
+.cov-side { display: inline-flex; color: color-mix(in srgb, var(--good) 70%, var(--faint)); }
+.cov-side.bad { color: var(--bad); }
+.cov-side.minor { color: var(--warn); }
+.cov-side .icon { width: 14px; height: 14px; }
+.cov-tile.more { justify-content: center; background: none; border: 1px dashed var(--line); color: var(--muted); font: 700 var(--fs-section)/1 var(--display); }
+.cov-tile.more:hover { color: var(--text); border-color: var(--control-line); background: none; }
+.dash.tight .cov-tile { padding-bottom: var(--sp-2); }
+.dash.tight .cov-mon { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .cov-tile { transition: none; } .cov-tile:hover { transform: none; } }
 /* Nessuna minaccia: il segno verde, alto quanto la griglia, così passando di scheda non si muove niente */
 .dash .dash-cov-panel { min-height: 0; }
-.dash .dash-meta-none { min-height: 76px; justify-content: center; }
+.dash .dash-meta-none { height: var(--cov-h); margin: 0; justify-content: center; }
 .dash .dash-meta-none .icon { width: 18px; height: 18px; }
 /* Tooltip della minaccia nella riga META: ogni ragione col segno del suo lato (scudo Difesa, spada Offesa) */
 .thr-tip-why.sided li { display: flex; align-items: baseline; gap: var(--sp-2); }

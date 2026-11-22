@@ -261,10 +261,10 @@ describe('Panoramica: Copertura › scheda Meta', () => {
   it('clic su una minaccia: la sua Coverage meta con la colonna per prima e accesa, "Mostra tutti" la spegne', async () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     await user.click(within(panel()).getByRole('tab', { name: /^Meta/ }));
-    // La prima casella non verde della scheda Meta: porta alla Coverage meta del suo lato
-    const first = panel().querySelector<HTMLElement>('.dash-coverage td.dash-cell.go:is(.bad, .minor)')!;
+    // La prima piastrella della scheda Meta: porta alla Coverage meta della Difesa se lì non è coperta, sennò dell'Offesa
+    const first = panel().querySelector<HTMLElement>('.dash-coverage .cov-tile:not(.more)')!;
     const species = first.getAttribute('aria-label')!.split(',')[0];
-    const offense = first.closest('tr')!.getAttribute('data-label') === 'Offesa';
+    const offense = first.querySelector('.cov-side')!.classList.contains('ok');
     await user.click(first);
     expect(within(views()).getByRole('tab', { name: new RegExp(`^${offense ? 'Offesa' : 'Difesa'}`) })).toHaveAttribute('aria-selected', 'true');
     const table = within(panel()).getByRole('table', { name: `${offense ? 'Offesa' : 'Difesa'}: Coverage meta` });

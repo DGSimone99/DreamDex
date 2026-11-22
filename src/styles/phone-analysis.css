@@ -191,6 +191,9 @@
   }
   .dash .dash-matrix .dash-type { width: 24px; height: 24px; }
   .dash .dash-matrix .dash-cell { height: 26px; display: grid; place-items: center; }
+  /* Copertura › Meta: le piastrelle su due file (il pannello è stretto ma c'è altezza) */
+  .cov-tiles { height: auto; grid-auto-rows: 84px; }
+  .dash .dash-meta-none { height: 84px; }
 }
 @media (min-width: 600px) and (max-width: 1099px) {
   .analysis-tabs { margin-inline: -18px; padding-inline: var(--sp-9); scroll-padding-inline: 18px; }
