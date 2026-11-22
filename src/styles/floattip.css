@@ -466,13 +466,18 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
 
-/* Il set consigliato si misura da sé: in un dettaglio stretto (sotto i 470px, tablet e telefono) esagono e mosse restano
-   affiancati e i dati del set vanno sotto, su tutta la larghezza, a coppie nome e valore */
+/* Il set consigliato si misura da sé: in un dettaglio stretto (sotto i 540px) i dati del set non stanno più accanto
+   all'esagono senza stringersi, e l'esagono se ne va (le statistiche sono nell'editor): mosse e dati del set affiancati.
+   Sotto i 340px (telefono) i dati del set vanno sotto le mosse, a coppie nome e valore */
 .detail-sec.set-sec { container: setsec / inline-size; }
 @container setsec (max-width: 539px) {
-  .detail .set-line { grid-template-columns: var(--hex-w) minmax(0, 240px); justify-content: start; }
-  .detail .set-line .mcard-kit { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--sp-2) var(--sp-4); }
+  .detail .set-line .mcard-hex { display: none; }
+  .detail .set-line { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); align-items: start; }
+  .detail .set-line .mcard-kit { margin-left: 0; }
+}
+@container setsec (max-width: 339px) {
+  .detail .set-line { grid-template-columns: minmax(0, 240px); }
+  .detail .set-line .mcard-kit { grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--sp-2) var(--sp-4); padding-left: 0; }
   .detail .set-line .mcard-kit small { margin-top: 0; }
-  .detail .set-line .mcard-kit { margin-left: 0; padding-left: 0; }
 }
 

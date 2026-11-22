@@ -313,7 +313,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         </div>
 
         {/* Il set consigliato in una riga, come la schermata riassunto dei giochi: l'esagono, le quattro mosse una sotto
-            l'altra, poi strumento, natura, abilità, EV (e Tera) col nome sopra il valore */}
+            l'altra, poi strumento, abilità, natura, EV (e Tera) col nome sopra il valore */}
         {showSet && (
         <section className="detail-sec wide set-sec">
           <h4 className="visually-hidden">{tr('detail.set')}</h4>
