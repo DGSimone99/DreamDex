@@ -158,7 +158,10 @@
 /* Statico e animato con la stessa scala, quanto lo spazio della carta: la GIF è il riquadro di 96px ritagliato sul Pokémon,
    quindi alta --ani-h/96 dello statico. Senza GIF (es. Urshifu Pluricolpo) lo statico resta grande uguale, non di più */
 .band:not(.collapsed) .slot.open > .slot-card .sprite { width: min(100cqh, 100cqw); height: min(100cqh, 100cqw); transform: none; }
-.band:not(.collapsed) .slot.open > .slot-card .sprite-ani { width: auto; height: calc(var(--ani-h, 96) / 96 * min(100cqh, 100cqw)); transform: translateX(-50%); }
+.band:not(.collapsed) .slot.open > .slot-card .sprite-ani { width: auto; height: calc(var(--ani-h, 96) / 96 * min(100cqh, 100cqw)); transform: translateX(-50%);
+  /* I piedi del primo fotogramma della GIF dove stanno quelli dello statico (9/96 sopra il fondo), di lato quanto serve
+     per cadergli sopra */
+  bottom: calc(min(100cqh, 100cqw) * (9 / 96 - var(--ani-lift, 0))); translate: calc(var(--ani-dx, 0) * min(100cqh, 100cqw)) 0; }
 /* Team compresso: il membro aperto saltella, come nel box dei giochi */
 @keyframes box-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
 .band.collapsed .slot.open .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }
