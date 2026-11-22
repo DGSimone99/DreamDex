@@ -162,9 +162,9 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Niente min-width 0: se i trattini al minimo non entrano la fascia sborda, e SuggestionsPanel lo vede (toglie il
    suggerimento, poi mostra la pagina come numero) */
 .pager { flex: 0 1 auto; margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); height: var(--pager-h); }
-/* Come il pager-button di DESIGN.md: 28×26, fondo Raised, angoli da 3 px */
-.pager .step { flex: none; display: grid; place-items: center; width: 28px; height: 26px; padding: 0; border: 0; border-radius: 3px; background: var(--raised); color: var(--muted); }
-.pager .step:hover:not(:disabled) { color: var(--text); }
+/* Come il pager di DESIGN.md: 28×26, fondo Raised, bordo Line, angoli da 3 px; al passaggio testo e bordo ciano */
+.pager .step { flex: none; display: grid; place-items: center; width: 28px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); }
+.pager .step:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
 /* La pagina come numero, "3/9", a ogni misura (scelta dell'utente: niente trattini) */
