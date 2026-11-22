@@ -368,6 +368,9 @@
   }
 }
 @media (min-width: 760px) and (max-width: 1099px) {
+  /* Filtri sul tablet: come la scheda del candidato, un pannello che entra da destra largo 620 px, la pagina sotto il velo */
+  .help-backdrop.filters-backdrop { place-items: stretch end; }
+  .help-dialog.filters-dialog { width: min(620px, 100vw) !important; border-left: 1px solid var(--line); box-shadow: -18px 0 44px rgb(0 0 0 / 0.5); animation: sheet-left 0.24s var(--ease); }
   .picker.sheet-open > .detail { left: auto; width: min(620px, 100vw); box-shadow: -18px 0 44px rgb(0 0 0 / 0.5); animation: sheet-left 0.24s var(--ease); }
   .picker.sheet-open > .sheet-back { left: auto; width: min(620px, 100vw); animation: sheet-left 0.24s var(--ease); }
   .picker.sheet-open > .sheet-scrim { position: fixed; inset: 0; z-index: 54; display: block; background: rgb(6 7 12 / 0.6); animation: scrim-in 0.2s ease-out; }
@@ -1525,13 +1528,14 @@ label.improve-col-head { cursor: pointer; }
   .band.collapsed .grade-badge .grade-pop-toggle { height: 52px; }
 }
 
-/* Tipo di team: la tendina si apre dal bordo sinistro della casella; sul telefono sale dal basso a tutta larghezza */
+/* Tipo di team: sul tablet la casella sta a destra, la tendina si apre dal suo bordo destro verso sinistra (dentro lo
+   schermo); sul telefono sale dal basso a tutta larghezza */
 @media (max-width: 1099px) {
-  .tt-menu { left: 0; right: auto; }
+  .tt-menu { left: auto; right: 0; max-width: calc(100vw - 32px); }
   .tt-option { min-height: 52px; }
 }
 @media (max-width: 599px) {
-  .tt-menu { position: fixed; z-index: 61; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: calc(var(--sp-6) + var(--safe-b, 0px)); width: auto; }
+  .tt-menu, .tt-menu.up { position: fixed; z-index: 61; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: calc(var(--sp-6) + var(--safe-b, 0px)); width: auto; }
 }
 
 /* Voto sul telefono e sul tablet: di base solo la prima riga (lettera, punteggio, giudizio, tipo di team); la targa e la

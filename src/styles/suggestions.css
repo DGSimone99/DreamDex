@@ -457,6 +457,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-4);
   background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
+.tt-menu.up { top: auto; bottom: calc(100% + 6px); }
 .tt-option { display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-6); width: 100%; padding: var(--sp-3) var(--sp-5);
   border: 1px solid transparent; border-radius: var(--alt-r-sm); background: none; text-align: left; color: var(--text); }
 .tt-option:hover, .tt-option:focus-visible { background: var(--raised); border-color: var(--line); }

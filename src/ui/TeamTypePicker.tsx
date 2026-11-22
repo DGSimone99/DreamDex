@@ -15,6 +15,8 @@ export function TeamTypePicker({ types, value, onChange }: {
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  // Sotto la casella c'è poco spazio (barra in basso sul tablet): la tendina si apre verso l'alto
+  const [up, setUp] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -41,13 +43,20 @@ export function TeamTypePicker({ types, value, onChange }: {
       onKeyDown={e => { if (open && e.key === 'Escape') { e.stopPropagation(); setOpen(false); trigger.current?.focus(); } }}>
       <button ref={trigger} type="button" className={`tt-trigger${open ? ' open' : ''}`} aria-haspopup="listbox" aria-expanded={open}
         aria-label={`${t('suggest.teamType')}: ${name}`} title={value ? t(`archetype.${value}.note`) : t('suggest.anyTypeNote')}
-        onClick={() => setOpen(o => !o)}>
+        onClick={() => {
+          if (!open) {
+            const r = trigger.current?.getBoundingClientRect();
+            const bottomBar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bottom-h')) || 0;
+            setUp(!!r && window.innerHeight - bottomBar - r.bottom < 380 && r.top > 380);
+          }
+          setOpen(o => !o);
+        }}>
         <span className="tt-label" aria-hidden="true">{t('suggest.teamTypeShort')}</span>
         <span className="tt-name">{name}</span>
         <b className="tt-chev" aria-hidden="true" />
       </button>
       {open && (
-        <div className="tt-menu" role="listbox" aria-label={t('suggest.teamType')} onKeyDown={move}>
+        <div className={`tt-menu${up ? ' up' : ''}`} role="listbox" aria-label={t('suggest.teamType')} onKeyDown={move}>
           {rows.map(row => (
             <button key={row ?? 'any'} type="button" role="option" aria-selected={row === value} className="tt-option" onClick={() => pick(row)}>
               <span className="tt-option-text">
