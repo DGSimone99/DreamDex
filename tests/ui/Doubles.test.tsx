@@ -317,11 +317,13 @@ describe('doppio: filtri e carte dei candidati', () => {
 
   it('in doppio i filtri per ruolo sono quelli del doppio', () => {
     renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={DOUBLES_RULES} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
     expect(chips()).toEqual(['Attaccante', 'Muro', 'Fake Out', 'Redirector', 'Mossa a più bersagli', 'Protect', 'Pivot', 'Hazard', 'Priorità', 'Setup']);
   });
 
   it('in singolo i filtri per ruolo restano quelli di sempre', () => {
     renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={NATDEX_OU_RULES} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
     const names = chips();
     expect(names).toHaveLength(19);
     expect(names).not.toContain('Fake Out');

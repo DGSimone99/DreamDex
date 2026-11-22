@@ -1038,7 +1038,7 @@ const STATES: Record<string, State> = {
   saved: { run: async p => clickText(p, 'details.popover > summary', /Team salvati/) },
   import: { run: async p => clickText(p, 'details.popover > summary', /Import/) },
   rules: { run: async p => { await p.click('.format-card > summary'); return true; } },
-  filters: { run: async p => { await tab(p, 'pokemon'); return clickText(p, 'details.filters > summary', /./); } },
+  filters: { run: async p => { await tab(p, 'pokemon'); return clickText(p, '.toolbar .filters-trigger', /./); } },
   combobox: { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
     await wait(500);
@@ -1157,13 +1157,17 @@ const STATES: Record<string, State> = {
   } },
   'filters-chips': { run: async p => {
     await tab(p, 'pokemon');
-    return p.evaluate(() => {
-      const select = document.querySelector<HTMLSelectElement>('select[aria-label="Uso nel meta"]');
-      if (!select) return false;
-      select.value = 'common';
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
+    await p.evaluate(() => (document.querySelector('.toolbar .filters-trigger') as HTMLElement | null)?.click());
+    await wait(300);
+    const ok = await p.evaluate(() => {
+      const group = document.querySelector('.filters-dialog [role="group"][aria-label="Ruolo"]');
+      const button = [...(group?.querySelectorAll('button') ?? [])].find(b => (b.textContent ?? '').trim() === 'Hazard') as HTMLElement | undefined;
+      button?.click();
+      return !!button;
     });
+    await p.keyboard.press('Escape');
+    await wait(300);
+    return ok;
   } },
   empty: { hash: '' },
   // Team con 1, 3 o 5 Pokémon: solo il primo slot libero ha la scritta, gli altri sono cornici tenui
@@ -1177,7 +1181,22 @@ const STATES: Record<string, State> = {
   'fill-open': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await wait(2500); return true; } },
   'fill-tournament': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await clickText(p, '[role="tab"]', /Team da torneo/); await wait(800); return true; } },
   'fill-unlocked': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await p.evaluate(() => (document.querySelector('.fill-panel input[type="checkbox"]') as HTMLElement | null)?.click()); await wait(3500); return true; } },
-  'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
+  'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters-trigger') as HTMLElement | null)?.click()); await wait(400); return true; } },
+  // Finestra dei filtri con qualche scelta accesa (in un evaluate solo l'ultima resta: basta per vedere una tessera accesa)
+  'filters-busy': { run: async p => {
+    await tab(p, 'pokemon');
+    await p.evaluate(() => (document.querySelector('.toolbar .filters-trigger') as HTMLElement | null)?.click());
+    await wait(300);
+    // Niente funzioni con nome dentro evaluate: tsx ci aggiunge __name, che nella pagina non esiste
+    await p.evaluate(() => {
+      for (const [group, text] of [['Tipo del Pokémon', 'Acciaio'], ['Resiste a', 'Terra'], ['Ruolo', 'Muro Fisico'], ['Ruolo', 'Hazard']]) {
+        const g = document.querySelector(`.filters-dialog [role="group"][aria-label="${group}"]`);
+        ([...(g?.querySelectorAll('button') ?? [])].find(b => (b.textContent ?? '').trim() === text) as HTMLElement | undefined)?.click();
+      }
+    });
+    await wait(500);
+    return true;
+  } },
   'format-menu': { run: async p => { await p.click('.rail-format'); await wait(500); return true; } },
   'saved-menu': { storage: { 'dreamdex.savedTeams': JSON.stringify([{ name: 'Pioggia NatDex', text: 'Pelipper' }, { name: 'Un nome di team davvero molto lungo per vedere se va a capo', text: 'Garchomp' }]) }, run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-empty': { hash: '', run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },

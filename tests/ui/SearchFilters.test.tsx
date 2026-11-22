@@ -19,6 +19,16 @@ async function setup(...names: string[]) {
   return user;
 }
 
+/** Apre la finestra dei filtri dal pulsante nella barra (le scelte valgono subito). */
+async function openFilters(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(within(suggestions()).getByRole('button', { name: /^Filtri/ }));
+  return screen.getByRole('dialog', { name: 'Filtri' });
+}
+/** Accende una tessera di un gruppo della finestra (tipi, ruoli, tier, uso…). */
+async function pick(user: ReturnType<typeof userEvent.setup>, group: string, name: string) {
+  await user.click(within(screen.getByRole('group', { name: group })).getByRole('button', { name }));
+}
+
 describe('ricerca e filtri nei suggerimenti', () => {
   it('la ricerca sta nei suggerimenti, non più nel team', async () => {
     await setup();
@@ -43,97 +53,120 @@ describe('ricerca e filtri nei suggerimenti', () => {
 
   it('filtro per tipo, contatore dei filtri attivi e azzeramento', async () => {
     const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Water');
-    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
-    await waitFor(() => expect([...cardNames()].sort()).toEqual(['Rotom-Wash', 'Toxapex']));
+    const dialog = await openFilters(user);
+    await pick(user, 'Tipo del Pokémon', 'Water');
+    await pick(user, 'Resiste a', 'Fire');
+    await pick(user, 'Resiste a', 'Ground');
+    await waitFor(() => expect(cardNames()).toContain('Rotom-Wash'));
+    await waitFor(() => expect(cardNames().every(name => getSpecies(name)?.types.includes('Water'))).toBe(true));
     expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
-    await user.click(screen.getAllByRole('button', { name: /Azzera filtri/ })[0]);
+    expect(within(dialog).getByText('2 attivi')).toBeInTheDocument();
+    // Il piede dice quanti Pokémon restano e chiude la finestra
+    await user.click(within(dialog).getByRole('button', { name: /^Mostra \d+ Pokémon$/ }));
+    expect(screen.queryByRole('dialog', { name: 'Filtri' })).toBeNull();
+    await openFilters(user);
+    await user.click(within(screen.getByRole('dialog', { name: 'Filtri' })).getByRole('button', { name: /Azzera filtri/ }));
     expect(within(suggestions()).getByText('Filtri')).toBeInTheDocument();
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
 
   it('Solo preferiti: conta come filtro; senza preferiti non trova niente', async () => {
     const user = await setup('Great Tusk');
+    await openFilters(user);
     await user.click(screen.getByRole('checkbox', { name: 'Solo preferiti' }));
     expect(within(suggestions()).getByText('Filtri (1 attivo)')).toBeInTheDocument();
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
 
-  it('Mono si sceglie solo dopo il Tipo 1', async () => {
+  it('tipo del Pokémon: al massimo due tipi; Solo monotipo solo con nessuno o un tipo', async () => {
     const user = await setup('Great Tusk');
-    expect(screen.getByRole('option', { name: 'Solo monotipo' })).toBeDisabled();
-    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Water');
-    expect(screen.getByRole('option', { name: 'Solo monotipo' })).toBeEnabled();
+    await openFilters(user);
+    const own = within(screen.getByRole('group', { name: 'Tipo del Pokémon' }));
+    await pick(user, 'Tipo del Pokémon', 'Water');
+    await pick(user, 'Tipo del Pokémon', 'Poison');
+    expect(own.getByRole('button', { name: 'Fire' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Solo monotipo' })).toBeDisabled();
+    await waitFor(() => expect(cardNames()).toContain('Toxapex'));
+    await pick(user, 'Tipo del Pokémon', 'Poison');
+    expect(own.getByRole('button', { name: 'Fire' })).toBeEnabled();
+    expect(screen.getByRole('checkbox', { name: 'Solo monotipo' })).toBeEnabled();
   });
 
-  it('Tipo 1 + Mono: solo monotipo', async () => {
+  it('un tipo + Solo monotipo: solo monotipo di quel tipo', async () => {
     const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Water');
-    await user.selectOptions(screen.getByLabelText('Tipo 2'), 'mono');
+    await openFilters(user);
+    await pick(user, 'Tipo del Pokémon', 'Water');
+    await user.click(screen.getByRole('checkbox', { name: 'Solo monotipo' }));
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(0));
-    await waitFor(() => expect(cardNames().every(name => getSpecies(name)?.types.length === 1)).toBe(true));
+    await waitFor(() => expect(cardNames().every(name => getSpecies(name)?.types.join() === 'Water')).toBe(true));
     expect(cardNames()).not.toContain('Toxapex');
-  });
-
-  it('stesso tipo nelle due tendine: solo monotipo di quel tipo', async () => {
-    const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Fire');
-    await user.selectOptions(screen.getByLabelText('Tipo 2'), 'Fire');
-    await waitFor(() => expect(cardNames().length).toBeGreaterThan(0));
-    await waitFor(() => expect(cardNames().every(name => getSpecies(name)?.types.join() === 'Fire')).toBe(true));
   });
 
   it('resiste a: più tipi, devono essere tutti resistiti', async () => {
     const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
+    await openFilters(user);
     const resists = within(screen.getByRole('group', { name: 'Resiste a' }));
     await user.click(resists.getByRole('button', { name: 'Ground' }));
-    await waitFor(() => expect([...cardNames()].sort()).toEqual(['Corviknight', 'Rotom-Wash']));
+    await waitFor(() => expect(cardNames()).toContain('Corviknight'));
     await user.click(resists.getByRole('button', { name: 'Fire' }));
-    await waitFor(() => expect(cardNames()).toEqual(['Rotom-Wash']));
-    expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
+    await waitFor(() => expect(cardNames()).not.toContain('Corviknight'));
+    expect(within(suggestions()).getByText('Filtri (1 attivo)')).toBeInTheDocument();
   });
 
   it('leggendari e misteriosi in un solo filtro, niente "Fino alla gen"', async () => {
-    await setup('Great Tusk');
+    const user = await setup('Great Tusk');
+    await openFilters(user);
     expect(within(screen.getByRole('group', { name: 'Leggendari e Misteriosi' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByLabelText('Fino alla gen')).toBeNull();
   });
 
   it('filtri attivi come chip: la × ne toglie uno, anche a pannello chiuso', async () => {
     const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
-    expect(suggestions().querySelector('details.filters')).not.toHaveAttribute('open');
-    await user.click(within(suggestions()).getByRole('button', { name: /^Rimuovi filtro Uso nel meta/ }));
-    expect(screen.getByLabelText('Uso nel meta')).toHaveValue('all');
+    await openFilters(user);
+    await pick(user, 'Ruolo', 'Hazard');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Filtri' })).toBeNull();
+    await user.click(within(suggestions()).getByRole('button', { name: /^Rimuovi filtro Ruolo/ }));
+    await openFilters(user);
+    expect(within(screen.getByRole('group', { name: 'Ruolo' })).getByRole('button', { name: 'Hazard' })).toHaveAttribute('aria-pressed', 'false');
+    await user.keyboard('{Escape}');
     expect(within(suggestions()).queryByRole('button', { name: /^Rimuovi filtro/ })).toBeNull();
   });
 
   it('con filtri attivi il numero di risultati si vede una volta sola, nella fascia "Candidati (N)"', async () => {
     const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
+    await openFilters(user);
+    await pick(user, 'Ruolo', 'Hazard');
+    await user.keyboard('{Escape}');
     await waitFor(() => expect(within(suggestions()).getByRole('heading', { name: /^Candidati \(\d+\)$/ })).toBeInTheDocument());
     expect(suggestions().querySelector('.active-filters')).not.toHaveTextContent(/risultat[oi]/);
   });
 
   it('chip e Azzera con lista vuota', async () => {
     const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Tier' }), 'legal');
+    await openFilters(user);
+    await pick(user, 'Tipo del Pokémon', 'Fire');
+    await user.keyboard('{Escape}');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
     await user.click(within(suggestions().querySelector<HTMLElement>('.active-filters')!).getByRole('button', { name: 'Azzera filtri' }));
     await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
   });
 
-  it('tier: gli Uber compaiono nella ricerca con il tag di ban', async () => {
+  it('gli Uber compaiono nella ricerca con il tag di ban', async () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
     await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
     // Il triangolo sta sulla riga e nel dettaglio
     expect(within(suggestions().querySelector<HTMLElement>('.suggestions')!).getByText('Uber · bannato in National Dex OU')).toBeInTheDocument();
     expect(within(screen.getByRole('complementary', { name: 'Dettaglio di Dragapult' })).getByText('Uber · bannato in National Dex OU')).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Tier' }), 'legal');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+  });
+
+  it('niente Tier né Uso nel meta fra i filtri', async () => {
+    const user = await setup('Great Tusk');
+    await openFilters(user);
+    expect(screen.queryByRole('group', { name: 'Tier' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Uso nel meta' })).toBeNull();
   });
 
   it('niente badge del tier: solo il triangolo rosso per chi è bannato', async () => {

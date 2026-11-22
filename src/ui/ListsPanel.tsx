@@ -423,7 +423,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
         <div className="dex-head">
           <h3>{tr('lists.pokedex')}</h3>
           <OrderMenu order={order} onOrder={setOrder} usageLabel={usageLabel} hasUsage={hasUsage} />
-          <FilterBar filters={filters} onChange={setFilters} context="lists" rules={filterRules} />
+          <FilterBar filters={filters} onChange={setFilters} context="lists" rules={filterRules} resultCount={shown.length} />
           <span className="dex-count">
             {tr('lists.dexCount', { n: shown.length })}
             <span className="dex-key" aria-hidden="true"><Icon name="heart" /> {tr('lists.hintFav')} <Icon name="ban" /> {tr('lists.hintBan')}</span>

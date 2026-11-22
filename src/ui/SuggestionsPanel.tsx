@@ -371,7 +371,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           </select>
         </label>
       )}
-      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} />
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} resultCount={items.length} />
     </>
   );
 
