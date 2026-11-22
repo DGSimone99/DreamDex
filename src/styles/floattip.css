@@ -141,12 +141,14 @@
  * carte), il set in una riga sola: esagono, mosse una sotto l'altra, dati del set col nome sopra il valore.
  */
 .detail-sec.set-sec { --hex-w: 160px; }
-.detail .set-line { display: grid; grid-template-columns: var(--hex-w) minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: var(--sp-6); }
+.detail .set-line { display: grid; grid-template-columns: var(--hex-w) minmax(0, 1.45fr) minmax(0, 1fr); align-items: center; gap: var(--sp-6); }
 .detail .set-line .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
-.detail .set-sec .mcard-hex .hx-l { font-size: 10px; }
-.detail .set-sec .mcard-hex .hx-v { font-size: 14px; }
+.detail .set-sec .mcard-hex .hx-l { font-size: 12px; }
+.detail .set-sec .mcard-hex .hx-v { font-size: 17px; }
 .detail .set-sec .mcard-moves { display: grid; gap: var(--sp-3); }
-.detail .set-sec .mvp { --mvp-h: 26px; --mvp-r: 7px; --mvp-q: 2px; --mvp-cut: 8px; --mvp-tail-w: 40px; font-size: var(--fs-caption); }
+/* La pillola piccola di sempre, con la coda del numero un po' più stretta: il nome della mossa resta intero */
+.detail .set-sec .mvp-sm { --mvp-tail-w: 54px; }
+.detail .set-sec .mvp-sm .mvp-tail { gap: 2px; padding-right: var(--sp-3); }
 /* I dati del set in colonna, il nome piccolo sopra il valore */
 .detail .set-line .mcard-kit { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0; border: 0; font-size: var(--fs-small); }
 .detail .set-line .mcard-kit small { margin-top: var(--sp-3); }
@@ -163,12 +165,18 @@ aside.detail.compact .detail-hero.mcard-head:has(.detail-out) { grid-template-co
 .detail .effect .detail-areas { gap: var(--sp-2) var(--sp-9); }
 aside.detail .effect .detail-areas div, aside.detail .effect .detail-areas .extras { padding: 0; border: 0; box-shadow: none; background: none; font-size: var(--fs-small); font-weight: 600; }
 .detail .effect .detail-areas dt { color: var(--muted); }
-/* Porta e Toglie: le voci una dopo l'altra, a capo quando serve (gruppi e sezioni restano per i lettori di schermo) */
-.detail-because { grid-column: 1 / -1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-3) var(--sp-9); padding: var(--sp-5) var(--sp-9); border-bottom: 1px solid var(--line-soft); }
+/* Porta e Toglie: una voce per riga, in colonna; se il dettaglio non ci sta (.why-2col) su due colonne. Gruppi e
+   sezioni restano per i lettori di schermo */
+.detail-because { grid-column: 1 / -1; min-width: 0; padding: var(--sp-5) var(--sp-9); border-bottom: 1px solid var(--line-soft); }
+.detail-because li { display: block; break-inside: avoid; }
+.detail-because li + li, .detail-because .bring-group + .bring-group li, .detail-because .detail-sec + .detail-sec li { margin-top: var(--sp-3); }
+.detail.why-2col .detail-because { columns: 2; column-gap: var(--sp-10); }
 .detail-because:empty { display: none; }
 /* I titoli nascosti (Porta, Toglie, il gruppo) non devono prendere posto nella fila */
 aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; padding: 0; }
 .detail-because > .detail-sec, .detail-because .bring-groups, .detail-because .bring-group, .detail-because .bring-items { display: contents; }
+/* In cima a ogni colonna niente spazio in più */
+.detail.why-2col .detail-because li { margin-top: 0; margin-bottom: var(--sp-3); }
 .detail-because li { position: relative; padding-left: var(--sp-7); font-size: var(--fs-section); line-height: 1.35; }
 .detail-because li::before { position: absolute; left: 0; top: 0; font: 800 italic var(--fs-section)/1.35 var(--display); }
 .detail-because .gain li::before { content: '+'; color: var(--good); }
@@ -368,7 +376,6 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
   .detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; }
   .detail-sec.set-sec { --hex-w: 200px; }
   .detail .set-sec .mcard-moves { gap: var(--sp-3); }
-  .detail .set-sec .mcard-moves .mvp { --mvp-h: 28px; }
 }
 
 /* Porta e Toglie a gruppi (BringGroups): etichetta col segno a sinistra (verde in Porta, rosso in Toglie, giallo negli
