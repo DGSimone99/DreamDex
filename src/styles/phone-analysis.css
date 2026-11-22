@@ -34,14 +34,8 @@
   }
   /* Lo stacco fra Coaching e le aree: un po' di spazio in più */
   .analysis-tabs #analysis-view-strength { margin-left: var(--sp-5); }
-  .analysis-tabs [role='tab'][aria-selected='true'],
-  .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) {
-    width: auto;
-    margin: 0;
-    padding: 0 30px 0 var(--sp-7);
-    clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
-    animation: none;
-  }
+  /* Sul telefono la punta sotto la scheda aperta resterebbe tagliata dalla fila che scorre: basta il filo magenta */
+  .analysis-tabs [role='tab'][aria-selected='true']::after { content: none; }
   .analysis-tabs #analysis-view-strength[aria-selected='true'] { margin-left: var(--sp-5); }
   /* Bonus/Malus ha il suo "?" dentro la scheda aperta: spazio a destra per lui */
   .analysis-tabs [role='tab'][aria-selected='true']#analysis-view-bonusMalus { padding-right: 72px; }
