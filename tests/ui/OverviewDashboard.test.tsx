@@ -590,12 +590,16 @@ describe('Cruscotto: misure', () => {
     vi.unstubAllGlobals();
   });
 
-  it("team aperto: densità dall'altezza, anche alto resta normale; una misura a 0 (scheda nascosta) non la cambia", () => {
+  it("team aperto: densità dall'altezza (ampia e ricca da RICH_FROM, come 1920×1080); una misura a 0 (scheda nascosta) non la cambia", () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = 700;
     renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} />);
     const dash = document.querySelector('.dash')!;
+    expect(dash).toHaveAttribute('data-density', 'roomy');
+    expect(dash).toHaveClass('rich');
+    size.height = RICH_FROM - 1;
+    fire();
     expect(dash).toHaveAttribute('data-density', 'normal');
     size.height = 300;
     fire();
@@ -617,7 +621,7 @@ describe('Cruscotto: misure', () => {
     expect(dash).toHaveAttribute('data-density', 'roomy');
   });
 
-  it('Riassunto ricco solo col team ridotto e abbastanza alto (RICH_FROM), altrimenti compatto', () => {
+  it('Riassunto ricco solo se abbastanza alto (RICH_FROM), altrimenti compatto', () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = RICH_FROM;
@@ -631,8 +635,8 @@ describe('Cruscotto: misure', () => {
     expect(dash).toHaveAttribute('data-density', 'roomy');
     expect(dash.querySelector('.sum-line .sum-plinth .sprite')).toHaveAttribute('width', '34');
     cleanup();
-    // Team aperto: mai ricco, a ogni altezza
-    size.height = 2000;
+    // Team aperto: ricco solo da RICH_FROM
+    size.height = RICH_FROM - 1;
     renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} />);
     expect(document.querySelector('.dash')).not.toHaveClass('rich');
   });

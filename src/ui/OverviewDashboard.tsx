@@ -15,7 +15,7 @@ export type Density = 'tight' | 'normal' | 'roomy';
 /**
  * Soglia sull'altezza del cruscotto (px CSS), misurata con la card del voto a cinque righe (6 membri):
  * 1366×768 aperto 368 (stretto) · 1440×900 aperto 471 · 1920×1080 aperto 621 · 2560×1440 aperto 694 (normale).
- * L'ampia non dipende dall'altezza: c'è solo col team ridotto, a ogni risoluzione.
+ * L'ampia c'è sempre col team ridotto e, col team aperto, da RICH_FROM (1920×1080 e schermi più alti).
  */
 export const TIGHT_BELOW = 440;
 
@@ -27,7 +27,7 @@ export const TIGHT_BELOW = 440;
 export const RICH_FROM = 600;
 export const RICH_TALL = 820;
 
-/** La densità col team aperto: stretta o normale secondo l'altezza, mai ampia. */
+/** La densità col team aperto sotto RICH_FROM: stretta o normale secondo l'altezza. */
 export function densityFor(height: number): Density {
   return height < TIGHT_BELOW ? 'tight' : 'normal';
 }
@@ -74,7 +74,8 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
     observer.observe(box);
     return () => observer.disconnect();
   }, [forced]);
-  const density = forced ?? (teamCollapsed ? 'roomy' : measured);
+  // Ampia col team ridotto o, col team aperto, sugli schermi alti (1920×1080 e su): lo spazio in più va ai contenuti
+  const density = forced ?? (teamCollapsed || height >= RICH_FROM ? 'roomy' : measured);
   // Riassunto ricco: ampio e abbastanza alto (densità imposta dai test: basta ampio)
   const rich = density === 'roomy' && (!!forced || height >= RICH_FROM);
   // Le minacce solo col meta (statistiche presenti e meta acceso)

@@ -233,7 +233,7 @@
 .dash {
   --dash-row2: 150px; --sum-row-min: 30px;
   flex: 1; min-height: max(300px, calc(8 * var(--sum-row-min) + 48px));
-  display: grid; grid-template-columns: minmax(0, 30fr) minmax(0, 40fr) minmax(0, 30fr); grid-template-rows: auto minmax(var(--dash-row2), 1fr);
+  display: grid; grid-template-columns: minmax(min(300px, 34%), 30fr) minmax(0, 40fr) minmax(0, 30fr); grid-template-rows: auto minmax(var(--dash-row2), 1fr);
   gap: var(--sp-5); overflow: hidden;
 }
 .dash.tight { --sum-row-min: 24px; }
@@ -903,6 +903,11 @@
 .dash-tab-trio img + img { margin-left: -5px; }
 .dash-tabs [role='tab'][aria-selected='false'] :is(.dash-tab-trio, .icon) { opacity: 0.6; filter: saturate(0.6); }
 @media (prefers-reduced-motion: reduce) { .dash-tabs::before { transition: none; } }
+/* Portatili stretti (1100–1279): l'interruttore perde le icone, così i conti "offesa · difesa" della testata stanno interi */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .dash-tabs [role='tab'] { padding: 0 10px; }
+  .dash-tabs :is(.dash-tab-trio, .icon) { display: none; }
+}
 .dash-tab-n { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-label)/1.4 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
 /* Copertura più alta (come le piastrelle della scheda Meta): icone dei tipi e caselle più grandi, per densità */
 .dash .dash-coverage { --cov-icon: 26px; --cov-cell: 28px; --cov-h: 92px; }
