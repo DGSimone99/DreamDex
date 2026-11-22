@@ -4,7 +4,8 @@ import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, type CandidateFilters
 import { DEFAULT_RULES, isOneType, type FormatRules } from '../engine/formatRules';
 import { roleDescription, roleLabel } from '../engine/roles';
 import { FAMILIES, type Family } from '../engine/subRoles';
-import { CONDITIONS, conditionName, type Condition } from '../engine/synergy';
+import { CONDITIONS, conditionName } from '../engine/synergy';
+import { CONDITION_TYPE } from './dashboard/ConditionTip';
 import { TYPES, type TypeName } from '../engine/types';
 import { inkFor, typeColor } from './Sprite';
 import { typeIconUrl } from './typeIcons';
@@ -56,10 +57,10 @@ function TypeGrid({ label, selected, onChange }: {
   );
 }
 
-/** Il bottone di un tipo come le chip di Champions: icona nel quadretto del colore, nome a fianco. */
-function TypeFace({ type }: { type: TypeName }) {
+/** Il bottone di un tipo come le chip di Champions: icona nel quadretto del colore, nome a fianco (o il nome di una condizione col suo tipo). */
+function TypeFace({ type, label: text }: { type: TypeName; label?: string }) {
   const lang = useLang();
-  const label = typeName(type, lang);
+  const label = text ?? typeName(type, lang);
   return (
     <>
       <i aria-hidden="true"><img src={typeIconUrl(type)} alt="" draggable={false} /></i>
@@ -69,18 +70,21 @@ function TypeFace({ type }: { type: TypeName }) {
 }
 
 /**
- * Una casella del tipo del Pokémon (Tipo 1 o Tipo 2): mostra il tipo scelto o Qualsiasi; cliccata apre una tendina con
- * i 18 tipi e Qualsiasi. I tipi in `taken` (già nell'altra casella) sono spenti. Esc o un clic fuori la chiudono.
+ * Una casella con tendina (Tipo 1, Tipo 2, Imposta, Sfrutta): mostra la scelta col colore e l'icona del suo tipo, o
+ * Qualsiasi; cliccata apre la tendina con le tessere e Qualsiasi per svuotarla. Esc o un clic fuori la chiudono.
  */
-function TypeSlot({ label, value, taken, disabled, onPick }: {
+function Slot<V extends string>({ label, value, options, disabled, onPick, columns = 6, up = false }: {
   label: string;
-  value: TypeName | undefined;
-  taken?: TypeName;
+  value: V | undefined;
+  /** Ogni scelta col tipo che le dà colore e icona; `off` la spegne (il tipo già nell'altra casella). */
+  options: { value: V; label: string; type: TypeName; off?: boolean }[];
   disabled?: boolean;
-  onPick: (type: TypeName | undefined) => void;
+  onPick: (value: V | undefined) => void;
+  columns?: number;
+  /** La tendina si apre verso l'alto (le caselle in fondo alla finestra). */
+  up?: boolean;
 }) {
   const t = useT();
-  const lang = useLang();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -90,81 +94,35 @@ function TypeSlot({ label, value, taken, disabled, onPick }: {
     box.current?.querySelector<HTMLButtonElement>('.type-slot-menu button[aria-pressed="true"], .type-slot-menu button:not(:disabled)')?.focus();
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
-  const pick = (type: TypeName | undefined) => { onPick(type); setOpen(false); };
-  const color = value ? typeColor(value) : undefined;
+  const pick = (v: V | undefined) => { onPick(v); setOpen(false); };
+  const chosen = options.find(o => o.value === value);
+  const colors = (type: TypeName) => {
+    const c = typeColor(type);
+    return { '--c': c, '--ink': inkFor(c), '--tc': typeTextColor(type) } as CSSProperties;
+  };
   return (
-    <div className="type-slot" ref={box}
+    <div className={`type-slot${up ? ' up' : ''}`} ref={box}
       onKeyDown={e => { if (open && e.key === 'Escape') { e.stopPropagation(); setOpen(false); } }}>
       <span className="fchoice-label">{label}</span>
-      <button type="button" className={`type-slot-btn${value ? ' set' : ''}${open ? ' open' : ''}`} disabled={disabled}
-        aria-haspopup="true" aria-expanded={open} aria-label={`${label}: ${value ? typeName(value, lang) : t('filters.any')}`}
-        style={value ? { '--c': color, '--tc': typeTextColor(value) } as CSSProperties : undefined}
+      <button type="button" className={`type-slot-btn${chosen ? ' set' : ''}${open ? ' open' : ''}`} disabled={disabled}
+        aria-haspopup="true" aria-expanded={open} aria-label={`${label}: ${chosen ? chosen.label : t('filters.any')}`}
+        style={chosen ? colors(chosen.type) : undefined}
         onClick={() => setOpen(o => !o)}>
-        {value ? <TypeFace type={value} /> : <span className="type-slot-any">{t('filters.any')}</span>}
+        {chosen ? <TypeFace type={chosen.type} label={chosen.label} /> : <span className="type-slot-any">{t('filters.any')}</span>}
         <b className="type-slot-chev" aria-hidden="true" />
       </button>
       {open && (
-        <div className="type-slot-menu">
+        <div className="type-slot-menu" style={{ '--slot-cols': columns } as CSSProperties}>
           <div role="group" aria-label={label} className="type-grid">
-            {TYPES.map(type => {
-              const c = typeColor(type);
-              return (
-                <button key={type} type="button" aria-pressed={value === type} disabled={type === taken}
-                  style={{ '--c': c, '--ink': inkFor(c), '--tc': typeTextColor(type) } as CSSProperties}
-                  onClick={() => pick(type)}>
-                  <TypeFace type={type} />
-                </button>
-              );
-            })}
+            {options.map(o => (
+              <button key={o.value} type="button" aria-pressed={value === o.value} disabled={o.off} style={colors(o.type)} onClick={() => pick(o.value)}>
+                <TypeFace type={o.type} label={o.label} />
+              </button>
+            ))}
           </div>
-          <button type="button" className="type-slot-clear" disabled={!value} onClick={() => pick(undefined)}>{t('filters.any')}</button>
+          <button type="button" className="type-slot-clear" disabled={!chosen} onClick={() => pick(undefined)}>{t('filters.any')}</button>
         </div>
       )}
-    </div>
-  );
-}
-
-/** Una scelta sola fra tessere (Imposta, Sfrutta); con `clearTo` ricliccare la scelta la toglie. */
-function Choice<V extends string>({ label, value, options, onChange, clearTo }: {
-  label: string;
-  value: V;
-  options: { value: V; label: string }[];
-  onChange: (value: V) => void;
-  /** Il valore "nessuna scelta": ricliccando la tessera accesa si torna qui. */
-  clearTo?: V;
-}) {
-  return (
-    <div className="fchoice">
-      <span className="fchoice-label">{label}</span>
-      <div role="group" aria-label={label} className="role-tiles">
-        {options.map(o => (
-          <button key={o.value} type="button" aria-pressed={value === o.value}
-            onClick={() => onChange(clearTo !== undefined && value === o.value ? clearTo : o.value)}>
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Tre scelte affiancate: tutti / esclusi / solo. */
-function Segmented({ label, value, onChange }: {
-  label: string;
-  value: Inclusion;
-  onChange: (value: Inclusion) => void;
-}) {
-  const t = useT();
-  const labels = [t('filters.incl.all'), t('filters.incl.none'), t('filters.incl.only')];
-  const values: Inclusion[] = ['all', 'none', 'only'];
-  return (
-    <div className="fchoice">
-      <span className="fchoice-label">{label}</span>
-      <div role="group" aria-label={label} className="segmented">
-        {values.map((v, i) => (
-          <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>{labels[i]}</button>
-        ))}
-      </div>
     </div>
   );
 }
@@ -216,7 +174,7 @@ interface Props {
 }
 
 /**
- * Il pulsante Filtri nella barra e, aperto, la finestra dei filtri: tutto in vista (tipi, ruoli, campo, altro), i
+ * Il pulsante Filtri nella barra e, aperto, la finestra dei filtri: tutto in vista (tipo, resistenze, ruoli, campo), i
  * filtri valgono subito e il piede dice quanti Pokémon restano. I filtri attivi si vedono anche a finestra chiusa, nei
  * chip sotto la barra (ActiveFilters).
  */
@@ -276,7 +234,9 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
     set({ types, mono: types.length < 2 && filters.mono });
   };
 
-  const conditionOptions = [{ value: '' as const, label: t('filters.any') }, ...CONDITIONS.map(c => ({ value: c, label: conditionName(c, lang) }))];
+  const typeOptions = (taken: TypeName | undefined) => TYPES.map(type => ({ value: type, label: typeName(type, lang), type, off: type === taken }));
+  // Ogni condizione col colore e l'icona del suo tipo (Sole Fuoco, Pioggia Acqua, Trick Room Psico…), come nel Riassunto
+  const conditionOptions = CONDITIONS.map(c => ({ value: c, label: conditionName(c, lang), type: CONDITION_TYPE[c] ?? 'Normal' }));
   const showText = resultCount === undefined ? t('filters.done')
     : resultCount === 0 ? t('filters.showNone')
       : resultCount === 1 ? t('filters.showOne') : t('filters.showMany', { n: resultCount });
@@ -290,6 +250,13 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
           <span className={`filters-head-count${count > 0 ? ' on' : ''}`}>
             {count === 0 ? t('filters.countNone') : count === 1 ? t('filters.countOne') : t('filters.countMany', { n: count })}
           </span>
+          {/* Solo preferiti in alto a destra, accanto ad Azzera: vale su tutto, non è un gruppo */}
+          {meta && (
+            <label className="switch filters-head-fav">
+              <input type="checkbox" checked={filters.favoritesOnly} onChange={e => set({ favoritesOnly: e.target.checked })} />
+              <Icon name="heart" /> {t('filters.favoritesOnly')}
+            </label>
+          )}
           <button type="button" className="filters-head-reset" disabled={count === 0} onClick={reset}>
             <Icon name="undo" /> {t('filters.reset')}
           </button>
@@ -300,8 +267,8 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
           <section className="fgroup">
             <GroupHead label={t('filters.ownType')} />
             <div className="own-types">
-              <TypeSlot label={t('filters.type1')} value={first} taken={second} onPick={type => setOwnTypes(type, second)} />
-              <TypeSlot label={t('filters.type2')} value={second} taken={first} disabled={!first || filters.mono} onPick={type => setOwnTypes(first, type)} />
+              <Slot label={t('filters.type1')} value={first} options={typeOptions(second)} onPick={type => setOwnTypes(type, second)} />
+              <Slot label={t('filters.type2')} value={second} options={typeOptions(first)} disabled={!first || filters.mono} onPick={type => setOwnTypes(first, type)} />
               <label className="fmono">
                 <input type="checkbox" checked={filters.mono} disabled={filters.types.length >= 2} onChange={e => set({ mono: e.target.checked })} />
                 {t('filters.monoAria')}
@@ -321,23 +288,9 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
 
           <section className="fgroup">
             <GroupHead label={t('filters.group.field')} />
-            <div className="fchoices">
-              <Choice label={t('filters.sets')} value={filters.provides} options={conditionOptions} clearTo="" onChange={provides => set({ provides: provides as Condition | '' })} />
-              <Choice label={t('filters.benefits')} value={filters.benefitsFrom} options={conditionOptions} clearTo="" onChange={benefitsFrom => set({ benefitsFrom: benefitsFrom as Condition | '' })} />
-            </div>
-          </section>
-
-          <section className="fgroup">
-            <GroupHead label={t('filters.group.more')} />
-            <div className="fmore">
-              <Segmented label={t('filters.mega')} value={filters.mega} onChange={mega => set({ mega })} />
-              <Segmented label={t('filters.legendary')} value={filters.legendary} onChange={legendary => set({ legendary })} />
-              {meta && (
-                <label className="switch">
-                  <input type="checkbox" checked={filters.favoritesOnly} onChange={e => set({ favoritesOnly: e.target.checked })} />
-                  {t('filters.favoritesOnly')}
-                </label>
-              )}
+            <div className="own-types">
+              <Slot label={t('filters.sets')} value={filters.provides || undefined} options={conditionOptions} columns={5} up onPick={provides => set({ provides: provides ?? '' })} />
+              <Slot label={t('filters.benefits')} value={filters.benefitsFrom || undefined} options={conditionOptions} columns={5} up onPick={benefitsFrom => set({ benefitsFrom: benefitsFrom ?? '' })} />
             </div>
           </section>
         </div>

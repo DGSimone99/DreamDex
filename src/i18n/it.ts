@@ -1848,7 +1848,6 @@ export const it: Record<keyof typeof en, string> = {
   'filters.countMany': "{n} attivi",
   'filters.family.moves': "Mosse",
   'filters.ownType': "Tipo del Pokémon",
-  'filters.group.more': "Altro",
   'filters.group.field': "Campo",
   'filters.showNone': "Nessun Pokémon",
   'filters.showOne': "Mostra 1 Pokémon",

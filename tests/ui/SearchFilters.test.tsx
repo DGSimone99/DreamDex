@@ -124,11 +124,13 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(within(suggestions()).getByText('Filtri (1 attivo)')).toBeInTheDocument();
   });
 
-  it('leggendari e misteriosi in un solo filtro, niente "Fino alla gen"', async () => {
+  it('niente Mega, Leggendari né "Fino alla gen" fra i filtri; Solo preferiti in alto', async () => {
     const user = await setup('Great Tusk');
-    await openFilters(user);
-    expect(within(screen.getByRole('group', { name: 'Leggendari e Misteriosi' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
+    const dialog = await openFilters(user);
+    expect(screen.queryByRole('group', { name: 'Leggendari e Misteriosi' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Mega' })).toBeNull();
     expect(screen.queryByLabelText('Fino alla gen')).toBeNull();
+    expect(within(dialog.querySelector<HTMLElement>('.filters-head')!).getByRole('checkbox', { name: 'Solo preferiti' })).toBeInTheDocument();
   });
 
   it('filtri attivi come chip: la × ne toglie uno, anche a pannello chiuso', async () => {

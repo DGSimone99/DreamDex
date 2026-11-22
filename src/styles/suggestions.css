@@ -34,11 +34,16 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    Resiste a, Superefficace contro), poi Ruolo e Formato e meta in due colonne, sotto il Campo; ogni gruppo sotto la sua
    fascia con la targhetta inclinata (come le teste dell'Analisi). I filtri valgono subito; il piede dice quanti
    Pokémon restano e chiude. Dimensione fissa: non cambia mentre si sceglie. */
-.help-dialog.filters-dialog { width: min(1200px, 100%); height: min(700px, calc(100dvh - 48px)); max-height: none; }
+.help-dialog.filters-dialog { width: min(1200px, 100%); height: min(600px, calc(100dvh - 48px)); max-height: none; }
 .filters-head { justify-content: flex-start; padding-block: var(--sp-5); }
 .filters-head h3 { margin: 0; font: italic 800 var(--fs-heading)/1 var(--display); letter-spacing: 0.01em; }
 .filters-head-count { font-size: var(--fs-small); color: var(--faint); font-variant-numeric: tabular-nums; }
 .filters-head-count.on { color: var(--accent-ink); font-weight: 600; }
+.filters-head-fav { margin-left: auto; height: auto; gap: var(--sp-3); font-size: var(--fs-small); color: var(--muted); }
+.filters-head-fav:has(input:checked) { color: var(--text); }
+.filters-head-fav .icon { width: 14px; height: 14px; color: var(--accent-2-ink); }
+.filters-head-fav input { margin: 0; accent-color: var(--accent); }
+.filters-head-fav + .filters-head-reset { margin-left: var(--sp-4); }
 .filters-head-reset { margin-left: auto; gap: var(--sp-3); padding: var(--sp-2) var(--sp-6); border-radius: var(--alt-r); font-size: var(--fs-small); font-weight: 600; color: var(--muted); background: var(--raised); }
 .filters-head-reset .icon { width: 13px; height: 13px; }
 .filters-head-reset:hover:not(:disabled) { color: var(--text); }
@@ -58,11 +63,12 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .type-slot { position: relative; display: flex; align-items: center; gap: var(--sp-5); }
 .type-slot .fchoice-label { padding-top: 0; }
 .type-slot-btn {
-  width: 180px; height: 30px; justify-content: flex-start; gap: 0; padding: 0 var(--sp-6) 0 0; overflow: hidden;
+  width: 190px; height: 30px; justify-content: flex-start; gap: 0; padding: 0 var(--sp-6) 0 0; overflow: hidden;
   border-radius: 4px; border: 0; background: var(--field); box-shadow: inset 0 0 0 1px var(--control-line);
   font: 700 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text);
 }
-.type-slot-btn > i { width: 30px; }
+/* Nella finestra i pulsanti hanno un margine interno: qui no, l'icona tocca sopra, sotto e a sinistra */
+.filters-dialog .type-slot-btn { padding: 0 var(--sp-6) 0 0; }
 .type-slot-btn.set { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, var(--raised)), var(--field)); box-shadow: inset 0 0 0 1px var(--c); color: var(--tc); }
 .type-slot-btn.set > i { background: var(--c); }
 .type-slot-btn.set > i img { opacity: 1; }
@@ -73,22 +79,18 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .type-slot-menu {
   position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: 640px;
   display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5);
+  --slot-cols: 6;
   background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
+.type-slot.up .type-slot-menu { top: auto; bottom: calc(100% + 6px); }
+.type-slot-menu .type-grid { grid-template-columns: repeat(var(--slot-cols), minmax(0, 1fr)); }
 .type-slot-clear { align-self: flex-end; padding: var(--sp-1) var(--sp-6); border-radius: var(--alt-r-sm); font-size: var(--fs-small); color: var(--muted); background: var(--raised); }
 .fmono { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-caption); color: var(--muted); cursor: pointer; white-space: nowrap; }
 .fmono:has(input:disabled) { opacity: 0.45; cursor: default; }
 .fmono input { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); }
 
 /* Scelte a tessere: nome a sinistra in colonna, tessere ad angoli alterni (una sola accesa) */
-.fchoices { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--sp-5) var(--sp-7); align-items: start; }
-.fchoice { display: contents; }
 .fchoice-label { padding-top: 5px; font: italic 700 var(--fs-caption)/1.2 var(--display); color: var(--muted); white-space: nowrap; }
-.fmore { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-5) var(--sp-10); }
-.fmore .fchoice { display: flex; align-items: center; gap: var(--sp-5); }
-.fmore .fchoice-label { padding-top: 0; }
-.fmore .segmented { min-width: 190px; }
-.filters-dialog .fmore .switch { height: auto; font-size: var(--fs-small); }
 
 /* Due griglie di tipi affiancate, 6 per riga */
 .type-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-9); }
@@ -101,8 +103,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   font: 700 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.02em; color: var(--tc);
   transition: background-color 0.12s var(--ease), box-shadow 0.12s var(--ease);
 }
-.type-grid button > i, .type-slot-btn > i { flex: none; align-self: stretch; width: 22px; background: color-mix(in srgb, var(--c) 55%, var(--field)); }
-.type-grid button > i img, .type-slot-btn > i img { display: block; width: 100%; height: 100%; opacity: 0.85; }
+/* Il quadretto dell'icona è quadrato, alto quanto il bottone (24 px, 30 nelle caselle): l'icona non si schiaccia */
+.type-grid button > i, .type-slot-btn > i { flex: none; width: 24px; height: 24px; background: color-mix(in srgb, var(--c) 55%, var(--field)); }
+.type-slot-btn > i { width: 30px; height: 30px; }
+.type-grid button > i img, .type-slot-btn > i img { display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0.85; }
 .type-grid button > span, .type-slot-btn > span { flex: 1; min-width: 0; padding: 0 3px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .type-grid button > span.long, .type-slot-btn > span.long { font-size: 10px; letter-spacing: 0; }
 .type-grid button:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--c); background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, var(--raised)), color-mix(in srgb, var(--c) 8%, var(--field))); }

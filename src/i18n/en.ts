@@ -1845,7 +1845,6 @@ export const en = {
   'filters.countMany': "{n} active",
   'filters.family.moves': "Moves",
   'filters.ownType': "Pokémon type",
-  'filters.group.more': "More",
   'filters.group.field': "Field",
   'filters.showNone': "No Pokémon",
   'filters.showOne': "Show 1 Pokémon",

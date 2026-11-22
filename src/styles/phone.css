@@ -222,6 +222,9 @@
   .filters-backdrop { padding: 0; }
   .help-dialog.filters-dialog { width: 100% !important; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
   .filters-body { padding: var(--sp-7) var(--sp-7) var(--sp-9); }
+  /* Testa su due righe: Solo preferiti scende sotto il titolo */
+  .filters-head { flex-wrap: wrap; row-gap: var(--sp-3); }
+  .filters-head-fav { order: 10; flex-basis: 100%; margin-left: 0; }
   .type-filters { grid-template-columns: minmax(0, 1fr); gap: var(--sp-9); }
   .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .type-grid button { height: 36px; }
