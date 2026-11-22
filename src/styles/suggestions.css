@@ -472,6 +472,9 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Lo sprite in piedi sulla pedana: i piedi (circa al 90% del riquadro di 96) al centro dell'ellisse */
 .card-sprite { position: absolute; left: 50%; top: calc(var(--stage-top) + var(--stage-h) - 10px - var(--sprite-w) * 0.9); z-index: 1; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
 .card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
+/* Ogni sprite ha i piedi a un'altezza sua (Joltik a 63 px su 96, Kingambit a 90): --feet-dy (Sprite, da spriteFeet.ts) lo
+   sposta perché li abbia tutti alla stessa riga, sulla pedana, invece di fluttuare. La GIF è già appoggiata in basso */
+.card-sprite .sprite, .slot > .slot-card .sprite-wrap > .sprite { translate: 0 calc(var(--feet-dy, 0) * 100%); }
 /* Sotto il mouse lo sprite animato di Showdown, grande quanto lo statico: la GIF è il riquadro di 96px ritagliato
    sul Pokémon, quindi alta --ani-h/96 della casella; appoggiata in basso come i piedi dello statico */
 .card-sprite .sprite.covered { visibility: hidden; }

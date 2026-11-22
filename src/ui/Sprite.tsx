@@ -4,6 +4,7 @@ import { battleSpecies, getSpecies, toID } from '../engine/dex';
 import type { TypeName } from '../engine/types';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
+import { FEET_ROW, SPRITE_FEET } from './spriteFeet';
 import { typeIconUrl } from './typeIcons';
 
 /** Colori classici dei tipi. */
@@ -85,6 +86,10 @@ export function Sprite({ species, item = '', size = 96, animated = false, shiny 
   if (!id || failed === id) return <span className="sprite missing" style={{ width: size, height: size }} aria-hidden="true" />;
   const state = ani?.id === id ? ani : { id, ready: false, failed: false };
   const showAni = animated && !state.failed && !reducedMotion();
+  // Quanto abbassare (o alzare) lo statico perché i piedi stiano alla riga FEET_ROW, in frazioni della sua altezza: lo usano
+  // solo le carte con la pedana (suggestions.css, team.css). La GIF no: è già ritagliata sul Pokémon e appoggiata in basso
+  const feet = SPRITE_FEET[id];
+  const feetStyle = feet === undefined ? undefined : { '--feet-dy': (FEET_ROW - feet) / 96 } as CSSProperties;
   return (
     <>
       <img
@@ -93,6 +98,7 @@ export function Sprite({ species, item = '', size = 96, animated = false, shiny 
         alt=""
         width={size}
         height={size}
+        style={feetStyle}
         loading="lazy"
         onError={() => setFailed(id)}
       />
