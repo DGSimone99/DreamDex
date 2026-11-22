@@ -786,5 +786,9 @@ aside.detail.compact .detail-swap-text small { position: absolute; width: 1px; h
 }
 /* Si apre sotto la testata, dentro il dettaglio (dal badge andrebbe sopra la lista): il badge non fa da riferimento */
 .detail-hero:has(.stats-pop.has-side) :is(.detail-id, .detail-id h3, .stats-badge) { position: static; }
+/* Senza riferimento, la zona invisibile intorno a Stat (::after, larga il 100%) si misurava sulla testata intera e il
+   fumetto si apriva da qualunque punto del banner: qui niente zona, conta solo la targhetta (al tocco la allarga il padding) */
+aside.detail .detail-hero:has(.stats-pop.has-side) .detail-id h3 .stats-badge::after { content: none; }
+@media (pointer: coarse) { aside.detail .detail-hero .detail-id h3 .stats-badge { padding-block: var(--sp-3); margin-block: calc(-1 * var(--sp-3)); } }
 .detail-hero .stats-pop.has-side { top: calc(100% - 6px); left: var(--sp-6); right: auto; }
 .detail-id .stats-badge { font-weight: 700; }
