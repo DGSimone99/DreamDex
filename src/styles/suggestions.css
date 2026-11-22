@@ -585,6 +585,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .reason .type-chip { --tc-h: 16px; }
 .reason .type-chip.type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); text-align: left; letter-spacing: 0.02em; }
 .reason .type-chip.type-chip.long > span { font-size: var(--fs-label); }
+/* Coi nomi non entravano tutti: solo le icone dei tipi, una dopo l'altra */
+.reason .sym-chips.icons-only .type-chip > span { display: none; }
 /* La "×" davanti a un tipo a cui il candidato è immune */
 /* "vs" + pallino del tipo + nome, come nel dettaglio; il nome si accorcia, il "+N" resta */
 .reason .sym-mons { display: flex; align-items: center; min-width: 0; }

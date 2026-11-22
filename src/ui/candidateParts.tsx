@@ -258,8 +258,9 @@ function useFitLimit(count: number, key: string) {
 }
 
 /**
- * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano diventano "+N"
- * subito dopo l'ultimo chip (mai un chip tagliato a metà; la lista intera è nel tooltip).
+ * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: se coi nomi non entrano tutti si
+ * mostrano solo le icone; quelli che nemmeno così entrano diventano "+N" subito dopo l'ultima (mai un chip tagliato a
+ * metà; la lista intera è nel tooltip).
  * Gli immuni per primi, senza segni in più (lo scudo davanti alla riga basta a dire che li regge); immune o resiste
  * a parole nel tooltip del chip.
  */
@@ -267,10 +268,19 @@ function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: re
   const tr = useT();
   const lang = useLang();
   const all = [...immune, ...types];
-  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti sono immuni e la lingua
-  const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
+  // Prima coi nomi; se non entrano tutti, solo le icone dei tipi (meglio vederli tutti che "FUOCO +1"); il "+N" solo se
+  // nemmeno le icone bastano. Si riparte coi nomi quando cambiano i tipi o la lingua
+  const base = `${lang}|${immune.length}|${all.join()}`;
+  const [icons, setIcons] = useState({ key: base, on: false });
+  if (icons.key !== base) setIcons({ key: base, on: false });
+  const iconsOnly = icons.key === base && icons.on;
+  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti sono immuni, la lingua e nomi o icone
+  const { row, limit } = useFitLimit(all.length, `${base}|${iconsOnly ? 'icons' : 'names'}`);
+  useLayoutEffect(() => {
+    if (!iconsOnly && limit < all.length) setIcons({ key: base, on: true });
+  }, [iconsOnly, limit, all.length, base]);
   return (
-    <span className="sym-chips" ref={row}>
+    <span className={`sym-chips${iconsOnly ? ' icons-only' : ''}`} ref={row}>
       {all.slice(0, limit).map((type, i) => (
         i < immune.length ? (
           <span key={type} className="sym-chip immune" title={tr('reason.immuneTo', { type: typeName(type, lang) })}>
