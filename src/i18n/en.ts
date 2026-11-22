@@ -1104,6 +1104,7 @@ export const en = {
   'coach.row.on': "On {member}",
   'coach.row.emptySlot': "empty slot",
   'coach.row.moveKind': "move change",
+  'coach.row.lost': "Loses",
   'coach.row.change': "from {from} to {to}",
   'coach.row.gain': "grade",
   'coach.row.apply': "Apply",

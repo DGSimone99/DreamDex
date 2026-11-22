@@ -1106,6 +1106,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.row.on': "Su {member}",
   'coach.row.emptySlot': "slot libero",
   'coach.row.moveKind': "cambio di mossa",
+  'coach.row.lost': "Perdi",
   'coach.row.change': "da {from} a {to}",
   'coach.row.gain': "voto",
   'coach.row.apply': "Applica",

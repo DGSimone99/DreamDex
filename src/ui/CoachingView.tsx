@@ -5,7 +5,9 @@ import { areaOfProblem, areaValue, PROPOSAL_AREAS, proposalGroups, type Proposal
 import { columnOf } from '../engine/coachSteps';
 import { battleSpecies } from '../engine/dex';
 import type { MoveFix } from '../engine/moveFixes';
+import { needLabel } from '../engine/needs';
 import type { TeamRating } from '../engine/rating';
+import type { LevelKey } from '../engine/roleLevels';
 import { rolesPointsLabel } from '../engine/rolesArea';
 import { areaSnapshot, type AreaSnapshot } from '../engine/teamGain';
 import { gameName } from '../i18n/game';
@@ -63,6 +65,8 @@ const MAX_LINES = 3;
  * problemi risolti la riga dice comunque quanto cambia. Prima le aree coi problemi, poi quelle che salgono.
  */
 function areaLines(p: Proposal, problems: CoachProblem[], before: AreaSnapshot | null): { lines: AreaLine[]; merged: AreaLine[] } {
+  // La riga "Perdi" (i ruoli d'aiuto che il team perde) occupa un posto fra le righe
+  const reserved = p.fix.lostHelpers?.length ? 1 : 0;
   const solves = new Set(p.fix.solves);
   // Chi entra non "risolve" la minaccia che è lui stesso (entrando nel team non la regge, la porta)
   const self = p.kind === 'fix' ? p.fix.species : null;
@@ -77,7 +81,7 @@ function areaLines(p: Proposal, problems: CoachProblem[], before: AreaSnapshot |
   }).filter(l => l.entries.length > 0 || l.up);
   const withChips = all.filter(l => l.entries.length > 0);
   const rising = all.filter(l => l.entries.length === 0);
-  if (withChips.length + rising.length <= MAX_LINES) return { lines: [...withChips, ...rising], merged: [] };
+  if (withChips.length + rising.length + reserved <= MAX_LINES) return { lines: [...withChips, ...rising], merged: [] };
   return { lines: withChips, merged: rising };
 }
 
@@ -117,9 +121,14 @@ function AreaRow({ line }: { line: AreaLine }) {
   );
 }
 
-/** Le aree che salgono senza problemi, in fila in una riga sola quando le righe sarebbero troppe ("Offesa 91 → 93 · Velocità 51 → 58"). */
-function MergedRow({ lines }: { lines: AreaLine[] }) {
+/**
+ * Le aree che salgono senza problemi, in fila in una riga sola quando le righe sarebbero troppe ("Offesa 91 → 93 · Velocità
+ * 51 → 58"), e in coda "Perdi Danno nel Tempo": i ruoli d'aiuto che il team perde col cambio (il voto non li misura, ma il
+ * Coaching li protegge: swapGuard.ts). Con la sola perdita la riga è tutta sua.
+ */
+function MergedRow({ lines, lost = [] }: { lines: AreaLine[]; lost?: LevelKey[] }) {
   const tr = useT();
+  const lang = useLang();
   return (
     <div className="coach-ar is-merged">
       {lines.map(line => (
@@ -128,6 +137,12 @@ function MergedRow({ lines }: { lines: AreaLine[] }) {
           {line.from !== null && line.to !== null && <Change from={line.from} to={line.to} up={line.up} />}
         </span>
       ))}
+      {lost.length > 0 && (
+        <span className="coach-ar-who coach-lost">
+          <b>{tr('coach.row.lost')}</b>
+          <span className="coach-lost-what">{lost.map(key => needLabel(key, lang)).join(', ')}</span>
+        </span>
+      )}
     </div>
   );
 }
@@ -307,6 +322,7 @@ function ProposalRow({ group, choice, onChoose, primary, problems, before, actio
   const [open, setOpen] = useState(false);
   const p = group.options[Math.min(choice, group.options.length - 1)];
   const { lines, merged } = areaLines(p, problems, before);
+  const lost = p.fix.lostHelpers ?? [];
   const name = proposalName(p, tr, lang);
   const alternatives = group.options.length - 1;
   const close = (refocus: boolean) => { setOpen(false); if (refocus) button.current?.focus(); };
@@ -325,7 +341,7 @@ function ProposalRow({ group, choice, onChoose, primary, problems, before, actio
       </div>
       <div className="coach-solves">
         {lines.map(line => <AreaRow key={line.area} line={line} />)}
-        {merged.length > 0 && <MergedRow lines={merged} />}
+        {(merged.length > 0 || lost.length > 0) && <MergedRow lines={merged} lost={lost} />}
       </div>
       <div className="coach-act">
         <span className="coach-gain"><small>{tr('coach.row.gain')}</small><b>{gainText(p.fix.gain)}</b></span>
