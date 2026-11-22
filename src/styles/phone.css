@@ -306,6 +306,19 @@
   .search-field .clear { right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
 }
 
+/* Dito su uno schermo largo (tablet in orizzontale da 1100 px: layout del desktop). A vista resta tutto com'è, cresce
+   solo la zona che si tocca (::after centrato, almeno 44 px); i pulsanti del dettaglio crescono a 44 anche a vista.
+   Le righe del voto, una sopra l'altra, restano a 24 (44 si sovrapporrebbero) */
+@media (pointer: coarse) and (min-width: 1100px) {
+  :is(.rail .lang-switch button, .rail-credits, .rail-settings, .grade-badge .help-button, .stats-badge,
+    .team-head :is(.team-saved .popover > summary, .team-guide, .team-io .popover > summary, .team-io .export-tab > button, .clear-team)) { position: relative; }
+  :is(.rail .lang-switch button, .rail-credits, .rail-settings, .grade-badge .help-button, .stats-badge,
+    .team-head :is(.team-saved .popover > summary, .team-guide, .team-io .popover > summary, .team-io .export-tab > button, .clear-team))::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%; }
+  .band-toggle::after { inset: -15px -8px -15px; }
+  .detail-actions > :is(button, a) { min-height: 44px; min-width: 44px; justify-content: center; }
+}
+
 @media (max-width: 599px) {
   /* Solo il simbolo del logo: lo spazio va al formato */
   .rail-logo-art { width: 33px; }
