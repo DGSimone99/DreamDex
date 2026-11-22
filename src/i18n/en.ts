@@ -215,6 +215,7 @@ export const en = {
   'diff.pivotGained': "Pivot used",
   'diff.pivotLost': "Pivot no longer used",
   'diff.nobodyResists': "Nobody resists {types} anymore",
+  'diff.teamWithout': "The team is left without {role}",
   'coach.addTwo': "Add at least 2 Pokémon to get coaching",
   'overview.fix.title': "To fix",
   'overview.fix.go': "Go to Coaching",

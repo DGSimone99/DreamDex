@@ -9,7 +9,8 @@ import { improveReplacements, type Replacement } from './replace';
 import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
 import { rulesOf } from './formatRules';
-import { dataKey, idOf, isCollectingGains, rankByTeamGain, swapsPerMember, withCandidate, type AreaSnapshot, type SwapReport, type TeamGain } from './teamGain';
+import type { LevelKey } from './roleLevels';
+import { dataKey, idOf, isCollectingGains, netGain, rankByTeamGain, swapsPerMember, withCandidate, type AreaSnapshot, type SwapReport, type TeamGain } from './teamGain';
 
 /** Un cambio proposto dal Coaching: sostituzione di un membro o aggiunta a un team incompleto. */
 export interface CoachFix {
@@ -27,6 +28,9 @@ export interface CoachFix {
   reduces: string[];
   /** I valori delle aree col cambio (assente senza voto): il "da → a" delle righe del Coaching. */
   after?: AreaSnapshot;
+  /** Ruoli d'aiuto che il team perde col cambio e quanto il cambio scende in classifica per questo (swapGuard.ts). */
+  lostHelpers?: LevelKey[];
+  penalty?: number;
 }
 
 /**
@@ -83,21 +87,22 @@ export const MAX_ADDS = 15;
 /** Cambi a pari voto rianalizzati al massimo per membro (e fra le aggiunte): ognuno costa una ricerca dei problemi. */
 export const ZERO_GAIN_SWAPS = 3;
 
-/** I più forti per voto in più, solo quelli che alzano il voto. */
-const strongest = <T extends { teamGain?: { gain: number } }>(items: T[], limit: number) =>
-  items.filter(c => (c.teamGain?.gain ?? 0) > 0).sort((a, b) => b.teamGain!.gain - a.teamGain!.gain).slice(0, limit);
+/** I più forti per voto in più, solo quelli che alzano il voto (tolta la penalità per i ruoli d'aiuto persi). */
+const strongest = <T extends { teamGain?: { gain: number; penalty?: number } }>(items: T[], limit: number) =>
+  items.filter(c => netGain(c.teamGain) > 0).sort((a, b) => netGain(b.teamGain) - netGain(a.teamGain)).slice(0, limit);
 
 type ProblemDelta = { solves: string[]; reduces: string[]; introduces: string[] };
 
 /**
  * Quali cambi tenere, coi problemi che risolvono o riducono: i `limit` più forti che alzano il voto e, come per le
  * mosse, quelli a pari voto (±0) che risolvono qualcosa senza portare problemi nuovi (provati al massimo `ZERO_GAIN_SWAPS`).
+ * Il voto in più conta senza un punto per ogni ruolo d'aiuto che il team perde: un +1 che toglie l'unico Toxic vale come un pari.
  */
-export function keepSwaps<C extends { teamGain?: { gain: number } }>(ranked: C[], changes: (c: C) => ProblemDelta, limit: number) {
+export function keepSwaps<C extends { teamGain?: { gain: number; penalty?: number } }>(ranked: C[], changes: (c: C) => ProblemDelta, limit: number) {
   const kept: (C & { solves: string[]; reduces: string[] })[] = [];
   const add = (c: C, { solves, reduces }: ProblemDelta) => kept.push({ ...c, solves, reduces });
   for (const c of strongest(ranked, limit)) add(c, changes(c));
-  for (const c of ranked.filter(x => x.teamGain?.gain === 0).slice(0, ZERO_GAIN_SWAPS)) {
+  for (const c of ranked.filter(x => !!x.teamGain && netGain(x.teamGain) === 0).slice(0, ZERO_GAIN_SWAPS)) {
     const delta = changes(c);
     if (delta.solves.length > 0 && delta.introduces.length === 0) add(c, delta);
   }
@@ -160,7 +165,8 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
     }
     for (const c of kept) {
       fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain?.gain ?? 0, solves: c.solves, reduces: c.reduces,
-        ...(c.teamGain?.after && { after: c.teamGain.after }) });
+        ...(c.teamGain?.after && { after: c.teamGain.after }),
+        ...(c.teamGain?.lostHelpers && { lostHelpers: c.teamGain.lostHelpers, penalty: c.teamGain.penalty }) });
     }
   });
   if (team.length < 6) {
@@ -169,5 +175,5 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
         ...(c.teamGain?.after && { after: c.teamGain.after }) });
     }
   }
-  return fixes.sort((a, b) => b.gain - a.gain);
+  return fixes.sort((a, b) => netGain(b) - netGain(a));
 }

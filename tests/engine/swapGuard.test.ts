@@ -6,7 +6,10 @@ import { initGameNames } from '../../src/i18n/game';
 import { teamNeeds } from '../../src/engine/needs';
 import { levelOf } from '../../src/engine/roleLevels';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { lostResistances, lostRoles, rolePenalty, ROLE_PENALTY } from '../../src/engine/swapGuard';
+import { rateTeam } from '../../src/engine/rating';
+import { rankedChanges } from '../../src/engine/coach';
+import { HELPER_PENALTY, lostHelpers, lostResistances, lostRoles, rolePenalty, ROLE_PENALTY } from '../../src/engine/swapGuard';
+import { netGain, rankByTeamGain } from '../../src/engine/teamGain';
 import { fixtureData } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
@@ -61,6 +64,58 @@ describe('swapGuard', () => {
     const after = [set('Zamazenta', 'Leftovers', 'Dauntless Shield', ['Body Press', 'Iron Defense', 'Crunch', 'Roar'], 'Impish', bulky), before[1], before[2]];
     expect(lostResistances(before, after)).toContain('Electric');
     expect(lostResistances(before, before)).toEqual([]);
+  });
+});
+
+describe('ruoli d\'aiuto protetti nel Coaching', () => {
+  // Il Balance di sopra: Toxapex è l'unico col danno nel tempo (Toxic) e con l'anti-setup (Haze); i pivot sono due
+  // (Dragapult e Corviknight con U-turn); Great Tusk è l'unico con Knock Off
+  const rate = (team: TeamSet[]) => rateTeam(team, fixtureData, 'it')!;
+  const withMoves = (index: number, moves: string[]) => balance.map((m, i) => (i === index ? { ...m, moves } : m));
+  const noToxic = withMoves(5, ['Surf', 'Recover', 'Haze', 'Ice Beam']);
+  const before = rate(balance);
+
+  it('il danno nel tempo qui è un ruolo minore: il voto non lo paga', () => {
+    expect(before.roles.rows.find(r => r.key === 'dot')).toMatchObject({ level: 'minor' });
+    expect(before.roles.rows.find(r => r.key === 'dot')!.value).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it('togliere l\'unico Toxic: il team perde il danno nel tempo; rimetterlo non dà niente', () => {
+    expect(lostHelpers(before, rate(noToxic))).toEqual(['dot']);
+    expect(lostHelpers(rate(noToxic), before)).toEqual([]);
+    expect(lostHelpers(before, before)).toEqual([]);
+  });
+
+  it('se un altro membro lo porta ancora, niente è perso', () => {
+    // Un pivot su due resta: togliere U-turn a Dragapult non perde il ruolo
+    expect(lostHelpers(before, rate(withMoves(3, ['Draco Meteor', 'Shadow Ball', 'Thunderbolt', 'Flamethrower'])))).toEqual([]);
+    // Con Toxic anche su Corviknight, Toxapex può lasciarlo
+    const twoToxic = withMoves(4, ['Brave Bird', 'Roost', 'U-turn', 'Toxic']);
+    const twoBefore = rate(twoToxic);
+    expect(lostHelpers(twoBefore, rate(twoToxic.map((m, i) => (i === 5 ? noToxic[5] : m))))).toEqual([]);
+  });
+
+  it('attaccanti, muri e recupero non sono protetti: li misurano Attacco e Difesa', () => {
+    // Via Toxapex per un attaccante: si perdono solo gli aiuti (danno nel tempo, anti-setup), non "muro" o "recupero"
+    const lost = lostHelpers(before, rate(balance.map((m, i) => (i === 5 ? attacker : m))));
+    expect(lost).toContain('dot');
+    for (const key of lost) expect(['dot', 'disruptor', 'itemRemoval', 'pivot', 'phazer', 'support']).toContain(key);
+  });
+
+  it('il cambio di mossa che toglie l\'unico Toxic scende di un punto in classifica; il voto mostrato resta quello vero', () => {
+    const [ranked] = rankByTeamGain([{ set: noToxic[5], score: 0 }], balance, 5, fixtureData, 'it');
+    const gain = ranked.teamGain!;
+    expect(gain.lostHelpers).toEqual(['dot']);
+    expect(gain.penalty).toBe(HELPER_PENALTY);
+    expect(gain.gain).toBe(rate(noToxic).overall - before.overall);
+    expect(netGain(gain)).toBe(gain.gain - HELPER_PENALTY);
+  });
+
+  it('fra i contro del cambio: "Il team resta senza Danno nel Tempo", senza punti', () => {
+    const [ranked] = rankByTeamGain([{ set: noToxic[5], score: 0 }], balance, 5, fixtureData, 'it');
+    const empty = { roles: [], covers: [], resists: [] };
+    const { cons } = rankedChanges({ gains: empty, losses: empty, lostResists: [] }, ranked.teamGain, 'it');
+    expect(cons).toContainEqual(expect.objectContaining({ text: 'Il team resta senza Danno nel Tempo', points: 0 }));
   });
 });
 

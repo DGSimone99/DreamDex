@@ -217,6 +217,7 @@ export const it: Record<keyof typeof en, string> = {
   'diff.pivotGained': "Pivot sfruttato",
   'diff.pivotLost': "Pivot non più sfruttato",
   'diff.nobodyResists': "Nessuno resiste più {types}",
+  'diff.teamWithout': "Il team resta senza {role}",
   'coach.addTwo': "Aggiungi almeno 2 Pokémon per ricevere il coaching",
   'overview.fix.title': "Da sistemare",
   'overview.fix.go': "Vai al Coaching",

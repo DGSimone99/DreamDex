@@ -400,6 +400,8 @@ export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lan
     cons: side(diff.losses, false, [
       ...(diff.lostResists.length ? [{ text: t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang)), area: 'defense' as const }] : []),
       ...pivot('lost'),
+      // I ruoli d'aiuto che il team perde: il voto non li misura (0 punti), ma il cambio scende in classifica (swapGuard.ts)
+      ...(gain?.lostHelpers ?? []).map(key => ({ text: t(lang, 'diff.teamWithout', { role: needLabel(key, lang) }), area: 'roles' as const, fixed: 0 })),
     ]),
   };
 }
