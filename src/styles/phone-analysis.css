@@ -270,7 +270,7 @@
    La Panoramica è solo il Riassunto, con la striscia Da sistemare in cima -- */
 @media (max-width: 599px) {
   .analysis-tabs { margin: 0 0 var(--sp-6); padding: 0; overflow: visible; scroll-snap-type: none; }
-  .analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; width: auto; padding: 3px;
+  .analysis-tabs [role='tablist'] { flex: 1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; width: auto; min-width: 0; padding: 3px;
     border-radius: 10px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
   .analysis-tabs [role='tablist']::before { content: none; }
   .analysis-tabs [role='tab'], .analysis-tabs [role='tab'][aria-selected='true'],
