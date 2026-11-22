@@ -898,7 +898,7 @@ export const en = {
   'sum.moreFieldMany': "{n} more field setters",
   'sum.weather': "Weather & field",
   'sum.hazards': "Hazards",
-  'sum.fieldAll': "Weather, field & hazards",
+  'sum.fieldAll': "Weather & Fields",
   'sum.synergies': "Synergies",
   'sum.noneM': "None",
   'sum.noneF': "None",

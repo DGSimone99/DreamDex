@@ -558,11 +558,11 @@
    ma mai sotto titolo e una riga (sotto si accavallerebbero con la sezione dopo) */
 .sum-sec { position: relative; flex: 0 1 auto; min-height: auto; display: flex; flex-direction: column; padding-top: var(--sp-4); }
 .dash.rich .sum-sec { padding-top: var(--sp-6); }
-/* I sottotitoli del Riassunto (Meteo e campo, Trappole, Sinergie) come la fascia di Pokémon Champions a sinistra, come i titoli
-   della scheda del candidato: fascia chiara che sfuma verso destra e un filo sotto che sfuma uguale */
-.sum-sec-h, .analysis h4.sum-sec-h { position: relative; flex: none; display: block; margin: 0; padding: 4px 24px 4px 9px; font: 600 var(--fs-small)/1.2 var(--display); letter-spacing: 0.01em; text-transform: none; color: var(--text);
-  background: linear-gradient(90deg, var(--champ-band), transparent 70%); border-bottom: 0; }
-.sum-sec-h::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
+/* I sottotitoli del Riassunto (Meteo e campo, Trappole, Sinergie) come i titoli dei riquadri dell'editor: la fascia di Pokémon
+   Champions centrata, chiara al centro e sfumata ai due lati, col filo sotto che sfuma uguale; "+N" e "Nessuno" restano a destra */
+.sum-sec-h, .analysis h4.sum-sec-h { position: relative; flex: none; display: block; margin: 0; padding: 4px 36px; font: 600 var(--fs-small)/1.2 var(--display); letter-spacing: 0.01em; text-transform: none; text-align: center; color: var(--text);
+  background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); border-bottom: 0; }
+.sum-sec-h::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 /* Sezione vuota: "Nessuno" sulla riga del titolo, a destra (come il +N), così non occupa una riga sua */
 .sum-none { position: absolute; right: 4px; top: 13px; margin: 0; font-size: var(--fs-caption); line-height: 1.2; color: var(--faint); }
 .dash.rich .sum-none { top: 17px; }

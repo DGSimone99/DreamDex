@@ -900,7 +900,7 @@ export const it: Record<keyof typeof en, string> = {
   'sum.moreFieldMany': "Altri {n} che preparano il campo",
   'sum.weather': "Meteo e campo",
   'sum.hazards': "Trappole",
-  'sum.fieldAll': "Meteo, campo e trappole",
+  'sum.fieldAll': "Meteo e campi",
   'sum.synergies': "Sinergie",
   'sum.noneM': "Nessuno",
   'sum.noneF': "Nessuna",
