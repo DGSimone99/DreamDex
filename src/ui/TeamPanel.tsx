@@ -600,8 +600,10 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         {/* data-hint vuoto: sullo sprite niente fumetto "Trascina…", lì si apre la carta del Pokémon (si sovrapponevano) */}
         {/* Carta Pedana (pedana.css): la riga dei tipi in cima, la luce dall'alto solo sulla carta aperta, la pedana sotto lo sprite */}
         <span className="pedana-stripe" aria-hidden="true" />
-        <span className="pedana-beam" aria-hidden="true" />
         <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set), 'data-hint': '' })}>
+          {/* La luce sta nel riquadro dello sprite: finisce sempre sulla pedana, qualunque sia l'altezza della carta
+              (fuori, con un'altezza fissa, sul telefono e sul tablet scendeva sul nome) */}
+          <span className="pedana-beam" aria-hidden="true" />
           <span className="pedana-disc" aria-hidden="true" />
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>

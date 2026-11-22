@@ -269,9 +269,9 @@
   border: 1px solid var(--line-soft);
   transition: transform 0.3s var(--ease), box-shadow 0.2s;
 }
-.slot > .slot-card .pedana-beam { z-index: -1; }
-/* Carta aperta: lo sprite grande riempie la carta, la luce scende fin sotto i suoi piedi */
-.slot.open > .slot-card { --stage-h: calc(100% - 40px); }
+/* La luce parte dal bordo alto della carta (il riquadro dello sprite sta poco sotto; la carta taglia quel che sporge) e
+   finisce sulla pedana, in fondo al riquadro dello sprite */
+.slot > .slot-card .sprite-wrap > .pedana-beam { z-index: -1; top: auto; bottom: 2px; height: calc(100% + 24px); }
 /* La pedana sotto i piedi dello sprite (circa al 90% del riquadro): dietro lo sprite */
 .slot > .slot-card .sprite-wrap .pedana-disc { bottom: 2px; z-index: 0; }
 .slot > .slot-card .sprite-wrap > .sprite { position: relative; z-index: 1; }
