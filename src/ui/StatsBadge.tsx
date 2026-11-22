@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { battleSpecies } from '../engine/dex';
 import { STAT_IDS } from '../engine/sets';
 import { statShort } from '../i18n/game';
@@ -20,11 +20,23 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
  * Badge "Stat" ("Stats" in inglese): passandoci sopra (o col focus) mostra le statistiche base con barre e totale.
  * Con `compare` (il membro che esce in una sostituzione) ogni riga dice anche quanto si guadagna o si perde.
  * `side`: accanto alle base, le statistiche del set (l'esagono, nel dettaglio del candidato).
+ * È un pulsante vero: col mouse si apre passandoci sopra, col tocco o con Invio/Spazio si apre e si chiude (Esc, un tocco
+ * fuori o il focus altrove lo chiudono); i lettori di schermo sentono "Stat", pulsante, aperto/chiuso.
  */
 export function StatsBadge({ species, item = '', compare, side }: { species: string; item?: string; compare?: { species: string; item?: string }; side?: ReactNode }) {
   const id = useId();
   const lang = useLang();
   const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', esc); };
+  }, [open]);
   const forme = battleSpecies({ species, item });
   if (!forme) return null;
   const stats = forme.baseStats;
@@ -33,12 +45,15 @@ export function StatsBadge({ species, item = '', compare, side }: { species: str
   const otherTotal = other ? STAT_IDS.reduce((sum, stat) => sum + other.baseStats[stat], 0) : 0;
   const diff = (n: number) => <span className={`stats-diff${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>{signed(n)}</span>;
   return (
-    <span
+    <button
+      ref={ref}
+      type="button"
       className="stats-badge"
-      tabIndex={0}
+      aria-expanded={open}
       aria-describedby={id}
-      // Dentro un <summary>: il badge non deve aprire o chiudere la card
-      onClick={e => { e.preventDefault(); e.stopPropagation(); }}
+      // Il clic non arriva a chi sta sotto (il dettaglio, la carta); dentro la finestra delle statistiche non la chiude
+      onClick={e => { e.preventDefault(); e.stopPropagation(); if (!(e.target as Element).closest('.stats-pop')) setOpen(o => !o); }}
+      onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false); }}
     >
       {t('stats.badge')}
       <span id={id} role="tooltip" className={side ? 'stats-pop has-side' : 'stats-pop'}>
@@ -59,6 +74,6 @@ export function StatsBadge({ species, item = '', compare, side }: { species: str
         </span>
         {side && <span className="stats-side"><span className="stats-title">{t('stats.withSet')}</span>{side}</span>}
       </span>
-    </span>
+    </button>
   );
 }

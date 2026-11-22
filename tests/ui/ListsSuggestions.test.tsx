@@ -88,7 +88,9 @@ describe('liste nella scheda Pokémon', () => {
     // Il ♥ sta sul voto e ne spiega la salita; nella riga del nome niente cuore
     const row = suggestions().querySelectorAll('.suggestions li')[rowNames().indexOf(favorite)];
     const tag = within(row as HTMLElement).getByLabelText(/ · Più in alto perché è tra i tuoi preferiti$/);
-    expect(tag).toHaveAttribute('title', 'Più in alto perché è tra i tuoi preferiti');
+    // Il motivo nel fumetto dell'app, non nel titolo del browser
+    expect(tag).toHaveAttribute('data-hint', 'Più in alto perché è tra i tuoi preferiti');
+    expect(tag).toHaveAttribute('title', '');
     expect(tag.querySelector('.fav-heart')).not.toBeNull();
     expect(row.querySelector('.name-line .list-mark')).toBeNull();
     expect(within(suggestions()).queryAllByLabelText('Nei tuoi Preferiti')).toHaveLength(0);

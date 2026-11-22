@@ -783,9 +783,9 @@ aside.detail.compact .detail-swap-text small { position: absolute; width: 1px; h
 .stats-pop .stats-main, .stats-pop .stats-side { display: flex; flex-direction: column; gap: var(--sp-2); }
 .stats-pop.has-side .stats-main { width: 206px; }
 .stats-pop .stats-side .mcard-hex { width: 190px; height: calc(190px * 0.67); }
-.stats-badge:hover .stats-pop.has-side, .stats-badge:focus-visible .stats-pop.has-side { flex-direction: column; }
+.stats-badge:is(:hover, :focus-visible, [aria-expanded='true']) .stats-pop.has-side { flex-direction: column; }
 @container detailbox (min-width: 480px) {
-  .stats-badge:hover .stats-pop.has-side, .stats-badge:focus-visible .stats-pop.has-side { flex-direction: row; gap: var(--sp-9); }
+  .stats-badge:is(:hover, :focus-visible, [aria-expanded='true']) .stats-pop.has-side { flex-direction: row; gap: var(--sp-9); }
 }
 /* Si apre sotto la testata, dentro il dettaglio (dal badge andrebbe sopra la lista): il badge non fa da riferimento */
 .detail-hero:has(.stats-pop.has-side) :is(.detail-id, .detail-id h3, .stats-badge) { position: static; }
