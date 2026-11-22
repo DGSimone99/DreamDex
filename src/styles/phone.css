@@ -1579,3 +1579,6 @@ label.improve-col-head { cursor: pointer; }
   .grade-badge.areas-open .grade-fold .icon { transform: rotate(180deg); }
   .grade-badge.foldable:hover .grade-fold { color: var(--text); }
 }
+
+/* Telefono: la lista si scorre (niente pagine); l'ultimo elemento, invisibile, fa arrivare le carte successive */
+.suggestions .list-more { grid-column: 1 / -1; height: 1px; list-style: none; }

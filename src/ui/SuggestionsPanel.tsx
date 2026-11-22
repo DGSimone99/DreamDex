@@ -30,7 +30,7 @@ import { SuggestionDetail, type DetailTab } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
 import { BanMark, ExclusiveMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import { useLang, useT } from '../i18n/react';
-import { usePerPage } from './usePerPage';
+import { PAGE, usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
 import { ModeSwitch } from './ModeSwitch';
 
@@ -86,6 +86,10 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
+/** Telefono: la lista senza pagine, che si scorre; le carte arrivano a gruppi di SCROLL_STEP. */
+const PHONE_LIST = '(max-width: 599px)';
+const SCROLL_STEP = 12;
+
 export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
@@ -95,7 +99,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const pickerRef = useRef<HTMLDivElement>(null);
   // Linguetta del dettaglio a linguette (schermi bassi): resta cambiando candidato
   const [detailTab, setDetailTab] = useState<DetailTab>('brings');
-  const { perPage, columns, tileHeight, reasons, listWidth } = usePerPage(listRef, pickerRef, teamCollapsed);
+  const { perPage: pagePerPage, columns, tileHeight, reasons, listWidth } = usePerPage(listRef, pickerRef, teamCollapsed);
+  // Telefono: niente pagine, la lista si scorre; le carte arrivano a gruppi mentre si scende (SCROLL_STEP alla volta)
+  const scrollList = useMediaQuery(PHONE_LIST);
+  const [shown, setShown] = useState(SCROLL_STEP);
+  const perPage = scrollList ? Math.max(shown, PAGE) : pagePerPage;
+  const moreRef = useRef<HTMLLIElement>(null);
   const [chosenFilters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // I ruoli scelti in un formato che questo non offre (singolo → doppio) qui non valgono: né accesi né contati
   const filterRules = useMemo(() => formatRules(format.formatId), [format.formatId]);
@@ -194,6 +203,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   useEffect(() => {
     setCursor(null);
     setPage(0);
+    setShown(SCROLL_STEP);
     setSelectedName(name => (name && items.some(item => item.species === name) ? name : null));
   }, [items]);
   // Candidato dal Coaching: dopo l'effetto qui sopra, appena la lista aggiornata lo contiene (o non lo contiene più)
@@ -212,6 +222,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const index = items.findIndex(item => item.species === focusing);
     // Non c'è (filtri attivi): resta la lista com'è
     if (index >= 0) {
+      if (scrollList) setShown(n => Math.max(n, index + 1));
       setPage(Math.floor(index / perPage));
       setCursor(null);
       setSelectedName(focusing);
@@ -231,7 +242,18 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }, [perPage]); // eslint-disable-line react-hooks/exhaustive-deps
   const pages = Math.ceil(items.length / perPage);
   // Il numero per pagina può cambiare (finestra): la pagina resta fra quelle che ci sono
-  const page = Math.max(0, Math.min(pageState, pages - 1));
+  const page = scrollList ? 0 : Math.max(0, Math.min(pageState, pages - 1));
+  // Telefono: in fondo alla lista arrivano le carte successive
+  const more = scrollList && shown < items.length;
+  useEffect(() => {
+    const el = moreRef.current;
+    if (!more || !el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) setShown(n => n + SCROLL_STEP);
+    }, { rootMargin: '600px 0px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [more, shown]);
   const pageItems = items.slice(page * perPage, (page + 1) * perPage);
   // Fascia "Candidati": la pagina è sempre un numero ("3/9"); se titolo, suggerimento e paginazione non entrano su una riga
   // si toglie il suggerimento del doppio clic (1 = tutto, 0 = senza suggerimento)
@@ -266,6 +288,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const next = Math.min(items.length - 1, Math.max(0, from + delta));
     setCursor(next);
     setSelectedName(null);
+    if (scrollList) setShown(n => Math.max(n, next + 1));
     setPage(Math.floor(next / perPage));
   };
   const goToPage = (next: number) => {
@@ -458,7 +481,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             return <CandidateCard key={item.species} {...candidate} />;
           })}
           {/* Prima lista in calcolo: le sagome delle carte al loro posto (la griglia vera), non un riquadro vuoto */}
-          {stale && pageItems.length === 0 && Array.from({ length: perPage }, (_, i) => (
+          {more && <li ref={moreRef} className="list-more" aria-hidden="true" />}
+          {stale && pageItems.length === 0 && Array.from({ length: Math.min(perPage, PAGE) }, (_, i) => (
             <li key={`skel-${i}`} className="card card-skel" aria-hidden="true">
               <span className="card-skel-art" />
               <span className="card-skel-plate"><span className="card-skel-line" /><span className="card-skel-line short" /></span>
@@ -470,7 +494,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }
 
   // Paginazione nella fascia "Candidati (N)", su una riga: ‹ un trattino per pagina ›
-  const pager = pages > 1 && (
+  const pager = pages > 1 && !scrollList && (
     <nav className="pager" aria-label={tr('suggest.pages')}>
       <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
         <Icon name="prev" />
