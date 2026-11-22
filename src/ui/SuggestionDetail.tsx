@@ -130,7 +130,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     .flatMap((bring): Bring[] => (bring.roles?.length ? bring.roles.map(text => ({ text, short: text, kind: 'roles' })) : [bring]))
     .filter((bring, i, all) => all.findIndex(other => other.text === bring.text) === i);
   // Meta: uso nel meta e i 5 compagni più frequenti (quota dei team che lo usano), chi è già nel team riconosciuto per specie
-  const statsOf = statsEntry(data.stats, item.species);
+  // Senza meta (giochi, No Format, meta ignorato) niente sezione Meta, come sulle carte
+  const statsOf = data.ignoreMeta || format.game ? undefined : statsEntry(data.stats, item.species);
   const inTeam = new Set(team.map(member => toID(member.species)));
   const mates = statsOf ? Object.entries(statsOf.teammates).sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([name, share]) => ({ name, share, inTeam: inTeam.has(toID(name)) })) : [];
