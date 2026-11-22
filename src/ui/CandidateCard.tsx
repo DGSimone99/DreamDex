@@ -88,7 +88,7 @@ export function CandidateCard(props: CandidateProps) {
         <span className="visually-hidden">{typeNames}</span>
         <span className="who">
           <span className="name-line">
-            <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} />
+            <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} onAction={props.onAction} />
             <CandidateMarks item={item} format={format} lists={lists} />
           </span>
           <Reasons reasons={reasons} />
