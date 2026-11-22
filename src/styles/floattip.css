@@ -289,7 +289,7 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .detail-hero.mcard-head .detail-id { gap: var(--sp-4); }
 .detail-hero.mcard-head .detail-id h3 { gap: var(--sp-4); font-style: italic; text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-types { display: inline-flex; flex: none; gap: var(--sp-2); }
-.detail-types img { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
+.detail-types img { width: var(--ti-tip); height: var(--ti-tip); box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
 .detail-hero.mcard-head .detail-score strong, .detail-hero.mcard-head .detail-score span { text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-hero.mcard-head .detail-score span { color: var(--text); }
 /* Il dettaglio sta nella colonna senza scorrere: testata ed esagono un po' più bassi; sugli schermi bassi niente esagono
