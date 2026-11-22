@@ -6,7 +6,7 @@ import { useLang, useT } from '../../i18n/react';
 import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
-import { typeIconUrl } from '../typeIcons';
+import { tileStyle, typeIconUrl } from '../typeIcons';
 
 /** Le due fasce che contano per la Coverage: KO in un colpo e in due (il 3HKO quasi non conta: ignorato). */
 export type KoBand = 'ohko' | 'two';
@@ -42,7 +42,7 @@ export function koBands(targets: KoTarget[]): KoBands {
 export function Target({ target }: { target: KoTarget }) {
   const lang = useLang();
   return target.kind === 'type'
-    ? <span className="kot-type"><img src={typeIconUrl(target.label)} alt="" draggable={false} />{typeName(target.label as TypeName, lang)}</span>
+    ? <span className="kot-type"><img className="ti-sq" style={tileStyle(target.label)} src={typeIconUrl(target.label)} alt="" draggable={false} />{typeName(target.label as TypeName, lang)}</span>
     : <span className="kot-mon" title={target.label}><Sprite species={target.label} size={SPRITE_TIP_ROW} /></span>;
 }
 

@@ -11,7 +11,7 @@ import { MoveLine } from '../dashboard/CoverageTip';
 import { HOLD_BANDS } from '../defense/holds';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { typeIconUrl } from '../typeIcons';
+import { tileStyle, typeIconUrl } from '../typeIcons';
 
 /** Il badge dei colpi dal danno % (le soglie della Difesa: OHKO, 2HKO, 3HKO, 4HKO+). */
 const bandOf = (pct: number): HoldBand => holdBand(pct / 100);
@@ -79,7 +79,7 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
   return (
     <>
       <div className={`ftip-head${target ? ' tht-target' : ''}`}>
-        {type ? <img src={typeIconUrl(type)} alt="" draggable={false} /> : <Sprite species={target ?? ''} size={SPRITE_TIP_ROW} />}
+        {type ? <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} /> : <Sprite species={target ?? ''} size={SPRITE_TIP_ROW} />}
         <b>{type ? typeName(type as TypeName, lang) : target}</b>
         <span className={`ftip-ko off ${band} tht-band`}>{HOLD_BANDS[band].tag}</span>
       </div>

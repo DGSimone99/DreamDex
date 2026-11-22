@@ -7,7 +7,7 @@ import { describe } from './describe';
 import { FloatTip, keyboardFocus, useFloatAnchor } from './FloatTip';
 import { ItemIcon } from './ItemIcon';
 import { typeColor } from './Sprite';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 
 /** I bersagli di Showdown raggruppati come li dice il gioco (in singolo "normal", "any" e "adjacentFoe" sono lo stesso). */
 type TargetKey = 'single' | 'random' | 'self' | 'foes' | 'adjacent' | 'field' | 'foeSide' | 'allySide' | 'allyTeam' | 'allies' | 'ally' | 'allyOrSelf' | 'scripted';
@@ -37,7 +37,7 @@ export function MoveTipBody({ name }: { name: string }) {
   return (
     <>
       <div className="ftip-head">
-        <img src={typeIconUrl(move.type)} alt="" draggable={false} />
+        <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />
         <b>{gameName('move', move.name, lang)}</b>
         {move.priority !== 0 && (
           <span className={`mtip-prio${move.priority < 0 ? ' neg' : ''}`}>{t('moveTip.priority', { n: move.priority > 0 ? `+${move.priority}` : `${move.priority}` })}</span>

@@ -1,7 +1,7 @@
 import type { TypeName } from '../engine/types';
 import { useLang } from '../i18n/react';
 import { typeName } from '../i18n/game';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 
 /**
  * Il tooltip del tipo in testata alle tabelle Coverage tipi (Offesa e Difesa): icona e nome del tipo, poi le statistiche
@@ -13,7 +13,7 @@ export function TypeStatsTip({ type, stats, foot }: { type: string; stats: [stri
   return (
     <>
       <div className="ftip-head">
-        <img src={typeIconUrl(type)} alt="" draggable={false} />
+        <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
         <b>{typeName(type as TypeName, lang)}</b>
       </div>
       <div className="tst-stats" style={{ gridTemplateColumns: `repeat(${stats.length}, minmax(0, 1fr))` }}>

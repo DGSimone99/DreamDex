@@ -13,7 +13,7 @@ import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Sprite, typeColor } from './Sprite';
 import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 import { kitTip } from './MoveTip';
 import { ItemIcon } from './ItemIcon';
 
@@ -165,7 +165,7 @@ export function MemberCard({ set, was, alerts }: { set: TeamSet; was?: TeamSet; 
         <span className="mcard-mon"><Sprite species={battleName(set)} size={96} /></span>
         <span className="mcard-name">
           {battleName(set)}
-          {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}
+          {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />)}
         </span>
       </div>
       {!!alerts?.length && (
