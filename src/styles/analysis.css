@@ -303,7 +303,7 @@
 .dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 
-/* Il tooltip di una minaccia (riga META della Copertura): nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
+/* Il tooltip di una minaccia (scheda Meta della Copertura): nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
 .ftip.thr-tip { width: var(--tip-s); }
 .thr-tip-use { margin-left: auto; white-space: nowrap; font: 700 italic var(--tip-small)/1 var(--display); color: var(--muted); }
 .thr-tip-why { display: grid; gap: var(--sp-2); margin: 0; padding: 9px var(--sp-5); list-style: none; }
@@ -883,22 +883,30 @@
 /* Cruscotto basso: una fila sola di pillole, il resto nel "+N", così i core restano leggibili */
 .dash.tight .sum-packed .sum-lines { max-height: 44px; }
 
-/* Copertura › riga META: le minacce del meta nelle caselle della griglia dei tipi; rossa se scoperta, gialla se a fatica
-   (come le caselle dei tipi), l'icona del Box dentro; le caselle vuote non si vedono */
-.dash .dash-thr { height: 32px; padding: 0; text-align: center; vertical-align: middle; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; overflow: hidden; }
-/* La minaccia come icona del Box (40×30), rimpicciolita se la casella è più stretta */
-.dash .dash-thr-box { display: grid; place-items: center; height: 100%; }
-.dash .dash-thr-box .mon-icon { image-rendering: pixelated; transition: transform 0.15s var(--ease); }
-.dash .dash-thr:hover .mon-icon { transform: translateY(-2px); }
-.dash .dash-thr.open { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
-.dash .dash-thr.thin { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
-.dash .dash-thr.more { font: 700 var(--fs-caption)/1 var(--display); color: var(--muted); border-style: dashed; }
-.dash .dash-thr.more:hover { color: var(--text); border-color: var(--control-line); }
-.dash .dash-thr.empty { border: 0; cursor: default; }
-.dash .dash-meta-none { height: 30px; padding: 0 var(--sp-3); font-size: var(--fs-small); color: var(--good); }
-.dash .dash-meta-none .icon { width: 14px; height: 14px; margin-right: var(--sp-3); vertical-align: -2px; }
-.dash .dash-meta-row th[scope='row'] { vertical-align: middle; }
-@media (prefers-reduced-motion: reduce) { .dash .dash-thr .mon-icon { transition: none; } }
+/* Copertura: le schede Tipi | Meta nel titolo, piccole come le sottoschede (la aperta chiara col filo azzurro sotto);
+   su Meta il numero rosso delle minacce scoperte */
+.dash-tabs { flex: none; display: flex; margin-left: var(--sp-2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.dash-tabs [role='tab'] { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 3px var(--sp-5); border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; color: var(--muted); font: 500 var(--fs-caption)/1.2 var(--ui); white-space: nowrap; }
+.dash-tabs [role='tab']:last-child { border-right: 0; }
+.dash-tabs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.dash-tabs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
+.dash-tabs [role='tab']:focus-visible { outline-offset: -2px; }
+.dash-tab-n { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-label)/1.4 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
+/* Scheda Meta: in testa l'icona del Box della minaccia (40×30), con un filo sotto nel colore del caso */
+.dash .dash-matrix.meta thead th { padding: 0; }
+.dash .dash-thr-box { display: grid; place-items: center; height: 24px; overflow: visible; }
+.dash .dash-thr-box .mon-icon { image-rendering: pixelated; transform: scale(0.85); margin-top: -3px; }
+.dash .dash-thr-head { box-shadow: inset 0 -2px 0 var(--warn); }
+.dash .dash-thr-head.open { box-shadow: inset 0 -2px 0 var(--bad); }
+.dash .dash-thr-more { height: 24px; font: 700 var(--fs-caption)/1 var(--display); color: var(--muted); border: 1px dashed var(--line); border-radius: 3px; cursor: pointer; }
+.dash .dash-thr-more:hover { color: var(--text); border-color: var(--control-line); }
+.dash .dash-cell.go { cursor: pointer; }
+.dash .dash-cell.empty, .dash .dash-cell.more { border: 0; background: none; cursor: default; }
+/* Nessuna minaccia: il segno verde, alto quanto la griglia, così passando di scheda non si muove niente */
+.dash .dash-cov-panel { min-height: 0; }
+.dash .dash-meta-none { min-height: 76px; justify-content: center; }
+.dash .dash-meta-none .icon { width: 18px; height: 18px; }
 /* Tooltip della minaccia nella riga META: ogni ragione col segno del suo lato (scudo Difesa, spada Offesa) */
 .thr-tip-why.sided li { display: flex; align-items: baseline; gap: var(--sp-2); }
 .thr-tip-why.sided .icon { flex: none; width: 12px; height: 12px; align-self: center; }
+.thr-tip-why li.ok { border-left-color: var(--good); }

@@ -177,12 +177,8 @@
   .dash .dash-matrix thead tr::before { content: ''; grid-row: 4; grid-column: 1; }
   .dash .dash-matrix tbody tr:first-child > :nth-child(-n + 10) { grid-row: 2; }
   .dash .dash-matrix tbody tr:first-child > :nth-child(n + 11), .dash .dash-matrix tbody tr:first-child::before { grid-row: 5; }
-  .dash .dash-matrix tbody tr:nth-child(2) > :nth-child(-n + 10) { grid-row: 3; }
-  .dash .dash-matrix tbody tr:nth-child(2) > :nth-child(n + 11), .dash .dash-matrix tbody tr:nth-child(2)::before { grid-row: 6; }
-  /* La riga META dopo le due metà dei tipi, anche lei su due file da 9 (le minacce non sono legate ai tipi sopra) */
-  .dash .dash-matrix tbody tr.dash-meta-row > :nth-child(-n + 10) { grid-row: 7; margin-top: var(--sp-4); }
-  .dash .dash-matrix tbody tr.dash-meta-row > :nth-child(n + 11), .dash .dash-matrix tbody tr.dash-meta-row::before { grid-row: 8; }
-  .dash .dash-matrix .dash-meta-none { grid-column: 2 / -1; }
+  .dash .dash-matrix tbody tr:last-child > :nth-child(-n + 10) { grid-row: 3; }
+  .dash .dash-matrix tbody tr:last-child > :nth-child(n + 11), .dash .dash-matrix tbody tr:last-child::before { grid-row: 6; }
   .dash .dash-matrix th[scope='row'], .dash .dash-matrix tbody tr::before { grid-column: 1; width: auto; align-self: center; }
   .dash .dash-matrix tbody tr::before {
     content: attr(data-label);

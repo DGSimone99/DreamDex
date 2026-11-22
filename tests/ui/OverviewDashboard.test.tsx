@@ -773,67 +773,90 @@ describe('Cruscotto: misure', () => {
 
 });
 
-describe('Copertura › riga META (le minacce del meta)', () => {
+describe('Copertura › schede Tipi e Meta', () => {
   afterEach(() => { vi.restoreAllMocks(); });
-  const row = () => document.querySelector<HTMLElement>('.dash-meta-row')!;
-  const threats = () => [...row().querySelectorAll<HTMLElement>('td.dash-thr:not(.empty):not(.more)')];
-  const threat = (name: RegExp) => threats().find(td => name.test(td.getAttribute('aria-label')!))!;
+  const cov = () => screen.getByRole('region', { name: 'Copertura' });
+  const toMeta = async (user: ReturnType<typeof userEvent.setup>) => user.click(within(cov()).getByRole('tab', { name: /^Meta/ }));
+  const table = () => within(cov()).getByRole('table');
+  /** Le caselle di una riga (Offesa o Difesa) della scheda Meta, senza quelle vuote. */
+  const cells = (row: 'Offesa' | 'Difesa') => [...table().querySelectorAll<HTMLElement>(`tr[data-label="${row}"] td.dash-cell:not(.empty):not(.more)`)];
+  const cell = (row: 'Offesa' | 'Difesa', name: RegExp) => cells(row).find(td => name.test(td.getAttribute('aria-label')!))!;
 
-  it('una minaccia per casella nella griglia dei tipi, rossa se scoperta e gialla se a fatica; le caselle avanzate vuote; niente carta a parte', () => {
+  it('si apre su Tipi; Meta ha il numero delle minacce scoperte; niente carta a parte', async () => {
+    const user = userEvent.setup();
     mount();
-    expect(row().querySelector('th')).toHaveTextContent('Meta');
-    expect(threats().map(td => td.getAttribute('aria-label')!.split(',')[0])).toEqual(THREATS.map(x => x.species));
-    expect(threats()[0]).toHaveClass('open');
-    expect(threat(/^Zamazenta/)).toHaveClass('thin');
-    expect(threats().length + row().querySelectorAll('td.dash-thr.empty').length).toBe(18);
+    expect(within(cov()).getByRole('tab', { name: 'Tipi' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveTextContent('Meta3');
+    expect(table().querySelectorAll('thead .dash-type')).toHaveLength(18);
     expect(screen.queryByRole('region', { name: 'Minacce del meta' })).toBeNull();
+    await toMeta(user);
+    expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
+    expect(cov()).toHaveTextContent('scoperta 3 · a fatica 4');
   });
 
-  it('più minacce delle caselle: le prime 17 e "+N" per le altre', () => {
+  it('Meta: una colonna per minaccia problematica, per ogni lato rossa (nessuno), gialla (uno solo) o verde (due o più)', async () => {
+    const user = userEvent.setup();
+    mount();
+    await toMeta(user);
+    expect([...table().querySelectorAll('thead th[scope="col"]')].map(th => th.textContent)).toEqual(THREATS.map(x => x.species));
+    expect(cell('Difesa', /^Raging Bolt/)).toHaveClass('bad');
+    expect(cell('Offesa', /^Raging Bolt/)).toHaveClass('ok');
+    expect(cell('Offesa', /^Zamazenta/)).toHaveClass('minor');
+    expect(cell('Difesa', /^Zamazenta/)).toHaveClass('ok');
+    expect(cell('Offesa', /^Zamazenta/)).toHaveAttribute('aria-label', 'Zamazenta, offesa: Lo manda KO solo Iron Valiant. 14,8% nel meta');
+    expect(cell('Difesa', /^Zamazenta/)).toHaveAttribute('aria-label', 'Zamazenta, difesa: Lo gestiscono 2 o più membri. 14,8% nel meta');
+    expect(cells('Offesa').length + table().querySelectorAll('tr[data-label="Offesa"] td.dash-cell.empty').length).toBe(18);
+  });
+
+  it('più minacce delle colonne: le prime 17 e "+N" in testa', async () => {
+    const user = userEvent.setup();
     const list = Array.from({ length: 20 }, (_, i) => ({ species: `Mon${i}`, usage: 0.1, status: 'thin' as const, side: 'defense' as const, reasons: [{ side: 'defense' as const, by: ['Toxapex'] }] }));
     mount({ data: sample({ threats: { pods: [], list, total: 20, available: true, metaOff: false } }) });
-    expect(threats()).toHaveLength(17);
-    const more = row().querySelector<HTMLElement>('td.dash-thr.more')!;
+    await toMeta(user);
+    expect(cells('Difesa')).toHaveLength(17);
+    const more = table().querySelector<HTMLElement>('th.dash-thr-more')!;
     expect(more).toHaveTextContent('+3');
     expect(more).toHaveAttribute('aria-label', 'Altre 3 minacce: Mon17 (a fatica), Mon18 (a fatica), Mon19 (a fatica)');
   });
 
-  it('la ragione col suo lato e l\'uso nel nome accessibile e nel tooltip col fuoco; dove porta il clic', async () => {
+  it('tooltip col fuoco: i due lati (quello della casella per primo) e dove porta il clic', async () => {
     const user = userEvent.setup();
     mount();
-    const zama = threat(/^Zamazenta/);
-    expect(zama).toHaveAttribute('aria-label', 'Zamazenta, a fatica: Lo manda KO solo Iron Valiant. 14,8% nel meta');
+    await toMeta(user);
+    const zama = cell('Offesa', /^Zamazenta/);
     await user.tab();
     await act(async () => { zama.focus(); });
     const tip = await screen.findByText(/Lo manda KO solo Iron Valiant/, { selector: '.thr-tip li' }, { timeout: 1000 });
-    // Il lato della ragione: la spada e "Offesa"
-    expect(tip).toHaveTextContent('Offesa Lo manda KO solo Iron Valiant');
+    expect([...tip.closest('ul')!.querySelectorAll('li')].map(li => li.textContent)).toEqual(['Offesa Lo manda KO solo Iron Valiant', 'Difesa Lo gestiscono 2 o più membri']);
     expect(tip.closest('.ftip')).toHaveTextContent('14,8% nel meta');
     expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Offesa › Coverage meta');
-    expect(zama).toHaveAccessibleDescription('Clic: vai a Offesa › Coverage meta');
-    expect(threat(/^Raging Bolt/)).toHaveAccessibleDescription('Clic: vai a Difesa › Coverage meta');
+    expect(cell('Difesa', /^Raging Bolt/)).toHaveAccessibleDescription('Clic: vai a Difesa › Coverage meta');
   });
 
-  it('clic: la Coverage meta del lato non coperto (Difesa se lo sono tutti e due) con la minaccia accesa; il link Coverage meta', async () => {
+  it('clic: la Coverage meta del lato della casella con la minaccia accesa; i link Offesa e Difesa vanno alla Coverage meta', async () => {
     const user = userEvent.setup();
-    const both = { species: 'Darkrai', usage: 0.12, status: 'open' as const, side: 'offense' as const, reasons: [{ side: 'offense' as const, by: [] }, { side: 'defense' as const, by: ['Toxapex'] }] };
-    const { onView } = mount({ data: sample({ threats: { pods: [], list: [...sample().threats.list, both], total: 20, available: true, metaOff: false } }) });
-    await user.click(threat(/^Raging Bolt/));
+    const { onView } = mount();
+    await user.click(within(cov()).getByRole('button', { name: 'Difesa' }));
+    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageTypes');
+    await toMeta(user);
+    await user.click(cell('Difesa', /^Raging Bolt/));
     expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta', { kind: 'threat', side: 'defense', species: 'Raging Bolt' });
-    await user.click(threat(/^Zamazenta/));
+    await user.click(cell('Offesa', /^Zamazenta/));
     expect(onView).toHaveBeenLastCalledWith('strength', 'coverageMeta', { kind: 'threat', side: 'offense', species: 'Zamazenta' });
-    await user.click(threat(/^Darkrai/));
-    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta', { kind: 'threat', side: 'defense', species: 'Darkrai' });
-    await user.click(within(screen.getByRole('region', { name: 'Copertura' })).getByRole('button', { name: 'Coverage meta' }));
-    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta');
+    await user.click(within(cov()).getByRole('button', { name: 'Offesa' }));
+    expect(onView).toHaveBeenLastCalledWith('strength', 'coverageMeta');
   });
 
-  it('nessuna minaccia: una riga verde; meta spento o senza statistiche: niente riga META', () => {
+  it('nessuna minaccia: Meta mostra il segno verde, senza numero; meta spento o senza statistiche: niente schede', async () => {
+    const user = userEvent.setup();
     const { unmount } = mount({ data: sample({ threats: { pods: [], list: [], total: 20, available: true, metaOff: false } }) });
-    expect(row()).toHaveTextContent('Nessuna minaccia del meta senza risposta');
+    expect(within(cov()).getByRole('tab', { name: 'Meta' })).toHaveTextContent(/^Meta$/);
+    await toMeta(user);
+    expect(cov()).toHaveTextContent('Nessuna minaccia del meta senza risposta');
+    expect(within(cov()).queryByRole('table')).toBeNull();
     unmount();
     mount({ data: sample({ threats: { pods: [], list: [], total: 0, available: false, metaOff: true } }) });
-    expect(document.querySelector('.dash-meta-row')).toBeNull();
+    expect(within(cov()).queryByRole('tab')).toBeNull();
   });
 });
 

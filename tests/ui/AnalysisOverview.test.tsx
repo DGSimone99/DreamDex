@@ -257,13 +257,14 @@ describe('Panoramica: correzioni della revisione', () => {
 
 });
 
-describe('Panoramica: Copertura › riga META', () => {
+describe('Panoramica: Copertura › scheda Meta', () => {
   it('clic su una minaccia: la sua Coverage meta con la colonna per prima e accesa, "Mostra tutti" la spegne', async () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
-    const first = panel().querySelector<HTMLElement>('.dash-meta-row td.dash-thr:not(.empty):not(.more)')!;
+    await user.click(within(panel()).getByRole('tab', { name: /^Meta/ }));
+    // La prima casella non verde della scheda Meta: porta alla Coverage meta del suo lato
+    const first = panel().querySelector<HTMLElement>('.dash-coverage td.dash-cell.go:is(.bad, .minor)')!;
     const species = first.getAttribute('aria-label')!.split(',')[0];
-    // Va in Offesa solo se la minaccia non ha ragioni di Difesa (la Difesa ha la precedenza)
-    const offense = !/regge/.test(first.getAttribute('aria-label')!.split(':')[1]);
+    const offense = first.closest('tr')!.getAttribute('data-label') === 'Offesa';
     await user.click(first);
     expect(within(views()).getByRole('tab', { name: new RegExp(`^${offense ? 'Offesa' : 'Difesa'}`) })).toHaveAttribute('aria-selected', 'true');
     const table = within(panel()).getByRole('table', { name: `${offense ? 'Offesa' : 'Difesa'}: Coverage meta` });

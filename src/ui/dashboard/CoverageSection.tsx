@@ -1,22 +1,20 @@
-import { useId } from 'react';
-import type { MetaThreat } from '../../engine/overviewDashboard';
+import { useId, useState } from 'react';
+import type { CellState, DashboardData, MetaThreat } from '../../engine/overviewDashboard';
 import { formatPercent } from '../../i18n';
-import type { KoFocus } from '../AreaDetail';
-import { goText, TipGo } from '../FloatTip';
-import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP_ROW } from '../spriteSizes';
-import { firstType, useReasonText } from './threatText';
-import { PokemonIcon } from '../PokemonName';
-import type { CellState, DashboardData } from '../../engine/overviewDashboard';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
-import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
-import { useRoving } from '../useRoving';
+import type { KoFocus } from '../AreaDetail';
+import { FloatTip, goText, keyboardFocus, TipGo, useFloatAnchor } from '../FloatTip';
 import { Icon } from '../icons';
+import { PokemonIcon } from '../PokemonName';
+import { Sprite, typeColor } from '../Sprite';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl } from '../typeIcons';
+import { useRoving } from '../useRoving';
 import { DefenseTip, OffenseTip } from './CoverageTip';
 import { DashCard, DashLink } from './DashCard';
+import { firstType, useReasonText } from './threatText';
 
 /** Prima lettera minuscola: il dettaglio segue "Terra, colpisce:". */
 const lower = (text: string) => text.charAt(0).toLocaleLowerCase() + text.slice(1);
@@ -29,27 +27,35 @@ function TypeIcon({ type }: { type: string }) {
 
 /**
  * Una casella: coperto appena visibile, minore in giallo, scoperto in rosso con la ✕. Il dettaglio a parole è il suo
- * nome (screen reader); a vista, al passaggio, il tooltip DreamDex (FloatTip) al posto del tooltip del browser.
+ * nome (screen reader); a vista, al passaggio, il tooltip DreamDex (FloatTip) al posto del tooltip del browser. Con
+ * `onClick` (le minacce della scheda Meta) si apre anche col clic o con Invio.
  */
-function Cell({ state, label, onEnter, onLeave }: { state: CellState; label: string; onEnter: (el: Element) => void; onLeave: () => void }) {
+function Cell({ state, label, describedBy, onClick, onEnter, onLeave }: { state: CellState; label: string; describedBy?: string; onClick?: () => void; onEnter: (el: Element) => void; onLeave: () => void }) {
   // Raggiungibile con le frecce (data-nav: la tabella è un posto solo nel giro del Tab); col fuoco da tastiera il tooltip
   return (
-    <td className={`dash-cell ${state}`} aria-label={label} data-nav="" onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}
-      onFocus={e => { if (keyboardFocus(e.currentTarget)) onEnter(e.currentTarget); }} onBlur={onLeave}>
+    <td className={`dash-cell ${state}${onClick ? ' go' : ''}`} aria-label={label} aria-describedby={describedBy} data-nav="" onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}
+      onFocus={e => { if (keyboardFocus(e.currentTarget)) onEnter(e.currentTarget); }} onBlur={onLeave}
+      onClick={onClick} onKeyDown={onClick && (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } })}>
       <Icon name={state === 'ok' ? 'check' : 'close'} />
     </td>
   );
 }
 
+/** Il lato di una casella e la sua scheda: l'Offesa si chiama "strength" fra le schede. */
+type Side = 'offense' | 'defense';
+const areaOf = (side: Side): AnalysisView => (side === 'defense' ? 'defense' : 'strength');
+
 /**
- * Copertura: i 18 tipi, una riga per l'Offesa e una per la Difesa (l'ordine delle schede); non si comprime mai. Col meta
- * una terza riga, META: le minacce del meta che il team gestisce peggio (regola di `metaThreats`), una per casella nella
- * stessa griglia, rossa se scoperta e gialla se a fatica; se sono più delle caselle l'ultima è "+N". Al passaggio il
- * tooltip con le ragioni e l'uso; il clic apre la Coverage meta con la colonna della minaccia accesa.
+ * Copertura, con due schede nel titolo (si apre su Tipi):
+ * - Tipi: i 18 tipi, una riga per l'Offesa e una per la Difesa (l'ordine delle schede); non si comprime mai.
+ * - Meta (solo col meta): la stessa griglia, ma le colonne sono le minacce del meta che il team gestisce peggio (regola di
+ *   `metaThreats`), con l'icona del Box in testa; per ogni lato la casella dice quanti membri la gestiscono: rossa nessuno,
+ *   gialla uno solo, verde due o più. Se sono più delle colonne l'ultima è "+N". Senza minacce un segno verde. Al passaggio
+ *   il tooltip con le ragioni; il clic apre la Coverage meta di quel lato con la colonna della minaccia accesa.
  */
 export function CoverageSection({ coverage, threats, onView }: {
   coverage: DashboardData['coverage'];
-  /** Le minacce del meta (solo col meta): la riga META. */
+  /** Le minacce del meta (solo col meta): la scheda Meta. */
   threats?: DashboardData['threats'];
   onView: (v: AnalysisView, sub?: string, focus?: KoFocus) => void;
 }) {
@@ -59,109 +65,143 @@ export function CoverageSection({ coverage, threats, onView }: {
   const offense = t('dash.rowOffense');
   const title = t('dash.coverage');
   const names = coverage.cells.map(cell => typeName(cell.type, lang));
-  const tip = useFloatAnchor<{ side: 'offense' | 'defense'; i: number }>();
-  // Riga META: le minacce nelle caselle; se non stanno tutte, l'ultima casella è "+N"
-  const metaRow = t('dash.rowMeta');
+  const tip = useFloatAnchor<{ side: Side; i: number }>();
+  const [view, setView] = useState<'types' | 'meta'>('types');
+  const meta = view === 'meta' && !!threats;
   const reasonText = useReasonText();
-  const thrTip = useFloatAnchor<string>();
+  const thrTip = useFloatAnchor<{ species: string; side: Side }>();
   const moreTip = useFloatAnchor<true>();
-  // Dove porta il clic: la Coverage meta della Difesa se la minaccia non è coperta in Difesa (anche se non lo è
-  // nemmeno in Offesa: la Difesa ha la precedenza), altrimenti quella dell'Offesa
   const goIds = { defense: useId(), offense: useId() };
   const places = { defense: `${t('area.defense')} › ${t('dash.threatFoot')}`, offense: `${t('area.strength')} › ${t('dash.threatFoot')}` };
-  const sideOf = (x: MetaThreat): 'defense' | 'offense' => (x.reasons.some(r => r.side === 'defense') ? 'defense' : 'offense');
   const list = threats?.list ?? [];
   const cols = coverage.cells.length;
   const shownThreats = list.length > cols ? list.slice(0, cols - 1) : list;
   const hiddenThreats = list.slice(shownThreats.length);
+  const empties = Math.max(0, cols - shownThreats.length - (hiddenThreats.length ? 1 : 0));
+  const openCount = list.filter(x => x.status === 'open').length;
+  const thinCount = list.length - openCount;
   const word = (x: MetaThreat) => t(x.status === 'open' ? 'dash.threatOpen' : 'dash.threatThin');
   const usage = (x: MetaThreat) => t('dash.threatUsage', { pct: formatPercent(lang, x.usage) });
-  const openThreat = (x?: MetaThreat) => {
-    if (!x) { onView('defense', 'coverageMeta'); return; }
-    const side = sideOf(x);
-    onView(side === 'defense' ? 'defense' : 'strength', 'coverageMeta', { kind: 'threat', side, species: x.species });
+  /** Lo stato di una minaccia su un lato: nessuno la gestisce (rossa), uno solo (gialla), due o più (verde). */
+  const stateOf = (x: MetaThreat, side: Side): CellState => {
+    const reason = x.reasons.find(r => r.side === side);
+    return !reason ? 'ok' : reason.by.length ? 'minor' : 'bad';
   };
-  const tipThreat = thrTip.anchor ? list.find(x => x.species === thrTip.anchor!.key) : undefined;
-  // Il clic da tastiera (Invio o spazio) su una casella della riga META
-  const onKey = (go: () => void) => (e: { key: string; preventDefault: () => void }) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
+  /** La frase di un lato: la ragione se c'è, altrimenti "Lo gestiscono 2 o più membri". */
+  const sideText = (x: MetaThreat, side: Side) => {
+    const i = x.reasons.findIndex(r => r.side === side);
+    return i >= 0 ? reasonText(x)[i] : t('dash.threatSideOk');
+  };
+  const openThreat = (side: Side, x?: MetaThreat) =>
+    (x ? onView(areaOf(side), 'coverageMeta', { kind: 'threat', side, species: x.species }) : onView(areaOf(side), 'coverageMeta'));
+  const tipThreat = thrTip.anchor ? list.find(x => x.species === thrTip.anchor!.key.species) : undefined;
   const tipCell = tip.anchor ? coverage.cells[tip.anchor.key.i] : null;
   const nav = useRoving<HTMLTableElement>();
-  // Per i lettori di schermo, prima delle 36 caselle: i tipi scoperti (rossi) di ogni riga, o nessuno
+  // Per i lettori di schermo, prima delle caselle: i tipi scoperti (rossi) di ogni riga, o nessuno; nel meta quante minacce
   const summaryId = useId();
-  const open = (side: 'offense' | 'defense') => coverage.cells.flatMap((cell, i) => (cell[side] === 'bad' ? [names[i]] : []));
+  const open = (side: Side) => coverage.cells.flatMap((cell, i) => (cell[side] === 'bad' ? [names[i]] : []));
   const [openOff, openDef] = [open('offense'), open('defense')];
-  const summary = openOff.length || openDef.length
-    ? t('sr.coverage.some', { offense: openOff.join(', ') || t('sr.nobody'), defense: openDef.join(', ') || t('sr.nobody') })
-    : t('sr.coverage.none');
+  const summary = meta
+    ? (list.length ? t('dash.metaSr', { open: openCount, thin: thinCount }) : t('dash.threatsNone'))
+    : openOff.length || openDef.length
+      ? t('sr.coverage.some', { offense: openOff.join(', ') || t('sr.nobody'), defense: openDef.join(', ') || t('sr.nobody') })
+      : t('sr.coverage.none');
+  // Le due schede: frecce destra e sinistra per passare dall'una all'altra
+  const tabs = threats && (
+    <span className="dash-tabs" role="tablist" aria-label={t('dash.tabsLabel')}
+      onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const next = view === 'types' ? 'meta' : 'types'; setView(next); (e.currentTarget.querySelector(`[data-view="${next}"]`) as HTMLElement | null)?.focus(); } }}>
+      {(['types', 'meta'] as const).map(v => (
+        <button key={v} type="button" role="tab" data-view={v} aria-selected={view === v} tabIndex={view === v ? 0 : -1} onClick={() => setView(v)}>
+          {t(v === 'types' ? 'dash.tabTypes' : 'dash.tabMeta')}
+          {v === 'meta' && openCount > 0 && <span className="dash-tab-n" aria-label={t('dash.tabMetaOpen', { n: openCount })}>{openCount}</span>}
+        </button>
+      ))}
+    </span>
+  );
+  const typesMeta = <>{offense.toLocaleLowerCase()} <b>{coverage.offense}</b> · {defense.toLocaleLowerCase()} <b>{coverage.defense}</b></>;
+  const threatsMeta = list.length > 0 && <>{t('dash.threatOpen')} <b className={openCount ? 'bad' : undefined}>{openCount}</b> · {t('dash.threatThin')} <b>{thinCount}</b></>;
+  const threatRow = (side: Side, label: string) => (
+    <tr data-label={label}>
+      <th scope="row">{label}</th>
+      {shownThreats.map(x => (
+        <Cell key={x.species} state={stateOf(x, side)} label={`${x.species}, ${label.toLocaleLowerCase()}: ${sideText(x, side)}. ${usage(x)}`}
+          describedBy={goIds[side]} onClick={() => { thrTip.close(); openThreat(side, x); }}
+          onEnter={el => thrTip.open({ species: x.species, side }, el)} onLeave={thrTip.close} />
+      ))}
+      {hiddenThreats.length > 0 && <td className="dash-cell more" aria-hidden="true" />}
+      {Array.from({ length: empties }, (_, i) => <td key={`e${i}`} className="dash-cell empty" aria-hidden="true" />)}
+    </tr>
+  );
   return (
-    <DashCard className="dash-coverage" title={title}
-      meta={<>{offense.toLocaleLowerCase()} <b>{coverage.offense}</b> · {defense.toLocaleLowerCase()} <b>{coverage.defense}</b></>}
+    <DashCard className="dash-coverage" title={title} tabs={tabs}
+      meta={meta ? threatsMeta : typesMeta}
       links={<>
-        {/* Ognuno porta alla sua Coverage tipi, la stessa griglia per tipo */}
-        <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => onView('strength', 'types')} />
-        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => onView('defense', 'coverageTypes')} />
-        {/* Col meta: la Coverage meta (le minacce della riga META) */}
-        {threats && <DashLink label={t('detail.coverageMeta')} area={metaRow} onClick={() => openThreat()} />}
+        {/* Tipi: ognuno porta alla sua Coverage tipi; Meta: alla sua Coverage meta */}
+        <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => (meta ? openThreat('offense') : onView('strength', 'types'))} />
+        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => (meta ? openThreat('defense') : onView('defense', 'coverageTypes'))} />
       </>}>
       <p id={summaryId} hidden>{summary}</p>
-      <table ref={nav.ref} className="dash-matrix" aria-label={title} aria-describedby={summaryId} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
-        <thead>
-          <tr>
-            <td />
-            {coverage.cells.map((cell, i) => (
-              <th key={cell.type} scope="col" title={names[i]}>
-                <TypeIcon type={cell.type} />
-                <span className="visually-hidden">{names[i]}</span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {/* data-label: sul telefono la tabella va su due file da 9 tipi e la seconda ripete il nome della riga */}
-          <tr data-label={offense}>
-            <th scope="row">{offense}</th>
-            {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`}
-              onEnter={el => tip.open({ side: 'offense', i }, el)} onLeave={tip.close} />)}
-          </tr>
-          <tr data-label={defense}>
-            <th scope="row">{defense}</th>
-            {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`}
-              onEnter={el => tip.open({ side: 'defense', i }, el)} onLeave={tip.close} />)}
-          </tr>
-          {threats && (
-            <tr data-label={metaRow} className="dash-meta-row">
-              <th scope="row">{metaRow}</th>
-              {list.length === 0
-                ? <td colSpan={cols} className="dash-meta-none"><Icon name="check" />{t('dash.threatsNone')}</td>
-                : (
-                  <>
-                    {shownThreats.map(x => (
-                      <td key={x.species} className={`dash-thr ${x.status}`} data-nav="" tabIndex={-1}
-                        aria-label={t('dash.threatLabel', { species: x.species, word: word(x), reasons: reasonText(x).join('. '), usage: usage(x) })} aria-describedby={goIds[sideOf(x)]}
-                        onClick={() => { thrTip.close(); openThreat(x); }} onKeyDown={onKey(() => openThreat(x))}
-                        onMouseEnter={e => thrTip.open(x.species, e.currentTarget)} onMouseLeave={thrTip.close}
-                        onFocus={e => { if (keyboardFocus(e.currentTarget)) thrTip.open(x.species, e.currentTarget); }} onBlur={thrTip.close}>
-                        <span className="dash-thr-box"><PokemonIcon name={x.species} /></span>
-                      </td>
+      <div role={threats ? 'tabpanel' : undefined} className="dash-cov-panel">
+        {meta && list.length === 0
+          ? <p className="dash-note good dash-meta-none"><Icon name="check" />{t('dash.threatsNone')}</p>
+          : (
+            <table ref={nav.ref} className={`dash-matrix${meta ? ' meta' : ''}`} aria-label={meta ? `${title}: ${t('dash.tabMeta')}` : title} aria-describedby={summaryId} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
+              <thead>
+                <tr>
+                  <td />
+                  {meta
+                    ? (
+                      <>
+                        {shownThreats.map(x => (
+                          <th key={x.species} scope="col" title={x.species} className={`dash-thr-head ${x.status}`}>
+                            <span className="dash-thr-box"><PokemonIcon name={x.species} /></span>
+                            <span className="visually-hidden">{x.species}</span>
+                          </th>
+                        ))}
+                        {hiddenThreats.length > 0 && (
+                          <th scope="col" className="dash-thr-more" data-nav="" tabIndex={-1}
+                            aria-label={t('dash.threatsMoreSr', { n: hiddenThreats.length, list: hiddenThreats.map(x => `${x.species} (${word(x)})`).join(', ') })}
+                            onClick={() => { moreTip.close(); openThreat('defense'); }}
+                            onMouseEnter={e => moreTip.open(true, e.currentTarget)} onMouseLeave={moreTip.close}
+                            onFocus={e => { if (keyboardFocus(e.currentTarget)) moreTip.open(true, e.currentTarget); }} onBlur={moreTip.close}>
+                            <span aria-hidden="true">{t('dash.threatsMore', { n: hiddenThreats.length })}</span>
+                          </th>
+                        )}
+                        {Array.from({ length: empties }, (_, i) => <th key={`e${i}`} aria-hidden="true" />)}
+                      </>
+                    )
+                    : coverage.cells.map((cell, i) => (
+                      <th key={cell.type} scope="col" title={names[i]}>
+                        <TypeIcon type={cell.type} />
+                        <span className="visually-hidden">{names[i]}</span>
+                      </th>
                     ))}
-                    {hiddenThreats.length > 0 && (
-                      <td className="dash-thr more" data-nav="" tabIndex={-1}
-                        aria-label={t('dash.threatsMoreSr', { n: hiddenThreats.length, list: hiddenThreats.map(x => `${x.species} (${word(x)})`).join(', ') })} aria-describedby={goIds.defense}
-                        onClick={() => { moreTip.close(); openThreat(); }} onKeyDown={onKey(() => openThreat())}
-                        onMouseEnter={e => moreTip.open(true, e.currentTarget)} onMouseLeave={moreTip.close}
-                        onFocus={e => { if (keyboardFocus(e.currentTarget)) moreTip.open(true, e.currentTarget); }} onBlur={moreTip.close}>
-                        <span aria-hidden="true">{t('dash.threatsMore', { n: hiddenThreats.length })}</span>
-                      </td>
-                    )}
-                    {Array.from({ length: cols - shownThreats.length - (hiddenThreats.length ? 1 : 0) }, (_, i) => <td key={`empty${i}`} className="dash-thr empty" aria-hidden="true" />)}
-                  </>
-                )}
-            </tr>
+                </tr>
+              </thead>
+              <tbody>
+                {/* data-label: sul telefono la tabella va su due file da 9 colonne e la seconda ripete il nome della riga */}
+                {meta
+                  ? <>{threatRow('offense', offense)}{threatRow('defense', defense)}</>
+                  : (
+                    <>
+                      <tr data-label={offense}>
+                        <th scope="row">{offense}</th>
+                        {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`}
+                          onEnter={el => tip.open({ side: 'offense', i }, el)} onLeave={tip.close} />)}
+                      </tr>
+                      <tr data-label={defense}>
+                        <th scope="row">{defense}</th>
+                        {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`}
+                          onEnter={el => tip.open({ side: 'defense', i }, el)} onLeave={tip.close} />)}
+                      </tr>
+                    </>
+                  )}
+              </tbody>
+            </table>
           )}
-        </tbody>
-      </table>
-      {/* Dove porta il clic delle minacce, per i lettori di schermo */}
-      {list.length > 0 && (['defense', 'offense'] as const).map(side => <span key={side} id={goIds[side]} hidden>{goText(t, places[side])}</span>)}
+      </div>
+      {/* Dove porta il clic sulle minacce, per i lettori di schermo */}
+      {threats && (['defense', 'offense'] as const).map(side => <span key={side} id={goIds[side]} hidden>{goText(t, places[side])}</span>)}
       {thrTip.anchor && tipThreat && (
         <FloatTip rect={thrTip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
           <div className="ftip-head">
@@ -169,19 +209,19 @@ export function CoverageSection({ coverage, threats, onView }: {
             <b>{tipThreat.species}</b>
             <span className="thr-tip-use">{usage(tipThreat)}</span>
           </div>
-          {/* Ogni ragione col suo lato: lo scudo per la Difesa (reggerla), la spada per l'Offesa (mandarla KO) */}
+          {/* I due lati, quello della casella per primo: lo scudo per la Difesa (reggerla), la spada per l'Offesa (mandarla KO) */}
           <ul className="thr-tip-why sided">
-            {reasonText(tipThreat).map((line, i) => {
-              const side = tipThreat.reasons[i].side;
+            {([thrTip.anchor.key.side, thrTip.anchor.key.side === 'defense' ? 'offense' : 'defense'] as const).map(side => {
+              const state = stateOf(tipThreat, side);
               return (
-                <li key={line} className={tipThreat.reasons[i].by.length ? 'thin' : 'open'}>
+                <li key={side} className={state === 'bad' ? 'open' : state === 'minor' ? 'thin' : 'ok'}>
                   <Icon name={side === 'defense' ? 'shield' : 'sword'} />
-                  <b>{t(side === 'defense' ? 'area.defense' : 'area.strength')}</b> {line}
+                  <b>{t(side === 'defense' ? 'area.defense' : 'area.strength')}</b> {sideText(tipThreat, side)}
                 </li>
               );
             })}
           </ul>
-          <TipGo place={places[sideOf(tipThreat)]} />
+          <TipGo place={places[thrTip.anchor.key.side]} />
         </FloatTip>
       )}
       {moreTip.anchor && (
