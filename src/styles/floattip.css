@@ -467,20 +467,23 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 .ftip.hint::before { display: none; }
 
 /* Il set consigliato si misura da sé: in un dettaglio stretto (sotto i 540px) i dati del set non stanno più accanto
-   all'esagono senza stringersi, e l'esagono se ne va (le statistiche sono nell'editor): mosse e dati del set affiancati.
-   Sotto i 340px (telefono) i dati del set vanno sotto le mosse, a coppie nome e valore */
+   all'esagono senza stringersi, e l'esagono se ne va (le statistiche sono nell'editor). Sopra i dati del set a due
+   colonne (Strumento e Abilità, Natura ed EV; col nome sopra il valore), sotto le quattro mosse due per riga.
+   Sotto i 340px (telefono) le mosse una per riga */
 .detail-sec.set-sec { container: setsec / inline-size; }
 @container setsec (max-width: 539px) {
   .detail .set-line .mcard-hex { display: none; }
-  /* Mosse e dati del set alti uguali: le quattro mosse si distribuiscono dall'inizio di Strumento alla fine degli EV */
-  .detail .set-line { grid-template-columns: minmax(150px, 180px) minmax(0, 1fr); align-items: stretch; }
-  .detail .set-line .mcard-moves { align-content: space-between; }
-  /* Mosse a sinistra, dati del set spinti a destra (lo spazio libero in mezzo, come uno space-between) */
-  .detail .set-line .mcard-kit { margin-left: 0; justify-self: end; max-width: 100%; }
+  .detail .set-line { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
+  .detail .set-line .mcard-kit { order: -1; margin-left: 0; padding: 0; grid-template-columns: none; grid-template-rows: repeat(4, auto);
+    grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0 var(--sp-6); }
+  .detail .set-line .mcard-kit small:nth-of-type(2n) { margin-top: var(--sp-3); }
+  /* Con la Tera (Gen 9) cinque dati: a sinistra Strumento, Abilità e Natura, a destra EV e Tera */
+  .detail .set-line .mcard-kit:has(> small:nth-of-type(5)) { grid-template-rows: repeat(6, auto); }
+  .detail .set-line .mcard-kit:has(> small:nth-of-type(5)) small:nth-of-type(n) { margin-top: var(--sp-3); }
+  .detail .set-line .mcard-kit:has(> small:nth-of-type(5)) small:is(:nth-of-type(1), :nth-of-type(4)) { margin-top: 0; }
+  .detail .set-line .mcard-moves { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-3) var(--sp-4); }
 }
 @container setsec (max-width: 339px) {
-  .detail .set-line { grid-template-columns: minmax(0, 240px); }
-  .detail .set-line .mcard-kit { grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--sp-2) var(--sp-4); padding-left: 0; }
-  .detail .set-line .mcard-kit small { margin-top: 0; }
+  .detail .set-line .mcard-moves { grid-template-columns: minmax(0, 1fr); }
 }
 
