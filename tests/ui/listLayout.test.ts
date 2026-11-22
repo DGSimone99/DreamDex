@@ -4,13 +4,15 @@ import { cardsColumns, cardsLayout, cardsListWidth, cardsMinTile, cardsWidth } f
 // Larghezze di .picker (lista + dettaglio) alle misure di riferimento: 1440 → 1182, 1366 → 1132, 1280 → 1046,
 // 1100 compatto → 866, 1920 → 1662
 describe('cardsLayout (Box)', () => {
-  it('colonne dalla larghezza della scheda: 3 sotto 1000, 5 da 1500, sennò 4', () => {
+  it('colonne dalla larghezza della scheda: 3 sotto 1000, 4 fino a 1500, 5 fino a 1600, poi 6', () => {
     expect(cardsColumns(866)).toBe(3);
     expect(cardsColumns(999)).toBe(3);
     expect(cardsColumns(1000)).toBe(4);
     expect(cardsColumns(1182)).toBe(4);
     expect(cardsColumns(1499)).toBe(4);
     expect(cardsColumns(1500)).toBe(5);
+    expect(cardsColumns(1599)).toBe(5);
+    expect(cardsColumns(1662)).toBe(6);
     expect(cardsColumns(0)).toBe(4);
   });
   it('larghezza della carta e della lista', () => {
@@ -20,7 +22,7 @@ describe('cardsLayout (Box)', () => {
     // 4 × 150 + 3 × 8 + 2 × 14 + 2
     expect(cardsListWidth(1182)).toBe(654);
     expect(cardsListWidth(1046)).toBe(4 * 140 + 3 * 8 + 28 + 2);
-    expect(cardsListWidth(1662)).toBe(5 * 150 + 4 * 8 + 28 + 2);
+    expect(cardsListWidth(1662)).toBe(6 * 150 + 5 * 8 + 28 + 2);
   });
   it('carta minima: 166 px con 2 motivi, 182 con 3', () => {
     expect(cardsMinTile(2)).toBe(166);
@@ -34,8 +36,13 @@ describe('cardsLayout (Box)', () => {
     expect(cardsLayout(260, false, 1046)).toMatchObject({ rows: 1, perPage: 4 });
     expect(cardsLayout(404, true, 1046)).toMatchObject({ rows: 2, perPage: 8, tileHeight: 184 });
   });
-  it('mai più di 3 file, mai carte oltre 232 px', () => {
-    expect(cardsLayout(2000, true, 1182)).toMatchObject({ rows: 3, tileHeight: 232 });
+  it('mai più di 4 file, mai carte oltre 232 px; la quarta solo con carte da 196 px', () => {
+    expect(cardsLayout(2000, true, 1182)).toMatchObject({ rows: 4, tileHeight: 232 });
+    // 1920×1080 col team nascosto: 4 file da 205
+    expect(cardsLayout(874, true, 1662)).toMatchObject({ rows: 4, perPage: 24, tileHeight: 205 });
+    // 4 × 196 + 3 × 8 + 28 = 836: sotto restano 3 file
+    expect(cardsLayout(835, true, 1662)).toMatchObject({ rows: 3 });
+    expect(cardsLayout(836, true, 1662)).toMatchObject({ rows: 4, tileHeight: 196 });
   });
   it('motivi: 2 col team aperto, 3 col team nascosto', () => {
     expect(cardsLayout(400, false).reasons).toBe(2);
