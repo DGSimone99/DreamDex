@@ -27,6 +27,12 @@ export const CARDS_FOURTH_ROW_TILE = 196;
 export const CARDS_WIDE_W = 150;
 export const CARDS_NARROW_W = 140;
 
+/** Spazio fra la lista e il dettaglio (CSS .picker.has-detail) e larghezza minima del dettaglio: sotto, Perché e Set
+ *  non stanno più affiancati e il dettaglio finisce a linguette. Una colonna di carte in meno piuttosto che un dettaglio
+ *  stretto (1280: 3 colonne anche col team nascosto). */
+export const DETAIL_GAP = 16;
+export const DETAIL_MIN_W = 500;
+
 /** Carta bassa senza motivi (solo nome e sprite da 64 px): per avere 2 file dove ne entrerebbe una sola. */
 export const CARDS_SHORT_TILE = 120;
 
@@ -65,6 +71,9 @@ export function cardsLayout(height: number, teamCollapsed: boolean, pickerWidth 
   // Schermi bassi col team aperto: con i motivi entrerebbe una fila sola; senza, le carte si abbassano e le file sono 2,
   // da 3 carte al massimo: il dettaglio accanto (stretto su questi schermi) prende la larghezza della quarta colonna
   if (h && rows === 1 && fit(CARDS_SHORT_TILE) >= 2) { reasons = 0; rows = 2; columns = Math.min(columns, 3); }
+  // Il dettaglio accanto almeno largo DETAIL_MIN_W, col team aperto o nascosto: mai meno spazio chiudendo il team
+  const w = num(pickerWidth);
+  while (w && columns > 3 && w - cardsListWidth(w, columns) - DETAIL_GAP < DETAIL_MIN_W) columns--;
   const tileHeight = h ? clamp(Math.floor((h - 2 * CARDS_PAD - (rows - 1) * CARDS_GAP) / rows), 0, CARDS_MAX_TILE) : 0;
   return { columns, rows, perPage: columns * rows, tileHeight, reasons, listWidth: cardsListWidth(pickerWidth, columns) };
 }

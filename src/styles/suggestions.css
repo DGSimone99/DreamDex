@@ -676,6 +676,10 @@ aside.detail .detail-cols { display: grid; grid-template-columns: minmax(0, 1fr)
 @container dbody (min-width: 440px) {
   aside.detail .detail-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: var(--sp-9); }
 }
+/* Dettaglio sui 500 px (1366, 1440 col team aperto): più posto al set, così i suoi dati restano in due colonne coi nomi */
+@container dbody (min-width: 440px) and (max-width: 599px) {
+  aside.detail .detail-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+}
 aside.detail.compact .detail-cols { padding-block: var(--sp-5); }
 
 /* Le aree nella testata, sotto "B 79 → A 88": il nome corto e il verso (su, uguale, giù), mai il numero */
@@ -725,13 +729,13 @@ aside.detail .detail-why .visually-hidden { position: absolute; margin: 0; paddi
 .detail-run > * { width: 100%; box-sizing: border-box; }
 aside.detail .detail-run .mcard-kit { display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, auto); grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: minmax(0, 1fr); align-items: baseline; gap: 1px var(--sp-7); padding: 0; border: 0; font-size: var(--fs-small); }
 aside.detail .detail-run .mcard-kit > small:nth-child(4n + 3) { margin-top: var(--sp-4); }
-aside.detail .detail-run .mcard-kit > span { max-width: 100%; }
+aside.detail .detail-run .mcard-kit > span { max-width: 100%; white-space: normal; }
 aside.detail .detail-run .mcard-kit > span > .item-icon { vertical-align: -1px; }
 .detail-run .mcard-moves { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); min-width: 0; }
 @container drun (min-width: 520px) { .detail-run .mcard-moves { grid-template-columns: 1fr 1fr; } }
 /* Colonna del set stretta: i dati come testo che va a capo, senza nomi (in due colonne natura ed EV si tagliavano,
    uno sotto l'altro non entravano) */
-@container drun (max-width: 279px) {
+@container drun (max-width: 259px) {
   aside.detail .detail-run .mcard-kit { display: block; line-height: 1.45; }
   aside.detail .detail-run .mcard-kit > small { display: none; }
   aside.detail .detail-run .mcard-kit > span { display: inline; white-space: normal; }
@@ -747,11 +751,13 @@ aside.detail .detail-run .mcard-kit > span > .item-icon { vertical-align: -1px; 
 .mcard-roles .fresh { color: var(--good); font-weight: 700; }
 .mcard-roles .fresh b { margin-right: 1px; }
 
-/* Basso (portatile col team aperto): niente esagono, i dati del set su una riga sola */
-aside.detail.compact .detail-run { gap: var(--sp-4); }
-aside.detail.compact .detail-run .mcard-kit { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Basso (portatile col team aperto): i dati del set come testo su due righe al massimo (su una gli EV si tagliavano);
+   le mosse più vicine per fargli posto */
+aside.detail.compact .detail-run { gap: var(--sp-3); }
+aside.detail.compact .detail-run .mcard-moves { gap: 1px; }
+aside.detail.compact .detail-run .mcard-kit { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.3; white-space: normal; }
 aside.detail.compact .detail-run .mcard-kit > small { display: none; }
-aside.detail.compact .detail-run .mcard-kit > span { display: inline; }
+aside.detail.compact .detail-run .mcard-kit > span { display: inline; white-space: normal; }
 aside.detail.compact .detail-run .mcard-kit > span:not(:nth-child(2))::before { content: ' · '; color: var(--faint); font-weight: 400; }
 aside.detail.compact .detail-run .mcard-kit .kit-nature { display: none; }
 /* Linguette (il corpo non entra): una parte alla volta, a tutta larghezza */

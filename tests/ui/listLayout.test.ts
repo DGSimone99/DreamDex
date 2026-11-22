@@ -38,8 +38,16 @@ describe('cardsLayout (Box)', () => {
     // 1366×657: 2 file da 139
     expect(cardsLayout(315, false, 1132)).toMatchObject({ columns: 3, rows: 2, reasons: 0, tileHeight: 139 });
     // Troppo basso anche per 2 carte basse: una fila coi motivi
-    expect(cardsLayout(260, false, 1046)).toMatchObject({ rows: 1, perPage: 4, reasons: 2 });
-    expect(cardsLayout(404, true, 1046)).toMatchObject({ rows: 2, perPage: 8, tileHeight: 184 });
+    expect(cardsLayout(260, false, 1046)).toMatchObject({ rows: 1, perPage: 3, reasons: 2 });
+    // 1280×620 col team nascosto: 3 colonne come col team aperto, il dettaglio resta largo (1046 − 466 − 16 = 564)
+    expect(cardsLayout(404, true, 1046)).toMatchObject({ columns: 3, rows: 2, perPage: 6, tileHeight: 184, listWidth: 466 });
+  });
+  it('il dettaglio mai sotto 500 px: una colonna in meno', () => {
+    // 1280×800: 4 colonne lascerebbero 416 px
+    expect(cardsLayout(594, true, 1046).columns).toBe(3);
+    // 1366 e 1440 restano a 4 (502 e 512 px)
+    expect(cardsLayout(475, true, 1132).columns).toBe(4);
+    expect(cardsLayout(694, true, 1182).columns).toBe(4);
   });
   it('mai più di 4 file, mai carte oltre 232 px; la quarta solo con carte da 196 px', () => {
     expect(cardsLayout(2000, true, 1182)).toMatchObject({ rows: 4, tileHeight: 232 });
