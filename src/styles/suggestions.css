@@ -566,8 +566,11 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Nome con la forma (Charizard + MEGA Y): la specie base intera, la forma un'etichetta che cede per prima */
 .pick-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .pick-name b { flex: none; font: 800 var(--fs-title-s)/1.15 var(--display); font-style: italic; white-space: nowrap; }
-/* Sulle carte niente etichetta della forma (sta nel dettaglio e nel fumetto): solo Mega e Primal col loro simbolo, e la
-   lettera quando le Mega sono due (Charizard X / Y) */
+/* La forma accanto al nome, piccola come la lettera delle Mega (Zapdos GALAR): due carte con lo stesso nome si
+   distinguono. Se manca spazio si accorcia lei, mai il nome. Mega e Primal hanno invece il loro simbolo, con la lettera
+   quando le Mega sono due (Charizard X / Y) */
+.pick-name .pick-forme { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 700 var(--fs-label)/1 var(--display); font-style: italic; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 .pick-name .mega-mark { display: inline-flex; flex: none; align-items: center; gap: 1px; color: var(--accent-ink); font: 800 var(--fs-label)/1 var(--display); font-style: italic; }
 .pick-name .mega-mark .mega-icon { display: block; width: 15px; height: 15px; }
 .card .who small { display: flex; flex-direction: column; align-items: stretch; gap: calc(2px + var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }

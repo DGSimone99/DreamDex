@@ -413,13 +413,13 @@ export function PickButton({ rank, species, selected, onSelect, onAction }: { ra
     <button type="button" className="pick" aria-pressed={selected} {...hint(parts ? species : undefined)} onClick={e => { e.stopPropagation(); onSelect(); }}
       aria-keyshortcuts={onAction ? 'Shift+Enter' : undefined}
       onKeyDown={e => { if (onAction && e.key === 'Enter' && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); onAction(); } }}>
-      {/* Il nome intero per lettori di schermo (e test); a vista solo la specie base: la forma sta nel dettaglio e nel
-          fumetto. Mega e Primal hanno il loro simbolo (con X/Y quando servono) */}
+      {/* Il nome intero per lettori di schermo (e test); a vista la specie base e la forma accanto, piccola (Zapdos GALAR):
+          due carte con lo stesso nome si distinguono. Mega e Primal hanno il loro simbolo (con X/Y quando servono) */}
       <strong className={parts ? 'visually-hidden' : undefined}><span className="visually-hidden">{rank}. </span>{species}</strong>
       {parts && (
         <span className="pick-name" aria-hidden="true">
           <b>{parts.base}</b>
-          {mega && <span className="mega-mark"><MegaIcon />{mega.letter}</span>}
+          {mega ? <span className="mega-mark"><MegaIcon />{mega.letter}</span> : <i className="pick-forme">{parts.forme}</i>}
         </span>
       )}
     </button>
