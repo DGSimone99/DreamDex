@@ -22,6 +22,7 @@ import { Icon } from './icons';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SetMenu } from './SetMenu';
 import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
+import { useSwipeTabs } from './useSwipeTabs';
 import { typeTextColor } from './TypeText';
 import { MoveTail, moveTint } from './MovePill';
 import { CategoryIcon } from './CategoryIcon';
@@ -397,6 +398,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     if (drawer) drawer.scrollTop = 0;
     if (focus) requestAnimationFrame(() => document.getElementById(`${tabsId}-tab-${id}`)?.focus());
   };
+  // Strisciare col dito a destra o a sinistra cambia scheda: la vecchia esce nel verso del dito, la nuova entra
+  // dall'altro lato (useSwipeTabs); la testata resta ferma
+  const editorRef = useRef<HTMLDivElement>(null);
+  const tabAt = phoneTabs.findIndex(tab => tab.id === phoneTab);
+  useSwipeTabs(editorRef, {
+    enabled: phone, hasPrev: tabAt > 0, hasNext: tabAt < phoneTabs.length - 1, parts: ':scope > :not(.editor-head)',
+    onSwipe: dir => { const next = phoneTabs[tabAt + dir]; if (next) pickTab(next.id); },
+  });
   const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
     const at = phoneTabs.findIndex(tab => tab.id === phoneTab);
     const next = e.key === 'ArrowRight' ? (at + 1) % phoneTabs.length : e.key === 'ArrowLeft' ? (at - 1 + phoneTabs.length) % phoneTabs.length
@@ -435,7 +444,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const flagCount = (flags?.item ? 1 : 0) + (flags?.ability ? 1 : 0) + (flags?.moves?.filter(Boolean).length ?? 0);
 
   return (
-    <div className="set-editor" data-tab={phone ? phoneTab : undefined}>
+    <div className="set-editor" ref={editorRef} data-tab={phone ? phoneTab : undefined}>
       <div className="editor-head">
         <div className="editor-top">
           {title}
