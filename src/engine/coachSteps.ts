@@ -1,6 +1,7 @@
 import type { CoachProblem, ProblemCategory } from './coach';
 import type { CoachFix } from './coachFixes';
 import type { MoveFix } from './moveFixes';
+import { netGain } from './teamGain';
 
 
 /**
@@ -63,7 +64,7 @@ export function buildSteps(problems: CoachProblem[], fixes: CoachFix[], moves: M
     .map((problem, i) => ({ problem, i, gain: best(problem.key) }))
     .sort((a, b) => Number(b.problem.severity === 'serious') - Number(a.problem.severity === 'serious') || b.gain - a.gain || a.i - b.i)
     .map(x => x.problem);
-  const byGain = <T extends { gain: number }>(items: T[]) => [...items].sort((a, b) => b.gain - a.gain);
+  const byGain = <T extends { gain: number; penalty?: number }>(items: T[]) => [...items].sort((a, b) => netGain(b) - netGain(a));
   const sortedFixes = byGain(fixes);
   const sortedMoves = byGain(moves);
 

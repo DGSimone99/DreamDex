@@ -7,7 +7,8 @@ import { isOneType, rulesOf, type FormatRules } from './formatRules';
 import { rateTeam, type TeamRating } from './rating';
 import { rolesTally } from './rolesArea';
 import type { TeamSet } from './sets';
-import { lostResistances, type LostRole } from './swapGuard';
+import type { LevelKey } from './roleLevels';
+import { HELPER_PENALTY, lostHelpers, lostResistances, type LostRole } from './swapGuard';
 import type { TypeName } from './types';
 
 /** Voto del team col candidato e quanto cambia rispetto a ora. */
@@ -19,6 +20,8 @@ export interface TeamGain {
   lost?: LostRole[];
   /** Quanto il cambio scende in classifica per le voci perse (solo l'ordine, non il voto). */
   penalty?: number;
+  /** I ruoli d'aiuto che il voto non misura (Danno nel Tempo, Disruptor, Pivot…) e che il team perde col cambio (swapGuard.ts). */
+  lostHelpers?: LevelKey[];
   /** Tipi a cui nessuno resiste più dopo il cambio. */
   lostResists?: TypeName[];
   /** Con un tipo scelto e un team di 6 non ancora di quel tipo: il cambio lo porta a quel tipo. */
@@ -176,6 +179,9 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
     if (!fits(after, candidate, original)) return 'excluded';
     const rating = rateTeam(after, data, lang);
     if (!rating) return null;
+    const pivot = hasPivotBonus(rating) !== hasPivotBonus(before) ? (hasPivotBonus(rating) ? 'gained' as const : 'lost' as const) : null;
+    // Ruoli d'aiuto persi (solo nel singolo): il cambio scende in classifica. Il pivot che perde il suo bonus paga già un punto vero
+    const helpers = isOneType(rules) ? [] : lostHelpers(before, rating).filter(key => !(key === 'pivot' && pivot === 'lost'));
     return {
       rating,
       gain: {
@@ -187,7 +193,8 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         roles: rolesDelta(before, rating),
         typeShift: typeShiftOf(before, rating),
         after: areaSnapshot(rating),
-        ...(hasPivotBonus(rating) !== hasPivotBonus(before) && { pivot: hasPivotBonus(rating) ? 'gained' as const : 'lost' as const }),
+        ...(pivot && { pivot }),
+        ...(helpers.length > 0 && { lostHelpers: helpers, penalty: helpers.length * HELPER_PENALTY }),
       },
     };
   };
@@ -275,6 +282,9 @@ export function computeGains(jobs: GainJob[], data: EngineData, lang: Lang, arch
 export interface SwapReport {
   excluded: number;
 }
+
+/** I punti in più di un cambio per chi decide se proporlo: quelli veri meno la penalità per i ruoli d'aiuto persi. */
+export const netGain = (change: { gain: number; penalty?: number } | undefined): number => (change ? change.gain - (change.penalty ?? 0) : 0);
 
 /** Chiave dell'ordine: il voto dopo il cambio, meno la penalità per le voci perse. */
 export const rankKey = (gain: TeamGain | undefined) => (gain ? gain.overall - (gain.penalty ?? 0) : -1);

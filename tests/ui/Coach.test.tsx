@@ -384,6 +384,18 @@ describe('CoachingView', () => {
     expect(h.onMoveFix).toHaveBeenLastCalledWith(move);
   });
 
+  it('un cambio che lascia il team senza un ruolo d\'aiuto lo dice sulla riga: "Perdi Danno nel Tempo"; gli altri no', () => {
+    const move: MoveFix = { index: 0, member: 'Great Tusk', set: six[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 6, solves: [zapdos.key], after: before,
+      lostHelpers: ['dot', 'phazer'], penalty: 2 };
+    view(advice([swap('Rotom-Wash', 4, 2, [fire.key])], [move]));
+    const [lossy, clean] = rows();
+    expect(lossy).toHaveClass('is-move');
+    expect(lossy.querySelector('.coach-lost')).toHaveTextContent('PerdiDanno nel Tempo, Anti-setup');
+    // Il voto mostrato resta quello vero
+    expect(lossy.querySelector('.coach-gain')).toHaveTextContent('+6');
+    expect(clean.querySelector('.coach-lost')).toBeNull();
+  });
+
   it('aperto su un problema dalla testata di un\'area: la pagina della prima riga che lo risolve, in vista e accesa per 2 secondi', () => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;

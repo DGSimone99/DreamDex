@@ -114,6 +114,20 @@ describe('keepMoveFixes', () => {
     expect(kept).toEqual(['zeroSolves', 'up']);
   });
 
+  it('un ruolo d\'aiuto perso toglie un punto al voto in più: il +1 vale come un pari, il +3 resta', () => {
+    const run = (items: { to: string; gain: number; penalty?: number; d: Delta }[]) =>
+      keepMoveFixes(items, c => c.d, MOVE_FIXES_PER_MEMBER).map(c => c.to);
+    // Toxic → un attacco per +1: non si propone; Toxic → Defog per +3 (risolve il controllo hazard): sì, e col suo +3
+    expect(run([
+      { to: 'defog', gain: 3, penalty: 1, d: delta(['removal']) },
+      { to: 'attack', gain: 1, penalty: 1, d: delta() },
+    ])).toEqual(['defog']);
+    // A pari netto si propone solo se risolve qualcosa senza problemi nuovi
+    expect(run([{ to: 'solves', gain: 1, penalty: 1, d: delta(['a']) }])).toEqual(['solves']);
+    // Chi non perde niente passa davanti a chi perde un ruolo a parità di voto vero
+    expect(run([{ to: 'keeps', gain: 2, d: delta() }, { to: 'loses', gain: 3, penalty: 2, d: delta() }])).toEqual(['keeps', 'loses']);
+  });
+
   it('il limite per membro dopo il filtro: chi risolve prima di chi no, poi dal voto più alto', () => {
     const { kept } = keep([
       { to: 'p3', gain: 3, d: delta() }, { to: 'p2', gain: 2, d: delta() }, { to: 'p1', gain: 1, d: delta() },
