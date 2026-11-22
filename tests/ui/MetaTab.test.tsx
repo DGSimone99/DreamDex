@@ -9,6 +9,17 @@ import { LangProvider } from '../../src/i18n/react';
 const grid = () => screen.getByRole('list', { name: 'Pokémon del meta' });
 
 describe('scheda Meta', () => {
+  it('nella griglia del meta solo la carta scelta ha la luce, ognuna ha la sua pedana', async () => {
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    const cards = () => within(grid()).getAllByRole('listitem');
+    for (const card of cards()) expect(card.querySelector('.pedana-disc')).not.toBeNull();
+    expect(cards().map(card => card.classList.contains('beam-on'))).toEqual(cards().map((_, i) => i === 0));
+    await user.click(cards()[2]);
+    expect(cards().map(card => card.classList.contains('beam-on'))).toEqual(cards().map((_, i) => i === 2));
+    expect(cards()[0].style.getPropertyValue('--t2')).not.toBe('');
+  });
+
   it('griglia in ordine di uso con posizione, podio e i tuoi', () => {
     renderIt(<MetaTab team={[tusk]} data={fixtureData} />);
     const cards = within(grid()).getAllByRole('listitem');

@@ -279,7 +279,7 @@
   .band .slot :is(.favorite, .remove) { width: 44px; height: 44px; }
   .band .slot .favorite { right: 44px; }
   .list-head { --pager-h: 44px; }
-  .pager .step, .list-view-toggle { width: 44px; height: 44px; }
+  .pager .step { width: 44px; height: 44px; }
   .search-field .clear { right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
 }
 
@@ -1251,7 +1251,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .slot .name { --name-room: 0px; }
   .band:not(.collapsed) .slot > .slot-card > .ability { grid-column: 2; grid-row: 3; display: block; font-size: var(--fs-caption); }
   .band:not(.collapsed) .slot > .slot-card > .types { grid-column: 2; grid-row: 4; display: flex; margin: 0; }
-  .band:not(.collapsed) .slot > .slot-card > .roles { grid-column: 2; grid-row: 5; display: block; font-size: var(--fs-caption); line-height: 16px; }
   .band:not(.collapsed) .slot :is(.favorite, .remove) { top: 0; }
   .band:not(.collapsed) .slot .favorite { top: auto; bottom: 2px; right: 0; }
 }
@@ -1313,7 +1312,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .slot > .slot-card > .name-line { grid-column: 2; grid-row: 2; margin: 0; }
   .band:not(.collapsed) .slot > .slot-card > :is(.ability, .stats-badge) { display: none; }
   .band:not(.collapsed) .slot > .slot-card > .types { grid-column: 2; grid-row: 3; display: flex; margin: 0; }
-  .band:not(.collapsed) .slot > .slot-card > .roles { grid-column: 2; grid-row: 3; display: block; margin-left: 46px; font-size: var(--fs-caption); line-height: 18px; }
   .band:not(.collapsed) .slot .favorite { display: none; }
   /* Il triangolo d'avviso in fondo alla riga del nome (non sopra la riga) */
   .band:not(.collapsed) .slot .slot-alerts { position: static; margin-left: var(--sp-3); }

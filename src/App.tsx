@@ -27,7 +27,7 @@ import type { MoveFix } from './engine/moveFixes';
 import { Rail } from './ui/Rail';
 import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadListSprite, loadLists, loadPalette, loadFormatMemory, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveFormatMemory, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
+import { loadLang, loadLists, loadPalette, loadFormatMemory, loadSession, loadTab, loadTeamCollapsed, saveLang, saveFormatMemory, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { CreditsDialog } from './ui/CreditsDialog';
 import { FeedbackDialog } from './ui/FeedbackDialog';
@@ -35,12 +35,14 @@ import { EMPTY_LISTS, effectiveLists, listContext, type UserLists } from './engi
 import { formatPercent, t, type Lang } from './i18n';
 import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
+import { RulesContext } from './ui/rulesContext';
+import { formatRules } from './engine/formatRules';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { TouchTips } from './ui/TouchTips';
 import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
-import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
+import { paletteFor, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
 import { SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
 import { SHEET_QUERY } from './ui/useAnchoredPop';
@@ -93,12 +95,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setPalette(next);
     if (storage) savePalette(next, storage);
   };
-  // Lista candidati: sprite (normale/icona box), salvato come la palette
-  const [listSprite, setListSprite] = useState<ListSprite>(() => (storage ? loadListSprite(storage) : null) ?? 'normal');
-  const changeListSprite = (next: ListSprite) => {
-    setListSprite(next);
-    if (storage) saveListSprite(next, storage);
-  };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const closeCredits = useCallback(() => setCreditsOpen(false), []);
@@ -112,10 +108,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
   }, []);
-  // Con le icone del box, il foglio di sprite di Showdown si scarica in anticipo (una volta sola)
-  useEffect(() => {
-    if (listSprite === 'box') new Image().src = 'https://play.pokemonshowdown.com/sprites/pokemonicons-sheet.png';
-  }, [listSprite]);
   useEffect(() => {
     document.documentElement.dataset.palette = paletteFor(palette, format.formatId, format.game);
   }, [palette, format.formatId, format.game]);
@@ -390,11 +382,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione),
   // col nome che ha sulla carta (il soprannome, o la forma Mega)
   const editing = editingIndex !== null ? team[editingIndex] : undefined;
+  // Le regole del formato per la carta del tooltip (la lista dei ruoli del set)
+  const shownRules = useMemo(() => formatRules(data.formatId), [data.formatId]);
   const withEditing = <T extends { id: string; status?: React.ReactNode; hint?: string }>(tabs: T[]): T[] => editing
     ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.name || battleName(editing) })}</span>, hint: t(lang, 'rail.editing', { species: editing.name || battleName(editing) }) } : tab))
     : tabs;
   return (
     <LangProvider lang={lang}>
+    <RulesContext.Provider value={shownRules}>
     <div className="app">
       {/* Per chi usa la tastiera: il primo Tab mostra questo link, che salta la barra laterale */}
       <a className="skip-link" href="#main-content" onClick={e => {
@@ -493,8 +488,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focus={candidateFocus}
             onTarget={setReplaceIndex}
             focusSearch={searchRequest}
-            listSprite={listSprite}
-            onListSpriteChange={changeListSprite}
             teamCollapsed={sectionsCollapsed}
           />
         </TabPanel>
@@ -519,7 +512,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       </div>
       </div>
-      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listSprite={listSprite} onListSpriteChange={changeListSprite}
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette}
         onCredits={() => { setSettingsOpen(false); setCreditsOpen(true); }}
         onFeedback={() => { setSettingsOpen(false); setFeedbackOpen(true); }} onClose={closeSettings} />}
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
@@ -538,6 +531,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onUndo={() => { changeTeam(undo.before); if (undo.choice) setChoice(undo.choice); setUndo(null); }} />
       )}
     </div>
+    </RulesContext.Provider>
     </LangProvider>
   );
 }

@@ -284,12 +284,10 @@ describe("doppio: nell'app", () => {
     return within(within(slot).getByRole('group', { name: 'Ruoli' })).getAllByRole('listitem').map(li => li.textContent!).join(' · ');
   };
 
-  it('in doppio la carta di Incineroar mostra un ruolo del doppio (spiegato nel fumetto) e nei Ruoli Fake Out, Priorità e Pivot; niente ruoli del singolo', async () => {
+  it('in doppio Incineroar ha per primo un ruolo del doppio e nei Ruoli Fake Out, Priorità e Pivot; niente ruoli del singolo', async () => {
     const user = await start(true);
-    const roles = [...document.querySelectorAll<HTMLElement>('.slot .roles')][0];
-    expect(roles.textContent).toMatch(/^(Attaccante|Muro)$/);
-    expect(roles.getAttribute('data-hint')).toMatch(/^(Attaccante|Muro): /);
     const all = await rolesOf(user, 0);
+    expect(all.split(' · ')[0]).toMatch(/^(Attaccante|Muro)$/);
     for (const name of ['Fake Out', 'Priorità', 'Pivot']) expect(all).toContain(name);
     for (const name of ['Rimozione Strumenti', 'Sweeper', 'Wallbreaker', 'Muro Fisico']) expect(all).not.toContain(name);
     // Amoonguss: Redirector, non gli stati

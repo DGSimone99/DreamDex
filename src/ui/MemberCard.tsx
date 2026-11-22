@@ -1,5 +1,9 @@
 import { Icon } from './icons';
-import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react';
+import { useContext, type CSSProperties, type FocusEvent, type MouseEvent } from 'react';
+import { cardRoles } from '../engine/archetype';
+import type { FormatRules } from '../engine/formatRules';
+import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
+import { RulesContext } from './rulesContext';
 import { battleAbility, battleName, battleSpecies, dex } from '../engine/dex';
 import type { StatID, TeamSet } from '../engine/sets';
 import { statLines } from '../engine/statCalc';
@@ -11,6 +15,7 @@ import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
 import { typeIconUrl } from './typeIcons';
 import { kitTip } from './MoveTip';
+import { ItemIcon } from './ItemIcon';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
 const HEX_ORDER: StatID[] = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
@@ -75,7 +80,7 @@ export function MemberKit({ set, was }: { set: TeamSet; was?: TeamSet }) {
   const diff = (same: boolean) => (was && !same ? 'is-changed' : undefined);
   return (
     <div className="mcard-kit">
-      <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)} {...kitTip('item', set.item)}>{set.item ? anyGameName(set.item, lang) : '—'}</span>
+      <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)} {...kitTip('item', set.item)}>{set.item && <ItemIcon item={set.item} />}{set.item ? anyGameName(set.item, lang) : '—'}</span>
       <small>{t('mcard.nature')}</small>
       <span className={diff(was?.nature === set.nature)}>{set.nature ? natureName(set.nature, lang) : '—'}{nature?.plus && nature.minus && (
         // Le freccette di Champions; il segno resta nel testo per chi legge senza vedere
@@ -123,7 +128,35 @@ export function MemberMoves({ set, was, movesLabel, className = '' }: { set: Tea
 /** Un problema del membro (rosso non legale, giallo da controllare), detto nella carta: nel team compresso non c'è il triangolo. */
 export interface MemberAlert { level: 'danger' | 'warn'; text: string }
 
-export function MemberCard({ set, why, was, alerts }: { set: TeamSet; why?: ReactNode; was?: TeamSet; alerts?: MemberAlert[] }) {
+/**
+ * I ruoli del set in una riga semplice, in fondo alla carta: prima il principale (lo stesso delle carte del team), poi gli
+ * altri; la spiegazione di ognuno nel tooltip del nome. Le regole del formato dal contesto dell'app, o passate (il
+ * dettaglio dei candidati); senza regole niente riga.
+ */
+export function MemberRoles({ set, rules }: { set: TeamSet; rules?: FormatRules }) {
+  const t = useT();
+  const lang = useLang();
+  const fromApp = useContext(RulesContext);
+  const used = rules ?? fromApp;
+  if (!used) return null;
+  const main = cardRoles(set, used)[0];
+  const roles = [...(main ? [main] : []), ...shownRoles(detectRoles(set, used), used).filter(role => role !== main)];
+  if (!roles.length) return null;
+  return (
+    <p className="mcard-roles">
+      <small>{t('area.roles')}</small>
+      <span>
+        {roles.map((role, i) => (
+          <span key={role} title={role === 'weather' ? undefined : roleDescription(role, lang)}>
+            {i > 0 && ' · '}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
+          </span>
+        ))}
+      </span>
+    </p>
+  );
+}
+
+export function MemberCard({ set, was, alerts }: { set: TeamSet; was?: TeamSet; alerts?: MemberAlert[] }) {
   const species = battleSpecies(set);
   const types = (species?.types ?? []) as string[];
   return (
@@ -134,7 +167,6 @@ export function MemberCard({ set, why, was, alerts }: { set: TeamSet; why?: Reac
           {battleName(set)}
           {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}
         </span>
-        {why && <span className="mcard-why">{why}</span>}
       </div>
       {!!alerts?.length && (
         <ul className="mcard-alerts">
@@ -143,26 +175,27 @@ export function MemberCard({ set, why, was, alerts }: { set: TeamSet; why?: Reac
       )}
       <MemberKit set={set} was={was} />
       <MemberStatsMoves set={set} was={was} />
+      <MemberRoles set={set} />
     </>
   );
 }
 
 /**
  * La carta del Pokémon come tooltip DreamDex dove serve (Completa team, carte del team, candidati, Coaching, minacce):
- * `bind(set, why)` dà i gestori da mettere sull'elemento (mouse e fuoco), `tip` è il tooltip da rendere una volta.
+ * `bind(set)` dà i gestori da mettere sull'elemento (mouse e fuoco), `tip` è il tooltip da rendere una volta.
  * `delay`: quanto aspetta prima di aprirsi (più lungo dove il mouse passa spesso); `near`: il selettore dell'antenato
  * sotto cui aprirsi (la carta del team: sotto la carta intera, non sotto la sprite); `side`: di lato (le tabelle di
  * Analisi, così la carta non copre le righe sotto).
  */
 export function useMemberTip(delay?: number, near?: string, side?: boolean | 'left') {
-  const anchor = useFloatAnchor<{ set: TeamSet; why?: ReactNode; was?: TeamSet; alerts?: MemberAlert[] }>(delay);
-  const show = (set: TeamSet, why?: ReactNode, was?: TeamSet, alerts?: MemberAlert[]) => (e: MouseEvent<Element> | FocusEvent<Element>) =>
-    anchor.open({ set, why, was, alerts }, (near && e.currentTarget.closest(near)) || e.currentTarget);
-  const bind = (set: TeamSet, why?: ReactNode, was?: TeamSet, alerts?: MemberAlert[]) => ({ onMouseEnter: show(set, why, was, alerts), onMouseLeave: anchor.close, onFocus: show(set, why, was, alerts), onBlur: anchor.close });
+  const anchor = useFloatAnchor<{ set: TeamSet; was?: TeamSet; alerts?: MemberAlert[] }>(delay);
+  const show = (set: TeamSet, was?: TeamSet, alerts?: MemberAlert[]) => (e: MouseEvent<Element> | FocusEvent<Element>) =>
+    anchor.open({ set, was, alerts }, (near && e.currentTarget.closest(near)) || e.currentTarget);
+  const bind = (set: TeamSet, was?: TeamSet, alerts?: MemberAlert[]) => ({ onMouseEnter: show(set, was, alerts), onMouseLeave: anchor.close, onFocus: show(set, was, alerts), onBlur: anchor.close });
   const current = anchor.anchor;
   const tip = current && (
     <FloatTip rect={current.rect} tone={typeColor((battleSpecies(current.key.set)?.types[0] as string | undefined) ?? '')} className="member" side={side}>
-      <MemberCard set={current.key.set} why={current.key.why} was={current.key.was} alerts={current.key.alerts} />
+      <MemberCard set={current.key.set} was={current.key.was} alerts={current.key.alerts} />
     </FloatTip>
   );
   return { bind, tip, close: anchor.close };

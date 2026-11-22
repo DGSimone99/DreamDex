@@ -433,9 +433,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                     const changed = mine && proposal.changed.includes(j);
                     const favorite = !mine && isUserFavorite(set, data.userLists);
                     const title = changed ? changeText(team[j], set) : setTitle(set);
-                    const why = changed ? t('mcard.changed') : mine ? t('mcard.yours') : t('mcard.new');
                     return (
-                      <span key={`${set.species}#${j}`} {...memberTip.bind(set, why, changed ? team[j] : undefined)}
+                      <span key={`${set.species}#${j}`} {...memberTip.bind(set, changed ? team[j] : undefined)}
                         // I colori dei tipi: sul telefono la casella di un Pokémon nuovo prende il colore del suo tipo, come le carte del team
                         style={{ '--t1': typeColor(battleSpecies(set)?.types[0] ?? ''), '--t2': typeColor(battleSpecies(set)?.types[1] ?? battleSpecies(set)?.types[0] ?? '') } as CSSProperties}
                         data-tap-tip

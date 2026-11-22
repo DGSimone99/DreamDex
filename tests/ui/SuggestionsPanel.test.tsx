@@ -102,15 +102,15 @@ describe('SuggestionsPanel', () => {
     expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
     // Un'area a zero col team vuoto non sembra un errore: si legge "—"
     expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
-    // I ruoli del set nella lastra della testata, con la spiegazione nel tooltip
-    const slab = detail.querySelector('.detail-why')!;
-    expect(slab.getAttribute('aria-label')).toMatch(/^Ruoli del set: /);
-    expect(slab.getAttribute('title')).toBeTruthy();
+    // I ruoli del set in una riga semplice sotto il set (niente lastra in testata), la spiegazione nel tooltip del nome
+    expect(detail.querySelector('.detail-hero .mcard-why')).toBeNull();
+    expect(detail.querySelector('.set-sec .mcard-roles [title]')).not.toBeNull();
   });
 
-  it('mostra i tag sulle righe', async () => {
+  it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
     await setup('Great Tusk', 'Gholdengo');
-    expect(within(list()).getByText('Spesso usati insieme: Great Tusk (25%)')).toBeInTheDocument();
+    expect(within(list()).queryByText(/Spesso usati insieme/)).toBeNull();
+    expect(list().querySelector('.alert-mark .icon-spark, [data-icon="spark"]')).toBeNull();
   });
 
   it('Carte: pagine da 6, la seconda continua la numerazione', async () => {
@@ -623,9 +623,8 @@ describe('scheda del candidato', () => {
     expect(within(detail()).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
     expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
-    // Senza la versione estesa niente riga per area; col team chiuso c'è
-    expect(detail().querySelector('.detail-areas')).toBeNull();
-    // La riga per area c'è solo nella versione estesa (team chiuso)
+    // La riga per area c'è sempre, in cima, col team aperto e chiuso
+    expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
   }, 60000);
@@ -665,11 +664,11 @@ describe('stile Carte', () => {
     expect(list()).toHaveClass('cards');
     const first = list().querySelector<HTMLElement>('li')!;
     expect(first).toHaveClass('card');
-    // Tipi come icone tonde (decorative), il nome dei tipi nel tooltip; nessun chip
+    // Tipi come icone tonde (decorative), il nome di ognuno nel fumetto dell'icona; nessun chip
     const types = getSpecies(rowNames()[0])!.types;
     const icons = first.querySelector('.type-icons')!;
     expect(icons.querySelectorAll('img')).toHaveLength(types.length);
-    expect(icons).toHaveAttribute('title', types.map(type => typeName(type, 'it')).join(' / '));
+    expect([...icons.querySelectorAll('img')].map(img => img.getAttribute('data-hint'))).toEqual(types.map(type => typeName(type, 'it')));
     expect([...first.querySelectorAll('.type-chip')].filter(c => !c.closest('.reason'))).toHaveLength(0);
     // Quanto sale il voto, sulla targhetta in alto a sinistra
     expect(first.querySelector('.tag')!.textContent).toMatch(/^(\+\d+|−\d+|±0)$/);
@@ -704,46 +703,32 @@ describe('stile Carte', () => {
   });
 });
 
-describe('sprite Icona box', () => {
-  it('Icona box: la lista usa le icone del box', async () => {
-    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
-    const { renderIt } = await import('../helpers/italian');
-    const { tusk } = await import('../fixtures/data');
-    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="box" />);
-    const tiles = list().querySelectorAll('.card');
-    expect(tiles.length).toBeGreaterThan(0);
-    for (const tile of tiles) {
-      expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
-      expect(tile.querySelector('img.sprite')).toBeNull();
-    }
-  });
-
-  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato; con l’icona box mai la GIF', async () => {
+describe('sprite animato delle carte', () => {
+  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     const { fireEvent } = await import('@testing-library/react');
-    for (const listSprite of ['normal', 'box'] as const) {
+    {
       const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite={listSprite} />);
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
       const cards = [...list().querySelectorAll<HTMLElement>('.card')];
       expect(cards.length).toBeGreaterThan(1);
       const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
       // A riposo solo la selezionata (la prima)
       expect(cards[0].classList.contains('selected')).toBe(true);
-      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+      expect(animated()).toEqual([cards[0]]);
       vi.useFakeTimers();
       try {
         // Sotto il mouse lo sprite esce (e parte la GIF) solo dopo CARD_WAKE_MS fermi sulla carta
         fireEvent.mouseEnter(cards[1]);
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(animated()).toEqual([cards[0]]);
         expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
         act(() => { vi.advanceTimersByTime(CARD_WAKE_MS); });
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
+        expect(animated()).toEqual([cards[0], cards[1]]);
         expect(cards[1].querySelector('.card-sprite.popped')).not.toBeNull();
         fireEvent.mouseLeave(cards[1]);
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(animated()).toEqual([cards[0]]);
         expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
       } finally {
         vi.useRealTimers();
@@ -807,20 +792,18 @@ describe('sprite Icona box', () => {
     expect(cards[1].style.getPropertyValue('--wake')).toBe(`${CARD_WAKE_MS}ms`);
   });
 
-  it("la lastra della testata: il ruolo principale e quanti altri, l'elenco intero per i lettori di schermo e nel tooltip", async () => {
+  it('i ruoli del set: una riga sotto il set, tutti, senza doppioni, ognuno con la sua spiegazione', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="normal" />);
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
-    const slab = detail.querySelector('.detail-hero .detail-why')!;
-    const roles = slab.getAttribute('aria-label')!.replace('Ruoli del set: ', '').split(', ');
+    const line = detail.querySelector('.set-sec .mcard-roles')!;
+    const roles = [...line.querySelectorAll('span > span')].map(role => role.textContent!.replace(/^ · /, ''));
     expect(roles.length).toBeGreaterThan(0);
     expect(new Set(roles).size).toBe(roles.length);
-    // A vista il principale (il primo dell'elenco) e "+N" per gli altri
-    expect(slab.textContent).toBe(roles.length > 1 ? `${roles[0]} +${roles.length - 1}` : roles[0]);
-    expect(slab.getAttribute('title')).toBeTruthy();
+    expect(line.textContent).toBe(`Ruoli${roles.join(' · ')}`);
   });
 
   it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {
@@ -874,5 +857,65 @@ describe('nome dei candidati con la forma', () => {
     expect(formeParts('Ogerpon-Wellspring')).toEqual({ base: 'Ogerpon', forme: 'Wellspring' });
     expect(formeParts('Urshifu-Rapid-Strike')).toEqual({ base: 'Urshifu', forme: 'Rapid Strike' });
     expect(formeParts('Great Tusk')).toBeNull();
+  });
+});
+
+describe('carta Pedana', () => {
+  it('solo la carta selezionata ha la luce dall’alto, non quella sotto il mouse', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+    expect(cards.length).toBeGreaterThan(2);
+    expect(cards[0].classList.contains('beam-on')).toBe(true);
+    expect(cards.slice(1).some(card => card.classList.contains('beam-on'))).toBe(false);
+    vi.useFakeTimers();
+    try {
+      fireEvent.mouseEnter(cards[2]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS + 50); });
+      expect(cards[2].classList.contains('beam-on')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+    // Ogni carta ha la pedana e la luce (spenta) nel suo palco
+    for (const card of cards) {
+      expect(card.querySelector('.pedana-stage .pedana-disc')).not.toBeNull();
+      expect(card.querySelector('.pedana-beam')).not.toBeNull();
+    }
+  });
+
+  it('ogni carta ha i colori dei due tipi per la riga in cima', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    for (const card of list().querySelectorAll<HTMLElement>('.card')) {
+      expect(card.style.getPropertyValue('--t1')).not.toBe('');
+      expect(card.style.getPropertyValue('--t2')).not.toBe('');
+    }
+  });
+});
+
+describe('motivi delle carte', () => {
+  it('i motivi partono da sinistra, con 2 px fra una riga e l’altra; una riga troppo larga finisce coi puntini', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/suggestions.css'), 'utf8');
+    const rule = css.match(/\.reason\.has-sym \{[^}]*\}/)![0];
+    expect(rule).toContain('justify-content: flex-start');
+    const box = css.match(/\.card \.who small \{[^}]*\}/)![0];
+    expect(box).toContain('align-items: stretch');
+    expect(box).toContain('gap: calc(2px + var(--foot-air) / 4)');
+    expect(css).toMatch(/\.card \.reason \{[^}]*max-width: 100%/);
+    expect(css).toMatch(/\.card \.reason \{[^}]*text-align: left/);
+  });
+
+  it('chi esce (Sostituisci): l’icona del box a grandezza vera, nitida', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/suggestions.css'), 'utf8');
+    const icon = css.match(/\.card \.tag \.out-mon \.mon-icon \{[^}]*\}/)![0];
+    expect(icon).not.toContain('scale(');
+    expect(icon).toContain('image-rendering: pixelated');
   });
 });

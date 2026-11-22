@@ -52,6 +52,8 @@
 /* La coda stretta non deve toccare il nome: senza il rientro delle code larghe, un po' di spazio prima del taglio */
 .mvp-tail.st { width: auto; margin-left: var(--sp-2); padding: 0 var(--sp-5) 0 calc(var(--mvp-cut) + var(--sp-3)); }
 .mcp .mvp-tail.st { padding: 0 var(--sp-2); }
+/* Nella carta del set (tooltip e dettaglio) le code sono tutte lunghe uguali, anche con il solo simbolo di stato al centro */
+.mcard-moves .mvp-tail.st { width: var(--mvp-tail-w); margin-left: calc(var(--mvp-cut) * -0.5); padding-left: calc(var(--mvp-cut) + var(--sp-3)); }
 /* Simbolo della categoria, piccolo, prima del numero (in fondo alla coda per le mosse di stato) */
 .mvp-cat { display: flex; }
 .mvp-num { grid-column: 2; justify-self: center; }

@@ -2,7 +2,7 @@ import { DEFAULT_MEMORY, sanitizeChoice, sanitizeMemory, type FormatChoice, type
 import type { TeamSet } from './engine/sets';
 import { isLang, type Lang } from './i18n';
 import { EMPTY_LISTS, sanitizeLists, type UserLists } from './engine/lists';
-import { PALETTES, type ListSprite, type PaletteSetting } from './ui/theme';
+import { PALETTES, type PaletteSetting } from './ui/theme';
 
 export interface SavedTeam {
   name: string;
@@ -245,27 +245,5 @@ export function saveMySets(sets: MySets, storage: Storage | undefined = defaultS
     return true;
   } catch {
     return false;
-  }
-}
-
-const LIST_SPRITE_KEY = 'dreamdex.listSprite';
-const LIST_SPRITES: readonly ListSprite[] = ['normal', 'box'];
-
-/** Sprite della lista candidati scelto nelle impostazioni, o null. */
-export function loadListSprite(storage: Storage | undefined = defaultStorage()): ListSprite | null {
-  try {
-    const raw = storage?.getItem(LIST_SPRITE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return LIST_SPRITES.includes(parsed as ListSprite) ? parsed as ListSprite : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveListSprite(sprite: ListSprite, storage: Storage | undefined = defaultStorage()): void {
-  try {
-    storage?.setItem(LIST_SPRITE_KEY, JSON.stringify(sprite));
-  } catch {
-    // Archivio non disponibile: la scelta vale solo per questa sessione
   }
 }

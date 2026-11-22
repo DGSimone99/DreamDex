@@ -96,17 +96,6 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .pager .step .icon { width: 14px; height: 14px; }
 /* La pagina come numero, "3/9", a ogni misura (scelta dell'utente: niente trattini) */
 .pager-count { min-width: 34px; padding: 0 var(--sp-1); font: 600 var(--fs-caption)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; white-space: nowrap; }
-/* Vista della lista: in fondo alla fascia, dopo la paginazione; il riquadro scende sopra la lista */
-.list-view { position: relative; flex: none; margin-left: auto; }
-.pager ~ .list-view { margin-left: var(--sp-1); }
-.list-view-toggle { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); }
-.list-view-toggle:hover, .list-view-toggle[aria-expanded='true'] { color: var(--text); background: var(--accent-soft); }
-.list-view-toggle .icon { width: 14px; height: 14px; }
-.list-view-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: grid; gap: var(--sp-6); min-width: 190px; padding: var(--sp-6) var(--sp-7);
-  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
-.list-view-pop fieldset { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-7); margin: 0; padding: 0; border: 0; }
-.list-view-pop legend { width: 100%; margin: 0 0 var(--sp-3); padding: 0; font: 600 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
-.list-view-pop label { display: inline-flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-small); color: var(--text); white-space: nowrap; cursor: pointer; }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
@@ -379,13 +368,15 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   #panel-pokemon.active { overflow: hidden; }
   .suggestions-panel { height: 100%; min-height: 0; padding-bottom: var(--sp-6); }
   .picker { flex: 1; min-height: 0; }
-  /* Lista circa 2/5, scheda del candidato 3/5. La lista non scende sotto i 436 px in cui stanno 3 carte da 130 (3 × 130 +
-     spazi 2 × 8 + margini 2 × 14 + bordo 2), finché alla scheda restano almeno 520 px: sotto, le carte vanno su 2 colonne */
-  .picker.has-detail { grid-template-columns: minmax(min(436px, calc(100% - 532px)), 2fr) minmax(0, 3fr); gap: var(--sp-8); align-items: stretch; height: 100%; }
+  /* Box + scheda laterale: la lista è larga quanto le sue colonne (--list-w da usePerPage: 3-5 carte da 140-150 px),
+     la scheda del candidato prende il resto. Prima della misura: circa 3/5 alla lista; dopo, il dettaglio prende tutto il resto (2fr da solo) */
+  .picker.has-detail { grid-template-columns: var(--list-w, minmax(0, 3fr)) minmax(0, 2fr); gap: var(--sp-8); align-items: stretch; height: 100%; }
   .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   /* La lista prende lo spazio che resta: la sua altezza dice quanti candidati per pagina (niente scrollbar) */
   .picker-list > .suggestions { flex: 1 1 0; min-height: 0; overflow: hidden; }
   .detail { position: static; top: auto; max-height: none; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+  /* Scorre il corpo, non la scheda: così lo sprite della fascia può uscire dal bordo alto */
+  .detail:not(.detail-empty) { overflow: visible; }
 }
 
 @media (max-width: 1099px) {
@@ -440,18 +431,23 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Bonus/Malus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
 .detail .effect .detail-areas .extras { border-style: dashed; }
 
-/* Stile "Carte": 6 carte verticali (3 × 2) a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons).
+/* Carte Pedana (pedana.css) in griglia: colonne, file e altezza da usePerPage (--cols, --tile-h, --reasons).
    Oltre l'altezza massima la griglia resta a quella misura e si centra in verticale.
-   Margine di 14px (CARDS_PAD in listLayout.ts): ci sta la carta inclinata e ingrandita sotto il mouse senza essere tagliata */
+   Margine di 14px (CARDS_PAD in listLayout.ts): ci sta la carta che si alza sotto il mouse senza essere tagliata */
 .suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(min(130px, 100%), 1fr)); gap: var(--sp-4); padding: var(--sp-7); align-content: center; }
 .suggestions.cards > li + li { border-top: 0; }
 .card {
-  /* Targhetta in basso alta uguale in ogni carta (dai motivi che entrano): 7 + nome 18 + 2 + 16 × motivi + 10 */
-  --plate-h: calc(37px + 16px * var(--reasons, 2));
-  /* Sprite nella zona dell'immagine: altezza − bordo 3 − targhetta − 8, al massimo 140 */
-  --sprite-w: clamp(48px, calc(var(--tile-h, 220px) - 11px - var(--plate-h)), 140px);
-  /* La forma della carta: angolo in alto a destra tagliato */
-  --card-shape: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  /* Piede (nome e motivi) alto uguale in ogni carta, dai motivi che entrano: nome 18 + 4 + 16 per motivo + 12 (sopra la
+     riga dei tipi in fondo). Sulle
+     carte alte (oltre 180 px) il piede prende fino a 24 px d'aria in più, sopra il nome e fra i motivi: lo sprite sale */
+  --foot-air: clamp(0px, calc((var(--tile-h, 220px) - 180px) / 2), 24px);
+  --foot-h: calc(34px + 16px * var(--reasons, 2) + var(--foot-air));
+  /* Palco: dal bordo alto (sotto targhetta e riga dei tipi) fino al piede; lo sprite ci sta dentro, al massimo 112 px */
+  --stage-top: 16px;
+  --stage-h: calc(var(--tile-h, 220px) - var(--foot-h) - var(--stage-top));
+  --sprite-w: clamp(56px, calc(var(--stage-h) - 6px), 112px);
+  /* Spenta a riposo: la lista resta calma accanto al team, sempre acceso */
+  --lit: 0.45;
   position: relative;
   height: var(--tile-h, 220px);
   min-width: 0;
@@ -460,10 +456,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   cursor: pointer;
   user-select: none;
 }
-/* La carta vera, ritagliata; la casella (li) resta senza ritaglio */
+/* La carta vera (squadrata, come il team): fondo e riga dei tipi da pedana.css */
 .card-face {
-  /* Cornice sottile nel colore del tipo; scelta dalla ricerca o selezionata: ciano */
-  --frame-c: color-mix(in srgb, var(--t1) 30%, var(--line));
+  /* Cornice sottile; scelta dalla ricerca o selezionata: ciano */
+  --frame-c: var(--line-soft);
   --fw: 1px;
   position: relative;
   height: 100%;
@@ -471,35 +467,18 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
-  /* Zona dell'immagine: tinta piatta del tipo primario */
-  background: color-mix(in srgb, var(--t1) 16%, var(--raised));
-  border-bottom: 3px solid var(--t1);
-  clip-path: var(--card-shape);
-  transition: background 0.15s;
 }
-/* Cornice sopra a tutto (anche alla targhetta), senza prendere i clic: un anello che segue anche il taglio
-   (fuori la forma della carta, dentro la stessa rientrata di --fw; 0.4142 = √2 − 1 per il lato a 45°) */
-.card-face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background: var(--frame-c);
-  clip-path: polygon(evenodd,
-    0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%, 0 0,
-    var(--fw) var(--fw), var(--fw) calc(100% - var(--fw)), calc(100% - var(--fw)) calc(100% - var(--fw)),
-    calc(100% - var(--fw)) calc(16px + var(--fw) * 0.4142), calc(100% - 16px - var(--fw) * 0.4142) var(--fw), var(--fw) var(--fw), 0 0);
-}
+/* Cornice sopra a tutto, senza prendere i clic */
+.card-face::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border: var(--fw) solid var(--frame-c); }
 /* Il "sotto il mouse" solo con un mouse: sul telefono il tocco lascerebbe la carta sollevata */
-@media (hover: hover) { .card:hover .card-face { background: color-mix(in srgb, var(--t1) 24%, var(--raised)); } }
+@media (hover: hover) { .card:hover { --lit: 0.8; } }
+.card.picked { --lit: 0.8; }
+.card.selected { --lit: 1; }
 .card.picked .card-face { --frame-c: var(--accent); }
 .card.selected .card-face { --frame-c: var(--accent); --fw: 2px; }
-.card-sprite { position: absolute; left: 50%; top: 4px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
-.card-sprite .box-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
-.card-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
-.card-sprite .box-icon.big .mon-icon { transform: scale(2.4); }
-.card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+/* Lo sprite in piedi sulla pedana: i piedi (circa al 90% del riquadro di 96) al centro dell'ellisse */
+.card-sprite { position: absolute; left: 50%; top: calc(var(--stage-top) + var(--stage-h) - 10px - var(--sprite-w) * 0.9); z-index: 1; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
+.card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
 /* Sotto il mouse lo sprite animato di Showdown, grande quanto lo statico: la GIF è il riquadro di 96px ritagliato
    sul Pokémon, quindi alta --ani-h/96 della casella; appoggiata in basso come i piedi dello statico */
 .card-sprite .sprite.covered { visibility: hidden; }
@@ -517,37 +496,25 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   .card:hover { z-index: 5; transform: translateY(-4px); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
 }
 .card.selected { z-index: 4; }
-/* Riflettore dall'alto: un cono di luce (bianca appena tinta del tipo) che scende dal centro del bordo alto e si apre sul
-   Pokémon, e la pozza di luce ai suoi piedi; sfuma verso la targhetta */
-.card-face::before { --spot: color-mix(in srgb, var(--t1) 25%, #fff);
-  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s ease-out;
-  background:
-    radial-gradient(ellipse calc(var(--sprite-w) * 0.55) calc(var(--sprite-w) * 0.11) at 50% calc(4px + var(--sprite-w) * 0.94),
-      color-mix(in srgb, var(--spot) 55%, transparent), transparent),
-    conic-gradient(from 156deg at 50% -56px, transparent 0deg, color-mix(in srgb, var(--spot) 20%, transparent) 11deg,
-      color-mix(in srgb, var(--spot) 30%, transparent) 24deg, color-mix(in srgb, var(--spot) 20%, transparent) 37deg, transparent 48deg);
-  -webkit-mask-image: linear-gradient(#000 60%, transparent 90%); mask-image: linear-gradient(#000 60%, transparent 90%); }
-/* La riga del tipo sotto la targhetta (il bordo del tipo più spesso) solo sulla selezionata, non sotto il mouse */
-.card .who::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--t1); opacity: 0; transition: opacity 0.18s ease-out; pointer-events: none; }
-.card.selected .who::after { opacity: 1; }
-@media (hover: hover) { .card:hover .card-face::before { opacity: 1; transition-delay: var(--wake); } }
-.card.selected .card-face::before, .card:has(:focus-visible) .card-face::before { opacity: 1; transition-delay: 0s; }
-.card-sprite.popped { z-index: 1; transform-origin: 50% 100%; animation: sprite-pop 0.22s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+/* Trascinata sul team: segue il mouse la carta del team di quel set (TeamPanel, .slot-ghost) e al suo posto resta lo
+   spazio vuoto, tratteggiato come lo slot libero del team. Gli sprite non si trascinano da soli */
+.card img { -webkit-user-drag: none; }
+.card.drag-origin, .card.drag-origin:hover { transform: none; filter: none; outline: 2px dashed var(--line); outline-offset: -2px; }
+.card.drag-origin > * { visibility: hidden; }
+.card-sprite.popped { z-index: 4; transform-origin: 50% 100%; animation: sprite-pop 0.22s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
 @keyframes sprite-pop {
   from { transform: translateX(-50%); }
   to { transform: translateX(-50%) translateY(-10px) scale(1.15); }
 }
-/* Icona del box: quando esce dalla carta (dopo l'attesa sotto il mouse, subito col fuoco) e sulla selezionata saltella
-   come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
-.card-sprite.popped .box-icon, .card.selected .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .card, .card-face::before, .card .who::after { transition: none; }
+  .card { transition: none; }
   .card-sprite.popped { animation: none; }
-  .card-sprite.popped .box-icon, .card.selected .card-sprite .box-icon { animation: none; }
 }
 /* Targhetta in alto a sinistra: +N (#1 su azzurro scuro), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
-.card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-2); margin: 0; padding: 5px var(--sp-8) 5px var(--sp-4); border-radius: 0; background: var(--tag-bg); color: var(--text);
-  font: 800 var(--fs-body)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+.card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-2); margin: 0; padding: 5px var(--sp-8) 5px var(--sp-4); border-radius: 0; background: none; color: var(--text);
+  font: 800 var(--fs-body)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+/* La forma della targhetta (taglio obliquo a destra) sta in un fondo a parte: così l'icona di chi esce può uscirne */
+.card .tag::after { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--tag-bg); clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
 .card .tag strong { font: inherit; }
 .card .tag strong.worse { color: var(--bad); }
 .card .tag strong.same { color: var(--muted); }
@@ -555,7 +522,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Il #1: targhetta azzurro scuro con la cifra ciano. Il magenta resta al suo Aggiungi al team, l'azione migliore */
 .card.first .tag { --tag-bg: var(--accent-soft); color: var(--accent-ink); }
 /* Preferito: ♥ davanti al numero e bordo di 2px nel colore dei Preferiti (anche sul lato obliquo), sopra la cornice */
-.card .tag.fav { z-index: 4; background: var(--accent); }
+.card .tag.fav { z-index: 4; }
+.card .tag.fav::after { background: var(--accent); }
 .card .tag.fav::before { content: ''; position: absolute; inset: 2px; z-index: -1; background: var(--tag-bg); clip-path: polygon(0 0, calc(100% - 0.85px) 0, calc(100% - 6.4px) 100%, 0 100%); }
 .fav-heart { display: inline-flex; color: var(--accent); }
 .fav-heart .icon { width: 12px; height: 12px; fill: currentColor; }
@@ -565,35 +533,36 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    rimpicciolita dentro un riquadro 20×16: la targhetta cresce solo a destra quanto basta */
 .card .tag .out { display: flex; align-items: center; gap: var(--sp-1); height: 15px; margin-left: 1px; }
 .card .tag .out > .icon { width: 13px; height: 13px; vertical-align: 0; opacity: 0.72; }
-.card .tag .out-mon { position: relative; flex: none; width: 20px; height: 16px; overflow: hidden; }
-.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -54%) scale(0.56); image-rendering: auto; }
+/* L'icona di chi esce a grandezza vera (40×30, la pixel art rimpicciolita sbava e non si riconosce): il riquadro di 28×22
+   taglia solo il bordo vuoto dell'icona */
+.card .tag .out-mon { position: relative; flex: none; width: 28px; height: 22px; margin: -4px 0; }
+/* In Sostituisci la targhetta sale sopra la cornice e i motivi: l'icona di chi esce può uscire dal suo riquadro, ma
+   resta sotto lo sprite che si anima (quello scelto, z-index 4) */
+.card.swap .tag:not(.fav) { z-index: 3; }
+.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -56%); image-rendering: pixelated; }
 /* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: var(--sp-2); }
 .card .card-types img { width: 20px; height: 20px; box-shadow: none; }
 .card .card-types img + img { margin: 0; }
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
-.card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: var(--sp-1);
-  box-sizing: border-box; height: var(--plate-h); padding: 7px var(--sp-5) var(--sp-5);
-  background: color-mix(in srgb, var(--ground) 70%, var(--raised)); border-top: 1px solid color-mix(in srgb, var(--t1) 45%, var(--line)); }
-.card.selected .who { background: color-mix(in srgb, var(--accent) 14%, var(--ground)); }
-.card .name-line { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; height: 18px; }
+.card .who { position: relative; z-index: 2; flex: none; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: calc(var(--sp-2) + var(--foot-air) / 4);
+  box-sizing: border-box; height: var(--foot-h); padding: calc(var(--foot-air) * 0.4) var(--sp-4) calc(var(--sp-5) + 4px); text-align: center; }
+.card .name-line { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); max-width: 100%; min-width: 0; height: 18px; }
 .card .name-line > :not(.pick) { flex: none; }
-.card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+.card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: center; }
 .card .pick[aria-pressed='true'] { background: none; }
 .card .pick strong { display: block; font: 800 var(--fs-body)/1.15 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .name-line .list-mark { font-size: var(--fs-caption); }
 /* Nome con la forma (Charizard + MEGA Y): la specie base intera, la forma un'etichetta che cede per prima */
 .pick-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .pick-name b { flex: none; font: 800 var(--fs-body)/1.15 var(--display); font-style: italic; white-space: nowrap; }
-.pick-name .forme { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 1px 5px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink); font: 700 var(--fs-label)/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; }
-.card.first .pick-name .forme { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-/* Sulle carte la forma sta sul bordo alto della targhetta del nome, a destra (spazio libero sotto lo sprite): il nome e
-   le icone tengono la loro riga e la forma si legge sempre intera */
-.card .pick-name .forme { position: absolute; z-index: 1; top: -10px; right: 8px; max-width: calc(100% - 16px); padding: 1px var(--sp-3); background: var(--ground); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
-.card.first .pick-name .forme { background: var(--ground); }
-.card .who small { display: flex; flex-direction: column; min-width: 0; }
-.card .reason { display: block; min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Sulle carte niente etichetta della forma (sta nel dettaglio e nel fumetto): solo Mega e Primal col loro simbolo, e la
+   lettera quando le Mega sono due (Charizard X / Y) */
+.pick-name .mega-mark { display: inline-flex; flex: none; align-items: center; gap: 1px; color: var(--accent-ink); font: 800 var(--fs-label)/1 var(--display); font-style: italic; }
+.pick-name .mega-mark .mega-icon { display: block; width: 15px; height: 15px; }
+.card .who small { display: flex; flex-direction: column; align-items: stretch; gap: calc(2px + var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }
+.card .reason { display: block; max-width: 100%; min-width: 0; text-align: left; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 
 /* Motivi a segni: ⚔️ chip dei tipi colpiti, 🛡️ chip dei tipi retti (gli immuni con la parola), "vs" chi
@@ -604,7 +573,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    ancora le liste di Pokémon fermati, quindi restano a segni */
 .suggestions > li { container: cand / inline-size; }
 .reason.has-sym .words { display: none; }
-.reason.has-sym { display: flex; align-items: center; overflow: visible; text-overflow: clip; }
+.reason.has-sym { display: flex; align-items: center; justify-content: flex-start; max-width: 100%; overflow: visible; text-overflow: clip; }
 .reason.has-sym > b { flex: none; }
 .reason .syms { display: contents; }
 @container cand (min-width: 560px) {
@@ -623,6 +592,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .reason .type-chip { --tc-h: 16px; }
 .reason .type-chip.type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); text-align: left; letter-spacing: 0.02em; }
 .reason .type-chip.type-chip.long > span { font-size: var(--fs-label); }
+/* Coi nomi non entravano tutti: solo le icone dei tipi, una dopo l'altra */
+.reason .sym-chips.icons-only .type-chip > span { display: none; }
 /* La "×" davanti a un tipo a cui il candidato è immune */
 /* "vs" + pallino del tipo + nome, come nel dettaglio; il nome si accorcia, il "+N" resta */
 .reason .sym-mons { display: flex; align-items: center; min-width: 0; }
@@ -644,9 +615,9 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Sagome delle carte mentre la prima lista si calcola (critique 2026-11-21): la forma della carta vera (angolo tagliato,
    zona dell'immagine, targhetta in basso), senza colore di tipo, con la luce che passa piano come in Completa team */
 .card-skel { cursor: default; pointer-events: none; }
-.card-skel { display: flex; flex-direction: column; clip-path: var(--card-shape); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); overflow: hidden; }
-.card-skel-art { flex: 1; background: radial-gradient(40% 45% at 50% 55%, color-mix(in srgb, var(--raised) 70%, transparent), transparent 70%), var(--band); }
-.card-skel-plate { display: grid; gap: var(--sp-3); height: var(--plate-h); padding: var(--sp-4) var(--sp-5); border-top: 3px solid var(--line-soft); }
+.card-skel { display: flex; flex-direction: column; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); overflow: hidden; }
+.card-skel-art { flex: 1; background: radial-gradient(42% 9% at 50% 88%, color-mix(in srgb, var(--raised) 80%, transparent), transparent 70%), var(--panel); }
+.card-skel-plate { display: grid; justify-items: center; align-content: start; gap: var(--sp-3); height: var(--foot-h); padding: 0 var(--sp-5); box-shadow: inset 0 -3px 0 var(--line-soft); }
 .card-skel-line { display: block; width: 62%; height: 12px; border-radius: 3px; background: var(--raised); }
 .card-skel-line.short { width: 40%; height: 10px; }
 .card-skel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.05) 50%, transparent 70%);
@@ -662,4 +633,27 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 @container dactions (max-width: 459px) {
   .detail-actions .detail-copy, .detail-actions .smogon-link { padding-inline: var(--sp-5); }
   .detail-actions :is(.detail-copy, .smogon-link) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* Dettaglio che sceglie la versione che ci sta (SuggestionDetail, livelli 3-4 decisi dalla misura): testata bassa su
+   una riga (icona, nome, ruolo, +N e voto) e, se ancora non basta, due linguette: Porta e Toglie · Set consigliato */
+.detail-panel { display: contents; }
+.detail { container: detailbox / inline-size; }
+.detail-tabs { grid-column: 1 / -1; display: flex; border-bottom: 1px solid var(--line-soft); }
+.detail-tabs [role='tab'] { flex: 1; min-height: 34px; margin: 0; padding: 0 var(--sp-6); border: 0; border-radius: 0; background: none; box-shadow: none;
+  font: 700 var(--fs-body)/1 var(--display); font-style: italic; color: var(--muted); cursor: pointer; }
+.detail-tabs [role='tab']:hover { color: var(--text); }
+.detail-tabs [role='tab'].on { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.detail.compact .detail-hero.mcard-head { min-height: 0; padding-top: var(--sp-2); padding-bottom: var(--sp-2); grid-template-columns: 44px minmax(0, 1fr) auto; }
+.detail.compact .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 44px minmax(0, 1fr) auto auto; }
+.detail.compact .detail-hero.mcard-head .detail-sprite { width: 44px; height: 44px; }
+.detail.compact .detail-hero .detail-id { flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-5); }
+.detail.compact .detail-hero .detail-id h3 { font-size: var(--fs-title-l); }
+.detail.compact .detail-hero .detail-score { display: flex; align-items: baseline; gap: var(--sp-4); }
+.detail.compact .detail-hero .detail-score strong { font-size: 30px; }
+.detail.compact .detail-hero .detail-score span { margin-top: 0; }
+/* Dettaglio stretto: Porta e Toglie uno sotto l'altro */
+@container detailbox (max-width: 470px) {
+  .detail:not(.detail-empty) > .detail-body { grid-template-columns: minmax(0, 1fr); }
+  .detail .detail-sec:not(.wide) + .detail-sec:not(.wide) { border-left: 0; border-top: 1px solid var(--line-soft); }
 }

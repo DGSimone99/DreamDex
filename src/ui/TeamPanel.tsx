@@ -44,7 +44,8 @@ import { TOUCH_QUERY } from './TouchTips';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
-import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
+import { draggedSet, dragStart, endSetDrag, hideDragImage, onSetDrag } from './teamDrag';
+import { createPortal } from 'react-dom';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -174,6 +175,8 @@ interface SlotActions {
   move: (index: number, delta: number) => void;
   /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
   drag: (index: number, phase: 'start' | 'over' | 'drop' | 'end') => void;
+  /** Inizio del trascinamento: dove e quanto è grande la carta presa, per la carta che segue il mouse. */
+  lift: (index: number, at: Lift) => void;
   /** Set incollato; `review`: mosse non imparabili o nomi non trovati, da chiedere/dire dopo averlo applicato. */
   paste: (index: number, set: TeamSet, review?: ImportReview) => void;
   /** Preset con il voto del team più alto per questo membro, completato e ritoccato (null se il membro non ne ha). */
@@ -228,6 +231,34 @@ function EditorGrade({ grade }: { grade: EditorGradeShown }) {
   );
 }
 
+/** Dove si è afferrata una carta da trascinare: il punto, lo scarto dal suo angolo, la misura, team ridotto o no. */
+interface Lift { x: number; y: number; dx: number; dy: number; w: number; h: number; collapsed: boolean }
+
+/**
+ * La carta del team che segue il mouse trascinando (al posto della copia sfumata del browser): la stessa carta del
+ * team, piena, appena inclinata e con l'ombra. Sta nel body (sopra a tutto, mai tagliata) dentro i contenitori del team
+ * (band, team, slots: senza scatola, per gli stili); il mouse si legge da "dragover", che arriva ovunque nella pagina.
+ */
+function SlotGhost({ at, children }: { at: Lift; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const place = (x: number, y: number) => { el.style.translate = `${x - at.dx}px ${y - at.dy}px`; };
+    place(at.x, at.y);
+    const move = (e: DragEvent) => { if (e.clientX || e.clientY) place(e.clientX, e.clientY); };
+    document.addEventListener('dragover', move, true);
+    return () => document.removeEventListener('dragover', move, true);
+  }, [at]);
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <div ref={ref} className="slot-ghost" aria-hidden="true" style={{ width: at.w, height: at.h, transformOrigin: `${at.dx}px ${at.dy}px` }}>
+      <div className={`band${at.collapsed ? ' collapsed' : ''}`}><section className={`team${at.collapsed ? ' collapsed' : ''}`}><div className="slots">{children}</div></section></div>
+    </div>,
+    document.body,
+  );
+}
+
 const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions, collapsed = false, grade = null, startTab = null }: {
   index: number;
   /** Telefono: la scheda dell'editor da aprire (la Sfida, arrivando da "lascialo a" di un compagno). */
@@ -256,6 +287,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   actions: SlotActions;
 }) {
   const onToggle = (next: boolean) => actions.toggle(index, next);
+  const [flash, setFlash] = useState(false);
   const onStep = (delta: number) => actions.step(index, delta);
   const onMove = (delta: number) => actions.move(index, delta);
   const onDrag = (phase: 'start' | 'over' | 'drop' | 'end') => actions.drag(index, phase);
@@ -400,7 +432,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const rules = formatRules(format.formatId);
   const onCard = cardRoles(set, rules, subRoles);
   const weather = weatherOf(set);
-  const roles = onCard.map(role => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri (in doppio quelli del doppio)
   const allRoles = [...onCard, ...shownRoles(subRoles ? rolesListFor(subRoles, rules) : detectRoles(set, rules), rules).filter(role => !onCard.includes(role))];
   const roleLabels = allRoles.map(role => (role === 'weather' && weather
@@ -408,8 +439,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
   const roleTips = allRoles.map(role => (role === 'weather' ? undefined : roleDescription(role, lang)));
-  // Sulla carta solo il ruolo principale, con la sua spiegazione
-  const roleTitle = roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0];
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
@@ -487,13 +516,14 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       }}
     >
       <div
-        className="slot-card"
+        className={`slot-card pedana-face${open ? ' beam-on' : ''}${flash ? ' beam-flash' : ''}`}
+        onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…"). Carta aperta: niente
         // fumetto (col mouse ancora sopra, ridisegnando la pagina si riapriva sopra l'editor)
         {...(open || collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
 ${tr('team.slotKey', { n: index + 1 })}`))}
-        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
+        {...(collapsed && !open && !touch ? memberTip.bind(set, undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
         onPointerDown={e => {
           if (!touch || e.pointerType === 'mouse' || (e.target as Element).closest('button:not(.slot-toggle), a, input')) return;
@@ -511,11 +541,28 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
           const hit = (e.target as HTMLElement).closest('button, a, input, [tabindex]');
           if (hit && hit !== card.current) return;
+          // Aprendo, la luce dall'alto si accende forte e si assesta (CSS .beam-flash)
+          if (!open) setFlash(true);
           onToggle(!open);
           // Come prima col <summary>: dopo il clic il fuoco è sulla carta (Esc e frecce partono da lì), senza anello
           card.current?.focus({ preventScroll: true, focusVisible: false });
         }}
-        onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
+        onDragStart={e => {
+          // Segue il mouse una copia piena della carta (SlotGhost), non quella sfumata del browser; al suo posto lo slot vuoto
+          hideDragImage(e);
+          const box = e.currentTarget.getBoundingClientRect();
+          actions.lift(index, { x: e.clientX, y: e.clientY, dx: e.clientX - box.left, dy: e.clientY - box.top, w: box.width, h: box.height, collapsed });
+          if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); }
+          onDrag('start');
+        }}
+        // La carta trascinata entra da un lato: questa, che sta per essere sostituita o spostata, si fa da parte dall'altro
+        // (si sposta e si inclina, CSS .drop-target[data-lean]); il lato si decide entrando, non a ogni movimento
+        onDragEnter={e => {
+          const el = e.currentTarget;
+          if (e.relatedTarget instanceof Node && el.contains(e.relatedTarget)) return;
+          const box = el.getBoundingClientRect();
+          el.dataset.lean = e.clientX < box.left + box.width / 2 ? 'right' : 'left';
+        }}
         onDragOver={e => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = draggedSet() ? 'copy' : 'move'; onDrag('over'); }}
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
         onDragEnd={() => onDrag('end')}
@@ -551,7 +598,11 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         </span>
         {/* Sulla sprite, a carta chiusa: dopo mezzo secondo la carta del Pokémon sotto la carta del team (il set intero senza aprirlo) */}
         {/* data-hint vuoto: sullo sprite niente fumetto "Trascina…", lì si apre la carta del Pokémon (si sovrapponevano) */}
-        <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set, roles[0]), 'data-hint': '' })}>
+        {/* Carta Pedana (pedana.css): la riga dei tipi in cima, la luce dall'alto solo sulla carta aperta, la pedana sotto lo sprite */}
+        <span className="pedana-stripe" aria-hidden="true" />
+        <span className="pedana-beam" aria-hidden="true" />
+        <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set), 'data-hint': '' })}>
+          <span className="pedana-disc" aria-hidden="true" />
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
         {set.customSkillset && (
@@ -606,7 +657,6 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           ))}
         </span>
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
-        {roles.length > 0 && <small className="roles" {...bubble(roleTitle)} aria-hidden="true">{roles[0]}</small>}
       </div>
       {menuOpen && (
         <div className="member-menu" ref={menuRef} popover={supportsPopover ? 'manual' : undefined} role="menu" aria-label={tr('team.memberMenu', { species: name })}
@@ -832,7 +882,19 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
   // `from` -1: un candidato trascinato dalla lista Pokémon (teamDrag.ts); `over` oltre i membri = uno slot vuoto
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
   // Il trascinamento dalla lista finisce fuori dal team (o annullato con Esc): niente slot evidenziato
-  useEffect(() => onSetDrag(set => { if (!set) setDrag(d => (d?.from === -1 ? null : d)); }), []);
+  // La carta che segue il mouse trascinando: un membro del team (lift) o un candidato dalla lista, disegnato come carta del
+  // team (grande come le carte del team aperto, presa più o meno al centro)
+  const [ghost, setGhost] = useState<{ set: TeamSet; index: number; at: Lift } | null>(null);
+  useEffect(() => onSetDrag(set => {
+    if (!set) { setDrag(d => (d?.from === -1 ? null : d)); setGhost(g => (g?.index === -1 ? null : g)); return; }
+    const point = dragStart();
+    if (!point) return;
+    const card = slotsRef.current?.querySelector<HTMLElement>('.band:not(.collapsed) .slot.filled > .slot-card, .band:not(.collapsed) .slot.empty');
+    const box = card?.getBoundingClientRect();
+    const w = box?.width || 150;
+    const h = box?.height || 226;
+    setGhost({ set, index: -1, at: { x: point.x, y: point.y, dx: w / 2, dy: h * 0.45, w, h, collapsed: false } });
+  }), []);
   const dropSet = (i: number) => {
     const set = draggedSet();
     endSetDrag();
@@ -940,7 +1002,9 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
       else if (phase === 'over') overSlot(i);
       else if (phase === 'drop') { if (draggedSet()) dropSet(i); else { if (drag) move(drag.from, i); setDrag(null); } }
       else setDrag(null);
+      if (phase === 'drop' || phase === 'end') setGhost(null);
     },
+    lift: (i, at) => { if (team[i]) setGhost({ set: team[i], index: i, at }); },
     paste: (i, next, review) => {
       if (onPaste) onPaste(i, next); else onChange(team.map((s, j) => (j === i ? next : s)));
       if (review) setAsk({ index: i, review });
@@ -980,6 +1044,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
     step: (i, delta) => live.current.step(i, delta),
     move: (i, delta) => live.current.move(i, delta),
     drag: (i, phase) => live.current.drag(i, phase),
+    lift: (i, at) => live.current.lift(i, at),
     paste: (i, next, review) => live.current.paste(i, next, review),
     best: i => live.current.best(i),
     bestIndex: i => live.current.bestIndex(i),
@@ -1094,6 +1159,14 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
+      {ghost && (
+        <SlotGhost at={ghost.at}>
+          <TypeTextContext.Provider value={typeStep > 0}>
+            <TeamSlot index={Math.max(ghost.index, 0)} total={team.length} set={ghost.set} subRoles={ghost.index >= 0 ? subRoles[ghost.index] : undefined}
+              dragging={false} dropTarget={false} data={data} format={format} warning={null} open={false} actions={actions} collapsed={ghost.at.collapsed} />
+          </TypeTextContext.Provider>
+        </SlotGhost>
+      )}
       <div className={`slots types-${TYPE_STEPS[typeStep]}${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
         // Uscendo dalla fila del team lo slot evidenziato si spegne
         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrag(d => (d && d.over !== null ? { ...d, over: null } : d)); }}>

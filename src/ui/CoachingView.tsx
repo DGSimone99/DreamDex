@@ -266,16 +266,14 @@ function AlternativesMenu({ id, group, current, problems, onChoose, onClose, but
 function SwapArt({ fix, children }: { fix: CoachFix; children?: ReactNode }) {
   const tr = useT();
   const memberTip = useMemberTip();
-  const gain = gainText(fix.gain);
-  const why = fix.kind === 'swap' ? tr('mcard.inFor', { member: fix.member ?? '', gain }) : tr('mcard.added', { gain });
   return (
     <>
       {fix.kind === 'swap'
         ? <><span className="coach-art-out"><Sprite species={fix.member ?? ''} size={48} /></span><span className="coach-art-arrow" aria-hidden="true"><Icon name="swap" /></span></>
         : <span className="coach-art-add" aria-hidden="true"><Icon name="plus" /></span>}
-      <span className="coach-art-in" {...memberTip.bind(fix.set, why)}><Sprite species={fix.species} size={96} /></span>
+      <span className="coach-art-in" {...memberTip.bind(fix.set)}><Sprite species={fix.species} size={96} /></span>
       <span className="coach-art-text">
-        <b className="coach-art-name" {...memberTip.bind(fix.set, why)}>{fix.species}</b>
+        <b className="coach-art-name" {...memberTip.bind(fix.set)}>{fix.species}</b>
         <small>{fix.kind === 'swap' ? tr('coach.row.instead', { member: fix.member ?? '' }) : tr('coach.row.free')}</small>
         {children}
       </span>
