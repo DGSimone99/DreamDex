@@ -29,6 +29,12 @@ async function pick(user: ReturnType<typeof userEvent.setup>, group: string, nam
   await user.click(within(screen.getByRole('group', { name: group })).getByRole('button', { name }));
 }
 
+/** Sceglie il tipo in una casella del tipo del Pokémon (Tipo 1 o Tipo 2): apre la tendina e clicca il tipo. */
+async function pickSlot(user: ReturnType<typeof userEvent.setup>, slot: 'Tipo 1' | 'Tipo 2', type: string) {
+  await user.click(screen.getByRole('button', { name: new RegExp(`^${slot}:`) }));
+  await pick(user, slot, type);
+}
+
 describe('ricerca e filtri nei suggerimenti', () => {
   it('la ricerca sta nei suggerimenti, non più nel team', async () => {
     await setup();
@@ -54,7 +60,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
   it('filtro per tipo, contatore dei filtri attivi e azzeramento', async () => {
     const user = await setup('Great Tusk');
     const dialog = await openFilters(user);
-    await pick(user, 'Tipo del Pokémon', 'Water');
+    await pickSlot(user, 'Tipo 1', 'Water');
     await pick(user, 'Resiste a', 'Fire');
     await pick(user, 'Resiste a', 'Ground');
     await waitFor(() => expect(cardNames()).toContain('Rotom-Wash'));
@@ -78,24 +84,29 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
 
-  it('tipo del Pokémon: al massimo due tipi; Solo monotipo solo con nessuno o un tipo', async () => {
+  it('tipo del Pokémon: due caselle; Tipo 2 dopo il Tipo 1, Solo monotipo solo con un tipo', async () => {
     const user = await setup('Great Tusk');
     await openFilters(user);
-    const own = within(screen.getByRole('group', { name: 'Tipo del Pokémon' }));
-    await pick(user, 'Tipo del Pokémon', 'Water');
-    await pick(user, 'Tipo del Pokémon', 'Poison');
-    expect(own.getByRole('button', { name: 'Fire' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Tipo 2: Qualsiasi' })).toBeDisabled();
+    await pickSlot(user, 'Tipo 1', 'Water');
+    expect(screen.getByRole('button', { name: 'Tipo 1: Water' })).toBeInTheDocument();
+    // Nella tendina del Tipo 2 il tipo già scelto è spento
+    await user.click(screen.getByRole('button', { name: 'Tipo 2: Qualsiasi' }));
+    expect(within(screen.getByRole('group', { name: 'Tipo 2' })).getByRole('button', { name: 'Water' })).toBeDisabled();
+    await pick(user, 'Tipo 2', 'Poison');
     expect(screen.getByRole('checkbox', { name: 'Solo monotipo' })).toBeDisabled();
     await waitFor(() => expect(cardNames()).toContain('Toxapex'));
-    await pick(user, 'Tipo del Pokémon', 'Poison');
-    expect(own.getByRole('button', { name: 'Fire' })).toBeEnabled();
+    // Svuotando il Tipo 1 il Tipo 2 sale al suo posto
+    await user.click(screen.getByRole('button', { name: 'Tipo 1: Water' }));
+    await user.click(within(screen.getByRole('group', { name: 'Tipo 1' }).parentElement!).getByRole('button', { name: 'Qualsiasi' }));
+    expect(screen.getByRole('button', { name: 'Tipo 1: Poison' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Solo monotipo' })).toBeEnabled();
   });
 
   it('un tipo + Solo monotipo: solo monotipo di quel tipo', async () => {
     const user = await setup('Great Tusk');
     await openFilters(user);
-    await pick(user, 'Tipo del Pokémon', 'Water');
+    await pickSlot(user, 'Tipo 1', 'Water');
     await user.click(screen.getByRole('checkbox', { name: 'Solo monotipo' }));
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(0));
     await waitFor(() => expect(cardNames().every(name => getSpecies(name)?.types.join() === 'Water')).toBe(true));
@@ -145,7 +156,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
   it('chip e Azzera con lista vuota', async () => {
     const user = await setup('Great Tusk');
     await openFilters(user);
-    await pick(user, 'Tipo del Pokémon', 'Fire');
+    await pickSlot(user, 'Tipo 1', 'Fire');
     await user.keyboard('{Escape}');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();

@@ -1808,6 +1808,8 @@ export const en = {
   'filters.activeOne': "Filters (1 active)",
   'filters.activeMany': "Filters ({n} active)",
   'filters.type': "Type",
+  'filters.type1': "Type 1",
+  'filters.type2': "Type 2",
   'filters.mono': "Mono",
   'filters.monoAria': "Monotype only",
   'filters.favoritesOnly': "Favourites only",

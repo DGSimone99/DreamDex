@@ -26,22 +26,15 @@ function GroupHead({ label, children }: { label: string; children?: ReactNode })
   );
 }
 
-/**
- * Griglia dei 18 tipi da accendere e spegnere, nei loro colori, con l'icona del tipo come le chip di Champions.
- * Con `max` se ne accendono al massimo tanti: raggiunto il limite gli altri si spengono.
- */
-function TypeGrid({ label, selected, onChange, max, extra }: {
+/** Griglia dei 18 tipi da accendere e spegnere (Resiste a, Superefficace contro), con l'icona come le chip di Champions. */
+function TypeGrid({ label, selected, onChange }: {
   label: string;
   selected: TypeName[];
   onChange: (types: TypeName[]) => void;
-  max?: number;
-  extra?: ReactNode;
 }) {
-  const lang = useLang();
-  const full = max !== undefined && selected.length >= max;
   return (
     <div className="type-filter">
-      <GroupHead label={label}>{extra}</GroupHead>
+      <GroupHead label={label} />
       <div role="group" aria-label={label} className="type-grid">
         {TYPES.map(type => {
           const on = selected.includes(type);
@@ -51,12 +44,10 @@ function TypeGrid({ label, selected, onChange, max, extra }: {
               key={type}
               type="button"
               aria-pressed={on}
-              disabled={full && !on}
               style={{ '--c': color, '--ink': inkFor(color), '--tc': typeTextColor(type) } as CSSProperties}
               onClick={() => onChange(toggle(selected, type))}
             >
-              <i aria-hidden="true"><img src={typeIconUrl(type)} alt="" draggable={false} /></i>
-              <span>{typeName(type, lang)}</span>
+              <TypeFace type={type} />
             </button>
           );
         })}
@@ -65,7 +56,75 @@ function TypeGrid({ label, selected, onChange, max, extra }: {
   );
 }
 
-/** Una scelta sola fra tessere (Tier, Uso nel meta, Imposta, Sfrutta); con `clearable` ricliccare la scelta la toglie. */
+/** Il bottone di un tipo come le chip di Champions: icona nel quadretto del colore, nome a fianco. */
+function TypeFace({ type }: { type: TypeName }) {
+  const lang = useLang();
+  const label = typeName(type, lang);
+  return (
+    <>
+      <i aria-hidden="true"><img src={typeIconUrl(type)} alt="" draggable={false} /></i>
+      <span className={label.length > 8 ? 'long' : undefined}>{label}</span>
+    </>
+  );
+}
+
+/**
+ * Una casella del tipo del Pokémon (Tipo 1 o Tipo 2): mostra il tipo scelto o Qualsiasi; cliccata apre una tendina con
+ * i 18 tipi e Qualsiasi. I tipi in `taken` (già nell'altra casella) sono spenti. Esc o un clic fuori la chiudono.
+ */
+function TypeSlot({ label, value, taken, disabled, onPick }: {
+  label: string;
+  value: TypeName | undefined;
+  taken?: TypeName;
+  disabled?: boolean;
+  onPick: (type: TypeName | undefined) => void;
+}) {
+  const t = useT();
+  const lang = useLang();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    box.current?.querySelector<HTMLButtonElement>('.type-slot-menu button[aria-pressed="true"], .type-slot-menu button:not(:disabled)')?.focus();
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+  const pick = (type: TypeName | undefined) => { onPick(type); setOpen(false); };
+  const color = value ? typeColor(value) : undefined;
+  return (
+    <div className="type-slot" ref={box}
+      onKeyDown={e => { if (open && e.key === 'Escape') { e.stopPropagation(); setOpen(false); } }}>
+      <span className="fchoice-label">{label}</span>
+      <button type="button" className={`type-slot-btn${value ? ' set' : ''}${open ? ' open' : ''}`} disabled={disabled}
+        aria-haspopup="true" aria-expanded={open} aria-label={`${label}: ${value ? typeName(value, lang) : t('filters.any')}`}
+        style={value ? { '--c': color, '--tc': typeTextColor(value) } as CSSProperties : undefined}
+        onClick={() => setOpen(o => !o)}>
+        {value ? <TypeFace type={value} /> : <span className="type-slot-any">{t('filters.any')}</span>}
+        <b className="type-slot-chev" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="type-slot-menu">
+          <div role="group" aria-label={label} className="type-grid">
+            {TYPES.map(type => {
+              const c = typeColor(type);
+              return (
+                <button key={type} type="button" aria-pressed={value === type} disabled={type === taken}
+                  style={{ '--c': c, '--ink': inkFor(c), '--tc': typeTextColor(type) } as CSSProperties}
+                  onClick={() => pick(type)}>
+                  <TypeFace type={type} />
+                </button>
+              );
+            })}
+          </div>
+          <button type="button" className="type-slot-clear" disabled={!value} onClick={() => pick(undefined)}>{t('filters.any')}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Una scelta sola fra tessere (Imposta, Sfrutta); con `clearTo` ricliccare la scelta la toglie. */
 function Choice<V extends string>({ label, value, options, onChange, clearTo }: {
   label: string;
   value: V;
@@ -209,14 +268,13 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // Il tipo del Pokémon: fino a due tipi (deve averli tutti); "Solo monotipo" con nessuno o un tipo
-  const setOwnTypes = (types: TypeName[]) => set({ types, mono: types.length < 2 && filters.mono });
-  const monoToggle = (
-    <label className="fmono">
-      <input type="checkbox" checked={filters.mono} disabled={filters.types.length >= 2} onChange={e => set({ mono: e.target.checked })} />
-      {t('filters.monoAria')}
-    </label>
-  );
+  // Il tipo del Pokémon: fino a due tipi (deve averli tutti); "Solo monotipo" toglie il Tipo 2. Svuotando il Tipo 1 il
+  // Tipo 2 sale al suo posto
+  const [first, second] = filters.types;
+  const setOwnTypes = (one: TypeName | undefined, two: TypeName | undefined) => {
+    const types = [one ?? two, one ? two : undefined].filter((x): x is TypeName => !!x);
+    set({ types, mono: types.length < 2 && filters.mono });
+  };
 
   const conditionOptions = [{ value: '' as const, label: t('filters.any') }, ...CONDITIONS.map(c => ({ value: c, label: conditionName(c, lang) }))];
   const showText = resultCount === undefined ? t('filters.done')
@@ -239,8 +297,19 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
         </header>
 
         <div className="filters-body">
+          <section className="fgroup">
+            <GroupHead label={t('filters.ownType')} />
+            <div className="own-types">
+              <TypeSlot label={t('filters.type1')} value={first} taken={second} onPick={type => setOwnTypes(type, second)} />
+              <TypeSlot label={t('filters.type2')} value={second} taken={first} disabled={!first || filters.mono} onPick={type => setOwnTypes(first, type)} />
+              <label className="fmono">
+                <input type="checkbox" checked={filters.mono} disabled={filters.types.length >= 2} onChange={e => set({ mono: e.target.checked })} />
+                {t('filters.monoAria')}
+              </label>
+            </div>
+          </section>
+
           <div className="type-filters">
-            <TypeGrid label={t('filters.ownType')} selected={filters.types} onChange={setOwnTypes} max={2} extra={monoToggle} />
             <TypeGrid label={t('filters.resists')} selected={filters.resists} onChange={resists => set({ resists })} />
             <TypeGrid label={t('filters.hits')} selected={filters.hits} onChange={hits => set({ hits })} />
           </div>

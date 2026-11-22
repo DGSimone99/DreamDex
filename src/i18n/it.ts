@@ -1811,6 +1811,8 @@ export const it: Record<keyof typeof en, string> = {
   'filters.activeOne': "Filtri (1 attivo)",
   'filters.activeMany': "Filtri ({n} attivi)",
   'filters.type': "Tipo",
+  'filters.type1': "Tipo 1",
+  'filters.type2': "Tipo 2",
   'filters.mono': "Mono",
   'filters.monoAria': "Solo monotipo",
   'filters.favoritesOnly': "Solo preferiti",

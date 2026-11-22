@@ -1189,11 +1189,13 @@ const STATES: Record<string, State> = {
     await wait(300);
     // Niente funzioni con nome dentro evaluate: tsx ci aggiunge __name, che nella pagina non esiste
     await p.evaluate(() => {
-      for (const [group, text] of [['Tipo del Pokémon', 'Acciaio'], ['Resiste a', 'Terra'], ['Ruolo', 'Muro Fisico'], ['Ruolo', 'Hazard']]) {
+      for (const [group, text] of [['Resiste a', 'Terra'], ['Ruolo', 'Muro Fisico'], ['Ruolo', 'Hazard']]) {
         const g = document.querySelector(`.filters-dialog [role="group"][aria-label="${group}"]`);
         ([...(g?.querySelectorAll('button') ?? [])].find(b => (b.textContent ?? '').trim() === text) as HTMLElement | undefined)?.click();
       }
     });
+    // La casella Tipo 1 aperta: si vede la tendina dei tipi
+    await p.evaluate(() => (document.querySelector('.filters-dialog .type-slot-btn') as HTMLElement | null)?.click());
     await wait(500);
     return true;
   } },

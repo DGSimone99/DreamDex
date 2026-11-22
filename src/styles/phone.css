@@ -223,7 +223,11 @@
   .help-dialog.filters-dialog { width: 100% !important; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
   .filters-body { padding: var(--sp-7) var(--sp-7) var(--sp-9); }
   .type-filters { grid-template-columns: minmax(0, 1fr); gap: var(--sp-9); }
+  .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .type-grid button { height: 36px; }
+  .own-types { flex-direction: column; align-items: stretch; }
+  .type-slot-btn { flex: 1; width: auto; height: 40px; }
+  .type-slot-menu { position: fixed; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: var(--sp-6); width: auto; }
   .role-tiles button, .role-flow button, .segmented button { min-height: 40px; }
   .filters-foot { padding-bottom: calc(var(--sp-6) + var(--safe-b)); }
   .filters-foot .primary { flex: 1; min-height: 48px; }

@@ -60,7 +60,7 @@ describe('scheda Liste', () => {
     expect(within(filters).queryByRole('group', { name: 'Uso nel meta' })).toBeNull();
     expect(within(filters).queryByLabelText('Adatto a')).toBeNull();
     expect(within(filters).queryByRole('checkbox', { name: 'Solo preferiti' })).toBeNull();
-    expect(within(filters).getByRole('group', { name: 'Tipo del Pokémon' })).toBeInTheDocument();
+    expect(within(filters).getByRole('button', { name: /^Tipo 1:/ })).toBeInTheDocument();
   });
 
   it('il Pokédex in ordine nazionale, a pagine: si parte da Bulbasaur', async () => {
