@@ -287,6 +287,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   actions: SlotActions;
 }) {
   const onToggle = (next: boolean) => actions.toggle(index, next);
+  const [flash, setFlash] = useState(false);
   const onStep = (delta: number) => actions.step(index, delta);
   const onMove = (delta: number) => actions.move(index, delta);
   const onDrag = (phase: 'start' | 'over' | 'drop' | 'end') => actions.drag(index, phase);
@@ -515,7 +516,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       }}
     >
       <div
-        className={`slot-card pedana-face${open ? ' beam-on' : ''}`}
+        className={`slot-card pedana-face${open ? ' beam-on' : ''}${flash ? ' beam-flash' : ''}`}
+        onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}
         draggable
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…"). Carta aperta: niente
         // fumetto (col mouse ancora sopra, ridisegnando la pagina si riapriva sopra l'editor)
@@ -539,6 +541,8 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
           const hit = (e.target as HTMLElement).closest('button, a, input, [tabindex]');
           if (hit && hit !== card.current) return;
+          // Aprendo, la luce dall'alto si accende forte e si assesta (CSS .beam-flash)
+          if (!open) setFlash(true);
           onToggle(!open);
           // Come prima col <summary>: dopo il clic il fuoco è sulla carta (Esc e frecce partono da lì), senza anello
           card.current?.focus({ preventScroll: true, focusVisible: false });
