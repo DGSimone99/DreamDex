@@ -229,7 +229,10 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} {...hint(typeName(type as TypeName, lang))} />)}
             </span>
             {banMark}
-            <StatsBadge species={item.species} item={set.item} compare={out} side={<StatHex set={set} />} />
+            <StatsBadge species={item.species} item={set.item} compare={out} side={<>
+              <StatHex set={set} compare={out} />
+              {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+            </>} />
           </h3>
         </div>
         {result && before ? (
