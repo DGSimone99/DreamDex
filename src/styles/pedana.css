@@ -22,9 +22,9 @@
 /* Carte della lista e del Meta: col mouse fermo sopra (dopo --wake, come lo sprite che esce) la luce compare spenta;
    andando via sparisce subito. Al clic (.beam-flash) si accende più forte e si assesta com'è sulla scelta */
 @media (hover: hover) {
-  .card:not(.beam-on):hover .pedana-beam { opacity: 0.35; transition-delay: var(--wake, 0.7s); }
+  .card:not(.beam-on):hover .pedana-beam { opacity: 0.35; transition-delay: var(--wake, 120ms); }
   /* Le carte del team sono sempre accese: lì la luce spenta deve essere un po' più forte per vedersi */
-  .band:not(.collapsed) .slot.filled > .slot-card:not(.beam-on):hover .pedana-beam { opacity: 0.8; filter: brightness(1.4); transition-delay: var(--wake, 0.7s); }
+  .band:not(.collapsed) .slot.filled > .slot-card:not(.beam-on):hover .pedana-beam { opacity: 0.8; filter: brightness(1.4); transition-delay: var(--wake, 120ms); }
 }
 /* Anche le carte del team (aprendo l'editor) */
 .beam-flash.beam-on .pedana-beam { animation: beam-flash 0.45s ease-out; }
