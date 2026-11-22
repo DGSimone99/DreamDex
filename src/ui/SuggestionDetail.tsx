@@ -171,6 +171,19 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     const body = bodyRef.current;
     if (level < lastLevel && wideScreen() && body && body.scrollHeight - body.clientHeight > 1) setLevel((level + 1) as DetailLevel);
   });
+  // Avanza altezza (almeno 8 px liberi sotto le parti, a livello già scelto): più aria fra i dati del set e le mosse.
+  // Si toglie se poi il corpo non entra più; si ricalcola col candidato o il livello nuovo
+  const [roomy, setRoomy] = useState(false);
+  useLayoutEffect(() => setRoomy(false), [fitKey, level]); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    if (!body || !wideScreen()) return;
+    if (roomy) { if (body.scrollHeight - body.clientHeight > 1) setRoomy(false); return; }
+    const panel = body.querySelector('.detail-panel');
+    if (!panel || body.scrollHeight - body.clientHeight > 1) return;
+    const used = [...panel.children].reduce((sum, el) => sum + el.getBoundingClientRect().height, 0);
+    if (body.clientHeight - used >= 8) setRoomy(true);
+  });
   const startRef = useRef(start);
   startRef.current = start;
   useEffect(() => {
@@ -190,7 +203,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const showSet = !tabs || shownTab === 'set';
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 3 ? ' compact' : ''}${level === 2 || level === 3 ? ' why-2col' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 3 ? ' compact' : ''}${level === 2 || level === 3 ? ' why-2col' : ''}${tabs ? ' tabbed' : ''}${roomy ? ' roomy' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
@@ -313,7 +326,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         </div>
 
         {/* Il set consigliato in una riga, come la schermata riassunto dei giochi: l'esagono, le quattro mosse una sotto
-            l'altra, poi strumento, natura, abilità, EV (e Tera) col nome sopra il valore */}
+            l'altra, poi strumento, abilità, natura, EV (e Tera) col nome sopra il valore */}
         {showSet && (
         <section className="detail-sec wide set-sec">
           <h4 className="visually-hidden">{tr('detail.set')}</h4>

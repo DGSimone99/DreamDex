@@ -554,6 +554,8 @@ const STATES: Record<string, State> = {
   'pokemon-menu-fav': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.lists': JSON.stringify({ universal: { favorites: FAVS, bans: [] }, byFormat: {} }) }, run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long-en': { hash: hash(LONG), lang: 'en', run: async p => { await tab(p, 'pokemon'); return true; } },
+  // Gen 9: il set del candidato ha anche la Tera (cinque dati del set nel dettaglio)
+  'pokemon-gen9': { hash: hashWith(TEAM, { formatId: 'gen9ou' }), run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;

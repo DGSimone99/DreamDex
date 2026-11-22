@@ -121,6 +121,8 @@ const plain = (text: string): Bring => ({ text, short: text });
  * l'area che sale di più come la riga del dettaglio ("Offesa +13"); "nessuna differenza" solo se non cambia niente.
  */
 export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): ReasonSummary {
+  // Carte basse (una sola fila non bastava): niente motivi, il voto nel cartellino dice già quanto migliora
+  if (n <= 0) return { pros: false, items: [] };
   const rules = formatRules(format.formatId);
   // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, col "+" come i bonus
   if (usage !== null) {
@@ -367,6 +369,7 @@ function ReasonBody({ bring }: { bring: Bring }) {
 
 /** I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio; i segni col tooltip. */
 export function Reasons({ reasons }: { reasons: ReasonSummary }) {
+  if (!reasons.items.length) return null;
   return (
     <small>
       {reasons.items.map((bring, i) => {
