@@ -45,7 +45,7 @@ const Plinth = ({ name, size }: { name: string; size: number }) => <span classNa
 
 /** Chip col bordo e il pallino colorato, come quelle dei ruoli. */
 const Tag = ({ color, children }: { color: string; children: ReactNode }) => (
-  <span className="sum-tag" style={{ '--c': color } as CSSProperties}><i aria-hidden="true" />{children}</span>
+  <span className="sum-tag" style={{ '--c': color } as CSSProperties}><i aria-hidden="true" /><span className="sum-tag-t">{children}</span></span>
 );
 
 /**

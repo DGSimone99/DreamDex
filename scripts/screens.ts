@@ -57,6 +57,13 @@ const WEATHERS = [
   member('Tapu Koko', 'Choice Specs', 'Electric Surge', ['Rising Voltage', 'Volt Switch', 'Dazzling Gleam', 'Grass Knot'], 'Timid', { spa: 252, spe: 252, spd: 4 }),
   member('Rillaboom', 'Choice Band', 'Grassy Surge', ['Grassy Glide', 'Wood Hammer', 'Knock Off', 'U-turn'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
 ];
+/** Cinque condizioni (pioggia, sabbia, sole, Campo Nebbioso, Campo Erboso) e due core a tre: Tyranitar/Rillaboom/Tapu Fini e Pelipper/Torkoal/Excadrill. */
+const WEATHERS_CORES = [
+  WEATHERS[0], WEATHERS[2], WEATHERS[3],
+  member('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume', 'Rapid Spin', 'Yawn', 'Earth Power'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Tapu Fini', 'Leftovers', 'Misty Surge', ['Moonblast', 'Scald', 'Taunt', 'Defog'], 'Calm', { hp: 248, spd: 252, def: 8 }),
+  member('Rillaboom', 'Leftovers', 'Grassy Surge', ['Grassy Glide', 'Swords Dance', 'Knock Off', 'U-turn'], 'Adamant', { hp: 252, atk: 252, spd: 4 }),
+];
 /** Team senza sinergie né legami (nessun core, nessun pivot): il Riassunto ne mostra le sezioni vuote. */
 const LONE = [
   member('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Dragon Claw', 'Stone Edge', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -912,6 +919,7 @@ const STATES: Record<string, State> = {
   } },
   // Riassunto completo: team pioggia, aperto e col team ridotto, e team senza sinergie
   'analysis-weathers': { hash: hash(WEATHERS), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
+  'analysis-weathers-cores': { hash: hash(WEATHERS_CORES), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain': { hash: hash(RAIN), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain-collapsed': { hash: hash(RAIN), run: async p => {
     await tab(p, 'analysis');

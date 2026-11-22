@@ -677,6 +677,8 @@
 .sum-packed .sum-pill .sum-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sum-packed .sum-pill .sum-tag { min-width: 0; overflow: hidden; flex: 0 1 auto; }
 .sum-packed .sum-pill .sum-tag i { flex: none; }
+/* Nome lungo in una colonna stretta (Campo Nebbioso): finisce coi puntini, intero nel tooltip */
+.sum-packed .sum-pill .sum-tag-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sum-pill-n { flex: none; margin-left: auto; font: 700 var(--fs-caption)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--accent-ink); }
 .sum-packed .sum-pill .sum-tags { flex-wrap: nowrap; overflow: hidden; }
 
