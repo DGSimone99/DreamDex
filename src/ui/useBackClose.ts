@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 
 /** Telefono (e tablet stretto): la scheda del candidato copre la lista. */
 export const PHONE = '(max-width: 759px)';
+/** Telefono e tablet: la scheda del candidato si apre toccando la carta (a tutto schermo sul telefono, da destra sul tablet). */
+export const DETAIL_SHEET = '(max-width: 1099px)';
 /** Telefono e tablet: l'editor del membro copre tutto lo schermo. */
 export const SMALL = '(max-width: 1099px)';
 

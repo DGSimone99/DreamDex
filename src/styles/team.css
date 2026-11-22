@@ -269,11 +269,12 @@
   border: 1px solid var(--line-soft);
   transition: transform 0.3s var(--ease), box-shadow 0.2s;
 }
-.slot > .slot-card .pedana-beam { z-index: -1; }
-/* Carta aperta: lo sprite grande riempie la carta, la luce scende fin sotto i suoi piedi */
-.slot.open > .slot-card { --stage-h: calc(100% - 40px); }
-/* La pedana sotto i piedi dello sprite (circa al 90% del riquadro): dietro lo sprite */
-.slot > .slot-card .sprite-wrap .pedana-disc { bottom: 2px; z-index: 0; }
+/* La luce parte dal bordo alto della carta (il riquadro dello sprite sta poco sotto; la carta taglia quel che sporge) e
+   finisce sulla pedana, in fondo al riquadro dello sprite */
+.slot > .slot-card .sprite-wrap > .pedana-beam { z-index: -1; top: auto; bottom: 2px; height: calc(100% + 24px); }
+/* La pedana sotto i piedi dello sprite, dietro lo sprite: i piedi stanno a 10/96 del lato sopra il fondo (FEET_ROW in
+   spriteFeet.ts, il lato è quello dello sprite: tutto il riquadro, fino a 176 px) e lì va il centro della pedana (alta 26 px) */
+.slot > .slot-card .sprite-wrap .pedana-disc { bottom: calc(min(100cqh, 100cqw, 176px) * 10 / 96 - 13px); z-index: 0; }
 .slot > .slot-card .sprite-wrap > .sprite { position: relative; z-index: 1; }
 .slot > .slot-card .sprite-wrap > .sprite-ani { z-index: 1; }
 .slot > .slot-card .sprite { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
@@ -324,11 +325,14 @@
 .slot > .slot-card > * { flex-shrink: 0; }
 /* Con l'avviso aperto il suo fumetto passa sopra sprite, nome e righe sotto */
 .slot > .slot-card .slot-alerts:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
-.slot > .slot-card .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
+.slot > .slot-card .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease), opacity 0.18s ease-out; }
 /* Card aperta: lo sprite cresce un poco e gioca l'animazione */
 .slot.open > .slot-card { --open-scale: 1.12; }
 .slot.open > .slot-card .sprite { transform-origin: 50% 92%; transform: scale(var(--open-scale)); }
-.slot > .slot-card .sprite.covered { visibility: hidden; }
+/* Statico e GIF si danno il cambio con una dissolvenza breve (Sprite: .covered e .ready) */
+.slot > .slot-card .sprite.covered { opacity: 0; }
+.slot > .slot-card .sprite-ani { opacity: 0; transition: opacity 0.18s ease-out; }
+.slot > .slot-card .sprite-ani.ready { opacity: 1; }
 .slot > .slot-card .sprite-ani {
   position: absolute;
   /* Appoggiato in basso e mai più alto di --fit (px dello sprite): le GIF alte si rimpiccioliscono per stare nella card */

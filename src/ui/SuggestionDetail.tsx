@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import { rankedChanges } from '../engine/coach';
-import { getSpecies } from '../engine/dex';
+import { battleSpecies, getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
 import type { Archetype } from '../engine/archetype';
 import { areaDrops, extrasDelta, rolesDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
+import { roleLabel } from '../engine/roles';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
 import type { Suggestion } from '../engine/scoring';
@@ -16,8 +17,9 @@ import { typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
 import { Icon } from './icons';
+import { useFitCount } from './useFit';
 import { hint } from './MoveTip';
-import { BoxIcon, bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
+import { bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
 import { PokemonIcon } from './PokemonName';
 import { battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
@@ -25,7 +27,7 @@ import { Sprite, typeColor } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { Typed } from './TypeText';
 import { MemberKit, MemberMoves, MemberRoles, StatHex } from './MemberCard';
-import { typeIconUrl } from './typeIcons';
+import { typeIconUrl, tileStyle } from './typeIcons';
 import type { TypeName } from '../engine/types';
 
 
@@ -74,11 +76,10 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * sale il voto, cosa porta e cosa toglie, l'effetto sul team area per area (una riga), il set consigliato (griglia,
  * esagono, pillole delle mosse), le azioni.
  */
-/** Versioni del dettaglio, dalla più ricca: 0 con la sezione Meta (solo a team chiuso), 1 normale (aree, poi Porta e
- *  Toglie in colonna, poi il set in una riga), 2 Porta e Toglie su due colonne, 3 anche la testata bassa, 4 due
- *  linguette (Porta e Toglie · Set consigliato), 5 (solo se c'è Toglie) tre linguette: Porta · Toglie · Set consigliato. */
-export type DetailLevel = 0 | 1 | 2 | 3 | 4 | 5;
 export type DetailTab = 'brings' | 'loses' | 'set';
+/** Sotto questa altezza del dettaglio intero (portatile basso col team aperto): testata bassa e set su una riga. Si misura
+ *  il dettaglio, non il corpo: il corpo cambia proprio passando a basso (la testata si abbassa), e lì sfarfallerebbe. */
+const LOW_DETAIL = 400;
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
 const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
 
@@ -100,7 +101,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   actionLabel: string;
   onAction: () => void;
   /** Lo sprite della lista: il dettaglio mostra l'altro (lista Normale → icona box, lista Icona box → sprite animato). */
-  /** Team chiuso: c'è altezza per la sezione Meta. */
+  /** Team chiuso: il dettaglio è più alto (si rimisura quando cambia). */
   teamCollapsed?: boolean;
   /** Linguetta aperta quando il dettaglio è a linguette (la tiene il pannello, così resta cambiando candidato). */
   tab?: DetailTab;
@@ -122,91 +123,92 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
   const result = item.teamGain;
 
-  // Porta: tutto, nello stesso ordine delle caselle della lista (che ne mostrano le prime voci)
-  // ("Usato con X nel N% dei team" no: è un dato del meta, sta nella sezione Meta)
-  // I ruoli uno per uno (la voce "Porta Pivot, Hazard (mancanti nel team)" diventa un riquadro per ruolo), senza doppioni
-  const brings = bringsOf(item, lang, rulesOf(data)).filter(bring => !bring.usedWith)
+  // Risolve: tutto, nello stesso ordine delle caselle della lista (che ne mostrano le prime voci). I ruoli no: stanno nel
+  // set, una volta sola, coi nuovi per il team in verde ("Usato con X nel N% dei team" no: c'è "Spesso con" qui sotto)
+  // Col team vuoto non c'è niente da risolvere: Risolve dice cosa sa fare il Pokémon (i suoi ruoli), come le carte
+  const alone = team.length === 0;
+  const brings = bringsOf(item, lang, rulesOf(data)).filter(bring => !bring.usedWith && (alone || (bring.kind !== 'roles' && !bring.roles?.length)))
     .flatMap((bring): Bring[] => (bring.roles?.length ? bring.roles.map(text => ({ text, short: text, kind: 'roles' })) : [bring]))
     .filter((bring, i, all) => all.findIndex(other => other.text === bring.text) === i);
-  // Meta: uso nel meta e i 5 compagni più frequenti (quota dei team che lo usano), chi è già nel team riconosciuto per specie
-  const statsOf = statsEntry(data.stats, item.species);
-  const inTeam = new Set(team.map(member => toID(member.species)));
+  const freshRoles = item.facts.roles?.filled ?? [];
+  // Spesso con: fra i 5 compagni più frequenti nel meta, quelli già nel team (senza meta niente: giochi, No Format)
+  const statsOf = data.ignoreMeta || format.game ? undefined : statsEntry(data.stats, item.species);
+  const inTeam = new Set(team.filter((_, i) => i !== replaceIndex).map(member => toID(battleSpecies(member)?.baseSpecies ?? member.species)));
   const mates = statsOf ? Object.entries(statsOf.teammates).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([name, share]) => ({ name, share, inTeam: inTeam.has(toID(name)) })) : [];
-  const meta = statsOf ? {
-    usage: statsOf.usage,
-    // Posto nella classifica d'uso del formato (1 = il più usato)
-    place: Object.values(data.stats?.pokemon ?? {}).filter(entry => entry.usage > statsOf.usage).length + 1,
-    mates,
-    top: mates[0]?.share || 1,
-  } : null;
-  // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
+    .map(([name]) => name).filter(name => inTeam.has(toID(getSpecies(name)?.baseSpecies ?? name))) : [];
+  // Chi esce (Sostituisci): i ruoli che il team perde stanno nella sua striscia, non in Costa
+  const out = replaceIndex !== null ? team[replaceIndex] : undefined;
+  const lostRoles = 'diff' in item && item.diff ? item.diff.losses.roles.map(role => roleLabel(role, lang)) : [];
+  // Costa: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
   const loses: Bring[] = [
-    ...(changes?.cons.map((c): Bring => ({ text: c.text, short: c.text, kind: kindOfArea(c.area) })) ?? []),
+    ...(changes?.cons.map((c): Bring => ({ text: c.text, short: c.text, kind: kindOfArea(c.area) })) ?? [])
+      .filter(c => !(c.kind === 'roles' && lostRoles.includes(c.text))),
     ...(item.facts.clashes ?? []).map((text): Bring => { const clean = text.replace(/^⚠\s*/, ''); return { text: clean, short: clean, kind: 'warning' }; }),
   ];
-  // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
-  if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).map((drop): Bring => { const text = `${drop.label} ${delta(drop.change)}`; return { text, short: text, kind: 'other' }; }));
-  // Problemi risolti o nuovi e meteo: la parte del voto che le aree non spiegano, con la sua pillola
+  // Senza perdite da elencare ma con aree in calo (anche aggiungendo), Costa dice quali (mai frecce rosse senza perché)
+  if (!loses.length && !lostRoles.length && before && after) loses.push(...areaDrops(before, after).map((drop): Bring => { const text = tr('detail.areaDown', { area: drop.label }); return { text, short: text, kind: 'other' }; }));
+  // Problemi risolti o nuovi e meteo: la parte del voto che le aree non spiegano
   const extras = before && after ? extrasDelta(before, after) : 0;
   // I punti dei Ruoli a parte, come nella carta del voto (Bonus/Malus non li conta)
   const rolesChange = before && after ? rolesDelta(before, after) : 0;
-  // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso
-  const showLoses = replacing || loses.length > 0;
+  // Le aree nella testata, sotto "B 79 → A 88": solo il verso (sale, uguale, scende), quanto lo dice il +N
+  const areaMarks = before && after ? [
+    ...after.areas.filter(area => !area.inactive).map(area => {
+      const prev = before.areas.find(a => a.key === area.key);
+      const change = area.value !== null && prev?.value != null && !prev.inactive ? area.value - prev.value : 0;
+      return { key: area.key as string, short: tr(`area.${area.key}Short`), label: area.label, change };
+    }),
+    ...(rolesChange !== 0 ? [{ key: 'roles', short: tr('area.roles'), label: tr('area.roles'), change: rolesChange }] : []),
+    ...(extras !== 0 ? [{ key: 'extras', short: tr('detail.extrasShort'), label: tr('detail.extras'), change: extras }] : []),
+  ] : [];
 
-  // La versione più ricca che ci sta senza scorrere (solo su desktop: sul telefono il foglio scorre): si parte dalla più
-  // ricca ammessa e, finché il corpo non entra, si scende di una. Si riparte col candidato nuovo, col team aperto o chiuso
-  // e quando la finestra cambia misura
+  // Due colonne (Perché | Set) o una, la decide il CSS dalla larghezza del dettaglio. Dalla sua altezza (non dal
+  // candidato): basso, testata bassa e il set su una riga senza esagono; e se anche così il corpo non entra (portatile
+  // basso in Sostituisci), due linguette (Perché · Set). Sui fogli (tablet, telefono) il dettaglio scorre: niente linguette
   const bodyRef = useRef<HTMLDivElement>(null);
-  const start: DetailLevel = teamCollapsed ? 0 : 1;
-  // Tre linguette solo se c'è un Toglie da separare
-  const lastLevel: DetailLevel = showLoses ? 5 : 4;
-  const [level, setLevel] = useState<DetailLevel>(start);
+  // Azioni su una riga: se «Metti al posto di …» (nome lungo, inglese) non lascia posto, Copia set e Smogon restano icone
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const roomyActions = useFitCount(actionsRef, 1, `${lang}|${actionLabel}`, undefined, true) === 1;
+  const asideRef = useRef<HTMLElement>(null);
+  const [low, setLow] = useState(false);
+  useEffect(() => {
+    const aside = asideRef.current;
+    if (!aside || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => { if (aside.clientHeight > 0) setLow(wideScreen() && aside.clientHeight < LOW_DETAIL); });
+    observer.observe(aside);
+    return () => observer.disconnect();
+  }, []);
+  const [tabs, setTabs] = useState(false);
+  // Se il corpo non entra, prima il set su due righe di testo (come sul dettaglio basso); solo se non basta, le linguette
+  const [tight, setTight] = useState(false);
   const [ownTab, setOwnTab] = useState<DetailTab>('brings');
   const tab = tabProp ?? ownTab;
   const chooseTab = onTab ?? setOwnTab;
-  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${start}`;
-  useLayoutEffect(() => setLevel(start), [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${teamCollapsed}|${low}`;
+  useLayoutEffect(() => { setTabs(false); setTight(false); }, [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
-    if (level < lastLevel && wideScreen() && body && body.scrollHeight - body.clientHeight > 1) setLevel((level + 1) as DetailLevel);
+    if (tabs || !body || !wideScreen()) return;
+    if (body.scrollHeight - body.clientHeight > 1) {
+      if (!low && !tight) setTight(true);
+      else setTabs(true);
+    }
   });
-  // Avanza altezza (almeno 8 px liberi sotto le parti, a livello già scelto): più aria fra i dati del set e le mosse.
-  // Si toglie se poi il corpo non entra più; si ricalcola col candidato o il livello nuovo
-  const [roomy, setRoomy] = useState(false);
-  useLayoutEffect(() => setRoomy(false), [fitKey, level]); // eslint-disable-line react-hooks/exhaustive-deps
-  useLayoutEffect(() => {
-    const body = bodyRef.current;
-    if (!body || !wideScreen()) return;
-    if (roomy) { if (body.scrollHeight - body.clientHeight > 1) setRoomy(false); return; }
-    const panel = body.querySelector('.detail-panel');
-    if (!panel || body.scrollHeight - body.clientHeight > 1) return;
-    const used = [...panel.children].reduce((sum, el) => sum + el.getBoundingClientRect().height, 0);
-    if (body.clientHeight - used >= 8) setRoomy(true);
-  });
-  const startRef = useRef(start);
-  startRef.current = start;
   useEffect(() => {
-    const reset = () => setLevel(startRef.current);
+    const reset = () => { setTabs(false); setTight(false); };
     window.addEventListener('resize', reset);
     return () => window.removeEventListener('resize', reset);
   }, []);
-  const showMeta = teamCollapsed && level === 0;
-  const tabs = level >= 4;
-  // Tre linguette solo quando c'è Toglie e due non bastano; con due, "Toglie" sta con Porta
-  const tabKeys: DetailTab[] = level === 5 ? ['brings', 'loses', 'set'] : ['brings', 'set'];
-  const shownTab: DetailTab = tabKeys.includes(tab) ? tab : 'brings';
-  const showBrings = !tabs || shownTab === 'brings';
-  const showLosesPart = !tabs || shownTab === 'loses' || (level === 4 && shownTab === 'brings');
-  // Le aree stanno con Porta (in cima, sotto la testata): con le linguette nella prima
-  const showAreas = !tabs || shownTab === 'brings';
+  const shownTab: DetailTab = tab === 'set' ? 'set' : 'brings';
+  const showWhy = !tabs || shownTab === 'brings';
   const showSet = !tabs || shownTab === 'set';
+  const tabKeys: DetailTab[] = ['brings', 'set'];
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 3 ? ' compact' : ''}${level === 2 || level === 3 ? ' why-2col' : ''}${tabs ? ' tabbed' : ''}${roomy ? ' roomy' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${low || tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
-          tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
+          tipi; a destra quanto sale il voto e, sotto, il verso di ogni area */}
       <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
         <span className="mcard-mon detail-mon">
@@ -224,27 +226,34 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               </span>
             ) : <span>{item.species}</span>}
             <span className="detail-types" aria-label={types.map(type => typeName(type as TypeName, lang)).join(', ')}>
-              {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} {...hint(typeName(type as TypeName, lang))} />)}
+              {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} {...hint(typeName(type as TypeName, lang))} />)}
             </span>
             {banMark}
-            <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
+            <StatsBadge species={item.species} item={set.item} compare={out} side={<>
+              <StatHex set={set} compare={out} />
+              {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+            </>} />
           </h3>
         </div>
-        {/* Sostituendo: dopo nome e tipi, ⇄ e chi esce ingrigito, così si vede subito al posto di chi entra */}
-        {replacing && (
-          <span className="detail-out" title={tr('suggest.outFor', { member: battleName(team[replaceIndex]) })}>
-            <span className="visually-hidden">{tr('suggest.outFor', { member: battleName(team[replaceIndex]) })}</span>
-            <span className="detail-swap-mark" aria-hidden="true"><Icon name="swap" /></span>
-            <span aria-hidden="true" className="detail-sprite out">
-              <BoxIcon set={team[replaceIndex]} />
-            </span>
-          </span>
-        )}
         {result && before ? (
           <div className="detail-score">
             <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{delta(result.gain) || '±0'}</strong>
             {/* Solo "B 78 → A 86": che è il voto del team lo dice il posto; per i lettori di schermo resta la parola */}
             <span><span className="visually-hidden">{tr('detail.gradeLabel')} </span>{tr('detail.gradeChange', { from: `${before.grade} ${before.overall}`, to: `${result.grade} ${result.overall}` })}</span>
+            {areaMarks.length > 0 && (
+              <ul className="detail-area-marks" aria-label={tr('detail.team')}>
+                {areaMarks.map(mark => {
+                  const way = mark.change > 0 ? 'up' : mark.change < 0 ? 'down' : 'same';
+                  const said = tr(`detail.area.${way}`, { area: mark.label });
+                  return (
+                    <li key={mark.key} className={way} {...hint(said)}>
+                      <span aria-hidden="true">{mark.short}</span><AreaArrow way={way} />
+                      <span className="visually-hidden">{said}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         ) : result && team.length === 0 ? (
           // Primo Pokémon (nel gioco): il voto che mette da solo, "+36" e la sua lettera
@@ -260,122 +269,76 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         )}
       </header>
 
+      {/* Sostituendo: la striscia di chi esce, ingrigito, coi ruoli che il team perde */}
+      {out && (
+        <div className="detail-swap">
+          <span className="detail-swap-mark" aria-hidden="true"><Icon name="swap" /></span>
+          <span className="detail-swap-mon" aria-hidden="true"><Sprite species={battleName(out)} item={out.item} size={96} /></span>
+          <p className="detail-swap-text">
+            <small>{tr('detail.out')}</small>
+            <span>
+              <b>{battleName(out)}</b>
+              {lostRoles.length > 0 && <em>{tr('detail.outLoses', { roles: lostRoles.join(' · ') })}</em>}
+            </span>
+          </p>
+        </div>
+      )}
+
       <div className="detail-body" ref={bodyRef}>
-        {/* Schermo basso: Porta e Toglie da una parte, il set dall'altra, una alla volta */}
+        {/* Il corpo non entra: Perché da una parte, il set dall'altra, una alla volta */}
         {tabs && (
           <div className="detail-tabs" role="tablist" aria-label={tr('detail.region', { species: item.species })}>
             {tabKeys.map(key => (
               <button key={key} type="button" role="tab" id={`detail-tab-${key}`} aria-selected={shownTab === key} aria-controls="detail-tabpanel"
-                className={shownTab === key ? 'on' : undefined} onClick={() => chooseTab(key)}>
-                {level === 5 && key === 'brings' ? tr('detail.brings') : level === 5 && key === 'loses' ? tr('detail.loses') : tr(`detail.tab.${key === 'loses' ? 'brings' : key}`)}
+                tabIndex={shownTab === key ? 0 : -1} className={shownTab === key ? 'on' : undefined} onClick={() => chooseTab(key)}
+                onKeyDown={e => {
+                  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                  e.preventDefault();
+                  const next = tabKeys[(tabKeys.indexOf(key) + (e.key === 'ArrowRight' ? 1 : tabKeys.length - 1)) % tabKeys.length];
+                  chooseTab(next);
+                  (e.currentTarget.parentElement?.querySelector(`#detail-tab-${next}`) as HTMLElement | null)?.focus();
+                }}>
+                {tr(key === 'set' ? 'detail.tab.set' : 'detail.tab.brings')}
               </button>
             ))}
           </div>
         )}
-        <div className="detail-panel" {...(tabs ? { role: 'tabpanel', id: 'detail-tabpanel', 'aria-labelledby': `detail-tab-${shownTab}` } : {})}>
-        {/* Prima cosa sotto la testata, a ogni misura: area per area quanto cambia il voto, poi Porta e Toglie che dicono perché */}
-        {after && showAreas && (
-          <section className="detail-sec wide effect">
-            {/* Sotto Porta e Toglie, senza etichetta visibile (ne è il risultato; col primo Pokémon resta "Voto con lui da
-                solo"): una riga, per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
-            <h4 className={before ? 'visually-hidden' : undefined}>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
-            <dl className="detail-areas">
-              {after.areas.map(area => {
-                const prev = before?.areas.find(a => a.key === area.key);
-                const was = prev?.value;
-                const change = area.value !== null && was != null && !area.inactive && !prev?.inactive ? area.value - was : 0;
-                const note = area.inactive ? tr('rating.notCounted') : undefined;
-                return (
-                  <div key={area.key} className={area.inactive ? 'inactive' : undefined} title={note}>
-                    <dt aria-description={note}>{area.label}</dt>
-                    {before
-                      ? <dd className={`change${change < 0 ? ' worse' : change === 0 ? ' same' : ''}`}>{delta(change)}</dd>
-                      : <><dd className="value">{area.value || '—'}</dd><dd className="change" /></>}
-                  </div>
-                );
-              })}
-              {rolesChange !== 0 && (
-                <div className="extras">
-                  <dt>{tr('area.roles')}</dt>
-                  <dd className={`change${rolesChange < 0 ? ' worse' : ''}`}>{delta(rolesChange)}</dd>
+        <div className="detail-cols" {...(tabs ? { role: 'tabpanel', id: 'detail-tabpanel', 'aria-labelledby': `detail-tab-${shownTab}` } : {})}>
+          {showWhy && (
+            <section className="detail-why">
+              <div className="why-part">
+                <h4>{tr('detail.brings')}</h4>
+                <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
+                {mates.length > 0 && (
+                  <p className="detail-mates">
+                    <Icon name="chain" />
+                    <span>{tr('detail.oftenWith')}</span>
+                    {mates.map(name => <span key={name} className="mon-ref"><PokemonIcon name={name} /><strong>{name}</strong></span>)}
+                  </p>
+                )}
+              </div>
+              {loses.length > 0 && (
+                <div className="why-part">
+                  <h4>{tr('detail.loses')}</h4>
+                  <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
                 </div>
               )}
-              {extras !== 0 && (
-                <div className="extras">
-                  <dt>{tr('detail.extras')}</dt>
-                  <dd className={`change${extras < 0 ? ' worse' : ''}`}>{delta(extras)}</dd>
-                </div>
-              )}
-            </dl>
-          </section>
-        )}
-
-        <div className="detail-because">
-        {showBrings && (
-        <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
-          <h4 className="visually-hidden">{tr('detail.brings')}</h4>
-          <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
-        </section>
-        )}
-        {showLosesPart && showLoses && (
-          <section className="detail-sec loses">
-            <h4 className="visually-hidden">{tr('detail.loses')}</h4>
-            <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
-          </section>
-        )}
-        </div>
-
-        {/* Il set consigliato in una riga, come la schermata riassunto dei giochi: l'esagono, le quattro mosse una sotto
-            l'altra, poi strumento, abilità, natura, EV (e Tera) col nome sopra il valore */}
-        {showSet && (
-        <section className="detail-sec wide set-sec">
-          <h4 className="visually-hidden">{tr('detail.set')}</h4>
-          <div className="set-line">
-            <StatHex set={set} />
-            <MemberMoves set={set} movesLabel={tr('editor.moves')} />
-            <MemberKit set={set} />
-          </div>
-          <MemberRoles set={set} rules={rulesOf(data)} />
-        </section>
-        )}
-
-        {/* Meta, solo col team chiuso (c'è l'altezza): a sinistra l'uso nel meta e il posto in classifica, a destra i 5
-            compagni più frequenti come una classifica a barre (lunghe quanto la quota, rispetto al primo; colore del tipo);
-            chi è già nel team in ciano con la spunta. Senza statistiche la sezione non c'è */}
-        {showMeta && meta && (
-          <section className="detail-sec wide meta-sec">
-            <h4>{tr('detail.meta')}</h4>
-            <div className="detail-meta">
-              <p className="meta-usage">
-                <strong>{formatPercent(lang, meta.usage)}</strong>
-                <span>{tr('detail.metaUsageLong')}</span>
-                {meta.place > 0 && <span className="meta-place">{tr('detail.metaPlace', { n: meta.place })}</span>}
-              </p>
-              {meta.mates.length > 0 && (
-                <div className="meta-mates-box">
-                  <span className="meta-label">{tr('detail.metaWith')}</span>
-                  <ol className="meta-mates" aria-label={tr('detail.metaWith')}>
-                    {meta.mates.map(mate => (
-                      <li key={mate.name} className={mate.inTeam ? 'in-team' : undefined}
-                        style={{ '--mate-c': typeColor(getSpecies(mate.name)?.types[0] ?? ''), '--share': mate.share / meta.top } as CSSProperties}
-                        title={mate.inTeam ? tr('detail.metaInTeam', { name: mate.name }) : undefined}>
-                        <PokemonIcon name={mate.name} />
-                        <span className="mate-name">{mate.name}</span>
-                        <span className="mate-check">{mate.inTeam && <Icon name="check" />}</span>
-                        <span className="mate-bar" aria-hidden="true" />
-                        <strong>{formatPercent(lang, mate.share)}</strong>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
+            </section>
+          )}
+          {/* Il set consigliato: strumento, abilità, natura, EV (e Tera), le mosse, i ruoli del set (una volta sola, con
+              quelli che mancavano al team in verde). Le statistiche del set (l'esagono) stanno nel fumetto di "Stat" */}
+          {showSet && (
+            <section className="detail-run">
+              <h4 className="visually-hidden">{tr('detail.set')}</h4>
+              <MemberKit set={set} />
+              <MemberMoves set={set} movesLabel={tr('editor.moves')} />
+              <MemberRoles set={set} rules={rulesOf(data)} fresh={freshRoles} />
+            </section>
+          )}
         </div>
       </div>
 
-      <div className="detail-actions">
+      <div ref={actionsRef} className={roomyActions ? 'detail-actions' : 'detail-actions tight'}>
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
         {/* Nel dettaglio stretto (tablet, mezzo schermo) resta l'icona: il nome per i lettori di schermo e nel fumetto */}
         <button type="button" className="detail-copy" onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
@@ -384,5 +347,16 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} />
       </div>
     </aside>
+  );
+}
+
+/** Il verso di un'area nella testata: triangolo su (verde), giù (rosso), due trattini se resta uguale. */
+function AreaArrow({ way }: { way: 'up' | 'down' | 'same' }) {
+  return (
+    <svg className="area-arrow" viewBox="0 0 12 12" aria-hidden="true">
+      {way === 'same'
+        ? <><rect x="1" y="3.5" width="10" height="1.8" rx="0.9" /><rect x="1" y="6.7" width="10" height="1.8" rx="0.9" /></>
+        : <path d={way === 'up' ? 'M6 2 11 10H1z' : 'M6 10 1 2h10z'} />}
+    </svg>
   );
 }

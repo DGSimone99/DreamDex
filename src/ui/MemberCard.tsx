@@ -13,7 +13,7 @@ import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Sprite, typeColor } from './Sprite';
 import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 import { kitTip } from './MoveTip';
 import { ItemIcon } from './ItemIcon';
 
@@ -31,17 +31,23 @@ const at = (i: number, r: number) => {
 const ring = (f: number) => HEX_ORDER.map((_, i) => at(i, R * f).map(n => n.toFixed(1)).join(',')).join(' ');
 
 /** Le statistiche finali a esagono; quella che la natura alza in verde, quella che abbassa in rosso. */
-export function StatHex({ set }: { set: TeamSet }) {
+/** L'esagono delle statistiche del set. Con `compare` (chi esce, in Sostituisci) anche il suo esagono, grigio e
+ *  tratteggiato dietro: dove il nuovo è più forte si vede a colpo d'occhio; i numeri restano quelli del set. */
+export function StatHex({ set, compare }: { set: TeamSet; compare?: TeamSet }) {
   const lang = useLang();
   const lines = statLines(set);
   const byId = new Map(lines.map(l => [l.stat, l]));
-  const value = HEX_ORDER.map((stat, i) => at(i, R * Math.min(1, (byId.get(stat)?.value ?? 0) / HEX_FULL)).map(n => n.toFixed(1)).join(',')).join(' ');
+  const shape = (by: Map<string, { value: number }>) =>
+    HEX_ORDER.map((stat, i) => at(i, R * Math.min(1, (by.get(stat)?.value ?? 0) / HEX_FULL)).map(n => n.toFixed(1)).join(',')).join(' ');
+  const value = shape(byId);
+  const other = compare ? shape(new Map(statLines(compare).map(l => [l.stat, l]))) : null;
   return (
     <svg className="mcard-hex" viewBox="-40 -6 220 146" aria-hidden="true">
       <polygon className="hx-ring" points={ring(1)} />
       <polygon className="hx-ring soft" points={ring(2 / 3)} />
       <polygon className="hx-ring soft" points={ring(1 / 3)} />
       {HEX_ORDER.map((stat, i) => { const [x, y] = at(i, R); return <line key={stat} className="hx-axis" x1={CX} y1={CY} x2={x} y2={y} />; })}
+      {other && <polygon className="hx-out" points={other} />}
       <polygon className="hx-val" points={value} />
       {HEX_ORDER.map((stat, i) => {
         const [x, y] = at(i, R + 13);
@@ -133,7 +139,8 @@ export interface MemberAlert { level: 'danger' | 'warn'; text: string }
  * altri; la spiegazione di ognuno nel tooltip del nome. Le regole del formato dal contesto dell'app, o passate (il
  * dettaglio dei candidati); senza regole niente riga.
  */
-export function MemberRoles({ set, rules }: { set: TeamSet; rules?: FormatRules }) {
+/** I ruoli del set; `fresh`: quelli che mancavano al team (dettaglio del candidato), in verde col "+". */
+export function MemberRoles({ set, rules, fresh = [] }: { set: TeamSet; rules?: FormatRules; fresh?: readonly string[] }) {
   const t = useT();
   const lang = useLang();
   const fromApp = useContext(RulesContext);
@@ -147,8 +154,8 @@ export function MemberRoles({ set, rules }: { set: TeamSet; rules?: FormatRules 
       <small>{t('area.roles')}</small>
       <span>
         {roles.map((role, i) => (
-          <span key={role} title={role === 'weather' ? undefined : roleDescription(role, lang)}>
-            {i > 0 && ' · '}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
+          <span key={role} title={role === 'weather' ? undefined : roleDescription(role, lang)} className={fresh.includes(role) ? 'fresh' : undefined}>
+            {i > 0 && ' · '}{fresh.includes(role) && <b aria-hidden="true">+</b>}{fresh.includes(role) && <span className="visually-hidden">{t('detail.newRole')} </span>}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
           </span>
         ))}
       </span>
@@ -165,7 +172,7 @@ export function MemberCard({ set, was, alerts }: { set: TeamSet; was?: TeamSet; 
         <span className="mcard-mon"><Sprite species={battleName(set)} size={96} /></span>
         <span className="mcard-name">
           {battleName(set)}
-          {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}
+          {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />)}
         </span>
       </div>
       {!!alerts?.length && (

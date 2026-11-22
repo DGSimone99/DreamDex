@@ -55,12 +55,12 @@ beforeEach(() => sessionStorage.clear());
 describe('scheda Liste', () => {
   it('filtri: solo quelli che non riguardano il meta', async () => {
     await open(memory().storage);
-    const filters = panel().querySelector<HTMLElement>('details.filters')!;
-    expect(within(filters).queryByLabelText('Uso nel meta')).toBeNull();
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Filtri' }));
+    const filters = screen.getByRole('dialog', { name: 'Filtri' });
+    expect(within(filters).queryByRole('group', { name: 'Uso nel meta' })).toBeNull();
     expect(within(filters).queryByLabelText('Adatto a')).toBeNull();
     expect(within(filters).queryByRole('checkbox', { name: 'Solo preferiti' })).toBeNull();
-    expect(within(filters).getByLabelText('Tier')).toBeInTheDocument();
-    expect(within(filters).getByLabelText('Tipo 1')).toBeInTheDocument();
+    expect(within(filters).getByRole('button', { name: /^Tipo 1:/ })).toBeInTheDocument();
   });
 
   it('il Pokédex in ordine nazionale, a pagine: si parte da Bulbasaur', async () => {

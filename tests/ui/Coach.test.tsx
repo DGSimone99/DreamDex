@@ -109,16 +109,17 @@ describe('scheda Coaching', () => {
     const search = within(suggestions()).getByLabelText('Aggiungi Pokémon');
     await user.type(search, 'Zap');
     // Anche un tipo di team scelto a mano torna quello riconosciuto
-    const type = () => within(suggestions()).getByRole('combobox', { name: 'Tipo di team' }) as HTMLSelectElement;
-    const recognised = type().value;
-    await user.selectOptions(type(), recognised === 'stall' ? 'hyperOffense' : 'stall');
+    const type = () => within(suggestions()).getByRole('button', { name: /^Tipo di team:/ });
+    const recognised = type().getAttribute('aria-label');
+    await user.click(type());
+    await user.click(within(screen.getByRole('listbox', { name: 'Tipo di team' })).getByRole('option', { name: recognised === 'Tipo di team: Stall' ? /^Hyper Offense/ : /^Stall/ }));
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     const row = await findRow(user, SWAP);
     const [, species, , gain] = SWAP.exec(row.getAttribute('aria-label')!)!;
     await user.click(within(row).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${species}` }, { timeout: 3000 })).toBeInTheDocument();
     expect(within(suggestions()).getByLabelText('Aggiungi Pokémon')).toHaveValue('');
-    expect(type().value).toBe(recognised);
+    expect(type().getAttribute('aria-label')).toBe(recognised);
     expect(rowGain(species)).toBe(`+${gain}`);
   });
 

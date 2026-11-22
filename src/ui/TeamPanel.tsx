@@ -38,7 +38,7 @@ import { gainText } from './CoachingView';
 import { SMALL, useBackClose } from './useBackClose';
 import { Icon } from './icons';
 import { useFitCount } from './useFit';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 import { useMediaQuery } from './useMediaQuery';
 import { TOUCH_QUERY } from './TouchTips';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
@@ -600,8 +600,10 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         {/* data-hint vuoto: sullo sprite niente fumetto "Trascina…", lì si apre la carta del Pokémon (si sovrapponevano) */}
         {/* Carta Pedana (pedana.css): la riga dei tipi in cima, la luce dall'alto solo sulla carta aperta, la pedana sotto lo sprite */}
         <span className="pedana-stripe" aria-hidden="true" />
-        <span className="pedana-beam" aria-hidden="true" />
         <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set), 'data-hint': '' })}>
+          {/* La luce sta nel riquadro dello sprite: finisce sempre sulla pedana, qualunque sia l'altezza della carta
+              (fuori, con un'altezza fissa, sul telefono e sul tablet scendeva sul nome) */}
+          <span className="pedana-beam" aria-hidden="true" />
           <span className="pedana-disc" aria-hidden="true" />
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>
@@ -642,8 +644,9 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
-            <AlertMark alerts={warns} className="on-card" />
-            <AlertMark alerts={dangers} className="on-card" />
+            {/* Il fumetto va sopra la pagina e resta dentro lo schermo (sul tablet le carte di destra lo tagliavano) */}
+            <AlertMark alerts={warns} className="on-card" floating />
+            <AlertMark alerts={dangers} className="on-card" floating />
           </span>
         )}
         </span>
@@ -651,7 +654,7 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         <span className={`types${typeText ? '' : ' as-icons'}`} aria-hidden="true">
           {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
             <span key={type} className="type-dot" {...bubble(typeName(type, lang))}>
-              <img src={typeIconUrl(type)} alt="" draggable={false} />
+              <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
               <span className="visually-hidden">{typeName(type, lang)}</span>
             </span>
           ))}

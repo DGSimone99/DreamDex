@@ -4,7 +4,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { fixtureData } from '../fixtures/data';
+import { fixtureData, tusk } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { CARD_WAKE_MS } from '../../src/ui/CandidateCard';
 
@@ -48,16 +48,29 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
   });
 
-  it('il dettaglio mostra il primo candidato: quanto sale il voto del team, in tutto e per area', async () => {
-    const user = await setup('Great Tusk');
-    // La riga per area c'è solo nella versione estesa (team chiuso)
-    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-
+  it('il dettaglio mostra il primo candidato: quanto sale il voto del team in tutto (+N, B → A) e, area per area, solo il verso', async () => {
+    await setup('Great Tusk');
     const first = rowNames()[0];
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${first}` });
-    expect(detail.querySelector('.detail-score')).toHaveTextContent(/^(\+\d+|−\d+|±0)voto del team [SABCD] \d+ → [SABCD] \d+$/);
-    const areas = [...detail.querySelectorAll('.detail-areas dt')].map(dt => dt.textContent);
-    expect(areas).toEqual(expect.arrayContaining(['Difesa', 'Offesa']));
+    const score = detail.querySelector('.detail-score')!;
+    expect(score.querySelector('strong')).toHaveTextContent(/^(\+\d+|−\d+|±0)$/);
+    expect(score.querySelector(':scope > span')).toHaveTextContent(/^voto del team [SABCD] \d+ → [SABCD] \d+$/);
+    // Sotto "B 79 → A 88" un segno per area: nome breve e freccia, niente numeri; la frase per i lettori e nel fumetto
+    const marks = within(detail).getByRole('list', { name: 'Effetto sul team' });
+    expect(marks.closest('.detail-hero')).not.toBeNull();
+    const items = [...marks.querySelectorAll('li')];
+    expect(items.map(li => li.querySelector('[aria-hidden="true"]')!.textContent)).toEqual(expect.arrayContaining(['Dif', 'Off']));
+    for (const li of items) {
+      const way = li.className;
+      expect(['up', 'same', 'down']).toContain(way);
+      const said = li.querySelector('.visually-hidden')!.textContent!;
+      expect(said).toMatch({ up: / sale$/, same: / resta uguale$/, down: / scende$/ }[way as 'up']);
+      expect(li).toHaveAttribute('data-hint', said);
+      expect(li.querySelector('svg.area-arrow')).not.toBeNull();
+      expect(li.textContent).not.toMatch(/\d/);
+    }
+    expect(items.map(li => li.querySelector('.visually-hidden')!.textContent)).toEqual(expect.arrayContaining([expect.stringMatching(/^Difesa /), expect.stringMatching(/^Offesa /)]));
+    expect(detail.querySelector('.detail-areas, .effect')).toBeNull();
     expect(within(detail).getByRole('list', { name: 'Mosse' }).children.length).toBeGreaterThan(0);
   });
 
@@ -87,10 +100,8 @@ describe('SuggestionsPanel', () => {
     expect(document.activeElement?.closest('.detail')).toBeNull();
   });
 
-  it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
-    const user = await setup();
-    // La riga per area c'è solo nella versione estesa (team chiuso)
-    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+  it('team vuoto: niente voto da confrontare, quindi niente verso delle aree; i ruoli del set sotto il set', async () => {
+    await setup();
 
     // Nessuna nota sopra la lista: si parte dalla lista stessa
     expect(within(suggestions()).queryByText(/come si adatta al team/)).toBeNull();
@@ -98,13 +109,11 @@ describe('SuggestionsPanel', () => {
     expect(usages).toEqual([...usages].sort((a, b) => b - a));
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/uso nel meta$/);
-    expect(within(detail).getByText('Voto con lui da solo')).toBeInTheDocument();
-    expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
-    // Un'area a zero col team vuoto non sembra un errore: si legge "—"
-    expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
+    expect(within(detail).queryByRole('list', { name: 'Effetto sul team' })).toBeNull();
+    expect(within(detail).queryByText(/→/)).toBeNull();
     // I ruoli del set in una riga semplice sotto il set (niente lastra in testata), la spiegazione nel tooltip del nome
     expect(detail.querySelector('.detail-hero .mcard-why')).toBeNull();
-    expect(detail.querySelector('.set-sec .mcard-roles [title]')).not.toBeNull();
+    expect(detail.querySelector('.detail-run .mcard-roles [title]')).not.toBeNull();
   });
 
   it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
@@ -328,8 +337,9 @@ describe('SuggestionsPanel', () => {
     expect(reasons[1].querySelector('.sym-icon .icon')).not.toBeNull();
     const chips = [...reasons[1].querySelectorAll('.sym-chip')];
     expect(chips.map(c => c.querySelectorAll('.icon').length)).toEqual([0, 0]);
-    expect(chips[0]).toHaveAttribute('title', expect.stringMatching(/^Immune a /));
-    expect(chips[1]).not.toHaveAttribute('title');
+    // Sempre solo icone: il tipo (e l'immune) nel fumetto
+    expect(chips[0]).toHaveAttribute('data-hint', expect.stringMatching(/^Immune a /));
+    expect(chips[1]).toHaveAttribute('data-hint', expect.not.stringMatching(/^Immune/));
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
     // vs: il primo col pallino del tipo e il nome, come nel dettaglio; gli altri "+N" (niente mini sprite)
     expect(reasons[2].querySelector('.sym')!.textContent).toBe('VSZapdos');
@@ -369,7 +379,7 @@ describe('SuggestionsPanel', () => {
     expect(roles.items[0].short).not.toContain(',');
   });
 
-  it('Porta: il dettaglio raggruppa le voci per tipo (ruoli, difesa, offesa, minacce, sinergie) senza "Usato con"; le caselle le prime voci in ordine di peso', async () => {
+  it('Risolve: il dettaglio raggruppa le voci per tipo (difesa, offesa, minacce, sinergie), senza ruoli né "Usato con"; le caselle le prime voci in ordine di peso', async () => {
     const { bringsOf, reasonsOf } = await import('../../src/ui/candidateParts');
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { formatRules } = await import('../../src/engine/formatRules');
@@ -387,11 +397,13 @@ describe('SuggestionsPanel', () => {
         reason('threats', 2, 'Ferma Kingambit', 'Ferma Kingambit'),
       ],
     } as never;
-    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
-    // I gruppi sempre nello stesso ordine, ognuno con le sue voci; "Usato con" no (è un dato del meta)
+    renderIt(<SuggestionDetail item={item} rank={2} team={[tusk] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const porta = screen.getByRole('heading', { name: 'Risolve' }).closest('.why-part')!;
+    // I gruppi sempre nello stesso ordine, ognuno con le sue voci; "Usato con" no (è un dato del meta), i ruoli no
+    // (stanno una volta sola nel set)
     const groups = [...porta.querySelectorAll('.bring-group')];
-    expect(groups.map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense', 'offense', 'threats', 'synergy']);
+    expect(groups.map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['defense', 'offense', 'threats', 'synergy']);
+    expect(porta.textContent).not.toMatch(/Pivot/);
     const texts = (kind: string) => [...porta.querySelectorAll(`.bring-group.${kind} li`)].map(li => li.textContent);
     // Difesa, Offesa e Minacce nella forma breve (il gruppo dice già il resto), la frase intera nel tooltip
     expect(texts('defense')).toEqual(['Resiste ad Acqua']);
@@ -423,7 +435,7 @@ describe('SuggestionsPanel', () => {
 });
 
 describe('dettaglio: abilità in battaglia', () => {
-  it('gli avvisi (meteo in conflitto) non finiscono in Porta: aggiungendo compaiono in Toglie', async () => {
+  it('gli avvisi (meteo in conflitto) non finiscono in Risolve: aggiungendo compaiono in Costa', async () => {
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Pelipper', item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane'], nature: 'Bold', evs: { hp: 252 } };
@@ -434,13 +446,14 @@ describe('dettaglio: abilità in battaglia', () => {
       reasons: [{ component: 'roles', weight: 2, text: 'Porta Pivot' }, { component: 'synergy', weight: -1, text: clash }],
     } as never;
     renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    const porta = screen.getByRole('heading', { name: 'Risolve' }).closest('.why-part')!;
     expect(porta.textContent).not.toMatch(/pioggia/);
-    const toglie = screen.getByRole('heading', { name: 'Toglie' }).closest('section')!;
-    expect(toglie.textContent).toMatch(/La pioggia si scontra/);
+    const costa = screen.getByRole('heading', { name: 'Costa' }).closest('.why-part')!;
+    expect(costa.textContent).toMatch(/La pioggia si scontra/);
+    expect(costa.closest('section')).toHaveClass('detail-why');
   });
 
-  it('Porta: niente "Usato con" nel dettaglio (è un dato del meta), le altre voci nei loro gruppi', async () => {
+  it('Risolve: niente "Usato con" (è un dato del meta) e niente ruoli (stanno nel set), le altre voci nei loro gruppi', async () => {
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
@@ -452,10 +465,34 @@ describe('dettaglio: abilità in battaglia', () => {
         { component: 'roles', weight: 2, text: 'Porta Pivot (mancanti nel team)', short: '' },
       ],
     } as never;
-    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[tusk] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const porta = screen.getByRole('heading', { name: 'Risolve' }).closest('.why-part')!;
     expect(porta.textContent).not.toMatch(/Usato con/);
-    expect([...porta.querySelectorAll('.bring-group')].map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense']);
+    expect(porta.textContent).not.toMatch(/Pivot/);
+    expect([...porta.querySelectorAll('.bring-group')].map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['defense']);
+  });
+
+  it('aggiungendo, se un’area scende e non c’è altro da dire, Costa dice quale (senza numeri)', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const { rateTeam } = await import('../../src/engine/rating');
+    const { tusk } = await import('../fixtures/data');
+    const real = rateTeam([tusk] as never, fixtureData)!;
+    // Un "prima" con la Difesa al massimo: col candidato non può che scendere
+    const before = { ...real, areas: real.areas.map(area => (area.key === 'defense' ? { ...area, value: 100, inactive: false } : area)) };
+    const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
+    const item = {
+      species: 'Rotom-Wash', set, score: 50, components: {}, tags: [], penalty: 0, facts: { clashes: [] },
+      reasons: [{ component: 'defense', weight: 5, text: 'Resiste ad Acqua: debolezze del team', short: '' }],
+      teamGain: { grade: 'B', overall: 70, gain: 1 },
+    } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[tusk] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={before as never} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const costa = screen.getByRole('heading', { name: 'Costa' }).closest('.why-part')!;
+    expect([...costa.querySelectorAll('li')].map(li => li.textContent)).toContain('Difesa scende');
+    expect(costa.textContent).not.toMatch(/\d/);
+    // E nella testata la Difesa ha la freccia giù
+    const marks = screen.getByRole('list', { name: 'Effetto sul team' });
+    expect(within(marks).getByText('Difesa scende').closest('li')).toHaveClass('down');
   });
 
   it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {
@@ -474,7 +511,7 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.stats-badge')).not.toBeNull();
   });
 
-  it('stall: la Velocità nel dettaglio conta (10%), quindi non è grigia e non ha la nota', async () => {
+  it('stall: la Velocità conta, quindi ha il suo segno (Vel) fra le aree della testata', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -529,15 +566,12 @@ Bold Nature
 - Toxic Spikes`,
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    // La riga per area c'è solo nella versione estesa (team chiuso)
-    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    const areas = screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.detail-areas')!;
-    // Dal 2026-11-03 nessuna area è inattiva nello stall: niente grigio, niente nota
-    expect(areas.querySelector('.inactive')).toBeNull();
-    const speed = [...areas.querySelectorAll('div')].find(d => d.querySelector('dt')?.textContent === 'Velocità')!;
+    // Dal 2026-11-03 nessuna area è inattiva nello stall (le inattive non hanno segno): la Velocità c'è
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    const marks = within(detail).getByRole('list', { name: 'Effetto sul team' });
+    const speed = [...marks.querySelectorAll('li')].find(li => li.querySelector('[aria-hidden="true"]')?.textContent === 'Vel')!;
     expect(speed).toBeDefined();
-    expect(speed.querySelector('dt')).not.toHaveAttribute('aria-description');
-    expect(speed.querySelector('.change')).not.toBeNull();
+    expect(speed.querySelector('.visually-hidden')!.textContent).toMatch(/^Velocità (sale|resta uguale|scende)$/);
   });
 });
 
@@ -615,18 +649,19 @@ describe('riga della lista', () => {
 describe('scheda del candidato', () => {
   const FULL = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'];
   const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
-  const section = (name: string) => within(detail()).getByRole('heading', { name }).closest('section')!;
+  const section = (name: string) => within(detail()).getByRole('heading', { name }).closest('.why-part')!;
 
-  it('Migliora: prima cosa porta e cosa toglie, niente più Perché', async () => {
+  it('Migliora: cosa risolve e cosa costa, chi esce sotto la testata; il verso delle aree nella testata col team aperto e chiuso', async () => {
     const user = await setup(...FULL);
-    expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
-    expect(within(detail()).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
+    expect(within(detail()).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
+    expect(within(detail()).getByRole('heading', { name: 'Costa' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
-    expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
-    // La riga per area c'è sempre, in cima, col team aperto e chiuso
-    expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
+    expect(section('Risolve').textContent).not.toMatch(/Uso nel meta/);
+    expect(detail().querySelector('.detail-swap')).toHaveTextContent(/^Esce/);
+    const marks = () => within(detail()).getByRole('list', { name: 'Effetto sul team' });
+    expect(marks()).toHaveTextContent(/Difesa/);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
+    expect(marks()).toHaveTextContent(/Difesa/);
   }, 60000);
 
   it("team vuoto: la riga dice i ruoli, non ripete l'uso già a destra", async () => {
@@ -634,17 +669,21 @@ describe('scheda del candidato', () => {
     expect(list().querySelector('li .who small')!.textContent).not.toMatch(/Uso nel meta/);
   });
 
-  it('team vuoto: Porta dice cosa sa fare il Pokémon, non "nessuna differenza"', async () => {
+  it('team vuoto: Risolve dice cosa sa fare il Pokémon, non "nessuna differenza"', async () => {
     await setup();
-    expect(section('Porta').textContent).not.toMatch(/Nessuna differenza/);
-    expect(section('Porta').querySelectorAll('li').length).toBeGreaterThan(0);
+    expect(section('Risolve').textContent).not.toMatch(/Nessuna differenza/);
+    expect(section('Risolve').querySelectorAll('li').length).toBeGreaterThan(0);
   });
 
-  it('Aggiungi: solo Porta, senza uso nel meta', async () => {
+  it('Aggiungi: Risolve senza uso nel meta, nessuna striscia di chi esce; Costa solo se un’area scende', async () => {
     await setup('Great Tusk');
-    expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
-    expect(within(detail()).queryByRole('heading', { name: 'Toglie' })).toBeNull();
-    expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+    expect(within(detail()).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
+    expect(section('Risolve').textContent).not.toMatch(/Uso nel meta/);
+    expect(detail().querySelector('.detail-swap')).toBeNull();
+    const downs = [...detail().querySelectorAll('.detail-area-marks li.down')];
+    const costa = within(detail()).queryByRole('heading', { name: 'Costa' });
+    if (!downs.length) expect(costa).toBeNull();
+    else expect(costa).toBeInTheDocument();
   });
 });
 
@@ -714,7 +753,8 @@ describe('sprite animato delle carte', () => {
         onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
       const cards = [...list().querySelectorAll<HTMLElement>('.card')];
       expect(cards.length).toBeGreaterThan(1);
-      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
+      // Animata = la GIF, o lo statico che "respira" per chi la GIF non ce l'ha
+      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani, .sprite.idle'));
       // A riposo solo la selezionata (la prima)
       expect(cards[0].classList.contains('selected')).toBe(true);
       expect(animated()).toEqual([cards[0]]);
@@ -799,26 +839,52 @@ describe('sprite animato delle carte', () => {
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
       onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
-    const line = detail.querySelector('.set-sec .mcard-roles')!;
-    const roles = [...line.querySelectorAll('span > span')].map(role => role.textContent!.replace(/^ · /, ''));
+    const line = detail.querySelector('.detail-run .mcard-roles')!;
+    const roles = [...line.querySelectorAll(':scope > span > span')].map(role => role.textContent!.replace(/^ · /, ''));
     expect(roles.length).toBeGreaterThan(0);
     expect(new Set(roles).size).toBe(roles.length);
     expect(line.textContent).toBe(`Ruoli${roles.join(' · ')}`);
+    for (const role of line.querySelectorAll(':scope > span > span')) expect(role).toHaveAttribute('title');
+    // Una volta sola: Risolve non ripete i ruoli
+    expect(detail.querySelectorAll('.mcard-roles')).toHaveLength(1);
+    expect(detail.querySelector('.bring-group.roles')).toBeNull();
   });
 
-  it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {
+  it('i ruoli che mancavano al team sono segnati nel set: "+" visibile e "nuovo per il team:" per i lettori', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const set = { species: 'Great Tusk', item: 'Leftovers', ability: 'Protosynthesis', moves: ['Headlong Rush', 'Stealth Rock', 'Rapid Spin', 'Knock Off'], nature: 'Jolly', evs: { atk: 252, spe: 252 } };
+    const item = { species: 'Great Tusk', set, score: 50, components: {}, tags: [], penalty: 0, reasons: [], facts: { clashes: [], roles: { filled: ['hazards'] } } } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const fresh = [...document.querySelectorAll('.detail-run .mcard-roles .fresh')];
+    expect(fresh).toHaveLength(1);
+    expect(fresh[0].textContent).toMatch(/\+nuovo per il team: Hazard$/);
+    expect(fresh[0].querySelector('b')).toHaveTextContent('+');
+    expect(fresh[0].querySelector('.visually-hidden')).toHaveTextContent('nuovo per il team:');
+    // Gli altri ruoli senza segno
+    expect(document.querySelectorAll('.detail-run .mcard-roles > span > span:not(.fresh)').length).toBeGreaterThan(0);
+  });
+
+  it('niente sezione Meta: in Risolve "Spesso con" nomina i compagni frequenti già nel team (non chi esce), e senza meta sparisce', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
-    const { tusk } = await import('../fixtures/data');
+    const { tusk, gholdengo } = await import('../fixtures/data');
     const props = { team: [tusk] as never, format: DEFAULT_FORMAT, data: fixtureData, replaceIndex: null,
       onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
     const { rerender } = renderIt(<SuggestionsPanel {...props} />);
     const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
     expect(within(detail()).queryByRole('heading', { name: 'Meta' })).toBeNull();
-    rerender(<SuggestionsPanel {...props} teamCollapsed />);
-    const meta = within(detail()).getByRole('heading', { name: 'Meta' }).closest('section')!;
-    expect(meta).toHaveTextContent(/\d.*uso nel meta/);
-    expect(meta.querySelectorAll('.meta-mates li').length).toBeLessThanOrEqual(5);
+    expect(detail().querySelector('.meta-sec, .meta-mates')).toBeNull();
+    const mates = () => detail().querySelector('.detail-mates');
+    expect(mates()!.closest('.why-part')!.querySelector('h4')).toHaveTextContent('Risolve');
+    expect(mates()).toHaveTextContent(/^Spesso con.*Great Tusk/);
+    expect(within(mates() as HTMLElement).getByText('Great Tusk').tagName).toBe('STRONG');
+    // Chi esce non conta come compagno
+    rerender(<SuggestionsPanel {...props} team={[tusk, gholdengo] as never} replaceIndex={0} />);
+    expect(mates()?.textContent ?? '').not.toMatch(/Great Tusk/);
+    // Meta ignorato: niente "Spesso con"
+    rerender(<SuggestionsPanel {...props} data={{ ...fixtureData, ignoreMeta: true }} />);
+    expect(mates()).toBeNull();
   });
 
   it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {

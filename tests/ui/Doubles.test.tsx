@@ -274,7 +274,7 @@ describe("doppio: nell'app", () => {
     expect(band).toHaveTextContent('Doppio');
     expect(band).not.toHaveTextContent('Incompleto');
     expect(screen.queryByRole('button', { name: 'Tipi di team: come si riconoscono' })).toBeNull();
-    expect(screen.queryByLabelText('Tipo di team')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Tipo di team:/ })).toBeNull();
   });
 
   /** I ruoli del membro i nel riquadro Ruoli del suo editor. */
@@ -308,7 +308,7 @@ describe("doppio: nell'app", () => {
     const band = document.querySelector<HTMLElement>('.band')!;
     expect(band).toHaveTextContent('Incompleto');
     expect(band).not.toHaveTextContent('Doppio');
-    expect(screen.getByLabelText('Tipo di team')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Tipo di team:/ })).toBeInTheDocument();
   });
 });
 
@@ -317,11 +317,13 @@ describe('doppio: filtri e carte dei candidati', () => {
 
   it('in doppio i filtri per ruolo sono quelli del doppio', () => {
     renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={DOUBLES_RULES} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
     expect(chips()).toEqual(['Attaccante', 'Muro', 'Fake Out', 'Redirector', 'Mossa a più bersagli', 'Protect', 'Pivot', 'Hazard', 'Priorità', 'Setup']);
   });
 
   it('in singolo i filtri per ruolo restano quelli di sempre', () => {
     renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={NATDEX_OU_RULES} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
     const names = chips();
     expect(names).toHaveLength(19);
     expect(names).not.toContain('Fake Out');
