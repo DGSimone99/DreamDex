@@ -127,8 +127,6 @@
   .dash-head { flex-wrap: wrap; row-gap: 0; }
   .dash-head .dash-meta { flex: 0 1 auto; white-space: normal; padding: var(--sp-2) 0; }
   /* Minacce del meta: le carte vanno a capo, due o tre per riga; la riga Bonus/Malus del Riassunto (assoluta) non c'è */
-  .thr-row { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-  .thr-card, .thr-more { min-height: 44px; }
 
 }
 @media (max-width: 599px) {
@@ -179,8 +177,12 @@
   .dash .dash-matrix thead tr::before { content: ''; grid-row: 4; grid-column: 1; }
   .dash .dash-matrix tbody tr:first-child > :nth-child(-n + 10) { grid-row: 2; }
   .dash .dash-matrix tbody tr:first-child > :nth-child(n + 11), .dash .dash-matrix tbody tr:first-child::before { grid-row: 5; }
-  .dash .dash-matrix tbody tr:last-child > :nth-child(-n + 10) { grid-row: 3; }
-  .dash .dash-matrix tbody tr:last-child > :nth-child(n + 11), .dash .dash-matrix tbody tr:last-child::before { grid-row: 6; }
+  .dash .dash-matrix tbody tr:nth-child(2) > :nth-child(-n + 10) { grid-row: 3; }
+  .dash .dash-matrix tbody tr:nth-child(2) > :nth-child(n + 11), .dash .dash-matrix tbody tr:nth-child(2)::before { grid-row: 6; }
+  /* La riga META dopo le due metà dei tipi, anche lei su due file da 9 (le minacce non sono legate ai tipi sopra) */
+  .dash .dash-matrix tbody tr.dash-meta-row > :nth-child(-n + 10) { grid-row: 7; margin-top: var(--sp-4); }
+  .dash .dash-matrix tbody tr.dash-meta-row > :nth-child(n + 11), .dash .dash-matrix tbody tr.dash-meta-row::before { grid-row: 8; }
+  .dash .dash-matrix .dash-meta-none { grid-column: 2 / -1; }
   .dash .dash-matrix th[scope='row'], .dash .dash-matrix tbody tr::before { grid-column: 1; width: auto; align-self: center; }
   .dash .dash-matrix tbody tr::before {
     content: attr(data-label);
@@ -204,9 +206,9 @@
 
   /* Panoramica: Riassunto e Copertura a tutta larghezza, sotto Ruoli e Velocità affiancati */
   .dash { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; }
-  .dash-summary, .dash-coverage, .dash-threats { grid-column: 1 / -1; grid-row: auto; }
-  .dash-roles, .dash.has-threats .dash-roles { grid-column: 1; grid-row: auto; }
-  .dash-speed, .dash.has-threats .dash-speed { grid-column: 2; grid-row: auto; }
+  .dash-summary, .dash-coverage { grid-column: 1 / -1; grid-row: auto; }
+  .dash-roles { grid-column: 1; grid-row: auto; }
+  .dash-speed { grid-column: 2; grid-row: auto; }
   .dash-speed .dash-ladder { height: auto; flex: 1; min-height: 170px; }
 
 }

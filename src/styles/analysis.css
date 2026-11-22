@@ -303,73 +303,7 @@
 .dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 
-/*
- * Col meta: sotto la Copertura la carta Minacce del meta, a tutta la colonna di destra; Ruoli | Velocità scendono alla
- * terza riga. La Copertura si fa un po' più fitta (caselle e icone più basse) per lasciarle posto; senza meta resta com'era.
- */
-.dash.has-threats { grid-template-rows: auto auto minmax(var(--dash-row2), 1fr); --dash-row2: 120px; }
-.dash.has-threats.tight { --dash-row2: 100px; }
-.dash-threats { grid-column: 2 / -1; grid-row: 2; }
-.dash.has-threats .dash-roles, .dash.has-threats .dash-speed { grid-row: 3; }
-.dash.has-threats .dash-coverage .dash-head { margin-bottom: var(--sp-3); }
-.dash.has-threats .dash-cell { height: 18px; line-height: 0; }
-.dash.has-threats .dash-type { width: 20px; height: 20px; }
-.dash.has-threats.roomy .dash-cell { height: 22px; }
-.dash.has-threats.roomy .dash-type { width: var(--ti-tip); height: var(--ti-tip); }
-/* Stretto (1280×620, 1366×768 col team aperto): tutto un po' più fitto, così Ruoli e Velocità tengono ~120px */
-.dash.has-threats.tight { gap: var(--sp-4); }
-.dash.has-threats.tight .dash-cell { height: 14px; }
-.dash.has-threats.tight .dash-type { width: 16px; height: 16px; }
-.dash.has-threats.tight .dash-card { padding-bottom: var(--sp-4); }
-.dash.has-threats.tight .dash-head { margin-bottom: var(--sp-2); }
-.dash.has-threats.tight .dash-cell .icon { width: 10px; height: 10px; }
-
-/* Minacce del meta: le carte in fila, larghe uguali, il "+N" in una colonna stretta in più (--thr-more) */
-.thr-box { min-width: 0; }
-.thr-row { display: grid; grid-template-columns: repeat(var(--thr-n), minmax(0, 1fr)) var(--thr-more); gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
-.thr-row > li { display: flex; min-width: 0; }
-/* Una carta, nel linguaggio delle carte del team e del Coaching: il fondo Raised lavato nel colore del primo tipo (--t1,
-   24% a sinistra che sfuma), una lama di luce e il lato destro obliquo, disegnati nel ::before (così il ritaglio non
-   taglia l'anello del fuoco); sprite con l'ombra, nome (Kanit corsivo 700, mai tagliato: si rimpicciolisce o va a capo) e
-   lo stato come targhetta inclinata (--k su --k-bg: rosso scoperta, giallo a fatica), l'unico segno dello stato */
-.thr-card {
-  --k: var(--warn); --k-bg: var(--warn-bg); --wash: 24%;
-  position: relative; isolation: isolate; flex: 1; min-width: 0; height: 52px; display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: var(--sp-3); align-items: center;
-  padding: 0 var(--sp-5) 0 0; border: 0; border-radius: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
-  transition: transform 0.15s var(--ease), filter 0.15s var(--ease);
-}
-.thr-card.open { --k: var(--bad); --k-bg: var(--bad-bg); }
-.thr-card::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    linear-gradient(115deg, transparent 34%, #ffffff12 40%, transparent 47%),
-    linear-gradient(115deg, color-mix(in srgb, var(--t1, var(--raised)) var(--wash), var(--raised)) 0%, var(--raised) 70%);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-}
-.thr-card .sprite { width: 48px; height: 48px; image-rendering: pixelated; filter: drop-shadow(0 3px 4px #0008); transition: transform 0.15s var(--ease); }
-.thr-text { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
-.thr-name { display: block; max-width: 100%; white-space: nowrap; font: 700 var(--fs-small)/1.15 var(--display); font-style: italic; text-shadow: 0 1px 3px #0006; }
-.thr-name.wrap { white-space: normal; overflow-wrap: anywhere; line-height: 1.05; }
-.thr-word { padding: 0 9px 0 7px; font: 600 var(--fs-caption)/16px var(--ui); color: var(--k); background: var(--k-bg); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); white-space: nowrap; }
-/* Sotto il mouse (e col fuoco) come le carte dei candidati, in piccolo: sale di 2px con l'ombra, il fondo si tinge un po'
-   di più, la sprite cresce appena; senza movimento con le animazioni ridotte */
-.thr-card:hover, .thr-card:focus-visible { --wash: 34%; transform: translateY(-2px); filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.4)); }
-.thr-card:hover .sprite, .thr-card:focus-visible .sprite { transform: scale(1.05); }
-/* Il "+N": la stessa famiglia del "+N altre" di Bonus/Malus (tratteggiato, 600 14px Muted), alto come le carte */
-.thr-more { flex: 1; min-width: 0; height: 52px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line); border-radius: 0; background: none; color: var(--muted); font: 600 var(--fs-section) var(--ui); cursor: pointer; }
-.thr-more:hover { color: var(--text); border-color: var(--muted); background: none; }
-.thr-card:focus-visible, .thr-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Stretto: 40px (la sprite 40px), sempre un po' più ariosa della prima versione; l'altezza la cedono Ruoli e Velocità */
-.dash.tight .thr-card, .dash.tight .thr-more { height: 40px; }
-.dash.tight .thr-card { grid-template-columns: 40px minmax(0, 1fr); }
-.dash.tight .thr-card .sprite { width: 40px; height: 40px; }
-.dash.tight .thr-text { gap: var(--sp-1); }
-@media (prefers-reduced-motion: reduce) {
-  .thr-card, .thr-card .sprite { transition: none; }
-  .thr-card:hover, .thr-card:focus-visible { transform: none; }
-  .thr-card:hover .sprite, .thr-card:focus-visible .sprite { transform: none; }
-}
-/* Il tooltip di una minaccia: nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
+/* Il tooltip di una minaccia (riga META della Copertura): nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
 .ftip.thr-tip { width: var(--tip-s); }
 .thr-tip-use { margin-left: auto; white-space: nowrap; font: 700 italic var(--tip-small)/1 var(--display); color: var(--muted); }
 .thr-tip-why { display: grid; gap: var(--sp-2); margin: 0; padding: 9px var(--sp-5); list-style: none; }
@@ -948,3 +882,21 @@
 .dash-summary .sum-more-below { height: 34px; }
 /* Cruscotto basso: una fila sola di pillole, il resto nel "+N", così i core restano leggibili */
 .dash.tight .sum-packed .sum-lines { max-height: 44px; }
+
+/* Copertura › riga META: le minacce del meta nelle caselle della griglia dei tipi; rossa se scoperta, gialla se a fatica
+   (come le caselle dei tipi), la sprite dentro; le caselle vuote non si vedono */
+.dash .dash-thr { height: 30px; padding: 0; text-align: center; vertical-align: middle; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; overflow: hidden; }
+.dash .dash-thr .sprite { display: block; margin: -3px auto -3px; image-rendering: pixelated; transition: transform 0.15s var(--ease); }
+.dash .dash-thr:hover .sprite { transform: translateY(-2px); }
+.dash .dash-thr.open { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+.dash .dash-thr.thin { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
+.dash .dash-thr.more { font: 700 var(--fs-caption)/1 var(--display); color: var(--muted); border-style: dashed; }
+.dash .dash-thr.more:hover { color: var(--text); border-color: var(--control-line); }
+.dash .dash-thr.empty { border: 0; cursor: default; }
+.dash .dash-meta-none { height: 30px; padding: 0 var(--sp-3); font-size: var(--fs-small); color: var(--good); }
+.dash .dash-meta-none .icon { width: 14px; height: 14px; margin-right: var(--sp-3); vertical-align: -2px; }
+.dash .dash-meta-row th[scope='row'] { vertical-align: middle; }
+@media (prefers-reduced-motion: reduce) { .dash .dash-thr .sprite { transition: none; } }
+/* Tooltip della minaccia nella riga META: ogni ragione col segno del suo lato (scudo Difesa, spada Offesa) */
+.thr-tip-why.sided li { display: flex; align-items: baseline; gap: var(--sp-2); }
+.thr-tip-why.sided .icon { flex: none; width: 12px; height: 12px; align-self: center; }

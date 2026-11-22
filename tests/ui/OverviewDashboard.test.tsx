@@ -14,7 +14,6 @@ import { initGameNames } from '../../src/i18n/game';
 import { LangProvider } from '../../src/i18n/react';
 import { densityFor, OverviewDashboard, RICH_FROM, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
 import { renderIt } from '../helpers/italian';
-import { THREATS_FIVE_FROM } from '../../src/ui/dashboard/ThreatsSection';
 
 /** Sette minacce: tre scoperte, quattro a fatica (una dal lato dell'Offesa). */
 const THREATS: MetaThreat[] = [
@@ -774,67 +773,67 @@ describe('Cruscotto: misure', () => {
 
 });
 
-describe('Minacce del meta', () => {
+describe('Copertura › riga META (le minacce del meta)', () => {
   afterEach(() => { vi.restoreAllMocks(); });
-  const card = () => screen.getByRole('region', { name: 'Minacce del meta' });
+  const row = () => document.querySelector<HTMLElement>('.dash-meta-row')!;
+  const threats = () => [...row().querySelectorAll<HTMLElement>('td.dash-thr:not(.empty):not(.more)')];
+  const threat = (name: RegExp) => threats().find(td => name.test(td.getAttribute('aria-label')!))!;
 
-  it('larga (o non misurata): 5 carte con nome e parola, e "+2" per le altre', () => {
+  it('una minaccia per casella nella griglia dei tipi, rossa se scoperta e gialla se a fatica; le caselle avanzate vuote; niente carta a parte', () => {
     mount();
-    const cards = within(card()).getAllByRole('button', { name: /, (scoperta|a fatica):/ });
-    expect(cards).toHaveLength(5);
-    expect(cards[0]).toHaveTextContent('Raging Boltscoperta');
-    expect(cards[3]).toHaveTextContent('Zamazentaa fatica');
-    expect(cards[0]).toHaveClass('open');
-    expect(cards[3]).toHaveClass('thin');
-    expect(card()).toHaveTextContent('le 5 gestite peggio');
-    const more = within(card()).getByRole('button', { name: 'Altre 2 minacce: Latios-Mega (a fatica), Kyurem (a fatica)' });
-    expect(more).toHaveTextContent('+2');
+    expect(row().querySelector('th')).toHaveTextContent('Meta');
+    expect(threats().map(td => td.getAttribute('aria-label')!.split(',')[0])).toEqual(THREATS.map(x => x.species));
+    expect(threats()[0]).toHaveClass('open');
+    expect(threat(/^Zamazenta/)).toHaveClass('thin');
+    expect(threats().length + row().querySelectorAll('td.dash-thr.empty').length).toBe(18);
+    expect(screen.queryByRole('region', { name: 'Minacce del meta' })).toBeNull();
   });
 
-  it('stretta (sotto THREATS_FIVE_FROM): 4 carte e "+3"', () => {
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) { return this.classList.contains('thr-box') ? THREATS_FIVE_FROM - 34 : 0; });
-    mount();
-    expect(within(card()).getAllByRole('button', { name: /, (scoperta|a fatica):/ })).toHaveLength(4);
-    expect(card()).toHaveTextContent('le 4 gestite peggio');
-    expect(within(card()).getByRole('button', { name: /^Altre 3 minacce/ })).toHaveTextContent('+3');
+  it('più minacce delle caselle: le prime 17 e "+N" per le altre', () => {
+    const list = Array.from({ length: 20 }, (_, i) => ({ species: `Mon${i}`, usage: 0.1, status: 'thin' as const, side: 'defense' as const, reasons: [{ side: 'defense' as const, by: ['Toxapex'] }] }));
+    mount({ data: sample({ threats: { pods: [], list, total: 20, available: true, metaOff: false } }) });
+    expect(threats()).toHaveLength(17);
+    const more = row().querySelector<HTMLElement>('td.dash-thr.more')!;
+    expect(more).toHaveTextContent('+3');
+    expect(more).toHaveAttribute('aria-label', 'Altre 3 minacce: Mon17 (a fatica), Mon18 (a fatica), Mon19 (a fatica)');
   });
 
-  it('il nome intero sempre, la ragione e l\'uso nel nome accessibile e nel tooltip col fuoco', async () => {
+  it('la ragione col suo lato e l\'uso nel nome accessibile e nel tooltip col fuoco; dove porta il clic', async () => {
     const user = userEvent.setup();
     mount();
-    const zama = within(card()).getByRole('button', { name: 'Zamazenta, a fatica: Lo manda KO solo Iron Valiant. 14,8% nel meta' });
-    expect(within(card()).getByText('Ogerpon-Wellspring')).toBeInTheDocument();
+    const zama = threat(/^Zamazenta/);
+    expect(zama).toHaveAttribute('aria-label', 'Zamazenta, a fatica: Lo manda KO solo Iron Valiant. 14,8% nel meta');
     await user.tab();
-    zama.blur();
     await act(async () => { zama.focus(); });
-    const tip = await screen.findByText('Lo manda KO solo Iron Valiant', { selector: '.thr-tip li' }, { timeout: 1000 });
+    const tip = await screen.findByText(/Lo manda KO solo Iron Valiant/, { selector: '.thr-tip li' }, { timeout: 1000 });
+    // Il lato della ragione: la spada e "Offesa"
+    expect(tip).toHaveTextContent('Offesa Lo manda KO solo Iron Valiant');
     expect(tip.closest('.ftip')).toHaveTextContent('14,8% nel meta');
-    // In fondo dove porta il clic sulla carta (TipGo)
-    expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Coverage meta');
-    expect(zama).toHaveAccessibleDescription('Clic: vai a Coverage meta');
+    expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Offesa › Coverage meta');
+    expect(zama).toHaveAccessibleDescription('Clic: vai a Offesa › Coverage meta');
+    expect(threat(/^Raging Bolt/)).toHaveAccessibleDescription('Clic: vai a Difesa › Coverage meta');
   });
 
-  it('clic: apre la Coverage meta della Difesa (o dell\'Offesa) con la minaccia accesa; "+N" e il link sulla Coverage meta', async () => {
+  it('clic: la Coverage meta del lato non coperto (Difesa se lo sono tutti e due) con la minaccia accesa; il link Coverage meta', async () => {
     const user = userEvent.setup();
-    const { onView } = mount();
-    await user.click(within(card()).getByRole('button', { name: /^Raging Bolt, scoperta/ }));
+    const both = { species: 'Darkrai', usage: 0.12, status: 'open' as const, side: 'offense' as const, reasons: [{ side: 'offense' as const, by: [] }, { side: 'defense' as const, by: ['Toxapex'] }] };
+    const { onView } = mount({ data: sample({ threats: { pods: [], list: [...sample().threats.list, both], total: 20, available: true, metaOff: false } }) });
+    await user.click(threat(/^Raging Bolt/));
     expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta', { kind: 'threat', side: 'defense', species: 'Raging Bolt' });
-    await user.click(within(card()).getByRole('button', { name: /^Zamazenta, a fatica/ }));
+    await user.click(threat(/^Zamazenta/));
     expect(onView).toHaveBeenLastCalledWith('strength', 'coverageMeta', { kind: 'threat', side: 'offense', species: 'Zamazenta' });
-    await user.click(within(card()).getByRole('button', { name: /^Altre 2 minacce/ }));
-    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta');
-    await user.click(within(card()).getByRole('button', { name: 'Coverage meta' }));
+    await user.click(threat(/^Darkrai/));
+    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta', { kind: 'threat', side: 'defense', species: 'Darkrai' });
+    await user.click(within(screen.getByRole('region', { name: 'Copertura' })).getByRole('button', { name: 'Coverage meta' }));
     expect(onView).toHaveBeenLastCalledWith('defense', 'coverageMeta');
   });
 
-  it('nessuna minaccia: una riga verde; meta spento o senza statistiche: niente carta', () => {
+  it('nessuna minaccia: una riga verde; meta spento o senza statistiche: niente riga META', () => {
     const { unmount } = mount({ data: sample({ threats: { pods: [], list: [], total: 20, available: true, metaOff: false } }) });
-    expect(card()).toHaveTextContent('Nessuna minaccia del meta senza risposta');
-    expect(document.querySelector('.dash')).toHaveClass('has-threats');
+    expect(row()).toHaveTextContent('Nessuna minaccia del meta senza risposta');
     unmount();
     mount({ data: sample({ threats: { pods: [], list: [], total: 0, available: false, metaOff: true } }) });
-    expect(screen.queryByRole('region', { name: 'Minacce del meta' })).toBeNull();
-    expect(document.querySelector('.dash')).not.toHaveClass('has-threats');
+    expect(document.querySelector('.dash-meta-row')).toBeNull();
   });
 });
 

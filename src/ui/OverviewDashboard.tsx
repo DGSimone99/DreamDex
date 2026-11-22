@@ -9,7 +9,6 @@ import { CoverageSection } from './dashboard/CoverageSection';
 import { RolesSection } from './dashboard/RolesSection';
 import { SpeedSection } from './dashboard/SpeedSection';
 import { SummarySection } from './dashboard/SummarySection';
-import { ThreatsSection } from './dashboard/ThreatsSection';
 
 export type Density = 'tight' | 'normal' | 'roomy';
 
@@ -81,10 +80,10 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
   // Le minacce solo col meta (statistiche presenti e meta acceso)
   const threats = data.threats.available;
   return (
-    <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}${threats ? ' has-threats' : ''}`} data-density={density}>
+    <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}`} data-density={density}>
       <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
-      <CoverageSection coverage={data.coverage} onView={onView} />
-      {threats && <ThreatsSection threats={data.threats} onView={onView} />}
+      {/* Le minacce del meta sono la riga META della Copertura (la loro carta è stata tolta il 2026-11-22) */}
+      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} onView={onView} />
       <RolesSection roles={data.roles} density={density} onView={onView} />
       <SpeedSection speed={data.speed} density={density} onView={onView} />
     </div>
