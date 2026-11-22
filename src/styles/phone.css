@@ -888,9 +888,9 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .tabs.vertical .tab-status { display: none; }
 }
 @media (max-width: 1099px) and (prefers-reduced-motion: reduce) { .tabs.vertical .tab-icon { transition: none; } }
-/* Telefono: Completa team dritto, con gli angoli alterni come il menu "…" accanto (la targa del team resta inclinata);
-   fondo ciano scuro e bordo ciano tenue: è l'azione principale della riga */
-@media (max-width: 599px) {
+/* Telefono e tablet: Completa team / Migliora i set dritto, con gli angoli alterni come le mosse e il menu "…" accanto
+   (la targa del team resta inclinata); fondo ciano scuro e bordo ciano tenue: è l'azione principale della riga */
+@media (max-width: 1099px) {
   .band .team-head .team-guide-slot .team-guide { height: 40px; padding: 0 var(--sp-8); color: var(--text); }
   .band .team-head .team-guide-slot .team-guide::before { inset: 0; transform: none; border-radius: 8px 2px 8px 2px;
     background: var(--accent-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, var(--line)); }
@@ -1408,13 +1408,8 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .team-head .team-more { margin-left: auto; }
 }
 @media (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px), (min-width: 900px) and (max-width: 1099px) and (pointer: fine) {
-  /* Il fondo è il ::before (di solito un parallelogramma inclinato): qui dritto e tagliato a trapezio */
+  /* Il pulsante della guida ha gli angoli alterni come sul telefono (prima era un trapezio sulle righe della squadra) */
   .band:not(.collapsed) .team-head .team-guide-slot button.team-guide { clip-path: none; }
-  .band:not(.collapsed) .team-head .team-guide-slot button.team-guide::before { inset: 0; transform: none; border-radius: 0;
-    clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 100%, 0 100%); }
-  /* Il filo del bordo segue i lati obliqui: lo disegna un'ombra sotto (drop-shadow), non il riquadro */
-  /* (Sul pulsante, non sul suo contenitore: un filtro lì terrebbe il pannello di Completa team dentro la colonna) */
-  .band:not(.collapsed) .team-head .team-guide-slot button.team-guide { filter: drop-shadow(0 0 0.6px color-mix(in srgb, var(--accent) 70%, transparent)); }
   /* Con Completa team (o un menu) aperto la colonna passa sopra le barre, come la fascia sul telefono */
   .main > .band:has(.fill-panel, details[open]) { z-index: 50; }
 }
