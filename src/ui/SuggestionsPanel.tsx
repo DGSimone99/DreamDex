@@ -34,6 +34,9 @@ import { usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
 import { ModeSwitch } from './ModeSwitch';
 
+/** Quanto dura l'uscita della scheda del candidato (phone.css, sheet-out). */
+const SHEET_OUT_MS = 220;
+
 /** Candidati in tutto: MAX (candidateRanking.ts). Per pagina: misurato (PAGE senza misura). */
 export { MAX };
 
@@ -303,9 +306,20 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Telefono e tablet: la scheda si apre solo toccando un candidato (a tutto schermo sul telefono, da destra sul tablet);
   // Indietro (o il gesto, o un tocco fuori sul tablet) la chiude
   const [sheetOpen, setSheetOpen] = useState(false);
-  const closeSheet = useBackClose(sheetOpen, () => setSheetOpen(false), DETAIL_SHEET);
+  // Chiudendo, la scheda esce com'è entrata (verso destra sul tablet, verso il basso sul telefono), poi sparisce
+  const [sheetClosing, setSheetClosing] = useState(false);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const finishClose = () => {
+    window.clearTimeout(closeTimer.current);
+    const still = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still || typeof window.matchMedia !== 'function') { setSheetOpen(false); return; }
+    setSheetClosing(true);
+    closeTimer.current = window.setTimeout(() => { setSheetClosing(false); setSheetOpen(false); }, SHEET_OUT_MS);
+  };
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+  const closeSheet = useBackClose(sheetOpen, finishClose, DETAIL_SHEET);
   /** Apre il candidato nel dettaglio. */
-  const select = (item: Item) => { setSelectedName(item.species); setSheetOpen(true); };
+  const select = (item: Item) => { window.clearTimeout(closeTimer.current); setSheetClosing(false); setSelectedName(item.species); setSheetOpen(true); };
   // Sul telefono e sul tablet la scheda è una finestra: il fuoco ci entra, Esc la chiude, la lista sotto non si raggiunge
   const phone = useMediaQuery(DETAIL_SHEET);
 
@@ -481,7 +495,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <p className="visually-hidden" aria-live="polite">{cursorText}</p>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {notes}
-      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`} ref={pickerRef}
+      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}${sheetClosing ? ' sheet-closing' : ''}`} ref={pickerRef}
         style={listWidth ? { '--list-w': `${listWidth}px` } as CSSProperties : undefined}>
         <div className="picker-list" ref={pickerListRef}>
           {!full && items.length > 0 && (

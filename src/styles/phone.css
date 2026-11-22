@@ -377,6 +377,20 @@
 }
 @keyframes sheet-left { from { transform: translateX(100%); } }
 @keyframes scrim-in { from { opacity: 0; } }
+@keyframes sheet-right-out { to { transform: translateX(100%); } }
+@keyframes sheet-down-out { to { transform: translateY(100%); } }
+@keyframes scrim-out { to { opacity: 0; } }
+/* Chiudendo, la scheda del candidato esce com'è entrata: verso il basso sul telefono, verso destra sul tablet */
+@media (max-width: 759px) {
+  .picker.sheet-closing > :is(.detail, .sheet-back) { animation: sheet-down-out 0.22s ease-in both; }
+}
+@media (min-width: 760px) and (max-width: 1099px) {
+  .picker.sheet-closing > :is(.detail, .sheet-back) { animation: sheet-right-out 0.22s ease-in both; }
+  .picker.sheet-closing > .sheet-scrim { animation: scrim-out 0.22s ease-in both; }
+  /* Filtri: anche loro escono verso destra (al posto dello schermo che si spegne delle altre finestre) */
+  .help-backdrop.filters-backdrop.closing { animation: scrim-out 0.22s ease-in both; }
+  .help-backdrop.filters-backdrop.closing .filters-dialog { animation: sheet-right-out 0.22s ease-in both; }
+}
 @media (prefers-reduced-motion: reduce) { .picker.sheet-open > :is(.detail, .sheet-back, .sheet-scrim) { animation: none; } }
 @media (max-width: 1099px) {
   /* Scheda: il set su una colonna, l'azione principale larga e le altre accanto */
