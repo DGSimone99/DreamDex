@@ -9,7 +9,7 @@ import type { TeamRating } from '../engine/rating';
 import { rankKey } from '../engine/teamGain';
 import { MAX } from '../engine/candidateRanking';
 import { useRanking } from './useRanking';
-import { PHONE, useBackClose } from './useBackClose';
+import { DETAIL_SHEET, useBackClose } from './useBackClose';
 import { useMediaQuery } from './useMediaQuery';
 import { useSheet } from './useSheet';
 import { battleName } from '../engine/dex';
@@ -33,6 +33,9 @@ import { useLang, useT } from '../i18n/react';
 import { usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
 import { ModeSwitch } from './ModeSwitch';
+
+/** Quanto dura l'uscita della scheda del candidato (phone.css, sheet-out). */
+const SHEET_OUT_MS = 220;
 
 /** Candidati in tutto: MAX (candidateRanking.ts). Per pagina: misurato (PAGE senza misura). */
 export { MAX };
@@ -300,13 +303,25 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     }
     if (view === 'add') setScope('all');
   };
-  // Telefono: la scheda copre la lista e si apre solo toccando un candidato; Indietro (o il gesto) la chiude
+  // Telefono e tablet: la scheda si apre solo toccando un candidato (a tutto schermo sul telefono, da destra sul tablet);
+  // Indietro (o il gesto, o un tocco fuori sul tablet) la chiude
   const [sheetOpen, setSheetOpen] = useState(false);
-  const closeSheet = useBackClose(sheetOpen, () => setSheetOpen(false), PHONE);
+  // Chiudendo, la scheda esce com'è entrata (verso destra sul tablet, verso il basso sul telefono), poi sparisce
+  const [sheetClosing, setSheetClosing] = useState(false);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const finishClose = () => {
+    window.clearTimeout(closeTimer.current);
+    const still = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still || typeof window.matchMedia !== 'function') { setSheetOpen(false); return; }
+    setSheetClosing(true);
+    closeTimer.current = window.setTimeout(() => { setSheetClosing(false); setSheetOpen(false); }, SHEET_OUT_MS);
+  };
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+  const closeSheet = useBackClose(sheetOpen, finishClose, DETAIL_SHEET);
   /** Apre il candidato nel dettaglio. */
-  const select = (item: Item) => { setSelectedName(item.species); setSheetOpen(true); };
-  // Sul telefono la scheda è una finestra: il fuoco ci entra, Esc la chiude, la lista sotto non si raggiunge
-  const phone = useMediaQuery(PHONE);
+  const select = (item: Item) => { window.clearTimeout(closeTimer.current); setSheetClosing(false); setSelectedName(item.species); setSheetOpen(true); };
+  // Sul telefono e sul tablet la scheda è una finestra: il fuoco ci entra, Esc la chiude, la lista sotto non si raggiunge
+  const phone = useMediaQuery(DETAIL_SHEET);
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;
@@ -328,7 +343,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   const full = view === 'add' && team.length >= 6;
   const sheetModal = phone && sheetOpen && !!selected && !full;
-  useSheet(sheetModal, pickerRef, '.sheet-back, .detail', closeSheet);
+  useSheet(sheetModal, pickerRef, '.sheet-back, .detail, .sheet-scrim', closeSheet);
   const search = full ? null : (
     <>
       <div className="search">
@@ -339,7 +354,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             aria-label={tr('suggest.search')}
             aria-keyshortcuts="/"
             aria-describedby={target ? 'search-hint' : undefined}
-            placeholder={tr('suggest.searchPlaceholder')}
+            // Telefono e tablet: niente tasto / da ricordare (si tocca il campo), il testo resta corto
+            placeholder={tr(phone ? 'suggest.searchPlaceholderTouch' : 'suggest.searchPlaceholder')}
             value={filters.query}
             onChange={e => { setFilters({ ...filters, query: e.target.value }); setSelectedName(null); }}
             onKeyDown={e => {
@@ -479,7 +495,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <p className="visually-hidden" aria-live="polite">{cursorText}</p>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {notes}
-      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`} ref={pickerRef}
+      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}${sheetClosing ? ' sheet-closing' : ''}`} ref={pickerRef}
         style={listWidth ? { '--list-w': `${listWidth}px` } as CSSProperties : undefined}>
         <div className="picker-list" ref={pickerListRef}>
           {!full && items.length > 0 && (
@@ -500,8 +516,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             <p>{tr(stale ? 'suggest.detailLoading' : 'suggest.detailEmpty')}</p>
           </aside>
         )}
+        {/* Tablet: il velo scuro sulla lista; toccarlo chiude la scheda (il CSS lo mostra solo lì) */}
+        {selected && !full && sheetOpen && <div className="sheet-scrim" aria-hidden="true" onClick={closeSheet} />}
         {selected && !full && sheetOpen && (
-          // Solo sul telefono (il CSS la nasconde altrove): torna alla lista
+          // Solo sul telefono e sul tablet (il CSS la nasconde altrove): torna alla lista
           <button type="button" className="sheet-back" onClick={closeSheet}>
             <Icon name="prev" /> {tr('suggest.backToList')}
           </button>

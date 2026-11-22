@@ -40,9 +40,10 @@ describe('ricerca: annunci per i lettori di schermo', () => {
   });
 });
 
-describe('scheda del candidato sul telefono', () => {
+describe('scheda del candidato sul telefono e sul tablet', () => {
   it('apre come una finestra: fuoco dentro, lista inerte, Esc chiude e il fuoco torna sulla carta', async () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 759px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    // Tablet (sotto i 1100 px): la scheda si apre toccando la carta, come sul telefono
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
     const user = await setup('Great Tusk');
     const card = suggestions().querySelector<HTMLElement>('.suggestions > li button[aria-pressed]')!;
     await user.click(card);
