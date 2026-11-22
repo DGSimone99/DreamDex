@@ -317,6 +317,10 @@
     content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%; }
   .band-toggle::after { inset: -15px -8px -15px; }
   .detail-actions > :is(button, a) { min-height: 44px; min-width: 44px; justify-content: center; }
+  /* Scheda Pokémon: Aggiungi | Sostituisci, chi sostituire, Filtri e la ricerca alti 44 come sul tablet verticale
+     (la riga ha posto: qui non serve la zona invisibile) */
+  .toolbar .mode-switch > .segmented > button, .toolbar .filters-trigger, .toolbar .search-field input { min-height: 44px; }
+  .toolbar .team-type { height: 46px; }
 }
 
 @media (max-width: 599px) {
