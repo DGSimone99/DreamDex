@@ -5,7 +5,7 @@ import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
 import { useMemberTip } from './MemberCard';
 import { TypeIcons } from './typeIcons';
-import { endSetDrag, startSetDrag } from './teamDrag';
+import { endSetDrag, hideDragImage, startSetDrag } from './teamDrag';
 import { CandidateMarks, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
 /** Quanto il mouse deve restare sulla carta prima che lo sprite esca e parta la GIF (ms): passando sopra la griglia di corsa
@@ -63,12 +63,10 @@ export function CandidateCard(props: CandidateProps) {
       onMouseEnter={e => { enter(); if (!selected) tipHandlers.onMouseEnter(e); }}
       onPointerDown={closeTip} onMouseLeave={() => { leave(); memberTip.close(); }}
       // Trascinata sul team: sopra un membro lo sostituisce, sopra uno slot vuoto lo aggiunge (teamDrag.ts)
-      // Si trascina la carta intera (non solo lo sprite), presa dal punto dove la si afferra; lo spazio vuoto compare
-      // subito dopo, quando il browser ha già fotografato la carta
+      // Mentre la si trascina, segue il mouse la carta del team di questo set (la disegna TeamPanel, non la copia sfumata
+      // del browser); al suo posto nella lista resta lo spazio vuoto
       draggable onDragStart={e => {
-        const card = e.currentTarget;
-        const box = card.getBoundingClientRect();
-        try { e.dataTransfer.setDragImage(card, e.clientX - box.left, e.clientY - box.top); } catch { /* senza dataTransfer (test) */ }
+        hideDragImage(e);
         leave(); memberTip.close(); startSetDrag(e, item.set);
         setTimeout(() => setDragOrigin(true), 0);
       }}

@@ -496,8 +496,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   .card:hover { z-index: 5; transform: translateY(-4px); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
 }
 .card.selected { z-index: 4; }
-/* Trascinata sul team: la carta intera segue il mouse e al suo posto resta lo spazio vuoto, tratteggiato come lo slot
-   libero del team. Gli sprite non si trascinano da soli: si prende sempre la carta */
+/* Trascinata sul team: segue il mouse la carta del team di quel set (TeamPanel, .slot-ghost) e al suo posto resta lo
+   spazio vuoto, tratteggiato come lo slot libero del team. Gli sprite non si trascinano da soli */
 .card img { -webkit-user-drag: none; }
 .card.drag-origin, .card.drag-origin:hover { transform: none; filter: none; outline: 2px dashed var(--line); outline-offset: -2px; }
 .card.drag-origin > * { visibility: hidden; }

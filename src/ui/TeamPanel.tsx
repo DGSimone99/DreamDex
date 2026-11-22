@@ -44,7 +44,8 @@ import { TOUCH_QUERY } from './TouchTips';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { SmogonLink } from './SmogonLink';
 import { Hint } from './Hint';
-import { draggedSet, endSetDrag, onSetDrag } from './teamDrag';
+import { draggedSet, dragStart, endSetDrag, hideDragImage, onSetDrag } from './teamDrag';
+import { createPortal } from 'react-dom';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -174,6 +175,8 @@ interface SlotActions {
   move: (index: number, delta: number) => void;
   /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
   drag: (index: number, phase: 'start' | 'over' | 'drop' | 'end') => void;
+  /** Inizio del trascinamento: dove e quanto è grande la carta presa, per la carta che segue il mouse. */
+  lift: (index: number, at: Lift) => void;
   /** Set incollato; `review`: mosse non imparabili o nomi non trovati, da chiedere/dire dopo averlo applicato. */
   paste: (index: number, set: TeamSet, review?: ImportReview) => void;
   /** Preset con il voto del team più alto per questo membro, completato e ritoccato (null se il membro non ne ha). */
@@ -225,6 +228,34 @@ function EditorGrade({ grade }: { grade: EditorGradeShown }) {
         <span className={delta > 0 ? 'up' : 'down'}>{from}<Icon name="next" /><b>{grade.overall}</b></span>
       )}
     </span>
+  );
+}
+
+/** Dove si è afferrata una carta da trascinare: il punto, lo scarto dal suo angolo, la misura, team ridotto o no. */
+interface Lift { x: number; y: number; dx: number; dy: number; w: number; h: number; collapsed: boolean }
+
+/**
+ * La carta del team che segue il mouse trascinando (al posto della copia sfumata del browser): la stessa carta del
+ * team, piena, appena inclinata e con l'ombra. Sta nel body (sopra a tutto, mai tagliata) dentro i contenitori del team
+ * (band, team, slots: senza scatola, per gli stili); il mouse si legge da "dragover", che arriva ovunque nella pagina.
+ */
+function SlotGhost({ at, children }: { at: Lift; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const place = (x: number, y: number) => { el.style.translate = `${x - at.dx}px ${y - at.dy}px`; };
+    place(at.x, at.y);
+    const move = (e: DragEvent) => { if (e.clientX || e.clientY) place(e.clientX, e.clientY); };
+    document.addEventListener('dragover', move, true);
+    return () => document.removeEventListener('dragover', move, true);
+  }, [at]);
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <div ref={ref} className="slot-ghost" aria-hidden="true" style={{ width: at.w, height: at.h, transformOrigin: `${at.dx}px ${at.dy}px` }}>
+      <div className={`band${at.collapsed ? ' collapsed' : ''}`}><section className={`team${at.collapsed ? ' collapsed' : ''}`}><div className="slots">{children}</div></section></div>
+    </div>,
+    document.body,
   );
 }
 
@@ -512,7 +543,14 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           // Come prima col <summary>: dopo il clic il fuoco è sulla carta (Esc e frecce partono da lì), senza anello
           card.current?.focus({ preventScroll: true, focusVisible: false });
         }}
-        onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
+        onDragStart={e => {
+          // Segue il mouse una copia piena della carta (SlotGhost), non quella sfumata del browser; al suo posto lo slot vuoto
+          hideDragImage(e);
+          const box = e.currentTarget.getBoundingClientRect();
+          actions.lift(index, { x: e.clientX, y: e.clientY, dx: e.clientX - box.left, dy: e.clientY - box.top, w: box.width, h: box.height, collapsed });
+          if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); }
+          onDrag('start');
+        }}
         onDragOver={e => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = draggedSet() ? 'copy' : 'move'; onDrag('over'); }}
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
         onDragEnd={() => onDrag('end')}
@@ -832,7 +870,19 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
   // `from` -1: un candidato trascinato dalla lista Pokémon (teamDrag.ts); `over` oltre i membri = uno slot vuoto
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
   // Il trascinamento dalla lista finisce fuori dal team (o annullato con Esc): niente slot evidenziato
-  useEffect(() => onSetDrag(set => { if (!set) setDrag(d => (d?.from === -1 ? null : d)); }), []);
+  // La carta che segue il mouse trascinando: un membro del team (lift) o un candidato dalla lista, disegnato come carta del
+  // team (grande come le carte del team aperto, presa più o meno al centro)
+  const [ghost, setGhost] = useState<{ set: TeamSet; index: number; at: Lift } | null>(null);
+  useEffect(() => onSetDrag(set => {
+    if (!set) { setDrag(d => (d?.from === -1 ? null : d)); setGhost(g => (g?.index === -1 ? null : g)); return; }
+    const point = dragStart();
+    if (!point) return;
+    const card = slotsRef.current?.querySelector<HTMLElement>('.band:not(.collapsed) .slot.filled > .slot-card, .band:not(.collapsed) .slot.empty');
+    const box = card?.getBoundingClientRect();
+    const w = box?.width || 150;
+    const h = box?.height || 226;
+    setGhost({ set, index: -1, at: { x: point.x, y: point.y, dx: w / 2, dy: h * 0.45, w, h, collapsed: false } });
+  }), []);
   const dropSet = (i: number) => {
     const set = draggedSet();
     endSetDrag();
@@ -940,7 +990,9 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
       else if (phase === 'over') overSlot(i);
       else if (phase === 'drop') { if (draggedSet()) dropSet(i); else { if (drag) move(drag.from, i); setDrag(null); } }
       else setDrag(null);
+      if (phase === 'drop' || phase === 'end') setGhost(null);
     },
+    lift: (i, at) => { if (team[i]) setGhost({ set: team[i], index: i, at }); },
     paste: (i, next, review) => {
       if (onPaste) onPaste(i, next); else onChange(team.map((s, j) => (j === i ? next : s)));
       if (review) setAsk({ index: i, review });
@@ -980,6 +1032,7 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
     step: (i, delta) => live.current.step(i, delta),
     move: (i, delta) => live.current.move(i, delta),
     drag: (i, phase) => live.current.drag(i, phase),
+    lift: (i, at) => live.current.lift(i, at),
     paste: (i, next, review) => live.current.paste(i, next, review),
     best: i => live.current.best(i),
     bestIndex: i => live.current.bestIndex(i),
@@ -1094,6 +1147,14 @@ export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, o
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
+      {ghost && (
+        <SlotGhost at={ghost.at}>
+          <TypeTextContext.Provider value={typeStep > 0}>
+            <TeamSlot index={Math.max(ghost.index, 0)} total={team.length} set={ghost.set} subRoles={ghost.index >= 0 ? subRoles[ghost.index] : undefined}
+              dragging={false} dropTarget={false} data={data} format={format} warning={null} open={false} actions={actions} collapsed={ghost.at.collapsed} />
+          </TypeTextContext.Provider>
+        </SlotGhost>
+      )}
       <div className={`slots types-${TYPE_STEPS[typeStep]}${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}
         // Uscendo dalla fila del team lo slot evidenziato si spegne
         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrag(d => (d && d.over !== null ? { ...d, over: null } : d)); }}>

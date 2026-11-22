@@ -428,7 +428,16 @@
 /* Piastrina scura dietro la scritta: il ciano resta leggibile (>=4.5:1) su ogni colore di tipo */
 
 /* Riordino trascinando */
-.slot.dragging > .slot-card { opacity: 0.45; }
+/* Trascinando un membro: al suo posto lo slot vuoto tratteggiato (la carta piena segue il mouse, .slot-ghost) */
+.slot.dragging > .slot-card { background: none; box-shadow: none; outline: 2px dashed var(--line); outline-offset: -2px; }
+.slot.dragging > .slot-card > *, .slot.dragging > .slot-card::before, .slot.dragging > .slot-card::after, .slot.dragging > :not(.slot-card) { visibility: hidden; }
+/* La carta del team che segue il mouse trascinando (SlotGhost in TeamPanel): piena, appena inclinata, con l'ombra; i
+   contenitori del team ci sono solo per gli stili, senza scatola */
+.slot-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; rotate: 3deg; filter: drop-shadow(0 14px 18px rgb(0 0 0 / 0.55)); }
+.slot-ghost > .band, .slot-ghost .team, .slot-ghost .slots { display: contents; }
+.slot-ghost .slot { width: 100%; height: 100%; margin: 0; }
+.slot-ghost .slot > .slot-card { height: 100%; view-transition-name: none; }
+@media (prefers-reduced-motion: reduce) { .slot-ghost { rotate: none; } }
 .slot.drop-target > .slot-card { outline: 2px dashed var(--accent); outline-offset: 3px; }
 /* Candidato della lista sopra uno slot vuoto: come al passaggio del mouse */
 .slot.empty.drop-target { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
