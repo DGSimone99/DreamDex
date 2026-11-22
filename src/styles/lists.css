@@ -974,12 +974,14 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
      nell'editor e nel fumetto della carta) */
   .band:not(.collapsed) .slot .name-line .held { display: none; }
   .band:not(.collapsed) .slot .name { --name-room: 0px; }
-  .band:not(.collapsed) .grade-badge { column-gap: var(--sp-4); padding-left: var(--sp-5); padding-right: var(--sp-5); }
+  .band:not(.collapsed) .grade-badge { column-gap: var(--sp-3); padding-left: var(--sp-5); padding-right: var(--sp-5); }
   .band:not(.collapsed) .grade-head { margin-left: -10px; margin-right: -10px; }
   .band:not(.collapsed) .grade-badge .letter { font-size: 48px; }
   .band:not(.collapsed) .grade-badge .overall { font-size: var(--fs-title); }
   .band:not(.collapsed) .grade-badge .label { font-size: var(--fs-caption); }
-  .band:not(.collapsed) .grade-badge .grade-type { font-size: var(--fs-caption); }
+  /* Il tipo di team al passo più piccolo (come le etichette e i chip): "Bulky Offense" e "Hyper Offense" restano dentro
+     il margine della carta, allineati ai numeri delle aree */
+  .band:not(.collapsed) .grade-badge .grade-type { font-size: var(--fs-label); }
   .band:not(.collapsed) .grade-badge .grade-area .meter { display: none; }
   .band:not(.collapsed) .grade-badge button.grade-area:not(.grade-roles) { grid-template-columns: minmax(0, 1fr) 24px 10px; }
 }
