@@ -33,11 +33,11 @@ import type { TypeName } from '../engine/types';
 /** L'ordine dei gruppi di Porta e Toglie, e il segno di ognuno (gli stessi delle carte della lista). */
 const KINDS: BringKind[] = ['roles', 'defense', 'offense', 'threats', 'synergy', 'warning', 'other'];
 const SHORT_KINDS = new Set<BringKind>(['defense', 'offense', 'threats']);
-const KIND_ICON: Partial<Record<BringKind, 'shield' | 'sword' | 'chain' | 'warning'>> = { defense: 'shield', offense: 'sword', synergy: 'chain', warning: 'warning' };
 
 /**
- * Porta o Toglie a gruppi, sempre nello stesso ordine: a sinistra l'etichetta col suo segno (scudo, spada, VS, catena),
- * a destra le voci; i ruoli come riquadri, come nella Panoramica (spunta verde in Porta, × rossa in Toglie).
+ * Porta o Toglie a gruppi, sempre nello stesso ordine (ruoli, difesa, offesa, minacce, sinergie, avvisi), mostrati come
+ * una lista sola: ogni voce una riga col + verde (Porta), il − rosso (Toglie) o il ! giallo (avvisi), come le righe
+ * delle carte della lista. Il nome del gruppo resta per i lettori di schermo; i ruoli tutti su una riga.
  */
 function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'loss'; none: string }) {
   const tr = useT();
@@ -47,21 +47,12 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
       {KINDS.map(kind => {
         const group = items.filter(item => (item.kind ?? 'other') === kind);
         if (!group.length) return null;
-        const icon = KIND_ICON[kind];
         return (
           <div key={kind} className={`bring-group ${kind}`}>
-            <span className="bring-label">
-              {kind === 'threats' ? <span className="sym-vs" aria-hidden="true">VS</span> : icon ? <Icon name={icon} /> : null}
-              {tr(`detail.group.${kind}`)}
-            </span>
+            <span className="visually-hidden">{tr(`detail.group.${kind}`)}</span>
             {kind === 'roles' ? (
-              <ul className="bring-roles">
-                {group.map(item => (
-                  <li key={item.text} className="dash-role-tag">
-                    <Icon name={side === 'gain' ? 'check' : 'close'} />
-                    <span className="visually-hidden">{side === 'gain' ? '+' : '−'}</span><span className="dash-role-name">{item.text}</span>
-                  </li>
-                ))}
+              <ul className="bring-items">
+                <li><span className="visually-hidden">{side === 'gain' ? '+' : '−'}</span>{group.map(item => item.text).join(' · ')}</li>
               </ul>
             ) : (
               <ul className="bring-items">
@@ -84,11 +75,14 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * sale il voto, cosa porta e cosa toglie, l'effetto sul team area per area (una riga), il set consigliato (griglia,
  * esagono, pillole delle mosse), le azioni.
  */
-/** Versioni del dettaglio, dalla più ricca: 0 con la sezione Meta (solo a team chiuso), 1 normale (aree, Porta e Toglie,
- *  set), 2 uguale con la testata bassa, 3 anche il set più basso (esagono piccolo, senza titolo), 4 testata bassa e due
- *  linguette (Porta e Toglie · Set consigliato), 5 (solo se c'è Toglie) tre linguette: Porta · Toglie · Set consigliato. */
+/** Versioni del dettaglio, dalla più ricca: 0 con la sezione Meta (solo a team chiuso), 1 normale (aree, poi Porta e
+ *  Toglie, poi il set, uno sotto l'altro), 2 uguale con la testata bassa, 3 testata bassa e due colonne (il set a
+ *  sinistra, Porta e Toglie a destra), 4 due linguette (Porta e Toglie · Set consigliato), 5 (solo se c'è Toglie) tre
+ *  linguette: Porta · Toglie · Set consigliato. */
 export type DetailLevel = 0 | 1 | 2 | 3 | 4 | 5;
 export type DetailTab = 'brings' | 'loses' | 'set';
+/** Larghezza minima del dettaglio per la versione a due colonne (set e Porta e Toglie affiancati). */
+const COLS_MIN_WIDTH = 500;
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
 const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
 
@@ -183,7 +177,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   useLayoutEffect(() => setLevel(start), [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
-    if (level < lastLevel && wideScreen() && body && body.scrollHeight - body.clientHeight > 1) setLevel((level + 1) as DetailLevel);
+    if (!(level < lastLevel && wideScreen() && body && body.scrollHeight - body.clientHeight > 1)) return;
+    // Le due colonne solo in un dettaglio largo: sotto i 500px le mosse si ridurrebbero a una lettera, meglio le linguette
+    setLevel((level === 2 && body.clientWidth < COLS_MIN_WIDTH ? 4 : level + 1) as DetailLevel);
   });
   const startRef = useRef(start);
   startRef.current = start;
@@ -204,14 +200,14 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const showSet = !tabs || shownTab === 'set';
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 2 ? ' compact' : ''}${level === 3 ? ' small-set' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 2 ? ' compact' : ''}${level === 3 ? ' cols' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
       <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
-        <span className="detail-sprite">
-          <BoxIcon set={set} />
+        <span className="mcard-mon detail-mon">
+          <Sprite species={battleName(set)} item={set.item} size={96} />
         </span>
         <div className="detail-id">
           <h3>
@@ -318,24 +314,26 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           </section>
         )}
 
+        <div className="detail-because">
         {showBrings && (
         <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
-          <h4>{tr('detail.brings')}</h4>
+          <h4 className="visually-hidden">{tr('detail.brings')}</h4>
           <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
         </section>
         )}
         {showLosesPart && showLoses && (
           <section className="detail-sec loses">
-            <h4>{tr('detail.loses')}</h4>
+            <h4 className="visually-hidden">{tr('detail.loses')}</h4>
             <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
           </section>
         )}
+        </div>
 
         {/* Il set consigliato uguale alla carta del tooltip: strumento, natura, abilità, EV (e Tera), poi l'esagono a sinistra
             e le quattro mosse una sotto l'altra */}
         {showSet && (
         <section className="detail-sec wide set-sec">
-          <h4>{tr('detail.set')}</h4>
+          <h4 className="visually-hidden">{tr('detail.set')}</h4>
           <MemberKit set={set} />
           <MemberStatsMoves set={set} movesLabel={tr('editor.moves')} />
         </section>
