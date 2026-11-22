@@ -159,7 +159,7 @@ export function ExclusiveMark({ species, format, compact = false }: { species: s
   const version = found ? exclusiveOf(found, format) : null;
   if (!version) return null;
   const full = tr(`game.exclusive.${version}`);
-  return <span className={`version-mark ${version}${compact ? ' compact' : ''}`} role="img" aria-label={full} title={full}>{compact ? tr(`game.exclusiveLetter.${version}`) : full}</span>;
+  return <span className={`version-mark ${version}${compact ? ' compact' : ''}`} role="img" aria-label={full} {...hint(full)}>{compact ? tr(`game.exclusiveLetter.${version}`) : full}</span>;
 }
 
 /** Il candidato è nei Preferiti dell'utente (e non nella sua lista Ban): il voto lo dice col ♥. */
@@ -381,8 +381,8 @@ export function Reasons({ reasons }: { reasons: ReasonSummary }) {
         const title = bring.symbol || (bring.roles && bring.roles.length > 1) ? bring.text : undefined;
         const cls = `reason ${reasons.pros ? 'gain' : 'plain'}${bring.symbol ? ' has-sym' : ''}`;
         return reasons.pros
-          ? <span key={i} className={cls} title={title}><b aria-hidden="true">+</b><span className="visually-hidden">+</span><ReasonBody bring={bring} /></span>
-          : <span key={i} className={cls} title={title}><ReasonBody bring={bring} /></span>;
+          ? <span key={i} className={cls} {...hint(title)}><b aria-hidden="true">+</b><span className="visually-hidden">+</span><ReasonBody bring={bring} /></span>
+          : <span key={i} className={cls} {...hint(title)}><ReasonBody bring={bring} /></span>;
       })}
     </small>
   );
@@ -410,7 +410,7 @@ export function PickButton({ rank, species, selected, onSelect, onAction }: { ra
   const parts = formeParts(species);
   const mega = parts ? megaOf(parts.forme) : null;
   return (
-    <button type="button" className="pick" aria-pressed={selected} title={parts ? species : undefined} onClick={e => { e.stopPropagation(); onSelect(); }}
+    <button type="button" className="pick" aria-pressed={selected} {...hint(parts ? species : undefined)} onClick={e => { e.stopPropagation(); onSelect(); }}
       aria-keyshortcuts={onAction ? 'Shift+Enter' : undefined}
       onKeyDown={e => { if (onAction && e.key === 'Enter' && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); onAction(); } }}>
       {/* Il nome intero per lettori di schermo (e test); a vista solo la specie base: la forma sta nel dettaglio e nel
@@ -433,7 +433,7 @@ export function PickButton({ rank, species, selected, onSelect, onAction }: { ra
 function OutMark({ member }: { member: string }) {
   const tr = useT();
   return (
-    <span className="out" title={tr('suggest.outShort', { member })}>
+    <span className="out" {...hint(tr('suggest.outShort', { member }))}>
       <span className="visually-hidden">{tr('suggest.outFor', { member })}</span>
       <Icon name="swap" />
       <span className="out-mon" aria-hidden="true"><PokemonIcon name={member} /></span>

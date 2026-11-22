@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { hint } from './MoveTip';
 import type { Archetype } from '../engine/archetype';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
@@ -42,7 +43,8 @@ export function TeamTypePicker({ types, value, onChange }: {
     <div className="team-type" ref={box}
       onKeyDown={e => { if (open && e.key === 'Escape') { e.stopPropagation(); setOpen(false); trigger.current?.focus(); } }}>
       <button ref={trigger} type="button" className={`tt-trigger${open ? ' open' : ''}`} aria-haspopup="listbox" aria-expanded={open}
-        aria-label={`${t('suggest.teamType')}: ${name}`} title={value ? t(`archetype.${value}.note`) : t('suggest.anyTypeNote')}
+        aria-label={`${t('suggest.teamType')}: ${name}`} aria-description={value ? t(`archetype.${value}.note`) : t('suggest.anyTypeNote')}
+        {...hint(open ? null : value ? t(`archetype.${value}.note`) : t('suggest.anyTypeNote'))}
         onClick={() => {
           if (!open) {
             const r = trigger.current?.getBoundingClientRect();

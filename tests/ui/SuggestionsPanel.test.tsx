@@ -165,7 +165,7 @@ describe('SuggestionsPanel', () => {
       expect(mark).not.toBeNull();
       expect(mark.previousElementSibling!.tagName).toBe('STRONG');
       const member = mark.querySelector('.visually-hidden')!.textContent!.replace('Al posto di ', '');
-      expect(mark).toHaveAttribute('title', `Esce ${member}`);
+      expect(mark).toHaveAttribute('data-hint', `Esce ${member}`);
       expect(mark.querySelector('.icon')).not.toBeNull();
       expect(mark.querySelector('.out-mon .mon-icon')).not.toBeNull();
       expect(mark.querySelector('.out-mon')).toHaveAttribute('aria-hidden', 'true');
@@ -175,7 +175,7 @@ describe('SuggestionsPanel', () => {
     const rows = Number(list().style.getPropertyValue('--reasons'));
     expect(rows).toBeGreaterThan(1);
     expect(first.querySelectorAll('.who small > .reason')).toHaveLength(rows);
-    expect(first.querySelector('.tag .out')).toHaveAttribute('title', `Esce ${out}`);
+    expect(first.querySelector('.tag .out')).toHaveAttribute('data-hint', `Esce ${out}`);
     const name = rowNames()[0];
     await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
@@ -328,7 +328,7 @@ describe('SuggestionsPanel', () => {
     // Testo letto: "+" e la frase intera (le icone sono decorative)
     const spoken = (el: HTMLElement) => [...el.querySelectorAll('.visually-hidden')].map(e => e.textContent).join(' ');
     expect(spoken(reasons[0])).toBe('+ Colpisce super efficace Acqua, Erba, scoperti dal team');
-    expect(reasons[0]).toHaveAttribute('title', 'Colpisce super efficace Acqua, Erba, scoperti dal team');
+    expect(reasons[0]).toHaveAttribute('data-hint', 'Colpisce super efficace Acqua, Erba, scoperti dal team');
     expect(reasons[0].querySelector('.sym')).toHaveAttribute('aria-hidden', 'true');
     // La spada + i chip dei due tipi
     expect(reasons[0].querySelector('.sym-icon .icon')).not.toBeNull();
@@ -409,7 +409,7 @@ describe('SuggestionsPanel', () => {
     expect(texts('defense')).toEqual(['Resiste ad Acqua']);
     expect(texts('offense')).toEqual(['Colpisce Fuoco']);
     expect(texts('threats')).toEqual(['Ferma Kingambit']);
-    expect(porta.querySelector('.bring-group.offense li')).toHaveAttribute('title', 'Colpisce super efficace Fuoco, scoperti dal team');
+    expect(porta.querySelector('.bring-group.offense li')).toHaveAttribute('data-hint', 'Colpisce super efficace Fuoco, scoperti dal team');
     expect(texts('synergy')).toEqual(['Abilita Venusaur: Siccità → Clorofilla']);
     expect(porta.textContent).not.toMatch(/Usato con/);
     // Le caselle: le prime voci in ordine di peso, in forma breve, senza "Usato con"
@@ -844,7 +844,7 @@ describe('sprite animato delle carte', () => {
     expect(roles.length).toBeGreaterThan(0);
     expect(new Set(roles).size).toBe(roles.length);
     expect(line.textContent).toBe(`Ruoli${roles.join(' · ')}`);
-    for (const role of line.querySelectorAll(':scope > span > span')) expect(role).toHaveAttribute('title');
+    for (const role of line.querySelectorAll(':scope > span > span')) expect(role).toHaveAttribute('data-hint');
     // Una volta sola: Risolve non ripete i ruoli
     expect(detail.querySelectorAll('.mcard-roles')).toHaveLength(1);
     expect(detail.querySelector('.bring-group.roles')).toBeNull();

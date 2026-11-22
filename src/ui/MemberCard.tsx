@@ -14,7 +14,7 @@ import { Sprite, typeColor } from './Sprite';
 import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
 import { tileStyle, typeIconUrl } from './typeIcons';
-import { kitTip } from './MoveTip';
+import { hint, kitTip } from './MoveTip';
 import { ItemIcon } from './ItemIcon';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
@@ -154,7 +154,7 @@ export function MemberRoles({ set, rules, fresh = [] }: { set: TeamSet; rules?: 
       <small>{t('area.roles')}</small>
       <span>
         {roles.map((role, i) => (
-          <span key={role} title={role === 'weather' ? undefined : roleDescription(role, lang)} className={fresh.includes(role) ? 'fresh' : undefined}>
+          <span key={role} {...hint(role === 'weather' ? undefined : roleDescription(role, lang))} className={fresh.includes(role) ? 'fresh' : undefined}>
             {i > 0 && ' · '}{fresh.includes(role) && <b aria-hidden="true">+</b>}{fresh.includes(role) && <span className="visually-hidden">{t('detail.newRole')} </span>}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
           </span>
         ))}
