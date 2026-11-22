@@ -198,6 +198,9 @@ interface Props {
   rules?: FormatRules;
   /** Quanti Pokémon restano con questi filtri: si legge nella finestra mentre si sceglie (la lista sta sotto, coperta). */
   resultCount?: number;
+  /** Un gruppo in più in cima alla finestra (sul telefono il Tipo di team, tolto dalla barra per far posto alla lista);
+   *  `on`: il pulsante Filtri si accende anche per lui. Non è un filtro: Azzera non lo tocca. */
+  extra?: { label: string; summary: string; on: boolean; node: ReactNode };
 }
 
 /**
@@ -205,7 +208,7 @@ interface Props {
  * filtri valgono subito e il piede dice quanti Pokémon restano. I filtri attivi si vedono anche a finestra chiusa, nei
  * chip sotto la barra (ActiveFilters).
  */
-export function FilterBar({ filters, onChange, context = 'suggestions', rules = DEFAULT_RULES, resultCount }: Props) {
+export function FilterBar({ filters, onChange, context = 'suggestions', rules = DEFAULT_RULES, resultCount, extra }: Props) {
   const meta = context === 'suggestions';
   const t = useT();
   const count = activeFilterCount(filters);
@@ -214,7 +217,7 @@ export function FilterBar({ filters, onChange, context = 'suggestions', rules = 
 
   return (
     <div className="filters">
-      <button type="button" className={`filters-trigger${open ? ' open' : ''}${count > 0 ? ' on' : ''}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+      <button type="button" className={`filters-trigger${open ? ' open' : ''}${count > 0 || extra?.on ? ' on' : ''}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
         {count === 0 ? t('filters.title') : count === 1 ? t('filters.activeOne') : t('filters.activeMany', { n: count })}
       </button>
       {/* Azzera anche a finestra chiusa (nei suggerimenti lo fanno i chip sotto la barra) */}
@@ -224,13 +227,14 @@ export function FilterBar({ filters, onChange, context = 'suggestions', rules = 
         </button>
       )}
       {open && (
-        <FilterDialog filters={filters} onChange={onChange} meta={meta} rules={rules} resultCount={resultCount} onClose={() => setOpen(false)} />
+        <FilterDialog filters={filters} onChange={onChange} meta={meta} rules={rules} resultCount={resultCount} extra={extra} onClose={() => setOpen(false)} />
       )}
     </div>
   );
 }
 
-function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: {
+function FilterDialog({ filters, onChange, meta, rules, resultCount, extra, onClose }: {
+  extra?: Props['extra'];
   filters: CandidateFilters;
   onChange: (filters: CandidateFilters) => void;
   meta: boolean;
@@ -293,6 +297,7 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
 
         <Collapsible.Provider value={collapsible}>
         <div className="filters-body">
+          {extra && <FGroup label={extra.label} className="fgroup-extra" defaultOpen summary={extra.summary}>{extra.node}</FGroup>}
           <FGroup label={t('filters.ownType')} defaultOpen summary={[filters.types.map(type => typeName(type, lang)).join(' / '), filters.mono ? t('filters.mono') : ''].filter(Boolean).join(' · ')}>
             <div className="own-types">
               <Slot label={t('filters.type1')} value={first} options={typeOptions(second)} onPick={type => setOwnTypes(type, second)} />
