@@ -209,6 +209,8 @@
   .dash-roles { grid-column: 1; grid-row: auto; }
   .dash-speed { grid-column: 2; grid-row: auto; }
   .dash-speed .dash-ladder { height: auto; flex: 1; min-height: 170px; }
+  /* Tablet: la striscia Da sistemare (verso il Coaching) in cima alla Panoramica, non in fondo dopo tutte le carte */
+  .overview > .fix-row { order: -1; }
 
 }
 
