@@ -375,6 +375,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   /* La lista prende lo spazio che resta: la sua altezza dice quanti candidati per pagina (niente scrollbar) */
   .picker-list > .suggestions { flex: 1 1 0; min-height: 0; overflow: hidden; }
   .detail { position: static; top: auto; max-height: none; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+  /* Scorre il corpo, non la scheda: così lo sprite della fascia può uscire dal bordo alto */
+  .detail:not(.detail-empty) { overflow: visible; }
 }
 
 @media (max-width: 1099px) {

@@ -197,7 +197,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
       <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
         <span className="mcard-mon detail-mon">
-          <Sprite species={battleName(set)} item={set.item} size={96} animated />
+          <Sprite species={battleName(set)} item={set.item} size={96} />
         </span>
         <div className="detail-id">
           <h3>
