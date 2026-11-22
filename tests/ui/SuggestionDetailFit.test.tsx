@@ -43,14 +43,13 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(within(aside).queryByRole('heading', { name: 'Porta' })).toBeNull();
   });
 
-  it('col team esteso, se ci sta: aree in cima, poi Porta, poi il set in una riga; niente Meta né linguette', () => {
+  it('col team esteso, se ci sta: aree in cima, poi Porta, poi il set in una riga, poi il Meta; niente linguette', () => {
     overflow = false;
     panel();
     const aside = detail();
     expect(within(aside).queryByRole('tablist')).toBeNull();
-    expect(aside.querySelector('.meta-sec')).toBeNull();
-    const order = [...aside.querySelectorAll('.detail-sec')].map(sec => sec.classList.contains('effect') ? 'aree' : sec.classList.contains('brings') ? 'porta' : sec.classList.contains('set-sec') ? 'set' : '?');
-    expect(order).toEqual(['aree', 'porta', 'set']);
+    const order = [...aside.querySelectorAll('.detail-sec')].map(sec => sec.classList.contains('effect') ? 'aree' : sec.classList.contains('brings') ? 'porta' : sec.classList.contains('set-sec') ? 'set' : sec.classList.contains('meta-sec') ? 'meta' : '?');
+    expect(order).toEqual(['aree', 'porta', 'set', 'meta']);
     // Il set in una riga: esagono, mosse, dati del set
     expect([...aside.querySelector('.set-sec .set-line')!.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['mcard-hex', 'mcard-moves', 'mcard-kit']);
     expect(aside.classList.contains('compact')).toBe(false);

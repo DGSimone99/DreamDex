@@ -162,14 +162,16 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // Azioni su una riga: se «Metti al posto di …» (nome lungo, inglese) non lascia posto, Copia set e Smogon restano icone
   const actionsRef = useRef<HTMLDivElement>(null);
   const roomyActions = useFitCount(actionsRef, 1, `${lang}|${actionLabel}`, undefined, true) === 1;
-  const start: DetailLevel = teamCollapsed ? 0 : 1;
+  // Si parte sempre dalla versione col Meta: se non c'è posto (team aperto su uno schermo basso) la misura la toglie per
+  // prima. Sui fogli (tablet, telefono) il dettaglio scorre e il Meta c'è sempre
+  const start: DetailLevel = 0;
   // Tre linguette solo se c'è un Toglie da separare
   const lastLevel: DetailLevel = showLoses ? 5 : 4;
   const [level, setLevel] = useState<DetailLevel>(start);
   const [ownTab, setOwnTab] = useState<DetailTab>('brings');
   const tab = tabProp ?? ownTab;
   const chooseTab = onTab ?? setOwnTab;
-  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${start}`;
+  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${teamCollapsed}`;
   useLayoutEffect(() => setLevel(start), [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
@@ -195,7 +197,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     window.addEventListener('resize', reset);
     return () => window.removeEventListener('resize', reset);
   }, []);
-  const showMeta = teamCollapsed && level === 0;
+  const showMeta = level === 0;
   const tabs = level >= 4;
   // Tre linguette solo quando c'è Toglie e due non bastano; con due, "Toglie" sta con Porta
   const tabKeys: DetailTab[] = level === 5 ? ['brings', 'loses', 'set'] : ['brings', 'set'];
@@ -343,7 +345,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         </section>
         )}
 
-        {/* Meta, solo col team chiuso (c'è l'altezza): a sinistra l'uso nel meta e il posto in classifica, a destra i 5
+        {/* Meta, quando c'è l'altezza (il primo a cedere): a sinistra l'uso nel meta e il posto in classifica, a destra i 5
             compagni più frequenti come una classifica a barre (lunghe quanto la quota, rispetto al primo; colore del tipo);
             chi è già nel team in ciano con la spunta. Senza statistiche la sezione non c'è */}
         {showMeta && meta && (

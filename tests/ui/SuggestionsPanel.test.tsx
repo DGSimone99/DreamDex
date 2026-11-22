@@ -806,7 +806,7 @@ describe('sprite animato delle carte', () => {
     expect(line.textContent).toBe(`Ruoli${roles.join(' · ')}`);
   });
 
-  it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {
+  it("Meta nel dettaglio quando c'è posto, col team aperto o chiuso: uso e compagni più frequenti", async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
@@ -814,7 +814,7 @@ describe('sprite animato delle carte', () => {
       onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
     const { rerender } = renderIt(<SuggestionsPanel {...props} />);
     const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
-    expect(within(detail()).queryByRole('heading', { name: 'Meta' })).toBeNull();
+    expect(within(detail()).getByRole('heading', { name: 'Meta' })).toBeInTheDocument();
     rerender(<SuggestionsPanel {...props} teamCollapsed />);
     const meta = within(detail()).getByRole('heading', { name: 'Meta' }).closest('section')!;
     expect(meta).toHaveTextContent(/\d.*uso nel meta/);
