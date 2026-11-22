@@ -884,10 +884,12 @@
 .dash.tight .sum-packed .sum-lines { max-height: 44px; }
 
 /* Copertura › riga META: le minacce del meta nelle caselle della griglia dei tipi; rossa se scoperta, gialla se a fatica
-   (come le caselle dei tipi), la sprite dentro; le caselle vuote non si vedono */
-.dash .dash-thr { height: 30px; padding: 0; text-align: center; vertical-align: middle; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; overflow: hidden; }
-.dash .dash-thr .sprite { display: block; margin: -3px auto -3px; image-rendering: pixelated; transition: transform 0.15s var(--ease); }
-.dash .dash-thr:hover .sprite { transform: translateY(-2px); }
+   (come le caselle dei tipi), l'icona del Box dentro; le caselle vuote non si vedono */
+.dash .dash-thr { height: 32px; padding: 0; text-align: center; vertical-align: middle; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; overflow: hidden; }
+/* La minaccia come icona del Box (40×30), rimpicciolita se la casella è più stretta */
+.dash .dash-thr-box { display: grid; place-items: center; height: 100%; }
+.dash .dash-thr-box .mon-icon { image-rendering: pixelated; transition: transform 0.15s var(--ease); }
+.dash .dash-thr:hover .mon-icon { transform: translateY(-2px); }
 .dash .dash-thr.open { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 .dash .dash-thr.thin { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-thr.more { font: 700 var(--fs-caption)/1 var(--display); color: var(--muted); border-style: dashed; }
@@ -896,7 +898,7 @@
 .dash .dash-meta-none { height: 30px; padding: 0 var(--sp-3); font-size: var(--fs-small); color: var(--good); }
 .dash .dash-meta-none .icon { width: 14px; height: 14px; margin-right: var(--sp-3); vertical-align: -2px; }
 .dash .dash-meta-row th[scope='row'] { vertical-align: middle; }
-@media (prefers-reduced-motion: reduce) { .dash .dash-thr .sprite { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dash .dash-thr .mon-icon { transition: none; } }
 /* Tooltip della minaccia nella riga META: ogni ragione col segno del suo lato (scudo Difesa, spada Offesa) */
 .thr-tip-why.sided li { display: flex; align-items: baseline; gap: var(--sp-2); }
 .thr-tip-why.sided .icon { flex: none; width: 12px; height: 12px; align-self: center; }

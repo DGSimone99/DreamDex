@@ -6,6 +6,7 @@ import { goText, TipGo } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { firstType, useReasonText } from './threatText';
+import { PokemonIcon } from '../PokemonName';
 import type { CellState, DashboardData } from '../../engine/overviewDashboard';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
@@ -140,7 +141,7 @@ export function CoverageSection({ coverage, threats, onView }: {
                         onClick={() => { thrTip.close(); openThreat(x); }} onKeyDown={onKey(() => openThreat(x))}
                         onMouseEnter={e => thrTip.open(x.species, e.currentTarget)} onMouseLeave={thrTip.close}
                         onFocus={e => { if (keyboardFocus(e.currentTarget)) thrTip.open(x.species, e.currentTarget); }} onBlur={thrTip.close}>
-                        <Sprite species={x.species} size={30} />
+                        <span className="dash-thr-box"><PokemonIcon name={x.species} /></span>
                       </td>
                     ))}
                     {hiddenThreats.length > 0 && (
