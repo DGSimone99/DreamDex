@@ -836,6 +836,7 @@ export const it: Record<keyof typeof en, string> = {
   'combobox.fromPresets': "Dai preset Smogon",
   'combobox.more': "Altri {n}: scrivi per restringere",
   'stats.title': "Statistiche base",
+  'stats.withSet': "Col set",
   'stats.vs': "rispetto a {species}",
   'stats.total': "Totale",
   'stats.badge': "Stat",

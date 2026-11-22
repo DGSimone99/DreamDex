@@ -13,7 +13,7 @@ const scroll = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHei
 const client = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
 beforeEach(() => {
   Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get() { return overflow && this.classList.contains('detail-body') ? 900 : 0; } });
-  Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get() { return this.classList.contains('detail-body') ? 200 : 0; } });
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get() { return this.classList.contains('detail-body') ? 200 : this.matches('aside.detail') ? 300 : 0; } });
 });
 afterEach(() => {
   overflow = true;
@@ -68,9 +68,9 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(setTab).toHaveFocus();
   });
 
-  it('corpo più basso di 250 px: versione bassa (compact)', () => {
+  it('dettaglio più basso di 400 px: versione bassa (compact)', () => {
     const original = globalThis.ResizeObserver;
-    // Un ResizeObserver finto che misura subito (il corpo è alto 200)
+    // Un ResizeObserver finto che misura subito (il dettaglio è alto 300)
     globalThis.ResizeObserver = class {
       constructor(private callback: ResizeObserverCallback) {}
       observe() { this.callback([], this as never); }
@@ -86,7 +86,7 @@ describe('dettaglio: la versione che ci sta', () => {
     }
   });
 
-  it('se ci sta: due colonne, Perché (Risolve) e poi il set (dati, esagono con le mosse, ruoli); niente linguette', () => {
+  it('se ci sta: due colonne, Perché (Risolve) e poi il set (dati, mosse, ruoli); niente linguette', () => {
     overflow = false;
     panel();
     const aside = detail();
@@ -94,11 +94,10 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(aside).not.toHaveClass('tabbed');
     expect(aside).not.toHaveClass('compact');
     const cols = aside.querySelector('.detail-cols')!;
-    expect([...cols.children].map(el => el.className)).toEqual(['detail-why', 'detail-set']);
+    expect([...cols.children].map(el => el.className)).toEqual(['detail-why', 'detail-run']);
     expect(within(cols.querySelector('.detail-why') as HTMLElement).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
-    const set = cols.querySelector('.detail-set')!;
-    expect([...set.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['visually-hidden', 'mcard-kit', 'detail-set-row', 'mcard-roles']);
-    expect([...set.querySelector('.detail-set-row')!.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['mcard-hex', 'mcard-moves']);
+    const set = cols.querySelector('.detail-run')!;
+    expect([...set.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['visually-hidden', 'mcard-kit', 'mcard-moves', 'mcard-roles']);
     // Le vecchie sezioni non ci sono più
     expect(aside.querySelector('.effect, .detail-areas, .meta-sec, .set-sec')).toBeNull();
   });

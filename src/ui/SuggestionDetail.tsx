@@ -77,8 +77,9 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * esagono, pillole delle mosse), le azioni.
  */
 export type DetailTab = 'brings' | 'loses' | 'set';
-/** Sotto questa altezza del corpo (portatile basso col team aperto): testata bassa e set su una riga senza esagono. */
-const LOW_BODY = 250;
+/** Sotto questa altezza del dettaglio intero (portatile basso col team aperto): testata bassa e set su una riga. Si misura
+ *  il dettaglio, non il corpo: il corpo cambia proprio passando a basso (la testata si abbassa), e lì sfarfallerebbe. */
+const LOW_DETAIL = 400;
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
 const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
 
@@ -168,12 +169,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // Azioni su una riga: se «Metti al posto di …» (nome lungo, inglese) non lascia posto, Copia set e Smogon restano icone
   const actionsRef = useRef<HTMLDivElement>(null);
   const roomyActions = useFitCount(actionsRef, 1, `${lang}|${actionLabel}`, undefined, true) === 1;
+  const asideRef = useRef<HTMLElement>(null);
   const [low, setLow] = useState(false);
   useEffect(() => {
-    const body = bodyRef.current;
-    if (!body || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => { if (body.clientHeight > 0) setLow(wideScreen() && body.clientHeight < LOW_BODY); });
-    observer.observe(body);
+    const aside = asideRef.current;
+    if (!aside || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => { if (aside.clientHeight > 0) setLow(wideScreen() && aside.clientHeight < LOW_DETAIL); });
+    observer.observe(aside);
     return () => observer.disconnect();
   }, []);
   const [tabs, setTabs] = useState(false);
@@ -198,7 +200,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const tabKeys: DetailTab[] = ['brings', 'set'];
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}${low ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${low ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi; a destra quanto sale il voto e, sotto, il verso di ogni area */}
@@ -222,7 +224,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} {...hint(typeName(type as TypeName, lang))} />)}
             </span>
             {banMark}
-            <StatsBadge species={item.species} item={set.item} compare={out} />
+            <StatsBadge species={item.species} item={set.item} compare={out} side={<StatHex set={set} />} />
           </h3>
         </div>
         {result && before ? (
@@ -315,16 +317,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               )}
             </section>
           )}
-          {/* Il set consigliato: strumento, abilità, natura, EV (e Tera); l'esagono accanto alle mosse quando c'è posto;
-              i ruoli del set, una volta sola, con quelli che mancavano al team in verde */}
+          {/* Il set consigliato: strumento, abilità, natura, EV (e Tera), le mosse, i ruoli del set (una volta sola, con
+              quelli che mancavano al team in verde). Le statistiche del set (l'esagono) stanno nel fumetto di "Stat" */}
           {showSet && (
-            <section className="detail-set">
+            <section className="detail-run">
               <h4 className="visually-hidden">{tr('detail.set')}</h4>
               <MemberKit set={set} />
-              <div className="detail-set-row">
-                <StatHex set={set} />
-                <MemberMoves set={set} movesLabel={tr('editor.moves')} />
-              </div>
+              <MemberMoves set={set} movesLabel={tr('editor.moves')} />
               <MemberRoles set={set} rules={rulesOf(data)} fresh={freshRoles} />
             </section>
           )}

@@ -834,6 +834,7 @@ export const en = {
   'combobox.fromPresets': "From Smogon presets",
   'combobox.more': "{n} more: type to narrow down",
   'stats.title': "Base stats",
+  'stats.withSet': "With the set",
   'stats.vs': "vs {species}",
   'stats.total': "Total",
   'stats.badge': "Stats",

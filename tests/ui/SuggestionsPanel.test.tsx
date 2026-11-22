@@ -113,7 +113,7 @@ describe('SuggestionsPanel', () => {
     expect(within(detail).queryByText(/→/)).toBeNull();
     // I ruoli del set in una riga semplice sotto il set (niente lastra in testata), la spiegazione nel tooltip del nome
     expect(detail.querySelector('.detail-hero .mcard-why')).toBeNull();
-    expect(detail.querySelector('.detail-set .mcard-roles [title]')).not.toBeNull();
+    expect(detail.querySelector('.detail-run .mcard-roles [title]')).not.toBeNull();
   });
 
   it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
@@ -837,7 +837,7 @@ describe('sprite animato delle carte', () => {
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
       onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
-    const line = detail.querySelector('.detail-set .mcard-roles')!;
+    const line = detail.querySelector('.detail-run .mcard-roles')!;
     const roles = [...line.querySelectorAll(':scope > span > span')].map(role => role.textContent!.replace(/^ · /, ''));
     expect(roles.length).toBeGreaterThan(0);
     expect(new Set(roles).size).toBe(roles.length);
@@ -854,13 +854,13 @@ describe('sprite animato delle carte', () => {
     const set = { species: 'Great Tusk', item: 'Leftovers', ability: 'Protosynthesis', moves: ['Headlong Rush', 'Stealth Rock', 'Rapid Spin', 'Knock Off'], nature: 'Jolly', evs: { atk: 252, spe: 252 } };
     const item = { species: 'Great Tusk', set, score: 50, components: {}, tags: [], penalty: 0, reasons: [], facts: { clashes: [], roles: { filled: ['hazards'] } } } as never;
     renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const fresh = [...document.querySelectorAll('.detail-set .mcard-roles .fresh')];
+    const fresh = [...document.querySelectorAll('.detail-run .mcard-roles .fresh')];
     expect(fresh).toHaveLength(1);
     expect(fresh[0].textContent).toMatch(/\+nuovo per il team: Hazard$/);
     expect(fresh[0].querySelector('b')).toHaveTextContent('+');
     expect(fresh[0].querySelector('.visually-hidden')).toHaveTextContent('nuovo per il team:');
     // Gli altri ruoli senza segno
-    expect(document.querySelectorAll('.detail-set .mcard-roles > span > span:not(.fresh)').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.detail-run .mcard-roles > span > span:not(.fresh)').length).toBeGreaterThan(0);
   });
 
   it('niente sezione Meta: in Risolve "Spesso con" nomina i compagni frequenti già nel team (non chi esce), e senza meta sparisce', async () => {
