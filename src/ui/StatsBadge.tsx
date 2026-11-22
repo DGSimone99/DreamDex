@@ -49,6 +49,8 @@ export function StatsBadge({ species, item = '', compare, side }: { species: str
       ref={ref}
       type="button"
       className="stats-badge"
+      // Il nome è solo "Stat": senza etichetta il pulsante prenderebbe anche il testo della finestra che contiene
+      aria-label={t('stats.badge')}
       aria-expanded={open}
       aria-describedby={id}
       // Il clic non arriva a chi sta sotto (il dettaglio, la carta); dentro la finestra delle statistiche non la chiude
