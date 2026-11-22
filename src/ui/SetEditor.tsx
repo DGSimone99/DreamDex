@@ -398,20 +398,13 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
     if (drawer) drawer.scrollTop = 0;
     if (focus) requestAnimationFrame(() => document.getElementById(`${tabsId}-tab-${id}`)?.focus());
   };
-  // Strisciare col dito a destra o a sinistra cambia scheda; la scheda nuova entra dal lato da cui arriva
+  // Strisciare col dito a destra o a sinistra cambia scheda: la vecchia esce nel verso del dito, la nuova entra
+  // dall'altro lato (useSwipeTabs); la testata resta ferma
   const editorRef = useRef<HTMLDivElement>(null);
   const tabAt = phoneTabs.findIndex(tab => tab.id === phoneTab);
   useSwipeTabs(editorRef, {
-    enabled: phone, hasPrev: tabAt > 0, hasNext: tabAt < phoneTabs.length - 1,
-    onSwipe: dir => {
-      const next = phoneTabs[tabAt + dir];
-      if (!next) return;
-      pickTab(next.id);
-      const root = editorRef.current;
-      if (!root) return;
-      root.dataset.swipeIn = dir === 1 ? 'next' : 'prev';
-      window.setTimeout(() => { delete root.dataset.swipeIn; }, 260);
-    },
+    enabled: phone, hasPrev: tabAt > 0, hasNext: tabAt < phoneTabs.length - 1, parts: ':scope > :not(.editor-head)',
+    onSwipe: dir => { const next = phoneTabs[tabAt + dir]; if (next) pickTab(next.id); },
   });
   const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
     const at = phoneTabs.findIndex(tab => tab.id === phoneTab);
