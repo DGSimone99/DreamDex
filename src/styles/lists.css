@@ -261,7 +261,7 @@
 /* Voto vuoto: il messaggio a tutta larghezza, non spezzato in colonna */
 .grade-badge.none { display: flex; flex-direction: column; align-items: stretch; }
 .grade-badge.none .overall { font-size: var(--fs-title-l); }
-.grade-badge.none .label { text-wrap: balance; }
+.grade-badge.none .label { text-wrap: balance; color: var(--muted); }
 /* Il disegno del voto è solo visivo (la frase per i lettori sta a parte): non cambia la griglia */
 .grade-badge .grade-visual { display: contents; }
 .grade-badge.none .overall, .grade-badge.none .label { text-align: center; align-self: center; }
