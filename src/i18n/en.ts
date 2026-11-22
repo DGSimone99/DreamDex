@@ -1689,6 +1689,7 @@ export const en = {
   'suggest.pages': "Suggestion pages",
   'suggest.dblHint.add': "double-click: add",
   'suggest.dblHint.replace': "double-click: replace",
+  'suggest.keyHint': "Keyboard: Enter on the name opens the detail, Shift+Enter puts it in the team",
   'suggest.page': "Page {n}",
   'suggest.prev': "Previous page",
   'suggest.next': "Next page",

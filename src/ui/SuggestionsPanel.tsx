@@ -11,6 +11,7 @@ import { MAX } from '../engine/candidateRanking';
 import { useRanking } from './useRanking';
 import { DETAIL_SHEET, useBackClose } from './useBackClose';
 import { useMediaQuery } from './useMediaQuery';
+import { hint } from './MoveTip';
 import { useSheet } from './useSheet';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
@@ -525,7 +526,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           {!full && items.length > 0 && (
             <div className="list-head" ref={headRef}>
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
-              {headFit > 0 && <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
+              {headFit > 0 && <span className="dbl-hint" {...hint(tr('suggest.keyHint'))}>{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
               {pager}
             </div>
           )}

@@ -1692,6 +1692,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.pages': "Pagine dei suggerimenti",
   'suggest.dblHint.add': "doppio clic: aggiungi",
   'suggest.dblHint.replace': "doppio clic: sostituisci",
+  'suggest.keyHint': "Da tastiera: Invio sul nome apre il dettaglio, Maiusc+Invio lo mette nel team",
   'suggest.page': "Pagina {n}",
   'suggest.prev': "Pagina precedente",
   'suggest.next': "Pagina successiva",
