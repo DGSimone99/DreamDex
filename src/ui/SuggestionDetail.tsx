@@ -25,7 +25,7 @@ import { statsEntry } from '../engine/stats';
 import { Sprite, typeColor } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { Typed } from './TypeText';
-import { MemberKit, MemberMoves, StatHex } from './MemberCard';
+import { MemberKit, MemberStatsMoves } from './MemberCard';
 import { typeIconUrl } from './typeIcons';
 import type { TypeName } from '../engine/types';
 
@@ -84,9 +84,9 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * sale il voto, cosa porta e cosa toglie, l'effetto sul team area per area (una riga), il set consigliato (griglia,
  * esagono, pillole delle mosse), le azioni.
  */
-/** Versioni del dettaglio, dalla più ricca: 0 con aree e Meta, 1 con le aree (solo a team chiuso), 2 normale, 3 testata
- *  bassa e niente esagono, 4 testata bassa e due linguette (Porta e Toglie · Set consigliato), 5 (solo se c'è Toglie)
- *  tre linguette: Porta · Toglie · Set consigliato. */
+/** Versioni del dettaglio, dalla più ricca: 0 con la sezione Meta (solo a team chiuso), 1 normale (aree, Porta e Toglie,
+ *  set), 2 uguale con la testata bassa, 3 anche il set più basso (esagono piccolo, senza titolo), 4 testata bassa e due
+ *  linguette (Porta e Toglie · Set consigliato), 5 (solo se c'è Toglie) tre linguette: Porta · Toglie · Set consigliato. */
 export type DetailLevel = 0 | 1 | 2 | 3 | 4 | 5;
 export type DetailTab = 'brings' | 'loses' | 'set';
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
@@ -172,7 +172,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // ricca ammessa e, finché il corpo non entra, si scende di una. Si riparte col candidato nuovo, col team aperto o chiuso
   // e quando la finestra cambia misura
   const bodyRef = useRef<HTMLDivElement>(null);
-  const start: DetailLevel = teamCollapsed ? 0 : 2;
+  const start: DetailLevel = teamCollapsed ? 0 : 1;
   // Tre linguette solo se c'è un Toglie da separare
   const lastLevel: DetailLevel = showLoses ? 5 : 4;
   const [level, setLevel] = useState<DetailLevel>(start);
@@ -192,7 +192,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     window.addEventListener('resize', reset);
     return () => window.removeEventListener('resize', reset);
   }, []);
-  const showAreas = teamCollapsed && level <= 1;
   const showMeta = teamCollapsed && level === 0;
   const tabs = level >= 4;
   // Tre linguette solo quando c'è Toglie e due non bastano; con due, "Toglie" sta con Porta
@@ -200,10 +199,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const shownTab: DetailTab = tabKeys.includes(tab) ? tab : 'brings';
   const showBrings = !tabs || shownTab === 'brings';
   const showLosesPart = !tabs || shownTab === 'loses' || (level === 4 && shownTab === 'brings');
+  // Le aree stanno con Porta (in cima, sotto la testata): con le linguette nella prima
+  const showAreas = !tabs || shownTab === 'brings';
   const showSet = !tabs || shownTab === 'set';
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 3 ? ' tight compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 2 ? ' compact' : ''}${level === 3 ? ' small-set' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
@@ -280,20 +281,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           </div>
         )}
         <div className="detail-panel" {...(tabs ? { role: 'tabpanel', id: 'detail-tabpanel', 'aria-labelledby': `detail-tab-${shownTab}` } : {})}>
-        {showBrings && (
-        <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
-          <h4>{tr('detail.brings')}</h4>
-          <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
-        </section>
-        )}
-        {showLosesPart && showLoses && (
-          <section className="detail-sec loses">
-            <h4>{tr('detail.loses')}</h4>
-            <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
-          </section>
-        )}
-
-        {/* La riga per area solo nella versione estesa (team chiuso): i gruppi di Porta e Toglie dicono già dove si sale */}
+        {/* Prima cosa sotto la testata, a ogni misura: area per area quanto cambia il voto, poi Porta e Toglie che dicono perché */}
         {after && showAreas && (
           <section className="detail-sec wide effect">
             {/* Sotto Porta e Toglie, senza etichetta visibile (ne è il risultato; col primo Pokémon resta "Voto con lui da
@@ -330,21 +318,26 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           </section>
         )}
 
+        {showBrings && (
+        <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
+          <h4>{tr('detail.brings')}</h4>
+          <BringGroups items={brings} side="gain" none={tr('suggest.noDifference')} />
+        </section>
+        )}
+        {showLosesPart && showLoses && (
+          <section className="detail-sec loses">
+            <h4>{tr('detail.loses')}</h4>
+            <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
+          </section>
+        )}
 
-        {/* Il set consigliato come nella carta del tooltip: griglia (strumento, natura, abilità, EV, Tera), statistiche a
-            esagono e mosse come pillole */}
+        {/* Il set consigliato uguale alla carta del tooltip: strumento, natura, abilità, EV (e Tera), poi l'esagono a sinistra
+            e le quattro mosse una sotto l'altra */}
         {showSet && (
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
-          {/* Una fascia sola, come la schermata riassunto dei giochi: a sinistra l'esagono, a destra le mosse 2 per 2 e sotto
-              di loro i dati del set (la colonna di destra alta quanto l'esagono) */}
-          <div className="set-row">
-            <StatHex set={set} />
-            <div className="set-side">
-              <MemberMoves set={set} movesLabel={tr('editor.moves')} className="set-moves" />
-              <MemberKit set={set} />
-            </div>
-          </div>
+          <MemberKit set={set} />
+          <MemberStatsMoves set={set} movesLabel={tr('editor.moves')} />
         </section>
         )}
 

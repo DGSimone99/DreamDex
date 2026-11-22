@@ -624,9 +624,8 @@ describe('scheda del candidato', () => {
     expect(within(detail()).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
     expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
-    // Senza la versione estesa niente riga per area; col team chiuso c'è
-    expect(detail().querySelector('.detail-areas')).toBeNull();
-    // La riga per area c'è solo nella versione estesa (team chiuso)
+    // La riga per area c'è sempre, in cima, col team aperto e chiuso
+    expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
   }, 60000);

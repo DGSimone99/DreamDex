@@ -133,6 +133,18 @@
 .mcard-none { color: var(--faint); }
 /* Le parti cambiate rispetto al set di prima: in azzurro, la mossa nuova con un bordo azzurro sottile e un punto */
 .mcard-kit span.is-changed, .mcard-kit span.is-changed em { color: var(--accent-ink); }
+/* La riga delle aree non ha un titolo visibile: il titolo nascosto non deve prendere altezza */
+.detail:not(.detail-empty) .effect h4.visually-hidden { position: absolute; margin: 0; }
+/* Il dettaglio che non ci starebbe (.small-set, lo decide la misura): esagono piccolo e niente titolo del set, prima di
+   passare alle linguette */
+.detail.small-set .detail-sec.set-sec { --hex-w: 150px; }
+.detail.small-set .detail-sec.set-sec h4 { display: none; }
+.detail.small-set .set-sec .mcard-body { padding-top: var(--sp-2); }
+/* Meta nel dettaglio: righe dei compagni fitte, così entra anche a 1440x900 col team chiuso */
+.detail .meta-mates { gap: 1px; }
+.detail .meta-mates li { height: 22px; margin: 0; }
+/* L'icona dello strumento prima del nome, sulla linea della scritta */
+.mcard-kit .item-icon { display: inline-block; margin: -4px var(--sp-2) -4px 0; vertical-align: -4px; }
 .mcard-move.is-changed { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); }
 .mcard-move.is-changed .mvp-nm::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: var(--sp-3); border-radius: 50%; vertical-align: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 
@@ -283,16 +295,13 @@
 .detail-hero.mcard-head .detail-score strong, .detail-hero.mcard-head .detail-score span { text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-hero.mcard-head .detail-score span { color: var(--text); }
 /*
- * Set consigliato in una fascia sola, come la schermata riassunto dei giochi: a sinistra l'esagono, a destra le mosse
- * 2 per 2 a metà larghezza (nome intero) e sotto di loro i dati del set su due colonne. Senza esagono (schermi bassi,
- * dettaglio che non ci sta) la colonna di destra prende tutta la riga.
+ * Set consigliato uguale alla carta del tooltip (MemberKit + MemberStatsMoves): sopra strumento, natura, abilità ed EV
+ * su due colonne, sotto l'esagono a sinistra e le quattro mosse una sotto l'altra. L'esagono si misura con --hex-w.
  */
-.detail-sec.set-sec { display: block; }
-.set-row { --hex-w: 176px; display: grid; grid-template-columns: var(--hex-w) minmax(0, 1fr); align-items: center; gap: var(--sp-7); }
-.set-row .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
-.set-side { display: grid; gap: var(--sp-5); min-width: 0; }
-.set-row .set-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-4); }
-.set-row .mcard-kit { padding: 0; border: 0; font-size: var(--fs-small); }
+.detail-sec.set-sec { --hex-w: 200px; display: block; }
+.detail .set-sec .mcard-kit { padding: 0 0 var(--sp-5); }
+.detail .set-sec .mcard-body { grid-template-columns: var(--hex-w) minmax(0, 1fr); gap: var(--sp-5); padding: var(--sp-4) 0 var(--sp-2); }
+.detail .set-sec .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
 /* Il dettaglio sta nella colonna senza scorrere: testata ed esagono un po' più bassi; sugli schermi bassi niente esagono
    e le mosse su due colonne (le statistiche restano in un clic nella scheda) */
 .detail-hero.mcard-head { min-height: 92px; padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
@@ -300,8 +309,7 @@
 .detail-hero.mcard-head { grid-template-columns: 80px minmax(0, 1fr) auto; }
 .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
-  .set-row .mcard-hex { display: none; }
-  .set-row { grid-template-columns: minmax(0, 1fr); }
+  .detail-sec.set-sec { --hex-w: 150px; }
   .detail-hero.mcard-head { min-height: 72px; }
   .detail-hero.mcard-head .detail-sprite { width: 64px; height: 64px; }
   .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
@@ -309,7 +317,7 @@
 }
 /* Sotto i 900px di altezza (1536x864): esagono e testata ancora un filo più bassi */
 @media (min-width: 1100px) and (max-height: 899px) and (min-height: 800px) {
-  .set-row { --hex-w: 152px; }
+  .detail-sec.set-sec { --hex-w: 176px; }
   .detail-hero.mcard-head { min-height: 84px; }
 }
 /* Schermi molto bassi (1366x657, 1280x620): sezioni più strette, il titolo del set dentro la sua riga */
@@ -325,9 +333,9 @@
   .detail-hero.mcard-head { min-height: 112px; padding-top: var(--sp-6); padding-bottom: var(--sp-6); grid-template-columns: 96px minmax(0, 1fr) auto; }
   .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
   .detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; }
-  .set-row { --hex-w: 220px; }
-  .set-row .set-moves { gap: var(--sp-4) var(--sp-5); }
-  .set-row .set-moves .mvp { --mvp-h: 30px; font-size: var(--fs-small); }
+  .detail-sec.set-sec { --hex-w: 220px; }
+  .detail .set-sec .mcard-moves { gap: var(--sp-3); }
+  .detail .set-sec .mcard-moves .mvp { --mvp-h: 30px; font-size: var(--fs-small); }
 }
 
 /* Porta e Toglie a gruppi (BringGroups): etichetta col segno a sinistra (verde in Porta, rosso in Toglie, giallo negli
@@ -352,9 +360,6 @@
 .detail-sec:not(.wide) .bring-group > ul { flex: 1 1 150px; min-width: 0; }
 /* La lastra dei ruoli in testata su una riga sola: l'elenco intero nel tooltip */
 .detail-hero .detail-why { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Il dettaglio che non ci starebbe (.tight, lo decide la misura): il set si stringe come sugli schermi bassi */
-.detail.tight .set-row .mcard-hex { display: none; }
-.detail.tight .set-row { grid-template-columns: minmax(0, 1fr); }
 /* L'etichetta sulla stessa linea di base della prima riga delle voci (o della scritta dei riquadri dei ruoli): le due
    scritte hanno misure diverse, quindi si allineano le basi, non i centri; i segni restano centrati sulla scritta */
 .bring-group, .detail-sec:not(.wide) .bring-group { align-items: baseline; }
@@ -412,16 +417,11 @@
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
 
-/* Il set consigliato si misura da sé (critique 2026-11-21): in un dettaglio stretto (tablet, sotto i 560px) l'esagono va
-   sopra, centrato, e mosse e dati del set hanno tutta la larghezza; prima le mosse restavano in 146px e i nomi si
-   riducevano a una lettera */
+/* Il set consigliato si misura da sé (critique 2026-11-21): in un dettaglio molto stretto (sotto i 420px) l'esagono va
+   sopra, centrato, e mosse e dati del set hanno tutta la larghezza; i dati su due colonne (nome e valore) */
 .detail-sec.set-sec { container: setsec / inline-size; }
-@container setsec (max-width: 559px) {
-  .set-row { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
-  .set-row .mcard-hex { justify-self: center; }
-}
-/* Ancora più stretto (sotto i 420px): le mosse una per riga e i dati del set su due colonne (nome e valore) */
 @container setsec (max-width: 419px) {
-  .set-row .set-moves { grid-template-columns: minmax(0, 1fr); }
-  .set-row .mcard-kit { grid-template-columns: auto minmax(0, 1fr); }
+  .detail .set-sec .mcard-body { grid-template-columns: minmax(0, 1fr); }
+  .detail .set-sec .mcard-hex { justify-self: center; }
+  .detail .set-sec .mcard-kit { grid-template-columns: auto minmax(0, 1fr); }
 }

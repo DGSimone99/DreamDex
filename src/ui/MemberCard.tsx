@@ -11,6 +11,7 @@ import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
 import { typeIconUrl } from './typeIcons';
 import { kitTip } from './MoveTip';
+import { ItemIcon } from './ItemIcon';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
 const HEX_ORDER: StatID[] = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
@@ -75,7 +76,7 @@ export function MemberKit({ set, was }: { set: TeamSet; was?: TeamSet }) {
   const diff = (same: boolean) => (was && !same ? 'is-changed' : undefined);
   return (
     <div className="mcard-kit">
-      <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)} {...kitTip('item', set.item)}>{set.item ? anyGameName(set.item, lang) : '—'}</span>
+      <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)} {...kitTip('item', set.item)}>{set.item && <ItemIcon item={set.item} />}{set.item ? anyGameName(set.item, lang) : '—'}</span>
       <small>{t('mcard.nature')}</small>
       <span className={diff(was?.nature === set.nature)}>{set.nature ? natureName(set.nature, lang) : '—'}{nature?.plus && nature.minus && (
         // Le freccette di Champions; il segno resta nel testo per chi legge senza vedere
