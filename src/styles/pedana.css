@@ -33,3 +33,10 @@
   to { opacity: 1; filter: none; }
 }
 @media (prefers-reduced-motion: reduce) { .pedana-beam { transition: none; } .beam-flash .pedana-beam { animation: none; } }
+/* Chi non ha lo sprite animato (o non arriva) "respira" da fermo dove gli altri si animano: si allunga appena e torna,
+   coi piedi fermi sulla pedana (Sprite, .idle; mai con le animazioni ridotte) */
+.sprite.idle { transform-origin: 50% 90%; animation: sprite-breathe 1.8s ease-in-out infinite; }
+@keyframes sprite-breathe {
+  0%, 100% { scale: 1 1; }
+  50% { scale: 1.015 1.04; }
+}
