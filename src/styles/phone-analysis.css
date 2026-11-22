@@ -278,6 +278,12 @@
   .dash[data-part] .dash-head { padding-left: var(--sp-6); }
   .dash[data-part] .dash-summary > .dash-head { min-height: 0; margin-bottom: 0; padding: 0; background: none; }
   .dash[data-part] .dash-summary > .dash-head::after { display: none; }
+  /* Almeno alta quanto lo schermo sotto il team ridotto e le schede: passando a una carta più corta la pagina non si
+     accorcia fino in cima (lì il team si riaprirebbe da solo e coprirebbe tutto) */
+  .dash[data-part] { min-height: calc(100dvh - var(--top-h, 56px) - var(--bottom-h, 64px) - var(--safe-b, 0px) - 140px); }
+  /* La carta che esce strisciando verso destra sporgerebbe oltre lo schermo: la pagina diventerebbe più larga, il
+     telefono la reimpagina e la riporta in cima (e il team si riapre). Quello che sporge di lato si taglia */
+  .dash[data-part] { overflow-x: clip; overflow-clip-margin: 6px; }
   .dash[data-part].swiping > .dash-card { transform: translateX(var(--swipe-x, 0px)); transition: none; will-change: transform; }
   /* Da sola, la Velocità ha più spazio: barre più alte */
   .dash[data-part] .dash-ladder { height: 300px; }

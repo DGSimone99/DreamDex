@@ -105,9 +105,20 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
   const tabsRef = useRef<HTMLDivElement>(null);
   const pick = (id: Part, focus = false) => {
     setPart(id);
-    // Se le schede sono salite fuori vista, la carta nuova si legge dall'inizio
+    // Se le schede sono salite sotto le barre fisse in alto (formato e team), la pagina torna giusto sotto di loro: la carta
+    // nuova si legge dall'inizio e le schede restano in vista, mai coperte dal team
     const tabs = tabsRef.current;
-    if (tabs && tabs.getBoundingClientRect().top < 0) tabs.scrollIntoView({ block: 'start' });
+    if (tabs) {
+      const cover = Math.max(0, ...[...document.querySelectorAll<HTMLElement>('.rail, .main > .band')].map(el => {
+        const style = getComputedStyle(el);
+        const box = el.getBoundingClientRect();
+        return (style.position === 'sticky' || style.position === 'fixed') && box.top < window.innerHeight / 2 ? box.bottom : 0;
+      }));
+      if (tabs.getBoundingClientRect().top < cover) {
+        tabs.style.scrollMarginTop = `${Math.round(cover) + 8}px`;
+        tabs.scrollIntoView({ block: 'start' });
+      }
+    }
     if (focus) requestAnimationFrame(() => tabs?.querySelector<HTMLElement>(`[data-part="${id}"]`)?.focus());
   };
   useSwipeTabs(ref, {
