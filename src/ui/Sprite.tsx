@@ -87,19 +87,20 @@ export function Sprite({ species, item = '', size = 96, animated = false, shiny 
   const [ani, setAni] = useState<{ id: string; ready: boolean; failed: boolean; height?: number } | null>(null);
   if (!id || failed === id) return <span className="sprite missing" style={{ width: size, height: size }} aria-hidden="true" />;
   const state = ani?.id === id ? ani : { id, ready: false, failed: false };
-  // [riga dei piedi, centro del corpo, centro del riquadro, altezza della GIF o 0]; chi non è in tabella (Pokémon nuovi) prova la GIF
+  // [riga dei piedi, centro del corpo, (se c'è la GIF) altezza, spostamento di lato, righe sotto i piedi]; chi non è in
+  // tabella (Pokémon nuovi) prova la GIF
   const feet = SPRITE_FEET[id];
-  const hasAni = feet === undefined || feet[3] > 0;
+  const hasAni = feet === undefined || feet.length > 2;
   const motion = animated && !reducedMotion();
   const showAni = motion && hasAni && !state.failed;
   // Quanto spostare lo statico perché i piedi stiano alla riga FEET_ROW e il corpo al centro (FEET_X), in frazioni del suo
-  // lato: lo usano solo le carte con la pedana (suggestions.css). La GIF è il riquadro ritagliato sul Pokémon (centrata sul
-  // riquadro, non sul corpo): --ani-dx la sposta di quanto il riquadro sta di lato rispetto al corpo, così cade sullo statico
+  // lato: lo usano solo le carte con la pedana (suggestions.css). La GIF è il riquadro ritagliato su tutta l'animazione:
+  // --ani-dx e --ani-lift la spostano perché il suo primo fotogramma abbia corpo e piedi dove li ha lo statico
   const feetStyle = feet === undefined ? undefined : { '--feet-dy': (FEET_ROW - feet[0]) / 96, '--feet-dx': (FEET_X - feet[1]) / 96 } as CSSProperties;
   // Altezza vera della GIF (ritagliata sul Pokémon, da ~40 a 143 px): il CSS la usa per farla grande quanto lo statico. Dalla
   // tabella è nota prima che arrivi, così la GIF non cambia misura quando compare
-  const aniHeight = state.height ?? (feet && feet[3] > 0 ? feet[3] : undefined);
-  const aniStyle = { ...(aniHeight ? { '--ani-h': aniHeight } : {}), ...(feet ? { '--ani-dx': (feet[2] - feet[1]) / 96 } : {}) } as CSSProperties;
+  const aniHeight = state.height ?? feet?.[2];
+  const aniStyle = { ...(aniHeight ? { '--ani-h': aniHeight } : {}), ...(feet?.length === 5 ? { '--ani-dx': feet[3] / 96, '--ani-lift': feet[4] / 96 } : {}) } as CSSProperties;
   return (
     <>
       <img

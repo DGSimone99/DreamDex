@@ -477,12 +477,12 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    di fluttuare. La GIF è già appoggiata in basso */
 .card-sprite .sprite, .slot > .slot-card .sprite-wrap > .sprite { translate: calc(var(--feet-dx, 0) * 100%) calc(var(--feet-dy, 0) * 100%); }
 /* Sotto il mouse lo sprite animato di Showdown, grande quanto lo statico: la GIF è il riquadro di 96px ritagliato
-   sul Pokémon, quindi alta --ani-h/96 della casella; i piedi (il suo fondo) alla riga dei piedi dello statico (FEET_ROW,
-   9/96 sopra il fondo) e spostata di lato di --ani-dx, così cade proprio sullo statico. I due si danno il cambio con una
+   sul Pokémon, quindi alta --ani-h/96 della casella; i piedi del primo fotogramma (--ani-lift sopra il suo fondo) alla
+   riga dei piedi dello statico (FEET_ROW, 9/96 sopra il fondo) e spostata di lato di --ani-dx, così cade proprio sullo statico. I due si danno il cambio con una
    dissolvenza breve (Sprite: .covered sullo statico, .ready sulla GIF quando è arrivata) */
 .card-sprite .sprite { transition: opacity 0.18s ease-out; }
 .card-sprite .sprite.covered { opacity: 0; }
-.card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) * 9 / 96); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated;
+.card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) * (9 / 96 - var(--ani-lift, 0))); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated;
   transform: translateX(-50%); translate: calc(var(--ani-dx, 0) * var(--sprite-w)) 0; pointer-events: none; opacity: 0; transition: opacity 0.18s ease-out; }
 .card-sprite .sprite-ani.ready { opacity: 1; }
 /* Carta "sollevata": sotto il mouse sale subito di 4px con un'ombra (drop-shadow sul li, che non è ritagliato, così segue
