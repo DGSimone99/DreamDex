@@ -1582,3 +1582,12 @@ label.improve-col-head { cursor: pointer; }
 
 /* Telefono: la lista si scorre (niente pagine); l'ultimo elemento, invisibile, fa arrivare le carte successive */
 .suggestions .list-more { grid-column: 1 / -1; height: 1px; list-style: none; }
+
+/* Telefono (critique 2026-11-22): meno vuoto fra il team ridotto e i comandi, così sopra la piega entra una fila di carte
+   in più; sotto 380 px il nome del formato va su due righe ("National Dex / OU" intero, non "National D…") */
+@media (max-width: 599px) {
+  .band.collapsed { margin-bottom: 0; }
+}
+@media (max-width: 379px) {
+  .rail-format-name { white-space: normal; overflow: visible; font-size: var(--fs-small); line-height: 1.05; }
+}

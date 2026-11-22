@@ -471,7 +471,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               usage,
               out,
               picked: page * perPage + i === pickedIndex,
-              selected: item === selected,
+              selected: item === selected && (!phone || sheetOpen),
               onSelect: () => select(item),
               actionLabel: actionLabelOf(item),
               onAction: () => act(item),
