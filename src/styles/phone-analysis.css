@@ -318,3 +318,18 @@
 
 /* -- Telefono: fuori dalla scheda Pokémon il team non c'è (la fascia resta montata, nascosta) -- */
 @media (max-width: 599px) { .band.off { display: none; } }
+
+/* -- Tablet piccolo e telefono grande (600-759): le sette schede non stavano e la fila tagliava l'ultima a metà; qui stanno
+   tutte in sei colonne uguali, coi nomi un po' più piccoli -- */
+@media (min-width: 600px) and (max-width: 759px) {
+  .analysis-tabs { overflow: visible; }
+  .analysis-tabs [role='tablist'] { flex: 1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); width: auto; min-width: 0; }
+  .analysis-tabs [role='tab'], .analysis-tabs [role='tab'][aria-selected='true'],
+  .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus),
+  .analysis-tabs #analysis-view-strength, .analysis-tabs #analysis-view-strength[aria-selected='true'] {
+    min-width: 0; margin-left: 0; padding: 0 var(--sp-2); gap: var(--sp-2); font-size: var(--fs-small); }
+  .analysis-tabs [role='tab'] .tab-name { overflow: hidden; text-overflow: ellipsis; }
+  /* "Ruoli e Bonus" non sta: il nome corto, "Ruoli" (quello intero resta ai lettori di schermo) */
+  .analysis-tabs #analysis-view-bonusMalus .tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .analysis-tabs #analysis-view-bonusMalus .tab-short { display: inline; }
+}
