@@ -43,7 +43,7 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(within(aside).queryByRole('heading', { name: 'Porta' })).toBeNull();
   });
 
-  it('col team esteso, se ci sta: aree in cima, poi Porta e il set come nel tooltip; niente Meta né linguette', () => {
+  it('col team esteso, se ci sta: aree in cima, poi Porta, poi il set in una riga; niente Meta né linguette', () => {
     overflow = false;
     panel();
     const aside = detail();
@@ -51,8 +51,8 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(aside.querySelector('.meta-sec')).toBeNull();
     const order = [...aside.querySelectorAll('.detail-sec')].map(sec => sec.classList.contains('effect') ? 'aree' : sec.classList.contains('brings') ? 'porta' : sec.classList.contains('set-sec') ? 'set' : '?');
     expect(order).toEqual(['aree', 'porta', 'set']);
-    // Il set uguale alla carta del tooltip: dati del set, poi esagono e mosse
-    expect(aside.querySelector('.set-sec .mcard-kit + .mcard-body .mcard-hex')).not.toBeNull();
+    // Il set in una riga: esagono, mosse, dati del set
+    expect([...aside.querySelector('.set-sec .set-line')!.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['mcard-hex', 'mcard-moves', 'mcard-kit']);
     expect(aside.classList.contains('compact')).toBe(false);
   });
 

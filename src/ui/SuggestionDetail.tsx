@@ -25,7 +25,7 @@ import { statsEntry } from '../engine/stats';
 import { Sprite, typeColor } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { Typed } from './TypeText';
-import { MemberKit, MemberStatsMoves } from './MemberCard';
+import { MemberKit, MemberMoves, StatHex } from './MemberCard';
 import { typeIconUrl } from './typeIcons';
 import type { TypeName } from '../engine/types';
 
@@ -76,13 +76,10 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * esagono, pillole delle mosse), le azioni.
  */
 /** Versioni del dettaglio, dalla più ricca: 0 con la sezione Meta (solo a team chiuso), 1 normale (aree, poi Porta e
- *  Toglie, poi il set, uno sotto l'altro), 2 uguale con la testata bassa, 3 testata bassa e due colonne (il set a
- *  sinistra, Porta e Toglie a destra), 4 due linguette (Porta e Toglie · Set consigliato), 5 (solo se c'è Toglie) tre
- *  linguette: Porta · Toglie · Set consigliato. */
-export type DetailLevel = 0 | 1 | 2 | 3 | 4 | 5;
+ *  Toglie, poi il set in una riga), 2 uguale con la testata bassa, 3 due linguette (Porta e Toglie · Set consigliato),
+ *  4 (solo se c'è Toglie) tre linguette: Porta · Toglie · Set consigliato. */
+export type DetailLevel = 0 | 1 | 2 | 3 | 4;
 export type DetailTab = 'brings' | 'loses' | 'set';
-/** Larghezza minima del dettaglio per la versione a due colonne (set e Porta e Toglie affiancati). */
-const COLS_MIN_WIDTH = 500;
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
 const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
 
@@ -168,7 +165,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const bodyRef = useRef<HTMLDivElement>(null);
   const start: DetailLevel = teamCollapsed ? 0 : 1;
   // Tre linguette solo se c'è un Toglie da separare
-  const lastLevel: DetailLevel = showLoses ? 5 : 4;
+  const lastLevel: DetailLevel = showLoses ? 4 : 3;
   const [level, setLevel] = useState<DetailLevel>(start);
   const [ownTab, setOwnTab] = useState<DetailTab>('brings');
   const tab = tabProp ?? ownTab;
@@ -177,9 +174,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   useLayoutEffect(() => setLevel(start), [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
-    if (!(level < lastLevel && wideScreen() && body && body.scrollHeight - body.clientHeight > 1)) return;
-    // Le due colonne solo in un dettaglio largo: sotto i 500px le mosse si ridurrebbero a una lettera, meglio le linguette
-    setLevel((level === 2 && body.clientWidth < COLS_MIN_WIDTH ? 4 : level + 1) as DetailLevel);
+    if (level < lastLevel && wideScreen() && body && body.scrollHeight - body.clientHeight > 1) setLevel((level + 1) as DetailLevel);
   });
   const startRef = useRef(start);
   startRef.current = start;
@@ -189,18 +184,18 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     return () => window.removeEventListener('resize', reset);
   }, []);
   const showMeta = teamCollapsed && level === 0;
-  const tabs = level >= 4;
+  const tabs = level >= 3;
   // Tre linguette solo quando c'è Toglie e due non bastano; con due, "Toglie" sta con Porta
-  const tabKeys: DetailTab[] = level === 5 ? ['brings', 'loses', 'set'] : ['brings', 'set'];
+  const tabKeys: DetailTab[] = level === 4 ? ['brings', 'loses', 'set'] : ['brings', 'set'];
   const shownTab: DetailTab = tabKeys.includes(tab) ? tab : 'brings';
   const showBrings = !tabs || shownTab === 'brings';
-  const showLosesPart = !tabs || shownTab === 'loses' || (level === 4 && shownTab === 'brings');
+  const showLosesPart = !tabs || shownTab === 'loses' || (level === 3 && shownTab === 'brings');
   // Le aree stanno con Porta (in cima, sotto la testata): con le linguette nella prima
   const showAreas = !tabs || shownTab === 'brings';
   const showSet = !tabs || shownTab === 'set';
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 2 ? ' compact' : ''}${level === 3 ? ' cols' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside className={`detail${rank === 1 ? ' first' : ''}${level >= 2 ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi e la lastra ciano coi ruoli del set; a destra quanto sale il voto */}
@@ -271,7 +266,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             {tabKeys.map(key => (
               <button key={key} type="button" role="tab" id={`detail-tab-${key}`} aria-selected={shownTab === key} aria-controls="detail-tabpanel"
                 className={shownTab === key ? 'on' : undefined} onClick={() => chooseTab(key)}>
-                {level === 5 && key === 'brings' ? tr('detail.brings') : level === 5 && key === 'loses' ? tr('detail.loses') : tr(`detail.tab.${key === 'loses' ? 'brings' : key}`)}
+                {level === 4 && key === 'brings' ? tr('detail.brings') : level === 4 && key === 'loses' ? tr('detail.loses') : tr(`detail.tab.${key === 'loses' ? 'brings' : key}`)}
               </button>
             ))}
           </div>
@@ -329,13 +324,16 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         )}
         </div>
 
-        {/* Il set consigliato uguale alla carta del tooltip: strumento, natura, abilità, EV (e Tera), poi l'esagono a sinistra
-            e le quattro mosse una sotto l'altra */}
+        {/* Il set consigliato in una riga, come la schermata riassunto dei giochi: l'esagono, le quattro mosse una sotto
+            l'altra, poi strumento, natura, abilità, EV (e Tera) col nome sopra il valore */}
         {showSet && (
         <section className="detail-sec wide set-sec">
           <h4 className="visually-hidden">{tr('detail.set')}</h4>
-          <MemberKit set={set} />
-          <MemberStatsMoves set={set} movesLabel={tr('editor.moves')} />
+          <div className="set-line">
+            <StatHex set={set} />
+            <MemberMoves set={set} movesLabel={tr('editor.moves')} />
+            <MemberKit set={set} />
+          </div>
         </section>
         )}
 

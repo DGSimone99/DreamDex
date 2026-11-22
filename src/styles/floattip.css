@@ -137,18 +137,21 @@
 .detail:not(.detail-empty) .effect h4.visually-hidden { position: absolute; margin: 0; }
 /*
  * Dettaglio senza disordine (2026-11-22): niente barre per i titoli (restano per i lettori di schermo), le aree come una
- * riga di testo, Porta e Toglie come una lista sola (+ verde, − rosso, ! giallo, come le righe delle carte), il set con
- * l'esagono piccolo e le mosse 2×2 basse. Con poco spazio (.cols) il set va a sinistra e la lista a destra.
+ * riga di testo, Porta e Toglie come voci di fila che vanno a capo (+ verde, − rosso, ! giallo, come le righe delle
+ * carte), il set in una riga sola: esagono, mosse una sotto l'altra, dati del set col nome sopra il valore.
  */
-.detail-sec.set-sec { --hex-w: 148px; }
-/* L'esagono è più piccolo che nel tooltip: le scritte crescono per restare leggibili */
-.detail .set-sec .mcard-hex .hx-l { font-size: 11px; }
-.detail .set-sec .mcard-hex .hx-v { font-size: 15px; }
-.detail .set-sec .mcard-kit span { white-space: normal; }
-.detail .set-sec .mcard-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.detail-sec.set-sec { --hex-w: 160px; }
+.detail .set-line { display: grid; grid-template-columns: var(--hex-w) minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: var(--sp-6); }
+.detail .set-line .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
+.detail .set-sec .mcard-hex .hx-l { font-size: 10px; }
+.detail .set-sec .mcard-hex .hx-v { font-size: 14px; }
+.detail .set-sec .mcard-moves { display: grid; gap: var(--sp-3); }
 .detail .set-sec .mvp { --mvp-h: 26px; --mvp-r: 7px; --mvp-q: 2px; --mvp-cut: 8px; --mvp-tail-w: 40px; font-size: var(--fs-caption); }
-.detail .set-sec .mcard-kit { padding-bottom: var(--sp-3); border-bottom: 0; }
-.detail .set-sec .mcard-body { padding: 0; }
+/* I dati del set in colonna, il nome piccolo sopra il valore */
+.detail .set-line .mcard-kit { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0; border: 0; font-size: var(--fs-small); }
+.detail .set-line .mcard-kit small { margin-top: var(--sp-3); }
+.detail .set-line .mcard-kit small:first-child { margin-top: 0; }
+.detail .set-line .mcard-kit span { white-space: normal; }
 /* La fascia: lo sprite vero, grande come nel tooltip, che esce un po' dal bordo alto */
 .detail-hero .detail-mon { align-self: end; }
 .detail-hero .detail-mon .sprite { display: block; width: 96px; height: 96px; margin: -22px 0 -14px -8px; }
@@ -160,33 +163,19 @@ aside.detail.compact .detail-hero.mcard-head:has(.detail-out) { grid-template-co
 .detail .effect .detail-areas { gap: var(--sp-2) var(--sp-9); }
 aside.detail .effect .detail-areas div, aside.detail .effect .detail-areas .extras { padding: 0; border: 0; box-shadow: none; background: none; font-size: var(--fs-small); font-weight: 600; }
 .detail .effect .detail-areas dt { color: var(--muted); }
-/* Porta e Toglie, una lista sola */
-.detail-because { grid-column: 1 / -1; min-width: 0; padding: var(--sp-5) var(--sp-9) var(--sp-6); border-bottom: 1px solid var(--line-soft); }
+/* Porta e Toglie: le voci una dopo l'altra, a capo quando serve (gruppi e sezioni restano per i lettori di schermo) */
+.detail-because { grid-column: 1 / -1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-3) var(--sp-9); padding: var(--sp-5) var(--sp-9); border-bottom: 1px solid var(--line-soft); }
 .detail-because:empty { display: none; }
-.detail .detail-because .detail-sec { padding: 0; border: 0; }
-aside.detail .detail-because .detail-sec:not(.wide) + .detail-sec:not(.wide), aside.detail .detail-because .detail-sec + .detail-sec { margin-top: var(--sp-3); border: 0; }
-.detail-because .bring-groups { gap: var(--sp-3); }
-.detail-because .bring-group { display: block; }
-.detail-because .bring-items { gap: var(--sp-3); padding: 0; font-size: var(--fs-section); }
-.detail-because .bring-items li { position: relative; padding-left: var(--sp-9); }
-.detail-because .bring-items li::before { position: absolute; left: 2px; top: 0; font: 800 italic var(--fs-section)/1.35 var(--display); }
-.detail-because .gain .bring-items li::before { content: '+'; color: var(--good); }
-.detail-because .loss .bring-items li::before { content: '−'; color: var(--bad); }
-.detail-because .bring-group.warning .bring-items li::before { content: '!'; color: var(--warn); }
-.detail-because .bring-none { font-size: var(--fs-section); }
-/* Il set prende il posto libero: stacca la lista dai bottoni */
+/* I titoli nascosti (Porta, Toglie, il gruppo) non devono prendere posto nella fila */
+aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; padding: 0; }
+.detail-because > .detail-sec, .detail-because .bring-groups, .detail-because .bring-group, .detail-because .bring-items { display: contents; }
+.detail-because li { position: relative; padding-left: var(--sp-7); font-size: var(--fs-section); line-height: 1.35; }
+.detail-because li::before { position: absolute; left: 0; top: 0; font: 800 italic var(--fs-section)/1.35 var(--display); }
+.detail-because .gain li::before { content: '+'; color: var(--good); }
+.detail-because .loss li::before { content: '−'; color: var(--bad); }
+.detail-because .bring-group.warning li::before { content: '!'; color: var(--warn); }
+.detail-because .bring-none { margin: 0; font-size: var(--fs-section); }
 .detail .set-sec { padding-top: var(--sp-6); }
-/* Due colonne: il set a sinistra (dati in colonna, mosse una sotto l'altra), Porta e Toglie a destra */
-.detail.cols .detail-body { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
-.detail.cols .detail-because { grid-column: 2; grid-row: 2; border-bottom: 0; border-left: 1px solid var(--line-soft); padding-left: var(--sp-7); }
-.detail.cols .set-sec { grid-column: 1; grid-row: 2; border-bottom: 0; }
-.detail.cols .set-sec .mcard-kit { grid-template-columns: auto minmax(0, 1fr); }
-.detail.cols .set-sec .mcard-moves { grid-template-columns: minmax(0, 1fr); }
-.detail.cols .detail-sec.set-sec { --hex-w: 112px; }
-/* La colonna è stretta (sotto i 420px del contenitore): esagono e mosse restano affiancati, le mosse una per riga */
-@container setsec (max-width: 419px) {
-  .detail.cols .set-sec .mcard-body { grid-template-columns: var(--hex-w) minmax(0, 1fr); gap: var(--sp-4); }
-}
 /* Meta nel dettaglio: righe dei compagni fitte, così entra anche a 1440x900 col team chiuso */
 .detail .meta-mates { gap: 1px; }
 .detail .meta-mates li { height: 22px; margin: 0; }
@@ -346,8 +335,6 @@ aside.detail .detail-because .detail-sec:not(.wide) + .detail-sec:not(.wide), as
  * su due colonne, sotto l'esagono a sinistra e le quattro mosse una sotto l'altra. L'esagono si misura con --hex-w.
  */
 .detail-sec.set-sec { display: block; }
-.detail .set-sec .mcard-body { grid-template-columns: var(--hex-w) minmax(0, 1fr); gap: var(--sp-6); }
-.detail .set-sec .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
 /* Il dettaglio sta nella colonna senza scorrere: testata ed esagono un po' più bassi; sugli schermi bassi niente esagono
    e le mosse su due colonne (le statistiche restano in un clic nella scheda) */
 .detail-hero.mcard-head { min-height: 92px; padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
@@ -379,7 +366,7 @@ aside.detail .detail-because .detail-sec:not(.wide) + .detail-sec:not(.wide), as
   .detail-hero.mcard-head { min-height: 112px; padding-top: var(--sp-6); padding-bottom: var(--sp-6); grid-template-columns: 96px minmax(0, 1fr) auto; }
   .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
   .detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; }
-  .detail-sec.set-sec { --hex-w: 176px; }
+  .detail-sec.set-sec { --hex-w: 200px; }
   .detail .set-sec .mcard-moves { gap: var(--sp-3); }
   .detail .set-sec .mcard-moves .mvp { --mvp-h: 28px; }
 }
@@ -463,11 +450,12 @@ aside.detail .detail-because .detail-sec:not(.wide) + .detail-sec:not(.wide), as
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
 
-/* Il set consigliato si misura da sé (critique 2026-11-21): in un dettaglio molto stretto (sotto i 420px) l'esagono va
-   sopra, centrato, e mosse e dati del set hanno tutta la larghezza; i dati su due colonne (nome e valore) */
+/* Il set consigliato si misura da sé: in un dettaglio stretto (sotto i 470px, tablet e telefono) esagono e mosse restano
+   affiancati e i dati del set vanno sotto, su tutta la larghezza, a coppie nome e valore */
 .detail-sec.set-sec { container: setsec / inline-size; }
-@container setsec (max-width: 419px) {
-  .detail .set-sec .mcard-body { grid-template-columns: minmax(0, 1fr); }
-  .detail .set-sec .mcard-hex { justify-self: center; }
-  .detail .set-sec .mcard-kit { grid-template-columns: auto minmax(0, 1fr); }
+@container setsec (max-width: 469px) {
+  .detail .set-line { grid-template-columns: var(--hex-w) minmax(0, 1fr); }
+  .detail .set-line .mcard-kit { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--sp-2) var(--sp-4); }
+  .detail .set-line .mcard-kit small { margin-top: 0; }
 }
+
