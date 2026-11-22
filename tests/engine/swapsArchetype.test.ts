@@ -65,10 +65,13 @@ describe('scambi con l\'archetipo scelto', () => {
     }
   });
 
-  it('senza archetipo l\'ordine resta per voto', () => {
+  it('senza archetipo l\'ordine è per voto, meno un punto per ogni ruolo d\'aiuto che il team perde', () => {
     const swaps = bestSwaps(balance, fixtureData, 'it', pool);
-    for (let i = 1; i < swaps.length; i++) expect(swaps[i - 1].teamGain.overall).toBeGreaterThanOrEqual(swaps[i].teamGain.overall);
-    expect(swaps.every(s => !s.teamGain.penalty)).toBe(true);
+    for (let i = 1; i < swaps.length; i++) expect(rankKey(swaps[i - 1].teamGain)).toBeGreaterThanOrEqual(rankKey(swaps[i].teamGain));
+    // L'unica penalità è quella dei ruoli d'aiuto persi (swapGuard.ts): chi non ne perde resta in ordine di voto
+    for (const s of swaps) expect(s.teamGain.penalty ?? 0).toBe(s.teamGain.lostHelpers?.length ?? 0);
+    const clean = swaps.filter(s => !s.teamGain.penalty);
+    for (let i = 1; i < clean.length; i++) expect(clean[i - 1].teamGain.overall).toBeGreaterThanOrEqual(clean[i].teamGain.overall);
   });
 
   it('team non di quel tipo: compare solo chi lo rende di quel tipo', () => {

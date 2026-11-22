@@ -9,7 +9,8 @@ import type { Format } from './format';
 import { bannedParts, pokedexOf } from './formats';
 import { illegalParts } from './learnsets';
 import type { TeamSet } from './sets';
-import { rankByTeamGain, withCandidate, type AreaSnapshot } from './teamGain';
+import type { LevelKey } from './roleLevels';
+import { netGain, rankByTeamGain, withCandidate, type AreaSnapshot } from './teamGain';
 
 /** Un cambio di mossa proposto dal Coaching: una mossa del set al posto di un'altra (o in uno slot vuoto). */
 export interface MoveFix {
@@ -27,6 +28,9 @@ export interface MoveFix {
   reduces: string[];
   /** I valori delle aree col cambio (assente senza voto): il "da → a" delle righe del Coaching. */
   after?: AreaSnapshot;
+  /** Ruoli d'aiuto che il team perde col cambio e quanto il cambio scende in classifica per questo (swapGuard.ts). */
+  lostHelpers?: LevelKey[];
+  penalty?: number;
 }
 
 /** Si tengono (e si rianalizzano) solo i cambi di mossa più forti per membro. */
@@ -42,20 +46,23 @@ type ProblemDelta = { solves: string[]; reduces: string[]; introduces: string[] 
  * Quali cambi di un membro tenere, da `ranked` (dal voto più alto): chi alza il voto, e chi a pari voto risolve
  * un problema senza portarne di nuovi. Il limite vale dopo il filtro: prima chi risolve qualcosa (le tappe usano
  * solo quelli), poi dal voto più alto. I problemi si calcolano solo finché servono.
+ * Il voto in più conta senza un punto per ogni ruolo d'aiuto che il team perde (swapGuard.ts): togliere l'unico Toxic per
+ * un +1 vale come un pari, e si propone solo se risolve qualcosa.
  */
-export function keepMoveFixes<C extends { gain: number }>(ranked: C[], changes: (c: C) => ProblemDelta, limit: number): (C & ProblemDelta)[] {
+export function keepMoveFixes<C extends { gain: number; penalty?: number }>(ranked: C[], changes: (c: C) => ProblemDelta, limit: number): (C & ProblemDelta)[] {
   const kept: (C & ProblemDelta)[] = [];
   let zeroTries = 0;
   for (const c of ranked) {
     // Abbastanza cambi che risolvono, tutti con voto più alto di quelli che restano: inutile andare avanti
     if (kept.filter(k => k.solves.length).length >= limit) break;
-    if (c.gain < 0) break;
-    if (c.gain === 0 && zeroTries++ >= ZERO_GAIN_TRIES) break;
+    const net = netGain(c);
+    if (net < 0) break;
+    if (net === 0 && zeroTries++ >= ZERO_GAIN_TRIES) break;
     const delta = changes(c);
-    if (c.gain > 0 || (delta.solves.length > 0 && delta.introduces.length === 0)) kept.push({ ...c, ...delta });
+    if (net > 0 || (delta.solves.length > 0 && delta.introduces.length === 0)) kept.push({ ...c, ...delta });
   }
   return kept
-    .sort((a, b) => Number(b.solves.length > 0) - Number(a.solves.length > 0) || b.gain - a.gain)
+    .sort((a, b) => Number(b.solves.length > 0) - Number(a.solves.length > 0) || netGain(b) - netGain(a))
     .slice(0, limit);
 }
 
@@ -91,14 +98,15 @@ export function moveFixes(team: TeamSet[], format: Format, data: EngineData, pro
     }));
     if (!candidates.length) return;
     // Per ogni mossa lo slot migliore (la classifica è dal voto più alto)
-    const best = new Map<string, { set: TeamSet; slot: number; to: string; gain: number; after?: AreaSnapshot }>();
+    const best = new Map<string, { set: TeamSet; slot: number; to: string; gain: number; after?: AreaSnapshot; lostHelpers?: LevelKey[]; penalty?: number }>();
     for (const c of rankByTeamGain(candidates, team, index, data, lang, true)) {
-      if (c.teamGain && !best.has(c.to)) best.set(c.to, { set: c.set, slot: c.slot, to: c.to, gain: c.teamGain.gain, ...(c.teamGain.after && { after: c.teamGain.after }) });
+      if (c.teamGain && !best.has(c.to)) best.set(c.to, { set: c.set, slot: c.slot, to: c.to, gain: c.teamGain.gain, ...(c.teamGain.after && { after: c.teamGain.after }),
+        ...(c.teamGain.lostHelpers && { lostHelpers: c.teamGain.lostHelpers, penalty: c.teamGain.penalty }) });
     }
     for (const c of keepMoveFixes([...best.values()], c => changes(withCandidate(team, c.set, index)), MOVE_FIXES_PER_MEMBER)) {
       fixes.push({ index, member: battleName(member), slot: c.slot, from: member.moves[c.slot] ?? '', to: c.to, set: c.set, gain: c.gain,
-        solves: c.solves, reduces: c.reduces, ...(c.after && { after: c.after }) });
+        solves: c.solves, reduces: c.reduces, ...(c.after && { after: c.after }), ...(c.lostHelpers && { lostHelpers: c.lostHelpers, penalty: c.penalty }) });
     }
   });
-  return fixes.sort((a, b) => b.gain - a.gain);
+  return fixes.sort((a, b) => netGain(b) - netGain(a));
 }
