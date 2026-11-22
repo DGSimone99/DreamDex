@@ -664,11 +664,11 @@ describe('stile Carte', () => {
     expect(list()).toHaveClass('cards');
     const first = list().querySelector<HTMLElement>('li')!;
     expect(first).toHaveClass('card');
-    // Tipi come icone tonde (decorative), il nome dei tipi nel tooltip; nessun chip
+    // Tipi come icone tonde (decorative), il nome di ognuno nel fumetto dell'icona; nessun chip
     const types = getSpecies(rowNames()[0])!.types;
     const icons = first.querySelector('.type-icons')!;
     expect(icons.querySelectorAll('img')).toHaveLength(types.length);
-    expect(icons).toHaveAttribute('title', types.map(type => typeName(type, 'it')).join(' / '));
+    expect([...icons.querySelectorAll('img')].map(img => img.getAttribute('data-hint'))).toEqual(types.map(type => typeName(type, 'it')));
     expect([...first.querySelectorAll('.type-chip')].filter(c => !c.closest('.reason'))).toHaveLength(0);
     // Quanto sale il voto, sulla targhetta in alto a sinistra
     expect(first.querySelector('.tag')!.textContent).toMatch(/^(\+\d+|−\d+|±0)$/);

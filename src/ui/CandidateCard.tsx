@@ -70,7 +70,7 @@ export function CandidateCard(props: CandidateProps) {
         <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
         {!popped && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
         <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
-        <TypeIcons types={types} className="card-types" title={typeNames} />
+        <TypeIcons types={types} className="card-types" hints />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}
         <span className="visually-hidden">{typeNames}</span>
         <span className="who">

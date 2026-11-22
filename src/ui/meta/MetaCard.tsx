@@ -26,7 +26,7 @@ export function MetaCard({ entry, max, mine, selected, onSelect }: { entry: Meta
         <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
         <span className="card-sprite" aria-hidden="true"><Sprite species={entry.name} size={96} /></span>
         <span className="tag" aria-hidden="true">#{entry.rank}</span>
-        <TypeIcons types={entry.types} className="card-types" title={typeNames} />
+        <TypeIcons types={entry.types} className="card-types" hints />
         <span className="visually-hidden">{typeNames}</span>
         <span className="who">
           {mine && <span className="meta-mine">{t('meta.mine')}</span>}

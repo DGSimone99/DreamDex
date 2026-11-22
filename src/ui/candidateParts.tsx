@@ -22,6 +22,7 @@ import { Icon, MegaIcon } from './icons';
 import { formatPercent, t, type Lang } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { typeName } from '../i18n/game';
+import { hint } from './MoveTip';
 
 /**
  * Candidato in lista, col voto che darebbe al team (assente col primo Pokémon).
@@ -283,11 +284,11 @@ function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: re
     <span className={`sym-chips${iconsOnly ? ' icons-only' : ''}`} ref={row}>
       {all.slice(0, limit).map((type, i) => (
         i < immune.length ? (
-          <span key={type} className="sym-chip immune" title={tr('reason.immuneTo', { type: typeName(type, lang) })}>
+          <span key={type} className="sym-chip immune" {...(iconsOnly ? hint(typeName(type, lang)) : { title: tr('reason.immuneTo', { type: typeName(type, lang) }) })}>
             <TypeChip type={type} />
           </span>
         ) : (
-          <span key={type} className="sym-chip"><TypeChip type={type} /></span>
+          <span key={type} className="sym-chip" {...(iconsOnly ? hint(typeName(type, lang)) : {})}><TypeChip type={type} /></span>
         )
       ))}
       <More total={all.length} shown={limit} />

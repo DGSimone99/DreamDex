@@ -5,6 +5,7 @@ import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
 import { typeIconUrl } from '../typeIcons';
+import { hint } from '../MoveTip';
 
 /** Vertici del triangolo nel riquadro 150×128 (come sinergie-trio, opzione A): in alto, in basso a sinistra, in basso a destra. */
 const W = 150;
@@ -55,7 +56,7 @@ export function CoreArt({ core, sprite = 40 }: { core: Core; sprite?: number }) 
         </span>
       ))}
       {core.sides.map((side, i) => (
-        <span key={side.from} className="sum-tri-badge" title={typeName(side.type, lang)} style={{ left: pct(edges[i].mx, W), top: pct(edges[i].my, H) }}>
+        <span key={side.from} className="sum-tri-badge" {...hint(typeName(side.type, lang))} style={{ left: pct(edges[i].mx, W), top: pct(edges[i].my, H) }}>
           <img src={typeIconUrl(side.type)} alt="" draggable={false} />
         </span>
       ))}

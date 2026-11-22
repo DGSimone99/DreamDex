@@ -211,7 +211,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               </span>
             ) : <span>{item.species}</span>}
             <span className="detail-types" aria-label={types.map(type => typeName(type as TypeName, lang)).join(', ')}>
-              {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}
+              {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} {...hint(typeName(type as TypeName, lang))} />)}
             </span>
             {banMark}
             <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
