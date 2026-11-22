@@ -1,6 +1,6 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, type CandidateFilters, type FilterRole, type Inclusion } from '../engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, filtersFor, type CandidateFilters, type FilterRole } from '../engine/filters';
 import { DEFAULT_RULES, isOneType, type FormatRules } from '../engine/formatRules';
 import { roleDescription, roleLabel } from '../engine/roles';
 import { FAMILIES, type Family } from '../engine/subRoles';
@@ -13,17 +13,42 @@ import { typeTextColor } from './TypeText';
 import { typeName } from '../i18n/game';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
+import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import { useLang, useT } from '../i18n/react';
 
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
-/** Testa di un gruppo come nel resto dell'app: fascia a righe con la targhetta inclinata; a destra un'aggiunta (Solo monotipo). */
-function GroupHead({ label, children }: { label: string; children?: ReactNode }) {
+/** Tablet e telefono: i gruppi della finestra si chiudono (partono chiusi), il titolo dice cosa c'è di scelto. */
+const Collapsible = createContext(false);
+
+/**
+ * Un gruppo della finestra con il suo titolo come i riquadri dell'editor (fascia chiara centrata, stile Champions).
+ * Su tablet e telefono il titolo è un pulsante che apre e chiude il gruppo (chiuso all'inizio) e, chiuso, mostra in
+ * ciano le scelte fatte (`summary`).
+ */
+function FGroup({ label, summary, className = '', children }: { label: string; summary?: string; className?: string; children: ReactNode }) {
+  const collapsible = useContext(Collapsible);
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
+  if (!collapsible) {
+    return (
+      <section className={`fgroup ${className}`}>
+        <div className="fgroup-head"><h3 className="fgroup-plate">{label}</h3></div>
+        {children}
+      </section>
+    );
+  }
   return (
-    <div className="fgroup-head">
-      <h3 className="fgroup-plate">{label}</h3>
-      {children && <div className="fgroup-extra">{children}</div>}
-    </div>
+    <section className={`fgroup collapsible${open ? ' open' : ''} ${className}`}>
+      <h3 className="fgroup-toggle-wrap">
+        <button type="button" className="fgroup-toggle" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen(o => !o)}>
+          <span className="fgroup-toggle-label">{label}</span>
+          {summary && <span className="fgroup-summary">{summary}</span>}
+          <b className="fgroup-chev" aria-hidden="true" />
+        </button>
+      </h3>
+      <div id={bodyId} className="fgroup-body" hidden={!open}>{children}</div>
+    </section>
   );
 }
 
@@ -33,9 +58,9 @@ function TypeGrid({ label, selected, onChange }: {
   selected: TypeName[];
   onChange: (types: TypeName[]) => void;
 }) {
+  const lang = useLang();
   return (
-    <div className="type-filter">
-      <GroupHead label={label} />
+    <FGroup label={label} className="type-filter" summary={selected.map(type => typeName(type, lang)).join(', ')}>
       <div role="group" aria-label={label} className="type-grid">
         {TYPES.map(type => {
           const on = selected.includes(type);
@@ -53,7 +78,7 @@ function TypeGrid({ label, selected, onChange }: {
           );
         })}
       </div>
-    </div>
+    </FGroup>
   );
 }
 
@@ -218,6 +243,7 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
   const count = activeFilterCount(filters);
   const set = (patch: Partial<CandidateFilters>) => onChange({ ...filters, ...patch });
   const reset = () => onChange({ ...EMPTY_FILTERS, query: filters.query });
+  const collapsible = useMediaQuery(EDITOR_TABS_QUERY);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -263,9 +289,9 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
           <button ref={closeRef} type="button" className="help-close" aria-label={t('settings.close')} onClick={onClose}><Icon name="close" /></button>
         </header>
 
+        <Collapsible.Provider value={collapsible}>
         <div className="filters-body">
-          <section className="fgroup">
-            <GroupHead label={t('filters.ownType')} />
+          <FGroup label={t('filters.ownType')} summary={[filters.types.map(type => typeName(type, lang)).join(' / '), filters.mono ? t('filters.mono') : ''].filter(Boolean).join(' · ')}>
             <div className="own-types">
               <Slot label={t('filters.type1')} value={first} options={typeOptions(second)} onPick={type => setOwnTypes(type, second)} />
               <Slot label={t('filters.type2')} value={second} options={typeOptions(first)} disabled={!first || filters.mono} onPick={type => setOwnTypes(first, type)} />
@@ -274,26 +300,28 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
                 {t('filters.monoAria')}
               </label>
             </div>
-          </section>
+          </FGroup>
 
           <div className="type-filters">
             <TypeGrid label={t('filters.resists')} selected={filters.resists} onChange={resists => set({ resists })} />
             <TypeGrid label={t('filters.hits')} selected={filters.hits} onChange={hits => set({ hits })} />
           </div>
 
-          <section className="fgroup">
-            <GroupHead label={t('filters.role')} />
+          <FGroup label={t('filters.role')} summary={filtersFor(filters, rules).roles.map(role => roleLabel(role, lang)).join(', ')}>
             <RoleRows rules={rules} selected={filters.roles} onToggle={role => set({ roles: toggle(filters.roles, role) })} />
-          </section>
+          </FGroup>
 
-          <section className="fgroup">
-            <GroupHead label={t('filters.group.field')} />
+          <FGroup label={t('filters.group.field')} summary={[
+            filters.provides ? `${t('filters.sets')}: ${conditionName(filters.provides, lang)}` : '',
+            filters.benefitsFrom ? `${t('filters.benefits')}: ${conditionName(filters.benefitsFrom, lang)}` : '',
+          ].filter(Boolean).join(' · ')}>
             <div className="own-types">
               <Slot label={t('filters.sets')} value={filters.provides || undefined} options={conditionOptions} columns={5} up onPick={provides => set({ provides: provides ?? '' })} />
               <Slot label={t('filters.benefits')} value={filters.benefitsFrom || undefined} options={conditionOptions} columns={5} up onPick={benefitsFrom => set({ benefitsFrom: benefitsFrom ?? '' })} />
             </div>
-          </section>
+          </FGroup>
         </div>
+        </Collapsible.Provider>
 
         <footer className="filters-foot">
           <button type="button" className="primary" onClick={onClose}>{showText}</button>

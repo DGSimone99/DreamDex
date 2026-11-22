@@ -57,7 +57,6 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
 .fgroup-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .fgroup-plate { margin: 0; padding: 4px 0; text-align: center; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text); }
-.fgroup-extra { margin-left: auto; padding-right: var(--sp-4); }
 /* Tipo del Pokémon: due caselle (Tipo 1, Tipo 2) che aprono la griglia dei tipi, poi Solo monotipo */
 .own-types { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-5) var(--sp-10); }
 .type-slot { position: relative; display: flex; align-items: center; gap: var(--sp-5); }

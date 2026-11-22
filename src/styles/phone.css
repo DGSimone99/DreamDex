@@ -219,13 +219,27 @@
   /* Il team è un livello a sé: con un suo menu aperto passa sopra le sezioni in basso */
   .band:has(details[open], .slot.open, .fill-panel) { z-index: 50; }
   /* Filtri: la finestra a tutto schermo, un gruppo sotto l'altro, tipi su due colonne */
-  .filters-backdrop { padding: 0; }
+  .help-backdrop.filters-backdrop { padding: 0; place-items: stretch; }
   .help-dialog.filters-dialog { width: 100% !important; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
   .filters-body { padding: var(--sp-7) var(--sp-7) var(--sp-9); }
+  /* Gruppi a scomparsa, chiusi all'inizio: il titolo è una fascia da toccare (nome, scelte in ciano, freccetta) */
+  .filters-body { gap: var(--sp-3); }
+  .fgroup.collapsible + .fgroup.collapsible { margin-top: 0; }
+  .fgroup-toggle-wrap { margin: 0; font: inherit; }
+  .fgroup-toggle { display: flex; align-items: center; gap: var(--sp-5); width: 100%; min-height: 48px; padding: var(--sp-3) var(--sp-6);
+    border: 0; border-radius: 0; text-align: left; color: var(--text);
+    background: linear-gradient(90deg, var(--champ-band), color-mix(in srgb, var(--champ-band) 35%, transparent)); box-shadow: inset 0 -1px 0 var(--control-line); }
+  .fgroup-toggle-label { flex: none; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; }
+  .fgroup-summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-size: var(--fs-small); font-weight: 600; color: var(--accent-ink); }
+  .fgroup-chev { flex: none; width: 8px; height: 8px; margin: -4px 0 0 auto; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.18s var(--ease); }
+  .fgroup-summary + .fgroup-chev { margin-left: 0; }
+  .fgroup.open .fgroup-chev { margin-top: 4px; transform: rotate(-135deg); }
+  .fgroup-body { padding: var(--sp-6) var(--sp-2) var(--sp-5); }
   /* Testa su due righe: Solo preferiti scende sotto il titolo */
   .filters-head { flex-wrap: wrap; row-gap: var(--sp-3); }
   .filters-head-fav { order: 10; flex-basis: 100%; margin-left: 0; }
-  .type-filters { grid-template-columns: minmax(0, 1fr); gap: var(--sp-9); }
+  .filters-head-fav + .filters-head-reset { margin-left: auto; }
+  .type-filters { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
   .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .type-grid button { height: 36px; }
   .type-grid button > i { width: 36px; height: 36px; }
