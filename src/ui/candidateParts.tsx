@@ -261,37 +261,24 @@ function useFitLimit(count: number, key: string) {
 }
 
 /**
- * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: se coi nomi non entrano tutti si
- * mostrano solo le icone; quelli che nemmeno così entrano diventano "+N" subito dopo l'ultima (mai un chip tagliato a
- * metà; la lista intera è nel tooltip).
- * Gli immuni per primi, senza segni in più (lo scudo davanti alla riga basta a dire che li regge); immune o resiste
- * a parole nel tooltip del chip.
+ * I tipi dei motivi come icone (14 px, come gli altri segni della riga), su una riga sola: sempre icone, così le carte
+ * vicine si leggono allo stesso modo (coi nomi solo dove entravano, una carta diceva "FUOCO PSICO" e quella accanto
+ * no); quelle che non entrano diventano "+N" (la lista intera è nel tooltip). Il nome del tipo nel fumetto.
+ * Gli immuni per primi, senza segni in più (lo scudo davanti alla riga basta a dire che li regge); immune a parole
+ * nel fumetto.
  */
 function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
   const tr = useT();
   const lang = useLang();
   const all = [...immune, ...types];
-  // Prima coi nomi; se non entrano tutti, solo le icone dei tipi (meglio vederli tutti che "FUOCO +1"); il "+N" solo se
-  // nemmeno le icone bastano. Si riparte coi nomi quando cambiano i tipi o la lingua
-  const base = `${lang}|${immune.length}|${all.join()}`;
-  const [icons, setIcons] = useState({ key: base, on: false });
-  if (icons.key !== base) setIcons({ key: base, on: false });
-  const iconsOnly = icons.key === base && icons.on;
-  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti sono immuni, la lingua e nomi o icone
-  const { row, limit } = useFitLimit(all.length, `${base}|${iconsOnly ? 'icons' : 'names'}`);
-  useLayoutEffect(() => {
-    if (!iconsOnly && limit < all.length) setIcons({ key: base, on: true });
-  }, [iconsOnly, limit, all.length, base]);
+  const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
   return (
-    <span className={`sym-chips${iconsOnly ? ' icons-only' : ''}`} ref={row}>
+    <span className="sym-chips icons-only" ref={row}>
       {all.slice(0, limit).map((type, i) => (
-        i < immune.length ? (
-          <span key={type} className="sym-chip immune" {...(iconsOnly ? hint(typeName(type, lang)) : { title: tr('reason.immuneTo', { type: typeName(type, lang) }) })}>
-            <TypeChip type={type} />
-          </span>
-        ) : (
-          <span key={type} className="sym-chip" {...(iconsOnly ? hint(typeName(type, lang)) : {})}><TypeChip type={type} /></span>
-        )
+        <span key={type} className={`sym-chip${i < immune.length ? ' immune' : ''}`}
+          {...hint(i < immune.length ? tr('reason.immuneTo', { type: typeName(type, lang) }) : typeName(type, lang))}>
+          <TypeChip type={type} />
+        </span>
       ))}
       <More total={all.length} shown={limit} />
     </span>

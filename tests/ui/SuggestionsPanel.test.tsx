@@ -337,8 +337,9 @@ describe('SuggestionsPanel', () => {
     expect(reasons[1].querySelector('.sym-icon .icon')).not.toBeNull();
     const chips = [...reasons[1].querySelectorAll('.sym-chip')];
     expect(chips.map(c => c.querySelectorAll('.icon').length)).toEqual([0, 0]);
-    expect(chips[0]).toHaveAttribute('title', expect.stringMatching(/^Immune a /));
-    expect(chips[1]).not.toHaveAttribute('title');
+    // Sempre solo icone: il tipo (e l'immune) nel fumetto
+    expect(chips[0]).toHaveAttribute('data-hint', expect.stringMatching(/^Immune a /));
+    expect(chips[1]).toHaveAttribute('data-hint', expect.not.stringMatching(/^Immune/));
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
     // vs: il primo col pallino del tipo e il nome, come nel dettaglio; gli altri "+N" (niente mini sprite)
     expect(reasons[2].querySelector('.sym')!.textContent).toBe('VSZapdos');

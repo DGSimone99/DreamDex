@@ -63,9 +63,9 @@
   .grade-badge .overall { font-size: var(--fs-title-l); }
   .grade-areas { gap: var(--sp-1); margin-top: var(--sp-1); }
   .tab-body { padding: var(--sp-10) var(--sp-8) 0; }
-  .toolbar .mode-switch > .segmented button { padding: var(--sp-3) var(--sp-5); font-size: var(--fs-small); }
-  .toolbar .mode-switch > .segmented .target-toggle { padding: var(--sp-3) 9px; }
-  .toolbar .filters-trigger { height: 34px; }
+  .toolbar { --tb-h: 34px; }
+  .toolbar .mode-switch > .segmented button { padding: 0 var(--sp-5); font-size: var(--fs-small); }
+  .toolbar .mode-switch > .segmented .target-toggle { padding: 0 9px; }
   .picker.has-detail { gap: var(--sp-6); }
   .suggestions-panel { --picker-gap: 12px; }
   .detail-hero .detail-id h3 { font-size: var(--fs-title-l); }

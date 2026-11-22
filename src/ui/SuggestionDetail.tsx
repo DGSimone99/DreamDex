@@ -179,18 +179,23 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     return () => observer.disconnect();
   }, []);
   const [tabs, setTabs] = useState(false);
+  // Se il corpo non entra, prima il set su due righe di testo (come sul dettaglio basso); solo se non basta, le linguette
+  const [tight, setTight] = useState(false);
   const [ownTab, setOwnTab] = useState<DetailTab>('brings');
   const tab = tabProp ?? ownTab;
   const chooseTab = onTab ?? setOwnTab;
   const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${teamCollapsed}|${low}`;
-  useLayoutEffect(() => setTabs(false), [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => { setTabs(false); setTight(false); }, [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
     if (tabs || !body || !wideScreen()) return;
-    if (body.scrollHeight - body.clientHeight > 1) setTabs(true);
+    if (body.scrollHeight - body.clientHeight > 1) {
+      if (!low && !tight) setTight(true);
+      else setTabs(true);
+    }
   });
   useEffect(() => {
-    const reset = () => setTabs(false);
+    const reset = () => { setTabs(false); setTight(false); };
     window.addEventListener('resize', reset);
     return () => window.removeEventListener('resize', reset);
   }, []);
@@ -200,7 +205,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const tabKeys: DetailTab[] = ['brings', 'set'];
 
   return (
-    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${low ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${low || tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi; a destra quanto sale il voto e, sotto, il verso di ogni area */}
@@ -224,7 +229,10 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} {...hint(typeName(type as TypeName, lang))} />)}
             </span>
             {banMark}
-            <StatsBadge species={item.species} item={set.item} compare={out} side={<StatHex set={set} />} />
+            <StatsBadge species={item.species} item={set.item} compare={out} side={<>
+              <StatHex set={set} compare={out} />
+              {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+            </>} />
           </h3>
         </div>
         {result && before ? (

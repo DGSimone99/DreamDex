@@ -38,8 +38,8 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(why).toHaveAttribute('aria-selected', 'true');
     expect(within(aside).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
     expect(within(aside).queryByRole('list', { name: 'Mosse' })).toBeNull();
-    // Senza ResizeObserver (jsdom) nessuno misura l'altezza: niente versione bassa
-    expect(aside).not.toHaveClass('compact');
+    // Prima di passare alle linguette ha provato la versione bassa (il set su due righe di testo): resta così
+    expect(aside).toHaveClass('compact');
     await user.click(setTab);
     expect(setTab).toHaveAttribute('aria-selected', 'true');
     expect(within(aside).getByRole('list', { name: 'Mosse' })).toBeInTheDocument();

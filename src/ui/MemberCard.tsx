@@ -31,17 +31,23 @@ const at = (i: number, r: number) => {
 const ring = (f: number) => HEX_ORDER.map((_, i) => at(i, R * f).map(n => n.toFixed(1)).join(',')).join(' ');
 
 /** Le statistiche finali a esagono; quella che la natura alza in verde, quella che abbassa in rosso. */
-export function StatHex({ set }: { set: TeamSet }) {
+/** L'esagono delle statistiche del set. Con `compare` (chi esce, in Sostituisci) anche il suo esagono, grigio e
+ *  tratteggiato dietro: dove il nuovo è più forte si vede a colpo d'occhio; i numeri restano quelli del set. */
+export function StatHex({ set, compare }: { set: TeamSet; compare?: TeamSet }) {
   const lang = useLang();
   const lines = statLines(set);
   const byId = new Map(lines.map(l => [l.stat, l]));
-  const value = HEX_ORDER.map((stat, i) => at(i, R * Math.min(1, (byId.get(stat)?.value ?? 0) / HEX_FULL)).map(n => n.toFixed(1)).join(',')).join(' ');
+  const shape = (by: Map<string, { value: number }>) =>
+    HEX_ORDER.map((stat, i) => at(i, R * Math.min(1, (by.get(stat)?.value ?? 0) / HEX_FULL)).map(n => n.toFixed(1)).join(',')).join(' ');
+  const value = shape(byId);
+  const other = compare ? shape(new Map(statLines(compare).map(l => [l.stat, l]))) : null;
   return (
     <svg className="mcard-hex" viewBox="-40 -6 220 146" aria-hidden="true">
       <polygon className="hx-ring" points={ring(1)} />
       <polygon className="hx-ring soft" points={ring(2 / 3)} />
       <polygon className="hx-ring soft" points={ring(1 / 3)} />
       {HEX_ORDER.map((stat, i) => { const [x, y] = at(i, R); return <line key={stat} className="hx-axis" x1={CX} y1={CY} x2={x} y2={y} />; })}
+      {other && <polygon className="hx-out" points={other} />}
       <polygon className="hx-val" points={value} />
       {HEX_ORDER.map((stat, i) => {
         const [x, y] = at(i, R + 13);
