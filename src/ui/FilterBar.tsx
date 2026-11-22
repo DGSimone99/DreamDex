@@ -23,12 +23,12 @@ const Collapsible = createContext(false);
 
 /**
  * Un gruppo della finestra con il suo titolo come i riquadri dell'editor (fascia chiara centrata, stile Champions).
- * Su tablet e telefono il titolo è un pulsante che apre e chiude il gruppo (chiuso all'inizio) e, chiuso, mostra in
+ * Su tablet e telefono il titolo è un pulsante che apre e chiude il gruppo (chiuso all'inizio, tranne `defaultOpen`) e mostra in
  * ciano le scelte fatte (`summary`).
  */
-function FGroup({ label, summary, className = '', children }: { label: string; summary?: string; className?: string; children: ReactNode }) {
+function FGroup({ label, summary, className = '', defaultOpen = false, children }: { label: string; summary?: string; className?: string; defaultOpen?: boolean; children: ReactNode }) {
   const collapsible = useContext(Collapsible);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const bodyId = useId();
   if (!collapsible) {
     return (
@@ -42,8 +42,10 @@ function FGroup({ label, summary, className = '', children }: { label: string; s
     <section className={`fgroup collapsible${open ? ' open' : ''} ${className}`}>
       <h3 className="fgroup-toggle-wrap">
         <button type="button" className="fgroup-toggle" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen(o => !o)}>
-          <span className="fgroup-toggle-label">{label}</span>
-          {summary && <span className="fgroup-summary">{summary}</span>}
+          <span className="fgroup-toggle-text">
+            <span className="fgroup-toggle-label">{label}</span>
+            {summary && <span className="fgroup-summary">{summary}</span>}
+          </span>
           <b className="fgroup-chev" aria-hidden="true" />
         </button>
       </h3>
@@ -291,7 +293,7 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, onClose }: 
 
         <Collapsible.Provider value={collapsible}>
         <div className="filters-body">
-          <FGroup label={t('filters.ownType')} summary={[filters.types.map(type => typeName(type, lang)).join(' / '), filters.mono ? t('filters.mono') : ''].filter(Boolean).join(' · ')}>
+          <FGroup label={t('filters.ownType')} defaultOpen summary={[filters.types.map(type => typeName(type, lang)).join(' / '), filters.mono ? t('filters.mono') : ''].filter(Boolean).join(' · ')}>
             <div className="own-types">
               <Slot label={t('filters.type1')} value={first} options={typeOptions(second)} onPick={type => setOwnTypes(type, second)} />
               <Slot label={t('filters.type2')} value={second} options={typeOptions(first)} disabled={!first || filters.mono} onPick={type => setOwnTypes(first, type)} />
