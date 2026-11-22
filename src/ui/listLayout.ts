@@ -49,22 +49,22 @@ export function cardsColumns(pickerWidth: number): number {
 export const cardsWidth = (pickerWidth: number): number => (num(pickerWidth) >= 1150 ? CARDS_WIDE_W : CARDS_NARROW_W);
 
 /** Larghezza della lista: le colonne, gli spazi, il margine interno e il bordo di 1 px per lato. */
-export function cardsListWidth(pickerWidth: number): number {
-  const cols = cardsColumns(pickerWidth);
+export function cardsListWidth(pickerWidth: number, cols = cardsColumns(pickerWidth)): number {
   return cols * cardsWidth(pickerWidth) + (cols - 1) * CARDS_GAP + 2 * CARDS_PAD + 2;
 }
 
 /** Da 1 a 4 file che riempiono l'altezza della lista (la quarta solo con carte da 196 px in su); le carte fino a 232 px.
- *  Se entra una fila sola ma ne entrano 2 di carte basse (120 px), carte senza motivi su 2 file.
+ *  Se entra una fila sola ma ne entrano 2 di carte basse (120 px), carte senza motivi su 2 file da 3.
  *  Senza misura 2 file e l'altezza al CSS. */
 export function cardsLayout(height: number, teamCollapsed: boolean, pickerWidth = 0): CardsLayout {
   const h = num(height);
-  const columns = cardsColumns(pickerWidth);
+  let columns = cardsColumns(pickerWidth);
   const fit = (tile: number) => Math.floor((h - 2 * CARDS_PAD + CARDS_GAP) / (tile + CARDS_GAP));
   let reasons = cardsReasons(teamCollapsed);
   let rows = h ? (fit(CARDS_FOURTH_ROW_TILE) >= 4 ? CARDS_MAX_ROWS : clamp(fit(cardsMinTile(reasons)), 1, 3)) : 2;
-  // Schermi bassi col team aperto: con i motivi entrerebbe una fila sola; senza, le carte si abbassano e le file sono 2
-  if (h && rows === 1 && fit(CARDS_SHORT_TILE) >= 2) { reasons = 0; rows = 2; }
+  // Schermi bassi col team aperto: con i motivi entrerebbe una fila sola; senza, le carte si abbassano e le file sono 2,
+  // da 3 carte al massimo: il dettaglio accanto (stretto su questi schermi) prende la larghezza della quarta colonna
+  if (h && rows === 1 && fit(CARDS_SHORT_TILE) >= 2) { reasons = 0; rows = 2; columns = Math.min(columns, 3); }
   const tileHeight = h ? clamp(Math.floor((h - 2 * CARDS_PAD - (rows - 1) * CARDS_GAP) / rows), 0, CARDS_MAX_TILE) : 0;
-  return { columns, rows, perPage: columns * rows, tileHeight, reasons, listWidth: cardsListWidth(pickerWidth) };
+  return { columns, rows, perPage: columns * rows, tileHeight, reasons, listWidth: cardsListWidth(pickerWidth, columns) };
 }
