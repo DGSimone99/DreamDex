@@ -14,7 +14,7 @@ import { EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
-import { TypeIcons, typeIconUrl } from '../typeIcons';
+import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
 import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP } from '../spriteSizes';
@@ -216,7 +216,7 @@ export function DefenseHitTip({ type, species, cell, mult }: { type: string; spe
   return (
     <>
       <div className="ftip-head">
-        <img src={typeIconUrl(type)} alt="" draggable={false} />
+        <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
         <b>{typeName(type as TypeName, lang)}</b>
         {mult && <span className="tht-mult">{mult}</span>}
         <span className={`ftip-ko def ${cell.band} tht-band`}>{HOLD_BANDS[cell.band].tag}</span>

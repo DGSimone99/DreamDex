@@ -21,6 +21,7 @@ import { bannedNames } from '../engine/scoring';
 import { EMPTY_FILTERS, filtersFor, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
+import { TeamTypePicker } from './TeamTypePicker';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
 import { Sprite } from './Sprite';
 import { Icon } from './icons';
@@ -363,15 +364,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       </div>
       {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca) */}
       {!oneType && (
-        <label className="team-type" title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}>
-          <span aria-hidden="true">{tr('suggest.teamTypeShort')}</span>
-          <select aria-label={tr('suggest.teamType')} value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
-            <option value="">{tr('suggest.anyType')}</option>
-            {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
-          </select>
-        </label>
+        <TeamTypePicker types={TEAM_TYPES} value={typeChoice ?? null} onChange={setPickedType} />
       )}
-      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} />
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} resultCount={items.length} />
     </>
   );
 

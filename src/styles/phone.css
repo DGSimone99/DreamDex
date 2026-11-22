@@ -165,7 +165,6 @@
   .toolbar .search { flex: 1 1 100%; flex-wrap: wrap; }
   .toolbar .search .search-field { flex: 1 1 100%; }
   .toolbar .team-type { flex: 1; width: auto; min-width: 0; }
-  .toolbar .filters[open]::details-content { left: 0; }
   .search-hint { display: none; }
   /* Senza suggerimento il campo non tiene il suo spazio: la x per cancellare resta dentro lo schermo */
   .search-field.has-hint input { padding-right: 36px; }
@@ -193,7 +192,7 @@
   .editor-title .nickname-pencil .icon { width: 12px; height: 12px; }
 
   /* ── Menu a tendina: salgono dal basso, con lo sfondo scuro ───── */
-  :is(details.popover, details.filters, details.spread-panel)[open]::before {
+  :is(details.popover, details.spread-panel)[open]::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -219,19 +218,43 @@
   }
   /* Il team è un livello a sé: con un suo menu aperto passa sopra le sezioni in basso */
   .band:has(details[open], .slot.open, .fill-panel) { z-index: 50; }
-  .toolbar .filters[open]::details-content {
-    position: fixed;
-    z-index: 61;
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: 0;
-    max-height: 85dvh;
-    padding-bottom: calc(var(--sp-7) + var(--safe-b));
-    border-radius: 8px 8px 0 0;
-    animation: sheet-up 0.22s var(--ease);
-  }
-  .toolbar .filters .filter-controls, .toolbar .filters .type-filters, .filters .filter-switches { grid-template-columns: minmax(0, 1fr); }
+  /* Filtri: la finestra a tutto schermo, un gruppo sotto l'altro, tipi su due colonne */
+  .help-backdrop.filters-backdrop { padding: 0; place-items: stretch; }
+  .help-dialog.filters-dialog { width: 100% !important; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
+  .filters-body { padding: var(--sp-7) var(--sp-7) var(--sp-9); }
+  /* Gruppi a scomparsa (chiusi all'inizio, tranne il tipo del Pokémon): il titolo è la stessa fascia dei riquadri
+     dell'editor (chiara al centro, sfuma ai lati, filo sotto), con il nome al centro, le scelte in ciano sotto e la freccetta */
+  .filters-body { gap: var(--sp-4); }
+  .fgroup.collapsible + .fgroup.collapsible { margin-top: 0; }
+  .fgroup-toggle-wrap { margin: 0; font: inherit; }
+  .fgroup-toggle { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; width: 100%; min-height: 48px;
+    padding: var(--sp-3) var(--sp-4); border: 0; border-radius: 0; color: var(--text);
+    background: linear-gradient(90deg, transparent, var(--champ-band) 22%, var(--champ-band) 78%, transparent); }
+  .fgroup-toggle::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
+  .fgroup-toggle-text { grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
+  .fgroup-toggle-label { font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; text-align: center; }
+  .fgroup-summary { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: var(--fs-caption); font-weight: 600; color: var(--accent-ink); }
+  .fgroup-chev { grid-column: 3; justify-self: center; width: 8px; height: 8px; margin-top: -4px; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.18s var(--ease); }
+  .fgroup.open .fgroup-chev { margin-top: 4px; transform: rotate(-135deg); }
+  .fgroup-body { padding: var(--sp-6) var(--sp-2) var(--sp-5); }
+  /* Testa su due righe: Solo preferiti scende sotto il titolo */
+  .filters-head { flex-wrap: wrap; row-gap: var(--sp-3); }
+  .filters-head-fav { order: 10; flex-basis: 100%; margin-left: 0; }
+  .filters-head-fav + .filters-head-reset { margin-left: auto; }
+  .type-filters { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
+  .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .type-grid button { height: 36px; }
+  .type-grid button > i { width: 36px; height: 36px; }
+  .filters-dialog .type-slot-btn > i { width: 40px; height: 40px; }
+  .own-types { flex-direction: column; align-items: stretch; }
+  .type-slot-btn { flex: 1; width: auto; height: 40px; }
+  /* Su telefono la tendina va a capo prima: tre tipi per riga, due condizioni (i nomi del Campo sono lunghi) */
+  .type-slot-menu .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .type-slot.up .type-slot-menu .type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .type-slot-menu { position: fixed; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: var(--sp-6); width: auto; }
+  .role-tiles button, .role-flow button, .segmented button { min-height: 40px; }
+  .filters-foot { padding-bottom: calc(var(--sp-6) + var(--safe-b)); }
+  .filters-foot .primary { flex: 1; min-height: 48px; }
   .format-gens label, .format-chips label { padding-block: var(--sp-5); }
 
   /* ── Finestre: quasi a tutto schermo ──────────────────────────── */
@@ -1072,15 +1095,15 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .fill-proposal .fill-mon { cursor: pointer; }
 }
 
-/* ── Telefono: il team si riduce da solo scorrendo e resta fermo sotto la barra in alto (2026-11-20) ─────── */
-@media (max-width: 599px) {
+/* ── Telefono e tablet piccolo (fino a 767 px): il team si riduce da solo scorrendo e resta fermo sotto la barra in alto ── */
+@media (max-width: 767px) {
   .band.auto.collapsed { position: sticky; top: var(--top-h); z-index: 30; box-shadow: 0 6px 16px rgb(0 0 0 / 0.35); animation: band-drop 0.2s ease-out; }
   .band.auto.collapsed:has(details[open], .slot.open, .fill-panel) { z-index: 50; }
 }
 @keyframes band-drop { from { transform: translateY(-100%); } }
 /* Tornando grande il team compare con una dissolvenza (la pagina non si muove, cambia solo lui); niente ancoraggio
    automatico dello scorrimento: la pagina la sposta useAutoCollapse, di quanto il team è cambiato */
-@media (max-width: 599px) {
+@media (max-width: 767px) {
   html { overflow-anchor: none; }
   .band.auto:not(.collapsed) > :is(.team, .grade-badge) { animation: band-show 0.24s ease-out; }
 }
@@ -1450,7 +1473,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .team-head:has(.plate-dot) .team-more::after { content: ''; position: absolute; z-index: 1; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%;
     background: var(--warn); box-shadow: 0 0 0 2px var(--ground); pointer-events: none; }
   /* Scheda Pokémon: Aggiungi | Sostituisci, chi sostituire, Tipo di team, Filtri e la ricerca alti 44 */
-  .toolbar .mode-switch > .segmented > button, .toolbar .filters > summary, .toolbar .search-field input { min-height: 44px; }
+  .toolbar .mode-switch > .segmented > button, .toolbar .filters-trigger, .toolbar .search-field input { min-height: 44px; }
   /* Il campo vero (la tendina) è dentro il bordo: 46 fuori per averne 44 da toccare */
   .toolbar .team-type { height: 46px; }
   /* Completa team: schede, Impostazioni, Usa e Altre proposte da 44 */
@@ -1493,4 +1516,13 @@ label.improve-col-head { cursor: pointer; }
   .band.collapsed .slot .name-line :is(.held, .slot-alerts) { display: none; }
   .band.collapsed .slot .name-line .name { display: block; max-width: 100%; font-size: 10px; line-height: 12px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: none; }
   .band.collapsed .grade-badge .grade-pop-toggle { height: 62px; }
+}
+
+/* Tipo di team: la tendina si apre dal bordo sinistro della casella; sul telefono sale dal basso a tutta larghezza */
+@media (max-width: 1099px) {
+  .tt-menu { left: 0; right: auto; }
+  .tt-option { min-height: 52px; }
+}
+@media (max-width: 599px) {
+  .tt-menu { position: fixed; z-index: 61; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: calc(var(--sp-6) + var(--safe-b, 0px)); width: auto; }
 }

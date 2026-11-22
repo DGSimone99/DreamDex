@@ -10,7 +10,7 @@ import { DashCard } from './dashboard/DashCard';
 import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
 import { shortCase } from './bonusMalusShort';
 import { Typed } from './TypeText';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 import { useFitCount } from './useFit';
 
 type T = ReturnType<typeof useT>;
@@ -184,7 +184,7 @@ function HeldTypes({ core, rows, lang, t }: { core: Core; rows: HoldRow[]; lang:
         <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="kot bm-held-tip">
           <div className="kot-head"><b>{count}</b></div>
           <span className="bm-core-types">
-            {rows.map(row => <img key={row.type} className={held.includes(row) ? 'on' : 'off'} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
+            {rows.map(row => <img key={row.type} className={`ti-sq ${held.includes(row) ? 'on' : 'off'}`} style={tileStyle(row.type)} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
           </span>
           <p className="ftip-foot">{t('catalogue.cores.heldTip')}</p>
         </FloatTip>
@@ -249,7 +249,7 @@ function CoreCard({ core, open, rows, toggle, onOpen, lang, t }: {
             const line = t('catalogue.cores.parry', { name: side.from, to: side.to, type: typeName(side.type, lang) });
             return (
               <li key={side.from}>
-                <img src={typeIconUrl(side.type)} alt="" draggable={false} />
+                <img className="ti-sq" style={tileStyle(side.type)} src={typeIconUrl(side.type)} alt="" draggable={false} />
                 <span>{line.startsWith(side.from) ? <><b>{side.from}</b>{line.slice(side.from.length)}</> : line}</span>
               </li>
             );

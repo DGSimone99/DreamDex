@@ -7,7 +7,7 @@ import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 import { Icon } from '../icons';
 import { typeColor } from '../Sprite';
-import { typeIconUrl } from '../typeIcons';
+import { typeIconUrl, tileStyle } from '../typeIcons';
 import { DefenseTip, OffenseTip } from './CoverageTip';
 import { DashCard, DashLink } from './DashCard';
 
@@ -17,7 +17,7 @@ const lower = (text: string) => text.charAt(0).toLocaleLowerCase() + text.slice(
 
 /** Icona del tipo, decorativa: il nome è nel testo nascosto e nel tooltip della testata. */
 function TypeIcon({ type }: { type: string }) {
-  return <img className="dash-type" src={typeIconUrl(type)} alt="" width={22} height={22} draggable={false} />;
+  return <img className="dash-type ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" width={22} height={22} draggable={false} />;
 }
 
 /**
