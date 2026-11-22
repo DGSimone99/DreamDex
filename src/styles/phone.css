@@ -649,11 +649,11 @@
   .band:not(.collapsed) .grade-badge:not(.none) .label { grid-column: 2; grid-row: 2; align-self: start; flex-direction: row; flex-wrap: nowrap; align-items: baseline; gap: var(--sp-4); min-width: 0; overflow: hidden; white-space: nowrap; font-size: var(--fs-section); }
   .band:not(.collapsed) .grade-badge .label .grade-type { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   /* Aiuto e freccetta a destra, centrati sulla prima riga; il testo non ci passa sotto */
-  .band:not(.collapsed) .grade-badge.foldable { padding-right: 92px; }
+  .band:not(.collapsed) .grade-badge.foldable { padding-right: 116px; }
   /* Le aree, aperte, prendono tutta la larghezza della targa (lo spazio a destra serve solo alla prima riga) */
-  .band:not(.collapsed) .grade-badge.foldable .grade-areas { margin-right: -78px; }
+  .band:not(.collapsed) .grade-badge.foldable .grade-areas { margin-right: -102px; }
   .band:not(.collapsed) .grade-badge .grade-tools { top: 34px; right: var(--sp-3); height: auto; translate: 0 -50%; }
-  .band:not(.collapsed) .grade-badge.foldable .grade-fold { top: 34px; right: 46px; }
+
   .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 32px; height: 32px; }
   /* Le aree sotto: Attacco, Difesa e Velocità con la barretta; Ruoli e Bonus/Malus col solo valore */
   .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-5); margin: var(--sp-5) 0 0; }
@@ -1405,6 +1405,8 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .team-head .team-more { margin-left: auto; }
 }
 @media (min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px), (min-width: 900px) and (max-width: 1099px) and (pointer: fine) {
+  /* La colonna della squadra: righe con lo sprite a sinistra, il nome resta allineato a sinistra (non centrato come nelle carte in piedi) */
+  .band .slot .name-line { justify-content: flex-start; text-align: left; }
   /* Il pulsante della guida ha gli angoli alterni come sul telefono (prima era un trapezio sulle righe della squadra) */
   .band:not(.collapsed) .team-head .team-guide-slot button.team-guide { clip-path: none; }
   /* Con Completa team (o un menu) aperto la colonna passa sopra le barre, come la fascia sul telefono */
@@ -1539,10 +1541,8 @@ label.improve-col-head { cursor: pointer; }
 .grade-fold { display: none; }
 @media (max-width: 1099px) {
   .band:not(.collapsed) .grade-badge.foldable { position: relative; cursor: pointer; }
-  .grade-badge.foldable .grade-fold { position: absolute; right: 46px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; background: none; color: var(--muted); }
-  .grade-fold .icon { width: 20px; height: 20px; transition: transform 0.18s var(--ease); }
+  .grade-badge.foldable .grade-fold { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: none; color: var(--muted); }
+  .grade-fold .icon { width: 18px; height: 18px; transition: transform 0.18s var(--ease); }
   .grade-badge.areas-open .grade-fold .icon { transform: rotate(180deg); }
-  /* Aperta: la freccetta resta all'altezza della prima riga */
-  .grade-badge.foldable.areas-open .grade-fold { top: 30px; }
   .grade-badge.foldable:hover .grade-fold { color: var(--text); }
 }

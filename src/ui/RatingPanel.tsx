@@ -138,16 +138,17 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
           ]} />}
           {/* Col team ridotto il "?" sta nella tendina delle aree */}
           {rating && !withPop && <RatingHelp incomplete={incomplete} teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}
+          {/* Telefono e tablet: la freccetta che apre e chiude le righe delle aree, ultima della fila (per la tastiera e i
+              lettori di schermo; toccare la targa fa lo stesso) */}
+          {foldable && (
+            <button type="button" className="grade-fold" aria-expanded={areasOpen} aria-controls={areasId}
+              aria-label={t(areasOpen ? 'rating.areasHide' : 'rating.areasShow')} onClick={() => setAreasOpen(o => !o)}>
+              <Icon name="down" />
+            </button>
+          )}
         </span>
       )}
       {/* Le tre aree, i Ruoli e Bonus/Malus: ogni riga porta alla sua scheda in Analisi (col team ridotto, nella tendina) */}
-      {/* Telefono e tablet: la freccetta che apre e chiude le righe delle aree (per la tastiera e i lettori di schermo) */}
-      {foldable && (
-        <button type="button" className="grade-fold" aria-expanded={areasOpen} aria-controls={areasId}
-          aria-label={t(areasOpen ? 'rating.areasHide' : 'rating.areasShow')} onClick={() => setAreasOpen(o => !o)}>
-          <Icon name="down" />
-        </button>
-      )}
       {rating && !collapsed && (!foldable || areasOpen) && <span id={foldable ? areasId : undefined} className="grade-areas-wrap"><GradeAreaRows rating={rating} onOpen={onOpen} /></span>}
       {withPop && popOpen && (
         <GradePopover id={popId} button={popButton} onClose={closePop}

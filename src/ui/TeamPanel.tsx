@@ -642,8 +642,9 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
         {(dangers.length > 0 || warns.length > 0) && (
           <span className="slot-alerts">
-            <AlertMark alerts={warns} className="on-card" />
-            <AlertMark alerts={dangers} className="on-card" />
+            {/* Il fumetto va sopra la pagina e resta dentro lo schermo (sul tablet le carte di destra lo tagliavano) */}
+            <AlertMark alerts={warns} className="on-card" floating />
+            <AlertMark alerts={dangers} className="on-card" floating />
           </span>
         )}
         </span>
