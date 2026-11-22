@@ -425,7 +425,7 @@
 
 
 /* Tablet: la lista a tutta larghezza (la scheda si apre toccando la carta), tre carte per riga sul tablet stretto e
-   quattro da 760 px; la barra degli strumenti su una riga sola (senza "al posto di:", tipo di team più stretto) */
+   da 4 a 2 da 760 px (secondo la larghezza della lista); la barra degli strumenti su una riga sola (senza "al posto di:", tipo di team più stretto) */
 @media (min-width: 600px) and (max-width: 1099px) {
   .suggestions.cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   /* Due righe ordinate: sopra la ricerca larga e Filtri, sotto Aggiungi / Sostituisci a sinistra e il tipo di team a destra */
@@ -438,7 +438,8 @@
   .toolbar .team-type { grid-area: type; justify-self: end; width: 100%; max-width: 232px; min-width: 0; }
 }
 @media (min-width: 760px) and (max-width: 1099px) {
-  .suggestions.cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* Da 4 a 2 carte per riga secondo la larghezza della lista (usePerPage la misura e mette --cols) */
+  .suggestions.cards { grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); }
 }
 /* Telefono girato: la barra in alto scorre via con la pagina, resta più spazio */
 @media (max-width: 1099px) and (max-height: 500px) {
