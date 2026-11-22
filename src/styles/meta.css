@@ -64,7 +64,7 @@
 .meta-hero .sprite { width: 96px; height: 96px; image-rendering: pixelated; }
 .meta-hero-id { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
 .meta-hero-id strong { max-width: 100%; font: 800 var(--fs-title-l)/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; }
-.meta-hero-id .forme { display: inline-block; padding: 1px 5px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink);
+.meta-hero-id .forme { display: inline-block; padding: 1px 5px; border-radius: 3px; background: var(--field); color: var(--accent-ink);
   font: 700 var(--fs-label)/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; vertical-align: 3px; }
 .meta-hero-use b { font: 800 var(--fs-display)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
 .meta-hero-use small { color: var(--muted); font-size: var(--fs-small); }

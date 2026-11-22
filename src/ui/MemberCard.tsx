@@ -133,7 +133,8 @@ export interface MemberAlert { level: 'danger' | 'warn'; text: string }
  * altri; la spiegazione di ognuno nel tooltip del nome. Le regole del formato dal contesto dell'app, o passate (il
  * dettaglio dei candidati); senza regole niente riga.
  */
-export function MemberRoles({ set, rules }: { set: TeamSet; rules?: FormatRules }) {
+/** I ruoli del set; `fresh`: quelli che mancavano al team (dettaglio del candidato), in verde col "+". */
+export function MemberRoles({ set, rules, fresh = [] }: { set: TeamSet; rules?: FormatRules; fresh?: readonly string[] }) {
   const t = useT();
   const lang = useLang();
   const fromApp = useContext(RulesContext);
@@ -147,8 +148,8 @@ export function MemberRoles({ set, rules }: { set: TeamSet; rules?: FormatRules 
       <small>{t('area.roles')}</small>
       <span>
         {roles.map((role, i) => (
-          <span key={role} title={role === 'weather' ? undefined : roleDescription(role, lang)}>
-            {i > 0 && ' · '}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
+          <span key={role} title={role === 'weather' ? undefined : roleDescription(role, lang)} className={fresh.includes(role) ? 'fresh' : undefined}>
+            {i > 0 && ' · '}{fresh.includes(role) && <b aria-hidden="true">+</b>}{fresh.includes(role) && <span className="visually-hidden">{t('detail.newRole')} </span>}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
           </span>
         ))}
       </span>

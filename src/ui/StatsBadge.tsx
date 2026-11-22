@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import { battleSpecies } from '../engine/dex';
 import { STAT_IDS } from '../engine/sets';
 import { statShort } from '../i18n/game';
@@ -19,8 +19,9 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
 /**
  * Badge "Stat" ("Stats" in inglese): passandoci sopra (o col focus) mostra le statistiche base con barre e totale.
  * Con `compare` (il membro che esce in una sostituzione) ogni riga dice anche quanto si guadagna o si perde.
+ * `side`: accanto alle base, le statistiche del set (l'esagono, nel dettaglio del candidato).
  */
-export function StatsBadge({ species, item = '', compare }: { species: string; item?: string; compare?: { species: string; item?: string } }) {
+export function StatsBadge({ species, item = '', compare, side }: { species: string; item?: string; compare?: { species: string; item?: string }; side?: ReactNode }) {
   const id = useId();
   const lang = useLang();
   const t = useT();
@@ -40,7 +41,8 @@ export function StatsBadge({ species, item = '', compare }: { species: string; i
       onClick={e => { e.preventDefault(); e.stopPropagation(); }}
     >
       {t('stats.badge')}
-      <span id={id} role="tooltip" className="stats-pop">
+      <span id={id} role="tooltip" className={side ? 'stats-pop has-side' : 'stats-pop'}>
+        <span className="stats-main">
         <span className="stats-title">
           {t('stats.title')}{forme.name !== species ? <small>{forme.name}</small> : null}
         </span>
@@ -54,6 +56,8 @@ export function StatsBadge({ species, item = '', compare }: { species: string; i
           </span>
         ))}
         <span className="stats-total"><span>{t('stats.total')}</span><span>{total}{other && <> {diff(total - otherTotal)}</>}</span></span>
+        </span>
+        {side && <span className="stats-side"><span className="stats-title">{t('stats.withSet')}</span>{side}</span>}
       </span>
     </span>
   );
