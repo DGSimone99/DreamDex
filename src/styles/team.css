@@ -442,6 +442,8 @@
 /* Il membro che sta per essere sostituito (o scambiato) si fa da parte dal lato opposto a quello da cui arriva la carta
    trascinata: scivola di lato e si inclina, girando sulla base */
 .slot.filled > .slot-card { transform-origin: 50% 100%; transition: translate 0.2s var(--ease), rotate 0.2s var(--ease), box-shadow 0.15s var(--ease); }
+/* Sopra le carte vicine: inclinandosi le copre invece di finirci sotto */
+.slot.filled.drop-target > .slot-card { z-index: 3; }
 .slot.filled.drop-target > .slot-card[data-lean='right'] { translate: 12px 0; rotate: 5deg; }
 .slot.filled.drop-target > .slot-card[data-lean='left'] { translate: -12px 0; rotate: -5deg; }
 @media (prefers-reduced-motion: reduce) {
