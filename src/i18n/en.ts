@@ -900,6 +900,7 @@ export const en = {
   'sum.moreMonsMany': "{n} more Pokémon",
   'sum.weather': "Weather & field",
   'sum.hazards': "Hazards",
+  'sum.fieldAll': "Weather, field & hazards",
   'sum.synergies': "Synergies",
   'sum.noneM': "None",
   'sum.noneF': "None",

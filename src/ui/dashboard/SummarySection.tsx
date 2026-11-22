@@ -2,7 +2,7 @@ import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type Reac
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
-import type { ConditionRow, TeamSummary } from '../../engine/teamSummary';
+import type { ConditionRow, HazardRow, TeamSummary } from '../../engine/teamSummary';
 import type { TeamSet } from '../../engine/sets';
 import { battleName, battleSpecies } from '../../engine/dex';
 import { MemberCard } from '../MemberCard';
@@ -23,6 +23,7 @@ import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 import { MoreBelow } from '../MoreBelow';
 import { MovePill } from '../MovePill';
+import { typeIconUrl } from '../typeIcons';
 
 /**
  * Colore di una condizione (meteo, campo, Trick Room, schermi, Ventoincoda) e degli stili di team: il colore del tipo
@@ -52,10 +53,12 @@ const Tag = ({ color, children }: { color: string; children: ReactNode }) => (
  * finiscono nel "+N" (useFit), mai tagliate a metà; il "+N" sta accanto al titolo, così non toglie una riga alle altre.
  * Senza righe, la parola `empty` attenuata.
  */
-function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, moreTip, className = '' }: {
+function Section<T>({ title, empty, rows, rowKey, rowClass, fitKey, more, render, onMore, moreTip, className = '' }: {
   title: string; empty: string;
   rows: T[];
   rowKey: (row: T) => string;
+  /** Una classe in più sulla riga (es. la pillola larga due colonne). */
+  rowClass?: (row: T) => string | undefined;
   /** Cambia quando cambia ciò che occupa spazio (righe, lingua, densità): si rimisura. */
   fitKey: string;
   /** Il testo del "+N" (tooltip e lettori di schermo), dalle righe nascoste. */
@@ -84,7 +87,7 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
         ? <p className="sum-none">{empty}</p>
         : (
           <ul ref={fit.ref} className="sum-lines sum-fit">
-            {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} data-fit>{render(row)}</li>)}
+            {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} className={rowClass?.(row)} data-fit>{render(row)}</li>)}
           </ul>
         )}
       {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
@@ -107,6 +110,9 @@ const joinList = (items: string[], lang: string) => {
   if (items.length < 2) return items.join('');
   return `${items.slice(0, -1).join(', ')} ${lang === 'en' ? 'and' : 'e'} ${items[items.length - 1]}`;
 };
+
+/** Una riga di Meteo e campo: una condizione o, a sezione unita, chi piazza le trappole. */
+type FieldRow = { cond: ConditionRow; haz?: undefined } | { haz: HazardRow; cond?: undefined };
 
 /** Una sinergia: un core difensivo (da 2 o 3) o un legame tra membri. */
 type Synergy = { core: Core; link?: undefined } | { link: TeamLink; core?: undefined };
@@ -344,6 +350,51 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
   );
   const shownAtk = shown.filter(m => m.side === 'atk');
   const shownDef = shown.filter(m => m.side === 'def');
+  // Tante condizioni (3 o più): pillole su due colonne con chi le porta, l'etichetta e "+N" per chi ne approfitta (i nomi
+  // nel tooltip), e le trappole nella stessa sezione, così restano spazio e righe per le Sinergie
+  const packed = conditions.length >= 3;
+  const fieldRows: FieldRow[] = [
+    ...conditions.map(cond => ({ cond })),
+    ...(packed ? hazards.map(haz => ({ haz })) : []),
+  ];
+  const conditionLine = (row: ConditionRow) => {
+    // Con l'abilità o la mossa con cui la sfrutta: "Barraskewda · Nuotovelox"
+    const userLabel = (user: ConditionRow['users'][number]) => (user.via ? `${user.name} · ${viaName(user.via, lang)}` : user.name);
+    return (
+      // Al passaggio (o col fuoco) il tooltip della condizione: effetti e chi ne approfitta
+      <button type="button" className={`sum-line${packed ? ' sum-pill' : ''}`} onClick={() => onView('roles')}
+        onMouseEnter={e => condTip.open(row, e.currentTarget)} onMouseLeave={condTip.close}
+        onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close} aria-describedby={goIds.roles}>
+        <Plinth name={row.member} size={small} />
+        <span className="sum-name">{row.member}</span>
+        <Tag color={conditionColor(row.key)}>{row.label}</Tag>
+        {row.users.length > 0 && (packed
+          ? (
+            <span className="sum-pill-n">
+              <span aria-hidden="true">+{row.users.length}</span>
+              <span className="visually-hidden">{`→ ${row.users.map(userLabel).join(', ')}`}</span>
+            </span>
+          )
+          : (
+            <>
+              <span className="sum-to" aria-hidden="true">→</span>
+              <span className="sum-users">
+                {row.users.map((user, i) => (
+                  <span key={`${user.name}#${i}`} className="sum-user"><Sprite species={user.name} size={mini} /><span className="visually-hidden">{userLabel(user)}</span></span>
+                ))}
+              </span>
+            </>
+          ))}
+      </button>
+    );
+  };
+  const hazardLine = (row: HazardRow) => (
+    <button type="button" className={`sum-line${packed ? ' sum-pill' : ''}`} onClick={() => onView('roles')}>
+      <Plinth name={row.member} size={small} />
+      <span className="sum-name">{row.member}</span>
+      <span className="sum-tags">{row.moves.map(move => <MovePill key={move} name={move} size="sm" />)}</span>
+    </button>
+  );
   const card = useRef<HTMLDivElement>(null);
   const bmRoom = useBonusMalusRoom(card, !!bonusMalus && (bonusMalus.pieces.length > 0 || bonusMalus.net !== 0));
 
@@ -365,11 +416,20 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
                   : <strong className="sum-arch pending" title={t(members < 6 ? 'sum.archBuildingNote' : 'sum.archMixedNote')}>
                     {members < 6 ? t('sum.archBuilding', { n: members }) : t('sum.archMixed')}
                   </strong>}
-                {styles.map(style => (
-                  <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
-                    {t(`teamStyle.${style}`)}
-                  </span>
-                ))}
+                {/* Con due o più stili solo l'icona su un quadratino del suo colore, così il nome del tipo non si tronca;
+                    il nome resta nel tooltip e ai lettori di schermo (e nella sezione Meteo e campo sotto) */}
+                {styles.map(style => (styles.length > 1
+                  ? (
+                    <span key={style} className="sum-style mini" title={`${t(`teamStyle.${style}`)}: ${t(`teamStyle.${style}.note`)}`} style={{ '--c': conditionColor(style) } as CSSProperties}>
+                      {CONDITION_TYPE[style] && <img src={typeIconUrl(CONDITION_TYPE[style])} alt="" draggable={false} />}
+                      <span className="visually-hidden">{t(`teamStyle.${style}`)}</span>
+                    </span>
+                  )
+                  : (
+                    <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
+                      {t(`teamStyle.${style}`)}
+                    </span>
+                  )))}
                 {/* In doppio c'è un tipo solo: la guida ai tipi di team non serve */}
                 {summary.typeRule !== 'oneType' && <TeamTypeHelp />}
               </div>
@@ -384,43 +444,20 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
             )}
           </div>
         )}
-        <Section title={t('sum.weather')} empty={t('sum.noneM')} rows={conditions}
-          rowKey={row => `${row.member}:${row.key}`}
-          fitKey={keyOf(conditions.map(c => `${c.member}:${c.key}:${c.users.map(u => u.name).join('+')}`))}
+        <Section title={t(packed ? 'sum.fieldAll' : 'sum.weather')} empty={t('sum.noneM')} rows={fieldRows}
+          className={packed ? 'sum-packed' : ''}
+          rowKey={row => (row.cond ? `${row.cond.member}:${row.cond.key}` : `haz:${row.haz.member}`)}
+          rowClass={row => (row.haz ? 'haz' : undefined)}
+          fitKey={keyOf(fieldRows.map(row => (row.cond ? `${row.cond.member}:${row.cond.key}:${row.cond.users.map(u => u.name).join('+')}` : `haz:${row.haz.member}:${row.haz.moves.join('+')}`)))}
           more={n => count('sum.moreField', n)}
-          render={row => (
-            // Al passaggio (o col fuoco) il tooltip della condizione: effetti e chi ne approfitta
-            <button type="button" className="sum-line" onClick={() => onView('roles')}
-              onMouseEnter={e => condTip.open(row, e.currentTarget)} onMouseLeave={condTip.close}
-              onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close} aria-describedby={goIds.roles}>
-              <Plinth name={row.member} size={small} />
-              <span className="sum-name">{row.member}</span>
-              <Tag color={conditionColor(row.key)}>{row.label}</Tag>
-              {row.users.length > 0 && (
-                <>
-                  <span className="sum-to" aria-hidden="true">→</span>
-                  <span className="sum-users">
-                    {row.users.map((user, i) => {
-                      // Con l'abilità o la mossa con cui la sfrutta: "Barraskewda · Nuotovelox"
-                      const label = user.via ? `${user.name} · ${viaName(user.via, lang)}` : user.name;
-                      return <span key={`${user.name}#${i}`} className="sum-user"><Sprite species={user.name} size={mini} /><span className="visually-hidden">{label}</span></span>;
-                    })}
-                  </span>
-                </>
-              )}
-            </button>
-          )} />
-        <Section title={t('sum.hazards')} empty={t('sum.noneF')} rows={hazards}
-          rowKey={row => row.member}
-          fitKey={keyOf(hazards.map(h => `${h.member}:${h.moves.join('+')}`))}
-          more={n => count('sum.moreHazards', n)}
-          render={row => (
-            <button type="button" className="sum-line" onClick={() => onView('roles')}>
-              <Plinth name={row.member} size={small} />
-              <span className="sum-name">{row.member}</span>
-              <span className="sum-tags">{row.moves.map(move => <MovePill key={move} name={move} size="sm" />)}</span>
-            </button>
-          )} />
+          render={row => (row.cond ? conditionLine(row.cond) : hazardLine(row.haz))} />
+        {!packed && (
+          <Section title={t('sum.hazards')} empty={t('sum.noneF')} rows={hazards}
+            rowKey={row => row.member}
+            fitKey={keyOf(hazards.map(h => `${h.member}:${h.moves.join('+')}`))}
+            more={n => count('sum.moreHazards', n)}
+            render={hazardLine} />
+        )}
         <Section className="sum-syn-sec" title={t('sum.synergies')} empty={t('sum.noSynergies')} rows={synergies}
           rowKey={syn => synergyView(syn).key}
           fitKey={keyOf(synergies.map(syn => synergyView(syn).key))}

@@ -575,6 +575,10 @@
 .sum-style { flex: none; padding: var(--sp-1) var(--sp-7) var(--sp-1) 9px; font: 800 var(--fs-small)/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
 /* "quasi Semi-stall": il tipo accanto quando il team sta sul confine, piccolo e in grigio dopo il nome */
 .sum-arch-box { min-width: 0; display: flex; flex-direction: column; }
+/* Due o più stili: solo l'icona del tipo della condizione (goccia, roccia…), il nome nel tooltip */
+.sum-style.mini { display: grid; place-items: center; padding: 0; background: none; clip-path: none; }
+.sum-style.mini img { width: 20px; height: 20px; display: block; }
+.sum-style.mini + .sum-style.mini { margin-left: calc(var(--sp-4) * -1 + 3px); }
 /* Tipo non ancora riconosciuto: la scritta c'è ma più tenue */
 .sum-arch.pending { color: var(--muted); }
 .sum-type .help-button { flex: none; }
@@ -660,6 +664,21 @@
 /* Chi ne approfitta: mini-sprite accostati; vanno a capo invece di essere tagliati */
 .sum-users { min-width: 0; display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); }
 .sum-user { flex: none; display: flex; margin: calc(var(--sum-mini) * -0.1) calc(var(--sum-mini) * -0.08); }
+
+/* Tante condizioni (sum-packed): pillole su due colonne, chi la porta + etichetta + "+N" per chi ne approfitta (nomi nel
+   tooltip); trappole nella stessa griglia, larghe due colonne. Il nome resta ai lettori di schermo */
+.sum-packed .sum-lines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-3); padding-top: var(--sp-3); }
+.sum-packed .sum-lines > li { min-width: 0; border: 0; }
+.sum-packed .sum-lines > li.haz { grid-column: 1 / -1; }
+/* La sezione cede righe (nel "+N") quando manca spazio, così le Sinergie tengono la loro altezza minima */
+.sum-sec.sum-packed { min-height: 0; flex-shrink: 1; }
+.sum-packed .sum-pill { min-height: 0; gap: var(--sp-3); padding: 2px var(--sp-4) 2px 0; background: color-mix(in srgb, var(--raised) 55%, transparent); border-radius: var(--alt-r-sm); }
+.sum-packed .sum-pill:hover { background: var(--raised); }
+.sum-packed .sum-pill .sum-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sum-packed .sum-pill .sum-tag { min-width: 0; overflow: hidden; flex: 0 1 auto; }
+.sum-packed .sum-pill .sum-tag i { flex: none; }
+.sum-pill-n { flex: none; margin-left: auto; font: 700 var(--fs-caption)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--accent-ink); }
+.sum-packed .sum-pill .sum-tags { flex-wrap: nowrap; overflow: hidden; }
 
 /*
  * Sinergie: l'ultima sezione prende lo spazio che resta (le altre restano alte quanto il contenuto); le righe che non

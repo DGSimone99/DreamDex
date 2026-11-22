@@ -48,6 +48,15 @@ const STRESS = [
   member('Excadrill', 'Leftovers', 'Sand Rush', ['Earthquake', 'Iron Head', 'Stealth Rock', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
   member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Swords Dance'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
 ];
+/** Tanti meteo e campi (pioggia, sabbia, elettrico, erboso), chi li sfrutta e Stealth Rock: il Riassunto pieno. */
+const WEATHERS = [
+  member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Scald', 'U-turn', 'Roost'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Aqua Jet'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+  member('Tyranitar', 'Smooth Rock', 'Sand Stream', ['Stealth Rock', 'Stone Edge', 'Crunch', 'Earthquake'], 'Adamant', { hp: 248, atk: 252, spd: 8 }),
+  member('Excadrill', 'Life Orb', 'Sand Rush', ['Swords Dance', 'Earthquake', 'Iron Head', 'Rapid Spin'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+  member('Tapu Koko', 'Choice Specs', 'Electric Surge', ['Rising Voltage', 'Volt Switch', 'Dazzling Gleam', 'Grass Knot'], 'Timid', { spa: 252, spe: 252, spd: 4 }),
+  member('Rillaboom', 'Choice Band', 'Grassy Surge', ['Grassy Glide', 'Wood Hammer', 'Knock Off', 'U-turn'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+];
 /** Team senza sinergie né legami (nessun core, nessun pivot): il Riassunto ne mostra le sezioni vuote. */
 const LONE = [
   member('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Dragon Claw', 'Stone Edge', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -902,6 +911,7 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Riassunto completo: team pioggia, aperto e col team ridotto, e team senza sinergie
+  'analysis-weathers': { hash: hash(WEATHERS), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain': { hash: hash(RAIN), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain-collapsed': { hash: hash(RAIN), run: async p => {
     await tab(p, 'analysis');
@@ -1405,7 +1415,7 @@ for (const [w, h] of sizes) {
       const aside = document.querySelector<HTMLElement>('aside.detail');
       const hint = document.querySelector<HTMLElement>('.list-head .dbl-hint');
       const favs = ol.querySelectorAll('.result.fav').length;
-      const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} hintW=${hint ? `${hint.clientWidth}/${document.querySelector<HTMLElement>('.list-head')?.clientWidth}` : '-'} dashes=${document.querySelectorAll('.pager-dash').length} favs=${favs} detailLv=${aside ? (aside.classList.contains('tabbed') ? 'tabs' : aside.classList.contains('why-2col') ? (aside.classList.contains('compact') ? 'low2col' : '2col') : aside.classList.contains('compact') ? 'low' : 'full') : '-'} detailParts=${aside ? [...aside.querySelectorAll(':scope > *, .detail-panel > *')].map(el => `${el.className.split(' ').at(-1)}:${Math.round(el.getBoundingClientRect().height)}`).join(',') : '-'} detailFree=${body ? body.clientHeight - [...body.querySelectorAll('.detail-panel > *')].reduce((sum, el) => sum + el.getBoundingClientRect().height, 0) : '-'}`;
+      const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} hintW=${hint ? `${hint.clientWidth}/${document.querySelector<HTMLElement>('.list-head')?.clientWidth}` : '-'} dashes=${document.querySelectorAll('.pager-dash').length} favs=${favs} detailLv=${aside ? (aside.classList.contains('tabbed') ? 'tabs' : aside.classList.contains('why-2col') ? (aside.classList.contains('compact') ? 'low2col' : '2col') : aside.classList.contains('compact') ? 'low' : 'full') : '-'} detailParts=${aside ? [...aside.querySelectorAll(':scope > *, .detail-panel > *')].map(el => `${String(el.getAttribute("class") ?? "").split(' ').at(-1)}:${Math.round(el.getBoundingClientRect().height)}`).join(',') : '-'} detailFree=${body ? body.clientHeight - [...body.querySelectorAll('.detail-panel > *')].reduce((sum, el) => sum + el.getBoundingClientRect().height, 0) : '-'}`;
       return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} rowH=${ol.style.getPropertyValue('--row-h') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut} whoOver=${whoOver} wideCut=${wideCut} nameCut=${nameCut}${extra}`;
     });
     // Fascia del team: altezza, carte, chip dei tipi fuori dalla carta, nomi spezzati a metà parola, pulsanti della testata

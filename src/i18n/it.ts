@@ -902,6 +902,7 @@ export const it: Record<keyof typeof en, string> = {
   'sum.moreMonsMany': "Altri {n} Pokémon",
   'sum.weather': "Meteo e campo",
   'sum.hazards': "Trappole",
+  'sum.fieldAll': "Meteo, campo e trappole",
   'sum.synergies': "Sinergie",
   'sum.noneM': "Nessuno",
   'sum.noneF': "Nessuna",
