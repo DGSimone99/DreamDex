@@ -475,7 +475,8 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
   /* Mosse e dati del set alti uguali: le quattro mosse si distribuiscono dall'inizio di Strumento alla fine degli EV */
   .detail .set-line { grid-template-columns: minmax(150px, 180px) minmax(0, 1fr); align-items: stretch; }
   .detail .set-line .mcard-moves { align-content: space-between; }
-  .detail .set-line .mcard-kit { margin-left: 0; }
+  /* Mosse a sinistra, dati del set spinti a destra (lo spazio libero in mezzo, come uno space-between) */
+  .detail .set-line .mcard-kit { margin-left: 0; justify-self: end; max-width: 100%; }
 }
 @container setsec (max-width: 339px) {
   .detail .set-line { grid-template-columns: minmax(0, 240px); }
