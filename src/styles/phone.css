@@ -1540,3 +1540,17 @@ label.improve-col-head { cursor: pointer; }
 @media (max-width: 599px) {
   .tt-menu { position: fixed; z-index: 61; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: calc(var(--sp-6) + var(--safe-b, 0px)); width: auto; }
 }
+
+/* Voto sul telefono e sul tablet: di base solo la prima riga (lettera, punteggio, giudizio, tipo di team); la targa e la
+   freccetta in basso a destra aprono le righe delle aree sotto, come sul computer */
+.grade-areas-wrap { display: contents; }
+.grade-fold { display: none; }
+@media (max-width: 1099px) {
+  .band:not(.collapsed) .grade-badge.foldable { position: relative; cursor: pointer; }
+  .grade-badge.foldable .grade-fold { position: absolute; right: 46px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; background: none; color: var(--muted); }
+  .grade-fold-chev { width: 9px; height: 9px; margin-top: -4px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.18s var(--ease); }
+  .grade-badge.areas-open .grade-fold-chev { margin-top: 4px; transform: rotate(-135deg); }
+  /* Aperta: la freccetta resta all'altezza della prima riga */
+  .grade-badge.foldable.areas-open .grade-fold { top: 30px; }
+  .grade-badge.foldable:hover .grade-fold { color: var(--text); }
+}

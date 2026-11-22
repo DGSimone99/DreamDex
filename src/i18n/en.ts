@@ -1505,6 +1505,8 @@ export const en = {
   'catalogue.cores.name': "Core {title}",
   'catalogue.cores.parry': "{name} shields {to} from {type}",
   'rating.areasPop': "Area grades",
+  'rating.areasShow': "Show the grade areas",
+  'rating.areasHide': "Hide the grade areas",
   'rating.badgeHead': "Grade",
   'rating.since': "{delta}",
   'rating.changedSr': "Grade went from {from} to {to} ({grade})",
