@@ -161,13 +161,14 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .list-head .dbl-hint { flex: none; font-size: var(--fs-caption); color: var(--faint); white-space: nowrap; }
 /* Niente min-width 0: se i trattini al minimo non entrano la fascia sborda, e SuggestionsPanel lo vede (toglie il
    suggerimento, poi mostra la pagina come numero) */
-.pager { flex: 0 1 auto; margin-left: auto; display: flex; align-items: center; gap: var(--sp-1); height: var(--pager-h); }
-.pager .step { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
+.pager { flex: 0 1 auto; margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); height: var(--pager-h); }
+/* Come il pager-button di DESIGN.md: 28×26, fondo Raised, angoli da 3 px */
+.pager .step { flex: none; display: grid; place-items: center; width: 28px; height: 26px; padding: 0; border: 0; border-radius: 3px; background: var(--raised); color: var(--muted); }
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
 /* La pagina come numero, "3/9", a ogni misura (scelta dell'utente: niente trattini) */
-.pager-count { min-width: 34px; padding: 0 var(--sp-1); font: 600 var(--fs-caption)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; white-space: nowrap; }
+.pager-count { min-width: 34px; padding: 0 var(--sp-1); font: 600 var(--fs-small)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--text); text-align: center; white-space: nowrap; }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
@@ -250,17 +251,21 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 
 /* Sezione Pokémon come Box: una riga di strumenti, poi lista dei candidati e scheda di riepilogo che scorrono dentro */
 .suggestions-panel { display: flex; flex-direction: column; gap: var(--sp-5); }
-.toolbar { position: relative; display: flex; align-items: center; gap: var(--sp-5); }
+/* Un'altezza sola per tutta la riga (--tb-h: 38, 34 sui portatili bassi, 44 al tocco): ricerca, Aggiungi | Sostituisci,
+   Tipo di team e Filtri allineati */
+.toolbar { --tb-h: 38px; position: relative; display: flex; align-items: center; gap: var(--sp-5); }
+.toolbar .search-field input { height: var(--tb-h); padding-block: 0; }
+.toolbar .mode-switch > .segmented > button { height: calc(var(--tb-h) - 2px); min-height: 0; }
 .toolbar .search { flex: 1; min-width: 0; margin: 0; }
 .toolbar .filters { flex: none; }
-.toolbar .filters-trigger { height: 38px; padding: 0 var(--sp-6); border-radius: 4px; background: var(--raised); }
+.toolbar .filters-trigger { height: var(--tb-h); padding: 0 var(--sp-6); border-radius: 4px; background: var(--raised); }
 .toolbar .filters-trigger.on { background: var(--accent-soft); }
 /* Chi esce: la tendina attaccata a Sostituisci (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
    sotto, Tutti e i membri con icona e nome */
 .mode-switch { position: relative; flex: none; }
-.toolbar .mode-switch > .segmented button { gap: var(--sp-3); padding: var(--sp-4) var(--sp-7); font-size: var(--fs-section); white-space: nowrap; }
+.toolbar .mode-switch > .segmented button { gap: var(--sp-3); padding: 0 var(--sp-7); font-size: var(--fs-section); white-space: nowrap; }
 .toolbar .mode-switch > .segmented .icon { width: 14px; height: 14px; }
-.toolbar .mode-switch > .segmented .target-toggle { flex: none; gap: var(--sp-1); padding: var(--sp-4) 11px; }
+.toolbar .mode-switch > .segmented .target-toggle { flex: none; gap: var(--sp-1); padding: 0 11px; }
 .target-toggle .target-prefix { margin-right: var(--sp-2); font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); white-space: nowrap; }
 .target-toggle .target-prefix::after { content: ':'; }
 .target-toggle.on .target-prefix { color: var(--muted); }
@@ -367,7 +372,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Tipo di team: tendina accanto a Filtri, alta come la barra */
 /* Tipo di team: una casella come le altre della barra (nome piccolo e scelta) che apre la sua tendina: i tipi in ordine,
    ognuno con la spiegazione breve, la spunta su quello scelto */
-.toolbar .team-type { flex: none; position: relative; width: 232px; height: 38px; }
+.toolbar .team-type { flex: none; position: relative; width: 232px; height: var(--tb-h); }
 .tt-trigger { display: flex; align-items: center; gap: var(--sp-4); width: 100%; height: 100%; padding: 0 var(--sp-5) 0 var(--sp-6);
   border: 1px solid var(--line); border-radius: 4px; background: var(--field); text-align: left; color: var(--text); }
 .tt-trigger:hover, .tt-trigger.open { border-color: var(--accent); }
@@ -721,7 +726,7 @@ aside.detail .detail-why .visually-hidden { position: absolute; margin: 0; paddi
 .detail-mates { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin: 0; font-size: var(--fs-section); line-height: 1.35; color: var(--muted); }
 .detail-mates > .icon { flex: none; width: 14px; height: 14px; color: var(--good); }
 .detail-mates .mon-ref { display: inline-flex; align-items: center; color: var(--text); }
-.detail-mates .mon-icon { margin: -6px -4px -4px -6px; }
+.detail-mates .mon-icon { margin: -6px var(--sp-1) -4px -6px; }
 
 /* Set: i dati in due colonne (nome sopra il valore), le mosse, i ruoli (l'esagono sta nel fumetto di "Stat") */
 .detail-run { display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-6); min-width: 0; container: drun / inline-size; }
