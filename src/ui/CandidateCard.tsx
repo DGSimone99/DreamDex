@@ -45,6 +45,9 @@ export function CandidateCard(props: CandidateProps) {
   const popped = hover || focused;
   // Trascinata sul team: al suo posto resta uno spazio vuoto finché non la si lascia
   const [dragOrigin, setDragOrigin] = useState(false);
+  // Al clic la luce dall'alto si accende di colpo e si assesta (CSS .beam-flash): solo al clic, non quando la carta è
+  // scelta da sola (all'apertura, dalla ricerca)
+  const [flash, setFlash] = useState(false);
   // Sulla carta, dopo 0,7 s fermi: la carta del set proposto (strumento, abilità, statistiche, mosse). Su tutta la carta:
   // la sprite non prende il mouse (è decorativa, i clic vanno alla carta)
   // Non sul candidato scelto (il suo dettaglio è già aperto) e si chiude al clic, che lo sceglie
@@ -54,11 +57,12 @@ export function CandidateCard(props: CandidateProps) {
   useEffect(() => { if (selected) closeTip(); }, [selected, closeTip]);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
-  const className = ['card', isLead(rank, item) && 'first', selected && 'beam-on', dragOrigin && 'drag-origin', stateClasses(props)].filter(Boolean).join(' ');
+  const className = ['card', isLead(rank, item) && 'first', selected && 'beam-on', flash && 'beam-flash', dragOrigin && 'drag-origin', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
     <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => { pointer.current = e.pointerType; }}
+      onClickCapture={() => setFlash(true)} onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}
       // Uscendo dalla carta si chiude anche la carta del set
       onMouseEnter={e => { enter(); if (!selected) tipHandlers.onMouseEnter(e); }}
       onPointerDown={closeTip} onMouseLeave={() => { leave(); memberTip.close(); }}

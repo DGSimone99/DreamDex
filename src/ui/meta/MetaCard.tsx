@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { MetaEntry } from '../../engine/metaBoard';
 import { formatPercent } from '../../i18n';
 import { typeName } from '../../i18n/game';
@@ -17,9 +17,12 @@ export function MetaCard({ entry, max, mine, selected, onSelect }: { entry: Meta
   const lang = useLang();
   const typeNames = entry.types.map(type => typeName(type, lang)).join(' / ');
   const medal = entry.rank <= 3 ? `medal-${entry.rank}` : '';
-  const className = ['card', 'meta-card', medal, mine && 'mine', selected && 'selected beam-on'].filter(Boolean).join(' ');
+  // Al clic la luce dall'alto si accende di colpo e si assesta (come le carte dei candidati)
+  const [flash, setFlash] = useState(false);
+  const className = ['card', 'meta-card', medal, mine && 'mine', selected && 'selected beam-on', flash && 'beam-flash'].filter(Boolean).join(' ');
   return (
-    <li className={className} style={{ '--t1': typeColor(entry.types[0] ?? ''), '--t2': typeColor(entry.types[1] ?? entry.types[0] ?? '') } as CSSProperties} onClick={onSelect}>
+    <li className={className} style={{ '--t1': typeColor(entry.types[0] ?? ''), '--t2': typeColor(entry.types[1] ?? entry.types[0] ?? '') } as CSSProperties} onClick={() => { setFlash(true); onSelect(); }}
+      onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}>
       <div className="card-face pedana-face">
         <span className="pedana-stripe" aria-hidden="true" />
         <span className="pedana-beam" aria-hidden="true" />
