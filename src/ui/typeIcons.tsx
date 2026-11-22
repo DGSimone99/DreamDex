@@ -1,7 +1,9 @@
+import type { CSSProperties } from 'react';
 import type { TypeName } from '../engine/types';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { hint } from './MoveTip';
+import { typeColor } from './Sprite';
 
 // Icone ufficiali di Scarlatto/Violetto (PokeAPI sprites, types/generation-ix/scarlet-violet/small; grafica Nintendo),
 // incluse nel bundle da Vite: niente rete a runtime
@@ -9,6 +11,12 @@ const TYPE_ICONS = Object.fromEntries(
   Object.entries(import.meta.glob<string>('../assets/types/*.png', { eager: true, import: 'default' }))
     .map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1, -4), url]),
 );
+
+/**
+ * L'icona del tipo come quadretto alla Champions (prova 2026-11-22): il colore del tipo dietro l'icona tonda, angoli
+ * appena smussati (classe `ti-sq`, in marks.css). Da mettere sull'img insieme a `className="ti-sq"`.
+ */
+export const tileStyle = (type: string) => ({ '--c': typeColor(type) }) as CSSProperties;
 
 /** L'indirizzo dell'icona del tipo ("Fire" → fire.png). */
 export const typeIconUrl = (type: string): string | undefined => TYPE_ICONS[type.toLowerCase()];
@@ -22,7 +30,7 @@ export function TypeIcons({ types, title, className = '', hints = false }: { typ
   const lang = useLang();
   return (
     <span className={`type-icons${className ? ` ${className}` : ''}`} aria-hidden="true" title={hints ? undefined : title}>
-      {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} {...(hints ? hint(typeName(type as TypeName, lang)) : {})} />)}
+      {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} {...(hints ? hint(typeName(type as TypeName, lang)) : {})} />)}
     </span>
   );
 }

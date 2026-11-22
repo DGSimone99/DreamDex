@@ -156,6 +156,10 @@
 .detail .set-line .mcard-kit small { margin-top: var(--sp-3); }
 .detail .set-line .mcard-kit small:first-child { margin-top: 0; }
 .detail .set-line .mcard-kit span { white-space: normal; }
+/* Ogni valore largo quanto il suo testo (il fumetto di Strumento e Abilità parte da lì, non dal bordo della colonna);
+   l'icona dello strumento centrata sul nome */
+.detail .set-line .mcard-kit > span { justify-self: start; max-width: 100%; }
+.detail .set-line .mcard-kit > span > .item-icon { vertical-align: -1px; }
 /* La fascia: lo sprite vero, grande come nel tooltip, che esce un po' dal bordo alto */
 .detail-hero .detail-mon { align-self: end; }
 .detail-hero .detail-mon .sprite { display: block; width: 96px; height: 96px; margin: -22px 0 -14px -8px; }

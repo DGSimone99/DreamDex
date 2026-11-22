@@ -15,8 +15,14 @@ import { fixtureData } from '../fixtures/data';
 vi.setConfig({ testTimeout: 60000 });
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
-const types = () => screen.getByRole<HTMLSelectElement>('combobox', { name: 'Tipo di team' });
-const pressed = () => [...types().selectedOptions].map(o => o.textContent);
+/** La casella del tipo di team (si chiama "Tipo di team: <scelta>"). */
+const types = () => screen.getByRole('button', { name: /^Tipo di team:/ });
+const pressed = () => [types().getAttribute('aria-label')!.replace(/^Tipo di team: /, '')];
+/** Apre la tendina del tipo di team e sceglie una riga. */
+async function pickType(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(types());
+  await user.click(within(screen.getByRole('listbox', { name: 'Tipo di team' })).getByRole('option', { name: new RegExp(`^${name}`) }));
+}
 const list = () => suggestions().querySelector<HTMLElement>('.suggestions')!;
 
 const STALL = [
@@ -39,9 +45,11 @@ async function importTeam(sets: string[]) {
 
 describe('selettore del tipo di team nei suggerimenti', () => {
   it('team completo: Qualunque più i 5 tipi, preselezionato Qualunque', async () => {
-    await importTeam(STALL);
-    expect([...types().options].map(o => o.textContent))
+    const user = await importTeam(STALL);
+    await user.click(types());
+    expect(within(screen.getByRole('listbox', { name: 'Tipo di team' })).getAllByRole('option').map(o => o.querySelector('strong')!.textContent))
       .toEqual(['Qualunque', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
+    await user.keyboard('{Escape}');
     expect(pressed()).toEqual(['Qualunque']);
   });
 
@@ -61,7 +69,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     const user = await importTeam(STALL.slice(0, 5));
     await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
     expect(pressed()).toEqual(['Qualunque']);
-    await user.selectOptions(types(), 'Balance');
+    await pickType(user, 'Balance');
     await user.click(within(suggestions()).getByRole('button', { name: 'Aggiungi' }));
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Toxapex{Enter}');
     expect(pressed()).toEqual(['Balance']);
@@ -69,17 +77,17 @@ describe('selettore del tipo di team nei suggerimenti', () => {
 
   it('team già stall con Stall scelto: se nessun cambio lo mantiene, un messaggio propone Qualunque', async () => {
     const user = await importTeam(STALL);
-    await user.selectOptions(types(), 'Stall');
+    await pickType(user, 'Stall');
     // Solo Kyurem fra i candidati: ogni cambio fa uscire il team dallo stall
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kyurem');
     expect(await within(suggestions()).findByText(/Nessuno dei cambi migliori rende il team Stall/)).toBeInTheDocument();
-    await user.selectOptions(types(), 'Qualunque');
+    await pickType(user, 'Qualunque');
     expect(within(suggestions()).queryByText(/Nessuno dei cambi migliori rende il team Stall/)).toBeNull();
   });
 
   it('il dettaglio mostra lo stesso guadagno della lista, e il "prima" è il voto vero della card', async () => {
     const user = await importTeam(STALL);
-    await user.selectOptions(types(), 'Stall');
+    await pickType(user, 'Stall');
     const card = screen.getByRole('region', { name: 'Team' }).ownerDocument.querySelector('.grade-badge')!.textContent!;
     const row = list().querySelector('li')!;
     const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
@@ -110,7 +118,7 @@ describe('tipo di team in Aggiungi', () => {
     const names = () => [...list().querySelectorAll('.name-line strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
     await waitFor(() => expect(names().length).toBeGreaterThan(0));
     const before = names();
-    await user.selectOptions(types(), 'Stall');
+    await pickType(user, 'Stall');
     await waitFor(() => expect(names()).not.toEqual(before));
     expect(names().length).toBeGreaterThan(0);
     expect(names()).not.toContain('Dragapult');
@@ -118,14 +126,14 @@ describe('tipo di team in Aggiungi', () => {
 
   it('la tendina ha la sua etichetta visibile', async () => {
     render(<App initialLang="it" data={fixtureData} />);
-    expect(types().closest('label')).toHaveTextContent(/^Tipo di team/);
+    expect(types()).toHaveTextContent(/^Tipo di team/);
   });
 
   it('Aggiungi: se il tipo esclude tutti, il messaggio parla di costruire il team', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    await user.selectOptions(types(), 'Stall');
+    await pickType(user, 'Stall');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Dragapult');
     expect(await within(suggestions()).findByText(/Nessun candidato aiuta a costruire un team Stall/)).toBeInTheDocument();
   });

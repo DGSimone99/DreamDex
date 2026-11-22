@@ -38,7 +38,7 @@ import { gainText } from './CoachingView';
 import { SMALL, useBackClose } from './useBackClose';
 import { Icon } from './icons';
 import { useFitCount } from './useFit';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 import { useMediaQuery } from './useMediaQuery';
 import { TOUCH_QUERY } from './TouchTips';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
@@ -651,7 +651,7 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         <span className={`types${typeText ? '' : ' as-icons'}`} aria-hidden="true">
           {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
             <span key={type} className="type-dot" {...bubble(typeName(type, lang))}>
-              <img src={typeIconUrl(type)} alt="" draggable={false} />
+              <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
               <span className="visually-hidden">{typeName(type, lang)}</span>
             </span>
           ))}

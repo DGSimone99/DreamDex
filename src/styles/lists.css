@@ -65,7 +65,7 @@
   .tab-body { padding: var(--sp-10) var(--sp-8) 0; }
   .toolbar .mode-switch > .segmented button { padding: var(--sp-3) var(--sp-5); font-size: var(--fs-small); }
   .toolbar .mode-switch > .segmented .target-toggle { padding: var(--sp-3) 9px; }
-  .toolbar .filters > summary { height: 34px; }
+  .toolbar .filters-trigger { height: 34px; }
   .picker.has-detail { gap: var(--sp-6); }
   .suggestions-panel { --picker-gap: 12px; }
   .detail-hero .detail-id h3 { font-size: var(--fs-title-l); }
@@ -491,15 +491,9 @@
 .dex-order-pick:hover, .dex-order-pick[aria-expanded='true'] { border-color: var(--accent); }
 .dex-order-pick[aria-expanded='true'] .lists-chev { margin-top: var(--sp-2); transform: rotate(225deg); border-color: var(--accent-ink); }
 .lists-menu.order { left: 0; right: auto; width: 240px; }
-.dex-head .filters { flex: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
-.dex-head .filters > summary { height: 30px; padding: 0 var(--sp-5); gap: var(--sp-4); font-size: var(--fs-small); border: 1px solid var(--line); border-radius: 4px; background: var(--raised); white-space: nowrap; }
-.dex-head .filters > summary:hover, .dex-head .filters[open] > summary { border-color: var(--accent); }
-.dex-head .filters[open] > summary { margin-bottom: 0; }
-.dex-head .filters::details-content { position: absolute; }
-.dex-head .filters[open]::details-content {
-  position: absolute; z-index: 20; left: 12px; right: 12px; top: 44px; max-height: calc(100% - 56px); overflow: auto; padding: var(--sp-7) var(--sp-8);
-  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-}
+.dex-head .filters { flex: none; }
+.dex-head .filters-trigger { height: 30px; padding: 0 var(--sp-5); font-size: var(--fs-small); border-radius: 4px; background: var(--raised); }
+.dex-head .filters-trigger.on { background: var(--accent-soft); }
 .dex-count { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-6); font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .dex-key { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .dex-key .icon { width: 12px; height: 12px; }

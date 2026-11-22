@@ -6,7 +6,7 @@ import { anyGameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { typeIconUrl } from '../typeIcons';
+import { tileStyle, typeIconUrl } from '../typeIcons';
 import { MovePill } from '../MovePill';
 
 /**
@@ -100,7 +100,7 @@ export function ConditionTip({ row }: { row: ConditionRow }) {
   return (
     <>
       <div className={`ctip-head k-${row.key}`}>
-        {type && <img className="ctip-ico" src={typeIconUrl(type)} alt="" draggable={false} />}
+        {type && <img className="ctip-ico ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />}
         <b className="ctip-name">{row.label}</b>
         <span className="ctip-sub">{duration}</span>
         <span className="ctip-setter">
@@ -111,7 +111,7 @@ export function ConditionTip({ row }: { row: ConditionRow }) {
       <div className="ctip-fx">
         {(EFFECTS[row.key] ?? []).map((fx, i) => (
           <div key={i} className={`ctip-plate ${fx.tone}`}>
-            {fx.type && <img src={typeIconUrl(fx.type)} alt="" draggable={false} />}
+            {fx.type && <img className="ti-sq" style={tileStyle(fx.type)} src={typeIconUrl(fx.type)} alt="" draggable={false} />}
             <span><b>{t(fx.text, { type: fx.type ? typeName(fx.type, lang) : '' })}</b>{scope}</span>
             {fx.value && <strong>{fx.dir && <Arrow dir={fx.dir} />}{fx.value}</strong>}
           </div>

@@ -7,7 +7,7 @@ import { useLang, useT } from '../../i18n/react';
 import { HOLD_BANDS } from '../defense/holds';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { typeIconUrl } from '../typeIcons';
+import { tileStyle, typeIconUrl } from '../typeIcons';
 import { MovePill } from '../MovePill';
 
 /** Il badge dei colpi (OHKO, 2HKO, 3HKO, 4HKO+) dal danno %, con le soglie della scheda Difesa. */
@@ -18,7 +18,7 @@ function Head({ type, value }: { type: string; value: number }) {
   const lang = useLang();
   return (
     <div className="ftip-head">
-      <img src={typeIconUrl(type)} alt="" draggable={false} />
+      <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
       <b>{typeName(type as TypeName, lang)}</b>
       <em className="ftip-val">{value}<small>%</small></em>
     </div>
