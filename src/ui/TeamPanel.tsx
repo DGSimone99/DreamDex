@@ -551,6 +551,14 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
           if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); }
           onDrag('start');
         }}
+        // La carta trascinata entra da un lato: questa, che sta per essere sostituita o spostata, si fa da parte dall'altro
+        // (si sposta e si inclina, CSS .drop-target[data-lean]); il lato si decide entrando, non a ogni movimento
+        onDragEnter={e => {
+          const el = e.currentTarget;
+          if (e.relatedTarget instanceof Node && el.contains(e.relatedTarget)) return;
+          const box = el.getBoundingClientRect();
+          el.dataset.lean = e.clientX < box.left + box.width / 2 ? 'right' : 'left';
+        }}
         onDragOver={e => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = draggedSet() ? 'copy' : 'move'; onDrag('over'); }}
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
         onDragEnd={() => onDrag('end')}

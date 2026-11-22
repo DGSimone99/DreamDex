@@ -439,6 +439,15 @@
 .slot-ghost .slot > .slot-card { height: 100%; view-transition-name: none; }
 @media (prefers-reduced-motion: reduce) { .slot-ghost { rotate: none; } }
 .slot.drop-target > .slot-card { outline: 2px dashed var(--accent); outline-offset: 3px; }
+/* Il membro che sta per essere sostituito (o scambiato) si fa da parte dal lato opposto a quello da cui arriva la carta
+   trascinata: scivola di lato e si inclina, girando sulla base */
+.slot.filled > .slot-card { transform-origin: 50% 100%; transition: translate 0.2s var(--ease), rotate 0.2s var(--ease), box-shadow 0.15s var(--ease); }
+.slot.filled.drop-target > .slot-card[data-lean='right'] { translate: 12px 0; rotate: 5deg; }
+.slot.filled.drop-target > .slot-card[data-lean='left'] { translate: -12px 0; rotate: -5deg; }
+@media (prefers-reduced-motion: reduce) {
+  .slot.filled > .slot-card { transition: none; }
+  .slot.filled.drop-target > .slot-card[data-lean] { rotate: none; }
+}
 /* Candidato della lista sopra uno slot vuoto: come al passaggio del mouse */
 .slot.empty.drop-target { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 /* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
