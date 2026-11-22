@@ -102,10 +102,9 @@ describe('SuggestionsPanel', () => {
     expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
     // Un'area a zero col team vuoto non sembra un errore: si legge "—"
     expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
-    // I ruoli del set nella lastra della testata, con la spiegazione nel tooltip
-    const slab = detail.querySelector('.detail-why')!;
-    expect(slab.getAttribute('aria-label')).toMatch(/^Ruoli del set: /);
-    expect(slab.getAttribute('title')).toBeTruthy();
+    // I ruoli del set in una riga semplice sotto il set (niente lastra in testata), la spiegazione nel tooltip del nome
+    expect(detail.querySelector('.detail-hero .mcard-why')).toBeNull();
+    expect(detail.querySelector('.set-sec .mcard-roles [title]')).not.toBeNull();
   });
 
   it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
@@ -793,20 +792,18 @@ describe('sprite animato delle carte', () => {
     expect(cards[1].style.getPropertyValue('--wake')).toBe(`${CARD_WAKE_MS}ms`);
   });
 
-  it("la lastra della testata: il ruolo principale e quanti altri, l'elenco intero per i lettori di schermo e nel tooltip", async () => {
+  it('i ruoli del set: una riga sotto il set, tutti, senza doppioni, ognuno con la sua spiegazione', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
       onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
-    const slab = detail.querySelector('.detail-hero .detail-why')!;
-    const roles = slab.getAttribute('aria-label')!.replace('Ruoli del set: ', '').split(', ');
+    const line = detail.querySelector('.set-sec .mcard-roles')!;
+    const roles = [...line.querySelectorAll('span > span')].map(role => role.textContent!.replace(/^ · /, ''));
     expect(roles.length).toBeGreaterThan(0);
     expect(new Set(roles).size).toBe(roles.length);
-    // A vista il principale (il primo dell'elenco) e "+N" per gli altri
-    expect(slab.textContent).toBe(roles.length > 1 ? `${roles[0]} +${roles.length - 1}` : roles[0]);
-    expect(slab.getAttribute('title')).toBeTruthy();
+    expect(line.textContent).toBe(`Ruoli${roles.join(' · ')}`);
   });
 
   it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {

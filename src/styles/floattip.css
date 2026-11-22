@@ -112,7 +112,6 @@
 .mcard-alerts .icon { flex: none; width: 14px; height: 14px; margin-top: 1px; }
 .mcard-alerts .danger .icon { color: var(--bad); }
 .mcard-alerts .warn .icon { color: var(--warn); }
-.mcard-why { justify-self: start; margin-top: var(--sp-3); padding: 3px var(--sp-6) 3px 9px; font: 700 italic var(--tip-body)/1.2 var(--display); color: var(--on-accent); background: var(--accent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .mcard-kit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: baseline; gap: var(--sp-3) var(--sp-4); padding: var(--sp-5) var(--sp-6) 9px; border-bottom: 1px solid var(--line-soft); }
 .mcard-kit small { display: inline; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
 .mcard-kit span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -190,6 +189,11 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 /* Meta nel dettaglio: righe dei compagni fitte, così entra anche a 1440x900 col team chiuso */
 .detail .meta-mates { gap: 1px; }
 .detail .meta-mates li { height: 22px; margin: 0; }
+/* I ruoli del set in fondo alla carta (tooltip e dettaglio): una riga semplice, l'etichetta come quelle dei dati del set */
+.mcard-roles { display: flex; align-items: baseline; gap: var(--sp-4); margin: 0; padding: 0 var(--sp-6) var(--sp-5); font: 600 var(--tip-body)/1.35 var(--ui); color: var(--text); }
+.mcard-roles small { flex: none; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.mcard-roles [title] { cursor: help; }
+.detail .set-sec .mcard-roles { padding: var(--sp-5) 0 0; font-size: var(--fs-small); }
 /* L'icona dello strumento prima del nome, sulla linea della scritta */
 .mcard-kit .item-icon { display: inline-block; margin: -4px var(--sp-2) -4px 0; vertical-align: -4px; }
 .mcard-move.is-changed { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); }
@@ -338,7 +342,6 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 .detail-hero.mcard-head .detail-id h3 { gap: var(--sp-4); font-style: italic; text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-types { display: inline-flex; flex: none; gap: var(--sp-2); }
 .detail-types img { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
-.detail-hero .detail-why { align-self: flex-start; justify-self: auto; margin-top: 0; font-size: var(--fs-small); cursor: help; }
 .detail-hero.mcard-head .detail-score strong, .detail-hero.mcard-head .detail-score span { text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-hero.mcard-head .detail-score span { color: var(--text); }
 /*
@@ -402,7 +405,6 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 .detail-sec:not(.wide) .bring-group { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-2) var(--sp-4); }
 .detail-sec:not(.wide) .bring-group > ul { flex: 1 1 150px; min-width: 0; }
 /* La lastra dei ruoli in testata su una riga sola: l'elenco intero nel tooltip */
-.detail-hero .detail-why { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* L'etichetta sulla stessa linea di base della prima riga delle voci (o della scritta dei riquadri dei ruoli): le due
    scritte hanno misure diverse, quindi si allineano le basi, non i centri; i segni restano centrati sulla scritta */
 .bring-group, .detail-sec:not(.wide) .bring-group { align-items: baseline; }
@@ -410,7 +412,6 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 .bring-label .icon, .bring-label .sym-vs { align-self: center; }
 .bring-items { padding-top: 0; }
 .bring-roles .dash-role-tag { min-height: 22px; }
-.detail-why-more { font-style: normal; opacity: 0.75; }
 /* Nei riquadri dei ruoli la tessera del segno (spunta o ×) è alta quanto il riquadro, la scritta al centro */
 .bring-roles .dash-role-tag .icon { align-self: stretch; }
 

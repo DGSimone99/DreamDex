@@ -3,8 +3,7 @@ import type { EngineData } from '../engine/data';
 import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
-import { cardRoles, type Archetype } from '../engine/archetype';
-import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
+import type { Archetype } from '../engine/archetype';
 import { areaDrops, extrasDelta, rolesDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
@@ -25,7 +24,7 @@ import { statsEntry } from '../engine/stats';
 import { Sprite, typeColor } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { Typed } from './TypeText';
-import { MemberKit, MemberMoves, StatHex } from './MemberCard';
+import { MemberKit, MemberMoves, MemberRoles, StatHex } from './MemberCard';
 import { typeIconUrl } from './typeIcons';
 import type { TypeName } from '../engine/types';
 
@@ -129,8 +128,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const brings = bringsOf(item, lang, rulesOf(data)).filter(bring => !bring.usedWith)
     .flatMap((bring): Bring[] => (bring.roles?.length ? bring.roles.map(text => ({ text, short: text, kind: 'roles' })) : [bring]))
     .filter((bring, i, all) => all.findIndex(other => other.text === bring.text) === i);
-  // Ruoli del set consigliato: per primo il principale (lo stesso delle carte del team, evidenziato), poi gli altri
-  const mainRole = cardRoles(set, rulesOf(data))[0];
   // Meta: uso nel meta e i 5 compagni più frequenti (quota dei team che lo usano), chi è già nel team riconosciuto per specie
   const statsOf = statsEntry(data.stats, item.species);
   const inTeam = new Set(team.map(member => toID(member.species)));
@@ -143,8 +140,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     mates,
     top: mates[0]?.share || 1,
   } : null;
-  const setRoles = [...(mainRole ? [mainRole] : []), ...shownRoles(detectRoles(set, rulesOf(data)), rulesOf(data)).filter(role => role !== mainRole)];
-  const roleName = (role: (typeof setRoles)[number]) => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang));
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
   const loses: Bring[] = [
     ...(changes?.cons.map((c): Bring => ({ text: c.text, short: c.text, kind: kindOfArea(c.area) })) ?? []),
@@ -221,13 +216,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             {banMark}
             <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
           </h3>
-          {/* Il ruolo principale del set e quanti altri ("Pivot +1"); l'elenco intero con le spiegazioni nel tooltip */}
-          {setRoles.length > 0 && (
-            <span className="mcard-why detail-why" aria-label={`${tr('detail.roles')}: ${setRoles.map(roleName).join(', ')}`}
-              title={setRoles.map(role => (role === 'weather' ? roleName(role) : `${roleLabel(role, lang)}: ${roleDescription(role, lang)}`)).join(' · ')}>
-              {roleName(setRoles[0])}{setRoles.length > 1 && <span className="detail-why-more"> +{setRoles.length - 1}</span>}
-            </span>
-          )}
         </div>
         {/* Sostituendo: dopo nome e tipi, ⇄ e chi esce ingrigito, così si vede subito al posto di chi entra */}
         {replacing && (
@@ -334,6 +322,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <MemberMoves set={set} movesLabel={tr('editor.moves')} />
             <MemberKit set={set} />
           </div>
+          <MemberRoles set={set} rules={rulesOf(data)} />
         </section>
         )}
 

@@ -400,7 +400,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
   const rules = formatRules(format.formatId);
   const onCard = cardRoles(set, rules, subRoles);
   const weather = weatherOf(set);
-  const roles = onCard.map(role => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri (in doppio quelli del doppio)
   const allRoles = [...onCard, ...shownRoles(subRoles ? rolesListFor(subRoles, rules) : detectRoles(set, rules), rules).filter(role => !onCard.includes(role))];
   const roleLabels = allRoles.map(role => (role === 'weather' && weather
@@ -491,7 +490,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
         // fumetto (col mouse ancora sopra, ridisegnando la pagina si riapriva sopra l'editor)
         {...(open || collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}
 ${tr('team.slotKey', { n: index + 1 })}`))}
-        {...(collapsed && !open && !touch ? memberTip.bind(set, roles[0], undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
+        {...(collapsed && !open && !touch ? memberTip.bind(set, undefined, [...dangers, ...warns].map(a => ({ level: a.level === 'danger' ? 'danger' : 'warn', text: a.text }))) : {})}
         data-own-hold={touch || undefined}
         onPointerDown={e => {
           if (!touch || e.pointerType === 'mouse' || (e.target as Element).closest('button:not(.slot-toggle), a, input')) return;
@@ -552,7 +551,7 @@ ${tr('team.slotKey', { n: index + 1 })}`))}
         {/* Carta Pedana (pedana.css): la riga dei tipi in cima, la luce dall'alto solo sulla carta aperta, la pedana sotto lo sprite */}
         <span className="pedana-stripe" aria-hidden="true" />
         <span className="pedana-beam" aria-hidden="true" />
-        <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set, roles[0]), 'data-hint': '' })}>
+        <span className="sprite-wrap" {...(open || collapsed ? {} : { ...memberTip.bind(set), 'data-hint': '' })}>
           <span className="pedana-disc" aria-hidden="true" />
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
         </span>

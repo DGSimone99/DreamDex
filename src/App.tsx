@@ -35,6 +35,8 @@ import { EMPTY_LISTS, effectiveLists, listContext, type UserLists } from './engi
 import { formatPercent, t, type Lang } from './i18n';
 import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
+import { RulesContext } from './ui/rulesContext';
+import { formatRules } from './engine/formatRules';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { TouchTips } from './ui/TouchTips';
@@ -380,11 +382,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione),
   // col nome che ha sulla carta (il soprannome, o la forma Mega)
   const editing = editingIndex !== null ? team[editingIndex] : undefined;
+  // Le regole del formato per la carta del tooltip (la lista dei ruoli del set)
+  const shownRules = useMemo(() => formatRules(data.formatId), [data.formatId]);
   const withEditing = <T extends { id: string; status?: React.ReactNode; hint?: string }>(tabs: T[]): T[] => editing
     ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.name || battleName(editing) })}</span>, hint: t(lang, 'rail.editing', { species: editing.name || battleName(editing) }) } : tab))
     : tabs;
   return (
     <LangProvider lang={lang}>
+    <RulesContext.Provider value={shownRules}>
     <div className="app">
       {/* Per chi usa la tastiera: il primo Tab mostra questo link, che salta la barra laterale */}
       <a className="skip-link" href="#main-content" onClick={e => {
@@ -526,6 +531,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onUndo={() => { changeTeam(undo.before); if (undo.choice) setChoice(undo.choice); setUndo(null); }} />
       )}
     </div>
+    </RulesContext.Provider>
     </LangProvider>
   );
 }
