@@ -121,7 +121,7 @@
   .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 80px); height: min(100cqh, 100cqw, 80px); }
   .band:not(.collapsed) .slot > .slot-card > :is(.ability, .types, .roles, .stats-badge) { display: none; }
   .band .slot .name { --name-fs: 14px; }
-  .band .slot .name-line { gap: var(--sp-2); margin-top: var(--sp-1); }
+  .band .slot .name-line { gap: var(--sp-2); margin-top: var(--sp-1); justify-content: center; text-align: center; }
   .band .slot .name-line .held, .band .slot .name-line .held .item-icon { width: 18px; height: 18px; }
   .band .slot .favorite { right: 30px; }
   .band .slot :is(.favorite, .remove) { top: 0; width: 30px; height: 30px; }
@@ -646,8 +646,14 @@
   .band:not(.collapsed) .grade-badge .grade-head { display: none; }
   .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; font-size: 58px; }
   .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; font-size: 22px; }
-  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 2; align-self: start; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px var(--sp-4); font-size: var(--fs-section); }
-  .band:not(.collapsed) .grade-badge .grade-tools { top: var(--sp-3); right: var(--sp-3); height: auto; }
+  .band:not(.collapsed) .grade-badge:not(.none) .label { grid-column: 2; grid-row: 2; align-self: start; flex-direction: row; flex-wrap: nowrap; align-items: baseline; gap: var(--sp-4); min-width: 0; overflow: hidden; white-space: nowrap; font-size: var(--fs-section); }
+  .band:not(.collapsed) .grade-badge .label .grade-type { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* Aiuto e freccetta a destra, centrati sulla prima riga; il testo non ci passa sotto */
+  .band:not(.collapsed) .grade-badge.foldable { padding-right: 92px; }
+  /* Le aree, aperte, prendono tutta la larghezza della targa (lo spazio a destra serve solo alla prima riga) */
+  .band:not(.collapsed) .grade-badge.foldable .grade-areas { margin-right: -78px; }
+  .band:not(.collapsed) .grade-badge .grade-tools { top: 34px; right: var(--sp-3); height: auto; translate: 0 -50%; }
+  .band:not(.collapsed) .grade-badge.foldable .grade-fold { top: 34px; right: 46px; }
   .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 32px; height: 32px; }
   /* Le aree sotto: Attacco, Difesa e Velocità con la barretta; Ruoli e Bonus/Malus col solo valore */
   .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-5); margin: var(--sp-5) 0 0; }
@@ -1275,25 +1281,16 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 1; grid-row: 2; text-align: left; font: italic 800 var(--fs-title)/1 var(--display); }
   .band:not(.collapsed) .grade-badge button.grade-area > .meter { display: block; grid-column: 1; grid-row: 3; width: 100%; height: 4px; }
   .band:not(.collapsed) .grade-badge button.grade-area > svg { display: none; }
-  /* Le carte stese in larghezza: lo sprite a sinistra, a destra nome, abilità, tipi e ruolo; tre per riga */
+  /* Carte Pedana in piedi come sul computer e sul telefono, tre per riga: il Pokémon sulla sua pedana, sotto il nome
+     centrato con l'icona dello strumento, poi i tipi (l'abilità è nel fumetto della carta e nell'editor) */
   .band:not(.collapsed) .slots { display: grid; grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-columns: auto; gap: var(--sp-5); padding: 0; overflow: visible; scroll-snap-type: none; }
-  .band:not(.collapsed) .slot > .slot-card { display: grid; grid-template-columns: 80px minmax(0, 1fr); grid-template-rows: 1fr auto auto auto auto 1fr; column-gap: var(--sp-4); row-gap: 3px;
-    height: 112px; min-height: 0; padding: var(--sp-3) var(--sp-6) var(--sp-5) var(--sp-2); align-items: center; }
-  .band:not(.collapsed) .slot.empty { height: 112px; min-height: 0; flex-direction: row; }
-  .band:not(.collapsed) .slot > .slot-card .sprite-wrap { grid-column: 1; grid-row: 1 / -1; flex: none; width: 80px; height: 80px; min-height: 0; display: grid; place-items: center; }
-  .band:not(.collapsed) .slot > .slot-card .sprite { width: 80px; height: 80px; }
-  .band:not(.collapsed) .slot > .slot-card > .name-line { grid-column: 2; grid-row: 2; margin: 0; padding-right: 22px; }
-  /* Lo strumento non sta accanto al nome (lo dice il fumetto della carta e l'editor): il nome ha tutta la riga */
-  .band:not(.collapsed) .slot .name-line .held { display: none; }
-  .band:not(.collapsed) .slot .name { --name-room: 0px; }
-  .band:not(.collapsed) .slot > .slot-card > .ability { grid-column: 2; grid-row: 3; display: block; font-size: var(--fs-caption); }
-  .band:not(.collapsed) .slot > .slot-card > .types { grid-column: 2; grid-row: 4; display: flex; margin: 0; }
-  .band:not(.collapsed) .slot :is(.favorite, .remove) { top: 0; }
-  .band:not(.collapsed) .slot .favorite { top: auto; bottom: 2px; right: 0; }
+  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { height: 188px; min-height: 0; padding: var(--sp-3) var(--sp-5) var(--sp-5); }
+  .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 104px); height: min(100cqh, 100cqw, 104px); }
+  .band:not(.collapsed) .slot .name { --name-fs: 16px; }
+  .band:not(.collapsed) .slot > .slot-card > .types { display: flex; justify-content: center; gap: var(--sp-2); margin: var(--sp-2) 0 0; }
 }
-/* Tablet stretto in verticale (600–759): due carte per riga, sei in tre righe */
+/* Tablet stretto in verticale (600–759): le carte in piedi stanno tre per riga anche qui */
 @media (min-width: 600px) and (max-width: 759px) {
-  .band:not(.collapsed) .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .band:not(.collapsed) .grade-badge .grade-areas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
@@ -1543,8 +1540,8 @@ label.improve-col-head { cursor: pointer; }
 @media (max-width: 1099px) {
   .band:not(.collapsed) .grade-badge.foldable { position: relative; cursor: pointer; }
   .grade-badge.foldable .grade-fold { position: absolute; right: 46px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; background: none; color: var(--muted); }
-  .grade-fold-chev { width: 9px; height: 9px; margin-top: -4px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.18s var(--ease); }
-  .grade-badge.areas-open .grade-fold-chev { margin-top: 4px; transform: rotate(-135deg); }
+  .grade-fold .icon { width: 20px; height: 20px; transition: transform 0.18s var(--ease); }
+  .grade-badge.areas-open .grade-fold .icon { transform: rotate(180deg); }
   /* Aperta: la freccetta resta all'altezza della prima riga */
   .grade-badge.foldable.areas-open .grade-fold { top: 30px; }
   .grade-badge.foldable:hover .grade-fold { color: var(--text); }

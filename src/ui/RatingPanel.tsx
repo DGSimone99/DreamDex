@@ -145,7 +145,7 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
       {foldable && (
         <button type="button" className="grade-fold" aria-expanded={areasOpen} aria-controls={areasId}
           aria-label={t(areasOpen ? 'rating.areasHide' : 'rating.areasShow')} onClick={() => setAreasOpen(o => !o)}>
-          <b className="grade-fold-chev" aria-hidden="true" />
+          <Icon name="down" />
         </button>
       )}
       {rating && !collapsed && (!foldable || areasOpen) && <span id={foldable ? areasId : undefined} className="grade-areas-wrap"><GradeAreaRows rating={rating} onOpen={onOpen} /></span>}
