@@ -301,9 +301,13 @@
    sono: il voto è già nella barra, i problemi nel numerino della scheda e nel Coaching -- */
 @media (max-width: 599px) {
   .analysis .analysis-tabs { margin: -16px -14px var(--sp-6); }
-  .analysis .analysis-tabs [role='tablist'] { padding: 3px 4px; border-radius: 0; box-shadow: inset 0 -1px 0 var(--line-soft); }
+  /* Le schede attraversano tutta la riga: niente binario, segmenti accostati, la scelta una piastra piena col filo magenta */
+  .analysis .analysis-tabs [role='tablist'] { gap: 0; padding: 0; border-radius: 0; box-shadow: inset 0 -1px 0 var(--line-soft); }
+  .analysis .analysis-tabs [role='tab'], .analysis .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) { border-radius: 0; height: 58px; }
+  .analysis .analysis-tabs [role='tab'][aria-selected='true'], .analysis .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) { box-shadow: inset 0 -3px 0 var(--accent-2); }
   .area-view .area-head { flex-wrap: nowrap; gap: var(--sp-2); min-height: 0; margin: calc(-1 * var(--sp-6)) -14px var(--sp-5); padding: 0 var(--sp-2) 0 0;
-    border: 0; border-radius: 0; background: var(--field); box-shadow: inset 0 -1px 0 var(--line-soft); }
+    border: 0; border-radius: 0; background: var(--field); box-shadow: inset 0 -1px 0 var(--line-soft); overflow-x: clip; }
+  /* (overflow-x: clip: la zona di tocco da 44 del "?" in fondo sporgerebbe oltre lo schermo e il telefono rimpicciolirebbe la pagina) */
   .area-view .area-head :is(.area-grade, .area-chips) { display: none; }
   .area-view .area-head .area-subs { order: 0; flex: 1 1 auto; min-width: 0; border-radius: 0; box-shadow: none; background: none; }
   .area-view .area-head .area-help { order: 1; flex: none; margin-left: auto; }
@@ -311,3 +315,6 @@
   .area-view .area-head:not(:has(.area-subs)) { justify-content: flex-end; padding: var(--sp-2) var(--sp-4); }
   .area-view > .area-panel { border-top: 1px solid var(--line-soft); }
 }
+
+/* -- Telefono: fuori dalla scheda Pokémon il team non c'è (la fascia resta montata, nascosta) -- */
+@media (max-width: 599px) { .band.off { display: none; } }
