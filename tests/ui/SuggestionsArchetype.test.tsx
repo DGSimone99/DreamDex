@@ -96,8 +96,9 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     const [, after, raw] = /: [SABCD] (\d+) \(([^)]+)\)$/.exec(label)!;
     const gain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${name}` });
-    // Prima e dopo come nella lista; il "prima" è il voto vero, lo stesso della card del voto
-    expect(detail.querySelector('.detail-score')!.textContent).toMatch(new RegExp(`[SABCD] ${Number(after) - gain} → [SABCD] ${after}$`));
+    // Prima e dopo come nella lista (la riga sotto il +N; sotto ancora il verso delle aree); il "prima" è il voto vero, lo
+    // stesso della card del voto
+    expect(detail.querySelector('.detail-score > span')!.textContent).toMatch(new RegExp(`[SABCD] ${Number(after) - gain} → [SABCD] ${after}$`));
     expect(card).toContain(String(Number(after) - gain));
   });
 
@@ -168,7 +169,8 @@ describe('dettaglio col tipo scelto', () => {
           rating={before} archetype="balance" usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
       </LangProvider>,
     );
-    expect(document.querySelector('.detail-score')!.textContent).toMatch(new RegExp(`${before.overall} → [SABCD] ${after.overall}$`));
+    expect(document.querySelector('.detail-score > span')!.textContent).toMatch(new RegExp(`${before.overall} → [SABCD] ${after.overall}$`));
+    expect(screen.getByRole('list', { name: 'Effetto sul team' })).toBeInTheDocument();
     expect(screen.queryByText(/in classifica/)).toBeNull();
   });
 });

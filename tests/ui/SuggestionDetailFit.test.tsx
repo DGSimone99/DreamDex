@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { rateTeam } from '../../src/engine/rating';
 import { SuggestionsPanel } from '../../src/ui/SuggestionsPanel';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -26,59 +27,117 @@ const panel = (props: Partial<Parameters<typeof SuggestionsPanel>[0]> = {}) => r
     onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} {...props} />);
 
 describe('dettaglio: la versione che ci sta', () => {
-  it('quando non entra scende fino alle linguette; il set si vede col clic su «Set consigliato»', async () => {
+  it('quando non entra passa a due linguette (Perché · Set consigliato); il set si vede col clic su «Set consigliato»', async () => {
     const user = userEvent.setup();
     panel({ teamCollapsed: true });
     const aside = detail();
+    expect(aside).toHaveClass('tabbed');
     const tabs = within(aside).getByRole('tablist');
-    const brings = within(tabs).getByRole('tab', { name: 'Porta e Toglie' });
+    const why = within(tabs).getByRole('tab', { name: 'Perché' });
     const setTab = within(tabs).getByRole('tab', { name: 'Set consigliato' });
-    expect(brings).toHaveAttribute('aria-selected', 'true');
+    expect(why).toHaveAttribute('aria-selected', 'true');
+    expect(within(aside).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
     expect(within(aside).queryByRole('list', { name: 'Mosse' })).toBeNull();
-    expect(aside.querySelector('.meta-sec')).toBeNull();
-    expect(aside.classList.contains('compact')).toBe(true);
+    // Senza ResizeObserver (jsdom) nessuno misura l'altezza: niente versione bassa
+    expect(aside).not.toHaveClass('compact');
     await user.click(setTab);
     expect(setTab).toHaveAttribute('aria-selected', 'true');
     expect(within(aside).getByRole('list', { name: 'Mosse' })).toBeInTheDocument();
-    expect(within(aside).queryByRole('heading', { name: 'Porta' })).toBeNull();
+    expect(within(aside).queryByRole('heading', { name: 'Risolve' })).toBeNull();
   });
 
-  it('col team esteso, se ci sta: aree in cima, poi Porta, poi il set in una riga, poi il Meta; niente linguette', () => {
+  it('le linguette si cambiano con le frecce, e solo quella aperta è nel giro del Tab', async () => {
+    const user = userEvent.setup();
+    panel();
+    const aside = detail();
+    const why = within(aside).getByRole('tab', { name: 'Perché' });
+    const setTab = within(aside).getByRole('tab', { name: 'Set consigliato' });
+    expect(why).toHaveAttribute('tabindex', '0');
+    expect(setTab).toHaveAttribute('tabindex', '-1');
+    why.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(setTab).toHaveFocus();
+    expect(setTab).toHaveAttribute('aria-selected', 'true');
+    expect(setTab).toHaveAttribute('tabindex', '0');
+    expect(within(aside).getByRole('tabpanel')).toHaveAttribute('aria-labelledby', setTab.id);
+    await user.keyboard('{ArrowLeft}');
+    expect(why).toHaveFocus();
+    expect(why).toHaveAttribute('aria-selected', 'true');
+    // Dalla prima, a sinistra si torna all'ultima
+    await user.keyboard('{ArrowLeft}');
+    expect(setTab).toHaveFocus();
+  });
+
+  it('corpo più basso di 250 px: versione bassa (compact)', () => {
+    const original = globalThis.ResizeObserver;
+    // Un ResizeObserver finto che misura subito (il corpo è alto 200)
+    globalThis.ResizeObserver = class {
+      constructor(private callback: ResizeObserverCallback) {}
+      observe() { this.callback([], this as never); }
+      unobserve() {}
+      disconnect() {}
+    } as never;
+    try {
+      overflow = false;
+      panel();
+      expect(detail()).toHaveClass('compact');
+    } finally {
+      globalThis.ResizeObserver = original;
+    }
+  });
+
+  it('se ci sta: due colonne, Perché (Risolve) e poi il set (dati, esagono con le mosse, ruoli); niente linguette', () => {
     overflow = false;
     panel();
     const aside = detail();
     expect(within(aside).queryByRole('tablist')).toBeNull();
-    const order = [...aside.querySelectorAll('.detail-sec')].map(sec => sec.classList.contains('effect') ? 'aree' : sec.classList.contains('brings') ? 'porta' : sec.classList.contains('set-sec') ? 'set' : sec.classList.contains('meta-sec') ? 'meta' : '?');
-    expect(order).toEqual(['aree', 'porta', 'set', 'meta']);
-    // Il set in una riga: esagono, mosse, dati del set
-    expect([...aside.querySelector('.set-sec .set-line')!.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['mcard-hex', 'mcard-moves', 'mcard-kit']);
-    expect(aside.classList.contains('compact')).toBe(false);
+    expect(aside).not.toHaveClass('tabbed');
+    expect(aside).not.toHaveClass('compact');
+    const cols = aside.querySelector('.detail-cols')!;
+    expect([...cols.children].map(el => el.className)).toEqual(['detail-why', 'detail-set']);
+    expect(within(cols.querySelector('.detail-why') as HTMLElement).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
+    const set = cols.querySelector('.detail-set')!;
+    expect([...set.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['visually-hidden', 'mcard-kit', 'detail-set-row', 'mcard-roles']);
+    expect([...set.querySelector('.detail-set-row')!.children].map(el => el.getAttribute('class')?.split(' ')[0])).toEqual(['mcard-hex', 'mcard-moves']);
+    // Le vecchie sezioni non ci sono più
+    expect(aside.querySelector('.effect, .detail-areas, .meta-sec, .set-sec')).toBeNull();
   });
 
-  it('con le linguette le aree stanno nella prima (Porta e Toglie), non nel set', async () => {
+  it('con le linguette il verso delle aree resta nella testata, visibile anche sul set', async () => {
     const user = userEvent.setup();
-    panel();
+    // Il verso delle aree c'è quando c'è un voto di prima (la card del voto)
+    panel({ rating: rateTeam([tusk] as never, fixtureData) });
     const aside = detail();
-    expect(aside.querySelector('.effect')).not.toBeNull();
+    const marks = () => within(aside).queryByRole('list', { name: 'Effetto sul team' });
+    expect(marks()!.closest('.detail-hero')).not.toBeNull();
     await user.click(within(aside).getByRole('tab', { name: 'Set consigliato' }));
-    expect(aside.querySelector('.effect')).toBeNull();
+    expect(marks()).toBeInTheDocument();
   });
 
-  it('in Sostituisci, se due linguette non bastano, Porta, Toglie e Set hanno una linguetta ciascuno', async () => {
+  it('in Sostituisci restano due linguette (mai una per Costa): Perché mostra Risolve e Costa, chi esce sta sotto la testata', async () => {
     const user = userEvent.setup();
     panel({ team: [tusk, gholdengo] as never, replaceIndex: 1 });
     const aside = detail();
-    const tabs = within(aside).getAllByRole('tab').map(tab => tab.textContent);
-    expect(tabs).toEqual(['Porta', 'Toglie', 'Set consigliato']);
-    expect(within(aside).getByText(/al posto di Gholdengo/i)).toBeInTheDocument();
-    expect(within(aside).queryByRole('heading', { name: 'Toglie' })).toBeNull();
-    await user.click(within(aside).getByRole('tab', { name: 'Toglie' }));
-    expect(within(aside).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
-    expect(within(aside).queryByRole('heading', { name: 'Porta' })).toBeNull();
+    expect(within(aside).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Perché', 'Set consigliato']);
+    expect(within(aside).getByRole('button', { name: 'Sostituisci con questo' })).toBeInTheDocument();
+    // Chi esce: "Esce Gholdengo", coi ruoli che il team perde; quei ruoli non si ripetono in Costa
+    const swap = aside.querySelector('.detail-swap')!;
+    expect(swap).toHaveTextContent(/^EsceGholdengoperde /);
+    const lost = swap.querySelector('em')!.textContent!.replace(/^perde /, '').split(' · ');
+    const costa = within(aside).getByRole('heading', { name: 'Costa' }).closest('.why-part')!;
+    for (const role of lost) expect(costa.textContent).not.toContain(role);
+    expect(within(aside).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
+    expect(within(aside).getByRole('heading', { name: 'Costa' })).toBeInTheDocument();
+    await user.click(within(aside).getByRole('tab', { name: 'Set consigliato' }));
+    expect(within(aside).queryByRole('heading', { name: 'Risolve' })).toBeNull();
+    expect(within(aside).queryByRole('heading', { name: 'Costa' })).toBeNull();
+    // La striscia di chi esce resta, fuori dalle linguette
+    expect(aside.querySelector('.detail-swap')).not.toBeNull();
   });
 
-  it('aggiungendo (niente Toglie) restano due linguette anche quando non entra', () => {
+  it('aggiungendo restano due linguette anche quando non entra, e niente striscia di chi esce', () => {
     panel();
-    expect(within(detail()).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Porta e Toglie', 'Set consigliato']);
+    expect(within(detail()).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Perché', 'Set consigliato']);
+    expect(detail().querySelector('.detail-swap')).toBeNull();
   });
 });

@@ -748,3 +748,101 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Da tastiera il fuoco sta sul nome (il pulsante della carta): il contorno gira intorno a tutta la carta */
 .card:has(.pick:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .card .pick:focus-visible { outline: none; }
+
+/* ── Dettaglio del candidato come "verdetto" (critique 2026-11-22) ─────────────────────────────────────────────────
+   Testata (voto e, sotto, il verso di ogni area), la striscia di chi esce in Sostituisci, poi due colonne: Perché
+   (Risolve, Spesso con, Costa) | Set (strumento, abilità, natura, EV; esagono accanto alle mosse se c'è posto; ruoli).
+   Due colonne o una dalla larghezza del corpo (container dbody); basso (.compact, deciso dall'altezza): set su una riga,
+   senza esagono; una colonna che non entra: due linguette (SuggestionDetail) */
+aside.detail:not(.detail-empty) > .detail-body { display: block; padding: 0; container: dbody / inline-size; }
+aside.detail .detail-cols { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-8); padding: var(--sp-7) var(--sp-9); }
+@container dbody (min-width: 480px) {
+  aside.detail .detail-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: var(--sp-9); }
+}
+aside.detail.compact .detail-cols { padding-block: var(--sp-5); }
+
+/* Le aree nella testata, sotto "B 79 → A 88": il nome corto e il verso (su, uguale, giù), mai il numero */
+.detail-hero .detail-score .detail-area-marks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2) var(--sp-5); margin: var(--sp-3) 0 0; padding: 0; list-style: none; }
+.detail-hero .detail-score .detail-area-marks li { display: inline-flex; align-items: center; gap: 3px; font: 700 var(--fs-label)/1 var(--ui); color: rgb(255 255 255 / 0.9); text-shadow: 0 1px 2px rgb(0 0 0 / 0.6); white-space: nowrap; }
+.detail-hero .detail-score .detail-area-marks li > span[aria-hidden] { color: inherit; }
+.area-arrow { flex: none; width: 10px; height: 10px; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.55)); }
+.detail-area-marks .up .area-arrow { fill: var(--good); }
+.detail-area-marks .down .area-arrow { fill: var(--bad); }
+.detail-area-marks .same .area-arrow { fill: rgb(255 255 255 / 0.65); }
+aside.detail.compact .detail-area-marks { margin-top: var(--sp-1); }
+
+/* Chi esce: ⇄, lo sprite ingrigito, "Esce" e il nome barrato, i ruoli che il team perde */
+.detail-swap { flex: none; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-9);
+  background: color-mix(in srgb, var(--bad) 8%, var(--panel)); border-bottom: 1px solid var(--line-soft); }
+.detail-swap-mark { display: grid; color: var(--faint); }
+.detail-swap-mark .icon { width: 18px; height: 18px; }
+.detail-swap-mon .sprite { display: block; width: 48px; height: 48px; margin: -8px 0; filter: grayscale(0.85) brightness(0.85); }
+.detail-swap-text { display: flex; flex-direction: column; min-width: 0; margin: 0; }
+.detail-swap-text small { font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.detail-swap-text > span { display: flex; align-items: baseline; gap: var(--sp-4); min-width: 0; }
+.detail-swap-text b { flex: none; font: 800 italic var(--fs-title-s)/1.15 var(--display); color: var(--text);
+  text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--bad) 70%, transparent); }
+.detail-swap-text em { min-width: 0; font-style: normal; font-size: var(--fs-small); font-weight: 500; color: var(--bad); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Perché: Risolve (+ verde), Spesso con (catena), Costa (− rosso, ! giallo per gli avvisi) */
+.detail-why { display: flex; flex-direction: column; gap: var(--sp-7); min-width: 0; }
+.detail-why .why-part { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+.detail-why h4 { margin: 0; font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+/* Linguette su un dettaglio largo: Risolve e Costa affiancate */
+@container dbody (min-width: 480px) { aside.detail.tabbed .detail-why { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-9); } }
+.detail-why .bring-groups, .detail-why .bring-group, .detail-why .bring-items { display: contents; }
+aside.detail .detail-why .visually-hidden { position: absolute; margin: 0; padding: 0; }
+.detail-why li { position: relative; display: block; padding-left: var(--sp-7); font-size: var(--fs-section); line-height: 1.35; }
+.detail-why li::before { position: absolute; left: 0; top: 0; font: 800 italic var(--fs-section)/1.35 var(--display); }
+.detail-why .gain li::before { content: '+'; color: var(--good); }
+.detail-why .loss li::before { content: '−'; color: var(--bad); }
+.detail-why .bring-group.warning li::before { content: '!'; color: var(--warn); }
+.detail-why .bring-none { margin: 0; font-size: var(--fs-section); color: var(--muted); }
+.detail-mates { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin: 0; font-size: var(--fs-section); line-height: 1.35; color: var(--muted); }
+.detail-mates > .icon { flex: none; width: 14px; height: 14px; color: var(--good); }
+.detail-mates .mon-ref { display: inline-flex; align-items: center; color: var(--text); }
+.detail-mates .mon-icon { margin: -6px -4px -4px -6px; }
+
+/* Set: i dati in due colonne (nome sopra il valore), l'esagono accanto alle mosse se il set è largo, i ruoli */
+.detail-set { display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-6); min-width: 0; container: dset / inline-size; }
+.detail-set > * { width: 100%; box-sizing: border-box; }
+aside.detail .detail-set .mcard-kit { display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, auto); grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: minmax(0, 1fr); align-items: baseline; gap: 1px var(--sp-7); padding: 0; border: 0; font-size: var(--fs-small); }
+aside.detail .detail-set .mcard-kit > small:nth-child(4n + 3) { margin-top: var(--sp-4); }
+aside.detail .detail-set .mcard-kit > span { max-width: 100%; }
+aside.detail .detail-set .mcard-kit > span > .item-icon { vertical-align: -1px; }
+.detail-set-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--sp-6); }
+.detail-set-row .mcard-hex { display: none; }
+@container dset (min-width: 320px) {
+  .detail-set-row { grid-template-columns: 130px minmax(0, 1fr); }
+  .detail-set-row .mcard-hex { display: block; width: 130px; height: calc(130px * 0.67); }
+}
+.detail-set .mcard-moves { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); min-width: 0; }
+@container dset (min-width: 560px) { .detail-set-row .mcard-moves { grid-template-columns: 1fr 1fr; } }
+.detail-set .mvp-sm { --mvp-tail-w: 54px; }
+.detail-set .mvp-sm .mvp-cat .cat-icon { width: 11px; height: 9px; }
+.detail-set .mvp-sm .mvp-tail { gap: 2px; padding-right: var(--sp-3); }
+.detail-set .mcard-roles { margin: 0; padding: 0; border: 0; font-size: var(--fs-small); }
+.detail-set .mcard-roles > span { display: block; min-width: 0; }
+.detail-set .mcard-roles > span > span { display: inline; }
+.mcard-roles .fresh { color: var(--good); font-weight: 700; }
+.mcard-roles .fresh b { margin-right: 1px; }
+
+/* Basso (portatile col team aperto): niente esagono, i dati del set su una riga sola */
+aside.detail.compact .detail-set { gap: var(--sp-4); }
+aside.detail.compact .detail-set-row { grid-template-columns: minmax(0, 1fr); }
+aside.detail.compact .detail-set-row .mcard-hex { display: none; }
+aside.detail.compact .detail-set .mcard-kit { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+aside.detail.compact .detail-set .mcard-kit > small { display: none; }
+aside.detail.compact .detail-set .mcard-kit > span { display: inline; }
+aside.detail.compact .detail-set .mcard-kit > span:not(:nth-child(2))::before { content: ' · '; color: var(--faint); font-weight: 400; }
+aside.detail.compact .detail-set .mcard-kit .kit-nature { display: none; }
+/* Linguette (il corpo non entra): una parte alla volta, a tutta larghezza */
+aside.detail.tabbed .detail-cols { grid-template-columns: minmax(0, 1fr); }
+/* Basso: la striscia di chi esce su una riga sottile ("Esce" resta per gli screen reader, il ⇄ e il nome barrato lo dicono) */
+aside.detail.compact .detail-swap { padding-block: 2px; gap: var(--sp-4); }
+aside.detail.compact .detail-swap-mon .sprite { width: 36px; height: 36px; margin: -4px 0; }
+aside.detail.compact .detail-swap-text small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Dettaglio stretto (telefono, mezzo schermo): le aree su due righe corte, il nome del Pokémon resta intero */
+@container detailbox (max-width: 479px) {
+  .detail-hero .detail-score .detail-area-marks { max-width: 96px; gap: var(--sp-1) var(--sp-4); }
+}
