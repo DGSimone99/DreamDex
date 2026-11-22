@@ -143,6 +143,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Doppio: un tipo di team solo, la scelta non c'è (e un tipo scelto prima di cambiare formato non conta)
   const oneType = isOneType(formatRules(format.formatId));
   const typeChoice = oneType ? null : pickedType;
+  const narrowPhone = useMediaQuery('(max-width: 599px)');
+  const typePicker = <TeamTypePicker types={TEAM_TYPES} value={typeChoice ?? null} onChange={setPickedType} />;
   // Vale in tutte le modalità: aggiungendo cerca chi aiuta a costruire quel tipo, migliorando chi lo raggiunge o lo mantiene
   const archetype = typeChoice ?? undefined;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
@@ -402,11 +404,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           )}
         </span>
       </div>
-      {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca) */}
-      {!oneType && (
-        <TeamTypePicker types={TEAM_TYPES} value={typeChoice ?? null} onChange={setPickedType} />
-      )}
-      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} resultCount={items.length} />
+      {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca). Sul telefono sta dentro Filtri,
+          in cima: la barra perde una riga e la prima carta sale */}
+      {!oneType && !narrowPhone && typePicker}
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} resultCount={items.length}
+        extra={!oneType && narrowPhone ? { label: tr('suggest.teamType'), summary: typeChoice ? tr(`archetype.${typeChoice}`) : tr('suggest.anyType'), on: !!typeChoice, node: typePicker } : undefined} />
     </>
   );
 
