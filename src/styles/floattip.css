@@ -472,7 +472,9 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 .detail-sec.set-sec { container: setsec / inline-size; }
 @container setsec (max-width: 539px) {
   .detail .set-line .mcard-hex { display: none; }
-  .detail .set-line { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); align-items: start; }
+  /* Mosse e dati del set alti uguali: le quattro mosse si distribuiscono dall'inizio di Strumento alla fine degli EV */
+  .detail .set-line { grid-template-columns: minmax(150px, 180px) minmax(0, 1fr); align-items: stretch; }
+  .detail .set-line .mcard-moves { align-content: space-between; }
   .detail .set-line .mcard-kit { margin-left: 0; }
 }
 @container setsec (max-width: 339px) {
