@@ -883,14 +883,26 @@
 /* Cruscotto basso: una fila sola di pillole, il resto nel "+N", così i core restano leggibili */
 .dash.tight .sum-packed .sum-lines { max-height: 44px; }
 
-/* Copertura: le schede Tipi | Meta nel titolo, piccole come le sottoschede (la aperta chiara col filo azzurro sotto);
-   su Meta il numero rosso delle minacce scoperte */
-.dash-tabs { flex: none; display: flex; margin-left: var(--sp-2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-.dash-tabs [role='tab'] { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 3px var(--sp-5); border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; color: var(--muted); font: 500 var(--fs-caption)/1.2 var(--ui); white-space: nowrap; }
-.dash-tabs [role='tab']:last-child { border-right: 0; }
-.dash-tabs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
-.dash-tabs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
-.dash-tabs [role='tab']:focus-visible { outline-offset: -2px; }
+/* Copertura: le schede Tipi | Meta nel titolo come un interruttore (Champions): un binario incassato con due metà uguali e
+   una piastra chiara in rilievo col filo azzurro sotto che scivola sulla voce scelta (::before, da data-view); la voce non
+   scelta e le sue icone si spengono; su Meta il numero rosso delle minacce scoperte */
+.dash-tabs { position: relative; flex: none; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; height: 26px; margin-left: var(--sp-2); padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); border-radius: 9px 3px 9px 3px; background: color-mix(in srgb, var(--field) 85%, transparent); box-shadow: inset 0 1px 3px #0008; }
+.dash-tabs::before { content: ""; position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc(50% - 2px); border-radius: var(--alt-r-sm);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 78%, white 12%), var(--raised)); box-shadow: inset 0 -2px 0 var(--accent), 0 2px 4px #0007;
+  transition: transform 0.22s var(--ease); }
+.dash-tabs[data-view='meta']::before { transform: translateX(100%); }
+.dash-tabs [role='tab'] { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 100%; padding: 0 13px;
+  border: 0; border-radius: var(--alt-r-sm); background: none; color: var(--muted); font: 700 italic var(--fs-small)/1 var(--display); white-space: nowrap; }
+.dash-tabs [role='tab']:hover { color: var(--text); background: none; }
+.dash-tabs [role='tab'][aria-selected='true'] { color: var(--text); }
+.dash-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dash-tabs .icon { width: 15px; height: 15px; }
+.dash-tab-trio { display: inline-flex; }
+.dash-tab-trio img { width: 13px; height: 13px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--field); }
+.dash-tab-trio img + img { margin-left: -5px; }
+.dash-tabs [role='tab'][aria-selected='false'] :is(.dash-tab-trio, .icon) { opacity: 0.6; filter: saturate(0.6); }
+@media (prefers-reduced-motion: reduce) { .dash-tabs::before { transition: none; } }
 .dash-tab-n { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-label)/1.4 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
 /* Copertura più alta (come le piastrelle della scheda Meta): icone dei tipi e caselle più grandi, per densità */
 .dash .dash-coverage { --cov-icon: 26px; --cov-cell: 28px; --cov-h: 92px; }

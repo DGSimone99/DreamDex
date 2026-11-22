@@ -134,7 +134,7 @@ export function CoverageSection({ coverage, threats, onView }: {
 
   // Le due schede: frecce destra e sinistra per passare dall'una all'altra
   const tabs = threats && (
-    <span className="dash-tabs" role="tablist" aria-label={t('dash.tabsLabel')}
+    <span className="dash-tabs" role="tablist" aria-label={t('dash.tabsLabel')} data-view={view}
       onKeyDown={e => {
         if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
         e.preventDefault();
@@ -144,6 +144,10 @@ export function CoverageSection({ coverage, threats, onView }: {
       }}>
       {(['types', 'meta'] as const).map(v => (
         <button key={v} type="button" role="tab" data-view={v} aria-selected={view === v} tabIndex={view === v ? 0 : -1} onClick={() => setView(v)}>
+          {/* Tipi: tre mini icone di tipo sovrapposte; Meta: il globo della sezione Meta della barra laterale */}
+          {v === 'types'
+            ? <span className="dash-tab-trio" aria-hidden="true">{(['Fire', 'Water', 'Grass'] as const).map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}</span>
+            : <Icon name="globe" />}
           {t(v === 'types' ? 'dash.tabTypes' : 'dash.tabMeta')}
           {v === 'meta' && openCount > 0 && <span className="dash-tab-n" aria-label={t('dash.tabMetaOpen', { n: openCount })}>{openCount}</span>}
         </button>
