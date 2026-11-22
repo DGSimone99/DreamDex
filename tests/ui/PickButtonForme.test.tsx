@@ -12,7 +12,7 @@ describe('nome sulle carte: forme solo nel dettaglio', () => {
   it('una forma qualunque: a vista solo il nome base, il nome intero nel fumetto e per i lettori di schermo', () => {
     const button = pick('Landorus-Therian');
     expect(button).toHaveAccessibleName(/^1\.\s*Landorus-Therian$/);
-    expect(button).toHaveAttribute('title', 'Landorus-Therian');
+    expect(button).toHaveAttribute('data-hint', 'Landorus-Therian');
     expect(button.querySelector('.forme')).toBeNull();
     expect(button.querySelector('.pick-name')?.textContent).toBe('Landorus');
     expect(button.querySelector('.mega-mark')).toBeNull();

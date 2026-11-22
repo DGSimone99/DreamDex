@@ -60,7 +60,7 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
                 {group.map(item => {
                   // Difesa, Offesa e Minacce: la forma breve ("Colpisce Ghiaccio, Psico"), il gruppo dice già il resto
                   const text = SHORT_KINDS.has(kind) ? item.short : item.text;
-                  return <li key={item.text} title={text !== item.text ? item.text : undefined}><Typed text={text} /></li>;
+                  return <li key={item.text} {...hint(text !== item.text ? item.text : undefined)}><Typed text={text} /></li>;
                 })}
               </ul>
             )}
@@ -219,7 +219,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             {/* Come sulle carte: la specie base e la forma come etichetta ("Charizard" + MEGA Y); il nome intero ufficiale
                 per i lettori di schermo e nel tooltip */}
             {forme ? (
-              <span className="detail-name" title={item.species}>
+              <span className="detail-name" {...hint(item.species)}>
                 <span className="visually-hidden">{item.species}</span>
                 <span aria-hidden="true">{forme.base}</span>
                 <i className="forme" aria-hidden="true">{forme.forme}</i>
