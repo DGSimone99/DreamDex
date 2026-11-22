@@ -1036,6 +1036,8 @@ export const en = {
   'dash.tabMeta': "Meta",
   'dash.tabsLabel': "Coverage: types or meta",
   'dash.tabMetaOpen': "{n} open threats",
+  'dash.parts': "Overview parts",
+  'dash.partProblems': "{n} to fix",
   'dash.threatSideOk': "2 or more members handle it",
   'dash.metaSr': "Meta threats: {open} open, {thin} thin",
   'dash.rowOffense': "Offense",

@@ -1038,6 +1038,8 @@ export const it: Record<keyof typeof en, string> = {
   'dash.tabMeta': "Meta",
   'dash.tabsLabel': "Copertura: tipi o meta",
   'dash.tabMetaOpen': "{n} minacce scoperte",
+  'dash.parts': "Parti della Panoramica",
+  'dash.partProblems': "{n} da sistemare",
   'dash.threatSideOk': "Lo gestiscono 2 o più membri",
   'dash.metaSr': "Minacce del meta: {open} scoperte, {thin} a fatica",
   'dash.rowOffense': "Offesa",
