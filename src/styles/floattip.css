@@ -132,77 +132,18 @@
 .mcard-none { color: var(--faint); }
 /* Le parti cambiate rispetto al set di prima: in azzurro, la mossa nuova con un bordo azzurro sottile e un punto */
 .mcard-kit span.is-changed, .mcard-kit span.is-changed em { color: var(--accent-ink); }
-/* La riga delle aree non ha un titolo visibile: il titolo nascosto non deve prendere altezza */
-.detail:not(.detail-empty) .effect h4.visually-hidden { position: absolute; margin: 0; }
-/*
- * Dettaglio senza disordine (2026-11-22): niente barre per i titoli (restano per i lettori di schermo), le aree come una
- * riga di testo, Porta e Toglie come voci di fila che vanno a capo (+ verde, − rosso, ! giallo, come le righe delle
- * carte), il set in una riga sola: esagono, mosse una sotto l'altra, dati del set col nome sopra il valore.
- */
-.detail-sec.set-sec { --hex-w: 150px; }
-.detail .set-line { display: grid; grid-template-columns: var(--hex-w) minmax(168px, 200px) minmax(0, 1fr); align-items: center; gap: var(--sp-6); }
-.detail .set-line .mcard-hex { width: var(--hex-w); height: calc(var(--hex-w) * 0.67); }
-.detail .set-sec .mcard-hex .hx-l { font-size: 12px; }
-.detail .set-sec .mcard-hex .hx-v { font-size: 17px; }
-.detail .set-sec .mcard-moves { display: grid; gap: var(--sp-3); }
-/* La pillola piccola di sempre, con la coda del numero un po' più stretta: il nome della mossa resta intero */
-.detail .set-sec .mvp-sm { --mvp-tail-w: 54px; }
-.detail .set-sec .mvp-sm .mvp-cat .cat-icon { width: 11px; height: 9px; }
-.detail .set-sec .mvp-sm .mvp-tail { gap: 2px; padding-right: var(--sp-3); }
-/* I dati del set in colonna, il nome piccolo sopra il valore */
-.detail .set-line .mcard-kit { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 0 0 var(--sp-6); border: 0; font-size: var(--fs-small); }
-/* Staccati dalle mosse: i dati del set cominciano dalla seconda metà del dettaglio quando c'è posto */
-.detail .set-line .mcard-kit { justify-self: stretch; margin-left: max(0px, calc(50cqw - var(--hex-w) - 200px - 2 * var(--sp-6))); }
-.detail .set-line .mcard-kit small { margin-top: var(--sp-3); }
-.detail .set-line .mcard-kit small:first-child { margin-top: 0; }
-.detail .set-line .mcard-kit span { white-space: normal; }
-/* Ogni valore largo quanto il suo testo (il fumetto di Strumento e Abilità parte da lì, non dal bordo della colonna);
-   l'icona dello strumento centrata sul nome */
-.detail .set-line .mcard-kit > span { justify-self: start; max-width: 100%; }
-.detail .set-line .mcard-kit > span > .item-icon { vertical-align: -1px; }
 /* La fascia: lo sprite vero, grande come nel tooltip, che esce un po' dal bordo alto */
 .detail-hero .detail-mon { align-self: end; }
 .detail-hero .detail-mon .sprite { display: block; width: 96px; height: 96px; margin: -22px 0 -14px -8px; }
 /* Lo sprite (fermo) sta sopra a tutto: se capita che sbordi esce dalla fascia invece di essere tagliato; chi esce in
    Sostituisci (fermo anche lui) può uscire dal suo spazio, ma sotto lo sprite */
 .detail-hero .detail-mon { z-index: 3; }
-.detail-hero .detail-out { z-index: 2; }
-.detail-hero .detail-out .box-icon { animation: none; }
 aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
-aside.detail.compact .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 64px minmax(0, 1fr) auto auto; }
 .detail.compact .detail-hero .detail-mon .sprite { width: 72px; height: 72px; margin: -14px 0 -10px -6px; }
-/* Le aree: una riga di testo, il numero in corsivo */
-.detail .effect { padding-block: var(--sp-4); }
-.detail .effect .detail-areas { gap: var(--sp-2) var(--sp-9); }
-aside.detail .effect .detail-areas div, aside.detail .effect .detail-areas .extras { padding: 0; border: 0; box-shadow: none; background: none; font-size: var(--fs-small); font-weight: 600; }
-.detail .effect .detail-areas dt { color: var(--muted); }
-/* Porta e Toglie: una voce per riga, in colonna; se il dettaglio non ci sta (.why-2col) su due colonne. Gruppi e
-   sezioni restano per i lettori di schermo */
-.detail-because { grid-column: 1 / -1; min-width: 0; padding: var(--sp-5) var(--sp-9); border-bottom: 1px solid var(--line-soft); }
-.detail-because li { display: block; break-inside: avoid; }
-.detail-because li + li, .detail-because .bring-group + .bring-group li, .detail-because .detail-sec + .detail-sec li { margin-top: var(--sp-3); }
-.detail.why-2col .detail-because { columns: 2; column-gap: var(--sp-10); }
-.detail-because:empty { display: none; }
-/* I titoli nascosti (Porta, Toglie, il gruppo) non devono prendere posto nella fila */
-aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; padding: 0; }
-.detail-because > .detail-sec, .detail-because .bring-groups, .detail-because .bring-group, .detail-because .bring-items { display: contents; }
-/* In cima a ogni colonna niente spazio in più */
-.detail.why-2col .detail-because li { margin-top: 0; margin-bottom: var(--sp-3); }
-.detail-because li { position: relative; padding-left: var(--sp-7); font-size: var(--fs-section); line-height: 1.35; }
-.detail-because li::before { position: absolute; left: 0; top: 0; font: 800 italic var(--fs-section)/1.35 var(--display); }
-.detail-because .gain li::before { content: '+'; color: var(--good); }
-.detail-because .loss li::before { content: '−'; color: var(--bad); }
-.detail-because .bring-group.warning li::before { content: '!'; color: var(--warn); }
-.detail-because .bring-none { margin: 0; font-size: var(--fs-section); }
-.detail .set-sec { padding-top: var(--sp-6); }
-/* Meta nel dettaglio: righe dei compagni fitte, così entra anche a 1440x900 col team chiuso */
-.detail .meta-mates { gap: 1px; }
-.detail .meta-mates li { height: 22px; margin: 0; }
 /* I ruoli del set in fondo alla carta (tooltip e dettaglio): una riga semplice, l'etichetta come quelle dei dati del set */
 .mcard-roles { display: flex; align-items: baseline; gap: var(--sp-4); margin: 0; padding: 0 var(--sp-6) var(--sp-5); font: 600 var(--tip-body)/1.35 var(--ui); color: var(--text); }
 .mcard-roles small { flex: none; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
 .mcard-roles [title] { cursor: help; }
-.detail .set-sec .mcard-roles { padding: var(--sp-5) 0 0; font-size: var(--fs-small); }
 /* L'icona dello strumento prima del nome, sulla linea della scritta */
 .mcard-kit .item-icon { display: inline-block; margin: -4px var(--sp-2) -4px 0; vertical-align: -4px; }
 .mcard-move.is-changed { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); }
@@ -345,31 +286,20 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
    nei colori dei tipi, righe, ombra in basso) con sprite, nome, icone dei tipi e lastra dei ruoli, il voto a destra; il set
    con la stessa griglia, l'esagono e le pillole. Le misure sono quelle del dettaglio, più grandi del tooltip */
 .detail-hero.mcard-head { grid-template-columns: 96px minmax(0, 1fr) auto; grid-template-rows: auto; align-items: center; align-content: center; gap: var(--sp-3) var(--sp-7); min-height: 108px; padding: var(--sp-6) var(--sp-9) var(--sp-6) var(--sp-6); }
-.detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
-.detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45)); }
 .detail-hero.mcard-head .detail-id { gap: var(--sp-4); }
 .detail-hero.mcard-head .detail-id h3 { gap: var(--sp-4); font-style: italic; text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-types { display: inline-flex; flex: none; gap: var(--sp-2); }
 .detail-types img { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.5); }
 .detail-hero.mcard-head .detail-score strong, .detail-hero.mcard-head .detail-score span { text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-hero.mcard-head .detail-score span { color: var(--text); }
-/*
- * Set consigliato uguale alla carta del tooltip (MemberKit + MemberStatsMoves): sopra strumento, natura, abilità ed EV
- * su due colonne, sotto l'esagono a sinistra e le quattro mosse una sotto l'altra. L'esagono si misura con --hex-w.
- */
-.detail-sec.set-sec { display: block; }
 /* Il dettaglio sta nella colonna senza scorrere: testata ed esagono un po' più bassi; sugli schermi bassi niente esagono
    e le mosse su due colonne (le statistiche restano in un clic nella scheda) */
 .detail-hero.mcard-head { min-height: 92px; padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
-.detail-hero.mcard-head .detail-sprite { width: 80px; height: 80px; }
 .detail-hero.mcard-head { grid-template-columns: 80px minmax(0, 1fr) auto; }
-.detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 80px minmax(0, 1fr) auto auto; }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
 
   .detail-hero.mcard-head { min-height: 72px; }
-  .detail-hero.mcard-head .detail-sprite { width: 64px; height: 64px; }
   .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
-  .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 64px minmax(0, 1fr) auto auto; }
 }
 /* Sotto i 900px di altezza (1536x864): esagono e testata ancora un filo più bassi */
 @media (min-width: 1100px) and (max-height: 899px) and (min-height: 800px) {
@@ -378,19 +308,13 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 }
 /* Schermi molto bassi (1366x657, 1280x620): sezioni più strette, il titolo del set dentro la sua riga */
 @media (min-width: 1100px) and (max-height: 699px) {
-  .detail:not(.detail-empty) .detail-sec.set-sec h4 { display: none; }
   .detail-hero.mcard-head { min-height: 64px; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
-  .detail-hero.mcard-head .detail-sprite { width: 56px; height: 56px; }
   .detail-hero.mcard-head { grid-template-columns: 56px minmax(0, 1fr) auto; }
   .detail-hero.mcard-head .detail-id { gap: var(--sp-2); }
 }
 /* Schermi alti (1080 e oltre): c'è spazio, testata ed esagono grandi come nella carta e oltre */
 @media (min-width: 1100px) and (min-height: 1000px) {
   .detail-hero.mcard-head { min-height: 112px; padding-top: var(--sp-6); padding-bottom: var(--sp-6); grid-template-columns: 96px minmax(0, 1fr) auto; }
-  .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 96px minmax(0, 1fr) auto auto; }
-  .detail-hero.mcard-head .detail-sprite { width: 96px; height: 96px; }
-  .detail-sec.set-sec { --hex-w: 200px; }
-  .detail .set-sec .mcard-moves { gap: var(--sp-3); }
 }
 
 /* Porta e Toglie a gruppi (BringGroups): etichetta col segno a sinistra (verde in Porta, rosso in Toglie, giallo negli
@@ -410,13 +334,10 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
 .bring-groups.loss .bring-roles .dash-role-tag .icon { color: var(--bad); background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
 .bring-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
 .bring-roles .dash-role-tag { max-width: 100%; white-space: normal; }
-/* Porta e Toglie affiancati (colonne strette): etichetta e voci sulla stessa riga, le voci sotto solo se non c'è posto */
-.detail-sec:not(.wide) .bring-group { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-2) var(--sp-4); }
-.detail-sec:not(.wide) .bring-group > ul { flex: 1 1 150px; min-width: 0; }
 /* La lastra dei ruoli in testata su una riga sola: l'elenco intero nel tooltip */
 /* L'etichetta sulla stessa linea di base della prima riga delle voci (o della scritta dei riquadri dei ruoli): le due
    scritte hanno misure diverse, quindi si allineano le basi, non i centri; i segni restano centrati sulla scritta */
-.bring-group, .detail-sec:not(.wide) .bring-group { align-items: baseline; }
+.bring-group { align-items: baseline; }
 .bring-label { min-height: 0; height: auto; align-items: baseline; line-height: 1.35; }
 .bring-label .icon, .bring-label .sym-vs { align-self: center; }
 .bring-items { padding-top: 0; }
@@ -469,27 +390,4 @@ aside.detail .detail-because .visually-hidden { position: absolute; margin: 0; p
   background: var(--ground); box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); font: 500 var(--fs-caption)/1.35 var(--ui); white-space: pre-line;
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
-
-/* Il set consigliato si misura da sé: in un dettaglio stretto (sotto i 540px) i dati del set non stanno più accanto
-   all'esagono senza stringersi, e l'esagono se ne va (le statistiche sono nell'editor). Sopra i dati del set a due
-   colonne (Strumento e Abilità, Natura ed EV; col nome sopra il valore), sotto le quattro mosse due per riga.
-   Sotto i 340px (telefono) le mosse una per riga */
-.detail-sec.set-sec { container: setsec / inline-size; }
-@container setsec (max-width: 539px) {
-  .detail .set-line .mcard-hex { display: none; }
-  .detail .set-line { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
-  .detail .set-line .mcard-kit { order: -1; margin-left: 0; padding: 0; grid-template-columns: none; grid-template-rows: repeat(4, auto);
-    grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0 var(--sp-6); }
-  .detail .set-line .mcard-kit small:nth-of-type(2n) { margin-top: var(--sp-3); }
-  /* Con la Tera (Gen 9) cinque dati: a sinistra Strumento, Abilità e Natura, a destra EV e Tera */
-  .detail .set-line .mcard-kit:has(> small:nth-of-type(5)) { grid-template-rows: repeat(6, auto); }
-  .detail .set-line .mcard-kit:has(> small:nth-of-type(5)) small:nth-of-type(n) { margin-top: var(--sp-3); }
-  .detail .set-line .mcard-kit:has(> small:nth-of-type(5)) small:is(:nth-of-type(1), :nth-of-type(4)) { margin-top: 0; }
-  .detail .set-line .mcard-moves { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-3) var(--sp-4); }
-  /* Con altezza avanzata (SuggestionDetail: .roomy) un po' più d'aria fra i dati del set e le mosse */
-  .detail.roomy .set-line { row-gap: var(--sp-9); }
-}
-@container setsec (max-width: 339px) {
-  .detail .set-line .mcard-moves { grid-template-columns: minmax(0, 1fr); }
-}
 

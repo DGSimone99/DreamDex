@@ -406,8 +406,6 @@
 }
 @media (prefers-reduced-motion: reduce) { .picker.sheet-open > :is(.detail, .sheet-back, .sheet-scrim) { animation: none; } }
 @media (max-width: 1099px) {
-  /* Scheda: il set su una colonna, l'azione principale larga e le altre accanto */
-  .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions > * { min-height: 44px; margin: 0; white-space: nowrap; }
   .picker.sheet-open > .detail .detail-actions .go { font-size: var(--fs-body); }
@@ -435,7 +433,6 @@
   .set-editor .editor-group { grid-template-columns: minmax(0, 1fr); }
   .editor-actions { margin-left: 0; flex-wrap: wrap; }
 }
-
 
 /* Tablet: la lista a tutta larghezza (la scheda si apre toccando la carta), tre carte per riga sul tablet stretto e
    da 4 a 2 da 760 px (secondo la larghezza della lista); la barra degli strumenti su una riga sola (senza "al posto di:", tipo di team più stretto) */
