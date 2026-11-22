@@ -906,32 +906,16 @@ describe('Riassunto: la riga Bonus/Malus', () => {
   });
 });
 
-describe('Telefono › la Panoramica in schede', () => {
+describe('Telefono › la Panoramica è solo il Riassunto', () => {
   afterEach(() => { vi.unstubAllGlobals(); });
 
-  it('quattro schede (Riassunto aperta), i problemi su Copertura e Ruoli; una carta alla volta; frecce da tastiera', async () => {
+  it('sul telefono solo il Riassunto (Copertura, Ruoli e Velocità sono le loro schede); dal tablet in su tutte le carte', () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
-    const user = userEvent.setup();
+    const { unmount } = mount();
+    expect([...document.querySelectorAll('.dash > .dash-card')].map(el => el.className)).toEqual(['dash-card dash-summary']);
+    unmount();
+    vi.unstubAllGlobals();
     mount();
-    const list = screen.getByRole('tablist', { name: 'Parti della Panoramica' });
-    const tabs = within(list).getAllByRole('tab');
-    expect(tabs.map(tab => tab.getAttribute('data-part'))).toEqual(['summary', 'coverage', 'roles', 'speed']);
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
-    const dash = document.querySelector('.dash')!;
-    expect(dash).toHaveAttribute('data-part', 'summary');
-    await user.click(tabs[1]);
-    expect(dash).toHaveAttribute('data-part', 'coverage');
-    expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
-    tabs[1].focus();
-    await user.keyboard('{ArrowRight}');
-    expect(dash).toHaveAttribute('data-part', 'roles');
-    await user.keyboard('{End}');
-    expect(dash).toHaveAttribute('data-part', 'speed');
-  });
-
-  it('dal tablet in su niente schede: tutte le carte insieme', () => {
-    mount();
-    expect(screen.queryByRole('tablist', { name: 'Parti della Panoramica' })).toBeNull();
-    expect(document.querySelector('.dash')).not.toHaveAttribute('data-part');
+    expect(document.querySelectorAll('.dash > .dash-card')).toHaveLength(4);
   });
 });

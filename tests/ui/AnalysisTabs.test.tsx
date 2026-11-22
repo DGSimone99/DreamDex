@@ -21,7 +21,7 @@ async function setup(names = ['Great Tusk', 'Gholdengo']) {
 describe('schede interne di Analisi', () => {
   it('schede interne con Panoramica di default', async () => {
     await setup();
-    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
+    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('.tab-name')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
     // I Ruoli non hanno più una scheda loro: stanno in Bonus/Malus, sottoscheda Ruoli
     expect(within(views()).queryByRole('tab', { name: 'Ruoli' })).toBeNull();
     // Il voto di ogni area nella sua scheda, non nella Panoramica

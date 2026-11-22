@@ -4,13 +4,16 @@ import { useT } from '../i18n/react';
 import type { AnalysisView, TabView } from './analysisView';
 import { ModalLock } from './ModalLock';
 import { EeveePeek } from './EeveePeek';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 
 /**
  * Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa e Velocità, con "Ruoli e Bonus" in
  * fondo (la scheda bonusMalus: due sottoschede grandi, Bonus/Malus e Ruoli; i Ruoli non hanno un peso nel voto).
  */
 export const ANALYSIS_VIEWS: TabView[] = ['overview', 'coaching', 'strength', 'defense', 'speed', 'bonusMalus'];
+
+/** Telefono: le schede sono una barra a icone (le aree con icona e voto, le altre con icona e nome corto). */
+const TAB_ICON: Record<TabView, IconName> = { overview: 'roles', coaching: 'target', strength: 'sword', defense: 'shield', speed: 'speed', bonusMalus: 'star' };
 
 /** Il nome della scheda: le aree col nome dell'area, Bonus/Malus (che tiene anche i Ruoli) col suo, "Ruoli e Bonus". */
 export const viewLabelKey = (view: TabView) => (view === 'overview' || view === 'coaching' || view === 'bonusMalus' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
@@ -106,7 +109,9 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
             aria-describedby={scores[item] != null || badges[item] ? `analysis-view-${item}-desc` : undefined}
             title={badges[item] ? badgeTitle(badges[item]!, t) : undefined}
             onClick={() => { if (!(areasDisabled && item !== 'overview')) onView(item); }} onKeyDown={e => onKey(e, i)}>
-            <span>{t(viewLabelKey(item))}</span>
+            <span className="tab-icon" aria-hidden="true"><Icon name={TAB_ICON[item]} /></span>
+            <span className="tab-name">{t(viewLabelKey(item))}</span>
+            {scores[item] == null && <span className="tab-short" aria-hidden="true">{t(item === 'bonusMalus' ? 'analysis.view.bonusMalusShort' : viewLabelKey(item))}</span>}
             {/* Il voto dell'area si vede ma non entra nel nome della scheda */}
             {/* Problemi: numero fuori dal nome della scheda, rosso con almeno un grave */}
             {!!badges[item] && <span className={`tab-badge${badges[item]!.serious ? '' : ' minor'}`} aria-hidden="true">{badges[item]!.n}</span>}

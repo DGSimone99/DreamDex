@@ -1,7 +1,5 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { useT } from '../i18n/react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { EDITOR_TABS_QUERY, PHONE_QUERY, useMediaQuery } from './useMediaQuery';
-import { useSwipeTabs } from './useSwipeTabs';
 import type { DashboardData } from '../engine/overviewDashboard';
 import type { TeamSummary } from '../engine/teamSummary';
 import type { TeamSet } from '../engine/sets';
@@ -14,8 +12,6 @@ import { SpeedSection } from './dashboard/SpeedSection';
 import { SummarySection } from './dashboard/SummarySection';
 
 export type Density = 'tight' | 'normal' | 'roomy';
-/** Le carte della Panoramica, una per scheda sul telefono. */
-type Part = 'summary' | 'coverage' | 'roles' | 'speed';
 
 /**
  * Soglia sull'altezza del cruscotto (px CSS), misurata con la card del voto a cinque righe (6 membri):
@@ -88,71 +84,19 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
   // Le minacce solo col meta (statistiche presenti e meta acceso)
   const threats = data.threats.available;
 
-  // Telefono: una carta alla volta, scelta dalle schede sopra (come l'editor) o strisciando col dito
-  const t = useT();
+  // Telefono: la Panoramica è solo il Riassunto (Copertura, Ruoli e Velocità sono le loro schede, a un tocco nella barra
+  // delle schede di Analisi, che ne mostra già voti e problemi)
   const phone = useMediaQuery(PHONE_QUERY);
-  const [part, setPart] = useState<Part>('summary');
-  const coverageProblems = data.coverage.cells.filter(c => c.offense === 'bad').length + data.coverage.cells.filter(c => c.defense === 'bad').length
-    + (threats ? data.threats.list.filter(x => x.status === 'open').length : 0);
-  const rolesMissing = data.roles.chips.filter(c => !c.covered && !c.soft).length;
-  const parts: { id: Part; label: string; n?: number }[] = [
-    { id: 'summary', label: t('sum.title') },
-    { id: 'coverage', label: t('dash.coverage'), n: coverageProblems },
-    { id: 'roles', label: t('area.roles'), n: rolesMissing },
-    { id: 'speed', label: t('area.speed') },
-  ];
-  const at = parts.findIndex(p => p.id === part);
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const pick = (id: Part, focus = false) => {
-    setPart(id);
-    // Se le schede sono salite sotto le barre fisse in alto (formato e team), la pagina torna giusto sotto di loro: la carta
-    // nuova si legge dall'inizio e le schede restano in vista, mai coperte dal team
-    const tabs = tabsRef.current;
-    if (tabs) {
-      const cover = Math.max(0, ...[...document.querySelectorAll<HTMLElement>('.rail, .main > .band')].map(el => {
-        const style = getComputedStyle(el);
-        const box = el.getBoundingClientRect();
-        return (style.position === 'sticky' || style.position === 'fixed') && box.top < window.innerHeight / 2 ? box.bottom : 0;
-      }));
-      if (tabs.getBoundingClientRect().top < cover) {
-        tabs.style.scrollMarginTop = `${Math.round(cover) + 8}px`;
-        tabs.scrollIntoView({ block: 'start' });
-      }
-    }
-    if (focus) requestAnimationFrame(() => tabs?.querySelector<HTMLElement>(`[data-part="${id}"]`)?.focus());
-  };
-  useSwipeTabs(ref, {
-    enabled: phone, hasPrev: at > 0, hasNext: at < parts.length - 1, parts: ':scope > .dash-card',
-    onSwipe: dir => { const next = parts[at + dir]; if (next) pick(next.id); },
-  });
-  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const next = e.key === 'ArrowRight' ? (at + 1) % parts.length : e.key === 'ArrowLeft' ? (at - 1 + parts.length) % parts.length
-      : e.key === 'Home' ? 0 : e.key === 'End' ? parts.length - 1 : -1;
-    if (next < 0) return;
-    e.preventDefault();
-    pick(parts[next].id, true);
-  };
 
   return (
-    <>
-    {phone && (
-      <div ref={tabsRef} className="dash-parts" role="tablist" aria-label={t('dash.parts')}>
-        {parts.map(p => (
-          <button key={p.id} type="button" role="tab" data-part={p.id} aria-selected={part === p.id} tabIndex={part === p.id ? 0 : -1}
-            onClick={() => pick(p.id)} onKeyDown={onTabKey}>
-            {p.label}
-            {!!p.n && <span className="dash-tab-n" aria-label={t('dash.partProblems', { n: p.n })}>{p.n}</span>}
-          </button>
-        ))}
-      </div>
-    )}
-    <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}`} data-density={density} data-part={phone ? part : undefined}>
+    <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}`} data-density={density}>
       <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       {/* Le minacce del meta sono la riga META della Copertura (la loro carta è stata tolta il 2026-11-22) */}
-      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} onView={onView} />
-      <RolesSection roles={data.roles} density={density} onView={onView} />
-      <SpeedSection speed={data.speed} density={density} onView={onView} />
+      {!phone && <>
+        <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} onView={onView} />
+        <RolesSection roles={data.roles} density={density} onView={onView} />
+        <SpeedSection speed={data.speed} density={density} onView={onView} />
+      </>}
     </div>
-    </>
   );
 }

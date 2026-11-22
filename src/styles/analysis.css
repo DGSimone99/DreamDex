@@ -183,6 +183,8 @@
 /* Con la riga in fondo il margine sotto la Panoramica si accorcia a 4px, come sotto le aree */
 .overview:has(> .fix-row) { gap: var(--sp-4); padding-bottom: var(--sp-2); }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+/* Icona e nome corto: solo nella barra a icone del telefono (phone-analysis.css) */
+.analysis-tabs :is(.tab-icon, .tab-short) { display: none; }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come la carta scelta nell'editor: chiara, col filo
    magenta sotto e la punta che scende verso il contenuto */

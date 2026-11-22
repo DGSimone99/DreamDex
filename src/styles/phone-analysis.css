@@ -45,9 +45,12 @@
   .area-head { flex-wrap: wrap; gap: var(--sp-4) var(--sp-6); padding: var(--sp-4) var(--sp-6); }
   .area-help { margin-left: auto; }
   .area-chips { order: 3; flex: 1 1 100%; }
-  .area-subs { order: 4; flex: 1 1 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  /* Le sottoschede come quelle dell'editor: un binario incassato, la scelta una piastra chiara col filo azzurro */
+  .area-subs { order: 4; flex: 1 1 100%; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); gap: 2px; padding: 3px;
+    overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; border: 0; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
   .area-subs::-webkit-scrollbar { display: none; }
-  .area-subs [role='tab'] { flex: 1 0 auto; min-height: 44px; }
+  .area-subs [role='tab'] { min-height: 44px; padding: 0 var(--sp-5); justify-content: center; border: 0; border-radius: 6px; background: none; font: 600 var(--fs-small)/1 var(--display); }
+  .area-subs [role='tab'][aria-selected='true'] { background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
 
   /* L'interruttore Solo superefficaci / Solo efficacia: va sotto la testata, nel flusso, alto quanto un dito */
   .panel-switch { position: static; height: auto; margin-bottom: var(--sp-3); }
@@ -260,31 +263,35 @@
   .analysis .dash-head.is-link .dash-link::after { inset: min(0px, calc((100% - 44px) / 2)) 0; }
 }
 
-/* -- Telefono: la Panoramica in schede (Riassunto, Copertura, Ruoli, Velocità) come l'editor: un binario incassato, la
-   scelta una piastra chiara col filo azzurro; una carta alla volta, si cambia anche strisciando col dito. La striscia
-   Da sistemare resta in cima. Il titolo della carta lo dice già la scheda: resta solo ai lettori di schermo -- */
+
+/* -- Telefono: le schede di Analisi come una barra a icone su una fila (tutte in vista, niente scorrimento): Panoramica,
+   Coaching e Ruoli con icona e nome corto, le aree con icona e voto (il nome resta ai lettori di schermo). La scelta è la
+   piastra chiara col filo magenta, come le schede grandi del computer; il numerino dei problemi in alto a destra.
+   La Panoramica è solo il Riassunto, con la striscia Da sistemare in cima -- */
 @media (max-width: 599px) {
+  .analysis-tabs { margin: 0 0 var(--sp-6); padding: 0; overflow: visible; scroll-snap-type: none; }
+  .analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; width: auto; padding: 3px;
+    border-radius: 10px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .analysis-tabs [role='tablist']::before { content: none; }
+  .analysis-tabs [role='tab'], .analysis-tabs [role='tab'][aria-selected='true'],
+  .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) {
+    position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: auto; min-width: 0; height: 56px; margin: 0; padding: 0;
+    border: 0; border-radius: 7px; background: none; box-shadow: none; color: var(--muted); font: 600 10px/1 var(--ui); font-style: normal; }
+  .analysis-tabs #analysis-view-strength, .analysis-tabs #analysis-view-strength[aria-selected='true'] { margin-left: 0; }
+  .analysis-tabs [role='tab'] .tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .analysis-tabs [role='tab'] .tab-icon { display: inline-flex; }
+  .analysis-tabs [role='tab'] .tab-icon .icon { width: 18px; height: 18px; }
+  .analysis-tabs [role='tab'] .tab-short { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.02em; }
+  .analysis-tabs [role='tab'] .tab-score { font-size: var(--fs-small); }
+  .analysis-tabs [role='tab'] .tab-badge { position: absolute; top: 4px; right: 4px; min-width: 16px; padding: 1px 4px; font-size: 10px; }
+  .analysis-tabs [role='tab'][aria-selected='true'], .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) { color: var(--text);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 78%, white 12%), var(--raised)); box-shadow: inset 0 -3px 0 var(--accent-2), 0 2px 4px #0007; }
+  .analysis-tabs [role='tab'][aria-selected='true'] .tab-icon { color: var(--accent-2); }
+  .analysis-tabs [role='tab'][aria-selected='true']::after { content: none; }
+  .analysis-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
   .overview > .fix-row { order: -1; }
-  .dash-parts { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
-  .dash-parts [role='tab'] { min-width: 0; height: 44px; gap: var(--sp-2); justify-content: center; padding: 0 var(--sp-2); border: 0; border-radius: 6px; background: none;
-    font: 600 var(--fs-small)/1 var(--display); color: var(--muted); white-space: nowrap; }
-  .dash-parts [role='tab'][aria-selected='true'] { color: var(--text); background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
-  .dash-parts [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .dash[data-part='summary'] > .dash-card:not(.dash-summary),
-  .dash[data-part='coverage'] > .dash-card:not(.dash-coverage),
-  .dash[data-part='roles'] > .dash-card:not(.dash-roles),
-  .dash[data-part='speed'] > .dash-card:not(.dash-speed) { display: none; }
-  .dash[data-part] .dash-plate { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .dash[data-part] .dash-head { padding-left: var(--sp-6); }
-  .dash[data-part] .dash-summary > .dash-head { min-height: 0; margin-bottom: 0; padding: 0; background: none; }
-  .dash[data-part] .dash-summary > .dash-head::after { display: none; }
-  /* Almeno alta quanto lo schermo sotto il team ridotto e le schede: passando a una carta più corta la pagina non si
-     accorcia fino in cima (lì il team si riaprirebbe da solo e coprirebbe tutto) */
-  .dash[data-part] { min-height: calc(100dvh - var(--top-h, 56px) - var(--bottom-h, 64px) - var(--safe-b, 0px) - 140px); }
-  /* La carta che esce strisciando verso destra sporgerebbe oltre lo schermo: la pagina diventerebbe più larga, il
-     telefono la reimpagina e la riporta in cima (e il team si riapre). Quello che sporge di lato si taglia */
-  .dash[data-part] { overflow-x: clip; overflow-clip-margin: 6px; }
-  .dash[data-part].swiping > .dash-card { transform: translateX(var(--swipe-x, 0px)); transition: none; will-change: transform; }
-  /* Da sola, la Velocità ha più spazio: barre più alte */
-  .dash[data-part] .dash-ladder { height: 300px; }
 }
+@media (max-width: 370px) { .analysis-tabs [role='tab'] .tab-short { font-size: 9.5px; } }
+/* Telefono: sottoschede più strette, così anche le quattro della Difesa stanno senza scorrere */
+@media (max-width: 599px) { .area-subs [role='tab'] { padding: 0 var(--sp-3); } }
