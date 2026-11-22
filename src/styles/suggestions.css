@@ -504,8 +504,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   .card-sprite.popped { animation: none; }
 }
 /* Targhetta in alto a sinistra: +N (#1 su azzurro scuro), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
-.card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-2); margin: 0; padding: 5px var(--sp-8) 5px var(--sp-4); border-radius: 0; background: var(--tag-bg); color: var(--text);
-  font: 800 var(--fs-body)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+.card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-2); margin: 0; padding: 5px var(--sp-8) 5px var(--sp-4); border-radius: 0; background: none; color: var(--text);
+  font: 800 var(--fs-body)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+/* La forma della targhetta (taglio obliquo a destra) sta in un fondo a parte: così l'icona di chi esce può uscirne */
+.card .tag::after { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--tag-bg); clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
 .card .tag strong { font: inherit; }
 .card .tag strong.worse { color: var(--bad); }
 .card .tag strong.same { color: var(--muted); }
@@ -513,7 +515,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Il #1: targhetta azzurro scuro con la cifra ciano. Il magenta resta al suo Aggiungi al team, l'azione migliore */
 .card.first .tag { --tag-bg: var(--accent-soft); color: var(--accent-ink); }
 /* Preferito: ♥ davanti al numero e bordo di 2px nel colore dei Preferiti (anche sul lato obliquo), sopra la cornice */
-.card .tag.fav { z-index: 4; background: var(--accent); }
+.card .tag.fav { z-index: 4; }
+.card .tag.fav::after { background: var(--accent); }
 .card .tag.fav::before { content: ''; position: absolute; inset: 2px; z-index: -1; background: var(--tag-bg); clip-path: polygon(0 0, calc(100% - 0.85px) 0, calc(100% - 6.4px) 100%, 0 100%); }
 .fav-heart { display: inline-flex; color: var(--accent); }
 .fav-heart .icon { width: 12px; height: 12px; fill: currentColor; }
@@ -525,7 +528,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .card .tag .out > .icon { width: 13px; height: 13px; vertical-align: 0; opacity: 0.72; }
 /* L'icona di chi esce a grandezza vera (40×30, la pixel art rimpicciolita sbava e non si riconosce): il riquadro di 28×22
    taglia solo il bordo vuoto dell'icona */
-.card .tag .out-mon { position: relative; flex: none; width: 28px; height: 22px; margin: -4px 0; overflow: hidden; }
+.card .tag .out-mon { position: relative; flex: none; width: 28px; height: 22px; margin: -4px 0; }
+/* In Sostituisci la targhetta sale sopra la cornice e i motivi: l'icona di chi esce può uscire dal suo riquadro, ma
+   resta sotto lo sprite che si anima (quello scelto, z-index 4) */
+.card.swap .tag:not(.fav) { z-index: 3; }
 .card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -56%); image-rendering: pixelated; }
 /* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: var(--sp-2); }

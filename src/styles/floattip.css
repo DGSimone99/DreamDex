@@ -159,6 +159,12 @@
 /* La fascia: lo sprite vero, grande come nel tooltip, che esce un po' dal bordo alto */
 .detail-hero .detail-mon { align-self: end; }
 .detail-hero .detail-mon .sprite { display: block; width: 96px; height: 96px; margin: -22px 0 -14px -8px; }
+/* Il candidato aperto si muove (lo sprite animato, sulla stessa base di quello fermo; fermo con riduci animazioni) e sta
+   sopra a tutto nella fascia; chi esce in Sostituisci può uscire dal suo spazio, ma sotto lo sprite animato */
+.detail-hero .detail-mon { z-index: 3; }
+.detail-hero .detail-out { z-index: 2; }
+.detail-hero .detail-mon .sprite-ani { position: absolute; left: calc(50% - 4px); bottom: -14px; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 96px); translate: -50% 0; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45)); }
+.detail.compact .detail-hero .detail-mon .sprite-ani { left: calc(50% - 3px); bottom: -10px; height: calc(var(--ani-h, 96) / 96 * 72px); }
 aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
 aside.detail.compact .detail-hero.mcard-head:has(.detail-out) { grid-template-columns: 64px minmax(0, 1fr) auto auto; }
 .detail.compact .detail-hero .detail-mon .sprite { width: 72px; height: 72px; margin: -14px 0 -10px -6px; }
