@@ -44,8 +44,7 @@ import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
-import { SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
-import { SHEET_QUERY } from './ui/useAnchoredPop';
+import { AUTO_BAND_QUERY, SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
 import { AutoBand } from './ui/AutoBand';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -172,14 +171,15 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto il team non si riduce e non si riapre a mano: aperto sugli schermi normali (l'editor ha la sua
   // altezza giusta), compresso su quelli bassi (se no l'editor non ci sta); chiuso l'editor torna la scelta salvata
   const editingOpen = editingIndex !== null;
-  // Telefono: niente tasto, il team si riduce scorrendo la pagina e torna grande in cima (useAutoCollapse)
-  const phone = useMediaQuery(SHEET_QUERY);
+  // Telefono e tablet piccolo: niente tasto, il team si riduce scorrendo la pagina e torna grande in cima (useAutoCollapse)
   const bandControl = useRef<(() => void) | null>(null);
   // Fuori dal telefono; sul telefono decide AutoBand (le sezioni lo vedono sempre grande: lì la pagina scorre)
   // Tablet in orizzontale: il team è la colonna a sinistra, sempre intera (niente fascia da ridurre)
   const tabletSide = useMediaQuery(TABLET_SIDE_QUERY);
+  // Team che si riduce da solo: telefono e tablet piccolo in verticale (fino a 767 px), non col team in colonna
+  const autoBand = useMediaQuery(AUTO_BAND_QUERY) && !tabletSide;
   const collapsed = tabletSide ? false : editingOpen ? short : savedCollapsed;
-  const sectionsCollapsed = phone ? false : collapsed;
+  const sectionsCollapsed = autoBand ? false : collapsed;
   const toggleCollapsed = () => {
     if (editingOpen) return;
     setCollapsed(c => {
@@ -453,7 +453,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <p>{t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}</p>
         </div>
       )}
-      <AutoBand phone={phone} collapsed={collapsed} control={bandControl}>{collapsed => (<>
+      <AutoBand phone={autoBand} collapsed={collapsed} control={bandControl}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
           grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
           io={<ShowdownPanel team={team} format={format} choice={choice} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
@@ -468,7 +468,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
           incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { navTo('analysis'); setAnalysisView(area); }} />
         {/* Niente freccia mentre l'editor è aperto: lì il team ha una posizione fissa */}
-        {!editingOpen && !phone && !tabletSide && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
+        {!editingOpen && !autoBand && !tabletSide && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />
         </button>}
