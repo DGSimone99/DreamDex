@@ -379,7 +379,13 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Barra stretta (tablet intorno ai 780 px): prima va via "al posto di:" accanto a Sostituisci, poi, se la casella del
    tipo di team resta stretta, la sua etichetta (resta la scelta; il nome intero è nell'etichetta accessibile) */
 .toolbar { container: toolbar / inline-size; }
-@container toolbar (max-width: 560px) { .target-toggle .target-prefix { display: none; } }
+/* Barra stretta (telefono): «al posto di» piccolo sopra, chi esce sotto (come «Tipo di team»), invece di sparire */
+@container toolbar (max-width: 560px) {
+  .toolbar .mode-switch > .segmented .target-toggle { display: grid; grid-template-columns: auto auto; align-content: center; justify-content: center; gap: 3px var(--sp-2); padding: 0 var(--sp-5); }
+  .target-toggle .target-prefix { grid-column: 1 / -1; margin: 0; text-align: center; font: 700 10px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+  .target-toggle .target-prefix::after { content: none; }
+  .target-toggle .chevron { align-self: center; }
+}
 
 .toolbar .team-type { container: ttbox / inline-size; }
 @container ttbox (max-width: 200px) { .tt-label { display: none; } }
@@ -638,17 +644,16 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 @keyframes card-skel-light { to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .card-skel::after { animation: none; display: none; } }
 
-/* Azioni del dettaglio su una riga sola (critique 2026-11-21): nel dettaglio stretto «Copia set» e «Apri su Smogon»
-   restano icone (il nome nel fumetto e per i lettori di schermo), «Aggiungi al team» intero, mai su due righe */
-.detail-actions { container: dactions / inline-size; }
+/* Azioni del dettaglio su una riga sola, «Aggiungi al team» intero, mai su due righe. «Copia set» e «Apri su Smogon»
+   secondo lo spazio misurato (SuggestionDetail): coi nomi interi, coi nomi brevi «Copia» e «Smogon» (.short), o solo
+   icone (.tight, il nome nel fumetto e per i lettori di schermo) */
 .detail-actions > * { white-space: nowrap; }
 .detail-copy .icon { width: 15px; height: 15px; }
-@container dactions (max-width: 459px) {
-  .detail-actions .detail-copy, .detail-actions .smogon-link { padding-inline: var(--sp-5); }
-  .detail-actions :is(.detail-copy, .smogon-link) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-}
-/* Quando non basta lo spazio misurato (SuggestionDetail: «Metti al posto di …» lungo) vale lo stesso; e se il pulsante
-   principale non sta ancora, cede lui coi puntini invece di uscire dal dettaglio */
+.detail-actions .lbl-short { display: none; }
+.detail-actions.short .lbl-full { display: none; }
+.detail-actions.short .lbl-short { display: inline; }
+.detail-actions.short :is(.detail-copy, .smogon-link) { padding-inline: var(--sp-6); }
+/* Solo icone; e se il pulsante principale non sta ancora, cede lui coi puntini invece di uscire dal dettaglio */
 .detail-actions.tight .detail-copy, .detail-actions.tight .smogon-link { padding-inline: var(--sp-5); }
 .detail-actions.tight :is(.detail-copy, .smogon-link) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .detail-actions.tight > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

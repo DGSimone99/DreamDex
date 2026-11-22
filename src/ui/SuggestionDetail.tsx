@@ -168,7 +168,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const bodyRef = useRef<HTMLDivElement>(null);
   // Azioni su una riga: se «Metti al posto di …» (nome lungo, inglese) non lascia posto, Copia set e Smogon restano icone
   const actionsRef = useRef<HTMLDivElement>(null);
-  const roomyActions = useFitCount(actionsRef, 1, `${lang}|${actionLabel}`, undefined, true) === 1;
+  // Copia set e Smogon: coi nomi interi se c'è posto (2), coi nomi brevi "Copia" / "Smogon" (1), sennò solo icone (0)
+  const actionsFit = useFitCount(actionsRef, 2, `${lang}|${actionLabel}`, undefined, true);
   const asideRef = useRef<HTMLElement>(null);
   const [low, setLow] = useState(false);
   useEffect(() => {
@@ -338,13 +339,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         </div>
       </div>
 
-      <div ref={actionsRef} className={roomyActions ? 'detail-actions' : 'detail-actions tight'}>
+      <div ref={actionsRef} className={actionsFit === 2 ? 'detail-actions' : actionsFit === 1 ? 'detail-actions short' : 'detail-actions tight'}>
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
-        {/* Nel dettaglio stretto (tablet, mezzo schermo) resta l'icona: il nome per i lettori di schermo e nel fumetto */}
-        <button type="button" className="detail-copy" onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
-          <Icon name="copy" /> <span className="btn-label">{tr('suggest.copySet')}</span>
+        {/* Nome intero, nome breve o solo l'icona, secondo lo spazio; il nome intero per i lettori di schermo e nel fumetto */}
+        <button type="button" className="detail-copy" aria-label={tr('suggest.copySet')} onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
+          <Icon name="copy" /> <span className="btn-label" aria-hidden="true"><span className="lbl-full">{tr('suggest.copySet')}</span><span className="lbl-short">{tr('suggest.copySetShort')}</span></span>
         </button>
-        <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} />
+        <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} short />
       </div>
     </aside>
   );
