@@ -541,7 +541,7 @@
    coi tipi parati sui lati: le tre righe sono nel tooltip del core e, a team ridotto, tornano */
 .dash.tight .sum-syn.trio { padding-block: 1px; }
 .dash.tight .sum-cover { gap: var(--sp-1); }
-@container (max-height: 84px) { .dash.tight .sum-tri-row .sum-cover { display: none; } }
+@container (max-height: 112px) { .dash.tight .sum-tri-row .sum-cover { display: none; } }
 /* Portatili bassissimi (1280×620): il core a triangolo più piccolo e le righe dei tipi parati più fitte */
 @media (max-height: 639px) {
   .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 84px; }
@@ -994,3 +994,17 @@
 .dash.rich .sum-more-below.tipped > span, .dash.rich .sum-sec-more.tipped .sum-more { font-size: var(--fs-section); }
 .sum-sec-more.tipped { cursor: help; }
 .sum-more-below.tipped:hover > span, .sum-sec-more.tipped:hover .sum-more { background: color-mix(in srgb, var(--good) 28%, transparent); }
+
+/* Trappole: le mosse su una riga sola (accanto al nome), il nome della mossa coi puntini se non c'è posto */
+.sum-line .sum-tags { flex-wrap: nowrap; overflow: hidden; }
+.sum-line .sum-tags .mvp { min-width: 0; flex: 0 1 auto; }
+.sum-line .sum-tags .mvp-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Meteo e Trappole cedono altezza prima delle Sinergie (che tengono la loro altezza minima) */
+.sum-sec:not(.sum-syn-sec) { min-height: 0; }
+/* Nel Riassunto la pillola della trappola senza la coda (categoria e potenza): il nome intero ci sta */
+.sum-line .sum-tags .mvp-tail { display: none; }
+/* Il pulsante "+N" in fondo sta sotto le Sinergie, non sopra: la card lascia tutta la sua altezza */
+.dash-summary:has(.sum-more-below) { padding-bottom: 36px; }
+.dash-summary .sum-more-below { height: 34px; }
+/* Cruscotto basso: una fila sola di pillole, il resto nel "+N", così i core restano leggibili */
+.dash.tight .sum-packed .sum-lines { max-height: 44px; }

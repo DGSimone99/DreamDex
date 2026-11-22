@@ -5,7 +5,6 @@ import type { TeamLink } from '../../engine/teamLinks';
 import type { ConditionRow, HazardRow, TeamSummary } from '../../engine/teamSummary';
 import type { TeamSet } from '../../engine/sets';
 import { battleName, battleSpecies } from '../../engine/dex';
-import { MemberCard } from '../MemberCard';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
@@ -23,6 +22,7 @@ import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 import { MoreBelow } from '../MoreBelow';
 import { MovePill } from '../MovePill';
+import { hint } from '../MoveTip';
 import { typeIconUrl } from '../typeIcons';
 
 /**
@@ -341,8 +341,6 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
   const synergyView = useSynergyView();
   const condTip = useFloatAnchor<ConditionRow>();
   const coreTip = useFloatAnchor<Core>();
-  const monTip = useFloatAnchor<{ name: string; side: 'atk' | 'def'; score?: number }>();
-  const setOf = (name: string) => team.find(set => battleName(set) === name);
   // Dove porta il clic degli elementi col tooltip (il piede TipGo), anche ai lettori di schermo: una descrizione per destinazione
   const goIds = { strength: useId(), defense: useId(), roles: useId(), bonusMalus: useId() };
   const places = { strength: t('area.strength'), defense: t('area.defense'), roles: t('area.roles'), bonusMalus: t('analysis.view.bonusMalus') };
@@ -361,28 +359,13 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
   const small = rich ? 44 : 34;
   const mini = rich ? 38 : 28;
 
-  // Chi rende il team tale: prima gli attaccanti, poi i muri, in una riga; chi non sta va nel "+N"
-  const makers = [
-    ...attackers.map(name => ({ name, side: 'atk' as const, score: offenseOf[name] })),
-    ...walls.map(name => ({ name, side: 'def' as const, score: defenseOf[name] })),
-  ];
-  const crew = useFit<HTMLDivElement>(keyOf(makers.map(m => `${m.side}:${m.name}`)), makers.length, { more: true });
-  const shown = makers.slice(0, Math.min(crew.shown, makers.length));
-  const hiddenMakers = makers.length - shown.length;
-  const maker = (m: (typeof makers)[number], i: number, first = false) => (
-    <span key={`${m.name}#${i}`} data-fit className={`sum-maker ${m.side}${first ? ' first' : ''}`}>
-      {/* Al passaggio (o col fuoco) la carta del Pokémon nel tooltip DreamDex, al posto del tooltip del browser */}
-      <button type="button" className="sum-mon" onClick={() => onView(m.side === 'atk' ? 'strength' : 'defense')}
-        onMouseEnter={e => monTip.open(m, e.currentTarget)} onMouseLeave={monTip.close} onFocus={e => monTip.open(m, e.currentTarget)} onBlur={monTip.close}
-        aria-label={m.score === undefined ? m.name : t(m.side === 'atk' ? 'sum.offenseOf' : 'sum.defenseOf', { name: m.name, n: m.score })}
-        aria-describedby={goIds[m.side === 'atk' ? 'strength' : 'defense']}>
-        <Plinth name={m.name} size={big} />
-        {m.score !== undefined && <span className="sum-score" aria-hidden="true"><Icon name={m.side === 'atk' ? 'sword' : 'shield'} />{m.score}</span>}
-      </button>
-    </span>
-  );
-  const shownAtk = shown.filter(m => m.side === 'atk');
-  const shownDef = shown.filter(m => m.side === 'def');
+  // Chi rende il team tale (attaccanti con l'Offesa, muri con la Difesa): niente riga di sprite (ripeteva la squadra in alto),
+  // sta nel suggerimento sul nome del tipo di team
+  const who = (names: string[], of: Record<string, number>) => names.map(name => (of[name] === undefined ? name : `${name} ${of[name]}`)).join(', ');
+  const makersHint = [
+    attackers.length > 0 ? `${t('sum.attack')}: ${who(attackers, offenseOf)}` : '',
+    walls.length > 0 ? `${t('sum.hold')}: ${who(walls, defenseOf)}` : '',
+  ].filter(Boolean).join(' · ');
   // Tante condizioni (3 o più): pillole su due colonne con chi le porta, l'etichetta e "+N" per chi ne approfitta (i nomi
   // nel tooltip), e le trappole nella stessa sezione, così restano spazio e righe per le Sinergie
   const packed = conditions.length >= 3;
@@ -434,14 +417,14 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
       <div className="sum-body" ref={card}>
-        {(members >= 2 || makers.length > 0) && (
+        {members >= 2 && (
           <div className={`sum-hero${grade ? ` grade-${grade}` : ''}`}>
             {members >= 2 && (
               <div className="sum-type">
                 {archetype
                   ? (
                     <span className="sum-arch-box">
-                      <strong className="sum-arch" title={t(`archetype.${archetype}.note`)}>{t(`archetype.${archetype}`)}</strong>
+                      <strong className="sum-arch" {...hint(makersHint ? `${t(`archetype.${archetype}.note`)}\n${makersHint}` : t(`archetype.${archetype}.note`))}>{t(`archetype.${archetype}`)}</strong>
                       {/* Sul confine col tipo accanto: una riga piccola sotto il nome, che non lo accorcia */}
                     </span>
                   )
@@ -465,14 +448,6 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
                   )))}
                 {/* In doppio c'è un tipo solo: la guida ai tipi di team non serve */}
                 {summary.typeRule !== 'oneType' && <TeamTypeHelp />}
-              </div>
-            )}
-            {makers.length > 0 && (
-              <div ref={crew.ref} className="sum-crew sum-fit">
-                {shownAtk.length > 0 && <span role="group" aria-label={t('sum.attack')} className="sum-side">{shownAtk.map((m, i) => maker(m, i))}</span>}
-                {/* Una linea sottile separa i muri dagli attaccanti */}
-                {shownDef.length > 0 && <span role="group" aria-label={t('sum.hold')} className="sum-side">{shownDef.map((m, i) => maker(m, i, i === 0 && shownAtk.length > 0))}</span>}
-                {hiddenMakers > 0 && <span data-fit-more className="sum-crew-more"><More n={hiddenMakers} label={count('sum.moreMons', hiddenMakers)} /></span>}
               </div>
             )}
           </div>
@@ -520,12 +495,6 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
       {bmRoom && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
-      {monTip.anchor && setOf(monTip.anchor.key.name) && (
-        <FloatTip rect={monTip.anchor.rect} tone={typeColor(battleSpecies(setOf(monTip.anchor.key.name)!)?.types[0] ?? '')} className="member">
-          <MemberCard set={setOf(monTip.anchor.key.name)!} />
-          <TipGo place={places[monTip.anchor.key.side === 'atk' ? 'strength' : 'defense']} />
-        </FloatTip>
-      )}
       {coreTip.anchor && (
         <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
           <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />
