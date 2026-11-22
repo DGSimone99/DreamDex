@@ -1,8 +1,12 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { cardsLayout, cardsReasons } from './listLayout';
+import { useMediaQuery } from './useMediaQuery';
 
-/** Candidati per pagina senza misura (jsdom, telefono e tablet): 6 (3 × 2). */
+/** Candidati per pagina senza misura (jsdom, telefono e tablet stretto): 6 (3 × 2 o 2 × 3). */
 export const PAGE = 6;
+/** Tablet da 760 px: la lista a tutta larghezza ha quattro carte per riga, la pagina due file piene. */
+const TABLET_PAGE = 8;
+const TABLET_WIDE = '(min-width: 760px) and (max-width: 1099px)';
 
 /** Solo con lista e scheda affiancate la lista ha un'altezza sua: sotto, crescerebbe col contenuto. */
 const WIDE = '(min-width: 1100px)';
@@ -32,6 +36,7 @@ const wide = () => typeof matchMedia !== 'function' || matchMedia(WIDE).matches;
  */
 export function usePerPage(ref: RefObject<HTMLElement | null>, pickerRef: RefObject<HTMLElement | null>, teamCollapsed: boolean): PerPage {
   const [measure, setMeasure] = useState<Measure | null>(null);
+  const tabletWide = useMediaQuery(TABLET_WIDE);
   // La lista compare e sparisce (lista vuota, team pieno): si osserva l'elemento del momento
   const observed = useRef<{ el: HTMLElement; observer: ResizeObserver } | null>(null);
   useLayoutEffect(() => {
@@ -56,8 +61,8 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, pickerRef: RefObj
 
   return useMemo<PerPage>(() => {
     // Senza misura (jsdom, layout stretto) l'altezza della carta resta quella del CSS
-    if (!measure) return { perPage: PAGE, columns: 3, reasons: cardsReasons(teamCollapsed) };
+    if (!measure) return { perPage: tabletWide ? TABLET_PAGE : PAGE, columns: 3, reasons: cardsReasons(teamCollapsed) };
     const { perPage, columns, tileHeight, reasons, listWidth } = cardsLayout(measure.height, teamCollapsed, measure.width);
     return { perPage, columns, tileHeight, reasons, listWidth };
-  }, [measure, teamCollapsed]);
+  }, [measure, teamCollapsed, tabletWide]);
 }

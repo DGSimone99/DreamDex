@@ -1523,6 +1523,7 @@ export const en = {
   'suggest.replaceTitle': "Replace {species}",
   'suggest.search': "Add Pokémon",
   'suggest.searchPlaceholder': "Search a Pokémon… ( / )",
+  'suggest.searchPlaceholderTouch': "Search a Pokémon…",
   'suggest.enter': "Enter",
   'suggest.enterAdds': "adds",
   'suggest.enterReplaces': "replaces with",

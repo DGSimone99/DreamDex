@@ -316,9 +316,10 @@
   .band:not(.collapsed) .grade-badge .grade-areas { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
 }
 
-/* ── Scheda del candidato sul telefono (e sul tablet stretto): sale sopra la lista, Indietro in alto, l'azione in fondo ── */
-.sheet-back { display: none; }
-@media (max-width: 759px) {
+/* ── Scheda del candidato sul telefono e sul tablet: si apre toccando la carta, Indietro in alto, l'azione in fondo.
+      Telefono: sale a tutto schermo. Tablet (da 760 px): entra da destra larga 620 px, la lista resta sotto il velo ── */
+.sheet-back, .sheet-scrim { display: none; }
+@media (max-width: 1099px) {
   .picker.has-detail > .detail { display: none; }
   html:has(.picker.sheet-open) { overflow: hidden; }
   .picker.sheet-open > .detail {
@@ -366,7 +367,15 @@
     border-top: 1px solid var(--line-soft);
   }
 }
-@media (max-width: 759px) {
+@media (min-width: 760px) and (max-width: 1099px) {
+  .picker.sheet-open > .detail { left: auto; width: min(620px, 100vw); box-shadow: -18px 0 44px rgb(0 0 0 / 0.5); animation: sheet-left 0.24s var(--ease); }
+  .picker.sheet-open > .sheet-back { left: auto; width: min(620px, 100vw); animation: sheet-left 0.24s var(--ease); }
+  .picker.sheet-open > .sheet-scrim { position: fixed; inset: 0; z-index: 54; display: block; background: rgb(6 7 12 / 0.6); animation: scrim-in 0.2s ease-out; }
+}
+@keyframes sheet-left { from { transform: translateX(100%); } }
+@keyframes scrim-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .picker.sheet-open > :is(.detail, .sheet-back, .sheet-scrim) { animation: none; } }
+@media (max-width: 1099px) {
   /* Scheda: il set su una colonna, l'azione principale larga e le altre accanto */
   .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-4); }
@@ -398,16 +407,21 @@
 }
 
 
-/* Tablet largo: lista e scheda affiancate; la scheda resta in vista mentre la pagina scorre */
-@media (min-width: 760px) and (max-width: 1099px) {
-  .picker.has-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: var(--sp-7); align-items: start; }
-  .picker.has-detail > .detail { position: sticky; top: calc(var(--top-h) + 10px); max-height: calc(100dvh - var(--top-h) - var(--bottom-h) - var(--safe-b) - 20px); overflow: auto; overscroll-behavior: contain; }
-  .suggestions.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
+/* Tablet: la lista a tutta larghezza (la scheda si apre toccando la carta), tre carte per riga sul tablet stretto e
+   quattro da 760 px; la barra degli strumenti su una riga sola (senza "al posto di:", tipo di team più stretto) */
 @media (min-width: 600px) and (max-width: 1099px) {
-  .toolbar .mode-switch { flex: none; }
-  .toolbar .search { flex: 1 1 320px; }
-  .toolbar .team-type { flex: none; width: 232px; }
+  .suggestions.cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Due righe ordinate: sopra la ricerca larga e Filtri, sotto Aggiungi / Sostituisci a sinistra e il tipo di team a destra */
+  .toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "search search filters" "mode type type"; gap: var(--sp-5); }
+  .toolbar .search { grid-area: search; flex-wrap: nowrap; }
+  .toolbar .search .search-field { flex: 1 1 auto; }
+  .toolbar .search-field, .toolbar .search-field input { min-width: 0; width: 100%; }
+  .toolbar .filters { grid-area: filters; }
+  .toolbar .mode-switch { grid-area: mode; }
+  .toolbar .team-type { grid-area: type; justify-self: end; width: 100%; max-width: 232px; min-width: 0; }
+}
+@media (min-width: 760px) and (max-width: 1099px) {
+  .suggestions.cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 /* Telefono girato: la barra in alto scorre via con la pagina, resta più spazio */
 @media (max-width: 1099px) and (max-height: 500px) {
