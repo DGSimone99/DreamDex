@@ -680,6 +680,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
 .reason .sym-more { flex: none; margin-left: var(--sp-2); font: 500 var(--fs-label)/1 var(--ui); color: var(--faint); }
+/* I ruoli portati: quelli interi che entrano, poi "+N" (RoleRow); i puntini solo se nemmeno il primo entra */
+.reason .role-row { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; overflow: hidden; vertical-align: top; }
+.reason .role-names { flex: none; white-space: nowrap; }
+.reason .role-names.last { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 /* Esclusiva di una versione del gioco (Solo Scarlatto / Solo Violetto): pastiglia piccola nel colore della versione */
 .version-mark { display: inline-block; padding: 1px var(--sp-3); border-radius: 999px; font-size: var(--fs-label); line-height: 1.4; font-weight: 600; white-space: nowrap; }

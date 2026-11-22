@@ -351,8 +351,26 @@ function SymbolView({ symbol }: { symbol: ReasonSymbol }) {
   }
 }
 
+/**
+ * I ruoli che porta, su una riga: quelli che entrano interi, gli altri "+N" (mai "Sweeper Speciale, Wa…"); la frase
+ * intera per gli screen reader e nel tooltip della carta.
+ */
+function RoleRow({ roles, text }: { roles: readonly string[]; text: string }) {
+  const { row, limit } = useFitLimit(roles.length, roles.join('|'));
+  return (
+    <>
+      <span className="visually-hidden">{text}</span>
+      <span className="role-row" ref={row} aria-hidden="true">
+        <span className={limit === 1 ? 'role-names last' : 'role-names'}>{roles.slice(0, limit).join(', ')}</span>
+        <More total={roles.length} shown={limit} />
+      </span>
+    </>
+  );
+}
+
 /** Un motivo: a segni (con la frase intera nascosta e nel tooltip) o la forma breve a parole. */
 function ReasonBody({ bring }: { bring: Bring }) {
+  if (!bring.symbol && bring.roles && bring.roles.length > 1) return <RoleRow roles={bring.roles} text={bring.short} />;
   if (!bring.symbol) return <Typed text={bring.short} />;
   // Le due forme: le parole sulle carte larghe (schermi grandi), i segni sulle altre; il CSS ne mostra una sola,
   // per tutta la lista (le carte e le pillole di una lista hanno la stessa larghezza)
@@ -373,7 +391,7 @@ export function Reasons({ reasons }: { reasons: ReasonSummary }) {
   return (
     <small>
       {reasons.items.map((bring, i) => {
-        const title = bring.symbol ? bring.text : undefined;
+        const title = bring.symbol || (bring.roles && bring.roles.length > 1) ? bring.text : undefined;
         const cls = `reason ${reasons.pros ? 'gain' : 'plain'}${bring.symbol ? ' has-sym' : ''}`;
         return reasons.pros
           ? <span key={i} className={cls} title={title}><b aria-hidden="true">+</b><span className="visually-hidden">+</span><ReasonBody bring={bring} /></span>
