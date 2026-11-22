@@ -442,12 +442,32 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 }
 
 /* Tipo di team: tendina accanto a Filtri, alta come la barra */
-.toolbar .team-type { flex: none; position: relative; display: flex; align-items: center; height: 38px; margin: 0; gap: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--field); }
-.toolbar .team-type:hover, .toolbar .team-type:focus-within { border-color: var(--accent); }
-.toolbar .team-type > span { padding-left: var(--sp-6); font: 600 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+/* Tipo di team: una casella come le altre della barra (nome piccolo e scelta) che apre la sua tendina: i tipi in ordine,
+   ognuno con la spiegazione breve, la spunta su quello scelto */
+.toolbar .team-type { flex: none; position: relative; width: 232px; height: 38px; }
+.tt-trigger { display: flex; align-items: center; gap: var(--sp-4); width: 100%; height: 100%; padding: 0 var(--sp-5) 0 var(--sp-6);
+  border: 1px solid var(--line); border-radius: 4px; background: var(--field); text-align: left; color: var(--text); }
+.tt-trigger:hover, .tt-trigger.open { border-color: var(--accent); }
+.tt-label { flex: none; font: 600 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+.tt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-section); font-weight: 600; }
+.tt-chev { flex: none; width: 7px; height: 7px; margin: -3px 0 0 var(--sp-1); border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.tt-trigger.open .tt-chev { margin-top: 3px; transform: rotate(-135deg); }
+.tt-menu {
+  position: absolute; z-index: 25; top: calc(100% + 6px); right: 0; width: 330px;
+  display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-4);
+  background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.tt-option { display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-6); width: 100%; padding: var(--sp-3) var(--sp-5);
+  border: 1px solid transparent; border-radius: var(--alt-r-sm); background: none; text-align: left; color: var(--text); }
+.tt-option:hover, .tt-option:focus-visible { background: var(--raised); border-color: var(--line); }
+.tt-option[aria-selected='true'] { background: var(--accent-soft); border-color: var(--accent); }
+.tt-option > .icon { flex: none; width: 16px; height: 16px; margin-left: auto; color: var(--accent-ink); }
+.tt-option-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tt-option-text strong { font: 600 var(--fs-section)/1.2 var(--display); }
+.tt-option-text small { font-size: var(--fs-caption); line-height: 1.3; color: var(--muted); }
+.tt-option[aria-selected='true'] small { color: color-mix(in srgb, var(--accent-ink) 55%, var(--text)); }
 /* Larghezza fissa: cambiare tipo non sposta la ricerca (i nomi lunghi finiscono coi puntini) */
 .toolbar .team-type { width: 232px; }
-.toolbar .team-type select { flex: 1; min-width: 0; height: 100%; padding: 0 30px 0 var(--sp-4); border: 0; background-color: transparent; font-size: var(--fs-section); text-overflow: ellipsis; }
 
 /* Filtri attivi come chip sotto la barra; la × toglie quel filtro */
 .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-top: -2px; }

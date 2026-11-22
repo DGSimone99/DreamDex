@@ -1668,6 +1668,7 @@ export const en = {
   'suggest.listHead': "Candidates ({n})",
   'suggest.anyType': "Any",
   'suggest.anyTypeNote': "Limit suggestions to Pokémon that match this type",
+  'suggest.anyTypeRow': "No limit: every candidate",
   'suggest.typeEmptyAdd': "No candidate helps build a {type} team: try Any or another type.",
   'suggest.typeEmpty': "None of the best swaps makes the team {type}: try Any or another type.",
   'suggest.targetPrefix': "replacing",

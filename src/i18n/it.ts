@@ -1671,6 +1671,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.listHead': "Candidati ({n})",
   'suggest.anyType': "Qualunque",
   'suggest.anyTypeNote': "Mostra solo i Pokémon adatti a questo tipo",
+  'suggest.anyTypeRow': "Nessun limite: tutti i candidati",
   'suggest.typeEmptyAdd': "Nessun candidato aiuta a costruire un team {type}: prova Qualunque o un altro tipo.",
   'suggest.typeEmpty': "Nessuno dei cambi migliori rende il team {type}: prova Qualunque o un altro tipo.",
   'suggest.targetPrefix': "al posto di",

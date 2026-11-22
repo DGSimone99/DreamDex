@@ -274,7 +274,7 @@ describe("doppio: nell'app", () => {
     expect(band).toHaveTextContent('Doppio');
     expect(band).not.toHaveTextContent('Incompleto');
     expect(screen.queryByRole('button', { name: 'Tipi di team: come si riconoscono' })).toBeNull();
-    expect(screen.queryByLabelText('Tipo di team')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Tipo di team:/ })).toBeNull();
   });
 
   /** I ruoli del membro i nel riquadro Ruoli del suo editor. */
@@ -308,7 +308,7 @@ describe("doppio: nell'app", () => {
     const band = document.querySelector<HTMLElement>('.band')!;
     expect(band).toHaveTextContent('Incompleto');
     expect(band).not.toHaveTextContent('Doppio');
-    expect(screen.getByLabelText('Tipo di team')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Tipo di team:/ })).toBeInTheDocument();
   });
 });
 

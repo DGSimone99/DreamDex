@@ -1517,3 +1517,12 @@ label.improve-col-head { cursor: pointer; }
   .band.collapsed .slot .name-line .name { display: block; max-width: 100%; font-size: 10px; line-height: 12px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: none; }
   .band.collapsed .grade-badge .grade-pop-toggle { height: 62px; }
 }
+
+/* Tipo di team: la tendina si apre dal bordo sinistro della casella; sul telefono sale dal basso a tutta larghezza */
+@media (max-width: 1099px) {
+  .tt-menu { left: 0; right: auto; }
+  .tt-option { min-height: 52px; }
+}
+@media (max-width: 599px) {
+  .tt-menu { position: fixed; z-index: 61; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: calc(var(--sp-6) + var(--safe-b, 0px)); width: auto; }
+}
