@@ -396,9 +396,12 @@
 .dash-role.more { cursor: help; }
 .dash-role.more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Stretto: etichette e chip più fitti */
-.dash.tight .dash-role-band { padding-top: var(--sp-2); }
-.dash.tight .dash-level-name { padding-block: 2px; }
-.dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0; }
+/* Stretto: fasce fitte (titolo basso, niente aria sotto i ruoli), così le due fasce col loro primo ruolo stanno anche
+   nella card più bassa (1280×620 col team aperto) */
+.dash.tight .dash-role-band { padding-top: 0; }
+.dash.tight .dash-level-name { padding-block: 1px; line-height: 1.15; }
+.dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0 2px; }
+.dash.tight .dash-role-tag { --rt-h: 20px; }
 
 /*
  * Ruoli, ampio: tabella ruoli × membri con tutti i livelli. In testa gli sprite dei membri, una riga per ruolo con un

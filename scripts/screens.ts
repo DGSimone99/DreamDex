@@ -1335,6 +1335,21 @@ for (const [w, h] of sizes) {
       const cut = cards.filter(c => c.getBoundingClientRect().bottom - bottom > 1).length;
       const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
         .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
+      // Pezzi visibili tagliati dal fondo del contenitore che li nasconde (la card o una sua parte con overflow non
+      // visibile: overflow e cut non lo vedono), oltre 1px
+      const inCut = cards.flatMap(c => {
+        return [...c.querySelectorAll<HTMLElement>('.dash-role-tag, .more-n, .sum-line, .cov-tile, .dash-cell, .dash-lane-sprite, .sum-bm')]
+          .filter(e => {
+            const r = e.getBoundingClientRect();
+            if (r.height <= 0) return false;
+            let clip = c.getBoundingClientRect().bottom;
+            for (let a = e.parentElement; a && a !== c.parentElement; a = a.parentElement) {
+              if (getComputedStyle(a).overflowY !== 'visible') clip = Math.min(clip, a.getBoundingClientRect().bottom);
+            }
+            return r.bottom - clip > 1;
+          })
+          .map(e => `${c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')?.slice(5)}:${e.className.split(' ')[0]}`);
+      });
       // Riassunto: nome del tipo, riga dell'eroe e righe delle sezioni tagliati in larghezza (anche in EN)
       // (la riga degli sprite si misura dai suoi figli: la luce del passaggio dell'ultimo sprite sborda apposta di 6px)
       const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length
@@ -1413,7 +1428,7 @@ for (const [w, h] of sizes) {
           const pr = document.querySelector<HTMLElement>('.area-head');
           const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} headH=${Math.round(pr.getBoundingClientRect().height)} chips=${document.querySelectorAll('.area-chips > li:not(.area-chips-more)').length}+${document.querySelector('.area-chips-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} chipsCut=${(() => { const c = pr.querySelector<HTMLElement>('.area-chips'); return c ? c.scrollWidth - c.clientWidth : '-'; })()} headX=${pr.scrollWidth - pr.clientWidth}` : '';
           return `${guide}${prAt}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
-        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
+        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} inCut=[${[...new Set(inCut)].join(',')}] overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
     // Coaching: righe che sbordano, nomi o pillole tagliati in larghezza, scorrimento orizzontale
