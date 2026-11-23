@@ -427,3 +427,18 @@
 .sus-stack .sus-net-wrap { width: 100%; }
 .def-frame .sus-stack tr.og-mon-row td.sus-val { text-align: right; }
 .sus-stack col.og-col-share { width: 84px; }
+
+/* Telefono: niente riquadro attorno alle tabelle dell'Analisi (bordo e fondo del pannello), le tabelle prendono quasi
+   tutta la larghezza dello schermo (8 px di margine) */
+@media (max-width: 599px) {
+  .area-view > .area-panel { border: 0; background: none; margin-inline: -6px; }
+  .area-view > .area-panel.ad-panel { padding-inline: 0; }
+}
+
+/* Generale e Recupero a righe: i membri a fasce alternate (chiara, scura) al posto del filo, così si distinguono; il
+   contenuto non tocca i bordi della fascia */
+.def-frame .og-stack-table tbody.og-stack-mon { border-top: 0; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(.og-stack-team):nth-of-type(odd) > tr > * { background: var(--raised); }
+.def-frame .og-stack-table tbody.og-stack-mon > tr > :first-child { padding-left: var(--sp-3); }
+.def-frame .og-stack-table tbody.og-stack-mon > tr > :last-child { padding-right: var(--sp-3); }
+.def-frame .og-stack-table tbody.og-stack-team { border-top: 1px solid var(--line); }
