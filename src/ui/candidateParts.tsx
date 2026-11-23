@@ -1,5 +1,5 @@
 // I pezzi comuni a ogni candidato della lista (Carte e Menu): voto o uso, segni, motivi, chi esce
-import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { Format } from '../engine/format';
 import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
@@ -134,10 +134,11 @@ export function reasonsOf(item: Item, n: number, usage: number | null, format: F
   const gain = item.teamGain;
   if (gain && gain.gain > 0) {
     const best = gain.areaGains?.[0];
-    if (best) return { pros: false, items: [plain(`${best.label} +${best.change}`)] };
+    // Il verso, come nel dettaglio ("Difesa sale"), mai un numero per area (le aree pesano diverso a seconda del team)
+    if (best) return { pros: false, items: [plain(t(lang, 'detail.area.up', { area: best.label }))] };
     // Poi i Ruoli e Bonus/Malus, separati come nel voto
-    if ((gain.roles ?? 0) > 0) return { pros: false, items: [plain(`${t(lang, 'area.roles')} +${gain.roles}`)] };
-    if ((gain.extras ?? 0) > 0) return { pros: false, items: [plain(`${t(lang, 'detail.extras')} +${gain.extras}`)] };
+    if ((gain.roles ?? 0) > 0) return { pros: false, items: [plain(t(lang, 'suggest.rolesUp'))] };
+    if ((gain.extras ?? 0) > 0) return { pros: false, items: [plain(t(lang, 'suggest.extrasUp'))] };
   }
   return { pros: false, items: [plain(t(lang, 'suggest.noDifference'))] };
 }
@@ -409,10 +410,36 @@ export function megaOf(forme: string): { letter: string } | null {
   return m ? { letter: m[1] ?? '' } : null;
 }
 
+/**
+ * Il nome di un membro del team nelle frasi (Metti al posto di X, Esce X): il soprannome, se c'è; per Mega e Primal la
+ * specie base, come la scrive la carta del team (la pietra la rende Mega, il nome resta "Garchomp"); sennò il nome intero.
+ */
+export function memberLabel(set: TeamSet): string {
+  if (set.name) return set.name;
+  const name = battleName(set);
+  const parts = formeParts(name);
+  return parts && megaOf(parts.forme) ? parts.base : name;
+}
+
+/**
+ * Il nome come sulle carte: la specie base e, accanto, la forma piccola (Zapdos GALAR) o il simbolo della Mega con la
+ * lettera; il nome com'è se non ha forma. Solo a vista (aria-hidden): il nome intero lo dice chi lo usa.
+ */
+export function FormeName({ species }: { species: string }) {
+  const parts = formeParts(species);
+  if (!parts) return <span aria-hidden="true">{species}</span>;
+  const mega = megaOf(parts.forme);
+  return (
+    <span className="pick-name" aria-hidden="true">
+      <b>{parts.base}</b>
+      {mega ? <span className="mega-mark"><MegaIcon />{mega.letter}</span> : <i className="pick-forme">{parts.forme}</i>}
+    </span>
+  );
+}
+
 /** Da tastiera come col mouse: Invio apre il dettaglio (il clic), Maiusc+Invio aggiunge o sostituisce (il doppio clic). */
 export function PickButton({ rank, species, selected, onSelect, onAction, describedBy }: { rank: number; species: string; selected: boolean; onSelect: () => void; onAction?: () => void; describedBy?: string }) {
   const parts = formeParts(species);
-  const mega = parts ? megaOf(parts.forme) : null;
   return (
     <button type="button" className="pick" aria-pressed={selected} {...hint(parts ? species : undefined)} onClick={e => { e.stopPropagation(); onSelect(); }}
       aria-keyshortcuts={onAction ? 'Shift+Enter' : undefined} aria-describedby={describedBy}
@@ -420,12 +447,7 @@ export function PickButton({ rank, species, selected, onSelect, onAction, descri
       {/* Il nome intero per lettori di schermo (e test); a vista la specie base e la forma accanto, piccola (Zapdos GALAR):
           due carte con lo stesso nome si distinguono. Mega e Primal hanno il loro simbolo (con X/Y quando servono) */}
       <strong className={parts ? 'visually-hidden' : undefined}><span className="visually-hidden">{rank}. </span>{species}</strong>
-      {parts && (
-        <span className="pick-name" aria-hidden="true">
-          <b>{parts.base}</b>
-          {mega ? <span className="mega-mark"><MegaIcon />{mega.letter}</span> : <i className="pick-forme">{parts.forme}</i>}
-        </span>
-      )}
+      {parts && <FormeName species={species} />}
     </button>
   );
 }
@@ -457,3 +479,45 @@ export const candidateHandlers = ({ onSelect, onAction }: Pick<CandidateProps, '
 /** Le classi di stato comuni: scelto nel dettaglio, scelto dalla ricerca, scambio. */
 export const stateClasses = ({ selected, picked, out }: Pick<CandidateProps, 'selected' | 'picked' | 'out'>) =>
   [selected && 'selected', picked && 'picked', out && 'swap'].filter(Boolean).join(' ');
+
+/**
+ * Legenda dei segni delle carte (spada, scudo, VS, catena, ⇄, +N, ♥): un "?" accanto a "Candidati" che la apre e chiude
+ * (clic, tocco, Invio; Esc o un tocco fuori la chiudono). Le carte dicono il perché coi segni: qui si impara cosa vogliono dire.
+ */
+export function SymbolLegend() {
+  const tr = useT();
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  const rows: { sign: ReactNode; text: string }[] = [
+    { sign: <b className="lg-plus">+9</b>, text: tr('legend.gain') },
+    { sign: <span className="sym-icon"><Icon name="sword" /></span>, text: tr('legend.sword') },
+    { sign: <span className="sym-icon"><Icon name="shield" /></span>, text: tr('legend.shield') },
+    { sign: <span className="sym-vs">VS</span>, text: tr('legend.vs') },
+    { sign: <span className="sym-icon"><Icon name="chain" /></span>, text: tr('legend.chain') },
+    { sign: <span className="lg-swap"><Icon name="swap" /></span>, text: tr('legend.swap') },
+    { sign: <span className="lg-heart"><Icon name="heart" /></span>, text: tr('legend.heart') },
+  ];
+  return (
+    <span className="sym-legend" ref={box}>
+      <button type="button" className="help-button" aria-label={tr('legend.open')} aria-expanded={open} aria-controls={id}
+        onClick={() => setOpen(o => !o)}><Icon name="help" /></button>
+      {open && (
+        <div id={id} className="sym-legend-pop" role="group" aria-label={tr('legend.title')}>
+          <p className="sym-legend-title">{tr('legend.title')}</p>
+          <ul>
+            {rows.map(row => <li key={row.text}><span className="lg-sign" aria-hidden="true">{row.sign}</span><span>{row.text}</span></li>)}
+          </ul>
+        </div>
+      )}
+    </span>
+  );
+}

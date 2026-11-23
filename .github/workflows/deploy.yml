@@ -1,7 +1,7 @@
-# Pubblicazione su Cloudflare Pages, con i dati appena scaricati:
-# - a ogni modifica su master;
-# - ogni lunedì (statistiche Smogon del mese, tier e ban di Showdown, nomi italiani);
-# - a mano dalla scheda Actions ("Run workflow").
+# Pubblicazione su Cloudflare Pages:
+# - a ogni modifica su master, coi dati dell'ultimo scaricamento (messi da parte);
+# - ogni lunedì coi dati appena scaricati (statistiche Smogon del mese, tier e ban di Showdown, nomi italiani);
+# - a mano dalla scheda Actions ("Run workflow"), anche qui coi dati appena scaricati.
 # Se un test fallisce o un dato non si scarica (--strict), non si pubblica niente: resta online la versione di prima.
 name: Pubblica
 
@@ -31,8 +31,29 @@ jobs:
       # I test controllano il codice e vanno prima dei dati: quelli tarati sui dati di un mese (es. la tabella dei
       # ruoli) senza dati si saltano, altrimenti ogni mese nuovo bloccherebbe la pubblicazione
       - run: npm test
+      # Dati messi da parte (cache di GitHub): il lunedì e a mano si scaricano sempre freschi; a un push normale si
+      # riusano gli ultimi, così non si aspetta Smogon. La chiave cambia col codice che scarica e prepara i dati:
+      # se quello cambia, i dati messi da parte non valgono più e si riscaricano.
+      - name: Chiave dei dati
+        id: data-key
+        run: echo "key=data-${{ hashFiles('scripts/fetch-data.ts', 'scripts/sources.ts', 'scripts/pokeapi.ts', 'scripts/gameDex.ts', 'scripts/showdown-*.ts', 'src/engine/dex.ts', 'src/engine/sets.ts', 'src/engine/stats.ts', 'src/engine/tournamentTeams.ts', 'package-lock.json') }}" >> "$GITHUB_OUTPUT"
+      - name: Recupera i dati già scaricati
+        id: data-cache
+        if: github.event_name == 'push'
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: ${{ steps.data-key.outputs.key }}-${{ github.run_id }}
+          restore-keys: ${{ steps.data-key.outputs.key }}-
       - name: Scarica i dati (Smogon, Showdown, nomi italiani)
+        if: steps.data-cache.outputs.cache-matched-key == ''
         run: npm run fetch-data -- --strict
+      - name: Metti da parte i dati per i prossimi push
+        if: steps.data-cache.outputs.cache-matched-key == ''
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: ${{ steps.data-key.outputs.key }}-${{ github.run_id }}
       - run: npm run build
         env:
           # Chiave pubblica del modulo Segnala (Web3Forms): senza, nell'app resta solo il link a GitHub

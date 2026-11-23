@@ -48,3 +48,13 @@ describe('nome sulle carte: la forma accanto al nome', () => {
     expect(button).toHaveAccessibleName(/^1\.\s*Victini$/);
   });
 });
+
+describe('nome di chi esce nelle frasi (Metti al posto di X, Esce X)', () => {
+  it('come sulla carta del team: la Mega con la pietra resta il nome base; il soprannome vince; le altre forme intere', async () => {
+    const { memberLabel } = await import('../../src/ui/candidateParts');
+    const base = { ability: '', moves: [], nature: 'Hardy', evs: {} };
+    expect(memberLabel({ ...base, species: 'Garchomp', item: 'Garchompite' } as never)).toBe('Garchomp');
+    expect(memberLabel({ ...base, species: 'Garchomp', item: 'Garchompite', name: 'Squalo' } as never)).toBe('Squalo');
+    expect(memberLabel({ ...base, species: 'Landorus-Therian', item: '' } as never)).toBe('Landorus-Therian');
+  });
+});

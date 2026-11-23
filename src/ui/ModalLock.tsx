@@ -12,11 +12,32 @@ const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia
  * Da mettere dentro una finestra modale (nel portal, fuori da #root):
  * - finché è montata la pagina sotto è inerte, quindi il Tab resta nella finestra e i lettori di schermo leggono solo
  *   quella, come una finestra nativa del browser;
+ * - quando si chiude, il fuoco torna su chi l'ha aperta (se non è già andato altrove);
  * - quando si chiude, una copia ferma della finestra resta un attimo sulla pagina e fa la chiusura animata (Eevee che
  *   scende, poi lo schermo che si spegne). La finestra vera è già chiusa: niente da cliccare, niente da leggere.
  */
 export function ModalLock() {
   const mark = useRef<HTMLSpanElement>(null);
+  // Chi ha aperto la finestra (il pulsante "Filtri", "Impostazioni"…): preso prima che la finestra sposti il fuoco
+  // su un suo controllo (gli effetti dei figli vengono prima, ma questo è un effetto di disegno: ancora prima)
+  const opener = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    // Solo la prima volta: in sviluppo React monta, smonta e rimonta per prova, e al secondo giro il fuoco è già dentro
+    // la finestra (sul suo pulsante Chiudi), che non va presa per chi l'ha aperta
+    const active = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+    const inside = !!active && !!mark.current?.closest('.help-backdrop, [role="dialog"]')?.contains(active);
+    if (!opener.current && !inside) opener.current = active;
+    return () => {
+      const back = opener.current;
+      // Chiusa la finestra, il fuoco torna su chi l'ha aperta: chi usa la tastiera o un lettore di schermo riparte da lì,
+      // non dall'inizio della pagina. Solo se il fuoco si è perso (chi lo sposta apposta altrove vince)
+      window.setTimeout(() => {
+        const now = document.activeElement;
+        if (!back?.isConnected || (now && now !== document.body && now.isConnected)) return;
+        back.focus({ preventScroll: true });
+      }, 0);
+    };
+  }, []);
   useEffect(() => {
     const root = document.getElementById('root');
     open += 1;
