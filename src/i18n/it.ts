@@ -233,6 +233,8 @@ export const it: Record<keyof typeof en, string> = {
   'dash.threatsNone': "Nessuna minaccia del meta senza risposta",
   'dash.threatOpen': "scoperta",
   'dash.threatThin': "a fatica",
+  'dash.headOpenOne': "scoperta",
+  'dash.headOpenMany': "scoperte",
   'dash.threatDefNone': "Nessuno lo regge bene",
   'dash.threatDefOne': "Lo regge solo {name}",
   'dash.threatOffNone': "Nessuno lo manda KO in due colpi",

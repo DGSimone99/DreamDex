@@ -162,7 +162,7 @@ describe('Cruscotto della Panoramica', () => {
     expect(within(table).getByRole('cell', { name: /^(Normale|Normal), offesa: Nessuno lo colpisce forte$/i })).toHaveClass('bad');
     expect(within(table).getByRole('rowheader', { name: 'Difesa' })).toBeInTheDocument();
     expect(within(table).getByRole('rowheader', { name: 'Offesa' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('offesa 17/18 · difesa 17/18');
+    expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('17/18 offesa · 17/18 difesa');
     expect(screen.queryByText('Chi')).toBeNull();
   });
 
@@ -203,7 +203,7 @@ describe('Cruscotto della Panoramica', () => {
     const table = screen.getByRole('table', { name: 'Coverage' });
     expect(within(table).getByRole('rowheader', { name: 'Defense' })).toBeInTheDocument();
     expect(within(table).getByRole('rowheader', { name: 'Offense' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Coverage' }).querySelector('.dash-meta')).toHaveTextContent('offense 17/18 · defense 17/18');
+    expect(screen.getByRole('region', { name: 'Coverage' }).querySelector('.dash-meta')).toHaveTextContent('17/18 offense · 17/18 defense');
   });
 
   it('Copertura: in testata l\'icona ufficiale di ogni tipo, decorativa, col nome nel tooltip', () => {
@@ -859,7 +859,7 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(screen.queryByRole('region', { name: 'Minacce del meta' })).toBeNull();
     await toMeta(user);
     expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
-    expect(cov()).toHaveTextContent('scoperta 3 · a fatica 4');
+    expect(cov()).toHaveTextContent('3 scoperte · 4 a fatica');
   });
 
   it('tipi tutti verdi (Offesa e Difesa) e il meta: si apre su Meta; dopo un clic resta la scelta del giocatore', async () => {

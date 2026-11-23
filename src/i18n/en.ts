@@ -231,6 +231,8 @@ export const en = {
   'dash.threatsNone': "No meta threat left unanswered",
   'dash.threatOpen': "no answer",
   'dash.threatThin': "one answer",
+  'dash.headOpenOne': "no answer",
+  'dash.headOpenMany': "no answer",
   'dash.threatDefNone': "Nobody takes its hits well",
   'dash.threatDefOne': "Only {name} takes its hits",
   'dash.threatOffNone': "Nobody KOs it in two hits",
