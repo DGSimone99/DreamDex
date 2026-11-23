@@ -61,7 +61,7 @@ describe('liste nella scheda Pokémon', () => {
     const { storage } = withLists(bans('Kingambit'));
     const user = await setup(storage, 'Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'kinga');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon con questo nome')).toBeInTheDocument();
     await user.clear(screen.getByLabelText('Aggiungi Pokémon'));
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kingambit');
     await waitFor(() => expect(rowNames()).toEqual(['Kingambit']));

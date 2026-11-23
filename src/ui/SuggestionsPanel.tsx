@@ -442,7 +442,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     body = (
       <div className="list-empty">
         <EeveeMoment pose="thinking" />
-        <p>{tr('suggest.noMatch')}</p>
+        {/* Senza filtri il colpevole è la ricerca: lo si dice (niente "ai filtri" se non ce ne sono) */}
+        <p>{tr(isFiltering({ ...filters, query: '' }) ? 'suggest.noMatch' : 'suggest.noMatchSearch')}</p>
         {typeEmpty}
         {filters.query && <button type="button" onClick={() => setFilters({ ...filters, query: '' })}>{tr('suggest.clear')}</button>}
         {/* Vuota per colpa dei filtri: si azzerano da qui (la ricerca resta) */}
@@ -506,7 +507,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
         <Icon name="prev" />
       </button>
-      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1 })}>{page + 1}/{pages}</span>
+      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1, total: pages })}>{page + 1}/{pages}</span>
       <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
         <Icon name="next" />
       </button>
@@ -546,7 +547,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <aside className={`detail detail-empty${stale ? ' is-loading' : ''}`} aria-hidden="true">
             <Icon name="search" />
             {/* Lista vuota per una ricerca o per i filtri: niente "scegli dalla lista", il rimedio sta nella lista */}
-            <p>{tr(stale ? 'suggest.detailLoading' : filtering && items.length === 0 ? 'suggest.detailNoMatch' : 'suggest.detailEmpty')}</p>
+            <p>{tr(stale ? 'suggest.detailLoading' : filtering && items.length === 0 ? (isFiltering({ ...filters, query: '' }) ? 'suggest.detailNoMatch' : 'suggest.detailNoMatchSearch') : 'suggest.detailEmpty')}</p>
           </aside>
         )}
         {/* Tablet: il velo scuro sulla lista; toccarlo chiude la scheda (il CSS lo mostra solo lì) */}

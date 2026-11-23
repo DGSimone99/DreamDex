@@ -162,7 +162,7 @@ describe('SuggestionsPanel', () => {
     expect(rowNames()).toHaveLength(6);
     expect(within(pager).getByRole('button', { name: 'Pagina precedente' })).toBeDisabled();
     await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('li')!)).toBe(7);
   });
 
@@ -273,7 +273,7 @@ describe('SuggestionsPanel', () => {
     expect(buttons[0]).toHaveAccessibleName('Pagina precedente');
     expect(buttons[buttons.length - 1]).toHaveAccessibleName('Pagina successiva');
     await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
   });
 
   it('chi esce è una tendina attaccata a Sostituisci, nella barra comandi', async () => {
@@ -313,11 +313,11 @@ describe('SuggestionsPanel', () => {
     await user.type(search, 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
     for (let i = 0; i < 6; i++) await user.keyboard('{ArrowDown}');
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(7);
     // E indietro, prima della prima, alla precedente
     await user.keyboard('{ArrowUp}');
-    expect(within(pager).getByRole('status', { name: 'Pagina 1' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 1 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(6);
   });
 
@@ -668,7 +668,7 @@ describe('riga della lista', () => {
     rerender(<SuggestionsPanel {...props} focus={{ species: eleventh, mode: 'add', nonce: 1 }} />);
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eleventh}` }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByLabelText('Aggiungi Pokémon')).toHaveValue('');
-    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rowNames()).toContain(eleventh);
   });
 

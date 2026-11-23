@@ -54,7 +54,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
   it('nessun risultato', async () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'zzzz');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon con questo nome')).toBeInTheDocument();
   });
 
   it('filtro per tipo, contatore dei filtri attivi e azzeramento', async () => {
