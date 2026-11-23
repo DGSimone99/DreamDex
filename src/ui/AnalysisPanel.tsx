@@ -94,7 +94,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   useEffect(() => { if (!showCoaching) setCoachFocus(null); }, [showCoaching]);
   useEffect(() => { if (areaFocus && areaFocus.area !== (area ?? 'overview')) setAreaFocus(null); }, [area]);
   // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
-  const problems = coaching?.problems ?? [];
+  // Come la lista del Coaching: senza le debolezze in comune (le dice già la Difesa)
+  const problems = (coaching?.problems ?? []).filter(p => !p.key.startsWith('redundancy:sharedWeak:'));
   const serious = problems.filter(p => p.severity === 'serious').length;
   const tabView: TabView = area ?? (showCoaching ? 'coaching' : 'overview');
   let body;

@@ -321,7 +321,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const coaching = useMemo(() => (booted ? coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang) : COACHING_WAIT), [booted, coachSource]);
 
   // Contatori delle schede: i problemi del coach; sotto Meta l'uso medio del team (la scheda è solo informativa)
-  const problems = coaching.problems;
+  // Le debolezze in comune non sono nella lista del Coaching (le dice già la Difesa): non si contano
+  const problems = coaching.problems.filter(p => !p.key.startsWith('redundancy:sharedWeak:'));
   const metaAverage = metaOn ? metaBoard(data.stats, team).average : null;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
   if (shownTab === 'analysis' && !analysisOpened) setAnalysisOpened(true);

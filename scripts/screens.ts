@@ -821,11 +821,11 @@ const STATES: Record<string, State> = {
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
     const rowH = (sel: string) => p.evaluate(q => document.querySelector(q)?.getBoundingClientRect().height ?? -1, sel);
     const start = Date.now();
-    const skeleton = await rowH('.coach-rows[aria-busy] > li');
-    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
-    console.log(`coaching-six: proposte pronte in ${Date.now() - start} ms; row skeleton=${skeleton} real=${await rowH('.coach-rows:not([aria-busy]) > li')}`);
-    const rows = await p.evaluate(() => [...document.querySelectorAll('.coach-rows > li')].map(li => { const r = li.getBoundingClientRect(); return `${Math.round(r.top)}-${Math.round(r.bottom)}`; }).join(' '));
-    const box = await p.evaluate(() => { const r = document.querySelector('.coaching')?.getBoundingClientRect(); const ol = document.querySelector('.coach-rows'); return r ? `${Math.round(r.top)}-${Math.round(r.bottom)} rows=${ol ? getComputedStyle(ol).gridAutoRows : '-'}` : '-'; });
+    const skeleton = await rowH('.coach-diag-list[aria-busy] > li');
+    await p.waitForSelector('.coach-diag-list:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    console.log(`coaching-six: proposte pronte in ${Date.now() - start} ms; row skeleton=${skeleton} real=${await rowH('.coach-diag-list:not([aria-busy]) > li')}`);
+    const rows = await p.evaluate(() => [...document.querySelectorAll('.coach-diag-list > li')].map(li => { const r = li.getBoundingClientRect(); return `${Math.round(r.top)}-${Math.round(r.bottom)}`; }).join(' '));
+    const box = await p.evaluate(() => { const r = document.querySelector('.coaching')?.getBoundingClientRect(); const ol = document.querySelector('.coach-diag-list'); return r ? `${Math.round(r.top)}-${Math.round(r.bottom)} rows=${ol ? getComputedStyle(ol).gridAutoRows : '-'}` : '-'; });
     console.log(`coaching-six: righe ${rows}; coaching ${box}`);
     return true;
   } },
@@ -842,7 +842,7 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
-    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    await p.waitForSelector('.coach-diag-list:not([aria-busy]), .coach-empty', { timeout: 20000 });
     if (!await clickText(p, 'button.coach-alt-tile', /./)) return 'no alternatives';
     await wait(300);
     return true;
@@ -852,10 +852,10 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
-    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
-    if (!await clickText(p, '.coach-diag-item:not(.is-all):not(:disabled)', /./)) return 'no problem';
+    await p.waitForSelector('.coach-diag-list:not([aria-busy])', { timeout: 20000 });
+    if (!await clickText(p, 'button.coach-diag-item', /./)) return 'no problem';
     await wait(300);
-    if (!await clickText(p, '.coach-item-btn', /./)) return 'no other proposal';
+    if (!await clickText(p, '.coach-diag-cure:not(.is-open)', /./)) return 'no other proposal';
     await wait(300);
     return true;
   } },
@@ -864,7 +864,7 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
-    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    await p.waitForSelector('.coach-diag-list:not([aria-busy]), .coach-empty', { timeout: 20000 });
     if (!await clickText(p, '.coach-diag-top .help-button', /./)) return 'no help';
     await wait(300);
     return true;
@@ -874,7 +874,7 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
-    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    await p.waitForSelector('.coach-diag-list:not([aria-busy]), .coach-empty', { timeout: 20000 });
     return true;
   } },
   // Coaching col team chiuso: la scheda ha più altezza (versione estesa)
@@ -1045,7 +1045,7 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    await p.waitForSelector('.coach-diag-list:not([aria-busy]), .coach-empty', { timeout: 20000 });
     return true;
   } },
   // Proposte di mossa (team con set poveri): stampa quante righe di mossa ci sono nella prima pagina
@@ -1053,7 +1053,7 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
+    await p.waitForSelector('.coach-diag-list:not([aria-busy])', { timeout: 20000 });
     const n = await p.evaluate(() => document.querySelectorAll('.coach-rows .coach-item.is-move, .coach-hero.is-move').length);
     console.log(`coaching-move-steps: ${n} proposte di mossa`);
     return n > 0 || 'no move proposal';
@@ -1063,15 +1063,15 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
+    await p.waitForSelector('.coach-diag-list:not([aria-busy])', { timeout: 20000 });
     // La prima proposta di mossa: nella carta grande, o nella lista (pagina dopo pagina) e da lì nella carta
-    for (let i = 0; i < 8 && !await p.evaluate(() => !!document.querySelector('.coach-hero.is-move, .coach-item.is-move')); i++) {
-      const next = await p.$('.coach-list .coach-pages .cm-step:last-child:not(:disabled)');
+    for (let i = 0; i < 8 && !await p.evaluate(() => !!document.querySelector('.coach-hero.is-move, .coach-diag-cure.is-move')); i++) {
+      const next = await p.$('.coach-diag .coach-pages .cm-step:last-child:not(:disabled)');
       if (!next) break;
       await next.click();
       await wait(300);
     }
-    if (!await p.evaluate(() => !!document.querySelector('.coach-hero.is-move')) && !await clickText(p, '.coach-item.is-move .coach-item-btn', /./)) return 'no move proposal';
+    if (!await p.evaluate(() => !!document.querySelector('.coach-hero.is-move')) && !await clickText(p, '.coach-diag-cure.is-move', /./)) return 'no move proposal';
     await wait(300);
     if (!await clickText(p, '.coach-hero.is-move button.coach-see', /./)) return 'no move proposal';
     await wait(600);
@@ -1468,12 +1468,12 @@ for (const [w, h] of sizes) {
       const box = document.querySelector<HTMLElement>('.coaching');
       if (!box) return '';
       const hero = box.querySelector<HTMLElement>('.coach-hero:not(.skeleton)');
-      const rows = [...box.querySelectorAll<HTMLElement>('.coach-item:not(.skeleton)')];
+      const rows = [...box.querySelectorAll<HTMLElement>('.coach-diag-cure')];
       const rail = [...box.querySelectorAll<HTMLElement>('.coach-diag-list > li')];
       // (niente funzioni con nome qui dentro: tsx aggiunge __name, che nella pagina non c'è)
-      const listB = box.querySelector('.coach-list-box')?.getBoundingClientRect().bottom ?? Infinity;
+      const listB = box.querySelector('.coach-diag-box')?.getBoundingClientRect().bottom ?? Infinity;
       const railB = box.querySelector('.coach-diag-box')?.getBoundingClientRect().bottom ?? Infinity;
-      const wide = [...box.querySelectorAll<HTMLElement>('.coach-hero-name, .coach-plate-value, .coach-item-who strong, .coach-diag-cure-text b')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      const wide = [...box.querySelectorAll<HTMLElement>('.coach-hero-name, .coach-plate-value, .coach-diag-cure-text b, .coach-rank-plain')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
       const heroOver = hero ? hero.scrollHeight - hero.clientHeight : 0;
       const last = rows.at(-1)?.getBoundingClientRect().bottom ?? 0;
       return `coach: hero=${hero ? Math.round(hero.getBoundingClientRect().height) : 0} heroOverflow=${heroOver} rows=${rows.length} rowOverflow=${rows.filter(r => r.scrollHeight - r.clientHeight > 1).length} rowsBelow=${rows.filter(r => r.getBoundingClientRect().bottom > listB + 1).length} rail=${rail.length} railOverflow=${rail.filter(r => r.scrollHeight - r.clientHeight > 1).length} railBelow=${rail.filter(r => r.getBoundingClientRect().bottom > railB + 1).length} clipped=${wide} lastBottom=${Math.round(last)} coachBottom=${Math.round(box.getBoundingClientRect().bottom)} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;

@@ -1,3 +1,4 @@
+import { hint } from './MoveTip';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
@@ -37,7 +38,7 @@ export function HelpButton({ title, label = title, className, children }: { titl
 
   return (
     <>
-      <button ref={button} type="button" className="help-button" aria-label={label} title={label} onClick={() => setOpen(true)}>
+      <button ref={button} type="button" className="help-button" aria-label={label} {...hint(label)} onClick={() => setOpen(true)}>
         <Icon name="help" />
       </button>
       {open && createPortal(

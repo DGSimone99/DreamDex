@@ -15,6 +15,7 @@ import { useLang, useT } from '../i18n/react';
 import { rolesValue } from './AreaDetail';
 import { HelpButton } from './AnalysisTabs';
 import { EeveeMoment } from './EeveeMoment';
+import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { useMemberTip } from './MemberCard';
 import { MovePill } from './MovePill';
@@ -22,7 +23,6 @@ import { PokemonIcon } from './PokemonName';
 import { hint } from './MoveTip';
 import { MoreProblems, problemEntries, ProblemChip, ProblemPill, type ProblemEntry } from './ProblemPill';
 import { Sprite, typeColor } from './Sprite';
-import { TypeIcons } from './typeIcons';
 
 /** Il voto in più di una proposta: "+3", a pari voto "±0" (mai "+0"). */
 export const gainText = (gain: number) => (gain > 0 ? `+${gain}` : gain < 0 ? `−${-gain}` : '±0');
@@ -112,34 +112,6 @@ function Solved({ entry }: { entry: ProblemEntry }) {
 /** Il testo intero di un problema risolto (fumetti e lettori di schermo): il ruolo col suo nome, il resto col problema. */
 const solvedText = (entry: ProblemEntry, lang: ReturnType<typeof useLang>) => (entry.role ? needLabel(entry.role as Need, lang) : entry.problem.text);
 
-/** Di cosa parla un problema risolto, in piccolo: la minaccia (icona del Box), i tipi (icone), un ruolo (×); altrimenti niente. */
-function SolvedSubject({ entry }: { entry: ProblemEntry }) {
-  const subjects = entry.problem.subjects ?? [];
-  if (entry.role) return <span className="coach-mark-role"><Icon name="close" /></span>;
-  if ((entry.problem.category === 'meta' || entry.problem.category === 'metaHit') && subjects[0]) return <PokemonIcon name={subjects[0]} />;
-  if ((entry.problem.category === 'defense' || entry.problem.category === 'coverage') && subjects.length > 0) return <TypeIcons types={subjects.slice(0, 2)} />;
-  return null;
-}
-
-/**
- * I problemi risolti in una riga della lista, compatti: la spunta, quanti sono e le icone di cosa sono (minacce, tipi,
- * ruoli). Le parole nel fumetto e ai lettori di schermo.
- */
-function SolvedMarks({ entries }: { entries: ProblemEntry[] }) {
-  const tr = useT();
-  const lang = useLang();
-  const text = `${tr('coach.hero.solves')}: ${entries.map(e => solvedText(e, lang)).join('; ')}`;
-  return (
-    <span className="coach-marks" {...hint(text)}>
-      <span className="coach-marks-n"><Icon name="check" />{entries.length}</span>
-      <span className="coach-marks-icons" aria-hidden="true">
-        {entries.slice(0, 6).map(e => <SolvedSubject key={`${e.problem.key}|${e.role ?? ''}`} entry={e} />)}
-      </span>
-      <span className="visually-hidden">{text}</span>
-    </span>
-  );
-}
-
 /** Il nome della proposta per lo screen reader (e per il pulsante Applica): "Ting-Lu al posto di Kingambit, voto +3". */
 function proposalName(p: Proposal, tr: ReturnType<typeof useT>, lang: ReturnType<typeof useLang>): string {
   const gain = gainText(p.fix.gain);
@@ -155,8 +127,7 @@ function proposalName(p: Proposal, tr: ReturnType<typeof useT>, lang: ReturnType
 /** Il primo tipo di chi entra (o del membro che cambia mossa): il colore della zona del Pokémon, come le carte del team. */
 const firstType = (p: Proposal) => (battleSpecies(p.fix.set)?.types[0] as string | undefined) ?? '';
 
-/** I problemi risolti scritti per intero nella carta grande; gli altri in "+N altri" (col fumetto). */
-const SOLVED_SHOWN = 3;
+
 
 /** Chi entra (o il membro che cambia mossa): lo sprite della proposta. */
 const subjectOf = (p: Proposal) => (p.kind === 'fix' ? p.fix.species : p.fix.member);
@@ -201,8 +172,31 @@ function HeroTitle({ p, bind }: { p: Proposal; bind?: object }) {
       <b className="coach-hero-name" {...bind}>{p.fix.species}</b>
       {p.fix.kind === 'swap'
         ? <CardPlate label={tr('coach.plate.instead')}><PokemonIcon name={p.fix.member ?? ''} />{p.fix.member}</CardPlate>
-        : <span className="coach-hero-free">{tr('coach.row.free')}</span>}
+        : <CardPlate label={tr('coach.plate.add')}>{tr('coach.plate.freeSlot')}</CardPlate>}
     </div>
+  );
+}
+
+/**
+ * Il set della proposta, come lo vedrebbe chi gioca accanto a Showdown: strumento e abilità come targhette dell'editor, le
+ * quattro mosse come pillole. In un cambio di mossa la mossa nuova ha l'anello ciano.
+ */
+function SetSummary({ p }: { p: Proposal }) {
+  const tr = useT();
+  const lang = useLang();
+  const set = p.fix.set;
+  const slot = p.kind === 'move' ? p.fix.slot : -1;
+  return (
+    <section className="coach-set" aria-label={tr('coach.hero.set')}>
+      <h5>{tr('coach.hero.set')}</h5>
+      <div className="coach-set-kit">
+        {set.item && <CardPlate label={tr('coach.plate.item')}><ItemIcon item={set.item} />{gameName('item', set.item, lang)}</CardPlate>}
+        {set.ability && <CardPlate label={tr('coach.plate.ability')}>{gameName('ability', set.ability, lang)}</CardPlate>}
+      </div>
+      <ul className="coach-set-moves">
+        {set.moves.filter(Boolean).map((move, i) => <li key={`${i}|${move}`} className={i === slot ? 'is-new' : undefined}><MovePill name={move} size="sm" /></li>)}
+      </ul>
+    </section>
   );
 }
 
@@ -213,9 +207,11 @@ function HeroTitle({ p, bind }: { p: Proposal; bind?: object }) {
  * l'azione migliore sullo schermo), il link alla scheda Pokémon o al set e, se il posto ha altre proposte, "Oppure" con le
  * piccole carte delle alternative (un clic la mette nella carta grande).
  */
-function Hero({ group, choice, onChoose, problems, before, rating, actions, flash }: {
+function Hero({ group, choice, onChoose, problems, before, rating, actions, flash, titleRef }: {
   group: ProposalGroup; choice: number; onChoose: (index: number) => void; problems: CoachProblem[];
   before: AreaSnapshot | null; rating: TeamRating | null; actions: RowActions; flash: boolean;
+  /** Il titolo (nascosto) della carta: riceve il fuoco quando il pulsante usato sparisce (un'alternativa scelta). */
+  titleRef: RefObject<HTMLHeadingElement | null>;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -232,7 +228,7 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
   return (
     <article className={`coach-hero${p.kind === 'move' ? ' is-move' : ''}${flash ? ' is-flash' : ''}`} data-row={group.id} aria-labelledby={headId}
       style={{ '--t1': typeColor(firstType(p)) } as CSSProperties}>
-      <h4 id={headId} className="visually-hidden">{name}</h4>
+      <h4 id={headId} ref={titleRef} tabIndex={-1} className="visually-hidden">{name}</h4>
       <div className="coach-pad">
         {p.kind === 'fix' && p.fix.kind === 'swap' && (
           <span className="coach-pad-out" aria-hidden="true"><Sprite species={p.fix.member ?? ''} size={48} /><span className="coach-pad-swap"><Icon name="swap" /></span></span>
@@ -260,17 +256,7 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
           <section className="coach-fact is-good" aria-label={tr('coach.hero.solves')}>
             <h5>{tr('coach.hero.solves')}</h5>
             {fx.solved.length > 0
-              ? (
-                <ul className="coach-solved-list">
-                  {fx.solved.slice(0, SOLVED_SHOWN).map(entry => <Solved key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry} />)}
-                  {fx.solved.length > SOLVED_SHOWN && (
-                    <li className="coach-solved-more" tabIndex={0} {...hint(fx.solved.slice(SOLVED_SHOWN).map(e => solvedText(e, lang)).join('; '))}>
-                      {tr(fx.solved.length - SOLVED_SHOWN === 1 ? 'coach.hero.more1' : 'coach.hero.more', { n: fx.solved.length - SOLVED_SHOWN })}
-                      <span className="visually-hidden">: {fx.solved.slice(SOLVED_SHOWN).map(e => solvedText(e, lang)).join('; ')}</span>
-                    </li>
-                  )}
-                </ul>
-              )
+              ? <ul className="coach-solved-list">{fx.solved.map(entry => <Solved key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry} />)}</ul>
               : <p className="coach-fact-none">{tr('coach.hero.raisesOnly')}</p>}
             {fx.ups.length > 0 && <p className="coach-moves">{fx.ups.map(m => <Change key={m.area} move={m} />)}</p>}
           </section>
@@ -281,6 +267,7 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
             {fx.lost.length > 0 && <p className="coach-lost"><b>{tr('coach.row.lost')}</b> {fx.lost.map(key => needLabel(key, lang)).join(', ')}</p>}
           </section>
         </div>
+        <SetSummary p={p} />
         <div className="coach-hero-foot">
           <button type="button" className="coach-apply is-primary" aria-label={tr('coach.row.applyAria', { name })} onClick={apply}>{tr('coach.row.apply')}</button>
           <button type="button" className="coach-see" onClick={see} {...hint(tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet'))}
@@ -292,7 +279,8 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
               <span className="coach-alts-word" aria-hidden="true">{tr('coach.alt.or')}</span>
               {group.options.map((o, i) => (i === at ? null : (
                 <button key={i} type="button" className="coach-alt-tile" style={{ '--t1': typeColor(firstType(o)) } as CSSProperties}
-                  aria-label={tr('coach.alt.pick', { name: proposalName(o, tr, lang) })} {...hint(proposalName(o, tr, lang))} onClick={() => onChoose(i)}>
+                  aria-label={tr('coach.alt.pick', { name: proposalName(o, tr, lang) })} {...hint(proposalName(o, tr, lang))}
+                  onClick={() => { onChoose(i); requestAnimationFrame(() => titleRef.current?.focus()); }}>
                   <PokemonIcon name={subjectOf(o)} />
                   {o.kind === 'move' && <span className="coach-alt-move" aria-hidden="true">{gameName('move', o.fix.to, lang)}</span>}
                   <b aria-hidden="true">{gainText(o.fix.gain)}</b>
@@ -304,42 +292,6 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
       </div>
       {memberTip.tip}
     </article>
-  );
-}
-
-/**
- * Una riga compatta della lista sotto la carta grande (stile Box): chi entra, il +N, "al posto di X", i primi problemi che
- * risolve (spunte verdi) e la freccia. Un clic la porta nella carta grande.
- */
-function ProposalItem({ group, choice, problems, before, onOpen }: {
-  group: ProposalGroup; choice: number; problems: CoachProblem[]; before: AreaSnapshot | null; onOpen: () => void;
-}) {
-  const tr = useT();
-  const lang = useLang();
-  const p = group.options[Math.min(choice, group.options.length - 1)];
-  const fx = effectsOf(p, problems, before);
-  const seat = p.kind === 'move'
-    ? tr('coach.item.move', { member: p.fix.member, from: p.fix.from ? gameName('move', p.fix.from, lang) : tr('coach.row.emptySlot') })
-    : p.fix.kind === 'swap' ? tr('coach.row.instead', { member: p.fix.member ?? '' }) : tr('coach.row.free');
-  return (
-    <li className={`coach-item${p.kind === 'move' ? ' is-move' : ''}`} data-row={group.id} style={{ '--t1': typeColor(firstType(p)) } as CSSProperties}>
-      <button type="button" className="coach-item-btn" onClick={onOpen} aria-label={tr('coach.item.open', { name: proposalName(p, tr, lang) })}>
-        <span className="coach-item-mon" aria-hidden="true"><PokemonIcon name={subjectOf(p)} /></span>
-        <b className="coach-item-gain" aria-hidden="true">{gainText(p.fix.gain)}</b>
-        <span className="coach-item-who" aria-hidden="true">
-          {p.kind === 'move' ? <MovePill name={p.fix.to} size="sm" /> : <strong>{p.fix.species}</strong>}
-          <small>{seat}</small>
-        </span>
-        <span className="coach-item-solves">
-          {fx.solved.length > 0 ? <SolvedMarks entries={fx.solved} /> : fx.ups[0] && <Change move={fx.ups[0]} />}
-          {fx.downs.length + fx.lost.length > 0 && (
-            <span className="coach-item-cost"><b>{tr('coach.hero.costs')}</b>
-              {[...fx.downs.map(m => tr(AREA_NAME[m.area])), ...fx.lost.map(key => needLabel(key, lang))].join(', ')}</span>
-          )}
-        </span>
-        <span className="coach-item-go" aria-hidden="true"><Icon name="next" /></span>
-      </button>
-    </li>
   );
 }
 
@@ -358,103 +310,149 @@ function CoachingGuide() {
   );
 }
 
-/** Un blocco della diagnosi: i problemi che hanno la stessa proposta migliore (`cure`, null: nessun cambio singolo li risolve). */
-interface RailBlock { cure: ProposalGroup | null; pick: Proposal | null; entries: ProblemEntry[] }
+/**
+ * Un blocco della classifica: una proposta (`group`, con la scelta del posto `pick`) e i problemi che è la prima a
+ * risolvere (`entries`; così ogni problema è scritto una volta sola). `note`: niente problemi nuovi, perché risolve solo
+ * problemi già scritti sopra ('already') o alza solo il voto ('raise'). `group` null: i problemi che nessun cambio risolve.
+ */
+interface RankBlock { group: ProposalGroup | null; pick: Proposal | null; entries: ProblemEntry[]; note: 'already' | 'raise' | null }
 
-/** Una riga della colonna a pagine: la testata di un blocco (chi li risolve) o un problema. */
-type RailRow = { kind: 'cure'; block: RailBlock } | { kind: 'entry'; block: RailBlock; entry: ProblemEntry };
+/** Una riga della colonna a pagine (tutte alte uguali): la testata di un blocco, un problema o la nota di un blocco senza problemi nuovi. */
+type RankRow = { kind: 'head'; block: RankBlock } | { kind: 'entry'; block: RankBlock; entry: ProblemEntry } | { kind: 'note'; block: RankBlock };
+
+/** Perché una minaccia è un problema, in poche parole sotto il suo nome: chi nessuno regge, o chi nessuno manda KO. */
+function ThreatWhy({ problem }: { problem: CoachProblem }) {
+  const tr = useT();
+  if (problem.category !== 'meta' && problem.category !== 'metaHit') return null;
+  return <small className="coach-rank-why" aria-hidden="true">{tr(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone')}</small>;
+}
+
+/** Il problema come si legge in colonna: minacce, ruoli e tipi con la loro pillola, il resto in testo semplice (va a capo). */
+function RankProblem({ entry }: { entry: ProblemEntry }) {
+  const { problem, role } = entry;
+  const rich = role || problem.category === 'meta' || problem.category === 'metaHit' || problem.category === 'defense' || problem.category === 'coverage';
+  return (
+    <span className="coach-rank-text">
+      {rich ? <ProblemPill problem={problem} role={role} /> : <span className="coach-rank-plain">{problem.text}</span>}
+      <ThreatWhy problem={problem} />
+    </span>
+  );
+}
 
 /**
- * La colonna della diagnosi: i problemi del team, una volta sola, ognuno col numero di proposte che lo risolvono (un clic
- * mostra solo quelle; di nuovo: tutte). I problemi con la stessa proposta migliore stanno in un blocco, con in testa chi li
- * risolve tutti ("Raging Bolt +11 · li risolve tutti e 3"; un clic la apre nella carta grande). A pagine come le altre
- * liste: un blocco non si spezza se sta in una pagina. In fondo le aree senza problemi.
+ * La colonna di sinistra è la classifica: le proposte dalla più utile (+N più alto), ognuna una testata (icona del Box sul
+ * colore del tipo, nome, "al posto di X", +N; un clic la apre nella carta grande, quella aperta ha l'anello ciano) con
+ * sotto i problemi che è la prima a risolvere. Un clic su un problema mostra solo le proposte che lo risolvono ("Mostra
+ * tutte" torna alla lista intera). I problemi della proposta aperta hanno la spunta verde. In coda "Restano": i problemi che
+ * nessun cambio singolo risolve. A pagine come le altre liste (un blocco va intero alla pagina dopo se lì sta, altrimenti
+ * si spezza e la testata si ripete).
  */
-function ProblemRail({ blocks, counts, filter, onFilter, onCure, heroId, total, clean, cured }: {
-  blocks: RailBlock[]; counts: Map<string, number>; filter: string | null; onFilter: (key: string | null) => void;
-  onCure: (groupId: string) => void; heroId: string | null; total: number; clean: ReactNode;
-  /** I problemi che la proposta nella carta grande risolve: la riga si accende di verde. */
-  cured: Set<string>;
+function RankRail({ blocks, total, filter, onFilter, onOpen, heroId, cured, clean, busy }: {
+  blocks: RankBlock[]; total: number; filter: ProblemEntry | null; onFilter: (key: string | null) => void; onOpen: (groupId: string) => void;
+  heroId: string | null; cured: Set<string>; clean: ReactNode; busy: boolean;
 }) {
   const tr = useT();
   const lang = useLang();
   const headId = useId();
   const box = useRef<HTMLDivElement>(null);
-  const { perPage, rows } = useRowsPerPage(box, 16);
+  const allButton = useRef<HTMLButtonElement>(null);
+  const { perPage, rows } = useRowsPerPage(box, 20);
   const [start, setStart] = useState(0);
-  const count = blocks.reduce((n, b) => n + b.entries.length, 0);
-  // Le righe: ogni blocco di 2 o più problemi con la sua testata. Le pagine si riempiono a blocchi interi (la prima riga di
-  // ogni pagina è "Tutte le proposte"); senza misura (jsdom, telefono) tutto in una pagina
-  const room = rows ? Math.max(2, perPage - 1) : Number.POSITIVE_INFINITY;
-  const pageRows: RailRow[][] = [[]];
+  const room = rows ? Math.max(3, perPage) : Number.POSITIVE_INFINITY;
+  const pageRows: RankRow[][] = [[]];
   for (const block of blocks) {
-    const rowsOf: RailRow[] = [...(block.cure && block.entries.length > 1 ? [{ kind: 'cure' as const, block }] : []), ...block.entries.map(entry => ({ kind: 'entry' as const, block, entry }))];
+    const own: RankRow[] = [
+      { kind: 'head' as const, block },
+      ...block.entries.map(entry => ({ kind: 'entry' as const, block, entry })),
+      ...(block.note ? [{ kind: 'note' as const, block }] : []),
+    ];
     let cur = pageRows[pageRows.length - 1];
-    // Un blocco che non sta va alla pagina dopo, se lì sta intero e qui resterebbero meno di 3 righe; altrimenti si spezza
-    // e la sua testata si ripete in cima alla pagina dopo
-    if (cur.length > 0 && cur.length + rowsOf.length > room && rowsOf.length <= room && room - cur.length < 3) pageRows.push((cur = []));
-    for (const row of rowsOf) {
+    if (cur.length > 0 && cur.length + own.length > room && own.length <= room && room - cur.length < 3) pageRows.push((cur = []));
+    for (const row of own) {
       if (cur.length >= room) {
         pageRows.push((cur = []));
-        if (row.kind === 'entry' && rowsOf[0].kind === 'cure') cur.push(rowsOf[0]);
+        if (row.kind !== 'head') cur.push(own[0]);
       }
       cur.push(row);
     }
   }
   const pages = pageRows.length;
   const page = Math.min(start, pages - 1);
-  const firstOn = (n: number) => pageRows.slice(0, n).reduce((sum, rs) => sum + rs.filter(r => r.kind === 'entry').length, 0);
-  const entryButton = (entry: ProblemEntry, inBlock: boolean) => {
-    const key = entry.problem.key;
-    const n = counts.get(key) ?? 0;
-    return (
-      <button type="button" className={`coach-diag-item ${entry.problem.severity}${inBlock ? ' in-block' : ''}${filter === key ? ' is-on' : ''}${cured.has(key) ? ' is-cured' : ''}`} aria-pressed={filter === key}
-        disabled={n === 0} onClick={() => onFilter(filter === key ? null : key)} {...hint(n === 0 ? tr('coach.diag.noFix') : null)}>
-        <Icon name={cured.has(key) ? 'check' : 'warning'} />
-        <span className="coach-diag-text"><ProblemPill problem={entry.problem} role={entry.role} />{cured.has(key) && <span className="visually-hidden"> · {tr('coach.diag.cured')}</span>}</span>
-        <span className="coach-diag-n" aria-label={tr('coach.diag.countAria', { n })}>{n || '–'}</span>
-      </button>
-    );
-  };
+  const shownProposals = (n: number) => pageRows.slice(0, n).reduce((sum, rs) => sum + rs.filter(r => r.kind === 'head' && r.block.group).length, 0);
+  const onPage = pageRows[page].filter(r => r.kind === 'head' && r.block.group).length;
   return (
     <aside className="coach-diag" aria-labelledby={headId}>
       <div className="coach-diag-top">
-        <h3 id={headId} className="coach-diag-head">{tr('coach.diag.title')}<span className="coach-count">{count}</span></h3>
-        <HelpButton title={tr('coach.help.title')} className="coach-help"><CoachingGuide /></HelpButton>
-        <Pager page={page} pages={pages} from={firstOn(page) + 1} to={firstOn(page) + pageRows[page].filter(r => r.kind === 'entry').length} onPage={setStart}
+        <h3 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-count">{total}</span>}</h3>
+        <Pager page={page} pages={pages} from={shownProposals(page) + 1} to={shownProposals(page) + onPage} onPage={setStart}
           labels={{ pages: tr('coach.diag.pages'), prev: tr('coach.diag.prev'), next: tr('coach.diag.next'), page: 'coach.diag.page' }} />
+        <HelpButton title={tr('coach.help.title')} className="coach-help"><CoachingGuide /></HelpButton>
       </div>
+      {filter && (
+        <div className="coach-filter">
+          <span className="coach-filter-text"><b>{tr('coach.rank.only')}</b> <RankProblem entry={filter} /></span>
+          <button ref={allButton} type="button" className="coach-back" onClick={() => onFilter(null)}><Icon name="close" />{tr('coach.list.showAll')}</button>
+        </div>
+      )}
       <div className="coach-diag-box" ref={box}>
-        <ul className="coach-diag-list">
-          <li>
-            <button type="button" className={`coach-diag-item is-all${filter === null ? ' is-on' : ''}`} aria-pressed={filter === null} onClick={() => onFilter(null)}>
-              <span className="coach-diag-text">{tr('coach.diag.all')}</span>
-              <span className="coach-diag-n" aria-label={tr('coach.diag.countAria', { n: total })}>{total}</span>
-            </button>
-          </li>
-          {pageRows[page].map((row, i) => {
-            if (row.kind === 'entry') {
-              const last = pageRows[page][i + 1]?.block !== row.block;
-              return <li key={`${row.entry.problem.key}|${row.entry.role ?? ''}`} className={row.block.cure && row.block.entries.length > 1 ? `in-block${last ? ' is-last' : ''}` : undefined}>{entryButton(row.entry, row.block.entries.length > 1)}</li>;
-            }
-            const { cure, pick } = row.block;
-            if (!cure || !pick) return null;
-            const name = proposalName(pick, tr, lang);
-            return (
-              <li key={`cure|${cure.id}`} className="in-block is-head">
-                <button type="button" className={`coach-diag-cure${heroId === cure.id ? ' is-open' : ''}`} style={{ '--t1': typeColor(firstType(pick)) } as CSSProperties}
-                  aria-label={tr('coach.diag.cureAria', { name, n: row.block.entries.length })} onClick={() => onCure(cure.id)}>
-                  <span className="coach-diag-cure-mon" aria-hidden="true"><PokemonIcon name={subjectOf(pick)} /></span>
-                  <span className="coach-diag-cure-text" aria-hidden="true">
-                    <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
-                    <small>{tr('coach.diag.cureAll', { n: row.block.entries.length })}</small>
-                  </span>
-                  <b className="coach-diag-cure-gain" aria-hidden="true">{gainText(pick.fix.gain)}</b>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        {busy ? (
+          <ol className="coach-diag-list" aria-busy="true">
+            {Array.from({ length: 6 }, (_, i) => <li key={i} className="coach-rank-skeleton" aria-hidden="true" />)}
+          </ol>
+        ) : (
+          <ol className="coach-diag-list">
+            {pageRows[page].map((row, i) => {
+              const next = pageRows[page][i + 1];
+              const last = !next || next.block !== row.block;
+              const cls = `in-block${row.kind === 'head' ? ' is-head' : ''}${last ? ' is-last' : ''}${row.block.group && row.block.group.id === heroId ? ' is-open' : ''}`;
+              if (row.kind === 'head') {
+                const { group, pick } = row.block;
+                if (!group || !pick) return <li key="stuck|head" className={`${cls} is-stuck`}><span className="coach-rank-stuck">{tr('coach.rank.stuck')}</span></li>;
+                const name = proposalName(pick, tr, lang);
+                const seat = pick.kind === 'move'
+                  ? tr('coach.item.move', { member: pick.fix.member, from: pick.fix.from ? gameName('move', pick.fix.from, lang) : tr('coach.row.emptySlot') })
+                  : pick.fix.kind === 'swap' ? tr('coach.row.instead', { member: pick.fix.member ?? '' }) : tr('coach.row.free');
+                return (
+                  <li key={`head|${group.id}`} className={cls}>
+                    <button type="button" className={`coach-diag-cure${group.id === heroId ? ' is-open' : ''}${pick.kind === 'move' ? ' is-move' : ''}`} aria-current={group.id === heroId ? 'true' : undefined}
+                      style={{ '--t1': typeColor(firstType(pick)) } as CSSProperties} aria-label={tr('coach.rank.openAria', { name })} onClick={() => onOpen(group.id)}>
+                      <span className="coach-diag-cure-mon" aria-hidden="true"><PokemonIcon name={subjectOf(pick)} /></span>
+                      <span className="coach-diag-cure-text" aria-hidden="true">
+                        <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
+                        <small>{seat}</small>
+                      </span>
+                      <b className="coach-diag-cure-gain" aria-hidden="true">{gainText(pick.fix.gain)}</b>
+                    </button>
+                  </li>
+                );
+              }
+              if (row.kind === 'note') {
+                return <li key={`note|${row.block.group?.id}`} className={`${cls} is-note`}><span className="coach-rank-note">{tr(row.block.note === 'already' ? 'coach.rank.already' : 'coach.hero.raisesOnly')}</span></li>;
+              }
+              const { entry } = row;
+              const key = entry.problem.key;
+              const ok = cured.has(key);
+              // I problemi che nessun cambio risolve non sono pulsanti (non c'è niente da filtrare): il motivo è il titolo del blocco
+              if (!row.block.group) {
+                return (
+                  <li key={`stuck|${key}|${entry.role ?? ''}`} className={cls}>
+                    <span className={`coach-diag-item ${entry.problem.severity} is-static`}><Icon name="warning" /><RankProblem entry={entry} /></span>
+                  </li>
+                );
+              }
+              return (
+                <li key={`${key}|${entry.role ?? ''}`} className={cls}>
+                  <button type="button" className={`coach-diag-item ${entry.problem.severity}${filter?.problem.key === key ? ' is-on' : ''}${ok ? ' is-cured' : ''}`}
+                    aria-pressed={filter?.problem.key === key} onClick={() => onFilter(filter?.problem.key === key ? null : key)}
+                    aria-label={`${solvedText(entry, lang)}${ok ? ` · ${tr('coach.diag.cured')}` : ''}. ${tr('coach.rank.filterAria')}`}>
+                    <Icon name={ok ? 'check' : 'warning'} />
+                    <RankProblem entry={entry} />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </div>
       {clean}
     </aside>
@@ -534,10 +532,8 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
   const tr = useT();
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
-  const listBox = useRef<HTMLDivElement>(null);
-  // Le file della pagina si dividono l'altezza (--rows): le carte la riempiono tutta, anche nell'ultima pagina più corta
-  const { perPage, rows: fileRows } = useRowsPerPage(listBox, 10);
-  const rowsStyle = fileRows ? ({ '--rows': fileRows } as CSSProperties) : undefined;
+  const heroTitle = useRef<HTMLHeadingElement>(null);
+  const lang = useLang();
   const { problems, bannedCount = 0 } = coaching;
   const groups = useMemo(() => (advice ? neutralAsAlternatives(proposalGroups(problems, advice)) : null), [problems, advice]);
   // Il problema scelto a sinistra (null: tutti) e la proposta nella carta grande (null: la prima della lista)
@@ -546,8 +542,6 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
   // L'alternativa scelta di ogni posto, solo per i consigli con cui è nata (cambiano i consigli: si riparte dalla migliore)
   const [picks, setPicks] = useState<{ advice: CoachAdvice | null; chosen: Record<string, number> }>({ advice: null, chosen: {} });
   const chosen = picks.advice === advice ? picks.chosen : {};
-  // La prima riga mostrata (non il numero di pagina): se cambia quante ne stanno, la pagina resta quella con quella riga
-  const [start, setStart] = useState(0);
   const [flash, setFlash] = useState<{ nonce: number; id: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const handled = useRef<number | null>(null);
@@ -560,7 +554,6 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
     if (!hit) return;
     setFilter(focus.key);
     setHeroId(hit.id);
-    setStart(0);
     setFlash({ nonce: focus.nonce, id: hit.id });
   }, [focus, groups]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -658,83 +651,69 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
 
   const before = rating ? areaSnapshot(rating) : null;
   const solvesKey = (g: ProposalGroup, key: string) => g.options.some(o => o.fix.solves.includes(key));
+  const pickOf = (g: ProposalGroup) => g.options[Math.min(chosen[g.id] ?? 0, g.options.length - 1)];
+  const entries = problemEntries(mapped);
   // Un filtro su un problema che dopo un cambio non c'è più (o che nessuno risolve più) vale come "tutti"
   const active = filter && groups?.some(g => solvesKey(g, filter)) && mapped.some(x => x.key === filter) ? filter : null;
   const visible = groups ? (active ? groups.filter(g => solvesKey(g, active)) : groups) : [];
   const hero = visible.find(g => g.id === heroId) ?? visible[0] ?? null;
-  const others = visible.filter(g => g !== hero);
-  const heroPick = hero ? hero.options[Math.min(chosen[hero.id] ?? 0, hero.options.length - 1)] : null;
+  const heroPick = hero ? pickOf(hero) : null;
   const cured = new Set(heroPick?.fix.solves ?? []);
-  const pages = Math.max(1, Math.ceil(others.length / perPage));
-  const page = Math.min(Math.floor(start / perPage), pages - 1);
-  const rows = others.slice(page * perPage, (page + 1) * perPage);
-  const entries = problemEntries(mapped);
-  const counts = new Map(entries.map(e => [e.problem.key, groups ? groups.filter(g => solvesKey(g, e.problem.key)).length : 0]));
-  // I blocchi della diagnosi: i problemi con la stessa proposta migliore (la prima della lista che li risolve) insieme,
-  // nell'ordine dei problemi; quelli che nessun cambio risolve in coda
-  const pickOf = (g: ProposalGroup) => g.options[Math.min(chosen[g.id] ?? 0, g.options.length - 1)];
-  const blocks: RailBlock[] = [];
-  const byCure = new Map<string, RailBlock>();
-  const stuck: RailBlock = { cure: null, pick: null, entries: [] };
-  for (const entry of entries) {
-    // La cura è la proposta che si vede (quella scelta del posto), non una sua alternativa
-    const cure = groups?.find(g => pickOf(g).fix.solves.includes(entry.problem.key)) ?? null;
-    if (!cure) { stuck.entries.push(entry); continue; }
-    let block = byCure.get(cure.id);
-    if (!block) {
-      block = { cure, pick: pickOf(cure), entries: [] };
-      byCure.set(cure.id, block);
-      blocks.push(block);
-    }
-    block.entries.push(entry);
+  // I blocchi della classifica: ogni proposta (nell'ordine della lista) coi problemi che è la prima a risolvere; i problemi
+  // che risolve solo una sua alternativa vanno sotto di lei; senza filtro, in coda quelli che nessun cambio risolve
+  const entryId = (e: ProblemEntry) => `${e.problem.key}|${e.role ?? ''}`;
+  const taken = new Set<string>();
+  const blocks: RankBlock[] = visible.map(group => {
+    const pick = pickOf(group);
+    const own = entries.filter(e => !taken.has(entryId(e)) && pick.fix.solves.includes(e.problem.key));
+    own.forEach(e => taken.add(entryId(e)));
+    return { group, pick, entries: own, note: null };
+  });
+  for (const e of entries) {
+    if (taken.has(entryId(e))) continue;
+    const block = blocks.find(b => b.group && solvesKey(b.group, e.problem.key));
+    if (block) { block.entries.push(e); taken.add(entryId(e)); }
   }
-  if (stuck.entries.length) blocks.push(stuck);
+  for (const block of blocks) {
+    if (block.entries.length === 0) block.note = block.pick!.fix.solves.some(k => mapped.some(x => x.key === k)) ? 'already' : 'raise';
+  }
+  const stuck = entries.filter(e => !taken.has(entryId(e)) && !groups?.some(g => solvesKey(g, e.problem.key)));
+  if (!active && groups && stuck.length) blocks.push({ group: null, pick: null, entries: stuck, note: null });
+  const filterEntry = active ? entries.find(e => e.problem.key === active) ?? null : null;
   const actions: RowActions = { onFix, onMoveFix, onApplyFix, onApplyMove };
   const choose = (groupId: string, i: number) => setPicks(s => ({ advice, chosen: { ...(s.advice === advice ? s.chosen : {}), [groupId]: i } }));
-  const pickFilter = (key: string | null) => { setFilter(key); setHeroId(null); setStart(0); };
+  const pickFilter = (key: string | null) => {
+    setFilter(key); setHeroId(null);
+    // "Mostra tutte" sparisce col filtro: il fuoco va sul titolo della carta (che ora mostra la migliore)
+    if (key === null) requestAnimationFrame(() => heroTitle.current?.focus());
+  };
   const open = (groupId: string) => { setHeroId(groupId); setFlash(f => ({ nonce: (f?.nonce ?? 0) - 1, id: groupId })); };
+  const chosenNotBest = !!(hero && heroId && hero.id === heroId && hero !== visible[0]);
   return (
     <div className="coaching coach-cure" ref={root}>
-      <ProblemRail blocks={blocks} counts={counts} filter={active} onFilter={pickFilter} onCure={id => { setFilter(null); setStart(0); open(id); }}
-        heroId={hero?.id ?? null} total={groups?.length ?? 0} cured={cured}
-        clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} />
+      <RankRail blocks={blocks} total={visible.length} filter={filterEntry} onFilter={pickFilter} onOpen={open} heroId={hero?.id ?? null} cured={cured}
+        busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} />
       <section aria-labelledby={`${id}-list`} className="coach-main">
         <h3 className="visually-hidden" id={`${id}-list`}>{tr('coach.list.title')}</h3>
         <div className="coach-list-head coach-hero-band">
-          <h4 className="coach-sec">{tr(hero && heroId && hero.id === heroId && hero !== visible[0] ? 'coach.hero.chosen' : 'coach.hero.best')}</h4>
-          {hero && heroId && hero.id === heroId && hero !== visible[0] && (
-            <button type="button" className="coach-back" onClick={() => setHeroId(null)}><Icon name="undo" />{tr('coach.hero.back')}</button>
+          <h4 className="coach-sec">{tr(chosenNotBest ? 'coach.hero.chosen' : 'coach.hero.best')}</h4>
+          {chosenNotBest && (
+            <button type="button" className="coach-back" onClick={() => { setHeroId(null); requestAnimationFrame(() => heroTitle.current?.focus()); }}>
+              <Icon name="undo" />{tr('coach.hero.back')}
+            </button>
           )}
         </div>
         {groups ? (
           hero && <Hero key={hero.id} group={hero} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}
-            rating={rating} actions={actions} flash={flash?.id === hero.id} />
+            rating={rating} actions={actions} flash={flash?.id === hero.id} titleRef={heroTitle} />
         ) : (
           <>
             <div className="coach-hero skeleton" aria-hidden="true" />
             <p className="visually-hidden" role="status">{tr('coach.computing')}</p>
           </>
         )}
-        <div className="coach-list">
-          <div className="coach-list-head">
-            <h4 className="coach-sec">{tr(active ? 'coach.list.othersFor' : 'coach.list.others')}{groups && <span className="coach-count">{others.length}</span>}
-              {active && <button type="button" className="coach-back" onClick={() => pickFilter(null)}><Icon name="close" />{tr('coach.list.showAll')}</button>}</h4>
-            {groups && <Pager page={page} pages={pages} from={page * perPage + 1} to={Math.min(others.length, (page + 1) * perPage)} onPage={n => setStart(n * perPage)} />}
-          </div>
-          <div className="coach-list-box" ref={listBox}>
-            {groups ? (
-              others.length > 0
-                ? <ol className="coach-rows" style={rowsStyle}>
-                    {rows.map(group => <ProposalItem key={group.id} group={group} choice={chosen[group.id] ?? 0} problems={problems} before={before} onOpen={() => open(group.id)} />)}
-                  </ol>
-                : <p className="coach-list-empty">{tr(active ? 'coach.list.noneFor' : 'coach.list.none')}</p>
-            ) : (
-              <ol className="coach-rows" aria-busy="true" style={rowsStyle}>
-                {Array.from({ length: perPage }, (_, i) => <li key={i} className="coach-item skeleton" aria-hidden="true" />)}
-              </ol>
-            )}
-          </div>
-        </div>
+        {/* Cosa c'è nella carta, detto a chi usa il lettore di schermo quando cambia (proposta aperta, alternativa, filtro) */}
+        <p className="visually-hidden" aria-live="polite">{heroPick ? tr('coach.hero.now', { name: proposalName(heroPick, tr, lang) }) : ''}</p>
         {banned}
       </section>
     </div>
