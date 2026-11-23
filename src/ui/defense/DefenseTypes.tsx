@@ -125,7 +125,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
       <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
         {...focusAt(member, i, { slot: member, col: i })}>
-        <span className="ct-num">{cell.pct}<i>%</i></span>
+        <span className="ct-num">{cell.band !== 'ohko' && cell.pct >= 100 ? 99 : cell.pct}<i>%</i></span>
         <span className="visually-hidden"> {band.tag} · {t('ddetail.sides', { p: cell.physical, s: cell.special })}</span>
         <EffTag label={tag} side="defense" />
       </td>

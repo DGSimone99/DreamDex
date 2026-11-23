@@ -160,7 +160,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         )}
         {/* Un'area che non conta nel voto (Velocità nello stall) lo dice accanto al voto */}
         {areaInfo?.inactive && <span className="area-inactive" role="note">{t('rating.notCounted')}</span>}
-        <AreaProblems area={title} problems={problems} advice={advice} onCoaching={onCoaching} />
+        <AreaProblems area={title} problems={problems} advice={advice} onCoaching={onCoaching} low={grade?.grade === 'C' || grade?.grade === 'D'} />
         {!single && (
           <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
             {tabs.map((tab, i) => (
@@ -217,8 +217,10 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
  * Una pillola è un pulsante (apre il Coaching sulla prima proposta che la risolve) solo se almeno una proposta del
  * Coaching la risolve; mentre i consigli si calcolano, o senza proposte, mostra solo il tooltip.
  */
-function AreaProblems({ area, problems, advice, onCoaching }: {
+function AreaProblems({ area, problems, advice, onCoaching, low = false }: {
   area: string; problems: CoachProblem[]; advice: CoachAdvice | null; onCoaching?: (problemKey?: string) => void;
+  /** Voto C o D: senza problemi la pillola non è verde (il voto è basso per la media, non per un buco). */
+  low?: boolean;
 }) {
   const t = useT();
   const lang = useLang();
@@ -234,7 +236,9 @@ function AreaProblems({ area, problems, advice, onCoaching }: {
   return (
     <ul ref={listRef} className="area-chips" aria-label={t('analysis.areaProblems', { area })}>
       {entries.length === 0 ? (
-        <li><span className="area-chip good"><Icon name="check" />{t('area.problems.clear')}</span></li>
+        low
+          ? <li><span className="area-chip low">{t('area.problems.lowAverage')}</span></li>
+          : <li><span className="area-chip good"><Icon name="check" />{t('area.problems.clear')}</span></li>
       ) : entries.slice(0, fit).map(entry => (
         <ProblemChip key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry}
           onOpen={fixable.has(entry.problem.key) ? () => onCoaching!(entry.problem.key) : undefined} />

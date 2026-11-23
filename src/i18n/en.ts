@@ -908,6 +908,7 @@ export const en = {
   'area.guide.button': "How {tab} works",
   'area.guide.general': "How it works",
   'area.problems.clear': "No problems",
+  'area.problems.lowAverage': "No single gap: the average is low",
   'area.problems.go': "Go to Coaching: {what}",
   'area.problems.one': "1 problem",
   'area.problems.many': "{n} problems",

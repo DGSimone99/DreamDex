@@ -28,12 +28,12 @@ const rowOf = (name: string) => barOf(name).closest('tr')!;
 const totalOf = (name: string) => Number(barOf(name).querySelector('.sp-total')!.textContent!.replace('%', ''));
 const roomSwitch = () => screen.queryByRole('switch', { name: /^Distortozona/ });
 
-describe('Velocità rifinita: muri, priorità, Speed vera', () => {
-  it('sotto il nome "Speed" con la velocità vera; i muri (famiglia principale muri) grigi con "· muro"', () => {
+describe('Velocità rifinita: muri, priorità, Vel vera', () => {
+  it('sotto il nome "Vel" con la velocità vera; i muri (famiglia principale muri) grigi con "· muro"', () => {
     view(plain);
     // (MemberMon lo scrive accanto alla Velocità e, per le cornici basse senza statistiche, sulla riga del nome)
     expect(within(rowOf('Toxapex')).getAllByText(/· muro/).length).toBeGreaterThan(0);
-    expect(rowOf('Toxapex').querySelector('.def-mon-speed')).toHaveTextContent(/^Speed \d+$/);
+    expect(rowOf('Toxapex').querySelector('.def-mon-speed')).toHaveTextContent(/^Vel \d+$/);
     expect(barOf('Toxapex')).toHaveClass('wall');
     expect(barOf('Toxapex')).not.toHaveClass('bad');
     // Un attaccante tiene i colori di stato, niente "muro"
@@ -104,9 +104,9 @@ describe('Velocità: Trick Room', () => {
       expect(totalOf(name)).toBe(Math.round(100 * roomShare(members.find(m => m.species === name)!)));
     }
     expect(totalOf('Hatterene')).toBeGreaterThan(totalOf('Iron Valiant'));
-    // Le spinte non contano: niente pezzi a righe; i muri qui hanno i colori come gli altri
+    // Le spinte non contano: niente pezzi a righe; i muri restano grigi anche qui (la Velocità non è il loro lavoro)
     expect(document.querySelectorAll('.sp-seg-own, .sp-seg-team')).toHaveLength(0);
-    expect(barOf('Toxapex')).not.toHaveClass('wall');
+    expect(barOf('Toxapex')).toHaveClass('wall');
     expect(document.querySelector('.def-members thead')).toHaveTextContent(/Muove prima di… \(i più usati\)/);
     expect(document.querySelector('.og-legend')).toHaveTextContent('Con Distortozona i più lenti muovono prima: la barra dice prima di quanti del meta muove');
     // Il tooltip nell'ordine di Trick Room: sopra il membro chi è più lento (muove prima)

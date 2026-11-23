@@ -339,7 +339,7 @@ A dark, cool ground with two saturated version colours that swap per game, plus 
 ### Tertiary (status only)
 - **Alarm Red** (bad on bad-bg): legality and serious problems, banned tags, falling values, destructive hovers, OHKO taken in Difesa.
 - **Caution Yellow** (warn on warn-bg): "check this", minor problems, the C grade, 2HKO taken in Difesa.
-- **Pitch Green** (good on good-bg): strengths and gains, the A grade, rising values, hits that hold in Difesa, KOs dealt in Offesa.
+- **Pitch Green** (good on good-bg): strengths and gains, the A grade, rising values, hits that hold in Difesa, KOs dealt in Offesa (the Offesa KO stamp is dark green, the Difesa one red).
 - **Room Violet** (room, room-ink, room-soft): Trick Room only, in the Velocità tab, the same in every palette.
 
 ### Neutral
@@ -355,7 +355,7 @@ The 18 classic type colours (`src/ui/Sprite.tsx`) fill the icon tile of type chi
 
 **The Cyan Works Rule.** Cyan is work, information and selection: hover, focus, pressed, chosen, meters, links, info.
 
-**The Status Means Status Rule.** Red, yellow and green never decorate and never follow the palette. In Difesa they are a traffic light on the hits taken (holds green, 2HKO yellow, OHKO red). Counts are role-aware: a member's count is toned only where it is that member's job, so walls stay neutral in Offesa and Velocità and attackers stay neutral in Difesa. A team-level hole always keeps its colour.
+**The Status Means Status Rule.** Red, yellow and green never decorate and never follow the palette. In Difesa they are a traffic light on the hits taken (holds green, 2HKO yellow, OHKO red). Counts are role-aware: a member's count is toned only where it is that member's job, so walls stay neutral in Offesa and Velocità (Trick Room too) and attackers stay neutral in Difesa. A team-level hole always keeps its colour.
 
 **The Only Accents Change Rule.** A palette swaps the accent tokens and nothing else; ground, panels, lines, text, status, room and type colours are identical in Sword and Shield and Scarlet and Violet. "Segue il gioco" (default) picks Scarlet and Violet for Gen 9 and Sword and Shield otherwise. Never hard-code an accent hex in a component (the Settings swatches, which show the palettes, are the one exception).
 
@@ -507,7 +507,7 @@ The one expressive shape is the slant: a parallelogram cut by `clip-path: polygo
 - **Pokémon tab toolbar:** search, Aggiungi | Sostituisci (with "al posto di"), Tipo di team and Filtri share one height (`--tb-h`: 38px, 34px on low laptops, 44px with a touch screen at every width), so the row lines up. On the phone (under 600px) Tipo di team moves to the top of the Filtri window (Filtri lights up when a team type is chosen), so the bar is two rows: Aggiungi | Sostituisci, then search and Filtri. When the bar is narrow (560px or less) "al posto di" sits small and uppercase above the chosen member ("Tutti ⌄"), like the Tipo di team label, instead of disappearing.
 
 ### Area template (Analisi)
-Every area tab has the same shape. On top a head band (Panel, 1px Line Soft, about 50px, one centred row, no magenta): the area's grade letter (800 italic 30px) and word in the grade colour, then the area's problem chips on one row (the rest in "+N"; with none, one green "✓ Nessun problema"), then at the right the sub-view selector as a small segmented control and the "?". Under it the chosen sub-view in a framed Panel that never scrolls and starts at the same y in every area. Colour legends always sit top right in a 20px row above the table (12px Muted, `--legend-*` gaps); effectiveness and Trick Room switches sit top left on the same row. Member tables end with a Team Coverage row pinned to the bottom under a soft neutral wash and the "TEAM COVERAGE" plate.
+Every area tab has the same shape. On top a head band (Panel, 1px Line Soft, about 50px, one centred row, no magenta): the area's grade letter (800 italic 30px) and word in the grade colour, then the area's problem chips on one row (the rest in "+N"; with none, one green "✓ Nessun problema", or with a C or D grade a yellow "Nessun buco singolo: è bassa la media"), then at the right the sub-view selector as a small segmented control and the "?". Under it the chosen sub-view in a framed Panel that never scrolls and starts at the same y in every area. Colour legends always sit top right in a 20px row above the table (12px Muted, `--legend-*` gaps); effectiveness and Trick Room switches sit top left on the same row. Member tables end with a Team Coverage row pinned to the bottom under a soft neutral wash and the "TEAM COVERAGE" plate.
 
 Clicking an item that leads elsewhere opens the target view with that item lit (cyan ring, the rest greyed with grayscale, never opacity) and an "Evidenziato: X · Mostra tutti" note in the legend row.
 

@@ -148,15 +148,18 @@ describe('vista di un\'area sulla pagina', () => {
     }
   });
 
-  it('senza problemi una pillola verde "Nessun problema" (anche in Velocità), ferma', async () => {
+  it('senza problemi una pillola verde "Nessun problema" (anche in Velocità), ferma; con voto C o D una gialla "è bassa la media"', async () => {
     const user = userEvent.setup();
     const onCoaching = vi.fn();
     for (const area of ['defense', 'speed'] as const) {
       const { unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} onCoaching={onCoaching} />);
       const list = screen.getByRole('list', { name: /^Problemi in / });
       expect(within(list).getAllByRole('listitem')).toHaveLength(1);
-      const chip = within(list).getByText('Nessun problema');
-      expect(chip).toHaveClass('area-chip', 'good');
+      // Voto C o D: niente verde, il voto è basso per la media e non per un buco
+      const low = !!document.querySelector('.area-grade.grade-C, .area-grade.grade-D');
+      const chip = within(list).getByText(low ? 'Nessun buco singolo: è bassa la media' : 'Nessun problema');
+      if (low) { expect(chip).toHaveClass('area-chip', 'low'); expect(chip).not.toHaveClass('good'); }
+      else expect(chip).toHaveClass('area-chip', 'good');
       expect(within(list).queryByRole('button')).toBeNull();
       await user.click(chip);
       expect(onCoaching).not.toHaveBeenCalled();

@@ -112,7 +112,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         onFocus={e => { hover.enter(k0).onFocus(); tip.focus({ species: row.species, m }).onFocus(e); }} onBlur={tip.close}>
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
         {k === 'ohko'
-          ? <span className="cm-ko" aria-hidden="true">KO</span>
+          ? <span className="cm-ko win" aria-hidden="true">KO</span>
           : <><span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} /></>}
         {k === 'ohko' && <span className="visually-hidden">{c.pct}%</span>}
         {TAG[k] && <span className="visually-hidden"> {TAG[k]}</span>}
@@ -250,7 +250,7 @@ function OffenseMetaLegend() {
   const t = useT();
   return (
     <>
-      <span className="cm-ko small">KO</span>
+      <span className="cm-ko small win">KO</span>
       {KO_ORDER.filter(b => b !== 'ohko').map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
       <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
       <span className="wall-legend-setup"><i className="kob-tri team" />{t('kob.legendTeam')}</span>

@@ -137,8 +137,8 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
       </span>
     );
     const parts = m ? partsOf(m) : null;
-    // I muri restano grigi (solo fuori da Trick Room): per loro la lentezza non è un difetto
-    const cls = parts ? (wall && !room ? 'wall' : tone(parts.total)) : '';
+    // I muri restano grigi, anche in Trick Room: la Velocità non è il loro lavoro
+    const cls = parts ? (wall ? 'wall' : tone(parts.total)) : '';
     const mon = (
       <MemberMon name={name} set={set} stats="speed" nameTag={prioTag('main') || undefined}>
         {(wall || moves.length > 0) ? <>{prioTag('alt')}{wall && <span className="sp-wall">· {t('sdetail.wall')}</span>}</> : undefined}

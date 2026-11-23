@@ -191,7 +191,8 @@
 /* Il triangolo del setup nell'angolo in alto a destra (quasi dritto), dall'angolo esterno del pezzo (-1px: sopra il bordo) */
 .kob.has-setup::after { content: ""; position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
 .kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
-.kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
+/* Quasi bianco sul verde dell'OHKO: almeno 4,5:1 anche sul verde più chiaro del telefono */
+.kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 20%, white); }
 .kob.two { color: var(--good); background: color-mix(in srgb, var(--good) 22%, transparent); }
 .kob.two { --kob-ink: color-mix(in srgb, var(--good) 35%, var(--text)); }
 .kob.ohko:hover { box-shadow: inset 0 1px 0 color-mix(in srgb, white 22%, transparent), 0 0 8px color-mix(in srgb, var(--good) 35%, transparent); }
@@ -324,6 +325,9 @@
 .cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic var(--fs-title-s)/1 var(--display); letter-spacing: 0.06em; color: #fff; background: color-mix(in srgb, var(--bad) 40%, #a00d24);
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--bad) 60%, transparent)); }
 .cm-ko.small { padding: var(--sp-1) 7px; font-size: var(--fs-label); filter: none; }
+/* In Offesa il KO è un colpo dato: verde scuro (il verde dei KO dati), il bianco si legge (almeno 4,5:1) */
+.cm-ko.win { background: color-mix(in srgb, var(--good) 20%, #075c3a); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--good) 45%, transparent)); }
+.cm-ko.small.win { filter: none; }
 /* Righe basse: niente barra, resta il numero */
 @container (max-height: 330px) { .cm-hp { display: none; } }
 /* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
