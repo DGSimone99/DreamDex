@@ -610,6 +610,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* I tipi dei motivi: solo l'icona, 14 px come gli altri segni della riga (spada, scudo, catena) */
 .reason .type-chip { --tc-h: var(--ti-inline); }
 .reason .sym-chips.icons-only .type-chip > span { display: none; }
+/* Un tipo solo: anche il nome, come il Pokémon della riga VS (grassetto, si accorcia coi puntini, l'icona resta) */
+.reason .sym-chips.single .sym-chip { flex: 0 1 auto; min-width: 0; }
+.reason .sym-chips.single .type-chip { flex: none; }
+.reason .sym-type-name { min-width: 0; margin-left: var(--sp-2); font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* La "×" davanti a un tipo a cui il candidato è immune */
 /* "vs" + pallino del tipo + nome, come nel dettaglio; il nome si accorcia, il "+N" resta */
 .reason .sym-mons { display: flex; align-items: center; min-width: 0; }
