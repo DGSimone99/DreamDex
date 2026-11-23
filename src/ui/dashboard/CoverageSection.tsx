@@ -10,14 +10,15 @@ import { Icon } from '../icons';
 import { hint } from '../MoveTip';
 import { FormeName } from '../candidateParts';
 import { PokemonIcon } from '../PokemonName';
-import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { typeColor } from '../Sprite';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { typeIconUrl, tileStyle } from '../typeIcons';
 import { useMediaQuery } from '../useMediaQuery';
 import { useRoving } from '../useRoving';
 import { DefenseTip, OffenseTip } from './CoverageTip';
 import { DashCard, DashLink } from './DashCard';
-import { firstType, useReasonText } from './threatText';
+import { ThreatTip } from './ThreatTip';
+import { useReasonText } from './threatText';
 
 /** Prima lettera minuscola: il dettaglio segue "Terra, colpisce:". */
 const lower = (text: string) => text.charAt(0).toLocaleLowerCase() + text.slice(1);
@@ -270,39 +271,28 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
       </div>
       {/* Dove porta il clic sulle minacce, per i lettori di schermo */}
       {threats && (['defense', 'offense'] as const).map(side => <span key={side} id={goIds[side]} hidden>{goText(t, places[side])}</span>)}
+      {/* Il tooltip della minaccia, lo stesso ovunque (ThreatTip): i due lati, quello che il clic apre per primo; lo scudo per
+          la Difesa (reggerla), la spada per l'Offesa (mandarla KO) */}
       {thrTip.anchor && tipThreat && (
-        <FloatTip rect={thrTip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
-          <div className="ftip-head">
-            <Sprite species={tipThreat.species} size={SPRITE_TIP_ROW} />
-            <b>{tipThreat.species}</b>
-            <span className="thr-tip-use">{usage(tipThreat)}</span>
-          </div>
-          {/* I due lati, quello che il clic apre per primo: lo scudo per la Difesa (reggerla), la spada per l'Offesa (mandarla KO) */}
-          <ul className="thr-tip-why sided">
-            {([sideOf(tipThreat), sideOf(tipThreat) === 'defense' ? 'offense' : 'defense'] as const).map(side => {
-              const state = stateOf(tipThreat, side);
-              return (
-                <li key={side} className={state === 'bad' ? 'open' : state === 'minor' ? 'thin' : 'ok'}>
-                  <Icon name={side === 'defense' ? 'shield' : 'sword'} />
-                  <b>{t(side === 'defense' ? 'area.defense' : 'area.strength')}</b> {sideText(tipThreat, side)}
-                </li>
-              );
-            })}
-          </ul>
-          <TipGo place={places[sideOf(tipThreat)]} />
-        </FloatTip>
+        <ThreatTip rect={thrTip.anchor.rect} species={tipThreat.species} status={tipThreat.status} usage={tipThreat.usage} go={places[sideOf(tipThreat)]}
+          reasons={([sideOf(tipThreat), sideOf(tipThreat) === 'defense' ? 'offense' : 'defense'] as const).map(side => {
+            const state = stateOf(tipThreat, side);
+            return { side, text: sideText(tipThreat, side), state: state === 'bad' ? 'open' : state === 'minor' ? 'thin' : 'ok' };
+          })} />
       )}
       {moreTip.anchor && (
-        <FloatTip rect={moreTip.anchor.rect} tone={hiddenThreats.some(x => x.status === 'open') ? 'var(--bad)' : 'var(--warn)'} className="thr-tip">
-          <div className="ftip-head"><b>{t('dash.threatsMoreHead', { n: hiddenThreats.length })}</b></div>
-          <ul className="thr-tip-why">
-            {hiddenThreats.map(x => <li key={x.species} className={x.status === 'open' ? 'open' : 'thin'}><b>{x.species}</b> {word(x)}</li>)}
-          </ul>
+        <FloatTip rect={moreTip.anchor.rect} tone={hiddenThreats.some(x => x.status === 'open') ? 'var(--bad)' : 'var(--warn)'} className="thr-tip tip-w-m">
+          <TipHead lead={<TipGlyph icon="warning" />} title={t('dash.threatsMoreHead', { n: hiddenThreats.length })} />
+          <TipSec>
+            <ul className="thr-tip-why">
+              {hiddenThreats.map(x => <li key={x.species} className={x.status === 'open' ? 'open' : 'thin'}><b>{x.species}</b> {word(x)}</li>)}
+            </ul>
+          </TipSec>
           <TipGo place={places.defense} />
         </FloatTip>
       )}
       {tip.anchor && tipCell && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(tipCell.type)} className={tip.anchor.key.side}>
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(tipCell.type)} className={`tip-w-m cov-tip ${tip.anchor.key.side}`}>
           {tip.anchor.key.side === 'offense' ? <OffenseTip cell={tipCell} /> : <DefenseTip cell={tipCell} />}
         </FloatTip>
       )}

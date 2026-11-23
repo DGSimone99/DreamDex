@@ -1,28 +1,24 @@
-import type { CSSProperties } from 'react';
 import { holdBand, type HoldBand } from '../../engine/defense';
 import type { TypeCell } from '../../engine/overviewDashboard';
 import type { TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { HOLD_BANDS } from '../defense/holds';
 import { Sprite } from '../Sprite';
-import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { tileStyle, typeIconUrl } from '../typeIcons';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipDmg, TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from '../TipHead';
 import { MovePill } from '../MovePill';
 
 /** Il badge dei colpi (OHKO, 2HKO, 3HKO, 4HKO+) dal danno %, con le soglie della scheda Difesa. */
 const bandOf = (pct: number): HoldBand => holdBand(pct / 100);
 
-/** La testata: icona tonda del tipo, nome e a destra il valore del tipo nell'area, in %. */
-function Head({ type, value }: { type: string; value: number }) {
+/**
+ * La testata unica: la tessera del tipo, il nome, sotto cosa misura il danno; a destra quanto è coperto il tipo nell'area,
+ * in %, con sotto la parola che lo dice ("copertura").
+ */
+function Head({ type, value, sub }: { type: string; value: number; sub: string }) {
+  const t = useT();
   const lang = useLang();
-  return (
-    <div className="ftip-head">
-      <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
-      <b>{typeName(type as TypeName, lang)}</b>
-      <em className="ftip-val">{value}<small>%</small></em>
-    </div>
-  );
+  return <TipHead lead={<TipTypeIcon type={type} />} title={typeName(type as TypeName, lang)} sub={sub} num={<>{value}<small>%</small></>} qualifier={t('tip.covQual')} />;
 }
 
 /** La mossa: icona tonda e nome nel colore del suo tipo (alone leggero), poi categoria (fisico/speciale) e potenza. */
@@ -31,33 +27,27 @@ export function MoveLine({ name, type }: { name: string; type?: string | null })
   return <MovePill name={name} type={type} size="sm" tip={false} className="ftip-move" />;
 }
 
-/** Offesa: i tre migliori colpi del team sul Pokémon di prova del tipo, a podio; il badge dei colpi a nastro sulla sprite. */
+/** Offesa: i tre migliori colpi del team sul Pokémon medio del tipo, uno per riga (sprite, nome e mossa, la riga di danno). */
 export function OffenseTip({ cell }: { cell: TypeCell }) {
   const t = useT();
   const lang = useLang();
   const hits = cell.hits.filter(h => h.move).slice(0, 3);
   return (
     <>
-      <Head type={cell.type} value={cell.offenseLevel} />
-      {hits.length
-        ? (
-          <div className="ftip-podium" style={{ '--cols': hits.length } as CSSProperties}>
-            {hits.map(hit => {
-              const band = bandOf(hit.pct);
-              return (
-                <div key={hit.species} className="ftip-hit">
-                  <span className={`ftip-ko off ${band}`}>{HOLD_BANDS[band].tag}</span>
-                  <span className="ftip-plinth"><Sprite species={hit.species} size={SPRITE_TIP} /></span>
-                  <span className={`ftip-pct ${band}`}>{hit.pct}<small>%</small></span>
-                  <span className="ftip-name">{hit.species}</span>
-                  <MoveLine name={hit.move!} />
-                </div>
-              );
-            })}
-          </div>
-        )
-        : <p className="ftip-empty">{t('tip.noHits')}</p>}
-      <p className="ftip-foot">{t('tip.offFoot', { type: typeName(cell.type as TypeName, lang) })}</p>
+      <Head type={cell.type} value={cell.offenseLevel} sub={t('tip.offFoot', { type: typeName(cell.type as TypeName, lang) })} />
+      <TipSec>
+        {hits.length
+          ? (
+            <TipRows className="cov-rows">
+              {hits.map(hit => (
+                <TipRow key={hit.species} className="cov-hit" lead={<Sprite species={hit.species} size={SPRITE_TIP_ROW} />} title={hit.species}
+                  sub={<MoveLine name={hit.move!} />}
+                  value={<TipDmg pct={hit.pct} range={hit.range} side="off" band={bandOf(hit.pct)} />} />
+              ))}
+            </TipRows>
+          )
+          : <p className="ftip-empty">{t('tip.noHits')}</p>}
+      </TipSec>
     </>
   );
 }
@@ -72,39 +62,28 @@ const GROUPS = [
 
 const multLabel = (m: number) => (m === 0 ? '×0' : m <= 0.25 ? '×¼' : m < 1 ? '×½' : m >= 4 ? '×4' : m > 1 ? '×2' : '×1');
 
-/** Difesa: i membri per moltiplicatore (immuni, resistono, neutri, deboli), ognuno col danno % che subisce e il badge. */
+/** Difesa: i membri per moltiplicatore (immuni, resistono, neutri, deboli), una sezione per gruppo, ognuno con la riga di danno. */
 export function DefenseTip({ cell }: { cell: TypeCell }) {
   const t = useT();
   const lang = useLang();
   return (
     <>
-      <Head type={cell.type} value={cell.defenseLevel} />
+      <Head type={cell.type} value={cell.defenseLevel} sub={t('tip.defFoot', { type: typeName(cell.type as TypeName, lang) })} />
       {GROUPS.map(group => {
         const members = cell.members.filter(m => group.test(m.mult)).sort((a, b) => (a.pct ?? 999) - (b.pct ?? 999));
         if (!members.length) return null;
         const mults = [...new Set(members.map(m => multLabel(m.mult)))].join(' ');
         return (
-          <div key={group.key} className="ftip-group">
-            <span className={`ftip-group-label ${group.tone}`}>{t(`tip.${group.key}`)} <small>{mults}</small></span>
-            <span className="ftip-group-mons">
-              {members.map(m => {
-                const band = m.pct === null ? null : bandOf(m.pct);
-                return (
-                  <span key={m.species} className="ftip-mon">
-                    <Sprite species={m.species} size={SPRITE_TIP_ROW} />
-                    <span className="ftip-mon-name">{m.species}</span>
-                    {m.pct !== null && band && <>
-                      <span className="ftip-mon-pct">{m.pct}%</span>
-                      <span className={`ftip-ko def ${band}`}>{HOLD_BANDS[band].tag}</span>
-                    </>}
-                  </span>
-                );
-              })}
-            </span>
-          </div>
+          <TipSec key={group.key} className={`cov-group ${group.tone}`} label={<>{t(`tip.${group.key}`)} <small>{mults}</small></>}>
+            <TipRows className="cov-rows">
+              {members.map(m => (
+                <TipRow key={m.species} className="cov-mon" lead={<Sprite species={m.species} size={SPRITE_TIP_ROW} />} title={m.species}
+                  value={m.mult === 0 ? <TipDmg pct={0} side="def" band={null} immune /> : m.pct !== null ? <TipDmg pct={m.pct} range={m.range} side="def" band={bandOf(m.pct)} /> : undefined} />
+              ))}
+            </TipRows>
+          </TipSec>
         );
       })}
-      <p className="ftip-foot">{t('tip.defFoot', { type: typeName(cell.type as TypeName, lang) })}</p>
     </>
   );
 }

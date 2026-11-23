@@ -6,6 +6,8 @@ import { useLang, useT } from '../../i18n/react';
 import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { KoBadge } from '../KoBadge';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { tileStyle, typeIconUrl } from '../typeIcons';
 
 /** Le due fasce che contano per la Coverage: KO in un colpo e in due (il 3HKO quasi non conta: ignorato). */
@@ -60,11 +62,13 @@ export const pieceSize = (n: number) => ({ '--n': Math.max(0, n) } as CSSPropert
  * non c'è (salvo che il setup ci porti qualcuno: allora resta, spento, col triangolo). `alarm` (la riga del team): il
  * pezzo che resta è in rosso, sono gli scoperti. Passando su un pezzo il tooltip DreamDex elenca i bersagli, poi in righe a
  * parte quelli in più dopo la danza o con Tera/Z. A destra della barra il conto "11/18": quanti ne manda KO in due colpi o
- * meglio (nella riga del team verde se li copre tutti, rosso se no). `who`: il nome nella testata (il membro o il team); `of`: "tipi su 18".
+ * meglio (nella riga del team verde se li copre tutti, rosso se no). `who`: il nome nella testata (il membro o il team);
+ * `mon`: il membro (la sua sprite in testata; la riga del team ha la spada); `of`: la parola sotto il conto ("tipi").
+ * La testata dice la fascia nella riga sotto il nome (il badge OHKO o 2HKO e la frase) e a destra il conto "5/18".
  * Coi pezzi cliccabili (`onPick`) il tooltip finisce col piede TipGo verso `pickPlace` ("Clic: vai a Coverage tipi").
  */
-export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, pickPlace, alarm = false, quiet = false }: {
-  bands: KoBands; who: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
+export function KoBadges({ bands, who, mon, of, total, setupMove, onceName, onPick, pickPlace, alarm = false, quiet = false }: {
+  bands: KoBands; who: string; mon?: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
   /** Clic su un pezzo OHKO / 2HKO: apre il dettaglio su quei bersagli. */
   onPick?: (band: KoBand | 'rest') => void;
   /** Dove porta il clic su un pezzo (il nome della sottoscheda, es. "Coverage tipi"): il piede TipGo del tooltip e la descrizione. */
@@ -105,6 +109,8 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
   // Il colore dice quanto copre: pieno verde, da due terzi verde, da un terzo giallo, sotto rosso (zero spento); nella riga
   // del team basta uno scoperto per il rosso; `quiet` (un muro) lo lascia neutro
   const ratio = total ? hit / total : 0;
+  // In testata il membro con la sua sprite (un tooltip su un Pokémon), la riga del team con la spada
+  const lead = mon ? { sprite: mon } : { lead: <TipGlyph icon="sword" /> };
   const countTone = alarm ? (rest > 0 ? ' bad' : ' full') : quiet ? ' quiet' : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   return (
     <span className="kob-line">
@@ -136,18 +142,23 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
       )}
       {key === 'rest' && (
         <FloatTip rect={tip.anchor!.rect} tone={restBad ? 'var(--bad)' : 'var(--faint)'} className="kot">
-          <div className="kot-head"><b>{restBad ? t('kob.uncoveredTitle') : t('kob.restTitle', { name: who })}</b><small>{of}</small></div>
-          {list(bands.rest)}
+          <TipHead {...lead} title={who} sub={restBad ? t('kob.uncoveredTitle') : t('kob.restSub')}
+            num={<>{rest}<small>/{total}</small></>} qualifier={of} />
+          <TipSec>{list(bands.rest)}</TipSec>
           {picks('rest') && <TipGo place={pickPlace!} />}
         </FloatTip>
       )}
       {key && key !== 'rest' && (
         <FloatTip rect={tip.anchor!.rect} tone="var(--good)" className="kot">
-          <div className="kot-head"><b>{who}</b><span className={`kob labeled ${key}`}><em>{TAG[key]}</em><b>{bands.plain[key].length}</b></span><small>{of}</small></div>
-          {bands.plain[key].length ? list(bands.plain[key]) : <p className="kot-none">{t('kob.none')}</p>}
-          {/* In più col setup o con Tera/Z: solo il nome e quanti, "Danzaspada +15" */}
-          {bands.setup[key].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={`${setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')} +${bands.setup[key].length}`}>{list(bands.setup[key])}</Extra>}
-          {bands.once[key].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[key].length}`}>{list(bands.once[key])}</Extra>}
+          <TipHead {...lead} title={who} sub={<><KoBadge side="off" band={key} />{t(key === 'ohko' ? 'kob.say.ohko' : 'kob.say.two')}</>}
+            num={<>{bands.plain[key].length}<small>/{total}</small></>} qualifier={of} />
+          <TipSec>{bands.plain[key].length ? list(bands.plain[key]) : <p className="kot-none">{t('kob.none')}</p>}</TipSec>
+          {/* In più col setup o con Tera/Z: il nome a sinistra e, allineata al badge della testata, la fascia col totale
+              (quelli di sopra più questi): "Granfisico … OHKO 14" */}
+          {bands.setup[key].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')}
+            badge={<KoBadge side="off" band={key} n={bands.plain[key].length + bands.setup[key].length} />}>{list(bands.setup[key])}</Extra>}
+          {bands.once[key].length > 0 && onceName && <Extra label={onceName}
+            badge={<KoBadge side="off" band={key} n={bands.plain[key].length + bands.once[key].length} />}>{list(bands.once[key])}</Extra>}
           {picks(key) && <TipGo place={pickPlace!} />}
         </FloatTip>
       )}
@@ -161,12 +172,9 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
   );
 }
 
-function Extra({ icon, label, children }: { icon?: ReactNode; label: string; children: ReactNode }) {
+function Extra({ icon, label, badge, children }: { icon?: ReactNode; label: string; badge?: ReactNode; children: ReactNode }) {
   return (
-    <div className="kot-extra">
-      <span className="kot-extra-h">{icon}{label}</span>
-      {children}
-    </div>
+    <TipSec className="kot-extra" label={<><span className="kot-extra-name">{icon}{label}</span>{badge && <span className="kot-extra-badge">{badge}</span>}</>}>{children}</TipSec>
   );
 }
 

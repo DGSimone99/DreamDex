@@ -73,7 +73,7 @@ describe("doppio: l'etichetta di stile", () => {
 
   it('i nomi dei cinque stili nuovi', () => {
     expect(['grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain', 'tailwind'].map(s => t('it', `teamStyle.${s}` as 'teamStyle.tailwind')))
-      .toEqual(['Campo Erboso', 'Campo Psichico', 'Campo Elettrico', 'Campo Nebbioso', 'Tailwind']);
+      .toEqual(['Campo Erboso', 'Campo Psichico', 'Campo Elettrico', 'Campo Nebbioso', 'Ventoincoda']);
     expect(['grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain', 'tailwind'].map(s => t('en', `teamStyle.${s}` as 'teamStyle.tailwind')))
       .toEqual(['Grassy Terrain', 'Psychic Terrain', 'Electric Terrain', 'Misty Terrain', 'Tailwind']);
   });

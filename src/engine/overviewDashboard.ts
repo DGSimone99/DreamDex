@@ -1,5 +1,6 @@
 import { usesMeta, type TeamAnalysis } from './analysis';
 import { COVERED_LEVEL, holdSeverity, type CoachProblem } from './coach';
+import type { PctRange } from './damage';
 import type { EngineData } from './data';
 import { battleName, toID } from './dex';
 import { ownersOf } from './needs';
@@ -24,13 +25,15 @@ export type CellState = 'ok' | 'minor' | 'bad';
  * resist: quanti membri reggono del tutto il tipo (Coverage tipi della Difesa). Per il tooltip della casella:
  * offenseLevel e hits (i migliori colpi del team sul Pokémon di prova del tipo, come nella scheda Offesa), defenseLevel e
  * members (per membro in ordine di team il moltiplicatore del tipo e il danno % del colpo più forte, fisico o speciale,
- * come nella Coverage tipi della Difesa; null se il motore non conosce il membro).
+ * come nella Coverage tipi della Difesa; null se il motore non conosce il membro). `range`: la forbice dei tiri del colpo
+ * vero dietro il numero (da minimo a massimo, in % dei PS), null senza colpo (facoltativa: i dati scritti a mano dei test
+ * non la portano) e quando il numero è una media pesata (si mostra il numero solo).
  */
 export interface TypeCell {
   type: string; defense: CellState; offense: CellState; defenseNote: string; offenseNote: string; resist: number;
   offenseLevel: number; defenseLevel: number;
-  hits: { species: string; move: string | null; pct: number }[];
-  members: { species: string; mult: number; pct: number | null }[];
+  hits: { species: string; move: string | null; pct: number; range?: PctRange | null }[];
+  members: { species: string; mult: number; pct: number | null; range?: PctRange | null }[];
 }
 /** soft: una mancanza che non toglie punti (team con meno di 6 membri). I minori non si mostrano più (2026-11-22, utente). */
 export interface RoleChip { need: LevelKey; level: 'essential' | 'important'; covered: boolean; owners: string[]; soft: boolean }
@@ -175,11 +178,12 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
       resist: row.heldBy.length,
       offenseLevel: off?.level ?? 0,
       defenseLevel: row.level,
-      hits: (off?.best ?? []).map(b => ({ species: b.species, move: b.move, pct: b.pct })),
+      hits: (off?.best ?? []).map(b => ({ species: b.species, move: b.move, pct: b.pct, range: b.range })),
       members: team.map((set, m) => {
         const species = battleName(set);
         const typed = rating.defense.typed.find(x => x.species === species);
-        return { species, mult: weakness.get(row.type)?.[m] ?? 1, pct: typed?.cells[typeIndex(row.type)]?.pct ?? null };
+        const k = typeIndex(row.type);
+        return { species, mult: weakness.get(row.type)?.[m] ?? 1, pct: typed?.cells[k]?.pct ?? null, range: typed?.ranges[k]?.range ?? null };
       }),
     };
   });

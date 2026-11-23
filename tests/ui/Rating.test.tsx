@@ -330,8 +330,12 @@ describe('Bonus/Malus', () => {
       expect(more).toHaveTextContent(/^\+2 altre/);
       expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altre 2 voci: Hazard doppio −3: Due setter di Stealth Rock · Due setter di Spikes; Scudo del clima +2: Sole aiuta');
       await tabTo(user, more);
-      await waitFor(() => expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Hazard doppio −3Due setter di Stealth Rock'));
-      expect(document.querySelector('.ftip.bm-row-tip')).toHaveTextContent('Scudo del clima +2Sole aiuta');
+      // La testata dice quante, poi una riga per voce: nome, il caso sotto, i punti a destra nel loro colore
+      await waitFor(() => expect(document.querySelector('.ftip.bm-more-tip .tip-title')).toHaveTextContent('Altre 2 voci'));
+      const rows = [...document.querySelectorAll('.ftip.bm-more-tip .tip-row')];
+      expect(rows.map(row => row.textContent)).toEqual(['Hazard doppioDue setter di Stealth Rock · Due setter di Spikes−3', 'Scudo del climaSole aiuta+2']);
+      expect(rows[0].querySelector('.tip-row-val')).toHaveClass('bad');
+      expect(rows[1].querySelector('.tip-row-val')).toHaveClass('good');
     } finally {
       height.mockRestore();
       client.mockRestore();
@@ -440,10 +444,17 @@ describe('Bonus/Malus', () => {
     expect(held).toHaveAttribute('tabindex', '0');
     expect(held).toHaveAccessibleDescription(/^Reggono 9 tipi su 18\. Reggono: Heatran0, .*\. Passano: Pelipper0, /);
     await tabTo(user, held);
-    await waitFor(() => expect(document.querySelector('.ftip.bm-held-tip')).toHaveTextContent('Reggono 9 tipi su 18'));
+    await waitFor(() => expect(document.querySelector('.ftip.bm-held-tip .tip-num')).toHaveTextContent('9/18'));
     const tip = document.querySelector<HTMLElement>('.ftip.bm-held-tip')!;
-    expect(tip.querySelectorAll('.bm-core-types img.on')).toHaveLength(9);
-    expect(tip.querySelectorAll('.bm-core-types img.off')).toHaveLength(9);
+    expect(tip.querySelector('.tip-qual')).toHaveTextContent('tipi che reggono');
+    // I tipi col loro nome in due gruppi: Reggono (verde) e Passano (rosso), 9 e 9
+    const groups = [...tip.querySelectorAll('.tip-sec')];
+    expect(groups.map(g => g.querySelector('.tip-sec-label')!.textContent)).toEqual(['Reggono', 'Passano']);
+    expect(groups[0]).toHaveClass('good');
+    expect(groups[1]).toHaveClass('bad');
+    expect(groups[0].querySelectorAll('.kot-type img')).toHaveLength(9);
+    expect(groups[1].querySelectorAll('.kot-type img')).toHaveLength(9);
+    expect(groups[0].querySelector('.kot-type')!.textContent).not.toBe('');
   });
 
   it('un core solo con posto per due: accanto il posto tratteggiato del secondo e quanto varrebbe', () => {

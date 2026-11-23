@@ -192,7 +192,8 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     expect(tip).toHaveAttribute('aria-hidden', 'true');
     expect(tip).toHaveTextContent('BalanceMuri e attaccanti in equilibrio');
     await user.unhover(balance);
-    expect(document.querySelector('.ftip.fill-option-tip')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip.fill-option-tip')).toBeNull());
     // Col fuoco da tastiera lo stesso tooltip
     balance.focus();
     await user.keyboard('{Shift>}{Tab}{/Shift}{Tab}');

@@ -17,13 +17,14 @@ import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import type { Lang } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { FloatTip, useFloatAnchor } from './FloatTip';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { Sprite, typeColor } from './Sprite';
 import { EeveeMoment } from './EeveeMoment';
 import type { CSSProperties } from 'react';
 import { useMemberTip } from './MemberCard';
 import { streamFill } from './useRanking';
+import { TipGlyph, TipHead, TipSec } from './TipHead';
 
 const ARCHETYPES: SinglesArchetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 /** Le voci dei tipi, in ordine: "Il migliore" (nessun tipo) e i cinque archetipi. */
@@ -76,7 +77,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const memberTip = useMemberTip();
   const ids = useId();
   // Il tooltip DreamDex delle scelte con una spiegazione (tipi di team, Qualsiasi): nome e frase, col mouse e col fuoco
-  const optionTip = useFloatAnchor<{ label: string; note: string }>();
+  const optionTip = useFloatAnchor<{ label: string; note: string; icon: IconName }>();
   const [tab, setTab] = useState<Tab>('proposals');
   const [pickState, setPick] = useState<{ archetype: Archetype | null; style: FillStyle | null }>({ archetype: null, style: null });
   const [favorites, setFavorites] = useState<FavoriteMode>('priority');
@@ -284,12 +285,13 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const gapText = (gap: Gap) => gap.kind === 'weakness'
     ? t(gap.count > 3 ? 'fill.gap.weaknessMany' : 'fill.gap.weakness', { n: gap.count, type: typeName(gap.type, lang) })
     : t(`fill.gap.${gap.kind}`);
+  // `icon`: il simbolo della testata del tooltip (il migliore la coppa, i tipi di team il team, senza stile la nuvola).
   // `note`: la spiegazione della scelta, non scritta sotto il nome (la colonna resta corta e le proposte partono più in
   // alto): nel tooltip DreamDex col mouse e col fuoco, e per i lettori di schermo nella descrizione (testo nascosto qui)
-  const radio = (key: string, checked: boolean, label: string, onClick: () => void, note?: string, disabled = false) => (
+  const radio = (key: string, checked: boolean, label: string, onClick: () => void, note?: string, disabled = false, icon: IconName = 'team') => (
     <button key={key} type="button" role="radio" aria-checked={checked} disabled={disabled} aria-label={label}
       aria-describedby={note ? `${ids}-${key}` : undefined}
-      className={`fill-option${disabled ? ' empty' : ''}`} onClick={onClick} {...(note ? optionTip.bind({ label, note }) : {})}>
+      className={`fill-option${disabled ? ' empty' : ''}`} onClick={onClick} {...(note ? optionTip.bind({ label, note, icon }) : {})}>
       <strong>{label}</strong>
       {note && <small id={`${ids}-${key}`} hidden>{note}</small>}
     </button>
@@ -394,14 +396,14 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                   archetype ? t(`archetype.${archetype}`) : t('fill.best'),
                   () => pick({ ...pickState, archetype }),
                   archetype ? t(`archetype.${archetype}.note`) : t('fill.bestNote'),
-                  available[typeKey(archetype)] === false && pickState.archetype !== archetype))}
+                  available[typeKey(archetype)] === false && pickState.archetype !== archetype, archetype ? 'team' : 'trophy'))}
               </div>
             </div>
             )}
             <div className="fill-group">
               <span className="fill-head" aria-hidden="true">{t('fill.style')}</span>
               <div className="fill-styles" role="radiogroup" aria-label={t('fill.style')}>
-                {radio('none', pickedStyle === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'))}
+                {radio('none', pickedStyle === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), t('fill.noStyleNote'), false, 'cloud')}
                 {styles.map((style: FillStyle) => radio(style, pickedStyle === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
               </div>
             </div>
@@ -417,9 +419,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
         </div>
 
         {optionTip.anchor && (
-          <FloatTip rect={optionTip.anchor.rect} tone="var(--accent)" className="kot fill-option-tip" side>
-            <div className="kot-head"><b>{optionTip.anchor.key.label}</b></div>
-            <p className="kot-none">{optionTip.anchor.key.note}</p>
+          <FloatTip rect={optionTip.anchor.rect} tone="var(--accent)" className="tip-w-s fill-option-tip" side>
+            {/* La frase che spiega l'opzione è la riga sotto il titolo (niente corpo senza righe) */}
+            <TipHead lead={<TipGlyph icon={optionTip.anchor.key.icon} />} title={optionTip.anchor.key.label} sub={optionTip.anchor.key.note} />
           </FloatTip>
         )}
 

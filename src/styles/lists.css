@@ -792,51 +792,65 @@
 .duel-tip-chip.out { visibility: hidden; position: absolute; }
 .duel-tip-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-/* La scheda di un consiglio: come le tendine (Ground, 6px, ombra Menu), bordo ciano come il chip acceso */
-.duel-tip-card { margin: 0; padding: 0; width: 324px; overflow: auto; color: var(--text); background: var(--ground); border: 1px solid var(--accent); border-radius: 6px;
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.55); white-space: normal; animation: tip 0.14s var(--ease); }
-.duel-tip-head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-6); border-bottom: 1px solid var(--line-soft); }
-.duel-tip-icon { display: inline-flex; width: 14px; height: 14px; }
-.duel-tip-icon svg { width: 14px; height: 14px; }
-.duel-tip-icon.def { color: var(--bad); }
-.duel-tip-icon.atk, .duel-tip-icon.move { color: var(--accent-ink); }
-.duel-tip-icon.spe { color: var(--warn); }
-.duel-tip-title { flex: 1 1 auto; min-width: 0; font: 600 var(--fs-section)/1.2 var(--ui); }
+/* La scheda di un consiglio: un popover coi pulsanti, vestito come i tooltip DreamDex (vedi floattip.css): bordo e alone
+   nel colore del consiglio (--tc: Difesa rosso, Velocità giallo, attacco ciano), la testata unica a strisce, le sezioni
+   separate da un filo, il piede col voto e Applica. Larghezza S (300) */
+.duel-tip-card { --tc: var(--accent); margin: 0; padding: 0; width: var(--tip-s); max-width: calc(100vw - 16px); overflow: auto; color: var(--text); white-space: normal;
+  font-size: var(--tip-body); line-height: 1.3;
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tc) 16%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--raised) 55%, var(--panel)), color-mix(in srgb, var(--field) 40%, var(--panel)));
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); border-radius: 0;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5), 0 0 26px -4px color-mix(in srgb, var(--tc) 45%, transparent), 0 18px 40px rgb(0 0 0 / 0.65);
+  animation: tip 0.14s var(--ease); }
+.duel-tip-card.def { --tc: var(--bad); }
+.duel-tip-card.spe { --tc: var(--warn); }
+.duel-tip-head.tip-head { padding-right: var(--sp-6); }
 .duel-tip-title .duel-tip-mvp { max-width: 100%; }
+.duel-tip-main { gap: var(--sp-3); }
 .duel-tip-close { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--faint); cursor: pointer; }
 .duel-tip-close svg { width: 14px; height: 14px; }
 .duel-tip-close:hover { color: var(--text); background: var(--raised); }
 .duel-tip-close:focus-visible, .duel-tip-apply:focus-visible, .duel-tip-count:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.duel-tip-busy { margin: 0; padding: var(--sp-6); font: 500 12px/1.3 var(--ui); color: var(--faint); }
-/* Prima → dopo: oggi barrato, il nuovo in ciano; i colpi grandi in corsivo come nella Sfida */
-.duel-tip-ba { display: grid; grid-template-columns: auto auto auto 1fr; align-items: baseline; gap: 3px var(--sp-5); padding: var(--sp-5) var(--sp-6) var(--sp-2); font: 500 12px/1.2 var(--ui); color: var(--muted); }
+.duel-tip-busy { margin: 0; font: 500 var(--tip-body)/1.3 var(--ui); color: var(--faint); }
+/* Prima → dopo: oggi barrato, il nuovo in Text, verde se migliora e rosso se peggiora; i colpi grandi in corsivo come nella Sfida */
+.duel-tip-ba { display: grid; grid-template-columns: auto auto auto 1fr; align-items: baseline; gap: 3px var(--sp-5); font: 500 var(--tip-body)/1.2 var(--ui); color: var(--muted); }
 .duel-tip-what { grid-column: 1 / -1; color: var(--muted); }
 .duel-tip-ba > svg { width: 13px; height: 13px; align-self: center; color: var(--faint); }
 .duel-tip-ba .now { grid-column: 1; color: var(--faint); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--faint) 60%, transparent); }
-.duel-tip-ba .new { grid-column: 3; color: var(--accent-ink); font-weight: 600; }
+.duel-tip-ba .new { grid-column: 3; color: var(--text); font-weight: 600; }
+.duel-tip-ba .new.good { color: var(--good); }
+.duel-tip-ba .new.bad { color: var(--bad); }
 .duel-tip-ba .big { font: italic 800 var(--fs-title-l)/1 var(--display); white-space: nowrap; }
-.duel-tip-ba .big small { display: inline; margin-left: 3px; font: 700 11px/1 var(--ui); font-style: normal; text-transform: uppercase; letter-spacing: 0.04em; }
-.duel-tip-source.replace { display: flex; align-items: center; gap: var(--sp-4); padding-top: var(--sp-3); }
+/* I colpi per il KO come fasce (KoBands), nel loro colore; la freccia fra le due verde se migliora, rossa se peggiora */
+.duel-tip-ba .ko-ba { display: flex; align-items: center; align-self: center; text-decoration: none; }
+.duel-tip-to { display: inline-flex; align-self: center; color: var(--faint); }
+.duel-tip-to svg { width: 13px; height: 13px; }
+.duel-tip-to.good { color: var(--good); }
+.duel-tip-to.bad { color: var(--bad); }
+/* La testata della scheda: il valore (la ×) col peso dei badge degli altri tooltip */
+.duel-tip-card .tip-badge { font-weight: 400; }
+.duel-tip-source.replace { display: flex; align-items: center; gap: var(--sp-4); }
 .duel-tip-source.replace > .combobox { flex: 0 1 200px; min-width: 0; }
-.duel-tip-source { margin: 0; padding: var(--sp-2) var(--sp-6) 0; font: 500 12px/1.35 var(--ui); color: var(--faint); }
+.duel-tip-source { margin: 0; font: 500 var(--tip-body)/1.35 var(--ui); color: var(--faint); }
 /* Contro il resto del meta: il conto sottolineato a puntini apre la lista */
-.duel-tip-fx { display: grid; gap: var(--sp-3); margin: var(--sp-5) var(--sp-6) 0; padding-top: var(--sp-4); border-top: 1px solid var(--line-soft); }
-.duel-tip-label { font: 700 11px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.duel-tip-fxline { display: grid; grid-template-columns: 14px 1fr; gap: var(--sp-3); align-items: start; font: 500 12px/1.35 var(--ui); color: var(--muted); }
+.duel-tip-fx { gap: var(--sp-3); }
+.duel-tip-label { font: 700 var(--tip-small)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+.duel-tip-fxline { display: grid; grid-template-columns: 14px 1fr; gap: var(--sp-3); align-items: start; font: 500 var(--tip-body)/1.35 var(--ui); color: var(--muted); }
 .duel-tip-arrow { display: inline-flex; margin-top: 2px; }
 .duel-tip-arrow svg { width: 12px; height: 12px; }
 /* Verso l'alto: si gira solo il disegno (girare il riquadro, più alto della freccia, la farebbe scendere sotto la riga) */
 .duel-tip-fxline.up .duel-tip-arrow { color: var(--good); }
 .duel-tip-fxline.up .duel-tip-arrow svg { transform: rotate(180deg); }
 .duel-tip-fxline.down .duel-tip-arrow { color: var(--bad); }
-.duel-tip-count { padding: 0; border: 0; background: none; cursor: help; font: 600 12px/1.35 var(--ui); color: var(--text);
+.duel-tip-count { padding: 0; border: 0; background: none; cursor: help; font: 600 var(--tip-body)/1.35 var(--ui); color: var(--text);
   text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 3px; }
 .duel-tip-count:hover { color: var(--accent-ink); text-decoration-color: var(--accent); }
-.duel-tip-type { display: inline-block; margin-left: var(--sp-3); padding: 2px 5px 1px; border-radius: 3px; vertical-align: 1px;
-  font: 700 11px/1 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; color: #10142b; }
+/* Il tipo dell'effetto: la tessera e il nome, come in ogni tooltip (TipType) */
+.duel-tip-type { margin-left: var(--sp-3); }
 /* Il voto del team: la lettera grande nel colore del voto (S magenta, A verde, B ciano, C giallo, D rosso), "80 → 79",
    la targhetta del cambio; Applica a destra */
-.duel-tip-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); margin-top: var(--sp-5); padding: var(--sp-4) var(--sp-5) var(--sp-5) var(--sp-6); border-top: 1px solid var(--line-soft); }
+.duel-tip-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-5); padding: var(--sp-4) var(--sp-5) var(--sp-5) var(--sp-6); border-top: 1px solid var(--line-soft); }
 .duel-tip-grade { display: flex; align-items: center; gap: var(--sp-5); }
 .duel-tip-letter { --grade: var(--accent-ink); font: italic 800 34px/0.8 var(--display); color: var(--grade); text-shadow: 0 2px 0 rgb(0 0 0 / 0.35); }
 .duel-tip-letter.grade-S { --grade: var(--accent-2-ink); }
@@ -848,15 +862,15 @@
 .duel-tip-diff { align-self: flex-start; padding: 3px 6px 2px; border-radius: 6px 2px 6px 2px; font: italic 800 13px/1 var(--display); }
 .duel-tip-diff.up { color: var(--good); background: var(--good-bg); }
 .duel-tip-diff.down { color: var(--bad); background: var(--bad-bg); }
-.duel-tip-diff.same { color: var(--muted); background: var(--raised); }
+.duel-tip-same { display: block; margin-top: 3px; font: 600 var(--tip-small)/1 var(--ui); font-style: normal; color: var(--muted); }
 .duel-tip-apply { flex: none; height: 30px; padding: 0 var(--sp-6); border: 0; border-radius: 9px 2px 9px 2px; cursor: pointer;
-  font: 700 12px/1 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); }
+  font: 700 var(--tip-small)/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); }
 .duel-tip-apply:hover { filter: brightness(1.1); }
 .duel-tip-apply:disabled { cursor: default; color: var(--faint); background: var(--raised); filter: none; }
-/* Il tooltip della lista: una riga per Pokémon, "2 → 3 colpi" */
-.duel-fx-tip { width: 236px; padding-bottom: var(--sp-3); }
-.duel-fx-tip-head { padding: var(--sp-4) var(--sp-5) var(--sp-3); font: 700 11px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.duel-fx-tip ul { display: grid; gap: 1px; margin: 0; padding: 0 var(--sp-5); list-style: none; }
+/* Il tooltip della lista (testata unica, una riga per Pokémon, "2HKO → 3HKO"): le righe con l'icona del box, le fasce a destra */
+.duel-fx-tip .tip-row-lead .mon-icon { margin: -6px 0; }
+.duel-fx-bands { display: inline-flex; align-items: center; gap: var(--sp-2); font-style: normal; }
+.tip-more { margin: 0; font: 600 var(--tip-small)/1.2 var(--ui); color: var(--muted); }
 /* Col dito la stessa lista si apre dentro la scheda, sotto la riga: un riquadro scuro incassato, righe come nel tooltip */
 .duel-fx-inline { display: block; margin-top: var(--sp-3); padding: var(--sp-3) 0; border-radius: 4px; background: var(--field); box-shadow: var(--slot-inset); }
 .duel-fx-inline ul { display: grid; gap: 1px; margin: 0; padding: 0 var(--sp-4); list-style: none; }
@@ -866,10 +880,7 @@
 html.touch-tips .duel-tip-fxline { padding-block: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 html.touch-tips .duel-tip-fx { gap: 0; }
 html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink); text-decoration-color: var(--accent); }
-.duel-fx-tip li, .duel-fx-inline li { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: var(--sp-2); height: 24px; font: 600 12px/1.2 var(--ui); }
-.duel-fx-hits { font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.duel-fx-hits b.bad { color: var(--bad); }
-.duel-fx-hits b.good { color: var(--good); }
+.duel-fx-inline li { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: var(--sp-2); height: 24px; font: 600 12px/1.2 var(--ui); }
 .duel-fx-more { margin: var(--sp-2) var(--sp-5) 0; padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); font: 600 12px/1 var(--ui); color: var(--muted); }
 .duel-empty { grid-column: 2; position: relative; z-index: 2; align-self: center; margin: 0; padding: 0 var(--sp-6) 0 var(--sp-8); font-size: var(--fs-small); color: var(--faint); }
 @media (min-width: 1100px) {

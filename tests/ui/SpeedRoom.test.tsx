@@ -26,7 +26,7 @@ const view = (t: TeamSet[]) => {
 const barOf = (name: string) => screen.getByRole('button', { name: `Velocità di ${name}: apri i rivali` });
 const rowOf = (name: string) => barOf(name).closest('tr')!;
 const totalOf = (name: string) => Number(barOf(name).querySelector('.sp-total')!.textContent!.replace('%', ''));
-const roomSwitch = () => screen.queryByRole('switch', { name: /^Trick Room/ });
+const roomSwitch = () => screen.queryByRole('switch', { name: /^Distortozona/ });
 
 describe('Velocità rifinita: muri, priorità, Speed vera', () => {
   it('sotto il nome "Speed" con la velocità vera; i muri (famiglia principale muri) grigi con "· muro"', () => {
@@ -89,14 +89,14 @@ describe('Velocità: Trick Room', () => {
     expect(document.querySelector('.def-members thead')).toHaveTextContent(/Più veloce di…/);
     await user.hover(barOf('Hatterene'));
     await screen.findByText((_, el) => !!el?.classList.contains('stip-ladder'));
-    expect(document.querySelector('.ftip.speed')).not.toHaveTextContent(/Trick Room/);
+    expect(document.querySelector('.ftip.speed')).not.toHaveTextContent(/Trick Room|Distortozona/);
   });
 
   it('l\'interruttore "Trick Room · Hatterene" è acceso di base: le barre invertite (il lento in alto), senza pezzi a righe', async () => {
     const user = userEvent.setup();
     const rating = view(room);
     const sw = roomSwitch()!;
-    expect(sw).toHaveTextContent('Trick Room · Hatterene');
+    expect(sw).toHaveTextContent('Distortozona · Hatterene');
     expect(sw).toHaveAttribute('aria-checked', 'true');
     expect(sw.closest('.panel-switch')).not.toBeNull();
     const members = rating.speed.members;
@@ -108,14 +108,14 @@ describe('Velocità: Trick Room', () => {
     expect(document.querySelectorAll('.sp-seg-own, .sp-seg-team')).toHaveLength(0);
     expect(barOf('Toxapex')).not.toHaveClass('wall');
     expect(document.querySelector('.def-members thead')).toHaveTextContent(/Muove prima di… \(i più usati\)/);
-    expect(document.querySelector('.og-legend')).toHaveTextContent('In Trick Room i più lenti muovono prima: la barra dice prima di quanti del meta muove');
+    expect(document.querySelector('.og-legend')).toHaveTextContent('Con Distortozona i più lenti muovono prima: la barra dice prima di quanti del meta muove');
     // Il tooltip nell'ordine di Trick Room: sopra il membro chi è più lento (muove prima)
     await user.hover(barOf('Iron Valiant'));
     const ladder = await screen.findByText((_, el) => !!el?.classList.contains('stip-ladder'));
     const self = Number(ladder.querySelector('.stip-rung.self .stip-speed')!.textContent);
     ladder.querySelectorAll('.stip-rung.ahead .stip-speed').forEach(s => expect(Number(s.textContent)).toBeLessThan(self));
     ladder.querySelectorAll('.stip-rung.behind .stip-speed').forEach(s => expect(Number(s.textContent)).toBeGreaterThan(self));
-    expect(document.querySelector('.ftip.speed')).toHaveTextContent(/In Trick Room/);
+    expect(document.querySelector('.ftip.speed')).toHaveTextContent(/Distortozona: sopra chi muove prima di te/);
   });
 
   it('la scelta resta cambiando area: spento in Velocità, spento anche al ritorno', async () => {
@@ -138,7 +138,7 @@ describe('Velocità: Trick Room', () => {
     let dialog = screen.getByRole('dialog', { name: 'Velocità di Dragonite' });
     const check = within(dialog).getByRole('checkbox', { name: 'Trick Room' });
     expect(check).toBeChecked();
-    expect(dialog).toHaveTextContent(/sotto Trick Room/);
+    expect(dialog).toHaveTextContent(/sotto Distortozona/);
     await user.click(check);
     expect(check).not.toBeChecked();
     await user.keyboard('{Escape}');

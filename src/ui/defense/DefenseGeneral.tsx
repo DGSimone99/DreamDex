@@ -8,16 +8,16 @@ import type { Lang } from '../../i18n';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
-import { HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
-import { Ask, BarHead, MetaTargets } from '../offense/TargetsTip';
+import { attackerCols, HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
+import { Ask, BarHead, MetaTargets, metaText, typeStatText } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
 import { typeColor } from '../Sprite';
-import { effLabel } from '../effTag';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
+import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
@@ -37,50 +37,85 @@ export const sourceName = (source: string, lang: Lang): string => source.split('
 /** PS su 100, senza il segno del %: "6" per il 6% dei PS. */
 const hp = (x: number) => Math.round(100 * x);
 
+/** Una riga del recupero: la frase intera (per lo screen reader), e per il tooltip il nome, i PS su 100 col segno e la nota. */
+export interface SustainWord { text: string; tone: 'gain' | 'loss' | 'none'; label: string; value?: string; note?: string; n?: number }
+
+/**
+ * La nota di Levitoroccia a metà danno, in una frase intera: "Metà danno: Rapigiro di Great Tusk toglie gli hazard" (la
+ * mossa o l'abilità nella lingua scelta, il Pokémon che la porta dopo "di"); senza Pokémon "Metà danno: Rapigiro toglie gli
+ * hazard".
+ */
+export const rocksHalvedText = (t: ReturnType<typeof useT>, by: string, lang: Lang): string => {
+  const owner = /^(.*) \(([^()]*)\)$/.exec(by);
+  return owner
+    ? t('ddetail.sus.rocksHalved', { move: anyGameName(owner[1], lang), by: owner[2] })
+    : t('ddetail.sus.rocksHalvedSelf', { move: sourceName(by, lang) });
+};
+
 /**
  * Il recupero e le perdite di un membro in parole e numeri semplici (PS su 100, niente %): una riga per quello che
- * recupera e con che cosa, una per Stealth Rock (con chi la dimezza) e una per ogni strumento o mossa che costa PS.
+ * recupera e con che cosa, una per Levitoroccia (con chi la dimezza) e una per ogni strumento o mossa che costa PS.
  */
 function useSustainWords() {
   const t = useT();
   const lang = useLang();
   const name = (source: string) => sourceName(source, lang);
-  return (parts: SustainParts): { text: string; tone: 'gain' | 'loss' | 'none' }[] => {
-    const out: { text: string; tone: 'gain' | 'loss' | 'none' }[] = [];
+  return (parts: SustainParts): SustainWord[] => {
+    const out: SustainWord[] = [];
+    // "(dimezzata: Defog (Corviknight) toglie gli hazard)", con la minuscola dentro la frase
+    const loss = (n: number, from: string, note?: string) => out.push({
+      tone: 'loss', text: `${t('ddetail.share.loss', { n, from })}${note ? ` (${note.charAt(0).toLocaleLowerCase()}${note.slice(1)})` : ''}`,
+      label: t('ddetail.share.lossLabel', { from }), value: signed(-n), note, n: -n,
+    });
     if (parts.recovery > 0) {
       const from = parts.sources.map(name).join(' + ');
-      out.push({ tone: 'gain', text: t(parts.halved ? 'ddetail.share.gainHalved' : 'ddetail.share.gain', { n: hp(parts.recovery), from }) });
+      const n = hp(parts.recovery);
+      out.push({ tone: 'gain', text: t(parts.halved ? 'ddetail.share.gainHalved' : 'ddetail.share.gain', { n, from }),
+        label: t('ddetail.share.gainLabel', { from }), value: signed(n), note: parts.halved ? t('ddetail.share.halvedNote') : undefined, n });
     }
-    if (parts.rocks > 0) {
-      // "(dimezzata: Defog (Corviknight) toglie gli hazard)", con la minuscola dentro la frase
-      const note = parts.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: name(parts.rocksHalvedBy) }) : '';
-      const halved = note ? ` (${note.charAt(0).toLocaleLowerCase()}${note.slice(1)})` : '';
-      out.push({ tone: 'loss', text: `${t('ddetail.share.loss', { n: hp(parts.rocks), from: name('Stealth Rock') })}${halved}` });
-    }
+    if (parts.rocks > 0) loss(hp(parts.rocks), name('Stealth Rock'), parts.rocksHalvedBy ? rocksHalvedText(t, parts.rocksHalvedBy, lang) : undefined);
     // Le altre perdite fonte per fonte (Life Orb, Flame Orb, le mosse che costano PS); senza dettaglio, in una riga sola
     const losses = parts.losses.filter(l => hp(l.loss) > 0);
-    if (losses.length) for (const l of losses) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(l.loss), from: name(l.source) }) });
-    else if (parts.itemLoss > 0) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(parts.itemLoss), from: parts.itemLossFrom ? name(parts.itemLossFrom) : t('ddetail.sus.orb') }) });
-    if (!out.length) out.push({ tone: 'none', text: t('ddetail.share.flat') });
+    if (losses.length) for (const l of losses) loss(hp(l.loss), name(l.source));
+    else if (parts.itemLoss > 0) loss(hp(parts.itemLoss), parts.itemLossFrom ? name(parts.itemLossFrom) : t('ddetail.sus.orb'));
+    if (!out.length) out.push({ tone: 'none', text: t('ddetail.share.flat'), label: t('ddetail.share.flat') });
     return out;
   };
 }
 
+/** Il netto dei PS su 100 delle righe del recupero (la somma dei numeri che si leggono), null senza righe con un numero. */
+export const sustainNet = (words: SustainWord[]): number | null =>
+  (words.some(w => w.n !== undefined) ? words.reduce((a, w) => a + (w.n ?? 0), 0) : null);
+
 /**
- * Il tooltip di quanto porta un membro alla Difesa: i tre pezzi, Coverage tipi, Coverage meta e Recupero, e sotto in
- * parole quanto recupera e quanto perde (PS su 100).
+ * Il tooltip di quanto porta un membro alla Difesa: la sprite del membro, il totale, i tre pezzi (Coverage tipi, Coverage
+ * meta e Recupero) uno per riga, che sommati fanno il totale; sotto il Recupero il netto dei PS ("Netto −2 PS su 100", e
+ * quando i punti sono 0 perché è poco, "meno di un punto"); poi una riga per fonte, quanto recupera e quanto perde (PS su
+ * 100), e con più di una fonte il netto in fondo, così i numeri tornano a vista.
  */
-function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShare; words: { text: string; tone: string }[]; meta: boolean }) {
+function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShare; words: SustainWord[]; meta: boolean }) {
   const t = useT();
+  const net = sustainNet(words);
+  const netSub = net === null ? undefined
+    : t(share.sustain === 0 && net !== 0 ? 'ddetail.share.netLess' : 'ddetail.share.net', { n: signed(net) });
+  const sourced = words.filter(w => w.n !== undefined).length;
   return (
     <>
-      <div className="ftip-head"><b>{who}</b><span className={`dsh-total${share.points < 0 ? ' neg' : ''}`}>{signed(share.points)}</span></div>
-      <div className="dsh-rows">
-        <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageTypes')}<b>{signed(share.types)}</b></span>
-        {meta && <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageMeta')}<b>{signed(share.meta)}</b></span>}
-        <span className="dsh-row"><i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />{t('ddetail.sustain')}<b>{signed(share.sustain)}</b></span>
-        {words.map((w, k) => <span key={k} className={`dsh-line ${w.tone}`}>{w.text}</span>)}
-      </div>
+      <TipHead sprite={who} title={who} sub={t('ddetail.shareSub')} num={<span className={signTone(share.points)}>{signed(share.points)}</span>} />
+      <TipSec>
+        <TipRows className="dsh-rows">
+          <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.types)} tone={signTone(share.types)} />
+          {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.meta)} tone={signTone(share.meta)} />}
+          <TipRow className="dsh-row" lead={<i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />} title={t('ddetail.sustain')} sub={netSub} value={signed(share.sustain)} tone={signTone(share.sustain)} />
+        </TipRows>
+      </TipSec>
+      {/* Quanto recupera e quanto perde, una fonte per riga, i PS su 100 a destra (verdi se recupera, rossi se perde) */}
+      <TipSec label={t('ddetail.share.hp')}>
+        <TipRows className="dsh-lines">
+          {words.map((w, k) => <TipRow key={k} title={w.label} sub={w.note} value={w.value} tone={w.tone === 'gain' ? 'good' : w.tone === 'loss' ? 'bad' : undefined} />)}
+          {sourced > 1 && net !== null && <TipRow className="dsh-net" title={t('ddetail.share.netLabel')} value={signed(net)} tone={signTone(net)} />}
+        </TipRows>
+      </TipSec>
     </>
   );
 }
@@ -97,21 +132,24 @@ function DefShare({ share, tip, label, describe }: { share: DefenseShare; tip: R
     <span className="og-share dsh" data-nav="" role="img" aria-label={label} aria-describedby={id} {...float.bind(true)}>
       <span className={`def-num total og-share-num${share.points < 0 ? ' neg' : ''}`}>{signed(share.points)}</span>
       <HiddenText id={id}>{describe}</HiddenText>
-      {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="dsh-tip">{tip}</FloatTip>}
+      {float.anchor && <FloatTip rect={float.anchor.rect} tone={TIP_NEUTRAL} className="tip-w-s dsh-tip">{tip}</FloatTip>}
     </span>
   );
 }
 
 export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
+  const lang = useLang();
   const { members } = defense;
   const roomy = !!ctx.roomy;
+  // Il "?" delle testate apre la guida della Difesa (la pagina "Come funziona" di Generale e Coverage)
+  const openGuide = ctx.guide && (() => ctx.guide!('general'));
   // Quanto porta ogni membro alla Difesa del team (sommati fanno la Difesa del team), e in parole il suo recupero
   const shares = defenseShares(defense);
   const sustainWords = useSustainWords();
   const hasMeta = !!defense.coverageMeta;
   // Per lo screen reader le stesse cose del tooltip, in una frase
-  const describe = (share: DefenseShare, words: { text: string }[]) => [
+  const describe = (share: DefenseShare, words: SustainWord[]) => [
     `${t('detail.coverageTypes')} ${signed(share.types)}`,
     hasMeta ? `${t('detail.coverageMeta')} ${signed(share.meta)}` : '',
     `${t('ddetail.sustain')} ${signed(share.sustain)}`,
@@ -138,15 +176,15 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     ? (band: HoldPiece) => ctx.openFocus!(key, { kind, slot: slotOf(i), band })
     : undefined);
   const multipliers = new Map(ctx.analysis.weakness.map(row => [row.type, row.multipliers]));
-  const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band, cell: c })))
+  const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band, cell: { ...c, ...defense.typed[i]?.ranges?.[k] } })))
     .map(h => ({ ...h, color: typeColor(h.label),
-      tip: <DefenseHitTip type={h.label} species={members[i].species} cell={h.cell} mult={effLabel(multipliers.get(h.label as TypeName)?.[slotOf(i)] ?? 1, 'defense')} /> }));
+      tip: <DefenseHitTip type={h.label} species={members[i].species} cell={h.cell} mult={multipliers.get(h.label as TypeName)?.[slotOf(i)] ?? 1} /> }));
   const byUse = [...metaRows].sort((x, y) => y.weight - x.weight);
   const worstMeta = (i: number) => worstOf(byUse.map(row => {
     const h = row.heldBy.find(x => x.species === members[i].species);
     return { label: row.species, kind: 'mon' as const, pct: h ? h.pct : null, band: h ? h.band : 'ohko' as const, row, h };
   })).map(x => ({ ...x, color: typeColor((battleSpecies(x.row.set)?.types[0] as string | undefined) ?? ''),
-    tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={effLabel(x.row.mults?.[i], 'defense')} koMove={x.row.hits?.[i]?.move} /> }));
+    tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={x.row.mults?.[i]} koHit={x.row.hits?.[i]} /> }));
 
 
   return (
@@ -159,8 +197,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
+              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')} guide={openGuide} describe={typeStatText(attackerCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} icon="shield" /></Ask></th>}
               <th scope="col">{t('area.defense')}</th>
             </tr>
           </thead>
@@ -171,8 +209,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team, solo il numero: i pezzi e il recupero nel tooltip */}
                   {(() => {

@@ -7,7 +7,7 @@ import { describe } from './describe';
 import { FloatTip, keyboardFocus, useFloatAnchor } from './FloatTip';
 import { ItemIcon } from './ItemIcon';
 import { typeColor } from './Sprite';
-import { tileStyle, typeIconUrl } from './typeIcons';
+import { TipGlyph, TipHead, TipSec, TipTypeIcon } from './TipHead';
 
 /** I bersagli di Showdown raggruppati come li dice il gioco (in singolo "normal", "any" e "adjacentFoe" sono lo stesso). */
 type TargetKey = 'single' | 'random' | 'self' | 'foes' | 'adjacent' | 'field' | 'foeSide' | 'allySide' | 'allyTeam' | 'allies' | 'ally' | 'allyOrSelf' | 'scripted';
@@ -36,13 +36,8 @@ export function MoveTipBody({ name }: { name: string }) {
   const target: TargetKey = TARGET[move.target] ?? 'single';
   return (
     <>
-      <div className="ftip-head">
-        <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />
-        <b>{gameName('move', move.name, lang)}</b>
-        {move.priority !== 0 && (
-          <span className={`mtip-prio${move.priority < 0 ? ' neg' : ''}`}>{t('moveTip.priority', { n: move.priority > 0 ? `+${move.priority}` : `${move.priority}` })}</span>
-        )}
-      </div>
+      <TipHead lead={<TipTypeIcon type={move.type} />} title={gameName('move', move.name, lang)}
+        badge={move.priority !== 0 && <span className={`mtip-prio${move.priority < 0 ? ' neg' : ''}`}>{t('moveTip.priority', { n: move.priority > 0 ? `+${move.priority}` : `${move.priority}` })}</span>} />
       <div className="mtip-stats">
         <span>
           <small>{t('moveTip.category')}</small>
@@ -71,17 +66,20 @@ export function MoveTip({ name, rect, side = false, layer = false }: { name: str
   );
 }
 
-/** Il tooltip di uno strumento o di un'abilità: testata con l'icona dello strumento e il nome, sotto la descrizione. */
+/**
+ * Il tooltip di uno strumento o di un'abilità (vedi DESIGN.md, "Tooltips"): la testata unica con l'icona dello strumento
+ * (o il tondo dell'abilità), il nome e a destra il genere ("Strumento", "Abilità"); sotto la descrizione dei giochi:
+ * in italiano quella italiana, e se manca quella inglese di Showdown (meglio una descrizione in inglese che nessuna).
+ */
 export function KitTipBody({ kind, name }: { kind: 'item' | 'ability'; name: string }) {
+  const t = useT();
   const lang = useLang();
   const desc = describe[kind](name, lang);
   return (
     <>
-      <div className="ftip-head">
-        {kind === 'item' && <span className="ktip-icon"><ItemIcon item={name} size={24} /></span>}
-        <b>{gameName(kind, name, lang)}</b>
-      </div>
-      {desc && <p className="mtip-desc">{desc}</p>}
+      <TipHead lead={kind === 'item' ? <span className="ktip-icon"><ItemIcon item={name} size={24} /></span> : <TipGlyph icon="spark" />}
+        title={gameName(kind, name, lang)} badge={<span className="tip-kind">{t(kind === 'item' ? 'editor.item' : 'editor.ability')}</span>} />
+      {desc && <TipSec><p className="ktip-desc">{desc}</p></TipSec>}
     </>
   );
 }
@@ -114,28 +112,34 @@ const keyOf = (el: Element): TipKey | null => {
  * un campo col menu aperto; un clic lo chiude. Col dito lo apre TouchTips (tenendo premuto).
  */
 export function TipHost() {
-  const { anchor, open, close } = useFloatAnchor<TipKey>();
+  const { anchor, open, close, leave } = useFloatAnchor<TipKey>();
   useEffect(() => {
     let current: Element | null = null;
     const find = (target: EventTarget | null) => (target instanceof Element ? target.closest(TIP_SELECTOR) : null);
+    // Il mouse dentro il tooltip aperto (raggiungibile, WCAG 1.4.13): resta aperto, lo tiene useFloatAnchor
+    const inTip = (target: EventTarget | null) => target instanceof Element && !!target.closest('.ftip:not(.hint)');
     const blocked = (el: Element) => !!el.closest('.ftip') || !!el.querySelector('[aria-expanded="true"]');
+    // Il fumetto piccolo non va sopra un tooltip DreamDex aperto (es. il nome dei tipi sulla tessera dentro una pastiglia
+    // che ha già il suo tooltip): uno solo alla volta, vince quello ricco
+    const richOpen = () => !!document.querySelector('.ftip:not(.hint)');
     const start = (el: Element) => {
       const key = keyOf(el);
-      if (!key || blocked(el)) { close(); return; }
+      if (!key || blocked(el) || (key.kind === 'hint' && richOpen())) { close(); return; }
       open(key, el);
     };
     const over = (e: MouseEvent) => {
+      if (inTip(e.target)) return;
       const el = find(e.target);
       if (el === current) return;
       current = el;
-      if (el) start(el); else close();
+      if (el) start(el); else leave();
     };
     const out = (e: MouseEvent) => {
       if (!current) return;
       const to = e.relatedTarget;
       if (to instanceof Node && current.contains(to)) return;
       current = null;
-      close();
+      leave();
     };
     const down = () => { current = null; close(); };
     const focusIn = (e: FocusEvent) => {
@@ -151,7 +155,9 @@ export function TipHost() {
     // L'elemento perde il suo fumetto o sparisce (es. la carta del team aperta con Invio: l'editor si apre e la carta non
     // ha più "Trascina…"): il fumetto si chiude invece di restare sopra l'editor
     const gone = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => {
-      if (current && (!current.isConnected || !current.matches(TIP_SELECTOR))) { current = null; close(); }
+      if (current && (!current.isConnected || !current.matches(TIP_SELECTOR))) { current = null; close(); return; }
+      // Un tooltip DreamDex si è aperto dopo il fumetto: il fumetto si chiude (e non si riapre finché il mouse resta lì)
+      if (current && current.hasAttribute('data-hint') && !current.matches('[data-move-tip], [data-item-tip], [data-ability-tip]') && richOpen()) close();
     }) : null;
     gone?.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-hint', 'data-move-tip', 'data-item-tip', 'data-ability-tip'] });
     return () => {
@@ -162,7 +168,7 @@ export function TipHost() {
       document.removeEventListener('focusin', focusIn);
       document.removeEventListener('focusout', focusOut);
     };
-  }, [open, close]);
+  }, [open, close, leave]);
   if (!anchor) return null;
   const { kind, name, layer } = anchor.key;
   if (kind === 'move') return <MoveTip name={name} rect={anchor.rect} layer={layer} />;
