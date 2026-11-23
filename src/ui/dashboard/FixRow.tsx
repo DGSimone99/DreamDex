@@ -68,7 +68,7 @@ export function FixRow({ problems, advice, onView }: { problems: CoachProblem[];
         {parts[0]}{gain && <b className="fix-gain">{gain}</b>}{parts.slice(1).join(gain ?? '')}
       </span>
       <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: `${status}, ${offer}` })}>
-        {t('overview.fix.go')}<span aria-hidden="true"> ›</span>
+        {t('overview.fix.go')}<Icon name="next" />
       </button>
     </section>
   );

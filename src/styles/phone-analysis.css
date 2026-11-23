@@ -349,7 +349,7 @@
   .fix-row.is-link .fix-label { grid-column: 1; grid-row: 1; justify-self: start; }
   .fix-row.is-link .fix-items { grid-column: 1; grid-row: 2; white-space: normal; overflow: visible; text-overflow: clip; }
   .fix-row.is-link .fix-go { grid-column: 2; grid-row: 1 / 3; align-self: center; min-width: 44px; min-height: 44px; justify-content: center; font-size: 0; }
-  .fix-row.is-link .fix-go > span { font-size: 22px; line-height: 1; }
+  .fix-row.is-link .fix-go .icon { width: 22px; height: 22px; }
 }
 
 /* -- Telefono: niente Panoramica. Cinque schede (Coaching e le aree) e in fondo a destra il voto del team, sempre a vista:

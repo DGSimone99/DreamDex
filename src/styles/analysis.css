@@ -260,7 +260,8 @@
 /* La testata della Velocità ha il fumetto: il cursore lo dice */
 .dash-meta-hint { cursor: help; }
 .dash-links { flex: none; display: flex; gap: var(--sp-1); margin-left: auto; }
-.dash-link { gap: var(--sp-1); padding: var(--sp-1) var(--sp-3); font-size: var(--fs-caption); font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
+/* Tutti i link delle testate (col testo o la sola freccia) e "Vai al Coaching": alti 20px con la stessa freccia SVG da 14px */
+.dash-link { box-sizing: border-box; height: 20px; gap: var(--sp-1); padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; line-height: 20px; color: var(--accent-ink); background: none; border-color: transparent; }
 /* Al passaggio: una luce azzurra sfumata senza bordi (come le righe del Riassunto), il testo si accende con un alone
    leggero e la freccia scivola di 2px verso destra */
 .dash-link { position: relative; isolation: isolate; }
