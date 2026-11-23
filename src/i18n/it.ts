@@ -1263,6 +1263,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.member': "Pokémon",
   'flip.type': "Tipo",
   'flip.team': "Team",
+  'flip.best': "Top",
   'flip.target': "Minaccia",
   'detail.coverage': "Coverage",
   'detail.coverageTypes': "Coverage tipi",

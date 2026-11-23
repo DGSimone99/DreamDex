@@ -1261,6 +1261,7 @@ export const en = {
   'detail.member': "Pokémon",
   'flip.type': "Type",
   'flip.team': "Team",
+  'flip.best': "Best",
   'flip.target': "Threat",
   'detail.coverage': "Coverage",
   'detail.coverageTypes': "Type coverage",

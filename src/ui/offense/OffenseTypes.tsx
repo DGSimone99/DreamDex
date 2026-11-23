@@ -188,11 +188,11 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
               );
             })}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('detail.level')}</span></th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate"><span className="plate-long">{t('detail.level')}</span><span className="plate-short" aria-hidden="true">{t('flip.team')}</span></span></th>
               {TYPES.map((type, i) => levelCell(type, i))}
             </tr>
             <tr className="ct-sum ct-best">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('odetail.types.best')}</span></th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate"><span className="plate-long">{t('odetail.types.best')}</span><span className="plate-short" aria-hidden="true">{t('flip.best')}</span></span></th>
               {TYPES.map((type, i) => {
                 const top = best[i];
                 const who = top === null ? null : nameOf(top.slot);

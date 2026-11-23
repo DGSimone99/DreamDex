@@ -480,3 +480,16 @@
 @media (min-width: 768px) and (max-width: 1279px) {
   .def-frame .ct-table:not(.ct-flip-table) td.ct-cell .ct-num i { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
+/* Le targhette delle righe di riepilogo: la forma corta solo dove la colonna dei membri è stretta */
+.row-plate .plate-short { display: none; }
+/* Coverage tipi sul computer stretto (1100–1279 px): la colonna dei membri solo con la sprite (nome e statistiche nella
+   carta del Pokémon col mouse e per lo screen reader), così le 18 caselle tornano larghe ~40 px col "%"; le targhette
+   delle righe in fondo nella forma corta (Team, Top) */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .def-types .ct-table:not(.ct-flip-table) { --def-mon: 76px; }
+  .def-types .ct-table:not(.ct-flip-table) .def-mon-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .def-types .ct-table:not(.ct-flip-table) tbody th[scope='row'] .def-mon { justify-content: center; }
+  .def-frame.def-types .ct-table:not(.ct-flip-table) td.ct-cell .ct-num i { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .def-types .ct-table:not(.ct-flip-table) .row-plate .plate-long { display: none; }
+  .def-types .ct-table:not(.ct-flip-table) .row-plate .plate-short { display: inline; }
+}
