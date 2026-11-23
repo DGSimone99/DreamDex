@@ -171,7 +171,7 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
   // Il numero prima, come nelle testate di Ruoli e Velocità: "18/18 offesa · 18/18 difesa", "4 senza check · 8 con un solo check"
   const typesMeta = <><b>{coverage.offense}</b> {offense.toLocaleLowerCase()} · <b>{coverage.defense}</b> {defense.toLocaleLowerCase()}</>;
   const narrowHead = useMediaQuery(NARROW_HEAD);
-  const threatsMeta = list.length > 0 && <><b className={openCount && !gentle ? 'bad' : undefined}>{openCount}</b> {t('dash.headOpen')} · <b>{thinCount}</b> {t(narrowHead ? 'dash.headThinShort' : 'dash.headThin')}</>;
+  const threatsMeta = list.length > 0 && <><b className={openCount && !gentle && !incomplete ? 'bad' : undefined}>{openCount}</b> {t('dash.headOpen')} · <b>{thinCount}</b> {t(narrowHead ? 'dash.headThinShort' : 'dash.headThin')}</>;
   const sideMark = (x: MetaThreat, side: Side) => (
     <span className={`cov-side ${gentle && stateOf(x, side) !== 'ok' ? 'soft' : stateOf(x, side)}`}><Icon name={side === 'defense' ? 'shield' : 'sword'} /></span>
   );

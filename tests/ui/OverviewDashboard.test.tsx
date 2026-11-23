@@ -910,6 +910,19 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(cov()).toHaveTextContent('3 senza check · 4 con un solo check');
   });
 
+  it('team con meno di 6: il numero senza check in testata è neutro come quello della scheda Meta; con 6 è rosso', async () => {
+    const user = userEvent.setup();
+    const head = () => [...cov().querySelectorAll('b')].find(b => b.textContent === '3')!;
+    mount({ members: 5 });
+    await toMeta(user);
+    expect(head()).not.toHaveClass('bad');
+    expect(cov().querySelector('.dash-tab-n')).toHaveClass('minor');
+    cleanup();
+    mount();
+    await toMeta(user);
+    expect(head()).toHaveClass('bad');
+  });
+
   it('una sola minaccia senza check: "1 minaccia" al singolare; sul portatile stretto la testata dice "con 1 check"', async () => {
     const user = userEvent.setup();
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(min-width: 1100px) and (max-width: 1279px)', media: query, addEventListener() {}, removeEventListener() {} }));
