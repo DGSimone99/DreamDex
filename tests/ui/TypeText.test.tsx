@@ -31,8 +31,10 @@ describe('testo con tipi e Pokémon', () => {
     const refs = [...container.querySelectorAll('.mon-ref')];
     expect(refs.map(r => r.textContent)).toEqual(['Kyogre-Primal', 'Swampert-Mega']);
     const dots = refs.map(r => r.querySelector('.type-dot') as HTMLElement);
-    expect(dots[0].title).toBe('Water');
-    expect(dots[1].title).toBe('Water / Ground');
+    // I tipi nel fumetto dell'app (data-hint), non nel titolo del browser
+    expect(dots[0]).toHaveAttribute('data-hint', 'Water');
+    expect(dots[1]).toHaveAttribute('data-hint', 'Water / Ground');
+    expect(dots[1].title).toBe('');
     // Icone ufficiali, decorative: una per Kyogre-Primal, due per Swampert-Mega
     expect(dots.map(d => [...d.querySelectorAll('img')].map(img => img.getAttribute('src')!.match(/(\w+)\.png/)![1]))).toEqual([['water'], ['water', 'ground']]);
     expect(dots[1]).toHaveAttribute('aria-hidden', 'true');

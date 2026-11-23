@@ -332,7 +332,13 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, extra, onCl
         </Collapsible.Provider>
 
         <footer className="filters-foot">
-          <button type="button" className="primary" onClick={onClose}>{showText}</button>
+          {/* Con zero risultati niente invito magenta a "mostrare nessun Pokémon": lo si dice in chiaro e si chiude */}
+          {resultCount === 0 ? (
+            <>
+              <p className="filters-none" role="status">{t('filters.noneFound')}</p>
+              <button type="button" onClick={onClose}>{t('settings.close')}</button>
+            </>
+          ) : <button type="button" className="primary" onClick={onClose}>{showText}</button>}
         </footer>
       </div>
     </div>,

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { hint } from './MoveTip';
 import { battleName } from '../engine/dex';
 import type { TeamSet } from '../engine/sets';
 import { useT } from '../i18n/react';
@@ -51,23 +52,24 @@ export function ModeSwitch({ team, view, replacing, replaceIndex, addDisabled, i
           <Icon name="plus" />{tr('suggest.addMode')}
         </button>
         <button type="button" aria-pressed={view !== 'add'} disabled={improveDisabled} onClick={onImprove}>{tr('suggest.improve')}</button>
-        <button ref={buttonRef} type="button" className={`target-toggle${view !== 'add' ? ' on' : ''}`} disabled={improveDisabled}
+        {/* "al posto di" solo in Sostituisci: in Aggiungi non esce nessuno */}
+        {view !== 'add' && <button ref={buttonRef} type="button" className="target-toggle on" disabled={improveDisabled}
           aria-label={`${tr('suggest.target')}: ${chosen ? battleName(chosen) : tr('suggest.targetAll')}`}
           aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(o => !o)}>
           {/* "al posto di" piccolo davanti: si capisce che si sceglie chi esce */}
           <span className="target-prefix" aria-hidden="true">{tr('suggest.targetPrefix')}</span>
           {chosen ? <PokemonIcon name={battleName(chosen)} /> : <span className="target-all" aria-hidden="true">{tr('suggest.targetAll')}</span>}
           <span className="chevron" aria-hidden="true" />
-        </button>
+        </button>}
       </div>
-      {open && (
+      {open && view !== 'add' && (
         <div className="target-pop" role="group" aria-label={tr('suggest.target')}>
           <span className="targets-label" aria-hidden="true">{tr('suggest.targetLabel')}</span>
           <button type="button" aria-pressed={view === 'all'} onClick={() => pick(onAll)}>{tr('suggest.targetAll')}</button>
           {team.map((member, index) => (
             <button key={index} type="button" className="target-member" aria-pressed={replacing && replaceIndex === index}
               aria-label={tr('suggest.targetMember', { member: battleName(member) })}
-              title={member.favorite ? `${battleName(member)} · ${tr('suggest.targetFavorite')}` : battleName(member)}
+              {...hint(member.favorite ? `${battleName(member)} · ${tr('suggest.targetFavorite')}` : battleName(member))}
               onClick={() => pick(() => onTarget(index))}>
               <PokemonIcon name={battleName(member)} />
               <span className="target-name" aria-hidden="true">{battleName(member)}</span>

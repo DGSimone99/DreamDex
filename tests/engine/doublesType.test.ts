@@ -24,7 +24,7 @@ const stallTeam: TeamSet[] = [
 
 const doublesData = { ...fixtureData, formatId: 'natdexdoubles' as const };
 const ouData = { ...fixtureData, formatId: 'ou' as const };
-const benchTeams = JSON.parse(readFileSync('scripts/bench/teams.json', 'utf8')) as { name: string; team: TeamSet[] }[];
+const benchTeams = JSON.parse(readFileSync('tests/fixtures/referenceTeams.json', 'utf8')) as { name: string; team: TeamSet[] }[];
 
 afterEach(() => setDoublesWeights(null));
 
