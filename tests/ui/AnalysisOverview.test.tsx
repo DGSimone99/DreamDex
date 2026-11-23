@@ -119,9 +119,9 @@ describe('Panoramica di Analisi', () => {
 
   it('niente più tessera Bonus/Malus; "Vai al Coaching" solo nella riga Da sistemare', async () => {
     await setup(['Great Tusk', 'Dragapult']);
-    // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica
+    // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica, dove c'è solo la riga in fondo al Riassunto
     const overview = panel().querySelector<HTMLElement>('.overview')!;
-    expect(overview).not.toHaveTextContent(/Bonus\/Malus/);
+    for (const el of overview.querySelectorAll('.dash-card')) if (!el.classList.contains('dash-summary')) expect(el).not.toHaveTextContent(/Bonus\/Malus/);
     for (const button of within(panel()).queryAllByRole('button', { name: /Vai al Coaching/ })) expect(button.closest('.fix-row')).not.toBeNull();
     expect(panel().querySelector('.summary-tile, .summary-strip')).toBeNull();
   });

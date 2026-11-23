@@ -34,8 +34,8 @@ export function densityFor(height: number): Density {
 }
 
 /**
- * La Panoramica come cruscotto che riempie lo spazio: il Riassunto in colonna a sinistra (in fondo la riga Bonus/Malus,
- * solo se c'è posto); a destra la Copertura, sotto le Minacce del meta (solo col meta: senza, la Copertura prende il loro
+ * La Panoramica come cruscotto che riempie lo spazio: il Riassunto in colonna a sinistra (in fondo, sempre, la riga Bonus/Malus
+ * coi suoi punti); a destra la Copertura, sotto le Minacce del meta (solo col meta: senza, la Copertura prende il loro
  * posto), sotto Ruoli | Velocità.
  */
 export function OverviewDashboard({ data, summary, members, team = [], grade, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {

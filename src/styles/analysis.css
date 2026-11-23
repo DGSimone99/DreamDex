@@ -320,9 +320,9 @@
 .thr-tip-why li.open { border-left-color: var(--bad); }
 .thr-tip-why li b { font: 700 italic var(--tip-body)/1.2 var(--display); margin-right: var(--sp-2); }
 
-/* La riga Bonus/Malus in fondo al Riassunto: solo se c'è posto (misurato), in posizione assoluta, così non sposta niente */
+/* La riga Bonus/Malus in fondo al Riassunto: c'è sempre (desktop e tablet), le Sinergie sopra le cedono il posto col loro "+N" */
 .sum-bm {
-  position: absolute; left: 12px; right: 12px; bottom: 10px; height: 28px; display: flex; align-items: center; gap: var(--sp-4);
+  position: relative; flex: none; width: 100%; height: 28px; margin-top: var(--sp-2); display: flex; align-items: center; gap: var(--sp-4);
   padding: 0 var(--sp-2); border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; color: var(--text);
   font: inherit; font-size: var(--fs-caption); text-align: left; cursor: pointer;
 }
@@ -467,6 +467,10 @@
   .dash.tight .sum-cover > span { line-height: 1.1; }
   .dash.tight .sum-cover img { width: calc(var(--ti-inline) - 2px); height: calc(var(--ti-inline) - 2px); }
   .dash.tight .sum-sec-h { padding-bottom: 3px; }
+  /* Con la riga Bonus/Malus in fondo: sezioni e titoli ancora un poco più fitti, così le righe non si accavallano */
+  .dash.tight .dash-summary:has(.sum-bm) .sum-sec { padding-top: 1px; }
+  .dash.tight .dash-summary:has(.sum-bm) .sum-sec-h { padding-block: 2px; }
+  .dash.tight .dash-summary:has(.sum-bm) :is(.sum-none, .sum-sec-more) { top: 4px; }
 }
 
 .dash.rich .dash-summary { --sum-small: 44px; --sum-mini: 44px; --sum-line: 48px; --sum-arch: 30px; }
@@ -905,6 +909,12 @@
 /* Il pulsante "+N" in fondo sta sotto le Sinergie, non sopra: la card lascia tutta la sua altezza */
 .dash-summary:has(.sum-more-below) { padding-bottom: 36px; }
 .dash-summary .sum-more-below { height: 34px; }
+/* Con la riga Bonus/Malus in fondo il pulsante "+N" sta sopra di lei, in fondo al corpo del Riassunto, da bordo a bordo */
+.dash-summary:has(.sum-bm):has(.sum-more-below) { padding-bottom: var(--sp-5); }
+.dash-summary:has(.sum-bm) .sum-body { position: relative; }
+.dash-summary:has(.sum-bm) .sum-body:has(.sum-more-below) { padding-bottom: 34px; }
+.dash-summary:has(.sum-bm) .sum-more-below { left: calc(var(--sp-6) * -1); right: calc(var(--sp-6) * -1);
+  background: linear-gradient(to top, var(--panel) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); }
 /* Cruscotto basso: una fila sola di pillole, il resto nel "+N", così i core restano leggibili */
 .dash.tight .sum-packed .sum-lines { max-height: 44px; }
 
@@ -982,3 +992,5 @@
 .thr-tip-why.sided li { display: flex; align-items: baseline; gap: var(--sp-2); }
 .thr-tip-why.sided .icon { flex: none; width: 12px; height: 12px; align-self: center; }
 .thr-tip-why li.ok { border-left-color: var(--good); }
+/* Cruscotto basso: la riga Bonus/Malus un poco più bassa, attaccata alle Sinergie */
+.dash.tight .sum-bm { height: 24px; margin-top: 0; }

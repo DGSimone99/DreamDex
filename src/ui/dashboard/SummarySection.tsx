@@ -1,4 +1,4 @@
-import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode, type RefObject } from 'react';
+import { Fragment, useId, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
@@ -270,41 +270,9 @@ function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }
   );
 }
 
-/** Altezza della riga Bonus/Malus (px, come in CSS `.sum-bm`) e lo stacco minimo sopra di lei. */
+/** Altezza della riga Bonus/Malus (px, come in CSS `.sum-bm`). */
 export const BM_LINE = 28;
-const BM_GAP = 6;
 const signedPts = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
-
-/**
- * Se la riga Bonus/Malus sta in fondo al Riassunto (`card`: il corpo della card, .sum-body): solo se ogni sezione mostra tutte le sue righe (nessun "+N": i core e
- * le Sinergie vengono prima) e sotto l'ultimo contenuto restano almeno BM_GAP + BM_LINE px. La riga sta in posizione
- * assoluta in fondo alla card, così mostrarla non sposta niente (niente avanti e indietro). Si rimisura quando la card
- * cambia misura o il suo contenuto cambia (le sezioni si misurano a più passaggi).
- */
-function useBonusMalusRoom(card: RefObject<HTMLElement | null>, enabled: boolean): boolean {
-  const [room, setRoom] = useState(false);
-  useLayoutEffect(() => {
-    const el = card.current;
-    if (!enabled || !el) { setRoom(false); return; }
-    let frame = 0;
-    const measure = () => {
-      const { bottom, height } = el.getBoundingClientRect();
-      // Senza layout (test, scheda nascosta) non si sa: niente riga
-      if (!height) { setRoom(false); return; }
-      if (el.querySelector('.sum-sec-more, .sum-more-below')) { setRoom(false); return; }
-      const parts = el.querySelectorAll('.sum-hero, .sum-sec-h, .sum-none, .sum-lines > li > *');
-      const last = Math.max(0, ...[...parts].map(p => p.getBoundingClientRect().bottom));
-      setRoom(last + BM_GAP + BM_LINE <= bottom + 0.5);
-    };
-    const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); };
-    measure();
-    const observers: { disconnect: () => void }[] = [];
-    if (typeof ResizeObserver !== 'undefined') { const ro = new ResizeObserver(later); ro.observe(el); observers.push(ro); }
-    if (typeof MutationObserver !== 'undefined') { const mo = new MutationObserver(later); mo.observe(el, { childList: true, subtree: true }); observers.push(mo); }
-    return () => { cancelAnimationFrame(frame); observers.forEach(o => o.disconnect()); };
-  }, [card, enabled]);
-  return room;
-}
 
 /**
  * La riga Bonus/Malus in fondo al Riassunto: "Bonus/Malus +6 · 2 core +6 · Rete di sicurezza +1 · Tipi doppioni −1", le
@@ -337,7 +305,7 @@ function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: Bon
  */
 export function SummarySection({ summary, members, grade, density, rich = false, bonusMalus, onView, onShowAll }: {
   summary: TeamSummary; members: number;
-  /** La riga Bonus/Malus in fondo, solo se c'è posto (useBonusMalusRoom); senza, non c'è. */
+  /** La riga Bonus/Malus in fondo (sempre, se ci sono voci o un netto): le Sinergie le cedono il posto, col loro "+N". */
   bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
   /** La lettera del voto del team: il nome del tipo e la sfumatura dell'eroe ne prendono il colore (come la carta del voto). */
   grade?: string;
@@ -426,12 +394,11 @@ export function SummarySection({ summary, members, grade, density, rich = false,
       <span className="sum-tags">{row.moves.map(move => <MovePill key={move} name={move} size="sm" />)}</span>
     </button>
   );
-  const card = useRef<HTMLDivElement>(null);
-  const bmRoom = useBonusMalusRoom(card, !!bonusMalus && (bonusMalus.pieces.length > 0 || bonusMalus.net !== 0));
+  const showBm = !!bonusMalus && (bonusMalus.pieces.length > 0 || bonusMalus.net !== 0);
 
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
-      <div className="sum-body" ref={card}>
+      <div className="sum-body">
         {members >= 2 && (
           <div className={`sum-hero${grade ? ` grade-${grade}` : ''}`}>
             {members >= 2 && (
@@ -489,7 +456,8 @@ export function SummarySection({ summary, members, grade, density, rich = false,
             const view = synergyView(syn);
             return `${view.tag} ${view.title}: ${syn.core ? view.mons.join(', ') : view.text}`;
           }).join('; ')}`}
-          onMore={onShowAll}
+          // Cruscotto basso con la riga Bonus/Malus: il "+N" accanto al titolo (il pulsante in fondo toglierebbe una riga)
+          onMore={showBm && density === 'tight' ? undefined : onShowAll}
           render={syn => {
             if (syn.duo) {
               return (
@@ -508,7 +476,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
-      {bmRoom && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
+      {showBm && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {coreTip.anchor && (
         <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
           <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />

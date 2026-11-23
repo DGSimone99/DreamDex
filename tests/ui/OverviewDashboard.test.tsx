@@ -975,11 +975,10 @@ describe('Riassunto: la riga Bonus/Malus', () => {
     expect(onView).toHaveBeenCalledWith('bonusMalus');
   });
 
-  it('senza posto (i core arrivano in fondo) la riga non c\'è, nemmeno per i lettori di schermo', () => {
+  it('anche coi core fino in fondo la riga c\'è (le Sinergie le cedono il posto col loro +N)', () => {
     stubSummary(400, 380);
     mountBm();
-    expect(screen.queryByRole('button', { name: /^Bonus\/Malus/ })).toBeNull();
-    expect(document.querySelector('.sum-bm')).toBeNull();
+    expect(screen.getByRole('button', { name: /^Bonus\/Malus \+6/ })).toBeInTheDocument();
   });
 
   it('le voci che non stanno: "+N altre" con la parola (non un +N che sembra punti), le voci nascoste nel fumetto', () => {
@@ -1000,8 +999,11 @@ describe('Riassunto: la riga Bonus/Malus', () => {
     expect(screen.getByRole('button', { name: 'Bonus/Malus +6: 2 core +6, Tipi doppioni −1, Rete di sicurezza +1' })).toBeInTheDocument();
   });
 
-  it('senza layout (altezza 0) niente riga', () => {
+  it('senza layout (altezza 0) la riga c\'è lo stesso; senza voci né netto non c\'è', () => {
     mountBm();
+    expect(document.querySelector('.sum-bm')).not.toBeNull();
+    cleanup();
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={{ net: 0, pieces: [] }} onView={vi.fn()} density="normal" />);
     expect(document.querySelector('.sum-bm')).toBeNull();
   });
 });
