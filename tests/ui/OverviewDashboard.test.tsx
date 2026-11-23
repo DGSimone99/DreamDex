@@ -734,28 +734,25 @@ describe('Cruscotto: misure', () => {
     stubLayout({ 'dash-roles': { box: 150, item: 30 } });
     mount({ density: 'tight', data: sample({ roles: manyRoles }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    // 5 posti: 4 essenziali, poi Importanti senza chip: mai un "+2" nudo, il conto compatto (2 mancanti, in rosso)
+    // 5 posti: 4 essenziali, poi Importanti senza chip: il "+2" come tutti i +N (.more-n), i mancanti nel fumetto
     expect(within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')).toHaveLength(4);
     const tally = within(roleBand(roles, 'Importanti')).getByRole('listitem');
     expect(tally).toHaveClass('tally');
-    expect(tally).not.toHaveTextContent('+2');
-    expect(tally.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^2$/);
-    expect(tally.querySelector('.dash-role.bad')).toHaveTextContent('2');
-    expect(tally.querySelector('.dash-role.ok')).toBeNull();
+    expect(tally.querySelector('.more-n')).toHaveTextContent('+2', { normalizeWhitespace: true });
     // I nomi nel fumetto e ai lettori di schermo; si raggiunge con le frecce
     expect(tally.getAttribute('data-hint')).toMatch(/^2 ruoli: .+ \(mancante\), .+ \(mancante\)$/);
     expect(tally.querySelector('.visually-hidden')).toHaveTextContent(/^2 ruoli: /);
     expect(tally).toHaveAttribute('data-nav');
   });
 
-  it('Ruoli: fascia senza posto con ruoli coperti: "✓ N" (mancanti soft tratteggiati, non rossi)', () => {
+  it('Ruoli: fascia senza posto con ruoli coperti: "+N", coperti e mancanti nel fumetto', () => {
     stubLayout({ 'dash-roles': { box: 150, item: 30 } });
     const roles = { ...manyRoles, chips: manyRoles.chips.map(c => (c.level === 'important' ? { ...c, covered: c.need === 'screens', owners: c.need === 'screens' ? ['Great Tusk'] : [], soft: true } : c)) };
     mount({ density: 'tight', data: sample({ roles }) });
     const tally = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Importanti')).getByRole('listitem');
-    expect(tally.querySelector('.dash-role.soft')).toHaveTextContent('1');
-    expect(tally.querySelector('.dash-role.bad')).toBeNull();
-    expect(tally.querySelector('.dash-role.ok')).toHaveTextContent('1');
+    expect(tally.querySelector('.more-n')).toHaveTextContent('+2', { normalizeWhitespace: true });
+    expect(tally.getAttribute('data-hint')).toMatch(/coperto da Great Tusk/);
+    expect(tally.getAttribute('data-hint')).toMatch(/\(mancante\)/);
   });
 
   it('Ruoli: un contenitore che si stringe dopo il taglio non fa rimostrare tutto (niente rimbalzi)', () => {
@@ -985,7 +982,7 @@ describe('Riassunto: la riga Bonus/Malus', () => {
     expect(document.querySelector('.sum-bm')).toBeNull();
   });
 
-  it('le voci che non stanno: "altri N" a parole (non un +N che sembra punti), le voci nascoste nel fumetto', () => {
+  it('le voci che non stanno: "+N altre" con la parola (non un +N che sembra punti), le voci nascoste nel fumetto', () => {
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
       if (this.classList.contains('sum-body')) return rect(0, 400);
       if (this.classList.contains('sum-bm-list')) return rect(0, 18);
@@ -997,7 +994,8 @@ describe('Riassunto: la riga Bonus/Malus', () => {
     });
     mountBm();
     const more = document.querySelector('.sum-bm-more')!;
-    expect(more).toHaveTextContent(/^altri 2$/);
+    expect(more).toHaveTextContent(/^\+2 altre$/);
+    expect(more).toHaveClass('more-n');
     expect(more).toHaveAttribute('data-hint', 'Tipi doppioni −1 · Rete di sicurezza +1');
     expect(screen.getByRole('button', { name: 'Bonus/Malus +6: 2 core +6, Tipi doppioni −1, Rete di sicurezza +1' })).toBeInTheDocument();
   });

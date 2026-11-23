@@ -207,7 +207,7 @@ export function CoverageSection({ coverage, threats, gentle = false, onView }: {
                       onClick={() => { moreTip.close(); openThreat('defense'); }}
                       onMouseEnter={e => moreTip.open(true, e.currentTarget)} onMouseLeave={moreTip.close}
                       onFocus={e => { if (keyboardFocus(e.currentTarget)) moreTip.open(true, e.currentTarget); }} onBlur={moreTip.close}>
-                      <span aria-hidden="true">{t('dash.threatsMore', { n: hiddenThreats.length })}</span>
+                      <span className="more-n" aria-hidden="true">{t('dash.threatsMore', { n: hiddenThreats.length })}</span>
                     </button>
                   </li>
                 )}

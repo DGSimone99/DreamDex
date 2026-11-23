@@ -32,7 +32,7 @@ const conditionColor = (key: string) => typeColor(CONDITION_TYPE[key] ?? '');
 /** Il "+N": a vista solo il numero, per intero nel tooltip e ai lettori di schermo. */
 function More({ label, n, plain = false }: { label: string; n: number; plain?: boolean }) {
   return (
-    <span className="sum-more" {...(plain ? {} : hint(label))}>
+    <span className="sum-more more-n" {...(plain ? {} : hint(label))}>
       <span aria-hidden="true">+{n}</span><span className="visually-hidden">{label}</span>
     </span>
   );
@@ -94,7 +94,7 @@ function Section<T>({ title, empty, emptyBelow = false, rows, rowKey, rowClass, 
       {hidden > 0 && (onMore
         ? (
           <MoreBelow label={more(hidden, rows.slice(shown))} onClick={() => { tip.close(); onMore(); }} tipped={!!moreTip} hover={hover}>
-            +{hidden}
+            <span className="more-n">+{hidden}</span>
           </MoreBelow>
         )
         : <span className={`sum-sec-more${tipped}`} {...hover}><More n={hidden} label={more(hidden, rows.slice(shown))} plain={!!moreTip} /></span>)}
@@ -310,8 +310,8 @@ function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: Bon
       <em className={`sum-bm-net ${tone(net)}`} aria-hidden="true">{signedPts(net)}</em>
       <span ref={fit.ref} className="sum-bm-list" aria-hidden="true">
         {shown.map(p => <span key={p.key} data-fit className="sum-bm-item">{p.name} <b className={tone(p.points)}>{signedPts(p.points)}</b></span>)}
-        {/* A parole ("altri 3"), così non si legge come punti accanto ai +N delle voci; al passaggio le voci nascoste */}
-        {hidden > 0 && <span data-fit-more className="sum-bm-more" {...hint(pieces.slice(shown.length).map(p => `${p.name} ${signedPts(p.points)}`).join(' · '))}>{t('sum.bmMore', { n: hidden })}</span>}
+        {/* Con la parola ("+3 altre"), così non si legge come punti accanto ai +N delle voci; al passaggio le voci nascoste */}
+        {hidden > 0 && <span data-fit-more className="sum-bm-more more-n" {...hint(pieces.slice(shown.length).map(p => `${p.name} ${signedPts(p.points)}`).join(' · '))}>{t('sum.bmMore', { n: hidden })}</span>}
       </span>
     </button>
   );
@@ -386,7 +386,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
         <Tag color={conditionColor(row.key)}>{row.label}</Tag>
         {row.users.length > 0 && (packed
           ? (
-            <span className="sum-pill-n">
+            <span className="sum-pill-n more-n">
               <span aria-hidden="true">+{row.users.length}</span>
               <span className="visually-hidden">{`→ ${row.users.map(userLabel).join(', ')}`}</span>
             </span>

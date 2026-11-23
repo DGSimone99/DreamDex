@@ -83,8 +83,8 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
 
 /**
  * Una fascia (un livello): l'etichetta a sinistra, i ruoli che vanno a capo; quelli che non stanno nel "+N" a fine fascia.
- * Se non ci sta nessun ruolo la fascia non resta un "+N" nudo: un conto compatto, "✓ 3" (e "✕ 1" per i mancanti, rosso o
- * tratteggiato come i loro chip), coi nomi nel fumetto. "+N" e conto si raggiungono con le frecce (col fuoco il fumetto).
+ * Se non ci sta nessun ruolo resta il "+N" della fascia (come tutti i "+N"), coi nomi dei ruoli, coperti e mancanti, nel
+ * fumetto e ai lettori di schermo. Il "+N" si raggiunge con le frecce (col fuoco il fumetto).
  */
 function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; shown: number }) {
   const t = useT();
@@ -96,32 +96,16 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
   const names = rest.map(chip => `${needLabel(chip.need, lang)} (${t(chip.covered ? 'dash.roleCoveredBy' : 'dash.roleMissing', { names: chip.owners.join(', ') })})`).join(', ');
   const tally = shown === 0;
   const moreText = `${t(tally ? 'dash.bandRoles' : 'dash.moreRoles', { n: hidden })}: ${names}`;
-  const covered = rest.filter(chip => chip.covered).length;
-  const missing = rest.filter(chip => !chip.covered);
   return (
     <div className="dash-role-band">
       <span id={id} className="dash-level-name">{title}</span>
       <ul className="dash-role-list" aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} />)}
-        {hidden > 0 && (tally
-          ? (
-            <li data-fit-more data-nav="" className="dash-role more tally" {...hint(moreText)}>
-              <span className="dash-role-count" aria-hidden="true">
-                {missing.length > 0 && (
-                  <span className={`dash-role ${missing.every(chip => chip.soft) ? 'soft' : 'bad'}`}>
-                    <span className="dash-role-tag"><Icon name="close" /><span className="dash-role-name">{missing.length}</span></span>
-                  </span>
-                )}
-                {covered > 0 && <span className="dash-role ok"><span className="dash-role-tag"><Icon name="check" /><span className="dash-role-name">{covered}</span></span></span>}
-              </span>
-              <span className="visually-hidden">{moreText}</span>
-            </li>
-          )
-          : (
-            <li data-fit-more data-nav="" className="dash-role more" {...hint(moreText)}>
-              <span aria-hidden="true">+{hidden}</span><span className="visually-hidden">{moreText}</span>
-            </li>
-          ))}
+        {hidden > 0 && (
+          <li data-fit-more data-nav="" className={`dash-role more${tally ? ' tally' : ''}`} {...hint(moreText)}>
+            <span className="more-n" aria-hidden="true">+{hidden}</span><span className="visually-hidden">{moreText}</span>
+          </li>
+        )}
       </ul>
     </div>
   );

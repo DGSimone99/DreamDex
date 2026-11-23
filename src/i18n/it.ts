@@ -249,7 +249,7 @@ export const it: Record<keyof typeof en, string> = {
   'sum.bmCoresOne': "1 core",
   'sum.bmCoresMany': "{n} core",
   'sum.bmLabel': "Bonus/Malus {net}: {list}",
-  'sum.bmMore': "altri {n}",
+  'sum.bmMore': "+{n} altre",
   'dash.pts': "pt",
   'dash.ptsSr': "punti",
   'dash.speedHintMeta': "Quanti membri sono più veloci di oltre metà del meta. Il voto della Velocità conta anche di quanti Pokémon è più veloce ognuno, le spinte, la priorità e il controllo della velocità del team.",

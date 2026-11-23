@@ -247,7 +247,7 @@ export const en = {
   'sum.bmCoresOne': "1 core",
   'sum.bmCoresMany': "{n} cores",
   'sum.bmLabel': "Bonus/Malus {net}: {list}",
-  'sum.bmMore': "{n} more",
+  'sum.bmMore': "+{n} more",
   'dash.pts': "pts",
   'dash.ptsSr': "points",
   'dash.speedHintMeta': "How many members outspeed more than half of the meta. The Speed grade also counts how many Pokémon each one outspeeds, boosts, priority and the team's speed control.",
