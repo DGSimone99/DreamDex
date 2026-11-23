@@ -68,7 +68,7 @@ describe('dettaglio: la versione che ci sta', () => {
     expect(setTab).toHaveFocus();
   });
 
-  it('dettaglio basso (300 px) ma il contenuto ci sta: resta la versione piena (decide il contenuto, non l'altezza)', () => {
+  it('dettaglio basso (300 px) ma il contenuto ci sta: resta la versione piena (decide il contenuto, non l’altezza)', () => {
     const original = globalThis.ResizeObserver;
     // Un ResizeObserver finto che misura subito (il dettaglio è alto 300)
     globalThis.ResizeObserver = class {
