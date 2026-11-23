@@ -41,9 +41,15 @@ function More({ label, n, plain = false }: { label: string; n: number; plain?: b
 /** Sprite sul piedistallo luminoso (come le corsie della Velocità). */
 const Plinth = ({ name, size }: { name: string; size: number }) => <span className="sum-plinth"><Sprite species={name} size={size} /></span>;
 
-/** Chip col bordo e il pallino colorato, come quelle dei ruoli. */
-const Tag = ({ color, children }: { color: string; children: ReactNode }) => (
-  <span className="sum-tag" style={{ '--c': color } as CSSProperties}><i aria-hidden="true" /><span className="sum-tag-t">{children}</span></span>
+/**
+ * Una condizione (meteo, campo, stile) come le pillole delle mosse delle Trappole accanto: la tessera con l'icona del suo
+ * tipo (la stessa di CONDITION_TYPE delle icone dello stile) e il nome, senza la coda.
+ */
+const CondPill = ({ cond, children }: { cond: string; children: ReactNode }) => (
+  <span className="mvp mvp-sm sum-cond" style={{ '--c': conditionColor(cond) } as CSSProperties}>
+    <span className="mvp-ic" aria-hidden="true">{CONDITION_TYPE[cond] && <img src={typeIconUrl(CONDITION_TYPE[cond])} alt="" draggable={false} />}</span>
+    <span className="mvp-nm">{children}</span>
+  </span>
 );
 
 /**
@@ -383,7 +389,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
         onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close} aria-describedby={goIds.roles}>
         <Plinth name={row.member} size={small} />
         <span className="sum-name">{row.member}</span>
-        <Tag color={conditionColor(row.key)}>{row.label}</Tag>
+        <CondPill cond={row.key}>{row.label}</CondPill>
         {row.users.length > 0 && (packed
           ? (
             <span className="sum-pill-n more-n">

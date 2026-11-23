@@ -382,7 +382,6 @@
 /* Stretto: etichette e chip più fitti */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
 .dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0; }
-.dash.tight .dash-role-tag { --rt-h: 20px; }
 
 /*
  * Ruoli, ampio: tabella ruoli × membri con tutti i livelli. In testa gli sprite dei membri, una riga per ruolo con un
@@ -547,11 +546,12 @@
   .dash.rich .dash-summary { --sum-arch: 22px; }
   .dash.rich .sum-name { font-size: var(--fs-small); }
 }
-/* Chip come quelle dei ruoli: bordo --line e pallino colorato */
-.sum-tag { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-4); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; color: var(--text); border: 1px solid var(--line); }
-.sum-tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+/* Una famiglia sola di pillole nella Panoramica: mosse delle Trappole, condizioni (mvp-sm con la tessera del tipo) e ruoli,
+   tutte alte 22px. La condizione non ha la coda: il nome chiude con un po' d'aria */
+.dash .mvp-sm { --mvp-h: 22px; }
+.sum-cond { flex: none; }
+.sum-cond .mvp-nm { padding-right: var(--sp-5); }
 .sum-tags { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.sum-tags .sum-tag { padding: var(--sp-1) var(--sp-3); gap: var(--sp-2); }
 .sum-to { flex: none; font-size: var(--fs-small); color: var(--faint); }
 /* Chi ne approfitta: mini-sprite accostati; vanno a capo invece di essere tagliati */
 .sum-users { min-width: 0; display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); }
@@ -567,10 +567,8 @@
 .sum-packed .sum-pill { min-height: 0; gap: var(--sp-3); padding: 2px var(--sp-4) 2px 0; background: color-mix(in srgb, var(--raised) 55%, transparent); border-radius: var(--alt-r-sm); }
 .sum-packed .sum-pill:hover { background: var(--raised); }
 .sum-packed .sum-pill .sum-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.sum-packed .sum-pill .sum-tag { min-width: 0; overflow: hidden; flex: 0 1 auto; }
-.sum-packed .sum-pill .sum-tag i { flex: none; }
-/* Nome lungo in una colonna stretta (Campo Nebbioso): finisce coi puntini, intero nel tooltip */
-.sum-packed .sum-pill .sum-tag-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Nome lungo in una colonna stretta (Campo Nebbioso): finisce coi puntini (come nelle pillole), intero nel tooltip */
+.sum-packed .sum-pill .sum-cond { min-width: 0; flex: 0 1 auto; }
 .sum-pill-n { flex: none; margin-left: auto; }
 .sum-packed .sum-pill .sum-tags { flex-wrap: nowrap; overflow: hidden; }
 
