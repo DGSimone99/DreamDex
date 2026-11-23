@@ -92,8 +92,20 @@ describe('Panoramica di Analisi', () => {
 
   it('un membro solo: niente "nessun problema", l\'invito ad aggiungerne', async () => {
     await setup(['Great Tusk']);
-    expect(panel().querySelector('.overview-headline')).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
+    // In fondo, nella striscia neutra del team incompleto (non un titolo grande in cima)
+    const strip = within(panel()).getByRole('region', { name: 'Da sistemare' });
+    expect(strip).toHaveClass('fix-row', 'building');
+    expect(strip).toHaveTextContent(/^1 di 6 nel teamAggiungi almeno 2 Pokémon/);
     expect(within(panel()).queryByText('Nessun problema da sistemare')).toBeNull();
+    expect(within(panel()).getByText('Le sinergie arrivano col secondo Pokémon')).toBeInTheDocument();
+  });
+
+  it('team vuoto: l\'invito con un pulsante e le quattro carte della Panoramica vuote con cosa mostreranno', async () => {
+    render(<App initialLang="it" data={fixtureData} />);
+    await userEvent.setup().click(screen.getByRole('tab', { name: /^Analisi/ }));
+    expect(within(panel()).getAllByRole('button', { name: 'Aggiungi un Pokémon' })).toHaveLength(1);
+    expect([...panel().querySelectorAll('.dash.ghost > section')].map(r => r.getAttribute('aria-label'))).toEqual(['Riassunto', 'Copertura', 'Ruoli', 'Velocità']);
+    expect(within(panel()).getByRole('region', { name: 'Ruoli' })).toHaveTextContent('I ruoli che servono al team e chi li copre');
   });
 
   it('meta spento: "Meta spento" e la media del tier', async () => {

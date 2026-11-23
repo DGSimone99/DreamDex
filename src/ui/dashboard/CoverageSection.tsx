@@ -47,6 +47,8 @@ const areaOf = (side: Side): AnalysisView => (side === 'defense' ? 'defense' : '
 /** La larghezza minima di una piastrella della scheda Meta e lo stacco fra due: quante ne stanno in fila. */
 const TILE_MIN = 96;
 const TILE_GAP = 6;
+/** La piastrella "+N" delle minacce che non stanno: stretta, solo il numero (le altre prendono il posto che resta). */
+const MORE_W = 44;
 /** Portatili stretti: nella testata "con un solo check" non sta, lì "con 1 check" (la testata ha anche i link). */
 const NARROW_HEAD = '(min-width: 1100px) and (max-width: 1279px)';
 /** Senza misura (test, scheda nascosta): sette piastrelle. */
@@ -114,8 +116,10 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  const slots = width > 0 ? Math.max(3, Math.floor((width + TILE_GAP) / (TILE_MIN + TILE_GAP))) : TILES_DEFAULT;
-  const shownThreats = list.length > slots ? list.slice(0, slots - 1) : list;
+  const fits = (room: number) => Math.max(2, Math.floor((room + TILE_GAP) / (TILE_MIN + TILE_GAP)));
+  const slots = width > 0 ? Math.max(3, fits(width)) : TILES_DEFAULT;
+  // Se non stanno tutte: il "+N" stretto in fondo e le altre piastrelle nel posto che resta
+  const shownThreats = list.length > slots ? list.slice(0, width > 0 ? fits(width - MORE_W - TILE_GAP) : slots - 1) : list;
   const hiddenThreats = list.slice(shownThreats.length);
   const openCount = list.filter(x => x.status === 'open').length;
   const thinCount = list.length - openCount;
@@ -223,7 +227,8 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
           list.length === 0
             ? <p className="dash-note good dash-meta-none"><Icon name="check" />{t('dash.threatsNone')}</p>
             : (
-              <ul className="cov-tiles" aria-label={`${title}: ${t('dash.tabMeta')}`} style={{ '--n': slots } as CSSProperties}>
+              <ul className={`cov-tiles${shownThreats.length < list.length ? ' has-more' : ''}`} aria-label={`${title}: ${t('dash.tabMeta')}`}
+                style={{ '--n': shownThreats.length < list.length ? shownThreats.length : slots, '--more-w': `${MORE_W}px` } as CSSProperties}>
                 {shownThreats.map(x => (
                   <li key={x.species}>
                     <button type="button" className={`cov-tile ${x.status}${gentle ? ' soft' : ''}`}

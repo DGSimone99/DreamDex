@@ -360,3 +360,8 @@
   .dash-summary .sum-haz { grid-area: haz; }
   .dash-summary .sum-syn-sec { grid-area: syn; align-self: start; }
 }
+
+/* Telefono, team vuoto: solo l'invito (le carte della Panoramica lì non ci sono) */
+@media (max-width: 599px) {
+  .dash.ghost { display: none; }
+}

@@ -145,13 +145,16 @@
 
 /* Panoramica: il cruscotto che prende il resto, in fondo la riga Da sistemare (il giudizio in cima solo con un membro); scorre solo sotto la misura minima */
 .overview { display: flex; flex-direction: column; gap: var(--sp-5); height: 100%; min-height: 0; padding-bottom: var(--sp-7); overflow: auto; overscroll-behavior: contain; }
-.overview-empty { margin: 24px 0; color: var(--muted); }
+/* Team vuoto: l'invito in alto, sotto le quattro carte della Panoramica tratteggiate con cosa mostreranno */
+.overview-empty-intro { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-8); color: var(--muted); }
+.overview-empty-intro p { margin: 0; }
+.dash.ghost { min-height: 300px; }
+.dash-card.is-ghost { background: none; border-style: dashed; border-color: var(--line); }
+.dash-card.is-ghost .dash-plate { color: var(--muted); }
+.ghost-text { margin: auto; max-width: 30ch; text-align: center; font-size: var(--fs-small); line-height: 1.4; color: var(--faint); }
 
 
 /* Panoramica: in testa solo con un membro (l'invito ad aggiungerne), in fondo la riga Da sistemare */
-.overview-headline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-8); }
-.overview-headline > strong { font: 800 var(--fs-headline)/1.1 var(--display); font-style: italic; }
-.overview-empty { display: grid; justify-items: start; gap: var(--sp-6); }
 /* Da sistemare (in fondo alla Panoramica): una striscia sola, alta 26px, col colore del caso (--tone) nell'etichetta, nella
    sfumatura che parte da sinistra e nella cornice sottile;
    il testo lungo finisce coi puntini (tutto nel tooltip). Tutta la striscia porta al Coaching */
@@ -435,7 +438,8 @@
 /* Colonne come le barre di Champions: angoli dritti, un filo chiaro in cima */
 .dash-bar { position: relative; width: 70%; max-width: 40px; min-height: 2px; background: var(--line); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18); }
 .dash-bar.above { background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--panel))); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45); }
-.dash-bar small { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 1px; font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+/* Il numero sopra la barra su un fondo come la card, sopra la linea della media: quando ci passa vicino non si accavallano */
+.dash-bar small { position: absolute; z-index: 2; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); padding: 0 2px; line-height: 1.2; font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); background: var(--panel); }
 .dash-avg { position: absolute; left: 0; right: 0; z-index: 1; border-top: 1.5px dashed var(--warn); pointer-events: none; }
 .dash-avg span { position: absolute; left: 0; top: 0; transform: translateY(-50%); padding: 0 3px 0 0; font: 600 var(--fs-caption)/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--warn); background: var(--panel); }
 .dash-sprites { display: flex; gap: var(--sp-3); padding-left: var(--avg-gutter); }
@@ -973,6 +977,8 @@
    tratteggiato. Alte quanto la griglia dei Tipi (--cov-h), così cambiando scheda non si muove niente */
 .cov-tiles { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 6px; height: var(--cov-h); margin: 0; padding: 0; list-style: none; }
 .cov-tiles > li { display: flex; min-width: 0; }
+/* Con minacce che non stanno: il "+N" in una colonna stretta in fondo */
+.cov-tiles.has-more { grid-template-columns: repeat(var(--n), minmax(0, 1fr)) var(--more-w); }
 .cov-tile { --k: var(--warn); position: relative; isolation: isolate; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
   padding: 0 var(--sp-2) var(--sp-3); border: 0; border-radius: var(--alt-r-sm); color: var(--text); font: inherit; cursor: pointer;
   background: linear-gradient(180deg, color-mix(in srgb, var(--k) 16%, var(--raised)), color-mix(in srgb, var(--raised) 60%, var(--panel))); transition: transform 0.15s var(--ease); }

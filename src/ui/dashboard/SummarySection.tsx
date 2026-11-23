@@ -473,7 +473,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
             more={n => count('sum.moreHazards', n)}
             render={hazardLine} />
         )}
-        <Section className="sum-syn-sec" title={t('sum.synergies')} empty={t('sum.noSynergies')} emptyBelow rows={synergies}
+        <Section className="sum-syn-sec" title={t('sum.synergies')} empty={t(members === 1 ? 'sum.noSynergiesOne' : 'sum.noSynergies')} emptyBelow rows={synergies}
           rowKey={syn => synergyView(syn).key}
           fitKey={keyOf(synergies.map(syn => synergyView(syn).key))}
           more={(n, hidden) => `${count('sum.moreSyn', n)}: ${hidden.map(syn => {
