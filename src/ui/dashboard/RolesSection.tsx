@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { needLabel } from '../../engine/needs';
 import type { DashboardData, RoleChip } from '../../engine/overviewDashboard';
 import { useLang, useT } from '../../i18n/react';
@@ -71,7 +71,7 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
   const tip = useRoleTip(chip);
   return (
     // Raggiungibile con le frecce (data-nav: le fasce sono un posto solo nel giro del Tab); col fuoco il tooltip
-    <li data-fit data-nav="" className={`dash-role ${stateOf(chip)}`} {...tip.bind}>
+    <li data-fit data-nav="" data-tap-tip className={`dash-role ${stateOf(chip)}`} {...tip.bind}>
       {tip.node}
       <span className="dash-role-tag">
         <Icon name={chip.covered ? 'check' : 'close'} />
@@ -97,7 +97,7 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
   const moreText = `${t(hidden === 1 ? 'dash.moreRolesOne' : 'dash.moreRoles', { n: hidden })}: ${names}`;
   return (
     <div className="dash-role-band">
-      <span id={id} className="dash-level-name">{title}</span>
+      <span id={id} className="dash-level-name sum-sec-h">{title}</span>
       {/* Un ruolo solo e il "+N": sulla stessa riga, il nome si accorcia coi puntini se serve */}
       <ul className={`dash-role-list${shown === 1 && hidden > 0 ? ' one' : ''}`} aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} />)}
@@ -172,7 +172,9 @@ function RoleTable({ roles, titles }: { roles: DashboardData['roles']; titles: R
   const bands = LEVELS.map(level => missingFirst(roles.chips.filter(c => c.level === level)));
   return (
     <div className="dash-role-body dash-fit">
-      <table className="dash-role-grid" aria-label={t('area.roles')}>
+      {/* Righe alte al massimo come la riga piena (--rows, --seps in CSS): con tanto spazio la tabella resta in alto */}
+      <table className="dash-role-grid" aria-label={t('area.roles')}
+        style={{ '--rows': bands.reduce((n, band) => n + band.length, 0), '--seps': bands.filter(band => band.length > 0).length } as CSSProperties}>
         <thead>
           <tr>
             <td />
@@ -186,7 +188,7 @@ function RoleTable({ roles, titles }: { roles: DashboardData['roles']; titles: R
         </thead>
         {LEVELS.map((level, i) => bands[i].length > 0 && (
           <tbody key={level}>
-            <tr className="dash-role-sep"><th scope="rowgroup" colSpan={roles.members.length + 1}>{titles[level]}</th></tr>
+            <tr className="dash-role-sep"><th scope="rowgroup" colSpan={roles.members.length + 1}><span className="sum-sec-h">{titles[level]}</span></th></tr>
             {bands[i].map(chip => <RoleTableRow key={chip.need} chip={chip} members={roles.members} />)}
           </tbody>
         ))}
