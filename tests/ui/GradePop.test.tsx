@@ -129,3 +129,25 @@ describe('voto bloccato', () => {
     expect(card.querySelector('.label')).toHaveTextContent(/EV/);
   });
 });
+
+describe('voto sul telefono e sul tablet, team aperto: le righe delle aree', () => {
+  it('di base ridotto; aperto, si richiude cambiando sezione o scheda', async () => {
+    const real = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: query.includes('1099'), media: query, onchange: null,
+      addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false })) as typeof window.matchMedia;
+    try {
+      const rating = rated();
+      const user = userEvent.setup();
+      const { rerender } = renderIt(<GradeBadge rating={rating} foldReset="pokemon|overview" />);
+      const fold = screen.getByRole('button', { name: 'Mostra le aree del voto' });
+      expect(fold).toHaveAttribute('aria-expanded', 'false');
+      await user.click(fold);
+      expect(screen.getByRole('button', { name: /^Offesa \d+, apri il dettaglio/ })).toBeInTheDocument();
+      rerender(<GradeBadge rating={rating} foldReset="analysis|strength" />);
+      expect(screen.queryByRole('button', { name: /^Offesa \d+, apri il dettaglio/ })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Mostra le aree del voto' })).toHaveAttribute('aria-expanded', 'false');
+    } finally {
+      window.matchMedia = real;
+    }
+  });
+});
