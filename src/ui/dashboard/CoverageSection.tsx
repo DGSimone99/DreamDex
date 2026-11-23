@@ -48,8 +48,6 @@ const TILE_MIN = 96;
 const TILE_GAP = 6;
 /** Senza misura (test, scheda nascosta): sette piastrelle. */
 const TILES_DEFAULT = 7;
-/** Sotto questa larghezza del pannello (telefono) le piastrelle vanno su due file. */
-const PHONE_PANEL = 480;
 
 /**
  * Copertura, con due schede nel titolo (si apre su Tipi, o su Meta se i tipi sono tutti verdi e c'è il meta):
@@ -107,9 +105,7 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  // Sul telefono (pannello sotto PHONE_PANEL px) c'è altezza: due file
-  const perRow = Math.max(3, Math.floor((width + TILE_GAP) / (TILE_MIN + TILE_GAP)));
-  const slots = width > 0 ? perRow * (width < PHONE_PANEL ? 2 : 1) : TILES_DEFAULT;
+  const slots = width > 0 ? Math.max(3, Math.floor((width + TILE_GAP) / (TILE_MIN + TILE_GAP))) : TILES_DEFAULT;
   const shownThreats = list.length > slots ? list.slice(0, slots - 1) : list;
   const hiddenThreats = list.slice(shownThreats.length);
   const openCount = list.filter(x => x.status === 'open').length;
@@ -190,7 +186,7 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
           ? list.length === 0
             ? <p className="dash-note good dash-meta-none"><Icon name="check" />{t('dash.threatsNone')}</p>
             : (
-              <ul className="cov-tiles" aria-label={`${title}: ${t('dash.tabMeta')}`} style={{ '--n': width > 0 && width < PHONE_PANEL ? perRow : slots } as CSSProperties}>
+              <ul className="cov-tiles" aria-label={`${title}: ${t('dash.tabMeta')}`} style={{ '--n': slots } as CSSProperties}>
                 {shownThreats.map(x => (
                   <li key={x.species}>
                     <button type="button" className={`cov-tile ${x.status}${gentle ? ' soft' : ''}`}
