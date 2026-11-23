@@ -23,6 +23,9 @@ import { offenseSlots } from './slots';
 import { PokemonIcon } from '../PokemonName';
 import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 
+/** Da qui il danno si scrive anche se non conta (3HKO, la soglia di Coverage meta), in una casella grigia. */
+const LOW_PCT = 34;
+
 /** Colore della riga Copertura: rosso a 0, giallo sotto il livello coperto (COVERED_LEVEL, 60), verde da lì. */
 const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVEL ? 'warn' : 'good');
 
@@ -106,6 +109,9 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     const found = member?.hits.find(h => h.label === type);
     const tag = effLabel(found?.move ? moveAttackMultiplier(set, found.move, [type], '', field) : null, 'offense');
     const hit = found && found.credit > 0 ? found : undefined;
+    // Dal 34% (3HKO, come Coverage meta) al 49%: non conta, ma il danno si vede in una casella grigia; sotto la casella è
+    // vuota e senza ×2 (un ×2 senza numero non dice niente)
+    const low = !hit && found && found.pct >= LOW_PCT ? found : undefined;
     const strong = !!hit && hit.credit >= STRONG_CREDIT;
     // Il 100%: un verde a parte, più acceso (come i pezzi OHKO della Generale)
     const ohko = !!hit && hit.pct >= 100;
@@ -117,14 +123,15 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
     const bothUp = !!found && !lifted && !teamUp && found.comboPct !== null && rank(found.comboPct) > rank(found.plainPct);
     return (
-      <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : ''}${lifted || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
-        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.leave(); }} onMouseLeave={tip.close}
-        {...focusAt(slot, i, hit ? { slot, type } : undefined)}>
+      <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : low ? ' ok-low' : ''}${lifted || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
+        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit || low) tip.open({ slot, type }, e.currentTarget); else tip.leave(); }} onMouseLeave={tip.close}
+        {...focusAt(slot, i, hit || low ? { slot, type } : undefined)}>
         {hit && <>
           <span className="ct-num">{hit.pct}<i>%</i></span>
           <span className="visually-hidden"> {ohko ? 'OHKO' : t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>
         </>}
-        <EffTag label={tag} side="offense" />
+        {low && <span className="ct-num">{low.pct}<i>%</i></span>}
+        {(hit || low) && <EffTag label={tag} side="offense" />}
       </td>
     );
   };

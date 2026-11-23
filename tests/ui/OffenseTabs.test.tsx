@@ -593,7 +593,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(document.querySelector('.ct-table tr.x-row')).not.toBeNull();
   });
 
-  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66%, gialla dal 50% (KO in due colpi), vuota sotto', async () => {
+  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66%, gialla dal 50% (KO in due colpi), grigia col numero dal 34%, vuota sotto', async () => {
     const rating = await open();
     const rows = document.querySelectorAll('.ct-table tbody tr');
     const slots = offenseSlots(team, rating.offense.members);
@@ -603,9 +603,13 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
       TYPES.forEach((type, i) => {
         const hit = m.hits.find(h => h.label === type)!;
         const cell = cells[i];
-        if (hit.credit === 0) {
-          // Vuota: al massimo l'etichetta ×2 / ×4 di una mossa superefficace che non arriva al 50%
-          expect(cell.textContent).toMatch(/^(×[24] superefficace ×[24])?$/);
+        if (hit.credit === 0 && hit.pct >= 34) {
+          // Dal 34% al 49%: il danno in una casella grigia (non conta), col ×2 / ×4 se la mossa è superefficace
+          expect(cell).toHaveClass('ok-low');
+          expect(cell.textContent).toMatch(new RegExp(`^${hit.pct}%(×[24] superefficace ×[24])?$`));
+        } else if (hit.credit === 0) {
+          // Vuota sotto il 34%: niente numero e niente ×2 / ×4
+          expect(cell.textContent).toBe('');
         } else {
           expect(cell).toHaveTextContent(`${hit.pct}%`);
           expect(cell).toHaveClass(hit.credit >= 2 / 3 ? 'ok-full' : 'ok-half');

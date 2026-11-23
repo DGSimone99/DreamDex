@@ -378,3 +378,5 @@
 .def-members thead th:has(> .bar-head) :is(.bar-head-ic, .bar-head ~ *) { position: relative; top: -1px; }
 .bar-head-ic { display: inline-flex; flex: none; color: var(--muted); }
 .bar-head-ic .icon { width: 14px; height: 14px; }
+/* Coverage tipi: dal 34% al 49% il danno scritto in una casella grigia (non conta, ma si vede quanto manca) */
+.off-frame .ct-table td.ct-cell.ok-low { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(11px, calc(var(--def-row) * 0.2), 16px); font-variant-numeric: tabular-nums; color: var(--muted); cursor: help; }
