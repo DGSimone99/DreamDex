@@ -74,7 +74,7 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
    */
   both?: boolean;
   /**
-   * Un membro solo: niente allarmi (i buchi sono normali a team appena iniziato). Caselle scoperte e minacce in grigio
+   * Team appena iniziato (fino a 3 membri): niente allarmi (i buchi sono normali). Caselle scoperte e minacce in grigio
    * tratteggiato invece che rosse e gialle, niente numero rosso sulla scheda Meta.
    */
   gentle?: boolean;

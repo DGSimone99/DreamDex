@@ -1142,7 +1142,7 @@ describe('Riassunto: la riga Bonus/Malus', () => {
 
 describe('Un membro solo: niente allarmi', () => {
   const cov = () => screen.getByRole('region', { name: 'Copertura' });
-  it('caselle scoperte e minacce grigie tratteggiate, niente numero rosso; ruoli mancanti tenui; da due membri come sempre', async () => {
+  it('caselle scoperte e minacce grigie tratteggiate, niente numero rosso; ruoli mancanti tenui; Copertura tenue fino a 3, da 4 come sempre', async () => {
     const user = userEvent.setup();
     const strict = sample({ roles: { ...sample().roles, chips: sample().roles.chips.map(c => ({ ...c, soft: false })) } });
     const { unmount } = mount({ members: 1, data: strict });
@@ -1158,7 +1158,15 @@ describe('Un membro solo: niente allarmi', () => {
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(roles.querySelectorAll('.dash-role.bad, .dash-role-row.bad')).toHaveLength(0);
     unmount();
-    const { unmount: unmount2 } = mount({ members: 2, data: strict });
+    // Con 2 e 3 membri la Copertura resta tenue, i Ruoli tornano come sempre
+    for (const members of [2, 3]) {
+      const { unmount: unmountN } = mount({ members, data: strict });
+      expect(cov().querySelectorAll('.dash-cell.bad, .dash-cell.minor')).toHaveLength(0);
+      expect(cov().querySelector('.dash-tab-n')).toBeNull();
+      expect(screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-role-row.bad, .dash-role.bad').length).toBeGreaterThan(0);
+      unmountN();
+    }
+    const { unmount: unmount2 } = mount({ members: 4, data: strict });
     expect(cov().querySelectorAll('.dash-cell.bad')).toHaveLength(2);
     expect(cov().querySelector('.dash-tab-n')).toHaveTextContent('3');
     // Sotto i 6 il numero della scheda Meta è neutro (grigio); a team completo rosso

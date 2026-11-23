@@ -14,6 +14,12 @@ import { SummarySection } from './dashboard/SummarySection';
 export type Density = 'tight' | 'normal' | 'roomy';
 
 /**
+ * Fino a quanti membri la Copertura è tenue (caselle scoperte e minacce tratteggiate in grigio, niente numero sulla scheda
+ * Meta): a team appena iniziato i buchi ci sono per forza e il rosso insegnerebbe a ignorarlo.
+ */
+export const GENTLE_UP_TO = 3;
+
+/**
  * Soglia sull'altezza del cruscotto (px CSS), misurata con la card del voto a cinque righe (6 membri):
  * 1366×768 aperto 368 (stretto) · 1440×900 aperto 471 · 1920×1080 aperto 621 · 2560×1440 aperto 694 (normale).
  * L'ampia c'è sempre col team ridotto e, col team aperto, da RICH_FROM (1920×1080 e schermi più alti).
@@ -90,8 +96,8 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, we
     <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}`} data-density={density}>
       <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       {/* Le minacce del meta sono la riga META della Copertura (la loro carta è stata tolta il 2026-11-22) */}
-      {/* Un membro solo: niente allarmi in Copertura e Ruoli (in cima l'invito ad aggiungerne un altro) */}
-      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members === 1} incomplete={members < 6} both={rich} weak={weak} onView={onView} />
+      {/* Team appena iniziato: niente allarmi in Copertura fino a GENTLE_UP_TO membri, nei Ruoli con un membro solo */}
+      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members <= GENTLE_UP_TO} incomplete={members < 6} both={rich} weak={weak} onView={onView} />
       <RolesSection roles={data.roles} density={density} gentle={members === 1} onView={onView} />
       <SpeedSection speed={data.speed} density={density} weak={weak.speed} onView={onView} />
     </div>
