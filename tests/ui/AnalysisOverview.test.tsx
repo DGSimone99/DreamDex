@@ -90,13 +90,6 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Copertura' }).querySelector('.dash-head')).not.toHaveClass('is-link');
   });
 
-  it("il Riassunto: un attaccante dell'eroe porta a Offesa", async () => {
-    const user = await setup();
-    const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    await user.click(within(within(summary).getByRole('group', { name: 'Attaccano' })).getAllByRole('button')[0]);
-    expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
-  });
-
   it('un membro solo: niente "nessun problema", l\'invito ad aggiungerne', async () => {
     await setup(['Great Tusk']);
     expect(panel().querySelector('.overview-headline')).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
@@ -126,9 +119,9 @@ describe('Panoramica di Analisi', () => {
 
   it('niente più tessera Bonus/Malus; "Vai al Coaching" solo nella riga Da sistemare', async () => {
     await setup(['Great Tusk', 'Dragapult']);
-    // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica
+    // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica, dove c'è solo la riga in fondo al Riassunto
     const overview = panel().querySelector<HTMLElement>('.overview')!;
-    expect(overview).not.toHaveTextContent(/Bonus\/Malus/);
+    for (const el of overview.querySelectorAll('.dash-card')) if (!el.classList.contains('dash-summary')) expect(el).not.toHaveTextContent(/Bonus\/Malus/);
     for (const button of within(panel()).queryAllByRole('button', { name: /Vai al Coaching/ })) expect(button.closest('.fix-row')).not.toBeNull();
     expect(panel().querySelector('.summary-tile, .summary-strip')).toBeNull();
   });
@@ -264,13 +257,14 @@ describe('Panoramica: correzioni della revisione', () => {
 
 });
 
-describe('Panoramica: Minacce del meta', () => {
+describe('Panoramica: Copertura › scheda Meta', () => {
   it('clic su una minaccia: la sua Coverage meta con la colonna per prima e accesa, "Mostra tutti" la spegne', async () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
-    const card = within(panel()).getByRole('region', { name: 'Minacce del meta' });
-    const first = within(card).getAllByRole('button', { name: /, (scoperta|a fatica):/ })[0];
+    await user.click(within(panel()).getByRole('tab', { name: /^Meta/ }));
+    // La prima piastrella della scheda Meta: porta alla Coverage meta della Difesa se lì non è coperta, sennò dell'Offesa
+    const first = panel().querySelector<HTMLElement>('.dash-coverage .cov-tile:not(.more)')!;
     const species = first.getAttribute('aria-label')!.split(',')[0];
-    const offense = /Lo manda KO|Nessuno lo manda KO/.test(first.getAttribute('aria-label')!.split(':')[1]);
+    const offense = first.querySelector('.cov-side')!.classList.contains('ok');
     await user.click(first);
     expect(within(views()).getByRole('tab', { name: new RegExp(`^${offense ? 'Offesa' : 'Difesa'}`) })).toHaveAttribute('aria-selected', 'true');
     const table = within(panel()).getByRole('table', { name: `${offense ? 'Offesa' : 'Difesa'}: Coverage meta` });
@@ -370,11 +364,22 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemno single swap solves itGo to Coaching');
   });
 
-  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto', () => {
+  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto che dice che il Coaching lavora', () => {
     const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} onView={() => {}} /></LangProvider>);
     const bones = container.querySelector('.fix-row.is-skeleton');
-    expect(bones).toHaveAttribute('aria-hidden', 'true');
-    expect(bones).toHaveTextContent('');
+    expect(bones).toHaveAttribute('aria-live', 'polite');
+    expect(bones).toHaveTextContent(/^Il Coaching sta calcolando…$/);
+  });
+
+  it('team incompleto: striscia neutra "4 di 6 nel team", i problemi nel testo, niente rosso', () => {
+    const problems = [problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })];
+    render(<LangProvider lang="it"><FixRow problems={problems} advice={NO_ADVICE} members={4} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('is-link', 'building');
+    expect(row).not.toHaveClass('serious');
+    expect(row.querySelector('.fix-label')).toHaveTextContent(/^4 di 6 nel team$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^2 problemi · nessuna sostituzione singola li risolve$/);
+    expect(within(row).getByRole('button', { name: /^Vai al Coaching: 2 problemi/ })).toBeInTheDocument();
   });
 
   it('solvable: i problemi che almeno una proposta del Coaching risolve (cambi di Pokémon e di mossa, tutte)', () => {

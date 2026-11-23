@@ -48,6 +48,22 @@ const STRESS = [
   member('Excadrill', 'Leftovers', 'Sand Rush', ['Earthquake', 'Iron Head', 'Stealth Rock', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
   member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Swords Dance'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
 ];
+/** Tanti meteo e campi (pioggia, sabbia, elettrico, erboso), chi li sfrutta e Stealth Rock: il Riassunto pieno. */
+const WEATHERS = [
+  member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Scald', 'U-turn', 'Roost'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Aqua Jet'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+  member('Tyranitar', 'Smooth Rock', 'Sand Stream', ['Stealth Rock', 'Stone Edge', 'Crunch', 'Earthquake'], 'Adamant', { hp: 248, atk: 252, spd: 8 }),
+  member('Excadrill', 'Life Orb', 'Sand Rush', ['Swords Dance', 'Earthquake', 'Iron Head', 'Rapid Spin'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+  member('Tapu Koko', 'Choice Specs', 'Electric Surge', ['Rising Voltage', 'Volt Switch', 'Dazzling Gleam', 'Grass Knot'], 'Timid', { spa: 252, spe: 252, spd: 4 }),
+  member('Rillaboom', 'Choice Band', 'Grassy Surge', ['Grassy Glide', 'Wood Hammer', 'Knock Off', 'U-turn'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+];
+/** Cinque condizioni (pioggia, sabbia, sole, Campo Nebbioso, Campo Erboso) e due core a tre: Tyranitar/Rillaboom/Tapu Fini e Pelipper/Torkoal/Excadrill. */
+const WEATHERS_CORES = [
+  WEATHERS[0], WEATHERS[2], WEATHERS[3],
+  member('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume', 'Rapid Spin', 'Yawn', 'Earth Power'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Tapu Fini', 'Leftovers', 'Misty Surge', ['Moonblast', 'Scald', 'Taunt', 'Defog'], 'Calm', { hp: 248, spd: 252, def: 8 }),
+  member('Rillaboom', 'Leftovers', 'Grassy Surge', ['Grassy Glide', 'Swords Dance', 'Knock Off', 'U-turn'], 'Adamant', { hp: 252, atk: 252, spd: 4 }),
+];
 /** Team senza sinergie né legami (nessun core, nessun pivot): il Riassunto ne mostra le sezioni vuote. */
 const LONE = [
   member('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Dragon Claw', 'Stone Edge', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -717,6 +733,8 @@ const STATES: Record<string, State> = {
     return true;
   } },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
+  // Telefono: il voto in fondo alla barra delle schede, toccato: la tendina Voto delle aree
+  'analysis-phone-grade': { run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
   'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
   'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
   // Carta del membro (tooltip) passando sul primo Pokémon della tabella dell'Offesa: le mosse come pillole piccole
@@ -895,6 +913,8 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Riassunto completo: team pioggia, aperto e col team ridotto, e team senza sinergie
+  'analysis-weathers': { hash: hash(WEATHERS), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
+  'analysis-weathers-cores': { hash: hash(WEATHERS_CORES), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain': { hash: hash(RAIN), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain-collapsed': { hash: hash(RAIN), run: async p => {
     await tab(p, 'analysis');

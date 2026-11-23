@@ -165,6 +165,35 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
 }
 
 
+/**
+ * Telefono, in fondo alla barra delle schede di Analisi (dove non c'è la Panoramica): il voto del team sempre a vista,
+ * lettera nel colore del voto e punteggio (grigio col team fuori regola). Toccandolo si apre la tendina "Voto delle aree"
+ * del team ridotto: le righe delle aree (ognuna apre la sua scheda) e il "?" del voto.
+ */
+export function TabsGrade({ rating, broken = false, incomplete = false, onOpen }: { rating: TeamRating; broken?: boolean; incomplete?: boolean; onOpen: (area: DetailArea) => void }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const button = useRef<HTMLButtonElement>(null);
+  const close = (refocus: boolean) => { setOpen(false); if (refocus) button.current?.focus(); };
+  return (
+    <div className={`analysis-grade grade-${rating.grade}${broken ? ' rules-broken' : ''}`}>
+      <button ref={button} type="button" className="analysis-grade-toggle" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? id : undefined}
+        aria-label={t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label })} onClick={() => setOpen(o => !o)}
+        onKeyDown={e => { if (e.key === 'Escape' && open) { e.preventDefault(); e.stopPropagation(); close(true); } }}>
+        <span className="analysis-grade-letter" aria-hidden="true">{rating.grade}</span>
+        <span className="analysis-grade-overall" aria-hidden="true">{rating.overall}</span>
+      </button>
+      {open && (
+        <GradePopover id={id} button={button} onClose={close}
+          help={<RatingHelp incomplete={incomplete} teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}>
+          <GradeAreaRows rating={rating} onOpen={area => { onOpen(area); close(false); }} />
+        </GradePopover>
+      )}
+    </div>
+  );
+}
+
 /** Le tre aree (Offesa, Difesa, Velocità) come barrette impilate, per il voto del team ridotto. Solo disegno. */
 function GradeMini({ rating }: { rating: TeamRating }) {
   const t = useT();
