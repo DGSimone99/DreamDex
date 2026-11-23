@@ -109,7 +109,7 @@ const read = (dir: string, name: string) => {
 };
 const hasData = (dir: string) => existsSync(join('data', dir, 'stats.json'));
 
-// Come scripts/bench.ts: dati del formato più i set di riserva
+// Dati del formato più i set di riserva
 const load = (format: ReferenceFormat): EngineData => {
   const dir = REFERENCE_DIRS[format];
   return {
