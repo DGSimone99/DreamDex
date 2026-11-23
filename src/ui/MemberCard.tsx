@@ -14,8 +14,9 @@ import { Sprite, typeColor } from './Sprite';
 import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
 import { tileStyle, typeIconUrl } from './typeIcons';
-import { kitTip } from './MoveTip';
+import { hint, kitTip } from './MoveTip';
 import { ItemIcon } from './ItemIcon';
+import { FormeName } from './candidateParts';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
 const HEX_ORDER: StatID[] = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
@@ -154,7 +155,7 @@ export function MemberRoles({ set, rules, fresh = [] }: { set: TeamSet; rules?: 
       <small>{t('area.roles')}</small>
       <span>
         {roles.map((role, i) => (
-          <span key={role} title={role === 'weather' ? undefined : roleDescription(role, lang)} className={fresh.includes(role) ? 'fresh' : undefined}>
+          <span key={role} {...hint(role === 'weather' ? undefined : roleDescription(role, lang))} className={fresh.includes(role) ? 'fresh' : undefined}>
             {i > 0 && ' · '}{fresh.includes(role) && <b aria-hidden="true">+</b>}{fresh.includes(role) && <span className="visually-hidden">{t('detail.newRole')} </span>}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
           </span>
         ))}
@@ -171,7 +172,8 @@ export function MemberCard({ set, was, alerts }: { set: TeamSet; was?: TeamSet; 
       <div className="mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         <span className="mcard-mon"><Sprite species={battleName(set)} size={96} /></span>
         <span className="mcard-name">
-          {battleName(set)}
+          {/* Come sulle carte della lista: Charizard + il segno della Mega, Zapdos + GALAR; il nome intero per chi legge */}
+          <FormeName species={battleName(set)} /><span className="visually-hidden">{battleName(set)}</span>
           {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />)}
         </span>
       </div>

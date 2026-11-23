@@ -17,7 +17,7 @@ describe('badge delle esclusive', () => {
     renderIt(<ExclusiveMark compact species="Salamence" format={withGame(DEFAULT_FORMAT, 'sv')} />);
     const mark = screen.getByRole('img', { name: 'Ottenibile solo in Violetto' });
     expect(mark).toHaveTextContent(/^V$/);
-    expect(mark).toHaveAttribute('title', 'Ottenibile solo in Violetto');
+    expect(mark).toHaveAttribute('data-hint', 'Ottenibile solo in Violetto');
   });
 
   it('senza gioco o per chi sta in entrambe: niente', () => {

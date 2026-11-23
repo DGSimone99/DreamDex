@@ -26,10 +26,11 @@ export const typeIconUrl = (type: string): string | undefined => TYPE_ICONS[type
  * sotto la prima). Il nome dei tipi va nel testo vicino, nel tooltip (`title`) o, con `hints`, nel fumetto di ogni
  * icona (dove le icone stanno da sole, senza il nome scritto).
  */
-export function TypeIcons({ types, title, className = '', hints = false }: { types: readonly string[]; title?: string; className?: string; hints?: boolean }) {
+export function TypeIcons({ types, title, className = '', hints = false, bubble }: { types: readonly string[]; title?: string; className?: string; hints?: boolean; bubble?: string }) {
   const lang = useLang();
+  // `bubble`: il nome dei tipi nel fumetto dell'app per tutto il gruppo (al posto del titolo del browser)
   return (
-    <span className={`type-icons${className ? ` ${className}` : ''}`} aria-hidden="true" title={hints ? undefined : title}>
+    <span className={`type-icons${className ? ` ${className}` : ''}`} aria-hidden="true" title={hints || bubble ? undefined : title} {...(bubble ? hint(bubble) : {})}>
       {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} {...(hints ? hint(typeName(type as TypeName, lang)) : {})} />)}
     </span>
   );

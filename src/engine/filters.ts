@@ -186,6 +186,9 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
   const candidates = dex.species.all()
     .filter(s => isTeambuildable(s) && speciesInPokedex(s, format) && obtainableIn(s, format) && !isCosmeticForme(s) && withinGen(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
+    // Fuori regola nel formato (Uber, bannati): solo cercandoli per nome, come senza filtri, o chiedendo proprio il tier
+    // Uber; gli altri filtri da soli non li portano mai in lista (un bannato non può diventare il #1 da aggiungere)
+    .filter(s => !!query || f.tier === 'uber' || !isBannedIn(s, format))
     .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name, format.genLimit) }))
     .filter(c => matchesFilters(c, f, data, format));
   return uniqueFormes(candidates).map(c => c.set);

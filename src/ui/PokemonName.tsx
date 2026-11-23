@@ -10,7 +10,8 @@ export function TypeDot({ name }: { name: string }) {
   const lang = useLang();
   const types = getSpecies(name)?.types;
   if (!types) return null;
-  return <TypeIcons types={types} className="type-dot" title={types.map(type => typeName(type, lang)).join(' / ')} />;
+  // Il nome dei tipi nel fumetto dell'app, non nel titolo del browser
+  return <TypeIcons types={types} className="type-dot" bubble={types.map(type => typeName(type, lang)).join(' / ')} />;
 }
 
 /** Mini sprite "chibi" del Pokémon (40×30, le icone dei menu di Showdown). */

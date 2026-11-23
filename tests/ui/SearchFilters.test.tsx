@@ -54,7 +54,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
   it('nessun risultato', async () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'zzzz');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon con questo nome')).toBeInTheDocument();
   });
 
   it('filtro per tipo, contatore dei filtri attivi e azzeramento', async () => {
@@ -76,12 +76,32 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
 
+  it('chiusa la finestra Filtri (Esc o Mostra), il fuoco torna sul pulsante Filtri', async () => {
+    const user = await setup('Great Tusk');
+    const trigger = within(suggestions()).getByRole('button', { name: /^Filtri/ });
+    await openFilters(user);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).toHaveFocus());
+    const dialog = await openFilters(user);
+    await user.click(within(dialog).getByRole('button', { name: /^Mostra \d+ Pokémon$/ }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
   it('Solo preferiti: conta come filtro; senza preferiti non trova niente', async () => {
     const user = await setup('Great Tusk');
     await openFilters(user);
     await user.click(screen.getByRole('checkbox', { name: 'Solo preferiti' }));
     expect(within(suggestions()).getByText('Filtri (1 attivo)')).toBeInTheDocument();
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    // Nella finestra niente pulsante magenta "Nessun Pokémon": lo dice in chiaro, e c'è Chiudi
+    const dialog = screen.getByRole('dialog', { name: 'Filtri' });
+    expect(await within(dialog).findByText('Nessun Pokémon con questi filtri')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Nessun Pokémon' })).toBeNull();
+    expect(within(dialog).getAllByRole('button', { name: 'Chiudi' }).length).toBeGreaterThan(0);
+    // Lista vuota per colpa dei soli filtri: Azzera filtri anche lì, sotto il messaggio
+    const empty = suggestions().querySelector<HTMLElement>('.list-empty')!;
+    await user.click(within(empty).getByRole('button', { name: 'Azzera filtri' }));
+    await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
 
   it('tipo del Pokémon: due caselle; Tipo 2 dopo il Tipo 1, Solo monotipo solo con un tipo', async () => {

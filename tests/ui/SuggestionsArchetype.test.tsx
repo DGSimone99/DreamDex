@@ -93,7 +93,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
     await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
     const label = within(row).getByLabelText(/^Voto del team: /).getAttribute('aria-label')!;
-    const [, after, raw] = /: [SABCD] (\d+) \(([^)]+)\)$/.exec(label)!;
+    const [, after, raw] = /: [SABCD] (\d+) \(([^)]+)\)(?: · Al posto di .+)?$/.exec(label)!;
     const gain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${name}` });
     // Prima e dopo come nella lista (la riga sotto il +N; sotto ancora il verso delle aree); il "prima" è il voto vero, lo
@@ -105,7 +105,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
   it('nessun messaggio del tipo se la lista è vuota per altri motivi (ricerca senza risultati)', async () => {
     const user = await importTeam(STALL);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Zzzzz');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon con questo nome')).toBeInTheDocument();
     expect(within(suggestions()).queryByText(/rende il team Stall/)).toBeNull();
   });
 });

@@ -141,23 +141,28 @@
   select option::checkmark { display: none; }
 }
 
-/* Badge "Stats" con il tooltip delle statistiche base */
+/* Pulsante "Stat" con la finestra delle statistiche base: pieno come un pulsante (Raised, testo chiaro, bordo dei campi)
+   e il piccolo esagono ciano davanti, alto 20 px come l'etichetta della forma accanto; si tocca su 24 px (::after) */
 .stats-badge {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: var(--sp-2);
   flex: none;
-  padding: 0 var(--sp-3);
-  border: 1px solid var(--line);
+  height: 20px;
+  padding: 0 7px 0 5px;
+  border: 1px solid var(--control-line);
   border-radius: 3px;
-  font: 600 var(--fs-label)/1.5 var(--ui);
+  font: 700 var(--fs-label)/1 var(--ui);
   letter-spacing: 0.02em;
   text-transform: none;
-  color: var(--muted);
-  cursor: help;
+  color: var(--text);
+  background: var(--raised);
+  cursor: pointer;
 }
+.stats-badge-icon { flex: none; width: 12px; height: 12px; color: var(--accent-ink); }
 .stats-badge::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
-.stats-badge:hover, .stats-badge:focus-visible { color: var(--text); border-color: var(--accent); outline: none; }
+.stats-badge:hover, .stats-badge:focus-visible, .stats-badge[aria-expanded='true'] { color: var(--text); background: var(--accent-soft); border-color: var(--accent); outline: none; }
 .stats-pop {
   position: absolute;
   z-index: 60;
@@ -174,9 +179,12 @@
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   color: var(--text);
+  /* Dentro un pulsante: niente testo centrato né corsivo ereditati */
+  text-align: left;
+  font-style: normal;
   cursor: default;
 }
-.stats-badge:hover .stats-pop, .stats-badge:focus-visible .stats-pop { display: flex; animation: tip 0.15s var(--ease); }
+.stats-badge:hover .stats-pop, .stats-badge:focus-visible .stats-pop, .stats-badge[aria-expanded='true'] .stats-pop { display: flex; animation: tip 0.15s var(--ease); }
 .stats-title { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); margin-bottom: 3px; font: 700 var(--fs-small)/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .stats-title small { display: inline; font: 500 var(--fs-label) var(--ui); text-transform: none; letter-spacing: 0; color: var(--faint); }
 .stats-row { display: grid; grid-template-columns: 30px 30px minmax(0, 1fr); align-items: center; gap: var(--sp-4); font-size: var(--fs-caption); }

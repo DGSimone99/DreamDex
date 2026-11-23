@@ -12,6 +12,7 @@ import { typeIconUrl } from './typeIcons';
 import { typeTextColor } from './TypeText';
 import { typeName } from '../i18n/game';
 import { Icon } from './icons';
+import { hint } from './MoveTip';
 import { ModalLock } from './ModalLock';
 import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import { useLang, useT } from '../i18n/react';
@@ -177,7 +178,7 @@ function RoleRows({ rules, selected, onToggle }: { rules: FormatRules; selected:
         <div key={row.key} className="role-fam">
           {row.label && <span className="role-fam-label">{row.label}</span>}
           {row.roles.map(role => (
-            <button key={role} type="button" aria-pressed={selected.includes(role)} title={roleDescription(role, lang)} onClick={() => onToggle(role)}>
+            <button key={role} type="button" aria-pressed={selected.includes(role)} aria-description={roleDescription(role, lang)} {...hint(roleDescription(role, lang))} onClick={() => onToggle(role)}>
               {roleLabel(role, lang)}
             </button>
           ))}
@@ -331,7 +332,13 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, extra, onCl
         </Collapsible.Provider>
 
         <footer className="filters-foot">
-          <button type="button" className="primary" onClick={onClose}>{showText}</button>
+          {/* Con zero risultati niente invito magenta a "mostrare nessun Pokémon": lo si dice in chiaro e si chiude */}
+          {resultCount === 0 ? (
+            <>
+              <p className="filters-none" role="status">{t('filters.noneFound')}</p>
+              <button type="button" onClick={onClose}>{t('settings.close')}</button>
+            </>
+          ) : <button type="button" className="primary" onClick={onClose}>{showText}</button>}
         </footer>
       </div>
     </div>,

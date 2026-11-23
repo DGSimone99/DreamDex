@@ -320,8 +320,10 @@
   .detail-actions > :is(button, a) { min-height: 44px; min-width: 44px; justify-content: center; }
   /* Scheda Pokémon: Aggiungi | Sostituisci, chi sostituire, Filtri e la ricerca alti 44 come sul tablet verticale
      (la riga ha posto: qui non serve la zona invisibile) */
-  .toolbar .mode-switch > .segmented > button, .toolbar .filters-trigger, .toolbar .search-field input { min-height: 44px; }
-  .toolbar .team-type { height: 46px; }
+  /* Tutto alto 44: i segmenti 42 dentro il loro bordo da 1 px (come sul computer, --tb-h meno 2) */
+  .toolbar .filters-trigger, .toolbar .search-field input { min-height: 44px; }
+  .toolbar .mode-switch > .segmented > button { min-height: 42px; height: 42px; }
+  .toolbar .team-type { height: 44px; }
 }
 
 @media (max-width: 599px) {
@@ -414,6 +416,14 @@
   .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions > * { min-height: 44px; margin: 0; white-space: nowrap; }
   .picker.sheet-open > .detail .detail-actions .go { font-size: var(--fs-body); }
+}
+/* Telefono: Copia e Smogon come icona con la parola breve sotto (il tocco non ha fumetti), sempre, qualunque misura */
+@media (max-width: 759px) {
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) { flex-direction: column; gap: 2px; min-width: 56px; padding: var(--sp-2) var(--sp-5); font: 600 var(--fs-label)/1.1 var(--ui); }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .icon { width: 16px; height: 16px; }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .btn-label { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .lbl-full { display: none; }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .lbl-short { display: inline; }
 }
 
 /* ── Editor del membro sul telefono e sul tablet ──────────────────── */
@@ -1520,9 +1530,11 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .team-head:has(.plate-dot) .team-more::after { content: ''; position: absolute; z-index: 1; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%;
     background: var(--warn); box-shadow: 0 0 0 2px var(--ground); pointer-events: none; }
   /* Scheda Pokémon: Aggiungi | Sostituisci, chi sostituire, Tipo di team, Filtri e la ricerca alti 44 */
-  .toolbar .mode-switch > .segmented > button, .toolbar .filters-trigger, .toolbar .search-field input { min-height: 44px; }
+  /* Tutto alto 44: i segmenti 42 dentro il loro bordo da 1 px (come sul computer, --tb-h meno 2) */
+  .toolbar .filters-trigger, .toolbar .search-field input { min-height: 44px; }
+  .toolbar .mode-switch > .segmented > button { min-height: 42px; height: 42px; }
   /* Il campo vero (la tendina) è dentro il bordo: 46 fuori per averne 44 da toccare */
-  .toolbar .team-type { height: 46px; }
+  .toolbar .team-type { height: 44px; }
   /* Completa team: schede, Impostazioni, Usa e Altre proposte da 44 */
   .fill-panel .fill-tab { min-height: 44px; }
   .fill-panel .fill-settings-button, .fill-panel .fill-more { min-height: 44px; }

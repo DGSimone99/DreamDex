@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { StatsBadge } from '../../src/ui/StatsBadge';
 import { renderIt } from '../helpers/italian';
@@ -33,5 +33,18 @@ describe('badge Stats', () => {
     // PS 108−87, Att 130−60, Dif 95−95, AttSp 80−133, DifSp 85−91, Vel 102−84
     expect(rows).toEqual(['+21', '+70', '±0', '−53', '−6', '+18']);
     expect(tip.querySelector('.stats-total .stats-diff')).toHaveTextContent('+50');
+  });
+
+  it('è un pulsante: col tocco o con Invio si apre e si chiude, Esc lo chiude', () => {
+    renderIt(<StatsBadge species="Garchomp" />);
+    const button = screen.getByRole('button', { name: 'Stat' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 });

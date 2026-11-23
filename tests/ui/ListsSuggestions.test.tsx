@@ -61,7 +61,7 @@ describe('liste nella scheda Pokémon', () => {
     const { storage } = withLists(bans('Kingambit'));
     const user = await setup(storage, 'Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'kinga');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon con questo nome')).toBeInTheDocument();
     await user.clear(screen.getByLabelText('Aggiungi Pokémon'));
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kingambit');
     await waitFor(() => expect(rowNames()).toEqual(['Kingambit']));
@@ -88,7 +88,9 @@ describe('liste nella scheda Pokémon', () => {
     // Il ♥ sta sul voto e ne spiega la salita; nella riga del nome niente cuore
     const row = suggestions().querySelectorAll('.suggestions li')[rowNames().indexOf(favorite)];
     const tag = within(row as HTMLElement).getByLabelText(/ · Più in alto perché è tra i tuoi preferiti$/);
-    expect(tag).toHaveAttribute('title', 'Più in alto perché è tra i tuoi preferiti');
+    // Il motivo nel fumetto dell'app, non nel titolo del browser
+    expect(tag).toHaveAttribute('data-hint', 'Più in alto perché è tra i tuoi preferiti');
+    expect(tag).toHaveAttribute('title', '');
     expect(tag.querySelector('.fav-heart')).not.toBeNull();
     expect(row.querySelector('.name-line .list-mark')).toBeNull();
     expect(within(suggestions()).queryAllByLabelText('Nei tuoi Preferiti')).toHaveLength(0);

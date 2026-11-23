@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type FocusEvent, type PointerEvent } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type FocusEvent, type PointerEvent } from 'react';
 import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
@@ -57,6 +57,7 @@ export function CandidateCard(props: CandidateProps) {
   useEffect(() => { if (selected) closeTip(); }, [selected, closeTip]);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
+  const resultId = useId();
   const className = ['card', isLead(rank, item) && 'first', selected && 'beam-on', flash && 'beam-flash', dragOrigin && 'drag-origin', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
@@ -82,13 +83,14 @@ export function CandidateCard(props: CandidateProps) {
         <span className="pedana-beam" aria-hidden="true" />
         <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
         {!popped && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
-        <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
+        <ResultCell id={resultId} item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
         <TypeIcons types={types} className="card-types" hints />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}
         <span className="visually-hidden">{typeNames}</span>
         <span className="who">
           <span className="name-line">
-            <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} onAction={props.onAction} />
+            {/* Col nome si sente anche il voto (+N), il numero per cui scegliere */}
+            <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} onAction={props.onAction} describedBy={resultId} />
             <CandidateMarks item={item} format={format} lists={lists} />
           </span>
           <Reasons reasons={reasons} />

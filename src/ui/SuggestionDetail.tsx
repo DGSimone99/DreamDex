@@ -19,7 +19,7 @@ import { copyText } from './clipboard';
 import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { hint } from './MoveTip';
-import { bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
+import { bringsOf, formeParts, kindOfArea, memberLabel, type Bring, type BringKind } from './candidateParts';
 import { PokemonIcon } from './PokemonName';
 import { battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
@@ -60,7 +60,7 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
                 {group.map(item => {
                   // Difesa, Offesa e Minacce: la forma breve ("Colpisce Ghiaccio, Psico"), il gruppo dice già il resto
                   const text = SHORT_KINDS.has(kind) ? item.short : item.text;
-                  return <li key={item.text} title={text !== item.text ? item.text : undefined}><Typed text={text} /></li>;
+                  return <li key={item.text} {...hint(text !== item.text ? item.text : undefined)}><Typed text={text} /></li>;
                 })}
               </ul>
             )}
@@ -77,10 +77,9 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * esagono, pillole delle mosse), le azioni.
  */
 export type DetailTab = 'brings' | 'loses' | 'set';
-/** Sotto questa altezza del dettaglio intero (portatile basso col team aperto): testata bassa e set su una riga. Si misura
- *  il dettaglio, non il corpo: il corpo cambia proprio passando a basso (la testata si abbassa), e lì sfarfallerebbe. */
-const LOW_DETAIL = 400;
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
+/** Altezza dell'esagono nel corpo del dettaglio con la sua etichetta e lo spazio sopra (CSS .hex-part). */
+const HEX_PART_H = 168;
 const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
 
 export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, teamCollapsed = false, sheet = false, tab: tabProp, onTab }: {
@@ -168,29 +167,42 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const bodyRef = useRef<HTMLDivElement>(null);
   // Azioni su una riga: se «Metti al posto di …» (nome lungo, inglese) non lascia posto, Copia set e Smogon restano icone
   const actionsRef = useRef<HTMLDivElement>(null);
-  const roomyActions = useFitCount(actionsRef, 1, `${lang}|${actionLabel}`, undefined, true) === 1;
+  // Copia set e Smogon: coi nomi interi se c'è posto (2), coi nomi brevi "Copia" / "Smogon" (1), sennò solo icone (0)
+  const actionsFit = useFitCount(actionsRef, 2, `${lang}|${actionLabel}`, undefined, true);
   const asideRef = useRef<HTMLElement>(null);
-  const [low, setLow] = useState(false);
+  // Copia set: per un attimo "Copiato" con la spunta (come la carta del team), detto anche ai lettori di schermo
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1500); return () => window.clearTimeout(timer); }, [copied]);
+  useEffect(() => setCopied(false), [item.species]);
+  const [tabs, setTabs] = useState(false);
+  // La versione bassa e le linguette dipendono solo dal contenuto che non entra (non dall'altezza del dettaglio): quando
+  // il dettaglio si allunga (sparisce la riga dei filtri, si chiude il team) si riprova la versione piena
   useEffect(() => {
     const aside = asideRef.current;
     if (!aside || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => { if (aside.clientHeight > 0) setLow(wideScreen() && aside.clientHeight < LOW_DETAIL); });
+    let last = aside.clientHeight;
+    const observer = new ResizeObserver(() => {
+      const now = aside.clientHeight;
+      if (now > last + 4) { setTabs(false); setTight(false); }
+      if (now > 0) last = now;
+    });
     observer.observe(aside);
     return () => observer.disconnect();
   }, []);
-  const [tabs, setTabs] = useState(false);
   // Se il corpo non entra, prima il set su due righe di testo (come sul dettaglio basso); solo se non basta, le linguette
   const [tight, setTight] = useState(false);
   const [ownTab, setOwnTab] = useState<DetailTab>('brings');
   const tab = tabProp ?? ownTab;
   const chooseTab = onTab ?? setOwnTab;
-  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${teamCollapsed}|${low}`;
+  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${teamCollapsed}`;
   useLayoutEffect(() => { setTabs(false); setTight(false); }, [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
     if (tabs || !body || !wideScreen()) return;
+    // L'esagono messo nel vuoto (rimasto dal candidato di prima) non conta: se ora sborda lo toglie il suo effetto
+    if (body.querySelector('.hex-part')) return;
     if (body.scrollHeight - body.clientHeight > 1) {
-      if (!low && !tight) setTight(true);
+      if (!tight) setTight(true);
       else setTabs(true);
     }
   });
@@ -199,14 +211,58 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     window.addEventListener('resize', reset);
     return () => window.removeEventListener('resize', reset);
   }, []);
+  // Costa senza perdite: la riga "Niente…" su telefono e tablet (la scheda scorre) e, sul computer, solo se sta nel vuoto
+  // sotto Perché accanto a un set più alto: non allunga mai il dettaglio (non lo fa passare alla versione bassa)
+  const noneWanted = loses.length === 0 && !!before && !lostRoles.length && !tight && !tabs;
+  const [noneFits, setNoneFits] = useState(false);
+  useLayoutEffect(() => {
+    if (!noneWanted) return;
+    if (!wideScreen()) { if (!noneFits) setNoneFits(true); return; }
+    const why = bodyRef.current?.querySelector<HTMLElement>('.detail-why');
+    const run = bodyRef.current?.querySelector<HTMLElement>('.detail-run');
+    if (!why || !run || why.offsetTop !== run.offsetTop) { if (noneFits) setNoneFits(false); return; }
+    // Le colonne si allungano alla più alta: si misura fin dove arriva il contenuto di ciascuna (la riga stessa esclusa)
+    const bottom = (col: HTMLElement) => Math.max(col.getBoundingClientRect().top,
+      ...[...col.children].filter(el => !el.classList.contains('why-none-part') && !el.classList.contains('hex-part')).map(el => el.getBoundingClientRect().bottom));
+    const fits = bottom(run) - bottom(why) >= 52;
+    if (fits !== noneFits) setNoneFits(fits);
+  });
+  // L'esagono del set nel corpo (computer, e scheda di tablet e telefono), solo dove c'è un vuoto che lo contiene tutto: nella colonna con più spazio
+  // libero sotto. Altrimenti resta nel fumetto di Stat. Non allunga mai il dettaglio; la riga "Costa: niente" viene prima
+  const hexWanted = !tight && !tabs;
+  const [hexAt, setHexAt] = useState<'why' | 'run' | null>(null);
+  useLayoutEffect(() => {
+    let next: 'why' | 'run' | null = null;
+    const body = bodyRef.current;
+    const aside = asideRef.current;
+    const why = body?.querySelector<HTMLElement>('.detail-why');
+    const run = body?.querySelector<HTMLElement>('.detail-run');
+    const actions = aside?.querySelector<HTMLElement>('.detail-actions');
+    // Sul computer il vuoto è in fondo al corpo (che non deve scorrere); nella scheda di tablet e telefono è fra il
+    // contenuto e i pulsanti in basso (la scheda non deve scorrere)
+    const wide = wideScreen();
+    const fits = wide ? !!body && body.scrollHeight <= body.clientHeight + 1 : !!aside && aside.scrollHeight <= aside.clientHeight + 1;
+    if (hexWanted && body && why && run && actions && fits) {
+      const end = wide ? body.getBoundingClientRect().bottom - parseFloat(getComputedStyle(body).paddingBottom || '0')
+        : actions.getBoundingClientRect().top - 12;
+      const free = (col: HTMLElement) => end - Math.max(col.getBoundingClientRect().top,
+        ...[...col.children].filter(el => !el.classList.contains('hex-part')).map(el => el.getBoundingClientRect().bottom));
+      // Colonne affiancate: la più libera; una sotto l'altra: in fondo, sotto il set
+      const side = why.offsetTop === run.offsetTop;
+      const room = { why: side ? free(why) : -1, run: free(run) };
+      const best = room.why >= room.run ? 'why' : 'run';
+      if (room[best] >= HEX_PART_H) next = best;
+    }
+    if (next !== hexAt) setHexAt(next);
+  });
   const shownTab: DetailTab = tab === 'set' ? 'set' : 'brings';
   const showWhy = !tabs || shownTab === 'brings';
   const showSet = !tabs || shownTab === 'set';
   const tabKeys: DetailTab[] = ['brings', 'set'];
 
   return (
-    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${low || tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
-      {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
+    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+      {...(sheet ? { role: 'dialog', 'aria-modal': true, tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi; a destra quanto sale il voto e, sotto, il verso di ogni area */}
       <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
@@ -219,7 +275,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             {/* Come sulle carte: la specie base e la forma come etichetta ("Charizard" + MEGA Y); il nome intero ufficiale
                 per i lettori di schermo e nel tooltip */}
             {forme ? (
-              <span className="detail-name" title={item.species}>
+              <span className="detail-name" {...hint(item.species)}>
                 <span className="visually-hidden">{item.species}</span>
                 <span aria-hidden="true">{forme.base}</span>
                 <i className="forme" aria-hidden="true">{forme.forme}</i>
@@ -277,7 +333,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           <p className="detail-swap-text">
             <small>{tr('detail.out')}</small>
             <span>
-              <b>{battleName(out)}</b>
+              <b>{memberLabel(out)}</b>
               {lostRoles.length > 0 && <em>{tr('detail.outLoses', { roles: lostRoles.join(' · ') })}</em>}
             </span>
           </p>
@@ -317,34 +373,60 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                   </p>
                 )}
               </div>
-              {loses.length > 0 && (
+              {loses.length > 0 ? (
                 <div className="why-part">
                   <h4>{tr('detail.loses')}</h4>
                   <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
+                </div>
+              ) : noneWanted && noneFits && (
+                // Nessun costo: lo si dice (è un motivo per sceglierlo), dove c'è posto
+                <div className="why-part why-none-part">
+                  <h4>{tr('detail.loses')}</h4>
+                  <p className="why-none">{tr('detail.losesNone')}</p>
+                </div>
+              )}
+              {hexAt === 'why' && (
+                <div className="why-part hex-part">
+                  <h4>{tr('detail.statsWithSet')}</h4>
+                  <StatHex set={set} compare={out} />
+                  {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
                 </div>
               )}
             </section>
           )}
           {/* Il set consigliato: strumento, abilità, natura, EV (e Tera), le mosse, i ruoli del set (una volta sola, con
-              quelli che mancavano al team in verde). Le statistiche del set (l'esagono) stanno nel fumetto di "Stat" */}
+              quelli che mancavano al team in verde). Le statistiche del set (l'esagono) stanno nel fumetto di "Stat", e qui sotto
+              (o sotto Perché) solo quando avanza lo spazio per tutto l'esagono */}
           {showSet && (
             <section className="detail-run">
               <h4 className="visually-hidden">{tr('detail.set')}</h4>
               <MemberKit set={set} />
               <MemberMoves set={set} movesLabel={tr('editor.moves')} />
-              <MemberRoles set={set} rules={rulesOf(data)} fresh={freshRoles} />
+              {/* Col team vuoto i ruoli stanno già in Risolve (cosa sa fare il Pokémon): non si ripetono qui */}
+              {!(alone && showWhy) && <MemberRoles set={set} rules={rulesOf(data)} fresh={freshRoles} />}
+              {hexAt === 'run' && (
+                <div className="hex-part">
+                  <h4>{tr('detail.statsWithSet')}</h4>
+                  <StatHex set={set} compare={out} />
+                  {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+                </div>
+              )}
             </section>
           )}
         </div>
       </div>
 
-      <div ref={actionsRef} className={roomyActions ? 'detail-actions' : 'detail-actions tight'}>
+      <div ref={actionsRef} className={actionsFit === 2 ? 'detail-actions' : actionsFit === 1 ? 'detail-actions short' : 'detail-actions tight'}>
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
-        {/* Nel dettaglio stretto (tablet, mezzo schermo) resta l'icona: il nome per i lettori di schermo e nel fumetto */}
-        <button type="button" className="detail-copy" onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
-          <Icon name="copy" /> <span className="btn-label">{tr('suggest.copySet')}</span>
+        {/* Nome intero, nome breve o solo l'icona, secondo lo spazio; il nome intero per i lettori di schermo e nel fumetto */}
+        <button type="button" className={copied ? 'detail-copy done' : 'detail-copy'} aria-label={tr('suggest.copySet')}
+          onClick={async () => { if (await copyText(exportShowdown([set]))) setCopied(true); }} {...hint(tr('suggest.copySet'))}>
+          <Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label" aria-hidden="true">
+            <span className="lbl-full">{tr(copied ? 'team.copied' : 'suggest.copySet')}</span><span className="lbl-short">{tr(copied ? 'team.copied' : 'suggest.copySetShort')}</span>
+          </span>
         </button>
-        <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} />
+        {copied && <span className="visually-hidden" role="status">{tr('team.copied')}</span>}
+        <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} short />
       </div>
     </aside>
   );
