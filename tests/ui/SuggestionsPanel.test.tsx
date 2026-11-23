@@ -7,6 +7,7 @@ import { App } from '../../src/App';
 import { fixtureData, tusk } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { CARD_WAKE_MS } from '../../src/ui/CandidateCard';
+import { spyClipboard } from '../helpers/clipboard';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
 vi.setConfig({ testTimeout: 60000 });
@@ -46,6 +47,34 @@ describe('SuggestionsPanel', () => {
       .map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
     expect(grades).toHaveLength(4);
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
+  });
+
+  it('"al posto di" solo in Sostituisci: in Aggiungi non c’è', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo');
+    expect(document.querySelector('.target-toggle')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Sostituisci' }));
+    expect(document.querySelector('.target-toggle')).not.toBeNull();
+  });
+
+  it('la legenda dei segni delle carte si apre dal ? accanto a Candidati e si chiude con Esc', async () => {
+    const user = await setup('Great Tusk');
+    const open = within(suggestions()).getByRole('button', { name: 'Cosa vogliono dire i segni delle carte' });
+    await user.click(open);
+    const legend = screen.getByRole('group', { name: 'I segni delle carte' });
+    expect(within(legend).getAllByRole('listitem')).toHaveLength(7);
+    expect(legend).toHaveTextContent('Colpisce superefficace tipi che il team non copriva');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'I segni delle carte' })).toBeNull();
+  });
+
+  it('Copia set nel dettaglio: copia il set e per un attimo dice Copiato (anche ai lettori di schermo)', async () => {
+    const user = await setup('Great Tusk');
+    const copied = spyClipboard();
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    await user.click(within(detail).getByRole('button', { name: 'Copia set' }));
+    expect(copied()).not.toBe('');
+    expect(await within(detail).findByRole('status')).toHaveTextContent('Copiato');
+    expect(detail.querySelector('.detail-copy.done')).not.toBeNull();
   });
 
   it('col nome della carta i lettori di schermo sentono anche il voto (il numero per cui scegliere)', async () => {
@@ -109,7 +138,7 @@ describe('SuggestionsPanel', () => {
     expect(document.activeElement?.closest('.detail')).toBeNull();
   });
 
-  it('team vuoto: niente voto da confrontare, quindi niente verso delle aree; i ruoli del set sotto il set', async () => {
+  it('team vuoto: niente voto da confrontare, quindi niente verso delle aree; i ruoli una volta sola, in Risolve', async () => {
     await setup();
 
     // Nessuna nota sopra la lista: si parte dalla lista stessa
@@ -120,9 +149,11 @@ describe('SuggestionsPanel', () => {
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/uso nel meta$/);
     expect(within(detail).queryByRole('list', { name: 'Effetto sul team' })).toBeNull();
     expect(within(detail).queryByText(/→/)).toBeNull();
-    // I ruoli del set in una riga semplice sotto il set (niente lastra in testata), la spiegazione nel tooltip del nome
+    // Niente lastra dei ruoli in testata; col team vuoto i ruoli stanno in Risolve (cosa sa fare) e non si ripetono
+    // nella riga RUOLI sotto il set
     expect(detail.querySelector('.detail-hero .mcard-why')).toBeNull();
-    expect(detail.querySelector('.detail-run .mcard-roles [title]')).not.toBeNull();
+    expect(detail.querySelector('.detail-run .mcard-roles')).toBeNull();
+    expect(detail.querySelector('.detail-why li')).not.toBeNull();
   });
 
   it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
@@ -138,7 +169,7 @@ describe('SuggestionsPanel', () => {
     expect(rowNames()).toHaveLength(6);
     expect(within(pager).getByRole('button', { name: 'Pagina precedente' })).toBeDisabled();
     await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('li')!)).toBe(7);
   });
 
@@ -249,7 +280,7 @@ describe('SuggestionsPanel', () => {
     expect(buttons[0]).toHaveAccessibleName('Pagina precedente');
     expect(buttons[buttons.length - 1]).toHaveAccessibleName('Pagina successiva');
     await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
   });
 
   it('chi esce è una tendina attaccata a Sostituisci, nella barra comandi', async () => {
@@ -289,11 +320,11 @@ describe('SuggestionsPanel', () => {
     await user.type(search, 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
     for (let i = 0; i < 6; i++) await user.keyboard('{ArrowDown}');
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(7);
     // E indietro, prima della prima, alla precedente
     await user.keyboard('{ArrowUp}');
-    expect(within(pager).getByRole('status', { name: 'Pagina 1' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 1 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(6);
   });
 
@@ -316,8 +347,8 @@ describe('SuggestionsPanel', () => {
       diff: { gains: none, losses: none, lostResists: [] }, reasons: [],
     };
     const shorts = (teamGain: object) => reasonsOf({ ...base, teamGain } as never, 2, null, DEFAULT_FORMAT, 'it').items.map(b => b.short);
-    expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa +13']);
-    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Bonus/Malus +3']);
+    expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa sale']);
+    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Più bonus per il team']);
     expect(shorts({ gain: 0, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 4 }], extras: -4 })).toEqual(['Nessuna differenza rilevante']);
   });
 
@@ -644,7 +675,7 @@ describe('riga della lista', () => {
     rerender(<SuggestionsPanel {...props} focus={{ species: eleventh, mode: 'add', nonce: 1 }} />);
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eleventh}` }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByLabelText('Aggiungi Pokémon')).toHaveValue('');
-    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rowNames()).toContain(eleventh);
   });
 
@@ -864,7 +895,9 @@ describe('sprite animato delle carte', () => {
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Great Tusk', item: 'Leftovers', ability: 'Protosynthesis', moves: ['Headlong Rush', 'Stealth Rock', 'Rapid Spin', 'Knock Off'], nature: 'Jolly', evs: { atk: 252, spe: 252 } };
     const item = { species: 'Great Tusk', set, score: 50, components: {}, tags: [], penalty: 0, reasons: [], facts: { clashes: [], roles: { filled: ['hazards'] } } } as never;
-    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    // Con un membro nel team (col team vuoto i ruoli stanno in Risolve e la riga RUOLI non c'è)
+    const mate = { species: 'Corviknight', item: 'Leftovers', ability: 'Pressure', moves: ['Brave Bird', 'Roost'], nature: 'Impish', evs: { hp: 252 } };
+    renderIt(<SuggestionDetail item={item} rank={2} team={[mate] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
     const fresh = [...document.querySelectorAll('.detail-run .mcard-roles .fresh')];
     expect(fresh).toHaveLength(1);
     expect(fresh[0].textContent).toMatch(/\+nuovo per il team: Hazard$/);

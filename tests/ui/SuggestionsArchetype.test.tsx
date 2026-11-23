@@ -105,7 +105,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
   it('nessun messaggio del tipo se la lista è vuota per altri motivi (ricerca senza risultati)', async () => {
     const user = await importTeam(STALL);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Zzzzz');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon con questo nome')).toBeInTheDocument();
     expect(within(suggestions()).queryByText(/rende il team Stall/)).toBeNull();
   });
 });

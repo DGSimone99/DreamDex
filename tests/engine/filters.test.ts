@@ -39,9 +39,9 @@ describe('ricerca su tutto il Pokédex', () => {
     expect(search({ query: 'aegislash' })).toEqual(['Aegislash']);
   });
 
-  it('Ghost + Dragon trova tutti, anche Uber e non evoluti', () => {
-    expect(sorted(search({ types: ['Ghost', 'Dragon'] })))
-      .toEqual(['Dragapult', 'Drakloak', 'Dreepy', 'Giratina', 'Giratina-Origin']);
+  it('Ghost + Dragon trova anche i non evoluti, ma non i fuori regola (Uber): quelli solo per nome o col tier Uber', () => {
+    expect(sorted(search({ types: ['Ghost', 'Dragon'] }))).toEqual(['Drakloak', 'Dreepy']);
+    expect(sorted(search({ types: ['Ghost', 'Dragon'], query: 'dragap' }))).toEqual(['Dragapult']);
   });
 });
 
@@ -94,7 +94,8 @@ describe('filtri', () => {
   });
 
   it('ruolo', () => {
-    expect(sorted(search({ ...common, roles: ['pivot'] }))).toEqual(['Corviknight', 'Dragapult', 'Rotom-Wash']);
+    // Dragapult (Uber in National Dex) no: i filtri non portano in lista i fuori regola
+    expect(sorted(search({ ...common, roles: ['pivot'] }))).toEqual(['Corviknight', 'Rotom-Wash']);
   });
 
   it('filtro priorità resta, sulle mosse', () => {
@@ -146,7 +147,7 @@ describe('filtri', () => {
   });
 
   it('uso nel meta', () => {
-    expect(sorted(search(common))).toEqual(['Corviknight', 'Dragapult', 'Gholdengo', 'Kingambit', 'Rotom-Wash', 'Toxapex']);
+    expect(sorted(search(common))).toEqual(['Corviknight', 'Gholdengo', 'Kingambit', 'Rotom-Wash', 'Toxapex']);
     expect(sorted(search({ query: 'garch', usage: 'niche' }))).toEqual(['Garchomp', 'Garchomp-Mega']);
   });
 

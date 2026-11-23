@@ -147,7 +147,7 @@ describe('Pivot sfruttato: nel voto', () => {
 describe('Pivot sfruttato: nel Coaching', () => {
   const ouData = { ...fixtureData, formatId: 'ou' as const };
   // Il team di riferimento del banco: Corviknight (posto 4) ha U-turn, regge il colpo e fa entrare i compagni fragili
-  const reference = (JSON.parse(readFileSync('scripts/bench/teams.json', 'utf8')) as { team: TeamSet[] }[])[0].team;
+  const reference = (JSON.parse(readFileSync('tests/fixtures/referenceTeams.json', 'utf8')) as { team: TeamSet[] }[])[0].team;
   const without = reference.map((set, i) => (i === 4 ? { ...set, moves: set.moves.map(move => (move === 'U-turn' ? 'Defog' : move)) } : set));
   const hasBonus = (team: TeamSet[]) => rateTeam(team, ouData)!.bonus.items.some(i => i.catalog === 'pivotLink');
 
