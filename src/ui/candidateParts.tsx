@@ -1,5 +1,5 @@
 // I pezzi comuni a ogni candidato della lista (Carte e Menu): voto o uso, segni, motivi, chi esce
-import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { Format } from '../engine/format';
 import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
@@ -478,3 +478,45 @@ export const candidateHandlers = ({ onSelect, onAction }: Pick<CandidateProps, '
 /** Le classi di stato comuni: scelto nel dettaglio, scelto dalla ricerca, scambio. */
 export const stateClasses = ({ selected, picked, out }: Pick<CandidateProps, 'selected' | 'picked' | 'out'>) =>
   [selected && 'selected', picked && 'picked', out && 'swap'].filter(Boolean).join(' ');
+
+/**
+ * Legenda dei segni delle carte (spada, scudo, VS, catena, ⇄, +N, ♥): un "?" accanto a "Candidati" che la apre e chiude
+ * (clic, tocco, Invio; Esc o un tocco fuori la chiudono). Le carte dicono il perché coi segni: qui si impara cosa vogliono dire.
+ */
+export function SymbolLegend() {
+  const tr = useT();
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  const rows: { sign: ReactNode; text: string }[] = [
+    { sign: <b className="lg-plus">+9</b>, text: tr('legend.gain') },
+    { sign: <span className="sym-icon"><Icon name="sword" /></span>, text: tr('legend.sword') },
+    { sign: <span className="sym-icon"><Icon name="shield" /></span>, text: tr('legend.shield') },
+    { sign: <span className="sym-vs">VS</span>, text: tr('legend.vs') },
+    { sign: <span className="sym-icon"><Icon name="chain" /></span>, text: tr('legend.chain') },
+    { sign: <span className="lg-swap"><Icon name="swap" /></span>, text: tr('legend.swap') },
+    { sign: <span className="lg-heart"><Icon name="heart" /></span>, text: tr('legend.heart') },
+  ];
+  return (
+    <span className="sym-legend" ref={box}>
+      <button type="button" className="help-button" aria-label={tr('legend.open')} aria-expanded={open} aria-controls={id}
+        onClick={() => setOpen(o => !o)}><Icon name="help" /></button>
+      {open && (
+        <div id={id} className="sym-legend-pop" role="group" aria-label={tr('legend.title')}>
+          <p className="sym-legend-title">{tr('legend.title')}</p>
+          <ul>
+            {rows.map(row => <li key={row.text}><span className="lg-sign" aria-hidden="true">{row.sign}</span><span>{row.text}</span></li>)}
+          </ul>
+        </div>
+      )}
+    </span>
+  );
+}

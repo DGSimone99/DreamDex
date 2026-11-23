@@ -49,6 +49,17 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
   });
 
+  it('la legenda dei segni delle carte si apre dal ? accanto a Candidati e si chiude con Esc', async () => {
+    const user = await setup('Great Tusk');
+    const open = within(suggestions()).getByRole('button', { name: 'Cosa vogliono dire i segni delle carte' });
+    await user.click(open);
+    const legend = screen.getByRole('group', { name: 'I segni delle carte' });
+    expect(within(legend).getAllByRole('listitem')).toHaveLength(7);
+    expect(legend).toHaveTextContent('Colpisce superefficace tipi che il team non copriva');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'I segni delle carte' })).toBeNull();
+  });
+
   it('Copia set nel dettaglio: copia il set e per un attimo dice Copiato (anche ai lettori di schermo)', async () => {
     const user = await setup('Great Tusk');
     const copied = spyClipboard();

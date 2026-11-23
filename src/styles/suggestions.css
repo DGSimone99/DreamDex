@@ -808,3 +808,29 @@ aside.detail .detail-hero:has(.stats-pop.has-side) .detail-id h3 .stats-badge::a
 .detail-run .hex-part { margin-top: var(--sp-4); }
 .hex-part h4 { margin: 0; font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
 .hex-part .mcard-hex { align-self: flex-start; width: 190px; height: 127px; }
+
+/* Legenda dei segni delle carte: il "?" accanto a "Candidati" e la finestrella sotto (come quella di Stat) */
+.sym-legend { position: relative; display: inline-flex; flex: none; align-items: center; }
+.sym-legend .help-button:hover, .sym-legend .help-button[aria-expanded='true'] { color: var(--accent-ink); }
+.sym-legend-pop { position: absolute; z-index: 60; top: calc(100% + 8px); left: -8px; width: 300px; padding: var(--sp-6) var(--sp-7);
+  background: var(--ground); border: 1px solid var(--line); border-top: 2px solid var(--accent); border-radius: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  animation: tip 0.15s var(--ease); }
+.sym-legend-title { margin: 0 0 var(--sp-4); font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.sym-legend-pop ul { display: grid; gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
+.sym-legend-pop li { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: var(--sp-4); font: 500 var(--fs-small)/1.3 var(--ui); color: var(--text); }
+.sym-legend-pop .lg-sign { display: inline-flex; justify-content: center; }
+.sym-legend-pop .sym-icon .icon, .sym-legend-pop .lg-swap .icon, .sym-legend-pop .lg-heart .icon { width: 16px; height: 16px; }
+.sym-legend-pop .sym-icon { color: var(--accent-ink); }
+.sym-legend-pop .sym-vs { font: 800 var(--fs-label)/1 var(--display); font-style: italic; letter-spacing: 0.04em; color: var(--accent-ink); }
+.sym-legend-pop .lg-plus { font: 800 italic var(--fs-body)/1 var(--display); color: var(--text); }
+.sym-legend-pop .lg-swap { color: var(--muted); }
+.sym-legend-pop .lg-heart { color: var(--accent); }
+.sym-legend-pop .lg-heart .icon { fill: currentColor; }
+/* Con la legenda aperta la fascia "Candidati" sta sopra le carte (che si alzano e hanno i loro livelli) */
+.list-head:has(.sym-legend-pop) { position: relative; z-index: 20; }
+/* Sul computer due colonne: più bassa, sta anche sopra le carte dei portatili bassi (1280×620) */
+@media (min-width: 1100px) {
+  .sym-legend-pop { width: 520px; }
+  /* Si legge per colonne: +N, spada, scudo, VS a sinistra (spada e scudo uno sotto l'altro), il resto a destra */
+  .sym-legend-pop ul { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: var(--sp-8); }
+}

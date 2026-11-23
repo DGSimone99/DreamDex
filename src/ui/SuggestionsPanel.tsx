@@ -29,7 +29,7 @@ import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
 import { SuggestionDetail, type DetailTab } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { BanMark, ExclusiveMark, memberLabel, reasonsOf, type CandidateProps, type Item } from './candidateParts';
+import { BanMark, ExclusiveMark, SymbolLegend, memberLabel, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import { useLang, useT } from '../i18n/react';
 import { PAGE, usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
@@ -532,6 +532,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           {!full && items.length > 0 && (
             <div className="list-head" ref={headRef}>
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
+              <SymbolLegend />
               {headFit > 0 && <span className="dbl-hint" {...hint(tr('suggest.keyHint'))}>{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
               {pager}
             </div>
