@@ -199,6 +199,9 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
                       onClick={() => { thrTip.close(); openThreat(sideOf(x), x); }}
                       onMouseEnter={e => thrTip.open(x.species, e.currentTarget)} onMouseLeave={thrTip.close}
                       onFocus={e => { if (keyboardFocus(e.currentTarget)) thrTip.open(x.species, e.currentTarget); }} onBlur={thrTip.close}>
+                      {/* Quanto si usa nel meta, piccolo nell'angolo libero; dove la piastrella è stretta lo nasconde il CSS
+                          (resta nel tooltip e nell'aria-label) */}
+                      <span className="cov-pct" aria-hidden="true">{formatPercent(lang, x.usage, x.usage >= 0.01 ? 0 : 1)}</span>
                       <span className="cov-sides" aria-hidden="true">{sideMark(x, 'defense')}{sideMark(x, 'offense')}</span>
                       <span className="cov-mon" aria-hidden="true"><PokemonIcon name={x.species} /></span>
                       {/* Il nome come sulle carte della scheda Pokémon: la specie e accanto la forma piccola o il segno della Mega

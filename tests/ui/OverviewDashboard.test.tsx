@@ -935,6 +935,9 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(tiles().map(el => el.querySelector('.cov-name')!.textContent)).toEqual(['Raging Bolt', 'Tapu Koko', 'Diancie', 'Zamazenta', 'OgerponWellspring', 'Latios', 'Kyurem']);
     expect(tile(/^Diancie-Mega/).querySelector('.cov-name .mega-mark')).not.toBeNull();
     expect(tile(/^Ogerpon-Wellspring/).querySelector('.cov-name .pick-forme')).toHaveTextContent('Wellspring');
+    // L'uso nel meta nell'angolo, solo a vista (il nome accessibile lo dice già)
+    expect(tile(/^Raging Bolt/).querySelector('.cov-pct')).toHaveTextContent('17%');
+    expect(tile(/^Raging Bolt/).querySelector('.cov-pct')).toHaveAttribute('aria-hidden', 'true');
     expect(tile(/^Raging Bolt/)).toHaveClass('open');
     expect(tile(/^Zamazenta/)).toHaveClass('thin');
     expect([...tile(/^Raging Bolt/).querySelectorAll('.cov-side')].map(el => el.className)).toEqual(['cov-side bad', 'cov-side ok']);

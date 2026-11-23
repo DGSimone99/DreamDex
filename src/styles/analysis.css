@@ -998,6 +998,12 @@
 /* Un membro solo: le minacce senza rosso né giallo, il piedistallo grigio */
 .cov-tile.soft { --k: var(--faint); }
 .cov-side .icon { width: 14px; height: 14px; }
+/* L'uso nel meta nell'angolo in alto a sinistra, libero dai segni e dallo sprite: solo dove c'è posto (non nelle misure
+   strette né nelle piastrelle sotto gli 88 px), altrimenti resta nel tooltip */
+.cov-tile { container-type: inline-size; }
+.cov-pct { position: absolute; top: 5px; left: 6px; font: 600 var(--fs-caption)/14px var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); }
+.dash.tight .cov-pct { display: none; }
+@container (max-width: 87px) { .cov-pct { display: none; } }
 .cov-tile.more { justify-content: center; background: none; border: 1px dashed var(--line); color: var(--muted); }
 .cov-tile.more:hover { color: var(--text); border-color: var(--control-line); background: none; }
 .cov-tile.more:hover .more-n { color: var(--text); }
