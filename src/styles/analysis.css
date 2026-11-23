@@ -249,7 +249,7 @@
    verso destra e un filo sotto che sfuma uguale; il titolo dritto, i numeri e i link a destra */
 .dash-head { position: relative; display: flex; align-items: center; gap: var(--sp-5); min-width: 0; margin: 0 -12px var(--sp-4); padding-right: var(--sp-3); background: linear-gradient(90deg, var(--champ-band), transparent 72%); }
 .dash-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); pointer-events: none; }
-.dash-plate { flex: none; margin: 0; padding: 5px var(--sp-5) 5px var(--sp-6); font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text); }
+.dash-plate { flex: none; margin: 0; padding: 5px var(--sp-5) 5px var(--sp-6); font: 600 var(--fs-body)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text); }
 /* Un h4 usato come targhetta (colonne del Coaching): la targhetta vince sullo stile degli h4 di Analisi */
 .analysis h4.dash-plate { display: block; margin: 0; font: 700 var(--fs-small)/1.2 var(--display); font-style: italic; text-transform: none; letter-spacing: normal; color: var(--on-plate); }
 .dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 3px; margin-block: -3px; font-size: var(--fs-caption); color: var(--muted); }
