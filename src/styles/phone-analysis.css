@@ -464,3 +464,6 @@
 @media (max-width: 599px) {
   .def-frame .def-grid tbody th[scope='row'], .def-frame .def-grid thead th.def-mon-h { position: static; background: none; }
 }
+/* Coverage meta girata: righe più alte, l'icona della minaccia e il suo filo stanno nella riga senza toccare le vicine */
+.cm-matrix .ct-flip-table tbody tr { height: 54px; }
+.cm-matrix .ct-flip-table th.ct-type-h .def-box { height: 34px; }
