@@ -468,3 +468,15 @@
 .dsh-sw.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); }
 /* Il recupero e le perdite in parole, sotto i pezzi: verde quello che recupera, rosso quello che perde */
 
+
+/* Computer stretto (1100–1279 px): la colonna dei membri si stringe a quanto servono sprite, nome e statistiche, così le
+   18 caselle di Coverage tipi (e le barre della Generale, le pagine di Coverage meta) hanno posto. Uguale in tutte le
+   schede, così le colonne restano allineate passando da una all'altra */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .def-frame, .def-frame.roomy { --def-mon: 200px; }
+}
+/* Coverage tipi sul computer stretto e sul tablet: caselle da ~32 px, il numero senza il "%" piccolo (lo dice la riga
+   Team Coverage; resta per lo screen reader) */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .def-frame .ct-table:not(.ct-flip-table) td.ct-cell .ct-num i { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
