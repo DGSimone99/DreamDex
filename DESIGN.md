@@ -386,7 +386,7 @@ Every size is a role token in `tokens.css` (`--fs-label` 11px up to `--fs-grade`
 ### Named Rules
 **The Readable First Rule.** Pick the size that reads best in its place, from the scale. 11px is the smallest step on the scale, not a target; propose options when in doubt.
 
-**The One Voice Per Role Rule.** Every uppercase label (table heads, CORE, BONUS/MALUS, "5 problemi") is `--col-head` with `--col-head-track`, colour aside. Every "+N" counter of hidden items is 700 `--fs-caption` Kanit upright, tabular. Gains and head numbers in a card are 14px italic (`--fs-section`). A Pokémon name inside a sentence is as big as the names in the rows around it.
+**The One Voice Per Role Rule.** Every uppercase label (table heads, CORE, BONUS/MALUS, "5 problemi") is `--col-head` with `--col-head-track`, colour aside. Every "+N" counter of hidden items is the shared `.more-n`: "+N" 700 `--fs-caption` Kanit upright, tabular, muted on `--raised`, 16px tall, `--alt-r-sm` corners (the Bonus/Malus overflow keeps its word, "+3 altre", so it never reads as points). Gains and head numbers in a card are 700 14px italic (`--fs-section`), the number before its word ("4 scoperte", "18/18 offesa"). A Pokémon name in a row or sentence is upright 600 and as big as the names in the rows around it; italic only where the Pokémon is the protagonist (meta tiles, team cards).
 
 **The Official Names Rule.** UI copy follows the EN | IT switch. Pokémon names always stay official English. Moves, abilities, items, types and natures use the official Italian names in Italian. Team data, saves and Showdown text are always English.
 
@@ -433,6 +433,8 @@ The one expressive shape is the slant: a parallelogram cut by `clip-path: polygo
 
 ### Named Rules
 **The Slanted Head Rule.** Only the frame slants: section and panel plates, state tags, the active rail section, the team toolbar and the small inline labels inside a panel ("TEAM COVERAGE", "+N"). The Analisi cards and tabs no longer slant (2026-11-22, like the editor): card titles are Champions bands, the open tab is a light tab with a magenta underline and point (see Analisi tabs). Panels, rows, inputs and the cards' outline (team, candidates, Meta) are never slanted, never cut and never rounded.
+
+**The One Pill Family Rule (Analisi overview).** Move pills, condition pills (weather, terrain, style: `mvp-sm` with the condition's type icon tile, no tail) and role boxes are one family, 22px tall. Small content objects take only two radii: `--alt-r-sm` (7/2) for chips, tiles, pills and "+N" counters, 3px for data cells (coverage grid cells, the fix label); round counts on tabs stay round.
 
 **Shared Champions tokens** (`tokens.css`): plates, pills, chips and role boxes fade from Raised to `--fade-end` (Field) at `--fade-stop` (60%); bands use `--champ-band` (Raised 90% toward white; not `--band`, the team band colour) and plate heads `--plate-head` (80%); Champions slot bars use `--slot-inset` and a 1px `--slot-shine` line on the fill. Move pills have only their Line hairline, no drop shadow (only floaters cast shadows). Editor box titles are 14px, one step above the 13px group-title bands inside panels.
 
