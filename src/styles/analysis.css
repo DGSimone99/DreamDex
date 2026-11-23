@@ -173,7 +173,7 @@
 .fix-bone { display: block; flex: none; height: 8px; border-radius: 4px; background: var(--raised); }
 @media (prefers-reduced-motion: reduce) { .fix-row.is-link { transition: none; } }
 /* L'etichetta "N problemi" in testa: rossa se ce n'è almeno uno grave, gialla coi soli minori, verde con la spunta senza proposte */
-.fix-label { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; padding: 1px var(--sp-4); border-radius: 3px; font-size: var(--fs-label); line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--tone); background: var(--tone-bg); }
+.fix-label { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; padding: calc((16px - 1.2em) / 2 + 1px) var(--sp-4); border-radius: 3px; font-size: var(--fs-label); line-height: 1.2; font-weight: 600; text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--tone); background: var(--tone-bg); }
 .fix-label .icon { width: 13px; height: 13px; }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fix-more { flex: none; padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; color: var(--muted); background: var(--raised); }
@@ -299,7 +299,7 @@
 .dash.roomy .dash-type { width: var(--ti-head); height: var(--ti-head); }
 .dash-matrix thead td, .dash-matrix th[scope='row'] { width: 64px; }
 .dash-matrix thead th { padding: 0 0 var(--sp-1); }
-.dash-matrix th[scope='row'] { padding: 0 var(--sp-2) 0 0; text-align: right; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
+.dash-matrix th[scope='row'] { padding: 0 var(--sp-2) 0 0; text-align: right; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
 .dash-type { display: block; width: var(--ti-tip); height: var(--ti-tip); margin: 0 auto; border-radius: 50%; }
 .dash .dash-cell { height: 22px; padding: 0; text-align: center; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: color-mix(in srgb, var(--faint) 40%, var(--raised)); cursor: help; }
 .dash-cell .icon { width: 12px; height: 12px; vertical-align: middle; stroke-width: 2.5; }
@@ -328,7 +328,7 @@
 }
 .sum-bm:hover { border-color: var(--line-soft); background: color-mix(in srgb, var(--accent) 7%, transparent); }
 .sum-bm:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.sum-bm-label { flex: none; font: var(--col-head); line-height: 1; letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--faint); }
+.sum-bm-label { flex: none; font: var(--col-head); letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--faint); }
 .sum-bm-net { flex: none; font: 700 var(--fs-section)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
 .sum-bm .good { color: var(--good); }
 .sum-bm .bad { color: var(--bad); }
@@ -598,7 +598,7 @@
 /* Il titolo va a capo invece di finire coi puntini (nel core solo fra un membro e l'altro: ogni "Buio-Acciaio" resta intero) */
 .sum-syn-head { min-width: 0; font-size: var(--fs-small); line-height: 1.15; overflow-wrap: anywhere; }
 .sum-core-part { white-space: nowrap; }
-.sum-syn-tag { margin-right: var(--sp-3); font: var(--col-head); line-height: 1; font-style: normal; letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--c); vertical-align: 1px; }
+.sum-syn-tag { margin-right: var(--sp-3); font: var(--col-head); font-style: normal; letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--c); vertical-align: 1px; }
 .sum-syn-title { font: 700 var(--fs-small)/1.15 var(--display); }
 .sum-syn-text { font-size: var(--fs-small); line-height: 1.3; color: var(--muted); }
 .dash.rich .sum-syn-title { font-size: var(--fs-section); }
