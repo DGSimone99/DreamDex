@@ -33,6 +33,8 @@ export type GainValue = TeamGain | 'excluded' | null;
 export type WorkerRequest =
   | { kind: 'parts'; parts: [number, unknown][]; drop: number[] }
   | { kind: 'names'; names: unknown }
+  /** Prepara un calcolo sul team (il voto di partenza, coi suoi colpi in cache) mentre il primo decide quali voti servono. */
+  | { kind: 'warm'; team: TeamSet[]; lang: Lang; data: WorkerData }
   | { kind: 'plan'; id: number; params: RankingParams; data: WorkerData }
   | { kind: 'gains'; id: number; jobs: GainJob[]; lang: Lang; archetype?: Archetype; data: WorkerData }
   | { kind: 'rank'; id: number; params: RankingParams; data: WorkerData; primed: [string, GainValue][] }

@@ -12,11 +12,14 @@ describe('analisi in inglese', () => {
     await user.click(screen.getByLabelText('Showdown text'));
     await user.paste('Great Tusk\n\nGholdengo\n\nKingambit');
     await user.click(screen.getByRole('button', { name: 'Import' }));
+    // Analisi e Meta si disegnano la prima volta che si aprono
+    await user.click(screen.getByRole('tab', { name: /^Analysis/ }));
     const analysis = screen.getByRole('region', { name: 'Analysis' });
     for (const title of ['Overview', 'Coaching', 'Defense', 'Offense', 'Roles', 'Speed']) {
       expect(within(analysis).getAllByText(title).length).toBeGreaterThan(0);
     }
     // La scheda Meta: il tuo team e i Pokémon del meta
+    await user.click(document.getElementById('tab-meta')!);
     const meta = screen.getByRole('region', { name: 'Meta' });
     for (const title of ['Your team', 'Meta Pokémon']) expect(within(meta).getAllByText(title).length).toBeGreaterThan(0);
     // In fondo alla Panoramica la riga dei problemi; nel Voto il tipo di team, ancora da riconoscere

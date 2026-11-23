@@ -16,8 +16,14 @@ export function t(lang: Lang, key: MessageKey, values: Record<string, string | n
 
 const LOCALES: Record<Lang, string> = { en: 'en-US', it: 'it-IT' };
 
-export const formatNumber = (lang: Lang, value: number, digits = 1): string =>
-  new Intl.NumberFormat(LOCALES[lang], { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+/** Un formattatore per lingua e cifre, creato una volta: crearne uno a ogni numero costava (liste e tabelle ne scrivono tanti). */
+const formatters = new Map<string, Intl.NumberFormat>();
+export const formatNumber = (lang: Lang, value: number, digits = 1): string => {
+  const key = `${lang}|${digits}`;
+  let format = formatters.get(key);
+  if (!format) formatters.set(key, (format = new Intl.NumberFormat(LOCALES[lang], { minimumFractionDigits: digits, maximumFractionDigits: digits })));
+  return format.format(value);
+};
 
 export const formatPercent = (lang: Lang, fraction: number, digits = 1): string =>
   `${formatNumber(lang, fraction * 100, digits)}%`;
