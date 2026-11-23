@@ -1142,7 +1142,9 @@ describe('Riassunto: la riga Bonus/Malus', () => {
     });
     mountBm();
     const more = document.querySelector('.sum-bm-more')!;
-    expect(more).toHaveTextContent(/^\+2 altre$/);
+    // Fra le nascoste c'è un malus: il suo totale in rosso accanto
+    expect(more).toHaveTextContent(/^\+2 altre · −1$/);
+    expect(more.querySelector('b.bad')).toHaveTextContent('−1');
     expect(more).toHaveClass('more-n');
     expect(more).toHaveAttribute('data-hint', 'Tipi doppioni −1 · Rete di sicurezza +1');
     expect(screen.getByRole('button', { name: 'Bonus/Malus +6: 2 core +6, Tipi doppioni −1, Rete di sicurezza +1' })).toBeInTheDocument();

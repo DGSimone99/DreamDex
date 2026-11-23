@@ -311,6 +311,7 @@ function BonusMalusRow({ net, pieces: all, skip = [], lang, onOpen }: { net: num
   const fit = useFit<HTMLSpanElement>(`${lang}|${pieces.map(p => `${p.key}${p.points}`).join()}`, pieces.length, { more: true });
   const shown = pieces.slice(0, Math.min(fit.shown, pieces.length));
   const hidden = pieces.length - shown.length;
+  const hiddenMalus = pieces.slice(shown.length).reduce((n, p) => n + Math.min(0, p.points), 0);
   const tone = (n: number) => (n > 0 ? 'good' : n < 0 ? 'bad' : 'zero');
   return (
     <button type="button" className="sum-bm" onClick={onOpen}
@@ -320,7 +321,13 @@ function BonusMalusRow({ net, pieces: all, skip = [], lang, onOpen }: { net: num
       <span ref={fit.ref} className="sum-bm-list" aria-hidden="true">
         {shown.map(p => <span key={p.key} data-fit className="sum-bm-item">{p.name} <b className={tone(p.points)}>{signedPts(p.points)}</b></span>)}
         {/* Con la parola ("+3 altre"), così non si legge come punti accanto ai +N delle voci; al passaggio le voci nascoste */}
-        {hidden > 0 && <span data-fit-more className="sum-bm-more more-n" {...hint(pieces.slice(shown.length).map(p => `${p.name} ${signedPts(p.points)}`).join(' · '))}>{t('sum.bmMore', { n: hidden })}</span>}
+        {/* Se fra le nascoste ci sono malus, il loro totale in rosso accanto: il netto si spiega anche senza passarci sopra */}
+        {hidden > 0 && (
+          <span data-fit-more className="sum-bm-more more-n" {...hint(pieces.slice(shown.length).map(p => `${p.name} ${signedPts(p.points)}`).join(' · '))}>
+            {t('sum.bmMore', { n: hidden })}
+            {hiddenMalus < 0 && <>{' · '}<b className="bad">{signedPts(hiddenMalus)}</b></>}
+          </span>
+        )}
       </span>
     </button>
   );
@@ -433,13 +440,15 @@ export function SummarySection({ summary, members, grade, density, rich = false,
   const heavyAll = members >= 6 ? (bonusMalus?.pieces ?? []).filter(p => p.points <= -4) : [];
   // Schermo basso o stretto: la pillola sta sulla riga del tipo, una sola (la più pesante) perché il nome del tipo non si
   // tronchi; le altre restano nella riga Bonus/Malus
-  const heavy = density === 'tight' || short ? heavyAll.slice(0, 1) : heavyAll;
+  // (con le Sinergie vuote lo spazio c'è: pillole intere su una riga loro)
+  const compactAlerts = (density === 'tight' || short) && synergies.length > 0;
+  const heavy = compactAlerts ? heavyAll.slice(0, 1) : heavyAll;
 
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
       <div className="sum-body">
         {members >= 2 && (
-          <div className={`sum-hero${grade ? ` grade-${grade}` : ''}`}>
+          <div className={`sum-hero${grade ? ` grade-${grade}` : ''}${compactAlerts ? ' compact-alerts' : ''}`}>
             {members >= 2 && (
               <div className="sum-type">
                 {archetype
