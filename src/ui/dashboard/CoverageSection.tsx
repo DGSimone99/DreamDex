@@ -50,7 +50,7 @@ const TILES_DEFAULT = 7;
 const PHONE_PANEL = 480;
 
 /**
- * Copertura, con due schede nel titolo (si apre su Tipi):
+ * Copertura, con due schede nel titolo (si apre su Tipi, o su Meta se i tipi sono tutti verdi e c'è il meta):
  * - Tipi: i 18 tipi, una riga per l'Offesa e una per la Difesa (l'ordine delle schede); non si comprime mai.
  * - Meta (solo col meta): le sole minacce del meta che il team gestisce peggio (regola di `metaThreats`), come piastrelle
  *   in fila: l'icona del Box su un piedistallo rosso (scoperta) o giallo (a fatica), il nome sotto e in alto a destra lo
@@ -72,7 +72,11 @@ export function CoverageSection({ coverage, threats, onView }: {
   const title = t('dash.coverage');
   const names = coverage.cells.map(cell => typeName(cell.type, lang));
   const tip = useFloatAnchor<{ side: Side; i: number }>();
-  const [view, setView] = useState<'types' | 'meta'>('types');
+  // Si apre su Tipi; con i tipi tutti verdi (Offesa e Difesa) e il meta, su Meta: lì c'è qualcosa da guardare. Dopo un clic
+  // del giocatore vale la sua scelta finché la card resta
+  const [chosen, setView] = useState<'types' | 'meta' | null>(null);
+  const allGreen = coverage.cells.every(cell => cell.offense === 'ok' && cell.defense === 'ok');
+  const view = chosen ?? (threats && allGreen ? 'meta' : 'types');
   const meta = view === 'meta' && !!threats;
   const reasonText = useReasonText();
   const thrTip = useFloatAnchor<string>();

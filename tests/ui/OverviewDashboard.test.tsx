@@ -796,6 +796,22 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(cov()).toHaveTextContent('scoperta 3 · a fatica 4');
   });
 
+  it('tipi tutti verdi (Offesa e Difesa) e il meta: si apre su Meta; dopo un clic resta la scelta del giocatore', async () => {
+    const user = userEvent.setup();
+    const green = sample();
+    green.coverage = { ...green.coverage, cells: green.coverage.cells.map(cell => ({ ...cell, offense: 'ok' as const, defense: 'ok' as const })) };
+    mount({ data: green });
+    expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(cov()).queryByRole('table')).toBeNull();
+    await user.click(within(cov()).getByRole('tab', { name: 'Tipi' }));
+    expect(within(cov()).getByRole('tab', { name: 'Tipi' })).toHaveAttribute('aria-selected', 'true');
+    expect(cov().querySelectorAll('thead .dash-type')).toHaveLength(18);
+    cleanup();
+    // Tipi tutti verdi ma senza meta: niente schede, la tabella dei tipi
+    mount({ data: { ...green, threats: { pods: [], list: [], total: 0, available: false, metaOff: true } } });
+    expect(within(cov()).getByRole('table')).toBeInTheDocument();
+  });
+
   it('Meta: solo le minacce problematiche come piastrelle, rosse se scoperte e gialle a fatica; scudo e spada nel colore del lato', async () => {
     const user = userEvent.setup();
     mount();
