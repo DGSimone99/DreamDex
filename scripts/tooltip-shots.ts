@@ -152,15 +152,28 @@ const SCENES: Scene[] = [
     await wait(1500);
     return true;
   } },
-  { id: 'dash', team: SIX, setup: async p => { await tab(p, 'analysis'); await wait(1500); return true; }, scope: '.dash', max: 140, wants: [
-    { id: 'member-summary', tip: '.ftip.member', src: 'SummarySection.tsx (member)', where: 'Analisi overview, Riassunto: hover a crew sprite' },
+  // La Copertura si apre su Meta se i tipi sono tutti verdi: la scheda Tipi per le caselle
+  { id: 'dash', team: SIX, setup: async p => {
+    await tab(p, 'analysis'); await wait(1500);
+    await p.evaluate(() => { document.querySelector<HTMLElement>('.dash-coverage [role="tab"][data-view="types"]')?.click(); });
+    await wait(400);
+    return true;
+  }, scope: '.dash', max: 140, wants: [
     { id: 'syn-more', tip: '.ftip.syn-more', src: 'SummarySection.tsx (syn-more)', where: 'Analisi overview, Riassunto: hover "+N"' },
     { id: 'core', tip: '.ftip.core', src: 'SummarySection.tsx (core)', where: 'Analisi overview, Riassunto: hover a core' },
     { id: 'role', tip: '.ftip.role', src: 'dashboard/RolesSection.tsx', where: 'Analisi overview, Ruoli: hover a role chip' },
     { id: 'speed-dash', tip: '.ftip.speed', src: 'dashboard/SpeedSection.tsx', where: 'Analisi overview, Velocità: hover a bar' },
     { id: 'coverage-off', tip: '.ftip.offense', trigger: '.dash-matrix tbody tr:nth-child(1) .dash-cell', src: 'dashboard/CoverageSection.tsx (side=offense)', where: 'Analisi overview, Coverage: hover an offense cell' },
     { id: 'coverage-def', tip: '.ftip.defense', trigger: '.dash-matrix tbody tr:nth-child(2) .dash-cell', src: 'dashboard/CoverageSection.tsx (side=defense)', where: 'Analisi overview, Coverage: hover a defense cell' },
-    { id: 'thr-tip', tip: '.ftip.thr-tip', src: 'dashboard/ThreatsSection.tsx', where: 'Analisi overview, Minacce: hover a threat' },
+  ] },
+  // Le minacce del meta: la scheda Meta della Copertura (aperta col clic sulla scheda; sugli schermi alti Tipi e Meta stanno insieme)
+  { id: 'dash-meta', team: SIX, setup: async p => {
+    await tab(p, 'analysis'); await wait(1500);
+    await p.evaluate(() => { document.querySelector<HTMLElement>('.dash-coverage [role="tab"][data-view="meta"]')?.click(); });
+    await wait(600);
+    return true;
+  }, scope: '.dash-coverage', max: 40, wants: [
+    { id: 'thr-tip', tip: '.ftip.thr-tip', trigger: '.cov-tile:not(.more)', src: 'dashboard/ThreatTip.tsx (CoverageSection, scheda Meta)', where: 'Analisi overview, Copertura › Meta: hover a threat tile' },
   ] },
   { id: 'dash-rain', team: RAIN, setup: async p => { await tab(p, 'analysis'); await wait(1500); return true; }, scope: '.dash', max: 140, wants: [
     { id: 'cond-rain', tip: '.ftip.cond', src: 'SummarySection.tsx (cond)', where: 'Analisi overview (RAIN), Riassunto: hover a condition' },

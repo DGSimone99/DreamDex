@@ -13,6 +13,8 @@ import { resolveView, type AnalysisView, type TabView } from './analysisView';
 import type { AreaKey, KoFocus } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
+import { TabsGrade } from './RatingPanel';
+import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
 
 /**
  * I problemi del coaching che riguardano ogni area, nella testata dell'area: le stesse aree delle righe del Coaching
@@ -84,7 +86,10 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   useLayoutEffect(() => { if (target.sub) openView(view); }, [view]);
   useLayoutEffect(() => { if (jump) openView(jump.view, jump.sub, jump.focus); }, [jump?.nonce]);
   const area = target.tab !== 'overview' && target.tab !== 'coaching' && rating ? target.tab : null;
-  const showCoaching = view === 'coaching' && !!rating;
+  // Telefono: niente Panoramica, l'Analisi si apre sul Coaching (il voto del team sta nella barra delle schede); senza voto
+  // (team vuoto o voto bloccato) resta la Panoramica col suo messaggio, senza schede
+  const phone = useMediaQuery(PHONE_QUERY);
+  const showCoaching = (view === 'coaching' || (phone && target.tab === 'overview')) && !!rating;
   // Lasciato il Coaching, il problema scelto si dimentica (tornandoci dalle schede non si riaccende)
   useEffect(() => { if (!showCoaching) setCoachFocus(null); }, [showCoaching]);
   useEffect(() => { if (areaFocus && areaFocus.area !== (area ?? 'overview')) setAreaFocus(null); }, [area]);
@@ -107,7 +112,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} focus={coachFocus}
-      onExport={onExport} onImproveSets={onImproveSets} onOverview={() => openView('overview')} />;
+      onExport={onExport} onImproveSets={onImproveSets} onOverview={phone ? undefined : () => openView('overview')} />;
   } else {
     body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} advice={advice} data={data}
       onView={openView} onAdd={onAdd} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />;
@@ -115,8 +120,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      <AnalysisTabs view={tabView} onView={openView} panelId="analysis-view" areasDisabled={!rating} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
-        scores={Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value]))} />
+      {!(phone && !rating) && <AnalysisTabs view={tabView} onView={openView} panelId="analysis-view" areasDisabled={!rating}
+        noOverview={phone} aside={phone && rating ? <TabsGrade rating={rating} team={team} broken={problems.some(p => p.category === 'rules')} incomplete={team.length < 6} onOpen={area => openView(area)} /> : null} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious, neutral: team.length < 6 } } : {}}
+        scores={Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value]))} />}
       <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${tabView}`} className="analysis-view">{body}</div>
     </section>
   );

@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
+import { AnalysisTabs } from '../../src/ui/AnalysisTabs';
 import { fixtureData } from '../fixtures/data';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
@@ -21,7 +22,7 @@ async function setup(names = ['Great Tusk', 'Gholdengo']) {
 describe('schede interne di Analisi', () => {
   it('schede interne con Panoramica di default', async () => {
     await setup();
-    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
+    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('.tab-name')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
     // I Ruoli non hanno più una scheda loro: stanno in Bonus/Malus, sottoscheda Ruoli
     expect(within(views()).queryByRole('tab', { name: 'Ruoli' })).toBeNull();
     // Il voto di ogni area nella sua scheda, non nella Panoramica
@@ -96,16 +97,28 @@ describe('schede interne di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Offesa' })).toBeInTheDocument();
   });
 
-  it('Coaching: badge con tutti i problemi (lo stesso numero della barra laterale), rosso coi gravi; il nome resta "Coaching"', async () => {
+  it('Coaching: badge con tutti i problemi (lo stesso numero della barra laterale), grigio col team incompleto anche coi gravi; il nome resta "Coaching"', async () => {
     // Scoperti in difesa contro Fire, Water e Ground (nella Coverage tipi della Difesa): tre problemi gravi (in attacco nessun tipo scoperto)
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
     const badge = tab.querySelector('.tab-badge')!;
     expect(badge).toHaveAttribute('aria-hidden', 'true');
-    expect(badge).not.toHaveClass('minor');
+    // 3 di 6: un team a metà non è «rotto», il numero resta neutro come nella barra laterale
+    expect(badge).toHaveClass('minor');
     const total = Number(badge.textContent);
     expect(screen.getByRole('tab', { name: 'Analisi' })).toHaveAccessibleDescription(new RegExp(`${total} problemi`));
     expect(tab.getAttribute('title')).toMatch(/^3 gravi( · \d+ minor[ei])?$/);
+  });
+
+  it('badge rosso coi gravi solo a team completo', () => {
+    const badge = (neutral: boolean) => {
+      const { unmount } = render(<AnalysisTabs view="overview" onView={() => {}} panelId="p" badges={{ coaching: { n: 3, serious: 2, minor: 1, neutral } }} />);
+      const cls = screen.getByRole('tab', { name: 'Coaching' }).querySelector('.tab-badge')!.className;
+      unmount();
+      return cls;
+    };
+    expect(badge(false)).toBe('tab-badge');
+    expect(badge(true)).toBe('tab-badge minor');
   });
 
   it('Coaching senza problemi gravi: badge dei minori, non rosso', async () => {
@@ -136,5 +149,46 @@ describe('schede interne di Analisi', () => {
   it('niente blocco Valutazione team', async () => {
     await setup();
     expect(screen.queryByRole('group', { name: 'Valutazione team' })).toBeNull();
+  });
+});
+
+describe('telefono: Analisi senza Panoramica', () => {
+  it('si apre sul Coaching, cinque schede e il voto del team a destra (non è una scheda) che apre le aree', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      await setup();
+      expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('.tab-name')!.textContent)).toEqual(['Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
+      expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
+      const grade = within(panel()).getByRole('button', { name: /^Voto [SABCD], \d+ su 100/ });
+      expect(grade.closest('.analysis-grade')).not.toBeNull();
+      expect(grade.querySelector('.analysis-grade-overall')).toHaveTextContent(/^\d+$/);
+      // Toccato: la tendina Voto delle aree; una riga apre la sua scheda e la tendina si chiude
+      const user = userEvent.setup();
+      await user.click(grade);
+      expect(grade).toHaveAttribute('aria-expanded', 'true');
+      const pop = within(panel()).getByRole('dialog', { name: 'Voto delle aree' });
+      await user.click(within(pop).getByRole('button', { name: /^Difesa/ }));
+      expect(within(views()).getByRole('tab', { name: 'Difesa' })).toHaveAttribute('aria-selected', 'true');
+      expect(within(panel()).queryByRole('dialog', { name: 'Voto delle aree' })).toBeNull();
+      // Niente link "Panoramica" nel Coaching
+      expect(within(panel()).queryByRole('button', { name: /Panoramica/ })).toBeNull();
+      // Team incompleto: in cima alla tendina niente tipo di team (sarebbe provvisorio)
+      await user.click(grade);
+      expect(within(panel()).getByRole('dialog', { name: 'Voto delle aree' })).not.toHaveTextContent(/Hyper Offense|Bulky Offense|Balance|Semi-stall|Stall/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('team completo: in cima alla tendina del voto chi è il team (tipo di team, core, stili)', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Toxapex', 'Corviknight', 'Iron Valiant']);
+      await user.click(within(panel()).getByRole('button', { name: /^Voto [SABCD], \d+ su 100/ }));
+      const pop = within(panel()).getByRole('dialog', { name: 'Voto delle aree' });
+      expect(pop.querySelector('.grade-pop-id')).toHaveTextContent(/^(Hyper Offense|Bulky Offense|Balance|Semi-stall|Stall)( · .+)?$/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

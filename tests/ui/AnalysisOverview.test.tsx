@@ -90,27 +90,32 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Copertura' }).querySelector('.dash-head')).not.toHaveClass('is-link');
   });
 
-  it("il Riassunto: un attaccante dell'eroe porta a Offesa", async () => {
-    const user = await setup();
-    const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    await user.click(within(within(summary).getByRole('group', { name: 'Attaccano' })).getAllByRole('button')[0]);
-    expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
-  });
-
   it('un membro solo: niente "nessun problema", l\'invito ad aggiungerne', async () => {
     await setup(['Great Tusk']);
-    expect(panel().querySelector('.overview-headline')).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
+    // In fondo, nella striscia neutra del team incompleto (non un titolo grande in cima)
+    const strip = within(panel()).getByRole('region', { name: 'Da sistemare' });
+    expect(strip).toHaveClass('fix-row', 'building');
+    expect(strip).toHaveTextContent(/^1 di 6 nel teamAggiungi un altro Pokémon/);
     expect(within(panel()).queryByText('Nessun problema da sistemare')).toBeNull();
+    expect(within(panel()).getByText('Le sinergie arrivano col secondo Pokémon')).toBeInTheDocument();
   });
 
-  it('meta spento: "Meta spento" e la media del tier', async () => {
+  it('team vuoto: l\'invito con un pulsante e le quattro carte della Panoramica vuote con cosa mostreranno', async () => {
+    render(<App initialLang="it" data={fixtureData} />);
+    await userEvent.setup().click(screen.getByRole('tab', { name: /^Analisi/ }));
+    expect(within(panel()).getAllByRole('button', { name: 'Aggiungi un Pokémon' })).toHaveLength(1);
+    expect([...panel().querySelectorAll('.dash.ghost > section')].map(r => r.getAttribute('aria-label'))).toEqual(['Riassunto', 'Copertura', 'Ruoli', 'Velocità']);
+    expect(within(panel()).getByRole('region', { name: 'Ruoli' })).toHaveTextContent('I ruoli che servono al team e chi li copre');
+  });
+
+  it('meta spento: "Meta spento" e metà del tier', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     // Meta spento: nel Riassunto niente Minacce
     expect(within(within(panel()).getByRole('region', { name: 'Riassunto' })).queryByText('Minacce')).toBeNull();
-    expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/media del tier/);
+    expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/metà del formato/);
   });
 
   it("team di 3 senza statistiche: il Riassunto c'è, nessun crash, niente Minacce", async () => {
@@ -119,16 +124,16 @@ describe('Panoramica di Analisi', () => {
     for (const name of ['Great Tusk', 'Gholdengo', 'Dragapult']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    expect(within(summary).getByRole('heading', { name: 'Meteo e campo' })).toBeInTheDocument();
+    expect(within(summary).getByRole('heading', { name: 'Meteo e campi' })).toBeInTheDocument();
     expect(within(summary).getByRole('heading', { name: 'Trappole' })).toBeInTheDocument();
     expect(within(summary).queryByText('Minacce')).toBeNull();
   });
 
   it('niente più tessera Bonus/Malus; "Vai al Coaching" solo nella riga Da sistemare', async () => {
     await setup(['Great Tusk', 'Dragapult']);
-    // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica
+    // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica, dove c'è solo la riga in fondo al Riassunto
     const overview = panel().querySelector<HTMLElement>('.overview')!;
-    expect(overview).not.toHaveTextContent(/Bonus\/Malus/);
+    for (const el of overview.querySelectorAll('.dash-card')) if (!el.classList.contains('dash-summary')) expect(el).not.toHaveTextContent(/Bonus\/Malus/);
     for (const button of within(panel()).queryAllByRole('button', { name: /Vai al Coaching/ })) expect(button.closest('.fix-row')).not.toBeNull();
     expect(panel().querySelector('.summary-tile, .summary-strip')).toBeNull();
   });
@@ -264,13 +269,14 @@ describe('Panoramica: correzioni della revisione', () => {
 
 });
 
-describe('Panoramica: Minacce del meta', () => {
+describe('Panoramica: Copertura › scheda Meta', () => {
   it('clic su una minaccia: la sua Coverage meta con la colonna per prima e accesa, "Mostra tutti" la spegne', async () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
-    const card = within(panel()).getByRole('region', { name: 'Minacce del meta' });
-    const first = within(card).getAllByRole('button', { name: /, (scoperta|a fatica):/ })[0];
+    await user.click(within(panel()).getByRole('tab', { name: /^Meta/ }));
+    // La prima piastrella della scheda Meta: porta alla Coverage meta della Difesa se lì non è coperta, sennò dell'Offesa
+    const first = panel().querySelector<HTMLElement>('.dash-coverage .cov-tile:not(.more)')!;
     const species = first.getAttribute('aria-label')!.split(',')[0];
-    const offense = /Lo manda KO|Nessuno lo manda KO/.test(first.getAttribute('aria-label')!.split(':')[1]);
+    const offense = first.querySelector('.cov-side')!.classList.contains('ok');
     await user.click(first);
     expect(within(views()).getByRole('tab', { name: new RegExp(`^${offense ? 'Offesa' : 'Difesa'}`) })).toHaveAttribute('aria-selected', 'true');
     const table = within(panel()).getByRole('table', { name: `${offense ? 'Offesa' : 'Difesa'}: Coverage meta` });
@@ -294,7 +300,7 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = await within(panel()).findByRole('region', { name: 'Da sistemare' }, { timeout: 5000 });
     const go = await within(row).findByRole('button', { name: /^Vai al Coaching/ }, { timeout: 8000 });
     expect(row).toHaveTextContent(/\d+ problemi?/);
-    expect(row).toHaveTextContent(/il Coaching ha \d+ propost[ae]|nessuna sostituzione singola/);
+    expect(row).toHaveTextContent(/Il Coaching ha \d+ propost[ae]|Nessuna sostituzione singola/);
     await user.click(go);
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
   });
@@ -317,7 +323,7 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(onView).not.toHaveBeenCalled();
   });
 
-  it('problemi e proposte: "N problemi · il Coaching ha M proposte, la migliore +X", tutta la riga porta al Coaching', async () => {
+  it('problemi e proposte: "N problemi · Il Coaching ha M proposte, la migliore +X", tutta la riga porta al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
     const a = problem({ text: 'Debole a Fuoco', key: 'a', severity: 'serious' });
@@ -329,20 +335,20 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-link', 'serious');
     expect(row).toHaveTextContent('2 problemi');
-    expect(row).toHaveTextContent('il Coaching ha 2 proposte, la migliore +4');
+    expect(row).toHaveTextContent('Il Coaching ha 2 proposte, la migliore +4');
     expect(row.querySelector('.fix-gain')).toHaveTextContent('+4');
-    expect(within(row).getByRole('button', { name: 'Vai al Coaching: 2 problemi, il Coaching ha 2 proposte, la migliore +4' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Vai al Coaching: 2 problemi, Il Coaching ha 2 proposte, la migliore +4' })).toBeInTheDocument();
     await user.click(within(row).getByText('2 problemi'));
     expect(onView).toHaveBeenCalledWith('coaching');
   });
 
-  it('una proposta sola: "il Coaching ha 1 proposta: +X"; coi soli minori la riga è gialla', () => {
+  it('una proposta sola: "Il Coaching ha 1 proposta: +X"; coi soli minori la riga è gialla', () => {
     const p = problem({ text: 'Manca Pivot', key: 'p' });
     render(<LangProvider lang="it"><FixRow problems={[p]} advice={adviceSolving('p')} onView={() => {}} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('minor');
     expect(row).toHaveTextContent('1 problema');
-    expect(row).toHaveTextContent('il Coaching ha 1 proposta: +1');
+    expect(row).toHaveTextContent('Il Coaching ha 1 proposta: +1');
   });
 
   it('le proposte si contano come le righe del Coaching: stesso posto e stesso problema sono una riga', () => {
@@ -351,7 +357,7 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(coachingOffer([p], advice)).toEqual({ count: 1, best: 3 });
   });
 
-  it('problemi senza proposta: "N problemi · nessuna sostituzione singola li risolve", e porta comunque al Coaching', async () => {
+  it('problemi senza proposta: "N problemi · Nessuna sostituzione singola li risolve", e porta comunque al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
     const problems = [problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })];
@@ -359,7 +365,7 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-link', 'serious');
     expect(row).toHaveTextContent('2 problemi');
-    expect(row).toHaveTextContent('nessuna sostituzione singola li risolve');
+    expect(row).toHaveTextContent('Nessuna sostituzione singola li risolve');
     await user.click(within(row).getByRole('button', { name: /^Vai al Coaching/ }));
     expect(onView).toHaveBeenCalledWith('coaching');
   });
@@ -367,14 +373,47 @@ describe('Panoramica: la riga del Coaching', () => {
   it('in inglese', () => {
     const p = problem({ text: 'x', key: 'x' });
     render(<LangProvider lang="en"><FixRow problems={[p]} advice={NO_ADVICE} onView={() => {}} /></LangProvider>);
-    expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemno single swap solves itGo to Coaching');
+    expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemNo single swap solves itGo to Coaching');
   });
 
-  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto', () => {
-    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} onView={() => {}} /></LangProvider>);
-    const bones = container.querySelector('.fix-row.is-skeleton');
-    expect(bones).toHaveAttribute('aria-hidden', 'true');
-    expect(bones).toHaveTextContent('');
+  it('nessun problema col team incompleto: neutra "5 di 6 nel team · Nessun problema finora", verde solo a team completo', () => {
+    const { unmount } = render(<LangProvider lang="it"><FixRow problems={[]} advice={NO_ADVICE} members={5} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('building');
+    expect(row).not.toHaveClass('is-clear');
+    expect(row).toHaveTextContent(/^5 di 6 nel teamNessun problema finora$/);
+    unmount();
+    render(<LangProvider lang="it"><FixRow problems={[]} advice={NO_ADVICE} members={6} onView={() => {}} /></LangProvider>);
+    expect(screen.getByRole('region', { name: 'Da sistemare' })).toHaveClass('is-clear');
+  });
+
+  it('consigli ancora da calcolare (advice null): numero e colore subito, aspetta solo la parte delle proposte (senza link)', () => {
+    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })]} advice={null} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveAttribute('aria-live', 'polite');
+    expect(row).toHaveClass('is-waiting', 'serious');
+    expect(row.querySelector('.fix-label')).toHaveTextContent(/^2 problemi$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^Il Coaching sta calcolando…$/);
+    expect(within(row).queryByRole('button')).toBeNull();
+  });
+
+  it('consigli da calcolare con il team incompleto: neutra, "4 di 6 nel team" e i problemi nel testo', () => {
+    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} members={4} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('building');
+    expect(row.querySelector('.fix-label')).toHaveTextContent(/^4 di 6 nel team$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^1 problema · Il Coaching sta calcolando…$/);
+  });
+
+  it('team incompleto: striscia neutra "4 di 6 nel team", i problemi nel testo, niente rosso', () => {
+    const problems = [problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })];
+    render(<LangProvider lang="it"><FixRow problems={problems} advice={NO_ADVICE} members={4} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('is-link', 'building');
+    expect(row).not.toHaveClass('serious');
+    expect(row.querySelector('.fix-label')).toHaveTextContent(/^4 di 6 nel team$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^2 problemi · Nessuna sostituzione singola li risolve$/);
+    expect(within(row).getByRole('button', { name: /^Vai al Coaching: 2 problemi/ })).toBeInTheDocument();
   });
 
   it('solvable: i problemi che almeno una proposta del Coaching risolve (cambi di Pokémon e di mossa, tutte)', () => {

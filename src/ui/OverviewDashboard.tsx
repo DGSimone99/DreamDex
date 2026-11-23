@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import type { DashboardData } from '../engine/overviewDashboard';
 import type { TeamSummary } from '../engine/teamSummary';
 import type { TeamSet } from '../engine/sets';
@@ -9,14 +10,19 @@ import { CoverageSection } from './dashboard/CoverageSection';
 import { RolesSection } from './dashboard/RolesSection';
 import { SpeedSection } from './dashboard/SpeedSection';
 import { SummarySection } from './dashboard/SummarySection';
-import { ThreatsSection } from './dashboard/ThreatsSection';
 
 export type Density = 'tight' | 'normal' | 'roomy';
 
 /**
+ * Fino a quanti membri la Copertura è tenue (caselle scoperte e minacce tratteggiate in grigio, niente numero sulla scheda
+ * Meta): a team appena iniziato i buchi ci sono per forza e il rosso insegnerebbe a ignorarlo.
+ */
+export const GENTLE_UP_TO = 3;
+
+/**
  * Soglia sull'altezza del cruscotto (px CSS), misurata con la card del voto a cinque righe (6 membri):
  * 1366×768 aperto 368 (stretto) · 1440×900 aperto 471 · 1920×1080 aperto 621 · 2560×1440 aperto 694 (normale).
- * L'ampia non dipende dall'altezza: c'è solo col team ridotto, a ogni risoluzione.
+ * L'ampia c'è sempre col team ridotto e, col team aperto, da RICH_FROM (1920×1080 e schermi più alti).
  */
 export const TIGHT_BELOW = 440;
 
@@ -28,17 +34,17 @@ export const TIGHT_BELOW = 440;
 export const RICH_FROM = 600;
 export const RICH_TALL = 820;
 
-/** La densità col team aperto: stretta o normale secondo l'altezza, mai ampia. */
+/** La densità col team aperto sotto RICH_FROM: stretta o normale secondo l'altezza. */
 export function densityFor(height: number): Density {
   return height < TIGHT_BELOW ? 'tight' : 'normal';
 }
 
 /**
- * La Panoramica come cruscotto che riempie lo spazio: il Riassunto in colonna a sinistra (in fondo la riga Bonus/Malus,
- * solo se c'è posto); a destra la Copertura, sotto le Minacce del meta (solo col meta: senza, la Copertura prende il loro
+ * La Panoramica come cruscotto che riempie lo spazio: il Riassunto in colonna a sinistra (in fondo, sempre, la riga Bonus/Malus
+ * coi suoi punti); a destra la Copertura, sotto le Minacce del meta (solo col meta: senza, la Copertura prende il loro
  * posto), sotto Ruoli | Velocità.
  */
-export function OverviewDashboard({ data, summary, members, team = [], grade, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
+export function OverviewDashboard({ data, summary, members, team = [], grade, weak = {}, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
   data: DashboardData;
   summary: TeamSummary;
   /** Quanti Pokémon ha il team: con uno solo la riga Tipo non c'è. */
@@ -47,6 +53,8 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
   team?: TeamSet[];
   /** La lettera del voto del team (S…D): il tipo di team del Riassunto ne prende il colore. */
   grade?: string;
+  /** Le aree deboli (C, D) a team completo: il loro numero nelle testate prende il colore del voto. */
+  weak?: Partial<Record<'strength' | 'defense' | 'speed', 'C' | 'D'>>;
   /** La riga Bonus/Malus del Riassunto (netto e voci); senza, la riga non c'è. */
   bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
   onView: (v: AnalysisView, sub?: string, focus?: KoFocus) => void;
@@ -75,18 +83,23 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
     observer.observe(box);
     return () => observer.disconnect();
   }, [forced]);
-  const density = forced ?? (teamCollapsed ? 'roomy' : measured);
+  // Ampia col team ridotto o, col team aperto, sugli schermi alti del computer (1920×1080 e su): lo spazio in più va ai contenuti
+  // Telefono e tablet: il cruscotto è alto quanto il contenuto, la sua altezza non dice quanto spazio c'è
+  const stacked = useMediaQuery(EDITOR_TABS_QUERY);
+  const density = forced ?? (teamCollapsed || (!stacked && height >= RICH_FROM) ? 'roomy' : measured);
   // Riassunto ricco: ampio e abbastanza alto (densità imposta dai test: basta ampio)
   const rich = density === 'roomy' && (!!forced || height >= RICH_FROM);
   // Le minacce solo col meta (statistiche presenti e meta acceso)
   const threats = data.threats.available;
+
   return (
-    <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}${threats ? ' has-threats' : ''}`} data-density={density}>
-      <SummarySection summary={summary} members={members} team={team} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
-      <CoverageSection coverage={data.coverage} onView={onView} />
-      {threats && <ThreatsSection threats={data.threats} onView={onView} />}
-      <RolesSection roles={data.roles} density={density} onView={onView} />
-      <SpeedSection speed={data.speed} density={density} onView={onView} />
+    <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}`} data-density={density}>
+      <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
+      {/* Le minacce del meta sono la riga META della Copertura (la loro carta è stata tolta il 2026-11-22) */}
+      {/* Team appena iniziato: niente allarmi in Copertura fino a GENTLE_UP_TO membri, nei Ruoli con un membro solo */}
+      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members <= GENTLE_UP_TO} incomplete={members < 6} both={rich} weak={weak} onView={onView} />
+      <RolesSection roles={data.roles} density={density} gentle={members === 1} onView={onView} />
+      <SpeedSection speed={data.speed} density={density} weak={weak.speed} onView={onView} />
     </div>
   );
 }

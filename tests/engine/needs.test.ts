@@ -155,7 +155,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needLabel('anySweeper', 'en')).toBe('Sweeper');
     expect(needLabel('anyBreaker', 'it')).toBe('Wallbreaker');
     expect(needLabel('anyBreaker', 'en')).toBe('Wallbreaker');
-    expect(needLabel('anyPhysical', 'it')).toBe('Attaccante fisico');
+    expect(needLabel('anyPhysical', 'it')).toBe('Attaccante Fisico');
     expect(needLabel('anySpecial', 'en')).toBe('Special Attacker');
   });
 
@@ -215,7 +215,7 @@ describe('tabella dei livelli per archetipo', () => {
     const essential = area.failures.filter(f => f.catalog === 'essentialRole');
     expect(essential).toHaveLength(1);
     expect(essential[0]).toMatchObject({ points: ESSENTIAL_POINTS });
-    expect(essential[0].text).toContain('Attaccante speciale');
+    expect(essential[0].text).toContain('Attaccante Speciale');
     expect(area.failures.filter(f => f.catalog === 'importantRole')).toHaveLength(needs.importantMissing.length);
   });
 

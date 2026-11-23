@@ -121,7 +121,7 @@ describe('sotto-ruoli misurati', () => {
   });
 });
 
-describe('Attaccante fisico e speciale: chi attacca seriamente da un lato', () => {
+describe('Attaccante Fisico e speciale: chi attacca seriamente da un lato', () => {
   const zapdos = set('Zapdos', ['Hurricane', 'Heat Wave', 'Volt Switch', 'Roost'], 'Heavy-Duty Boots', 'Static', { hp: 248, def: 244, spe: 16 }, 'Bold');
   const team = [zapdos,
     set('Great Tusk', ['Headlong Rush', 'Close Combat', 'Ice Spinner', 'Rapid Spin'], 'Booster Energy', 'Protosynthesis', { atk: 252, spe: 252 }, 'Jolly'),

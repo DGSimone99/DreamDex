@@ -122,11 +122,11 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
         : <span tabIndex={0} {...props}>{content}</span>}
       {/* Il tooltip è solo visivo: le stesse parole ai lettori di schermo, e dove porta il pulsante */}
       <HiddenText id={descId}>{[full, onOpen ? t('overview.fix.go') : ''].filter(Boolean).join(' · ')}</HiddenText>
-      {/* Una minaccia del meta: lo stesso tooltip delle Minacce della Panoramica (ThreatTip: la sprite, "Minaccia scoperta"
+      {/* Una minaccia del meta: lo stesso tooltip delle minacce della Panoramica (ThreatTip, scheda Meta della Copertura: la sprite, "Minaccia senza check"
           sotto il nome, l'uso nel meta, la ragione "Nessuno lo regge bene" o "Nessuno lo manda KO in due colpi") */}
       {tip.anchor && subject.species && (
         <ThreatTip rect={tip.anchor.rect} species={subject.species} status="open" usage={problem.usage}
-          reasons={[{ text: t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone'), open: true }]}
+          reasons={[{ text: t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone'), state: 'open' }]}
           go={onOpen ? t('analysis.view.coaching') : undefined} />
       )}
       {tip.anchor && !subject.species && (

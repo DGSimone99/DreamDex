@@ -13,11 +13,11 @@ describe('coaching e valutazione in inglese', () => {
     // Difesa: grave se nessuno regge il tipo, minore se lo regge poco
     expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'serious' && /^Uncovered on defense vs \w+: nobody withstands its hits$/.test(p.text))).toBe(true);
     expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'minor' && /^Weakly covered on defense vs \w+: few withstand its hits$/.test(p.text))).toBe(true);
-    expect(coaching.problems.some(p => p.category === 'meta' && /^Uncovered on defense vs [\w-]+( [\w-]+)?: nobody withstands its hits$/.test(p.text))).toBe(true);
+    expect(coaching.problems.some(p => p.category === 'meta' && /^No check on defense vs [\w-]+( [\w-]+)?: nobody withstands its hits$/.test(p.text))).toBe(true);
   });
 
   it('meno di due membri', () => {
-    expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData, 'en').verdict).toBe('Add at least 2 Pokémon to get coaching');
+    expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData, 'en').verdict).toBe('Add another Pokémon to get coaching');
   });
 
   it('voto e aree in inglese', () => {

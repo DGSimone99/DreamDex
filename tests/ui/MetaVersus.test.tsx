@@ -36,10 +36,10 @@ describe('scheda Meta: Contro il tuo team', () => {
     expect(def.querySelectorAll('img.sprite')).toHaveLength(2);
   });
 
-  it('scoperta: "Nessuno lo regge"; uno solo lo manda KO (a fatica sul conto)', () => {
+  it('senza check: "Nessuno lo regge"; uno solo lo manda KO (un solo check sul conto)', () => {
     const rating = fakeRating({ 'Great Tusk': [held('Toxapex', true)] }, { 'Great Tusk': [ko('Kingambit')] });
     renderIt(<MetaTab team={[]} data={fixtureData} rating={rating} onCoverage={vi.fn()} />);
-    expect(within(block()).getByText('scoperta')).toHaveClass('open');
+    expect(within(block()).getByText('senza check')).toHaveClass('open');
     const [def, off] = rows();
     expect(def).toHaveTextContent('Nessunolo regge0');
     expect(def.querySelector('.mvs-count')).toHaveClass('open');
@@ -47,10 +47,10 @@ describe('scheda Meta: Contro il tuo team', () => {
     expect(off.querySelector('.mvs-count')).toHaveClass('thin');
   });
 
-  it('a fatica: un lato con un membro solo', () => {
+  it('un solo check: un lato con un membro solo', () => {
     const rating = fakeRating({ 'Great Tusk': [held('Kingambit')] }, { 'Great Tusk': [ko('Gholdengo'), ko('Kingambit')] });
     renderIt(<MetaTab team={[]} data={fixtureData} rating={rating} onCoverage={vi.fn()} />);
-    expect(within(block()).getByText('a fatica')).toHaveClass('thin');
+    expect(within(block()).getByText('un solo check')).toHaveClass('thin');
   });
 
   it('un tuo membro: "nel tuo team" e i conti del resto del team (lui tolto)', () => {

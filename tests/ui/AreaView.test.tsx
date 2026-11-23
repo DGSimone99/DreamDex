@@ -244,18 +244,18 @@ describe('problemi delle aree', () => {
 
   it('una minaccia del meta nella testata della Difesa: icona e nome del Pokémon, il testo intero nel tooltip', async () => {
     const user = userEvent.setup();
-    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Scoperto in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'], usage: 0.118 };
+    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Senza check in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'], usage: 0.118 };
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[threat]} />);
     const list = screen.getByRole('list', { name: 'Problemi in Difesa' });
     const chip = list.querySelector<HTMLElement>('.area-chip')!;
     expect(chip.querySelector('.coach-threat-name')).toHaveTextContent('Zapdos');
     for (let i = 0; i < 20 && document.activeElement !== chip; i++) await user.tab();
-    // Lo stesso fumetto delle Minacce della Panoramica (ThreatTip): la sprite, "Minaccia scoperta", l'uso nel meta, la ragione in una riga;
+    // Lo stesso fumetto delle minacce della Panoramica (ThreatTip, scheda Meta della Copertura): la sprite, "Minaccia senza check", l'uso nel meta, la ragione in una riga;
     // il testo intero resta ai lettori di schermo nella descrizione della pillola
     await waitFor(() => expect(document.querySelector('.ftip.thr-tip')).not.toBeNull());
     const tip = document.querySelector('.ftip.thr-tip')!;
     expect(tip.querySelector('.tip-head.has-sprite')).toHaveTextContent('Zapdos');
-    expect(tip.querySelector('.tip-sub')).toHaveTextContent('Minaccia scoperta');
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent('Minaccia senza check');
     expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(/^11,8%$/);
     expect(tip.querySelector('.tip-head .tip-qual')).toHaveTextContent('nel meta');
     expect(tip).toHaveClass('tip-w-m');

@@ -171,11 +171,11 @@ describe('scheda Coaching', () => {
     render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     // Nella Panoramica: come giudizio e nel "Cosa fare" del cruscotto
-    expect(within(analysis()).getAllByText('Aggiungi almeno 2 Pokémon per ricevere il coaching').length).toBeGreaterThan(0);
+    expect(within(analysis()).getAllByText('Aggiungi un altro Pokémon per ricevere il coaching').length).toBeGreaterThan(0);
     // Anche nella scheda Coaching, non "il team è a posto"
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     await user.click(within(analysis()).getByRole('tab', { name: /^Coaching/ }));
-    expect(within(analysis()).getByText('Aggiungi almeno 2 Pokémon per ricevere il coaching')).toBeInTheDocument();
+    expect(within(analysis()).getByText('Aggiungi un altro Pokémon per ricevere il coaching')).toBeInTheDocument();
     expect(within(analysis()).queryByText('Il team è a posto')).toBeNull();
   });
 });
@@ -187,7 +187,7 @@ describe('CoachingView', () => {
   const coachingOf = (problems: CoachProblem[], over: Partial<Coaching> = {}): Coaching => ({ verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems, ...over });
   const fire: CoachProblem = { severity: 'serious', category: 'defense', text: 'Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi',
     fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } };
-  const zapdos: CoachProblem = { severity: 'minor', category: 'meta', text: 'Scoperto in difesa contro Zapdos', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
+  const zapdos: CoachProblem = { severity: 'minor', category: 'meta', text: 'Senza check in difesa contro Zapdos', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
   const pivot: CoachProblem = { severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important', subjects: ['pivot'] };
   const steel: CoachProblem = { severity: 'minor', category: 'redundancy', text: '3 membri di tipo Acciaio', fixes: [], key: 'redundancy:3 membri di tipo Acciaio' };
   const problems = [fire, zapdos, pivot, steel];
@@ -463,7 +463,7 @@ describe('CoachingView', () => {
 
   it('con meno di 2 membri: solo l\'invito ad aggiungere', () => {
     view(null, { members: 1, coaching: coachingOf([]) });
-    expect(screen.getByText('Aggiungi almeno 2 Pokémon per ricevere il coaching')).toBeInTheDocument();
+    expect(screen.getByText('Aggiungi un altro Pokémon per ricevere il coaching')).toBeInTheDocument();
     expect(screen.queryByText('Il team è a posto')).toBeNull();
   });
 

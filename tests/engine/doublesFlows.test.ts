@@ -93,7 +93,7 @@ describe('doppio: coach, Panoramica e riassunto', () => {
     const text = coaching.problems.map(p => p.text).join(' | ');
     expect(text).toContain('Protect (2 membri)');
     expect(text).toContain('Fake Out');
-    for (const gone of ['Controllo Hazard', 'Recupero', 'Screen Setter', 'Sweeper', 'Wallbreaker', 'Attaccante fisico', 'Attaccante speciale', 'Anti-setup']) expect(text).not.toContain(gone);
+    for (const gone of ['Controllo Hazard', 'Recupero', 'Screen Setter', 'Sweeper', 'Wallbreaker', 'Attaccante Fisico', 'Attaccante Speciale', 'Anti-setup']) expect(text).not.toContain(gone);
   });
 
   it('il riassunto dice Doppio con al massimo uno stile, anche a team incompleto', () => {
