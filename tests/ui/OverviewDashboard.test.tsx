@@ -931,7 +931,10 @@ describe('Copertura › schede Tipi e Meta', () => {
     mount();
     await toMeta(user);
     expect(within(cov()).queryByRole('table')).toBeNull();
-    expect(tiles().map(el => el.querySelector('.cov-name')!.textContent)).toEqual(THREATS.map(x => x.species));
+    // Il nome come sulle carte: la specie e accanto la forma piccola (Ogerpon WELLSPRING) o il segno della Mega
+    expect(tiles().map(el => el.querySelector('.cov-name')!.textContent)).toEqual(['Raging Bolt', 'Tapu Koko', 'Diancie', 'Zamazenta', 'OgerponWellspring', 'Latios', 'Kyurem']);
+    expect(tile(/^Diancie-Mega/).querySelector('.cov-name .mega-mark')).not.toBeNull();
+    expect(tile(/^Ogerpon-Wellspring/).querySelector('.cov-name .pick-forme')).toHaveTextContent('Wellspring');
     expect(tile(/^Raging Bolt/)).toHaveClass('open');
     expect(tile(/^Zamazenta/)).toHaveClass('thin');
     expect([...tile(/^Raging Bolt/).querySelectorAll('.cov-side')].map(el => el.className)).toEqual(['cov-side bad', 'cov-side ok']);

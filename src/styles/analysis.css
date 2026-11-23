@@ -979,6 +979,16 @@
 .cov-mon .mon-icon { transform: scale(1.2); transform-origin: 50% 70%; image-rendering: pixelated; }
 .cov-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic var(--fs-small)/1.15 var(--display); }
 .dash.tight .cov-name { font-size: var(--fs-caption); }
+/* Le forme come sulle carte (FormeName): la specie nel carattere della piastrella, la forma piccola accanto; se manca
+   spazio cede prima la forma, poi il nome */
+.cov-name .pick-name { justify-content: center; gap: 2px; max-width: 100%; }
+.cov-name .pick-name b { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: inherit; }
+.cov-name .pick-name .pick-forme { flex-shrink: 100; font-size: var(--fs-label); letter-spacing: 0.02em; }
+.cov-name .pick-name .mega-mark { font-size: var(--fs-label); }
+.cov-name .pick-name .mega-mark .mega-icon { width: 13px; height: 13px; }
+/* Piastrelle alte (roomy): una forma che non sta accanto al nome va a capo sotto (Urshifu / RAPID STRIKE), c'è aria fra
+   i segni in alto e lo sprite; nelle altre misure cede con i puntini */
+.dash.roomy .cov-name .pick-name { flex-wrap: wrap; row-gap: 1px; }
 .cov-sides { position: absolute; top: 5px; right: 6px; display: flex; gap: 2px; }
 /* Coperto: il verde pieno delle icone (come la spunta dei ruoli); il verde tenue resta solo alle caselle della griglia dei Tipi */
 .cov-side { display: inline-flex; color: var(--good); }

@@ -8,6 +8,7 @@ import type { KoFocus } from '../AreaDetail';
 import { FloatTip, goText, keyboardFocus, TipGo, useFloatAnchor } from '../FloatTip';
 import { Icon } from '../icons';
 import { hint } from '../MoveTip';
+import { FormeName } from '../candidateParts';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
@@ -200,7 +201,9 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
                       onFocus={e => { if (keyboardFocus(e.currentTarget)) thrTip.open(x.species, e.currentTarget); }} onBlur={thrTip.close}>
                       <span className="cov-sides" aria-hidden="true">{sideMark(x, 'defense')}{sideMark(x, 'offense')}</span>
                       <span className="cov-mon" aria-hidden="true"><PokemonIcon name={x.species} /></span>
-                      <b className="cov-name" aria-hidden="true">{x.species}</b>
+                      {/* Il nome come sulle carte della scheda Pokémon: la specie e accanto la forma piccola o il segno della Mega
+                          (Charizard ◆Y), così le forme lunghe stanno nella piastrella; il nome intero è nell'aria-label */}
+                      <b className="cov-name" aria-hidden="true"><FormeName species={x.species} /></b>
                     </button>
                   </li>
                 ))}
