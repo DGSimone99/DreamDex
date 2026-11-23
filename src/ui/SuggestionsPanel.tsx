@@ -443,6 +443,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         <p>{tr('suggest.noMatch')}</p>
         {typeEmpty}
         {filters.query && <button type="button" onClick={() => setFilters({ ...filters, query: '' })}>{tr('suggest.clear')}</button>}
+        {/* Vuota per colpa dei filtri: si azzerano da qui (la ricerca resta) */}
+        {isFiltering({ ...filters, query: '' }) && <button type="button" onClick={() => setFilters({ ...EMPTY_FILTERS, query: filters.query })}>{tr('filters.reset')}</button>}
       </div>
     );
   } else {

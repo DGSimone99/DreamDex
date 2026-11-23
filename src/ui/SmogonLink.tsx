@@ -6,7 +6,7 @@ import { Icon } from './icons';
 import { hint } from './MoveTip';
 
 /** Link esterno alla pagina Smogon del Pokémon: l'analisi del formato se c'è, altrimenti la pagina generale. */
-export function SmogonLink({ species, format, presets, iconOnly = false }: { species: string; format: Format; presets: { format: string }[]; iconOnly?: boolean }) {
+export function SmogonLink({ species, format, presets, iconOnly = false, short = false }: { species: string; format: Format; presets: { format: string }[]; iconOnly?: boolean; short?: boolean }) {
   const tr = useT();
   const lang = useLang();
   const analysed = hasSmogonAnalysis(presets, format);
@@ -23,10 +23,13 @@ export function SmogonLink({ species, format, presets, iconOnly = false }: { spe
     );
   }
   return (
-    <a className="smogon-link" href={href} target="_blank" rel="noopener noreferrer"
+    <a className="smogon-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={short ? tr('detail.smogon') : undefined}
       aria-description={tr(analysed ? 'detail.smogonTitle' : 'detail.smogonGeneral', { format: formatText })}
       {...hint(tr(analysed ? 'detail.smogonTitle' : 'detail.smogonGeneral', { format: formatText }))}>
-      <Icon name="external" /> <span className="btn-label">{tr('detail.smogon')}</span>
+      {/* `short`: anche il nome breve ("Smogon"), che il contenitore mostra quando manca spazio */}
+      <Icon name="external" /> {short
+        ? <span className="btn-label" aria-hidden="true"><span className="lbl-full">{tr('detail.smogon')}</span><span className="lbl-short">{tr('detail.smogonShort')}</span></span>
+        : <span className="btn-label">{tr('detail.smogon')}</span>}
     </a>
   );
 }

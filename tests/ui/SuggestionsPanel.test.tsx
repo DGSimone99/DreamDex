@@ -48,6 +48,15 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
   });
 
+  it('col nome della carta i lettori di schermo sentono anche il voto (il numero per cui scegliere)', async () => {
+    await setup('Great Tusk', 'Gholdengo');
+    const picks = [...list().querySelectorAll<HTMLElement>(':scope > li .pick')];
+    expect(picks.length).toBeGreaterThan(0);
+    for (const pick of picks) expect(pick).toHaveAccessibleDescription(/^Voto del team: [SABCD] \d+ \((\+\d+|−\d+|±0)\)$/);
+    // Il voto è un'immagine con etichetta: uno span senza ruolo verrebbe ignorato
+    expect(within(list()).getAllByRole('img', { name: /^Voto del team: / })).toHaveLength(picks.length);
+  });
+
   it('il dettaglio mostra il primo candidato: quanto sale il voto del team in tutto (+N, B → A) e, area per area, solo il verso', async () => {
     await setup('Great Tusk');
     const first = rowNames()[0];
