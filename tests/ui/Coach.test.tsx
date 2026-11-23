@@ -730,7 +730,7 @@ describe('CoachingView', () => {
     const h = view(advice([]));
     expect(screen.getByRole('heading', { name: 'Nessuna sostituzione singola li risolve' })).toBeInTheDocument();
     expect(screen.getByText('Restano questi problemi, ma cambiare un solo Pokémon non basta.')).toBeInTheDocument();
-    expect(document.querySelector('.coach-empty .eevee-moment.thinking')).not.toBeNull();
+    expect(document.querySelector('.coach-empty .eevee-moment.down')).not.toBeNull();
     const chips = within(screen.getByRole('list', { name: 'Problemi che restano' })).getAllByRole('listitem');
     // Il ruolo mancante ha la sua pillola
     expect(chips.map(c => c.querySelector('.area-chip')!.getAttribute('data-key'))).toEqual([fire.key, zapdos.key, pivot.key, steel.key]);

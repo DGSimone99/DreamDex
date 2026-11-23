@@ -513,7 +513,7 @@ function Pager({ page, pages, from, to, onPage, labels }: {
  * che è la prima a risolvere; un clic su una proposta la apre, su un problema mostra solo le proposte che lo risolvono);
  * a destra la carta grande della proposta aperta (all'inizio la migliore), alta quanto la colonna. Le proposte quasi uguali
  * stanno insieme (proposalGroups) e quelle che non alzano il voto vanno fra le alternative (neutralAsAlternatives).
- * Senza problemi: Eevee contento e il team da esportare; con problemi che nessuna proposta risolve: Eevee pensieroso, i
+ * Senza problemi: Eevee contento e il team da esportare; con problemi che nessuna proposta risolve: Eevee sdraiato a terra, i
  * problemi e Migliora i set. `advice` null: i consigli si stanno calcolando (lo scheletro). `focus`: un problema scelto
  * nella testata di un'area (`nonce` cambia a ogni clic): la lista si filtra su quel problema e la carta grande si accende.
  */
@@ -626,7 +626,7 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
       <div className="coaching" ref={root}>
         {cleanLine}
         <div className="coach-empty is-stuck">
-          <EeveeMoment pose="thinking" />
+          <EeveeMoment pose="down" />
           <div className="coach-empty-text">
             <h3>{tr('coach.stuck.title')}</h3>
             <p>{tr('coach.stuck.text')}</p>
