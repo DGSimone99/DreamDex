@@ -420,8 +420,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
 
         {optionTip.anchor && (
           <FloatTip rect={optionTip.anchor.rect} tone="var(--accent)" className="tip-w-s fill-option-tip" side>
-            <TipHead lead={<TipGlyph icon={optionTip.anchor.key.icon} />} title={optionTip.anchor.key.label} />
-            <TipSec><p>{optionTip.anchor.key.note}</p></TipSec>
+            {/* La frase che spiega l'opzione è la riga sotto il titolo (niente corpo senza righe) */}
+            <TipHead lead={<TipGlyph icon={optionTip.anchor.key.icon} />} title={optionTip.anchor.key.label} sub={optionTip.anchor.key.note} />
           </FloatTip>
         )}
 

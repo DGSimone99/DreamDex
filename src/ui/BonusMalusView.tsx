@@ -4,7 +4,7 @@ import { typeName } from '../i18n/game';
 import type { Core } from '../engine/cores';
 import type { FormatRules } from '../engine/formatRules';
 import { bonusMalusCatalog, CORE_TRIO_POINTS, type CatalogEntry, type CatalogKey, type Redundancy, type TeamRating } from '../engine/rating';
-import { useT } from '../i18n/react';
+import { useLang, useT } from '../i18n/react';
 import { CoreArt } from './dashboard/CoreTriangle';
 import { DashCard } from './dashboard/DashCard';
 import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
@@ -81,7 +81,7 @@ export function Medal({ entry, className = '', style }: { entry: Pick<CatalogEnt
  * Una medaglia della griglia: la voce, il caso concreto e i punti. `short`: il caso corto, senza ripetizioni, da mostrare
  * solo se quello lungo (`details` con " · ") verrebbe tagliato; null se non c'è o non è più corto.
  */
-interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[]; short: string | null }
+interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[]; short: string | null; items: Redundancy[] }
 
 /**
  * Le voci dei Ruoli nel catalogo: nella scheda Bonus/Malus non ci sono (hanno i loro punti nella sottoscheda Ruoli, qui
@@ -117,7 +117,7 @@ function activeRows(catalog: CatalogEntry[], kind: CatalogEntry['kind'], items: 
     const own = items.filter(i => i.catalog === entry.key && i.points > 0);
     if (!own.length) return [];
     const details = own.map(i => detailOf(i, entry.name));
-    return [{ key: entry.key, entry, points: own.reduce((n, i) => n + i.points, 0), details, short: shortCase(entry.key, own, lang, details.join(' · ')) }];
+    return [{ key: entry.key, entry, points: own.reduce((n, i) => n + i.points, 0), details, short: shortCase(entry.key, own, lang, details.join(' · ')), items: own }];
   });
 }
 
@@ -159,6 +159,22 @@ function heldCount(core: Core, rows: { heldBy: string[] }[]): number {
 
 type HoldRow = { type: string; heldBy: string[] };
 
+/** Dei tipi in un tooltip come gruppo: la tessera e il nome di ognuno, uno accanto all'altro (Reggono/Passano, Nessuno regge). */
+function TypeList({ types, lang }: { types: string[]; lang: Lang }) {
+  return (
+    <div className="kot-list">
+      {types.map(type => (
+        <span key={type} className="kot-type">
+          <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />{typeName(type, lang)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Il tipo di una voce "Buco in Difesa" (la chiave "defenseHole:Fire"). */
+const holeType = (item: Redundancy) => (item.key?.startsWith('defenseHole:') ? item.key.slice('defenseHole:'.length) : null);
+
 /**
  * "Reggono N/18" nella testata del core: col mouse e col fuoco il tooltip DreamDex coi 18 tipi d'attacco come icone
  * (accese quelle che almeno uno dei tre regge, spente quelle che passano). Per i lettori di schermo la descrizione dice
@@ -183,18 +199,12 @@ function HeldTypes({ core, rows, lang, t }: { core: Core; rows: HoldRow[]; lang:
       <HiddenText id={descId}>{`${count}. ${description}`}</HiddenText>
       {tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="tip-w-m bm-held-tip">
-          <TipHead lead={<TipGlyph icon="shield" />} title={coreTypes(core, lang)} sub={t('catalogue.cores.heldTip')}
+          <TipHead lead={<TipGlyph icon="shield" />} title={coreTypes(core, lang)} sub={t('tip.cores.heldSub')}
             num={<>{held.length}<small>/{rows.length}</small></>} qualifier={t('tip.cores.heldQual')} />
           {/* I tipi con il loro nome, in due gruppi: quelli che almeno uno dei tre regge (verdi) e quelli che passano (rossi) */}
           {([['held', held, 'good'], ['through', open, 'bad']] as const).map(([key, list, tone]) => list.length > 0 && (
             <TipSec key={key} className={tone} label={t(key === 'held' ? 'tip.cores.held' : 'tip.cores.through')}>
-              <div className="kot-list">
-                {list.map(row => (
-                  <span key={row.type} className="kot-type">
-                    <img className="ti-sq" style={tileStyle(row.type)} src={typeIconUrl(row.type)} alt="" draggable={false} />{typeName(row.type, lang)}
-                  </span>
-                ))}
-              </div>
+              <TypeList types={list.map(row => row.type)} lang={lang} />
             </TipSec>
           ))}
         </FloatTip>
@@ -408,6 +418,10 @@ function useShortIfCut(ref: RefObject<HTMLElement | null>, hasShort: boolean, ke
  */
 function Entry({ row, index }: { row: ActiveRow; index: number }) {
   const { entry, details } = row;
+  const t = useT();
+  const lang = useLang();
+  // Buco in Difesa: i tipi che nessuno regge in un gruppo solo ("NESSUNO REGGE" e le tessere coi nomi), non una frase per tipo
+  const holes = entry.key === 'defenseHole' ? row.items.map(holeType).filter((x): x is string => !!x) : [];
   const tip = useFloatAnchor<true>();
   const caseRef = useRef<HTMLSpanElement>(null);
   const long = details.join(' · ');
@@ -429,7 +443,9 @@ function Entry({ row, index }: { row: ActiveRow; index: number }) {
         <FloatTip rect={tip.anchor.rect} tone={entry.kind === 'malus' ? 'var(--bad)' : 'var(--good)'} className="tip-w-m bm-row-tip">
           <TipHead lead={<Medal entry={entry} className="tip-medal" />} title={entry.name}
             num={<span className={entry.kind === 'malus' ? 'bad' : 'good'}>{pointsOf(row)}</span>} />
-          <TipSec>{details.map((detail, i) => <p key={i}><Typed text={detail} tip /></p>)}</TipSec>
+          {holes.length > 0 && holes.length === row.items.length
+            ? <TipSec className="bad" label={t('tip.bm.noneHolds')}><TypeList types={holes} lang={lang} /></TipSec>
+            : <TipSec>{details.map((detail, i) => <p key={i}><Typed text={detail} tip /></p>)}</TipSec>}
         </FloatTip>
       )}
     </li>

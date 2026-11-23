@@ -11,12 +11,26 @@ import { renderIt } from '../helpers/italian';
 import { it as dict } from '../../src/i18n/it';
 
 describe('righe dei tooltip (DESIGN.md, Tooltips)', () => {
-  it('il danno come il calcolatore di Showdown: la forbice dei tiri senza decimali, il numero solo se non c\'è', () => {
+  it('il danno come il calcolatore di Showdown: la forbice dei tiri senza decimali; senza forbice è una stima, "≈86"', () => {
     expect(dmgText(86, [79, 93])).toBe('79–93');
     expect(dmgText(100, [112, 132])).toBe('112–132');
     expect(dmgText(50, [50, 50])).toBe('50');
-    expect(dmgText(86, null)).toBe('86');
-    expect(dmgText(86)).toBe('86');
+    expect(dmgText(86, null)).toBe('≈86');
+    expect(dmgText(86)).toBe('≈86');
+  });
+
+  it('una stima ha il "≈" piccolo davanti, la forbice no; un colpo che non fa niente dice "immune" senza 0% né fascia', () => {
+    renderIt(<TipRows>
+      <TipRow title="Stima" value={<TipDmg pct={86} side="off" band="two" />} />
+      <TipRow title="Vero" value={<TipDmg pct={86} range={[79, 93]} side="off" band="two" />} />
+      <TipRow title="Immune" value={<TipDmg pct={0} side="def" band={null} immune />} />
+    </TipRows>);
+    const [est, exact, immune] = [...document.querySelectorAll('.tip-row')];
+    expect(est.querySelector('.tip-dmg-pct')).toHaveTextContent(/^≈86%$/);
+    expect(est.querySelector('.tip-dmg-pct > .tip-dmg-est')).toHaveTextContent('≈');
+    expect(exact.querySelector('.tip-dmg-est')).toBeNull();
+    expect(immune.querySelector('.tip-dmg')).toHaveTextContent(/^immune$/);
+    expect(immune.querySelector('.ko-badge, .tip-dmg-pct')).toBeNull();
   });
 
   it('una riga di danno: nome, danno in Text, la fascia in fondo a destra (il colore lo dà solo il badge)', () => {

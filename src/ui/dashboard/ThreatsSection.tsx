@@ -1,6 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { DashboardData, MetaThreat } from '../../engine/overviewDashboard';
-import { battleSpecies } from '../../engine/dex';
 import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
@@ -10,6 +9,7 @@ import { Icon } from '../icons';
 import { Sprite, typeColor } from '../Sprite';
 import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { DashCard, DashLink } from './DashCard';
+import { ThreatTip, threatType } from './ThreatTip';
 
 /**
  * Quante minacce stanno in fila: 5 se la carta è larga almeno THREATS_FIVE_FROM px (dentro, senza i margini), 4 sotto.
@@ -22,11 +22,6 @@ const NAME_PX = 13;
 const NAME_MIN_PX = 11;
 
 /** Le parole di una ragione: "Nessuno lo regge bene", "Lo regge solo Kingambit", "Lo manda KO solo Iron Valiant". */
-/** Il primo tipo della minaccia: dà il colore al fondo della carta e al tooltip. */
-function firstType(species: string): string {
-  return battleSpecies({ species, item: '' })?.types[0] ?? '';
-}
-
 function useReasonText() {
   const t = useT();
   return (threat: MetaThreat) => threat.reasons.map(r => (r.side === 'defense'
@@ -101,7 +96,7 @@ export function ThreatsSection({ threats, onView }: {
               {shown.map(x => (
                 <li key={x.species}>
                   <button type="button" className={`thr-card ${x.status}`} onClick={() => { tip.close(); open(x); }} {...tip.bind(x.species)}
-                    style={{ '--t1': typeColor(firstType(x.species)) } as CSSProperties}
+                    style={{ '--t1': typeColor(threatType(x.species)) } as CSSProperties}
                     aria-label={t('dash.threatLabel', { species: x.species, word: word(x), reasons: reasonText(x).join('. '), usage: usage(x) })} aria-describedby={goId}>
                     <Sprite species={x.species} size={48} />
                     <span className="thr-text" aria-hidden="true">
@@ -125,18 +120,8 @@ export function ThreatsSection({ threats, onView }: {
         {list.length > 0 && <span id={goId} hidden>{goText(t, place)}</span>}
       </div>
       {tip.anchor && tipThreat && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
-          <TipHead sprite={tipThreat.species} title={tipThreat.species} sub={t(tipThreat.status === 'open' ? 'tip.threat.open' : 'tip.threat.thin')}
-            num={formatPercent(lang, tipThreat.usage)} qualifier={t('dash.threatUsageWord')} />
-          <TipSec>
-            <ul className="thr-tip-why">
-              {reasonText(tipThreat).map((line, i) => (
-                <li key={line} className={tipThreat.reasons[i].by.length ? 'thin' : 'open'}>{line}</li>
-              ))}
-            </ul>
-          </TipSec>
-          <TipGo place={place} />
-        </FloatTip>
+        <ThreatTip rect={tip.anchor.rect} species={tipThreat.species} status={tipThreat.status} usage={tipThreat.usage} go={place}
+          reasons={reasonText(tipThreat).map((text, i) => ({ text, open: !tipThreat.reasons[i].by.length }))} />
       )}
       {moreTip.anchor && (
         <FloatTip rect={moreTip.anchor.rect} tone={hidden.some(x => x.status === 'open') ? 'var(--bad)' : 'var(--warn)'} className="thr-tip">

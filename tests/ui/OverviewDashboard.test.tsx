@@ -188,13 +188,14 @@ describe('Cruscotto della Panoramica', () => {
     expect(hits).toHaveLength(2);
     expect(hits[0]).toHaveTextContent('Great Tusk');
     expect(hits[0].querySelector('.ko-badge')).toHaveTextContent('2HKO');
-    // La riga di danno: il danno in Text (senza forbice qui: la casella non la porta), la fascia in fondo a destra
-    expect(hits[0].querySelector('.tip-dmg-pct')).toHaveTextContent(/^86%$/);
+    // La riga di danno: il danno in Text (senza forbice qui: la casella non la porta, quindi è una stima, "≈"), la fascia in fondo a destra
+    expect(hits[0].querySelector('.tip-dmg-pct')).toHaveTextContent(/^≈86%$/);
     expect(hits[0].querySelector('.tip-dmg > :last-child')).toHaveClass('ko-badge');
     expect(off.querySelector('.tip-head .tip-qual')).toHaveTextContent('copertura');
     expect(hits[1].querySelector('.ko-badge')).toHaveTextContent('3HKO');
     await user.unhover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
-    expect(document.querySelector('.ftip')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip')).toBeNull());
 
     await user.hover(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa:/ }));
     const def = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cov-tip.defense'); if (!el) throw new Error('no tip'); return el; });
@@ -516,7 +517,8 @@ describe('Riassunto', () => {
     // Senza abilità né mossa: chi si potenzia (qui un utente senza via)
     expect(rows[1]).toHaveTextContent('Zapdos');
     await user.unhover(row);
-    expect(document.querySelector('.ftip')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip')).toBeNull());
     await user.click(row);
     expect(onView).toHaveBeenCalledWith('roles');
   });

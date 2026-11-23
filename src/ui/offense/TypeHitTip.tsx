@@ -23,20 +23,17 @@ const RANK: Record<HoldBand, number> = { ohko: 3, two: 2, three: 1, four: 0 };
 export type CellHit = Pick<TargetHit, 'move' | 'plainPct' | 'setupPct' | 'oncePct' | 'teamPct' | 'teamVia' | 'teamMove' | 'comboPct' | 'comboMove'>
   & Partial<Pick<TargetHit, 'plainRange' | 'setupRange' | 'onceRange' | 'teamRange' | 'comboRange'>>;
 
-/**
- * La mossa di una riga, con lo stesso aspetto in ogni riga: la pillola nel colore del tipo, poi l'efficacia sul bersaglio a
- * parole ("superefficace ×2", "poco efficace ×½"; niente se neutra).
- */
-function HitMove({ set, move, defTypes }: { set: TeamSet; move: string | null; defTypes: readonly string[] }) {
+/** La mossa di una riga, con lo stesso aspetto in ogni riga: la pillola nel colore del tipo, intera (mai tagliata). */
+function HitMove({ set, move }: { set: TeamSet; move: string | null }) {
   const t = useT();
-  const raw = move ? moveAttackMultiplier(set, move, defTypes) : null;
-  const eff = effWord(t, raw, 'offense');
-  return (
-    <>
-      {move ? <MoveLine name={move} type={battleMoveType(set, move)} /> : <span className="tht-none">{t('tht.noMove')}</span>}
-      {eff && <span className="tip-eff">{eff}</span>}
-    </>
-  );
+  return move ? <MoveLine name={move} type={battleMoveType(set, move)} /> : <span className="tht-none">{t('tht.noMove')}</span>;
+}
+
+/** L'efficacia della mossa sul bersaglio a parole ("superefficace ×2", "poco efficace ×½"; niente se neutra). */
+function useHitEff(set: TeamSet, defTypes: readonly string[]) {
+  const t = useT();
+  const mult = (move: string | null) => (move ? moveAttackMultiplier(set, move, defTypes) : null);
+  return { effOf: (move: string | null) => effWord(t, mult(move), 'offense'), effMult: mult };
 }
 
 /**
@@ -51,6 +48,8 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
   const lang = useLang();
   const band = bandOf(hit.plainPct);
   const defTypes = type ? [type] : (battleSpecies({ species: target ?? '', item: '' })?.types ?? []);
+  const { effOf, effMult } = useHitEff(set, defTypes);
+  const plainEff = effOf(hit.move);
   // L'effetto di danza e meteo/campo sulla mossa di ogni riga (Att ×2 solo per una mossa fisica, Fuoco ×1,5 solo per il Fuoco...)
   const boosts = setupBoosts(set)?.boosts ?? null;
   const teamConds = (hit.teamVia ?? []).map(v => v.condition as string);
@@ -86,15 +85,15 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
       <TipSec>
         <TipRows>
           <TipRow className="tht-row" lead={<Sprite species={species} size={SPRITE_TIP_ROW} />} title={species}
-            sub={<HitMove set={set} move={hit.move} defTypes={defTypes} />}
-            value={<TipDmg pct={hit.plainPct} range={hit.plainRange} side="off" band={band} />} />
+            sub={<><HitMove set={set} move={hit.move} />{plainEff && <span className="tip-eff">{plainEff}</span>}</>}
+            value={<TipDmg pct={hit.plainPct} range={hit.plainRange} side="off" band={band} immune={!!hit.move && hit.plainPct === 0 && effMult(hit.move) === 0} />} />
         </TipRows>
       </TipSec>
       {extras.map(x => (
         <TipSec key={x.label} className="tht-extra"
           label={<>{(x.kind === 'setup' || x.kind === 'combo') && <i className="kob-tri" aria-hidden="true" />}{(x.kind === 'team' || x.kind === 'combo') && <i className="kob-tri team" aria-hidden="true" />}{x.label}</>}>
           <TipRows>
-            <TipRow className="tht-row" title={<HitMove set={set} move={x.move} defTypes={defTypes} />} sub={x.effect || undefined}
+            <TipRow className="tht-row" title={<HitMove set={set} move={x.move} />} sub={[effOf(x.move), x.effect].filter(Boolean).join(' · ') || undefined}
               value={<TipDmg pct={x.pct} range={x.range} side="off" band={x.band} />} />
           </TipRows>
         </TipSec>

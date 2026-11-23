@@ -128,6 +128,10 @@
 /* Nei tooltip la coda è più stretta: lo spazio va al nome */
 .ftip .mvp { --mvp-tail-w: 50px; }
 .ftip .mvp-tail { gap: 2px; padding: 0 var(--sp-3) 0 calc(var(--mvp-cut) + var(--sp-1)); }
+/* Nei tooltip (e nella scheda della Sfida vestita da tooltip) le scritte delle pillole piccole sui gradini dei tooltip: il
+   nome e la potenza in --tip-small, così il nome della mossa sta intero accanto al danno (fuori dai tooltip restano a 12px) */
+.ftip .mvp-sm, .duel-tip-card .mvp-sm { font-size: var(--tip-small); }
+.ftip .mvp-sm .mvp-tail, .duel-tip-card .mvp-sm .mvp-tail { font-size: var(--tip-small); }
 
 /* Il menu delle mosse è largo quanto la pillola: il nome (con la quota d'uso) sulla prima riga, categoria, potenza,
    precisione e tipo sulla seconda */

@@ -104,7 +104,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
         <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
         <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table"
           aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
-          onMouseLeave={() => { setHover(null); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
+          onMouseLeave={e => { setHover(null); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" />{rows.map(row => <col key={row.type} />)}</colgroup>
           <thead>
             <tr>
@@ -210,16 +210,17 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
 export function DefenseHitTip({ type, species, cell, mult }: { type: string; species: string; cell: { pct: number; physical: number; special: number; band: HoldBand; physicalRange?: DmgRange | null; specialRange?: DmgRange | null }; mult: number | null | undefined }) {
   const t = useT();
   const lang = useLang();
+  const eff = effWord(t, mult, 'defense');
   const side = (category: 'Physical' | 'Special', pct: number, range: DmgRange | null | undefined) => (
     <TipRow className="dht-side" lead={<CategoryIcon category={category} />} title={t(category === 'Physical' ? 'tip.physical' : 'tip.special')}
-      value={<TipDmg pct={pct} range={range} side="def" band={holdBandOf(pct)} />} />
+      value={<TipDmg pct={pct} range={range} side="def" band={holdBandOf(pct)} immune={mult === 0} />} />
   );
   return (
     <>
       <TipHead lead={<TipTypeIcon type={type} />} title={typeName(type as TypeName, lang)} badge={<KoBadge side="def" band={cell.band} />} />
       <TipSec>
         <TipRows>
-          <TipRow lead={<Sprite species={species} size={SPRITE_TIP_ROW} />} title={species} sub={effWord(t, mult, 'defense') ?? undefined} />
+          <TipRow lead={<Sprite species={species} size={SPRITE_TIP_ROW} />} title={species} sub={eff ? <span className="tip-eff">{eff}</span> : undefined} />
           {side('Physical', cell.physical, cell.physicalRange)}
           {side('Special', cell.special, cell.specialRange)}
         </TipRows>

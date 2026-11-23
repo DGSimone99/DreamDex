@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { gradeFor, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -72,6 +72,8 @@ describe('Velocità: una scheda a barre', () => {
     expect(gains.querySelector('.tip-sec-label')).toHaveTextContent('In più sulla barra');
     expect([...gains.querySelectorAll('.tip-row-val')].every(v => /^\+\d+$/.test(v.textContent!) && v.classList.contains('good'))).toBe(true);
     await user.unhover(barOf('Dragonite'));
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
     await user.hover(barOf('Iron Valiant'));
     const self = await screen.findByText((_, el) => !!el?.classList.contains('self') && !!el.textContent?.includes('Iron Valiant'));
     expect(self.querySelector('.item-icon')).not.toBeNull();
@@ -257,6 +259,8 @@ describe('Velocità: una scheda a barre', () => {
     expect(rows()[1].querySelector('.tip-row-sub')).toHaveTextContent(/^Shell Smash, Agility, Rock Polish e altre \d+$/);
     expect(rows()[3].querySelector('.tip-row-sub')).toHaveTextContent(/^Booster Energy, Protosynthesis, Quark DriveSolo se la Velocità è la più alta$/);
     await user.unhover(within(panel).getByRole('button', { name: 'Potenziamenti' }));
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
     await user.hover(within(panel).getByRole('button', { name: 'Controllo del team' }));
     // I controlli in due gruppi (Lunghi, Brevi), ognuno col suo nome; la regola tiene solo l'eccezione comune
     await waitFor(() => expect([...document.querySelectorAll('.ftip.gat .tip-sec-label')].map(l => l.textContent)).toEqual(['Lunghi', 'Brevi, contano meno']));

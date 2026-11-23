@@ -38,7 +38,19 @@ export const sourceName = (source: string, lang: Lang): string => source.split('
 const hp = (x: number) => Math.round(100 * x);
 
 /** Una riga del recupero: la frase intera (per lo screen reader), e per il tooltip il nome, i PS su 100 col segno e la nota. */
-export interface SustainWord { text: string; tone: 'gain' | 'loss' | 'none'; label: string; value?: string; note?: string }
+export interface SustainWord { text: string; tone: 'gain' | 'loss' | 'none'; label: string; value?: string; note?: string; n?: number }
+
+/**
+ * La nota di Levitoroccia a metà danno, in una frase intera: "Metà danno: Rapigiro di Great Tusk toglie gli hazard" (la
+ * mossa o l'abilità nella lingua scelta, il Pokémon che la porta dopo "di"); senza Pokémon "Metà danno: Rapigiro toglie gli
+ * hazard".
+ */
+export const rocksHalvedText = (t: ReturnType<typeof useT>, by: string, lang: Lang): string => {
+  const owner = /^(.*) \(([^()]*)\)$/.exec(by);
+  return owner
+    ? t('ddetail.sus.rocksHalved', { move: anyGameName(owner[1], lang), by: owner[2] })
+    : t('ddetail.sus.rocksHalvedSelf', { move: sourceName(by, lang) });
+};
 
 /**
  * Il recupero e le perdite di un membro in parole e numeri semplici (PS su 100, niente %): una riga per quello che
@@ -53,15 +65,15 @@ function useSustainWords() {
     // "(dimezzata: Defog (Corviknight) toglie gli hazard)", con la minuscola dentro la frase
     const loss = (n: number, from: string, note?: string) => out.push({
       tone: 'loss', text: `${t('ddetail.share.loss', { n, from })}${note ? ` (${note.charAt(0).toLocaleLowerCase()}${note.slice(1)})` : ''}`,
-      label: t('ddetail.share.lossLabel', { from }), value: signed(-n), note,
+      label: t('ddetail.share.lossLabel', { from }), value: signed(-n), note, n: -n,
     });
     if (parts.recovery > 0) {
       const from = parts.sources.map(name).join(' + ');
       const n = hp(parts.recovery);
       out.push({ tone: 'gain', text: t(parts.halved ? 'ddetail.share.gainHalved' : 'ddetail.share.gain', { n, from }),
-        label: t('ddetail.share.gainLabel', { from }), value: signed(n), note: parts.halved ? t('ddetail.share.halvedNote') : undefined });
+        label: t('ddetail.share.gainLabel', { from }), value: signed(n), note: parts.halved ? t('ddetail.share.halvedNote') : undefined, n });
     }
-    if (parts.rocks > 0) loss(hp(parts.rocks), name('Stealth Rock'), parts.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: name(parts.rocksHalvedBy) }) : undefined);
+    if (parts.rocks > 0) loss(hp(parts.rocks), name('Stealth Rock'), parts.rocksHalvedBy ? rocksHalvedText(t, parts.rocksHalvedBy, lang) : undefined);
     // Le altre perdite fonte per fonte (Life Orb, Flame Orb, le mosse che costano PS); senza dettaglio, in una riga sola
     const losses = parts.losses.filter(l => hp(l.loss) > 0);
     if (losses.length) for (const l of losses) loss(hp(l.loss), name(l.source));
@@ -71,12 +83,22 @@ function useSustainWords() {
   };
 }
 
+/** Il netto dei PS su 100 delle righe del recupero (la somma dei numeri che si leggono), null senza righe con un numero. */
+export const sustainNet = (words: SustainWord[]): number | null =>
+  (words.some(w => w.n !== undefined) ? words.reduce((a, w) => a + (w.n ?? 0), 0) : null);
+
 /**
  * Il tooltip di quanto porta un membro alla Difesa: la sprite del membro, il totale, i tre pezzi (Coverage tipi, Coverage
- * meta e Recupero) uno per riga, e sotto, una riga per fonte, quanto recupera e quanto perde (PS su 100).
+ * meta e Recupero) uno per riga, che sommati fanno il totale; sotto il Recupero il netto dei PS ("Netto −2 PS su 100", e
+ * quando i punti sono 0 perché è poco, "meno di un punto"); poi una riga per fonte, quanto recupera e quanto perde (PS su
+ * 100), e con più di una fonte il netto in fondo, così i numeri tornano a vista.
  */
 function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShare; words: SustainWord[]; meta: boolean }) {
   const t = useT();
+  const net = sustainNet(words);
+  const netSub = net === null ? undefined
+    : t(share.sustain === 0 && net !== 0 ? 'ddetail.share.netLess' : 'ddetail.share.net', { n: signed(net) });
+  const sourced = words.filter(w => w.n !== undefined).length;
   return (
     <>
       <TipHead sprite={who} title={who} sub={t('ddetail.shareSub')} num={<span className={signTone(share.points)}>{signed(share.points)}</span>} />
@@ -84,13 +106,14 @@ function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShar
         <TipRows className="dsh-rows">
           <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.types)} tone={signTone(share.types)} />
           {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.meta)} tone={signTone(share.meta)} />}
-          <TipRow className="dsh-row" lead={<i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />} title={t('ddetail.sustain')} value={signed(share.sustain)} tone={signTone(share.sustain)} />
+          <TipRow className="dsh-row" lead={<i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />} title={t('ddetail.sustain')} sub={netSub} value={signed(share.sustain)} tone={signTone(share.sustain)} />
         </TipRows>
       </TipSec>
       {/* Quanto recupera e quanto perde, una fonte per riga, i PS su 100 a destra (verdi se recupera, rossi se perde) */}
       <TipSec label={t('ddetail.share.hp')}>
         <TipRows className="dsh-lines">
           {words.map((w, k) => <TipRow key={k} title={w.label} sub={w.note} value={w.value} tone={w.tone === 'gain' ? 'good' : w.tone === 'loss' ? 'bad' : undefined} />)}
+          {sourced > 1 && net !== null && <TipRow className="dsh-net" title={t('ddetail.share.netLabel')} value={signed(net)} tone={signTone(net)} />}
         </TipRows>
       </TipSec>
     </>

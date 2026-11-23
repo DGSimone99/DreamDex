@@ -171,7 +171,7 @@ const SCENES: Scene[] = [
     { id: 'dsh-tip', tip: '.ftip.dsh-tip', trigger: '.og-share.dsh', src: 'defense/DefenseGeneral.tsx (dsh-tip)', where: 'Difesa › Generale: hover a member share (%)' },
     { id: 'kot-hold', tip: '.ftip.kot', trigger: '.kob.hb', src: 'defense/HoldBars.tsx (kot, bar piece)', where: 'Difesa › Generale: hover a hold-bar piece' },
     { id: 'kot-hold-count', tip: '.ftip.kot', trigger: '.kob-count', src: 'defense/HoldBars.tsx (kot, countTip)', where: 'Difesa › Generale: hover a hold count' },
-    { id: 'area-chip', tip: '.ftip.area-chip-tip', trigger: '.area-chip', src: 'ProblemPill.tsx (ProblemChip in AreaView)', where: 'Difesa: hover a problem pill in the area head' },
+    { id: 'area-chip', tip: '.ftip.area-chip-tip, .ftip.thr-tip', trigger: '.area-chip', src: 'ProblemPill.tsx (ProblemChip in AreaView; a threat: ThreatTip)', where: 'Difesa: hover a problem pill in the area head' },
     { id: 'kot-more-problems', tip: '.ftip.area-more-tip', trigger: '.area-chips-more', src: 'ProblemPill.tsx (MoreProblems)', where: 'Difesa: hover "+N" problems' },
     { id: 'gat-guide-ask', tip: '.ftip.gat', trigger: 'th:nth-child(2) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, gat) + defense/HoldBars.tsx TypeAttackers', where: 'Difesa › Generale: hover the Tipi head "?"' },
     { id: 'gat-def-meta', tip: '.ftip.gat', trigger: 'th:nth-child(3) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, MetaTargets shield)', where: 'Difesa › Generale: hover the Meta head "?"' },

@@ -30,7 +30,8 @@ describe('Velocità nell’editor', () => {
     expect(tip.children).toHaveLength(0);
     expect(document.querySelector('.ftip.speed .tip-sub')).toHaveTextContent('Velocità vera, coi set più usati del meta');
     await user.unhover(line);
-    expect(document.querySelector('.ftip.speed')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip.speed')).toBeNull());
     const evs = within(team).getByRole('group', { name: 'Statistiche' });
     await user.clear(within(evs).getByLabelText('VEL'));
     expect(within(team).getByTestId('final-spe')).toHaveTextContent(/^264$/); // Jolly, 0 EV

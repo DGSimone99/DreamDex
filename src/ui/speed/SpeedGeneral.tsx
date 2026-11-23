@@ -219,7 +219,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
                 const move = getMove(name);
                 // Scivolerba ha priorità 0 sulla carta: qui c'è perché col Campo Erboso arriva a +1
                 return (
-                  <TipRow key={name} title={gameName('move', name, lang)} value={`+${Math.max(1, move?.priority ?? 1)}`}
+                  <TipRow key={name} title={gameName('move', name, lang)} value={<span className="mtip-prio">{`+${Math.max(1, move?.priority ?? 1)}`}</span>}
                     lead={move && <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />} />
                 );
               })}

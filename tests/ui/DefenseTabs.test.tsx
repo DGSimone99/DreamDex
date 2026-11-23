@@ -190,6 +190,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(hit).toHaveTextContent(`Fisica${dmgText(c.physical, r.physicalRange)}%${HOLD[holdBand(c.physical / 100)]}`);
     expect(hit).toHaveTextContent(`Speciale${dmgText(c.special, r.specialRange)}%${HOLD[holdBand(c.special / 100)]}`);
     await user.unhover(cell);
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
     const head = within(table).getAllByRole('columnheader')[1];
     expect(head).toHaveTextContent(/Att \d+, AttSp \d+/);
     await user.hover(head);

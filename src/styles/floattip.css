@@ -4,9 +4,10 @@
 
 /* Tooltip DreamDex (FloatTip): pannello nel body, alone nel colore --tc (es. il tipo), fondo sfumato e ombra profonda per
    staccarlo dallo sfondo; testata a strisce con l'icona tonda, punta verso la casella di partenza. Solo a vista: il
-   testo per gli screen reader sta sulla casella. */
+   testo per gli screen reader sta sulla casella. Si lascia raggiungere col mouse (WCAG 1.4.13: resta aperto finché il
+   mouse sta sulla casella o sul tooltip, useFloatAnchor); il fumetto piccolo (.hint) no. */
 .ftip {
-  position: fixed; z-index: 1000; width: var(--tip-m); max-width: calc(100vw - 16px); pointer-events: none;
+  position: fixed; z-index: 1000; width: var(--tip-m); max-width: calc(100vw - 16px);
   color: var(--text); font-size: var(--tip-body); line-height: 1.3;
   background:
     radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tc) 16%, transparent), transparent 70%),
@@ -124,6 +125,8 @@
 .tip-sec.good > .tip-sec-label { color: var(--good); }
 .tip-sec.bad > .tip-sec-label { color: var(--bad); }
 .tip-sec-label small { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0; text-transform: none; }
+/* Il netto dei PS in fondo alle fonti del recupero (la quota di un membro in Difesa): sotto un filo, come una somma */
+.tip-row.dsh-net { padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); }
 /* Le tre larghezze, per i tooltip fatti con la testata unica */
 .ftip.tip-w-s { width: var(--tip-s); }
 .ftip.tip-w-m { width: var(--tip-m); }
@@ -146,6 +149,10 @@
 .ko-badge.def.two { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
 .ko-badge.def.three { background: color-mix(in srgb, var(--good) 42%, var(--panel)); border-color: color-mix(in srgb, var(--good) 85%, transparent); }
 .ko-badge.def.four, .ko-badge.def.held { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
+/* I colpi per il KO come fasce (KoBands, la Sfida): un badge, o due attaccati con la barra ("OHKO/2HKO") */
+.ko-bands { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+.ko-bands > i { font: 600 var(--tip-small)/1 var(--ui); font-style: normal; color: var(--muted); }
+.ko-bands.none { font: 600 var(--tip-body)/1 var(--ui); color: var(--muted); }
 
 /* Le righe di danno (TipDmg), una forma sola in ogni tooltip: nome a sinistra, il danno in Text (la forbice dei tiri
    "79–93%", numeri tabellari) e in fondo a destra la fascia dei colpi; il colore lo dà solo il badge */
@@ -153,13 +160,20 @@
 .tip-dmg-pct { min-width: 64px; font: 700 italic var(--tip-title)/1 var(--display); font-variant-numeric: tabular-nums; text-align: right; color: var(--text); }
 .tip-dmg-pct small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--tip-qual-ink); }
 .tip-dmg .ko-badge { min-width: 52px; justify-content: center; }
-.tip-row-sub:has(.mvp), .tip-row-title:has(.mvp) { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+/* La stima (un numero che non è un colpo solo): "≈" piccolo e spento come il "%", le forbici restano senza segno */
+.tip-dmg-pct .tip-dmg-est { margin-right: 1px; }
+/* Il colpo che non fa niente: la parola spenta al posto di "0%" e della fascia (immune in Difesa, verde verso Text) */
+.tip-dmg-word { font: 500 var(--tip-small)/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
+.tip-dmg-word.def { color: color-mix(in srgb, var(--good) 40%, var(--text)); }
+.tip-row-title:has(.mvp) { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+/* Sotto il nome la mossa intera sulla sua riga (mai tagliata) e l'efficacia a parole sotto, mai accanto alla pillola */
+.tip-row-sub:has(.mvp) { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 /* Un tipo nelle righe e nelle frasi: la tessera da 24 e il nome in Text */
 .tip-type { display: inline-flex; align-items: center; gap: var(--sp-2); vertical-align: middle; font-weight: 600; color: var(--text); }
 .tip-type-tile { flex: none; width: var(--ti-head); height: var(--ti-head); }
 .tip-row-sub .tip-type, .tip-sec > p .tip-type { margin-block: -3px; }
-/* L'efficacia accanto alla mossa, a parole ("debole ×2", "superefficace ×2") */
-.tip-eff { flex: none; font: 600 var(--tip-small)/1 var(--ui); color: var(--muted); white-space: nowrap; }
+/* L'efficacia a parole ("debole ×2", "superefficace ×2", "immune"): sempre nella riga sotto il nome, sotto la mossa */
+.tip-eff { flex: none; font: 600 var(--tip-small)/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
 /* La mossa: icona tonda e nome nel colore del suo tipo, schiarito per leggersi sul fondo scuro, con un alone leggerissimo;
    poi simbolo della categoria e potenza in Faint */
 /* Mosse nei tooltip: pillole (move-pill.css), mai più larghe della riga */
@@ -300,8 +314,9 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 /* La riga del membro ("tu") in azzurro, l'unico ciano della scala; il numero in testata resta in Text */
 .stip-rung.self .stip-speed { color: var(--accent-ink); }
 .tip-sec.stip-ladder { gap: 0; }
-.stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 var(--sp-4); padding: 3px var(--sp-3); font-size: var(--tip-body); }
-.stip-rung .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
+/* Righe strette (la scala intera sta sotto i ~440px anche coi guadagni): la sprite da 40 entra nel bordo trasparente */
+.stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 var(--sp-4); padding: 1px var(--sp-3); font-size: var(--tip-body); }
+.stip-rung .sprite { display: block; margin: -7px -2px; image-rendering: pixelated; }
 .stip-name { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
 .stip-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Il nome come sulle carte (FormeName) nel carattere della riga e del titolo: la forma piccola accanto, il simbolo Mega */
@@ -316,8 +331,11 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .stip-rung.ahead .stip-speed { color: var(--bad); }
 .stip-rung.behind .stip-speed { color: var(--good); }
 .stip-rung.tie .stip-speed { color: var(--warn); }
-.stip-rung.self { margin: 3px 0; padding-block: var(--sp-2); background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 4%, transparent)); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+.stip-rung.self { margin: 2px 0; padding-block: 3px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 4%, transparent)); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
 .stip-rung.self .stip-name { font: 600 var(--tip-title)/1.1 var(--display); }
+/* I guadagni sotto la scala, una riga ciascuno: il nome e accanto, piccolo, cos'è e chi lo porta (va a capo se è lungo) */
+.stip-gains .tip-rows { gap: var(--sp-2); }
+.stip-gains .tip-row-main { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0 var(--sp-3); }
 .stip-item { grid-column: 3; padding: 1px var(--sp-4) 1px var(--sp-3); font: 700 var(--tip-small)/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .stip-item.tie { color: var(--warn); }
 .stip-empty { margin: 0; color: var(--muted); }
@@ -451,6 +469,7 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
   background: var(--ground); box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); font: 500 var(--fs-caption)/1.35 var(--ui); white-space: pre-line;
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
+.ftip.hint { pointer-events: none; }
 /* Uno solo alla volta: con un tooltip DreamDex aperto il fumetto piccolo non si vede (anche se si apre per primo) */
 body:has(.ftip:not(.hint)) .ftip.hint { display: none; }
 

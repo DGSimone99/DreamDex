@@ -144,7 +144,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         <div className="ad-scroll">
           <p id={summaryId} hidden>{open.length ? t('sr.cm.defense', { list: open.join(', ') }) : t('sr.cm.defenseNone')}</p>
           <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
-            onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
+            onMouseLeave={e => { hover.table.onMouseLeave(); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
             <colgroup>
               <col className="def-col-mon" />
               {shown.map(r => <col key={r.species} />)}
@@ -225,7 +225,7 @@ export function ThreatHitTip({ row, name, hit, mult, koHit }: { row: Row; name: 
           <TipRow className="tht-row" lead={<Sprite species={name} size={SPRITE_TIP_ROW} />} title={name}
             sub={<>{move ? <MoveLine name={move} type={battleMoveType(row.set, move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}{eff && <span className="tip-eff">{eff}</span>}</>}
             value={hit === 'ko' ? (koHit?.pct ? <TipDmg pct={koHit.pct} range={koHit.range} side="def" band="ohko" /> : <KoBadge side="def" band="ohko" />)
-              : <TipDmg pct={hit.pct} range={hit.range} side="def" band={band} />} />
+              : <TipDmg pct={hit.pct} range={hit.range} side="def" band={band} immune={mult === 0} />} />
         </TipRows>
       </TipSec>
     </>

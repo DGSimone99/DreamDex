@@ -86,7 +86,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       <div className="ad-scroll">
         <p id={summaryId} hidden>{holeNames.length ? t('sr.types.offense', { list: holeNames.join(', ') }) : t('sr.types.offenseNone')}</p>
         <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
-          onMouseLeave={() => { setHover(null); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
+          onMouseLeave={e => { setHover(null); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" /></colgroup>
           <thead>
             <tr>
@@ -130,7 +130,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                     const bothUp = !!found && !lifted && !teamUp && found.comboPct !== null && rank(found.comboPct) > rank(found.plainPct);
                     return (
                       <td key={type} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : ''}${lifted || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
-                        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.close(); }} onMouseLeave={tip.close}
+                        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.leave(); }} onMouseLeave={tip.close}
                         {...focusAt(slot, i, hit ? { slot, type } : undefined)}>
                         {hit && <>
                           <span className="ct-num">{hit.pct}<i>%</i></span>

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { typeName } from '../i18n/game';
-import { useLang } from '../i18n/react';
-import { dmgText, type DmgRange } from './dmgText';
+import { useLang, useT } from '../i18n/react';
+import { DMG_EST, dmgText, type DmgRange } from './dmgText';
 import { Icon, type IconName } from './icons';
 import { KoBadge, type KoBadgeBand, type KoSide } from './KoBadge';
 import { Sprite } from './Sprite';
@@ -87,13 +87,19 @@ export function TipRow({ lead, title, sub, value, tone, className = '' }: {
 
 /**
  * Il valore di una riga di danno, uguale in ogni tooltip (vedi DESIGN.md, "Tooltips"): il danno in Text, numeri tabellari,
- * la forbice dei tiri ("79–93%", dmgText) quando c'è, e in fondo a destra la fascia dei colpi (KoBadge): il colore lo dà
- * solo il badge, mai il numero. Senza fascia (`band` null) solo il numero.
+ * la forbice dei tiri ("79–93%", dmgText) quando è il colpo vero, se no la stima col segno "≈" piccolo e spento ("≈79%"),
+ * e in fondo a destra la fascia dei colpi (KoBadge): il colore lo dà solo il badge, mai il numero. Senza fascia (`band`
+ * null) solo il numero. `immune`: il colpo non fa niente (moltiplicatore 0): la parola spenta al posto di "0%" e della
+ * fascia ("immune" in Difesa, "nessun effetto" in Offesa).
  */
-export function TipDmg({ pct, range, side, band }: { pct: number; range?: DmgRange | null; side: KoSide; band: KoBadgeBand | null }) {
+export function TipDmg({ pct, range, side, band, immune = false }: { pct: number; range?: DmgRange | null; side: KoSide; band: KoBadgeBand | null; immune?: boolean }) {
+  const t = useT();
+  if (immune) return <span className="tip-dmg"><span className={`tip-dmg-word ${side}`}>{t(side === 'def' ? 'eff.immune' : 'eff.none')}</span></span>;
+  const text = dmgText(pct, range);
+  const est = text.startsWith(DMG_EST);
   return (
     <span className="tip-dmg">
-      <b className="tip-dmg-pct">{dmgText(pct, range)}<small>%</small></b>
+      <b className="tip-dmg-pct">{est && <small className="tip-dmg-est">{DMG_EST}</small>}{est ? text.slice(DMG_EST.length) : text}<small>%</small></b>
       {band && <KoBadge side={side} band={band} />}
     </span>
   );

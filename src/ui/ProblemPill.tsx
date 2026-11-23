@@ -11,6 +11,7 @@ import { SPRITE_TIP_ROW } from './spriteSizes';
 import { TipGlyph, TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from './TipHead';
 import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
+import { ThreatTip } from './dashboard/ThreatTip';
 
 /** I tipi colorati; `plain`: senza colore (nella pillola l'icona del tipo è già davanti). */
 export function ProblemText({ text, plain = false }: { text: string; plain?: boolean }) {
@@ -121,17 +122,18 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
         : <span tabIndex={0} {...props}>{content}</span>}
       {/* Il tooltip è solo visivo: le stesse parole ai lettori di schermo, e dove porta il pulsante */}
       <HiddenText id={descId}>{[full, onOpen ? t('overview.fix.go') : ''].filter(Boolean).join(' · ')}</HiddenText>
-      {tip.anchor && (
+      {/* Una minaccia del meta: lo stesso tooltip delle Minacce della Panoramica (ThreatTip: la sprite, "Minaccia scoperta"
+          sotto il nome, l'uso nel meta, la ragione "Nessuno lo regge bene" o "Nessuno lo manda KO in due colpi") */}
+      {tip.anchor && subject.species && (
+        <ThreatTip rect={tip.anchor.rect} species={subject.species} status="open" usage={problem.usage}
+          reasons={[{ text: t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone'), open: true }]}
+          go={onOpen ? t('analysis.view.coaching') : undefined} />
+      )}
+      {tip.anchor && !subject.species && (
         <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="tip-w-m area-chip-tip">
-          {/* Una minaccia del meta come il fumetto delle Minacce della Panoramica: la sprite, "Minaccia scoperta" sotto il
-              nome, nel corpo la ragione ("Nessuno lo regge bene", "Nessuno lo manda KO in due colpi") */}
-          <TipHead sprite={subject.species} lead={subject.lead} title={subject.title}
-            sub={subject.species ? t('tip.threat.open') : subject.plain ? undefined : t(problem.severity === 'serious' ? 'tip.problem.serious' : 'tip.problem.minor')} />
-          <TipSec>
-            {subject.species
-              ? <ul className="thr-tip-why"><li className="open">{t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone')}</li></ul>
-              : <p><Typed text={full} tip /></p>}
-          </TipSec>
+          <TipHead lead={subject.lead} title={subject.title}
+            sub={subject.plain ? undefined : t(problem.severity === 'serious' ? 'tip.problem.serious' : 'tip.problem.minor')} />
+          <TipSec><p><Typed text={full} tip /></p></TipSec>
           {onOpen && <TipGo place={t('analysis.view.coaching')} />}
         </FloatTip>
       )}

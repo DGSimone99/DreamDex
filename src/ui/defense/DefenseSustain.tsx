@@ -2,7 +2,7 @@ import type { TeamDefense } from '../../engine/defense';
 import { useLang, useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
-import { signed, sourceName } from './DefenseGeneral';
+import { rocksHalvedText, signed, sourceName } from './DefenseGeneral';
 
 const pct = (x: number) => `${Math.round(100 * x)}%`;
 /** Metà barra del netto: un netto di ±50% (SUSTAIN_FULL) arriva al bordo. */
@@ -47,7 +47,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
           <tbody>
             {defense.members.map((m, i) => {
               const p = m.sustainParts;
-              const halvedBy = p.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: sourceName(p.rocksHalvedBy, lang) }) : null;
+              const halvedBy = p.rocksHalvedBy ? rocksHalvedText(t, p.rocksHalvedBy, lang) : null;
               const net = p.recovery - p.rocks - p.itemLoss;
               return (
                 <tr key={`${m.species}-${i}`}>

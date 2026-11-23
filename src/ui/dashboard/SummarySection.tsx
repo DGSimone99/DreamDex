@@ -53,7 +53,7 @@ const Tag = ({ color, children }: { color: string; children: ReactNode }) => (
  * finiscono nel "+N" (useFit), mai tagliate a metà; il "+N" sta accanto al titolo, così non toglie una riga alle altre.
  * Senza righe, la parola `empty` attenuata.
  */
-function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, moreTip, className = '' }: {
+function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, moreTip, moreTipClass, className = '' }: {
   title: string; empty: string;
   rows: T[];
   rowKey: (row: T) => string;
@@ -69,6 +69,8 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
   onMore?: () => void;
   /** Se c'è: il "+N" è colorato e al passaggio apre il tooltip DreamDex con le righe nascoste (questo contenuto). */
   moreTip?: (hidden: T[]) => ReactNode;
+  /** La larghezza del tooltip del "+N" (di solito M; L se dentro c'è un core, come il tooltip del core). */
+  moreTipClass?: (hidden: T[]) => string;
   className?: string;
 }) {
   const tip = useFloatAnchor<true>();
@@ -97,7 +99,7 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
         )
         : <span className={`sum-sec-more${tipped}`} {...hover}><More n={hidden} label={more(hidden, rows.slice(shown))} plain={!!moreTip} /></span>)}
       {moreTip && hidden > 0 && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="syn-more tip-w-m">{moreTip(rows.slice(shown))}</FloatTip>
+        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className={`syn-more ${moreTipClass?.(rows.slice(shown)) ?? 'tip-w-m'}`}>{moreTip(rows.slice(shown))}</FloatTip>
       )}
     </div>
   );
@@ -191,8 +193,8 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
 
 /**
  * Il tooltip DreamDex del "+N" delle Sinergie: le sinergie che non stanno nella card, con le righe degli altri tooltip
- * (sprite da 40 senza sovrapposizioni, nome, sotto cosa fa; mai un paragrafo). Una sola: la testata dice cos'è (il titolo
- * e il genere come targhetta a destra, "Core", come il tooltip del core); più di una: "Altre N sinergie" e una sezione per
+ * (sprite da 40 senza sovrapposizioni, nome, sotto cosa fa; mai un paragrafo). Un core solo: il tooltip del core (CoreTip,
+ * larghezza L); un legame solo: la testata dice cos'è (il titolo e il genere come targhetta a destra); più di una: "Altre N sinergie" e una sezione per
  * sinergia, etichettata col genere e il titolo. Un core: una riga per lato (CoreSideRows, "Great Tusk · para Elettro");
  * un legame: una riga per membro, la frase sotto il primo.
  */
@@ -208,6 +210,8 @@ function MoreSynergies({ items, label, taken }: { items: { syn: Synergy; view: S
     ));
   if (items.length === 1) {
     const [only] = items;
+    // Un core: lo stesso tooltip del core (CoreTip: sotto il titolo cosa misura la fascia, le righe dei lati, larghezza L)
+    if (only.syn.core) return <CoreTip core={only.syn.core} taken={taken} />;
     return (
       <>
         <TipHead lead={<TipGlyph icon={only.syn.core ? 'shield' : 'chain'} />} title={only.view.title}
@@ -445,7 +449,8 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
               ? { onMouseEnter: (e: { currentTarget: Element }) => coreTip.open(syn.core!, e.currentTarget), onMouseLeave: coreTip.close } : undefined;
             return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
-          moreTip={hidden => <MoreSynergies items={hidden.map(syn => ({ syn, view: synergyView(syn) }))} label={count('sum.moreSyn', hidden.length)} taken={summary.typedTaken ?? {}} />} />
+          moreTip={hidden => <MoreSynergies items={hidden.map(syn => ({ syn, view: synergyView(syn) }))} label={count('sum.moreSyn', hidden.length)} taken={summary.typedTaken ?? {}} />}
+          moreTipClass={hidden => (hidden.some(syn => syn.core) ? 'tip-w-l' : 'tip-w-m')} />
       </div>
       {bmRoom && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {monTip.anchor && setOf(monTip.anchor.key.name) && (

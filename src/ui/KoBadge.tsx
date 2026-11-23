@@ -14,6 +14,31 @@ export type KoBadgeBand = HoldBand | 'held';
 
 export const KO_TAG: Record<KoBadgeBand, string> = { ohko: 'OHKO', two: '2HKO', three: '3HKO', four: '4HKO+', held: '3HKO+' };
 
+/** La fascia di un numero di colpi per il KO (1 OHKO, 2 2HKO, 3 3HKO, da 4 4HKO+); senza colpi (nessun danno) niente. */
+export const bandOfHits = (n: number): HoldBand | null =>
+  (!Number.isFinite(n) || n <= 0 ? null : n <= 1 ? 'ohko' : n === 2 ? 'two' : n === 3 ? 'three' : 'four');
+
+/**
+ * I colpi per il KO come fasce (la Sfida, i suoi effetti sul meta): `fewest` col tiro migliore, `most` quelli sicuri. Se
+ * cadono nella stessa fascia un badge solo, se no le due fasce attaccate con una barra ("OHKO/2HKO", un colpo o due).
+ * Senza colpi (nessun danno) un trattino spento.
+ */
+export function KoBands({ side, fewest, most }: { side: KoSide; fewest: number; most?: number }) {
+  const a = bandOfHits(fewest);
+  const b = most === undefined || !Number.isFinite(most) ? a : bandOfHits(most);
+  if (!a || !b) return <span className="ko-bands none">—</span>;
+  if (a === b) return <span className="ko-bands"><KoBadge side={side} band={a} /></span>;
+  return <span className="ko-bands"><KoBadge side={side} band={a} /><i>/</i><KoBadge side={side} band={b} /></span>;
+}
+
+/** Le stesse fasce in parole, per i lettori di schermo ("OHKO/2HKO", "—"). */
+export const koBandsText = (fewest: number, most?: number): string => {
+  const a = bandOfHits(fewest);
+  const b = most === undefined || !Number.isFinite(most) ? a : bandOfHits(most);
+  if (!a || !b) return '—';
+  return a === b ? KO_TAG[a] : `${KO_TAG[a]}/${KO_TAG[b]}`;
+};
+
 export function KoBadge({ side, band, n, className = '' }: { side: KoSide; band: KoBadgeBand; n?: ReactNode; className?: string }) {
   return (
     <span className={`ko-badge ${side} ${band}${className ? ` ${className}` : ''}`}>

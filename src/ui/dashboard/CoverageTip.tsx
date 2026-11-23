@@ -78,7 +78,7 @@ export function DefenseTip({ cell }: { cell: TypeCell }) {
             <TipRows className="cov-rows">
               {members.map(m => (
                 <TipRow key={m.species} className="cov-mon" lead={<Sprite species={m.species} size={SPRITE_TIP_ROW} />} title={m.species}
-                  value={m.pct !== null ? <TipDmg pct={m.pct} range={m.range} side="def" band={bandOf(m.pct)} /> : undefined} />
+                  value={m.mult === 0 ? <TipDmg pct={0} side="def" band={null} immune /> : m.pct !== null ? <TipDmg pct={m.pct} range={m.range} side="def" band={bandOf(m.pct)} /> : undefined} />
               ))}
             </TipRows>
           </TipSec>

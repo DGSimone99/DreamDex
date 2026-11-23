@@ -141,7 +141,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
       <div className="ad-scroll">
         <p id={summaryId} hidden>{open.length ? t('sr.cm.offense', { list: open.join(', ') }) : t('sr.cm.offenseNone')}</p>
         <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
-          onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
+          onMouseLeave={e => { hover.table.onMouseLeave(); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
           <colgroup>
             <col className="def-col-mon" />
             {shown.map(r => <col key={r.species} />)}
