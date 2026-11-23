@@ -172,6 +172,21 @@ describe('telefono: Analisi senza Panoramica', () => {
       expect(within(panel()).queryByRole('dialog', { name: 'Voto delle aree' })).toBeNull();
       // Niente link "Panoramica" nel Coaching
       expect(within(panel()).queryByRole('button', { name: /Panoramica/ })).toBeNull();
+      // Team incompleto: in cima alla tendina niente tipo di team (sarebbe provvisorio)
+      await user.click(grade);
+      expect(within(panel()).getByRole('dialog', { name: 'Voto delle aree' })).not.toHaveTextContent(/Hyper Offense|Bulky Offense|Balance|Semi-stall|Stall/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('team completo: in cima alla tendina del voto chi è il team (tipo di team, core, stili)', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Toxapex', 'Corviknight', 'Iron Valiant']);
+      await user.click(within(panel()).getByRole('button', { name: /^Voto [SABCD], \d+ su 100/ }));
+      const pop = within(panel()).getByRole('dialog', { name: 'Voto delle aree' });
+      expect(pop.querySelector('.grade-pop-id')).toHaveTextContent(/^(Hyper Offense|Bulky Offense|Balance|Semi-stall|Stall)( · .+)?$/);
     } finally {
       vi.unstubAllGlobals();
     }

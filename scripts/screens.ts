@@ -1,7 +1,7 @@
 /**
  * Foto della pagina negli stati del restyle (sezioni, editor, modali, popover, tooltip), a più dimensioni.
  * Serve il server di sviluppo su http://localhost:5173 (npx vite).
- *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv]
+ *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv] [--wait 8000]
  * Per ogni foto stampa pageScroll = quanto la pagina scorre oltre la finestra (0 = una schermata).
  */
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -123,8 +123,12 @@ const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-/** Come hash, con qualche impostazione del formato cambiata (es. meta spento). */
-const hashWith = (team: unknown[], format: Partial<typeof FORMAT>) => '#team=' + Buffer.from(JSON.stringify({ team, format: { ...FORMAT, ...format } })).toString('base64')
+/**
+ * Come hash, con qualche impostazione del formato cambiata. Il link condiviso porta la scelta del formato (`choice`), non le
+ * regole: il meta non si spegne più a mano (è automatico), quindi "meta spento" è No Format, che il meta non lo ha.
+ */
+const hashWith = (team: unknown[], format: Partial<typeof FORMAT>) => '#team=' + Buffer.from(JSON.stringify({ team,
+  ...(format.meta === false ? { choice: { family: 'free', genLimit: format.genLimit ?? 9, multipleMegas: false } } : { format: { ...FORMAT, ...format } }) })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 /** Clic sul primo elemento visibile del selettore il cui testo o aria-label corrisponde. */
@@ -735,6 +739,7 @@ const STATES: Record<string, State> = {
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   // Telefono: il voto in fondo alla barra delle schede, toccato: la tendina Voto delle aree
   'analysis-phone-grade': { run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
+  'analysis-phone-grade-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
   'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
   'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
   // Carta del membro (tooltip) passando sul primo Pokémon della tabella dell'Offesa: le mosse come pillole piccole
@@ -1296,7 +1301,8 @@ for (const [w, h] of sizes) {
     await wait(1500);
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
-    await wait(800);
+    // --wait <ms>: aspetta di più prima della foto (es. finché il Coaching ha finito di calcolare)
+    await wait(Number(arg('wait') ?? 800));
     // --palette sv: la palette di Scarlatto/Violetto (accento arancione) sulla pagina, per controllare i colori
     const palette = arg('palette');
     if (palette) { await page.evaluate(p => { document.documentElement.dataset.palette = p; }, palette); await wait(300); }
@@ -1329,6 +1335,21 @@ for (const [w, h] of sizes) {
       const cut = cards.filter(c => c.getBoundingClientRect().bottom - bottom > 1).length;
       const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
         .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
+      // Pezzi visibili tagliati dal fondo del contenitore che li nasconde (la card o una sua parte con overflow non
+      // visibile: overflow e cut non lo vedono), oltre 1px
+      const inCut = cards.flatMap(c => {
+        return [...c.querySelectorAll<HTMLElement>('.dash-role-tag, .more-n, .sum-line, .cov-tile, .dash-cell, .dash-lane-sprite, .sum-bm')]
+          .filter(e => {
+            const r = e.getBoundingClientRect();
+            if (r.height <= 0) return false;
+            let clip = c.getBoundingClientRect().bottom;
+            for (let a = e.parentElement; a && a !== c.parentElement; a = a.parentElement) {
+              if (getComputedStyle(a).overflowY !== 'visible') clip = Math.min(clip, a.getBoundingClientRect().bottom);
+            }
+            return r.bottom - clip > 1;
+          })
+          .map(e => `${c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')?.slice(5)}:${e.className.split(' ')[0]}`);
+      });
       // Riassunto: nome del tipo, riga dell'eroe e righe delle sezioni tagliati in larghezza (anche in EN)
       // (la riga degli sprite si misura dai suoi figli: la luce del passaggio dell'ultimo sprite sborda apposta di 6px)
       const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length
@@ -1407,7 +1428,7 @@ for (const [w, h] of sizes) {
           const pr = document.querySelector<HTMLElement>('.area-head');
           const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} headH=${Math.round(pr.getBoundingClientRect().height)} chips=${document.querySelectorAll('.area-chips > li:not(.area-chips-more)').length}+${document.querySelector('.area-chips-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} chipsCut=${(() => { const c = pr.querySelector<HTMLElement>('.area-chips'); return c ? c.scrollWidth - c.clientWidth : '-'; })()} headX=${pr.scrollWidth - pr.clientWidth}` : '';
           return `${guide}${prAt}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
-        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
+        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} inCut=[${[...new Set(inCut)].join(',')}] overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
     // Coaching: righe che sbordano, nomi o pillole tagliati in larghezza, scorrimento orizzontale

@@ -1,7 +1,8 @@
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useEditing } from './editing';
 import { GRADES, type TeamRating } from '../engine/rating';
-import type { Archetype } from '../engine/archetype';
+import { teamArchetype, type Archetype } from '../engine/archetype';
+import type { TeamSet } from '../engine/sets';
 import { rolesTally } from '../engine/rolesArea';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
@@ -170,8 +171,18 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
  * lettera nel colore del voto e punteggio (grigio col team fuori regola). Toccandolo si apre la tendina "Voto delle aree"
  * del team ridotto: le righe delle aree (ognuna apre la sua scheda) e il "?" del voto.
  */
-export function TabsGrade({ rating, broken = false, incomplete = false, onOpen }: { rating: TeamRating; broken?: boolean; incomplete?: boolean; onOpen: (area: DetailArea) => void }) {
+export function TabsGrade({ rating, team = [], broken = false, incomplete = false, onOpen }: { rating: TeamRating;
+  /** Il team: in cima alla tendina chi è (tipo di team, core, meteo), che sul telefono senza Panoramica non si vede altrove. */
+  team?: TeamSet[];
+  broken?: boolean; incomplete?: boolean; onOpen: (area: DetailArea) => void }) {
   const t = useT();
+  // "Balance · 2 core · Pioggia": il tipo solo col team completo (prima sarebbe provvisorio), i core che il voto conta, gli stili
+  const found = team.length ? teamArchetype(team, rating.needs.rules) : null;
+  const identity = [
+    ...(found && team.length >= 6 ? [t(`archetype.${found.archetype}`)] : []),
+    ...(rating.cores.length ? [t(rating.cores.length === 1 ? 'rating.popCoresOne' : 'rating.popCoresMany', { n: rating.cores.length })] : []),
+    ...(found?.styles ?? []).map(style => t(`teamStyle.${style}`)),
+  ].join(' · ');
   const [open, setOpen] = useState(false);
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
@@ -187,6 +198,7 @@ export function TabsGrade({ rating, broken = false, incomplete = false, onOpen }
       {open && (
         <GradePopover id={id} button={button} onClose={close}
           help={<RatingHelp incomplete={incomplete} teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}>
+          {identity && <p className="grade-pop-id">{identity}</p>}
           <GradeAreaRows rating={rating} onOpen={area => { onOpen(area); close(false); }} />
         </GradePopover>
       )}

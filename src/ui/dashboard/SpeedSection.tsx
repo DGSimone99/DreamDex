@@ -17,7 +17,10 @@ import { DashCard } from './DashCard';
 const SPRITE: Record<Density, number> = { tight: 32, normal: 40, roomy: 48 };
 
 /** Velocità: una barra per membro dal più veloce (le barre riempiono la card), la linea della media col valore a sinistra e il controllo, se c'è. */
-export function SpeedSection({ speed, density, onView }: { speed: DashboardData['speed']; density: Density; onView: (v: AnalysisView) => void }) {
+export function SpeedSection({ speed, density, weak, onView }: { speed: DashboardData['speed']; density: Density;
+  /** Velocità debole (C, D) a team completo: il numero della testata nel colore del voto. */
+  weak?: 'C' | 'D';
+  onView: (v: AnalysisView) => void }) {
   const t = useT();
   const lang = useLang();
   const { lanes, median, vsMeta } = speed;
@@ -47,7 +50,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
         // Il fumetto dice cosa conta il 3/6 e che il voto guarda anche altro (lo stesso testo ai lettori di schermo)
         // Stretto: il controllo del team non ha la sua riga, sta in fondo allo stesso fumetto
         <span className="dash-meta-hint" {...hint([headHint, density === 'tight' ? controlText : ''].filter(Boolean).join('\n'))}>
-          <b>{speed.value}</b> {t(vsMeta ? 'dash.aboveMeta' : 'dash.aboveTier')}
+          <b className={weak ? `weak-${weak}` : undefined}>{speed.value}</b> {t(vsMeta ? 'dash.aboveMeta' : 'dash.aboveTier')}
           <span className="visually-hidden">. {headHint}</span>
         </span>
       )}
@@ -62,7 +65,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
             </span>
           )}
           {lanes.map((lane, i) => (
-            <span key={`${lane.species}-${i}`} className="dash-lane" data-nav="" {...hover(i)} {...tip.focus(i)}>
+            <span key={`${lane.species}-${i}`} className="dash-lane" data-nav="" data-tap-tip {...hover(i)} {...tip.focus(i)}>
               {/* Nome e velocità separati per i lettori di schermo: "Barraskewda, 371" */}
               <span className="visually-hidden">{`${lane.species}, `}</span>
               <span className={`dash-bar${lane.above ? ' above' : ''}`} style={{ height: pct(lane.speed) }}><small>{lane.speed}</small></span>
@@ -70,7 +73,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
           ))}
         </div>
         <div className="dash-sprites" aria-hidden="true">
-          {lanes.map((lane, i) => <span key={`${lane.species}-${i}`} className="dash-lane-sprite" {...hover(i)}><Sprite species={lane.species} size={SPRITE[density]} /></span>)}
+          {lanes.map((lane, i) => <span key={`${lane.species}-${i}`} className="dash-lane-sprite" data-tap-tip {...hover(i)}><Sprite species={lane.species} size={SPRITE[density]} /></span>)}
         </div>
       </div>
       {/* Stretto: il controllo solo nel fumetto della testata e, per intero, ai lettori di schermo */}

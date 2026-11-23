@@ -265,14 +265,14 @@ describe('Cruscotto della Panoramica', () => {
     const head = screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-meta-hint')!;
     expect(head).toHaveAttribute('data-hint', itText['dash.speedHintMeta']);
     expect(head.querySelector('.visually-hidden')).toHaveTextContent(itText['dash.speedHintMeta']);
-    expect(head).toHaveTextContent(/^1\/2 sopra la media/);
+    expect(head).toHaveTextContent(/^1\/2 sopra metà del meta/);
   });
 
   it('Velocità: la media a vista è solo il numero, per intero ai lettori di schermo', () => {
     mount();
     const avg = screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-avg')!;
     expect(avg.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^300$/);
-    expect(avg.querySelector('.visually-hidden')).toHaveTextContent(/^media meta 300$/);
+    expect(avg.querySelector('.visually-hidden')).toHaveTextContent(/^metà del meta 300$/);
   });
 
   it('Velocità: senza controllo niente riga né tooltip; con il controllo solo quello che c\'è', () => {
@@ -319,6 +319,7 @@ describe('Cruscotto della Panoramica', () => {
       // Ogni fascia: l'etichetta del livello, poi i ruoli in fila
       const bands = [...roles.querySelectorAll('.dash-role-band')];
       expect(bands.map(band => band.firstElementChild?.textContent)).toEqual(['Essenziali', 'Importanti']);
+      bands.forEach(band => expect(band.firstElementChild).toHaveClass('sum-sec-h'));
       expect(bands.map(band => band.lastElementChild?.tagName)).toEqual(['UL', 'UL']);
       const lists = within(roles).getAllByRole('list');
       expect(lists.map(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent))
@@ -473,14 +474,14 @@ describe('Riassunto', () => {
     const arch = region().querySelector<HTMLElement>('.sum-arch')!;
     expect(arch.getAttribute('data-hint')).toContain('Attaccano: Garchomp 92, Zapdos 86 · Reggono: Toxapex 88');
     expect(region().querySelector('.sum-crew, .sum-mon')).toBeNull();
-    expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campo', 'Trappole', 'Sinergie']);
+    expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campi', 'Trappole', 'Sinergie']);
   });
 
-  it('in inglese: Offense / Defense, Weather & field, Hazards, None', () => {
+  it('in inglese: Offense / Defense, Weather & fields, Hazards, None', () => {
     render(<LangProvider lang="en"><OverviewDashboard data={sample()} summary={summaryOf({ hazards: [] })} members={6} onView={vi.fn()} density="normal" /></LangProvider>);
     const summary = screen.getByRole('region', { name: 'Summary' });
     expect(summary.querySelector('.sum-arch')!.getAttribute('data-hint')).toContain('Attack: Garchomp 92, Zapdos 86 · Hold: Toxapex 88');
-    expect(within(summary).getByRole('heading', { name: 'Weather & field' }).closest('.sum-sec')).toHaveTextContent(/None$/);
+    expect(within(summary).getByRole('heading', { name: 'Weather & fields' }).closest('.sum-sec')).toHaveTextContent(/None$/);
     expect(within(summary).getByRole('heading', { name: 'Hazards' }).closest('.sum-sec')).toHaveTextContent(/None$/);
   });
 
@@ -521,6 +522,17 @@ describe('Riassunto', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('Sinergie: due core a tre affiancati (solo triangolo e titolo); nel Riassunto ricco ognuno intero con chi para cosa', () => {
+    italianNames();
+    const second: Core = { ...trio, members: ['Pelipper', 'Ferrothorn', 'Heatran'] };
+    mount({ summary: summaryOf({ cores: [trio, second] }) });
+    expect(section('Sinergie').querySelector('.sum-duo')).not.toBeNull();
+    cleanup();
+    mount({ density: 'roomy', summary: summaryOf({ cores: [trio, second] }) });
+    expect(section('Sinergie').querySelector('.sum-duo')).toBeNull();
+    expect(section('Sinergie').querySelectorAll('.sum-tri-row.roomy .sum-cover')).toHaveLength(2);
   });
 
   it('Sinergie: cruscotto basso su uno schermo alto, il triangolo resta', () => {
@@ -834,7 +846,7 @@ describe('Cruscotto: misure', () => {
       { member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [], via: 'Drizzle', item: '' },
       { member: 'Indeedee', label: 'Campo Psichico', key: 'psychicterrain', users: [], via: 'Psychic Surge', item: '' },
     ] }) });
-    const weather = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Meteo e campo' }).closest<HTMLElement>('.sum-sec')!;
+    const weather = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Meteo e campi' }).closest<HTMLElement>('.sum-sec')!;
     expect(within(weather).getAllByRole('button')).toHaveLength(1);
     expect(weather.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro che prepara il campo$/);
   });
@@ -908,6 +920,41 @@ describe('Copertura › schede Tipi e Meta', () => {
     await toMeta(user);
     expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
     expect(cov()).toHaveTextContent('3 senza check · 4 con un solo check');
+  });
+
+  it('col dito un tocco apre il tooltip (data-tap-tip) di ciò che al clic non fa niente: caselle della Copertura, barre e sprite della Velocità, pillole dei Ruoli', () => {
+    const { container } = renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} density="normal" />);
+    for (const sel of ['td.dash-cell', '.dash-lane', '.dash-lane-sprite', 'li.dash-role:not(.more)']) {
+      const els = container.querySelectorAll(sel);
+      expect(els.length, sel).toBeGreaterThan(0);
+      els.forEach(el => expect(el, sel).toHaveAttribute('data-tap-tip'));
+    }
+  });
+
+  it('cruscotto alto (ricco): Tipi e Meta insieme, senza schede; in testata i numeri di tutti e due; i link aprono la Coverage tipi', async () => {
+    const user = userEvent.setup();
+    const { onView } = mount({ density: 'roomy' });
+    await user.click(within(cov()).getByRole('button', { name: 'Difesa' }));
+    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageTypes');
+    await user.click(within(cov()).getByRole('button', { name: 'Offesa' }));
+    expect(onView).toHaveBeenLastCalledWith('strength', 'types');
+    expect(within(cov()).queryByRole('tablist')).toBeNull();
+    expect(within(cov()).getByRole('table')).toBeInTheDocument();
+    expect(tiles().length).toBeGreaterThan(0);
+    expect(cov()).toHaveTextContent(/offesa · .* difesa · 3 senza check · 4 con un solo check/);
+  });
+
+  it('team con meno di 6: il numero senza check in testata è neutro come quello della scheda Meta; con 6 è rosso', async () => {
+    const user = userEvent.setup();
+    const head = () => [...cov().querySelectorAll('b')].find(b => b.textContent === '3')!;
+    mount({ members: 5 });
+    await toMeta(user);
+    expect(head()).not.toHaveClass('bad');
+    expect(cov().querySelector('.dash-tab-n')).toHaveClass('minor');
+    cleanup();
+    mount();
+    await toMeta(user);
+    expect(head()).toHaveClass('bad');
   });
 
   it('una sola minaccia senza check: "1 minaccia" al singolare; sul portatile stretto la testata dice "con 1 check"', async () => {
@@ -1031,6 +1078,41 @@ describe('Riassunto: la riga Bonus/Malus', () => {
   }
   const mountBm = () => renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={bonusMalus} onView={vi.fn()} density="normal" />);
 
+  it('a vista bonus e malus alternati dal più pesante; il malus già in pillola non si ripete nella riga (resta per i lettori di schermo)', () => {
+    const pieces = [
+      { key: 'coreTrio', name: '2 core', points: 6, kind: 'bonus' as const },
+      { key: 'weatherClash', name: 'Scontro di climi', points: -6, kind: 'malus' as const },
+      { key: 'weakCovered', name: 'Rete di sicurezza', points: 1, kind: 'bonus' as const },
+      { key: 'noAnswer', name: 'Senza risposta', points: -2, kind: 'malus' as const },
+    ];
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={{ net: -1, pieces }} onView={vi.fn()} density="normal" />);
+    expect([...document.querySelectorAll('.sum-bm-item')].map(e => e.textContent)).toEqual(['2 core +6', 'Senza risposta −2', 'Rete di sicurezza +1']);
+    expect(screen.getByRole('button', { name: /^Bonus\/Malus −1/ })).toHaveAccessibleName(/Scontro di climi −6/);
+  });
+
+  it('malus pesanti (−4 e oltre) a team completo: una pillola rossa sotto il tipo di team che apre Bonus/Malus; sotto i 6 no', async () => {
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    const heavy = { net: -4, pieces: [{ key: 'weatherClash', name: 'Scontro di climi', points: -6, kind: 'malus' as const }, ...bonusMalus.pieces] };
+    const { unmount } = renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={heavy} onView={onView} density="normal" />);
+    const pills = document.querySelectorAll('.sum-alert');
+    expect([...pills].map(p => p.textContent)).toEqual(['Scontro di climi−6']);
+    await user.click(pills[0] as HTMLElement);
+    expect(onView).toHaveBeenCalledWith('bonusMalus');
+    unmount();
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={5} bonusMalus={heavy} onView={vi.fn()} density="normal" />);
+    expect(document.querySelector('.sum-alert')).toBeNull();
+  });
+
+  it('aree deboli a team completo: i loro numeri nelle testate di Copertura e Velocità nel colore del voto (C giallo, D rosso)', () => {
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} weak={{ defense: 'C', speed: 'D' }} onView={vi.fn()} density="normal" />);
+    const cov = screen.getByRole('region', { name: 'Copertura' });
+    const [off, def] = [...cov.querySelectorAll('.dash-meta b')];
+    expect(off).not.toHaveClass('weak-C', 'weak-D');
+    expect(def).toHaveClass('weak-C');
+    expect(screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-meta b')).toHaveClass('weak-D');
+  });
+
   it('con posto sotto i core: la riga c\'è, col netto e le voci, e apre Bonus/Malus', async () => {
     stubSummary(400, 300);
     const user = userEvent.setup();
@@ -1060,7 +1142,9 @@ describe('Riassunto: la riga Bonus/Malus', () => {
     });
     mountBm();
     const more = document.querySelector('.sum-bm-more')!;
-    expect(more).toHaveTextContent(/^\+2 altre$/);
+    // Fra le nascoste c'è un malus: il suo totale in rosso accanto
+    expect(more).toHaveTextContent(/^\+2 altre · −1$/);
+    expect(more.querySelector('b.bad')).toHaveTextContent('−1');
     expect(more).toHaveClass('more-n');
     expect(more).toHaveAttribute('data-hint', 'Tipi doppioni −1 · Rete di sicurezza +1');
     expect(screen.getByRole('button', { name: 'Bonus/Malus +6: 2 core +6, Tipi doppioni −1, Rete di sicurezza +1' })).toBeInTheDocument();
@@ -1077,7 +1161,7 @@ describe('Riassunto: la riga Bonus/Malus', () => {
 
 describe('Un membro solo: niente allarmi', () => {
   const cov = () => screen.getByRole('region', { name: 'Copertura' });
-  it('caselle scoperte e minacce grigie tratteggiate, niente numero rosso; ruoli mancanti tenui; da due membri come sempre', async () => {
+  it('caselle scoperte e minacce grigie tratteggiate, niente numero rosso; ruoli mancanti tenui; Copertura tenue fino a 3, da 4 come sempre', async () => {
     const user = userEvent.setup();
     const strict = sample({ roles: { ...sample().roles, chips: sample().roles.chips.map(c => ({ ...c, soft: false })) } });
     const { unmount } = mount({ members: 1, data: strict });
@@ -1093,7 +1177,15 @@ describe('Un membro solo: niente allarmi', () => {
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(roles.querySelectorAll('.dash-role.bad, .dash-role-row.bad')).toHaveLength(0);
     unmount();
-    const { unmount: unmount2 } = mount({ members: 2, data: strict });
+    // Con 2 e 3 membri la Copertura resta tenue, i Ruoli tornano come sempre
+    for (const members of [2, 3]) {
+      const { unmount: unmountN } = mount({ members, data: strict });
+      expect(cov().querySelectorAll('.dash-cell.bad, .dash-cell.minor')).toHaveLength(0);
+      expect(cov().querySelector('.dash-tab-n')).toBeNull();
+      expect(screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-role-row.bad, .dash-role.bad').length).toBeGreaterThan(0);
+      unmountN();
+    }
+    const { unmount: unmount2 } = mount({ members: 4, data: strict });
     expect(cov().querySelectorAll('.dash-cell.bad')).toHaveLength(2);
     expect(cov().querySelector('.dash-tab-n')).toHaveTextContent('3');
     // Sotto i 6 il numero della scheda Meta è neutro (grigio); a team completo rosso

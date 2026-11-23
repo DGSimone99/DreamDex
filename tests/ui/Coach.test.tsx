@@ -171,11 +171,11 @@ describe('scheda Coaching', () => {
     render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     // Nella Panoramica: come giudizio e nel "Cosa fare" del cruscotto
-    expect(within(analysis()).getAllByText('Aggiungi almeno 2 Pokémon per ricevere il coaching').length).toBeGreaterThan(0);
+    expect(within(analysis()).getAllByText('Aggiungi un altro Pokémon per ricevere il coaching').length).toBeGreaterThan(0);
     // Anche nella scheda Coaching, non "il team è a posto"
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     await user.click(within(analysis()).getByRole('tab', { name: /^Coaching/ }));
-    expect(within(analysis()).getByText('Aggiungi almeno 2 Pokémon per ricevere il coaching')).toBeInTheDocument();
+    expect(within(analysis()).getByText('Aggiungi un altro Pokémon per ricevere il coaching')).toBeInTheDocument();
     expect(within(analysis()).queryByText('Il team è a posto')).toBeNull();
   });
 });
@@ -463,7 +463,7 @@ describe('CoachingView', () => {
 
   it('con meno di 2 membri: solo l\'invito ad aggiungere', () => {
     view(null, { members: 1, coaching: coachingOf([]) });
-    expect(screen.getByText('Aggiungi almeno 2 Pokémon per ricevere il coaching')).toBeInTheDocument();
+    expect(screen.getByText('Aggiungi un altro Pokémon per ricevere il coaching')).toBeInTheDocument();
     expect(screen.queryByText('Il team è a posto')).toBeNull();
   });
 
