@@ -143,10 +143,13 @@
 
   /* ── Coaching: una colonna sola (i problemi sopra, poi la carta grande, poi le altre), alta quanto serve ── */
   .coaching.coach-cure { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); padding-bottom: var(--sp-6); overflow: visible; }
-  .coach-diag-list { max-height: 220px; }
+  .coach-diag-box { --row-h: auto; }
+  .coach-diag-list { grid-auto-rows: auto; }
+  .coach-diag-item, .coach-diag-cure { min-height: 44px; }
   .coach-diag-item { min-height: 44px; }
   .coach-hero { grid-template-columns: minmax(0, 1fr); }
-  .coach-pad { height: 150px; }
+  .coach-pad { height: 136px; }
+  .coach-stage { top: 6px; bottom: 14px; }
   .coach-hero-head { flex-wrap: wrap; }
   .coach-hero-facts { grid-template-columns: minmax(0, 1fr); }
   .coach-apply, .coach-see, .coach-alt-tile { height: 44px; }

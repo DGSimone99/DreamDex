@@ -752,7 +752,7 @@
 .coach-list-head .coach-sec::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 /* ── Diagnosi → Cura: a sinistra i problemi del team (una volta sola, col numero di proposte), a destra la carta grande
    della proposta scelta e sotto le altre in righe compatte. Margine sotto come le altre schede ── */
-.coaching.coach-cure { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: stretch; gap: var(--sp-6); padding-bottom: var(--sp-8); overflow: hidden; }
+.coaching.coach-cure { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: stretch; gap: var(--sp-6); padding-bottom: var(--sp-8); overflow: hidden auto; }
 
 /* La diagnosi: un pannello con la fascia del titolo, i problemi come righe-pulsante (filtrano la lista), le aree pulite in fondo */
 .coach-diag { display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; padding: var(--sp-5) var(--sp-4) var(--sp-4); background: var(--panel); }
@@ -762,7 +762,7 @@
 .coach-diag-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 .coach-diag-head .coach-count { padding: 1px var(--sp-4); line-height: 14px; }
 /* La lista dei problemi va a pagine (righe alte uguali, --row-h): niente colonna lunga che scorre */
-.coach-diag-box { --row-h: 46px; --row-gap: 3px; flex: 1; min-height: 0; }
+.coach-diag-box { --row-h: 48px; --row-gap: 3px; flex: 1; min-height: 0; }
 .coach-diag-list { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 2px; list-style: none; }
 .coach-diag-list > li { display: flex; margin: 0; }
 .coach-diag-item { flex: 1; display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); min-width: 0; padding: 0 var(--sp-4) 0 var(--sp-5);
@@ -919,7 +919,7 @@
 
 /* La lista delle altre: righe compatte a strisce come le statistiche dell'editor; un clic porta la proposta nella carta grande */
 .coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
-.coach-list-box { --row-h: 44px; --row-gap: 3px; flex: 1; min-height: 0; }
+.coach-list-box { --row-h: 44px; --row-gap: 3px; flex: 1; min-height: var(--row-h); }
 .coach-rows { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
 .coach-item { display: flex; min-width: 0; margin: 0; }
 .coach-item.skeleton { border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
@@ -996,6 +996,10 @@
   .coach-stage { top: 8px; bottom: 18px; }
   .coach-art-in .sprite { width: 88px; height: 88px; }
   .coach-list-box { --row-h: 40px; }
+  .coach-hero-facts { gap: var(--sp-6); }
+  .coach-solved { padding-block: 1px; line-height: 1.25; }
+  .coach-fact { gap: var(--sp-2); }
+  .coach-apply, .coach-see, .coach-alt-tile { height: 30px; }
 }
 
 /* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga

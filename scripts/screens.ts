@@ -837,13 +837,35 @@ const STATES: Record<string, State> = {
     await wait(600);
     return (await p.evaluate(() => !!document.querySelector('.coach-empty.is-clear'))) || 'team con problemi';
   } },
-  // La tendina delle alternative aperta sulla prima riga che ne ha
+  // Un'alternativa ("Oppure") messa nella carta grande
   'coaching-menu': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
     await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
-    if (!await clickText(p, 'button.coach-alt', /./)) return 'no alternatives';
+    if (!await clickText(p, 'button.coach-alt-tile', /./)) return 'no alternatives';
+    await wait(300);
+    return true;
+  } },
+  // Un problema scelto nella diagnosi (la lista filtrata) e una proposta della lista aperta nella carta grande
+  'coaching-filter': { hash: hash(LONG), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
+    if (!await clickText(p, '.coach-diag-item:not(.is-all):not(:disabled)', /./)) return 'no problem';
+    await wait(300);
+    if (!await clickText(p, '.coach-item-btn', /./)) return 'no other proposal';
+    await wait(300);
+    return true;
+  } },
+  // Il "?" del Coaching aperto
+  'coaching-help': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    await p.waitForSelector('.coach-rows:not([aria-busy]), .coach-empty', { timeout: 20000 });
+    if (!await clickText(p, '.coach-diag-top .help-button', /./)) return 'no help';
     await wait(300);
     return true;
   } },
@@ -880,7 +902,7 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
     // I consigli arrivano dopo il calcolo: si aspettano le righe delle proposte
-    await p.waitForSelector('.coach-rows:not([aria-busy]) button.coach-see', { timeout: 20000 });
+    await p.waitForSelector('.coach-hero button.coach-see', { timeout: 20000 });
     // Applica applica la proposta: "Vedi nella scheda Pokémon" apre le alternative nella scheda Pokémon
     if (!await clickText(p, 'button.coach-see', /./)) return false;
     // La lista per membro si calcola dopo il clic: si aspetta che non sia più attenuata
@@ -1032,7 +1054,7 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
     await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
-    const n = await p.evaluate(() => document.querySelectorAll('.coach-rows .coach-row.is-move').length);
+    const n = await p.evaluate(() => document.querySelectorAll('.coach-rows .coach-item.is-move, .coach-hero.is-move').length);
     console.log(`coaching-move-steps: ${n} proposte di mossa`);
     return n > 0 || 'no move proposal';
   } },
@@ -1042,7 +1064,16 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
     await p.waitForSelector('.coach-rows:not([aria-busy])', { timeout: 20000 });
-    if (!await clickText(p, '.coach-row.is-move button.coach-see', /./)) return 'no move proposal';
+    // La prima proposta di mossa: nella carta grande, o nella lista (pagina dopo pagina) e da lì nella carta
+    for (let i = 0; i < 8 && !await p.evaluate(() => !!document.querySelector('.coach-hero.is-move, .coach-item.is-move')); i++) {
+      const next = await p.$('.coach-list .coach-pages .cm-step:last-child:not(:disabled)');
+      if (!next) break;
+      await next.click();
+      await wait(300);
+    }
+    if (!await p.evaluate(() => !!document.querySelector('.coach-hero.is-move')) && !await clickText(p, '.coach-item.is-move .coach-item-btn', /./)) return 'no move proposal';
+    await wait(300);
+    if (!await clickText(p, '.coach-hero.is-move button.coach-see', /./)) return 'no move proposal';
     await wait(600);
     return (await p.evaluate(() => !!document.querySelector('.move-proposal'))) || 'no preview in the editor';
   } },
@@ -1431,16 +1462,21 @@ for (const [w, h] of sizes) {
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} inCut=[${[...new Set(inCut)].join(',')}] overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
-    // Coaching: righe che sbordano, nomi o pillole tagliati in larghezza, scorrimento orizzontale
+    // Coaching (Diagnosi → Cura): la carta grande, le righe della lista e della diagnosi che sbordano, i nomi tagliati,
+    // le righe oltre il fondo del loro riquadro, gli scorrimenti
     const coach = await page.evaluate(() => {
       const box = document.querySelector<HTMLElement>('.coaching');
       if (!box) return '';
-      const rows = [...box.querySelectorAll<HTMLElement>('.coach-row:not(.skeleton)')];
-      const tall = rows.filter(r => r.scrollHeight - r.clientHeight > 1).length;
-      const wide = [...box.querySelectorAll<HTMLElement>('.coach-art-name, .coach-art-moves, .coach-ar-who')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
-      const row = rows[0]?.getBoundingClientRect().height ?? 0;
+      const hero = box.querySelector<HTMLElement>('.coach-hero:not(.skeleton)');
+      const rows = [...box.querySelectorAll<HTMLElement>('.coach-item:not(.skeleton)')];
+      const rail = [...box.querySelectorAll<HTMLElement>('.coach-diag-list > li')];
+      // (niente funzioni con nome qui dentro: tsx aggiunge __name, che nella pagina non c'è)
+      const listB = box.querySelector('.coach-list-box')?.getBoundingClientRect().bottom ?? Infinity;
+      const railB = box.querySelector('.coach-diag-box')?.getBoundingClientRect().bottom ?? Infinity;
+      const wide = [...box.querySelectorAll<HTMLElement>('.coach-hero-name, .coach-plate-value, .coach-item-who strong, .coach-diag-cure-text b')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      const heroOver = hero ? hero.scrollHeight - hero.clientHeight : 0;
       const last = rows.at(-1)?.getBoundingClientRect().bottom ?? 0;
-      return `coach: rows=${rows.length} rowH=${Math.round(row)} rowOverflow=${tall} clipped=${wide} lastBottom=${Math.round(last)} coachBottom=${Math.round(box.getBoundingClientRect().bottom)} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} coachH=${box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
+      return `coach: hero=${hero ? Math.round(hero.getBoundingClientRect().height) : 0} heroOverflow=${heroOver} rows=${rows.length} rowOverflow=${rows.filter(r => r.scrollHeight - r.clientHeight > 1).length} rowsBelow=${rows.filter(r => r.getBoundingClientRect().bottom > listB + 1).length} rail=${rail.length} railOverflow=${rail.filter(r => r.scrollHeight - r.clientHeight > 1).length} railBelow=${rail.filter(r => r.getBoundingClientRect().bottom > railB + 1).length} clipped=${wide} lastBottom=${Math.round(last)} coachBottom=${Math.round(box.getBoundingClientRect().bottom)} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
     // Lista candidati: scorrimento interno, caselle tagliate dal fondo, misure delle Carte
     const list = await page.evaluate(() => {

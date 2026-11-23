@@ -1,10 +1,10 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { coachTeam, type CoachAdvice, type Coaching, type CoachProblem } from '../../src/engine/coach';
 import type { CoachFix } from '../../src/engine/coachFixes';
-import { proposalGroups } from '../../src/engine/coachProposals';
+import { neutralAsAlternatives, proposalGroups } from '../../src/engine/coachProposals';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
@@ -34,9 +34,21 @@ const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
 
 const analysis = () => screen.getByRole('region', { name: 'Analisi' });
 const suggestions = () => screen.getAllByRole('region', { name: 'Suggerimenti' }).find(r => !analysis().contains(r))!;
-const proposals = () => within(analysis()).getByRole('region', { name: 'Proposte, dalla più utile' });
+const proposals = () => screen.getByRole('region', { name: 'Proposte, dalla più utile' });
 
-/** Importa il team, apre Analisi e la scheda Coaching (e aspetta le proposte). */
+/** La carta grande (la proposta scelta). */
+const heroOf = () => within(proposals()).getByRole('article');
+/** Il nome della proposta nella carta grande ("X al posto di Y, voto +N"). */
+const heroName = () => heroOf().querySelector('h4')!.textContent!;
+/** I pulsanti delle righe sotto la carta (pagina corrente). */
+const rowButtons = () => [...proposals().querySelectorAll<HTMLButtonElement>('.coach-item-btn')];
+/** I nomi delle proposte nelle righe della pagina ("Apri: " tolto). */
+const rowNames = () => rowButtons().map(b => b.getAttribute('aria-label')!.replace(/^Apri: /, ''));
+/** Il pulsante della carta grande che mette un'alternativa nella carta. */
+const altTiles = () => [...heroOf().querySelectorAll<HTMLButtonElement>('.coach-alt-tile')];
+const altNames = () => altTiles().map(b => b.getAttribute('aria-label')!.replace(/^Metti nella carta: /, ''));
+
+/** Importa il team, apre Analisi e la scheda Coaching (e aspetta la carta grande). */
 async function openCoaching(team: TeamSet[]) {
   const user = userEvent.setup();
   render(<App initialLang="it" data={fixtureData} />);
@@ -45,25 +57,55 @@ async function openCoaching(team: TeamSet[]) {
   await user.click(screen.getByRole('button', { name: 'Importa' }));
   await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
   await user.click(within(analysis()).getByRole('tab', { name: /^Coaching/ }));
-  await within(proposals()).findAllByRole('listitem', {}, { timeout: 5000 });
+  await within(proposals()).findByRole('article', {}, { timeout: 5000 });
   return user;
 }
 
-/** La prima riga (sfogliando le pagine) il cui nome rispetta `pattern`. */
+/**
+ * Porta nella carta grande la prima proposta il cui nome rispetta `pattern`: la carta stessa, le sue alternative, poi le
+ * righe sfogliando le pagine (un clic la apre); in ultimo le alternative di ogni riga. Torna la carta grande.
+ */
 async function findRow(user: ReturnType<typeof userEvent.setup>, pattern: RegExp): Promise<HTMLElement> {
+  const inHero = async () => {
+    if (pattern.test(heroName())) return true;
+    const tile = altTiles().find((_, i) => pattern.test(altNames()[i]));
+    if (tile) { await user.click(tile); return true; }
+    return false;
+  };
+  if (await inHero()) return heroOf();
+  const first = () => within(proposals()).queryByRole<HTMLButtonElement>('button', { name: 'Proposte precedenti' });
+  const next = () => within(proposals()).queryByRole<HTMLButtonElement>('button', { name: 'Proposte successive' });
   for (let page = 0; page < 30; page++) {
-    const row = within(proposals()).queryAllByRole('listitem').find(li => pattern.test(li.getAttribute('aria-label') ?? ''));
-    if (row) return row;
-    const next = within(proposals()).queryByRole('button', { name: 'Proposte successive' });
-    if (!next || (next as HTMLButtonElement).disabled) break;
-    await user.click(next);
+    const button = rowButtons().find((_, i) => pattern.test(rowNames()[i]));
+    if (button) { await user.click(button); return heroOf(); }
+    const n = next();
+    if (!n || n.disabled) break;
+    await user.click(n);
   }
-  throw new Error(`nessuna riga ${pattern}`);
+  // Fra le alternative delle altre righe: si aprono una per una, dalla prima pagina
+  while (first() && !first()!.disabled) await user.click(first()!);
+  const seen = new Set<string>();
+  for (let tries = 0; tries < 60; tries++) {
+    const button = rowButtons().find(b => !seen.has(b.getAttribute('aria-label')!));
+    if (!button) {
+      const n = next();
+      if (!n || n.disabled) break;
+      await user.click(n);
+      continue;
+    }
+    seen.add(button.getAttribute('aria-label')!);
+    await user.click(button);
+    seen.add(`Apri: ${heroName()}`);
+    if (await inHero()) return heroOf();
+  }
+  throw new Error(`nessuna proposta ${pattern}`);
 }
 
 const SWAP = /^(.+) al posto di (.+), voto \+(\d+)$/;
 const ADD = /^(.+) in un posto libero, voto \+(\d+)$/;
 const MOVE = /^(.+?) (?:al posto di .+?|in uno slot libero) su (.+), voto (\+\d+|±0)$/;
+/** Il voto in più scritto in un nome ("voto +3" → 3, "voto ±0" → 0, "voto −2" → -2). */
+const gainOf = (name: string) => Number(/voto ([+−±]\d+)$/.exec(name)![1].replace('−', '-').replace('±', ''));
 
 /** Il "+N" della riga del candidato nella lista di Sostituisci. */
 const rowGain = (species: string) => {
@@ -74,18 +116,20 @@ const rowGain = (species: string) => {
 };
 
 describe('scheda Coaching', () => {
-  it('una lista di proposte dalla più utile: il +N non sale scendendo, la prima pagina ha al più 4 righe', async () => {
+  it('dalla più utile: la carta grande ha il +N più alto, le righe sotto non salgono, al più 4 per pagina', async () => {
     const user = await openCoaching(six);
+    const top = gainOf(heroName());
     const gains: number[] = [];
     for (let page = 0; page < 30; page++) {
-      const rows = within(proposals()).getAllByRole('listitem');
-      expect(rows.length).toBeLessThanOrEqual(4);
-      gains.push(...rows.map(li => Number(/voto ([+−±]\d+)/.exec(li.getAttribute('aria-label')!)![1].replace('−', '-').replace('±', ''))));
+      const names = rowNames();
+      expect(names.length).toBeLessThanOrEqual(4);
+      gains.push(...names.map(gainOf));
       const next = within(proposals()).queryByRole('button', { name: 'Proposte successive' });
       if (!next || (next as HTMLButtonElement).disabled) break;
       await user.click(next);
     }
-    expect(gains.length).toBeGreaterThan(1);
+    expect(gains.length).toBeGreaterThan(0);
+    expect(gains.every(g => g <= top)).toBe(true);
     expect([...gains].sort((a, b) => b - a)).toEqual(gains);
     // Niente più mappa dei problemi né tappe numerate
     expect(within(analysis()).queryByText('Problemi per area')).toBeNull();
@@ -94,9 +138,9 @@ describe('scheda Coaching', () => {
 
   it('"Vedi nella scheda Pokémon": scheda Pokémon, quel membro da sostituire, il candidato aperto, stesso +N', async () => {
     const user = await openCoaching(six);
-    const row = await findRow(user, SWAP);
-    const [, species, member, gain] = SWAP.exec(row.getAttribute('aria-label')!)!;
-    await user.click(within(row).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
+    const hero = await findRow(user, SWAP);
+    const [, species, member, gain] = SWAP.exec(heroName())!;
+    await user.click(within(hero).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveTextContent(`Sostituisci ${member}`);
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${species}` })).toBeInTheDocument();
@@ -114,9 +158,9 @@ describe('scheda Coaching', () => {
     await user.click(type());
     await user.click(within(screen.getByRole('listbox', { name: 'Tipo di team' })).getByRole('option', { name: recognised === 'Tipo di team: Stall' ? /^Hyper Offense/ : /^Stall/ }));
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
-    const row = await findRow(user, SWAP);
-    const [, species, , gain] = SWAP.exec(row.getAttribute('aria-label')!)!;
-    await user.click(within(row).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
+    const hero = await findRow(user, SWAP);
+    const [, species, , gain] = SWAP.exec(heroName())!;
+    await user.click(within(hero).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${species}` }, { timeout: 3000 })).toBeInTheDocument();
     expect(within(suggestions()).getByLabelText('Aggiungi Pokémon')).toHaveValue('');
     expect(type().getAttribute('aria-label')).toBe(recognised);
@@ -125,9 +169,9 @@ describe('scheda Coaching', () => {
 
   it('team di 3: un candidato da aggiungere apre Aggiungi con lui nel dettaglio, stesso +N', async () => {
     const user = await openCoaching(trio);
-    const row = await findRow(user, ADD);
-    const [, species, gain] = ADD.exec(row.getAttribute('aria-label')!)!;
-    await user.click(within(row).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
+    const hero = await findRow(user, ADD);
+    const [, species, gain] = ADD.exec(heroName())!;
+    await user.click(within(hero).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${species}` })).toBeInTheDocument();
@@ -136,11 +180,11 @@ describe('scheda Coaching', () => {
 
   it('Applica su un sostituto: lo applica subito (stessa scheda), avviso con Annulla che riporta il membro', async () => {
     const user = await openCoaching(six);
-    const row = await findRow(user, SWAP);
-    const [, species, member] = SWAP.exec(row.getAttribute('aria-label')!)!;
+    const hero = await findRow(user, SWAP);
+    const [, species, member] = SWAP.exec(heroName())!;
     const cards = () => [...document.querySelectorAll('.slot.filled .slot-card')].map(el => el.textContent ?? '');
     expect(cards().some(text => text.includes(member))).toBe(true);
-    await user.click(within(row).getByRole('button', { name: /^Applica: / }));
+    await user.click(within(hero).getByRole('button', { name: /^Applica: / }));
     // Resta su Analisi; il membro è sostituito
     expect(screen.getByRole('tab', { name: /^Analisi/ })).toHaveAttribute('aria-selected', 'true');
     expect(cards().some(text => text.includes(member))).toBe(false);
@@ -155,10 +199,10 @@ describe('scheda Coaching', () => {
 
   it('team di 3: Applica su un candidato da aggiungere lo aggiunge, Annulla lo toglie', async () => {
     const user = await openCoaching(trio);
-    const row = await findRow(user, ADD);
-    const species = ADD.exec(row.getAttribute('aria-label')!)![1];
+    const hero = await findRow(user, ADD);
+    const species = ADD.exec(heroName())![1];
     const filled = () => document.querySelectorAll('.slot.filled').length;
-    await user.click(within(row).getByRole('button', { name: /^Applica: / }));
+    await user.click(within(hero).getByRole('button', { name: /^Applica: / }));
     expect(filled()).toBe(4);
     const undo = document.querySelector<HTMLElement>('.undo-toast')!;
     expect(undo).toHaveTextContent(`${species} aggiunto`);
@@ -203,78 +247,141 @@ describe('CoachingView', () => {
     return handlers;
   };
   const list = () => screen.getByRole('region', { name: 'Proposte, dalla più utile' });
-  const rows = () => within(list()).getAllByRole('listitem');
+  const band = () => list().querySelector('.coach-hero-band h4')!;
+  const othersHead = () => list().querySelector('.coach-list .coach-list-head h4')!;
+  const six6 = ['Zapdos', 'Heatran', 'Rotom-Wash', 'Landorus-Therian', 'Clefable', 'Dragonite'];
+  /** La colonna "Da sistemare" a sinistra. */
+  const rail = () => screen.getByRole('complementary', { name: /^Da sistemare/ });
+  /** Il pulsante di un problema nella colonna, dal suo testo. */
+  const railItem = (text: string) => [...rail().querySelectorAll<HTMLButtonElement>('.coach-diag-item:not(.is-all)')].find(b => b.textContent!.includes(text))!;
+  const allButton = () => within(rail()).getByRole('button', { name: /^Tutte le proposte/ });
 
   it('a pari voto "±0", mai "+0"', () => {
     expect([gainText(3), gainText(0), gainText(-2)]).toEqual(['+3', '±0', '−2']);
   });
 
-  it('una riga per proposta, dalla più utile; nome accessibile "X al posto di Y, voto +N"; il numero delle proposte nel titolo', () => {
+  it('la migliore nella carta grande, le altre in righe dalla più utile; nomi "X al posto di Y, voto +N"; quante sono nel titolo', () => {
     view(advice([swap('Rotom-Wash', 4, 2, [fire.key]), swap('Zapdos', 5, 5, [pivot.key]), swap('Heatran', 1, 3, [steel.key])]));
-    expect(rows().map(li => li.getAttribute('aria-label'))).toEqual([
-      'Zapdos al posto di Sunkern, voto +5', 'Heatran al posto di Gholdengo, voto +3', 'Rotom-Wash al posto di Magikarp, voto +2',
-    ]);
-    expect(list().querySelector('.coach-count')).toHaveTextContent('3');
+    expect(band()).toHaveTextContent('La proposta migliore');
+    expect(within(list()).queryByRole('button', { name: 'Torna alla migliore' })).toBeNull();
+    expect(within(list()).getByRole('article', { name: 'Zapdos al posto di Sunkern, voto +5' })).toBeInTheDocument();
+    expect(heroOf().querySelector('.coach-hero-name')).toHaveTextContent('Zapdos');
+    expect(heroOf().querySelector('.coach-plate')).toHaveTextContent('Al posto diSunkern');
+    expect(heroOf().querySelector('.coach-gain')).toHaveTextContent('+5');
+    expect(heroOf().querySelector('.coach-grade-change')).toHaveTextContent(`${rating.grade} ${rating.overall}`);
+    expect(rowNames()).toEqual(['Heatran al posto di Gholdengo, voto +3', 'Rotom-Wash al posto di Magikarp, voto +2']);
+    expect(othersHead()).toHaveTextContent('Altre proposte2');
     // Pochi: nessuna pagina
     expect(within(list()).queryByRole('navigation')).toBeNull();
   });
 
-  it('il magenta solo su Applica della prima proposta della prima pagina', async () => {
-    view(advice(Array.from({ length: 6 }, (_, i) => swap(['Zapdos', 'Heatran', 'Rotom-Wash', 'Landorus-Therian', 'Clefable', 'Dragonite'][i], i, 9 - i, [fire.key]))));
-    const primary = () => list().querySelectorAll('.coach-apply.is-primary');
+  it('un clic su una riga la porta nella carta grande ("La proposta scelta"); "Torna alla migliore" riporta la prima', async () => {
+    const user = userEvent.setup();
+    view(advice([swap('Rotom-Wash', 4, 2, [fire.key]), swap('Zapdos', 5, 5, [pivot.key]), swap('Heatran', 1, 3, [steel.key])]));
+    await user.click(within(list()).getByRole('button', { name: 'Apri: Rotom-Wash al posto di Magikarp, voto +2' }));
+    expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +2');
+    expect(band()).toHaveTextContent('La proposta scelta');
+    // La migliore torna fra le righe, al suo posto (in testa)
+    expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +5', 'Heatran al posto di Gholdengo, voto +3']);
+    await user.click(within(list()).getByRole('button', { name: 'Torna alla migliore' }));
+    expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
+    expect(band()).toHaveTextContent('La proposta migliore');
+    expect(within(list()).queryByRole('button', { name: 'Torna alla migliore' })).toBeNull();
+  });
+
+  it('il magenta solo su Applica della carta grande, una volta sola (le righe non hanno Applica)', async () => {
+    const user = userEvent.setup();
+    view(advice(six6.map((s, i) => swap(s, i, 9 - i, [fire.key]))));
+    const primary = () => document.querySelectorAll('.coach-apply.is-primary');
     expect(primary()).toHaveLength(1);
-    expect(rows()[0].contains(primary()[0])).toBe(true);
-    expect(list().querySelectorAll('.coach-apply')).toHaveLength(4);
-    await userEvent.setup().click(within(list()).getByRole('button', { name: 'Proposte successive' }));
-    expect(primary()).toHaveLength(0);
+    expect(heroOf().contains(primary()[0])).toBe(true);
+    expect(document.querySelectorAll('.coach-apply')).toHaveLength(1);
+    await user.click(within(list()).getByRole('button', { name: 'Proposte successive' }));
+    expect(primary()).toHaveLength(1);
+    await user.click(rowButtons()[0]);
+    expect(primary()).toHaveLength(1);
+    expect(heroOf().contains(primary()[0])).toBe(true);
   });
 
   it('pagine da 4 righe: "‹ 1/2 ›" coi nomi per lo screen reader, avanti e indietro', async () => {
     const user = userEvent.setup();
-    view(advice(Array.from({ length: 6 }, (_, i) => swap(['Zapdos', 'Heatran', 'Rotom-Wash', 'Landorus-Therian', 'Clefable', 'Dragonite'][i], i, 9 - i, [fire.key]))));
+    view(advice(six6.map((s, i) => swap(s, i, 9 - i, [fire.key]))));
     const pages = within(list()).getByRole('navigation', { name: 'Pagine delle proposte' });
     expect(pages).toHaveTextContent('1/2');
     expect(pages).toHaveTextContent('Proposte da 1 a 4');
     expect(within(pages).getByRole('button', { name: 'Proposte precedenti' })).toBeDisabled();
-    expect(rows()).toHaveLength(4);
+    // La migliore (Zapdos) è nella carta: le righe partono dalla seconda
+    expect(rowNames().map(n => n.split(' ')[0])).toEqual(['Heatran', 'Rotom-Wash', 'Landorus-Therian', 'Clefable']);
     await user.click(within(pages).getByRole('button', { name: 'Proposte successive' }));
-    expect(rows().map(li => li.getAttribute('aria-label')!.split(' ')[0])).toEqual(['Clefable', 'Dragonite']);
-    expect(pages).toHaveTextContent('Proposte da 5 a 6');
+    expect(rowNames().map(n => n.split(' ')[0])).toEqual(['Dragonite']);
+    expect(pages).toHaveTextContent('2/2');
+    expect(pages).toHaveTextContent('Proposte da 5 a 5');
     expect(within(pages).getByRole('button', { name: 'Proposte successive' })).toBeDisabled();
+    await user.click(within(pages).getByRole('button', { name: 'Proposte precedenti' }));
+    expect(pages).toHaveTextContent('1/2');
   });
 
-  it('cosa cambia, per area: "da → a" del valore e le pillole dei problemi risolti; le aree che non cambiano non ci sono', () => {
+  it('cosa cambia: "Risolve" coi problemi risolti (spunte) e le aree che salgono "da → a"; le aree che non cambiano non ci sono; "Costa: Niente"', () => {
     const def = Math.round(before.defense!);
     view(advice([swap('Rotom-Wash', 4, 3, [fire.key, zapdos.key, steel.key], { defense: def + 5, bonusMalus: before.bonusMalus + 1 })]));
-    const lines = [...rows()[0].querySelectorAll<HTMLElement>('.coach-ar')];
-    const label = (l: HTMLElement) => l.querySelector('.coach-ar-who b')!.textContent;
-    expect(lines.map(label)).toEqual(['Difesa', 'Bonus/Malus']);
-    expect(lines[0].querySelector('.coach-change')).toHaveTextContent(`${def} →${def + 5}da ${def} a ${def + 5}`);
-    expect(lines[0].querySelector('.coach-to')).toHaveTextContent(String(def + 5));
-    // Le pillole sono quelle della testata delle aree: Fuoco (tipo) e Zapdos (minaccia), col tooltip col fuoco
-    expect([...lines[0].querySelectorAll('.area-chip')].map(c => c.getAttribute('data-key'))).toEqual([fire.key, zapdos.key]);
-    expect(lines[0].querySelector('.area-chip')).toHaveAttribute('tabindex', '0');
-    expect(lines[1].querySelector('.coach-change')).toHaveTextContent(`${gainText(before.bonusMalus)} →${gainText(before.bonusMalus + 1)}`);
-    expect(lines[1].querySelector('.area-chip')).toHaveAttribute('data-key', steel.key);
+    const solves = within(heroOf()).getByRole('region', { name: 'Risolve' });
+    const solved = [...solves.querySelectorAll('li.coach-solved')];
+    expect(solved).toHaveLength(3);
+    expect(solved.map(li => li.textContent).join('|')).toMatch(/Scoperto in difesa contro Fire.*Senza check in difesa contro Zapdos.*3 membri di tipo Acciaio/);
+    const changes = [...solves.querySelectorAll<HTMLElement>('.coach-change')];
+    expect(changes.map(c => c.querySelector('b')!.textContent)).toEqual(['Difesa', 'Bonus/Malus']);
+    expect(changes.every(c => c.classList.contains('is-up'))).toBe(true);
+    expect(changes[0]).toHaveTextContent(`Difesa${def} →${def + 5}da ${def} a ${def + 5}`);
+    expect(changes[0].querySelector('.coach-to')).toHaveTextContent(String(def + 5));
+    expect(changes[1]).toHaveTextContent(`${gainText(before.bonusMalus).replace('±0', '0')} →${gainText(before.bonusMalus + 1)}`);
+    const costs = within(heroOf()).getByRole('region', { name: 'Costa' });
+    expect(costs).toHaveTextContent('CostaNiente');
+    expect(costs).not.toHaveClass('is-bad');
   });
 
-  it('un\'area che sale senza problemi risolti ha la sua riga, senza pillole', () => {
+  it('un\'area che sale senza problemi risolti: "alza solo il voto" e la sua riga "da → a"; nelle righe la prima area che sale', async () => {
     const off = Math.round(before.strength!);
-    view(advice([swap('Zapdos', 4, 2, [], { strength: off + 2 })]));
-    const [line] = rows()[0].querySelectorAll<HTMLElement>('.coach-ar');
-    expect(line.querySelector('.coach-ar-who b')).toHaveTextContent('Offesa');
-    expect(line.querySelector('.coach-to')).toHaveTextContent(String(off + 2));
-    expect(line.querySelector('.area-chip')).toBeNull();
+    const def = Math.round(before.defense!);
+    view(advice([swap('Zapdos', 4, 3, [], { strength: off + 2 }), swap('Heatran', 1, 2, [], { defense: def + 1 })]));
+    const solves = within(heroOf()).getByRole('region', { name: 'Risolve' });
+    expect(solves).toHaveTextContent('Nessun problema: alza solo il voto');
+    expect(solves.querySelector('li.coach-solved')).toBeNull();
+    expect(solves.querySelector('.coach-change b')).toHaveTextContent('Offesa');
+    expect(solves.querySelector('.coach-change .coach-to')).toHaveTextContent(String(off + 2));
+    const [row] = list().querySelectorAll('li.coach-item');
+    expect(row.querySelector('.coach-marks')).toBeNull();
+    expect(row.querySelector('.coach-change b')).toHaveTextContent('Difesa');
+  });
+
+  it('nelle righe: la spunta con quanti problemi risolve (il testo per lo screen reader) e "Costa" quando un\'area scende', () => {
+    const def = Math.round(before.defense!);
+    view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 3, [fire.key, zapdos.key], { defense: def - 2 })]));
+    const [row] = list().querySelectorAll('li.coach-item');
+    const marks = row.querySelector('.coach-marks')!;
+    expect(marks.querySelector('.coach-marks-n')).toHaveTextContent('2');
+    expect(marks.querySelector('.visually-hidden')).toHaveTextContent(/^Risolve: .*Fire.*; .*Zapdos/);
+    expect(row.querySelector('.coach-item-cost')).toHaveTextContent('CostaDifesa');
+  });
+
+  it('aperta nella carta, un\'area che scende sta in "Costa" (in rosso), non in "Risolve"', () => {
+    const def = Math.round(before.defense!);
+    view(advice([swap('Rotom-Wash', 4, 3, [fire.key, zapdos.key], { defense: def - 2 })]));
+    const costs = within(heroOf()).getByRole('region', { name: 'Costa' });
+    expect(costs).toHaveClass('is-bad');
+    expect(costs.querySelector('.coach-change.is-down')).toHaveTextContent(`Difesa${def} →${def - 2}`);
+    expect(within(heroOf()).getByRole('region', { name: 'Risolve' }).querySelector('.coach-change')).toBeNull();
   });
 
   it('Applica applica la proposta, "Vedi nella scheda Pokémon" la apre; il nome dice cosa applica', async () => {
     const user = userEvent.setup();
     const fix = swap('Rotom-Wash', 4, 3, [fire.key]);
     const h = view(advice([fix]));
-    await user.click(within(rows()[0]).getByRole('button', { name: 'Applica: Rotom-Wash al posto di Magikarp, voto +3' }));
+    await user.click(within(heroOf()).getByRole('button', { name: 'Applica: Rotom-Wash al posto di Magikarp, voto +3' }));
     expect(h.onApplyFix).toHaveBeenLastCalledWith(fix);
-    await user.click(within(rows()[0]).getByRole('button', { name: 'Vedi nella scheda Pokémon: Rotom-Wash' }));
+    await user.click(within(heroOf()).getByRole('button', { name: 'Vedi nella scheda Pokémon: Rotom-Wash' }));
     expect(h.onFix).toHaveBeenLastCalledWith(fix);
+    // Una proposta sola: nessun'altra
+    expect(within(list()).getByText('Nessun\'altra proposta')).toBeInTheDocument();
   });
 
   describe('alternative', () => {
@@ -283,73 +390,51 @@ describe('CoachingView', () => {
     const third = swap('Volcanion', 4, 2, [fire.key, zapdos.key]);
     const other = swap('Zapdos', 5, 1, [pivot.key]);
 
-    it('stesso membro e stesso problema principale: una riga con "Altre N", le altre sotto il pulsante', () => {
+    it('stesso membro e stesso problema principale: una carta con "Oppure" e le piccole carte delle altre; le righe senza', () => {
       const adv = advice([second, best, third, other]);
       expect(proposalGroups(problems, adv).map(g => g.options.length)).toEqual([3, 1]);
       view(adv);
-      expect(rows()).toHaveLength(2);
-      const button = within(rows()[0]).getByRole('button', { name: 'Altre 2' });
-      expect(button).toHaveAttribute('aria-expanded', 'false');
-      expect(button).toHaveAttribute('aria-haspopup', 'listbox');
-      expect(within(rows()[1]).queryByRole('button', { name: /^Altre/ })).toBeNull();
+      expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
+      const alts = within(heroOf()).getByRole('group', { name: 'Altre 2 proposte per questo posto' });
+      expect(alts).toHaveTextContent('Oppure');
+      expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3', 'Volcanion al posto di Magikarp, voto +2']);
+      expect(altTiles().map(t => t.textContent)).toEqual(['+3', '+2']);
+      expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +1']);
     });
 
-    it('scegliere un\'alternativa la mette nella riga (nome, +N) e Applica applica quella', async () => {
+    it('un posto senza alternative non ha "Oppure"', async () => {
+      const user = userEvent.setup();
+      view(advice([second, best, third, other]));
+      await user.click(rowButtons()[0]);
+      expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +1');
+      expect(heroOf().querySelector('.coach-alts')).toBeNull();
+    });
+
+    it('scegliere un\'alternativa la mette nella carta (nome, +N) e Applica applica quella; la migliore va fra le piccole carte', async () => {
       const user = userEvent.setup();
       const h = view(advice([second, best, third, other]));
-      const button = within(rows()[0]).getByRole('button', { name: 'Altre 2' });
-      await user.click(button);
-      expect(button).toHaveAttribute('aria-expanded', 'true');
-      const listbox = screen.getByRole('listbox');
-      expect(button).toHaveAttribute('aria-controls', listbox.id);
-      expect(screen.getByText('Al posto di Magikarp, per gli stessi problemi · dalla più utile')).toBeInTheDocument();
-      const options = within(listbox).getAllByRole('option');
-      expect(options.map(o => o.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
-      expect(options[0]).toHaveTextContent('Scelta');
-      expect(options[1]).toHaveTextContent('Heatran');
-      expect(options[1]).toHaveTextContent('1 problema su 2');
-      expect(options[2]).toHaveTextContent('stessi problemi');
-      await user.click(options[1]);
-      expect(screen.queryByRole('listbox')).toBeNull();
-      expect(rows()[0]).toHaveAttribute('aria-label', 'Heatran al posto di Magikarp, voto +3');
-      expect(rows()[0].querySelector('.coach-gain')).toHaveTextContent('+3');
-      // La prima riga resta la prima (il gruppo è lo stesso): Applica applica Heatran
-      await user.click(within(rows()[0]).getByRole('button', { name: /^Applica: Heatran/ }));
+      await user.click(within(heroOf()).getByRole('button', { name: 'Metti nella carta: Heatran al posto di Magikarp, voto +3' }));
+      expect(heroName()).toBe('Heatran al posto di Magikarp, voto +3');
+      expect(heroOf().querySelector('.coach-gain')).toHaveTextContent('+3');
+      expect(altNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +4', 'Volcanion al posto di Magikarp, voto +2']);
+      await user.click(within(heroOf()).getByRole('button', { name: /^Applica: Heatran/ }));
       expect(h.onApplyFix).toHaveBeenLastCalledWith(second);
-      // Riaperta: la scelta per prima
-      await user.click(within(rows()[0]).getByRole('button', { name: 'Altre 2' }));
-      expect(within(screen.getByRole('listbox')).getAllByRole('option')[0]).toHaveTextContent('Heatran');
+      await user.click(within(heroOf()).getByRole('button', { name: 'Vedi nella scheda Pokémon: Heatran' }));
+      expect(h.onFix).toHaveBeenLastCalledWith(second);
+      // Aperta un'altra riga, il posto resta con la scelta fra le righe
+      await user.click(rowButtons()[0]);
+      expect(rowNames()).toEqual(['Heatran al posto di Magikarp, voto +3']);
     });
 
-    it('tastiera: il fuoco sulla scelta, frecce per muoversi, Invio sceglie, Esc chiude e torna sul pulsante', async () => {
+    it('tastiera: le piccole carte sono pulsanti, Invio e Spazio scelgono', async () => {
       const user = userEvent.setup();
       view(advice([second, best, third, other]));
-      const button = within(rows()[0]).getByRole('button', { name: 'Altre 2' });
-      button.focus();
+      altTiles()[1].focus();
       await user.keyboard('{Enter}');
-      const options = within(screen.getByRole('listbox')).getAllByRole('option');
-      expect(options[0]).toHaveFocus();
-      await user.keyboard('{ArrowDown}{ArrowDown}');
-      expect(options[2]).toHaveFocus();
-      await user.keyboard('{ArrowDown}');
-      expect(options[0]).toHaveFocus();
-      await user.keyboard('{End}{Enter}');
-      expect(rows()[0]).toHaveAttribute('aria-label', 'Volcanion al posto di Magikarp, voto +2');
-      expect(button).toHaveFocus();
-      await user.keyboard('{Enter}');
-      expect(screen.getByRole('listbox')).toBeInTheDocument();
-      await user.keyboard('{Escape}');
-      expect(screen.queryByRole('listbox')).toBeNull();
-      expect(button).toHaveFocus();
-      expect(button).toHaveAttribute('aria-expanded', 'false');
-    });
-
-    it('un clic fuori chiude la tendina', async () => {
-      const user = userEvent.setup();
-      view(advice([second, best, third, other]));
-      await user.click(within(rows()[0]).getByRole('button', { name: 'Altre 2' }));
-      fireEvent.pointerDown(document.body);
-      expect(screen.queryByRole('listbox')).toBeNull();
+      expect(heroName()).toBe('Volcanion al posto di Magikarp, voto +2');
+      altTiles()[0].focus();
+      await user.keyboard(' ');
+      expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
     });
 
     it('la scelta si dimentica quando cambiano i consigli', async () => {
@@ -357,79 +442,205 @@ describe('CoachingView', () => {
       const adv = advice([second, best, third, other]);
       const h = { onFix: vi.fn(), onMoveFix: vi.fn(), onApplyFix: vi.fn(), onApplyMove: vi.fn() };
       const { rerender } = renderIt(<CoachingView coaching={coachingOf(problems)} advice={adv} members={6} rating={rating} {...h} />);
-      await user.click(within(rows()[0]).getByRole('button', { name: 'Altre 2' }));
-      await user.click(within(screen.getByRole('listbox')).getAllByRole('option')[1]);
-      expect(rows()[0]).toHaveAttribute('aria-label', 'Heatran al posto di Magikarp, voto +3');
+      await user.click(altTiles()[0]);
+      expect(heroName()).toBe('Heatran al posto di Magikarp, voto +3');
       rerender(<CoachingView coaching={coachingOf(problems)} advice={{ ...adv }} members={6} rating={rating} {...h} />);
-      expect(rows()[0]).toHaveAttribute('aria-label', 'Rotom-Wash al posto di Magikarp, voto +4');
+      expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
+    });
+
+    it('una proposta che non alza il voto va fra le alternative della prima che risolve il suo problema, non fra le righe', () => {
+      const neutral = swap('Incineroar', 3, 0, [fire.key]);
+      view(advice([second, best, other, neutral]));
+      expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3', 'Incineroar al posto di Corviknight, voto ±0']);
+      expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +1']);
+    });
+
+    it('senza una proposta che alza il voto e risolve il suo problema, resta in coda alle righe', () => {
+      const neutral = swap('Incineroar', 3, 0, [steel.key]);
+      view(advice([best, other, neutral]));
+      expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +1', 'Incineroar al posto di Corviknight, voto ±0']);
     });
   });
 
-  it('cambio di mossa: una riga della stessa lista, "Su X", mossa vecchia barrata → nuova, Applica e "Apri il set"', async () => {
+  it('cambio di mossa: la mossa nuova protagonista, "Su X", la vecchia barrata; Applica e "Apri il set"', async () => {
     const user = userEvent.setup();
     const move: MoveFix = { index: 0, member: 'Great Tusk', set: six[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 4, solves: [zapdos.key], after: before };
     const empty: MoveFix = { ...move, index: 1, member: 'Gholdengo', set: six[1], slot: 3, from: '', to: 'Thunderbolt', gain: 1, solves: [pivot.key] };
     const h = view(advice([swap('Rotom-Wash', 4, 2, [fire.key])], [move, empty]));
-    expect(rows().map(li => li.getAttribute('aria-label'))).toEqual([
-      'Knock Off al posto di Rapid Spin su Great Tusk, voto +4', 'Rotom-Wash al posto di Magikarp, voto +2', 'Thunderbolt in uno slot libero su Gholdengo, voto +1',
-    ]);
-    const row = rows()[0];
-    expect(row).toHaveClass('is-move');
-    expect(row.querySelector('.coach-art')).toHaveTextContent('Su Great Tusk');
-    expect(row.querySelector('.coach-art s')).toHaveTextContent('Rapid Spin');
-    expect(row.querySelector('.coach-art-moves .coach-move-in')).toHaveTextContent('Knock Off');
-    expect(row.querySelector('.coach-art')).toHaveTextContent('cambio di mossa');
-    expect(rows()[2].querySelector('.coach-art')).toHaveTextContent('slot libero');
-    await user.click(within(row).getByRole('button', { name: /^Applica: Knock Off/ }));
+    expect(heroName()).toBe('Knock Off al posto di Rapid Spin su Great Tusk, voto +4');
+    expect(rowNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +2', 'Thunderbolt in uno slot libero su Gholdengo, voto +1']);
+    const hero = heroOf();
+    expect(hero).toHaveClass('is-move');
+    const title = hero.querySelector('.coach-hero-title.is-move')!;
+    expect(title.querySelector('.coach-move-in')).toHaveTextContent('Knock Off');
+    const plates = [...title.querySelectorAll('.coach-plate')];
+    expect(plates[0]).toHaveTextContent('SuGreat Tusk');
+    expect(plates[1]).toHaveClass('is-out');
+    expect(plates[1].querySelector('s')).toHaveTextContent('Rapid Spin');
+    expect(title).toHaveTextContent('cambio di mossa');
+    // Nelle righe la mossa è segnata come tale
+    expect(list().querySelectorAll('li.coach-item')[1]).toHaveClass('is-move');
+    await user.click(within(hero).getByRole('button', { name: /^Applica: Knock Off/ }));
     expect(h.onApplyMove).toHaveBeenLastCalledWith(move);
-    await user.click(within(row).getByRole('button', { name: 'Apri il set: Great Tusk' }));
+    await user.click(within(hero).getByRole('button', { name: 'Apri il set: Great Tusk' }));
     expect(h.onMoveFix).toHaveBeenLastCalledWith(move);
+    // Uno slot libero: "slot libero" al posto della mossa vecchia
+    await user.click(within(list()).getByRole('button', { name: 'Apri: Thunderbolt in uno slot libero su Gholdengo, voto +1' }));
+    expect(heroOf().querySelector('.coach-hero-free')).toHaveTextContent('slot libero');
+    expect(heroOf().querySelector('.coach-plate.is-out')).toBeNull();
   });
 
-  it('un cambio che lascia il team senza un ruolo d\'aiuto lo dice sulla riga: "Perdi Danno nel Tempo"; gli altri no', () => {
+  it('un cambio che lascia il team senza un ruolo d\'aiuto lo dice in "Costa": "Perdi Danno nel Tempo"; anche nella riga; gli altri no', async () => {
+    const user = userEvent.setup();
     const move: MoveFix = { index: 0, member: 'Great Tusk', set: six[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 6, solves: [zapdos.key], after: before,
       lostHelpers: ['dot', 'phazer'], penalty: 2 };
     view(advice([swap('Rotom-Wash', 4, 2, [fire.key])], [move]));
-    const [lossy, clean] = rows();
-    expect(lossy).toHaveClass('is-move');
-    expect(lossy.querySelector('.coach-lost')).toHaveTextContent('PerdiDanno nel Tempo, Anti-setup');
+    expect(heroOf()).toHaveClass('is-move');
+    const costs = within(heroOf()).getByRole('region', { name: 'Costa' });
+    expect(costs).toHaveClass('is-bad');
+    expect(costs.querySelector('.coach-lost')).toHaveTextContent('Perdi Danno nel Tempo, Anti-setup');
     // Il voto mostrato resta quello vero
-    expect(lossy.querySelector('.coach-gain')).toHaveTextContent('+6');
-    expect(clean.querySelector('.coach-lost')).toBeNull();
+    expect(heroOf().querySelector('.coach-gain')).toHaveTextContent('+6');
+    const [clean] = list().querySelectorAll('li.coach-item');
+    expect(clean.querySelector('.coach-item-cost')).toBeNull();
+    await user.click(rowButtons()[0]);
+    expect(heroOf().querySelector('.coach-lost')).toBeNull();
+    expect(within(heroOf()).getByRole('region', { name: 'Costa' })).toHaveTextContent('Niente');
+    const [lossy] = list().querySelectorAll('li.coach-item');
+    expect(lossy.querySelector('.coach-item-cost')).toHaveTextContent('CostaDanno nel Tempo, Anti-setup');
   });
 
-  it('aperto su un problema dalla testata di un\'area: la pagina della prima riga che lo risolve, in vista e accesa per 2 secondi', () => {
+  it('aperto su un problema dalla testata di un\'area: filtro su quel problema, la prima proposta che lo risolve nella carta, in vista e accesa per 2 secondi', () => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
     vi.useFakeTimers();
     try {
-      const fixes = Array.from({ length: 6 }, (_, i) => swap(['Zapdos', 'Heatran', 'Rotom-Wash', 'Landorus-Therian', 'Clefable', 'Dragonite'][i], i, 9 - i, i === 5 ? [pivot.key] : [fire.key]));
+      const fixes = six6.map((s, i) => swap(s, i, 9 - i, i === 5 ? [pivot.key] : [fire.key]));
       renderIt(<CoachingView coaching={coachingOf(problems)} advice={advice(fixes)} members={6} rating={rating} {...noop} focus={{ key: pivot.key, nonce: 1 }} />);
-      const row = rows().find(li => li.getAttribute('aria-label')!.startsWith('Dragonite'))!;
-      expect(row).toBeTruthy();
-      expect(within(list()).getByRole('navigation')).toHaveTextContent('2/2');
-      expect(row).toHaveClass('is-flash');
-      expect(scroll.mock.contexts[0]).toBe(row);
+      const hero = heroOf();
+      expect(heroName()).toBe('Dragonite al posto di Sunkern, voto +4');
+      expect(hero).toHaveClass('is-flash');
+      expect(scroll.mock.contexts[0]).toBe(hero);
+      expect(railItem('Pivot')).toHaveAttribute('aria-pressed', 'true');
+      expect(allButton()).toHaveAttribute('aria-pressed', 'false');
+      expect(othersHead()).toHaveTextContent('Altre proposte per questo problema');
+      expect(rowNames()).toEqual([]);
       act(() => { vi.advanceTimersByTime(2100); });
-      expect(row).not.toHaveClass('is-flash');
+      expect(heroOf()).not.toHaveClass('is-flash');
     } finally {
       vi.useRealTimers();
       delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
     }
   });
 
-  it('consigli in calcolo: righe scheletro (aria-busy) e un avviso per lo screen reader', () => {
+  it('consigli in calcolo: la carta e le righe scheletro (aria-busy) e un avviso per lo screen reader', () => {
     view(null);
+    expect(list().querySelector('.coach-hero.skeleton')).not.toBeNull();
+    expect(within(list()).queryByRole('article')).toBeNull();
     const busy = list().querySelector('ol[aria-busy="true"]')!;
-    expect(busy.querySelectorAll('.coach-row.skeleton')).toHaveLength(4);
+    expect(busy.querySelectorAll('li.coach-item.skeleton')).toHaveLength(4);
     expect(screen.getByRole('status')).toHaveTextContent('Calcolo dei consigli…');
   });
 
-  it('le aree senza problemi in una riga verde sopra la lista', () => {
+  it('le aree senza problemi in una riga verde sotto i problemi', () => {
     renderIt(<CoachingView coaching={coachingOf([zapdos])} advice={advice([swap('Rotom-Wash', 4, 2, [zapdos.key])])} members={6} rating={rating} {...noop} />);
-    const clean = document.querySelector('.coach-clean')!;
+    const clean = rail().querySelector('.coach-clean')!;
     expect(clean).toHaveTextContent(`Nessun problema in Offesa ${Math.round(before.strength!)} · Ruoli`);
     expect(clean).not.toHaveTextContent('Difesa');
+  });
+
+  describe('Da sistemare', () => {
+    const stuck: CoachProblem = { severity: 'minor', category: 'redundancy', text: 'Due membri lenti', fixes: [], key: 'redundancy:slow' };
+
+    it('i problemi una volta sola, col numero di proposte che li risolvono; "Tutte le proposte" acceso; senza proposte spento', () => {
+      view(advice([swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key]), swap('Heatran', 1, 3, [fire.key]), swap('Zapdos', 5, 2, [pivot.key])]),
+        { coaching: coachingOf([...problems, stuck]) });
+      expect(within(rail()).getByRole('heading', { name: /^Da sistemare/ })).toHaveTextContent('Da sistemare5');
+      expect(allButton()).toHaveAttribute('aria-pressed', 'true');
+      expect(allButton().querySelector('.coach-diag-n')).toHaveTextContent('3');
+      const n = (text: string) => railItem(text).querySelector('.coach-diag-n')!;
+      expect(n('contro Fire')).toHaveTextContent('2');
+      expect(n('contro Fire')).toHaveAttribute('aria-label', '2 proposte');
+      expect(n('contro Zapdos')).toHaveTextContent('1');
+      expect(n('Pivot')).toHaveTextContent('1');
+      expect(railItem('Acciaio')).toBeDisabled();
+      expect(railItem('Due membri lenti')).toBeDisabled();
+      expect(n('Acciaio')).toHaveTextContent('–');
+      // Pochi: nessuna pagina
+      expect(within(rail()).queryByRole('navigation')).toBeNull();
+    });
+
+    it('i problemi con la stessa proposta migliore in un blocco, con in testa chi li risolve tutti; un problema solo non ha testata', () => {
+      view(advice([swap('Zapdos', 5, 5, [pivot.key, steel.key]), swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key]), swap('Heatran', 1, 1, [fire.key])]),
+        { coaching: coachingOf([...problems, stuck]) });
+      const cures = [...rail().querySelectorAll<HTMLButtonElement>('.coach-diag-cure')];
+      expect(cures.map(c => c.getAttribute('aria-label'))).toEqual([
+        'Apri Rotom-Wash al posto di Magikarp, voto +4: risolve tutti e 2 i problemi qui sotto',
+        'Apri Zapdos al posto di Sunkern, voto +5: risolve tutti e 2 i problemi qui sotto',
+      ]);
+      expect(cures[0]).toHaveTextContent('Rotom-Wash');
+      expect(cures[0]).toHaveTextContent('li risolve tutti e 2');
+      // L'ordine: la testata, poi i suoi problemi; in coda quelli che nessuno risolve
+      const order = [...rail().querySelectorAll<HTMLButtonElement>('.coach-diag-cure, .coach-diag-item:not(.is-all)')]
+        .map(b => (b.classList.contains('coach-diag-cure') ? `cura:${b.textContent!.includes('Rotom') ? 'Rotom' : 'Zapdos'}` : b.textContent!.includes('Fire') ? 'fire' : b.textContent!.includes('contro Zapdos') ? 'zapdos'
+          : b.textContent!.includes('Pivot') ? 'pivot' : b.textContent!.includes('Acciaio') ? 'steel' : 'stuck'));
+      expect(order).toEqual(['cura:Rotom', 'fire', 'zapdos', 'cura:Zapdos', 'pivot', 'steel', 'stuck']);
+      // La carta grande (Zapdos) risolve Pivot e Acciaio: righe accese
+      expect(railItem('Pivot')).toHaveClass('is-cured');
+      expect(railItem('Pivot')).toHaveTextContent('lo risolve la proposta nella carta');
+      expect(railItem('contro Fire')).not.toHaveClass('is-cured');
+      expect(cures[1]).toHaveClass('is-open');
+    });
+
+    it('un clic sulla testata di un blocco apre quella proposta nella carta grande', async () => {
+      const user = userEvent.setup();
+      view(advice([swap('Zapdos', 5, 5, [pivot.key, steel.key]), swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key])]));
+      expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
+      await user.click(within(rail()).getByRole('button', { name: /^Apri Rotom-Wash al posto di Magikarp, voto \+4:/ }));
+      expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
+      expect(band()).toHaveTextContent('La proposta scelta');
+      expect(railItem('contro Fire')).toHaveClass('is-cured');
+      await user.click(within(list()).getByRole('button', { name: 'Torna alla migliore' }));
+      expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
+    });
+
+    it('un clic su un problema mostra solo le proposte che lo risolvono; di nuovo, o "Mostra tutte", tutte', async () => {
+      const user = userEvent.setup();
+      view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 4, [fire.key]), swap('Heatran', 1, 3, [fire.key, zapdos.key]), swap('Clefable', 2, 2, [steel.key])]));
+      await user.click(railItem('contro Fire'));
+      expect(railItem('contro Fire')).toHaveAttribute('aria-pressed', 'true');
+      expect(allButton()).toHaveAttribute('aria-pressed', 'false');
+      expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
+      expect(band()).toHaveTextContent('La proposta migliore');
+      expect(rowNames()).toEqual(['Heatran al posto di Gholdengo, voto +3']);
+      expect(othersHead()).toHaveTextContent('Altre proposte per questo problema1');
+      // Di nuovo sullo stesso problema: tutte
+      await user.click(railItem('contro Fire'));
+      expect(allButton()).toHaveAttribute('aria-pressed', 'true');
+      expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
+      expect(rowNames()).toHaveLength(3);
+      // "Mostra tutte" nel titolo della lista
+      await user.click(railItem('Pivot'));
+      expect(rowNames()).toEqual([]);
+      expect(within(list()).getByText('Nessun\'altra proposta risolve questo problema')).toBeInTheDocument();
+      await user.click(within(list()).getByRole('button', { name: 'Mostra tutte' }));
+      expect(othersHead()).toHaveTextContent('Altre proposte3');
+      expect(within(list()).queryByRole('button', { name: 'Mostra tutte' })).toBeNull();
+      expect(railItem('Pivot')).toHaveAttribute('aria-pressed', 'false');
+      // "Tutte le proposte" toglie il filtro
+      await user.click(railItem('Acciaio'));
+      expect(heroName()).toBe('Clefable al posto di Toxapex, voto +2');
+      await user.click(allButton());
+      expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
+    });
+
+    it('il "?" apre "Come funziona il Coaching"', async () => {
+      const user = userEvent.setup();
+      view(advice([swap('Zapdos', 5, 5, [pivot.key])]));
+      await user.click(within(rail()).getByRole('button', { name: 'Come funziona il Coaching' }));
+      const dialog = screen.getByRole('dialog', { name: 'Come funziona il Coaching' });
+      expect(within(dialog).getAllByRole('heading', { level: 4 }).map(h => h.textContent)).toEqual(['Da sistemare', 'La carta grande', 'Risolve e Costa', 'Applica e Oppure']);
+    });
   });
 
   it('nessun problema: Eevee contento, "Il team è a posto", i valori delle aree, Esporta per Showdown e la Panoramica', async () => {
@@ -473,23 +684,39 @@ describe('CoachingView', () => {
     expect(screen.getByText('1 bannato escluso')).toBeInTheDocument();
   });
 
-  it('coi consigli veri: ogni proposta del motore compare (fra righe e alternative), il +N di ogni riga è quello del motore', () => {
+  it('coi consigli veri: ogni gruppo del motore compare (carta, righe, alternative), col +N del motore', async () => {
+    const user = userEvent.setup();
     const coaching = coachTeam(six, DEFAULT_FORMAT, data);
     const adv = adviceOf(six, DEFAULT_FORMAT, data);
-    const groups = proposalGroups(coaching.problems, adv);
+    const groups = neutralAsAlternatives(proposalGroups(coaching.problems, adv));
     expect(groups.length).toBeGreaterThan(0);
     renderIt(<CoachingView coaching={coaching} advice={adv} members={6} rating={rateTeam(six, data, 'it')} {...noop} />);
-    expect(list().querySelector('.coach-count')).toHaveTextContent(String(groups.length));
-    rows().forEach((li, i) => expect(li.querySelector('.coach-gain b')).toHaveTextContent(gainText(groups[i].options[0].fix.gain)));
+    expect(othersHead().querySelector('.coach-count')).toHaveTextContent(String(groups.length - 1));
+    expect(heroOf()).toHaveAttribute('data-row', groups[0].id);
+    expect(heroOf().querySelector('.coach-gain')).toHaveTextContent(gainText(groups[0].options[0].fix.gain));
+    expect(altTiles().map(t => t.querySelector('b')!.textContent)).toEqual(groups[0].options.slice(1).map(o => gainText(o.fix.gain)));
+    const ids: string[] = [];
+    const gains: string[] = [];
+    for (let page = 0; page < 30; page++) {
+      for (const li of list().querySelectorAll<HTMLElement>('li.coach-item')) {
+        ids.push(li.getAttribute('data-row')!);
+        gains.push(li.querySelector('.coach-item-gain')!.textContent!);
+      }
+      const next = within(list()).queryByRole('button', { name: 'Proposte successive' });
+      if (!next || (next as HTMLButtonElement).disabled) break;
+      await user.click(next);
+    }
+    expect(ids).toEqual(groups.slice(1).map(g => g.id));
+    expect(gains).toEqual(groups.slice(1).map(g => gainText(g.options[0].fix.gain)));
   });
 });
 
 describe('proposta di mossa nell\'editor', () => {
   it('"Apri il set": si apre l\'editor del membro con la proposta; Applica cambia la mossa, Annulla del toast la riporta', async () => {
     const user = await openCoaching(fixable);
-    const row = await findRow(user, MOVE);
-    const [, to, member, gain] = MOVE.exec(row.getAttribute('aria-label')!)!;
-    await user.click(within(row).getByRole('button', { name: `Apri il set: ${member}` }));
+    const hero = await findRow(user, MOVE);
+    const [, to, member, gain] = MOVE.exec(heroName())!;
+    await user.click(within(hero).getByRole('button', { name: `Apri il set: ${member}` }));
     const card = document.querySelector<HTMLElement>('.slot.open')!;
     expect(card).toBeTruthy();
     // Il fuoco va su Applica
@@ -512,11 +739,11 @@ describe('proposta di mossa nell\'editor', () => {
     expect(input().value).toBe(before);
   });
 
-  it('Applica sulla riga: la mossa cambia subito, senza editor; Annulla del toast la riporta', async () => {
+  it('Applica nella carta: la mossa cambia subito, senza editor; Annulla del toast la riporta', async () => {
     const user = await openCoaching(fixable);
-    const row = await findRow(user, MOVE);
-    const [, to, member] = MOVE.exec(row.getAttribute('aria-label')!)!;
-    await user.click(within(row).getByRole('button', { name: /^Applica: / }));
+    const hero = await findRow(user, MOVE);
+    const [, to, member] = MOVE.exec(heroName())!;
+    await user.click(within(hero).getByRole('button', { name: /^Applica: / }));
     expect(document.querySelector('.slot.open')).toBeNull();
     const toast = document.querySelector<HTMLElement>('.undo-toast')!;
     expect(toast).toHaveTextContent(`${member}: `);
@@ -527,9 +754,9 @@ describe('proposta di mossa nell\'editor', () => {
 
   it('Annulla della proposta: nessun cambio, la proposta sparisce, l\'editor resta aperto', async () => {
     const user = await openCoaching(fixable);
-    const row = await findRow(user, MOVE);
-    const member = MOVE.exec(row.getAttribute('aria-label')!)![2];
-    await user.click(within(row).getByRole('button', { name: `Apri il set: ${member}` }));
+    const hero = await findRow(user, MOVE);
+    const member = MOVE.exec(heroName())![2];
+    await user.click(within(hero).getByRole('button', { name: `Apri il set: ${member}` }));
     const card = document.querySelector<HTMLElement>('.slot.open')!;
     await user.click(within(card).getByRole('button', { name: 'Annulla' }));
     expect(card.querySelector('.move-proposal')).toBeNull();
@@ -541,9 +768,9 @@ describe('proposta di mossa nell\'editor', () => {
   it('team compresso: "Apri il set" apre comunque l\'editor con la proposta e lo slot evidenziato', async () => {
     const user = await openCoaching(fixable);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    const row = await findRow(user, MOVE);
-    const member = MOVE.exec(row.getAttribute('aria-label')!)![2];
-    await user.click(within(row).getByRole('button', { name: `Apri il set: ${member}` }));
+    const hero = await findRow(user, MOVE);
+    const member = MOVE.exec(heroName())![2];
+    await user.click(within(hero).getByRole('button', { name: `Apri il set: ${member}` }));
     const card = document.querySelector<HTMLElement>('.slot.open')!;
     expect(card).toBeTruthy();
     expect(card.querySelector('.move-proposal')).not.toBeNull();
@@ -554,8 +781,8 @@ describe('proposta di mossa nell\'editor', () => {
   // i consigli si ricalcolano e la riga sparisce; la guardia in App.openMoveFix non ha un punto d'ingresso nei test.
   it('rimosso il membro, nessuna proposta resta aperta', async () => {
     const user = await openCoaching(fixable);
-    const row = await findRow(user, MOVE);
-    const member = MOVE.exec(row.getAttribute('aria-label')!)![2];
+    await findRow(user, MOVE);
+    const member = MOVE.exec(heroName())![2];
     await user.click(screen.getByRole('button', { name: new RegExp(`^Rimuovi ${member}`) }));
     expect(document.querySelector('.move-proposal')).toBeNull();
     expect(document.querySelector('.undo-toast')).toHaveTextContent('rimosso');

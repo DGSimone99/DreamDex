@@ -151,12 +151,20 @@ describe('Panoramica di Analisi', () => {
     expect(panel().querySelector('.overview-headline .alert-mark')).toBeNull();
   });
 
-  it('Coaching: un membro fuori regola ha una proposta che lo toglie, con la pillola grave nella riga Regole', async () => {
+  it('Coaching: un membro fuori regola ha una proposta che lo toglie: il problema grave a sinistra, la proposta lo risolve', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
-    const chip = (await within(panel()).findAllByText((_, el) => !!el?.matches('.area-chip[data-key^="rules:"]')))[0];
-    expect(chip).toHaveClass('serious');
-    expect(chip.closest('.coach-ar')!.querySelector('.coach-ar-who b')).toHaveTextContent('Regole');
+    await within(panel()).findByRole('article', {}, { timeout: 8000 });
+    // Il problema della regola nella colonna Da sistemare: grave, con almeno una proposta che lo risolve
+    const rule = [...panel().querySelectorAll<HTMLButtonElement>('.coach-diag-item:not(.is-all)')].find(b => /Dragapult.*(legale|vietat)/.test(b.textContent!))!;
+    expect(rule).toBeTruthy();
+    expect(rule).toHaveClass('serious');
+    expect(rule).not.toBeDisabled();
+    // Un clic: la carta grande è una proposta al posto di Dragapult, e fra i problemi risolti c'è la regola
+    await user.click(rule);
+    const hero = within(panel()).getByRole('article');
+    expect(hero.querySelector('h4')).toHaveTextContent(/al posto di Dragapult, voto/);
+    expect([...hero.querySelectorAll('li.coach-solved')].some(li => /Dragapult.*(legale|vietat)/.test(li.textContent!))).toBe(true);
   });
 
   it('team stall: niente più la nota "valutato come stall"', async () => {
