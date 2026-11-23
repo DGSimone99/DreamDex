@@ -338,7 +338,7 @@
   .analysis-grade-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .analysis-grade .grade-pop { top: calc(100% + 4px); right: var(--sp-2); width: min(260px, calc(100vw - 28px)); text-align: left; }
   .analysis-grade .grade-pop .grade-areas { display: grid; margin-top: 0; gap: var(--sp-2); }
-  .analysis-grade .grade-pop button.grade-area { min-height: 40px; }
+  .analysis-grade .grade-pop button.grade-area { min-height: 44px; }
   .analysis-grade.grade-S { --grade: var(--accent-2); }
   .analysis-grade.grade-A { --grade: var(--good); }
   .analysis-grade.grade-B { --grade: var(--accent); }
@@ -350,11 +350,11 @@
   .analysis-grade.rules-broken .analysis-grade-overall { color: var(--muted); }
 }
 
-/* Tablet: il Riassunto su due colonne, Meteo e campo e Trappole a sinistra, Sinergie a destra, ogni titolo sopra la sua
-   colonna; resta alto quanto il contenuto (tutte le righe a vista) */
+/* Tablet: il Riassunto su due colonne, a sinistra il tipo di team, Meteo e campi e Trappole, a destra le Sinergie dall'alto
+   (accanto al tipo, così la colonna corta non lascia un vuoto sotto le Trappole); alto quanto il contenuto */
 @media (min-width: 600px) and (max-width: 1099px) {
   .dash-summary .sum-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto 1fr; column-gap: var(--sp-9);
-    grid-template-areas: "hero hero" "field syn" "haz syn"; }
+    grid-template-areas: "hero syn" "field syn" "haz syn"; }
   .dash-summary .sum-hero { grid-area: hero; }
   .dash-summary .sum-field { grid-area: field; }
   .dash-summary .sum-haz { grid-area: haz; }

@@ -265,14 +265,14 @@ describe('Cruscotto della Panoramica', () => {
     const head = screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-meta-hint')!;
     expect(head).toHaveAttribute('data-hint', itText['dash.speedHintMeta']);
     expect(head.querySelector('.visually-hidden')).toHaveTextContent(itText['dash.speedHintMeta']);
-    expect(head).toHaveTextContent(/^1\/2 sopra la media/);
+    expect(head).toHaveTextContent(/^1\/2 sopra metà del meta/);
   });
 
   it('Velocità: la media a vista è solo il numero, per intero ai lettori di schermo', () => {
     mount();
     const avg = screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-avg')!;
     expect(avg.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^300$/);
-    expect(avg.querySelector('.visually-hidden')).toHaveTextContent(/^media meta 300$/);
+    expect(avg.querySelector('.visually-hidden')).toHaveTextContent(/^metà del meta 300$/);
   });
 
   it('Velocità: senza controllo niente riga né tooltip; con il controllo solo quello che c\'è', () => {

@@ -108,14 +108,14 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Ruoli' })).toHaveTextContent('I ruoli che servono al team e chi li copre');
   });
 
-  it('meta spento: "Meta spento" e la media del tier', async () => {
+  it('meta spento: "Meta spento" e metà del tier', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     // Meta spento: nel Riassunto niente Minacce
     expect(within(within(panel()).getByRole('region', { name: 'Riassunto' })).queryByText('Minacce')).toBeNull();
-    expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/media del tier/);
+    expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/metà del tier/);
   });
 
   it("team di 3 senza statistiche: il Riassunto c'è, nessun crash, niente Minacce", async () => {
