@@ -62,7 +62,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
             </span>
           )}
           {lanes.map((lane, i) => (
-            <span key={`${lane.species}-${i}`} className="dash-lane" data-nav="" {...hover(i)} {...tip.focus(i)}>
+            <span key={`${lane.species}-${i}`} className="dash-lane" data-nav="" data-tap-tip {...hover(i)} {...tip.focus(i)}>
               {/* Nome e velocità separati per i lettori di schermo: "Barraskewda, 371" */}
               <span className="visually-hidden">{`${lane.species}, `}</span>
               <span className={`dash-bar${lane.above ? ' above' : ''}`} style={{ height: pct(lane.speed) }}><small>{lane.speed}</small></span>
@@ -70,7 +70,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
           ))}
         </div>
         <div className="dash-sprites" aria-hidden="true">
-          {lanes.map((lane, i) => <span key={`${lane.species}-${i}`} className="dash-lane-sprite" {...hover(i)}><Sprite species={lane.species} size={SPRITE[density]} /></span>)}
+          {lanes.map((lane, i) => <span key={`${lane.species}-${i}`} className="dash-lane-sprite" data-tap-tip {...hover(i)}><Sprite species={lane.species} size={SPRITE[density]} /></span>)}
         </div>
       </div>
       {/* Stretto: il controllo solo nel fumetto della testata e, per intero, ai lettori di schermo */}

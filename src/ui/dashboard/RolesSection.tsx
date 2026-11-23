@@ -71,7 +71,7 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
   const tip = useRoleTip(chip);
   return (
     // Raggiungibile con le frecce (data-nav: le fasce sono un posto solo nel giro del Tab); col fuoco il tooltip
-    <li data-fit data-nav="" className={`dash-role ${stateOf(chip)}`} {...tip.bind}>
+    <li data-fit data-nav="" data-tap-tip className={`dash-role ${stateOf(chip)}`} {...tip.bind}>
       {tip.node}
       <span className="dash-role-tag">
         <Icon name={chip.covered ? 'check' : 'close'} />

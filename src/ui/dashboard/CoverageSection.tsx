@@ -34,7 +34,7 @@ function TypeIcon({ type }: { type: string }) {
 function Cell({ state, label, gentle, onEnter, onLeave }: { state: CellState; label: string; gentle: boolean; onEnter: (el: Element) => void; onLeave: () => void }) {
   // Raggiungibile con le frecce (data-nav: la tabella è un posto solo nel giro del Tab); col fuoco da tastiera il tooltip
   return (
-    <td className={`dash-cell ${gentle && state !== 'ok' ? 'soft' : state}`} aria-label={label} data-nav="" onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}
+    <td className={`dash-cell ${gentle && state !== 'ok' ? 'soft' : state}`} aria-label={label} data-nav="" data-tap-tip onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}
       onFocus={e => { if (keyboardFocus(e.currentTarget)) onEnter(e.currentTarget); }} onBlur={onLeave}>
       <Icon name={state === 'ok' ? 'check' : 'close'} />
     </td>

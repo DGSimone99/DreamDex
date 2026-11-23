@@ -921,6 +921,15 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(cov()).toHaveTextContent('3 senza check · 4 con un solo check');
   });
 
+  it('col dito un tocco apre il tooltip (data-tap-tip) di ciò che al clic non fa niente: caselle della Copertura, barre e sprite della Velocità, pillole dei Ruoli', () => {
+    const { container } = renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} density="normal" />);
+    for (const sel of ['td.dash-cell', '.dash-lane', '.dash-lane-sprite', 'li.dash-role:not(.more)']) {
+      const els = container.querySelectorAll(sel);
+      expect(els.length, sel).toBeGreaterThan(0);
+      els.forEach(el => expect(el, sel).toHaveAttribute('data-tap-tip'));
+    }
+  });
+
   it('cruscotto alto (ricco): Tipi e Meta insieme, senza schede; in testata i numeri di tutti e due', () => {
     mount({ density: 'roomy' });
     expect(within(cov()).queryByRole('tablist')).toBeNull();
