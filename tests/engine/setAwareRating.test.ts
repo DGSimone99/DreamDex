@@ -54,20 +54,20 @@ describe('team tutto fisico o tutto speciale', () => {
   const walls = [withMoves('Blissey', ['Soft-Boiled', 'Toxic']), withMoves('Toxapex', ['Recover', 'Haze'])];
 
   // 2026-11-05: niente malus a parte "un solo stile" (contava due volte la stessa mancanza): lo dice la riga dei Ruoli
-  it('nessun attaccante fisico: la riga "Attaccante fisico" dei Ruoli, una volta sola', () => {
+  it('nessun attaccante fisico: la riga "Attaccante Fisico" dei Ruoli, una volta sola', () => {
     // Da balance (2026-11-11: lo leggerebbe Semi-stall, dove basta un Attaccante di qualunque lato)
     const items = rateTeam([...special, ...walls], fixtureData, 'it', { archetype: 'balance' })!.penalty.items;
-    expect(items.filter(i => i.text.includes('Attaccante fisico'))).toHaveLength(1);
+    expect(items.filter(i => i.text.includes('Attaccante Fisico'))).toHaveLength(1);
     expect(items.map(i => i.text)).not.toContain('Nessun attaccante fisico');
   });
 
   it('un attaccante fisico basta', () => {
-    expect(penalties([...special, withMoves('Great Tusk', ['Headlong Rush', 'Close Combat']), walls[0]]).map(i => i.text).join(' | ')).not.toMatch(/Attaccante fisico/);
+    expect(penalties([...special, withMoves('Great Tusk', ['Headlong Rush', 'Close Combat']), walls[0]]).map(i => i.text).join(' | ')).not.toMatch(/Attaccante Fisico/);
   });
 
   it('il coaching lo segnala tra i ruoli', () => {
     expect(coachTeam([...special, ...walls], DEFAULT_FORMAT, fixtureData).problems)
-      .toContainEqual(expect.objectContaining({ category: 'roles', text: expect.stringContaining('Attaccante fisico') }));
+      .toContainEqual(expect.objectContaining({ category: 'roles', text: expect.stringContaining('Attaccante Fisico') }));
   });
 
 });

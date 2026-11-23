@@ -112,7 +112,7 @@ describe('Panoramica di Analisi', () => {
     for (const name of ['Great Tusk', 'Gholdengo', 'Dragapult']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    expect(within(summary).getByRole('heading', { name: 'Meteo e campo' })).toBeInTheDocument();
+    expect(within(summary).getByRole('heading', { name: 'Meteo e campi' })).toBeInTheDocument();
     expect(within(summary).getByRole('heading', { name: 'Trappole' })).toBeInTheDocument();
     expect(within(summary).queryByText('Minacce')).toBeNull();
   });
@@ -288,7 +288,7 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = await within(panel()).findByRole('region', { name: 'Da sistemare' }, { timeout: 5000 });
     const go = await within(row).findByRole('button', { name: /^Vai al Coaching/ }, { timeout: 8000 });
     expect(row).toHaveTextContent(/\d+ problemi?/);
-    expect(row).toHaveTextContent(/il Coaching ha \d+ propost[ae]|nessuna sostituzione singola/);
+    expect(row).toHaveTextContent(/Il Coaching ha \d+ propost[ae]|Nessuna sostituzione singola/);
     await user.click(go);
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
   });
@@ -311,7 +311,7 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(onView).not.toHaveBeenCalled();
   });
 
-  it('problemi e proposte: "N problemi · il Coaching ha M proposte, la migliore +X", tutta la riga porta al Coaching', async () => {
+  it('problemi e proposte: "N problemi · Il Coaching ha M proposte, la migliore +X", tutta la riga porta al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
     const a = problem({ text: 'Debole a Fuoco', key: 'a', severity: 'serious' });
@@ -323,20 +323,20 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-link', 'serious');
     expect(row).toHaveTextContent('2 problemi');
-    expect(row).toHaveTextContent('il Coaching ha 2 proposte, la migliore +4');
+    expect(row).toHaveTextContent('Il Coaching ha 2 proposte, la migliore +4');
     expect(row.querySelector('.fix-gain')).toHaveTextContent('+4');
-    expect(within(row).getByRole('button', { name: 'Vai al Coaching: 2 problemi, il Coaching ha 2 proposte, la migliore +4' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Vai al Coaching: 2 problemi, Il Coaching ha 2 proposte, la migliore +4' })).toBeInTheDocument();
     await user.click(within(row).getByText('2 problemi'));
     expect(onView).toHaveBeenCalledWith('coaching');
   });
 
-  it('una proposta sola: "il Coaching ha 1 proposta: +X"; coi soli minori la riga è gialla', () => {
+  it('una proposta sola: "Il Coaching ha 1 proposta: +X"; coi soli minori la riga è gialla', () => {
     const p = problem({ text: 'Manca Pivot', key: 'p' });
     render(<LangProvider lang="it"><FixRow problems={[p]} advice={adviceSolving('p')} onView={() => {}} /></LangProvider>);
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('minor');
     expect(row).toHaveTextContent('1 problema');
-    expect(row).toHaveTextContent('il Coaching ha 1 proposta: +1');
+    expect(row).toHaveTextContent('Il Coaching ha 1 proposta: +1');
   });
 
   it('le proposte si contano come le righe del Coaching: stesso posto e stesso problema sono una riga', () => {
@@ -345,7 +345,7 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(coachingOffer([p], advice)).toEqual({ count: 1, best: 3 });
   });
 
-  it('problemi senza proposta: "N problemi · nessuna sostituzione singola li risolve", e porta comunque al Coaching', async () => {
+  it('problemi senza proposta: "N problemi · Nessuna sostituzione singola li risolve", e porta comunque al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
     const problems = [problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })];
@@ -353,7 +353,7 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-link', 'serious');
     expect(row).toHaveTextContent('2 problemi');
-    expect(row).toHaveTextContent('nessuna sostituzione singola li risolve');
+    expect(row).toHaveTextContent('Nessuna sostituzione singola li risolve');
     await user.click(within(row).getByRole('button', { name: /^Vai al Coaching/ }));
     expect(onView).toHaveBeenCalledWith('coaching');
   });
@@ -361,7 +361,7 @@ describe('Panoramica: la riga del Coaching', () => {
   it('in inglese', () => {
     const p = problem({ text: 'x', key: 'x' });
     render(<LangProvider lang="en"><FixRow problems={[p]} advice={NO_ADVICE} onView={() => {}} /></LangProvider>);
-    expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemno single swap solves itGo to Coaching');
+    expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemNo single swap solves itGo to Coaching');
   });
 
   it('consigli ancora da calcolare (advice null): numero e colore subito, aspetta solo la parte delle proposte (senza link)', () => {
@@ -389,7 +389,7 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(row).toHaveClass('is-link', 'building');
     expect(row).not.toHaveClass('serious');
     expect(row.querySelector('.fix-label')).toHaveTextContent(/^4 di 6 nel team$/);
-    expect(row.querySelector('.fix-items')).toHaveTextContent(/^2 problemi · nessuna sostituzione singola li risolve$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^2 problemi · Nessuna sostituzione singola li risolve$/);
     expect(within(row).getByRole('button', { name: /^Vai al Coaching: 2 problemi/ })).toBeInTheDocument();
   });
 

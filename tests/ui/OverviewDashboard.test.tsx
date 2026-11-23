@@ -474,14 +474,14 @@ describe('Riassunto', () => {
     const arch = region().querySelector<HTMLElement>('.sum-arch')!;
     expect(arch.getAttribute('data-hint')).toContain('Attaccano: Garchomp 92, Zapdos 86 · Reggono: Toxapex 88');
     expect(region().querySelector('.sum-crew, .sum-mon')).toBeNull();
-    expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campo', 'Trappole', 'Sinergie']);
+    expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campi', 'Trappole', 'Sinergie']);
   });
 
-  it('in inglese: Offense / Defense, Weather & field, Hazards, None', () => {
+  it('in inglese: Offense / Defense, Weather & fields, Hazards, None', () => {
     render(<LangProvider lang="en"><OverviewDashboard data={sample()} summary={summaryOf({ hazards: [] })} members={6} onView={vi.fn()} density="normal" /></LangProvider>);
     const summary = screen.getByRole('region', { name: 'Summary' });
     expect(summary.querySelector('.sum-arch')!.getAttribute('data-hint')).toContain('Attack: Garchomp 92, Zapdos 86 · Hold: Toxapex 88');
-    expect(within(summary).getByRole('heading', { name: 'Weather & field' }).closest('.sum-sec')).toHaveTextContent(/None$/);
+    expect(within(summary).getByRole('heading', { name: 'Weather & fields' }).closest('.sum-sec')).toHaveTextContent(/None$/);
     expect(within(summary).getByRole('heading', { name: 'Hazards' }).closest('.sum-sec')).toHaveTextContent(/None$/);
   });
 
@@ -846,7 +846,7 @@ describe('Cruscotto: misure', () => {
       { member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [], via: 'Drizzle', item: '' },
       { member: 'Indeedee', label: 'Campo Psichico', key: 'psychicterrain', users: [], via: 'Psychic Surge', item: '' },
     ] }) });
-    const weather = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Meteo e campo' }).closest<HTMLElement>('.sum-sec')!;
+    const weather = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Meteo e campi' }).closest<HTMLElement>('.sum-sec')!;
     expect(within(weather).getAllByRole('button')).toHaveLength(1);
     expect(weather.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro che prepara il campo$/);
   });
