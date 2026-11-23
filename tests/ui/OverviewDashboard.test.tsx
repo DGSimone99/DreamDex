@@ -734,9 +734,28 @@ describe('Cruscotto: misure', () => {
     stubLayout({ 'dash-roles': { box: 150, item: 30 } });
     mount({ density: 'tight', data: sample({ roles: manyRoles }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    // 5 posti: 4 essenziali, poi il "+N" di Importanti (2)
+    // 5 posti: 4 essenziali, poi Importanti senza chip: mai un "+2" nudo, il conto compatto (2 mancanti, in rosso)
     expect(within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')).toHaveLength(4);
-    expect(within(roleBand(roles, 'Importanti')).getByRole('listitem')).toHaveTextContent('+2');
+    const tally = within(roleBand(roles, 'Importanti')).getByRole('listitem');
+    expect(tally).toHaveClass('tally');
+    expect(tally).not.toHaveTextContent('+2');
+    expect(tally.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^2$/);
+    expect(tally.querySelector('.dash-role.bad')).toHaveTextContent('2');
+    expect(tally.querySelector('.dash-role.ok')).toBeNull();
+    // I nomi nel fumetto e ai lettori di schermo; si raggiunge con le frecce
+    expect(tally.getAttribute('data-hint')).toMatch(/^2 ruoli: .+ \(mancante\), .+ \(mancante\)$/);
+    expect(tally.querySelector('.visually-hidden')).toHaveTextContent(/^2 ruoli: /);
+    expect(tally).toHaveAttribute('data-nav');
+  });
+
+  it('Ruoli: fascia senza posto con ruoli coperti: "✓ N" (mancanti soft tratteggiati, non rossi)', () => {
+    stubLayout({ 'dash-roles': { box: 150, item: 30 } });
+    const roles = { ...manyRoles, chips: manyRoles.chips.map(c => (c.level === 'important' ? { ...c, covered: c.need === 'screens', owners: c.need === 'screens' ? ['Great Tusk'] : [], soft: true } : c)) };
+    mount({ density: 'tight', data: sample({ roles }) });
+    const tally = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Importanti')).getByRole('listitem');
+    expect(tally.querySelector('.dash-role.soft')).toHaveTextContent('1');
+    expect(tally.querySelector('.dash-role.bad')).toBeNull();
+    expect(tally.querySelector('.dash-role.ok')).toHaveTextContent('1');
   });
 
   it('Ruoli: un contenitore che si stringe dopo il taglio non fa rimostrare tutto (niente rimbalzi)', () => {

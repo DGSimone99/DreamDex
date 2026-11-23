@@ -372,6 +372,11 @@
 .dash-role-row { cursor: default; }
 .dash-role-row:hover > * { background: color-mix(in srgb, var(--accent) 7%, transparent); }
 .dash-role.more { padding: 0 var(--sp-2); font: 700 var(--fs-caption)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--faint); }
+/* Fascia senza posto per i chip: il conto compatto ("✕ 1" "✓ 3"), chip piccoli col numero al posto del nome */
+.dash-role.more.tally { padding: 0; cursor: help; }
+.dash-role-count { display: inline-flex; gap: var(--sp-3); }
+.dash-role-count .dash-role-name { padding-right: var(--sp-3); font-weight: 700; font-variant-numeric: tabular-nums; }
+.dash-role.more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Stretto: etichette e chip più fitti */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
 .dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0; }
@@ -451,6 +456,9 @@
 /* Portatili bassissimi (1280×620): il core a triangolo più piccolo e le righe dei tipi parati più fitte */
 @media (max-height: 639px) {
   .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 84px; }
+  /* Il cruscotto cede qualche pixel alla striscia Da sistemare: l'eroe e le sezioni un poco più fitti li restituiscono */
+  .dash.tight .sum-sec { padding-top: 3px; }
+  .dash.tight .sum-hero { padding-top: var(--sp-4); padding-bottom: var(--sp-2); }
   .dash.tight .sum-tri { --tri-w: clamp(68px, calc((100cqh - 12px) * 150 / 128), 118px); --tri-badge: calc(var(--ti-chip) + 3px); }
   .dash.tight .sum-syn.trio { padding-block: 0; }
   .dash.tight .sum-cover { margin-top: var(--sp-1); gap: 1px; }
