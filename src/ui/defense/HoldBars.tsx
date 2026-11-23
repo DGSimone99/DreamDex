@@ -9,6 +9,7 @@ import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
 import { PokemonIcon } from '../PokemonName';
 import { pieceSize, Target } from '../offense/KoBadges';
+import { TypeStatTable } from '../offense/TargetsTip';
 import { HOLD_BANDS } from './holds';
 
 /*
@@ -129,30 +130,19 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
 }
 
 /**
- * Gli attaccanti dei 18 tipi (Coverage tipi della Difesa): Attacco e Attacco Speciale, in due colonne, e sotto la nota
- * (dentro la sezione: l'unico piede è "Clic: apri la guida" quando il "?" apre la guida).
+ * Gli attaccanti dei 18 tipi (Coverage tipi della Difesa): Attacco e Attacco Speciale nella tabella dei 18 tipi; la nota
+ * è la riga sotto il titolo (l'unico piede è "Clic: apri la guida" quando il "?" apre la guida).
  */
 export function TypeAttackers({ formatId }: { formatId: FormatId }) {
   const t = useT();
-  const lang = useLang();
   return (
     <>
-      <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.attackersTitle')} />
+      <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.attackersTitle')} sub={t('ddetail.attackerTip')} />
       <TipSec>
-        <div className="gat-cols">
-          {[TYPES.slice(0, 9), TYPES.slice(9)].map((part, col) => (
-            <table key={col} className="gat-table">
-              <thead><tr><th scope="col" /><th scope="col">{t('stat.atk')}</th><th scope="col">{t('stat.spa')}</th></tr></thead>
-              <tbody>
-                {part.map(type => {
-                  const a = dummyStats(formatId, type);
-                  return <tr key={type}><th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th><td>{a.atk}</td><td>{a.spa}</td></tr>;
-                })}
-              </tbody>
-            </table>
-          ))}
-        </div>
-        <p className="tip-more">{t('ddetail.attackerTip')}</p>
+        <TypeStatTable cols={[
+          { label: t('stat.atk'), value: type => dummyStats(formatId, type).atk },
+          { label: t('stat.spa'), value: type => dummyStats(formatId, type).spa },
+        ]} />
       </TipSec>
     </>
   );

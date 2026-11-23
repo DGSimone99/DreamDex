@@ -171,7 +171,8 @@ const SCENES: Scene[] = [
     { id: 'kot-hold-count', tip: '.ftip.kot', trigger: '.kob-count', src: 'defense/HoldBars.tsx (kot, countTip)', where: 'Difesa › Generale: hover a hold count' },
     { id: 'area-chip', tip: '.ftip.area-chip-tip', trigger: '.area-chip', src: 'ProblemPill.tsx (ProblemChip in AreaView)', where: 'Difesa: hover a problem pill in the area head' },
     { id: 'kot-more-problems', tip: '.ftip.area-more-tip', trigger: '.area-chips-more', src: 'ProblemPill.tsx (MoreProblems)', where: 'Difesa: hover "+N" problems' },
-    { id: 'gat-guide-ask', tip: '.ftip.gat', trigger: '.guide-ask', src: 'offense/TargetsTip.tsx (Ask, gat)', where: 'Difesa › Generale: hover a column-head "?"' },
+    { id: 'gat-guide-ask', tip: '.ftip.gat', trigger: 'th:nth-child(2) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, gat) + defense/HoldBars.tsx TypeAttackers', where: 'Difesa › Generale: hover the Tipi head "?"' },
+    { id: 'gat-def-meta', tip: '.ftip.gat', trigger: 'th:nth-child(3) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, MetaTargets shield)', where: 'Difesa › Generale: hover the Meta head "?"' },
   ] },
   { id: 'def-general-collapsed', team: SIX, setup: area(/^(Difesa|Defense)/, undefined, true), scope: '.tab-panel.active', max: 120, wants: [
     { id: 'dht-hold', tip: '.ftip.tht.dht', trigger: '.mcs.wh .mc', src: 'defense/HoldBars.tsx (tht dht, worst hit by type)', where: 'Difesa › Generale (team collapsed): hover a worst-hit type pill' },
@@ -189,6 +190,8 @@ const SCENES: Scene[] = [
     { id: 'kot-ko', tip: '.ftip.kot', trigger: '.kob.ohko', src: 'offense/KoBadges.tsx (kot, KO band)', where: 'Offesa › Generale: hover a KO badge' },
     { id: 'kot-ko-rest', tip: '.ftip.kot', trigger: '.kob.rest', src: 'offense/KoBadges.tsx (kot, rest band)', where: 'Offesa › Generale: hover the "rest" badge' },
     { id: 'kot-offgen', tip: '.ftip.kot', trigger: '.og-share', src: 'offense/OffenseGeneral.tsx (kot, kot-none + foot)', where: 'Offesa › Generale: hover a member share (%)' },
+    { id: 'gat-off-types', tip: '.ftip.gat', trigger: 'th:nth-child(2) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, TypeAverages)', where: 'Offesa › Generale: hover the Tipi head "?"' },
+    { id: 'gat-off-meta', tip: '.ftip.gat', trigger: 'th:nth-child(3) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, MetaTargets sword)', where: 'Offesa › Generale: hover the Meta head "?"' },
   ] },
   { id: 'off-general-collapsed', team: SIX, setup: area(/^Offe(sa|nse)/, undefined, true), scope: '.tab-panel.active', max: 120, wants: [
     { id: 'kot-chip', tip: '.ftip.kot', trigger: '.mcs .mcp', src: 'offense/MoveChips.tsx (kot)', where: 'Offesa › Generale (team collapsed): hover a move chip' },

@@ -64,14 +64,28 @@
 .guide-ask:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ftip.gat:not(.tip-w-m) { width: var(--tip-l); }
 .tip-sec .gat-mons, .tip-sec .gat-cols { padding: 0; }
-.gat-cols { display: flex; gap: var(--sp-9); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
-.gat-table { border-collapse: collapse; font-size: var(--tip-body); font-variant-numeric: tabular-nums; }
-.gat-table th, .gat-table td { padding: var(--sp-1) 0 var(--sp-1) var(--sp-6); border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
-.gat-table thead th { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding-bottom: 5px; }
-.gat-table tbody th { padding-left: 0; text-align: left; font-weight: 600; }
-.gat-table tbody th img { width: var(--ti-inline); height: var(--ti-inline); margin-right: var(--sp-3); vertical-align: -3px; }
-.gat-table tbody tr:last-child > * { border-bottom: 0; }
-.gat-mons { display: grid; grid-template-columns: repeat(8, 40px); gap: var(--sp-1) var(--sp-2); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
+/* La tabella dei 18 tipi dei "?": due metà da 9 divise da un filo Line Soft, righe a strisce come la Generale (una sì e
+   una no Raised al 50%, niente linee, piccoli angoli alternati ai due capi), tessera del tipo e nome, numeri in display
+   tabellari a destra; i 3 più alti di ogni colonna in Text 700, gli altri in Muted */
+.gat-cols { display: flex; padding: var(--sp-4) var(--sp-6) var(--sp-5); }
+.gat-table { flex: 1; border-collapse: separate; border-spacing: 0; font-size: var(--tip-body); }
+.gat-table:first-child { padding-right: var(--sp-5); }
+.gat-table + .gat-table { padding-left: var(--sp-5); border-left: 1px solid var(--line-soft); }
+.gat-table th, .gat-table td { height: 22px; vertical-align: middle; padding: 0 var(--sp-3) 0 var(--sp-2); text-align: right; white-space: nowrap; }
+.gat-table thead th { height: auto; padding-bottom: var(--sp-3); font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.gat-table tbody th { padding-left: var(--sp-2); text-align: left; font-weight: 600; line-height: 1; color: var(--text); }
+.gat-table tbody th .type-icons { display: inline-flex; margin-right: var(--sp-3); vertical-align: middle; }
+.gat-table tbody th img { width: var(--ti-chip); height: var(--ti-chip); }
+.gat-table tbody tr:nth-child(odd) > * { background: color-mix(in srgb, var(--raised) 50%, transparent); }
+.gat-table tbody tr > :first-child { border-radius: 7px 0 0 2px; }
+.gat-table tbody tr > :last-child { border-radius: 0 2px 7px 0; }
+/* Kanit siede basso nella sua riga: 4px sotto lo alzano di 2 alla linea dei nomi */
+.gat-table tbody td { padding-bottom: 4px; }
+.gat-table td { min-width: 30px; font: 500 var(--tip-body)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--muted); }
+.gat-table td.gat-top { font-weight: 700; color: var(--text); }
+/* Le minacce del meta: 10 sprite per riga, celle uguali */
+.gat-mons { display: grid; grid-template-columns: repeat(10, 40px); justify-content: space-between; row-gap: var(--sp-2); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
+.gat-mons > span { display: grid; place-items: end center; width: 40px; height: 40px; }
 .guide-targets tbody th { font-weight: 600; color: var(--text); white-space: nowrap; }
 .guide-targets tbody th .type-icons { margin-right: var(--sp-3); vertical-align: middle; }
 .guide-targets td { min-width: 4ch; color: var(--text); }

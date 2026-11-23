@@ -1379,6 +1379,7 @@ export const en = {
   'guide.off.doubles.spread': "In doubles a move that hits several targets deals less damage to each.",
   'guide.off.targets.typesTitle': "The average Pokémon of the 18 types",
   'guide.off.targets.metaTitle': "The {n} most used Pokémon",
+  'guide.off.targets.metaSub': "Most used first, with their most common sets",
   'guide.off.cov.targets.meta': "The {n} most used Pokémon, with their most common sets",
   'guide.off.cov.depth': "How many cover it",
   'guide.off.cov.rank': "member #{n}",
