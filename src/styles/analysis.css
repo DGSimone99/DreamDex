@@ -152,13 +152,14 @@
 .overview-headline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-8); }
 .overview-headline > strong { font: 800 var(--fs-headline)/1.1 var(--display); font-style: italic; }
 .overview-empty { display: grid; justify-items: start; gap: var(--sp-6); }
-/* Da sistemare (in fondo alla Panoramica): una striscia sola, alta 26px, rossa a sinistra (o nel colore del caso, --tone);
+/* Da sistemare (in fondo alla Panoramica): una striscia sola, alta 26px, col colore del caso (--tone) nell'etichetta, nella
+   sfumatura che parte da sinistra e nella cornice sottile;
    il testo lungo finisce coi puntini (tutto nel tooltip). Tutta la striscia porta al Coaching */
 .fix-row {
   --tone: var(--bad); --tone-bg: var(--bad-bg);
   flex: none; display: flex; align-items: center; gap: var(--sp-6); min-width: 0; height: 26px; padding: 0 var(--sp-2) 0 var(--sp-6); line-height: 20px;
   overflow: hidden; background: linear-gradient(90deg, var(--tone-bg), var(--panel) 70%);
-  border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--line)); border-left: 3px solid var(--tone);
+  border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--line));
   font-size: var(--fs-small);
 }
 .fix-row.minor { --tone: var(--warn); --tone-bg: var(--warn-bg); }
@@ -169,7 +170,7 @@
 /* Mentre il Coaching calcola: la frase che lo dice, tenue, prima delle ossa che pulsano */
 .fix-wait { flex: none; font-size: var(--fs-caption); color: var(--muted); }
 .fix-row.is-link { cursor: pointer; transition: border-color 0.15s ease-out; }
-.fix-row.is-link:hover { border-color: color-mix(in srgb, var(--tone) 60%, var(--line)); border-left-color: var(--tone); }
+.fix-row.is-link:hover { border-color: color-mix(in srgb, var(--tone) 60%, var(--line)); }
 .fix-row.is-link:hover .fix-go { background: var(--accent-wash); }
 .fix-row.is-link:has(.fix-go:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .fix-row .fix-go:focus-visible { outline: none; }

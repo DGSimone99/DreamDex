@@ -1,7 +1,7 @@
 /**
  * Foto della pagina negli stati del restyle (sezioni, editor, modali, popover, tooltip), a più dimensioni.
  * Serve il server di sviluppo su http://localhost:5173 (npx vite).
- *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv]
+ *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv] [--wait 8000]
  * Per ogni foto stampa pageScroll = quanto la pagina scorre oltre la finestra (0 = una schermata).
  */
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -1296,7 +1296,8 @@ for (const [w, h] of sizes) {
     await wait(1500);
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
-    await wait(800);
+    // --wait <ms>: aspetta di più prima della foto (es. finché il Coaching ha finito di calcolare)
+    await wait(Number(arg('wait') ?? 800));
     // --palette sv: la palette di Scarlatto/Violetto (accento arancione) sulla pagina, per controllare i colori
     const palette = arg('palette');
     if (palette) { await page.evaluate(p => { document.documentElement.dataset.palette = p; }, palette); await wait(300); }
