@@ -159,7 +159,6 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                     <span className="visually-hidden">{battleName(set)}</span>
                   </th>
                 ))}
-                <th scope="col" className="ct-level-h">{t('flip.team')}</th>
               </tr>
             </thead>
             <tbody>
@@ -167,7 +166,6 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                 <tr key={row.type}>
                   {typeHead(row, i, 'row')}
                   {team.map((_, member) => hitCell(member, row, i))}
-                  {levelCell(row, i)}
                 </tr>
               ))}
             </tbody>

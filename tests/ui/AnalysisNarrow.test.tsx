@@ -32,7 +32,7 @@ describe('Offesa sullo schermo stretto', () => {
     expect(document.querySelector('.og-stack-team')).toHaveTextContent('Team Coverage');
   });
 
-  it('Coverage tipi girata: 18 tipi in riga, i membri in colonna, il Team Coverage in fondo a ogni riga', async () => {
+  it('Coverage tipi girata: 18 tipi in riga, i membri in colonna, senza la colonna Team (il filo sotto il tipo dice se è coperto)', async () => {
     const user = userEvent.setup();
     view();
     await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
@@ -40,11 +40,11 @@ describe('Offesa sullo schermo stretto', () => {
     expect(table).toHaveClass('ct-flip-table');
     expect(table.querySelectorAll('tbody tr')).toHaveLength(18);
     expect([...table.querySelectorAll('thead th.ct-mon-h')].map(th => th.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    for (const row of table.querySelectorAll('tbody tr')) expect(row.querySelectorAll('td')).toHaveLength(3);
-    expect(table.querySelector('tbody tr td.ct-level .ct-pill')).toHaveTextContent(/^\d+%$/);
+    for (const row of table.querySelectorAll('tbody tr')) expect(row.querySelectorAll('td')).toHaveLength(2);
+    expect(table.querySelector('.ct-level')).toBeNull();
   });
 
-  it('Coverage meta girata: le minacce in riga, i membri in colonna, quanti la coprono in fondo', async () => {
+  it('Coverage meta girata: le minacce in riga, i membri in colonna, senza la colonna Team', async () => {
     const user = userEvent.setup();
     view();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
@@ -53,7 +53,7 @@ describe('Offesa sullo schermo stretto', () => {
     const rows = table.querySelectorAll('tbody tr');
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.length).toBeLessThanOrEqual(8);
-    for (const row of rows) expect(row.querySelectorAll('td')).toHaveLength(3);
+    for (const row of rows) expect(row.querySelectorAll('td')).toHaveLength(2);
     expect(screen.getByRole('navigation', { name: /pagine/i })).toBeInTheDocument();
   });
 
@@ -70,7 +70,7 @@ describe('Offesa sullo schermo stretto', () => {
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const meta = screen.getByRole('table', { name: 'Difesa: Coverage meta' });
     expect(meta).toHaveClass('ct-flip-table');
-    for (const row of meta.querySelectorAll('tbody tr')) expect(row.querySelectorAll('td')).toHaveLength(3);
+    for (const row of meta.querySelectorAll('tbody tr')) expect(row.querySelectorAll('td')).toHaveLength(2);
     await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     const sus = screen.getByRole('table', { name: 'Difesa: Recupero' });
     expect(sus).toHaveClass('sus-stack');

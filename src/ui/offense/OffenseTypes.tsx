@@ -161,7 +161,6 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                     <span className="visually-hidden">{nameOf(slot)}</span>
                   </th>
                 ))}
-                <th scope="col" className="ct-level-h">{t('flip.team')}</th>
               </tr>
             </thead>
             <tbody>
@@ -169,7 +168,6 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                 <tr key={type}>
                   {typeHead(type, i, 'row')}
                   {team.map((_, slot) => hitCell(slot, type, i))}
-                  {levelCell(type, i)}
                 </tr>
               ))}
             </tbody>

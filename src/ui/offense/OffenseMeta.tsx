@@ -162,7 +162,6 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                       </th>
                     );
                   })}
-                  <th scope="col" className="ct-level-h">{t('flip.team')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,7 +174,6 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                         <span className={`cm-flag ${coverTone(n)}`} aria-hidden="true" />
                       </th>
                       {ctx.team.map((_, m) => cell(r, m, k))}
-                      <td className={hover.cls(k, 'ct-level')} {...hover.enter(k)}><span className={`ct-pill ${coverTone(n)}`}>{n}<span className="visually-hidden"> {t('odetail.cm.coveredBy')}</span></span></td>
                     </tr>
                   );
                 })}

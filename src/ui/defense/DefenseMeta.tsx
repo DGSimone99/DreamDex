@@ -161,7 +161,6 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                         <span className="visually-hidden">{battleName(set)}</span>
                       </th>
                     ))}
-                    <th scope="col" className="ct-level-h">{t('flip.team')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -172,9 +171,6 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                         <span className={`cm-flag ${countTone(held(r))}`} aria-hidden="true" />
                       </th>
                       {ctx.team.map((_, m) => cell(r, cells[k][m], m, k))}
-                      <td className={hover.cls(k, 'ct-level')} {...hover.enter(k)}>
-                        <span className={`ct-pill ${countTone(held(r))}`}>{held(r)}<span className="visually-hidden"> {t('ddetail.heldBy')}</span></span>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
