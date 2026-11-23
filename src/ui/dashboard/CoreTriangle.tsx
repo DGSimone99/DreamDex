@@ -30,7 +30,7 @@ const pct = (v: number, of: number) => `${(v / of) * 100}%`;
 
 /** Il nome di un core: per membro i suoi tipi che parano, uniti col trattino; i membri separati da " / ". */
 /** I tipi di ogni membro ("Buio-Acciaio"), uno per membro: nel titolo vanno a capo solo fra un membro e l'altro */
-const coreParts = (core: Core, lang: Lang) => core.names.map(types => types.map(type => typeName(type, lang)).join('-'));
+export const coreParts = (core: Core, lang: Lang) => core.names.map(types => types.map(type => typeName(type, lang)).join('-'));
 export const coreTitle = (core: Core, lang: Lang) => coreParts(core, lang).join(' / ');
 
 /** Il solo disegno del triangolo (sprite, frecce e icone dei tipi), decorativo: lo usa anche la scheda Bonus/Malus. */
@@ -51,7 +51,7 @@ export function CoreArt({ core, sprite = 40 }: { core: Core; sprite?: number }) 
         {edges.map((e, i) => <line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} markerEnd={`url(#${marker})`} />)}
       </svg>
       {core.members.map((name, i) => (
-        <span key={name} className="sum-tri-v" title={name} style={{ left: pct(VERTICES[i][0], W), top: pct(VERTICES[i][1], H) }}>
+        <span key={name} className="sum-tri-v" style={{ left: pct(VERTICES[i][0], W), top: pct(VERTICES[i][1], H) }}>
           <Sprite species={name} size={sprite} />
         </span>
       ))}

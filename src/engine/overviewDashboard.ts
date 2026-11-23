@@ -7,11 +7,17 @@ import { summarizeTeam } from './overviewSummary';
 import { ratingThreats, type TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
 import { usageOf } from './stats';
-import { rolesValue } from './rolesArea';
+import { rolesTally, rolesValue } from './rolesArea';
 import type { TeamSet } from './sets';
 import { poolMedian, speedTier, type SpeedRival } from './speed';
 import type { SpeedCondition } from './speedArea';
 import { t, type Lang } from '../i18n';
+
+/** Il conteggio dei Ruoli diviso: "7/8" e i punti (0 senza). */
+const rolesCount = (roles: TeamRating['roles']) => {
+  const { covered, total, points } = rolesTally(roles);
+  return { count: `${covered}/${total}`, points };
+};
 
 export type CellState = 'ok' | 'minor' | 'bad';
 /**
@@ -138,7 +144,8 @@ export function metaVersus(rating: TeamRating | null, species: string, team: Tea
 export interface DashboardData {
   coverage: { cells: TypeCell[]; defense: string; offense: string };
   /** members: i membri in ordine di team (le colonne della tabella dei ruoli), scritti come gli owners. */
-  roles: { chips: RoleChip[]; members: string[]; value: string };
+  /** value: "7/8 −4"; count e points lo stesso diviso (la testata scrive i punti come punti: "7/8 −4 pt"). */
+  roles: { chips: RoleChip[]; members: string[]; value: string; count?: string; points?: number };
   speed: { lanes: SpeedLane[]; median: number | null; vsMeta: boolean; control: { condition: SpeedCondition; move: string; by: string[] }[]; value: string };
   /** metaOff: il formato non usa il meta (Giochi, No Format); altrimenti, se non disponibile, mancano le statistiche. */
   /** `list`: le minacce gestite peggio per la carta della Panoramica (metaThreats). */
@@ -203,7 +210,7 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
   return {
     coverage: { cells, defense: tile('defense').value, offense: tile('strength').value },
     // Ruoli: lo stesso conteggio di ovunque (essenziali e importanti coperte sul totale, poi i punti: "8/8 +2")
-    roles: { chips, members: team.map(set => battleName(set)), value: rolesValue(rating.roles) },
+    roles: { chips, members: team.map(set => battleName(set)), value: rolesValue(rating.roles), ...rolesCount(rating.roles) },
     speed: {
       lanes, median: poolMedian(data), vsMeta: usesMeta(data),
       control: rating.speed.sources.map(s => ({ condition: s.condition, move: s.move, by: s.by })),

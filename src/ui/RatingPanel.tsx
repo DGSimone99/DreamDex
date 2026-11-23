@@ -1,7 +1,8 @@
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useEditing } from './editing';
 import { GRADES, type TeamRating } from '../engine/rating';
-import type { Archetype } from '../engine/archetype';
+import { teamArchetype, type Archetype } from '../engine/archetype';
+import type { TeamSet } from '../engine/sets';
 import { rolesTally } from '../engine/rolesArea';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
@@ -164,6 +165,46 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
   );
 }
 
+
+/**
+ * Telefono, in fondo alla barra delle schede di Analisi (dove non c'è la Panoramica): il voto del team sempre a vista,
+ * lettera nel colore del voto e punteggio (grigio col team fuori regola). Toccandolo si apre la tendina "Voto delle aree"
+ * del team ridotto: le righe delle aree (ognuna apre la sua scheda) e il "?" del voto.
+ */
+export function TabsGrade({ rating, team = [], broken = false, incomplete = false, onOpen }: { rating: TeamRating;
+  /** Il team: in cima alla tendina chi è (tipo di team, core, meteo), che sul telefono senza Panoramica non si vede altrove. */
+  team?: TeamSet[];
+  broken?: boolean; incomplete?: boolean; onOpen: (area: DetailArea) => void }) {
+  const t = useT();
+  // "Balance · 2 core · Pioggia": il tipo solo col team completo (prima sarebbe provvisorio), i core che il voto conta, gli stili
+  const found = team.length ? teamArchetype(team, rating.needs.rules) : null;
+  const identity = [
+    ...(found && team.length >= 6 ? [t(`archetype.${found.archetype}`)] : []),
+    ...(rating.cores.length ? [t(rating.cores.length === 1 ? 'rating.popCoresOne' : 'rating.popCoresMany', { n: rating.cores.length })] : []),
+    ...(found?.styles ?? []).map(style => t(`teamStyle.${style}`)),
+  ].join(' · ');
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const button = useRef<HTMLButtonElement>(null);
+  const close = (refocus: boolean) => { setOpen(false); if (refocus) button.current?.focus(); };
+  return (
+    <div className={`analysis-grade grade-${rating.grade}${broken ? ' rules-broken' : ''}`}>
+      <button ref={button} type="button" className="analysis-grade-toggle" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? id : undefined}
+        aria-label={t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label })} onClick={() => setOpen(o => !o)}
+        onKeyDown={e => { if (e.key === 'Escape' && open) { e.preventDefault(); e.stopPropagation(); close(true); } }}>
+        <span className="analysis-grade-letter" aria-hidden="true">{rating.grade}</span>
+        <span className="analysis-grade-overall" aria-hidden="true">{rating.overall}</span>
+      </button>
+      {open && (
+        <GradePopover id={id} button={button} onClose={close}
+          help={<RatingHelp incomplete={incomplete} teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}>
+          {identity && <p className="grade-pop-id">{identity}</p>}
+          <GradeAreaRows rating={rating} onOpen={area => { onOpen(area); close(false); }} />
+        </GradePopover>
+      )}
+    </div>
+  );
+}
 
 /** Le tre aree (Offesa, Difesa, Velocità) come barrette impilate, per il voto del team ridotto. Solo disegno. */
 function GradeMini({ rating }: { rating: TeamRating }) {

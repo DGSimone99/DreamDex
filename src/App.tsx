@@ -44,7 +44,7 @@ import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
-import { AUTO_BAND_QUERY, SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
+import { AUTO_BAND_QUERY, PHONE_QUERY, SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
 import { AutoBand } from './ui/AutoBand';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -178,10 +178,19 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const tabletSide = useMediaQuery(TABLET_SIDE_QUERY);
   // Team che si riduce da solo: telefono e tablet piccolo in verticale (fino a 767 px), non col team in colonna
   const autoBand = useMediaQuery(AUTO_BAND_QUERY) && !tabletSide;
-  const collapsed = tabletSide ? false : editingOpen ? short : savedCollapsed;
+  const phone = useMediaQuery(PHONE_QUERY);
+  // Senza meta la scheda Meta è spenta: si resta sull'Analisi
+  const metaOn = !data.ignoreMeta && !!data.stats;
+  const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
+  // Schermo basso, Analisi aperta senza editor: il team parte compresso (la Panoramica sta in una schermata); se il giocatore
+  // lo riapre lì resta aperto in Analisi per tutta la sessione (solo in memoria: la scelta salvata vale per le altre schede)
+  const [analysisExpanded, setAnalysisExpanded] = useState(false);
+  const analysisShort = short && shownTab === 'analysis' && !editingOpen && !tabletSide;
+  const collapsed = tabletSide ? false : editingOpen ? short : analysisShort ? !analysisExpanded : savedCollapsed;
   const sectionsCollapsed = autoBand ? false : collapsed;
   const toggleCollapsed = () => {
     if (editingOpen) return;
+    if (analysisShort) { setAnalysisExpanded(e => !e); return; }
     setCollapsed(c => {
       if (storage) saveTeamCollapsed(!c, storage);
       return !c;
@@ -291,10 +300,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
 
   // Contatori delle schede: i problemi del coach; sotto Meta l'uso medio del team (la scheda è solo informativa)
   const problems = coaching.problems;
-  const metaOn = !data.ignoreMeta && !!data.stats;
   const metaAverage = metaOn ? metaBoard(data.stats, team).average : null;
-  // Senza meta la scheda Meta è spenta: si resta sull'Analisi
-  const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
   // I consigli (candidati e prima mossa) sono lenti: solo col Coaching aperto, o con la Panoramica (la riga Da sistemare
   // mostra solo ciò che il Coaching risolve), e dopo che la scheda si è disegnata
@@ -453,7 +459,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <p>{t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}</p>
         </div>
       )}
-      <AutoBand phone={autoBand} collapsed={collapsed} control={bandControl}>{collapsed => (<>
+      {/* Telefono: il team si vede solo nella scheda Pokémon (in Analisi, Meta e Liste i membri sono già nelle loro tabelle e il
+          voto nella barra in basso); resta montato e torna quando si apre l'editor o Completa team */}
+      <AutoBand phone={autoBand} collapsed={collapsed} control={bandControl} off={phone && shownTab !== 'pokemon' && !editingOpen && !fillOpen}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
           grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
           io={<ShowdownPanel team={team} format={format} choice={choice} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}

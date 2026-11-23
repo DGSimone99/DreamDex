@@ -1,7 +1,7 @@
 /**
  * Foto della pagina negli stati del restyle (sezioni, editor, modali, popover, tooltip), a più dimensioni.
  * Serve il server di sviluppo su http://localhost:5173 (npx vite).
- *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv]
+ *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730] [--palette sv] [--wait 8000]
  * Per ogni foto stampa pageScroll = quanto la pagina scorre oltre la finestra (0 = una schermata).
  */
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -47,6 +47,22 @@ const STRESS = [
   member('Luvdisc', 'Choice Scarf', 'Swift Swim', ['Surf', 'Ice Beam', 'Charm', 'Sweet Kiss'], 'Timid', { atk: 252, spe: 252, hp: 4 }),
   member('Excadrill', 'Leftovers', 'Sand Rush', ['Earthquake', 'Iron Head', 'Stealth Rock', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
   member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Swords Dance'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
+];
+/** Tanti meteo e campi (pioggia, sabbia, elettrico, erboso), chi li sfrutta e Stealth Rock: il Riassunto pieno. */
+const WEATHERS = [
+  member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Scald', 'U-turn', 'Roost'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Aqua Jet'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+  member('Tyranitar', 'Smooth Rock', 'Sand Stream', ['Stealth Rock', 'Stone Edge', 'Crunch', 'Earthquake'], 'Adamant', { hp: 248, atk: 252, spd: 8 }),
+  member('Excadrill', 'Life Orb', 'Sand Rush', ['Swords Dance', 'Earthquake', 'Iron Head', 'Rapid Spin'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+  member('Tapu Koko', 'Choice Specs', 'Electric Surge', ['Rising Voltage', 'Volt Switch', 'Dazzling Gleam', 'Grass Knot'], 'Timid', { spa: 252, spe: 252, spd: 4 }),
+  member('Rillaboom', 'Choice Band', 'Grassy Surge', ['Grassy Glide', 'Wood Hammer', 'Knock Off', 'U-turn'], 'Adamant', { atk: 252, spe: 252, spd: 4 }),
+];
+/** Cinque condizioni (pioggia, sabbia, sole, Campo Nebbioso, Campo Erboso) e due core a tre: Tyranitar/Rillaboom/Tapu Fini e Pelipper/Torkoal/Excadrill. */
+const WEATHERS_CORES = [
+  WEATHERS[0], WEATHERS[2], WEATHERS[3],
+  member('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume', 'Rapid Spin', 'Yawn', 'Earth Power'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Tapu Fini', 'Leftovers', 'Misty Surge', ['Moonblast', 'Scald', 'Taunt', 'Defog'], 'Calm', { hp: 248, spd: 252, def: 8 }),
+  member('Rillaboom', 'Leftovers', 'Grassy Surge', ['Grassy Glide', 'Swords Dance', 'Knock Off', 'U-turn'], 'Adamant', { hp: 252, atk: 252, spd: 4 }),
 ];
 /** Team senza sinergie né legami (nessun core, nessun pivot): il Riassunto ne mostra le sezioni vuote. */
 const LONE = [
@@ -107,8 +123,12 @@ const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-/** Come hash, con qualche impostazione del formato cambiata (es. meta spento). */
-const hashWith = (team: unknown[], format: Partial<typeof FORMAT>) => '#team=' + Buffer.from(JSON.stringify({ team, format: { ...FORMAT, ...format } })).toString('base64')
+/**
+ * Come hash, con qualche impostazione del formato cambiata. Il link condiviso porta la scelta del formato (`choice`), non le
+ * regole: il meta non si spegne più a mano (è automatico), quindi "meta spento" è No Format, che il meta non lo ha.
+ */
+const hashWith = (team: unknown[], format: Partial<typeof FORMAT>) => '#team=' + Buffer.from(JSON.stringify({ team,
+  ...(format.meta === false ? { choice: { family: 'free', genLimit: format.genLimit ?? 9, multipleMegas: false } } : { format: { ...FORMAT, ...format } }) })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 /** Clic sul primo elemento visibile del selettore il cui testo o aria-label corrisponde. */
@@ -717,6 +737,9 @@ const STATES: Record<string, State> = {
     return true;
   } },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
+  // Telefono: il voto in fondo alla barra delle schede, toccato: la tendina Voto delle aree
+  'analysis-phone-grade': { run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
+  'analysis-phone-grade-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
   'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
   'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
   // Carta del membro (tooltip) passando sul primo Pokémon della tabella dell'Offesa: le mosse come pillole piccole
@@ -895,6 +918,8 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Riassunto completo: team pioggia, aperto e col team ridotto, e team senza sinergie
+  'analysis-weathers': { hash: hash(WEATHERS), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
+  'analysis-weathers-cores': { hash: hash(WEATHERS_CORES), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain': { hash: hash(RAIN), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain-collapsed': { hash: hash(RAIN), run: async p => {
     await tab(p, 'analysis');
@@ -1276,7 +1301,8 @@ for (const [w, h] of sizes) {
     await wait(1500);
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
-    await wait(800);
+    // --wait <ms>: aspetta di più prima della foto (es. finché il Coaching ha finito di calcolare)
+    await wait(Number(arg('wait') ?? 800));
     // --palette sv: la palette di Scarlatto/Violetto (accento arancione) sulla pagina, per controllare i colori
     const palette = arg('palette');
     if (palette) { await page.evaluate(p => { document.documentElement.dataset.palette = p; }, palette); await wait(300); }
@@ -1309,6 +1335,21 @@ for (const [w, h] of sizes) {
       const cut = cards.filter(c => c.getBoundingClientRect().bottom - bottom > 1).length;
       const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
         .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
+      // Pezzi visibili tagliati dal fondo del contenitore che li nasconde (la card o una sua parte con overflow non
+      // visibile: overflow e cut non lo vedono), oltre 1px
+      const inCut = cards.flatMap(c => {
+        return [...c.querySelectorAll<HTMLElement>('.dash-role-tag, .more-n, .sum-line, .cov-tile, .dash-cell, .dash-lane-sprite, .sum-bm')]
+          .filter(e => {
+            const r = e.getBoundingClientRect();
+            if (r.height <= 0) return false;
+            let clip = c.getBoundingClientRect().bottom;
+            for (let a = e.parentElement; a && a !== c.parentElement; a = a.parentElement) {
+              if (getComputedStyle(a).overflowY !== 'visible') clip = Math.min(clip, a.getBoundingClientRect().bottom);
+            }
+            return r.bottom - clip > 1;
+          })
+          .map(e => `${c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')?.slice(5)}:${e.className.split(' ')[0]}`);
+      });
       // Riassunto: nome del tipo, riga dell'eroe e righe delle sezioni tagliati in larghezza (anche in EN)
       // (la riga degli sprite si misura dai suoi figli: la luce del passaggio dell'ultimo sprite sborda apposta di 6px)
       const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length
@@ -1387,7 +1428,7 @@ for (const [w, h] of sizes) {
           const pr = document.querySelector<HTMLElement>('.area-head');
           const prAt = pr ? ` panelTop=${Math.round(el.getBoundingClientRect().top)} headH=${Math.round(pr.getBoundingClientRect().height)} chips=${document.querySelectorAll('.area-chips > li:not(.area-chips-more)').length}+${document.querySelector('.area-chips-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0'} chipsCut=${(() => { const c = pr.querySelector<HTMLElement>('.area-chips'); return c ? c.scrollWidth - c.clientWidth : '-'; })()} headX=${pr.scrollWidth - pr.clientWidth}` : '';
           return `${guide}${prAt}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
-        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
+        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} inCut=[${[...new Set(inCut)].join(',')}] overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
     // Coaching: righe che sbordano, nomi o pillole tagliati in larghezza, scorrimento orizzontale
