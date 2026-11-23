@@ -3,7 +3,7 @@ import { battleName, battleSpecies } from '../../engine/dex';
 import { holdBand, type HoldBand, type TeamDefense } from '../../engine/defense';
 import { pieceOf, type HoldPiece } from './HoldBars';
 import { HOLD_BANDS } from './holds';
-import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { FocusNote } from '../offense/KoBadges';
 import { battleMoveType } from '../../engine/types';
 import { useT } from '../../i18n/react';
@@ -64,7 +64,7 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
   const hover = useColumnHover();
-  const narrow = useMediaQuery(NARROW_TABLES_QUERY);
+  const narrow = useMediaQuery(FLIP_TABLES_QUERY);
   const tip = useFloatAnchor<{ species: string; m: number }>();
   const card = useMemberTip(400, undefined, true);
   // Tastiera: la griglia è un posto solo nel giro del Tab, le frecce vanno di casella in casella (col fuoco la colonna e il tooltip)

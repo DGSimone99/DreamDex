@@ -29,7 +29,7 @@ import { HOLD_BANDS, HOLD_ORDER } from './holds';
 import { pieceOf } from './HoldBars';
 import { FocusNote } from '../offense/KoBadges';
 import { PokemonIcon } from '../PokemonName';
-import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 
 /** Colore della riga Copertura, come nell'Offesa: rosso a 0, giallo sotto il livello retto (HELD_LEVEL), verde da lì. */
 const levelTone = (level: number) => (level === 0 ? 'bad' : level < HELD_LEVEL ? 'warn' : 'good');
@@ -53,7 +53,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const lang = useLang();
   const { team, analysis } = ctx;
   const roomy = !!ctx.roomy;
-  const narrow = useMediaQuery(NARROW_TABLES_QUERY);
+  const narrow = useMediaQuery(FLIP_TABLES_QUERY);
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   // Aperta da un pezzo della barra in Generale: la riga del membro e i tipi di quel pezzo accesi, il resto spento
   const focus = ctx.focus?.kind === 'dtypes' ? ctx.focus : null;

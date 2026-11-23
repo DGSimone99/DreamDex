@@ -364,7 +364,7 @@
   .dash.ghost { display: none; }
 }
 
-/* Telefono e tablet piccolo (fino a 767 px, NARROW_TABLES_QUERY): le tabelle di Coverage girate (.ct-flip-table): i tipi (o le minacce) in riga, i 6 membri in colonna con
+/* Telefono e tablet (fino a 1099 px, FLIP_TABLES_QUERY): le tabelle di Coverage girate (.ct-flip-table): i tipi (o le minacce) in riga, i 6 membri in colonna con
    l'icona del box in testata, in fondo a ogni riga il Team Coverage. Stanno nei 390 px senza scorrere di lato. */
 .ct-flip-table { width: 100%; table-layout: fixed; }
 .ct-flip-table thead th.def-mon-h { width: 36px; padding: 0; }
@@ -388,7 +388,8 @@
 /* Coverage meta girata: le pagine sopra la tabella, a destra; nelle caselle niente barra dei PS (è nel tooltip), il timbro
    KO più piccolo; la testata della minaccia con l'icona del box e il filo di Lo coprono */
 .cm-flip-pager { display: flex; justify-content: flex-end; margin-bottom: var(--sp-2); }
-.ct-flip-table .cm-hp { display: none; }
+/* (la barra dei PS solo dove la casella è larga: tablet) */
+@media (max-width: 767px) { .ct-flip-table .cm-hp { display: none; } }
 .def-frame.cm-matrix .ct-flip-table td.rob-cell { vertical-align: middle; padding: 0; }
 .ct-flip-table .cm-ko { padding: 2px 6px; font-size: var(--fs-caption); }
 .ct-flip-table th.ct-type-h .def-box { --bs: 1; width: 100%; }
@@ -467,3 +468,8 @@
 /* Coverage meta girata: righe più alte, l'icona della minaccia e il suo filo stanno nella riga senza toccare le vicine */
 .cm-matrix .ct-flip-table tbody tr { height: 54px; }
 .cm-matrix .ct-flip-table th.ct-type-h .def-box { height: 34px; }
+/* Tablet: colonne larghe, le icone dei membri in testata più grandi */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .ct-flip-table .ct-mon-box { height: 46px; }
+  .ct-flip-table .ct-mon-box .mon-icon { transform: scale(1.5); }
+}

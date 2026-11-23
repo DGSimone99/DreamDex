@@ -5,9 +5,9 @@ import { useMediaQuery } from './useMediaQuery';
 
 /** Pokémon del meta per pagina: le colonne della tabella (8 sul computer largo e sul telefono, dove la tabella è girata). */
 export const META_PAGE = 8;
-/** Sul computer stretto e sul tablet (768–1279 px) 6 per pagina, così le caselle restano larghe; più pagine. */
+/** Sul computer stretto (1100–1279 px) 6 per pagina, così le caselle restano larghe; più pagine. (Sul tablet la tabella è girata.) */
 export const META_PAGE_NARROW = 6;
-export const META_NARROW_QUERY = '(min-width: 768px) and (max-width: 1279px)';
+export const META_NARROW_QUERY = '(min-width: 1100px) and (max-width: 1279px)';
 
 /** Pastiglia con il conteggio di un gruppo (grigia a zero), come nella barra di Coverage meta. */
 export function MetaCount({ n, tone, label }: { n: number; tone: 'good' | 'warn' | 'bad'; label: string }) {

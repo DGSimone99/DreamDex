@@ -9,7 +9,7 @@ import { useMemberTip } from '../MemberCard';
 import { typeColor } from '../Sprite';
 import { PokemonIcon } from '../PokemonName';
 import { offenseSlots } from './slots';
-import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { TypeHitTip } from './TypeHitTip';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
@@ -58,7 +58,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const t = useT();
   const lang = useLang();
   const hover = useColumnHover();
-  const phone = useMediaQuery(NARROW_TABLES_QUERY);
+  const phone = useMediaQuery(FLIP_TABLES_QUERY);
   const tip = useFloatAnchor<{ species: string; m: number }>();
   const card = useMemberTip(400, undefined, true);
   // Tastiera: la griglia è un posto solo nel giro del Tab, le frecce vanno di casella in casella (col fuoco la colonna e il tooltip)

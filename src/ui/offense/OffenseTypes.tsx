@@ -21,7 +21,7 @@ import { FocusNote, inBand, koBandOf } from './KoBadges';
 import { TypeHitTip } from './TypeHitTip';
 import { offenseSlots } from './slots';
 import { PokemonIcon } from '../PokemonName';
-import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 
 /** Da qui il danno si scrive anche se non conta (3HKO, la soglia di Coverage meta), in una casella grigia. */
 const LOW_PCT = 34;
@@ -45,7 +45,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const lang = useLang();
   const { team } = ctx;
   const roomy = !!ctx.roomy;
-  const phone = useMediaQuery(NARROW_TABLES_QUERY);
+  const phone = useMediaQuery(FLIP_TABLES_QUERY);
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const { rows, holes } = offense.types;
   const byType = new Map(rows.map(row => [row.label, row]));
