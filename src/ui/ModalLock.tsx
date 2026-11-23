@@ -22,7 +22,11 @@ export function ModalLock() {
   // su un suo controllo (gli effetti dei figli vengono prima, ma questo è un effetto di disegno: ancora prima)
   const opener = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
-    opener.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+    // Solo la prima volta: in sviluppo React monta, smonta e rimonta per prova, e al secondo giro il fuoco è già dentro
+    // la finestra (sul suo pulsante Chiudi), che non va presa per chi l'ha aperta
+    const active = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+    const inside = !!active && !!mark.current?.closest('.help-backdrop, [role="dialog"]')?.contains(active);
+    if (!opener.current && !inside) opener.current = active;
     return () => {
       const back = opener.current;
       // Chiusa la finestra, il fuoco torna su chi l'ha aperta: chi usa la tastiera o un lettore di schermo riparte da lì,
