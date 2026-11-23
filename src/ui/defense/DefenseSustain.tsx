@@ -74,7 +74,8 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
               const halvedBy = p.rocksHalvedBy ? rocksHalvedText(t, p.rocksHalvedBy, lang) : null;
               const net = p.recovery - p.rocks - p.itemLoss;
               return (
-                <tbody key={`${m.species}-${i}`} className="og-stack-mon">
+                <tbody key={`${m.species}-${i}`} className={`og-stack-mon${i % 2 === 0 ? ' og-alt' : ''}`}>
+                  {i > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>}
                   <tr className="og-mon-row">
                     <th scope="rowgroup" colSpan={2}><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats /></th>
                     <td className="sus-val"><span className={`ct-pill ${m.sustain < 0 ? 'bad' : tone(m.sustain)}`}>{signed(m.sustain)}</span></td>

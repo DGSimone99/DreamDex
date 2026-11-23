@@ -220,7 +220,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               </tr>
             </thead>
             {members.map((m, i) => (
-              <tbody key={`${m.species}-${i}`} className="og-stack-mon">
+              <tbody key={`${m.species}-${i}`} className={`og-stack-mon${i % 2 === 0 ? ' og-alt' : ''}`}>
+                {i > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>}
                 <tr className="og-mon-row">
                   <th scope="rowgroup" colSpan={2}><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats /></th>
                   <td>{share(m, i)}</td>
@@ -230,6 +231,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               </tbody>
             ))}
             <tbody className="og-stack-mon og-stack-team">
+              <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>
               <tr className="og-mon-row"><th scope="rowgroup" colSpan={3}><span className="og-plate">{teamName}</span></th></tr>
               {bars(t('kob.headTypes'), <HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm />, 'types')}
               {meta && bars(t('kob.headMeta'), <HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm />, 'meta')}

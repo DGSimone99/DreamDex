@@ -150,7 +150,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
               const s = index === null ? null : shares[index];
               const quiet = familyAt(ctx, slot) === 'wall';
               return (
-                <tbody key={`${name}-${slot}`} className="og-stack-mon">
+                <tbody key={`${name}-${slot}`} className={`og-stack-mon${slot % 2 === 0 ? ' og-alt' : ''}`}>
+                  {slot > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>}
                   <tr className="og-mon-row">
                     <th scope="rowgroup" colSpan={2}><MemberMon name={name} set={set} stats="offense" /></th>
                     <td>{s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}</td>
@@ -163,6 +164,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
               );
             })}
             <tbody className="og-stack-mon og-stack-team">
+              <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>
               <tr className="og-mon-row"><th scope="rowgroup" colSpan={3}><span className="og-plate">{teamName}</span></th></tr>
               {bars(t('kob.headTypes'), <KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm />, 'types')}
               {meta && bars(t('kob.headMeta'), <KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm />, 'meta')}

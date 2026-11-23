@@ -438,7 +438,7 @@
 /* Generale e Recupero a righe: i membri a fasce alternate (chiara, scura) al posto del filo, così si distinguono; il
    contenuto non tocca i bordi della fascia */
 .def-frame .og-stack-table tbody.og-stack-mon { border-top: 0; }
-.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(.og-stack-team):nth-of-type(odd) > tr > * { background: var(--raised); }
+.def-frame .og-stack-table.def-members tbody.og-alt > tr:not(.og-gap) > * { background: var(--raised); }
 .def-frame .og-stack-table tbody.og-stack-mon > tr > :first-child { padding-left: var(--sp-3); }
 .def-frame .og-stack-table tbody.og-stack-mon > tr > :last-child { padding-right: var(--sp-3); }
 .def-frame .og-stack-table tbody.og-stack-team { border-top: 1px solid var(--line); }
@@ -446,9 +446,21 @@
 .def-frame .def-grid.og-stack-table { border-collapse: collapse; border-spacing: 0; }
 /* Angoli arrotondati solo ai quattro capi della fascia (non a ogni riga), e niente luce della singola riga sotto il dito */
 .def-frame .og-stack-table.def-members tbody.og-stack-mon > tr > * { border-radius: 0; }
-.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:first-child > :first-child { border-top-left-radius: 7px; }
-.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:first-child > :last-child { border-top-right-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr.og-mon-row > :first-child { border-top-left-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr.og-mon-row > :last-child { border-top-right-radius: 7px; }
 .def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:last-child > :first-child { border-bottom-left-radius: 7px; }
 .def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:last-child > :last-child { border-bottom-right-radius: 7px; }
-.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(:nth-of-type(odd)) > tr:hover > *, .def-frame .og-stack-table.def-members tbody.og-stack-team > tr:hover > * { background: none; }
-.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(.og-stack-team):nth-of-type(odd) > tr:hover > * { background: var(--raised); }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(.og-alt) > tr:hover > *, .def-frame .og-stack-table.def-members tbody.og-alt > tr.og-gap:hover > * { background: none; }
+.def-frame .og-stack-table.def-members tbody.og-alt > tr:not(.og-gap):hover > * { background: var(--raised); }
+/* Lo spazio fra un membro e l'altro (una riga vuota in testa al pacchetto); il team staccato da un filo nello spazio */
+.def-frame .og-stack-table tr.og-gap { height: 10px; }
+.def-frame .og-stack-table tr.og-gap > td { padding: 0; background: none; }
+.def-frame .og-stack-table tbody.og-stack-team { border-top: 0; }
+/* La testata sopra le tabelle a righe (Tipi ? Meta ?, Offesa/Difesa/Recupero): solo le parole, niente riquadro */
+.def-frame .og-stack-table thead th, .def-frame .og-stack-table thead th .bar-head { background: none; box-shadow: none; }
+.def-frame .og-stack-table thead th::before, .def-frame .og-stack-table thead th::after { content: none; }
+/* Telefono: le tabelle non scorrono più di lato, la prima colonna non serve ferma col fondo del pannello (senza il
+   riquadro il fondo si vedeva come una scatola dietro le testate) */
+@media (max-width: 599px) {
+  .def-frame .def-grid tbody th[scope='row'], .def-frame .def-grid thead th.def-mon-h { position: static; background: none; }
+}
