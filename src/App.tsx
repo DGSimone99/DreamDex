@@ -179,10 +179,18 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Team che si riduce da solo: telefono e tablet piccolo in verticale (fino a 767 px), non col team in colonna
   const autoBand = useMediaQuery(AUTO_BAND_QUERY) && !tabletSide;
   const phone = useMediaQuery(PHONE_QUERY);
-  const collapsed = tabletSide ? false : editingOpen ? short : savedCollapsed;
+  // Senza meta la scheda Meta è spenta: si resta sull'Analisi
+  const metaOn = !data.ignoreMeta && !!data.stats;
+  const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
+  // Schermo basso, Analisi aperta senza editor: il team parte compresso (la Panoramica sta in una schermata); se il giocatore
+  // lo riapre lì resta aperto in Analisi per tutta la sessione (solo in memoria: la scelta salvata vale per le altre schede)
+  const [analysisExpanded, setAnalysisExpanded] = useState(false);
+  const analysisShort = short && shownTab === 'analysis' && !editingOpen && !tabletSide;
+  const collapsed = tabletSide ? false : editingOpen ? short : analysisShort ? !analysisExpanded : savedCollapsed;
   const sectionsCollapsed = autoBand ? false : collapsed;
   const toggleCollapsed = () => {
     if (editingOpen) return;
+    if (analysisShort) { setAnalysisExpanded(e => !e); return; }
     setCollapsed(c => {
       if (storage) saveTeamCollapsed(!c, storage);
       return !c;
@@ -292,10 +300,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
 
   // Contatori delle schede: i problemi del coach; sotto Meta l'uso medio del team (la scheda è solo informativa)
   const problems = coaching.problems;
-  const metaOn = !data.ignoreMeta && !!data.stats;
   const metaAverage = metaOn ? metaBoard(data.stats, team).average : null;
-  // Senza meta la scheda Meta è spenta: si resta sull'Analisi
-  const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
   // I consigli (candidati e prima mossa) sono lenti: solo col Coaching aperto, o con la Panoramica (la riga Da sistemare
   // mostra solo ciò che il Coaching risolve), e dopo che la scheda si è disegnata

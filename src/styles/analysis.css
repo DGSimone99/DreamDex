@@ -362,6 +362,11 @@
 .dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: var(--sp-2); }
 /* Le fasce tagliano quello che sborda: l'anello del fuoco (si arriva coi tasti freccia) sta dentro il ruolo */
 .dash-role:focus-visible { outline-offset: -2px; }
+/* Un ruolo solo prima del "+N" (cruscotto basso): stessa riga, la pillola si stringe e il nome finisce coi puntini */
+.dash-role-list.one { flex-wrap: nowrap; }
+.dash-role-list.one .dash-role:not(.more) { flex: 0 1 auto; min-width: 0; }
+.dash-role-list.one .dash-role:not(.more) .dash-role-tag { max-width: 100%; }
+.dash-role-list.one .dash-role:not(.more) .dash-role-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* Ruolo come piccola lastra di Champions: la spunta (o la ×) in una tessera a sinistra, come il tipo nelle mosse */
 .dash-role-tag { --rt-h: 22px; display: inline-flex; align-items: stretch; min-height: var(--rt-h); overflow: hidden; font-size: var(--fs-caption); line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); }
 .dash-role-tag .icon { flex: none; box-sizing: border-box; width: var(--rt-h); height: auto; padding: 0 5px; stroke-width: 2.5; color: var(--good); background: color-mix(in srgb, var(--good) 22%, var(--panel)); }

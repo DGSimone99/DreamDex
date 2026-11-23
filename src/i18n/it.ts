@@ -1064,7 +1064,7 @@ export const it: Record<keyof typeof en, string> = {
   'dash.roleMissing': "mancante",
   'dash.roleCoveredBy': "coperto da {names}",
   'dash.moreRoles': "Altri {n} ruoli",
-  'dash.bandRoles': "{n} ruoli",
+  'dash.moreRolesOne': "Un altro ruolo",
   'analysis.essential': "Essenziali",
   'analysis.important': "Importanti",
   'meta.average': "Uso medio {pct}",

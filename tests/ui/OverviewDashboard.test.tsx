@@ -731,29 +731,35 @@ describe('Cruscotto: misure', () => {
     expect(within(roleBand(roles, 'Importanti')).getAllByRole('listitem')).toHaveLength(8);
   });
 
-  it('Ruoli: se manca spazio cedono prima le ultime fasce, ognuna col suo "+N"', () => {
+  it('Ruoli: se manca spazio cedono prima le ultime fasce, ognuna col suo "+N" ma sempre col suo primo ruolo', () => {
     stubLayout({ 'dash-roles': { box: 150, item: 30 } });
     mount({ density: 'tight', data: sample({ roles: manyRoles }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    // 5 posti: 4 essenziali, poi Importanti senza chip: il "+2" come tutti i +N (.more-n), i mancanti nel fumetto
-    expect(within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')).toHaveLength(4);
-    const tally = within(roleBand(roles, 'Importanti')).getByRole('listitem');
-    expect(tally).toHaveClass('tally');
-    expect(tally.querySelector('.more-n')).toHaveTextContent('+2', { normalizeWhitespace: true });
+    // 5 posti: il primo ruolo di ogni fascia è garantito (mai il "+N" da solo), poi gli essenziali
+    const essential = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem');
+    expect(essential).toHaveLength(3);
+    expect(essential[2].querySelector('.more-n')).toHaveTextContent('+2', { normalizeWhitespace: true });
+    const important = within(roleBand(roles, 'Importanti')).getAllByRole('listitem');
+    expect(important).toHaveLength(2);
+    // Il primo è la pillola normale del ruolo (un mancante), poi il "+1" sulla stessa riga
+    expect(important[0]).toHaveClass('dash-role', 'bad');
+    expect(important[0].closest('ul')).toHaveClass('one');
+    expect(important[1].querySelector('.more-n')).toHaveTextContent('+1', { normalizeWhitespace: true });
     // I nomi nel fumetto e ai lettori di schermo; si raggiunge con le frecce
-    expect(tally.getAttribute('data-hint')).toMatch(/^2 ruoli: .+ \(mancante\), .+ \(mancante\)$/);
-    expect(tally.querySelector('.visually-hidden')).toHaveTextContent(/^2 ruoli: /);
-    expect(tally).toHaveAttribute('data-nav');
+    expect(important[1].getAttribute('data-hint')).toMatch(/^Un altro ruolo: .+ \(mancante\)$/);
+    expect(important[1]).toHaveAttribute('data-nav');
   });
 
-  it('Ruoli: fascia senza posto con ruoli coperti: "+N", coperti e mancanti nel fumetto', () => {
+  it('Ruoli: fascia senza posto con ruoli coperti: un ruolo e "+N", coperti e mancanti nel fumetto', () => {
     stubLayout({ 'dash-roles': { box: 150, item: 30 } });
-    const roles = { ...manyRoles, chips: manyRoles.chips.map(c => (c.level === 'important' ? { ...c, covered: c.need === 'screens', owners: c.need === 'screens' ? ['Great Tusk'] : [], soft: true } : c)) };
+    const roles = { ...manyRoles, chips: [...manyRoles.chips, { need: 'speedControl' as const, level: 'important' as const, covered: true, owners: ['Great Tusk'], soft: false }]
+      .map(c => (c.level === 'important' && c.need !== 'speedControl' ? { ...c, soft: true } : c)) };
     mount({ density: 'tight', data: sample({ roles }) });
-    const tally = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Importanti')).getByRole('listitem');
-    expect(tally.querySelector('.more-n')).toHaveTextContent('+2', { normalizeWhitespace: true });
-    expect(tally.getAttribute('data-hint')).toMatch(/coperto da Great Tusk/);
-    expect(tally.getAttribute('data-hint')).toMatch(/\(mancante\)/);
+    const important = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Importanti')).getAllByRole('listitem');
+    expect(important).toHaveLength(2);
+    expect(important[1].querySelector('.more-n')).toHaveTextContent('+2', { normalizeWhitespace: true });
+    expect(important[1].getAttribute('data-hint')).toMatch(/coperto da Great Tusk/);
+    expect(important[1].getAttribute('data-hint')).toMatch(/\(mancante\)/);
   });
 
   it('Ruoli: un contenitore che si stringe dopo il taglio non fa rimostrare tutto (niente rimbalzi)', () => {

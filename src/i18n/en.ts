@@ -1062,7 +1062,7 @@ export const en = {
   'dash.roleMissing': "missing",
   'dash.roleCoveredBy': "covered by {names}",
   'dash.moreRoles': "{n} more roles",
-  'dash.bandRoles': "{n} roles",
+  'dash.moreRolesOne': "1 more role",
   'analysis.essential': "Essential",
   'analysis.important': "Important",
   'meta.average': "Average usage {pct}",

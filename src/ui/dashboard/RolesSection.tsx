@@ -83,8 +83,8 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
 
 /**
  * Una fascia (un livello): l'etichetta a sinistra, i ruoli che vanno a capo; quelli che non stanno nel "+N" a fine fascia.
- * Se non ci sta nessun ruolo resta il "+N" della fascia (come tutti i "+N"), coi nomi dei ruoli, coperti e mancanti, nel
- * fumetto e ai lettori di schermo. Il "+N" si raggiunge con le frecce (col fuoco il fumetto).
+ * Almeno un ruolo c'è sempre (RoleBands); i nomi dei ruoli nascosti, coperti e mancanti, sono nel fumetto del "+N" e ai
+ * lettori di schermo. Il "+N" si raggiunge con le frecce (col fuoco il fumetto).
  */
 function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; shown: number }) {
   const t = useT();
@@ -94,15 +94,15 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
   const rest = chips.slice(shown);
   // I ruoli nascosti per nome, coi coperti e i mancanti: nel fumetto e ai lettori di schermo
   const names = rest.map(chip => `${needLabel(chip.need, lang)} (${t(chip.covered ? 'dash.roleCoveredBy' : 'dash.roleMissing', { names: chip.owners.join(', ') })})`).join(', ');
-  const tally = shown === 0;
-  const moreText = `${t(tally ? 'dash.bandRoles' : 'dash.moreRoles', { n: hidden })}: ${names}`;
+  const moreText = `${t(hidden === 1 ? 'dash.moreRolesOne' : 'dash.moreRoles', { n: hidden })}: ${names}`;
   return (
     <div className="dash-role-band">
       <span id={id} className="dash-level-name">{title}</span>
-      <ul className="dash-role-list" aria-labelledby={id}>
+      {/* Un ruolo solo e il "+N": sulla stessa riga, il nome si accorcia coi puntini se serve */}
+      <ul className={`dash-role-list${shown === 1 && hidden > 0 ? ' one' : ''}`} aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} />)}
         {hidden > 0 && (
-          <li data-fit-more data-nav="" className={`dash-role more${tally ? ' tally' : ''}`} {...hint(moreText)}>
+          <li data-fit-more data-nav="" className="dash-role more" {...hint(moreText)}>
             <span className="more-n" aria-hidden="true">+{hidden}</span><span className="visually-hidden">{moreText}</span>
           </li>
         )}
@@ -115,22 +115,26 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
  * Stretto e normale: due fasce una sotto l'altra (Essenziali, Importanti), compatte in alto.
  * Quanti ruoli stanno si misura una volta per tutta la card, in ordine (essenziali, importanti; in ogni fascia
  * prima i mancanti): se manca spazio cedono prima gli importanti, mai un problema prima di un coperto, e ogni fascia
- * tagliata chiude col suo "+N". Mai un "+N" in una fascia mentre un'altra ha spazio vuoto.
+ * tagliata chiude col suo "+N", ma tiene sempre il suo primo ruolo. Mai un "+N" in una fascia mentre un'altra ha spazio vuoto.
  */
 function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; density: Density; titles: Record<(typeof LEVELS)[number], string> }) {
   const lang = useLang();
   const bands = LEVELS.map(level => missingFirst(roles.chips.filter(c => c.level === level)));
   // La lingua cambia la larghezza delle etichette: si rimisura. Le fasce seguono il contenuto: si guarda anche la card
+  // Ogni fascia mostra almeno un ruolo (il primo: un mancante se c'è) prima del suo "+N", mai il "+N" da solo
+  const filled = bands.filter(chips => chips.length > 0).length;
   const { ref, shown } = useFit<HTMLDivElement>(
     `${density}|${lang}|${bands.flat().map(c => `${c.need}${c.covered}${c.owners.join('+')}`).join()}`, roles.chips.length,
-    { more: true, outer: '.dash-roles' },
+    { more: true, min: filled, outer: '.dash-roles' },
   );
   const nav = useRoving<HTMLDivElement>();
-  let left = shown;
+  // Il primo di ogni fascia è garantito; il resto dei posti va in ordine (prima gli essenziali)
+  let left = Math.max(0, shown - filled);
   const visible = bands.map(chips => {
-    const n = Math.min(chips.length, Math.max(0, left));
+    if (!chips.length) return 0;
+    const n = Math.min(chips.length - 1, left);
     left -= n;
-    return n;
+    return 1 + n;
   });
   return (
     <div ref={el => { ref(el); nav.ref.current = el; }} className="dash-role-bands dash-fit" onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>

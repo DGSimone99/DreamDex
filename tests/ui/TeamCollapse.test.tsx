@@ -96,4 +96,38 @@ describe('team compresso', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("su uno schermo basso l'Analisi parte col team compresso; riaperto lì resta aperto per la sessione, senza toccare la scelta salvata", async () => {
+    const short = vi.fn((query: string) => ({
+      matches: query.includes('max-height: 759px'), media: query, onchange: null,
+      addEventListener: () => undefined, removeEventListener: () => undefined, addListener: () => undefined, removeListener: () => undefined, dispatchEvent: () => false,
+    }) as MediaQueryList);
+    vi.stubGlobal('matchMedia', short);
+    try {
+      const user = userEvent.setup();
+      const storage = memory();
+      const { container } = renderTeam(storage);
+      const band = () => container.querySelector('.band')!;
+      // Nella scheda Pokémon vale la scelta salvata (aperto)
+      expect(band()).not.toHaveClass('collapsed');
+      await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+      expect(band()).toHaveClass('collapsed');
+      expect(screen.getByRole('button', { name: 'Espandi team' })).toHaveAttribute('aria-expanded', 'false');
+      await user.click(screen.getByRole('button', { name: 'Espandi team' }));
+      expect(band()).not.toHaveClass('collapsed');
+      expect(screen.getByRole('button', { name: 'Comprimi team' })).toHaveAttribute('aria-expanded', 'true');
+      expect(loadTeamCollapsed(storage)).toBeNull();
+      // Altre schede come sempre; tornando in Analisi il team resta aperto
+      await user.click(screen.getByRole('tab', { name: /^Pokémon/ }));
+      expect(band()).not.toHaveClass('collapsed');
+      await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+      expect(loadTeamCollapsed(storage)).toBe(true);
+      await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+      expect(band()).not.toHaveClass('collapsed');
+      await user.click(screen.getByRole('tab', { name: /^Pokémon/ }));
+      expect(band()).toHaveClass('collapsed');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
