@@ -442,3 +442,13 @@
 .def-frame .og-stack-table tbody.og-stack-mon > tr > :first-child { padding-left: var(--sp-3); }
 .def-frame .og-stack-table tbody.og-stack-mon > tr > :last-child { padding-right: var(--sp-3); }
 .def-frame .og-stack-table tbody.og-stack-team { border-top: 1px solid var(--line); }
+/* Il "pacchetto" di un membro (nome, Tipi, Meta) è una fascia sola: niente spazi fra le sue righe */
+.def-frame .def-grid.og-stack-table { border-collapse: collapse; border-spacing: 0; }
+/* Angoli arrotondati solo ai quattro capi della fascia (non a ogni riga), e niente luce della singola riga sotto il dito */
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr > * { border-radius: 0; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:first-child > :first-child { border-top-left-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:first-child > :last-child { border-top-right-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:last-child > :first-child { border-bottom-left-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:last-child > :last-child { border-bottom-right-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(:nth-of-type(odd)) > tr:hover > *, .def-frame .og-stack-table.def-members tbody.og-stack-team > tr:hover > * { background: none; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(.og-stack-team):nth-of-type(odd) > tr:hover > * { background: var(--raised); }
