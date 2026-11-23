@@ -1528,6 +1528,8 @@ export const it: Record<keyof typeof en, string> = {
   'catalogue.cores.name': "Core {title}",
   'catalogue.cores.parry': "{name} para {to} da {type}",
   'rating.areasPop': "Voto delle aree",
+  'rating.popCoresOne': "{n} core",
+  'rating.popCoresMany': "{n} core",
   'rating.areasShow': "Mostra le aree del voto",
   'rating.areasHide': "Nascondi le aree del voto",
   'rating.badgeHead': "Voto",

@@ -735,6 +735,7 @@ const STATES: Record<string, State> = {
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   // Telefono: il voto in fondo alla barra delle schede, toccato: la tendina Voto delle aree
   'analysis-phone-grade': { run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
+  'analysis-phone-grade-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
   'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
   'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
   // Carta del membro (tooltip) passando sul primo Pokémon della tabella dell'Offesa: le mosse come pillole piccole
