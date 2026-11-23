@@ -931,8 +931,13 @@ describe('Copertura › schede Tipi e Meta', () => {
     }
   });
 
-  it('cruscotto alto (ricco): Tipi e Meta insieme, senza schede; in testata i numeri di tutti e due', () => {
-    mount({ density: 'roomy' });
+  it('cruscotto alto (ricco): Tipi e Meta insieme, senza schede; in testata i numeri di tutti e due; i link aprono la Coverage tipi', async () => {
+    const user = userEvent.setup();
+    const { onView } = mount({ density: 'roomy' });
+    await user.click(within(cov()).getByRole('button', { name: 'Difesa' }));
+    expect(onView).toHaveBeenLastCalledWith('defense', 'coverageTypes');
+    await user.click(within(cov()).getByRole('button', { name: 'Offesa' }));
+    expect(onView).toHaveBeenLastCalledWith('strength', 'types');
     expect(within(cov()).queryByRole('tablist')).toBeNull();
     expect(within(cov()).getByRole('table')).toBeInTheDocument();
     expect(tiles().length).toBeGreaterThan(0);

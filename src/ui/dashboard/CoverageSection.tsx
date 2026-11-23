@@ -193,9 +193,10 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
     <DashCard className="dash-coverage" title={title} tabs={tabs}
       meta={stacked ? <>{typesMeta}{threatsMeta && <> · {threatsMeta}</>}</> : meta ? threatsMeta : typesMeta}
       links={<>
-        {/* Tipi: ognuno porta alla sua Coverage tipi; Meta: alla sua Coverage meta */}
-        <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => (meta ? openThreat('offense') : onView('strength', 'types'))} />
-        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => (meta ? openThreat('defense') : onView('defense', 'coverageTypes'))} />
+        {/* Tipi: ognuno porta alla sua Coverage tipi; Meta: alla sua Coverage meta. Tipi e Meta insieme: alla Coverage tipi
+            (la griglia è subito sotto; ogni piastrella del Meta porta già alla sua Coverage meta) */}
+        <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => (meta && !stacked ? openThreat('offense') : onView('strength', 'types'))} />
+        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => (meta && !stacked ? openThreat('defense') : onView('defense', 'coverageTypes'))} />
       </>}>
       <p id={summaryId} hidden>{summary}</p>
       <div ref={panel} role={threats && !stacked ? 'tabpanel' : undefined} className={`dash-cov-panel${stacked ? ' both' : ''}`} aria-describedby={meta ? summaryId : undefined}>
