@@ -7,6 +7,7 @@ import type { AnalysisView } from '../analysisView';
 import type { KoFocus } from '../AreaDetail';
 import { FloatTip, goText, keyboardFocus, TipGo, useFloatAnchor } from '../FloatTip';
 import { Icon } from '../icons';
+import { hint } from '../MoveTip';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
@@ -213,7 +214,7 @@ export function CoverageSection({ coverage, threats, onView }: {
                 <tr>
                   <td />
                   {coverage.cells.map((cell, i) => (
-                    <th key={cell.type} scope="col" title={names[i]}>
+                    <th key={cell.type} scope="col" {...hint(names[i])}>
                       <TypeIcon type={cell.type} />
                       <span className="visually-hidden">{names[i]}</span>
                     </th>

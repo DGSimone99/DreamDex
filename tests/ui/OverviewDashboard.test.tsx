@@ -215,7 +215,9 @@ describe('Cruscotto della Panoramica', () => {
       expect(img!.getAttribute('src')).toMatch(new RegExp(`${TYPES[i].toLowerCase()}\\.png`));
       expect(img).toHaveAttribute('alt', '');
     });
-    expect(headers[TYPES.indexOf('Ground')].getAttribute('title')).toMatch(/^(Terra|Ground)$/);
+    // Il nome nel fumetto dell'app, non nel tooltip del browser
+    expect(headers[TYPES.indexOf('Ground')].getAttribute('data-hint')).toMatch(/^(Terra|Ground)$/);
+    expect(headers[TYPES.indexOf('Ground')].getAttribute('title')).toBe('');
     expect(headers[TYPES.indexOf('Ground')]).toHaveAccessibleName(/^(Terra|Ground)$/);
   });
 
@@ -377,7 +379,10 @@ describe('Cruscotto della Panoramica', () => {
     mount({ density: 'tight' });
     const speed = screen.getByRole('region', { name: 'Velocità' });
     expect(speed.querySelector('.dash-ctrl')).toBeNull();
-    expect(speed).toHaveAttribute('title', expect.stringMatching(/^Controllo:/));
+    // Il controllo in fondo al fumetto della testata e, per intero, ai lettori di schermo; niente tooltip del browser
+    expect(speed).not.toHaveAttribute('title');
+    expect(speed.querySelector('.dash-meta-hint')!.getAttribute('data-hint')).toMatch(/\nControllo: /);
+    expect(speed.querySelector('p.visually-hidden')).toHaveTextContent(/^Controllo:/);
     // Ruoli: ogni chip ha solo il segno e il nome
     for (const chip of screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-role:not(.more)')) {
       expect([...chip.children].map(x => x.className)).toEqual(['dash-role-tag']);
@@ -503,6 +508,25 @@ describe('Riassunto', () => {
     expect(core.querySelectorAll('.sum-pair .sprite')).toHaveLength(2);
     expect(core.querySelector('.sum-syn-text')).toHaveTextContent('Pelipper para Fuoco e Lotta, Ferrothorn para Elettro e Roccia');
     expect(section('Sinergie')).not.toHaveTextContent('Giro di U-turn');
+  });
+
+  it('Sinergie: il core da 2 ha il tooltip del core come quello da 3 (chi para cosa), al passaggio e col fuoco da tastiera', async () => {
+    italianNames();
+    const user = userEvent.setup();
+    mount({ summary: summaryOf({ cores: [pair] }) });
+    const core = within(section('Sinergie')).getByRole('button');
+    // Niente tooltip del browser sulle sprite: il tooltip del core dice già chi è
+    expect(core.querySelector('.sum-pair-mon')).not.toHaveAttribute('title');
+    expect(core.querySelector('.sum-pair-mon')).not.toHaveAttribute('data-hint');
+    expect(core).toHaveAccessibleDescription(/Pelipper para Fuoco e Lotta, Ferrothorn para Elettro e Roccia/);
+    await user.hover(core);
+    const tip = await screen.findByText('Acqua-Volante / Erba-Acciaio', { selector: '.core-tip-head b' });
+    expect([...tip.closest('.ftip')!.querySelectorAll('.core-tip-what > b')].map(b => b.textContent)).toEqual(['Pelipper', 'Ferrothorn']);
+    expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Ruoli e Bonus');
+    await user.unhover(core);
+    await user.tab();
+    await act(async () => { core.focus(); });
+    expect(await screen.findByText('Acqua-Volante / Erba-Acciaio', { selector: '.core-tip-head b' })).toBeInTheDocument();
   });
 
   it('Sinergie: tutti i core, prima il triangolo e poi la coppia (riga piccola); poi i legami nel loro ordine, senza pivot; clic: core a Bonus/Malus, legami a Ruoli', async () => {
@@ -683,9 +707,9 @@ describe('Cruscotto: misure', () => {
     expect(essential).toHaveLength(2);
     expect(essential[1]).toHaveTextContent('+3');
     expect(essential[1]).toHaveClass('more');
-    expect(essential[1]).toHaveAttribute('title', 'Altri 3 ruoli');
-    // Il significato del "+N" anche per i lettori di schermo
-    expect(essential[1].querySelector('.visually-hidden')).toHaveTextContent(/^Altri 3 ruoli$/);
+    // I ruoli nascosti per nome nel fumetto dell'app e ai lettori di schermo
+    expect(essential[1].getAttribute('data-hint')).toMatch(/^Altri 3 ruoli: /);
+    expect(essential[1].querySelector('.visually-hidden')).toHaveTextContent(/^Altri 3 ruoli: .+\(coperto da Great Tusk\)$/);
     expect(essential[1].querySelector('[aria-hidden="true"]')).toHaveTextContent(/^[+]3$/);
     expect(roles.querySelectorAll('.more')).toHaveLength(1);
   });

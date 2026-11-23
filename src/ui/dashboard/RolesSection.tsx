@@ -4,6 +4,7 @@ import type { DashboardData, RoleChip } from '../../engine/overviewDashboard';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import { Icon } from '../icons';
+import { hint } from '../MoveTip';
 import type { Density } from '../OverviewDashboard';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
@@ -84,15 +85,18 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
 function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; shown: number }) {
   const t = useT();
   const id = useId();
+  const lang = useLang();
   const hidden = chips.length - shown;
+  // I ruoli nascosti per nome, coi coperti e i mancanti: nel fumetto e ai lettori di schermo
+  const moreText = `${t('dash.moreRoles', { n: hidden })}: ${chips.slice(shown).map(chip => `${needLabel(chip.need, lang)} (${t(chip.covered ? 'dash.roleCoveredBy' : 'dash.roleMissing', { names: chip.owners.join(', ') })})`).join(', ')}`;
   return (
     <div className="dash-role-band">
       <span id={id} className="dash-level-name">{title}</span>
       <ul className="dash-role-list" aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} />)}
         {hidden > 0 && (
-          <li data-fit-more className="dash-role more" title={t('dash.moreRoles', { n: hidden })}>
-            <span aria-hidden="true">+{hidden}</span><span className="visually-hidden">{t('dash.moreRoles', { n: hidden })}</span>
+          <li data-fit-more className="dash-role more" {...hint(moreText)}>
+            <span aria-hidden="true">+{hidden}</span><span className="visually-hidden">{moreText}</span>
           </li>
         )}
       </ul>
@@ -162,7 +166,7 @@ function RoleTable({ roles, titles }: { roles: DashboardData['roles']; titles: R
           <tr>
             <td />
             {roles.members.map((member, i) => (
-              <th key={`${member}-${i}`} scope="col" title={member}>
+              <th key={`${member}-${i}`} scope="col" {...hint(member)}>
                 <Sprite species={member} size={44} />
                 <span className="visually-hidden">{member}</span>
               </th>

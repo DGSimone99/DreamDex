@@ -1,4 +1,4 @@
-import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode, type RefObject } from 'react';
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
@@ -32,7 +32,7 @@ const conditionColor = (key: string) => typeColor(CONDITION_TYPE[key] ?? '');
 /** Il "+N": a vista solo il numero, per intero nel tooltip e ai lettori di schermo. */
 function More({ label, n, plain = false }: { label: string; n: number; plain?: boolean }) {
   return (
-    <span className="sum-more" title={plain ? undefined : label}>
+    <span className="sum-more" {...(plain ? {} : hint(label))}>
       <span aria-hidden="true">+{n}</span><span className="visually-hidden">{label}</span>
     </span>
   );
@@ -169,7 +169,9 @@ function useSynergyView() {
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
  * la frase (o il giro del triangolo letto in parole).
  */
-function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void; hover?: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void };
+function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void;
+  /** I gestori del tooltip del core (mouse e fuoco da tastiera); senza, le sprite hanno il fumetto col nome. */
+  hover?: HTMLAttributes<HTMLButtonElement>;
   /** La descrizione di dove porta il clic (col tooltip: il suo piede TipGo), dopo la frase. */
   goId?: string;
   /** Un core da 3 dopo il primo: triangolo piccolo anche col team ridotto. */
@@ -186,12 +188,12 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
               {view.mons.map((name, i) => (
                 <span key={`${name}:${i}`} className="sum-pair-ring">
                   {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
-                  <span className="sum-pair-mon" title={name}><Sprite species={name} size={small} /></span>
+                  <span className="sum-pair-mon" {...(hover ? {} : hint(name))}><Sprite species={name} size={small} /></span>
                 </span>
               ))}
             </span>
             <span className="sum-syn-body">
-              <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title" title={view.title}>{view.title}</strong></span>
+              <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{view.title}</strong></span>
               <span id={desc} className="sum-syn-text">{view.text}</span>
             </span>
           </>
@@ -204,7 +206,7 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
  * Un core a tre nella riga dei due core affiancati: il triangolo e sotto il titolo, senza le righe "Nome para Tipo" (sono nel
  * tooltip del core e, a parole, nella descrizione per i lettori di schermo).
  */
-function DuoCore({ core, goId, onClick, hover }: { core: Core; goId: string; onClick: () => void; hover: { onMouseEnter: (e: { currentTarget: Element }) => void; onMouseLeave: () => void } }) {
+function DuoCore({ core, goId, onClick, hover }: { core: Core; goId: string; onClick: () => void; hover: HTMLAttributes<HTMLButtonElement> }) {
   const t = useT();
   const lang = useLang();
   const desc = useId();
@@ -425,20 +427,20 @@ export function SummarySection({ summary, members, grade, density, rich = false,
                     </span>
                   )
                   // Senza tipo riconosciuto: a team incompleto "Incompleto · 5/6", a team completo "Misto" (non somiglia a nessun tipo)
-                  : <strong className="sum-arch pending" title={t(members < 6 ? 'sum.archBuildingNote' : 'sum.archMixedNote')}>
+                  : <strong className="sum-arch pending" {...hint(t(members < 6 ? 'sum.archBuildingNote' : 'sum.archMixedNote'))}>
                     {members < 6 ? t('sum.archBuilding', { n: members }) : t('sum.archMixed')}
                   </strong>}
                 {/* Con due o più stili solo l'icona su un quadratino del suo colore, così il nome del tipo non si tronca;
                     il nome resta nel tooltip e ai lettori di schermo (e nella sezione Meteo e campo sotto) */}
                 {styles.map(style => (styles.length > 1
                   ? (
-                    <span key={style} className="sum-style mini" title={`${t(`teamStyle.${style}`)}: ${t(`teamStyle.${style}.note`)}`} style={{ '--c': conditionColor(style) } as CSSProperties}>
+                    <span key={style} className="sum-style mini" {...hint(`${t(`teamStyle.${style}`)}: ${t(`teamStyle.${style}.note`)}`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
                       {CONDITION_TYPE[style] && <img src={typeIconUrl(CONDITION_TYPE[style])} alt="" draggable={false} />}
                       <span className="visually-hidden">{t(`teamStyle.${style}`)}</span>
                     </span>
                   )
                   : (
-                    <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
+                    <span key={style} className="sum-style" {...hint(t(`teamStyle.${style}.note`))} style={{ '--c': conditionColor(style) } as CSSProperties}>
                       {t(`teamStyle.${style}`)}
                     </span>
                   )))}
@@ -477,15 +479,14 @@ export function SummarySection({ summary, members, grade, density, rich = false,
                 <div className="sum-duo">
                   {syn.duo.map(core => (
                     <DuoCore key={core.members.join('+')} core={core} goId={goIds.bonusMalus} onClick={() => onView('bonusMalus')}
-                      hover={{ onMouseEnter: e => coreTip.open(core, e.currentTarget), onMouseLeave: coreTip.close }} />
+                      hover={coreTip.bind(core)} />
                   ))}
                 </div>
               );
             }
             const view = synergyView(syn);
-            // Sul core a tre: il tooltip con quanto regge chi para ogni tipo e chi protegge
-            const hover = syn.core && syn.core.members.length === 3
-              ? { onMouseEnter: (e: { currentTarget: Element }) => coreTip.open(syn.core!, e.currentTarget), onMouseLeave: coreTip.close } : undefined;
+            // Sui core (a tre e a due): il tooltip con quanto regge chi para ogni tipo e chi protegge, anche col fuoco da tastiera
+            const hover = syn.core ? coreTip.bind(syn.core) : undefined;
             return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />

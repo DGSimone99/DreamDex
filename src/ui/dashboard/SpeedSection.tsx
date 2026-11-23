@@ -40,14 +40,15 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
     </p>
   );
   const area = t('area.speed');
+  const headHint = t(vsMeta ? 'dash.speedHintMeta' : 'dash.speedHintTier');
   return (
     <DashCard className="dash-speed" title={area}
-      tooltip={density === 'tight' ? controlText : undefined}
       meta={(
         // Il fumetto dice cosa conta il 3/6 e che il voto guarda anche altro (lo stesso testo ai lettori di schermo)
-        <span className="dash-meta-hint" {...hint(t(vsMeta ? 'dash.speedHintMeta' : 'dash.speedHintTier'))}>
+        // Stretto: il controllo del team non ha la sua riga, sta in fondo allo stesso fumetto
+        <span className="dash-meta-hint" {...hint([headHint, density === 'tight' ? controlText : ''].filter(Boolean).join('\n'))}>
           <b>{speed.value}</b> {t(vsMeta ? 'dash.aboveMeta' : 'dash.aboveTier')}
-          <span className="visually-hidden">. {t(vsMeta ? 'dash.speedHintMeta' : 'dash.speedHintTier')}</span>
+          <span className="visually-hidden">. {headHint}</span>
         </span>
       )}
       onOpen={() => onView('speed')}>
@@ -71,7 +72,8 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
           {lanes.map((lane, i) => <span key={`${lane.species}-${i}`} className="dash-lane-sprite" {...hover(i)}><Sprite species={lane.species} size={SPRITE[density]} /></span>)}
         </div>
       </div>
-      {density !== 'tight' && control}
+      {/* Stretto: il controllo solo nel fumetto della testata e, per intero, ai lettori di schermo */}
+      {density !== 'tight' ? control : controlText && <p className="visually-hidden">{controlText}</p>}
       {tip.anchor && lanes[tip.anchor.key] && (
         <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="speed" side="left">
           <SpeedTip lane={lanes[tip.anchor.key]} vsMeta={vsMeta} />

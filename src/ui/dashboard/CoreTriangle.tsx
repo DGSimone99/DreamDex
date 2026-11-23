@@ -51,7 +51,7 @@ export function CoreArt({ core, sprite = 40 }: { core: Core; sprite?: number }) 
         {edges.map((e, i) => <line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} markerEnd={`url(#${marker})`} />)}
       </svg>
       {core.members.map((name, i) => (
-        <span key={name} className="sum-tri-v" title={name} style={{ left: pct(VERTICES[i][0], W), top: pct(VERTICES[i][1], H) }}>
+        <span key={name} className="sum-tri-v" style={{ left: pct(VERTICES[i][0], W), top: pct(VERTICES[i][1], H) }}>
           <Sprite species={name} size={sprite} />
         </span>
       ))}
