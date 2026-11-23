@@ -146,9 +146,12 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
         <FloatTip rect={tip.anchor!.rect} tone="var(--good)" className="kot">
           <TipHead lead={<TipGlyph icon="sword" />} title={who} badge={<span className={`kob labeled ${key}`}><em>{TAG[key]}</em><b>{bands.plain[key].length}</b></span>} qualifier={of} />
           <TipSec>{bands.plain[key].length ? list(bands.plain[key]) : <p className="kot-none">{t('kob.none')}</p>}</TipSec>
-          {/* In più col setup o con Tera/Z: solo il nome e quanti, "Danzaspada +15" */}
-          {bands.setup[key].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={`${setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')} +${bands.setup[key].length}`}>{list(bands.setup[key])}</Extra>}
-          {bands.once[key].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[key].length}`}>{list(bands.once[key])}</Extra>}
+          {/* In più col setup o con Tera/Z: il nome a sinistra e, allineata al badge della testata, la fascia col totale
+              (quelli di sopra più questi): "Granfisico … OHKO 14" */}
+          {bands.setup[key].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')}
+            badge={<span className={`kob labeled ${key}`}><em>{TAG[key]}</em><b>{bands.plain[key].length + bands.setup[key].length}</b></span>}>{list(bands.setup[key])}</Extra>}
+          {bands.once[key].length > 0 && onceName && <Extra label={onceName}
+            badge={<span className={`kob labeled ${key}`}><em>{TAG[key]}</em><b>{bands.plain[key].length + bands.once[key].length}</b></span>}>{list(bands.once[key])}</Extra>}
           {picks(key) && <TipGo place={pickPlace!} />}
         </FloatTip>
       )}
@@ -162,9 +165,9 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
   );
 }
 
-function Extra({ icon, label, children }: { icon?: ReactNode; label: string; children: ReactNode }) {
+function Extra({ icon, label, badge, children }: { icon?: ReactNode; label: string; badge?: ReactNode; children: ReactNode }) {
   return (
-    <TipSec className="kot-extra" label={<>{icon}{label}</>}>{children}</TipSec>
+    <TipSec className="kot-extra" label={<><span className="kot-extra-name">{icon}{label}</span>{badge && <span className="kot-extra-badge">{badge}</span>}</>}>{children}</TipSec>
   );
 }
 

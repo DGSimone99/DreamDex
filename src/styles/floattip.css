@@ -65,6 +65,11 @@
 .tip-badge { display: flex; align-items: center; }
 .tip-badge .kob { cursor: default; }
 .tip-badge .kob > b { font-size: var(--tip-title); }
+/* Il setup nel fumetto dei KO: il nome a sinistra, la fascia col totale a destra sotto quella della testata */
+.kot-extra-name { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.kot-extra-badge { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.kot-extra-badge .kob { cursor: default; }
+.kot-extra-badge .kob > b { font-size: var(--tip-title); }
 .tip-qual { grid-area: qual; justify-self: end; display: block; margin-top: 3px; font: 500 var(--tip-small)/1.2 var(--ui); color: var(--faint); white-space: nowrap; }
 /* Un Pokémon come soggetto: la sprite grande (SPRITE_TIP) che esce dal bordo alto, come la carta del Pokémon in piccolo */
 /* Un Pokémon come soggetto: la sprite in piedi sul fondo della testata (i piedi 3px sopra il filo, dalla riga dei piedi di

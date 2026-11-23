@@ -353,7 +353,10 @@ describe('Offesa: Generale', () => {
     const move = gameName('move', 'Swords Dance', 'it');
     const extra = [...tip.querySelectorAll('.kot-extra')].find(e => e.textContent!.includes(move))!;
     const more = band === 'ohko' ? c.setupOhko : c.setupTwo;
-    expect(extra.querySelector('.tip-sec-label')!.textContent).toBe(`${move} +${more}`);
+    // Il nome della mossa a sinistra, a destra la fascia col totale: quelli senza setup più questi
+    expect(extra.querySelector('.kot-extra-name')!.textContent).toBe(move);
+    const plain = tip.querySelector('.tip-head .kob b')!.textContent;
+    expect(extra.querySelector('.kot-extra-badge .kob b')!.textContent).toBe(String(Number(plain) + more));
     expect(extra.querySelectorAll('.kot-type')).toHaveLength(more);
   });
 
