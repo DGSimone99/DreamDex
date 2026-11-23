@@ -129,7 +129,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col"><span className="sp-head"><span>{head}</span><span className="sp-head-val">{t('area.speed')}</span></span></th>
+              <th scope="col"><span className="sp-head"><span>{head}</span>{/* A destra la parola solo in Trick Room: fuori la testata dice già "Velocità" */}<span className="sp-head-val">{room ? t('area.speed') : null}</span></span></th>
             </tr>
           </thead>
           <tbody>

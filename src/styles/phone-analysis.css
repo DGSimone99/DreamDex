@@ -87,9 +87,7 @@
   /* Generale: le intestazioni vanno a capo invece di tagliarsi */
   .def-general .def-members thead th:not(.def-mon-h) { white-space: normal; overflow: visible; overflow-wrap: anywhere; hyphens: auto; text-overflow: clip; max-width: none; line-height: 1.15; padding-inline: var(--sp-2); text-transform: none; letter-spacing: 0; }
   .def-general .def-members td { padding: 0 var(--sp-2); }
-  /* Offesa Generale: le barre dei colpi col conto "11/18" hanno bisogno di posto; la tabella scorre col dito, il membro resta fermo */
-  .off-general .def-members { min-width: calc(var(--def-mon) + 2 * 250px + 110px); }
-  .off-general .def-members:not(:has(colgroup > col:nth-child(4))) { min-width: calc(var(--def-mon) + 250px + 110px); }
+  /* Offesa Generale sul tablet: la tabella sta nella cornice (le barre si stringono), sul telefono le barre una sopra l'altra (.og-stack) */
 
   /* Ruoli: le voci di ogni fascia su una colonna sola; il link alla guida va a capo sotto */
   .rl-general, .rl-general.three { --cols: 1; }
@@ -365,3 +363,58 @@
 @media (max-width: 599px) {
   .dash.ghost { display: none; }
 }
+
+/* Telefono e tablet piccolo (fino a 767 px, NARROW_TABLES_QUERY): le tabelle di Coverage girate (.ct-flip-table): i tipi (o le minacce) in riga, i 6 membri in colonna con
+   l'icona del box in testata, in fondo a ogni riga il Team Coverage. Stanno nei 390 px senza scorrere di lato. */
+.ct-flip-table { width: 100%; table-layout: fixed; }
+.ct-flip-table thead th.def-mon-h { width: 36px; padding: 0; }
+.ct-flip-table thead th.ct-level-h { width: 48px; padding: 0 0 var(--sp-2); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); vertical-align: bottom; }
+.ct-flip-table thead th.ct-mon-h { padding: 0 0 var(--sp-2); vertical-align: bottom; }
+.ct-flip-table .ct-mon-box { display: inline-grid; place-items: center; width: 100%; height: 30px; }
+.ct-flip-table .ct-mon-box .mon-icon { image-rendering: pixelated; }
+.ct-flip-table thead th.kf-col .ct-mon-box { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 3px; }
+/* La testata del tipo in riga: icona a sinistra, il filo dei tipi scoperti diventa una tacca sotto l'icona */
+.ct-flip-table th.ct-type-h { padding: 0; text-align: center; vertical-align: middle; }
+.ct-flip-table th.ct-type-h .type-icons { display: block; }
+.ct-flip-table th.ct-type-h .type-icons img { display: block; width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; }
+.ct-flip-table th.ct-type-h .ct-flag { width: 18px; margin-top: 3px; }
+.ct-flip-table tbody tr { height: 36px; }
+.def-frame .ct-flip-table td.ct-cell { font-size: var(--fs-caption); }
+.ct-flip-table td.ct-level { padding: 0 0 0 var(--sp-1); text-align: center; }
+.ct-flip-table td.ct-level .ct-pill { min-width: 0; width: 100%; padding: 2px 0; font-size: var(--fs-label); }
+/* Il numero in alto, il ×2 sotto: nelle caselle strette non si sovrappongono */
+.ct-flip-table tbody tr { height: 42px; }
+.def-frame .ct-flip-table td.ct-cell { vertical-align: top; padding-top: 7px; }
+/* Coverage meta girata: le pagine sopra la tabella, a destra; nelle caselle niente barra dei PS (è nel tooltip), il timbro
+   KO più piccolo; la testata della minaccia con l'icona del box e il filo di Lo coprono */
+.cm-flip-pager { display: flex; justify-content: flex-end; margin-bottom: var(--sp-2); }
+.ct-flip-table .cm-hp { display: none; }
+.def-frame.def-walls .ct-flip-table td.rob-cell { vertical-align: middle; padding: 0; }
+.ct-flip-table .cm-ko { padding: 2px 6px; font-size: var(--fs-caption); }
+.ct-flip-table th.ct-type-h .def-box { --bs: 1; width: 100%; }
+.ct-flip-table th.ct-type-h .cm-flag { width: 22px; }
+.off-frame.def-walls .ct-flip-table .eff-tag { top: auto; bottom: 2px; }
+.def-frame.def-walls .ct-flip-table td.rob-cell:has(.eff-tag) { vertical-align: top; padding-top: 7px; }
+
+/* Telefono e tablet piccolo (fino a 767 px), Offesa Generale (.og-stack): per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la barra
+   Meta larghe quanto lo schermo, con l'etichetta corta a sinistra; i membri separati da un filo; in fondo il team */
+.og-stack-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.og-stack-table col.og-col-label { width: 44px; }
+.og-stack-table col.og-col-share { width: 56px; }
+.def-frame .og-stack-table thead th.og-stack-head { position: static; padding: 0 0 var(--sp-3); }
+.og-stack-asks { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.og-stack-asks .bar-head + * { margin-right: var(--sp-6); }
+.def-general .og-stack-table thead th.og-share-h { padding: 0 0 var(--sp-3); text-align: right; vertical-align: bottom; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
+.og-stack-mon { border-top: 1px solid var(--line-soft); }
+.og-stack-table tr.og-mon-row { height: 40px; }
+.def-frame .og-stack-table tr.og-mon-row th { position: static; padding: var(--sp-3) 0 var(--sp-1); text-align: left; background: none; }
+.def-general .og-stack-table tr.og-mon-row td { padding: var(--sp-3) 0 var(--sp-1); text-align: right; background: none; }
+.og-stack-table tr.og-bar-row { height: 34px; }
+.def-frame .og-stack-table th.og-bar-label { position: static; padding: 0; text-align: left; background: none; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
+.def-general .og-stack-table tr.og-bar-row td { padding: 0 0 var(--sp-2); }
+.og-stack-mon tr:last-child td { padding-bottom: var(--sp-4); }
+/* Il team: la targa nel flusso (non sopra la riga), staccato dai membri da un filo più forte */
+.og-stack-team { border-top: 1px solid var(--line); }
+.og-stack-team .og-plate { position: relative !important; top: 0; }
+/* Niente righe a strisce (qui ogni membro ha tre righe): lo stacco lo fa il filo fra i membri */
+.def-frame .og-stack-table.def-members tbody tr:not(.og-fill) > * { background: none; border-bottom: 0; }

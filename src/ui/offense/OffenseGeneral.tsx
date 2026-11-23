@@ -10,7 +10,8 @@ import { offenseSlots } from './slots';
 import { Ask, averageCols, BarHead, MetaTargets, metaText, TypeAverages, typeStatText } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
-import { useEffect, useId } from 'react';
+import { useEffect, useId, type ReactNode } from 'react';
+import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { signed } from '../defense/DefenseGeneral';
@@ -83,6 +84,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const t = useT();
   const lang = useLang();
   const roomy = !!ctx.roomy;
+  const phone = useMediaQuery(NARROW_TABLES_QUERY);
   // Il "?" delle testate apre la guida dell'Offesa (una pagina sola per le tre schede, la sezione "types")
   const openGuide = ctx.guide && (() => ctx.guide!('types'));
   const { members, shares } = offense;
@@ -115,6 +117,64 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const metaBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(metaTargets(offense, slot))));
   const typeBands = ctx.team.map((_, slot) => (slots[slot] === null ? null : koBands(typeTargets(members[slots[slot]!]))));
 
+
+  const typesAsk = <Ask label={t('guide.off.targets.typesTitle')} guide={openGuide} describe={typeStatText(averageCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask>;
+  const metaAsk = <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} /></Ask>;
+
+  if (phone) {
+    // Telefono: per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la barra Meta larghe quanto lo
+    // schermo (una sopra l'altra, niente da scorrere di lato); in fondo il team allo stesso modo
+    const bars = (label: string, cell: ReactNode, key: string, cls = '') => (
+      <tr key={key} className={`og-bar-row${cls}`}>
+        <th scope="row" className="og-bar-label">{label}</th>
+        <td colSpan={2}>{cell}</td>
+      </tr>
+    );
+    return (
+      <div className={`def-frame off-frame def-general off-general og-stack${roomy ? ' roomy' : ''}`}>
+        <div className="ad-scroll">
+          <table ref={nav.ref} className="def-grid def-members og-stack-table" aria-label={`${t('area.strength')}: ${t('detail.tab.general')}`} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
+            <colgroup><col className="og-col-label" /><col /><col className="og-col-share" /></colgroup>
+            <thead>
+              <tr>
+                <th scope="col" colSpan={2} className="def-mon-h og-stack-head">
+                  <span className="og-stack-asks"><BarHead icon="sword" word={t('kob.headTypes')} />{typesAsk}{meta && <><BarHead icon="sword" word={t('kob.headMeta')} />{metaAsk}</>}</span>
+                </th>
+                <th scope="col" className="og-share-h">{t('area.strength')}</th>
+              </tr>
+            </thead>
+            {ctx.team.map((set, slot) => {
+              const name = battleSpecies(set)?.name ?? set.species;
+              const index = slots[slot];
+              const m = index === null ? null : members[index];
+              const s = index === null ? null : shares[index];
+              const quiet = familyAt(ctx, slot) === 'wall';
+              return (
+                <tbody key={`${name}-${slot}`} className="og-stack-mon">
+                  <tr className="og-mon-row">
+                    <th scope="rowgroup" colSpan={2}><MemberMon name={name} set={set} stats="offense" /></th>
+                    <td>{s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}</td>
+                  </tr>
+                  {m && bars(t('kob.headTypes'), <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
+                    onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} pickPlace={t('detail.coverageTypes')} />, 'types')}
+                  {m && meta && bars(t('kob.headMeta'), <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
+                    onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} pickPlace={t('detail.coverageMeta')} />, 'meta')}
+                </tbody>
+              );
+            })}
+            <tbody className="og-stack-mon og-stack-team">
+              <tr className="og-mon-row"><th scope="rowgroup" colSpan={3}><span className="og-plate">{teamName}</span></th></tr>
+              {bars(t('kob.headTypes'), <KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm />, 'types')}
+              {meta && bars(t('kob.headMeta'), <KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm />, 'meta')}
+            </tbody>
+          </table>
+        </div>
+        <div className="rob-legend og-legend" aria-hidden="true">
+          <span><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`def-frame off-frame def-general off-general${roomy ? ' roomy' : ''}`}>

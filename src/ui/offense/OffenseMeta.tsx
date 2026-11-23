@@ -9,6 +9,7 @@ import { useMemberTip } from '../MemberCard';
 import { typeColor } from '../Sprite';
 import { PokemonIcon } from '../PokemonName';
 import { offenseSlots } from './slots';
+import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { TypeHitTip } from './TypeHitTip';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
@@ -57,6 +58,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const t = useT();
   const lang = useLang();
   const hover = useColumnHover();
+  const phone = useMediaQuery(NARROW_TABLES_QUERY);
   const tip = useFloatAnchor<{ species: string; m: number }>();
   const card = useMemberTip(400, undefined, true);
   // Tastiera: la griglia è un posto solo nel giro del Tab, le frecce vanno di casella in casella (col fuoco la colonna e il tooltip)
@@ -94,7 +96,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
 
   const cell = (row: Row, m: number, k0: number) => {
     const c = row.cells?.[m];
-    if (!c || c.pct < 0) return <td key={row.species} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}${focus || threat ? ' kf-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
+    if (!c || c.pct < 0) return <td key={`${row.species}-${m}`} className={hover.cls(k0, `rob-cell ko-none${ctx.effOnly ? ' eff-dim' : ''}${focus || threat ? ' kf-dim' : ''}`)} {...hover.enter(k0)}>—</td>;
     const tag = effLabel(c.mult, 'offense');
     const k = bucket(c.pct);
     // Il triangolo del setup, come in Coverage tipi e nella Generale: solo se la danza fa salire di fascia fino al 2HKO o all'OHKO
@@ -105,7 +107,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
     const bothUp = !up && !teamUp && c.comboPct !== null && rank(c.comboPct) > rank(c.pct);
     return (
-      <td key={row.species} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : threat ? (row.species === threat ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={`${row.species}-${m}`} className={hover.cls(k0, `rob-cell ko-${k}${up || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (m === focus.slot && lit(row) ? ' kf-hit' : ' kf-dim') : threat ? (row.species === threat ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { hover.enter(k0).onMouseEnter(); tip.open({ species: row.species, m }, e.currentTarget); }} onMouseLeave={tip.close}
         onFocus={e => { hover.enter(k0).onFocus(); tip.focus({ species: row.species, m }).onFocus(e); }} onBlur={tip.close}>
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
@@ -137,9 +139,50 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   };
 
   const body = (shown: Row[], pager: ReactNode) => (
-    <div className={`def-frame off-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
+    <div className={`def-frame off-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}${phone ? ' ct-flip' : ''}`}>
       <div className="ad-scroll">
         <p id={summaryId} hidden>{open.length ? t('sr.cm.offense', { list: open.join(', ') }) : t('sr.cm.offenseNone')}</p>
+        {phone ? (
+          // Telefono: la tabella girata, le minacce in riga (icona e filo di Lo coprono) e i membri in colonna, così sta in
+          // larghezza senza scorrere di lato; le pagine sopra la tabella, in fondo a ogni riga quanti la coprono. Nelle caselle
+          // il danno o il timbro KO (la barra dei PS è nel tooltip).
+          <>
+            <div className="cm-flip-pager">{pager}</div>
+            <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table ct-flip-table"
+              onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
+              <thead>
+                <tr>
+                  <th scope="col" className="def-mon-h"><span className="visually-hidden">{t('flip.target')}</span></th>
+                  {ctx.team.map((set, m) => {
+                    const name = battleSpecies(set)?.name ?? set.species;
+                    return (
+                      <th key={`${name}-${m}`} scope="col" className={`ct-mon-h${focus && m === focus.slot ? ' kf-col' : ''}`}>
+                        <span className="ct-mon-box" {...card.bind(set)}><PokemonIcon name={name} /></span>
+                        <span className="visually-hidden">{name}</span>
+                      </th>
+                    );
+                  })}
+                  <th scope="col" className="ct-level-h">{t('flip.team')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((r, k) => {
+                  const n = coveredCount(r);
+                  return (
+                    <tr key={r.species}>
+                      <th scope="row" aria-label={r.species} className={hover.cls(k, 'wall-h ct-type-h')} {...hover.enter(k)}>
+                        <span className="def-box cm-head-mon" {...card.bind(r.set)}><PokemonIcon name={r.species} /></span>
+                        <span className={`cm-flag ${coverTone(n)}`} aria-hidden="true" />
+                      </th>
+                      {ctx.team.map((_, m) => cell(r, m, k))}
+                      <td className={hover.cls(k, 'ct-level')} {...hover.enter(k)}><span className={`ct-pill ${coverTone(n)}`}>{n}<span className="visually-hidden"> {t('odetail.cm.coveredBy')}</span></span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        ) : (
         <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
           onMouseLeave={e => { hover.table.onMouseLeave(); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
           <colgroup>
@@ -189,6 +232,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
             </tr>
           </tfoot>
         </table>
+        )}
       </div>
       {tipCell(shown)}
       {card.tip}

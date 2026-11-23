@@ -58,7 +58,7 @@ describe('Velocità rifinita: muri, priorità, Speed vera', () => {
     view(plain);
     expect(document.querySelectorAll('.sp-stack .sp-half')).toHaveLength(plain.length + 1);
     expect([...document.querySelectorAll('.sp-scale-ticks > span')].map(s => s.textContent)).toEqual(['0', '25', '50', '75', '100']);
-    expect(document.querySelector('.def-members thead')).toHaveTextContent(/Più veloce di… \(i più usati\)/);
+    expect(document.querySelector('.def-members thead')).toHaveTextContent(/^PokémonVelocità$/);
   });
 });
 
@@ -86,7 +86,7 @@ describe('Velocità: Trick Room', () => {
     expect(barOf('Hatterene').querySelector('.sp-seg-team')).toBeNull();
     // Spento: il veloce sopra il lento, la testata e la legenda di sempre
     expect(totalOf('Iron Valiant')).toBeGreaterThan(totalOf('Hatterene'));
-    expect(document.querySelector('.def-members thead')).toHaveTextContent(/Più veloce di…/);
+    expect(document.querySelector('.def-members thead')).toHaveTextContent(/^PokémonVelocità$/);
     await user.hover(barOf('Hatterene'));
     await screen.findByText((_, el) => !!el?.classList.contains('stip-ladder'));
     expect(document.querySelector('.ftip.speed')).not.toHaveTextContent(/Trick Room|Distortozona/);

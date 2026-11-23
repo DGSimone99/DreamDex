@@ -151,7 +151,9 @@ async function gradeRow(page: Page, text: RegExp): Promise<boolean> {
     return true;
   });
   if (opened) await wait(200);
-  return clickText(page, '.band button.grade-area', text);
+  if (await clickText(page, '.band button.grade-area', text)) return true;
+  // Senza il riquadro del voto nella fascia (tablet verticale, telefono): la scheda dell'area nella barra dell'Analisi
+  return clickText(page, '[role="tab"]', text);
 }
 
 async function focus(page: Page, selector: string): Promise<boolean> {

@@ -11,6 +11,9 @@ export const PHONE_QUERY = '(max-width: 599px)';
 export const EDITOR_TABS_QUERY = '(max-width: 1099px)';
 /** Telefono e tablet piccolo in verticale (fino a 767 px): il team si riduce da solo scorrendo e toccando una sezione si
  *  torna in cima col team ridotto (AutoBand). Più larghi resta il tasto per ridurlo a mano. */
+/** Telefono e tablet piccolo in verticale (fino a 767 px): le tabelle dell'Analisi in colonna stretta (Generale con le
+ *  barre una sopra l'altra, Coverage tipi e meta girate coi membri in colonna). */
+export const NARROW_TABLES_QUERY = '(max-width: 767px)';
 export const AUTO_BAND_QUERY = '(max-width: 767px)';
 /** Tablet in orizzontale, e il computer a mezzo schermo (da 900 px col mouse, anche con la finestra più alta che larga):
  *  il team è una colonna a sinistra (come la squadra nei giochi), la sezione e l'editor a destra. */
