@@ -95,7 +95,7 @@ describe('Panoramica di Analisi', () => {
     // In fondo, nella striscia neutra del team incompleto (non un titolo grande in cima)
     const strip = within(panel()).getByRole('region', { name: 'Da sistemare' });
     expect(strip).toHaveClass('fix-row', 'building');
-    expect(strip).toHaveTextContent(/^1 di 6 nel teamAggiungi almeno 2 Pokémon/);
+    expect(strip).toHaveTextContent(/^1 di 6 nel teamAggiungi un altro Pokémon/);
     expect(within(panel()).queryByText('Nessun problema da sistemare')).toBeNull();
     expect(within(panel()).getByText('Le sinergie arrivano col secondo Pokémon')).toBeInTheDocument();
   });
@@ -115,7 +115,7 @@ describe('Panoramica di Analisi', () => {
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     // Meta spento: nel Riassunto niente Minacce
     expect(within(within(panel()).getByRole('region', { name: 'Riassunto' })).queryByText('Minacce')).toBeNull();
-    expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/metà del tier/);
+    expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/metà del formato/);
   });
 
   it("team di 3 senza statistiche: il Riassunto c'è, nessun crash, niente Minacce", async () => {
@@ -374,6 +374,17 @@ describe('Panoramica: la riga del Coaching', () => {
     const p = problem({ text: 'x', key: 'x' });
     render(<LangProvider lang="en"><FixRow problems={[p]} advice={NO_ADVICE} onView={() => {}} /></LangProvider>);
     expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemNo single swap solves itGo to Coaching');
+  });
+
+  it('nessun problema col team incompleto: neutra "5 di 6 nel team · Nessun problema finora", verde solo a team completo', () => {
+    const { unmount } = render(<LangProvider lang="it"><FixRow problems={[]} advice={NO_ADVICE} members={5} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('building');
+    expect(row).not.toHaveClass('is-clear');
+    expect(row).toHaveTextContent(/^5 di 6 nel teamNessun problema finora$/);
+    unmount();
+    render(<LangProvider lang="it"><FixRow problems={[]} advice={NO_ADVICE} members={6} onView={() => {}} /></LangProvider>);
+    expect(screen.getByRole('region', { name: 'Da sistemare' })).toHaveClass('is-clear');
   });
 
   it('consigli ancora da calcolare (advice null): numero e colore subito, aspetta solo la parte delle proposte (senza link)', () => {

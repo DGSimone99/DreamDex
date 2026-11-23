@@ -297,15 +297,24 @@ const signedPts = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
  * voci dalla più pesante (bonusMalusLine) finché stanno su una riga, le altre in "+N". Tutta la riga apre la scheda Ruoli e
  * Bonus (Bonus/Malus); il nome per i lettori di schermo dice tutte le voci.
  */
-function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: BonusMalusPiece[]; lang: string; onOpen: () => void }) {
+function BonusMalusRow({ net, pieces: all, skip = [], lang, onOpen }: { net: number; pieces: BonusMalusPiece[];
+  /** Voci già a vista come pillola sotto il tipo di team: qui non si ripetono (restano nel nome per i lettori di schermo). */
+  skip?: string[];
+  lang: string; onOpen: () => void }) {
   const t = useT();
+  // A vista bonus e malus alternati, ognuno dal più pesante: anche con una o due voci in riga il netto si spiega (il core
+  // e il malus più pesante), mai solo i bonus
+  const rest = all.filter(p => !skip.includes(p.key));
+  const bonuses = rest.filter(p => p.points > 0);
+  const maluses = rest.filter(p => p.points <= 0);
+  const pieces = Array.from({ length: Math.max(bonuses.length, maluses.length) }, (_, i) => [bonuses[i], maluses[i]]).flat().filter((p): p is BonusMalusPiece => !!p);
   const fit = useFit<HTMLSpanElement>(`${lang}|${pieces.map(p => `${p.key}${p.points}`).join()}`, pieces.length, { more: true });
   const shown = pieces.slice(0, Math.min(fit.shown, pieces.length));
   const hidden = pieces.length - shown.length;
   const tone = (n: number) => (n > 0 ? 'good' : n < 0 ? 'bad' : 'zero');
   return (
     <button type="button" className="sum-bm" onClick={onOpen}
-      aria-label={t('sum.bmLabel', { net: signedPts(net), list: pieces.map(p => `${p.name} ${signedPts(p.points)}`).join(', ') })}>
+      aria-label={t('sum.bmLabel', { net: signedPts(net), list: all.map(p => `${p.name} ${signedPts(p.points)}`).join(', ') })}>
       <span className="sum-bm-label" aria-hidden="true">{t('area.bonusMalus')}</span>
       <em className={`sum-bm-net ${tone(net)}`} aria-hidden="true">{signedPts(net)}</em>
       <span ref={fit.ref} className="sum-bm-list" aria-hidden="true">
@@ -421,7 +430,10 @@ export function SummarySection({ summary, members, grade, density, rich = false,
   );
   const showBm = !!bonusMalus && (bonusMalus.pieces.length > 0 || bonusMalus.net !== 0);
   /** I malus da −4 in giù: una pillola rossa sotto il tipo di team (solo a team completo: prima mancano per forza pezzi). */
-  const heavy = members >= 6 ? (bonusMalus?.pieces ?? []).filter(p => p.points <= -4) : [];
+  const heavyAll = members >= 6 ? (bonusMalus?.pieces ?? []).filter(p => p.points <= -4) : [];
+  // Schermo basso o stretto: la pillola sta sulla riga del tipo, una sola (la più pesante) perché il nome del tipo non si
+  // tronchi; le altre restano nella riga Bonus/Malus
+  const heavy = density === 'tight' || short ? heavyAll.slice(0, 1) : heavyAll;
 
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
@@ -515,7 +527,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
-      {showBm && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
+      {showBm && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} skip={heavy.map(p => p.key)} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {coreTip.anchor && (
         <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
           <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />

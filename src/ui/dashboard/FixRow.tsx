@@ -40,6 +40,15 @@ export function FixRow({ problems, advice, members = 6, onView }: { problems: Co
   onView: (v: AnalysisView) => void }) {
   const t = useT();
   if (problems.length === 0) {
+    // Team incompleto: neutra anche senza problemi (il verde è per il team finito)
+    if (members < 6) {
+      return (
+        <section className="fix-row building" aria-label={t('overview.fix.title')}>
+          <span className="fix-label">{t('overview.fix.building', { n: members })}</span>
+          <span className="fix-items">{t('overview.fix.noneYet')}</span>
+        </section>
+      );
+    }
     return (
       <section className="fix-row is-clear" aria-label={t('overview.fix.title')}>
         <span className="fix-label"><Icon name="check" />{t('overview.fix.none')}</span>

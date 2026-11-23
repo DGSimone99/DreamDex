@@ -275,6 +275,11 @@
 /* Al passaggio: una luce azzurra sfumata senza bordi (come le righe del Riassunto), il testo si accende con un alone
    leggero e la freccia scivola di 2px verso destra */
 .dash-link { position: relative; isolation: isolate; }
+/* Col mouse: link della testata, interruttore Tipi | Meta e "?" piccoli da vedere ma da 24px da cliccare (zona invisibile);
+   col dito la zona sale a 44 (phone-analysis.css) */
+.dash-head .dash-link::after, .dash-tabs [role='tab']::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 24px; translate: 0 -50%; }
+.dash .help-button { position: relative; }
+.dash .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; translate: -50% -50%; }
 .dash-link::before { content: ""; position: absolute; inset: -2px -4px; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 26%, transparent), transparent); opacity: 0; transition: opacity 0.18s var(--ease); }
 .dash-link:hover { background: none; border-color: transparent; color: color-mix(in srgb, var(--accent-ink) 70%, white); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); }
 .dash-link:hover::before { opacity: 1; }

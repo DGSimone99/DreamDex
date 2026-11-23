@@ -1078,6 +1078,18 @@ describe('Riassunto: la riga Bonus/Malus', () => {
   }
   const mountBm = () => renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={bonusMalus} onView={vi.fn()} density="normal" />);
 
+  it('a vista bonus e malus alternati dal più pesante; il malus già in pillola non si ripete nella riga (resta per i lettori di schermo)', () => {
+    const pieces = [
+      { key: 'coreTrio', name: '2 core', points: 6, kind: 'bonus' as const },
+      { key: 'weatherClash', name: 'Scontro di climi', points: -6, kind: 'malus' as const },
+      { key: 'weakCovered', name: 'Rete di sicurezza', points: 1, kind: 'bonus' as const },
+      { key: 'noAnswer', name: 'Senza risposta', points: -2, kind: 'malus' as const },
+    ];
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={{ net: -1, pieces }} onView={vi.fn()} density="normal" />);
+    expect([...document.querySelectorAll('.sum-bm-item')].map(e => e.textContent)).toEqual(['2 core +6', 'Senza risposta −2', 'Rete di sicurezza +1']);
+    expect(screen.getByRole('button', { name: /^Bonus\/Malus −1/ })).toHaveAccessibleName(/Scontro di climi −6/);
+  });
+
   it('malus pesanti (−4 e oltre) a team completo: una pillola rossa sotto il tipo di team che apre Bonus/Malus; sotto i 6 no', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();

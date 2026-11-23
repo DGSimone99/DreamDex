@@ -17,7 +17,7 @@ describe('coaching e valutazione in inglese', () => {
   });
 
   it('meno di due membri', () => {
-    expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData, 'en').verdict).toBe('Add at least 2 Pokémon to get coaching');
+    expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData, 'en').verdict).toBe('Add another Pokémon to get coaching');
   });
 
   it('voto e aree in inglese', () => {
