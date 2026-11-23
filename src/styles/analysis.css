@@ -751,11 +751,13 @@
   background: linear-gradient(90deg, var(--champ-band), transparent 70%); }
 .coach-list-head .coach-sec::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 /* La lista ha l'altezza che resta: quante righe ci stanno lo conta useRowsPerPage (fino a 4) */
-.coach-list-box { --row-h: 112px; --row-gap: 6px; flex: 1; min-height: 0; }
-.coach-rows { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
+.coach-list-box { --row-h: 144px; --row-gap: 8px; --cols: 2; flex: 1; min-height: 0; }
+.coach-rows { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: var(--row-h);
+  grid-template-rows: repeat(var(--rows, 1), minmax(var(--row-h), 1fr)); height: 100%; gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
 
-/* La riga: zona del Pokémon (360px) · cosa cambia, per area · voto in più e azioni (168px) */
-.coach-row { position: relative; margin: 0; display: grid; grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) 168px; min-width: 0; background: var(--panel); }
+/* La carta (due per fila): la zona del Pokémon a sinistra, alta quanto la carta; a destra in alto il titolo (chi entra, o
+   le due mosse) col voto in più, Applica e la lente; sotto cosa cambia, per area */
+.coach-row { position: relative; margin: 0; display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); min-width: 0; background: var(--panel); }
 .coach-row.skeleton { border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-row.is-open { z-index: 3; }
 /* Aperta da un problema nella testata di un'area: un anello ciano che si spegne in 2 secondi */
@@ -768,95 +770,142 @@
   .coach-row.is-flash { animation: none; box-shadow: inset 0 0 0 1px var(--accent); }
 }
 
-/* Zona del Pokémon: il colore del primo tipo di chi entra (come le carte del team), una lama di luce, il lato destro obliquo */
-.coach-art { position: relative; overflow: hidden; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; padding: 0 30px 0 var(--sp-7);
-  background: linear-gradient(115deg, color-mix(in srgb, var(--t1) 55%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 22%, var(--panel)) 55%, var(--panel) 100%);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
-.coach-art::before { content: ''; position: absolute; inset: -40% auto -40% 38%; width: 60px; background: linear-gradient(90deg, transparent, #ffffff14, transparent); transform: rotate(18deg); pointer-events: none; }
-.coach-art-out { flex: none; align-self: flex-start; display: flex; margin-top: var(--sp-5); }
-.coach-art-out .sprite { width: 48px; height: 48px; image-rendering: pixelated; filter: grayscale(1) brightness(0.7); }
-.coach-art-arrow { flex: none; align-self: flex-start; display: flex; margin-top: 26px; color: var(--text); opacity: 0.8; }
-.coach-art-arrow .icon { width: 16px; height: 16px; }
-.coach-art-add { flex: none; display: flex; color: var(--text); opacity: 0.8; }
-.coach-art-add .icon { width: 18px; height: 18px; }
-.coach-art-in { position: relative; z-index: 1; flex: none; display: flex; margin: -4px -4px -4px -6px; }
-.coach-art-in .sprite { width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 4px 6px #0007); }
-.coach-art-in.is-member { margin-left: 0; }
-.coach-art-in.is-member .sprite { width: 80px; height: 80px; }
+/* .coach-art tiene insieme zona e titolo per chi legge (e per i test); i due pezzi stanno nella griglia della carta */
+.coach-art { display: contents; }
+
+/* Zona del Pokémon, come le carte Pedana: la luce del primo tipo che scende dall'alto, il Pokémon in piedi sulla pedana;
+   chi esce piccolo e spento nell'angolo col ⇄. Squadrata come le carte (niente taglio obliquo: quello è delle testate) */
+.coach-pad { grid-row: 1 / span 2; position: relative; overflow: hidden; min-width: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 30%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 8%, var(--panel)) 78%);
+  box-shadow: inset -1px 0 0 var(--line-soft); }
+.coach-pad::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--t1); opacity: 0.8; }
+/* Il palco sta in alto (sotto la targhetta del voto), così sotto la pedana resta il posto per "Oppure" */
+.coach-stage { position: absolute; left: 0; right: 0; top: 8px; bottom: 40px; display: flex; justify-content: center; align-items: flex-end; }
+.coach-stage .pedana-disc { --sprite-w: 96px; bottom: -6px; width: 104px; }
+.coach-art-in { position: relative; z-index: 1; flex: none; display: flex; margin-bottom: -2px; }
+.coach-art-in .sprite { width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0006); }
 .coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 96px); translate: -50% 0; }
-.coach-art-text { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
+.coach-pad-out { position: absolute; z-index: 2; top: var(--sp-3); right: var(--sp-3); display: flex; align-items: center; }
+.coach-pad-out .sprite { width: 40px; height: 40px; margin: -4px; image-rendering: pixelated; filter: grayscale(1) brightness(0.75); }
+.coach-pad-swap { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 2px; border-radius: 50%;
+  background: color-mix(in srgb, var(--ground) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 30%, transparent); color: var(--text); }
+.coach-pad-swap .icon { width: 12px; height: 12px; }
+.coach-pad-out.is-add .coach-pad-swap { width: 24px; height: 24px; }
+
+/* Il titolo: il nome grande in corsivo; sotto la targhetta (o le due mosse) e "Oppure"; a destra voto e azioni */
+.coach-head { grid-column: 2; grid-row: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-6); min-width: 0; padding: var(--sp-5) var(--sp-6) 0 var(--sp-6); }
+.coach-art-text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); min-width: 0; }
 .coach-art-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.1em; margin-block: -0.1em;
-  font: italic 800 var(--fs-headline)/1 var(--display); color: var(--text); text-shadow: 0 2px 6px #0006; }
-.coach-art-text small { font-size: var(--fs-caption); color: var(--text); opacity: 0.85; }
-.coach-art-on { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); opacity: 0.9; }
-.coach-art-moves { display: flex; align-items: center; gap: var(--sp-4); max-width: 100%; min-width: 0; white-space: nowrap; }
-/* Mosse come pillole: quella che esce spenta col nome barrato, quella che entra piena */
-.coach-art-moves s { display: flex; min-width: 0; flex: 0 1 auto; text-decoration: none; }
-.coach-move-out { opacity: 0.6; }
+  font: italic 800 var(--fs-headline)/1 var(--display); color: var(--text); }
+.coach-art-sub { display: flex; align-items: center; gap: var(--sp-5); max-width: 100%; min-width: 0; }
+/* La targhetta come nell'editor: etichetta chiara col taglio obliquo, il valore sul fondo che sfuma */
+.coach-plate { display: flex; align-items: stretch; min-width: 0; height: 24px; border-radius: var(--alt-r-sm);
+  background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); box-shadow: inset 0 0 0 1px var(--line); }
+.coach-plate-label { flex: none; display: flex; align-items: center; margin: 1px 0 1px 1px; padding: 0 var(--sp-6) 0 var(--sp-4); border-radius: 6px 0 0 2px;
+  font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--plate-head);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.coach-plate-value { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; padding: 0 var(--sp-5) 0 var(--sp-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 600 var(--fs-small)/1 var(--ui); color: var(--text); }
+.coach-plate-value .mon-icon { margin: -10px -4px -8px -6px; }
+/* Le due mosse una sotto l'altra: quella che esce spenta col nome barrato, la freccia in giù a sinistra, quella che entra */
+.coach-art-moves { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; padding-left: 18px; white-space: nowrap; }
+.coach-art-moves > s, .coach-art-moves > .mvp { width: min(200px, 100%); }
+.coach-art-moves s { display: flex; min-width: 0; text-decoration: none; }
+.coach-art-moves s .mvp { flex: 1; min-width: 0; }
+.coach-art-arrow { position: absolute; left: 0; top: 50%; translate: 0 -50%; display: flex; color: var(--muted); }
+.coach-art-arrow .icon { width: 14px; height: 14px; }
+.coach-move-out { opacity: 0.55; }
 .coach-move-out .mvp-nm { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); }
-.coach-art-arrow { flex: none; color: var(--muted); }
-.coach-move-in { flex: 0 1 auto; }
 .coach-art-empty { font-size: var(--fs-small); color: var(--muted); }
-/* "Altre N ▾": il pulsante delle alternative sotto il nome */
-.coach-alt { margin-top: var(--sp-1); padding: 5px 9px; gap: var(--sp-3); border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 4px;
-  font: 600 var(--fs-caption)/1 var(--ui); color: var(--text); background: color-mix(in srgb, #000 45%, transparent); }
-.coach-alt:hover { border-color: var(--accent); background: color-mix(in srgb, #000 62%, transparent); }
-.coach-alt[aria-expanded='true'] { border-color: var(--accent); background: var(--accent-wash); }
-.coach-alt-caret { display: inline-block; }
+.coach-row.is-move .coach-art-sub { align-items: flex-end; }
+.coach-row.is-move .coach-head { padding-top: var(--sp-4); }
+.coach-row.is-move .coach-art-text { gap: var(--sp-2); }
+
+/* "◦◦◦ +2 ⌄" (Altre N): chi altro può prendere questo posto, con le icone del Box; apre la finestrella con tutte. Sta in fondo
+   alla zona del Pokémon, sotto la pedana, largo quanto la zona */
+.coach-alt { position: absolute; z-index: 2; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-4); justify-content: center; flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); height: 24px; padding: 0 var(--sp-3);
+  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--ground) 62%, transparent); color: var(--muted); cursor: pointer; }
+.coach-alt:hover { border-color: var(--control-line); background: var(--raised); color: var(--text); }
+.coach-alt[aria-expanded='true'] { border-color: var(--accent); background: var(--accent-wash); color: var(--text); }
+.coach-alt-mons { display: flex; }
+.coach-alt-mons { gap: 2px; }
+.coach-alt-mons .mon-icon { margin: -10px -4px -8px -4px; }
+.coach-alt-more { font: 700 var(--fs-caption)/1 var(--ui); color: var(--text); }
+.coach-alt-caret { display: flex; }
+.coach-alt-caret .icon { width: 12px; height: 12px; }
 @media (prefers-reduced-motion: no-preference) {
   .coach-alt-caret { transition: transform 0.2s var(--ease); }
 }
 .coach-alt[aria-expanded='true'] .coach-alt-caret { transform: rotate(180deg); }
 
-/* Cosa cambia: una riga per area (nome, "da → a", le pillole dei problemi risolti) */
-.coach-solves { display: flex; flex-direction: column; justify-content: center; gap: var(--sp-4); min-width: 0; padding: var(--sp-5) var(--sp-7) var(--sp-5) var(--sp-9); }
-.coach-ar { display: grid; grid-template-columns: 148px minmax(0, 1fr); align-items: center; gap: var(--sp-5); min-width: 0; }
-.coach-ar.is-merged { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-9); }
-.coach-ar-who { display: flex; align-items: baseline; gap: var(--sp-4); white-space: nowrap; }
-.coach-ar-who b { font: 600 var(--fs-caption)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+/* Cosa cambia: righe a strisce come le statistiche dell'editor (una sì e una no più chiara), una per area: il nome, "da → a",
+   le pillole dei problemi risolti */
+.coach-solves { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: var(--sp-2) var(--sp-6) var(--sp-4) var(--sp-5); }
+.coach-ar { display: grid; grid-template-columns: 172px minmax(0, 1fr); align-items: center; gap: var(--sp-4); min-height: 22px; min-width: 0; padding: 0 var(--sp-3) 0 var(--sp-4); border-radius: var(--alt-r-sm); }
+.coach-ar:nth-child(odd) { background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.coach-ar.is-merged { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-8); }
+.coach-ar-who { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); min-width: 0; white-space: nowrap; }
+.coach-ar.is-merged .coach-ar-who { justify-content: flex-start; align-items: center; }
+.coach-ar-who b { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 /* "Perdi Danno nel Tempo": i ruoli d'aiuto che il team perde col cambio, in rosso come un valore che scende */
 .coach-lost { min-width: 0; }
 .coach-lost-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--bad); }
 .coach-change { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
-.coach-from { font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
+.coach-from { font: 500 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 .coach-to { font: italic 700 var(--fs-section)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .coach-change.is-down .coach-to { color: var(--bad); font-style: normal; }
 .coach-ar-chips { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--sp-3); min-width: 0; padding: var(--sp-1); overflow: hidden; }
 .coach-ar-chips > .area-chip-item { flex: none; display: flex; }
 
-/* Voto in più e azioni, allineati a destra */
-.coach-act { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: var(--sp-4); padding-right: var(--sp-8); }
-.coach-gain { display: flex; align-items: baseline; gap: var(--sp-3); }
-.coach-gain small { font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); }
-.coach-gain b { font: italic 800 var(--fs-stat-s)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-.coach-apply { padding: 9px var(--sp-8); border: 0; border-radius: 4px; font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
-.coach-apply:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }
+/* Il voto in più: la targhetta in alto a sinistra della zona del Pokémon, come il +N delle carte della lista */
+.coach-gain { position: absolute; z-index: 2; top: 0; left: 0; display: flex; align-items: center; height: 30px; padding: 0 var(--sp-7) 0 var(--sp-5);
+  background: color-mix(in srgb, var(--ground) 72%, transparent); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.coach-gain b { font: italic 800 var(--fs-headline)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+/* Applica e la lente in alto a destra */
+.coach-act { flex: none; display: flex; align-items: center; }
+.coach-act-row { display: flex; align-items: center; gap: var(--sp-3); }
+.coach-apply { height: 30px; padding: 0 var(--sp-7); border: 0; border-radius: var(--alt-r-sm); font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
+.coach-apply:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); box-shadow: inset 0 0 0 1px var(--control-line); }
 /* L'unico magenta della scheda: Applica della prima proposta */
-.coach-apply.is-primary { color: var(--on-accent-2); background: var(--accent-2); }
+.coach-apply.is-primary { color: var(--on-accent-2); background: var(--accent-2); box-shadow: none; }
 .coach-apply.is-primary:hover { background: var(--accent-2-ink); }
-.coach-see, .coach-link { gap: var(--sp-2); padding: var(--sp-1) 0; border: 0; background: none; font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
-.coach-see:hover, .coach-link:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
-.coach-see .icon { width: 13px; height: 13px; }
+/* La lente: apre la proposta nella scheda Pokémon (o il set); il nome nel fumetto */
+.coach-see { justify-content: center; width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: none; color: var(--muted); }
+.coach-see:hover { border-color: var(--accent); color: var(--text); }
+.coach-see .icon { width: 15px; height: 15px; }
+.coach-link { gap: var(--sp-2); padding: var(--sp-1) 0; border: 0; background: none; font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
+.coach-link:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 
-/* La tendina delle alternative, sotto il pulsante */
-.coach-menu { position: absolute; z-index: 10; left: 14px; top: calc(100% - 6px); width: min(560px, calc(100% - 28px)); padding: var(--sp-3);
+/* Le alternative: una finestrella sotto la carta (sopra, se sotto non c'è posto) con le proposte come piccole carte, due per
+   fila: il Pokémon sulla pedana del suo tipo, il nome, i tipi, il voto in più; quella scelta con l'anello ciano */
+.coach-menu { position: absolute; z-index: 10; left: 8px; right: 8px; top: calc(100% - 8px); padding: var(--sp-4) var(--sp-4) var(--sp-5);
   border: 1px solid var(--line); border-radius: 6px; background: var(--ground); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); animation: tip 0.14s var(--ease); }
-.coach-menu-title { margin: var(--sp-2) var(--sp-4) var(--sp-3); font: 600 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.coach-menu-list { display: grid; gap: var(--sp-1); }
-.coach-opt { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 52px auto; align-items: center; gap: var(--sp-5); padding: var(--sp-2) var(--sp-4); border-radius: 4px; cursor: pointer; }
-.coach-opt:hover, .coach-opt:focus-visible { background: var(--raised); }
-.coach-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.coach-opt.is-chosen { background: var(--accent-wash); }
-.coach-opt .sprite { width: 44px; height: 44px; margin: -4px 0; image-rendering: pixelated; }
-.coach-opt-name { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
+.coach-menu.is-up { top: auto; bottom: calc(100% - 8px); }
+.coach-menu-title { margin: 0 var(--sp-2) var(--sp-4); font: 600 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.coach-menu-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.coach-opt { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-4);
+  min-width: 0; padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2); border: 1px solid var(--line-soft); border-radius: 7px 2px 7px 2px; cursor: pointer;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 26%, var(--panel)) 0%, var(--panel) 72%); }
+.coach-opt:hover { border-color: color-mix(in srgb, var(--t1) 60%, var(--line)); background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 36%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 8%, var(--panel)) 80%); }
+.coach-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.coach-opt.is-chosen { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* Il Pokémon in piedi sulla pedana del suo tipo (un'ellisse di luce sotto i piedi) */
+.coach-opt-mon { position: relative; display: flex; justify-content: center; }
+.coach-opt-mon::before { content: ''; position: absolute; left: 4px; right: 4px; bottom: 2px; height: 12px; border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--t1) 70%, transparent), transparent); }
+.coach-opt-mon .sprite { position: relative; width: 56px; height: 56px; margin: -6px 0 -4px; image-rendering: pixelated; }
+.coach-opt-name { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); min-width: 0; }
+.coach-opt-title { display: flex; align-items: center; gap: var(--sp-3); max-width: 100%; min-width: 0; }
 .coach-opt-name .mvp { max-width: 100%; }
-.coach-opt-name b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-body)/1.1 var(--display); }
-.coach-opt-name small { font-size: var(--fs-caption); color: var(--muted); }
-.coach-opt-types { display: flex; gap: var(--sp-2); }
-.coach-opt-note { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; }
-.coach-opt-gain { font: italic 800 var(--fs-title)/1 var(--display); color: var(--good); text-align: right; font-variant-numeric: tabular-nums; }
-.coach-opt-use { padding: var(--sp-3) 9px; border: 1px solid var(--line); border-radius: 4px; font: 700 var(--fs-label)/1 var(--ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
-.coach-opt.is-chosen .coach-opt-use { border-color: var(--accent); color: var(--accent-ink); }
+.coach-opt-name b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-section)/1.1 var(--display); color: var(--text); }
+.coach-opt-name small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); color: var(--muted); }
+.coach-opt-types { flex: none; display: flex; gap: 2px; }
+.coach-opt-types img { width: var(--ti-chip); height: var(--ti-chip); }
+.coach-opt-gain { align-self: start; padding-top: var(--sp-1); font: italic 800 var(--fs-title)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+/* "Scelta": solo sulla proposta di ora, una piccola targa ciano nell'angolo in basso */
+.coach-opt-use { display: none; }
+.coach-opt.is-chosen .coach-opt-use { display: block; position: absolute; right: -1px; bottom: -1px; padding: 2px 6px; border-radius: 4px 0 4px 0;
+  font: 700 var(--fs-label)/1.2 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); }
 
 /* Senza proposte: Eevee grande a sinistra, il titolo, la frase, le azioni */
 .coach-empty { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 30px; background: var(--panel); }
@@ -879,31 +928,32 @@
 .coach-note { margin: 0; font-size: var(--fs-caption); color: var(--faint); }
 .coach-note.coach-top { margin: 0 0 var(--sp-2); }
 
-/* Righe più strette (portatili, team aperto): la zona del Pokémon si stringe, i nomi delle aree pure */
-@container coaching (max-width: 1040px) {
-  .coach-row { grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) 150px; }
-  .coach-ar { grid-template-columns: 124px minmax(0, 1fr); gap: var(--sp-4); }
+/* Carte più strette (portatili, team aperto): la zona del Pokémon e la colonna dei nomi delle aree si stringono */
+@container coaching (max-width: 1100px) {
+  .coach-row { grid-template-columns: 124px minmax(0, 1fr); }
   .coach-art-name { font-size: var(--fs-heading); }
   .coach-art-in .sprite { width: 84px; height: 84px; }
-  .coach-art-in.is-member .sprite { width: 72px; height: 72px; }
-  .coach-solves { padding-left: var(--sp-6); padding-right: var(--sp-5); }
+  .coach-pad-out .sprite { width: 34px; height: 34px; }
+  .coach-head, .coach-solves { padding-left: var(--sp-5); padding-right: var(--sp-5); }
+  .coach-ar { grid-template-columns: 150px minmax(0, 1fr); }
+  .coach-apply { padding-inline: var(--sp-5); }
+}
+/* Una colonna sola quando le carte sarebbero troppo strette */
+@container coaching (max-width: 760px) {
+  .coach-list-box { --cols: 1; }
 }
 
-/* Poca altezza (1280×620 col team aperto): righe più basse (84px), così ne stanno tre invece di due */
+/* Poca altezza (1280×620 col team aperto): carte più basse, così ne stanno due file */
 @container coaching (max-height: 400px) {
-  .coach-list-box { --row-h: 84px; }
+  .coach-list-box { --row-h: 116px; }
+  .coach-stage { bottom: 36px; }
   .coach-art-in .sprite { width: 72px; height: 72px; }
-  .coach-art-in.is-member .sprite { width: 60px; height: 60px; }
-  .coach-art-out { margin-top: var(--sp-2); }
-  .coach-art-out .sprite { width: 36px; height: 36px; }
-  .coach-art-arrow { margin-top: var(--sp-7); }
-  .coach-art-text { gap: var(--sp-1); }
+  .coach-pad-out .sprite { width: 30px; height: 30px; }
+  .coach-head { padding-top: var(--sp-4); }
+  .coach-art-text { gap: var(--sp-2); }
   .coach-art-name { font-size: var(--fs-heading); }
-  .coach-alt { padding: 3px var(--sp-4); }
-  .coach-solves { gap: var(--sp-2); padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
-  .coach-act { gap: var(--sp-2); }
-  .coach-gain b { font-size: var(--fs-headline); }
-  .coach-apply { padding: 7px var(--sp-7); }
+  .coach-solves { padding-top: var(--sp-2); padding-bottom: var(--sp-3); }
+  .coach-ar { min-height: 22px; }
 }
 
 /* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga

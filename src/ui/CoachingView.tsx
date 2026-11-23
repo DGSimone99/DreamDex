@@ -17,8 +17,11 @@ import { EeveeMoment } from './EeveeMoment';
 import { Icon } from './icons';
 import { useMemberTip } from './MemberCard';
 import { MovePill } from './MovePill';
+import { PokemonIcon } from './PokemonName';
+import { hint } from './MoveTip';
 import { isThreat, MoreProblems, problemEntries, ProblemChip, type ProblemEntry } from './ProblemPill';
-import { Sprite, TypeChip, typeColor } from './Sprite';
+import { Sprite, typeColor } from './Sprite';
+import { TypeIcons } from './typeIcons';
 import { useFitCount } from './useFit';
 
 /** Il voto in più di una proposta: "+3", a pari voto "±0" (mai "+0"). */
@@ -55,8 +58,12 @@ function areaText(snapshot: AreaSnapshot, area: ProposalArea): string | null {
 /** Una riga della zona centrale: l'area, quanto cambia ("75 → 80") e i problemi che la proposta risolve lì. */
 interface AreaLine { area: ProposalArea; from: string | null; to: string | null; up: boolean; entries: ProblemEntry[] }
 
-/** Righe di aree al più in una proposta: oltre, le aree che salgono senza problemi si mettono in fila in una riga sola. */
+/**
+ * Righe di aree al più in una carta: oltre, le aree che salgono senza problemi si mettono in fila in una riga sola. Un cambio
+ * di mossa ne ha due (il titolo con le due mosse una sotto l'altra prende più altezza).
+ */
 const MAX_LINES = 3;
+const MAX_LINES_MOVE = 2;
 
 /**
  * Cosa cambia con una proposta, per area: un'area compare se la proposta risolve lì dei problemi (le loro pillole) o se
@@ -81,8 +88,11 @@ function areaLines(p: Proposal, problems: CoachProblem[], before: AreaSnapshot |
   }).filter(l => l.entries.length > 0 || l.up);
   const withChips = all.filter(l => l.entries.length > 0);
   const rising = all.filter(l => l.entries.length === 0);
-  if (withChips.length + rising.length + reserved <= MAX_LINES) return { lines: [...withChips, ...rising], merged: [] };
-  return { lines: withChips, merged: rising };
+  const max = p.kind === 'move' ? MAX_LINES_MOVE : MAX_LINES;
+  if (withChips.length + rising.length + reserved <= max) return { lines: [...withChips, ...rising], merged: [] };
+  // Troppe aree coi problemi: le prime hanno la loro riga, le altre vanno nella riga in fila (coi loro problemi nel "+N")
+  const keep = Math.max(1, max - 1 - reserved);
+  return { lines: withChips.slice(0, keep), merged: [...withChips.slice(keep), ...rising] };
 }
 
 /** "75 → 80": il valore di prima tenue, la freccia, quello dopo in verde (o in rosso se scende); a parole per lo screen reader. */
@@ -135,6 +145,7 @@ function MergedRow({ lines, lost = [] }: { lines: AreaLine[]; lost?: LevelKey[] 
         <span key={line.area} className="coach-ar-who">
           <b>{tr(AREA_NAME[line.area])}</b>
           {line.from !== null && line.to !== null && <Change from={line.from} to={line.to} up={line.up} />}
+          {line.entries.length > 0 && <MoreProblems hidden={line.entries} as="span" />}
         </span>
       ))}
       {lost.length > 0 && (
@@ -202,8 +213,12 @@ function AlternativesMenu({ id, group, current, problems, onChoose, onClose, but
   const order = [current, ...group.options.map((_, i) => i).filter(i => i !== current)];
   const options = () => [...(ref.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])];
   useLayoutEffect(() => {
-    options()[0]?.focus();
-    ref.current?.scrollIntoView?.({ block: 'nearest' });
+    // Sotto non c'è posto (le carte in basso): la finestrella si apre verso l'alto, sopra la carta
+    const el = ref.current;
+    const box = el?.closest('.coaching')?.getBoundingClientRect();
+    if (el && box && el.getBoundingClientRect().bottom > box.bottom) el.classList.add('is-up');
+    options()[0]?.focus({ preventScroll: true });
+    el?.scrollIntoView?.({ block: 'nearest' });
   }, []);
   useEffect(() => {
     const away = (e: PointerEvent) => {
@@ -243,15 +258,17 @@ function AlternativesMenu({ id, group, current, problems, onChoose, onClose, but
           const types = option.kind === 'fix' ? ((battleSpecies(option.fix.set)?.types ?? []) as string[]) : [];
           return (
             <div key={i} role="option" tabIndex={-1} aria-selected={chosen} className={`coach-opt${chosen ? ' is-chosen' : ''}`}
+              style={{ '--t1': typeColor(firstType(option)) } as CSSProperties}
               aria-label={[proposalName(option, tr, lang), note].filter(Boolean).join(' · ')} onClick={() => onChoose(i)}>
-              <Sprite species={option.kind === 'fix' ? option.fix.species : option.fix.member} size={48} />
+              <span className="coach-opt-mon"><Sprite species={option.kind === 'fix' ? option.fix.species : option.fix.member} size={64} /></span>
               <span className="coach-opt-name">
-                {option.kind === 'fix' ? <b>{option.fix.species}</b> : <MovePill name={option.fix.to} size="sm" />}
-                {types.length > 0 && <span className="coach-opt-types">{types.map(type => <TypeChip key={type} type={type} />)}</span>}
+                {option.kind === 'fix'
+                  ? <span className="coach-opt-title"><b>{option.fix.species}</b>{types.length > 0 && <TypeIcons types={types} className="coach-opt-types" />}</span>
+                  : <MovePill name={option.fix.to} size="sm" />}
                 {option.kind === 'move' && option.fix.from && <small>{tr('coach.row.insteadMove', { from: gameName('move', option.fix.from, lang) })}</small>}
                 {mixed && option.kind === 'fix' && <small>{seat(option)}</small>}
+                {note && <small className="coach-opt-note">{note}</small>}
               </span>
-              <span className="coach-opt-note">{note}</span>
               <span className="coach-opt-gain">{gainText(option.fix.gain)}</span>
               <span className="coach-opt-use" aria-hidden="true">{tr(chosen ? 'coach.alt.chosen' : 'coach.alt.choose')}</span>
             </div>
@@ -262,52 +279,93 @@ function AlternativesMenu({ id, group, current, problems, onChoose, onClose, but
   );
 }
 
-/** La zona del Pokémon di un cambio: chi esce piccolo e spento, ⇄, chi entra grande (la sua carta col perché), il nome. */
-function SwapArt({ fix, children }: { fix: CoachFix; children?: ReactNode }) {
+/**
+ * La zona del Pokémon: in piedi sulla pedana del colore del suo primo tipo (come le carte del team e della lista); il voto
+ * in più nella targhetta in alto a sinistra (come il +N delle carte della lista); in un cambio, chi esce piccolo e spento
+ * nell'angolo in alto a destra col ⇄; sotto la pedana "Oppure" (le alternative), se ci sono.
+ */
+function CardPad({ species, gain, alt, out, add = false, member = false, bind }: { species: string; gain: ReactNode; alt?: ReactNode; out?: string; add?: boolean; member?: boolean; bind?: object }) {
+  return (
+    <div className="coach-pad">
+      {gain}
+      {out && <span className="coach-pad-out" aria-hidden="true"><Sprite species={out} size={48} /><span className="coach-pad-swap"><Icon name="swap" /></span></span>}
+      {add && <span className="coach-pad-out is-add" aria-hidden="true"><span className="coach-pad-swap"><Icon name="plus" /></span></span>}
+      <span className="coach-stage">
+        <span className="pedana-disc" aria-hidden="true" />
+        <span className={`coach-art-in${member ? ' is-member' : ''}`} {...bind}><Sprite species={species} size={96} /></span>
+      </span>
+      {alt}
+    </div>
+  );
+}
+
+/**
+ * La targhetta sotto il nome, come quelle dell'editor (STRUMENTO, ABILITÀ): l'etichetta chiara a sinistra col taglio
+ * obliquo, il valore a destra ("AL POSTO DI · Gholdengo").
+ */
+function CardPlate({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <span className="coach-plate">
+      <span className="coach-plate-label">{label}</span>
+      <span className="coach-plate-value">{children}</span>
+    </span>
+  );
+}
+
+/** La carta di un cambio di Pokémon: chi entra sulla pedana, il suo nome e la targhetta "Al posto di X" (o "Posto libero"). */
+function SwapCard({ fix, gain, alt, act }: { fix: CoachFix; gain: ReactNode; alt?: ReactNode; act: ReactNode }) {
   const tr = useT();
   const memberTip = useMemberTip();
   return (
     <>
-      {fix.kind === 'swap'
-        ? <><span className="coach-art-out"><Sprite species={fix.member ?? ''} size={48} /></span><span className="coach-art-arrow" aria-hidden="true"><Icon name="swap" /></span></>
-        : <span className="coach-art-add" aria-hidden="true"><Icon name="plus" /></span>}
-      <span className="coach-art-in" {...memberTip.bind(fix.set)}><Sprite species={fix.species} size={96} /></span>
-      <span className="coach-art-text">
-        <b className="coach-art-name" {...memberTip.bind(fix.set)}>{fix.species}</b>
-        <small>{fix.kind === 'swap' ? tr('coach.row.instead', { member: fix.member ?? '' }) : tr('coach.row.free')}</small>
-        {children}
-      </span>
+      <CardPad species={fix.species} gain={gain} alt={alt} out={fix.kind === 'swap' ? fix.member ?? '' : undefined} add={fix.kind !== 'swap'} bind={memberTip.bind(fix.set)} />
+      <div className="coach-head">
+        <span className="coach-art-text">
+          <b className="coach-art-name" {...memberTip.bind(fix.set)}>{fix.species}</b>
+          <span className="coach-art-sub">
+            {fix.kind === 'swap'
+              ? <CardPlate label={tr('coach.plate.instead')}><PokemonIcon name={fix.member ?? ''} />{fix.member}</CardPlate>
+              : <CardPlate label={tr('coach.plate.slot')}>{tr('coach.plate.free')}</CardPlate>}
+          </span>
+        </span>
+        {act}
+      </div>
       {memberTip.tip}
     </>
   );
 }
 
-/** La zona del Pokémon di un cambio di mossa: il membro, "Su Kingambit", ~~mossa vecchia~~ → mossa nuova, "cambio di mossa". */
-function MoveArt({ fix, children }: { fix: MoveFix; children?: ReactNode }) {
+/**
+ * La carta di un cambio di mossa: il membro sulla pedana e il suo nome; sotto le due mosse intere una sotto l'altra, la
+ * vecchia spenta e barrata, ↓, la nuova. "Su X · cambio di mossa" lo sente solo lo screen reader (lo dicono le pillole).
+ */
+function MoveCard({ fix, gain, alt, act }: { fix: MoveFix; gain: ReactNode; alt?: ReactNode; act: ReactNode }) {
   const tr = useT();
   return (
     <>
-      <span className="coach-art-in is-member"><Sprite species={fix.member} size={80} /></span>
-      <span className="coach-art-text is-move">
-        <span className="coach-art-on">{tr('coach.row.on', { member: fix.member })}</span>
-        <span className="coach-art-moves">
-          {/* La mossa che esce, spenta e barrata; quella che entra, piena */}
-          {fix.from ? <s><MovePill name={fix.from} size="sm" className="coach-move-out" /></s> : <span className="coach-art-empty">{tr('coach.row.emptySlot')}</span>}
-          <span className="coach-art-arrow" aria-hidden="true">→</span>
-          <MovePill name={fix.to} className="coach-move-in" />
+      <CardPad species={fix.member} gain={gain} alt={alt} member />
+      <div className="coach-head">
+        <span className="coach-art-text is-move">
+          <b className="coach-art-name">{fix.member}<span className="visually-hidden"> · {tr('coach.row.on', { member: fix.member })} · {tr('coach.row.moveKind')}</span></b>
+          <span className="coach-art-sub">
+            <span className="coach-art-moves">
+              {fix.from ? <s><MovePill name={fix.from} size="sm" className="coach-move-out" /></s> : <span className="coach-art-empty">{tr('coach.row.emptySlot')}</span>}
+              <span className="coach-art-arrow" aria-hidden="true"><Icon name="down" /></span>
+              <MovePill name={fix.to} size="sm" className="coach-move-in" />
+            </span>
+          </span>
         </span>
-        <small>{tr('coach.row.moveKind')}</small>
-        {children}
-      </span>
+        {act}
+      </div>
     </>
   );
 }
 
 /**
- * Una riga della lista: a sinistra la zona del Pokémon (colore del primo tipo di chi entra, la lama di luce, il taglio
- * obliquo) con "Altre N ▾" se il gruppo ha alternative; al centro cosa cambia, per area; a destra il voto in più,
- * Applica (applica subito, annullabile) e il link alla scheda Pokémon (o al set per una mossa). `primary`: la prima riga
- * della prima pagina, l'unico Applica magenta della scheda.
+ * Una carta della lista (due per fila): a sinistra la zona del Pokémon (colore del primo tipo di chi entra, la lama di
+ * luce, il taglio obliquo) con "Altre N ▾" se il gruppo ha alternative; in alto il titolo (chi entra, o le due mosse) col
+ * voto in più, Applica (applica subito, annullabile) e la lente verso la scheda Pokémon (o il set); sotto cosa cambia, per
+ * area. `primary`: la prima carta della prima pagina, l'unico Applica magenta della scheda.
  */
 function ProposalRow({ group, choice, onChoose, primary, problems, before, actions, flash }: {
   group: ProposalGroup; choice: number; onChoose: (index: number) => void; primary: boolean; problems: CoachProblem[];
@@ -324,32 +382,47 @@ function ProposalRow({ group, choice, onChoose, primary, problems, before, actio
   const name = proposalName(p, tr, lang);
   const alternatives = group.options.length - 1;
   const close = (refocus: boolean) => { setOpen(false); if (refocus) button.current?.focus(); };
+  // Sotto la pedana: le icone delle prime alternative (chi altro può entrare, o il membro di un'altra mossa) e quante
+  // altre, il fumetto "Altre N proposte per questo posto"; il clic apre la finestrella con tutte. Il nome resta "Altre N"
+  const others = group.options.filter((_, i) => i !== Math.min(choice, group.options.length - 1));
+  const ALT_ICONS = 3;
   const altButton = alternatives > 0 && (
     <button ref={button} type="button" className="coach-alt" aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined}
-      onClick={() => setOpen(o => !o)}>
-      {tr('coach.alt.button', { n: alternatives })}<span className="coach-alt-caret" aria-hidden="true">▾</span>
+      aria-label={tr('coach.alt.button', { n: alternatives })} {...hint(tr('coach.alt.hint', { n: alternatives }))} onClick={() => setOpen(o => !o)}>
+      <span className="coach-alt-mons" aria-hidden="true">
+        {others.slice(0, ALT_ICONS).map((o, i) => <PokemonIcon key={i} name={o.kind === 'fix' ? o.fix.species : o.fix.member} />)}
+      </span>
+      {others.length > ALT_ICONS && <span className="coach-alt-more" aria-hidden="true">+{others.length - ALT_ICONS}</span>}
+      <span className="coach-alt-caret" aria-hidden="true"><Icon name="down" /></span>
     </button>
   );
   const apply = () => (p.kind === 'fix' ? actions.onApplyFix(p.fix) : actions.onApplyMove(p.fix));
   const see = () => (p.kind === 'fix' ? actions.onFix(p.fix) : actions.onMoveFix(p.fix));
+  // Il voto in più: la targhetta in alto a sinistra della zona del Pokémon ("voto" solo per lo screen reader)
+  const gain = <span className="coach-gain"><small className="visually-hidden">{tr('coach.row.gain')} </small><b>{gainText(p.fix.gain)}</b></span>;
+  // In alto a destra della carta: Applica e la lente (scheda Pokémon o set, il nome nel fumetto)
+  const act = (
+    <div className="coach-act">
+      <div className="coach-act-row">
+      <button type="button" className={`coach-apply${primary ? ' is-primary' : ''}`} aria-label={tr('coach.row.applyAria', { name })} onClick={apply}>
+        {tr('coach.row.apply')}
+      </button>
+      <button type="button" className="coach-see" onClick={see} {...hint(tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet'))}
+        aria-label={p.kind === 'fix' ? tr('coach.row.seeAria', { species: p.fix.species }) : tr('coach.row.openSetAria', { member: p.fix.member })}>
+        <Icon name="search" />
+      </button>
+      </div>
+    </div>
+  );
   return (
-    <li className={`coach-row${p.kind === 'move' ? ' is-move' : ''}${open ? ' is-open' : ''}${flash ? ' is-flash' : ''}`} data-row={group.id} aria-label={name}>
-      <div className="coach-art" style={{ '--t1': typeColor(firstType(p)) } as CSSProperties}>
-        {p.kind === 'fix' ? <SwapArt fix={p.fix}>{altButton}</SwapArt> : <MoveArt fix={p.fix}>{altButton}</MoveArt>}
+    <li className={`coach-row${p.kind === 'move' ? ' is-move' : ''}${open ? ' is-open' : ''}${flash ? ' is-flash' : ''}`} data-row={group.id} aria-label={name}
+      style={{ '--t1': typeColor(firstType(p)) } as CSSProperties}>
+      <div className="coach-art">
+        {p.kind === 'fix' ? <SwapCard fix={p.fix} gain={gain} alt={altButton} act={act} /> : <MoveCard fix={p.fix} gain={gain} alt={altButton} act={act} />}
       </div>
       <div className="coach-solves">
         {lines.map(line => <AreaRow key={line.area} line={line} />)}
         {(merged.length > 0 || lost.length > 0) && <MergedRow lines={merged} lost={lost} />}
-      </div>
-      <div className="coach-act">
-        <span className="coach-gain"><small>{tr('coach.row.gain')}</small><b>{gainText(p.fix.gain)}</b></span>
-        <button type="button" className={`coach-apply${primary ? ' is-primary' : ''}`} aria-label={tr('coach.row.applyAria', { name })} onClick={apply}>
-          {tr('coach.row.apply')}
-        </button>
-        <button type="button" className="coach-see" onClick={see}
-          aria-label={p.kind === 'fix' ? tr('coach.row.seeAria', { species: p.fix.species }) : tr('coach.row.openSetAria', { member: p.fix.member })}>
-          <Icon name="search" />{tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet')}
-        </button>
       </div>
       {open && <AlternativesMenu id={menuId} group={group} current={choice} problems={problems} button={button} onClose={close}
         onChoose={i => { onChoose(i); close(true); }} />}
@@ -361,8 +434,8 @@ function ProposalRow({ group, choice, onChoose, primary, problems, before, actio
  * Quante righe stanno nell'altezza della lista (fino a ROWS_PER_PAGE), con l'altezza delle righe e lo spazio fra loro
  * dal CSS (--row-h, --row-gap); senza misura (jsdom) o con le righe alte quanto serve (telefono) ROWS_PER_PAGE.
  */
-function useRowsPerPage(ref: RefObject<HTMLElement | null>): number {
-  const [rows, setRows] = useState(ROWS_PER_PAGE);
+function useRowsPerPage(ref: RefObject<HTMLElement | null>): { perPage: number; rows: number } {
+  const [fit, setFit] = useState({ perPage: ROWS_PER_PAGE, rows: 0 });
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
@@ -371,13 +444,16 @@ function useRowsPerPage(ref: RefObject<HTMLElement | null>): number {
       const style = getComputedStyle(el);
       const row = parseFloat(style.getPropertyValue('--row-h'));
       const gap = parseFloat(style.getPropertyValue('--row-gap')) || 0;
-      if (!height || !row) { setRows(ROWS_PER_PAGE); return; }
-      setRows(Math.max(1, Math.min(ROWS_PER_PAGE, Math.floor((height + gap) / (row + gap)))));
+      // Le carte stanno in --cols colonne: per pagina righe × colonne
+      const cols = Math.max(1, parseInt(style.getPropertyValue('--cols'), 10) || 1);
+      if (!height || !row) { setFit(f => (f.perPage === ROWS_PER_PAGE && f.rows === 0 ? f : { perPage: ROWS_PER_PAGE, rows: 0 })); return; }
+      const rows = Math.max(1, Math.min(ROWS_PER_PAGE, Math.floor((height + gap) / (row + gap))));
+      setFit(f => (f.rows === rows && f.perPage === cols * rows ? f : { perPage: cols * rows, rows }));
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, [ref]);
-  return rows;
+  return fit;
 }
 
 /** Le pagine: "‹ 1/3 ›" come in Coverage meta, coi nomi per lo screen reader. */
@@ -423,7 +499,9 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const listBox = useRef<HTMLDivElement>(null);
-  const perPage = useRowsPerPage(listBox);
+  // Le file della pagina si dividono l'altezza (--rows): le carte la riempiono tutta, anche nell'ultima pagina più corta
+  const { perPage, rows: fileRows } = useRowsPerPage(listBox);
+  const rowsStyle = fileRows ? ({ '--rows': fileRows } as CSSProperties) : undefined;
   const { problems, bannedCount = 0 } = coaching;
   const groups = useMemo(() => (advice ? proposalGroups(problems, advice) : null), [problems, advice]);
   // La scelta fatta nella tendina di ogni riga, solo per i consigli con cui è nata (cambiano i consigli: si riparte dalla migliore)
@@ -555,7 +633,7 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
         </div>
         <div className="coach-list-box" ref={listBox}>
           {groups ? (
-            <ol className="coach-rows">
+            <ol className="coach-rows" style={rowsStyle}>
               {rows.map((group, j) => (
                 <ProposalRow key={group.id} group={group} choice={chosen[group.id] ?? 0} problems={problems} before={before} actions={actions}
                   primary={page === 0 && j === 0} flash={flash?.id === group.id}
@@ -564,7 +642,7 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
             </ol>
           ) : (
             <>
-              <ol className="coach-rows" aria-busy="true">
+              <ol className="coach-rows" aria-busy="true" style={rowsStyle}>
                 {Array.from({ length: perPage }, (_, i) => <li key={i} className="coach-row skeleton" aria-hidden="true" />)}
               </ol>
               <p className="visually-hidden" role="status">{tr('coach.computing')}</p>

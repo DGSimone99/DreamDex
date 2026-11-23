@@ -143,19 +143,21 @@
 
   /* ── Coaching: ogni riga una scheda (zona del Pokémon in alto, poi cosa cambia, poi voto e azioni), alta quanto serve ── */
   .coach-list-box { --row-h: auto; }
-  .coach-rows { grid-auto-rows: auto; }
-  .coach-row { grid-template-columns: minmax(0, 1fr); }
+  .coach-rows { grid-auto-rows: auto; grid-template-rows: none; height: auto; }
+  .coach-row { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
   .coach-row.skeleton { height: 220px; }
-  .coach-art { min-height: 96px; clip-path: none; padding-right: var(--sp-7); }
-  .coach-solves { padding: var(--sp-5) var(--sp-6); }
-  .coach-ar { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .coach-pad { grid-row: auto; height: 120px; }
+  .coach-head { grid-column: 1; grid-row: auto; flex-wrap: wrap; padding: var(--sp-5) var(--sp-6) 0; }
+  .coach-solves { grid-column: 1; grid-row: auto; padding: var(--sp-4) var(--sp-6) var(--sp-6); }
+  .coach-ar { grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); padding-block: var(--sp-2); }
+  .coach-head { flex-direction: column; }
+  .coach-art-sub { flex-wrap: wrap; }
   .coach-ar-chips { flex-wrap: wrap; }
-  .coach-act { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--sp-6); padding: 0 var(--sp-6) var(--sp-6); }
+  .coach-act { width: 100%; }
   .coach-gain { margin-right: auto; }
-  .coach-menu { left: 8px; right: 8px; width: auto; top: 90px; }
-  .coach-opt { grid-template-columns: 40px minmax(0, 1fr) auto; }
-  .coach-opt-note { grid-column: 2; }
-  .coach-opt-use { display: none; }
+  .coach-see { width: 44px; height: 44px; }
+  .coach-menu { left: 8px; right: 8px; width: auto; top: 90px; bottom: auto; }
+  .coach-menu-list { grid-template-columns: minmax(0, 1fr); }
   .coach-empty { flex-direction: column; gap: var(--sp-8); padding: 20px; }
   .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }
 
