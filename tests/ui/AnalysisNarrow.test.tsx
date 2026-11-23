@@ -13,7 +13,7 @@ const team = [
   { ...emptySet('Gholdengo'), ability: 'Good as Gold', moves: ['Make It Rain', 'Shadow Ball', 'Nasty Plot', 'Recover'], evs: { spa: 252, spe: 252 } },
 ];
 const analysis = analyzeTeam(team, fixtureData);
-const view = () => renderIt(<AreaView rating={rateTeam(team, fixtureData, 'it')!} area="strength" team={team} analysis={analysis} problems={[]} />);
+const view = (area: 'strength' | 'defense' = 'strength') => renderIt(<AreaView rating={rateTeam(team, fixtureData, 'it')!} area={area} team={team} analysis={analysis} problems={[]} />);
 
 // Telefono e tablet piccolo (fino a 767 px): niente da scorrere di lato
 describe('Offesa sullo schermo stretto', () => {
@@ -55,5 +55,25 @@ describe('Offesa sullo schermo stretto', () => {
     expect(rows.length).toBeLessThanOrEqual(8);
     for (const row of rows) expect(row.querySelectorAll('td')).toHaveLength(3);
     expect(screen.getByRole('navigation', { name: /pagine/i })).toBeInTheDocument();
+  });
+
+  it('Difesa: Generale a barre impilate, Coverage tipi e meta girate, Recupero una riga per voce', async () => {
+    const user = userEvent.setup();
+    view('defense');
+    const groups = document.querySelectorAll('.og-stack-table tbody.og-stack-mon:not(.og-stack-team)');
+    expect(groups).toHaveLength(2);
+    expect([...groups[0].querySelectorAll('.og-bar-label')].map(th => th.textContent)).toEqual(['Tipi', 'Meta']);
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
+    const types = screen.getByRole('table', { name: 'Difesa: Coverage tipi' });
+    expect(types).toHaveClass('ct-flip-table');
+    expect(types.querySelectorAll('tbody tr')).toHaveLength(18);
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    const meta = screen.getByRole('table', { name: 'Difesa: Coverage meta' });
+    expect(meta).toHaveClass('ct-flip-table');
+    for (const row of meta.querySelectorAll('tbody tr')) expect(row.querySelectorAll('td')).toHaveLength(3);
+    await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
+    const sus = screen.getByRole('table', { name: 'Difesa: Recupero' });
+    expect(sus).toHaveClass('sus-stack');
+    expect([...sus.querySelectorAll('tbody.og-stack-mon')[0].querySelectorAll('.og-bar-label')].map(th => th.textContent)).toEqual(['Perde', 'Recupera', 'Netto']);
   });
 });

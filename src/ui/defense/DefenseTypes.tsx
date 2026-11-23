@@ -28,6 +28,8 @@ import { TypeStatsTip } from '../TypeStatsTip';
 import { HOLD_BANDS, HOLD_ORDER } from './holds';
 import { pieceOf } from './HoldBars';
 import { FocusNote } from '../offense/KoBadges';
+import { PokemonIcon } from '../PokemonName';
+import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 
 /** Colore della riga Copertura, come nell'Offesa: rosso a 0, giallo sotto il livello retto (HELD_LEVEL), verde da lì. */
 const levelTone = (level: number) => (level === 0 ? 'bad' : level < HELD_LEVEL ? 'warn' : 'good');
@@ -51,6 +53,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const lang = useLang();
   const { team, analysis } = ctx;
   const roomy = !!ctx.roomy;
+  const narrow = useMediaQuery(NARROW_TABLES_QUERY);
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   // Aperta da un pezzo della barra in Generale: la riga del membro e i tipi di quel pezzo accesi, il resto spento
   const focus = ctx.focus?.kind === 'dtypes' ? ctx.focus : null;
@@ -98,10 +101,78 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const summaryId = useId();
   const weakNames = rows.filter(row => weak.includes(row.type)).map(row => typeName(row.type as TypeName, lang));
 
+  /** La testata di un tipo: in colonna sul computer, in riga sullo schermo stretto (tabella girata). */
+  const typeHead = (row: (typeof rows)[number], i: number, scope: 'col' | 'row') => {
+    const hole = weak.includes(row.type);
+    return (
+      <th key={row.type} scope={scope} className={colClass(i, `${hole ? 'sev-serious' : ''}${scope === 'row' ? ' ct-type-h' : ''}`)}
+        onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
+        {...focusAt(-1, i, { slot: -1, col: i })}>
+        <TypeIcons types={[row.type]} />
+        <span className="ct-flag" aria-hidden="true" />
+        <span className="visually-hidden">{typeName(row.type as TypeName, lang)}{hole && ` ${t('analysis.shortfallSerious')}`}{` · ${attackerLabel(row.type)}`}</span>
+      </th>
+    );
+  };
+  /** La casella di un membro su un tipo: il danno del colpo forte sul lato peggiore, colorato per quanto regge. */
+  const hitCell = (member: number, row: (typeof rows)[number], i: number) => {
+    const s = slots[member];
+    const cell = s === null ? null : defense.typed[s].cells[i];
+    if (!cell) return <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} {...focusAt(member, i)}>—</td>;
+    const band = HOLD_BANDS[cell.band];
+    const tag = effLabel(multipliers.get(row.type as TypeName)?.[member] ?? 1, 'defense');
+    return (
+      <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
+        onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
+        {...focusAt(member, i, { slot: member, col: i })}>
+        <span className="ct-num">{cell.pct}<i>%</i></span>
+        <span className="visually-hidden"> {band.tag} · {t('ddetail.sides', { p: cell.physical, s: cell.special })}</span>
+        <EffTag label={tag} side="defense" />
+      </td>
+    );
+  };
+  const levelCell = (row: (typeof rows)[number], i: number) => (
+    <td key={`lv-${row.type}`} className={colClass(i, 'ct-level')} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}>
+      <span className={`ct-pill ${levelTone(row.level)}`}>{row.level}%</span>
+    </td>
+  );
+  const plate = (long: string, short: string) => (
+    <span className="row-plate"><span className="plate-long">{long}</span><span className="plate-short" aria-hidden="true">{short}</span></span>
+  );
+
   return (
-    <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
+    <div className={`def-frame def-types${roomy ? ' roomy' : ''}${narrow ? ' ct-flip' : ''}`}>
       <div className="ad-scroll">
         <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
+        {narrow ? (
+          // Telefono e tablet piccolo: la tabella girata come nell'Offesa, i 18 tipi in riga e i membri in colonna, in fondo
+          // a ogni riga la Copertura del tipo; niente "Il migliore" (è la casella migliore della riga)
+          <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table ct-flip-table"
+            aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
+            onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
+            <thead>
+              <tr>
+                <th scope="col" className="def-mon-h"><span className="visually-hidden">{t('flip.type')}</span></th>
+                {team.map((set, member) => (
+                  <th key={member} scope="col" className={`ct-mon-h${focus && member === focus.slot ? ' kf-col' : ''}`} {...focusAt(member, -1)}>
+                    <span className="ct-mon-box" {...card.bind(set)}><PokemonIcon name={battleName(set)} /></span>
+                    <span className="visually-hidden">{battleName(set)}</span>
+                  </th>
+                ))}
+                <th scope="col" className="ct-level-h">{t('flip.team')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={row.type}>
+                  {typeHead(row, i, 'row')}
+                  {team.map((_, member) => hitCell(member, row, i))}
+                  {levelCell(row, i)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
         <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table"
           aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
           onMouseLeave={e => { setHover(null); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
@@ -109,56 +180,23 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              {rows.map((row, i) => {
-                const hole = weak.includes(row.type);
-                return (
-                  <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
-                    onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
-                    {...focusAt(-1, i, { slot: -1, col: i })}>
-                    <TypeIcons types={[row.type]} />
-                    <span className="ct-flag" aria-hidden="true" />
-                    <span className="visually-hidden">{typeName(row.type as TypeName, lang)}{hole && ` ${t('analysis.shortfallSerious')}`}{` · ${attackerLabel(row.type)}`}</span>
-                  </th>
-                );
-              })}
+              {rows.map((row, i) => typeHead(row, i, 'col'))}
             </tr>
           </thead>
           <tbody>
-            {team.map((set, member) => {
-              const s = slots[member];
-              const typed = s === null ? null : defense.typed[s];
-              return (
-                <tr key={member} className={[hover?.row === member && 'x-row', focus && (member === focus.slot ? 'kf-row' : 'kf-off')].filter(Boolean).join(' ') || undefined}>
-                  <th scope="row" onMouseEnter={() => { setHover({ row: member, col: -1 }); tip.close(); }} {...focusAt(member, -1)}><MemberMon name={battleName(set)} set={set} stats /></th>
-                  {rows.map((row, i) => {
-                    const cell = typed?.cells[i];
-                    if (!cell) return <td key={row.type} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} {...focusAt(member, i)}>—</td>;
-                    const band = HOLD_BANDS[cell.band];
-                    const tag = effLabel(multipliers.get(row.type as TypeName)?.[member] ?? 1, 'defense');
-                    return (
-                      <td key={row.type} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
-                        onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
-                        {...focusAt(member, i, { slot: member, col: i })}>
-                        <span className="ct-num">{cell.pct}<i>%</i></span>
-                        <span className="visually-hidden"> {band.tag} · {t('ddetail.sides', { p: cell.physical, s: cell.special })}</span>
-                        <EffTag label={tag} side="defense" />
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
+            {team.map((set, member) => (
+              <tr key={member} className={[hover?.row === member && 'x-row', focus && (member === focus.slot ? 'kf-row' : 'kf-off')].filter(Boolean).join(' ') || undefined}>
+                <th scope="row" onMouseEnter={() => { setHover({ row: member, col: -1 }); tip.close(); }} {...focusAt(member, -1)}><MemberMon name={battleName(set)} set={set} stats /></th>
+                {rows.map((row, i) => hitCell(member, row, i))}
+              </tr>
+            ))}
             {/* In fondo, come nell'Offesa: la Copertura di ogni tipo e chi lo regge meglio */}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('ddetail.level')}</span></th>
-              {rows.map((row, i) => (
-                <td key={row.type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}>
-                  <span className={`ct-pill ${levelTone(row.level)}`}>{row.level}%</span>
-                </td>
-              ))}
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{plate(t('ddetail.level'), t('flip.team'))}</th>
+              {rows.map((row, i) => levelCell(row, i))}
             </tr>
             <tr className="ct-sum ct-best">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('odetail.types.best')}</span></th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}>{plate(t('odetail.types.best'), t('flip.best'))}</th>
               {rows.map((row, i) => {
                 const top = best[i];
                 const who = top === null ? null : battleName(team[top.slot]);
@@ -176,6 +214,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
             </tr>
           </tbody>
         </table>
+        )}
       </div>
       {card.tip}
       {tip.anchor && openType && anchor!.slot < 0 && (

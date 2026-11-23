@@ -384,17 +384,17 @@
 .ct-flip-table td.ct-level .ct-pill { min-width: 0; width: 100%; padding: 2px 0; font-size: var(--fs-label); }
 /* Il numero in alto, il ×2 sotto: nelle caselle strette non si sovrappongono */
 .ct-flip-table tbody tr { height: 42px; }
-.def-frame .ct-flip-table td.ct-cell { vertical-align: top; padding-top: 7px; }
+.def-frame .ct-flip-table td:is(.ct-cell, .ht-cell) { vertical-align: top; padding-top: 7px; }
 /* Coverage meta girata: le pagine sopra la tabella, a destra; nelle caselle niente barra dei PS (è nel tooltip), il timbro
    KO più piccolo; la testata della minaccia con l'icona del box e il filo di Lo coprono */
 .cm-flip-pager { display: flex; justify-content: flex-end; margin-bottom: var(--sp-2); }
 .ct-flip-table .cm-hp { display: none; }
-.def-frame.def-walls .ct-flip-table td.rob-cell { vertical-align: middle; padding: 0; }
+.def-frame.cm-matrix .ct-flip-table td.rob-cell { vertical-align: middle; padding: 0; }
 .ct-flip-table .cm-ko { padding: 2px 6px; font-size: var(--fs-caption); }
 .ct-flip-table th.ct-type-h .def-box { --bs: 1; width: 100%; }
 .ct-flip-table th.ct-type-h .cm-flag { width: 22px; }
-.off-frame.def-walls .ct-flip-table .eff-tag { top: auto; bottom: 2px; }
-.def-frame.def-walls .ct-flip-table td.rob-cell:has(.eff-tag) { vertical-align: top; padding-top: 7px; }
+.off-frame.def-walls .ct-flip-table .eff-tag, .def-meta-grid .ct-flip-table .eff-tag { top: auto; bottom: 2px; }
+.def-frame.cm-matrix .ct-flip-table td.rob-cell:has(.eff-tag) { vertical-align: top; padding-top: 7px; }
 
 /* Telefono e tablet piccolo (fino a 767 px), Offesa Generale (.og-stack): per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la barra
    Meta larghe quanto lo schermo, con l'etichetta corta a sinistra; i membri separati da un filo; in fondo il team */
@@ -418,3 +418,12 @@
 .og-stack-team .og-plate { position: relative !important; top: 0; }
 /* Niente righe a strisce (qui ogni membro ha tre righe): lo stacco lo fa il filo fra i membri */
 .def-frame .og-stack-table.def-members tbody tr:not(.og-fill) > * { background: none; border-bottom: 0; }
+/* Recupero sullo schermo stretto (.sus-stack): etichette Perde / Recupera / Netto più larghe, le due perdite affiancate
+   col loro nome piccolo, il netto con la barra larga quanto la riga */
+.sus-stack col.sus-col-label { width: 72px; }
+.sus-stack .sus-losses { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-7); }
+.sus-stack .sus-loss-item { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.sus-stack .sus-loss-item > small { font-size: var(--fs-label); color: var(--muted); }
+.sus-stack .sus-net-wrap { width: 100%; }
+.def-frame .sus-stack tr.og-mon-row td.sus-val { text-align: right; }
+.sus-stack col.og-col-share { width: 84px; }
