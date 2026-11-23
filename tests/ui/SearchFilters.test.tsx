@@ -93,6 +93,11 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Solo preferiti' }));
     expect(within(suggestions()).getByText('Filtri (1 attivo)')).toBeInTheDocument();
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    // Nella finestra niente pulsante magenta "Nessun Pokémon": lo dice in chiaro, e c'è Chiudi
+    const dialog = screen.getByRole('dialog', { name: 'Filtri' });
+    expect(await within(dialog).findByText('Nessun Pokémon con questi filtri')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Nessun Pokémon' })).toBeNull();
+    expect(within(dialog).getAllByRole('button', { name: 'Chiudi' }).length).toBeGreaterThan(0);
     // Lista vuota per colpa dei soli filtri: Azzera filtri anche lì, sotto il messaggio
     const empty = suggestions().querySelector<HTMLElement>('.list-empty')!;
     await user.click(within(empty).getByRole('button', { name: 'Azzera filtri' }));

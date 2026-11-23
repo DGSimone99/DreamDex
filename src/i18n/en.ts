@@ -1881,6 +1881,7 @@ export const en = {
   'filters.family.moves': "Moves",
   'filters.ownType': "Pokémon type",
   'filters.group.field': "Field",
+  'filters.noneFound': "No Pokémon with these filters",
   'filters.showNone': "No Pokémon",
   'filters.showOne': "Show 1 Pokémon",
   'filters.showMany': "Show {n} Pokémon",

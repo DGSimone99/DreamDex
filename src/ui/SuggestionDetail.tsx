@@ -253,7 +253,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
 
   return (
     <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
-      {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
+      {...(sheet ? { role: 'dialog', 'aria-modal': true, tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi; a destra quanto sale il voto e, sotto, il verso di ogni area */}
       <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>

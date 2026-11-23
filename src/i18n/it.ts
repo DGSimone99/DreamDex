@@ -1884,6 +1884,7 @@ export const it: Record<keyof typeof en, string> = {
   'filters.family.moves': "Mosse",
   'filters.ownType': "Tipo del Pokémon",
   'filters.group.field': "Campo",
+  'filters.noneFound': "Nessun Pokémon con questi filtri",
   'filters.showNone': "Nessun Pokémon",
   'filters.showOne': "Mostra 1 Pokémon",
   'filters.showMany': "Mostra {n} Pokémon",

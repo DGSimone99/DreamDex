@@ -409,7 +409,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca). Sul telefono sta dentro Filtri,
           in cima: la barra perde una riga e la prima carta sale */}
       {!oneType && !narrowPhone && typePicker}
-      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} resultCount={items.length}
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} resultCount={stale ? undefined : items.length}
         extra={!oneType && narrowPhone ? { label: tr('suggest.teamType'), summary: typeChoice ? tr(`archetype.${typeChoice}`) : tr('suggest.anyType'), on: !!typeChoice, node: typePicker } : undefined} />
     </>
   );
@@ -490,7 +490,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           })}
           {/* Prima lista in calcolo: le sagome delle carte al loro posto (la griglia vera), non un riquadro vuoto */}
           {more && <li ref={moreRef} className="list-more" aria-hidden="true" />}
-          {stale && pageItems.length === 0 && Array.from({ length: Math.min(perPage, PAGE) }, (_, i) => (
+          {stale && pageItems.length === 0 && Array.from({ length: perPage }, (_, i) => (
             <li key={`skel-${i}`} className="card card-skel" aria-hidden="true">
               <span className="card-skel-art" />
               <span className="card-skel-plate"><span className="card-skel-line" /><span className="card-skel-line short" /></span>
@@ -507,7 +507,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
         <Icon name="prev" />
       </button>
-      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1, total: pages })}>{page + 1}/{pages}</span>
+      {/* A vista "2/7"; detto e annunciato "Pagina 2 di 7" (l'annuncio legge il testo, non l'etichetta) */}
+      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1, total: pages })}>
+        <span aria-hidden="true">{page + 1}/{pages}</span><span className="visually-hidden">{tr('suggest.page', { n: page + 1, total: pages })}</span>
+      </span>
       <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
         <Icon name="next" />
       </button>
