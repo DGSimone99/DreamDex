@@ -27,6 +27,12 @@ describe('palette salvata', () => {
 });
 
 describe('Impostazioni', () => {
+  it("il pulsante della barra ha il fumetto dell'app, non il title del browser", () => {
+    render(<App initialLang="it" data={fixtureData} storage={memory()} />);
+    const button = screen.getByRole('button', { name: 'Impostazioni' });
+    expect(button).toHaveAttribute('data-hint', 'Impostazioni');
+    expect(button).toHaveAttribute('title', '');
+  });
   it('fissare Scarlatto e Violetto cambia la palette, la salva e resta dopo il riavvio', async () => {
     const user = userEvent.setup();
     const storage = memory();

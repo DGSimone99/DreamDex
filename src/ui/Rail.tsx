@@ -7,6 +7,7 @@ import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
 import { FormatDialog } from './FormatDialog';
 import { choiceName, choiceSummary } from './formatName';
+import { hint } from './MoveTip';
 import { Icon } from './icons';
 
 /** L'icona di ogni famiglia. */
@@ -107,7 +108,7 @@ export function Rail({ choice, memory, onPick, team, meta, lang, onLangChange, t
             ))}
           </div>
           {onSettings && (
-            <button type="button" className="rail-settings" aria-label={t('settings.open')} title={t('settings.open')} onClick={onSettings}>
+            <button type="button" className="rail-settings" aria-label={t('settings.open')} {...hint(t('settings.open'))} onClick={onSettings}>
               <Icon name="gear" />
               <span className="rail-settings-text" aria-hidden="true">{t('settings.open')}</span>
             </button>
