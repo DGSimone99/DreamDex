@@ -28,7 +28,7 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
  * stesse righe (GradeAreaRows) e il "?"; col team aperto la carta resta com'è.
  * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
+export function GradeBadge({ rating: computed, grading = false, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; /** Il voto si sta calcolando (all'apertura del sito, subito dopo il primo disegno). */ grading?: boolean; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
   const t = useT();
   // Voto bloccato (EV oltre il massimo, specie sconosciuta): si sa subito dal team, mentre il voto nuovo arriva un attimo
   // dopo. Nel frattempo il voto vecchio non si mostra, se no per un istante comparirebbe con l'avviso delle regole sotto
@@ -92,14 +92,14 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
     <>
     {/* Per i lettori di schermo una frase sola; il disegno qui sotto è solo visivo */}
     <span className="visually-hidden">
-      {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) + (broken ? `, ${notLegal}${illegalNames.length ? ` (${illegalNames.join(', ')})` : ''}: ${ruleIssues.join('; ')}` : '') + (rating.notes.length ? `, ${t('rating.provisional')}` : '') + `, ${typeLabel}` : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
+      {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) + (broken ? `, ${notLegal}${illegalNames.length ? ` (${illegalNames.join(', ')})` : ''}: ${ruleIssues.join('; ')}` : '') + (rating.notes.length ? `, ${t('rating.provisional')}` : '') + `, ${typeLabel}` : `${t('rating.badgeHead')}: ${t(grading ? 'rating.calculating' : 'rating.noGrade')}`}
     </span>
     <span className="grade-visual" aria-hidden="true">
     <span className="grade-head">{t('rating.badgeHead')}</span>
     {rating && <span className="letter">{rating.grade}</span>}
-    {!rating && !blocked && <EeveeMoment pose="wave" />}
-    <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}{withPop && deltaChip('in-strip')}</span>
-    <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}
+    {!rating && !blocked && !grading && <EeveeMoment pose="wave" />}
+    <span className="overall">{rating ? `${rating.overall} / 100` : t(grading ? 'rating.calculating' : 'rating.noGrade')}{withPop && deltaChip('in-strip')}</span>
+    <span className="label">{rating ? rating.label : grading ? '' : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}
       {/* Il tipo di team sulla riga del giudizio, come testo semplice (non una targa): la carta non diventa più alta */}
       {rating && <span className="grade-type" title={typeNote}>{typeLabel}</span>}
     </span>
@@ -107,7 +107,7 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
     </>
   );
   return (
-    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}${flash?.letter ? ' letter-changed' : ''}${foldable ? ` foldable${areasOpen ? ' areas-open' : ''}` : ''}`}
+    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${grading ? ' grading' : ''}${broken ? ' rules-broken' : ''}${flash?.letter ? ' letter-changed' : ''}${foldable ? ` foldable${areasOpen ? ' areas-open' : ''}` : ''}`}
       // Tutta la targa apre e chiude le righe (tranne i suoi pulsanti: aiuto, regole, le righe stesse)
       onClick={foldable ? e => { if (!(e.target as Element).closest('button, a, [role="button"]')) setAreasOpen(o => !o); } : undefined}>
       {withPop ? (

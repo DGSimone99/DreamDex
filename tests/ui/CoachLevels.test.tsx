@@ -39,6 +39,7 @@ describe('tipo di team', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     expect(within(screen.getByRole('region', { name: 'Analisi' })).queryByText('Tipo di team')).toBeNull();
   });
 });
