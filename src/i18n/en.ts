@@ -224,6 +224,8 @@ export const en = {
   'overview.fix.title': "To fix",
   'overview.fix.go': "Go to Coaching",
   'overview.fix.none': "Nothing to fix",
+  'overview.fix.building': "{n} of 6 in the team",
+  'overview.fix.wait': "Coaching is working…",
   'overview.fix.proposalsOne': "Coaching has 1 proposal: {gain}",
   'overview.fix.proposalsMany': "Coaching has {n} proposals, the best {gain}",
   'overview.fix.stuckOne': "no single swap solves it",

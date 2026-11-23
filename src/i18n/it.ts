@@ -226,6 +226,8 @@ export const it: Record<keyof typeof en, string> = {
   'overview.fix.title': "Da sistemare",
   'overview.fix.go': "Vai al Coaching",
   'overview.fix.none': "Nessun problema da sistemare",
+  'overview.fix.building': "{n} di 6 nel team",
+  'overview.fix.wait': "Il Coaching sta calcolando…",
   'overview.fix.proposalsOne': "il Coaching ha 1 proposta: {gain}",
   'overview.fix.proposalsMany': "il Coaching ha {n} proposte, la migliore {gain}",
   'overview.fix.stuckOne': "nessuna sostituzione singola lo risolve",

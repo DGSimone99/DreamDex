@@ -364,11 +364,22 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemno single swap solves itGo to Coaching');
   });
 
-  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto', () => {
+  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto che dice che il Coaching lavora', () => {
     const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} onView={() => {}} /></LangProvider>);
     const bones = container.querySelector('.fix-row.is-skeleton');
-    expect(bones).toHaveAttribute('aria-hidden', 'true');
-    expect(bones).toHaveTextContent('');
+    expect(screen.getByRole('status')).toBe(bones);
+    expect(bones).toHaveTextContent(/^Il Coaching sta calcolando…$/);
+  });
+
+  it('team incompleto: striscia neutra "4 di 6 nel team", i problemi nel testo, niente rosso', () => {
+    const problems = [problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })];
+    render(<LangProvider lang="it"><FixRow problems={problems} advice={NO_ADVICE} members={4} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('is-link', 'building');
+    expect(row).not.toHaveClass('serious');
+    expect(row.querySelector('.fix-label')).toHaveTextContent(/^4 di 6 nel team$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^2 problemi · nessuna sostituzione singola li risolve$/);
+    expect(within(row).getByRole('button', { name: /^Vai al Coaching: 2 problemi/ })).toBeInTheDocument();
   });
 
   it('solvable: i problemi che almeno una proposta del Coaching risolve (cambi di Pokémon e di mossa, tutte)', () => {

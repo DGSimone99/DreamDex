@@ -163,6 +163,11 @@
 }
 .fix-row.minor { --tone: var(--warn); --tone-bg: var(--warn-bg); }
 .fix-row.is-clear { --tone: var(--good); --tone-bg: var(--good-bg); }
+/* Team incompleto: neutra, niente rosso né giallo (mancano per forza membri); stessa misura e stesso posto */
+.fix-row.building { --tone: var(--muted); --tone-bg: var(--raised); }
+.fix-row.building .fix-items { color: var(--muted); }
+/* Mentre il Coaching calcola: la frase che lo dice, tenue, prima delle ossa che pulsano */
+.fix-wait { flex: none; font-size: var(--fs-caption); color: var(--muted); }
 .fix-row.is-link { cursor: pointer; transition: border-color 0.15s ease-out; }
 .fix-row.is-link:hover { border-color: color-mix(in srgb, var(--tone) 60%, var(--line)); border-left-color: var(--tone); }
 .fix-row.is-link:hover .fix-go { background: var(--accent-wash); }

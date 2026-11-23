@@ -29,10 +29,15 @@ export function coachingOffer(problems: CoachProblem[], advice: Pick<CoachAdvice
  * "N problemi · il Coaching ha M proposte, la migliore +X · Vai al Coaching ›". Rossa con almeno un problema grave,
  * gialla coi soli minori; con problemi ma nessuna proposta "N problemi · nessuna sostituzione singola li risolve" (porta
  * comunque al Coaching, dove c'è Migliora i set). Senza problemi "Nessun problema da sistemare", verde e ferma. Mentre i
- * consigli si calcolano (`advice` null) uno scheletro alto uguale, così la pagina non salta. N è il numero della scheda
- * Coaching (tutti i problemi).
+ * consigli si calcolano (`advice` null) uno scheletro alto uguale che dice "Il Coaching sta calcolando…" (anche ai lettori
+ * di schermo), così la pagina non salta. N è il numero della scheda Coaching (tutti i problemi).
+ * Team incompleto (meno di 6): la striscia è neutra, senza rosso né giallo, "4 di 6 nel team" come la barra laterale e
+ * i problemi contati nel testo (mancano per forza membri, non è un allarme).
  */
-export function FixRow({ problems, advice, onView }: { problems: CoachProblem[]; advice: CoachAdvice | null; onView: (v: AnalysisView) => void }) {
+export function FixRow({ problems, advice, members = 6, onView }: { problems: CoachProblem[]; advice: CoachAdvice | null;
+  /** Quanti Pokémon ha il team: sotto 6 la striscia è neutra. */
+  members?: number;
+  onView: (v: AnalysisView) => void }) {
   const t = useT();
   if (problems.length === 0) {
     return (
@@ -43,10 +48,10 @@ export function FixRow({ problems, advice, onView }: { problems: CoachProblem[];
   }
   if (!advice) {
     return (
-      <div className="fix-row is-skeleton fill-skeleton" aria-hidden="true">
-        <span className="fix-bone" style={{ width: 84 }} />
-        <span className="fix-bone" style={{ width: 280 }} />
-        <span className="fix-bone" style={{ width: 96, marginLeft: 'auto' }} />
+      <div className="fix-row is-skeleton fill-skeleton" role="status">
+        <span className="fix-wait">{t('overview.fix.wait')}</span>
+        <span className="fix-bone" aria-hidden="true" style={{ width: 220 }} />
+        <span className="fix-bone" aria-hidden="true" style={{ width: 96, marginLeft: 'auto' }} />
       </div>
     );
   }
@@ -57,15 +62,17 @@ export function FixRow({ problems, advice, onView }: { problems: CoachProblem[];
     : t(count === 1 ? 'overview.fix.proposalsOne' : 'overview.fix.proposalsMany', { n: count, gain: gainText(best) });
   // Il colore dice il caso: rosso con almeno un problema grave, giallo coi soli minori
   const serious = problems.some(p => p.severity === 'serious');
+  const building = members < 6;
+  const tone = building ? ' building' : serious ? ' serious' : ' minor';
   // Il numero di proposte e il +N in risalto: il testo si spezza attorno a loro
   const gain = best === null ? null : gainText(best);
   const parts = gain ? offer.split(gain) : [offer];
   return (
     // Il clic sta sulla striscia; il pulsante vero è "Vai al Coaching" (tastiera e lettori: Invio e Spazio fanno un clic)
-    <section className={`fix-row is-link${serious ? ' serious' : ' minor'}`} aria-label={t('overview.fix.title')} onClick={() => onView('coaching')}>
-      <span className="fix-label" aria-hidden="true"><Icon name="warning" />{status}</span>
+    <section className={`fix-row is-link${tone}`} aria-label={t('overview.fix.title')} onClick={() => onView('coaching')}>
+      <span className="fix-label" aria-hidden="true">{building ? t('overview.fix.building', { n: members }) : <><Icon name="warning" />{status}</>}</span>
       <span className="fix-items">
-        {parts[0]}{gain && <b className="fix-gain">{gain}</b>}{parts.slice(1).join(gain ?? '')}
+        {building && `${status} · `}{parts[0]}{gain && <b className="fix-gain">{gain}</b>}{parts.slice(1).join(gain ?? '')}
       </span>
       <button type="button" className="fix-go dash-link" aria-label={t('area.problems.go', { what: `${status}, ${offer}` })}>
         {t('overview.fix.go')}<Icon name="next" />
