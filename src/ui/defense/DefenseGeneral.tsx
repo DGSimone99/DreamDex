@@ -17,7 +17,7 @@ import { typeColor } from '../Sprite';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
-import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { useStackedTables } from '../useMediaQuery';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
@@ -166,7 +166,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const teamName = t('odetail.gen.total');
   // Tutti i pezzi della tabella (barre, colpi peggiori, quanto porta) sono un posto solo nel giro del Tab, poi le frecce
   const nav = useRoving<HTMLTableElement>();
-  const narrow = useMediaQuery(NARROW_TABLES_QUERY);
+  const narrow = useStackedTables();
 
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
   // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta

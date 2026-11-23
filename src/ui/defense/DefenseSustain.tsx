@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TeamDefense } from '../../engine/defense';
-import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { useStackedTables } from '../useMediaQuery';
 import { useLang, useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
@@ -21,7 +21,7 @@ const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : '
 export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
   const lang = useLang();
-  const narrow = useMediaQuery(NARROW_TABLES_QUERY);
+  const narrow = useStackedTables();
   const loss = (x: number, note?: string | null, halved = true) => (x > 0
     ? <span className="sus-loss-cell" title={note ?? undefined}>
         <span className="sus-loss-val">−{pct(x)}</span>

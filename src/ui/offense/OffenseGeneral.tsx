@@ -11,7 +11,7 @@ import { Ask, averageCols, BarHead, MetaTargets, metaText, TypeAverages, typeSta
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect, useId, type ReactNode } from 'react';
-import { NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { useStackedTables } from '../useMediaQuery';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { signed } from '../defense/DefenseGeneral';
@@ -84,7 +84,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const t = useT();
   const lang = useLang();
   const roomy = !!ctx.roomy;
-  const phone = useMediaQuery(NARROW_TABLES_QUERY);
+  const phone = useStackedTables();
   // Il "?" delle testate apre la guida dell'Offesa (una pagina sola per le tre schede, la sezione "types")
   const openGuide = ctx.guide && (() => ctx.guide!('types'));
   const { members, shares } = offense;

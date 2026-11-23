@@ -34,3 +34,11 @@ export function useMediaQuery(query: string): boolean {
   }, [query]);
   return value;
 }
+
+/** Le tabelle a righe (Generale di Offesa e Difesa, Recupero): sullo schermo stretto e sul tablet col team a sinistra,
+ *  dove il pannello resta largo ~660 px e le colonne affiancate non ci stanno. */
+export function useStackedTables(): boolean {
+  const narrow = useMediaQuery(NARROW_TABLES_QUERY);
+  const side = useMediaQuery(TABLET_SIDE_QUERY);
+  return narrow || side;
+}
