@@ -862,6 +862,9 @@
   .area-grade-letter { font-size: var(--fs-display); }
   .area-grade-word { font-size: var(--fs-title); }
   .fix-row { height: 24px; }
+  /* Il cruscotto cede alla striscia: il suo minimo scende (Riassunto al minimo, Copertura + Ruoli | Velocità bassi), così
+     a 1280×620 la striscia Da sistemare sta intera nello schermo e la Panoramica non scorre */
+  .dash { --dash-row2: 136px; min-height: max(272px, calc(8 * var(--sum-row-min) + 48px)); }
   .area-subs [role='tab'] { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
   .area-panel.ad-panel { padding-bottom: var(--sp-5); }
 }
