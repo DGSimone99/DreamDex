@@ -51,8 +51,10 @@ const Tag = ({ color, children }: { color: string; children: ReactNode }) => (
  * finiscono nel "+N" (useFit), mai tagliate a metà; il "+N" sta accanto al titolo, così non toglie una riga alle altre.
  * Senza righe, la parola `empty` attenuata.
  */
-function Section<T>({ title, empty, rows, rowKey, rowClass, fitKey, more, render, onMore, moreTip, className = '' }: {
+function Section<T>({ title, empty, emptyBelow = false, rows, rowKey, rowClass, fitKey, more, render, onMore, moreTip, className = '' }: {
   title: string; empty: string;
+  /** Una frase vuota lunga ("Nessuna sinergia: …"): sulla sua riga sotto il titolo, non a destra sulla riga del titolo. */
+  emptyBelow?: boolean;
   rows: T[];
   rowKey: (row: T) => string;
   /** Una classe in più sulla riga (es. la pillola larga due colonne). */
@@ -82,7 +84,7 @@ function Section<T>({ title, empty, rows, rowKey, rowClass, fitKey, more, render
     <div className={`sum-sec${className ? ` ${className}` : ''}`}>
       <h4 className="sum-sec-h">{title}</h4>
       {rows.length === 0
-        ? <p className="sum-none">{empty}</p>
+        ? <p className={`sum-none${emptyBelow ? ' below' : ''}`}>{empty}</p>
         : (
           <ul ref={fit.ref} className="sum-lines sum-fit">
             {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} className={rowClass?.(row)} data-fit>{render(row)}</li>)}
@@ -464,7 +466,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
             more={n => count('sum.moreHazards', n)}
             render={hazardLine} />
         )}
-        <Section className="sum-syn-sec" title={t('sum.synergies')} empty={t('sum.noSynergies')} rows={synergies}
+        <Section className="sum-syn-sec" title={t('sum.synergies')} empty={t('sum.noSynergies')} emptyBelow rows={synergies}
           rowKey={syn => synergyView(syn).key}
           fitKey={keyOf(synergies.map(syn => synergyView(syn).key))}
           more={(n, hidden) => `${count('sum.moreSyn', n)}: ${hidden.map(syn => {

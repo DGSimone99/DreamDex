@@ -516,6 +516,8 @@
 /* Sezione vuota: "Nessuno" sulla riga del titolo, a destra (come il +N), così non occupa una riga sua */
 .sum-none { position: absolute; right: 4px; top: 13px; margin: 0; font-size: var(--fs-caption); line-height: 1.2; color: var(--faint); }
 .dash.rich .sum-none { top: 17px; }
+/* Una frase vuota lunga (Sinergie): sulla sua riga sotto il titolo, a sinistra come le righe */
+.sum-none.below, .dash.tight .sum-none.below { position: static; padding: var(--sp-4) var(--sp-2); font-size: var(--fs-small); }
 .sum-lines { flex: 0 1 auto; min-height: var(--sum-line); margin: 0; padding: 0; list-style: none; overflow: hidden; }
 .sum-lines > li { border-bottom: 1px solid var(--line-soft); }
 .sum-lines > li:last-child { border-bottom: 0; }
