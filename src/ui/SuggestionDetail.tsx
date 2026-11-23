@@ -19,7 +19,7 @@ import { copyText } from './clipboard';
 import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { hint } from './MoveTip';
-import { bringsOf, formeParts, kindOfArea, type Bring, type BringKind } from './candidateParts';
+import { bringsOf, formeParts, kindOfArea, memberLabel, type Bring, type BringKind } from './candidateParts';
 import { PokemonIcon } from './PokemonName';
 import { battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
@@ -321,7 +321,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           <p className="detail-swap-text">
             <small>{tr('detail.out')}</small>
             <span>
-              <b>{battleName(out)}</b>
+              <b>{memberLabel(out)}</b>
               {lostRoles.length > 0 && <em>{tr('detail.outLoses', { roles: lostRoles.join(' · ') })}</em>}
             </span>
           </p>

@@ -410,6 +410,17 @@ export function megaOf(forme: string): { letter: string } | null {
 }
 
 /**
+ * Il nome di un membro del team nelle frasi (Metti al posto di X, Esce X): il soprannome, se c'è; per Mega e Primal la
+ * specie base, come la scrive la carta del team (la pietra la rende Mega, il nome resta "Garchomp"); sennò il nome intero.
+ */
+export function memberLabel(set: TeamSet): string {
+  if (set.name) return set.name;
+  const name = battleName(set);
+  const parts = formeParts(name);
+  return parts && megaOf(parts.forme) ? parts.base : name;
+}
+
+/**
  * Il nome come sulle carte: la specie base e, accanto, la forma piccola (Zapdos GALAR) o il simbolo della Mega con la
  * lettera; il nome com'è se non ha forma. Solo a vista (aria-hidden): il nome intero lo dice chi lo usa.
  */

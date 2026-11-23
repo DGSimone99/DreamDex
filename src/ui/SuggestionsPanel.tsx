@@ -29,7 +29,7 @@ import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
 import { SuggestionDetail, type DetailTab } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { BanMark, ExclusiveMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
+import { BanMark, ExclusiveMark, memberLabel, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import { useLang, useT } from '../i18n/react';
 import { PAGE, usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
@@ -317,8 +317,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const outOf = (item: Item) => (item.replaces !== undefined ? item.replaces : replacing ? replaceIndex : null);
   // Il nome dal team per cui la lista è stata calcolata: per un attimo può essere quello di prima (es. team appena svuotato)
   const memberName = (index: number) => { const member = deferred.team[index] ?? team[index]; return member ? battleName(member) : ''; };
+  // Nel pulsante il nome come sulla carta del team (Garchomp, non Garchomp-Mega)
+  const memberText = (index: number) => { const member = deferred.team[index] ?? team[index]; return member ? memberLabel(member) : ''; };
   const actionLabelOf = (item: Item) => (item.replaces !== undefined
-    ? tr('suggest.swapAction', { member: memberName(item.replaces) })
+    ? tr('suggest.swapAction', { member: memberText(item.replaces) })
     : tr(replacing ? 'suggest.replaceWith' : 'suggest.add'));
   /** Modalità: aggiungere o migliorare (tutto il team o un membro). */
   const chooseMode = (next: 'add' | 'improve') => {
