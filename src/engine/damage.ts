@@ -2,9 +2,12 @@ import { calculate, Field, Generations, Move as CalcMove, Pokemon } from '@smogo
 import { battleAbility, battleSpecies, dex, getMove, movePriority, toID } from './dex';
 import type { TeamSet } from './sets';
 import type { Condition } from './synergy';
+import { installFastClone } from './fastCalc';
 
 /** Tutti i formati dell'app sono di Scarlatto/Violetto: i dati di gen 9 della libreria hanno anche Mega e mosse Z. */
 const gen = Generations.get(9);
+// Ogni colpo copia attaccante, difensore e mossa: la copia veloce dà lo stesso risultato in meno tempo
+installFastClone();
 
 /** Meteo e campi che entrano nel calcolo (Trick Room non cambia il danno). */
 export type FieldCondition = Exclude<Condition, 'trickroom'>;
