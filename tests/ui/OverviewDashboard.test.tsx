@@ -1073,6 +1073,29 @@ describe('Riassunto: la riga Bonus/Malus', () => {
   }
   const mountBm = () => renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={bonusMalus} onView={vi.fn()} density="normal" />);
 
+  it('malus pesanti (−4 e oltre) a team completo: una pillola rossa sotto il tipo di team che apre Bonus/Malus; sotto i 6 no', async () => {
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    const heavy = { net: -4, pieces: [{ key: 'weatherClash', name: 'Scontro di climi', points: -6, kind: 'malus' as const }, ...bonusMalus.pieces] };
+    const { unmount } = renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} bonusMalus={heavy} onView={onView} density="normal" />);
+    const pills = document.querySelectorAll('.sum-alert');
+    expect([...pills].map(p => p.textContent)).toEqual(['Scontro di climi−6']);
+    await user.click(pills[0] as HTMLElement);
+    expect(onView).toHaveBeenCalledWith('bonusMalus');
+    unmount();
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={5} bonusMalus={heavy} onView={vi.fn()} density="normal" />);
+    expect(document.querySelector('.sum-alert')).toBeNull();
+  });
+
+  it('aree deboli a team completo: i loro numeri nelle testate di Copertura e Velocità nel colore del voto (C giallo, D rosso)', () => {
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} weak={{ defense: 'C', speed: 'D' }} onView={vi.fn()} density="normal" />);
+    const cov = screen.getByRole('region', { name: 'Copertura' });
+    const [off, def] = [...cov.querySelectorAll('.dash-meta b')];
+    expect(off).not.toHaveClass('weak-C', 'weak-D');
+    expect(def).toHaveClass('weak-C');
+    expect(screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-meta b')).toHaveClass('weak-D');
+  });
+
   it('con posto sotto i core: la riga c\'è, col netto e le voci, e apre Bonus/Malus', async () => {
     stubSummary(400, 300);
     const user = userEvent.setup();

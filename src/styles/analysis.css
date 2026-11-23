@@ -522,6 +522,18 @@
 .sum-style.mini + .sum-style.mini { margin-left: calc(var(--sp-4) * -1 + 3px); }
 /* Tipo non ancora riconosciuto: la scritta c'è ma più tenue */
 .sum-arch.pending { color: var(--muted); }
+/* Malus pesanti sotto il tipo di team: pillole rosse come i ruoli mancanti, il clic apre Bonus/Malus */
+.sum-alerts { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-3); }
+.sum-alert { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; max-width: 100%; min-height: 22px; padding: 0 var(--sp-4); font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--text); cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
+.sum-alert .icon { flex: none; width: 12px; height: 12px; color: var(--bad); }
+.sum-alert-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sum-alert b { color: var(--bad); }
+.sum-alert:hover { border-color: var(--bad); }
+.sum-alert:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Area debole (C, D) a team completo: il suo numero nella testata della card nel colore del voto */
+.dash-meta b.weak-C { color: var(--warn); }
+.dash-meta b.weak-D { color: var(--bad); }
 .sum-type .help-button { flex: none; }
 
 /* Sprite sul piedistallo: un'ellisse luminosa sotto i piedi, come nelle corsie della Velocità */

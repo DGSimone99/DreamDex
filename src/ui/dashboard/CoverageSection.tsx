@@ -64,7 +64,9 @@ const TILES_DEFAULT = 7;
  * Al passaggio sulla minaccia il tooltip con i due lati e l'uso; il clic apre la Coverage meta del lato non coperto
  * (la Difesa se lo sono tutti e due) con la colonna della minaccia accesa.
  */
-export function CoverageSection({ coverage, threats, gentle = false, incomplete = false, both = false, onView }: {
+export function CoverageSection({ coverage, threats, gentle = false, incomplete = false, both = false, weak = {}, onView }: {
+  /** Offesa e Difesa deboli (C, D) a team completo: i loro numeri nella testata nel colore del voto. */
+  weak?: Partial<Record<'strength' | 'defense', 'C' | 'D'>>;
   coverage: DashboardData['coverage'];
   /**
    * Cruscotto alto (Riassunto ricco): c'è posto per Tipi e Meta insieme, uno sotto l'altro e senza schede; la testata dice
@@ -179,7 +181,8 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
     </span>
   );
   // Il numero prima, come nelle testate di Ruoli e Velocità: "18/18 offesa · 18/18 difesa", "4 senza check · 8 con un solo check"
-  const typesMeta = <><b>{coverage.offense}</b> {offense.toLocaleLowerCase()} · <b>{coverage.defense}</b> {defense.toLocaleLowerCase()}</>;
+  const weakCls = (g?: 'C' | 'D') => (g ? `weak-${g}` : undefined);
+  const typesMeta = <><b className={weakCls(weak.strength)}>{coverage.offense}</b> {offense.toLocaleLowerCase()} · <b className={weakCls(weak.defense)}>{coverage.defense}</b> {defense.toLocaleLowerCase()}</>;
   const narrowHead = useMediaQuery(NARROW_HEAD);
   const threatsMeta = list.length > 0 && <><b className={openCount && !gentle && !incomplete ? 'bad' : undefined}>{openCount}</b> {t('dash.headOpen')} · <b>{thinCount}</b> {t(narrowHead ? 'dash.headThinShort' : 'dash.headThin')}</>;
   const sideMark = (x: MetaThreat, side: Side) => (

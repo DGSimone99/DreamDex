@@ -420,6 +420,8 @@ export function SummarySection({ summary, members, grade, density, rich = false,
     </button>
   );
   const showBm = !!bonusMalus && (bonusMalus.pieces.length > 0 || bonusMalus.net !== 0);
+  /** I malus da −4 in giù: una pillola rossa sotto il tipo di team (solo a team completo: prima mancano per forza pezzi). */
+  const heavy = members >= 6 ? (bonusMalus?.pieces ?? []).filter(p => p.points <= -4) : [];
 
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
@@ -455,6 +457,18 @@ export function SummarySection({ summary, members, grade, density, rich = false,
                   )))}
                 {/* In doppio c'è un tipo solo: la guida ai tipi di team non serve */}
                 {summary.typeRule !== 'oneType' && <TeamTypeHelp />}
+              </div>
+            )}
+            {/* I malus pesanti (−4 e oltre) in vista sotto il tipo: tolgono molto al voto e in fondo, nella riga Bonus/Malus,
+                passerebbero inosservati. Il clic apre Bonus/Malus */}
+            {heavy.length > 0 && (
+              <div className="sum-alerts">
+                {heavy.map(p => (
+                  <button key={p.key} type="button" className="sum-alert" onClick={() => onView('bonusMalus')}
+                    aria-label={`${p.name} ${signedPts(p.points)}, ${goText(t, places.bonusMalus)}`}>
+                    <Icon name="warning" /><span className="sum-alert-name">{p.name}</span><b>{signedPts(p.points)}</b>
+                  </button>
+                ))}
               </div>
             )}
           </div>

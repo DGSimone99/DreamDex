@@ -38,7 +38,7 @@ export function densityFor(height: number): Density {
  * coi suoi punti); a destra la Copertura, sotto le Minacce del meta (solo col meta: senza, la Copertura prende il loro
  * posto), sotto Ruoli | Velocità.
  */
-export function OverviewDashboard({ data, summary, members, team = [], grade, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
+export function OverviewDashboard({ data, summary, members, team = [], grade, weak = {}, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
   data: DashboardData;
   summary: TeamSummary;
   /** Quanti Pokémon ha il team: con uno solo la riga Tipo non c'è. */
@@ -47,6 +47,8 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
   team?: TeamSet[];
   /** La lettera del voto del team (S…D): il tipo di team del Riassunto ne prende il colore. */
   grade?: string;
+  /** Le aree deboli (C, D) a team completo: il loro numero nelle testate prende il colore del voto. */
+  weak?: Partial<Record<'strength' | 'defense' | 'speed', 'C' | 'D'>>;
   /** La riga Bonus/Malus del Riassunto (netto e voci); senza, la riga non c'è. */
   bonusMalus?: { net: number; pieces: BonusMalusPiece[] };
   onView: (v: AnalysisView, sub?: string, focus?: KoFocus) => void;
@@ -89,9 +91,9 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
       <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       {/* Le minacce del meta sono la riga META della Copertura (la loro carta è stata tolta il 2026-11-22) */}
       {/* Un membro solo: niente allarmi in Copertura e Ruoli (in cima l'invito ad aggiungerne un altro) */}
-      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members === 1} incomplete={members < 6} both={rich} onView={onView} />
+      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members === 1} incomplete={members < 6} both={rich} weak={weak} onView={onView} />
       <RolesSection roles={data.roles} density={density} gentle={members === 1} onView={onView} />
-      <SpeedSection speed={data.speed} density={density} onView={onView} />
+      <SpeedSection speed={data.speed} density={density} weak={weak.speed} onView={onView} />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import type { TeamAnalysis } from '../engine/analysis';
 import type { Coaching, CoachAdvice } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import { dashboardData } from '../engine/overviewDashboard';
-import type { TeamRating } from '../engine/rating';
+import { GRADES, type TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
 import { teamSummary } from '../engine/teamSummary';
 import { useLang, useT } from '../i18n/react';
@@ -38,6 +38,17 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
   const problems = coaching?.problems;
   const dash = useMemo(() => (rating ? dashboardData(team, analysis, rating, problems ?? [], data, lang) : null), [team, analysis, rating, problems, data, lang]);
   const bonusMalus = useMemo(() => (rating ? bonusMalusLine(rating, lang) : undefined), [rating, lang]);
+  // A team completo le aree deboli (C, D): il loro numero nelle testate delle card prende il colore del voto
+  const weak = useMemo(() => {
+    const out: Partial<Record<'strength' | 'defense' | 'speed', 'C' | 'D'>> = {};
+    if (!rating || team.length < 6) return out;
+    for (const area of rating.areas) {
+      if ((area.key !== 'strength' && area.key !== 'defense' && area.key !== 'speed') || area.value === null || area.inactive) continue;
+      const grade = GRADES.find(g => area.value! >= g.min)?.grade;
+      if (grade === 'C' || grade === 'D') out[area.key] = grade;
+    }
+    return out;
+  }, [rating, team.length]);
   const summary = useMemo(() => (rating && coaching && dash ? teamSummary(team, rating, coaching, dash, data, lang) : null), [team, rating, coaching, dash, data, lang]);
   if (team.length === 0) {
     // Team vuoto: l'invito e, sotto, le quattro carte della Panoramica vuote (tratteggiate) con cosa mostreranno
@@ -68,7 +79,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
     <div className="overview">
       {/* Prima com'è fatto il team e in fondo cosa sistemare; con un membro solo, in fondo, l'invito ad aggiungerne un altro
           nella stessa striscia neutra del team incompleto */}
-      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} team={team} grade={rating?.grade} bonusMalus={team.length >= 2 ? bonusMalus : undefined} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
+      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} team={team} grade={rating?.grade} weak={weak} bonusMalus={team.length >= 2 ? bonusMalus : undefined} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
       {team.length >= 2 && problems && <FixRow problems={problems} advice={advice ?? null} members={team.length} onView={onView} />}
       {team.length < 2 && coaching && (
         <section className="fix-row building overview-headline" aria-label={t('overview.fix.title')}>
