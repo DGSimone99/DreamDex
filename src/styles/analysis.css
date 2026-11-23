@@ -210,7 +210,7 @@
 
 /* Badge dei problemi gravi: rosso, sulla scheda chiusa e su quella aperta */
 .analysis-tabs .tab-badge { align-self: center; min-width: 18px; padding: 1px 5px; border-radius: 9px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-caption)/1.3 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
-/* Solo problemi minori: come il contatore della barra laterale */
+/* Solo problemi minori, o team incompleto: come il contatore della barra laterale */
 .analysis-tabs .tab-badge.minor { background: var(--accent-soft); color: var(--text); }
 
 /* La sezione aperta della barra laterale si srotola da sinistra */
@@ -949,6 +949,8 @@
   .dash-tabs :is(.dash-tab-trio, .icon) { display: none; }
 }
 .dash-tab-n { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-label)/1.4 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
+/* Team incompleto: il numero resta neutro, come il contatore della barra laterale */
+.dash-tab-n.minor { background: var(--accent-soft); color: var(--text); }
 /* Copertura più alta (come le piastrelle della scheda Meta): icone dei tipi e caselle più grandi, per densità */
 .dash .dash-coverage { --cov-icon: 26px; --cov-cell: 28px; --cov-h: 92px; }
 .dash.tight .dash-coverage { --cov-icon: 22px; --cov-cell: 24px; --cov-h: 80px; }

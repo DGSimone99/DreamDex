@@ -67,7 +67,8 @@ export function HelpButton({ title, label = title, className, children }: { titl
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
 /** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica e Ruoli e Bonus non ne hanno). */
 /** Il numero sulla scheda: tutti i problemi, quanti gravi e quanti minori (per il suggerimento al passaggio del mouse). */
-export interface TabBadge { n: number; serious: number; minor: number }
+/** `neutral`: team incompleto, il numero resta grigio anche con problemi gravi (come il contatore della barra laterale). */
+export interface TabBadge { n: number; serious: number; minor: number; neutral?: boolean }
 const badgeTitle = ({ serious, minor }: TabBadge, t: ReturnType<typeof useT>) => [
   serious ? t(serious === 1 ? 'analysis.seriousOne' : 'analysis.seriousMany', { n: serious }) : null,
   minor ? t(minor === 1 ? 'analysis.minorOne' : 'analysis.minorMany', { n: minor }) : null,
@@ -116,8 +117,8 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
             <span className="tab-name">{t(viewLabelKey(item))}</span>
             {scores[item] == null && <span className="tab-short" aria-hidden="true">{t(item === 'bonusMalus' ? 'analysis.view.bonusMalusShort' : viewLabelKey(item))}</span>}
             {/* Il voto dell'area si vede ma non entra nel nome della scheda */}
-            {/* Problemi: numero fuori dal nome della scheda, rosso con almeno un grave */}
-            {!!badges[item] && <span className={`tab-badge${badges[item]!.serious ? '' : ' minor'}`} aria-hidden="true">{badges[item]!.n}</span>}
+            {/* Problemi: numero fuori dal nome della scheda, rosso con almeno un grave (a team completo) */}
+            {!!badges[item] && <span className={`tab-badge${badges[item]!.serious && !badges[item]!.neutral ? '' : ' minor'}`} aria-hidden="true">{badges[item]!.n}</span>}
             {scores[item] != null && <span className="tab-score" aria-hidden="true">{scores[item]}</span>}
           </button>
         ))}

@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
+import { AnalysisTabs } from '../../src/ui/AnalysisTabs';
 import { fixtureData } from '../fixtures/data';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
@@ -96,16 +97,28 @@ describe('schede interne di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Offesa' })).toBeInTheDocument();
   });
 
-  it('Coaching: badge con tutti i problemi (lo stesso numero della barra laterale), rosso coi gravi; il nome resta "Coaching"', async () => {
+  it('Coaching: badge con tutti i problemi (lo stesso numero della barra laterale), grigio col team incompleto anche coi gravi; il nome resta "Coaching"', async () => {
     // Scoperti in difesa contro Fire, Water e Ground (nella Coverage tipi della Difesa): tre problemi gravi (in attacco nessun tipo scoperto)
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
     const badge = tab.querySelector('.tab-badge')!;
     expect(badge).toHaveAttribute('aria-hidden', 'true');
-    expect(badge).not.toHaveClass('minor');
+    // 3 di 6: un team a metà non è «rotto», il numero resta neutro come nella barra laterale
+    expect(badge).toHaveClass('minor');
     const total = Number(badge.textContent);
     expect(screen.getByRole('tab', { name: 'Analisi' })).toHaveAccessibleDescription(new RegExp(`${total} problemi`));
     expect(tab.getAttribute('title')).toMatch(/^3 gravi( · \d+ minor[ei])?$/);
+  });
+
+  it('badge rosso coi gravi solo a team completo', () => {
+    const badge = (neutral: boolean) => {
+      const { unmount } = render(<AnalysisTabs view="overview" onView={() => {}} panelId="p" badges={{ coaching: { n: 3, serious: 2, minor: 1, neutral } }} />);
+      const cls = screen.getByRole('tab', { name: 'Coaching' }).querySelector('.tab-badge')!.className;
+      unmount();
+      return cls;
+    };
+    expect(badge(false)).toBe('tab-badge');
+    expect(badge(true)).toBe('tab-badge minor');
   });
 
   it('Coaching senza problemi gravi: badge dei minori, non rosso', async () => {

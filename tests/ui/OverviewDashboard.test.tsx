@@ -1051,9 +1051,15 @@ describe('Un membro solo: niente allarmi', () => {
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(roles.querySelectorAll('.dash-role.bad, .dash-role-row.bad')).toHaveLength(0);
     unmount();
-    mount({ members: 2, data: strict });
+    const { unmount: unmount2 } = mount({ members: 2, data: strict });
     expect(cov().querySelectorAll('.dash-cell.bad')).toHaveLength(2);
     expect(cov().querySelector('.dash-tab-n')).toHaveTextContent('3');
+    // Sotto i 6 il numero della scheda Meta è neutro (grigio); a team completo rosso
+    expect(cov().querySelector('.dash-tab-n')).toHaveClass('minor');
     expect(screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-role-row.bad, .dash-role.bad').length).toBeGreaterThan(0);
+    unmount2();
+    mount({ members: 6, data: strict });
+    expect(cov().querySelector('.dash-tab-n')).not.toHaveClass('minor');
+    expect(within(cov()).getByRole('tab', { name: /^Meta, 3 minacce/ })).toBeInTheDocument();
   });
 });

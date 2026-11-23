@@ -60,13 +60,15 @@ const PHONE_PANEL = 480;
  * Al passaggio sulla minaccia il tooltip con i due lati e l'uso; il clic apre la Coverage meta del lato non coperto
  * (la Difesa se lo sono tutti e due) con la colonna della minaccia accesa.
  */
-export function CoverageSection({ coverage, threats, gentle = false, onView }: {
+export function CoverageSection({ coverage, threats, gentle = false, incomplete = false, onView }: {
   coverage: DashboardData['coverage'];
   /**
    * Un membro solo: niente allarmi (i buchi sono normali a team appena iniziato). Caselle scoperte e minacce in grigio
    * tratteggiato invece che rosse e gialle, niente numero rosso sulla scheda Meta.
    */
   gentle?: boolean;
+  /** Team incompleto (meno di 6): il numero della scheda Meta resta grigio, come quello della barra laterale. */
+  incomplete?: boolean;
   /** Le minacce del meta (solo col meta): la scheda Meta. */
   threats?: DashboardData['threats'];
   onView: (v: AnalysisView, sub?: string, focus?: KoFocus) => void;
@@ -161,7 +163,7 @@ export function CoverageSection({ coverage, threats, gentle = false, onView }: {
             ? <span className="dash-tab-trio" aria-hidden="true">{(['Fire', 'Water', 'Grass'] as const).map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}</span>
             : <Icon name="globe" />}
           {t(v === 'types' ? 'dash.tabTypes' : 'dash.tabMeta')}
-          {v === 'meta' && openCount > 0 && !gentle && <span className="dash-tab-n" aria-hidden="true">{openCount}</span>}
+          {v === 'meta' && openCount > 0 && !gentle && <span className={`dash-tab-n${incomplete ? ' minor' : ''}`} aria-hidden="true">{openCount}</span>}
         </button>
       ))}
     </span>
