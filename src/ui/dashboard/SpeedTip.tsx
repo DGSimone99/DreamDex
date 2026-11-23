@@ -1,26 +1,43 @@
 import type { ReactNode } from 'react';
 import type { SpeedLane, SpeedNeighbour } from '../../engine/overviewDashboard';
 import { useT } from '../../i18n/react';
-import { Icon } from '../icons';
+import { FormeName } from '../candidateParts';
 import { ItemIcon } from '../ItemIcon';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipHead, TipSec } from '../TipHead';
 
-/** Il nome con accanto l'icona dello strumento che alza la Velocità (Sciarpa o Booster), se c'è. */
+/** Lo strumento che alza la Velocità: la Sciarpa Scelta (×1,5) o la Capsula energetica (Booster). */
+type SpeedItem = 'Choice Scarf' | 'Booster Energy';
+const itemOf = (mon: { scarf?: boolean; booster?: boolean }): SpeedItem | undefined =>
+  (mon.scarf ? 'Choice Scarf' : mon.booster ? 'Booster Energy' : undefined);
+
+/**
+ * Il nome come sulle carte (la specie base e la forma piccola o il simbolo Mega: FormeName) e, quando la sua velocità viene
+ * da uno strumento, la targhetta con l'icona e la parola ("Sciarpa", "Capsula"): si vede subito chi corre col ×1,5.
+ */
 function Name({ species, item }: { species: string; item?: string }) {
-  return <span className="stip-name"><span>{species}</span>{item && <ItemIcon item={item} size={20} />}</span>;
+  const t = useT();
+  const mark = item === 'Choice Scarf' ? t('stip.scarf') : item === 'Booster Energy' ? t('stip.booster') : null;
+  return (
+    <span className="stip-name">
+      <span className="stip-who"><FormeName species={species} /></span>
+      {mark && <span className={`stip-mark ${item === 'Choice Scarf' ? 'scarf' : 'booster'}`} data-testid="stip-item"><ItemIcon item={item!} size={20} />{mark}</span>}
+    </span>
+  );
 }
 
 /**
- * Una riga della scala: sprite, nome con l'icona dello strumento che alza la Velocità, e la velocità effettiva.
- * `ahead`: muove prima del membro (rosso), `behind`: dopo (verde), `tie`: a pari velocità.
+ * Una riga della scala: sprite, nome (con la targhetta dello strumento che alza la Velocità) e la velocità effettiva.
+ * `ahead`: muove prima del membro (rosso), `behind`: dopo (verde), `tie`: alla stessa velocità (giallo, con la targhetta
+ * "pari": chi vince lo decide il caso).
  */
 function Rung({ mon, tone, tag }: { mon: SpeedNeighbour; tone: 'ahead' | 'behind' | 'tie'; tag?: string }) {
   return (
     <div className={`stip-rung ${tone}`}>
       <span className="stip-mon"><Sprite species={mon.species} size={SPRITE_TIP_ROW} /></span>
-      <Name species={mon.species} item={mon.scarf ? 'Choice Scarf' : mon.booster ? 'Booster Energy' : undefined} />
-      {tag && <span className="stip-item tie">{tag}</span>}
+      <Name species={mon.species} item={itemOf(mon)} />
+      {tag && <span className="stip-item tie" data-testid="stip-tie">{tag}</span>}
       <b className="stip-speed">{mon.speed}</b>
     </div>
   );
@@ -32,7 +49,9 @@ function Rung({ mon, tone, tag }: { mon: SpeedNeighbour; tone: 'ahead' | 'behind
  * strumento più usati: Sciarpa e Booster con la loro icona accanto al nome). Rosso chi ti supera, verde chi superi.
  * `room` (l'interruttore Trick Room della scheda Velocità): la scala nell'ordine di Trick Room, in alto i più lenti
  * (muovono prima, in rosso), sotto i più veloci (il membro muove prima di loro, in verde).
- * `extra`: righe in più prima della nota (nella scheda Velocità: cosa aggiunge ogni guadagno).
+ * La testata unica (la sprite del membro in piedi, il nome come sulle carte, sotto cosa sono i numeri, a destra la sua velocità
+ * in Text); la nota sta nella riga sotto il titolo, così l'unico piede resta quello del clic (TipGo) dove c'è.
+ * `extra`: le sezioni in più sotto la scala (nella scheda Velocità: cosa aggiunge ogni guadagno alla barra).
  */
 export function SpeedTip({ lane, vsMeta, extra, room = false }: { lane: SpeedLane; vsMeta: boolean; extra?: ReactNode; room?: boolean }) {
   const t = useT();
@@ -42,12 +61,9 @@ export function SpeedTip({ lane, vsMeta, extra, room = false }: { lane: SpeedLan
   const below = near ? (room ? near.faster : near.slower) : [];
   return (
     <>
-      <div className="stip-head">
-        <span className="stip-bolt"><Icon name="speed" /></span>
-        <b>{lane.species}</b>
-        <em className="stip-own">{lane.speed}</em>
-      </div>
-      <div className="stip-ladder">
+      <TipHead sprite={lane.species} title={<FormeName species={lane.species} />} sub={room ? t('stip.footRoom') : t(vsMeta ? 'stip.footMeta' : 'stip.footTier')}
+        num={lane.speed} />
+      <TipSec className="stip-ladder">
         {above.map(mon => <Rung key={`a-${mon.species}-${mon.speed}`} mon={mon} tone="ahead" />)}
         <div className="stip-rung self">
           <span className="stip-mon"><Sprite species={lane.species} size={SPRITE_TIP_ROW} /></span>
@@ -57,9 +73,8 @@ export function SpeedTip({ lane, vsMeta, extra, room = false }: { lane: SpeedLan
         {near?.ties.map(mon => <Rung key={`t-${mon.species}-${mon.speed}`} mon={mon} tone="tie" tag={t('stip.tie')} />)}
         {below.map(mon => <Rung key={`b-${mon.species}-${mon.speed}`} mon={mon} tone="behind" />)}
         {!near && <p className="stip-empty">{t('stip.none')}</p>}
-      </div>
+      </TipSec>
       {extra}
-      <p className="ftip-foot">{room ? t('stip.footRoom') : t(vsMeta ? 'stip.footMeta' : 'stip.footTier')}</p>
     </>
   );
 }

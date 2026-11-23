@@ -17,6 +17,7 @@ import type { WorkerData, WorkerRequest, WorkerResponse } from './rankingProtoco
 import type { TeamSet } from './sets';
 import { collectGainJobs, computeGains, primeGains } from './teamGain';
 import { coachAdvice } from './coach';
+import { rateTeam } from './rating';
 import { improveSets } from './bestPreset';
 import { duelTips } from './duelTips';
 import { fillProposals } from './fillProposals';
@@ -60,7 +61,7 @@ function sameTeam(team: TeamSet[]): TeamSet[] {
 }
 const withTeam = (params: RankingParams): RankingParams => ({ ...params, team: sameTeam(params.team) });
 
-function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' | 'fill' | 'cancel' }>): WorkerResponse {
+function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' | 'warm' | 'fill' | 'cancel' }>): WorkerResponse {
   if (message.kind === 'plan') {
     const params = withTeam(message.params);
     const data = engineData(message.data);
@@ -135,6 +136,11 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     return;
   }
   await ready;
+  // Il voto di partenza del team: i voti che arrivano dopo trovano i colpi del team già in cache (senza risposta)
+  if (message.kind === 'warm') {
+    try { rateTeam(sameTeam(message.team), engineData(message.data), message.lang); } catch { /* lo rifarà il voto vero */ }
+    return;
+  }
   if (message.kind !== 'gains') await (learnsets ??= initLearnsets());
   let response: WorkerResponse;
   try {

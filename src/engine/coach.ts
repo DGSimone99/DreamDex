@@ -28,6 +28,7 @@ import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types'
 import { withUsableMoves } from './lockedMoves';
 import { duplicateSpecies, missingFormeItem, voteTeam } from './legalTeam';
 import { EV_TOTAL, evTotal } from './statCalc';
+import { usageOf } from './stats';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
@@ -65,6 +66,8 @@ export interface CoachProblem {
   subjects?: string[];
   /** Solo per la difesa: quanti membri reggono del tutto il tipo (come nella Coverage tipi della Difesa), per le pillole corte. */
   counts?: { held: number };
+  /** Solo per le minacce del meta (meta, metaHit): l'uso del Pokémon nel meta (0..1), per il tooltip come nelle Minacce. */
+  usage?: number;
 }
 
 /** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
@@ -255,6 +258,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
     if (threat.handledBy.length) continue;
     add('meta', false, t(lang, 'coach.problem.threat', { species: threat.name }),
       fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`, undefined, [threat.name]);
+    minor[minor.length - 1].usage = threat.usage;
   }
 
   // Pokémon del meta che nessuno manda KO in due colpi, come nella Coverage meta dell'Offesa (vuota senza meta).
@@ -264,6 +268,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   for (const label of offenseMeta?.holes ?? []) {
     const species = offenseMeta!.rows.find(row => row.label === label)?.species ?? label;
     add('metaHit', false, t(lang, 'coach.problem.metaHit', { species }), [], `metaHit:${species}`, undefined, [species]);
+    minor[minor.length - 1].usage = usageOf(data.stats, species);
   }
 
   return [...serious, ...minor];

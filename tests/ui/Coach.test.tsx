@@ -170,7 +170,8 @@ describe('scheda Coaching', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    // Nella Panoramica: come giudizio e nel "Cosa fare" del cruscotto
+    // Nella Panoramica: come giudizio e nel "Cosa fare" del cruscotto (Analisi si disegna la prima volta che si apre)
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     expect(within(analysis()).getAllByText('Aggiungi un altro Pokémon per ricevere il coaching').length).toBeGreaterThan(0);
     // Anche nella scheda Coaching, non "il team è a posto"
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));

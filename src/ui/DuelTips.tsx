@@ -1,20 +1,25 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { StatID } from '@pkmn/dex';
-import type { DuelTip, DuelTipsResult, EvMap, MetaEffect, TipId, TipOption } from '../engine/duelTips';
+import type { DuelTip, DuelTipsResult, EvMap, MetaEffect, MetaShift, TipId, TipOption } from '../engine/duelTips';
 import { battleSpeed, duelHits, type DuelHit } from '../engine/editorDuel';
 import { gradeFor } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
-import { gameName, statShort, typeName } from '../i18n/game';
+import { gameName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox } from './Combobox';
 import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
+import { KoBands, koBandsText, type KoSide } from './KoBadge';
 import { MovePill } from './MovePill';
 import { PokemonIcon } from './PokemonName';
-import { typeColor } from './Sprite';
+import { FormeName } from './candidateParts';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec, TipType } from './TipHead';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { useMediaQuery } from './useMediaQuery';
 import { TOUCH_QUERY } from './TouchTips';
+
+/** La larghezza S dei tooltip (--tip-s): la scheda del consiglio è vestita da tooltip. */
+const TIP_S = 300;
 
 /** Quanti Pokémon mostra il tooltip di un effetto sul meta prima di "e altri N". */
 export const META_TIP_ROWS = 8;
@@ -77,7 +82,7 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
     setOpen(null);
     if (focus && was) chipRefs.current.get(was)?.focus();
   };
-  useAnchoredPop(anchor, pop, open !== null, { width: 324, prefer: 'above', gap: 8, sheet: true, onDismiss: () => close(false) });
+  useAnchoredPop(anchor, pop, open !== null, { width: TIP_S, prefer: 'above', gap: 8, sheet: true, onDismiss: () => close(false) });
   useEffect(() => {
     if (!open) return undefined;
     const away = (e: PointerEvent) => {
@@ -121,7 +126,7 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
         </button>
       )}
       {open && openQuick && (
-        <div className="duel-tip-card" ref={pop} id={cardId} role="dialog" aria-label={openQuick.label} popover={supportsPopover ? 'manual' : undefined}
+        <div className={`duel-tip-card ${openQuick.id}`} ref={pop} id={cardId} role="dialog" aria-label={openQuick.label} popover={supportsPopover ? 'manual' : undefined}
           onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } }}>
           <TipCard me={me} opp={opp} quick={openQuick} tip={tip} base={result?.overall ?? null} pick={tip ? picked[tip.id] ?? tip.best : 0}
             onPick={i => tip && setPicked(p => ({ ...p, [tip.id]: i }))} onClose={() => close()}
@@ -134,10 +139,6 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
 
 type Tr = ReturnType<typeof useT>;
 
-const hitsText = (hit: DuelHit | null) => {
-  if (!hit || !Number.isFinite(hit.hitsMaybe)) return '—';
-  return hit.hitsSure === hit.hitsMaybe || !Number.isFinite(hit.hitsSure) ? String(Number.isFinite(hit.hitsSure) ? hit.hitsSure : hit.hitsMaybe) : `${hit.hitsMaybe}–${hit.hitsSure}`;
-};
 const rangeText = (hit: DuelHit | null) => (hit && hit.max > 0 ? `${Math.round(hit.min * 100)}–${Math.round(hit.max * 100)}%` : '0%');
 
 function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: {
@@ -159,6 +160,8 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
     return [evsText(d.add), ...taken].join(', ');
   };
 
+  // Prima → dopo: il nuovo valore verde se migliora, rosso se peggiora (come in ogni tooltip)
+  const trend = (x: number) => (x > 0 ? ' good' : x < 0 ? ' bad' : '');
   let compare: ReactNode = <p className="duel-tip-busy">{t('duel.tipBusy')}</p>;
   if (tip && option) {
     if (tip.id === 'spe') {
@@ -169,7 +172,7 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
       compare = (
         <div className="duel-tip-ba">
           <span className="duel-tip-what">{t('editor.duelSpeed')} · {opp.species} {theirs}</span>
-          <span className="now big">{place(a)} {a}</span><Icon name="arrow" /><span className="new big">{place(b)} {b}</span>
+          <span className="now big">{place(a)} {a}</span><Icon name="arrow" /><span className={`new big${trend(b - a)}`}>{place(b)} {b}</span>
         </div>
       );
     } else {
@@ -178,13 +181,22 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
       const now = duelHits(option.set, opp);
       const before = theirs ? was.theirs : was.mine;
       const after = theirs ? now.theirs : now.mine;
-      const unit = (hit: DuelHit | null) => t(hitsText(hit) === '1' ? 'editor.duelHitUnit' : 'editor.duelHitsUnit');
+      // I colpi per il KO come fasce (KoBadge), nella scala del lato: colpisci tu (Offesa) o colpisce lui (Difesa)
+      const koSide: KoSide = theirs ? 'def' : 'off';
+      const bands = (hit: DuelHit | null) => <KoBands side={koSide} fewest={hit?.hitsMaybe ?? Infinity} most={hit?.hitsSure} />;
+      // Meglio o peggio per il membro: i suoi colpi per mandarlo KO meno sono meglio, quelli che servono al rivale più
+      // sono meglio; a pari colpi decide il danno (il suo più alto, quello del rivale più basso)
+      const hitsOf = (hit: DuelHit | null) => (hit && Number.isFinite(hit.hitsMaybe) ? (hit.hitsMaybe + (Number.isFinite(hit.hitsSure) ? hit.hitsSure : hit.hitsMaybe)) / 2 : Infinity);
+      const fewer = hitsOf(before) - hitsOf(after);
+      const gain = (Number.isFinite(fewer) && fewer !== 0 ? fewer : (after?.max ?? 0) - (before?.max ?? 0)) * (theirs ? -1 : 1);
+      const better = trend(gain);
       compare = (
         <div className="duel-tip-ba">
           {before && <span className="duel-tip-what">{gameName('move', before.move, lang)}</span>}
-          <span className="now">{rangeText(before)}</span><Icon name="arrow" /><span className="new">{rangeText(after)}</span>
-          <span className="now big">{hitsText(before)}<small>{unit(before)}</small></span><Icon name="arrow" />
-          <span className="new big">{hitsText(after)}<small>{unit(after)}</small></span>
+          <span className="now">{rangeText(before)}</span><Icon name="arrow" /><span className={`new${better}`}>{rangeText(after)}</span>
+          {/* Le fasce tengono il loro colore (la scala del lato); la freccia dice se migliora (verde) o peggiora (rosso) */}
+          <span className="now ko-ba">{bands(before)}</span><span className={`duel-tip-to${better}`}><Icon name="arrow" /></span>
+          <span className="new ko-ba">{bands(after)}</span>
         </div>
       );
     }
@@ -214,19 +226,24 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
   const diff = score !== null && base !== null ? score - base : null;
   return (
     <>
-      <div className="duel-tip-head">
-        <span className={`duel-tip-icon ${quick.id}`} aria-hidden="true"><Icon name={icon} /></span>
+      {/* La testata dei tooltip DreamDex (TipHead): il tondo col simbolo, la mossa come pillola o gli EV, la × al posto del valore */}
+      <div className="tip-head has-lead duel-tip-head">
+        <span className="tip-lead" aria-hidden="true"><TipGlyph icon={icon} /></span>
         {/* Una mossa: la sua pillola come nella Sfida (tipo, angoli alterni, linguetta con la potenza) */}
         {tip?.move
-          ? <span className="duel-tip-title"><MovePill name={tip.move} size="sm" className="duel-tip-mvp" /></span>
-          : <span className="duel-tip-title">{title}</span>}
-        <button type="button" className="duel-tip-close" aria-label={t('duel.tipClose')} onClick={onClose}><Icon name="close" /></button>
+          ? <span className="tip-title duel-tip-title"><MovePill name={tip.move} size="sm" className="duel-tip-mvp" /></span>
+          : <b className="tip-title duel-tip-title">{title}</b>}
+        <span className="tip-badge">
+          <button type="button" className="duel-tip-close" aria-label={t('duel.tipClose')} onClick={onClose}><Icon name="close" /></button>
+        </span>
       </div>
-      {compare}
-      {source}
+      <div className="tip-sec duel-tip-main">
+        {compare}
+        {source}
+      </div>
       {option && option.effects.length > 0 && (
-        <div className="duel-tip-fx">
-          <span className="duel-tip-label">{t('duel.tipMeta')}</span>
+        <div className="tip-sec duel-tip-fx">
+          <span className="tip-sec-label">{t('duel.tipMeta')}</span>
           {option.effects.map(fx => <EffectLine key={fx.kind} fx={fx} />)}
         </div>
       )}
@@ -234,10 +251,11 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
         <span className="duel-tip-grade">
           {letter && <span className={`duel-tip-letter grade-${letter}`}>{letter}</span>}
           <span className="duel-tip-score">
-            <span className="duel-tip-nums">{`${base ?? '—'} → ${score ?? '—'}`}</span>
+            {/* Voto uguale: la parola tenue sotto i numeri, non un chip (così "voto del team" sta su una riga a 300px) */}
+            <span className="duel-tip-nums">{`${base ?? '—'} → ${score ?? '—'}`}{diff === 0 && <small className="duel-tip-same">{t('duel.tipSame')}</small>}</span>
             <span className="duel-tip-label">{t('duel.tipGrade')}</span>
           </span>
-          {diff !== null && <span className={`duel-tip-diff ${diff > 0 ? 'up' : diff < 0 ? 'down' : 'same'}`}>{diff > 0 ? `+${diff}` : diff < 0 ? `−${-diff}` : '='}</span>}
+          {diff !== null && diff !== 0 && <span className={`duel-tip-diff ${diff > 0 ? 'up' : 'down'}`}>{diff > 0 ? `+${diff}` : `−${-diff}`}</span>}
         </span>
         <button type="button" className="duel-tip-apply" disabled={!tip || !option}
           onClick={() => { if (tip && option) onApply(option.set, change(option, tip)); }}>{t('duel.tipApply')}</button>
@@ -263,17 +281,24 @@ function EffectLine({ fx }: { fx: MetaEffect }) {
   const listId = useId();
   const up = UP.includes(fx.kind);
   const count = t('duel.fxCount', { n: fx.shifts.length });
-  const hits = (n: number) => (Number.isFinite(n) ? String(n) : '—');
-  const words = fx.shifts.map(s => `${s.species} ${t('duel.fxHits', { a: hits(s.before), b: hits(s.after) })}`).join(', ');
+  // Reggere i colpi è la Difesa (colpiscono te), fare danni l'Offesa: la scala dei colori delle fasce
+  const take = fx.kind.startsWith('take');
+  const koSide: KoSide = take ? 'def' : 'off';
+  const words = fx.shifts.map(s => `${s.species} ${koBandsText(s.before)} → ${koBandsText(s.after)}`).join(', ');
   const [before, after] = t(`duel.fx.${fx.kind}`, { n: '\u0000' }).split('\u0000');
   const shown = fx.shifts.slice(0, META_TIP_ROWS);
+  const change = (s: MetaShift) => (
+    <span className="duel-fx-bands">
+      <KoBands side={koSide} fewest={s.before} /><span className={`duel-tip-to ${up ? 'good' : 'bad'}`}><Icon name="arrow" /></span><KoBands side={koSide} fewest={s.after} />
+    </span>
+  );
   const list = (
     <>
       <ul>
         {shown.map(s => (
           <li key={s.species}>
             <PokemonIcon name={s.species} /><span>{s.species}</span>
-            <span className="duel-fx-hits">{hits(s.before)} → <b className={up ? 'good' : 'bad'}>{hits(s.after)}</b> {t('editor.duelHitsUnit')}</span>
+            {change(s)}
           </li>
         ))}
       </ul>
@@ -291,13 +316,22 @@ function EffectLine({ fx }: { fx: MetaEffect }) {
               onClick={() => setListOpen(o => !o)}>{count}</button>
           : <button type="button" className="duel-tip-count" aria-label={`${count}: ${words}`} {...tip.bind('list')}>{count}</button>}
         {after}
-        {fx.type && <span className="duel-tip-type" style={{ background: typeColor(fx.type) }}>{typeName(fx.type, lang)}</span>}
+        {fx.type && <span className="duel-tip-type"><TipType type={fx.type} /></span>}
         {touch && listOpen && <span id={listId} className="duel-fx-inline" aria-hidden="true">{list}</span>}
       </span>
       {!touch && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={up ? 'var(--good)' : 'var(--bad)'} side layer className="duel-fx-tip">
-          <div className="duel-fx-tip-head">{t('duel.fxTipHead')}</div>
-          {list}
+        <FloatTip rect={tip.anchor.rect} tone={up ? 'var(--good)' : 'var(--bad)'} side layer className="duel-fx-tip tip-w-s">
+          {/* Titolo un nome corto ("Meno danni"), sotto a chi si applica senza ripeterlo ("A 1 Pokémon del meta") */}
+          <TipHead lead={<TipGlyph icon={take ? 'shield' : 'sword'} />} title={t(`duel.fxShort.${fx.kind}`)}
+            sub={<>{t(take ? 'duel.fxSub.take' : 'duel.fxSub.deal', { n: count })}{fx.type && <> · <TipType type={fx.type} /></>}</>} />
+          <TipSec label={t('duel.fxTipHead')}>
+            <TipRows>
+              {shown.map(s => (
+                <TipRow key={s.species} lead={<PokemonIcon name={s.species} />} title={<FormeName species={s.species} />} value={change(s)} />
+              ))}
+            </TipRows>
+            {fx.shifts.length > META_TIP_ROWS && <p className="tip-more">{t('duel.fxMore', { n: fx.shifts.length - META_TIP_ROWS })}</p>}
+          </TipSec>
         </FloatTip>
       )}
     </div>

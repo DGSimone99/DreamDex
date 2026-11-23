@@ -1,0 +1,5 @@
+# Cloudflare Pages: i file in /assets hanno il contenuto nel nome (index-BKxvy2kc.js): non cambiano mai, il browser
+# li tiene un anno senza ricontrollarli. index.html e il resto restano ricontrollati a ogni visita (così un rilascio
+# nuovo arriva subito).
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

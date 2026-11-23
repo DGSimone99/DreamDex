@@ -234,7 +234,7 @@ describe('Panoramica: rifinitura', () => {
       '6 attaccanti', '4–6 attaccanti robusti, max 2 muri', 'Mix di attaccanti e muri', 'Quasi tutti muri, 1–2 attaccanti', '6 muri',
     ]);
     expect(dialog.querySelectorAll('.tt-pips')[0].querySelectorAll('.tt-pip.a')).toHaveLength(6);
-    expect(dialog).toHaveTextContent(/Meteo.*Chi lo porta.*1\+ che lo sfruttano.*Trick Room.*Chi la porta.*2\+ Pokémon lenti/);
+    expect(dialog).toHaveTextContent(/Meteo.*Chi lo porta.*1\+ che lo sfruttano.*Distortozona.*Chi la porta.*2\+ Pokémon lenti/);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();

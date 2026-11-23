@@ -5,9 +5,9 @@ import { OFFENSE_DEPTH } from '../../engine/offense';
 import { depthWeights } from '../../engine/coverage';
 import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { pokedexOf, teraAllowed } from '../../engine/formats';
-import { useT } from '../../i18n/react';
+import { useLang, useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
-import { Ask, MetaTargets, TypeAverages } from './TargetsTip';
+import { Ask, averageCols, MetaTargets, metaText, TypeAverages, typeStatText } from './TargetsTip';
 
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
@@ -34,6 +34,7 @@ export function Bar({ label, weights, rank, from, to }: { label: string; weights
  */
 export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { offense: TeamOffense; formatId?: FormatId }) {
   const t = useT();
+  const lang = useLang();
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.off.${key}` as Key, params);
   const lines = (items: ReactNode[]) => <ul className="guide-lines">{items.map((item, i) => <li key={i}>{item}</li>)}</ul>;
   // Quello che conta meno, in una riga sola: Tera solo dove il formato lo ammette, mosse Z solo nel National Dex (in
@@ -51,8 +52,8 @@ export function OffenseGuide({ offense, formatId = DEFAULT_FORMAT.formatId }: { 
     <>
       <h4>{g('test.targets')}</h4>
       <Rows compact rows={[
-        [t('detail.coverageTypes'), <>{g('targets.types')} <Ask label={g('targets.typesTitle')}><TypeAverages formatId={formatId} /></Ask></>],
-        ...(offense.coverageMeta ? [[t('detail.coverageMeta'), <>{g('cov.targets.meta', { n: metaSpecies.length })} <Ask label={g('targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></>] as [ReactNode, ReactNode]] : []),
+        [t('detail.coverageTypes'), <>{g('targets.types')} <Ask label={g('targets.typesTitle')} describe={typeStatText(averageCols(formatId, t), lang)}><TypeAverages formatId={formatId} /></Ask></>],
+        ...(offense.coverageMeta ? [[t('detail.coverageMeta'), <>{g('cov.targets.meta', { n: metaSpecies.length })} <Ask label={g('targets.metaTitle', { n: metaSpecies.length })} describe={metaText(g('targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} /></Ask></>] as [ReactNode, ReactNode]] : []),
       ]} />
 
       <h4>{g('test')}</h4>

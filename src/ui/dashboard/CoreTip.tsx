@@ -1,49 +1,57 @@
-import type { CSSProperties } from 'react';
 import type { Core } from '../../engine/cores';
 import { holdBand } from '../../engine/defense';
-import { typeName } from '../../i18n/game';
-import { useLang, useT } from '../../i18n/react';
-import { HOLD_BANDS } from '../defense/holds';
-import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { tileStyle, typeIconUrl } from '../typeIcons';
+import { useT } from '../../i18n/react';
+import { KoBadge } from '../KoBadge';
+import { Sprite } from '../Sprite';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec, TipType } from '../TipHead';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { useLang } from '../../i18n/react';
 import { coreTitle } from './CoreTriangle';
 
 /**
- * Il tooltip di un core a tre: per ogni lato chi para, il tipo che para (nel suo colore) e quanto lo regge, come badge
- * dei colpi (OHKO, 2HKO, 3HKO, 4HKO+: i colori e le soglie della scheda Difesa, senza percentuali), poi chi protegge.
+ * I lati di un core come righe (TipRow), le stesse nel tooltip del core e nel "+N" delle Sinergie: la sprite da 40 di chi
+ * para, il nome, sotto "para" con la tessera e il nome del tipo (in Text, mai una parola colorata) e per chi lo para; a
+ * destra quanto lo regge, come fascia dei colpi (KoBadge, i colori della Difesa, senza percentuali).
  * `taken`: per membro e tipo il danno subito (0–100), dal Riassunto.
+ */
+export function CoreSideRows({ core, taken }: { core: Core; taken: Record<string, Record<string, number>> }) {
+  const t = useT();
+  // "para {type}": la parola prima e dopo il tipo, che in mezzo è la tessera col nome
+  const [before, after] = t('coreTip.holds', { type: '\u0000' }).split('\u0000');
+  return (
+    <TipRows className="core-tip-rows">
+      {core.sides.map(side => {
+        const pct = taken[side.from]?.[side.type];
+        const band = pct === undefined ? null : holdBand(pct / 100);
+        return (
+          <TipRow key={`${side.from}>${side.to}`} lead={<Sprite species={side.from} size={SPRITE_TIP_ROW} />} title={side.from}
+            sub={(
+              <span className="core-tip-type">
+                {before}<TipType type={side.type} />{after}
+                <span className="core-tip-for">{t('coreTip.for')} {side.to}</span>
+              </span>
+            )}
+            value={band ? <KoBadge side="def" band={band} /> : undefined} />
+        );
+      })}
+    </TipRows>
+  );
+}
+
+/**
+ * Il tooltip di un core a tre: la testata unica (scudo, i tipi del core, sotto cosa misura la fascia; a destra "Core"),
+ * poi una riga per lato (CoreSideRows).
  */
 export function CoreTip({ core, taken }: { core: Core; taken: Record<string, Record<string, number>> }) {
   const t = useT();
   const lang = useLang();
   return (
     <>
-      <div className="core-tip-head">
-        <em className="core-tip-tag">{t('sum.link.core')}</em>
-        <b>{coreTitle(core, lang)}</b>
-      </div>
-      {core.sides.map(side => {
-        const pct = taken[side.from]?.[side.type];
-        const band = pct === undefined ? null : holdBand(pct / 100);
-        return (
-          <div key={side.from} className="core-tip-side">
-            <span className="ctip-plinth good"><Sprite species={side.from} size={SPRITE_TIP} /></span>
-            <span className="core-tip-what">
-              <b>{side.from}</b>
-              <span className="core-tip-type" style={{ '--mc': typeColor(side.type) } as CSSProperties}>
-                <img className="ti-sq" style={tileStyle(side.type)} src={typeIconUrl(side.type)} alt="" draggable={false} />{t('coreTip.holds', { type: typeName(side.type, lang) })}
-              </span>
-            </span>
-            {band && <span className={`ftip-ko def ${band}`}>{HOLD_BANDS[band].tag}</span>}
-            <span className="core-tip-for">
-              <small>{t('coreTip.for')}</small>
-              <Sprite species={side.to} size={SPRITE_TIP_ROW} />
-            </span>
-          </div>
-        );
-      })}
-      <p className="ftip-foot">{t('coreTip.foot')}</p>
+      <TipHead lead={<TipGlyph icon="shield" />} title={coreTitle(core, lang)} sub={t('coreTip.foot')}
+        badge={<span className="tip-kind">{t('sum.link.core')}</span>} />
+      <TipSec>
+        <CoreSideRows core={core} taken={taken} />
+      </TipSec>
     </>
   );
 }

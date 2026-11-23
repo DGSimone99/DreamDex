@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { battleSpecies } from '../../engine/dex';
+import { battleSpecies, getMove } from '../../engine/dex';
 import { laneNear, speedItem, type SpeedLane } from '../../engine/overviewDashboard';
 import { speedNeighbours } from '../../engine/speed';
 import type { TeamSet } from '../../engine/sets';
 import {
   CONTROL_CONDITIONS, priorityMoves, roomShare, SHOWN_CONTROL, shownTotal, teamSpeedOf, type MemberSpeed, type TeamSpeed,
 } from '../../engine/speedArea';
-import { useT } from '../../i18n/react';
+import { anyGameName, gameName } from '../../i18n/game';
+import { useLang, useT } from '../../i18n/react';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { tone } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
@@ -15,6 +16,8 @@ import { SpeedTip } from '../dashboard/SpeedTip';
 import { Icon } from '../icons';
 import { offenseSlots } from '../offense/slots';
 import { linkTeamCard } from '../teamLink';
+import { TIP_NEUTRAL, TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
+import { tileStyle, typeIconUrl } from '../typeIcons';
 import { SpeedMemberDialog } from './SpeedMemberDialog';
 
 const points = (x: number) => Math.round(100 * x);
@@ -54,6 +57,7 @@ interface Parts { raw: number; own: number; team: number; total: number }
  */
 export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext; room?: boolean }) {
   const t = useT();
+  const lang = useLang();
   const { members } = speed;
   const slots = offenseSlots(ctx.team, members);
   const [open, setOpen] = useState<{ m: MemberSpeed; set: TeamSet; slot: number } | null>(null);
@@ -72,19 +76,30 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
     return index === null || index === undefined ? null : members[index];
   };
   const shown = tip.anchor ? (() => { const m = memberAt(tip.anchor.key); return m ? laneOf(m, ctx.team[tip.anchor.key]) : null; })() : null;
-  // Il nome del guadagno e la sua fonte, una volta sola se coincidono ("Sticky Web", non "Sticky Web · Sticky Web")
-  const label = (condition: MemberSpeed['gains'][number]['condition'], source: string) => {
+  // Come ogni setup nei tooltip: il nome della mossa (o abilità, strumento) come titolo, sotto che cosa è ("Setup") e chi
+  // la porta; una volta sola se coincidono ("Rete Vischiosa", non "Rete Vischiosa · Rete Vischiosa")
+  const label = (condition: MemberSpeed['gains'][number]['condition'], source: string, by?: string[]) => {
     const name = t(`sdetail.cond.${condition}`);
-    return name === source ? source : `${name} · ${source}`;
+    const from = anyGameName(source, lang);
+    const sub = [name === from ? '' : name, by?.join(', ') ?? ''].filter(Boolean).join(' · ');
+    return { title: from, sub: sub || undefined };
   };
-  // Sotto la scala, cosa aggiunge ogni guadagno: "Setup · Dragon Dance: +18" (Trick Room no: ha il suo interruttore;
-  // in Trick Room nessuno, le spinte lì non contano)
+  // Sotto la scala, cosa aggiunge ogni guadagno alla barra: "Dragodanza" (sotto "Setup") e a destra "+18", gli stessi punti
+  // dei pezzi a righe della barra ("55 +18"); Distortozona no: ha il suo interruttore; in Distortozona nessuno, le spinte lì
+  // non contano
   const gains = (m: MemberSpeed) => {
     const list = room ? [] : m.gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition) || SHOWN_CONTROL.includes(g.condition));
     return list.length
-      ? <ul className="stip-gains">{list.map(g => (
-        <li key={`${g.condition}-${g.source}`}><span>{label(g.condition, g.source)}{g.by ? ` (${g.by.join(', ')})` : ''}</span><b>+{points(g.gain)}</b></li>
-      ))}</ul>
+      ? (
+        <TipSec label={t('sdetail.gains')} className="stip-gains">
+          <TipRows>
+            {list.map(g => (
+              <TipRow key={`${g.condition}-${g.source}`} {...label(g.condition, g.source, g.by)}
+                value={`+${points(g.gain)}`} tone="good" />
+            ))}
+          </TipRows>
+        </TipSec>
+      )
       : null;
   };
   /** I numeri della barra di un membro: in Trick Room solo la quota prima della quale muove, senza pezzi a righe. */
@@ -124,7 +139,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
               const wall = familyAt(ctx, slot) === 'wall';
               const moves = m ? priorityMoves(set, ctx.team) : [];
               const prioTag = moves.length > 0 && (
-                <span className="sp-prio" tabIndex={0} aria-label={t('sdetail.prio.label', { moves: moves.join(', ') })} {...prio.bind(slot)}>
+                <span className="sp-prio" tabIndex={0} aria-label={t('sdetail.prio.label', { moves: moves.map(m => gameName('move', m, lang)).join(', ') })} {...prio.bind(slot)}>
                   {t('sdetail.prio')}
                 </span>
               );
@@ -189,16 +204,27 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
           </>}
       </span></div>
       {shown && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={room ? 'var(--room)' : 'var(--accent)'} className="speed" side="left">
+        <FloatTip rect={tip.anchor.rect} tone={room ? 'var(--room)' : TIP_NEUTRAL} className="tip-w-m speed" side="left">
           <SpeedTip lane={shown} vsMeta={meta} room={room} extra={gains(memberAt(tip.anchor.key)!)} />
           {/* Il clic apre la finestra coi rivali (non un'altra scheda): lo stesso piede col verbo "apri"; il nome del pulsante lo dice già */}
           <TipGo place={t('sdetail.bar.go')} verb="open" />
         </FloatTip>
       )}
       {prio.anchor && prioOpen.length > 0 && (
-        <FloatTip rect={prio.anchor.rect} tone="var(--accent)" className="sp-prio-ftip">
-          <div className="ftip-head"><b>{t('sdetail.prio.title')}</b></div>
-          <p className="sp-prio-tip">{t('sdetail.prio.tip', { moves: prioOpen.join(', ') })}</p>
+        <FloatTip rect={prio.anchor.rect} tone="var(--accent)" className="tip-w-s sp-prio-ftip">
+          <TipHead lead={<TipGlyph icon="speed" />} title={t('sdetail.prio.title')} sub={t('sdetail.prio.sub')} />
+          <TipSec>
+            <TipRows>
+              {prioOpen.map(name => {
+                const move = getMove(name);
+                // Scivolerba ha priorità 0 sulla carta: qui c'è perché col Campo Erboso arriva a +1
+                return (
+                  <TipRow key={name} title={gameName('move', name, lang)} value={<span className="mtip-prio">{`+${Math.max(1, move?.priority ?? 1)}`}</span>}
+                    lead={move && <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />} />
+                );
+              })}
+            </TipRows>
+          </TipSec>
         </FloatTip>
       )}
       {open && <SpeedMemberDialog member={open.m} set={open.set} team={ctx.team} meta={meta} room={room} onClose={close} />}

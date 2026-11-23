@@ -818,10 +818,11 @@ function EmptySlot({ onClick, quiet = false, dropTarget = false, onDragOver, onD
 
 export function TeamPanel({ team, format, data, grade = null, onChange, onAdd, onReplace, onRemove, onDropSet, onAllowMultipleMegas, onOpenChange, closeSignal, improveSignal, collapsed = false, onFillOpenChange, onPaste, onSetChange, onTipApply, onBulk, onAddClick, proposal, onProposalDone, io, saved, plateName }: Props) {
   const lang = useLang();
-  // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
-  const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Sotto-ruoli misurati del membro aperto: l'editor dice quello che dice il voto (stessa cache dell'area Ruoli). Solo
+  // lui: i ruoli si vedono nell'editor, e misurarli per tutti a ogni disegno costava (sul telefono un secondo all'avvio)
+  const subRoles = useMemo(() => team.map((set, i) => (i === openIndex ? measuredSubRoles(set, team, data) : undefined)), [team, data, openIndex]);
   // Il voto di quando si è aperto un membro (il primo voto che arriva, se in quel momento non c'era): il chip
   // dell'editor sul telefono dice di quanto è cambiato. Resta anche se il voto sparisce un attimo (EV oltre 510)
   const [gradeFrom, setGradeFrom] = useState<number | null>(null);

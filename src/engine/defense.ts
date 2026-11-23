@@ -1,7 +1,7 @@
 import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
 import { dexPool, ownConditions } from './coverage';
-import { bestHit, FIRST_HIT_SHARE, hasZMove, FIRST_HIT_SHARE_RECOVERY, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
+import { bestHit, FIRST_HIT_SHARE, hasZMove, FIRST_HIT_SHARE_RECOVERY, hitRange, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type PctRange, type Target } from './damage';
 import { hitRules } from './formatRules';
 import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
@@ -334,7 +334,13 @@ function onField(own: FieldCondition[], combos: FieldCondition[][], damage: (con
   return (off + combos.reduce((acc, c) => acc + damage(c), 0) / combos.length) / 2;
 }
 
-const typedCache = new Map<string, { plain: number[]; held: number[] }>();
+/**
+ * `ranges`: per ognuno dei 36 colpi, la forbice dei tiri del colpo dietro `held` (solo da mostrare). Solo quando il numero
+ * è un colpo solo: niente danza difensiva (tre quarti con, un quarto senza), niente meteo dei compagni (metà e metà),
+ * niente schermi del team (a quota di partita), niente Multiscale a quota (hitRange); se no null e si mostra il numero.
+ */
+type TypedHits = { plain: number[]; held: number[]; ranges: (PctRange | null)[] };
+const typedCache = new Map<string, TypedHits>();
 const TYPED_LIMIT = 5000;
 
 /**
@@ -342,7 +348,7 @@ const TYPED_LIMIT = 5000;
  * `plain` senza setup; `held` con la danza difensiva che conta per tre quarti (uguale a `plain` senza danza).
  * Il meteo e il terreno che il membro porta con la sua abilità valgono per lui; quelli dei compagni a metà (`onField`).
  */
-export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [member]): { plain: number[]; held: number[] } {
+export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [member]): TypedHits {
   const own = ownConditions(member);
   const combos = fieldCombos(own, conditionsOf(member, team).all);
   const firstHit = firstHitShare(member, team);
@@ -353,11 +359,19 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
   if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
   const setup = defensiveSetup(member);
   const target = member;
+  const ranges: (PctRange | null)[] = [];
   const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
     const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
     const options = { moveType: type, targetBoosts: boosted ? setup?.boosts : undefined, firstHitShare: firstHit };
     const cut = screenFactor(screens, category);
-    return onField(own, combos, conditions => Math.min(1, cut * (standardHit(attacker, target, category, { ...options, conditions })?.expected ?? 0)));
+    let range: PctRange | null = null;
+    const x = onField(own, combos, conditions => {
+      const found = standardHit(attacker, target, category, { ...options, conditions });
+      if (!boosted && !setup && !combos.length && cut === 1) range = hitRange(found);
+      return Math.min(1, cut * (found?.expected ?? 0));
+    });
+    if (!boosted) ranges.push(range);
+    return x;
   };
   const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
   const held = setup
@@ -366,7 +380,7 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
       return x - DEFENSE_SETUP_SHARE * (x - boosted);
     }))
     : plain;
-  const value = { plain, held };
+  const value = { plain, held, ranges };
   typedCache.set(key, value);
   return value;
 }
@@ -437,7 +451,11 @@ export interface ThreatRow {
   /** Quanto è retta: 0–100, coi crediti dei membri (holdCredit) pesati 70/20/10. */
   level: number;
   /** Chi non va KO in un colpo: `band` è la fascia del colpo (4HKO+, 3HKO, 2HKO), come nei colpi di tipo. */
-  heldBy: { species: string; move: string; pct: number; partial: boolean; band: HoldBand }[];
+  /**
+   * `range`: la forbice dei tiri (da minimo a massimo, in % dei PS) del colpo migliore della minaccia; null quando il numero
+   * è una media pesata (meteo dei compagni, Tera/Z a un quarto, schermi, precisione sotto 100: threatHit, hitRange).
+   */
+  heldBy: { species: string; move: string; pct: number; partial: boolean; band: HoldBand; range: PctRange | null }[];
   /**
    * Per ogni membro conosciuto (ordine di `members`): il moltiplicatore di tipo della mossa della minaccia che gli fa più
    * danno (la stessa del % nella casella), per l'etichetta della casella.
@@ -447,7 +465,7 @@ export interface ThreatRow {
    * Per ogni membro conosciuto (ordine di `members`): la mossa della minaccia che gli fa più danno e il danno % (anche
    * oltre 100, quando lo manda KO in un colpo). Solo per i tooltip: il voto usa `heldBy`.
    */
-  hits?: { move: string; pct: number }[];
+  hits?: { move: string; pct: number; range: PctRange | null }[];
 }
 
 /** Quanti colpi regge sul lato peggiore: KO, 2HKO, 3HKO, 4 o più. */
@@ -474,8 +492,14 @@ export interface TeamDefense {
   coverageTypes: { value: number; weak: string[]; rows: TypeHoldRow[] };
   coverageMeta: { value: number; unanswered: string[]; rows: ThreatRow[] } | null;
   members: MemberDefense[];
-  /** Per ogni membro (ordine di `members`) e tipo (ordine di TYPES): danno % del lato peggiore e dei due lati. */
-  typed: { species: string; cells: { pct: number; physical: number; special: number; band: HoldBand }[] }[];
+  /**
+   * Per ogni membro (ordine di `members`) e tipo (ordine di TYPES): danno % del lato peggiore e dei due lati.
+   * `ranges`, casella per casella come `cells` (a parte, così le caselle restano quelle di prima): la forbice dei tiri
+   * (in % dei PS) del colpo dietro il numero; `range` è quella del lato del `pct`. Null senza colpo (immune) e quando il
+   * numero è una media pesata (danza difensiva, meteo dei compagni, schermi, Multiscale: typedHits).
+   */
+  typed: { species: string; cells: { pct: number; physical: number; special: number; band: HoldBand }[];
+    ranges: { range: PctRange | null; physicalRange: PctRange | null; specialRange: PctRange | null }[] }[];
 }
 
 /** Danno del colpo migliore vero di una minaccia su un membro; Tera e mossa Z della minaccia a un quarto. */
@@ -494,7 +518,8 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField
   if (!base) return base;
   const combos = fieldCombos(own, teamField);
   const expected = onField(own, combos, field => (field === own ? base : bestHit(threat, member, { conditions: field, ...incoming }))?.expected ?? 0);
-  return { ...base, expected: expected + oneUse };
+  // Col meteo dei compagni (metà e metà) o Tera/Z a un quarto il numero è una media pesata: niente forbice (hitRange)
+  return { ...base, expected: expected + oneUse, exact: !!base.exact && !combos.length && oneUse === 0 };
 }
 
 /**
@@ -517,7 +542,8 @@ function threatHitsOf(member: TeamSet, data: EngineData, team: TeamSet[] = [memb
     const hit = threatHit(set, target, data, teamField, firstHit);
     if (!hit) return hit;
     const cut = screenFactor(screens, getMove(hit.move)?.category ?? 'Status');
-    return cut === 1 ? hit : { ...hit, expected: cut * hit.expected, min: cut * hit.min, max: cut * hit.max };
+    // Gli schermi a quota di partita: una media pesata, niente forbice
+    return cut === 1 ? hit : { ...hit, expected: cut * hit.expected, min: cut * hit.min, max: cut * hit.max, exact: false };
   });
   threatCache.set(key, hits);
   return hits;
@@ -541,7 +567,8 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const sustain = rankWeighted(members.map(m => m.sustain));
 
   // Coverage di tipi sui colpi
-  const hits = known.map(set => typedHits(set, data, team).held);
+  const typedAll = known.map(set => typedHits(set, data, team));
+  const hits = typedAll.map(t => t.held);
   const columnDepth = (c: number) => depthOf(hits.map(h => holdCredit(h[c])));
   const depths = Array.from({ length: 2 * TYPES.length }, (_, c) => columnDepth(c));
   const typeValue = known.length ? softScore(mean(depths)) : 0;
@@ -562,6 +589,10 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
       const [p, s] = [hits[m][2 * i], hits[m][2 * i + 1]];
       return { pct: Math.floor(100 * Math.max(p, s)), physical: Math.floor(100 * p), special: Math.floor(100 * s), band: holdBand(Math.max(p, s)) };
     }),
+    ranges: TYPES.map((_, i) => {
+      const [physicalRange, specialRange] = [typedAll[m].ranges[2 * i] ?? null, typedAll[m].ranges[2 * i + 1] ?? null];
+      return { range: hits[m][2 * i] >= hits[m][2 * i + 1] ? physicalRange : specialRange, physicalRange, specialRange };
+    }),
   }));
 
   // Coverage meta: per ogni minaccia, chi regge il suo colpo migliore vero
@@ -575,7 +606,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
         const hit = memberHits[m][i];
         const x = Math.min(1, hit?.expected ?? 0);
         if (x >= 1) return [];
-        return [{ species: battleSpecies(member)?.name ?? member.species, move: hit?.move ?? '', pct: Math.floor(100 * x), partial: x >= HOLD_FULL, band: holdBand(x) }];
+        return [{ species: battleSpecies(member)?.name ?? member.species, move: hit?.move ?? '', pct: Math.floor(100 * x), partial: x >= HOLD_FULL, band: holdBand(x), range: hitRange(hit) }];
       });
       // Il credito di ogni membro come nei colpi di tipo (pieno sotto un terzo dei PS, metà sotto la metà)
       const level = depthOf(known.map((_, m) => holdCredit(Math.min(1, memberHits[m][i]?.expected ?? 0))));
@@ -587,7 +618,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
         if (!move) return bestAttackMultiplier(threat, types, battleAbility(member)) ?? 1;
         return moveAttackMultiplier(threat, move, types, battleAbility(member)) ?? 1;
       });
-      const hits = known.map((_, m) => ({ move: memberHits[m][i]?.move ?? '', pct: Math.floor(100 * (memberHits[m][i]?.expected ?? 0)) }));
+      const hits = known.map((_, m) => ({ move: memberHits[m][i]?.move ?? '', pct: Math.floor(100 * (memberHits[m][i]?.expected ?? 0)), range: hitRange(memberHits[m][i]) }));
       return { species: threat.species, set: threat, weight, level: Math.round(100 * level), heldBy, mults, hits };
     });
     coverageMeta = { value: softScore(total), unanswered: threatRows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows: threatRows };

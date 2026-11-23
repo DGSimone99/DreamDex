@@ -16,9 +16,12 @@ import { byThreat, byUsage } from '../../engine/overviewDashboard';
 import { HpLeft } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { KoBadge } from '../KoBadge';
+import { TipDmg, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
+import type { DmgRange } from '../dmgText';
 import { MemberMon } from './MemberMon';
-import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
+import { EffTag, effClass, effLabel, effWord, useColumnHover } from '../effTag';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 type Holder = Row['heldBy'][number];
@@ -129,7 +132,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     const types = battleSpecies(row.set)?.types ?? [];
     return (
       <FloatTip rect={tip.anchor.rect} tone={typeColor((types[0] as string | undefined) ?? '')} className="tht">
-        <ThreatHitTip row={row} name={name} hit={c} mult={effLabel(row.mults?.[knownIndex[m]], 'defense')} koMove={row.hits?.[knownIndex[m]]?.move} />
+        <ThreatHitTip row={row} name={name} hit={c} mult={row.mults?.[knownIndex[m]]} koHit={row.hits?.[knownIndex[m]]} />
       </FloatTip>
     );
   };
@@ -141,7 +144,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         <div className="ad-scroll">
           <p id={summaryId} hidden>{open.length ? t('sr.cm.defense', { list: open.join(', ') }) : t('sr.cm.defenseNone')}</p>
           <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
-            onMouseLeave={() => { hover.table.onMouseLeave(); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
+            onMouseLeave={e => { hover.table.onMouseLeave(); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
             <colgroup>
               <col className="def-col-mon" />
               {shown.map(r => <col key={r.species} />)}
@@ -202,33 +205,29 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
 /** La legenda di Coverage meta della Difesa: il timbro KO, poi le tre fasce col loro % (come Coverage tipi). */
 /**
  * Il tooltip di un colpo di una minaccia su un membro (casella di Coverage meta, pastiglia della Generale): la minaccia
- * col badge dei colpi, il membro, la mossa della minaccia con l'efficacia e il danno; "KO" se lo manda KO in un colpo.
+ * col badge dei colpi, il membro in una riga di danno (sprite, nome, sotto la mossa della minaccia e l'efficacia a parole,
+ * "debole ×2"; a destra il danno e la fascia); KO in un colpo: la stessa riga col colpo trovato per il membro (la fascia OHKO).
  */
-export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name: string; hit: { move: string; pct: number; partial: boolean; band?: HoldBand } | 'ko'; mult: string | null; koMove?: string }) {
+export function ThreatHitTip({ row, name, hit, mult, koHit }: { row: Row; name: string; hit: { move: string; pct: number; partial: boolean; band?: HoldBand; range?: DmgRange | null } | 'ko'; mult: number | null | undefined;
+  /** KO in un colpo: il colpo che il motore ha trovato per il membro (mossa, danno e forbice), per la riga di danno. */
+  koHit?: { move: string; pct: number; range?: DmgRange | null } }) {
   const t = useT();
   // La mossa del colpo: quella della casella, o (KO in un colpo) quella che il motore ha trovato per il membro
-  const move = hit === 'ko' ? koMove : hit.move;
+  const move = hit === 'ko' ? koHit?.move : hit.move;
   // La fascia del colpo, come nei colpi di tipo (4HKO+, 3HKO, 2HKO)
   const band = hit === 'ko' ? 'ohko' : hit.band ?? holdBand(hit.pct / 100);
-  const tag = hit === 'ko' ? 'KO' : HOLD_BANDS[band].tag;
+  const eff = effWord(t, mult, 'defense');
   return (
     <>
-      <div className="ftip-head tht-target">
-        <Sprite species={row.species} size={SPRITE_TIP_ROW} />
-        <b>{row.species}</b>
-        <span className={`ftip-ko def ${band} tht-band`}>{tag}</span>
-      </div>
-      <div className="tht-body">
-        <Sprite species={name} size={SPRITE_TIP} />
-        <span className="tht-text">
-          <span className="tht-name">{name}</span>
-          <span className="tht-move">
-            {move ? <MoveLine name={move} type={battleMoveType(row.set, move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}
-            {mult && <span className="tht-mult">{mult}</span>}
-            {hit !== 'ko' && <b className="tht-pct">{hit.pct}<small>%</small></b>}
-          </span>
-        </span>
-      </div>
+      <TipHead sprite={row.species} title={row.species} badge={<KoBadge side="def" band={band} />} />
+      <TipSec>
+        <TipRows>
+          <TipRow className="tht-row" lead={<Sprite species={name} size={SPRITE_TIP_ROW} />} title={name}
+            sub={<>{move ? <MoveLine name={move} type={battleMoveType(row.set, move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}{eff && <span className="tip-eff">{eff}</span>}</>}
+            value={hit === 'ko' ? (koHit?.pct ? <TipDmg pct={koHit.pct} range={koHit.range} side="def" band="ohko" /> : <KoBadge side="def" band="ohko" />)
+              : <TipDmg pct={hit.pct} range={hit.range} side="def" band={band} immune={mult === 0} />} />
+        </TipRows>
+      </TipSec>
     </>
   );
 }

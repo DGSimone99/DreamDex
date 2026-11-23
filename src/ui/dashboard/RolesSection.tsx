@@ -9,7 +9,8 @@ import type { Density } from '../OverviewDashboard';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
-import { SPRITE_TIP } from '../spriteSizes';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
@@ -31,44 +32,47 @@ function useRoleText(chip: RoleChip) {
 }
 
 /**
- * Il tooltip DreamDex di un ruolo: il nome col suo livello e solo le sprite di chi lo copre (niente percentuali);
- * se manca, "Nessuno lo copre" in rosso (in grigio se non toglie punti).
+ * Il tooltip DreamDex di un ruolo: la testata unica (il tondo con la spunta o la ×, il nome del ruolo, sotto il livello; a
+ * destra quanti membri lo coprono, "4/6" col "del team" sotto come gli altri conti N/totale, o "Manca"), poi una riga per chi lo copre (sprite e nome, niente percentuali); se manca,
+ * "Nessuno lo copre" in rosso (in grigio se non toglie punti).
  */
-function RoleTip({ chip }: { chip: RoleChip }) {
+function RoleTip({ chip, total }: { chip: RoleChip; total: number }) {
   const t = useT();
   const lang = useLang();
+  const n = chip.owners.length;
   return (
     <>
-      <div className={`role-tip-head ${stateOf(chip)}`}>
-        <Icon name={chip.covered ? 'check' : 'close'} />
-        <b>{needLabel(chip.need, lang)}</b>
-        <small>{t(`rdetail.level.${chip.level}`)}</small>
-      </div>
-      {chip.covered
-        ? <div className="role-tip-mons">{chip.owners.map(name => (
-          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={SPRITE_TIP} /></span><span>{name}</span></span>
-        ))}</div>
-        : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
+      <TipHead lead={<TipGlyph icon={chip.covered ? 'check' : 'close'} />} title={needLabel(chip.need, lang)} sub={t(`rdetail.level.${chip.level}`)}
+        {...(chip.covered
+          ? { num: <>{n}<small>/{total}</small></>, qualifier: t('roleTip.ofTeam') }
+          : { badge: <span className="tip-kind">{t('roleTip.missing')}</span> })} />
+      <TipSec>
+        {chip.covered
+          ? <TipRows className="role-tip-mons">{chip.owners.map(name => (
+            <TipRow key={name} className="role-tip-mon" lead={<Sprite species={name} size={SPRITE_TIP_ROW} />} title={name} />
+          ))}</TipRows>
+          : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
+      </TipSec>
     </>
   );
 }
 
 /** I gestori del tooltip di un ruolo e il tooltip da rendere (uno per chip o riga). */
-function useRoleTip(chip: RoleChip) {
+function useRoleTip(chip: RoleChip, total: number) {
   const tip = useFloatAnchor<RoleChip>();
   const bind = tip.bind(chip);
   const node = tip.anchor && (
-    <FloatTip rect={tip.anchor.rect} tone={chip.covered ? 'var(--good)' : chip.soft ? 'var(--faint)' : 'var(--bad)'} className="role">
-      <RoleTip chip={chip} />
+    <FloatTip rect={tip.anchor.rect} tone={chip.covered ? 'var(--good)' : chip.soft ? 'var(--faint)' : 'var(--bad)'} className="tip-w-m role">
+      <RoleTip chip={chip} total={total} />
     </FloatTip>
   );
   return { bind, node };
 }
 
 /** Stretto e normale: un chip col solo segno e nome, su una riga (chi lo copre è nel tooltip DreamDex). */
-function RoleChipItem({ chip }: { chip: RoleChip }) {
+function RoleChipItem({ chip, total }: { chip: RoleChip; total: number }) {
   const { label, detail } = useRoleText(chip);
-  const tip = useRoleTip(chip);
+  const tip = useRoleTip(chip, total);
   return (
     // Raggiungibile con le frecce (data-nav: le fasce sono un posto solo nel giro del Tab); col fuoco il tooltip
     <li data-fit data-nav="" data-tap-tip className={`dash-role ${stateOf(chip)}`} {...tip.bind}>
@@ -86,7 +90,7 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
  * Almeno un ruolo c'è sempre (RoleBands); i nomi dei ruoli nascosti, coperti e mancanti, sono nel fumetto del "+N" e ai
  * lettori di schermo. Il "+N" si raggiunge con le frecce (col fuoco il fumetto).
  */
-function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; shown: number }) {
+function RoleBand({ title, chips, shown, total }: { title: string; chips: RoleChip[]; shown: number; total: number }) {
   const t = useT();
   const id = useId();
   const lang = useLang();
@@ -100,7 +104,7 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
       <span id={id} className="dash-level-name sum-sec-h">{title}</span>
       {/* Un ruolo solo e il "+N": sulla stessa riga, il nome si accorcia coi puntini se serve */}
       <ul className={`dash-role-list${shown === 1 && hidden > 0 ? ' one' : ''}`} aria-labelledby={id}>
-        {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} />)}
+        {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} total={total} />)}
         {hidden > 0 && (
           <li data-fit-more data-nav="" className="dash-role more" {...hint(moreText)}>
             <span className="more-n" aria-hidden="true">+{hidden}</span><span className="visually-hidden">{moreText}</span>
@@ -138,7 +142,7 @@ function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; 
   });
   return (
     <div ref={el => { ref(el); nav.ref.current = el; }} className="dash-role-bands dash-fit" onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
-      {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} shown={visible[i]} />)}
+      {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} shown={visible[i]} total={roles.members.length} />)}
     </div>
   );
 }

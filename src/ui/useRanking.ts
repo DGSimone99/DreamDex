@@ -146,6 +146,7 @@ class RankingClient {
       const [first] = this.workers;
       let primed: [string, GainValue][] = [];
       if (this.workers.length > 1) {
+        this.warm(params.team, params.lang, data);
         const { jobs } = await first.call<'plan'>({ kind: 'plan', params, data });
         primed = await this.gains(jobs, params.lang, params.archetype, data);
       }
@@ -155,6 +156,15 @@ class RankingClient {
       this.broken = true;
       return rank(input);
     }
+  }
+
+  /**
+   * Mentre il primo decide quali voti servono, gli altri calcolano già il voto di partenza del team: i suoi colpi restano
+   * in cache e i voti dei candidati, quando arrivano, partono caldi (prima aspettavano fermi e partivano da zero).
+   */
+  private warm(team: TeamSet[], lang: RankingParams['lang'], data: WorkerData) {
+    if (team.length === 0) return;
+    for (const worker of this.workers.slice(1)) worker.post({ kind: 'warm', team, lang, data });
   }
 
   /**
@@ -228,6 +238,7 @@ class RankingClient {
       const [first] = this.workers;
       let primed: [string, GainValue][] = [];
       if (this.workers.length > 1) {
+        this.warm(params.team, params.lang, data);
         const { jobs } = await first.call<'advicePlan'>({ kind: 'advicePlan', params, data });
         primed = await this.gains(jobs, params.lang, undefined, data);
       }

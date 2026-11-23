@@ -179,23 +179,28 @@ describe('Cruscotto della Panoramica', () => {
     // Nessun tooltip del browser sulle caselle: il dettaglio a parole resta nel nome
     expect(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ })).not.toHaveAttribute('title');
     await user.hover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
-    const off = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.offense'); if (!el) throw new Error('no tip'); return el; });
+    const off = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cov-tip.offense'); if (!el) throw new Error('no tip'); return el; });
     expect(off).toHaveAttribute('aria-hidden', 'true');
-    expect(off.querySelector('.ftip-head')).toHaveTextContent(/^(Fuoco|Fire)\s*90%$/);
-    const hits = off.querySelectorAll('.ftip-hit');
+    expect(off.querySelector('.tip-title')).toHaveTextContent(/^(Fuoco|Fire)$/);
+    expect(off.querySelector('.tip-head .tip-num')).toHaveTextContent(/^90%$/);
+    const hits = off.querySelectorAll('.cov-hit');
     expect(hits).toHaveLength(2);
     expect(hits[0]).toHaveTextContent('Great Tusk');
-    expect(hits[0].querySelector('.ftip-ko')).toHaveTextContent('2HKO');
-    expect(hits[0].querySelector('.ftip-pct')).toHaveTextContent('86%');
-    expect(hits[1].querySelector('.ftip-ko')).toHaveTextContent('3HKO');
+    expect(hits[0].querySelector('.ko-badge')).toHaveTextContent('2HKO');
+    // La riga di danno: il danno in Text (senza forbice qui: la casella non la porta, quindi è una stima, "≈"), la fascia in fondo a destra
+    expect(hits[0].querySelector('.tip-dmg-pct')).toHaveTextContent(/^≈86%$/);
+    expect(hits[0].querySelector('.tip-dmg > :last-child')).toHaveClass('ko-badge');
+    expect(off.querySelector('.tip-head .tip-qual')).toHaveTextContent('copertura');
+    expect(hits[1].querySelector('.ko-badge')).toHaveTextContent('3HKO');
     await user.unhover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
-    expect(document.querySelector('.ftip')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip')).toBeNull());
 
     await user.hover(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa:/ }));
-    const def = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.defense'); if (!el) throw new Error('no tip'); return el; });
-    const groups = [...def.querySelectorAll('.ftip-group')].map(g => g.querySelector('.ftip-group-label')!.textContent);
+    const def = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cov-tip.defense'); if (!el) throw new Error('no tip'); return el; });
+    const groups = [...def.querySelectorAll('.cov-group')].map(g => g.querySelector('.tip-sec-label')!.textContent);
     expect(groups).toEqual(['Immuni ×0', 'Deboli ×2']);
-    expect(def.querySelector('.ftip-group:last-of-type .ftip-ko')).toHaveTextContent('OHKO');
+    expect([...def.querySelectorAll('.cov-group')].at(-1)!.querySelector('.ko-badge')).toHaveTextContent('OHKO');
   });
 
   it('Copertura in inglese: righe Defense e Offense, anche in testata', () => {
@@ -410,7 +415,8 @@ describe('Cruscotto della Panoramica', () => {
     expect(removal).not.toHaveAttribute('title');
     await user.hover(removal);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.role'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip.querySelector('.role-tip-head')).toHaveTextContent(/Controllo Hazard\s*Essenziale/);
+    expect(tip.querySelector('.tip-head')).toHaveTextContent(/Controllo Hazard\s*Essenziale/);
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent('3');
     // Solo le sprite coi nomi, niente percentuali
     expect([...tip.querySelectorAll('.role-tip-mon')].map(m => m.textContent)).toEqual(['Great Tusk', 'Corviknight', 'Toxapex']);
     expect(tip).not.toHaveTextContent('%');
@@ -475,6 +481,70 @@ describe('Riassunto', () => {
     expect(arch.getAttribute('data-hint')).toContain('Attaccano: Garchomp 92, Zapdos 86 · Reggono: Toxapex 88');
     expect(region().querySelector('.sum-crew, .sum-mon')).toBeNull();
     expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campi', 'Trappole', 'Sinergie']);
+  });
+
+  it('Meteo e campi: chi lo porta, la condizione e chi ne approfitta; clic a Ruoli', async () => {
+    const user = userEvent.setup();
+    italianNames();
+    const { onView } = mount({ summary: summaryOf({ conditions: [{ member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [{ name: 'Barraskewda', via: 'Swift Swim' }, { name: 'Zapdos' }], via: 'Drizzle', item: 'Damp Rock' }] }) });
+    const row = within(section('Meteo e campi')).getByRole('button');
+    expect(row).toHaveTextContent('Pelipper');
+    expect(row.querySelector('.sum-cond')).toHaveTextContent('Pioggia');
+    const users = [...row.querySelectorAll<HTMLElement>('.sum-user')];
+    // Niente tooltip del browser sulle sprite: al loro posto il tooltip DreamDex della riga
+    expect(users.map(u => u.getAttribute('title'))).toEqual([null, null]);
+    expect(users[0].querySelector('.sprite')).not.toBeNull();
+    // I nomi letti anche dai lettori di schermo, con l'abilità o la mossa con cui la sfrutta, nella lingua dell'interfaccia
+    expect(row).toHaveAccessibleName(/Pelipper.*Pioggia.*Barraskewda · Nuotovelox.*Zapdos/);
+    // Passando sulla riga: la condizione, quanto dura, chi la porta, gli effetti per tutti e chi ne approfitta
+    await user.hover(row);
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cond'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveAttribute('aria-hidden', 'true');
+    expect(tip.querySelector('.tip-head')).toHaveClass('k-rain');
+    expect(tip.querySelector('.tip-title')).toHaveTextContent('Pioggia');
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent(/^8 turni grazie a (Rocciaumida|Damp Rock)$/);
+    expect(tip.querySelector('.ctip-setter')).toHaveTextContent(/^(Piovischio|Drizzle)$/);
+    // Gli effetti come le caselle della mossa: fascia col nome, il valore con la freccia nel tono, sotto per chi vale
+    const cells = [...tip.querySelectorAll('.mtip-stats.ctip-cells > .ctip-cell')];
+    expect(cells.map(c => c.className)).toEqual(['ctip-cell good', 'ctip-cell bad']);
+    expect(cells.map(c => c.querySelector('small')?.textContent)).toEqual(['Mosse Acqua', 'Mosse Fuoco']);
+    expect(cells.map(c => c.querySelector('.ctip-val')?.textContent)).toEqual(['50%', '50%']);
+    expect(cells.map(c => c.querySelector('.ctip-val path')?.getAttribute('d')?.startsWith('M12 19'))).toEqual([true, false]);
+    expect(cells.map(c => c.querySelector('.ctip-note')?.textContent)).toEqual(['per tutti', 'per tutti']);
+    // Chi ne approfitta: sezione con l'etichetta, una riga a testa con la sprite
+    expect(tip.querySelector('.ctip-users-sec .tip-sec-label')).toHaveTextContent('Chi ne approfitta');
+    const rows = [...tip.querySelectorAll('.ctip-users > .ctip-user')];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].querySelector('.ctip-mon .sprite')).not.toBeNull();
+    expect(rows[0]).toHaveTextContent(/Barraskewda\s*Nuotovelox\s*Velocità ×2/);
+    // Senza abilità né mossa: chi si potenzia (qui un utente senza via)
+    expect(rows[1]).toHaveTextContent('Zapdos');
+    await user.unhover(row);
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip')).toBeNull());
+    await user.click(row);
+    expect(onView).toHaveBeenCalledWith('roles');
+  });
+
+  it('Meteo e campi vuoto: "Nessuno"', () => {
+    mount();
+    expect(section('Meteo e campi')).toHaveTextContent(/^Meteo e campiNessuno$/);
+    expect(within(section('Meteo e campi')).queryByRole('button')).toBeNull();
+  });
+
+  it('Trappole: una chip per mossa, nella lingua dell\'interfaccia; vuoto: "Nessuna"', async () => {
+    initGameNames({ moves: { stealthrock: { name: 'Levitoroccia' }, spikes: { name: 'Punte' } }, abilities: {}, items: {}, types: {}, natures: {} });
+    const user = userEvent.setup();
+    const { onView } = mount({ summary: summaryOf({ hazards: [{ member: 'Ferrothorn', moves: ['Stealth Rock', 'Spikes'] }] }) });
+    const row = within(section('Trappole')).getByRole('button');
+    expect(row).toHaveTextContent('Ferrothorn');
+    // Le mosse come pillole: il nome tradotto, la potenza nella coda ("—" per le mosse di stato)
+    expect([...row.querySelectorAll('.mvp .mvp-nm')].map(c => c.textContent)).toEqual(['Levitoroccia', 'Punte']);
+    await user.click(row);
+    expect(onView).toHaveBeenCalledWith('roles');
+    cleanup();
+    mount({ summary: summaryOf({ hazards: [] }) });
+    expect(section('Trappole')).toHaveTextContent(/^TrappoleNessuna$/);
   });
 
   it('in inglese: Offense / Defense, Weather & fields, Hazards, None', () => {
@@ -564,13 +634,15 @@ describe('Riassunto', () => {
     expect(core.querySelector('.sum-pair-mon')).not.toHaveAttribute('data-hint');
     expect(core).toHaveAccessibleDescription(/Pelipper para Fuoco e Lotta, Ferrothorn para Elettro e Roccia/);
     await user.hover(core);
-    const tip = await screen.findByText('Acqua-Volante / Erba-Acciaio', { selector: '.core-tip-head b' });
-    expect([...tip.closest('.ftip')!.querySelectorAll('.core-tip-what > b')].map(b => b.textContent)).toEqual(['Pelipper', 'Ferrothorn']);
+    const tip = await screen.findByText('Acqua-Volante / Erba-Acciaio', { selector: '.tip-head .tip-title' });
+    // Lo stesso tooltip del core a tre (CoreTip): larghezza L, una riga per lato (chi para, col suo nome)
+    expect(tip.closest('.ftip')).toHaveClass('tip-w-l');
+    expect([...new Set([...tip.closest('.ftip')!.querySelectorAll('.core-tip-rows .tip-row-title')].map(b => b.textContent))]).toEqual(['Pelipper', 'Ferrothorn']);
     expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Ruoli e Bonus');
     await user.unhover(core);
     await user.tab();
     await act(async () => { core.focus(); });
-    expect(await screen.findByText('Acqua-Volante / Erba-Acciaio', { selector: '.core-tip-head b' })).toBeInTheDocument();
+    expect(await screen.findByText('Acqua-Volante / Erba-Acciaio', { selector: '.tip-head .tip-title' })).toBeInTheDocument();
   });
 
   it('Sinergie: tutti i core, prima il triangolo e poi la coppia (riga piccola); poi i legami nel loro ordine, senza pivot; clic: core a Bonus/Malus, legami a Ruoli', async () => {
@@ -874,7 +946,13 @@ describe('Cruscotto: misure', () => {
     await user.hover(syn.querySelector('.sum-sec-more')!);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.syn-more'); if (!el) throw new Error('no tip'); return el; });
     expect(tip).toHaveTextContent('Altre 3 sinergie');
-    expect(tip.querySelectorAll('.syn-more-list > li')).toHaveLength(3);
+    // Una sezione per sinergia, etichettata col genere e il titolo; righe con la sprite da 40, mai la catena di sprite
+    // piccole, la frase sotto il primo membro (non un paragrafo)
+    expect(tip.querySelectorAll('.tip-sec')).toHaveLength(3);
+    expect(tip.querySelectorAll('.tip-sec-label')[1]).toHaveTextContent(/^Baton Pass · /);
+    expect(tip.querySelectorAll('.tip-row .sprite').length).toBeGreaterThanOrEqual(3);
+    tip.querySelectorAll('.tip-row .sprite').forEach(s => expect(s).toHaveAttribute('width', '40'));
+    expect(tip.querySelector('.sum-link, p')).toBeNull();
     expect(tip).toHaveTextContent('Hatterene fa entrare Iron Valiant');
   });
 
@@ -1024,9 +1102,20 @@ describe('Copertura › schede Tipi e Meta', () => {
     await user.tab();
     await act(async () => { zama.focus(); });
     const tip = await screen.findByText(/Lo manda KO solo Iron Valiant/, { selector: '.thr-tip li' }, { timeout: 1000 });
+    const ftip = tip.closest('.ftip')!;
+    // Lo stesso tooltip di ogni minaccia (ThreatTip): la sprite e il nome in testata, sotto lo stato, larghezza M
+    expect(ftip).toHaveClass('tip-w-m');
+    expect(ftip.querySelector('.tip-head.has-sprite')).toHaveTextContent('Zamazenta');
+    expect(ftip.querySelector('.tip-sub')).toHaveTextContent('Minaccia con un solo check');
+    // I due lati, prima quello che il clic apre, ognuno con lo scudo o la spada
     expect([...tip.closest('ul')!.querySelectorAll('li')].map(li => li.textContent)).toEqual(['Offesa Lo manda KO solo Iron Valiant', 'Difesa Lo gestiscono 2 o più membri']);
-    expect(tip.closest('.ftip')).toHaveTextContent('14,8% nel meta');
-    expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Offesa › Coverage meta');
+    expect([...tip.closest('ul')!.querySelectorAll('li')].map(li => li.className)).toEqual(['thin', 'ok']);
+    expect(tip.querySelector('.icon')).not.toBeNull();
+    // L'uso nel meta a destra della testata: il numero, sotto la parola che lo spiega
+    expect(ftip.querySelector('.tip-num')).toHaveTextContent('14,8%');
+    expect(ftip.querySelector('.tip-qual')).toHaveTextContent('nel meta');
+    // In fondo dove porta il clic sulla piastrella (TipGo)
+    expect(ftip.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Offesa › Coverage meta');
     expect(tile(/^Raging Bolt/)).toHaveAccessibleDescription('Clic: vai a Difesa › Coverage meta');
   });
 

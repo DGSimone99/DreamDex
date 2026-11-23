@@ -281,7 +281,6 @@
 .nature-fx .down { color: var(--bad); }
 .faint { color: var(--faint); }
 /* Il tooltip di una scelta di Completa team: il nome nella testata, la frase sotto (largo come i tooltip piccoli) */
-.ftip.fill-option-tip { width: var(--tip-s); }
 
 /*
  * Computer (2026-11-21): Completa team è una finestra al centro dello schermo, come le altre (Come funziona il voto,

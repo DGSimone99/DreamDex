@@ -329,9 +329,8 @@
 /* Un membro solo: i buchi sono normali, grigi e tratteggiati come i ruoli che non tolgono punti (niente allarme) */
 .dash .dash-cell.soft { background: none; color: var(--faint); border-style: dashed; border-color: var(--line); }
 
-/* Il tooltip di una minaccia (scheda Meta della Copertura): nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
-.ftip.thr-tip { width: var(--tip-s); }
-.thr-tip-use { margin-left: auto; white-space: nowrap; font: 700 italic var(--tip-small)/1 var(--display); color: var(--muted); }
+/* Il tooltip di una minaccia (ThreatTip, scheda Meta della Copertura e pillole dei problemi): le ragioni intere col filo nel colore del caso */
+.ftip.thr-tip { width: var(--tip-m); }
 .thr-tip-why { display: grid; gap: var(--sp-2); margin: 0; padding: 9px var(--sp-5); list-style: none; }
 .thr-tip-why li { padding-left: 9px; border-left: 2px solid var(--warn); }
 .thr-tip-why li.open { border-left-color: var(--bad); }
