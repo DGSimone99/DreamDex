@@ -811,6 +811,12 @@ describe('Cruscotto: misure', () => {
     expect(rule('.dash-role-bands, .dash-role-bands.dash-fit')).toMatch(/flex: 0 1 auto/);
   });
 
+  it('tablet (CSS): le Sinergie alte quanto il contenuto, nessuna nascosta (niente altezza fissa della lista)', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/phone-analysis.css'), 'utf8');
+    const block = css.slice(css.indexOf('Tablet: la pagina scorre, il Riassunto'));
+    expect(block).toMatch(/@media \(min-width: 600px\) and \(max-width: 1099px\) \{\s*\.dash-summary \.sum-syn-sec \.sum-lines, [^{]+\{ height: auto; container-type: normal; \}/);
+  });
+
   it('Ruoli: se il "+N" sta sulla stessa riga non si toglie nessun ruolo', () => {
     stubLayout({ 'dash-roles': { box: 75, item: 30, inline: true } });
     mount({ density: 'tight', data: sample({ roles: essentialsOnly }) });

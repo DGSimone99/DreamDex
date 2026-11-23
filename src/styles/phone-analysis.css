@@ -254,6 +254,12 @@
   .dash-summary .sum-syn-sec .sum-lines { flex: none; height: 150px; }
   .dash-summary .sum-syn-sec .sum-lines:has(.sum-duo) { height: 190px; }
 }
+/* Tablet: la pagina scorre, il Riassunto è alto quanto il suo contenuto: tutte le Sinergie, nessuna nel "+N" né sotto
+   le frecce. La lista non è più un contenitore a misura fissa: i triangoli prendono la loro misura piena */
+@media (min-width: 600px) and (max-width: 1099px) {
+  .dash-summary .sum-syn-sec .sum-lines, .dash-summary .sum-syn-sec .sum-lines:has(.sum-duo) { height: auto; container-type: normal; }
+  .dash-summary .sum-syn-sec .sum-lines > li:has(.sum-duo) { height: 190px; }
+}
 
 /* ── Col dito (anche il tablet orizzontale da 1180): l'interruttore Tipi | Meta e i link delle testate si toccano su 44 px,
    senza cambiare come appaiono ── */
