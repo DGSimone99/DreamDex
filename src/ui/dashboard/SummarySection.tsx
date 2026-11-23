@@ -172,6 +172,14 @@ function useSynergyView() {
   };
 }
 
+/** La frase con i nomi dei Pokémon in grassetto 600, dritti come i nomi delle righe (e come nelle righe dei tipi parati). */
+function NamesIn({ text, names }: { text: string; names: string[] }) {
+  const unique = [...new Set(names.filter(Boolean))].sort((a, b) => b.length - a.length);
+  if (!unique.length || !text) return <>{text}</>;
+  const pattern = new RegExp(`(${unique.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+  return <>{text.split(pattern).map((part, i) => (i % 2 ? <b key={i}>{part}</b> : part))}</>;
+}
+
 /**
  * Una riga delle Sinergie. Il core da 3 è il triangolo; il resto due sprite unite da un anello "catena" nel colore del
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
@@ -202,7 +210,7 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
             </span>
             <span className="sum-syn-body">
               <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{view.title}</strong></span>
-              <span id={desc} className="sum-syn-text">{view.text}</span>
+              <span id={desc} className="sum-syn-text"><NamesIn text={view.text} names={view.mons} /></span>
             </span>
           </>
         )}
@@ -363,7 +371,8 @@ export function SummarySection({ summary, members, grade, density, rich = false,
   ];
   const keyOf = (parts: string[]) => `${lang}|${density}|${rich}|${parts.join()}`;
   const small = rich ? 44 : 34;
-  const mini = rich ? 38 : 28;
+  // Chi ne approfitta: grandi come le sprite delle righe (due misure sole nel Riassunto: righe e vertici del triangolo)
+  const mini = small;
 
   // Chi rende il team tale (attaccanti con l'Offesa, muri con la Difesa): niente riga di sprite (ripeteva la squadra in alto),
   // sta nel suggerimento sul nome del tipo di team

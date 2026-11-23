@@ -443,8 +443,8 @@
  * delle righe), --sum-line (altezza minima di una riga). Ricca (team ridotto): sprite più grandi; le Sinergie prendono
  * l'altezza che resta e le loro righe crescono fino a un tetto, così sotto non resta un vuoto.
  */
-.dash-summary { --sum-small: 34px; --sum-mini: 28px; --sum-line: 36px; --sum-arch: 24px; }
-.dash.tight .dash-summary { --sum-small: 30px; --sum-mini: 24px; --sum-line: 32px; --sum-arch: 20px; }
+.dash-summary { --sum-small: 34px; --sum-mini: 34px; --sum-line: 36px; --sum-arch: 24px; }
+.dash.tight .dash-summary { --sum-small: 30px; --sum-mini: 30px; --sum-line: 32px; --sum-arch: 20px; }
 /* Cruscotto basso (portatili): sezioni più vicine e il triangolo delle sinergie più basso, così il Riassunto ci sta */
 .dash.tight .sum-sec { padding-top: 5px; }
 .dash.tight .sum-none, .dash.tight .sum-sec-more { top: 9px; }
@@ -464,12 +464,12 @@
   .dash.tight .sum-tri { --tri-w: clamp(68px, calc((100cqh - 12px) * 150 / 128), 118px); --tri-badge: calc(var(--ti-chip) + 3px); }
   .dash.tight .sum-syn.trio { padding-block: 0; }
   .dash.tight .sum-cover { margin-top: var(--sp-1); gap: 1px; }
-  .dash.tight .sum-cover > span { font-size: var(--fs-caption); line-height: 1.1; }
+  .dash.tight .sum-cover > span { line-height: 1.1; }
   .dash.tight .sum-cover img { width: calc(var(--ti-inline) - 2px); height: calc(var(--ti-inline) - 2px); }
   .dash.tight .sum-sec-h { padding-bottom: 3px; }
 }
 
-.dash.rich .dash-summary { --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
+.dash.rich .dash-summary { --sum-small: 44px; --sum-mini: 44px; --sum-line: 48px; --sum-arch: 30px; }
 .sum-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 /* Eroe: righe diagonali leggere e una sfumatura dall'alto nel colore del voto del team (S magenta, A verde, B ciano,
@@ -604,6 +604,8 @@
 .dash.rich .sum-syn-title { font-size: var(--fs-section); }
 /* Nelle frasi i nomi sono grandi come i nomi delle righe di sopra (.sum-name): 14 nel Riassunto ricco largo, se no 13 */
 @media (min-width: 1321px) { .dash.rich .sum-syn-text { font-size: var(--fs-section); } }
+/* I nomi nelle frasi: dritti 600 come i nomi delle righe */
+.sum-syn-text b { font-weight: 600; color: var(--text); }
 
 /* Core da 3 a triangolo (sinergie-trio, opzione A): sprite ai vertici su un piedistallo verde, frecce del giro, tipo parato su ogni lato */
 .sum-syn.trio { padding: var(--sp-2) var(--sp-2) var(--sp-2) 0; }
@@ -629,6 +631,8 @@
 .sum-tri-v { position: absolute; display: flex; transform: translate(-50%, -50%); }
 .sum-tri-v::before { content: ""; position: absolute; left: 50%; bottom: 8%; width: 74%; height: 18%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
 .sum-tri-v .sprite { position: relative; display: block; width: calc(var(--tri-w) * 0.345); height: auto; image-rendering: pixelated; }
+/* Nel Riassunto le sprite dei vertici (la misura "in scena") mai sotto i 30px, anche col triangolo stretto dei portatili bassi */
+.dash .sum-tri-v .sprite { width: max(30px, calc(var(--tri-w) * 0.345)); }
 /* L'icona tonda del tipo riempie tutto il cerchio dentro l'anello verde (niente fondo che si vede attorno) */
 /* Il badge è l icona del tipo (misura --ti-*) più il bordo verde da 1,5px per lato: --tri-badge = icona + 3px */
 .sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; overflow: hidden; }
@@ -655,7 +659,9 @@
 .sum-cover img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .sum-cover b { font-weight: 600; color: var(--text); }
 .dash.rich .sum-cover { gap: var(--sp-3); }
-.dash.rich .sum-cover > span { font-size: var(--fs-caption); }
+/* Ricco: le righe dei tipi parati grandi come i nomi delle righe (14, 13 sotto i 1321px) */
+.dash.rich .sum-cover > span { font-size: var(--fs-section); }
+@media (max-width: 1320px) { .dash.rich .sum-cover > span { font-size: var(--fs-small); } }
 
 /*
  * Lo stesso alone del piedistallo delle Minacce sotto gli altri sprite "in scena": le corsie della Velocità, la testata
@@ -918,7 +924,7 @@
 .dash-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .dash-tabs .icon { width: 15px; height: 15px; }
 .dash-tab-trio { display: inline-flex; }
-.dash-tab-trio img { width: 13px; height: 13px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--field); }
+.dash-tab-trio img { width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; box-shadow: 0 0 0 1.5px var(--field); }
 .dash-tab-trio img + img { margin-left: -5px; }
 .dash-tabs [role='tab'][aria-selected='false'] :is(.dash-tab-trio, .icon) { opacity: 0.6; filter: saturate(0.6); }
 @media (prefers-reduced-motion: reduce) { .dash-tabs::before { transition: none; } }
