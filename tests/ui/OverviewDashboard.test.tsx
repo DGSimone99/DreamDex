@@ -498,6 +498,37 @@ describe('Riassunto', () => {
     expect(row).toHaveAccessibleDescription('Garchomp para Fuoco a Scizor, Scizor para Acciaio a Iron Valiant, Iron Valiant para Drago a Garchomp Clic: vai a Ruoli e Bonus');
   });
 
+  it('Sinergie: cruscotto basso su uno schermo basso, il core da 3 è una riga come quella da 2 (tre sprite e la catena); due core a tre non si affiancano', () => {
+    italianNames();
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('max-height: 759px'), media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      const second: Core = { ...trio, members: ['Pelipper', 'Ferrothorn', 'Heatran'] };
+      mount({ density: 'tight', summary: summaryOf({ cores: [trio, second] }) });
+      const rows = within(section('Sinergie')).getAllByRole('button');
+      expect(rows).toHaveLength(2);
+      const [row] = rows;
+      expect(section('Sinergie').querySelector('.sum-tri, .sum-duo')).toBeNull();
+      expect(row).toHaveClass('trio-row');
+      expect(row).not.toHaveClass('trio');
+      expect(row.querySelectorAll('.sum-pair .sprite')).toHaveLength(3);
+      expect(row.querySelectorAll('.sum-pair .sum-link')).toHaveLength(2);
+      expect(row.querySelector('.sum-syn-tag')).toHaveTextContent('Core');
+      expect(row.querySelector('.sum-syn-title')).toHaveTextContent('Drago / Acciaio / Folletto');
+      // Chi para cosa: non a vista (è nel tooltip del core), ma letto ai lettori di schermo come col triangolo
+      expect(row.querySelector('.sum-syn-text')).toBeNull();
+      expect(row).toHaveAccessibleName('Core Drago / Acciaio / Folletto');
+      expect(row).toHaveAccessibleDescription('Garchomp para Fuoco a Scizor, Scizor para Acciaio a Iron Valiant, Iron Valiant para Drago a Garchomp Clic: vai a Ruoli e Bonus');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('Sinergie: cruscotto basso su uno schermo alto, il triangolo resta', () => {
+    italianNames();
+    mount({ density: 'tight', summary: summaryOf({ cores: [trio] }) });
+    expect(within(section('Sinergie')).getByRole('button').querySelector('.sum-tri')).not.toBeNull();
+  });
+
   it('Sinergie: il core da 2 (senza core da 3) è una riga a due sprite con etichetta, titolo e frase; i pivot non compaiono', () => {
     italianNames();
     mount({ summary: summaryOf({ cores: [pair], links: [pivotLink] }) });

@@ -645,8 +645,6 @@
 .sum-tri-v { position: absolute; display: flex; transform: translate(-50%, -50%); }
 .sum-tri-v::before { content: ""; position: absolute; left: 50%; bottom: 8%; width: 74%; height: 18%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
 .sum-tri-v .sprite { position: relative; display: block; width: calc(var(--tri-w) * 0.345); height: auto; image-rendering: pixelated; }
-/* Nel Riassunto le sprite dei vertici (la misura "in scena") mai sotto i 30px, anche col triangolo stretto dei portatili bassi */
-.dash .sum-tri-v .sprite { width: max(30px, calc(var(--tri-w) * 0.345)); }
 /* L'icona tonda del tipo riempie tutto il cerchio dentro l'anello verde (niente fondo che si vede attorno) */
 /* Il badge è l icona del tipo (misura --ti-*) più il bordo verde da 1,5px per lato: --tri-badge = icona + 3px */
 .sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; overflow: hidden; }

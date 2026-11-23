@@ -5,6 +5,7 @@ import type { TeamLink } from '../../engine/teamLinks';
 import type { ConditionRow, HazardRow, TeamSummary } from '../../engine/teamSummary';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
+import { SHORT_SCREEN, useMediaQuery } from '../useMediaQuery';
 import type { AnalysisView } from '../analysisView';
 import type { BonusMalusPiece } from '../BonusMalusView';
 import { TeamTypeHelp } from '../CoachPanel';
@@ -183,20 +184,25 @@ function NamesIn({ text, names }: { text: string; names: string[] }) {
 /**
  * Una riga delle Sinergie. Il core da 3 è il triangolo; il resto due sprite unite da un anello "catena" nel colore del
  * legame (una sola per Desiderio), l'etichetta, il titolo e la frase in grigio. Nome: etichetta e titolo; descrizione:
- * la frase (o il giro del triangolo letto in parole).
+ * la frase (o il giro del triangolo letto in parole). `flat`: senza posto per un triangolo leggibile il core da 3 è una
+ * riga come quella da 2 (tre sprite unite dalla catena, CORE e il titolo); chi para cosa resta nel tooltip del core.
  */
-function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void;
+function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = false, flat = false }: { syn: Synergy; view: SynergyView; rich: boolean; small: number; onClick: () => void;
   /** I gestori del tooltip del core (mouse e fuoco da tastiera); senza, le sprite hanno il fumetto col nome. */
   hover?: HTMLAttributes<HTMLButtonElement>;
   /** La descrizione di dove porta il clic (col tooltip: il suo piede TipGo), dopo la frase. */
   goId?: string;
   /** Un core da 3 dopo il primo: triangolo piccolo anche col team ridotto. */
-  second?: boolean }) {
+  second?: boolean;
+  flat?: boolean }) {
+  const t = useT();
+  const lang = useLang();
   const desc = useId();
+  const trioRow = view.trio && !!syn.core && flat;
   return (
-    <button type="button" className={`sum-syn${view.trio ? ' trio' : ''}`} style={{ '--c': view.color } as CSSProperties}
+    <button type="button" className={`sum-syn${view.trio && !flat ? ' trio' : ''}${trioRow ? ' trio-row' : ''}`} style={{ '--c': view.color } as CSSProperties}
       aria-label={`${view.tag} ${view.title}`} aria-describedby={goId ? `${desc} ${goId}` : desc} onClick={onClick} {...hover}>
-      {view.trio && syn.core
+      {view.trio && syn.core && !flat
         ? <CoreTriangle core={syn.core} size={rich && !second ? 'roomy' : 'normal'} descId={desc} />
         : (
           <>
@@ -208,10 +214,22 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
                 </span>
               ))}
             </span>
-            <span className="sum-syn-body">
-              <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{view.title}</strong></span>
-              <span id={desc} className="sum-syn-text"><NamesIn text={view.text} names={view.mons} /></span>
-            </span>
+            {trioRow && syn.core
+              ? (
+                <span className="sum-syn-body">
+                  {/* A capo solo fra un membro e l'altro, come nel triangolo */}
+                  <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{coreParts(syn.core, lang).map((part, i) => <Fragment key={i}>{i > 0 && ' / '}<span className="sum-core-part">{part}</span></Fragment>)}</strong></span>
+                  <span id={desc} className="visually-hidden">
+                    {syn.core.sides.map(side => t('sum.parryTo', { name: side.from, type: typeName(side.type, lang), to: side.to })).join(', ')}
+                  </span>
+                </span>
+              )
+              : (
+                <span className="sum-syn-body">
+                  <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{view.title}</strong></span>
+                  <span id={desc} className="sum-syn-text"><NamesIn text={view.text} names={view.mons} /></span>
+                </span>
+              )}
           </>
         )}
     </button>
@@ -329,15 +347,19 @@ export function SummarySection({ summary, members, grade, density, rich = false,
   const places = { roles: t('area.roles'), bonusMalus: t('analysis.view.bonusMalus') };
   // Tutti i core: prima quelli da 3 (il primo col triangolo grande), poi quelli da 2 (riga piccola). Poi i legami, senza i pivot
   const trios = cores.filter(core => core.members.length === 3);
+  // Cruscotto basso su uno schermo basso (1280×620, 1366×657 col team aperto): niente posto per un triangolo leggibile, i
+  // core a tre sono righe come quelli a due (tre sprite unite dalla catena); il triangolo resta nelle altre densità
+  const short = useMediaQuery(SHORT_SCREEN);
+  const flat = density === 'tight' && short;
   // Due o più core a tre: i primi due affiancati in una riga (solo triangolo e titolo), così stanno entrambi nella card
-  const duo: Synergy[] = trios.length >= 2 ? [{ duo: [trios[0], trios[1]] }] : [];
+  const duo: Synergy[] = trios.length >= 2 && !flat ? [{ duo: [trios[0], trios[1]] }] : [];
   const synergies: Synergy[] = [
     ...duo,
     ...trios.slice(duo.length * 2).map(core => ({ core })),
     ...cores.filter(core => core.members.length !== 3).map(core => ({ core })),
     ...links.filter(link => link.kind !== 'pivot').map(link => ({ link })),
   ];
-  const keyOf = (parts: string[]) => `${lang}|${density}|${rich}|${parts.join()}`;
+  const keyOf = (parts: string[]) => `${lang}|${density}|${rich}|${flat}|${parts.join()}`;
   const small = rich ? 44 : 34;
   // Chi ne approfitta: grandi come le sprite delle righe (due misure sole nel Riassunto: righe e vertici del triangolo)
   const mini = small;
@@ -474,7 +496,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
             const view = synergyView(syn);
             // Sui core (a tre e a due): il tooltip con quanto regge chi para ogni tipo e chi protegge, anche col fuoco da tastiera
             const hover = syn.core ? coreTip.bind(syn.core) : undefined;
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} flat={flat} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>
