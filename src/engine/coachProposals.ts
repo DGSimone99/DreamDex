@@ -92,6 +92,23 @@ export function proposalGroups(problems: CoachProblem[], advice: Pick<CoachAdvic
   });
 }
 
+/**
+ * Le proposte che non alzano il voto (±0 o meno) non hanno una riga loro: vanno fra le alternative della prima riga che
+ * alza il voto e risolve il loro problema principale (scelta di Simone, 2026-11-23). Senza una riga così restano in coda
+ * alla lista (sono l'unico modo di risolvere quel problema con un cambio solo).
+ */
+export function neutralAsAlternatives(groups: ProposalGroup[]): ProposalGroup[] {
+  const up = groups.filter(g => g.options[0].fix.gain > 0).map(g => ({ ...g, options: [...g.options] }));
+  const left: ProposalGroup[] = [];
+  for (const g of groups) {
+    if (g.options[0].fix.gain > 0) continue;
+    const host = g.lead ? up.find(h => h.options[0].fix.solves.includes(g.lead!)) : undefined;
+    if (host) host.options.push(...g.options.slice(0, Math.max(0, MAX_ALTERNATIVES + 1 - host.options.length)));
+    else left.push(g);
+  }
+  return [...up, ...left];
+}
+
 /** I problemi che almeno una proposta del Coaching risolve (le pillole delle aree sono link solo per loro). */
 export function solvedKeys(advice: Pick<CoachAdvice, 'fixes' | 'moves'>): Set<string> {
   return new Set([...advice.fixes, ...(advice.moves ?? [])].flatMap(f => f.solves));

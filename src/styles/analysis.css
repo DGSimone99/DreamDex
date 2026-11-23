@@ -733,8 +733,8 @@
 @keyframes dash-in { from { opacity: 0; transform: translateY(6px); } }
 
 /*
- * Coaching: una lista sola di proposte, dalla più utile. In cima la riga verde delle aree senza problemi, poi il titolo
- * con le pagine a destra, poi le righe (alte uguali, 112px; anche lo scheletro). Scorre dentro solo se serve.
+ * Coaching, "Diagnosi → Cura": la colonna dei problemi e la colonna delle proposte (la carta grande, poi la lista).
+ * Gli stati vuoti (team a posto, nessun cambio singolo) restano una colonna sola. Scorre dentro solo se serve.
  */
 .coaching { container: coaching / size; display: flex; flex-direction: column; gap: var(--sp-3); height: 100%; min-height: 0; padding-bottom: 0; overflow: hidden auto; overscroll-behavior: contain; }
 .coach-sec { display: flex; align-items: center; gap: var(--sp-4); margin: 0; font: 700 var(--fs-small)/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
@@ -750,164 +750,209 @@
 .coach-list-head .coach-sec { position: relative; flex: 1; min-width: 0; padding: 4px 24px 4px 9px; font: 600 var(--fs-small)/1.2 var(--display); font-style: normal; text-transform: none; letter-spacing: 0.01em; color: var(--text);
   background: linear-gradient(90deg, var(--champ-band), transparent 70%); }
 .coach-list-head .coach-sec::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
-/* La lista ha l'altezza che resta: quante righe ci stanno lo conta useRowsPerPage (fino a 4) */
-.coach-list-box { --row-h: 144px; --row-gap: 8px; --cols: 2; flex: 1; min-height: 0; }
-.coach-rows { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: var(--row-h);
-  grid-template-rows: repeat(var(--rows, 1), minmax(var(--row-h), 1fr)); height: 100%; gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
+/* ── Diagnosi → Cura: a sinistra i problemi del team (una volta sola, col numero di proposte), a destra la carta grande
+   della proposta scelta e sotto le altre in righe compatte. Margine sotto come le altre schede ── */
+.coaching.coach-cure { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: stretch; gap: var(--sp-6); padding-bottom: var(--sp-8); overflow: hidden; }
 
-/* La carta (due per fila): la zona del Pokémon a sinistra, alta quanto la carta; a destra in alto il titolo (chi entra, o
-   le due mosse) col voto in più, Applica e la lente; sotto cosa cambia, per area */
-.coach-row { position: relative; margin: 0; display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); min-width: 0; background: var(--panel); }
-.coach-row.skeleton { border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
-.coach-row.is-open { z-index: 3; }
-/* Aperta da un problema nella testata di un'area: un anello ciano che si spegne in 2 secondi */
-.coach-row.is-flash { animation: coach-flash 2s ease-out forwards; }
+/* La diagnosi: un pannello con la fascia del titolo, i problemi come righe-pulsante (filtrano la lista), le aree pulite in fondo */
+.coach-diag { display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; padding: var(--sp-5) var(--sp-4) var(--sp-4); background: var(--panel); }
+.coach-diag-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
+.coach-diag-head { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-4); margin: 0; padding: 4px 24px 4px 9px;
+  font: 600 var(--fs-small)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text); background: linear-gradient(90deg, var(--champ-band), transparent 70%); }
+.coach-diag-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
+.coach-diag-head .coach-count { padding: 1px var(--sp-4); line-height: 14px; }
+/* La lista dei problemi va a pagine (righe alte uguali, --row-h): niente colonna lunga che scorre */
+.coach-diag-box { --row-h: 46px; --row-gap: 3px; flex: 1; min-height: 0; }
+.coach-diag-list { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 2px; list-style: none; }
+.coach-diag-list > li { display: flex; margin: 0; }
+.coach-diag-item { flex: 1; display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); min-width: 0; padding: 0 var(--sp-4) 0 var(--sp-5);
+  border: 0; border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--raised) 40%, transparent); color: var(--text); font: 500 var(--fs-small)/1.2 var(--ui); text-align: left; cursor: pointer;
+  box-shadow: inset 0 0 0 1px transparent; transition: background 0.15s var(--ease), box-shadow 0.15s var(--ease); }
+.coach-diag-item:nth-child(n) { min-width: 0; }
+.coach-diag-item .icon { width: 14px; height: 14px; }
+.coach-diag-item.serious .icon { color: var(--bad); }
+.coach-diag-item.minor .icon { color: var(--warn); }
+.coach-diag-item.is-all { grid-template-columns: minmax(0, 1fr) auto; font-weight: 600; }
+.coach-diag-item:not(:disabled):hover { background: var(--raised); box-shadow: inset 0 0 0 1px var(--control-line); }
+/* Il filtro scelto: lavoro/selezione = ciano */
+.coach-diag-item.is-on { background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.coach-diag-item:disabled { cursor: default; color: var(--muted); background: transparent; }
+/* Il problema su due righe al più (va a capo invece di tagliarsi a metà parola) */
+.coach-diag-text { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.25; }
+.coach-diag-text .coach-prob-text { display: inline; overflow: visible; white-space: normal; }
+.coach-diag-text .coach-prob-text .type-icons, .coach-diag-text .coach-prob-text .mon-icon { vertical-align: middle; }
+.coach-diag-text .coach-prob-text .type-icons { margin-right: var(--sp-2); }
+.coach-diag-text .coach-prob-text.is-threat .mon-icon { margin: -10px -2px -8px -6px; }
+/* Un blocco: i problemi con la stessa proposta migliore, dentro una cornice sottile; in testa chi li risolve tutti */
+.coach-diag-list > li.in-block { position: relative; padding: 0 4px; background: color-mix(in srgb, var(--raised) 22%, transparent); box-shadow: inset 1px 0 0 var(--line), inset -1px 0 0 var(--line); }
+.coach-diag-list > li.in-block.is-head { padding-top: 4px; border-radius: 7px 2px 0 0; box-shadow: inset 1px 0 0 var(--line), inset -1px 0 0 var(--line), inset 0 1px 0 var(--line); }
+.coach-diag-list > li.in-block.is-last { padding-bottom: 4px; margin-bottom: var(--sp-3); border-radius: 0 0 7px 2px; box-shadow: inset 1px 0 0 var(--line), inset -1px 0 0 var(--line), inset 0 -1px 0 var(--line); }
+.coach-diag-cure { flex: 1; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); min-width: 0; padding: 0 var(--sp-5) 0 var(--sp-2);
+  border: 0; border-radius: var(--alt-r-sm); cursor: pointer; color: var(--text); text-align: left;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 34%, var(--panel)), color-mix(in srgb, var(--t1) 8%, var(--panel)) 70%);
+  box-shadow: inset 0 0 0 1px transparent; transition: box-shadow 0.15s var(--ease); }
+.coach-diag-cure:hover { box-shadow: inset 0 0 0 1px var(--control-line); }
+.coach-diag-cure.is-open { box-shadow: inset 0 0 0 1px var(--accent); }
+.coach-diag-cure-mon { display: flex; justify-content: center; }
+.coach-diag-cure-mon .mon-icon { margin: -8px -6px; }
+.coach-diag-cure-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.coach-diag-cure-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-section)/1.1 var(--display); }
+.coach-diag-cure-text small { font-size: var(--fs-caption); color: color-mix(in srgb, var(--text) 75%, var(--t1)); }
+.coach-diag-cure-gain { font: italic 800 var(--fs-title-l)/1 var(--display); color: var(--good); }
+.coach-diag-item.in-block { background: color-mix(in srgb, var(--raised) 30%, transparent); }
+.coach-diag-top .help-button { flex: none; }
+.coach-guide { display: grid; gap: var(--sp-8); max-width: 640px; }
+.coach-guide h4 { margin: 0 0 var(--sp-3); font: italic 700 var(--fs-title)/1.1 var(--display); color: var(--text); }
+.coach-guide p { margin: 0; font-size: var(--fs-body); line-height: 1.5; color: var(--muted); }
+/* Lo risolve la proposta nella carta grande: spunta e fondo verdi */
+.coach-diag-item.is-cured { background: color-mix(in srgb, var(--good) 10%, var(--panel)); }
+.coach-diag-item.is-cured > .icon { color: var(--good); }
+.coach-diag-item.is-cured .coach-prob-text * { color: inherit; }
+.coach-diag-n { min-width: 22px; padding: 2px var(--sp-3); border-radius: 10px; font: 700 var(--fs-caption)/1 var(--ui); text-align: center; color: var(--text); background: var(--raised); font-variant-numeric: tabular-nums; }
+.coach-diag-item.is-on .coach-diag-n { color: var(--on-accent); background: var(--accent); }
+.coach-diag-item:disabled .coach-diag-n { background: none; color: var(--faint); }
+.coach-diag-clean .coach-clean { padding: var(--sp-3) var(--sp-4); font-size: var(--fs-small); background: color-mix(in srgb, var(--good) 8%, transparent); border-radius: var(--alt-r-sm); flex-wrap: wrap; }
+
+/* La colonna della cura: la fascia "La proposta migliore", la carta grande, poi la lista */
+.coach-hero-band { margin-bottom: calc(-1 * var(--sp-3)); }
+.coach-list-head .coach-sec .coach-back { margin-left: var(--sp-4); }
+.coach-back { display: inline-flex; align-items: center; gap: var(--sp-2); height: 24px; padding: 0 var(--sp-4); border: 1px solid var(--line); border-radius: var(--alt-r-sm);
+  background: none; color: var(--muted); font: 600 var(--fs-caption)/1 var(--ui); white-space: nowrap; cursor: pointer; }
+.coach-back:hover { border-color: var(--accent); color: var(--text); }
+.coach-back .icon { width: 12px; height: 12px; }
+.coach-main { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; min-height: 0; }
+
+/* La carta grande: zona del Pokémon (come le carte Pedana) e il corpo: titolo e voto, Risolve | Costa, azioni */
+.coach-hero { position: relative; flex: none; display: grid; grid-template-columns: 188px minmax(0, 1fr); min-height: 236px; background: var(--panel); }
+.coach-hero.skeleton { border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
+.coach-hero.is-flash { animation: coach-flash 2s ease-out forwards; }
 @keyframes coach-flash {
   0%, 60% { box-shadow: inset 0 0 0 2px var(--accent); }
   100% { box-shadow: inset 0 0 0 2px transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .coach-row.is-flash { animation: none; box-shadow: inset 0 0 0 1px var(--accent); }
+  .coach-hero.is-flash { animation: none; box-shadow: inset 0 0 0 1px var(--accent); }
 }
-
-/* .coach-art tiene insieme zona e titolo per chi legge (e per i test); i due pezzi stanno nella griglia della carta */
-.coach-art { display: contents; }
-
-/* Zona del Pokémon, come le carte Pedana: la luce del primo tipo che scende dall'alto, il Pokémon in piedi sulla pedana;
-   chi esce piccolo e spento nell'angolo col ⇄. Squadrata come le carte (niente taglio obliquo: quello è delle testate) */
-.coach-pad { grid-row: 1 / span 2; position: relative; overflow: hidden; min-width: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 30%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 8%, var(--panel)) 78%);
+.coach-pad { position: relative; overflow: hidden; min-width: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 32%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 8%, var(--panel)) 80%);
   box-shadow: inset -1px 0 0 var(--line-soft); }
 .coach-pad::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--t1); opacity: 0.8; }
-/* Il palco sta in alto (sotto la targhetta del voto), così sotto la pedana resta il posto per "Oppure" */
-.coach-stage { position: absolute; left: 0; right: 0; top: 8px; bottom: 40px; display: flex; justify-content: center; align-items: flex-end; }
-.coach-stage .pedana-disc { --sprite-w: 96px; bottom: -6px; width: 104px; }
-.coach-art-in { position: relative; z-index: 1; flex: none; display: flex; margin-bottom: -2px; }
-.coach-art-in .sprite { width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0006); }
-.coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 96px); translate: -50% 0; }
-.coach-pad-out { position: absolute; z-index: 2; top: var(--sp-3); right: var(--sp-3); display: flex; align-items: center; }
-.coach-pad-out .sprite { width: 40px; height: 40px; margin: -4px; image-rendering: pixelated; filter: grayscale(1) brightness(0.75); }
+.coach-stage { position: absolute; left: 0; right: 0; top: 16px; bottom: 30px; display: flex; justify-content: center; align-items: flex-end; }
+.coach-stage .pedana-disc { --sprite-w: 120px; bottom: -8px; width: 124px; }
+.coach-art-in { position: relative; z-index: 1; flex: none; display: flex; }
+.coach-art-in .sprite { width: 120px; height: 120px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0006); }
+.coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 120px); translate: -50% 0; }
+.coach-pad-out { position: absolute; z-index: 2; top: var(--sp-4); left: var(--sp-4); display: flex; align-items: center; }
+.coach-pad-out .sprite { width: 44px; height: 44px; margin: -4px; image-rendering: pixelated; filter: grayscale(1) brightness(0.75); }
 .coach-pad-swap { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 2px; border-radius: 50%;
   background: color-mix(in srgb, var(--ground) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 30%, transparent); color: var(--text); }
 .coach-pad-swap .icon { width: 12px; height: 12px; }
-.coach-pad-out.is-add .coach-pad-swap { width: 24px; height: 24px; }
 
-/* Il titolo: il nome grande in corsivo; sotto la targhetta (o le due mosse) e "Oppure"; a destra voto e azioni */
-.coach-head { grid-column: 2; grid-row: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-6); min-width: 0; padding: var(--sp-5) var(--sp-6) 0 var(--sp-6); }
-.coach-art-text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); min-width: 0; }
-.coach-art-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.1em; margin-block: -0.1em;
-  font: italic 800 var(--fs-headline)/1 var(--display); color: var(--text); }
-.coach-art-sub { display: flex; align-items: center; gap: var(--sp-5); max-width: 100%; min-width: 0; }
+.coach-hero-body { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; padding: var(--sp-5) var(--sp-8) var(--sp-5); }
+.coach-hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-8); }
+.coach-hero-title { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); min-width: 0; }
+.coach-hero-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.1em; margin-block: -0.1em; font: italic 800 var(--fs-display)/1 var(--display); color: var(--text); }
+.coach-hero-title.is-move .mvp { max-width: 100%; }
+.coach-hero-plates { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.coach-hero-free { font: 500 var(--fs-small)/1.2 var(--ui); color: var(--muted); }
+/* Il voto: +N grande in verde, sotto "B 70 → A 81" */
+.coach-hero-grade { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-2); }
+.coach-gain { font: italic 800 var(--fs-score)/0.9 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.coach-grade-change { font: 600 var(--fs-small)/1 var(--display); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* La targhetta come nell'editor: etichetta chiara col taglio obliquo, il valore sul fondo che sfuma */
-.coach-plate { display: flex; align-items: stretch; min-width: 0; height: 24px; border-radius: var(--alt-r-sm);
+.coach-plate { display: flex; align-items: stretch; min-width: 0; height: 26px; border-radius: var(--alt-r-sm);
   background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); box-shadow: inset 0 0 0 1px var(--line); }
 .coach-plate-label { flex: none; display: flex; align-items: center; margin: 1px 0 1px 1px; padding: 0 var(--sp-6) 0 var(--sp-4); border-radius: 6px 0 0 2px;
   font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--plate-head);
   clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-.coach-plate-value { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; padding: 0 var(--sp-5) 0 var(--sp-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font: 600 var(--fs-small)/1 var(--ui); color: var(--text); }
+.coach-plate-value { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; padding: 0 var(--sp-6) 0 var(--sp-3); overflow: hidden; white-space: nowrap; font: 600 var(--fs-small)/1 var(--ui); color: var(--text); }
 .coach-plate-value .mon-icon { margin: -10px -4px -8px -6px; }
-/* Le due mosse una sotto l'altra: quella che esce spenta col nome barrato, la freccia in giù a sinistra, quella che entra */
-.coach-art-moves { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; padding-left: 18px; white-space: nowrap; }
-.coach-art-moves > s, .coach-art-moves > .mvp { width: min(200px, 100%); }
-.coach-art-moves s { display: flex; min-width: 0; text-decoration: none; }
-.coach-art-moves s .mvp { flex: 1; min-width: 0; }
-.coach-art-arrow { position: absolute; left: 0; top: 50%; translate: 0 -50%; display: flex; color: var(--muted); }
-.coach-art-arrow .icon { width: 14px; height: 14px; }
-.coach-move-out { opacity: 0.55; }
-.coach-move-out .mvp-nm { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); }
-.coach-art-empty { font-size: var(--fs-small); color: var(--muted); }
-.coach-row.is-move .coach-art-sub { align-items: flex-end; }
-.coach-row.is-move .coach-head { padding-top: var(--sp-4); }
-.coach-row.is-move .coach-art-text { gap: var(--sp-2); }
+/* La mossa che esce: grigia e barrata (mai trasparente: i testi restano leggibili) */
+.coach-plate.is-out .coach-plate-value { color: var(--muted); }
+.coach-plate.is-out s { text-decoration-color: color-mix(in srgb, var(--muted) 80%, transparent); }
 
-/* "◦◦◦ +2 ⌄" (Altre N): chi altro può prendere questo posto, con le icone del Box; apre la finestrella con tutte. Sta in fondo
-   alla zona del Pokémon, sotto la pedana, largo quanto la zona */
-.coach-alt { position: absolute; z-index: 2; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-4); justify-content: center; flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); height: 24px; padding: 0 var(--sp-3);
-  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--ground) 62%, transparent); color: var(--muted); cursor: pointer; }
-.coach-alt:hover { border-color: var(--control-line); background: var(--raised); color: var(--text); }
-.coach-alt[aria-expanded='true'] { border-color: var(--accent); background: var(--accent-wash); color: var(--text); }
-.coach-alt-mons { display: flex; }
-.coach-alt-mons { gap: 2px; }
-.coach-alt-mons .mon-icon { margin: -10px -4px -8px -4px; }
-.coach-alt-more { font: 700 var(--fs-caption)/1 var(--ui); color: var(--text); }
-.coach-alt-caret { display: flex; }
-.coach-alt-caret .icon { width: 12px; height: 12px; }
-@media (prefers-reduced-motion: no-preference) {
-  .coach-alt-caret { transition: transform 0.2s var(--ease); }
-}
-.coach-alt[aria-expanded='true'] .coach-alt-caret { transform: rotate(180deg); }
-
-/* Cosa cambia: righe a strisce come le statistiche dell'editor (una sì e una no più chiara), una per area: il nome, "da → a",
-   le pillole dei problemi risolti */
-.coach-solves { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: var(--sp-2) var(--sp-6) var(--sp-4) var(--sp-5); }
-.coach-ar { display: grid; grid-template-columns: 172px minmax(0, 1fr); align-items: center; gap: var(--sp-4); min-height: 22px; min-width: 0; padding: 0 var(--sp-3) 0 var(--sp-4); border-radius: var(--alt-r-sm); }
-.coach-ar:nth-child(odd) { background: color-mix(in srgb, var(--raised) 55%, transparent); }
-.coach-ar.is-merged { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-8); }
-.coach-ar-who { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); min-width: 0; white-space: nowrap; }
-.coach-ar.is-merged .coach-ar-who { justify-content: flex-start; align-items: center; }
-.coach-ar-who b { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-/* "Perdi Danno nel Tempo": i ruoli d'aiuto che il team perde col cambio, in rosso come un valore che scende */
-.coach-lost { min-width: 0; }
-.coach-lost-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--bad); }
-.coach-change { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
+/* Risolve | Costa: due colonne con l'etichetta piccola in maiuscolo come le sezioni dei fumetti */
+.coach-hero-facts { flex: 1; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(180px, 1fr); gap: var(--sp-9); min-height: 0; }
+.coach-fact { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+.coach-fact h5 { margin: 0; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.coach-fact.is-good h5 { color: color-mix(in srgb, var(--good) 75%, var(--text)); }
+.coach-fact.is-bad h5 { color: color-mix(in srgb, var(--bad) 75%, var(--text)); }
+.coach-fact-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
+.coach-solved-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+/* Un problema risolto: spunta verde e il problema in chiaro, su una riga a strisce leggere; se è lungo va a capo */
+.coach-solved { display: grid; grid-template-columns: 14px minmax(0, 1fr); align-items: start; gap: var(--sp-4); padding: 3px var(--sp-5) 3px var(--sp-4); border-radius: var(--alt-r-sm);
+  font: 500 var(--fs-small)/1.35 var(--ui); color: var(--text); background: color-mix(in srgb, var(--good) 9%, transparent); }
+.coach-solved > .icon { width: 14px; height: 14px; margin-top: 2px; color: var(--good); }
+.coach-solved .coach-prob-text { display: inline; overflow: visible; white-space: normal; }
+.coach-solved .coach-prob-text * { color: inherit; }
+.coach-solved .coach-prob-text .type-icons, .coach-solved .mon-icon { vertical-align: middle; }
+.coach-solved .coach-prob-text .type-icons { margin-right: var(--sp-2); }
+.coach-solved .mon-icon { margin: -10px -2px -8px -6px; }
+.coach-solved-more { padding: 2px var(--sp-4); font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); cursor: help; }
+.coach-moves { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-7); margin: 0; }
+.coach-change { display: inline-flex; align-items: baseline; gap: var(--sp-3); white-space: nowrap; }
+.coach-change b { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 .coach-from { font: 500 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 .coach-to { font: italic 700 var(--fs-section)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .coach-change.is-down .coach-to { color: var(--bad); font-style: normal; }
-.coach-ar-chips { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--sp-3); min-width: 0; padding: var(--sp-1); overflow: hidden; }
-.coach-ar-chips > .area-chip-item { flex: none; display: flex; }
+.coach-lost { margin: 0; font: 600 var(--fs-small)/1.3 var(--ui); color: var(--bad); }
+.coach-lost b { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-right: var(--sp-2); }
 
-/* Il voto in più: la targhetta in alto a sinistra della zona del Pokémon, come il +N delle carte della lista */
-.coach-gain { position: absolute; z-index: 2; top: 0; left: 0; display: flex; align-items: center; height: 30px; padding: 0 var(--sp-7) 0 var(--sp-5);
-  background: color-mix(in srgb, var(--ground) 72%, transparent); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
-.coach-gain b { font: italic 800 var(--fs-headline)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-/* Applica e la lente in alto a destra */
-.coach-act { flex: none; display: flex; align-items: center; }
-.coach-act-row { display: flex; align-items: center; gap: var(--sp-3); }
-.coach-apply { height: 30px; padding: 0 var(--sp-7); border: 0; border-radius: var(--alt-r-sm); font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
-.coach-apply:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); box-shadow: inset 0 0 0 1px var(--control-line); }
-/* L'unico magenta della scheda: Applica della prima proposta */
-.coach-apply.is-primary { color: var(--on-accent-2); background: var(--accent-2); box-shadow: none; }
+/* Le azioni: Applica (l'unico magenta: l'azione migliore sullo schermo), la scheda Pokémon, le alternative a destra */
+.coach-hero-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-6); min-width: 0; }
+.coach-apply { height: 34px; padding: 0 var(--sp-9); border: 0; border-radius: var(--alt-r-sm); font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
+.coach-apply.is-primary { color: var(--on-accent-2); background: var(--accent-2); }
 .coach-apply.is-primary:hover { background: var(--accent-2-ink); }
-/* La lente: apre la proposta nella scheda Pokémon (o il set); il nome nel fumetto */
-.coach-see { justify-content: center; width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: none; color: var(--muted); }
+.coach-see { gap: var(--sp-3); height: 34px; padding: 0 var(--sp-6); border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: none; color: var(--muted); font: 600 var(--fs-small)/1 var(--ui); white-space: nowrap; }
 .coach-see:hover { border-color: var(--accent); color: var(--text); }
-.coach-see .icon { width: 15px; height: 15px; }
-.coach-link { gap: var(--sp-2); padding: var(--sp-1) 0; border: 0; background: none; font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
-.coach-link:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.coach-see .icon { width: 14px; height: 14px; }
+.coach-alts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); min-width: 0; margin-left: auto; }
+.coach-alts-word { margin-right: var(--sp-2); font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); white-space: nowrap; }
+/* Un'alternativa: piccola carta col colore del tipo dall'alto, l'icona del Box e il +N; un clic la mette nella carta grande */
+.coach-alt-tile { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); height: 34px; padding: 0 var(--sp-4) 0 var(--sp-2); border: 1px solid var(--line-soft); border-radius: var(--alt-r-sm); cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 28%, var(--panel)), var(--panel)); color: var(--text); }
+.coach-alt-tile:hover { border-color: color-mix(in srgb, var(--t1) 70%, var(--line)); }
+.coach-alt-tile .mon-icon { margin: -10px -4px -8px -4px; }
+.coach-alt-tile b { font: italic 800 var(--fs-small)/1 var(--display); color: var(--good); }
+.coach-alt-move { max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 var(--fs-caption)/1 var(--ui); }
 
-/* Le alternative: una finestrella sotto la carta (sopra, se sotto non c'è posto) con le proposte come piccole carte, due per
-   fila: il Pokémon sulla pedana del suo tipo, il nome, i tipi, il voto in più; quella scelta con l'anello ciano */
-.coach-menu { position: absolute; z-index: 10; left: 8px; right: 8px; top: calc(100% - 8px); padding: var(--sp-4) var(--sp-4) var(--sp-5);
-  border: 1px solid var(--line); border-radius: 6px; background: var(--ground); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); animation: tip 0.14s var(--ease); }
-.coach-menu.is-up { top: auto; bottom: calc(100% - 8px); }
-.coach-menu-title { margin: 0 var(--sp-2) var(--sp-4); font: 600 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.coach-menu-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
-.coach-opt { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-4);
-  min-width: 0; padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-2); border: 1px solid var(--line-soft); border-radius: 7px 2px 7px 2px; cursor: pointer;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 26%, var(--panel)) 0%, var(--panel) 72%); }
-.coach-opt:hover { border-color: color-mix(in srgb, var(--t1) 60%, var(--line)); background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 36%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 8%, var(--panel)) 80%); }
-.coach-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.coach-opt.is-chosen { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-/* Il Pokémon in piedi sulla pedana del suo tipo (un'ellisse di luce sotto i piedi) */
-.coach-opt-mon { position: relative; display: flex; justify-content: center; }
-.coach-opt-mon::before { content: ''; position: absolute; left: 4px; right: 4px; bottom: 2px; height: 12px; border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--t1) 70%, transparent), transparent); }
-.coach-opt-mon .sprite { position: relative; width: 56px; height: 56px; margin: -6px 0 -4px; image-rendering: pixelated; }
-.coach-opt-name { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); min-width: 0; }
-.coach-opt-title { display: flex; align-items: center; gap: var(--sp-3); max-width: 100%; min-width: 0; }
-.coach-opt-name .mvp { max-width: 100%; }
-.coach-opt-name b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-section)/1.1 var(--display); color: var(--text); }
-.coach-opt-name small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); color: var(--muted); }
-.coach-opt-types { flex: none; display: flex; gap: 2px; }
-.coach-opt-types img { width: var(--ti-chip); height: var(--ti-chip); }
-.coach-opt-gain { align-self: start; padding-top: var(--sp-1); font: italic 800 var(--fs-title)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-/* "Scelta": solo sulla proposta di ora, una piccola targa ciano nell'angolo in basso */
-.coach-opt-use { display: none; }
-.coach-opt.is-chosen .coach-opt-use { display: block; position: absolute; right: -1px; bottom: -1px; padding: 2px 6px; border-radius: 4px 0 4px 0;
-  font: 700 var(--fs-label)/1.2 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); }
+/* La lista delle altre: righe compatte a strisce come le statistiche dell'editor; un clic porta la proposta nella carta grande */
+.coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.coach-list-box { --row-h: 44px; --row-gap: 3px; flex: 1; min-height: 0; }
+.coach-rows { display: grid; grid-auto-rows: var(--row-h); gap: var(--row-gap); margin: 0; padding: 0; list-style: none; }
+.coach-item { display: flex; min-width: 0; margin: 0; }
+.coach-item.skeleton { border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
+.coach-item-btn { flex: 1; display: grid; grid-template-columns: 44px 46px minmax(150px, 260px) minmax(0, 1fr) 18px; align-items: center; gap: var(--sp-5); min-width: 0; padding: 0 var(--sp-6) 0 var(--sp-2);
+  border: 0; border-radius: var(--alt-r-sm); background: var(--panel); color: var(--text); text-align: left; cursor: pointer;
+  box-shadow: inset 0 0 0 1px transparent; transition: background 0.15s var(--ease), box-shadow 0.15s var(--ease); }
+.coach-item:nth-child(even) .coach-item-btn { background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.coach-item-btn:hover, .coach-item-btn:focus-visible { background: color-mix(in srgb, var(--accent) 12%, var(--raised)); box-shadow: inset 0 0 0 1px var(--accent); }
+.coach-item-mon { display: flex; align-items: center; justify-content: center; height: 36px; border-radius: var(--alt-r-sm); background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 40%, var(--panel)), color-mix(in srgb, var(--t1) 12%, var(--panel))); }
+.coach-item-mon .mon-icon { margin: -6px; }
+.coach-item-gain { font: italic 800 var(--fs-title-l)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
+.coach-item-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.coach-item-who strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-section)/1.1 var(--display); }
+.coach-item-who small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); color: var(--muted); }
+.coach-item-who .mvp { max-width: 100%; }
+.coach-item-solves { display: flex; align-items: center; gap: var(--sp-6); min-width: 0; overflow: hidden; }
+/* I problemi risolti nella riga: spunta e numero in verde, poi le icone di cosa sono (minacce, tipi, ruoli) */
+.coach-marks { display: inline-flex; align-items: center; gap: var(--sp-5); min-width: 0; height: 28px; padding: 0 var(--sp-5) 0 var(--sp-4); border-radius: var(--alt-r-sm);
+  background: color-mix(in srgb, var(--good) 10%, transparent); }
+.coach-marks-n { display: inline-flex; align-items: center; gap: var(--sp-2); font: italic 800 var(--fs-section)/1 var(--display); color: var(--good); }
+.coach-marks-n .icon { width: 13px; height: 13px; }
+.coach-marks-icons { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.coach-marks-icons .mon-icon { margin: -10px -6px -8px -6px; }
+.coach-marks-icons .type-icons img { width: var(--ti-chip); height: var(--ti-chip); }
+.coach-mark-role { display: inline-flex; color: var(--text); }
+.coach-mark-role .icon { width: 12px; height: 12px; }
+.coach-item-cost { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--bad); }
+.coach-item-cost b { margin-right: var(--sp-3); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.coach-item-go { display: flex; color: var(--muted); }
+.coach-item-go .icon { width: 14px; height: 14px; }
+.coach-item-btn:hover .coach-item-go { color: var(--accent); }
+.coach-list-empty { margin: 0; padding: var(--sp-5) var(--sp-6); font-size: var(--fs-small); color: var(--muted); background: var(--panel); }
 
-/* Senza proposte: Eevee grande a sinistra, il titolo, la frase, le azioni */
 .coach-empty { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 30px; background: var(--panel); }
 .coach-empty .eevee-moment { flex: none; width: 190px; }
 .coach-empty.is-stuck .eevee-moment { width: 170px; }
@@ -924,36 +969,33 @@
 .coach-btn { padding: 9px var(--sp-8); border: 0; border-radius: 4px; font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
 .coach-btn:hover { background: color-mix(in srgb, var(--text) 10%, var(--raised)); }
 .coach-btn .icon { width: 14px; height: 14px; }
-.coach-link { font-size: var(--fs-section); }
+.coach-link { gap: var(--sp-2); padding: var(--sp-1) 0; border: 0; background: none; font: 500 var(--fs-section)/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
+.coach-link:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 .coach-note { margin: 0; font-size: var(--fs-caption); color: var(--faint); }
 .coach-note.coach-top { margin: 0 0 var(--sp-2); }
+.coach-main > .coach-note { flex: none; }
 
-/* Carte più strette (portatili, team aperto): la zona del Pokémon e la colonna dei nomi delle aree si stringono */
-@container coaching (max-width: 1100px) {
-  .coach-row { grid-template-columns: 124px minmax(0, 1fr); }
-  .coach-art-name { font-size: var(--fs-heading); }
-  .coach-art-in .sprite { width: 84px; height: 84px; }
-  .coach-pad-out .sprite { width: 34px; height: 34px; }
-  .coach-head, .coach-solves { padding-left: var(--sp-5); padding-right: var(--sp-5); }
-  .coach-ar { grid-template-columns: 150px minmax(0, 1fr); }
-  .coach-apply { padding-inline: var(--sp-5); }
+/* Portatili (team aperto, 1280): la diagnosi si stringe, la carta grande pure */
+@container coaching (max-width: 1000px) {
+  .coaching.coach-cure { grid-template-columns: 232px minmax(0, 1fr); gap: var(--sp-5); }
+  .coach-hero { grid-template-columns: 150px minmax(0, 1fr); }
+  .coach-art-in .sprite { width: 100px; height: 100px; }
+  .coach-hero-name { font-size: var(--fs-headline-l); }
+  .coach-gain { font-size: var(--fs-stat); }
+  .coach-hero-facts { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+  .coach-item-btn { grid-template-columns: 40px 40px minmax(120px, 200px) minmax(0, 1fr) 16px; gap: var(--sp-4); }
+  .coach-diag-box { --row-h: 50px; }
+  .coach-alts-word { display: none; }
+  .coach-see { width: 34px; padding: 0; justify-content: center; }
+  .coach-see > span { display: none; }
 }
-/* Una colonna sola quando le carte sarebbero troppo strette */
-@container coaching (max-width: 760px) {
-  .coach-list-box { --cols: 1; }
-}
-
-/* Poca altezza (1280×620 col team aperto): carte più basse, così ne stanno due file */
-@container coaching (max-height: 400px) {
-  .coach-list-box { --row-h: 116px; }
-  .coach-stage { bottom: 36px; }
-  .coach-art-in .sprite { width: 72px; height: 72px; }
-  .coach-pad-out .sprite { width: 30px; height: 30px; }
-  .coach-head { padding-top: var(--sp-4); }
-  .coach-art-text { gap: var(--sp-2); }
-  .coach-art-name { font-size: var(--fs-heading); }
-  .coach-solves { padding-top: var(--sp-2); padding-bottom: var(--sp-3); }
-  .coach-ar { min-height: 22px; }
+/* Poca altezza (1280×620 col team aperto): carta grande più bassa */
+@container coaching (max-height: 430px) {
+  .coach-hero { min-height: 188px; }
+  .coach-hero-body { gap: var(--sp-3); padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+  .coach-stage { top: 8px; bottom: 18px; }
+  .coach-art-in .sprite { width: 88px; height: 88px; }
+  .coach-list-box { --row-h: 40px; }
 }
 
 /* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga

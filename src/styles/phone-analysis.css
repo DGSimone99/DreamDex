@@ -141,23 +141,19 @@
   .def-frame .def-mon-name { font-size: var(--fs-caption); }
   .def-frame .def-mon-tag .def-weak { padding: 0 var(--sp-2); font-size: var(--fs-label); letter-spacing: 0; }
 
-  /* ── Coaching: ogni riga una scheda (zona del Pokémon in alto, poi cosa cambia, poi voto e azioni), alta quanto serve ── */
+  /* ── Coaching: una colonna sola (i problemi sopra, poi la carta grande, poi le altre), alta quanto serve ── */
+  .coaching.coach-cure { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); padding-bottom: var(--sp-6); overflow: visible; }
+  .coach-diag-list { max-height: 220px; }
+  .coach-diag-item { min-height: 44px; }
+  .coach-hero { grid-template-columns: minmax(0, 1fr); }
+  .coach-pad { height: 150px; }
+  .coach-hero-head { flex-wrap: wrap; }
+  .coach-hero-facts { grid-template-columns: minmax(0, 1fr); }
+  .coach-apply, .coach-see, .coach-alt-tile { height: 44px; }
   .coach-list-box { --row-h: auto; }
-  .coach-rows { grid-auto-rows: auto; grid-template-rows: none; height: auto; }
-  .coach-row { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
-  .coach-row.skeleton { height: 220px; }
-  .coach-pad { grid-row: auto; height: 120px; }
-  .coach-head { grid-column: 1; grid-row: auto; flex-wrap: wrap; padding: var(--sp-5) var(--sp-6) 0; }
-  .coach-solves { grid-column: 1; grid-row: auto; padding: var(--sp-4) var(--sp-6) var(--sp-6); }
-  .coach-ar { grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); padding-block: var(--sp-2); }
-  .coach-head { flex-direction: column; }
-  .coach-art-sub { flex-wrap: wrap; }
-  .coach-ar-chips { flex-wrap: wrap; }
-  .coach-act { width: 100%; }
-  .coach-gain { margin-right: auto; }
-  .coach-see { width: 44px; height: 44px; }
-  .coach-menu { left: 8px; right: 8px; width: auto; top: 90px; bottom: auto; }
-  .coach-menu-list { grid-template-columns: minmax(0, 1fr); }
+  .coach-rows { grid-auto-rows: auto; }
+  .coach-item-btn { grid-template-columns: 40px 40px minmax(0, 1fr) 16px; min-height: 52px; padding-block: var(--sp-2); }
+  .coach-item-solves { grid-column: 2 / 4; }
   .coach-empty { flex-direction: column; gap: var(--sp-8); padding: 20px; }
   .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }
 
