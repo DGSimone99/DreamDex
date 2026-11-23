@@ -97,7 +97,7 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
   const moreText = `${t(hidden === 1 ? 'dash.moreRolesOne' : 'dash.moreRoles', { n: hidden })}: ${names}`;
   return (
     <div className="dash-role-band">
-      <span id={id} className="dash-level-name">{title}</span>
+      <span id={id} className="dash-level-name sum-sec-h">{title}</span>
       {/* Un ruolo solo e il "+N": sulla stessa riga, il nome si accorcia coi puntini se serve */}
       <ul className={`dash-role-list${shown === 1 && hidden > 0 ? ' one' : ''}`} aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} />)}
@@ -188,7 +188,7 @@ function RoleTable({ roles, titles }: { roles: DashboardData['roles']; titles: R
         </thead>
         {LEVELS.map((level, i) => bands[i].length > 0 && (
           <tbody key={level}>
-            <tr className="dash-role-sep"><th scope="rowgroup" colSpan={roles.members.length + 1}>{titles[level]}</th></tr>
+            <tr className="dash-role-sep"><th scope="rowgroup" colSpan={roles.members.length + 1}><span className="sum-sec-h">{titles[level]}</span></th></tr>
             {bands[i].map(chip => <RoleTableRow key={chip.need} chip={chip} members={roles.members} />)}
           </tbody>
         ))}

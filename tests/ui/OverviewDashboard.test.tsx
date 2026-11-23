@@ -319,6 +319,7 @@ describe('Cruscotto della Panoramica', () => {
       // Ogni fascia: l'etichetta del livello, poi i ruoli in fila
       const bands = [...roles.querySelectorAll('.dash-role-band')];
       expect(bands.map(band => band.firstElementChild?.textContent)).toEqual(['Essenziali', 'Importanti']);
+      bands.forEach(band => expect(band.firstElementChild).toHaveClass('sum-sec-h'));
       expect(bands.map(band => band.lastElementChild?.tagName)).toEqual(['UL', 'UL']);
       const lists = within(roles).getAllByRole('list');
       expect(lists.map(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent))

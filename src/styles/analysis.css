@@ -356,10 +356,10 @@
  * la card: se non basta, si misura tutto insieme (useFit) e cedono prima i minori, col "+N" di fascia.
  */
 .dash-role-bands, .dash-role-bands.dash-fit { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
-/* Ogni fascia: l'etichetta in una colonna stretta, i ruoli in fila che vanno a capo */
-.dash-role-band { flex: none; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: var(--sp-5); padding: var(--sp-2) 0; border-top: 1px solid var(--line-soft); }
-.dash-role-band:first-child { border-top: 0; }
-.dash-level-name { align-self: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1.2; }
+/* Ogni fascia: il titolo come i sottotitoli del Riassunto (la banda Champions centrata, .sum-sec-h), sotto i ruoli in fila
+   che vanno a capo */
+.dash-role-band { flex: none; display: flex; flex-direction: column; padding-top: var(--sp-4); }
+.dash-role-band:first-child { padding-top: 0; }
 .dash-role-list { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: var(--sp-2) var(--sp-4); margin: 0; padding: var(--sp-2) 0; list-style: none; }
 .dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: var(--sp-2); }
 /* Le fasce tagliano quello che sborda: l'anello del fuoco (si arriva coi tasti freccia) sta dentro il ruolo */
@@ -393,7 +393,8 @@
 .dash-role.more { cursor: help; }
 .dash-role.more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Stretto: etichette e chip più fitti */
-.dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
+.dash.tight .dash-role-band { padding-top: var(--sp-2); }
+.dash.tight .dash-level-name { padding-block: 2px; }
 .dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0; }
 
 /*
@@ -407,7 +408,7 @@
 .dash-role-grid thead th { padding: 0 0 var(--sp-1); font-weight: 400; text-align: center; vertical-align: bottom; }
 /* Lo sprite si stringe con la sua colonna: le sei colonne stanno sempre tutte */
 .dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
-.dash-role-sep th { height: 22px; padding: var(--sp-2) 0 var(--sp-1); text-align: left; vertical-align: bottom; border-bottom: 1px solid var(--line); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1.2; }
+.dash-role-sep th { height: 22px; padding: var(--sp-4) 0 0; vertical-align: bottom; font-weight: 400; }
 .dash-role-row th, .dash-role-row td { height: 24px; padding: 0; border-bottom: 1px solid var(--line-soft); }
 .dash-role-row th { width: 1%; padding-right: var(--sp-4); text-align: left; font-weight: 500; white-space: nowrap; color: var(--text); }
 .dash-role-row th > * { vertical-align: middle; }
