@@ -9,6 +9,7 @@ import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
 import { SpeedTip } from './SpeedTip';
+import { TIP_NEUTRAL } from '../TipHead';
 import { hint } from '../MoveTip';
 import { MoveName } from '../TypeText';
 import { DashCard } from './DashCard';
@@ -79,7 +80,7 @@ export function SpeedSection({ speed, density, weak, onView }: { speed: Dashboar
       {/* Stretto: il controllo solo nel fumetto della testata e, per intero, ai lettori di schermo */}
       {density !== 'tight' ? control : controlText && <p className="visually-hidden">{controlText}</p>}
       {tip.anchor && lanes[tip.anchor.key] && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="speed" side="left">
+        <FloatTip rect={tip.anchor.rect} tone={TIP_NEUTRAL} className="tip-w-m speed" side="left">
           <SpeedTip lane={lanes[tip.anchor.key]} vsMeta={vsMeta} />
         </FloatTip>
       )}

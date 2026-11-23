@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { gradeFor, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -10,6 +10,7 @@ import type { SpeciesStats } from '../../src/engine/stats';
 import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
+import { visibleText } from '../helpers/visibleText';
 import { renderIt } from '../helpers/italian';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
@@ -67,7 +68,12 @@ describe('Velocità: una scheda a barre', () => {
     const gains = document.querySelector('.stip-gains')!;
     expect(gains).toHaveTextContent(/Dragon Dance/);
     expect(gains).toHaveTextContent(/Sticky Web/);
+    // Il numero dice cos'è: i punti in più sulla barra (gli stessi dei pezzi a righe), in verde perché è un guadagno
+    expect(gains.querySelector('.tip-sec-label')).toHaveTextContent('In più sulla barra');
+    expect([...gains.querySelectorAll('.tip-row-val')].every(v => /^\+\d+$/.test(v.textContent!) && v.classList.contains('good'))).toBe(true);
     await user.unhover(barOf('Dragonite'));
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
     await user.hover(barOf('Iron Valiant'));
     const self = await screen.findByText((_, el) => !!el?.classList.contains('self') && !!el.textContent?.includes('Iron Valiant'));
     expect(self.querySelector('.item-icon')).not.toBeNull();
@@ -239,21 +245,27 @@ describe('Velocità: una scheda a barre', () => {
     // Tre fonti come righe, ognuna col "?": il dettaglio sta nel tooltip, niente a vista sulla pagina
     expect(panel.querySelectorAll('.guide-rows > div')).toHaveLength(3);
     expect(panel.querySelectorAll('.guide-ask')).toHaveLength(3);
-    expect(panel).not.toHaveTextContent(/×1,5|Shell Smash/);
-    // Abilità e strumenti come etichette, le mosse come pillole (il nome, con la nota del tipo immune dentro)
-    const chips = () => [...document.querySelectorAll('.sp-gd-tip .sp-gd-chip, .sp-gd-tip .sp-gd-move .mvp-nm')].map(c => c.textContent);
-    await user.hover(within(panel).getByRole('button', { name: 'Boost' }));
-    await waitFor(() => expect(chips()).toContain('Shell Smash'));
-    expect(chips()).toContain('Swift Swimpioggia');
-    expect(chips()).toContain('Booster Energy');
-    expect(document.querySelector('.sp-gd-tip')).toHaveTextContent(/×1,5/);
-    await user.unhover(within(panel).getByRole('button', { name: 'Boost' }));
+    expect(visibleText(panel)).not.toMatch(/×1,5|Shell Smash/);
+    const boostAsk = within(panel).getByRole('button', { name: 'Potenziamenti' });
+    expect(boostAsk).toHaveAccessibleDescription(/×1,5 .*Dragon Dance.*Speed Boost; .*×2 .*Shell Smash/);
+    expect(document.getElementById(boostAsk.getAttribute('aria-describedby')!)!.closest('[role="tabpanel"]')).toBe(panel);
+    // Il tooltip è corto: al massimo quattro righe (cosa conta, il moltiplicatore a destra), sotto i primi tre esempi coi
+    // nomi dei giochi e "e altre N" in parole, mai "+N" che sembra un bonus (qui senza i dati italiani restano in inglese) e la regola breve
+    const rows = () => [...document.querySelectorAll('.ftip.gat .tip-row')];
+    await user.hover(within(panel).getByRole('button', { name: 'Potenziamenti' }));
+    await waitFor(() => expect(rows()).toHaveLength(4));
+    expect(rows()[0].querySelector('.tip-row-val')).toHaveTextContent('×1,5');
+    expect(rows()[0].querySelector('.tip-row-sub')).toHaveTextContent(/^Dragon Dance, Quiver Dance, Victory Dance e altre \d+$/);
+    expect(rows()[1].querySelector('.tip-row-sub')).toHaveTextContent(/^Shell Smash, Agility, Rock Polish e altre \d+$/);
+    expect(rows()[3].querySelector('.tip-row-sub')).toHaveTextContent(/^Booster Energy, Protosynthesis, Quark DriveSolo se la Velocità è la più alta$/);
+    await user.unhover(within(panel).getByRole('button', { name: 'Potenziamenti' }));
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
     await user.hover(within(panel).getByRole('button', { name: 'Controllo del team' }));
-    await waitFor(() => expect(chips()).toContain('Glare'));
-    // Le mosse che rallentano come etichette, coi tipi immuni dentro; la regola tiene solo l'eccezione comune
-    // (i nomi dei tipi in italiano arrivano coi dati del gioco: qui, senza, restano in inglese)
-    expect(chips()).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
-    const control = document.querySelector('.sp-gd-tip')!;
+    // I controlli in due gruppi (Lunghi, Brevi), ognuno col suo nome; la regola tiene solo l'eccezione comune
+    await waitFor(() => expect([...document.querySelectorAll('.ftip.gat .tip-sec-label')].map(l => l.textContent)).toEqual(['Lunghi', 'Brevi, contano meno']));
+    const control = document.querySelector('.ftip.gat')!;
+    expect(control).toHaveTextContent(/Thunder Wave, Glare, Stun Spore e un'altra/);
     expect(control).toHaveTextContent(/Non sui tipi Elettro/);
     expect(control).toHaveTextContent(/Trick Room/);
     expect(control).toHaveTextContent(/Tailwind/);

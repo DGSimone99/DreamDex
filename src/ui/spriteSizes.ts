@@ -4,4 +4,6 @@
  * La carta del Pokémon (MemberCard) resta grande: è il profilo, non un tooltip di dettaglio.
  */
 export const SPRITE_TIP = 48;
+/** La sprite del soggetto quando la testata ha anche la riga sotto il titolo (più alta): la stessa soglia per uscire dal bordo. */
+export const SPRITE_TIP_TALL = 64;
 export const SPRITE_TIP_ROW = 40;

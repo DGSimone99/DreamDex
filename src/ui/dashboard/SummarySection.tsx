@@ -13,8 +13,9 @@ import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
-import { CoreTip } from './CoreTip';
+import { CoreSideRows, CoreTip } from './CoreTip';
 import { CoreArt, CoreTriangle, coreParts, coreTitle } from './CoreTriangle';
 import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
@@ -58,7 +59,7 @@ const CondPill = ({ cond, children }: { cond: string; children: ReactNode }) => 
  * finiscono nel "+N" (useFit), mai tagliate a metà; il "+N" sta accanto al titolo, così non toglie una riga alle altre.
  * Senza righe, la parola `empty` attenuata.
  */
-function Section<T>({ title, empty, emptyBelow = false, rows, rowKey, rowClass, fitKey, more, render, onMore, moreTip, className = '' }: {
+function Section<T>({ title, empty, emptyBelow = false, rows, rowKey, rowClass, fitKey, more, render, onMore, moreTip, moreTipClass, className = '' }: {
   title: string; empty: string;
   /** Una frase vuota lunga ("Nessuna sinergia: …"): sulla sua riga sotto il titolo, non a destra sulla riga del titolo. */
   emptyBelow?: boolean;
@@ -78,6 +79,8 @@ function Section<T>({ title, empty, emptyBelow = false, rows, rowKey, rowClass, 
   onMore?: () => void;
   /** Se c'è: il "+N" è colorato e al passaggio apre il tooltip DreamDex con le righe nascoste (questo contenuto). */
   moreTip?: (hidden: T[]) => ReactNode;
+  /** La larghezza del tooltip del "+N" (di solito M; L se dentro c'è un core, come il tooltip del core). */
+  moreTipClass?: (hidden: T[]) => string;
   className?: string;
 }) {
   const tip = useFloatAnchor<true>();
@@ -106,7 +109,7 @@ function Section<T>({ title, empty, emptyBelow = false, rows, rowKey, rowClass, 
         )
         : <span className={`sum-sec-more${tipped}`} {...hover}><More n={hidden} label={more(hidden, rows.slice(shown))} plain={!!moreTip} /></span>)}
       {moreTip && hidden > 0 && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="syn-more">{moreTip(rows.slice(shown))}</FloatTip>
+        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className={`syn-more ${moreTipClass?.(rows.slice(shown)) ?? 'tip-w-m'}`}>{moreTip(rows.slice(shown))}</FloatTip>
       )}
     </div>
   );
@@ -259,31 +262,40 @@ function DuoCore({ core, goId, onClick, hover }: { core: Core; goId: string; onC
 }
 
 /**
- * Il tooltip DreamDex del "+N" delle Sinergie: le sinergie che non stanno nella card, ognuna con le sue sprite (unite dalla
- * catena nel colore del legame), l'etichetta, il titolo e la frase.
+ * Il tooltip DreamDex del "+N" delle Sinergie: le sinergie che non stanno nella card, con le righe degli altri tooltip
+ * (sprite da 40 senza sovrapposizioni, nome, sotto cosa fa; mai un paragrafo). Un core solo: il tooltip del core (CoreTip,
+ * larghezza L); un legame solo: la testata dice cos'è (il titolo e il genere come targhetta a destra); più di una: "Altre N sinergie" e una sezione per
+ * sinergia, etichettata col genere e il titolo. Un core: una riga per lato (CoreSideRows, "Great Tusk · para Elettro");
+ * un legame: una riga per membro, la frase sotto il primo.
  */
-function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }) {
+function MoreSynergies({ items, label, taken }: { items: { syn: Synergy; view: SynergyView }[]; label: string; taken: Record<string, Record<string, number>> }) {
+  const body = ({ syn, view }: { syn: Synergy; view: SynergyView }) => (syn.core
+    ? <CoreSideRows core={syn.core} taken={taken} />
+    : (
+      <TipRows className="syn-more-list">
+        {view.mons.map((name, i) => (
+          <TipRow key={`${name}:${i}`} lead={<Sprite species={name} size={SPRITE_TIP_ROW} />} title={name} sub={i === 0 ? view.text : undefined} />
+        ))}
+      </TipRows>
+    ));
+  if (items.length === 1) {
+    const [only] = items;
+    // Un core: lo stesso tooltip del core (CoreTip: sotto il titolo cosa misura la fascia, le righe dei lati, larghezza L)
+    if (only.syn.core) return <CoreTip core={only.syn.core} taken={taken} />;
+    return (
+      <>
+        <TipHead lead={<TipGlyph icon={only.syn.core ? 'shield' : 'chain'} />} title={only.view.title}
+          badge={<span className="tip-kind">{only.view.tag}</span>} />
+        <TipSec>{body(only)}</TipSec>
+      </>
+    );
+  }
   return (
     <>
-      <div className="ftip-head"><b>{label}</b></div>
-      <ul className="syn-more-list">
-        {items.map(view => (
-          <li key={view.key} style={{ '--c': view.color } as CSSProperties}>
-            <span className="syn-more-mons" aria-hidden="true">
-              {view.mons.map((name, i) => (
-                <span key={`${name}:${i}`} className="syn-more-mon">
-                  {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
-                  <Sprite species={name} size={SPRITE_TIP_ROW} />
-                </span>
-              ))}
-            </span>
-            <span className="syn-more-body">
-              <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{view.title}</strong></span>
-              <span className="sum-syn-text">{view.text}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <TipHead lead={<TipGlyph icon="chain" />} title={label} />
+      {items.map(item => (
+        <TipSec key={item.view.key} label={`${item.view.tag} · ${item.view.title}`}>{body(item)}</TipSec>
+      ))}
     </>
   );
 }
@@ -534,17 +546,19 @@ export function SummarySection({ summary, members, grade, density, rich = false,
             const hover = syn.core ? coreTip.bind(syn.core) : undefined;
             return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!rich && !!syn.core && syn.core !== trios[0]} flat={flat} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
-          moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
+          // I due core affiancati, se finiscono nel "+N", vi stanno come due core
+          moreTip={hidden => <MoreSynergies items={hidden.flatMap((syn): Synergy[] => (syn.duo ? syn.duo.map(core => ({ core })) : [syn])).map(syn => ({ syn, view: synergyView(syn) }))} label={count('sum.moreSyn', hidden.length)} taken={summary.typedTaken ?? {}} />}
+          moreTipClass={hidden => (hidden.some(syn => syn.core || syn.duo) ? 'tip-w-l' : 'tip-w-m')} />
       </div>
       {showBm && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} skip={heavy.map(p => p.key)} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {coreTip.anchor && (
-        <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
+        <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="tip-w-l core">
           <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />
           <TipGo place={places.bonusMalus} />
         </FloatTip>
       )}
       {condTip.anchor && (
-        <FloatTip rect={condTip.anchor.rect} tone={conditionColor(condTip.anchor.key.key)} className="cond">
+        <FloatTip rect={condTip.anchor.rect} tone={conditionColor(condTip.anchor.key.key)} className="tip-w-m cond">
           <ConditionTip row={condTip.anchor.key} />
           <TipGo place={places.roles} />
         </FloatTip>

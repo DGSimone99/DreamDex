@@ -62,15 +62,30 @@
 .guide-ask .icon { width: 16px; height: 16px; vertical-align: 0; }
 .guide-ask:hover, .guide-ask:focus-visible { color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .guide-ask:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.ftip.gat { width: var(--tip-l); }
-.gat-cols { display: flex; gap: var(--sp-9); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
-.gat-table { border-collapse: collapse; font-size: var(--tip-body); font-variant-numeric: tabular-nums; }
-.gat-table th, .gat-table td { padding: var(--sp-1) 0 var(--sp-1) var(--sp-6); border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
-.gat-table thead th { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding-bottom: 5px; }
-.gat-table tbody th { padding-left: 0; text-align: left; font-weight: 600; }
-.gat-table tbody th img { width: var(--ti-inline); height: var(--ti-inline); margin-right: var(--sp-3); vertical-align: -3px; }
-.gat-table tbody tr:last-child > * { border-bottom: 0; }
-.gat-mons { display: grid; grid-template-columns: repeat(8, 40px); gap: var(--sp-1) var(--sp-2); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
+.ftip.gat:not(.tip-w-m) { width: var(--tip-l); }
+.tip-sec .gat-mons, .tip-sec .gat-cols { padding: 0; }
+/* La tabella dei 18 tipi dei "?": due metà da 9 divise da un filo Line Soft, righe a strisce come la Generale (una sì e
+   una no Raised al 50%, niente linee, piccoli angoli alternati ai due capi), tessera del tipo e nome, numeri in display
+   tabellari a destra; i 3 più alti di ogni colonna in Text 700, gli altri in Muted */
+.gat-cols { display: flex; padding: var(--sp-4) var(--sp-6) var(--sp-5); }
+.gat-table { flex: 1; border-collapse: separate; border-spacing: 0; font-size: var(--tip-body); }
+.gat-table:first-child { padding-right: var(--sp-5); }
+.gat-table + .gat-table { padding-left: var(--sp-5); border-left: 1px solid var(--line-soft); }
+.gat-table th, .gat-table td { height: 22px; vertical-align: middle; padding: 0 var(--sp-3) 0 var(--sp-2); text-align: right; white-space: nowrap; }
+.gat-table thead th { height: auto; padding-bottom: var(--sp-3); font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.gat-table tbody th { padding-left: var(--sp-2); text-align: left; font-weight: 600; line-height: 1; color: var(--text); }
+.gat-table tbody th .type-icons { display: inline-flex; margin-right: var(--sp-3); vertical-align: middle; }
+.gat-table tbody th img { width: var(--ti-chip); height: var(--ti-chip); }
+.gat-table tbody tr:nth-child(odd) > * { background: color-mix(in srgb, var(--raised) 50%, transparent); }
+.gat-table tbody tr > :first-child { border-radius: 7px 0 0 2px; }
+.gat-table tbody tr > :last-child { border-radius: 0 2px 7px 0; }
+/* Kanit siede basso nella sua riga: 4px sotto lo alzano di 2 alla linea dei nomi */
+.gat-table tbody td { padding-bottom: 4px; }
+.gat-table td { min-width: 30px; font: 500 var(--tip-body)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--muted); }
+.gat-table td.gat-top { font-weight: 700; color: var(--text); }
+/* Le minacce del meta: 10 sprite per riga, celle uguali */
+.gat-mons { display: grid; grid-template-columns: repeat(10, 40px); justify-content: space-between; row-gap: var(--sp-2); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
+.gat-mons > span { display: grid; place-items: end center; width: 40px; height: 40px; }
 .guide-targets tbody th { font-weight: 600; color: var(--text); white-space: nowrap; }
 .guide-targets tbody th .type-icons { margin-right: var(--sp-3); vertical-align: middle; }
 .guide-targets td { min-width: 4ch; color: var(--text); }
@@ -192,10 +207,6 @@
 .kob.rest.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
 .kob.rest.bad .kob-num > b { font-size: var(--fs-body); color: var(--bad); }
 .kob.rest.bad:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
-/* Con l'etichetta (nella testata del tooltip): larghezza libera */
-.kob.labeled { display: inline-flex; gap: var(--sp-3); width: auto; height: auto; padding: 3px 11px 3px var(--sp-4); }
-.kob.labeled em { font: 700 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.05em; }
-.kob.labeled > b { min-width: 0; font: 700 italic var(--fs-body)/1 var(--display); }
 .kob-tri { display: inline-block; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--good) transparent transparent; }
 
 
@@ -265,27 +276,13 @@
 /* Il tooltip di una casella di Coverage tipi: testata col tipo e il badge dei colpi; il membro con la mossa migliore;
    le righe in più col setup o Tera/Z solo se salgono di fascia */
 .ftip.tht { width: var(--tip-m); }
-/* Il tooltip del tipo in testata a Coverage tipi: PS, Dif e DifSp del Pokémon medio, tre caselle affiancate */
-.ftip.tst { width: var(--tip-s); }
+/* Il tooltip del tipo in testata a Coverage tipi: PS, Dif e DifSp del Pokémon medio, affiancati */
 .tst-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.tst-stats span { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: 9px var(--sp-2) var(--sp-4); border-right: 1px solid var(--line-soft); }
+.tst-stats span { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2); border-right: 1px solid var(--line-soft); }
 .tst-stats span:last-child { border-right: 0; }
 .tst-stats small { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 .tst-stats b { font: 700 italic var(--tip-num)/1 var(--display); font-variant-numeric: tabular-nums; }
-.ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
-.tht-body { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-5); }
-.tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
-.tht-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.tht-name { font: 600 var(--tip-body)/1.2 var(--display); }
-.tht-move { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
-.tht-mult { font: 700 italic var(--tip-small)/1 var(--display); color: var(--faint); }
-.tht-mult.se { color: var(--good); }
-.tht-mult.nve { color: var(--bad); }
-.tht-pct { margin-left: auto; font: 700 italic var(--tip-title)/1 var(--display); font-variant-numeric: tabular-nums; }
 .tht-none { color: var(--muted); }
-.tht-extra { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; padding: var(--sp-3) var(--sp-5) 7px; border-top: 1px solid var(--line-soft); }
-.tht-extra-h { display: flex; align-items: center; gap: var(--sp-3); font-weight: 600; color: var(--muted); }
-.tht-extra-h .ftip-ko { margin-left: auto; }
 
 /* Le tabelle Coverage: freccia, niente cursore del testo; "?" sulle caselle col tooltip */
 .def-frame .ct-table { cursor: default; }
@@ -349,7 +346,6 @@
 .area-legend .area-legend-swatch i.kob-tri, .area-legend .wall-legend-setup i.kob-tri { width: 0; height: 0; background: none; border-radius: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
 .area-legend .area-legend-swatch i.kob-tri.team, .area-legend .wall-legend-setup i.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
 /* L'effetto della danza o del meteo accanto al nome della riga: piccolo e spento ("Att ×2", "Fuoco ×1,5") */
-.tht-eff { display: inline; margin-left: var(--sp-1); font: 600 var(--tip-small)/1 var(--display); color: var(--faint); white-space: nowrap; }
 /* Coverage meta: la riga Team Coverage in fondo al pannello, allo stesso posto e alta come quella della Generale (la
    tabella riempie la cornice, la riga di riempimento prende lo spazio): la linguetta e nelle colonne le pastiglie di quanti
    lo coprono (i numeri del team sono già nella Generale e nel titolo della sottoscheda) */

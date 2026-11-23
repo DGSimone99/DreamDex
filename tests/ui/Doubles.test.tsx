@@ -242,12 +242,12 @@ describe('doppio: Completa team', () => {
 
   it('in doppio le condizioni sono dieci: meteo, campi, Trick Room, Tailwind', () => {
     panel('natdexdoubles');
-    expect(styleNames().slice(1)).toEqual(['Pioggia', 'Sole', 'Sabbia', 'Neve', 'Campo Erboso', 'Campo Psichico', 'Campo Elettrico', 'Campo Nebbioso', 'Trick Room', 'Tailwind']);
+    expect(styleNames().slice(1)).toEqual(['Pioggia', 'Sole', 'Sabbia', 'Neve', 'Campo Erboso', 'Campo Psichico', 'Campo Elettrico', 'Campo Nebbioso', 'Distortozona', 'Ventoincoda']);
   });
 
   it('in singolo le condizioni restano le cinque di sempre', () => {
     panel('ou');
-    expect(styleNames().slice(1)).toEqual(['Pioggia', 'Sole', 'Sabbia', 'Neve', 'Trick Room']);
+    expect(styleNames().slice(1)).toEqual(['Pioggia', 'Sole', 'Sabbia', 'Neve', 'Distortozona']);
   });
 });
 

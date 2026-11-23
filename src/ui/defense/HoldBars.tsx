@@ -5,10 +5,12 @@ import { TYPES, type TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
+import { KoBadge } from '../KoBadge';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
 import { PokemonIcon } from '../PokemonName';
 import { pieceSize, Target } from '../offense/KoBadges';
-import { HOLD_BANDS } from './holds';
+import { TypeStatTable, type TypeStatCol } from '../offense/TargetsTip';
 
 /*
  * La barra a pezzi della Generale della Difesa, sorella di quella dell'Offesa (KoBadges): per un membro (o per il team)
@@ -55,8 +57,10 @@ export const teamHolds = (per: HoldTarget[][]): HoldTarget[] =>
  * DreamDex elenca i bersagli. A destra il conto "12/18": quanti ne regge (meno di metà PS). `alarm` (la riga del team):
  * il conto è verde solo se li regge tutti, rosso se no. `quiet` (un attaccante): il conto è neutro.
  */
-export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPick, pickPlace }: {
-  targets: HoldTarget[]; who: string; of: string; alarm?: boolean;
+export function HoldBars({ targets, who, mon, of, alarm = false, quiet = false, onPick, pickPlace }: {
+  targets: HoldTarget[]; who: string;
+  /** Il membro: la sua sprite in testata ai tooltip (la riga del team ha lo scudo). */
+  mon?: string; of: string; alarm?: boolean;
   /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per reggere (un attaccante). I pezzi restano uguali. */
   quiet?: boolean;
   /** Clic su un pezzo: apre Coverage tipi o meta con quei bersagli accesi (come nell'Offesa). */
@@ -80,6 +84,8 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
   const tag = (p: Piece) => PIECE_TAG[p];
   const n = by('held').length;
   const ratio = total ? n / total : 0;
+  // In testata il membro con la sua sprite (un tooltip su un Pokémon), la riga del team con lo scudo
+  const lead = mon ? { sprite: mon } : { lead: <TipGlyph icon="shield" /> };
   const countTone = alarm ? (n < total ? ' bad' : ' full') : quiet ? ' quiet' : n === 0 ? ' zero' : n === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   const list = (items: HoldTarget[]) => <div className={`kot-list${items[0]?.kind === 'mon' ? ' mons' : ''}`}>{items.map(x => <Target key={x.label} target={{ label: x.label, kind: x.kind, plain: 0, setup: null, once: null }} />)}</div>;
   return (
@@ -101,12 +107,14 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
         })}
         {key && (
           <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
-            <div className="kot-head"><b>{who}</b><span className={`kob labeled hb ${PIECE_CLS[key]}`}><em>{tag(key)}</em><b>{by(key).length}</b></span><small>{of}</small></div>
+            <TipHead {...lead} title={who} sub={<><KoBadge side="def" band={key} />{t(`hold.say.${key}`)}</>}
+              num={<>{by(key).length}<small>/{total}</small></>} qualifier={of} />
             {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO). I pallini hanno i colori delle
                 caselle di Coverage (verde, verde chiaro, giallo, rosso); quello del 2HKO un filo più pieno, se no è piccolo e spento */}
             {(key === 'held' ? (['four', 'three'] as const) : [key]).map(b => {
               const items = targets.filter(x => x.band === b);
-              return items.length ? <div key={b} className={`hb-group${b === 'two' ? ' hb-group-two' : ''}`}><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;
+              // La frase della fascia sta già sotto il titolo: qui solo per i due gruppi di "Regge" (4HKO+ e 3HKO)
+              return items.length ? <TipSec key={b} className="hb-group" label={key === 'held' ? <><KoBadge side="def" band={b} />{t(`hold.say.${b}`)}</> : undefined}>{list(items)}</TipSec> : null;
             })}
             {go && <TipGo place={pickPlace!} />}
           </FloatTip>
@@ -118,32 +126,33 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
         <span className="kob-count-line" aria-hidden="true" />
         <HiddenText id={`${id}-count`}>{t('hold.countTitle')}</HiddenText>
       </span>
-      {countTip.anchor && <FloatTip rect={countTip.anchor.rect} tone="var(--accent)" className="kot"><p className="kot-none">{t('hold.countTitle')}</p></FloatTip>}
+      {countTip.anchor && (
+        <FloatTip rect={countTip.anchor.rect} tone="var(--accent)" className="kot small">
+          <TipHead {...lead} title={who} sub={t('hold.countSub')} num={<>{n}<small>/{total}</small></>} qualifier={of} />
+        </FloatTip>
+      )}
     </span>
   );
 }
 
-/** Gli attaccanti dei 18 tipi (Coverage tipi della Difesa): Attacco e Attacco Speciale, in due colonne. */
+/** Le colonne degli attaccanti dei 18 tipi (Att e AttSp): la tabella del "?" e la sua descrizione. */
+export const attackerCols = (formatId: FormatId, t: ReturnType<typeof useT>): TypeStatCol[] => [
+  { label: t('stat.atk'), value: type => dummyStats(formatId, type).atk },
+  { label: t('stat.spa'), value: type => dummyStats(formatId, type).spa },
+];
+
+/**
+ * Gli attaccanti dei 18 tipi (Coverage tipi della Difesa): Attacco e Attacco Speciale nella tabella dei 18 tipi; la nota
+ * è la riga sotto il titolo (l'unico piede è "Clic: apri la guida" quando il "?" apre la guida).
+ */
 export function TypeAttackers({ formatId }: { formatId: FormatId }) {
   const t = useT();
-  const lang = useLang();
   return (
     <>
-      <div className="ftip-head"><b>{t('hold.attackersTitle')}</b></div>
-      <div className="gat-cols">
-        {[TYPES.slice(0, 9), TYPES.slice(9)].map((part, col) => (
-          <table key={col} className="gat-table">
-            <thead><tr><th scope="col" /><th scope="col">{t('stat.atk')}</th><th scope="col">{t('stat.spa')}</th></tr></thead>
-            <tbody>
-              {part.map(type => {
-                const a = dummyStats(formatId, type);
-                return <tr key={type}><th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th><td>{a.atk}</td><td>{a.spa}</td></tr>;
-              })}
-            </tbody>
-          </table>
-        ))}
-      </div>
-      <p className="ftip-foot">{t('ddetail.attackerTip')}</p>
+      <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.attackersTitle')} sub={t('ddetail.attackerTableTip')} />
+      <TipSec>
+        <TypeStatTable cols={attackerCols(formatId, t)} />
+      </TipSec>
     </>
   );
 }
@@ -185,7 +194,7 @@ export function WorstHits({ hits }: { hits: WorstHit[] }) {
         );
       })}
       {open?.tip && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={open.color ?? 'var(--faint)'} className={`tht${open.kind === 'type' ? ' dht' : ''}`}>{open.tip}</FloatTip>
+        <FloatTip rect={tip.anchor.rect} tone={open.color ?? 'var(--faint)'} className={`tip-w-m tht${open.kind === 'type' ? ' dht' : ''}`}>{open.tip}</FloatTip>
       )}
     </span>
   );

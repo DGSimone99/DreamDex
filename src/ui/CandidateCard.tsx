@@ -66,7 +66,7 @@ export function CandidateCard(props: CandidateProps) {
       onClickCapture={() => setFlash(true)} onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}
       // Uscendo dalla carta si chiude anche la carta del set
       onMouseEnter={e => { enter(); if (!selected) tipHandlers.onMouseEnter(e); }}
-      onPointerDown={closeTip} onMouseLeave={() => { leave(); memberTip.close(); }}
+      onPointerDown={closeTip} onMouseLeave={e => { leave(); memberTip.close(e); }}
       // Trascinata sul team: sopra un membro lo sostituisce, sopra uno slot vuoto lo aggiunge (teamDrag.ts)
       // Mentre la si trascina, segue il mouse la carta del team di questo set (la disegna TeamPanel, non la copia sfumata
       // del browser); al suo posto nella lista resta lo spazio vuoto

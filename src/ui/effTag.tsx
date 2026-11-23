@@ -8,6 +8,18 @@ import { useT } from '../i18n/react';
  */
 export type EffSide = 'offense' | 'defense';
 
+/**
+ * L'efficacia a parole nelle righe dei tooltip, accanto alla mossa, sempre nello stesso posto: Difesa (il membro
+ * colpito) "debole ×2", "resiste ×½", "immune"; Offesa (la mossa sul bersaglio) "superefficace ×2", "poco efficace ×½",
+ * "nessun effetto". Neutro (×1) o sconosciuto: niente.
+ */
+export function effWord(t: ReturnType<typeof useT>, mult: number | null | undefined, side: EffSide): string | null {
+  if (mult === null || mult === undefined || mult === 1) return null;
+  const m = mult >= 4 ? '×4' : mult > 1 ? '×2' : mult <= 0.25 ? '×¼' : '×½';
+  if (side === 'defense') return mult === 0 ? t('eff.immune') : mult > 1 ? t('eff.weak', { m }) : t('eff.resist', { m });
+  return mult === 0 ? t('eff.none') : mult > 1 ? t('eff.se', { m }) : t('eff.nve', { m });
+}
+
 export function effLabel(mult: number | null | undefined, side: EffSide): string | null {
   if (mult === null || mult === undefined) return null;
   if (mult >= 4) return '×4';

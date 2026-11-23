@@ -3,6 +3,7 @@ import { getMove, speciesNames } from '../engine/dex';
 import { TYPES, type TypeName } from '../engine/types';
 import { TYPE_COLORS } from './Sprite';
 import { TypeDot } from './PokemonName';
+import { TipType } from './TipHead';
 import type { Lang } from '../i18n';
 import { gameName, gameNamesVersion, namesWithTypes, typeName, typeNames } from '../i18n/game';
 import { useLang } from '../i18n/react';
@@ -71,8 +72,11 @@ function namedFor(lang: Lang) {
   return entry;
 }
 
-/** Testo libero con i nomi dei tipi colorati e quelli dei Pokémon in grassetto. */
-export function Typed({ text }: { text: string }) {
+/**
+ * Testo libero con i nomi dei tipi colorati e quelli dei Pokémon in grassetto. `tip` (nei tooltip DreamDex): i tipi come
+ * ovunque nei tooltip, la tessera da 24px e il nome in Text (TipType), e i Pokémon in grassetto senza le mini tessere.
+ */
+export function Typed({ text, tip = false }: { text: string; tip?: boolean }) {
   const lang = useLang();
   const { regex, english } = namedFor(lang);
   const parts: ReactNode[] = [];
@@ -81,8 +85,9 @@ export function Typed({ text }: { text: string }) {
     const index = match.index ?? 0;
     if (index > last) parts.push(text.slice(last, index));
     parts.push(match[1]
-      ? <span key={index} className="mon-ref"><TypeDot name={match[1]} /><strong>{match[1]}</strong></span>
+      ? <span key={index} className="mon-ref">{!tip && <TypeDot name={match[1]} />}<strong>{match[1]}</strong></span>
       : match[2] ? match[2]
+      : tip ? <TipType key={index} type={english.get(match[3]) ?? match[3]} />
       : <TypeLabel key={index} type={english.get(match[3]) ?? match[3]} />);
     last = index + match[0].length;
   }

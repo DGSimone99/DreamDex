@@ -140,6 +140,8 @@ describe('vista di un\'area sulla pagina', () => {
       await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).not.toBeNull());
       expect(document.querySelector('.ftip.area-chip-tip .ftip-go')).toBeNull();
       await user.unhover(chip);
+      // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+      await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
       await user.click(chip);
       expect(onCoaching).not.toHaveBeenCalled();
       unmount();
@@ -182,7 +184,9 @@ describe('vista di un\'area sulla pagina', () => {
       const user = userEvent.setup();
       for (let i = 0; i < 20 && document.activeElement !== more; i++) await user.tab();
       expect(more).toHaveFocus();
-      await waitFor(() => expect(document.querySelector('.ftip.kot:not(.area-chip-tip)')).toHaveTextContent('Problema eProblema aProblema d'));
+      // La testata dice quanti, poi una riga per problema (nell'ordine)
+      await waitFor(() => expect(document.querySelector('.ftip.area-more-tip .tip-title')).toHaveTextContent('Altri 3 problemi'));
+      expect([...document.querySelectorAll('.ftip.area-more-tip .tip-row-sub')].map(el => el.textContent)).toEqual(['Problema e', 'Problema a', 'Problema d']);
       expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 3 problemi: Problema e; Problema a; Problema d');
     } finally {
       width.mockRestore();
@@ -240,13 +244,23 @@ describe('problemi delle aree', () => {
 
   it('una minaccia del meta nella testata della Difesa: icona e nome del Pokémon, il testo intero nel tooltip', async () => {
     const user = userEvent.setup();
-    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Senza check in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
+    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Senza check in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'], usage: 0.118 };
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[threat]} />);
     const list = screen.getByRole('list', { name: 'Problemi in Difesa' });
     const chip = list.querySelector<HTMLElement>('.area-chip')!;
     expect(chip.querySelector('.coach-threat-name')).toHaveTextContent('Zapdos');
     for (let i = 0; i < 20 && document.activeElement !== chip; i++) await user.tab();
-    await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).toHaveTextContent(threat.text));
+    // Lo stesso fumetto delle minacce della Panoramica (ThreatTip, scheda Meta della Copertura): la sprite, "Minaccia senza check", l'uso nel meta, la ragione in una riga;
+    // il testo intero resta ai lettori di schermo nella descrizione della pillola
+    await waitFor(() => expect(document.querySelector('.ftip.thr-tip')).not.toBeNull());
+    const tip = document.querySelector('.ftip.thr-tip')!;
+    expect(tip.querySelector('.tip-head.has-sprite')).toHaveTextContent('Zapdos');
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent('Minaccia senza check');
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(/^11,8%$/);
+    expect(tip.querySelector('.tip-head .tip-qual')).toHaveTextContent('nel meta');
+    expect(tip).toHaveClass('tip-w-m');
+    expect(tip.querySelector('.thr-tip-why li.open')).toHaveTextContent('Nessuno lo regge bene');
+    expect(document.getElementById(chip.getAttribute('aria-describedby')!)).toHaveTextContent(threat.text);
   });
 });
 

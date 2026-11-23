@@ -55,6 +55,39 @@ describe('consigli della Sfida: chip e scheda', () => {
     expect(screen.getAllByText(/^Mon\d+$/)).toHaveLength(8);
   });
 
+  it('i colpi per il KO sono fasce (KoBadge) nella scala del lato: la difesa con quella della Difesa', async () => {
+    const user = userEvent.setup();
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={quick} result={fakeResult} />);
+    await user.click(screen.getByRole('button', { name: '+32 DifSp' }));
+    const card = screen.getByRole('dialog');
+    const ba = card.querySelector('.duel-tip-ba')!;
+    // Prima e dopo: una fascia o due attaccate ("OHKO/2HKO"), mai "colpi"
+    expect(ba.querySelectorAll('.now.ko-ba .ko-badge').length).toBeGreaterThan(0);
+    expect(ba.querySelectorAll('.new.ko-ba .ko-badge').length).toBeGreaterThan(0);
+    expect(ba.querySelectorAll('.ko-badge.off')).toHaveLength(0);
+    expect(ba.querySelectorAll('.ko-badge.def').length).toBeGreaterThan(0);
+    expect(ba.textContent).toMatch(/\dHKO|OHKO/);
+    expect(ba.textContent).not.toMatch(/colp/);
+  });
+
+  it('il tooltip di un effetto: titolo corto, sotto a chi senza ripeterlo, le fasce prima → dopo', async () => {
+    const user = userEvent.setup();
+    renderIt(<DuelTips me={me} opp={gholdengo} quick={quick} result={fakeResult} />);
+    await user.click(screen.getByRole('button', { name: '+32 DifSp' }));
+    await user.hover(screen.getByRole('button', { name: /11 Pokémon del meta/ }));
+    await screen.findByText('e altri 3');
+    const tip = document.querySelector('.duel-fx-tip')!;
+    expect(tip.querySelector('.tip-title')).toHaveTextContent(/^Meno danni$/);
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent(/^A 11 Pokémon del meta$/);
+    // Fai danni: la scala dell'Offesa; 2 colpi → 3 colpi
+    const row = tip.querySelector('.tip-row')!;
+    expect([...row.querySelectorAll('.ko-badge')].map(b => b.className)).toEqual(['ko-badge off two', 'ko-badge off three']);
+    expect(row.querySelector('.duel-tip-to.bad')).not.toBeNull();
+    expect(tip.textContent).not.toMatch(/colp/);
+    // Il conto dice le fasce anche ai lettori di schermo
+    expect(screen.getByRole('button', { name: /11 Pokémon del meta/ })).toHaveAccessibleName(/Mon0 2HKO → 3HKO/);
+  });
+
   it('mossa: parte dalla scelta migliore, cambiare la mossa da togliere cambia voto e cambio', async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();

@@ -7,9 +7,8 @@ import { SPEED_POOL } from '../../engine/speed';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
-import { MovePill } from '../MovePill';
 import { Ask } from '../offense/TargetsTip';
-import { kitTip } from '../MoveTip';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
 /** Le tre fonti di velocità in più. */
@@ -25,38 +24,50 @@ const SLOW_IMMUNE: Record<string, string> = { thunderwave: 'Ground', nuzzle: 'Gr
 const moveChips = (ids: Iterable<string>, note?: (id: string) => string | undefined): Chip[] =>
   [...ids].map(id => ({ name: getMove(id)?.name ?? id, note: note?.(id), move: true }));
 const abilityName = (id: string) => dex.abilities.get(id).name;
+/** Il nome di una mossa per le etichette, nella lingua scelta. */
+const moveLabel = (id: string, fallback: string, lang: ReturnType<typeof useLang>) => gameName('move', getMove(id)?.name ?? fallback, lang);
 
 /** Una mossa, abilità o strumento come etichetta; `note` è il meteo o il campo che serve, scritto piccolo dentro. */
 interface Chip { name: string; note?: string; move?: boolean }
 /** Una riga del dettaglio: cosa conta, quanto vale, le etichette (mosse, abilità) e la regola breve sotto. */
 interface Row { label: string; value?: string; chips?: Chip[]; text?: ReactNode; group?: string }
 
-/** Il dettaglio di una fonte nel tooltip del "?": le righe (cosa conta, il moltiplicatore, le mosse o abilità) e la nota. */
-function GainTip({ title, rows, grouped, foot }: { title: string; rows: Row[]; grouped?: boolean; foot?: string }) {
+/** Quante righe e quanti esempi per riga ha il tooltip del "?" (corto: il resto si capisce dalla regola nella guida). */
+const GAIN_ROWS = 4;
+const GAIN_CHIPS = 3;
+
+/**
+ * Il dettaglio di una fonte nel tooltip del "?", corto (vedi DESIGN.md, "Tooltips"): la testata col tondo della
+ * velocità, le prime righe (cosa conta e il moltiplicatore a destra; sotto i primi esempi coi nomi dei giochi e "e altre N", o
+ * la regola breve) e la nota.
+ */
+function GainTip({ title, rows, grouped = false, foot }: { title: string; rows: Row[]; grouped?: boolean; foot?: string }) {
+  const t = useT();
   const lang = useLang();
+  const name = (chip: Chip) => gameName(chip.move ? 'move' : dex.items.get(chip.name).exists ? 'item' : 'ability', chip.name, lang);
+  const sub = (row: Row): ReactNode => {
+    const chips = row.chips ?? [];
+    if (!chips.length) return row.text;
+    // Quanti altri esempi in parole ("e altre 10"): un "+10" dopo i nomi sembrerebbe un bonus alle statistiche
+    const rest = chips.length - GAIN_CHIPS;
+    const names = chips.slice(0, GAIN_CHIPS).map(name).join(', ') + (rest > 0 ? ` ${rest === 1 ? t('tip.andMoreOne') : t('tip.andMoreMany', { n: rest })}` : '');
+    return row.text ? <>{names}<br />{row.text}</> : names;
+  };
   return (
     <>
-      <div className="ftip-head"><b>{title}</b></div>
-      <div className="sp-gd-tip">
-        <div className={`sp-gd-rows${grouped ? ' grouped' : ''}`}>
-          {rows.map((row, i) => (
-            <div key={i} className={`sp-gd-row${row.group && i > 0 ? ' next-group' : ''}`}>
-              {grouped && <span className="sp-gd-group">{row.group}</span>}
-              <b>{row.label}</b>
-              <span className="sp-gd-val">{row.value}</span>
-              <span className="sp-gd-body">
-                {row.chips?.map(chip => (chip.move
-                  // Le mosse come pillole (nome tradotto, potenza nella coda); la nota sul tipo immune dentro, piccola
-                  ? <MovePill key={chip.name} name={chip.name} size="sm" className="sp-gd-move"
-                    label={chip.note ? <>{gameName('move', chip.name, lang)}<small>{chip.note}</small></> : undefined} />
-                  : <span key={chip.name} className="sp-gd-chip" {...kitTip(dex.items.get(chip.name).exists ? 'item' : 'ability', chip.name)}>{chip.name}{chip.note && <small>{chip.note}</small>}</span>))}
-                {row.text && <span className="sp-gd-text">{row.text}</span>}
-              </span>
-            </div>
-          ))}
-        </div>
-        {foot && <p className="ftip-foot">{foot}</p>}
-      </div>
+      <TipHead lead={<TipGlyph icon="speed" />} title={title} />
+      {/* Coi gruppi (Lunghi, Brevi) una sezione per gruppo, col suo nome; una riga col gruppo ne apre uno nuovo */}
+      {rows.slice(0, GAIN_ROWS).reduce<Row[][]>((groups, row, i) => {
+        if (i === 0 || (grouped && row.group)) groups.push([row]); else groups[groups.length - 1].push(row);
+        return groups;
+      }, []).map((group, g) => (
+        <TipSec key={g} label={grouped ? group[0].group : undefined}>
+          <TipRows>
+            {group.map((row, i) => <TipRow key={i} title={row.label} value={row.value} sub={sub(row)} />)}
+          </TipRows>
+        </TipSec>
+      ))}
+      {foot && <p className="ftip-foot">{foot}</p>}
     </>
   );
 }
@@ -90,22 +101,22 @@ export function SpeedGuideSection({ speed, meta, doubles = false }: { speed: Tea
         { label: g('d.boost.plus2'), value: times(2), chips: moveChips(SETUP_PLUS_TWO) },
         { label: g('d.boost.weather'), value: times(2), chips: weather },
         { label: g('d.boost.paradox'), value: times(PARADOX_SPEED), chips: paradox, text: g('d.boost.paradox.rule') },
-        { label: abilityName('unburden'), value: times(2), text: g('d.boost.unburden.rule') },
+        { label: gameName('ability', abilityName('unburden'), lang), value: times(2), text: g('d.boost.unburden.rule') },
       ],
     },
     priority: {
       rows: [
         { label: g('d.prio.how'), text: g('d.prio.how.rule') },
-        { label: g('d.prio.moves'), chips: moveChips(PRIORITY_EXAMPLES), text: g('d.prio.moves.rule', { glide: getMove('grassyglide')?.name ?? 'Grassy Glide' }) },
+        { label: g('d.prio.moves'), chips: moveChips(PRIORITY_EXAMPLES), text: g('d.prio.moves.rule', { glide: moveLabel('grassyglide', 'Grassy Glide', lang) }) },
         { label: g('d.prio.field'), text: g('d.prio.field.rule') },
       ],
     },
     control: {
       rows: [
-        { group: g('d.ctrl.long'), label: getMove('stickyweb')?.name ?? 'Sticky Web', value: '−1', text: g('d.ctrl.web.rule') },
-        { label: getMove('trickroom')?.name ?? 'Trick Room', text: g('d.ctrl.room.rule') },
+        { group: g('d.ctrl.long'), label: moveLabel('stickyweb', 'Sticky Web', lang), value: '−1', text: g('d.ctrl.web.rule') },
+        { label: moveLabel('trickroom', 'Trick Room', lang), text: g('d.ctrl.room.rule') },
         // In doppio Tailwind conta come Trick Room (un compagno lo mette mentre l'altro attacca); in singolo fra i brevi
-        { ...(!doubles && { group: g('d.ctrl.short') }), label: getMove('tailwind')?.name ?? 'Tailwind', value: times(2), text: g('d.ctrl.tail.rule') },
+        { ...(!doubles && { group: g('d.ctrl.short') }), label: moveLabel('tailwind', 'Tailwind', lang), value: times(2), text: g('d.ctrl.tail.rule') },
         { ...(doubles && { group: g('d.ctrl.short') }), label: g('d.ctrl.para'), value: '×½', chips: moveChips(PARALYSIS, immune), text: g('d.ctrl.para.rule') },
         { label: g('d.ctrl.drop'), value: '×⅔', chips: moveChips(SPEED_DROP, immune) },
       ],
@@ -113,9 +124,13 @@ export function SpeedGuideSection({ speed, meta, doubles = false }: { speed: Tea
       grouped: true,
     },
   };
+  // Il tooltip del "?" in parole per i lettori di schermo: ogni riga col moltiplicatore, tutti gli esempi e la regola
+  const chipName = (chip: Chip) => gameName(chip.move ? 'move' : dex.items.get(chip.name).exists ? 'item' : 'ability', chip.name, lang);
+  const describe = (rows: Row[]) => rows.map(row => [row.label, row.value, row.chips?.map(chipName).join(', '), typeof row.text === 'string' ? row.text : '']
+    .filter(Boolean).join(' ')).join('; ');
   const gain = (key: GainKey): [ReactNode, ReactNode] => [
     g(`gains.${key}`),
-    <>{g(`gains.${key}.rule`)} <Ask label={g(`gains.${key}`)}><GainTip title={g(`gains.${key}`)} {...details[key]} /></Ask></>,
+    <>{g(`gains.${key}.rule`)} <Ask label={g(`gains.${key}`)} short describe={describe(details[key].rows)}><GainTip title={g(`gains.${key}`)} {...details[key]} /></Ask></>,
   ];
 
   return (

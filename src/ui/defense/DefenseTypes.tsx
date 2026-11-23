@@ -6,18 +6,23 @@ import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies } from '../../engine/dex';
 import type { TeamDefense } from '../../engine/defense';
 import type { TypeName } from '../../engine/types';
-import { weatherMitigations } from '../../engine/synergy';
+import { weatherMitigations, type WeatherMitigation } from '../../engine/synergy';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
-import { mitigationNote } from '../AnalysisTables';
-import { EffTag, effClass, effLabel } from '../effTag';
+import { formatMultiplier, mitigationNote, mitigationParts } from '../AnalysisTables';
+import { CONDITION_TYPE } from '../dashboard/ConditionTip';
+import { KoBadge } from '../KoBadge';
+import { TipDmg, TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from '../TipHead';
+import { EffTag, effClass, effLabel, effWord } from '../effTag';
+import { CategoryIcon } from '../CategoryIcon';
+import type { DmgRange } from '../dmgText';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
-import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
+import { TypeIcons } from '../typeIcons';
 import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP } from '../spriteSizes';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { useMemberTip } from '../MemberCard';
 import { TypeStatsTip } from '../TypeStatsTip';
 import { HOLD_BANDS, HOLD_ORDER } from './holds';
@@ -61,7 +66,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
   // Le note del meteo stanno sulla riga della legenda, dopo di lei; se non ci entrano si tagliano coi puntini e il testo intero è nel suggerimento
-  const notes = weatherMitigations(team).map(m => mitigationNote(m, lang));
+  const mitigations = weatherMitigations(team);
+  const notes = mitigations.map(m => mitigationNote(m, lang));
   // Il tooltip DreamDex: sulla casella (slot >= 0) il colpo sui due lati, sul tipo in testata (slot -1) l'attaccante
   const tip = useFloatAnchor<{ slot: number; col: number }>();
   const card = useMemberTip(400, undefined, true);
@@ -77,7 +83,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
     return top as { slot: number; pct: number } | null;
   });
   const anchor = tip.anchor?.key ?? null;
-  const openCell = anchor && anchor.slot >= 0 && slots[anchor.slot] !== null ? defense.typed[slots[anchor.slot]!].cells[anchor.col] : null;
+  const openCell = anchor && anchor.slot >= 0 && slots[anchor.slot] !== null ? { ...defense.typed[slots[anchor.slot]!].cells[anchor.col], ...defense.typed[slots[anchor.slot]!].ranges?.[anchor.col] } : null;
   const openType = anchor ? rows[anchor.col].type : null;
   // Tastiera: la griglia è un posto solo nel giro del Tab, le frecce vanno di casella in casella; col fuoco la casella
   // accende riga e colonna come il puntatore e apre il suo tooltip
@@ -98,7 +104,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
         <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
         <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table"
           aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
-          onMouseLeave={() => { setHover(null); tip.close(); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
+          onMouseLeave={e => { setHover(null); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" />{rows.map(row => <col key={row.type} />)}</colgroup>
           <thead>
             <tr>
@@ -173,15 +179,15 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
       </div>
       {card.tip}
       {tip.anchor && openType && anchor!.slot < 0 && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tst">
-          <TypeStatsTip type={openType} foot={t('ddetail.attackerTip')}
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tip-w-s tst">
+          <TypeStatsTip type={openType} sub={t('ddetail.attackerTip')}
             stats={[[t('stat.atk'), dummyStats(formatId, openType).atk], [t('stat.spa'), dummyStats(formatId, openType).spa]]} />
         </FloatTip>
       )}
       {tip.anchor && openType && openCell && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tht dht">
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tip-w-m tht dht">
           <DefenseHitTip type={openType} species={battleName(team[anchor!.slot])} cell={openCell}
-            mult={effLabel(multipliers.get(openType as TypeName)?.[anchor!.slot] ?? 1, 'defense')} />
+            mult={multipliers.get(openType as TypeName)?.[anchor!.slot] ?? 1} />
         </FloatTip>
       )}
       <div className="rob-legend ht-foot">
@@ -189,7 +195,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           ? <FocusNote name={battleName(team[focus.slot])} band="two" text={t(`hold.focus.${focus.band}`, { name: battleName(team[focus.slot]) })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>}
         {!focus && notes.length > 0 && (
-          <NotesLine id={notesId} notes={notes} />
+          <NotesLine id={notesId} notes={notes} mitigations={mitigations} />
         )}
       </div>
     </div>
@@ -197,38 +203,28 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
 }
 
 /**
- * Il tooltip di una casella: il tipo in testata col badge dei colpi (e l'efficacia sul membro se non è neutra), il
- * membro, e il colpo forte di quel tipo sui due lati (fisico e speciale), ognuno col suo badge.
+ * Il tooltip di una casella: il tipo in testata col badge dei colpi; il membro (sprite, nome, sotto l'efficacia a parole:
+ * "debole ×2", "resiste ×½"), poi il colpo forte di quel tipo sui due lati, una riga di danno ciascuno (Fisica, Speciale:
+ * il danno e la fascia).
  */
-export function DefenseHitTip({ type, species, cell, mult }: { type: string; species: string; cell: { pct: number; physical: number; special: number; band: HoldBand }; mult: string | null }) {
+export function DefenseHitTip({ type, species, cell, mult }: { type: string; species: string; cell: { pct: number; physical: number; special: number; band: HoldBand; physicalRange?: DmgRange | null; specialRange?: DmgRange | null }; mult: number | null | undefined }) {
   const t = useT();
   const lang = useLang();
-  const side = (label: string, pct: number) => {
-    const band = holdBandOf(pct);
-    return (
-      <span className="tht-move">
-        <span className="dht-side">{label}</span>
-        <span className={`ftip-ko def ${band}`}>{HOLD_BANDS[band].tag}</span>
-        <b className="tht-pct">{pct}<small>%</small></b>
-      </span>
-    );
-  };
+  const eff = effWord(t, mult, 'defense');
+  const side = (category: 'Physical' | 'Special', pct: number, range: DmgRange | null | undefined) => (
+    <TipRow className="dht-side" lead={<CategoryIcon category={category} />} title={t(category === 'Physical' ? 'tip.physical' : 'tip.special')}
+      value={<TipDmg pct={pct} range={range} side="def" band={holdBandOf(pct)} immune={mult === 0} />} />
+  );
   return (
     <>
-      <div className="ftip-head">
-        <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
-        <b>{typeName(type as TypeName, lang)}</b>
-        {mult && <span className="tht-mult">{mult}</span>}
-        <span className={`ftip-ko def ${cell.band} tht-band`}>{HOLD_BANDS[cell.band].tag}</span>
-      </div>
-      <div className="tht-body">
-        <Sprite species={species} size={SPRITE_TIP} />
-        <span className="tht-text">
-          <span className="tht-name">{species}</span>
-          {side(t('tip.physical'), cell.physical)}
-          {side(t('tip.special'), cell.special)}
-        </span>
-      </div>
+      <TipHead lead={<TipTypeIcon type={type} />} title={typeName(type as TypeName, lang)} badge={<KoBadge side="def" band={cell.band} />} />
+      <TipSec>
+        <TipRows>
+          <TipRow lead={<Sprite species={species} size={SPRITE_TIP_ROW} />} title={species} sub={eff ? <span className="tip-eff">{eff}</span> : undefined} />
+          {side('Physical', cell.physical, cell.physicalRange)}
+          {side('Special', cell.special, cell.specialRange)}
+        </TipRows>
+      </TipSec>
     </>
   );
 }
@@ -247,16 +243,44 @@ function DefenseTypesLegend() {
  * DreamDex (col mouse e col fuoco, prima era il title del browser); per lo screen reader il testo intero c'è sempre e la
  * griglia lo usa come descrizione (`id`).
  */
-function NotesLine({ id, notes }: { id: string; notes: string[] }) {
+function NotesLine({ id, notes, mitigations }: { id: string; notes: string[]; mitigations: WeatherMitigation[] }) {
+  const t = useT();
+  const lang = useLang();
   const tip = useFloatAnchor<true>();
+  const name = (m: WeatherMitigation) => t(`conditionName.${m.condition}` as Parameters<typeof t>[0]);
+  const parts = mitigations.map(m => mitigationParts(m, lang));
+  const one = mitigations.length === 1;
+  // Un cambio per riga: il tipo (tessera e nome), sotto per chi vale, a destra il moltiplicatore prima → dopo (verde se
+  // migliora, rosso se peggiora)
+  const rows = (m: WeatherMitigation) => {
+    const groups = new Map<string, { from: number; to: number; names: string[] }>();
+    for (const x of m.members) {
+      const key = `${x.from}|${x.to}`;
+      const g = groups.get(key) ?? { from: x.from, to: x.to, names: [] };
+      g.names.push(x.species);
+      groups.set(key, g);
+    }
+    return [...groups.values()].map(g => (
+      <TipRow key={`${g.from}|${g.to}`} lead={<TipTypeIcon type={m.type} />} title={typeName(m.type, lang)}
+        sub={t('tip.weather.for', { list: g.names.join(', ') })} tone={g.to < g.from ? 'good' : 'bad'}
+        value={`${formatMultiplier(g.from)} → ${formatMultiplier(g.to) || '×1'}`} />
+    ));
+  };
+  const type = CONDITION_TYPE[mitigations[0]?.condition ?? ''];
   return (
     <>
       <span id={id} className="ht-notes note" tabIndex={0} {...tip.bind(true)}>
         <Typed text={notes.join(' · ')} />
       </span>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot">
-          {notes.map(n => <p key={n} className="kot-none"><Typed text={n} /></p>)}
+        <FloatTip rect={tip.anchor.rect} tone={type ? typeColor(type) : 'var(--accent)'} className="tip-w-m weather-tip">
+          {/* Come il fumetto di Meteo e campo: la tessera del tipo della condizione; sotto il titolo l'avvertenza */}
+          <TipHead lead={type ? <TipTypeIcon type={type} /> : undefined} title={mitigations.map(name).join(' · ')} sub={t('tip.weather.notAlways')} />
+          {mitigations.map((m, i) => (
+            <TipSec key={m.condition} label={one ? parts[i].source : `${name(m)} · ${parts[i].source}`}>
+              <TipRows>{rows(m)}</TipRows>
+            </TipSec>
+          ))}
         </FloatTip>
       )}
     </>

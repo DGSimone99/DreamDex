@@ -58,12 +58,18 @@ describe('Offesa: navigazione e guida', () => {
     await waitFor(() => expect(document.querySelector('.ftip.gat .gat-table')).not.toBeNull());
     const avg = document.querySelector('.ftip.gat')!;
     expect(avg.querySelectorAll('tbody tr')).toHaveLength(18);
+    // La tabella dei 18 tipi dice "di ogni tipo", il tooltip di un tipo solo "di questo tipo"
+    expect(avg.querySelector('.tip-sub')).toHaveTextContent('Il Pokémon medio di ogni tipo');
     await user.unhover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
     const metaAsk = within(panel).getByRole('button', { name: /^I \d+ Pokémon più usati$/ });
     await user.hover(metaAsk);
     await waitFor(() => expect(document.querySelector('.ftip.gat .gat-mons')).not.toBeNull());
     expect(document.querySelectorAll('.ftip.gat .gat-mons > span').length).toBe(withMeta().offense.coverageMeta!.rows.length);
     await user.unhover(metaAsk);
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
     // Una sezione sola anche se il "?" c'è in tutte e tre le schede
     expect(within(dialog).queryByRole('tab', { name: 'Generale' })).toBeNull();
     await user.keyboard('{Escape}');
@@ -77,11 +83,29 @@ describe('Offesa: navigazione e guida', () => {
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
     expect(within(screen.getByRole('dialog', { name: 'Guida: Offesa' })).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{Escape}');
-    // Accanto alle testate Tipi e Meta il "?" dei bersagli, lo stesso della guida
+    // Accanto alle testate Tipi e Meta il "?" dei bersagli: la tabella intera dei 18 tipi (come nella guida) con un
+    // solo piede, "Clic: apri la guida"; il clic apre la guida
     const typesAsk = screen.getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' });
+    // Per i lettori di schermo la tabella intera in parole (18 tipi), poi dove porta il clic; la descrizione sta accanto al
+    // "?" (dentro la testata), non nel body
+    expect(typesAsk).toHaveAccessibleDescription(/^(Normale|Normal): PS \d+, Dif \d+, DifSp \d+; (Fuoco|Fire): PS \d+, .*; (Folletto|Fairy): PS \d+, Dif \d+, DifSp \d+\. Clic: apri la guida$/);
+    const typesDesc = document.getElementById(typesAsk.getAttribute('aria-describedby')!)!;
+    expect(typesDesc.textContent!.split('; ')).toHaveLength(18);
+    expect(typesDesc.closest('th')).not.toBeNull();
+    const metaAsk = screen.getByRole('button', { name: /^I \d+ Pokémon più usati$/ });
+    expect(document.getElementById(metaAsk.getAttribute('aria-describedby')!)!.textContent).toMatch(/: [A-Z][^,]+(, [^,]+){4,}\. Clic: apri la guida$/);
     await user.hover(typesAsk);
     await waitFor(() => expect(document.querySelectorAll('.ftip.gat tbody tr')).toHaveLength(18));
-    await user.unhover(typesAsk);
+    expect(document.querySelectorAll('.ftip.gat .ftip-go, .ftip.gat .ftip-foot')).toHaveLength(1);
+    expect(document.querySelector('.ftip.gat .ftip-go')).toHaveTextContent('Clic: apri la guida');
+    await user.click(typesAsk);
+    const guide = screen.getByRole('dialog', { name: 'Guida: Offesa' });
+    expect(within(guide).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    // Nella guida lo stesso "?" ha la tabella intera dei 18 tipi, senza piede
+    await user.hover(within(guide).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
+    await waitFor(() => expect(document.querySelectorAll('.ftip.gat tbody tr')).toHaveLength(18));
+    expect(document.querySelector('.ftip.gat .ftip-go')).toBeNull();
+    await user.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: /^I \d+ Pokémon più usati$/ })).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     // Il "?" di Coverage meta apre la stessa pagina di Coverage tipi
@@ -340,7 +364,14 @@ describe('Offesa: Generale', () => {
     const move = gameName('move', 'Swords Dance', 'it');
     const extra = [...tip.querySelectorAll('.kot-extra')].find(e => e.textContent!.includes(move))!;
     const more = band === 'ohko' ? c.setupOhko : c.setupTwo;
-    expect(extra.querySelector('.kot-extra-h')!.textContent).toBe(`${move} +${more}`);
+    // Il nome della mossa a sinistra, a destra la fascia col totale: quelli senza setup più questi
+    expect(extra.querySelector('.kot-extra-name')!.textContent).toBe(move);
+    // In testata il conto "N/18" (il valore) con la fascia nella riga sotto il nome; la riga del setup la fascia col totale
+    const plain = tip.querySelector('.tip-head .tip-num')!.textContent!.split('/')[0];
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(`${plain}/18`);
+    expect(tip.querySelector('.tip-sub .ko-badge')).toHaveTextContent(band === 'ohko' ? 'OHKO' : '2HKO');
+    expect(extra.querySelector('.kot-extra-badge .ko-badge em')).toHaveTextContent(band === 'ohko' ? 'OHKO' : '2HKO');
+    expect(extra.querySelector('.kot-extra-badge .ko-badge b')!.textContent).toBe(String(Number(plain) + more));
     expect(extra.querySelectorAll('.kot-type')).toHaveLength(more);
   });
 
@@ -356,20 +387,25 @@ describe('Offesa: Generale', () => {
     await user.hover(badge);
     let tip = await tipOf();
     expect(tip).toHaveAttribute('aria-hidden', 'true');
-    expect(tip.querySelector('.kot-head')).toHaveTextContent('Great Tusk');
-    expect(tip.querySelector('.kot-head')).toHaveTextContent('tipi su 18');
+    expect(tip.querySelector('.tip-head')).toHaveTextContent('Great Tusk');
+    // Un tooltip su un Pokémon: la sua sprite in testata; il conto "N/18" nel posto del valore, sotto la parola "tipi"
+    expect(tip.querySelector('.tip-head.has-sprite .tip-mon .sprite')).not.toBeNull();
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(`${types[band]}/18`);
+    expect(tip.querySelector('.tip-head .tip-qual')).toHaveTextContent('tipi');
     const list = mainList(tip)!;
     expect(list.querySelectorAll('.kot-type')).toHaveLength(types[band]);
     expect(list.querySelector('.kot-type img')).not.toBeNull();
     await user.unhover(badge);
-    expect(document.querySelector('.ftip')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip')).toBeNull());
     // Il meta: le minacce come sprite
     const meta = count(metaHits(rating, 0));
     const mBand = meta.ohko > 0 ? 'ohko' : 'two';
     expect(meta[mBand]).toBeGreaterThan(0);
     await user.hover(cells[1].querySelector(`.kob.${mBand}`)!);
     tip = await tipOf();
-    expect(tip.querySelector('.kot-head')).toHaveTextContent(`minacce su ${rating.offense.coverageMeta!.rows.length}`);
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(`${meta[mBand]}/${rating.offense.coverageMeta!.rows.length}`);
+    expect(tip.querySelector('.tip-head .tip-qual')).toHaveTextContent('del meta');
     expect(mainList(tip)).toHaveClass('mons');
     expect(mainList(tip)!.querySelectorAll('.kot-mon')).toHaveLength(meta[mBand]);
   });
@@ -399,9 +435,11 @@ describe('Offesa: Generale', () => {
         expect(bad.querySelector('b')).toHaveTextContent(new RegExp(`^${open}$`));
         await user.hover(bad);
         const tip = await tipOf();
-        expect(tip.querySelector('.kot-head')).toHaveTextContent('Nessuno li manda KO in due colpi');
+        expect(tip.querySelector('.tip-head')).toHaveTextContent('Nessuno li manda KO in due colpi');
         expect(mainList(tip)!.children).toHaveLength(open);
         await user.unhover(bad);
+        // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+        await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
       }
     }
     // Nell'ultima colonna niente: il voto dell'Offesa sta nella testata dell'area
@@ -459,10 +497,12 @@ describe('Offesa: Generale', () => {
     const chip = memberRows()[0].querySelectorAll('td')[0].querySelector<HTMLElement>('.mcs .mcp:not(.z)')!;
     await user.hover(chip);
     const tip = await tipOf();
-    expect(tip.querySelector('.kot-head')).toHaveTextContent(chip.querySelector('.mvp-nm')!.textContent!);
+    expect(tip.querySelector('.tip-title')).toHaveTextContent(chip.querySelector('.mvp-nm')!.textContent!);
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(chip.querySelector('.mvp-tail')!.textContent!);
     expect(mainList(tip)!.children).toHaveLength(Number(chip.querySelector('.mvp-tail')!.textContent));
     await user.unhover(chip);
-    expect(document.querySelector('.og-bands')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.og-bands')).toBeNull());
     expect(document.querySelector('.og-meta')).toBeNull();
     expect(document.querySelector('.og-detail')).toBeNull();
   });
@@ -506,8 +546,10 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tst'); if (!el) throw new Error('no tip'); return el; });
     expect(tip).toHaveTextContent(typeName('Water', 'it'));
     expect(tip.querySelectorAll('.tst-stats span')).toHaveLength(3);
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent('Le statistiche del Pokémon medio');
     await user.unhover(water);
-    expect(document.querySelector('.ftip.tst')).toBeNull();
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip.tst')).toBeNull());
   });
 
   it('il triangolo del setup sulla casella solo se la danza fa salire di fascia (fino al 2HKO o all’OHKO)', async () => {
@@ -538,9 +580,11 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     document.querySelectorAll('.ct-table thead th').forEach(th => expect(th).not.toHaveAttribute('title'));
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
-    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
-    expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-name')!.textContent);
+    expect(tip.querySelector('.tip-head .ko-badge.off')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
+    // La riga di danno: il danno in forbice dei tiri ("79–93%"), poi la fascia in fondo a destra
+    expect(tip.querySelector('.tht-row .tip-dmg-pct')!.textContent).toMatch(/^[0-9]+–[0-9]+%$/);
+    expect(tip.querySelector('.tht-row .tip-dmg > :last-child')).toHaveClass('ko-badge');
+    expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-row .tip-row-title')!.textContent);
     // Uscendo dalla casella (anche verso il nome del membro, dentro la tabella) il tooltip si chiude
     await user.hover(document.querySelector<HTMLElement>('.ct-table tbody th')!);
     expect(document.querySelector('body > .ftip.tht')).toBeNull();
@@ -716,10 +760,13 @@ describe('Offesa: Coverage meta', () => {
     const cell = bodyRows()[0].querySelectorAll<HTMLElement>('td')[0];
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip.querySelector('.ftip-head')).toHaveTextContent(sorted[0].species);
-    expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
-    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
+    expect(tip.querySelector('.tip-head')).toHaveTextContent(sorted[0].species);
+    expect(tip.querySelector('.tip-head .ko-badge.off')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
+    expect(tip.querySelector('.tht-row .tip-dmg-pct')!.textContent).toMatch(/^[0-9]+–[0-9]+%$/);
+    expect(tip.querySelector('.tht-row .tip-dmg > :last-child')).toHaveClass('ko-badge');
     await user.unhover(cell);
+    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
+    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
   });
 
   it('Lo coprono conta chi lo manda KO in due colpi', async () => {
