@@ -13,6 +13,7 @@ import { resolveView, type AnalysisView, type TabView } from './analysisView';
 import type { AreaKey, KoFocus } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
+import { TabsGrade } from './RatingPanel';
 import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
 
 /**
@@ -120,7 +121,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
       {!(phone && !rating) && <AnalysisTabs view={tabView} onView={openView} panelId="analysis-view" areasDisabled={!rating}
-        noOverview={phone} grade={phone && rating ? { grade: rating.grade, overall: rating.overall, label: rating.label, broken: problems.some(p => p.category === 'rules') } : null} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
+        noOverview={phone} aside={phone && rating ? <TabsGrade rating={rating} broken={problems.some(p => p.category === 'rules')} incomplete={team.length < 6} onOpen={area => openView(area)} /> : null} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
         scores={Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value]))} />}
       <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${tabView}`} className="analysis-view">{body}</div>
     </section>

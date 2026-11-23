@@ -52,7 +52,7 @@
 
 /* Righe del voto come scorciatoie verso Analisi: si vede che si aprono (freccia, fondo al passaggio, focus ciano) */
 .grade-badge { position: relative; }
-.grade-badge button.grade-area {
+:is(.grade-badge, .analysis-grade) button.grade-area {
   grid-template-columns: 58px 1fr 24px 10px;
   width: 100%;
   margin: 0 -6px;
@@ -67,25 +67,25 @@
   cursor: pointer;
   box-sizing: content-box;
 }
-.grade-badge button.grade-area:hover { background: var(--raised); color: var(--text); }
-.grade-badge button.grade-area .icon { width: 10px; height: 10px; color: var(--faint); }
-.grade-badge button.grade-area:hover .icon { color: var(--accent); }
+:is(.grade-badge, .analysis-grade) button.grade-area:hover { background: var(--raised); color: var(--text); }
+:is(.grade-badge, .analysis-grade) button.grade-area .icon { width: 10px; height: 10px; color: var(--faint); }
+:is(.grade-badge, .analysis-grade) button.grade-area:hover .icon { color: var(--accent); }
 /* Aiuto e triangolo delle regole nella testa magenta, a destra */
 /* A metà della fascia "Voto" (alta ~28px, il "?" 20px): non tocca il bordo in alto */
 .grade-tools { position: absolute; top: 4px; right: 22px; display: flex; align-items: center; gap: var(--sp-2); }
 /* Bersagli da almeno 24×24: l'area cliccabile va oltre il disegno (pseudo-elemento), il disegno e la misura restano */
-.grade-tools .help-button::after, .grade-badge button.grade-area::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
-.grade-badge button.grade-area { position: relative; }
+.grade-tools .help-button::after, :is(.grade-badge, .analysis-grade) button.grade-area::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
+:is(.grade-badge, .analysis-grade) button.grade-area { position: relative; }
 .grade-tools .help-button { position: relative; width: 20px; height: 20px; color: var(--on-plate); border-color: color-mix(in srgb, var(--on-plate) 40%, transparent); background: transparent; }
 .band.collapsed .grade-badge .grade-areas, .band.collapsed .grade-badge .grade-tools { display: none; }
-.grade-badge button.grade-area.inactive { color: var(--faint); }
-.grade-badge button.grade-area.inactive b { color: var(--faint); }
+:is(.grade-badge, .analysis-grade) button.grade-area.inactive { color: var(--faint); }
+:is(.grade-badge, .analysis-grade) button.grade-area.inactive b { color: var(--faint); }
 /* Bonus/Malus: etichetta su due colonne (niente barra), valore netto colorato dal segno */
-.grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 24px 10px; }
-.grade-badge button.grade-area.grade-bm.pos b { color: var(--good); }
-.grade-badge button.grade-area.grade-bm.neg b { color: var(--bad); }
+:is(.grade-badge, .analysis-grade) button.grade-area.grade-bm { grid-template-columns: 1fr 24px 10px; }
+:is(.grade-badge, .analysis-grade) button.grade-area.grade-bm.pos b { color: var(--good); }
+:is(.grade-badge, .analysis-grade) button.grade-area.grade-bm.neg b { color: var(--bad); }
 /* Ruoli: coperti/totale (essenziali e importanti) e i punti al posto di barra e numero (stessa altezza delle altre righe) */
-.grade-badge button.grade-area.grade-roles { grid-template-columns: auto minmax(0, 1fr) 10px; column-gap: var(--sp-2); }
+:is(.grade-badge, .analysis-grade) button.grade-area.grade-roles { grid-template-columns: auto minmax(0, 1fr) 10px; column-gap: var(--sp-2); }
 .grade-roles-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* Le righe non allargano la carta: una colonna sola, larga quanto la carta */
 .grade-areas { grid-template-columns: minmax(0, 1fr); }
@@ -96,8 +96,8 @@
 /* Il conteggio prima dei punti: grigio, giallo se manca un importante, rosso se manca un essenziale */
 .grade-roles-count { margin-right: var(--sp-3); color: var(--muted); }
 .grade-roles-val em.grade-roles-count.warn { color: var(--warn); }
-.grade-badge button.grade-area.grade-roles.pos b { color: var(--good); }
-.grade-badge button.grade-area.grade-roles.neg b { color: var(--bad); }
+:is(.grade-badge, .analysis-grade) button.grade-area.grade-roles.pos b { color: var(--good); }
+:is(.grade-badge, .analysis-grade) button.grade-area.grade-roles.neg b { color: var(--bad); }
 
 /* Team ridotto: lettera e punteggio sono il pulsante della tendina "Voto delle aree" (freccia che si gira aperta) */
 .grade-pop-toggle {

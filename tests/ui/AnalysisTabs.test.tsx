@@ -140,15 +140,23 @@ describe('schede interne di Analisi', () => {
 });
 
 describe('telefono: Analisi senza Panoramica', () => {
-  it('si apre sul Coaching, cinque schede e il voto del team a destra (non è una scheda)', async () => {
+  it('si apre sul Coaching, cinque schede e il voto del team a destra (non è una scheda) che apre le aree', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
     try {
       await setup();
       expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('.tab-name')!.textContent)).toEqual(['Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
       expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
-      const grade = within(panel()).getByRole('img', { name: /^Voto [SABCD], \d+ su 100/ });
-      expect(grade).toHaveClass('analysis-grade');
+      const grade = within(panel()).getByRole('button', { name: /^Voto [SABCD], \d+ su 100/ });
+      expect(grade.closest('.analysis-grade')).not.toBeNull();
       expect(grade.querySelector('.analysis-grade-overall')).toHaveTextContent(/^\d+$/);
+      // Toccato: la tendina Voto delle aree; una riga apre la sua scheda e la tendina si chiude
+      const user = userEvent.setup();
+      await user.click(grade);
+      expect(grade).toHaveAttribute('aria-expanded', 'true');
+      const pop = within(panel()).getByRole('dialog', { name: 'Voto delle aree' });
+      await user.click(within(pop).getByRole('button', { name: /^Difesa/ }));
+      expect(within(views()).getByRole('tab', { name: 'Difesa' })).toHaveAttribute('aria-selected', 'true');
+      expect(within(panel()).queryByRole('dialog', { name: 'Voto delle aree' })).toBeNull();
       // Niente link "Panoramica" nel Coaching
       expect(within(panel()).queryByRole('button', { name: /Panoramica/ })).toBeNull();
     } finally {

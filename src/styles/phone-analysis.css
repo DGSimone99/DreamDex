@@ -347,14 +347,22 @@
 }
 
 /* -- Telefono: niente Panoramica. Cinque schede (Coaching e le aree) e in fondo a destra il voto del team, sempre a vista:
-   lettera grande nel colore del voto, sotto il punteggio; non è una scheda (non si tocca), grigio col team fuori regola -- */
+   lettera grande nel colore del voto, sotto il punteggio; non è una scheda: toccandolo si apre la tendina "Voto delle aree"
+   (righe delle aree che aprono la loro scheda, e il "?"); grigio col team fuori regola -- */
 .analysis-grade { display: none; }
 @media (max-width: 599px) {
   .analysis .analysis-tabs:has(.analysis-grade) { display: flex; align-items: stretch; }
   .analysis .analysis-tabs:has(.analysis-grade) [role='tablist'] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .analysis-grade { --grade: var(--accent); flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 64px;
+  .analysis-grade { --grade: var(--accent); position: relative; flex: none; display: flex; width: 64px;
     background: radial-gradient(90% 80% at 50% 30%, color-mix(in srgb, var(--grade) 22%, transparent), transparent 75%), var(--panel);
     box-shadow: inset 1px 0 0 var(--line), inset 0 -1px 0 var(--line-soft); }
+  .analysis-grade-toggle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; margin: 0; padding: 0;
+    border: 0; border-radius: 0; background: none; color: inherit; cursor: pointer; }
+  .analysis-grade-toggle[aria-expanded='true'] { background: color-mix(in srgb, var(--raised) 70%, transparent); }
+  .analysis-grade-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .analysis-grade .grade-pop { top: calc(100% + 4px); right: var(--sp-2); width: min(260px, calc(100vw - 28px)); text-align: left; }
+  .analysis-grade .grade-pop .grade-areas { display: grid; margin-top: 0; gap: var(--sp-2); }
+  .analysis-grade .grade-pop button.grade-area { min-height: 40px; }
   .analysis-grade.grade-S { --grade: var(--accent-2); }
   .analysis-grade.grade-A { --grade: var(--good); }
   .analysis-grade.grade-B { --grade: var(--accent); }

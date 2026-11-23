@@ -73,12 +73,9 @@ const badgeTitle = ({ serious, minor }: TabBadge, t: ReturnType<typeof useT>) =>
   minor ? t(minor === 1 ? 'analysis.minorOne' : 'analysis.minorMany', { n: minor }) : null,
 ].filter(Boolean).join(' · ');
 
-/** Il voto del team accanto alle schede (telefono, dove la Panoramica non c'è): lettera, punteggio, giudizio; `broken`: team fuori regola (grigio). */
-export interface TabsGrade { grade: string; overall: number; label: string; broken: boolean }
-
-export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {}, noOverview = false, grade = null }: { view: TabView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<TabView, number | string | null>>; badges?: Partial<Record<TabView, TabBadge>>;
-  /** Telefono: niente scheda Panoramica (l'Analisi si apre sul Coaching) e il voto del team in fondo a destra. */
-  noOverview?: boolean; grade?: TabsGrade | null }) {
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {}, noOverview = false, aside = null }: { view: TabView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<TabView, number | string | null>>; badges?: Partial<Record<TabView, TabBadge>>;
+  /** Telefono: niente scheda Panoramica (l'Analisi si apre sul Coaching). `aside`: in fondo a destra, fuori dalle schede (il voto del team). */
+  noOverview?: boolean; aside?: ReactNode }) {
 
   const t = useT();
   const VIEWS = noOverview ? ANALYSIS_VIEWS.filter(item => item !== 'overview') : ANALYSIS_VIEWS;
@@ -125,14 +122,7 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           </button>
         ))}
       </div>
-      {/* Il voto del team, sempre a vista (non è una scheda): a destra, dopo Ruoli */}
-      {grade && (
-        <div className={`analysis-grade grade-${grade.grade}${grade.broken ? ' rules-broken' : ''}`} role="img"
-          aria-label={t('rating.badgeSr', { grade: grade.grade, overall: grade.overall, label: grade.label })}>
-          <span className="analysis-grade-letter" aria-hidden="true">{grade.grade}</span>
-          <span className="analysis-grade-overall" aria-hidden="true">{grade.overall}</span>
-        </div>
-      )}
+      {aside}
       {/* Voto e problemi delle schede per i lettori di schermo: descrizione, così il nome della scheda resta il suo nome */}
       {VIEWS.filter(item => scores[item] != null || badges[item]).map(item => (
         <span key={item} id={`analysis-view-${item}-desc`} hidden>
