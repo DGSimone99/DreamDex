@@ -234,13 +234,12 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
                 </tr>
               </thead>
               <tbody>
-                {/* data-label: sul telefono la tabella va su due file da 9 tipi e la seconda ripete il nome della riga */}
-                <tr data-label={offense}>
+                <tr>
                   <th scope="row">{offense}</th>
                   {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} gentle={gentle} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`}
                     onEnter={el => tip.open({ side: 'offense', i }, el)} onLeave={tip.close} />)}
                 </tr>
-                <tr data-label={defense}>
+                <tr>
                   <th scope="row">{defense}</th>
                   {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} gentle={gentle} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`}
                     onEnter={el => tip.open({ side: 'defense', i }, el)} onLeave={tip.close} />)}
