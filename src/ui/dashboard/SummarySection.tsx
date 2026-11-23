@@ -435,14 +435,14 @@ export function SummarySection({ summary, members, grade, density, rich = false,
           </div>
         )}
         <Section title={t(packed ? 'sum.fieldAll' : 'sum.weather')} empty={t('sum.noneM')} rows={fieldRows}
-          className={packed ? 'sum-packed' : ''}
+          className={packed ? 'sum-field sum-packed' : 'sum-field'}
           rowKey={row => (row.cond ? `${row.cond.member}:${row.cond.key}` : `haz:${row.haz.member}`)}
           rowClass={row => (row.haz ? 'haz' : undefined)}
           fitKey={keyOf(fieldRows.map(row => (row.cond ? `${row.cond.member}:${row.cond.key}:${row.cond.users.map(u => u.name).join('+')}` : `haz:${row.haz.member}:${row.haz.moves.join('+')}`)))}
           more={n => count('sum.moreField', n)}
           render={row => (row.cond ? conditionLine(row.cond) : hazardLine(row.haz))} />
         {!packed && (
-          <Section title={t('sum.hazards')} empty={t('sum.noneF')} rows={hazards}
+          <Section className="sum-haz" title={t('sum.hazards')} empty={t('sum.noneF')} rows={hazards}
             rowKey={row => row.member}
             fitKey={keyOf(hazards.map(h => `${h.member}:${h.moves.join('+')}`))}
             more={n => count('sum.moreHazards', n)}

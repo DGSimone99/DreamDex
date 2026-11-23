@@ -379,3 +379,14 @@
   .analysis-grade-overall { font: 700 var(--fs-small)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--text); }
   .analysis-grade.rules-broken .analysis-grade-overall { color: var(--muted); }
 }
+
+/* Tablet: il Riassunto su due colonne, Meteo e campo e Trappole a sinistra, Sinergie a destra, ogni titolo sopra la sua
+   colonna; resta alto quanto il contenuto (tutte le righe a vista) */
+@media (min-width: 600px) and (max-width: 1099px) {
+  .dash-summary .sum-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto 1fr; column-gap: var(--sp-9);
+    grid-template-areas: "hero hero" "field syn" "haz syn"; }
+  .dash-summary .sum-hero { grid-area: hero; }
+  .dash-summary .sum-field { grid-area: field; }
+  .dash-summary .sum-haz { grid-area: haz; }
+  .dash-summary .sum-syn-sec { grid-area: syn; align-self: start; }
+}
