@@ -76,6 +76,17 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
 
+  it('chiusa la finestra Filtri (Esc o Mostra), il fuoco torna sul pulsante Filtri', async () => {
+    const user = await setup('Great Tusk');
+    const trigger = within(suggestions()).getByRole('button', { name: /^Filtri/ });
+    await openFilters(user);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).toHaveFocus());
+    const dialog = await openFilters(user);
+    await user.click(within(dialog).getByRole('button', { name: /^Mostra \d+ Pokémon$/ }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
   it('Solo preferiti: conta come filtro; senza preferiti non trova niente', async () => {
     const user = await setup('Great Tusk');
     await openFilters(user);
