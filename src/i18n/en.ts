@@ -1307,6 +1307,7 @@ export const en = {
   'odetail.types.half': "medium",
   'odetail.types.legendFull': "Strong",
   'odetail.types.legendHalf': "Medium",
+  'odetail.types.legendLow': "Weak",
   'odetail.gen.ohko': "OHKO {n}",
   'odetail.gen.strong': "Strong {n}",
   'odetail.gen.counts': "Counts {n}",

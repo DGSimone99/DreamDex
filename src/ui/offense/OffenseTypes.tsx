@@ -246,6 +246,7 @@ function OffenseTypesLegend() {
       <span className="area-legend-swatch"><i className="ok-full ok-ohko" />OHKO</span>
       <span className="area-legend-swatch"><i className="ok-full" />{t('odetail.types.legendFull')}</span>
       <span className="area-legend-swatch"><i className="ok-half" />{t('odetail.types.legendHalf')}</span>
+      <span className="area-legend-swatch"><i className="ok-low" />{t('odetail.types.legendLow')}</span>
       <span className="area-legend-swatch"><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
       <span className="area-legend-swatch"><i className="kob-tri team" />{t('kob.legendTeam')}</span>
     </>

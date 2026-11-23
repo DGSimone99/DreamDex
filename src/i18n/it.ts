@@ -1309,6 +1309,7 @@ export const it: Record<keyof typeof en, string> = {
   'odetail.types.half': "medio",
   'odetail.types.legendFull': "Forte",
   'odetail.types.legendHalf': "Medio",
+  'odetail.types.legendLow': "Debole",
   'odetail.gen.ohko': "OHKO {n}",
   'odetail.gen.strong': "Forti {n}",
   'odetail.gen.counts': "Contano {n}",
