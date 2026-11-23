@@ -333,3 +333,15 @@
   .analysis-tabs #analysis-view-bonusMalus .tab-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .analysis-tabs #analysis-view-bonusMalus .tab-short { display: inline; }
 }
+
+/* -- Telefono: la striscia Da sistemare su due righe, così la frase si legge intera: in alto "N problemi", sotto "il
+   Coaching ha M proposte, la migliore +X" (va a capo se serve); a destra solo la freccia (tutta la striscia porta al
+   Coaching, il pulsante tiene il suo nome per i lettori di schermo) -- */
+@media (max-width: 599px) {
+  .fix-row.is-link { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: var(--sp-2) var(--sp-4);
+    height: auto; padding: var(--sp-4) var(--sp-2) var(--sp-4) var(--sp-6); line-height: 1.3; }
+  .fix-row.is-link .fix-label { grid-column: 1; grid-row: 1; justify-self: start; }
+  .fix-row.is-link .fix-items { grid-column: 1; grid-row: 2; white-space: normal; overflow: visible; text-overflow: clip; }
+  .fix-row.is-link .fix-go { grid-column: 2; grid-row: 1 / 3; align-self: center; min-width: 44px; min-height: 44px; justify-content: center; font-size: 0; }
+  .fix-row.is-link .fix-go > span { font-size: 22px; line-height: 1; }
+}
