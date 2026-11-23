@@ -1,6 +1,6 @@
-import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
-import { coachTeam } from './engine/coach';
+import { coachTeam, type Coaching } from './engine/coach';
 import type { CoachFix } from './engine/coachFixes';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
@@ -48,6 +48,15 @@ import { AUTO_BAND_QUERY, PHONE_QUERY, SHORT_SCREEN, TABLET_SIDE_QUERY, useMedia
 import { AutoBand } from './ui/AutoBand';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
+
+/**
+ * Nel browser la pagina si disegna prima del voto: voto, analisi e Coaching del team (migliaia di colpi, sul telefono
+ * qualche secondo) si calcolano subito dopo il primo disegno, intanto la carta del voto dice che lo sta calcolando.
+ * Senza worker (test, browser vecchi) come prima, tutto al primo disegno.
+ */
+const PAINT_FIRST = typeof Worker !== 'undefined';
+/** Il Coaching mentre il voto si calcola: niente problemi, niente consigli (la riga Da sistemare resta vuota un attimo). */
+const COACHING_WAIT: Coaching = { verdict: '', teamType: null, strengths: [], problems: [], threatFixes: {} };
 
 interface AppProps {
   /** Dati della fonte iniziale (National Dex OU). */
@@ -140,8 +149,19 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setListUndo(undo ? { id: Date.now(), undo, before: listsRef.current, after: next } : null);
     setLists(next);
   }, []);
-  // La scheda Liste si monta la prima volta che la si apre, poi resta
+  // Le schede Analisi, Meta e Liste si montano la prima volta che le si apre, poi restano (nascoste non si disegnano
+  // all'avvio, e prima di aprirle non si ridisegnano a ogni modifica del team)
   const [listsOpened, setListsOpened] = useState(false);
+  const [analysisOpened, setAnalysisOpened] = useState(false);
+  const [metaOpened, setMetaOpened] = useState(false);
+  // Voto, analisi e Coaching dopo il primo disegno (vedi PAINT_FIRST): un giro dopo che la pagina è sullo schermo
+  const [booted, setBooted] = useState(!PAINT_FIRST);
+  useEffect(() => {
+    if (booted) return;
+    let timer = 0;
+    const frame = requestAnimationFrame(() => { timer = window.setTimeout(() => startTransition(() => setBooted(true)), 0); });
+    return () => { cancelAnimationFrame(frame); clearTimeout(timer); };
+  }, [booted]);
   // Senza meta (single player): voto, analisi, coach e suggerimenti ignorano l'uso nel formato
   // Il formato scelto entra nei dati: alcune regole del voto cambiano col formato (Ubers)
   // Il voto e l'analisi non dipendono dalle liste: cambiandole non si ricalcolano (solo i suggerimenti le usano)
@@ -289,23 +309,27 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       remember({ kind: 'add', from: battleName(fix.set) }, after);
     }
   };
-  const analysis = useMemo(() => analyzeTeam(team, rated), [team, rated]);
-  const rating = useMemo(() => rateTeam(team, rated, lang), [team, rated, lang]);
+  const analysis = useMemo(() => (booted ? analyzeTeam(team, rated) : null), [booted, team, rated]);
+  const rating = useMemo(() => (booted ? rateTeam(team, rated, lang) : null), [booted, team, rated, lang]);
+  /** Il voto del team non c'è ancora: si sta calcolando (solo al primo disegno, vedi PAINT_FIRST). */
+  const grading = !booted && team.length > 0;
   // Il coach prova gli scambi per ogni membro (un decimo di secondo): si aggiorna subito dopo il team, senza bloccarlo
   const coachInput = useMemo(() => ({ team, format, data, lang }), [team, format, data, lang]);
   const coachSource = useDeferredValue(coachInput);
   // Team vuoto: niente aree da mostrare, Analisi torna alla Panoramica
   useEffect(() => { if (team.length === 0) setAnalysisView('overview'); }, [team.length]);
-  const coaching = useMemo(() => coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang), [coachSource]);
+  const coaching = useMemo(() => (booted ? coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang) : COACHING_WAIT), [booted, coachSource]);
 
   // Contatori delle schede: i problemi del coach; sotto Meta l'uso medio del team (la scheda è solo informativa)
   const problems = coaching.problems;
   const metaAverage = metaOn ? metaBoard(data.stats, team).average : null;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
+  if (shownTab === 'analysis' && !analysisOpened) setAnalysisOpened(true);
+  if (shownTab === 'meta' && !metaOpened) setMetaOpened(true);
   // I consigli (candidati e prima mossa) sono lenti: solo col Coaching aperto, o con la Panoramica (la riga Da sistemare
   // mostra solo ciò che il Coaching risolve), e dopo che la scheda si è disegnata
   const coachingOpen = shownTab === 'analysis' && (analysisView === 'coaching' || (analysisView === 'overview' && team.length >= 2));
-  const adviceInput = useMemo(() => (coachingOpen ? { source: coachSource, problems: coaching.problems } : null), [coachingOpen, coachSource, coaching]);
+  const adviceInput = useMemo(() => (coachingOpen && booted ? { source: coachSource, problems: coaching.problems } : null), [coachingOpen, booted, coachSource, coaching]);
   // In sottofondo (useAdvice): aprire il Coaching non blocca più l'app
   // Consigli di un team precedente: non si mostrano, si dice che si stanno calcolando
   const advice = useAdvice(adviceInput);
@@ -423,13 +447,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
           // Col team incompleto il numero resta neutro: giallo o rosso solo a team completo (un team a metà non è «rotto»)
           count: problems.length ? { text: String(problems.length), level: team.length < 6 ? 'info' : problems.some(p => p.severity === 'serious') ? 'serious' : 'warn' } : null,
-          hint: rating ? [`${rating.grade} ${rating.overall}`, ...(problems.length ? [t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })] : [])].join(' · ') : t(lang, 'rail.noGrade'),
+          hint: rating ? [`${rating.grade} ${rating.overall}`, ...(problems.length ? [t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })] : [])].join(' · ') : t(lang, grading ? 'rating.calculating' : 'rail.noGrade'),
           status: rating ? <>
             {/* Team non legale nel formato: il voto in grigio, come nella carta del voto */}
             <b className={`grade grade-${rating.grade}${problems.some(p => p.category === 'rules') ? ' illegal' : ''}`}>{rating.grade} {rating.overall}</b>
             {problems.length > 0 && <>{' · '}<span className={problems.some(p => p.severity === 'serious') ? 'serious' : 'minor'}>
               {t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })}</span></>}
-          </> : t(lang, 'rail.noGrade') },
+          </> : t(lang, grading ? 'rating.calculating' : 'rail.noGrade') },
         { id: 'meta', label: t(lang, 'tabs.meta'), icon: 'globe', disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
           hint: !metaOn ? t(lang, 'rail.metaOff') : team.length > 0 && metaAverage !== null ? t(lang, 'meta.average', { pct: formatPercent(lang, metaAverage) }) : t(lang, 'rail.metaUsage'),
           status: !metaOn ? t(lang, 'rail.metaOff')
@@ -471,7 +495,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} improveSignal={improveSignal} collapsed={collapsed} onFillOpenChange={setFillOpen}
           onAllowMultipleMegas={() => setChoice(withMultipleMegas)} />
-        <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
+        <GradeBadge rating={rating} grading={grading} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
           incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { navTo('analysis'); setAnalysisView(area); }} />
@@ -500,19 +524,19 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
+          {analysisOpened && analysis && <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
             jump={analysisJump}
             onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
             onExport={exportTeam} onImproveSets={() => setImproveSignal(n => n + 1)}
-            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={sectionsCollapsed} />
+            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={sectionsCollapsed} />}
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
-          <MetaTab team={team} data={rated} rating={rating}
+          {metaOpened && booted && <MetaTab team={team} data={rated} rating={rating}
             onCoverage={(side, species) => {
               setAnalysisJump(j => ({ view: side === 'defense' ? 'defense' : 'strength', sub: 'coverageMeta', focus: { kind: 'threat', side, species }, nonce: (j?.nonce ?? 0) + 1 }));
               setTab('analysis');
             }}
-            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={sectionsCollapsed} />
+            onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={sectionsCollapsed} />}
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}

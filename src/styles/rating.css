@@ -166,3 +166,6 @@
   .grade-badge.letter-changed .letter { animation: none; }
 }
 @keyframes grade-delta-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Voto in arrivo (all'apertura del sito, un attimo): una riga tenue come "Preparo i candidati…", non grande come un voto */
+:is(.band, .main) .grade-badge.grading .grade-visual .overall { font-family: inherit; font-weight: 400; font-style: normal; font-size: var(--fs-section); line-height: 1.3; color: var(--muted); white-space: normal; }

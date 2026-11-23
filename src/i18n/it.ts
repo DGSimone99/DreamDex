@@ -1542,6 +1542,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.since': "{delta}",
   'rating.changedSr': "Voto passato da {from} a {to} ({grade})",
   'rating.noGrade': "Nessun voto",
+  'rating.calculating': "Calcolo del voto…",
   'rating.addPokemon': "Aggiungi un Pokémon",
   'rating.evBlocked': "Bloccato: EV oltre 510",
   'rating.speciesBlocked': "Bloccato: specie doppia",

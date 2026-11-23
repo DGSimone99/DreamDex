@@ -1539,6 +1539,7 @@ export const en = {
   'rating.since': "{delta}",
   'rating.changedSr': "Grade went from {from} to {to} ({grade})",
   'rating.noGrade': "No grade",
+  'rating.calculating': "Working out the grade…",
   'rating.addPokemon': "Add a Pokémon",
   'rating.evBlocked': "Blocked: EVs over 510",
   'rating.speciesBlocked': "Blocked: duplicate species",

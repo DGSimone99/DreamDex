@@ -62,13 +62,15 @@ describe('Riquadro Voto', () => {
     render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     expect(band()).not.toHaveTextContent('Statistiche n/d');
-    expect(screen.getByRole('region', { name: 'Meta' })).toHaveTextContent('Statistiche Smogon assenti');
+    // Senza statistiche la scheda Meta non si apre (e non si disegna: le schede si disegnano la prima volta che si aprono)
+    expect(document.getElementById('tab-meta')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('scheda Meta: posizione e uso di ogni membro, fuori dalla valutazione', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    await user.click(screen.getByRole('tab', { name: /^Meta/ }));
     const team = screen.getByRole('group', { name: 'Il tuo team' });
     expect(team).toHaveTextContent('Great Tusk #1 30,0%');
     expect(team).toHaveTextContent('Gholdengo #2 25,0%');
