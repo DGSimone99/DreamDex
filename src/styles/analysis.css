@@ -950,6 +950,8 @@
 @media (min-width: 1100px) and (max-width: 1279px) {
   .dash-tabs [role='tab'] { padding: 0 10px; }
   .dash-tabs :is(.dash-tab-trio, .icon) { display: none; }
+  /* Copertura › Meta: "3 senza check · 9 con 1 check" sta intero fra l'interruttore e i link */
+  .dash-coverage .dash-head { gap: var(--sp-4); }
 }
 .dash-tab-n { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--bad); color: var(--on-accent-2); font: 700 var(--fs-label)/1.4 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
 /* Team incompleto: il numero resta neutro, come il contatore della barra laterale */

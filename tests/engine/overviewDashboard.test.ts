@@ -97,7 +97,7 @@ describe('dashboardData', () => {
     for (let i = 1; i < dash.threats.pods.length; i++) expect(dash.threats.pods[i - 1].usage).toBeGreaterThanOrEqual(dash.threats.pods[i].usage);
   });
 
-  it('metaThreats: scoperte (nessuno regge / nessuno KO in due) prima, poi a fatica (uno solo), poi dalla più usata', () => {
+  it('metaThreats: senza check (nessuno regge / nessuno KO in due) prima, poi con un solo check, poi dalla più usata', () => {
     const { rating, dash } = build();
     const list = metaThreats(rating, fixtureData);
     expect(dash.threats.list).toEqual(list);
@@ -124,7 +124,7 @@ describe('dashboardData', () => {
       const vs = metaVersus(rating, name, [])!;
       expect(vs.own).toBe(false);
       const threat = list.find(x => x.species === name);
-      // Scoperta / a fatica come la carta della Panoramica; chi non è fra le minacce è gestito
+      // Senza check / un solo check come la carta della Panoramica; chi non è fra le minacce è gestito
       expect(vs.status).toBe(threat ? (threat.status === 'open' ? 'open' : 'thin') : 'held');
       for (const r of threat?.reasons ?? []) expect(vs[r.side]).toEqual(r.by);
     }

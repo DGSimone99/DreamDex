@@ -15,7 +15,7 @@ import { LangProvider } from '../../src/i18n/react';
 import { densityFor, OverviewDashboard, RICH_FROM, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
 import { renderIt } from '../helpers/italian';
 
-/** Sette minacce: tre scoperte, quattro a fatica (una dal lato dell'Offesa). */
+/** Sette minacce: tre senza check, quattro con un solo check (una dal lato dell'Offesa). */
 const THREATS: MetaThreat[] = [
   { species: 'Raging Bolt', usage: 0.172, status: 'open', side: 'defense', reasons: [{ side: 'defense', by: [] }] },
   { species: 'Tapu Koko', usage: 0.114, status: 'open', side: 'defense', reasons: [{ side: 'defense', by: [] }] },
@@ -896,18 +896,31 @@ describe('Copertura › schede Tipi e Meta', () => {
   const tiles = () => [...cov().querySelectorAll<HTMLElement>('.cov-tile:not(.more)')];
   const tile = (name: RegExp) => tiles().find(el => name.test(el.getAttribute('aria-label')!))!;
 
-  it('si apre su Tipi; Meta ha il numero delle minacce scoperte; niente carta a parte', async () => {
+  it('si apre su Tipi; Meta ha il numero delle minacce senza check; niente carta a parte', async () => {
     const user = userEvent.setup();
     mount();
     expect(within(cov()).getByRole('tab', { name: 'Tipi' })).toHaveAttribute('aria-selected', 'true');
     expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveTextContent('Meta3');
     // Per i lettori di schermo numero e parola separati: niente "Meta3"
-    expect(within(cov()).getByRole('tab', { name: 'Meta, 3 minacce scoperte' })).toBeInTheDocument();
+    expect(within(cov()).getByRole('tab', { name: 'Meta, 3 minacce senza check' })).toBeInTheDocument();
     expect(cov().querySelectorAll('thead .dash-type')).toHaveLength(18);
     expect(screen.queryByRole('region', { name: 'Minacce del meta' })).toBeNull();
     await toMeta(user);
     expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
-    expect(cov()).toHaveTextContent('3 scoperte · 4 a fatica');
+    expect(cov()).toHaveTextContent('3 senza check · 4 con un solo check');
+  });
+
+  it('una sola minaccia senza check: "1 minaccia" al singolare; sul portatile stretto la testata dice "con 1 check"', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(min-width: 1100px) and (max-width: 1279px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      mount({ data: sample({ threats: { pods: [], list: THREATS.slice(2), total: 20, available: true, metaOff: false } }) });
+      expect(within(cov()).getByRole('tab', { name: 'Meta, 1 minaccia senza check' })).toBeInTheDocument();
+      await toMeta(user);
+      expect(cov()).toHaveTextContent('1 senza check · 4 con 1 check');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('tipi tutti verdi (Offesa e Difesa) e il meta: si apre su Meta; dopo un clic resta la scelta del giocatore', async () => {
@@ -926,7 +939,7 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(within(cov()).getByRole('table')).toBeInTheDocument();
   });
 
-  it('Meta: solo le minacce problematiche come piastrelle, rosse se scoperte e gialle a fatica; scudo e spada nel colore del lato', async () => {
+  it('Meta: solo le minacce problematiche come piastrelle, rosse senza check e gialle con un solo check; scudo e spada nel colore del lato', async () => {
     const user = userEvent.setup();
     mount();
     await toMeta(user);
@@ -942,7 +955,7 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(tile(/^Zamazenta/)).toHaveClass('thin');
     expect([...tile(/^Raging Bolt/).querySelectorAll('.cov-side')].map(el => el.className)).toEqual(['cov-side bad', 'cov-side ok']);
     expect([...tile(/^Zamazenta/).querySelectorAll('.cov-side')].map(el => el.className)).toEqual(['cov-side ok', 'cov-side minor']);
-    expect(tile(/^Zamazenta/)).toHaveAttribute('aria-label', 'Zamazenta, a fatica: Difesa: Lo gestiscono 2 o più membri. Offesa: Lo manda KO solo Iron Valiant. 14,8% nel meta');
+    expect(tile(/^Zamazenta/)).toHaveAttribute('aria-label', 'Zamazenta, un solo check: Difesa: Lo gestiscono 2 o più membri. Offesa: Lo manda KO solo Iron Valiant. 14,8% nel meta');
   });
 
   it('più minacce di quante ne stanno (7 senza misura): le prime 6 e "+N"', async () => {
@@ -953,7 +966,7 @@ describe('Copertura › schede Tipi e Meta', () => {
     expect(tiles()).toHaveLength(6);
     const more = cov().querySelector<HTMLElement>('.cov-tile.more')!;
     expect(more).toHaveTextContent('+4');
-    expect(more).toHaveAttribute('aria-label', 'Altre 4 minacce: Mon6 (a fatica), Mon7 (a fatica), Mon8 (a fatica), Mon9 (a fatica)');
+    expect(more).toHaveAttribute('aria-label', 'Altre 4 minacce: Mon6 (un solo check), Mon7 (un solo check), Mon8 (un solo check), Mon9 (un solo check)');
   });
 
   it('tooltip col fuoco: i due lati (prima quello che il clic apre) e dove porta il clic', async () => {
@@ -992,7 +1005,7 @@ describe('Copertura › schede Tipi e Meta', () => {
     const { unmount } = mount({ data: sample({ threats: { pods: [], list: [], total: 20, available: true, metaOff: false } }) });
     expect(within(cov()).getByRole('tab', { name: 'Meta' })).toHaveTextContent(/^Meta$/);
     await toMeta(user);
-    expect(cov()).toHaveTextContent('Nessuna minaccia del meta senza risposta');
+    expect(cov()).toHaveTextContent('Nessuna minaccia del meta senza check');
     expect(tiles()).toHaveLength(0);
     unmount();
     mount({ data: sample({ threats: { pods: [], list: [], total: 0, available: false, metaOff: true } }) });

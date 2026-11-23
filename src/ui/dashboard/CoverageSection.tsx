@@ -13,6 +13,7 @@ import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { typeIconUrl, tileStyle } from '../typeIcons';
+import { useMediaQuery } from '../useMediaQuery';
 import { useRoving } from '../useRoving';
 import { DefenseTip, OffenseTip } from './CoverageTip';
 import { DashCard, DashLink } from './DashCard';
@@ -46,6 +47,8 @@ const areaOf = (side: Side): AnalysisView => (side === 'defense' ? 'defense' : '
 /** La larghezza minima di una piastrella della scheda Meta e lo stacco fra due: quante ne stanno in fila. */
 const TILE_MIN = 96;
 const TILE_GAP = 6;
+/** Portatili stretti: nella testata "con un solo check" non sta, lì "con 1 check" (la testata ha anche i link). */
+const NARROW_HEAD = '(min-width: 1100px) and (max-width: 1279px)';
 /** Senza misura (test, scheda nascosta): sette piastrelle. */
 const TILES_DEFAULT = 7;
 
@@ -153,8 +156,8 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
       }}>
       {(['types', 'meta'] as const).map(v => (
         <button key={v} type="button" role="tab" data-view={v} aria-selected={view === v} tabIndex={view === v ? 0 : -1} onClick={() => setView(v)}
-          // "Meta, 3 minacce scoperte" (non "Meta3")
-          aria-label={v === 'meta' && openCount > 0 && !gentle ? `${t('dash.tabMeta')}, ${t('dash.tabMetaOpen', { n: openCount })}` : undefined}>
+          // "Meta, 3 minacce senza check" (non "Meta3")
+          aria-label={v === 'meta' && openCount > 0 && !gentle ? `${t('dash.tabMeta')}, ${openCount === 1 ? t('dash.tabMetaOpenOne') : t('dash.tabMetaOpen', { n: openCount })}` : undefined}>
           {/* Tipi: tre mini icone di tipo sovrapposte; Meta: il globo della sezione Meta della barra laterale */}
           {v === 'types'
             ? <span className="dash-tab-trio" aria-hidden="true">{(['Fire', 'Water', 'Grass'] as const).map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}</span>
@@ -165,9 +168,10 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
       ))}
     </span>
   );
-  // Il numero prima, come nelle testate di Ruoli e Velocità: "18/18 offesa · 18/18 difesa", "4 scoperte · 8 a fatica"
+  // Il numero prima, come nelle testate di Ruoli e Velocità: "18/18 offesa · 18/18 difesa", "4 senza check · 8 con un solo check"
   const typesMeta = <><b>{coverage.offense}</b> {offense.toLocaleLowerCase()} · <b>{coverage.defense}</b> {defense.toLocaleLowerCase()}</>;
-  const threatsMeta = list.length > 0 && <><b className={openCount && !gentle ? 'bad' : undefined}>{openCount}</b> {t(openCount === 1 ? 'dash.headOpenOne' : 'dash.headOpenMany')} · <b>{thinCount}</b> {t('dash.threatThin')}</>;
+  const narrowHead = useMediaQuery(NARROW_HEAD);
+  const threatsMeta = list.length > 0 && <><b className={openCount && !gentle ? 'bad' : undefined}>{openCount}</b> {t('dash.headOpen')} · <b>{thinCount}</b> {t(narrowHead ? 'dash.headThinShort' : 'dash.headThin')}</>;
   const sideMark = (x: MetaThreat, side: Side) => (
     <span className={`cov-side ${gentle && stateOf(x, side) !== 'ok' ? 'soft' : stateOf(x, side)}`}><Icon name={side === 'defense' ? 'shield' : 'sword'} /></span>
   );

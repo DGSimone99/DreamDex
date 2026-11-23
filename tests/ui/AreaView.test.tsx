@@ -240,7 +240,7 @@ describe('problemi delle aree', () => {
 
   it('una minaccia del meta nella testata della Difesa: icona e nome del Pokémon, il testo intero nel tooltip', async () => {
     const user = userEvent.setup();
-    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Scoperto in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
+    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Senza check in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[threat]} />);
     const list = screen.getByRole('list', { name: 'Problemi in Difesa' });
     const chip = list.querySelector<HTMLElement>('.area-chip')!;
