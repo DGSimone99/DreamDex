@@ -78,3 +78,11 @@
   .rail-foot .lang-switch button { min-width: 30px; }
   .rail .tabs.vertical .tab-name { font-size: var(--fs-title); }
 }
+/* EN | IT e Impostazioni nella barra: la scritta più piccola e vicina all'ingranaggio; "Impostazioni" non sta nella
+   barra stretta (160 px di riga) e lì resta solo l'ingranaggio, col nome nel fumetto e nell'aria-label */
+@media (min-width: 1100px) {
+  .rail-settings { gap: var(--sp-2); padding-right: 0; font-size: var(--fs-caption); }
+}
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  :lang(it) .rail-settings-text { display: none; }
+}

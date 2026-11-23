@@ -3,7 +3,9 @@ import { useT } from '../../i18n/react';
 import { Icon } from '../icons';
 
 /** Una sezione del cruscotto: targhetta magenta obliqua, un riassunto breve, i link alle schede. */
-export function DashCard({ title, meta, links, onOpen, openLabel, className = '', tooltip, icon, titleExtra, level = 'h3', children }: {
+export function DashCard({ title, meta, links, onOpen, openLabel, className = '', icon, titleExtra, tabs, level = 'h3', children }: {
+  /** Le schede della card, dopo il titolo (la Copertura: Tipi e Meta). */
+  tabs?: ReactNode;
   title: string;
   /** Un segno prima della targhetta (es. la medaglia del core in Bonus/Malus), decorativo. */
   icon?: ReactNode;
@@ -18,17 +20,16 @@ export function DashCard({ title, meta, links, onOpen, openLabel, className = ''
   meta?: ReactNode;
   links?: ReactNode;
   className?: string;
-  /** Testo nascosto per la densità stretta (es. il controllo della Velocità). */
-  tooltip?: string;
   children: ReactNode;
 }) {
   const id = useId();
   const Title = level;
   return (
-    <section className={`dash-card ${className}`} aria-labelledby={id} title={tooltip}>
+    <section className={`dash-card ${className}`} aria-labelledby={id}>
       <header className={`dash-head${onOpen ? ' is-link' : ''}`}>
         {icon}
         <Title id={id} className="dash-plate">{title}{titleExtra}</Title>
+        {tabs}
         {meta && <span className="dash-meta">{meta}</span>}
         {(links || onOpen) && <span className="dash-links">{links}{onOpen && <DashLink area={title} name={openLabel} onClick={onOpen} />}</span>}
       </header>

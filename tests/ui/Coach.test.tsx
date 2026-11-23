@@ -187,7 +187,7 @@ describe('CoachingView', () => {
   const coachingOf = (problems: CoachProblem[], over: Partial<Coaching> = {}): Coaching => ({ verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems, ...over });
   const fire: CoachProblem = { severity: 'serious', category: 'defense', text: 'Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi',
     fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } };
-  const zapdos: CoachProblem = { severity: 'minor', category: 'meta', text: 'Scoperto in difesa contro Zapdos', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
+  const zapdos: CoachProblem = { severity: 'minor', category: 'meta', text: 'Senza check in difesa contro Zapdos', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] };
   const pivot: CoachProblem = { severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important', subjects: ['pivot'] };
   const steel: CoachProblem = { severity: 'minor', category: 'redundancy', text: '3 membri di tipo Acciaio', fixes: [], key: 'redundancy:3 membri di tipo Acciaio' };
   const problems = [fire, zapdos, pivot, steel];
