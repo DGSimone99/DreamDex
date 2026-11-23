@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { typeAverage } from '../../engine/coverage';
+import { TARGET_SCAN, typeAverage } from '../../engine/coverage';
 import type { FormatId } from '../../engine/format';
 import { TYPES, type TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
@@ -107,12 +107,16 @@ export function TypeAverages({ formatId }: { formatId: FormatId }) {
   );
 }
 
-/** Le minacce del meta usate come bersagli: le sprite in una griglia ordinata (10 per riga), dalla più usata. */
+/**
+ * Le minacce del meta usate come bersagli: le sprite in una griglia ordinata (10 per riga), dalla più usata. Offesa
+ * (`sword`): fra i 40 più usati uno per coppia di tipi (il più usato la rappresenta), per questo a volte meno di 40, e la
+ * riga sotto il titolo lo dice; Difesa (`shield`): i 40 più usati con una mossa d'attacco.
+ */
 export function MetaTargets({ species, icon = 'sword' }: { species: string[]; icon?: 'sword' | 'shield' }) {
   const t = useT();
   return (
     <>
-      <TipHead lead={<TipGlyph icon={icon} />} title={t('guide.off.targets.metaTitle', { n: species.length })} sub={t('guide.off.targets.metaSub')} />
+      <TipHead lead={<TipGlyph icon={icon} />} title={t('guide.off.targets.metaTitle', { n: species.length })} sub={icon === 'sword' ? t('guide.off.targets.metaSubOff', { top: TARGET_SCAN }) : t('guide.off.targets.metaSub')} />
       <TipSec>
         <div className="gat-mons">{species.map(name => <span key={name} title={name}><Sprite species={name} size={SPRITE_TIP_ROW} /></span>)}</div>
       </TipSec>

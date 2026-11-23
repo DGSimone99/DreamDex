@@ -9,8 +9,10 @@ import type { TypeName } from '../../engine/types';
 import { weatherMitigations, type WeatherMitigation } from '../../engine/synergy';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
-import { mitigationNote, mitigationParts } from '../AnalysisTables';
-import { TipGlyph, TipHead, TipSec, TipTypeIcon } from '../TipHead';
+import { formatMultiplier, mitigationNote, mitigationParts } from '../AnalysisTables';
+import { CONDITION_TYPE } from '../dashboard/ConditionTip';
+import { KoBadge } from '../KoBadge';
+import { TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from '../TipHead';
 import { EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
@@ -210,7 +212,7 @@ export function DefenseHitTip({ type, species, cell, mult }: { type: string; spe
     return (
       <span className="tht-move">
         <span className="dht-side">{label}</span>
-        <span className={`ftip-ko def ${band}`}>{HOLD_BANDS[band].tag}</span>
+        <KoBadge side="def" band={band} />
         <b className="tht-pct">{pct}<small>%</small></b>
       </span>
     );
@@ -218,7 +220,7 @@ export function DefenseHitTip({ type, species, cell, mult }: { type: string; spe
   return (
     <>
       <TipHead lead={<TipTypeIcon type={type} />} title={typeName(type as TypeName, lang)}
-        badge={<span className={`ftip-ko def ${cell.band} tht-band`}>{HOLD_BANDS[cell.band].tag}</span>} qualifier={mult ?? undefined} />
+        badge={<KoBadge side="def" band={cell.band} />} qualifier={mult ?? undefined} />
       <TipSec>
         <div className="tht-body">
           <Sprite species={species} size={SPRITE_TIP_ROW} />
@@ -254,22 +256,37 @@ function NotesLine({ id, notes, mitigations }: { id: string; notes: string[]; mi
   const name = (m: WeatherMitigation) => t(`conditionName.${m.condition}` as Parameters<typeof t>[0]);
   const parts = mitigations.map(m => mitigationParts(m, lang));
   const one = mitigations.length === 1;
+  // Un cambio per riga: il tipo (tessera e nome), sotto per chi vale, a destra il moltiplicatore prima → dopo (verde se
+  // migliora, rosso se peggiora)
+  const rows = (m: WeatherMitigation) => {
+    const groups = new Map<string, { from: number; to: number; names: string[] }>();
+    for (const x of m.members) {
+      const key = `${x.from}|${x.to}`;
+      const g = groups.get(key) ?? { from: x.from, to: x.to, names: [] };
+      g.names.push(x.species);
+      groups.set(key, g);
+    }
+    return [...groups.values()].map(g => (
+      <TipRow key={`${g.from}|${g.to}`} lead={<TipTypeIcon type={m.type} />} title={typeName(m.type, lang)}
+        sub={t('tip.weather.for', { list: g.names.join(', ') })} tone={g.to < g.from ? 'good' : 'bad'}
+        value={`${formatMultiplier(g.from)} → ${formatMultiplier(g.to) || '×1'}`} />
+    ));
+  };
+  const type = CONDITION_TYPE[mitigations[0]?.condition ?? ''];
   return (
     <>
       <span id={id} className="ht-notes note" tabIndex={0} {...tip.bind(true)}>
         <Typed text={notes.join(' · ')} />
       </span>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="tip-w-s weather-tip">
-          <TipHead lead={<TipGlyph icon={mitigations.every(m => m.condition.endsWith('terrain')) ? 'field' : 'cloud'} />}
-            title={mitigations.map(name).join(' · ')} sub={one ? parts[0].source : undefined} />
+        <FloatTip rect={tip.anchor.rect} tone={type ? typeColor(type) : 'var(--accent)'} className="tip-w-m weather-tip">
+          {/* Come il fumetto di Meteo e campo: la tessera del tipo della condizione; sotto il titolo l'avvertenza */}
+          <TipHead lead={type ? <TipTypeIcon type={type} /> : undefined} title={mitigations.map(name).join(' · ')} sub={t('tip.weather.notAlways')} />
           {mitigations.map((m, i) => (
-            // Un cambio per riga: più effetti di fila in un paragrafo solo non si leggono
-            <TipSec key={m.condition} label={one ? undefined : `${name(m)} · ${parts[i].source}`}>
-              {parts[i].changes.map(c => <p key={c}><Typed text={c} /></p>)}
+            <TipSec key={m.condition} label={one ? parts[i].source : `${name(m)} · ${parts[i].source}`}>
+              <TipRows>{rows(m)}</TipRows>
             </TipSec>
           ))}
-          <p className="ftip-foot">{t('tip.weather.notAlways')}</p>
         </FloatTip>
       )}
     </>

@@ -8,7 +8,7 @@ import { moveEffects } from './moveEffects';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { MoveLine } from '../dashboard/CoverageTip';
-import { HOLD_BANDS } from '../defense/holds';
+import { KoBadge } from '../KoBadge';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { TipHead, TipSec, TipTypeIcon } from '../TipHead';
@@ -79,7 +79,7 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
   return (
     <>
       <TipHead lead={type ? <TipTypeIcon type={type} /> : undefined} sprite={type ? undefined : target ?? ''} title={type ? typeName(type as TypeName, lang) : target}
-        badge={<span className={`ftip-ko off ${band} tht-band`}>{HOLD_BANDS[band].tag}</span>} />
+        badge={<KoBadge side="off" band={band} />} />
       <TipSec>
         <div className="tht-body">
           <Sprite species={species} size={SPRITE_TIP_ROW} />
@@ -91,7 +91,7 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
       </TipSec>
       {extras.map(x => (
         <TipSec key={x.label} className="tht-extra">
-          <span className="tht-extra-h">{(x.kind === 'setup' || x.kind === 'combo') && <i className="kob-tri" aria-hidden="true" />}{(x.kind === 'team' || x.kind === 'combo') && <i className="kob-tri team" aria-hidden="true" />}{x.label}{x.effect && <small className="tht-eff">{x.effect}</small>}<span className={`ftip-ko off ${x.band}`}>{HOLD_BANDS[x.band].tag}</span></span>
+          <span className="tht-extra-h">{(x.kind === 'setup' || x.kind === 'combo') && <i className="kob-tri" aria-hidden="true" />}{(x.kind === 'team' || x.kind === 'combo') && <i className="kob-tri team" aria-hidden="true" />}{x.label}{x.effect && <small className="tht-eff">{x.effect}</small>}<KoBadge side="off" band={x.band} /></span>
           <HitLine set={set} move={x.move} defTypes={defTypes} pct={x.pct} />
         </TipSec>
       ))}

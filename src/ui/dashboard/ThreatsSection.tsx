@@ -126,7 +126,7 @@ export function ThreatsSection({ threats, onView }: {
       </div>
       {tip.anchor && tipThreat && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
-          <TipHead sprite={tipThreat.species} title={tipThreat.species} sub={word(tipThreat)}
+          <TipHead sprite={tipThreat.species} title={tipThreat.species} sub={t(tipThreat.status === 'open' ? 'tip.threat.open' : 'tip.threat.thin')}
             num={formatPercent(lang, tipThreat.usage)} qualifier={t('dash.threatUsageWord')} />
           <TipSec>
             <ul className="thr-tip-why">

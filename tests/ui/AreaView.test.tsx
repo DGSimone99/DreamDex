@@ -248,7 +248,14 @@ describe('problemi delle aree', () => {
     const chip = list.querySelector<HTMLElement>('.area-chip')!;
     expect(chip.querySelector('.coach-threat-name')).toHaveTextContent('Zapdos');
     for (let i = 0; i < 20 && document.activeElement !== chip; i++) await user.tab();
-    await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).toHaveTextContent(threat.text));
+    // Il fumetto come quello delle Minacce della Panoramica: la sprite, "Minaccia scoperta", la ragione in una riga;
+    // il testo intero resta ai lettori di schermo nella descrizione della pillola
+    await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).not.toBeNull());
+    const tip = document.querySelector('.ftip.area-chip-tip')!;
+    expect(tip.querySelector('.tip-head.has-sprite')).toHaveTextContent('Zapdos');
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent('Minaccia scoperta');
+    expect(tip.querySelector('.thr-tip-why li.open')).toHaveTextContent('Nessuno lo regge bene');
+    expect(document.getElementById(chip.getAttribute('aria-describedby')!)).toHaveTextContent(threat.text);
   });
 });
 

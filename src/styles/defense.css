@@ -426,10 +426,8 @@
 .kob.hb-held:hover { background: color-mix(in srgb, var(--good) 42%, transparent); }
 .kob.hb-2:hover { background: color-mix(in srgb, var(--warn) 32%, transparent); }
 .kob.hb-ohko:hover { background: color-mix(in srgb, var(--bad) 50%, transparent); }
-.hb-say { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-3); font-size: var(--tip-body); color: var(--muted); }
-.hb-group + .hb-group { margin-top: var(--sp-5); }
-.hb-dot { flex: none; width: 9px; height: 9px; border-radius: 2px; }
-.hb-group-two .hb-dot { background: color-mix(in srgb, var(--warn) 40%, var(--panel)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 65%, transparent); }
+/* "Regge" nel tooltip in due gruppi (4HKO+ e 3HKO): l'etichetta del gruppo è la fascia e la sua frase, in chiaro */
+.hb-group > .tip-sec-label { font: 500 var(--tip-small)/1.3 var(--ui); letter-spacing: 0; text-transform: none; color: var(--muted); }
 
 /* Squadra chiusa: sotto le barre di Tipi e Meta i colpi peggiori (pastiglie del colore della fascia), sotto Recupero
    come recupera */
@@ -473,8 +471,4 @@
 .dsh-sw.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); }
 .dsh-sw.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); }
 /* Il recupero e le perdite in parole, sotto i pezzi: verde quello che recupera, rosso quello che perde */
-.tip-sec.dsh-lines { gap: var(--sp-2); }
-.dsh-line { margin: 0; font-size: var(--tip-small); color: var(--muted); }
-.dsh-line.gain { color: color-mix(in srgb, var(--good) 70%, var(--text)); }
-.dsh-line.loss { color: color-mix(in srgb, var(--bad) 70%, var(--text)); }
 

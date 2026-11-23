@@ -122,10 +122,16 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
       {/* Il tooltip è solo visivo: le stesse parole ai lettori di schermo, e dove porta il pulsante */}
       <HiddenText id={descId}>{[full, onOpen ? t('overview.fix.go') : ''].filter(Boolean).join(' · ')}</HiddenText>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="tip-w-s area-chip-tip">
+        <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="tip-w-m area-chip-tip">
+          {/* Una minaccia del meta come il fumetto delle Minacce della Panoramica: la sprite, "Minaccia scoperta" sotto il
+              nome, nel corpo la ragione ("Nessuno lo regge bene", "Nessuno lo manda KO in due colpi") */}
           <TipHead sprite={subject.species} lead={subject.lead} title={subject.title}
-            sub={subject.plain ? undefined : t(problem.severity === 'serious' ? 'tip.problem.serious' : 'tip.problem.minor')} />
-          <TipSec><p><Typed text={full} /></p></TipSec>
+            sub={subject.species ? t('tip.threat.open') : subject.plain ? undefined : t(problem.severity === 'serious' ? 'tip.problem.serious' : 'tip.problem.minor')} />
+          <TipSec>
+            {subject.species
+              ? <ul className="thr-tip-why"><li className="open">{t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone')}</li></ul>
+              : <p><Typed text={full} /></p>}
+          </TipSec>
           {onOpen && <TipGo place={t('analysis.view.coaching')} />}
         </FloatTip>
       )}

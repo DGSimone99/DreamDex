@@ -6,7 +6,7 @@ import type { TeamSet } from '../../engine/sets';
 import {
   CONTROL_CONDITIONS, priorityMoves, roomShare, SHOWN_CONTROL, shownTotal, teamSpeedOf, type MemberSpeed, type TeamSpeed,
 } from '../../engine/speedArea';
-import { gameName } from '../../i18n/game';
+import { anyGameName, gameName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { tone } from '../defense/DefenseGeneral';
@@ -76,19 +76,29 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
     return index === null || index === undefined ? null : members[index];
   };
   const shown = tip.anchor ? (() => { const m = memberAt(tip.anchor.key); return m ? laneOf(m, ctx.team[tip.anchor.key]) : null; })() : null;
-  // Il nome del guadagno e la sua fonte, una volta sola se coincidono ("Sticky Web", non "Sticky Web · Sticky Web")
+  // Il nome del guadagno e la sua fonte nei nomi dei giochi, una volta sola se coincidono ("Rete Vischiosa", non
+  // "Rete Vischiosa · Rete Vischiosa"); la fonte è una mossa, un'abilità o uno strumento
   const label = (condition: MemberSpeed['gains'][number]['condition'], source: string) => {
     const name = t(`sdetail.cond.${condition}`);
-    return name === source ? source : `${name} · ${source}`;
+    const from = anyGameName(source, lang);
+    return name === from ? from : `${name} · ${from}`;
   };
-  // Sotto la scala, cosa aggiunge ogni guadagno: "Setup · Dragon Dance: +18" (Trick Room no: ha il suo interruttore;
-  // in Trick Room nessuno, le spinte lì non contano)
+  // Sotto la scala, cosa aggiunge ogni guadagno alla barra: "Setup · Dragodanza" e a destra "+18", gli stessi punti dei
+  // pezzi a righe della barra ("55 +18"); Distortozona no: ha il suo interruttore; in Distortozona nessuno, le spinte lì
+  // non contano
   const gains = (m: MemberSpeed) => {
     const list = room ? [] : m.gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition) || SHOWN_CONTROL.includes(g.condition));
     return list.length
-      ? <ul className="stip-gains">{list.map(g => (
-        <li key={`${g.condition}-${g.source}`}><span>{label(g.condition, g.source)}{g.by ? ` (${g.by.join(', ')})` : ''}</span><b>+{points(g.gain)}</b></li>
-      ))}</ul>
+      ? (
+        <TipSec label={t('sdetail.gains')} className="stip-gains">
+          <TipRows>
+            {list.map(g => (
+              <TipRow key={`${g.condition}-${g.source}`} title={label(g.condition, g.source)} sub={g.by ? g.by.join(', ') : undefined}
+                value={`+${points(g.gain)}`} tone="good" />
+            ))}
+          </TipRows>
+        </TipSec>
+      )
       : null;
   };
   /** I numeri della barra di un membro: in Trick Room solo la quota prima della quale muove, senza pezzi a righe. */

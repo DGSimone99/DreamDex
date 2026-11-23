@@ -407,7 +407,11 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     await userEvent.setup().keyboard('{Shift}');
     act(() => num.focus());
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.dsh-tip'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip).toHaveTextContent(/Recupera \d+ PS su 100 con Recover/);
+    // Nel tooltip una riga per fonte: il nome a sinistra, i PS su 100 a destra col segno, verdi se recupera
+    const gain = [...tip.querySelectorAll('.tip-row')].find(r => /Recupera con Recover/.test(r.textContent!))!;
+    expect(gain.querySelector('.tip-row-val')!.textContent).toMatch(/^\+\d+$/);
+    expect(gain.querySelector('.tip-row-val')).toHaveClass('good');
+    expect(tip).toHaveTextContent('PS su 100');
     expect(tip).toHaveTextContent('Recupero');
     expect(tip.textContent).not.toContain('%');
     // Great Tusk non recupera: perde con Stealth Rock, in parole

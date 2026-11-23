@@ -17,6 +17,7 @@ import { HpLeft } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { KoBadge } from '../KoBadge';
 import { TipHead, TipSec } from '../TipHead';
 import { MemberMon } from './MemberMon';
 import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
@@ -211,10 +212,9 @@ export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name:
   const move = hit === 'ko' ? koMove : hit.move;
   // La fascia del colpo, come nei colpi di tipo (4HKO+, 3HKO, 2HKO)
   const band = hit === 'ko' ? 'ohko' : hit.band ?? holdBand(hit.pct / 100);
-  const tag = hit === 'ko' ? 'KO' : HOLD_BANDS[band].tag;
   return (
     <>
-      <TipHead sprite={row.species} title={row.species} badge={<span className={`ftip-ko def ${band} tht-band`}>{tag}</span>} />
+      <TipHead sprite={row.species} title={row.species} badge={<KoBadge side="def" band={band} />} />
       <TipSec>
         <div className="tht-body">
           <Sprite species={name} size={SPRITE_TIP_ROW} />

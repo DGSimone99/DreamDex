@@ -163,6 +163,8 @@ export interface MemberShare {
   meta: { covered: number; total: number } | null;
   /** Punti di Offesa che porta al team: 50% di quanto porta ai tipi + 50% di quanto porta al meta (senza meta solo i tipi). */
   points: number;
+  /** Da dove vengono i punti: la parte dei tipi e quella del meta (0 senza meta), sommate fanno `points`. */
+  parts: { types: number; meta: number };
 }
 
 /**
@@ -555,6 +557,13 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
  * Meta: lo stesso coi bersagli del meta (il credito di chi lo manda KO in due colpi è il suo danno), pesati per uso.
  * I punti sommati fanno l'Offesa del team.
  */
+/** I punti di un membro divisi fra tipi e meta in proporzione alle due parti (sommati tornano `points`). */
+function splitPoints(points: number, types: number, meta: number): { types: number; meta: number } {
+  const sum = types + meta;
+  const fromTypes = sum > 0 ? Math.round((points * types) / sum) : points;
+  return { types: fromTypes, meta: points - fromTypes };
+}
+
 function memberShares(members: MemberOffense[], targets: number, metaRows: CoverageRow[] | null, value: number): MemberShare[] {
   const typePart = members.map(() => 0);
   for (let i = 0; i < targets; i++) depthShares(members.map(m => m.hits[i].credit), OFFENSE_DEPTH).forEach((x, k) => { typePart[k] += (100 * x) / targets; });
@@ -574,5 +583,6 @@ function memberShares(members: MemberOffense[], targets: number, metaRows: Cover
     },
     meta: metaRows && { covered: metaRows.filter(r => r.coveredBy.some(c => c.species === m.species)).length, total: metaRows.length },
     points: points[k],
+    parts: splitPoints(points[k], OFFENSE_SHARES.types * typePart[k], metaRows ? OFFENSE_SHARES.meta * metaPart[k] : 0),
   }));
 }

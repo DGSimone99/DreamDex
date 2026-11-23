@@ -37,9 +37,9 @@ export function moveShares(moves: string[], targets: KoTarget[], best: (target: 
 
 /**
  * Sotto la barra dei colpi (squadra chiusa): quanto lavora ogni mossa d'attacco, nel colore del suo tipo, col numero dei
- * bersagli; passando su una mossa il tooltip li elenca. Pillola chiusa (tessera e numero); il nome si apre passandoci sopra. A 0 spenta (il motivo nel tooltip).
+ * bersagli; passando su una mossa il tooltip li elenca (in testata il conto "5/18", sotto la parola "tipi"). Pillola chiusa (tessera e numero); il nome si apre passandoci sopra. A 0 spenta (il motivo nel tooltip).
  */
-export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
+export function MoveChips({ shares, of, total }: { shares: MoveShare[]; of: string; total: number }) {
   const t = useT();
   const lang = useLang();
   const tip = useFloatAnchor<string>();
@@ -68,7 +68,7 @@ export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
       })}
       {open && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(getMove(open.move)?.type ?? '')} className="kot">
-          <TipHead lead={<TipTypeIcon type={getMove(open.move)?.type ?? ''} />} title={gameName('move', open.move, lang)} num={open.targets.length} qualifier={of} />
+          <TipHead lead={<TipTypeIcon type={getMove(open.move)?.type ?? ''} />} title={gameName('move', open.move, lang)} num={<>{open.targets.length}<small>/{total}</small></>} qualifier={of} />
           <TipSec>
             {open.targets.length
               ? <div className={`kot-list${open.targets[0].kind === 'mon' ? ' mons' : ''}`}>{open.targets.map(x => <Target key={x.label} target={x} />)}</div>

@@ -447,8 +447,14 @@ describe('Bonus/Malus', () => {
     await waitFor(() => expect(document.querySelector('.ftip.bm-held-tip .tip-num')).toHaveTextContent('9/18'));
     const tip = document.querySelector<HTMLElement>('.ftip.bm-held-tip')!;
     expect(tip.querySelector('.tip-qual')).toHaveTextContent('tipi che reggono');
-    expect(tip.querySelectorAll('.bm-core-types img.on')).toHaveLength(9);
-    expect(tip.querySelectorAll('.bm-core-types img.off')).toHaveLength(9);
+    // I tipi col loro nome in due gruppi: Reggono (verde) e Passano (rosso), 9 e 9
+    const groups = [...tip.querySelectorAll('.tip-sec')];
+    expect(groups.map(g => g.querySelector('.tip-sec-label')!.textContent)).toEqual(['Reggono', 'Passano']);
+    expect(groups[0]).toHaveClass('good');
+    expect(groups[1]).toHaveClass('bad');
+    expect(groups[0].querySelectorAll('.kot-type img')).toHaveLength(9);
+    expect(groups[1].querySelectorAll('.kot-type img')).toHaveLength(9);
+    expect(groups[0].querySelector('.kot-type')!.textContent).not.toBe('');
   });
 
   it('un core solo con posto per due: accanto il posto tratteggiato del secondo e quanto varrebbe', () => {

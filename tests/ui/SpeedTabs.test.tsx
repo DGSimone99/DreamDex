@@ -67,6 +67,9 @@ describe('Velocità: una scheda a barre', () => {
     const gains = document.querySelector('.stip-gains')!;
     expect(gains).toHaveTextContent(/Dragon Dance/);
     expect(gains).toHaveTextContent(/Sticky Web/);
+    // Il numero dice cos'è: i punti in più sulla barra (gli stessi dei pezzi a righe), in verde perché è un guadagno
+    expect(gains.querySelector('.tip-sec-label')).toHaveTextContent('In più sulla barra');
+    expect([...gains.querySelectorAll('.tip-row-val')].every(v => /^\+\d+$/.test(v.textContent!) && v.classList.contains('good'))).toBe(true);
     await user.unhover(barOf('Dragonite'));
     await user.hover(barOf('Iron Valiant'));
     const self = await screen.findByText((_, el) => !!el?.classList.contains('self') && !!el.textContent?.includes('Iron Valiant'));
@@ -243,13 +246,13 @@ describe('Velocità: una scheda a barre', () => {
     // Il tooltip è corto: al massimo quattro righe (cosa conta, il moltiplicatore a destra), sotto i primi tre esempi coi
     // nomi dei giochi e "e altre N" in parole, mai "+N" che sembra un bonus (qui senza i dati italiani restano in inglese) e la regola breve
     const rows = () => [...document.querySelectorAll('.ftip.gat .tip-row')];
-    await user.hover(within(panel).getByRole('button', { name: 'Boost' }));
+    await user.hover(within(panel).getByRole('button', { name: 'Potenziamenti' }));
     await waitFor(() => expect(rows()).toHaveLength(4));
     expect(rows()[0].querySelector('.tip-row-val')).toHaveTextContent('×1,5');
     expect(rows()[0].querySelector('.tip-row-sub')).toHaveTextContent(/^Dragon Dance, Quiver Dance, Victory Dance e altre \d+$/);
     expect(rows()[1].querySelector('.tip-row-sub')).toHaveTextContent(/^Shell Smash, Agility, Rock Polish e altre \d+$/);
     expect(rows()[3].querySelector('.tip-row-sub')).toHaveTextContent(/^Booster Energy, Protosynthesis, Quark DriveSolo se la Velocità è la più alta$/);
-    await user.unhover(within(panel).getByRole('button', { name: 'Boost' }));
+    await user.unhover(within(panel).getByRole('button', { name: 'Potenziamenti' }));
     await user.hover(within(panel).getByRole('button', { name: 'Controllo del team' }));
     // I controlli in due gruppi (Lunghi, Brevi), ognuno col suo nome; la regola tiene solo l'eccezione comune
     await waitFor(() => expect([...document.querySelectorAll('.ftip.gat .tip-sec-label')].map(l => l.textContent)).toEqual(['Lunghi', 'Brevi, contano meno']));

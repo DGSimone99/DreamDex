@@ -805,7 +805,7 @@
   animation: tip 0.14s var(--ease); }
 .duel-tip-card.def { --tc: var(--bad); }
 .duel-tip-card.spe { --tc: var(--warn); }
-.duel-tip-head.tip-head { padding-right: var(--sp-3); }
+.duel-tip-head.tip-head { padding-right: var(--sp-6); }
 .duel-tip-title .duel-tip-mvp { max-width: 100%; }
 .duel-tip-main { gap: var(--sp-3); }
 .duel-tip-close { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--faint); cursor: pointer; }
@@ -813,12 +813,14 @@
 .duel-tip-close:hover { color: var(--text); background: var(--raised); }
 .duel-tip-close:focus-visible, .duel-tip-apply:focus-visible, .duel-tip-count:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .duel-tip-busy { margin: 0; font: 500 var(--tip-body)/1.3 var(--ui); color: var(--faint); }
-/* Prima → dopo: oggi barrato, il nuovo in ciano; i colpi grandi in corsivo come nella Sfida */
+/* Prima → dopo: oggi barrato, il nuovo in Text, verde se migliora e rosso se peggiora; i colpi grandi in corsivo come nella Sfida */
 .duel-tip-ba { display: grid; grid-template-columns: auto auto auto 1fr; align-items: baseline; gap: 3px var(--sp-5); font: 500 var(--tip-body)/1.2 var(--ui); color: var(--muted); }
 .duel-tip-what { grid-column: 1 / -1; color: var(--muted); }
 .duel-tip-ba > svg { width: 13px; height: 13px; align-self: center; color: var(--faint); }
 .duel-tip-ba .now { grid-column: 1; color: var(--faint); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--faint) 60%, transparent); }
-.duel-tip-ba .new { grid-column: 3; color: var(--accent-ink); font-weight: 600; }
+.duel-tip-ba .new { grid-column: 3; color: var(--text); font-weight: 600; }
+.duel-tip-ba .new.good { color: var(--good); }
+.duel-tip-ba .new.bad { color: var(--bad); }
 .duel-tip-ba .big { font: italic 800 var(--fs-title-l)/1 var(--display); white-space: nowrap; }
 .duel-tip-ba .big small { display: inline; margin-left: 3px; font: 700 11px/1 var(--ui); font-style: normal; text-transform: uppercase; letter-spacing: 0.04em; }
 .duel-tip-source.replace { display: flex; align-items: center; gap: var(--sp-4); }

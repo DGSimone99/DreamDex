@@ -106,17 +106,17 @@ describe('malus: Trick Room in un team veloce', () => {
   it('−1 per ogni membro veloce (supera almeno metà del meta), al massimo −3', () => {
     const team = [hatt, fast('Regieleki'), fast('Dragapult'), fast('Iron Bundle'), fast('Electrode-Hisui'), fast('Meowscarada')];
     const rating = rateTeam(team, fixtureData)!;
-    const item = rating.penalty.items.find(i => i.text.startsWith('Trick Room di Hatterene rallenta'))!;
+    const item = rating.penalty.items.find(i => i.text.startsWith('Distortozona di Hatterene rallenta'))!;
     expect(item.points).toBe(3);
     const two = rateTeam([hatt, fast('Regieleki'), fast('Dragapult'), toxapex], fixtureData)!;
-    expect(two.penalty.items.find(i => i.text.startsWith('Trick Room'))!.points).toBe(2);
+    expect(two.penalty.items.find(i => i.text.startsWith('Distortozona'))!.points).toBe(2);
   });
 
   it('un vero team Trick Room (tutti lenti) non perde niente; senza Trick Room nemmeno', () => {
     const slow = (species: string) => set(species, 'Leftovers', '', ['Body Slam'], 'Brave');
     const team = [hatt, { ...toxapex, nature: 'Relaxed', evs: {} }, slow('Ursaluna'), slow('Torkoal')].map(s => ({ ...s, evs: {} }));
-    expect(rateTeam(team, fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
-    expect(rateTeam([fast('Regieleki'), fast('Dragapult')], fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
+    expect(rateTeam(team, fixtureData)!.penalty.items.some(i => i.text.startsWith('Distortozona'))).toBe(false);
+    expect(rateTeam([fast('Regieleki'), fast('Dragapult')], fixtureData)!.penalty.items.some(i => i.text.startsWith('Distortozona'))).toBe(false);
   });
 });
 
@@ -145,8 +145,8 @@ describe('controllo e malus: casi limite', () => {
   it('un solo membro veloce: il testo è al singolare', () => {
     const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
     const rating = rateTeam([hatt, fast('Regieleki'), toxapex], fixtureData)!;
-    const item = rating.penalty.items.find(i => i.text.startsWith('Trick Room'))!;
-    expect(item.text).toBe('Trick Room di Hatterene rallenta 1 membro veloce (Regieleki)');
+    const item = rating.penalty.items.find(i => i.text.startsWith('Distortozona'))!;
+    expect(item.text).toBe('Distortozona di Hatterene rallenta 1 membro veloce (Regieleki)');
     expect(item.points).toBe(1);
   });
 

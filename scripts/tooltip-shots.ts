@@ -191,7 +191,7 @@ const SCENES: Scene[] = [
   { id: 'off-general', team: SIX, setup: area(/^Offe(sa|nse)/), scope: '.tab-panel.active', max: 120, wants: [
     { id: 'kot-ko', tip: '.ftip.kot', trigger: '.kob.ohko', src: 'offense/KoBadges.tsx (kot, KO band)', where: 'Offesa › Generale: hover a KO badge' },
     { id: 'kot-ko-rest', tip: '.ftip.kot', trigger: '.kob.rest', src: 'offense/KoBadges.tsx (kot, rest band)', where: 'Offesa › Generale: hover the "rest" badge' },
-    { id: 'kot-offgen', tip: '.ftip.kot', trigger: '.og-share', src: 'offense/OffenseGeneral.tsx (kot, kot-none + foot)', where: 'Offesa › Generale: hover a member share (%)' },
+    { id: 'kot-offgen', tip: '.ftip.dsh-tip', trigger: '.og-share', src: 'offense/OffenseGeneral.tsx (dsh-tip, like Difesa)', where: 'Offesa › Generale: hover a member share (%)' },
     { id: 'gat-off-types', tip: '.ftip.gat', trigger: 'th:nth-child(2) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, TypeAverages)', where: 'Offesa › Generale: hover the Tipi head "?"' },
     { id: 'gat-off-meta', tip: '.ftip.gat', trigger: 'th:nth-child(3) > .guide-ask', src: 'offense/TargetsTip.tsx (Ask, MetaTargets sword)', where: 'Offesa › Generale: hover the Meta head "?"' },
   ] },

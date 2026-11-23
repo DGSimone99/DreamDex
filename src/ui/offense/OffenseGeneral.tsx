@@ -1,6 +1,6 @@
 import { battleSpecies } from '../../engine/dex';
 import { DEFAULT_FORMAT } from '../../engine/format';
-import type { MemberOffense, TeamOffense } from '../../engine/offense';
+import type { MemberOffense, MemberShare, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import { familyAt, type AreaContext } from '../AreaDetail';
@@ -12,7 +12,8 @@ import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect, useId } from 'react';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
-import { TipGlyph, TipHead, TipSec } from '../TipHead';
+import { TipHead, TipRow, TipRows, TipSec } from '../TipHead';
+import { signed } from '../defense/DefenseGeneral';
 import { useRoving } from '../useRoving';
 
 /** I 18 tipi di un membro come bersagli: colpo semplice, dopo una danza, con Tera/Z. */
@@ -40,22 +41,31 @@ const teamTargets = (per: KoTarget[][]): KoTarget[] =>
 /**
  * Quanto porta un membro all'Offesa del team: solo il numero ("+29", i punti dei membri sommati fanno l'Offesa del team),
  * col suo tooltip DreamDex col mouse e col fuoco: raggiungibile con le frecce (data-nav, nel gruppo della tabella), il
- * testo è anche il nome per lo screen reader.
+ * testo è anche il nome per lo screen reader. Il tooltip ha la forma di quello della Difesa: la sprite del membro, il
+ * totale, sotto i pezzi (Coverage tipi, Coverage meta) uno per riga.
  */
-function ShareTip({ points }: { points: number }) {
+function ShareTip({ who, share, meta }: { who: string; share: MemberShare; meta: boolean }) {
   const t = useT();
   const tip = useFloatAnchor<true>();
-  const text = t('odetail.gen.shareTitle', { n: points });
-  const note = t('odetail.gen.shareNote');
+  const text = t('odetail.gen.shareTitle', { n: share.points });
   const id = useId();
+  const parts = [
+    `${t('detail.coverageTypes')} ${signed(share.parts.types)}`,
+    meta ? `${t('detail.coverageMeta')} ${signed(share.parts.meta)}` : '',
+  ].filter(Boolean).join(', ');
   return (
     <span className="og-share" data-nav="" role="img" aria-label={text} aria-describedby={id} {...tip.bind(true)}>
-      <span className="def-num total og-share-num">+{points}</span>
-      <HiddenText id={id}>{note}</HiddenText>
+      <span className="def-num total og-share-num">+{share.points}</span>
+      <HiddenText id={id}>{`${t('odetail.gen.shareNote')}. ${parts}`}</HiddenText>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot small">
-          <TipHead lead={<TipGlyph icon="sword" />} title={t('odetail.gen.shareHead')} num={`+${points}`} />
-          <TipSec><p className="kot-none">{note}</p></TipSec>
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="tip-w-s dsh-tip">
+          <TipHead sprite={who} title={who} sub={t('odetail.gen.shareSub')} num={<span className="dsh-total">{signed(share.points)}</span>} />
+          <TipSec>
+            <TipRows className="dsh-rows">
+              <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.parts.types)} />
+              {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.parts.meta)} />}
+            </TipRows>
+          </TipSec>
         </FloatTip>
       )}
     </span>
@@ -134,15 +144,15 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {m && s
                     ? <>
-                      <td><KoBadges bands={typeBands[slot]!} who={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
+                      <td><KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} pickPlace={t('detail.coverageTypes')} />
-                        {roomy && <MoveChips shares={typeMoves(m, slot)} of={ofTypes} />}</td>
-                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
+                        {roomy && <MoveChips shares={typeMoves(m, slot)} of={ofTypes} total={18} />}</td>
+                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} pickPlace={t('detail.coverageMeta')} />
-                        {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} />}</td>}
+                        {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} total={nMeta} />}</td>}
                       <td>
                         {/* Quanto porta al team: i punti dei membri sommati fanno l'Offesa del team */}
-                        <ShareTip points={s.points} />
+                        <ShareTip who={name} share={s} meta={!!offense.coverageMeta} />
                       </td>
                     </>
                     : <><td>—</td>{meta && <td>—</td>}<td>—</td></>}

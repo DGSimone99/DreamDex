@@ -273,11 +273,6 @@
 .bm-core-lines li { display: flex; align-items: center; gap: var(--sp-3); margin: 0; }
 .bm-core-lines img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
-/* Nel tooltip di "Reggono": i 18 tipi d'attacco, accesi quelli retti, spenti in grigio quelli che passano */
-.ftip.bm-held-tip { width: auto; }
-.bm-held-tip .bm-core-types { display: grid; grid-template-columns: repeat(9, var(--ti-chip)); justify-content: space-between; gap: var(--sp-3); }
-.bm-held-tip .bm-core-types img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
-.bm-held-tip .bm-core-types img.off { filter: grayscale(1); opacity: 0.25; }
 /* Due posti affiancati (usePairFits): due core aperti, o un core e il posto del secondo, metà carta ciascuno, col
    triangolo medio. --pair-min è la larghezza della carta sotto cui non stanno (bordi + triangolo + spazio + testo da
    230px, per due): due core vanno a fisarmonica, un core solo prende tutta la carta */

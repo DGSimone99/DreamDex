@@ -187,9 +187,9 @@ describe('Cruscotto della Panoramica', () => {
     const hits = off.querySelectorAll('.cov-hit');
     expect(hits).toHaveLength(2);
     expect(hits[0]).toHaveTextContent('Great Tusk');
-    expect(hits[0].querySelector('.ftip-ko')).toHaveTextContent('2HKO');
+    expect(hits[0].querySelector('.ko-badge')).toHaveTextContent('2HKO');
     expect(hits[0].querySelector('.cov-pct')).toHaveTextContent('86%');
-    expect(hits[1].querySelector('.ftip-ko')).toHaveTextContent('3HKO');
+    expect(hits[1].querySelector('.ko-badge')).toHaveTextContent('3HKO');
     await user.unhover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
     expect(document.querySelector('.ftip')).toBeNull();
 
@@ -197,7 +197,7 @@ describe('Cruscotto della Panoramica', () => {
     const def = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cov-tip.defense'); if (!el) throw new Error('no tip'); return el; });
     const groups = [...def.querySelectorAll('.cov-group')].map(g => g.querySelector('.tip-sec-label')!.textContent);
     expect(groups).toEqual(['Immuni ×0', 'Deboli ×2']);
-    expect([...def.querySelectorAll('.cov-group')].at(-1)!.querySelector('.ftip-ko')).toHaveTextContent('OHKO');
+    expect([...def.querySelectorAll('.cov-group')].at(-1)!.querySelector('.ko-badge')).toHaveTextContent('OHKO');
   });
 
   it('Copertura in inglese: righe Defense e Offense, anche in testata', () => {

@@ -38,44 +38,49 @@ export const sourceName = (source: string, lang: Lang): string => source.split('
 /** PS su 100, senza il segno del %: "6" per il 6% dei PS. */
 const hp = (x: number) => Math.round(100 * x);
 
+/** Una riga del recupero: la frase intera (per lo screen reader), e per il tooltip il nome, i PS su 100 col segno e la nota. */
+export interface SustainWord { text: string; tone: 'gain' | 'loss' | 'none'; label: string; value?: string; note?: string }
+
 /**
  * Il recupero e le perdite di un membro in parole e numeri semplici (PS su 100, niente %): una riga per quello che
- * recupera e con che cosa, una per Stealth Rock (con chi la dimezza) e una per ogni strumento o mossa che costa PS.
+ * recupera e con che cosa, una per Levitoroccia (con chi la dimezza) e una per ogni strumento o mossa che costa PS.
  */
 function useSustainWords() {
   const t = useT();
   const lang = useLang();
   const name = (source: string) => sourceName(source, lang);
-  return (parts: SustainParts): { text: string; tone: 'gain' | 'loss' | 'none' }[] => {
-    const out: { text: string; tone: 'gain' | 'loss' | 'none' }[] = [];
+  return (parts: SustainParts): SustainWord[] => {
+    const out: SustainWord[] = [];
+    // "(dimezzata: Defog (Corviknight) toglie gli hazard)", con la minuscola dentro la frase
+    const loss = (n: number, from: string, note?: string) => out.push({
+      tone: 'loss', text: `${t('ddetail.share.loss', { n, from })}${note ? ` (${note.charAt(0).toLocaleLowerCase()}${note.slice(1)})` : ''}`,
+      label: t('ddetail.share.lossLabel', { from }), value: signed(-n), note,
+    });
     if (parts.recovery > 0) {
       const from = parts.sources.map(name).join(' + ');
-      out.push({ tone: 'gain', text: t(parts.halved ? 'ddetail.share.gainHalved' : 'ddetail.share.gain', { n: hp(parts.recovery), from }) });
+      const n = hp(parts.recovery);
+      out.push({ tone: 'gain', text: t(parts.halved ? 'ddetail.share.gainHalved' : 'ddetail.share.gain', { n, from }),
+        label: t('ddetail.share.gainLabel', { from }), value: signed(n), note: parts.halved ? t('ddetail.share.halvedNote') : undefined });
     }
-    if (parts.rocks > 0) {
-      // "(dimezzata: Defog (Corviknight) toglie gli hazard)", con la minuscola dentro la frase
-      const note = parts.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: name(parts.rocksHalvedBy) }) : '';
-      const halved = note ? ` (${note.charAt(0).toLocaleLowerCase()}${note.slice(1)})` : '';
-      out.push({ tone: 'loss', text: `${t('ddetail.share.loss', { n: hp(parts.rocks), from: name('Stealth Rock') })}${halved}` });
-    }
+    if (parts.rocks > 0) loss(hp(parts.rocks), name('Stealth Rock'), parts.rocksHalvedBy ? t('ddetail.sus.rocksHalved', { by: name(parts.rocksHalvedBy) }) : undefined);
     // Le altre perdite fonte per fonte (Life Orb, Flame Orb, le mosse che costano PS); senza dettaglio, in una riga sola
     const losses = parts.losses.filter(l => hp(l.loss) > 0);
-    if (losses.length) for (const l of losses) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(l.loss), from: name(l.source) }) });
-    else if (parts.itemLoss > 0) out.push({ tone: 'loss', text: t('ddetail.share.loss', { n: hp(parts.itemLoss), from: parts.itemLossFrom ? name(parts.itemLossFrom) : t('ddetail.sus.orb') }) });
-    if (!out.length) out.push({ tone: 'none', text: t('ddetail.share.flat') });
+    if (losses.length) for (const l of losses) loss(hp(l.loss), name(l.source));
+    else if (parts.itemLoss > 0) loss(hp(parts.itemLoss), parts.itemLossFrom ? name(parts.itemLossFrom) : t('ddetail.sus.orb'));
+    if (!out.length) out.push({ tone: 'none', text: t('ddetail.share.flat'), label: t('ddetail.share.flat') });
     return out;
   };
 }
 
 /**
- * Il tooltip di quanto porta un membro alla Difesa: i tre pezzi, Coverage tipi, Coverage meta e Recupero, e sotto in
- * parole quanto recupera e quanto perde (PS su 100).
+ * Il tooltip di quanto porta un membro alla Difesa: la sprite del membro, il totale, i tre pezzi (Coverage tipi, Coverage
+ * meta e Recupero) uno per riga, e sotto, una riga per fonte, quanto recupera e quanto perde (PS su 100).
  */
-function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShare; words: { text: string; tone: string }[]; meta: boolean }) {
+function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShare; words: SustainWord[]; meta: boolean }) {
   const t = useT();
   return (
     <>
-      <TipHead sprite={who} title={who} num={<span className={share.points < 0 ? 'bad' : 'dsh-total'}>{signed(share.points)}</span>} />
+      <TipHead sprite={who} title={who} sub={t('ddetail.shareSub')} num={<span className={share.points < 0 ? 'bad' : 'dsh-total'}>{signed(share.points)}</span>} />
       <TipSec>
         <TipRows className="dsh-rows">
           <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.types)} />
@@ -83,8 +88,12 @@ function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShar
           <TipRow className="dsh-row" lead={<i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />} title={t('ddetail.sustain')} value={signed(share.sustain)} />
         </TipRows>
       </TipSec>
-      {/* Quanto recupera e quanto perde, una cosa per riga */}
-      <TipSec className="dsh-lines">{words.map((w, k) => <p key={k} className={`dsh-line ${w.tone}`}>{w.text}</p>)}</TipSec>
+      {/* Quanto recupera e quanto perde, una fonte per riga, i PS su 100 a destra (verdi se recupera, rossi se perde) */}
+      <TipSec label={t('ddetail.share.hp')}>
+        <TipRows className="dsh-lines">
+          {words.map((w, k) => <TipRow key={k} title={w.label} sub={w.note} value={w.value} tone={w.tone === 'gain' ? 'good' : w.tone === 'loss' ? 'bad' : undefined} />)}
+        </TipRows>
+      </TipSec>
     </>
   );
 }
@@ -117,7 +126,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const sustainWords = useSustainWords();
   const hasMeta = !!defense.coverageMeta;
   // Per lo screen reader le stesse cose del tooltip, in una frase
-  const describe = (share: DefenseShare, words: { text: string }[]) => [
+  const describe = (share: DefenseShare, words: SustainWord[]) => [
     `${t('detail.coverageTypes')} ${signed(share.types)}`,
     hasMeta ? `${t('detail.coverageMeta')} ${signed(share.meta)}` : '',
     `${t('ddetail.sustain')} ${signed(share.sustain)}`,
@@ -177,8 +186,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team, solo il numero: i pezzi e il recupero nel tooltip */}
                   {(() => {

@@ -163,6 +163,8 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
     return [evsText(d.add), ...taken].join(', ');
   };
 
+  // Prima → dopo: il nuovo valore verde se migliora, rosso se peggiora (come in ogni tooltip)
+  const trend = (x: number) => (x > 0 ? ' good' : x < 0 ? ' bad' : '');
   let compare: ReactNode = <p className="duel-tip-busy">{t('duel.tipBusy')}</p>;
   if (tip && option) {
     if (tip.id === 'spe') {
@@ -173,7 +175,7 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
       compare = (
         <div className="duel-tip-ba">
           <span className="duel-tip-what">{t('editor.duelSpeed')} · {opp.species} {theirs}</span>
-          <span className="now big">{place(a)} {a}</span><Icon name="arrow" /><span className="new big">{place(b)} {b}</span>
+          <span className="now big">{place(a)} {a}</span><Icon name="arrow" /><span className={`new big${trend(b - a)}`}>{place(b)} {b}</span>
         </div>
       );
     } else {
@@ -183,12 +185,18 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
       const before = theirs ? was.theirs : was.mine;
       const after = theirs ? now.theirs : now.mine;
       const unit = (hit: DuelHit | null) => t(hitsText(hit) === '1' ? 'editor.duelHitUnit' : 'editor.duelHitsUnit');
+      // Meglio o peggio per il membro: i suoi colpi per mandarlo KO meno sono meglio, quelli che servono al rivale più
+      // sono meglio; a pari colpi decide il danno (il suo più alto, quello del rivale più basso)
+      const hitsOf = (hit: DuelHit | null) => (hit && Number.isFinite(hit.hitsMaybe) ? (hit.hitsMaybe + (Number.isFinite(hit.hitsSure) ? hit.hitsSure : hit.hitsMaybe)) / 2 : Infinity);
+      const fewer = hitsOf(before) - hitsOf(after);
+      const gain = (Number.isFinite(fewer) && fewer !== 0 ? fewer : (after?.max ?? 0) - (before?.max ?? 0)) * (theirs ? -1 : 1);
+      const better = trend(gain);
       compare = (
         <div className="duel-tip-ba">
           {before && <span className="duel-tip-what">{gameName('move', before.move, lang)}</span>}
-          <span className="now">{rangeText(before)}</span><Icon name="arrow" /><span className="new">{rangeText(after)}</span>
+          <span className="now">{rangeText(before)}</span><Icon name="arrow" /><span className={`new${better}`}>{rangeText(after)}</span>
           <span className="now big">{hitsText(before)}<small>{unit(before)}</small></span><Icon name="arrow" />
-          <span className="new big">{hitsText(after)}<small>{unit(after)}</small></span>
+          <span className={`new big${better}`}>{hitsText(after)}<small>{unit(after)}</small></span>
         </div>
       );
     }

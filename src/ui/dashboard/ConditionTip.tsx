@@ -139,7 +139,8 @@ export function ConditionTip({ row }: { row: ConditionRow }) {
                 <li key={user.name} className="ctip-user">
                   <span className="ctip-mon"><Sprite species={user.name} size={SPRITE_TIP_ROW} /></span>
                   <span className="ctip-who"><b>{user.name}</b>{user.via && benefit && <span className="ctip-via"><Via via={user.via} /></span>}</span>
-                  <span className="ctip-eff">{benefit?.up && <Arrow dir="up" />}{text}</span>
+                  {/* Un numero ("Velocità ×2") forte come i valori; una parola ("Non manca mai") più quieta, non compete coi numeri */}
+                  <span className={`ctip-eff${/\d/.test(text) ? '' : ' word'}`}>{benefit?.up && <Arrow dir="up" />}{text}</span>
                 </li>
               );
             })}

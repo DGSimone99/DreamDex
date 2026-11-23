@@ -16,7 +16,7 @@ import { FIELD_SHARE, MOVE_FIELD_SHARE, SETUP_SHARE } from './offense';
 import { moveAttackMultiplier, TYPES } from './types';
 
 /** Quanti Pokémon del meta, dal più usato, danno le combinazioni di tipi da coprire. */
-const TARGET_SCAN = 40;
+export const TARGET_SCAN = 40;
 /** Un membro copre un bersaglio se lo manda KO in due colpi. */
 export const COVER_HIT = 0.5;
 /** Sotto questo danno super efficace nessuno ha un vantaggio di tipo vero: è un buco (non arriva al KO in tre colpi). */

@@ -183,14 +183,20 @@ function HeldTypes({ core, rows, lang, t }: { core: Core; rows: HoldRow[]; lang:
       <HiddenText id={descId}>{`${count}. ${description}`}</HiddenText>
       {tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="tip-w-m bm-held-tip">
-          <TipHead lead={<TipGlyph icon="shield" />} title={coreTypes(core, lang)}
+          <TipHead lead={<TipGlyph icon="shield" />} title={coreTypes(core, lang)} sub={t('catalogue.cores.heldTip')}
             num={<>{held.length}<small>/{rows.length}</small></>} qualifier={t('tip.cores.heldQual')} />
-          <TipSec>
-            <span className="bm-core-types">
-              {rows.map(row => <img key={row.type} className={`ti-sq ${held.includes(row) ? 'on' : 'off'}`} style={tileStyle(row.type)} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
-            </span>
-          </TipSec>
-          <p className="ftip-foot">{t('catalogue.cores.heldTip')}</p>
+          {/* I tipi con il loro nome, in due gruppi: quelli che almeno uno dei tre regge (verdi) e quelli che passano (rossi) */}
+          {([['held', held, 'good'], ['through', open, 'bad']] as const).map(([key, list, tone]) => list.length > 0 && (
+            <TipSec key={key} className={tone} label={t(key === 'held' ? 'tip.cores.held' : 'tip.cores.through')}>
+              <div className="kot-list">
+                {list.map(row => (
+                  <span key={row.type} className="kot-type">
+                    <img className="ti-sq" style={tileStyle(row.type)} src={typeIconUrl(row.type)} alt="" draggable={false} />{typeName(row.type, lang)}
+                  </span>
+                ))}
+              </div>
+            </TipSec>
+          ))}
         </FloatTip>
       )}
     </>

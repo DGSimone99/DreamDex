@@ -3,7 +3,7 @@ import type { TypeCell } from '../../engine/overviewDashboard';
 import type { TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { HOLD_BANDS } from '../defense/holds';
+import { KoBadge } from '../KoBadge';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from '../TipHead';
@@ -41,7 +41,7 @@ export function OffenseTip({ cell }: { cell: TypeCell }) {
                 return (
                   <TipRow key={hit.species} className="cov-hit" lead={<Sprite species={hit.species} size={SPRITE_TIP_ROW} />} title={hit.species}
                     sub={<MoveLine name={hit.move!} />}
-                    value={<><span className={`cov-pct ${band}`}>{hit.pct}<small>%</small></span><span className={`ftip-ko off ${band}`}>{HOLD_BANDS[band].tag}</span></>} />
+                    value={<><span className={`cov-pct ${band}`}>{hit.pct}<small>%</small></span><KoBadge side="off" band={band} /></>} />
                 );
               })}
             </TipRows>
@@ -80,7 +80,7 @@ export function DefenseTip({ cell }: { cell: TypeCell }) {
                 const band = m.pct === null ? null : bandOf(m.pct);
                 return (
                   <TipRow key={m.species} className="cov-mon" lead={<Sprite species={m.species} size={SPRITE_TIP_ROW} />} title={m.species}
-                    value={m.pct !== null && band ? <><span className="cov-pct">{m.pct}<small>%</small></span><span className={`ftip-ko def ${band}`}>{HOLD_BANDS[band].tag}</span></> : undefined} />
+                    value={m.pct !== null && band ? <><span className="cov-pct">{m.pct}<small>%</small></span><KoBadge side="def" band={band} /></> : undefined} />
                 );
               })}
             </TipRows>
