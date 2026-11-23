@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
  * altezza in su (es. 2K col ridimensionamento al 150%, 1707×780) team compatto ed editor stanno insieme: niente chiusura.
  */
 export const SHORT_SCREEN = '(min-width: 1100px) and (max-height: 759px)';
-/** Telefono: la Panoramica dell'Analisi in schede (Riassunto, Copertura, Ruoli, Velocità), una carta alla volta. */
+/** Telefono: l'Analisi senza Panoramica (si apre sul Coaching, il voto del team nella barra delle schede). */
 export const PHONE_QUERY = '(max-width: 599px)';
 /** Editor a schede (Set, Statistiche, Sfida) sotto la testata a riepilogo: telefono e tablet. */
 export const EDITOR_TABS_QUERY = '(max-width: 1099px)';

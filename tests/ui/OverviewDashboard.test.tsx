@@ -1062,20 +1062,6 @@ describe('Riassunto: la riga Bonus/Malus', () => {
   });
 });
 
-describe('Telefono › la Panoramica è solo il Riassunto', () => {
-  afterEach(() => { vi.unstubAllGlobals(); });
-
-  it('sul telefono solo il Riassunto (Copertura, Ruoli e Velocità sono le loro schede); dal tablet in su tutte le carte', () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
-    const { unmount } = mount();
-    expect([...document.querySelectorAll('.dash > .dash-card')].map(el => el.className)).toEqual(['dash-card dash-summary']);
-    unmount();
-    vi.unstubAllGlobals();
-    mount();
-    expect(document.querySelectorAll('.dash > .dash-card')).toHaveLength(4);
-  });
-});
-
 describe('Un membro solo: niente allarmi', () => {
   const cov = () => screen.getByRole('region', { name: 'Copertura' });
   it('caselle scoperte e minacce grigie tratteggiate, niente numero rosso; ruoli mancanti tenui; da due membri come sempre', async () => {

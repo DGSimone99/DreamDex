@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { EDITOR_TABS_QUERY, PHONE_QUERY, useMediaQuery } from './useMediaQuery';
+import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import type { DashboardData } from '../engine/overviewDashboard';
 import type { TeamSummary } from '../engine/teamSummary';
 import type { TeamSet } from '../engine/sets';
@@ -84,20 +84,14 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
   // Le minacce solo col meta (statistiche presenti e meta acceso)
   const threats = data.threats.available;
 
-  // Telefono: la Panoramica è solo il Riassunto (Copertura, Ruoli e Velocità sono le loro schede, a un tocco nella barra
-  // delle schede di Analisi, che ne mostra già voti e problemi)
-  const phone = useMediaQuery(PHONE_QUERY);
-
   return (
     <div ref={ref} className={`dash ${density}${rich ? ' rich' : ''}${rich && height >= RICH_TALL ? ' tall' : ''}`} data-density={density}>
       <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       {/* Le minacce del meta sono la riga META della Copertura (la loro carta è stata tolta il 2026-11-22) */}
-      {!phone && <>
-        {/* Un membro solo: niente allarmi in Copertura e Ruoli (in cima l'invito ad aggiungerne un altro) */}
-        <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members === 1} incomplete={members < 6} onView={onView} />
-        <RolesSection roles={data.roles} density={density} gentle={members === 1} onView={onView} />
-        <SpeedSection speed={data.speed} density={density} onView={onView} />
-      </>}
+      {/* Un membro solo: niente allarmi in Copertura e Ruoli (in cima l'invito ad aggiungerne un altro) */}
+      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members === 1} incomplete={members < 6} onView={onView} />
+      <RolesSection roles={data.roles} density={density} gentle={members === 1} onView={onView} />
+      <SpeedSection speed={data.speed} density={density} onView={onView} />
     </div>
   );
 }

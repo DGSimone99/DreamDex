@@ -158,8 +158,6 @@
   .coach-opt-use { display: none; }
   .coach-empty { flex-direction: column; gap: var(--sp-8); padding: 20px; }
   .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }
-  /* Riassunto: il nome del core va a capo invece di tagliarsi */
-  .sum-syn-head { white-space: normal; }
 
   /* Difesa, Generale a squadra chiusa: le due colonne in più (colpo peggiore, recupero) non ci stanno */
   .def-general.roomy .def-members tr > :nth-last-child(-n + 2) { display: none; }
@@ -169,34 +167,6 @@
 
 @media (max-width: 599px) {
   .analysis-tabs { margin-inline: -14px; }
-
-  /* Copertura: i 18 tipi in due file da 9 (in una sola le caselle sarebbero puntini); ogni fila ripete Offesa e Difesa */
-  .dash .dash-matrix { display: grid; grid-template-columns: auto repeat(9, minmax(0, 1fr)); gap: var(--sp-2); width: 100%; margin: 0; }
-  .dash .dash-matrix :is(thead, tbody, tr) { display: contents; }
-  .dash .dash-matrix thead td { grid-row: 1; grid-column: 1; width: auto; }
-  .dash .dash-matrix thead th:nth-child(-n + 10) { grid-row: 1; }
-  .dash .dash-matrix thead th:nth-child(n + 11) { grid-row: 4; margin-top: var(--sp-4); }
-  /* L'angolo vuoto della seconda fila tiene la prima colonna, così le icone partono dalla seconda */
-  .dash .dash-matrix thead tr::before { content: ''; grid-row: 4; grid-column: 1; }
-  .dash .dash-matrix tbody tr:first-child > :nth-child(-n + 10) { grid-row: 2; }
-  .dash .dash-matrix tbody tr:first-child > :nth-child(n + 11), .dash .dash-matrix tbody tr:first-child::before { grid-row: 5; }
-  .dash .dash-matrix tbody tr:last-child > :nth-child(-n + 10) { grid-row: 3; }
-  .dash .dash-matrix tbody tr:last-child > :nth-child(n + 11), .dash .dash-matrix tbody tr:last-child::before { grid-row: 6; }
-  .dash .dash-matrix th[scope='row'], .dash .dash-matrix tbody tr::before { grid-column: 1; width: auto; align-self: center; }
-  .dash .dash-matrix tbody tr::before {
-    content: attr(data-label);
-    padding: 0 var(--sp-2) 0 0;
-    font: 600 var(--fs-label)/1 var(--ui);
-    text-align: right;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-  }
-  .dash .dash-matrix .dash-type { width: 24px; height: 24px; }
-  .dash .dash-matrix .dash-cell { height: 26px; display: grid; place-items: center; }
-  /* Copertura › Meta: le piastrelle su due file (il pannello è stretto ma c'è altezza) */
-  .cov-tiles { height: auto; grid-auto-rows: 84px; }
-  .dash .dash-meta-none { height: 84px; }
 }
 @media (min-width: 600px) and (max-width: 1099px) {
   .analysis-tabs { margin-inline: -18px; padding-inline: var(--sp-9); scroll-padding-inline: 18px; }
@@ -270,10 +240,9 @@
 }
 
 
-/* -- Telefono: le schede di Analisi come una barra a icone su una fila (tutte in vista, niente scorrimento): Panoramica,
+/* -- Telefono: le schede di Analisi come una barra a icone su una fila (tutte in vista, niente scorrimento):
    Coaching e Ruoli con icona e nome corto, le aree con icona e voto (il nome resta ai lettori di schermo). La scelta è la
-   piastra chiara col filo magenta, come le schede grandi del computer; il numerino dei problemi in alto a destra.
-   La Panoramica è solo il Riassunto, con la striscia Da sistemare in cima -- */
+   piastra chiara col filo magenta, come le schede grandi del computer; il numerino dei problemi in alto a destra -- */
 @media (max-width: 599px) {
   .analysis-tabs { margin: 0 0 var(--sp-6); padding: 0; overflow: visible; scroll-snap-type: none; }
   .analysis-tabs [role='tablist'] { flex: 1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; width: auto; min-width: 0; padding: 3px;
@@ -295,8 +264,6 @@
   .analysis-tabs [role='tab'][aria-selected='true'] .tab-icon { color: var(--accent-2); }
   .analysis-tabs [role='tab'][aria-selected='true']::after { content: none; }
   .analysis-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-
-  .overview > .fix-row { order: -1; }
 }
 @media (max-width: 370px) { .analysis-tabs [role='tab'] .tab-short { font-size: 9.5px; } }
 /* Telefono: sottoschede più strette, così anche le quattro della Difesa stanno senza scorrere */
@@ -340,7 +307,7 @@
   .analysis-tabs #analysis-view-bonusMalus .tab-short { display: inline; }
 }
 
-/* -- Telefono: la striscia Da sistemare su due righe, così la frase si legge intera: in alto "N problemi", sotto "il
+/* -- Telefono (Panoramica solo col voto bloccato, senza cruscotto): la striscia Da sistemare su due righe, così la frase si legge intera: in alto "N problemi", sotto "il
    Coaching ha M proposte, la migliore +X" (va a capo se serve); a destra solo la freccia (tutta la striscia porta al
    Coaching, il pulsante tiene il suo nome per i lettori di schermo) -- */
 @media (max-width: 599px) {
