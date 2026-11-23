@@ -9,6 +9,7 @@ import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
 import { SpeedTip } from './SpeedTip';
+import { TIP_NEUTRAL } from '../TipHead';
 import { MoveName } from '../TypeText';
 import { DashCard } from './DashCard';
 
@@ -66,7 +67,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
       </div>
       {density !== 'tight' && control}
       {tip.anchor && lanes[tip.anchor.key] && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="tip-w-m speed" side="left">
+        <FloatTip rect={tip.anchor.rect} tone={TIP_NEUTRAL} className="tip-w-m speed" side="left">
           <SpeedTip lane={lanes[tip.anchor.key]} vsMeta={vsMeta} />
         </FloatTip>
       )}

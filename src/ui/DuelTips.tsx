@@ -11,6 +11,7 @@ import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
 import { MovePill } from './MovePill';
 import { PokemonIcon } from './PokemonName';
+import { FormeName } from './candidateParts';
 import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from './TipHead';
 import { typeColor } from './Sprite';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
@@ -251,10 +252,11 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
         <span className="duel-tip-grade">
           {letter && <span className={`duel-tip-letter grade-${letter}`}>{letter}</span>}
           <span className="duel-tip-score">
-            <span className="duel-tip-nums">{`${base ?? '—'} → ${score ?? '—'}`}</span>
+            {/* Voto uguale: la parola tenue sotto i numeri, non un chip (così "voto del team" sta su una riga a 300px) */}
+            <span className="duel-tip-nums">{`${base ?? '—'} → ${score ?? '—'}`}{diff === 0 && <small className="duel-tip-same">{t('duel.tipSame')}</small>}</span>
             <span className="duel-tip-label">{t('duel.tipGrade')}</span>
           </span>
-          {diff !== null && <span className={`duel-tip-diff ${diff > 0 ? 'up' : diff < 0 ? 'down' : 'same'}`}>{diff > 0 ? `+${diff}` : diff < 0 ? `−${-diff}` : '='}</span>}
+          {diff !== null && diff !== 0 && <span className={`duel-tip-diff ${diff > 0 ? 'up' : 'down'}`}>{diff > 0 ? `+${diff}` : `−${-diff}`}</span>}
         </span>
         <button type="button" className="duel-tip-apply" disabled={!tip || !option}
           onClick={() => { if (tip && option) onApply(option.set, change(option, tip)); }}>{t('duel.tipApply')}</button>
@@ -319,7 +321,7 @@ function EffectLine({ fx }: { fx: MetaEffect }) {
           <TipSec label={t('duel.fxTipHead')}>
             <TipRows>
               {shown.map(s => (
-                <TipRow key={s.species} lead={<PokemonIcon name={s.species} />} title={s.species}
+                <TipRow key={s.species} lead={<PokemonIcon name={s.species} />} title={<FormeName species={s.species} />}
                   value={<>{hits(s.before)} → <b className={up ? 'good' : 'bad'}>{hits(s.after)}</b></>} />
               ))}
             </TipRows>

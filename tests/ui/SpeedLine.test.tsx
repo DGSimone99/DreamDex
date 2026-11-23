@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
@@ -24,8 +24,10 @@ describe('Velocità nell’editor', () => {
     expect(document.querySelector('.ftip.speed')).toBeNull();
     await user.hover(line);
     // Lo stesso tooltip di Analisi › Velocità: il membro al centro con la sua velocità
-    const tip = await screen.findByText((_, el) => !!el?.classList.contains('stip-own'));
-    expect(tip).toHaveTextContent('333');
+    // Il numero in testata in Text (niente classe colorata), la riga "tu" in azzurro
+    const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('.ftip.speed .tip-head .tip-num'); if (!el) throw new Error('no tip'); return el; });
+    expect(tip).toHaveTextContent(/^333$/);
+    expect(tip.children).toHaveLength(0);
     expect(document.querySelector('.ftip.speed .tip-sub')).toHaveTextContent('Velocità vera, coi set più usati del meta');
     await user.unhover(line);
     expect(document.querySelector('.ftip.speed')).toBeNull();

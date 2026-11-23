@@ -404,7 +404,7 @@
   .thr-card:hover .sprite, .thr-card:focus-visible .sprite { transform: none; }
 }
 /* Il tooltip di una minaccia: nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
-.ftip.thr-tip { width: var(--tip-s); }
+.ftip.thr-tip { width: var(--tip-m); }
 .thr-tip-why { display: grid; gap: var(--sp-2); margin: 0; padding: 9px var(--sp-5); list-style: none; }
 .thr-tip-why li { padding-left: 9px; border-left: 2px solid var(--warn); }
 .thr-tip-why li.open { border-left-color: var(--bad); }

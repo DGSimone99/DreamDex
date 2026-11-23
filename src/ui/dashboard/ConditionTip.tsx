@@ -5,7 +5,7 @@ import type { MessageKey } from '../../i18n';
 import { anyGameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
-import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
+import { SPRITE_TIP_ROW, SPRITE_TIP_TALL } from '../spriteSizes';
 import { MovePill } from '../MovePill';
 import { TipGlyph, TipHead, TipSec, TipTypeIcon } from '../TipHead';
 
@@ -107,7 +107,7 @@ export function ConditionTip({ row }: { row: ConditionRow }) {
     <>
       <TipHead className={`ctip-tex k-${row.key}`} lead={type ? <TipTypeIcon type={type} /> : <TipGlyph icon="cloud" />} title={row.label} sub={duration}
         badge={<span className="ctip-setter">
-          <span className="ctip-plinth"><Sprite species={row.member} size={SPRITE_TIP} /></span>
+          <span className="ctip-plinth"><Sprite species={row.member} size={SPRITE_TIP_TALL} /></span>
           <Via via={row.via} />
         </span>} />
       {effects.length > 0 && (

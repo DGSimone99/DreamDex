@@ -10,6 +10,7 @@ import type { SpeciesStats } from '../../src/engine/stats';
 import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
+import { visibleText } from '../helpers/visibleText';
 import { renderIt } from '../helpers/italian';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
@@ -242,7 +243,10 @@ describe('Velocità: una scheda a barre', () => {
     // Tre fonti come righe, ognuna col "?": il dettaglio sta nel tooltip, niente a vista sulla pagina
     expect(panel.querySelectorAll('.guide-rows > div')).toHaveLength(3);
     expect(panel.querySelectorAll('.guide-ask')).toHaveLength(3);
-    expect(panel).not.toHaveTextContent(/×1,5|Shell Smash/);
+    expect(visibleText(panel)).not.toMatch(/×1,5|Shell Smash/);
+    const boostAsk = within(panel).getByRole('button', { name: 'Potenziamenti' });
+    expect(boostAsk).toHaveAccessibleDescription(/×1,5 .*Dragon Dance.*Speed Boost; .*×2 .*Shell Smash/);
+    expect(document.getElementById(boostAsk.getAttribute('aria-describedby')!)!.closest('[role="tabpanel"]')).toBe(panel);
     // Il tooltip è corto: al massimo quattro righe (cosa conta, il moltiplicatore a destra), sotto i primi tre esempi coi
     // nomi dei giochi e "e altre N" in parole, mai "+N" che sembra un bonus (qui senza i dati italiani restano in inglese) e la regola breve
     const rows = () => [...document.querySelectorAll('.ftip.gat .tip-row')];

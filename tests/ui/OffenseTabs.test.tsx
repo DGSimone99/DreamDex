@@ -82,7 +82,14 @@ describe('Offesa: navigazione e guida', () => {
     // Accanto alle testate Tipi e Meta il "?" dei bersagli: la tabella intera dei 18 tipi (come nella guida) con un
     // solo piede, "Clic: apri la guida"; il clic apre la guida
     const typesAsk = screen.getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' });
-    expect(typesAsk).toHaveAccessibleDescription('Clic: apri la guida');
+    // Per i lettori di schermo la tabella intera in parole (18 tipi), poi dove porta il clic; la descrizione sta accanto al
+    // "?" (dentro la testata), non nel body
+    expect(typesAsk).toHaveAccessibleDescription(/^(Normale|Normal): PS \d+, Dif \d+, DifSp \d+; (Fuoco|Fire): PS \d+, .*; (Folletto|Fairy): PS \d+, Dif \d+, DifSp \d+\. Clic: apri la guida$/);
+    const typesDesc = document.getElementById(typesAsk.getAttribute('aria-describedby')!)!;
+    expect(typesDesc.textContent!.split('; ')).toHaveLength(18);
+    expect(typesDesc.closest('th')).not.toBeNull();
+    const metaAsk = screen.getByRole('button', { name: /^I \d+ Pokémon più usati$/ });
+    expect(document.getElementById(metaAsk.getAttribute('aria-describedby')!)!.textContent).toMatch(/: [A-Z][^,]+(, [^,]+){4,}\. Clic: apri la guida$/);
     await user.hover(typesAsk);
     await waitFor(() => expect(document.querySelectorAll('.ftip.gat tbody tr')).toHaveLength(18));
     expect(document.querySelectorAll('.ftip.gat .ftip-go, .ftip.gat .ftip-foot')).toHaveLength(1);
@@ -565,8 +572,10 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
     expect(tip.querySelector('.tip-head .ko-badge.off')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
-    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
-    expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-name')!.textContent);
+    // La riga di danno: il danno in forbice dei tiri ("79–93%"), poi la fascia in fondo a destra
+    expect(tip.querySelector('.tht-row .tip-dmg-pct')!.textContent).toMatch(/^[0-9]+–[0-9]+%$/);
+    expect(tip.querySelector('.tht-row .tip-dmg > :last-child')).toHaveClass('ko-badge');
+    expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-row .tip-row-title')!.textContent);
     // Uscendo dalla casella (anche verso il nome del membro, dentro la tabella) il tooltip si chiude
     await user.hover(document.querySelector<HTMLElement>('.ct-table tbody th')!);
     expect(document.querySelector('body > .ftip.tht')).toBeNull();
@@ -744,7 +753,8 @@ describe('Offesa: Coverage meta', () => {
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
     expect(tip.querySelector('.tip-head')).toHaveTextContent(sorted[0].species);
     expect(tip.querySelector('.tip-head .ko-badge.off')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
-    expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
+    expect(tip.querySelector('.tht-row .tip-dmg-pct')!.textContent).toMatch(/^[0-9]+–[0-9]+%$/);
+    expect(tip.querySelector('.tht-row .tip-dmg > :last-child')).toHaveClass('ko-badge');
     await user.unhover(cell);
   });
 

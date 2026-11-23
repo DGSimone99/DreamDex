@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react';
+import { typeName } from '../i18n/game';
+import { useLang } from '../i18n/react';
+import { dmgText, type DmgRange } from './dmgText';
 import { Icon, type IconName } from './icons';
+import { KoBadge, type KoBadgeBand, type KoSide } from './KoBadge';
 import { Sprite } from './Sprite';
 import { SPRITE_TIP, SPRITE_TIP_TALL } from './spriteSizes';
 import { tileStyle, typeIconUrl } from './typeIcons';
@@ -80,3 +84,37 @@ export function TipRow({ lead, title, sub, value, tone, className = '' }: {
     </li>
   );
 }
+
+/**
+ * Il valore di una riga di danno, uguale in ogni tooltip (vedi DESIGN.md, "Tooltips"): il danno in Text, numeri tabellari,
+ * la forbice dei tiri ("79–93%", dmgText) quando c'è, e in fondo a destra la fascia dei colpi (KoBadge): il colore lo dà
+ * solo il badge, mai il numero. Senza fascia (`band` null) solo il numero.
+ */
+export function TipDmg({ pct, range, side, band }: { pct: number; range?: DmgRange | null; side: KoSide; band: KoBadgeBand | null }) {
+  return (
+    <span className="tip-dmg">
+      <b className="tip-dmg-pct">{dmgText(pct, range)}<small>%</small></b>
+      {band && <KoBadge side={side} band={band} />}
+    </span>
+  );
+}
+
+/** Un tipo nelle righe e nelle frasi dei tooltip: sempre la tessera da 24px e il nome in Text (mai una parola colorata). */
+export function TipType({ type }: { type: string }) {
+  const lang = useLang();
+  return <span className="tip-type"><TipTypeTile type={type} />{typeName(type, lang)}</span>;
+}
+
+/** La tessera da 24px di un tipo nelle righe (`--ti-head`), senza nome. */
+export function TipTypeTile({ type }: { type: string }) {
+  return <img className="ti-sq tip-type-tile" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />;
+}
+
+/** I punti con segno ("+6", "−12") hanno il colore del segno ovunque, in testata e nelle righe: verde sopra zero, rosso sotto. */
+export const signTone = (n: number): 'good' | 'bad' | undefined => (n > 0 ? 'good' : n < 0 ? 'bad' : undefined);
+
+/**
+ * Il tono dei tooltip senza un colore loro (la scala della Velocità, la quota di un membro): neutro. Il ciano resta al
+ * lavoro e alla selezione ("tu" nella scala), non tinge una testata intera.
+ */
+export const TIP_NEUTRAL = 'var(--faint)';

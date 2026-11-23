@@ -8,17 +8,16 @@ import type { Lang } from '../../i18n';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
-import { HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
-import { Ask, BarHead, MetaTargets } from '../offense/TargetsTip';
+import { attackerCols, HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
+import { Ask, BarHead, MetaTargets, metaText, typeStatText } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
 import { typeColor } from '../Sprite';
-import { effLabel } from '../effTag';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
-import { TipHead, TipRow, TipRows, TipSec } from '../TipHead';
+import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
@@ -80,12 +79,12 @@ function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShar
   const t = useT();
   return (
     <>
-      <TipHead sprite={who} title={who} sub={t('ddetail.shareSub')} num={<span className={share.points < 0 ? 'bad' : 'dsh-total'}>{signed(share.points)}</span>} />
+      <TipHead sprite={who} title={who} sub={t('ddetail.shareSub')} num={<span className={signTone(share.points)}>{signed(share.points)}</span>} />
       <TipSec>
         <TipRows className="dsh-rows">
-          <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.types)} />
-          {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.meta)} />}
-          <TipRow className="dsh-row" lead={<i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />} title={t('ddetail.sustain')} value={signed(share.sustain)} />
+          <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.types)} tone={signTone(share.types)} />
+          {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.meta)} tone={signTone(share.meta)} />}
+          <TipRow className="dsh-row" lead={<i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />} title={t('ddetail.sustain')} value={signed(share.sustain)} tone={signTone(share.sustain)} />
         </TipRows>
       </TipSec>
       {/* Quanto recupera e quanto perde, una fonte per riga, i PS su 100 a destra (verdi se recupera, rossi se perde) */}
@@ -110,13 +109,14 @@ function DefShare({ share, tip, label, describe }: { share: DefenseShare; tip: R
     <span className="og-share dsh" data-nav="" role="img" aria-label={label} aria-describedby={id} {...float.bind(true)}>
       <span className={`def-num total og-share-num${share.points < 0 ? ' neg' : ''}`}>{signed(share.points)}</span>
       <HiddenText id={id}>{describe}</HiddenText>
-      {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="tip-w-s dsh-tip">{tip}</FloatTip>}
+      {float.anchor && <FloatTip rect={float.anchor.rect} tone={TIP_NEUTRAL} className="tip-w-s dsh-tip">{tip}</FloatTip>}
     </span>
   );
 }
 
 export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
+  const lang = useLang();
   const { members } = defense;
   const roomy = !!ctx.roomy;
   // Il "?" delle testate apre la guida della Difesa (la pagina "Come funziona" di Generale e Coverage)
@@ -153,15 +153,15 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     ? (band: HoldPiece) => ctx.openFocus!(key, { kind, slot: slotOf(i), band })
     : undefined);
   const multipliers = new Map(ctx.analysis.weakness.map(row => [row.type, row.multipliers]));
-  const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band, cell: c })))
+  const worstTypes = (i: number) => worstOf((defense.typed[i]?.cells ?? []).map((c, k) => ({ label: TYPES[k], kind: 'type' as const, pct: c.pct, band: c.band, cell: { ...c, ...defense.typed[i]?.ranges?.[k] } })))
     .map(h => ({ ...h, color: typeColor(h.label),
-      tip: <DefenseHitTip type={h.label} species={members[i].species} cell={h.cell} mult={effLabel(multipliers.get(h.label as TypeName)?.[slotOf(i)] ?? 1, 'defense')} /> }));
+      tip: <DefenseHitTip type={h.label} species={members[i].species} cell={h.cell} mult={multipliers.get(h.label as TypeName)?.[slotOf(i)] ?? 1} /> }));
   const byUse = [...metaRows].sort((x, y) => y.weight - x.weight);
   const worstMeta = (i: number) => worstOf(byUse.map(row => {
     const h = row.heldBy.find(x => x.species === members[i].species);
     return { label: row.species, kind: 'mon' as const, pct: h ? h.pct : null, band: h ? h.band : 'ohko' as const, row, h };
   })).map(x => ({ ...x, color: typeColor((battleSpecies(x.row.set)?.types[0] as string | undefined) ?? ''),
-    tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={effLabel(x.row.mults?.[i], 'defense')} koMove={x.row.hits?.[i]?.move} /> }));
+    tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={x.row.mults?.[i]} koHit={x.row.hits?.[i]} /> }));
 
 
   return (
@@ -174,8 +174,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')} guide={openGuide}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide}><MetaTargets species={metaSpecies} icon="shield" /></Ask></th>}
+              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')} guide={openGuide} describe={typeStatText(attackerCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} icon="shield" /></Ask></th>}
               <th scope="col">{t('area.defense')}</th>
             </tr>
           </thead>

@@ -1,3 +1,7 @@
+/* Il colore dei complementi accanto ai numeri ("/6", "/18", "del team", "tipi", il "%" del danno): spento ma ≥4,5:1 anche
+   sul punto più chiaro di una testata tinta (verde dei ruoli e dei KO), 2026-11-23 */
+:root { --tip-qual-ink: color-mix(in srgb, var(--muted) 30%, var(--text)); }
+
 /* Tooltip DreamDex (FloatTip): pannello nel body, alone nel colore --tc (es. il tipo), fondo sfumato e ombra profonda per
    staccarlo dallo sfondo; testata a strisce con l'icona tonda, punta verso la casella di partenza. Solo a vista: il
    testo per gli screen reader sta sulla casella. */
@@ -34,7 +38,7 @@
   background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent));
   border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
 /* Il "/totale" dopo un numero, uguale ovunque (tooltip e tabelle): piccolo, spento, sulla stessa linea */
-.cov-pct small, .tht-pct small, .kob-count-num > small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--faint); }
+.kob-count-num > small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--faint); }
 /* Dove porta il clic sull'elemento (TipGo): piede Accent Ink sotto il filo, la freccia dei link */
 .ftip-go { display: flex; align-items: center; gap: var(--sp-1); margin: 0; padding: var(--sp-3) var(--sp-6) var(--sp-4); border-top: 1px solid var(--line-soft);
   font: 600 var(--tip-small)/1.3 var(--ui); color: var(--accent-ink); }
@@ -58,12 +62,12 @@
 .tip-title { grid-area: title; min-width: 0; font: 700 italic var(--tip-title)/1.15 var(--display); text-shadow: 0 1px 4px rgb(0 0 0 / 0.45); overflow-wrap: anywhere; }
 /* La riga sotto il titolo e la parola sotto il valore: più chiare di Muted (sulle testate tinte dei tipi chiari Muted resta
    sotto 4,5:1), la riga sotto ancora tinta del tono, la parola sotto il valore un gradino più spenta */
-.tip-sub { grid-area: sub; min-width: 0; margin-top: 3px; font: 500 var(--tip-small)/1.25 var(--ui); color: color-mix(in srgb, var(--tc) 14%, color-mix(in srgb, var(--muted) 40%, var(--text))); }
+.tip-sub { grid-area: sub; min-width: 0; margin-top: 3px; font: 500 var(--tip-small)/1.25 var(--ui); color: color-mix(in srgb, var(--tc) 14%, color-mix(in srgb, var(--muted) 25%, var(--text))); }
 .tip-num, .tip-badge { grid-area: value; justify-self: end; white-space: nowrap; }
 /* Senza la parola sotto, il valore sta al centro della testata (anche con la riga sotto il titolo) */
 .tip-head:not(.has-qual) > .tip-num, .tip-head:not(.has-qual) > .tip-badge { grid-row: 1 / 3; }
 .tip-num { font: 700 italic var(--tip-num)/1 var(--display); font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px rgb(0 0 0 / 0.45); }
-.tip-num small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: color-mix(in srgb, var(--muted) 55%, var(--text)); }
+.tip-num small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--tip-qual-ink); }
 .tip-badge { display: flex; align-items: center; }
 /* Il badge in testata (la fascia dei colpi): inclinato come le lastre, un filo più grande che nelle righe */
 .tip-badge .ko-badge { padding: 3px var(--sp-5) 2px; transform: skewX(-12deg); }
@@ -74,7 +78,7 @@
 .kot-extra-badge .ko-badge > b { font-size: var(--tip-title); }
 /* La fascia nella riga sotto il titolo, prima della frase ("OHKO Li manda KO in un colpo") */
 .tip-sub .ko-badge { margin-right: var(--sp-3); vertical-align: 1px; }
-.tip-qual { grid-area: qual; justify-self: end; display: block; margin-top: 3px; font: 500 var(--tip-small)/1.2 var(--ui); color: color-mix(in srgb, var(--muted) 55%, var(--text)); white-space: nowrap; }
+.tip-qual { grid-area: qual; justify-self: end; display: block; margin-top: 3px; font: 500 var(--tip-small)/1.2 var(--ui); color: var(--tip-qual-ink); white-space: nowrap; }
 /* Un Pokémon come soggetto: la sprite grande (SPRITE_TIP) che esce dal bordo alto, come la carta del Pokémon in piccolo */
 /* Un Pokémon come soggetto: la sprite in piedi sul fondo della testata (i piedi 3px sopra il filo, dalla riga dei piedi di
    spriteFeet.ts: --feet-dy + 10/96 è quanto vuoto c'è sotto i piedi, in frazioni del lato). Non allunga la testata: chi è
@@ -96,7 +100,7 @@
 .tip-sec > p { margin: 0; }
 .tip-sec-label { display: flex; align-items: center; gap: var(--sp-3); font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 /* Le parti vecchie dentro una sezione: l'aria la dà la sezione */
-.tip-sec .kot-list, .tip-sec .tht-body, .tip-sec .thr-tip-why, .tip-sec .ftip-empty { padding: 0; }
+.tip-sec .kot-list, .tip-sec .thr-tip-why, .tip-sec .ftip-empty { padding: 0; }
 .tip-sec .kot-none { padding: 0; }
 /* Le righe di un elenco (TipRows/TipRow): icona, nome con la frase sotto, valore a destra */
 .tip-rows { display: flex; flex-direction: column; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
@@ -143,14 +147,19 @@
 .ko-badge.def.three { background: color-mix(in srgb, var(--good) 42%, var(--panel)); border-color: color-mix(in srgb, var(--good) 85%, transparent); }
 .ko-badge.def.four, .ko-badge.def.held { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 
-/* Copertura (CoverageTip): una riga per colpo o per membro, a destra il danno % e il badge dei colpi */
-.cov-rows .tip-row-val { display: flex; align-items: center; gap: var(--sp-4); }
-.cov-rows .tip-row-sub { display: flex; min-width: 0; }
-.cov-pct { min-width: 38px; font: 700 italic var(--tip-title)/1 var(--display); text-align: right; color: var(--text); }
-.cov-hit .cov-pct.ohko, .cov-hit .cov-pct.two { color: var(--good); }
-.cov-hit .cov-pct.three { color: var(--warn); }
-.cov-hit .cov-pct.four { color: var(--muted); }
-.cov-rows .ko-badge { min-width: 46px; justify-content: center; }
+/* Le righe di danno (TipDmg), una forma sola in ogni tooltip: nome a sinistra, il danno in Text (la forbice dei tiri
+   "79–93%", numeri tabellari) e in fondo a destra la fascia dei colpi; il colore lo dà solo il badge */
+.tip-dmg { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-4); }
+.tip-dmg-pct { min-width: 64px; font: 700 italic var(--tip-title)/1 var(--display); font-variant-numeric: tabular-nums; text-align: right; color: var(--text); }
+.tip-dmg-pct small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--tip-qual-ink); }
+.tip-dmg .ko-badge { min-width: 52px; justify-content: center; }
+.tip-row-sub:has(.mvp), .tip-row-title:has(.mvp) { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+/* Un tipo nelle righe e nelle frasi: la tessera da 24 e il nome in Text */
+.tip-type { display: inline-flex; align-items: center; gap: var(--sp-2); vertical-align: middle; font-weight: 600; color: var(--text); }
+.tip-type-tile { flex: none; width: var(--ti-head); height: var(--ti-head); }
+.tip-row-sub .tip-type, .tip-sec > p .tip-type { margin-block: -3px; }
+/* L'efficacia accanto alla mossa, a parole ("debole ×2", "superefficace ×2") */
+.tip-eff { flex: none; font: 600 var(--tip-small)/1 var(--ui); color: var(--muted); white-space: nowrap; }
 /* La mossa: icona tonda e nome nel colore del suo tipo, schiarito per leggersi sul fondo scuro, con un alone leggerissimo;
    poi simbolo della categoria e potenza in Faint */
 /* Mosse nei tooltip: pillole (move-pill.css), mai più larghe della riga */
@@ -255,7 +264,9 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .ctip-plinth { position: relative; display: flex; justify-content: center; }
 .ctip-plinth::before { content: ""; position: absolute; left: 50%; bottom: 2px; width: 72%; height: 8px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgb(255 255 255 / 0.35), transparent 70%); }
 .ctip-plinth .sprite { position: relative; display: block; image-rendering: pixelated; }
-.ctip-setter .sprite { margin: -10px 0 -8px; }
+/* 64px come la sprite in testata con la riga sotto (la testata del meteo ha sempre la durata): esce dal bordo alto, non
+   allunga la testata */
+.ctip-setter .sprite { margin: -26px 0 -10px; }
 /* Abilità: lastra inclinata; mossa: nome nel colore del tipo, alone leggero */
 .ctip-ab { display: inline-flex; align-items: center; padding: var(--sp-1) var(--sp-5) var(--sp-1) var(--sp-4); font: 600 var(--tip-small)/1.2 var(--display); color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .ctip-arrow { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -286,13 +297,21 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 
 /* ===== Velocità (SpeedTip): una scala verticale; in alto chi ti supera (rosso), al centro il membro in azzurro, sotto chi
    superi (verde), ognuno con la velocità effettiva; Sciarpa e Booster come piccole lastre inclinate */
-/* Il valore di testata (la velocità del membro) e la sua riga nella scala nel colore del tooltip, schiarito */
-.stip-own, .stip-rung.self .stip-speed { color: color-mix(in srgb, var(--tc) 55%, #fff); }
+/* La riga del membro ("tu") in azzurro, l'unico ciano della scala; il numero in testata resta in Text */
+.stip-rung.self .stip-speed { color: var(--accent-ink); }
 .tip-sec.stip-ladder { gap: 0; }
 .stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 var(--sp-4); padding: 3px var(--sp-3); font-size: var(--tip-body); }
 .stip-rung .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
-.stip-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
-.stip-name > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stip-name { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.stip-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Il nome come sulle carte (FormeName) nel carattere della riga e del titolo: la forma piccola accanto, il simbolo Mega */
+.tip-head .pick-name, .tip-sec .pick-name { display: inline-flex; }
+.tip-head .pick-name b, .tip-sec .pick-name b { font: inherit; }
+.tip-head .pick-name .mega-mark .mega-icon, .tip-sec .pick-name .mega-mark .mega-icon { width: 15px; height: 15px; }
+/* Lo strumento che dà la velocità (Sciarpa, Capsula): una piccola lastra inclinata con l'icona e la parola */
+.stip-mark { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 0 var(--sp-3) 0 1px; font: 700 var(--tip-small)/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text);
+  background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.stip-mark .item-icon { margin: -3px 0; }
 .stip-speed { grid-column: 4; font: 700 italic var(--tip-title)/1 var(--display); text-align: right; min-width: 38px; }
 .stip-rung.ahead .stip-speed { color: var(--bad); }
 .stip-rung.behind .stip-speed { color: var(--good); }
@@ -303,12 +322,11 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .stip-item.tie { color: var(--warn); }
 .stip-empty { margin: 0; color: var(--muted); }
 
-/* ===== Core (CoreTip): testata verde come i core, una riga per lato (TipRow): chi para con la sprite da 40, sotto la
-   tessera e il tipo parato nel colore schiarito dei nomi dei tipi (typeTextColor: almeno 4.5:1 sul fondo) e per chi;
-   a destra la fascia dei colpi (quanto lo regge, colori della Difesa) */
-.core-tip-type { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); font-weight: 600; }
-.core-tip-type img { width: var(--ti-head); height: var(--ti-head); }
-.core-tip-for { font-weight: 400; color: var(--muted); }
+/* ===== Core (CoreTip, CoreSideRows): testata verde come i core, una riga per lato (TipRow): chi para con la sprite da 40,
+   sotto "para", la tessera e il nome del tipo in Text (TipType) e per chi; a destra la fascia dei colpi (quanto lo regge,
+   colori della Difesa) */
+.core-tip-type { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.core-tip-for { color: var(--muted); }
 
 /* ===== Ruoli (RoleTip): la testata unica, poi una riga per chi lo copre (niente percentuali); se manca, una frase rossa
    (grigia se non toglie punti) */
@@ -326,15 +344,6 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .kot-none { margin: 0; padding: var(--sp-5) var(--sp-6); color: var(--muted); }
 .kot-extra { border-top: 1px solid var(--line-soft); }
 .kot-extra-h { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) var(--sp-6) 0; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-
-/* Le sinergie in più del Riassunto (il "+N" verde): una riga per sinergia, sprite unite dalla catena, etichetta, titolo, frase */
-/* Il "+N" delle Sinergie: una riga per sinergia, le sprite unite dalla catena a sinistra, etichetta e titolo, la frase sotto */
-.syn-more-row { --link-w: 16px; align-items: flex-start; }
-.syn-more-row + .syn-more-row { padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); }
-.syn-more-mons { min-width: 76px; display: flex; align-items: center; justify-content: center; }
-.syn-more-mon { display: flex; align-items: center; }
-.syn-more-row .tip-row-lead .sprite { margin: -6px 0; }
-.syn-more-row .sum-syn-tag { margin-right: var(--sp-2); }
 
 /* ===== Dettaglio dei candidati disegnato come la carta del tooltip (SuggestionDetail): la testata della carta (diagonale
    nei colori dei tipi, righe, ombra in basso) con sprite, nome, icone dei tipi e lastra dei ruoli, il voto a destra; il set
@@ -442,4 +451,6 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
   background: var(--ground); box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); font: 500 var(--fs-caption)/1.35 var(--ui); white-space: pre-line;
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
+/* Uno solo alla volta: con un tooltip DreamDex aperto il fumetto piccolo non si vede (anche se si apre per primo) */
+body:has(.ftip:not(.hint)) .ftip.hint { display: none; }
 

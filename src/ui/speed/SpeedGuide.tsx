@@ -124,9 +124,13 @@ export function SpeedGuideSection({ speed, meta, doubles = false }: { speed: Tea
       grouped: true,
     },
   };
+  // Il tooltip del "?" in parole per i lettori di schermo: ogni riga col moltiplicatore, tutti gli esempi e la regola
+  const chipName = (chip: Chip) => gameName(chip.move ? 'move' : dex.items.get(chip.name).exists ? 'item' : 'ability', chip.name, lang);
+  const describe = (rows: Row[]) => rows.map(row => [row.label, row.value, row.chips?.map(chipName).join(', '), typeof row.text === 'string' ? row.text : '']
+    .filter(Boolean).join(' ')).join('; ');
   const gain = (key: GainKey): [ReactNode, ReactNode] => [
     g(`gains.${key}`),
-    <>{g(`gains.${key}.rule`)} <Ask label={g(`gains.${key}`)} short><GainTip title={g(`gains.${key}`)} {...details[key]} /></Ask></>,
+    <>{g(`gains.${key}.rule`)} <Ask label={g(`gains.${key}`)} short describe={describe(details[key].rows)}><GainTip title={g(`gains.${key}`)} {...details[key]} /></Ask></>,
   ];
 
   return (

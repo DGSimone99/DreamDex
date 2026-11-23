@@ -7,11 +7,13 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { metaThreats } from '../../src/engine/attackers';
 import { battleSpecies } from '../../src/engine/dex';
 import { holdBand } from '../../src/engine/defense';
+import { dmgText } from '../../src/ui/dmgText';
 
 const HOLD = { ohko: 'OHKO', two: '2HKO', three: '3HKO', four: '4HKO+' } as const;
 import { moveAttackMultiplier } from '../../src/engine/types';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
+import { visibleText } from '../helpers/visibleText';
 import { renderIt } from '../helpers/italian';
 
 /** Ordine Minaccia di Coverage meta (quello di partenza), la regola della Panoramica: prima le minacce che nessuno regge del
@@ -181,9 +183,12 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     await user.hover(cell);
     const hit = await tipOf('dht');
     const c = rating.defense.typed[0].cells[0];
+    const r = rating.defense.typed[0].ranges[0];
     expect(hit).toHaveTextContent(rating.defense.typed[0].species);
-    expect(hit).toHaveTextContent(`Fisica${HOLD[holdBand(c.physical / 100)]}${c.physical}%`);
-    expect(hit).toHaveTextContent(`Speciale${HOLD[holdBand(c.special / 100)]}${c.special}%`);
+    // Righe di danno: il lato, la forbice dei tiri, la fascia in fondo
+    expect(r.physicalRange).not.toBeNull();
+    expect(hit).toHaveTextContent(`Fisica${dmgText(c.physical, r.physicalRange)}%${HOLD[holdBand(c.physical / 100)]}`);
+    expect(hit).toHaveTextContent(`Speciale${dmgText(c.special, r.specialRange)}%${HOLD[holdBand(c.special / 100)]}`);
     await user.unhover(cell);
     const head = within(table).getAllByRole('columnheader')[1];
     expect(head).toHaveTextContent(/Att \d+, AttSp \d+/);
@@ -425,7 +430,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori senza colonne in più; altrimenti niente pastiglie', () => {
     const rating = withMeta();
     const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
+    expect(screen.getAllByRole('columnheader').map(visibleText)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {

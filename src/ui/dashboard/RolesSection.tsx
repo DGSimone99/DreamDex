@@ -32,10 +32,10 @@ function useRoleText(chip: RoleChip) {
 
 /**
  * Il tooltip DreamDex di un ruolo: la testata unica (il tondo con la spunta o la ×, il nome del ruolo, sotto il livello; a
- * destra quanti lo coprono, o "Manca"), poi una riga per chi lo copre (sprite e nome, niente percentuali); se manca,
+ * destra quanti membri lo coprono, "4/6" col "del team" sotto come gli altri conti N/totale, o "Manca"), poi una riga per chi lo copre (sprite e nome, niente percentuali); se manca,
  * "Nessuno lo copre" in rosso (in grigio se non toglie punti).
  */
-function RoleTip({ chip }: { chip: RoleChip }) {
+function RoleTip({ chip, total }: { chip: RoleChip; total: number }) {
   const t = useT();
   const lang = useLang();
   const n = chip.owners.length;
@@ -43,7 +43,7 @@ function RoleTip({ chip }: { chip: RoleChip }) {
     <>
       <TipHead lead={<TipGlyph icon={chip.covered ? 'check' : 'close'} />} title={needLabel(chip.need, lang)} sub={t(`rdetail.level.${chip.level}`)}
         {...(chip.covered
-          ? { num: n, qualifier: t(n === 1 ? 'roleTip.coverOne' : 'roleTip.coverMany') }
+          ? { num: <>{n}<small>/{total}</small></>, qualifier: t('roleTip.ofTeam') }
           : { badge: <span className="tip-kind">{t('roleTip.missing')}</span> })} />
       <TipSec>
         {chip.covered
@@ -57,21 +57,21 @@ function RoleTip({ chip }: { chip: RoleChip }) {
 }
 
 /** I gestori del tooltip di un ruolo e il tooltip da rendere (uno per chip o riga). */
-function useRoleTip(chip: RoleChip) {
+function useRoleTip(chip: RoleChip, total: number) {
   const tip = useFloatAnchor<RoleChip>();
   const bind = tip.bind(chip);
   const node = tip.anchor && (
     <FloatTip rect={tip.anchor.rect} tone={chip.covered ? 'var(--good)' : chip.soft ? 'var(--faint)' : 'var(--bad)'} className="tip-w-m role">
-      <RoleTip chip={chip} />
+      <RoleTip chip={chip} total={total} />
     </FloatTip>
   );
   return { bind, node };
 }
 
 /** Stretto e normale: un chip col solo segno e nome, su una riga (chi lo copre è nel tooltip DreamDex). */
-function RoleChipItem({ chip }: { chip: RoleChip }) {
+function RoleChipItem({ chip, total }: { chip: RoleChip; total: number }) {
   const { label, detail } = useRoleText(chip);
-  const tip = useRoleTip(chip);
+  const tip = useRoleTip(chip, total);
   return (
     // Raggiungibile con le frecce (data-nav: le fasce sono un posto solo nel giro del Tab); col fuoco il tooltip
     <li data-fit data-nav="" className={`dash-role ${stateOf(chip)}`} {...tip.bind}>
@@ -85,7 +85,7 @@ function RoleChipItem({ chip }: { chip: RoleChip }) {
 }
 
 /** Una fascia (un livello): l'etichetta a sinistra, i ruoli che vanno a capo; quelli che non stanno nel "+N" a fine fascia. */
-function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; shown: number }) {
+function RoleBand({ title, chips, shown, total }: { title: string; chips: RoleChip[]; shown: number; total: number }) {
   const t = useT();
   const id = useId();
   const hidden = chips.length - shown;
@@ -93,7 +93,7 @@ function RoleBand({ title, chips, shown }: { title: string; chips: RoleChip[]; s
     <div className="dash-role-band">
       <span id={id} className="dash-level-name">{title}</span>
       <ul className="dash-role-list" aria-labelledby={id}>
-        {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} />)}
+        {chips.slice(0, shown).map(chip => <RoleChipItem key={chip.need} chip={chip} total={total} />)}
         {hidden > 0 && (
           <li data-fit-more className="dash-role more" title={t('dash.moreRoles', { n: hidden })}>
             <span aria-hidden="true">+{hidden}</span><span className="visually-hidden">{t('dash.moreRoles', { n: hidden })}</span>
@@ -127,7 +127,7 @@ function RoleBands({ roles, density, titles }: { roles: DashboardData['roles']; 
   });
   return (
     <div ref={el => { ref(el); nav.ref.current = el; }} className="dash-role-bands dash-fit" onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
-      {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} shown={visible[i]} />)}
+      {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} shown={visible[i]} total={roles.members.length} />)}
     </div>
   );
 }

@@ -828,15 +828,15 @@
 .duel-tip-source { margin: 0; font: 500 var(--tip-body)/1.35 var(--ui); color: var(--faint); }
 /* Contro il resto del meta: il conto sottolineato a puntini apre la lista */
 .duel-tip-fx { gap: var(--sp-3); }
-.duel-tip-label { font: 700 11px/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.duel-tip-fxline { display: grid; grid-template-columns: 14px 1fr; gap: var(--sp-3); align-items: start; font: 500 12px/1.35 var(--ui); color: var(--muted); }
+.duel-tip-label { font: 700 var(--tip-small)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+.duel-tip-fxline { display: grid; grid-template-columns: 14px 1fr; gap: var(--sp-3); align-items: start; font: 500 var(--tip-body)/1.35 var(--ui); color: var(--muted); }
 .duel-tip-arrow { display: inline-flex; margin-top: 2px; }
 .duel-tip-arrow svg { width: 12px; height: 12px; }
 /* Verso l'alto: si gira solo il disegno (girare il riquadro, più alto della freccia, la farebbe scendere sotto la riga) */
 .duel-tip-fxline.up .duel-tip-arrow { color: var(--good); }
 .duel-tip-fxline.up .duel-tip-arrow svg { transform: rotate(180deg); }
 .duel-tip-fxline.down .duel-tip-arrow { color: var(--bad); }
-.duel-tip-count { padding: 0; border: 0; background: none; cursor: help; font: 600 12px/1.35 var(--ui); color: var(--text);
+.duel-tip-count { padding: 0; border: 0; background: none; cursor: help; font: 600 var(--tip-body)/1.35 var(--ui); color: var(--text);
   text-decoration: underline dotted color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 3px; }
 .duel-tip-count:hover { color: var(--accent-ink); text-decoration-color: var(--accent); }
 .duel-tip-type { display: inline-block; margin-left: var(--sp-3); padding: 2px 5px 1px; border-radius: 3px; vertical-align: 1px;
@@ -855,14 +855,14 @@
 .duel-tip-diff { align-self: flex-start; padding: 3px 6px 2px; border-radius: 6px 2px 6px 2px; font: italic 800 13px/1 var(--display); }
 .duel-tip-diff.up { color: var(--good); background: var(--good-bg); }
 .duel-tip-diff.down { color: var(--bad); background: var(--bad-bg); }
-.duel-tip-diff.same { color: var(--muted); background: var(--raised); }
+.duel-tip-same { display: block; margin-top: 3px; font: 600 var(--tip-small)/1 var(--ui); font-style: normal; color: var(--muted); }
 .duel-tip-apply { flex: none; height: 30px; padding: 0 var(--sp-6); border: 0; border-radius: 9px 2px 9px 2px; cursor: pointer;
   font: 700 12px/1 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); }
 .duel-tip-apply:hover { filter: brightness(1.1); }
 .duel-tip-apply:disabled { cursor: default; color: var(--faint); background: var(--raised); filter: none; }
 /* Il tooltip della lista (testata unica, una riga per Pokémon, "2 → 3"): le righe con l'icona del box, i colpi a destra */
 .duel-fx-tip .tip-row-lead .mon-icon { margin: -6px 0; }
-.duel-fx-tip .tip-row-val { font: 600 var(--tip-body)/1 var(--ui); color: var(--muted); }
+.duel-fx-tip .tip-row-val { color: var(--muted); }
 .duel-fx-tip .tip-row-val b.good { color: var(--good); }
 .duel-fx-tip .tip-row-val b.bad { color: var(--bad); }
 .tip-more { margin: 0; font: 600 var(--tip-small)/1.2 var(--ui); color: var(--muted); }

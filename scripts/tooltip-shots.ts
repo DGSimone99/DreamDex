@@ -305,6 +305,19 @@ const missing: string[] = [];
 let counter = 1;
 
 async function shoot(p: Page, want: Want, cls: string) {
+  // Aspetta la fine della dissolvenza d'entrata (ftip-in, 0,16s): con la pagina occupata a calcolare può durare di più,
+  // e una foto a metà sembra un tooltip trasparente
+  const fade = await p.evaluate(async () => {
+    const t = document.querySelector('[data-shot]');
+    if (!t) return null;
+    const anims = t.getAnimations({ subtree: true }).filter(a => a.playState !== 'finished' && a.effect?.getTiming().iterations !== Infinity);
+    await Promise.race([Promise.all(anims.map(a => a.finished.catch(() => null))), new Promise(res => setTimeout(res, 3000))]);
+    await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+    let op = 1;
+    for (let e: Element | null = t; e; e = e.parentElement) op *= +getComputedStyle(e).opacity;
+    return { waited: anims.length, opacity: Math.round(op * 1000) / 1000 };
+  });
+  if (fade && fade.opacity < 1) console.log(`  warning ${want.id}: tooltip opacity ${fade.opacity} at shot time`);
   const r = await p.evaluate(() => {
     const t = document.querySelector('[data-shot]');
     if (!t) return null;

@@ -1,5 +1,5 @@
 import { usesMeta } from './analysis';
-import { bestHit, hasZMove, setKey, type FieldCondition, type Target } from './damage';
+import { bestHit, hasZMove, hitRange, setKey, type FieldCondition, type PctRange, type Target } from './damage';
 import { hitRules } from './formatRules';
 import type { EngineData } from './data';
 import type { Species } from '@pkmn/dex';
@@ -167,12 +167,18 @@ export interface CoverageRow {
    * arriva; null se il team non ne porta o non fa di più. `teamMove`: la mossa di quel colpo. `comboPct` / `comboMove`: dopo la
    * danza e col meteo del team insieme. Nel credito entrano come nei tipi: setup un terzo, meteo del compagno metà (un quarto
    * se arriva solo da una mossa).
+   * `range` / `setupRange` / `teamRange` / `comboRange`: la forbice dei tiri (da minimo a massimo, in % dei PS, anche oltre
+   * 100) del colpo vero dietro `pct`, `setupPct`, `teamPct` e `comboPct`; null senza quel colpo, se il membro è sconosciuto
+   * o se il numero è una stima (precisione sotto 100, Multiscale a quota, sconto di Band/Specs: hitRange).
    */
-  cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null; teamPct: number | null; teamVia: FieldSource[] | null; teamMove: string | null; comboPct: number | null; comboMove: string | null }[] | null;
+  cells: { pct: number; setupPct: number | null; mult: number | null; move: string | null; teamPct: number | null; teamVia: FieldSource[] | null; teamMove: string | null; comboPct: number | null; comboMove: string | null;
+    range: PctRange | null; setupRange: PctRange | null; teamRange: PctRange | null; comboRange: PctRange | null }[] | null;
 }
 
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
-interface CoverHit { x: number; move: string; plain: number; setup: number | null; team: number | null; teamVia: FieldSource[] | null; teamMove: string | null; combo: number | null; comboMove: string | null }
+interface CoverHit { x: number; move: string; plain: number; setup: number | null; team: number | null; teamVia: FieldSource[] | null; teamMove: string | null; combo: number | null; comboMove: string | null;
+  /** Le forbici dei tiri dei colpi dietro `plain`, `setup`, `team` e `combo` (solo da mostrare). */
+  range: PctRange | null; setupRange: PctRange | null; teamRange: PctRange | null; comboRange: PctRange | null }
 const hitsCache = new Map<string, CoverHit[]>();
 const HITS_LIMIT = 5000;
 function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind, team: TeamSet[] = [set]): CoverHit[] {
@@ -199,21 +205,26 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
     const x = Math.min(1, base?.expected ?? 0);
     const boosted = Math.max(x, ...once.map(hit => Math.min(1, hit.expected)));
     // Tera e mossa Z una volta a partita: un quarto di quello che aggiungono
-    const danced = setup ? Math.max(x, Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts: setup.boosts, ...rules })?.expected ?? 0)) : null;
+    const dancedHit = setup ? bestHit(set, target.set, { superEffectiveOnly, conditions, boosts: setup.boosts, ...rules }) : null;
+    const danced = setup ? Math.max(x, Math.min(1, dancedHit?.expected ?? 0)) : null;
+    // Dopo la danza il colpo col setup, se non fa meno di quello semplice (come `danced`)
+    const setupRange = setup ? hitRange(Math.min(1, dancedHit?.expected ?? 0) >= x ? dancedHit : base) : null;
     // Col meteo o il campo del team: la combinazione che fa di più, solo se fa di più del colpo semplice
     let team: number | null = null;
     let teamVia: FieldSource[] | null = null;
     let teamMove: string | null = null;
     let combo: number | null = null;
     let comboMove: string | null = null;
+    let teamRange: PctRange | null = null;
+    let comboRange: PctRange | null = null;
     for (const c of teamFieldCombos(conditions, sources)) {
       const found = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, ...rules });
       const hit = Math.min(1, found?.expected ?? 0);
-      if (hit > x && hit > (team ?? 0)) { team = hit; teamVia = sources.filter(s => c.added.includes(s.condition)); teamMove = found?.move ?? null; }
+      if (hit > x && hit > (team ?? 0)) { team = hit; teamVia = sources.filter(s => c.added.includes(s.condition)); teamMove = found?.move ?? null; teamRange = hitRange(found); }
       // Danza e meteo del team insieme
       if (setup) {
         const both = bestHit(set, target.set, { superEffectiveOnly, conditions: c.conditions, boosts: setup.boosts, ...rules });
-        if ((both?.expected ?? 0) > (combo ?? 0)) { combo = Math.min(1, both!.expected); comboMove = both!.move ?? null; }
+        if ((both?.expected ?? 0) > (combo ?? 0)) { combo = Math.min(1, both!.expected); comboMove = both!.move ?? null; comboRange = hitRange(both); }
       }
     }
     // Nel credito del meta, come nei tipi (2026-11-15, prima solo da mostrare): il meteo o il campo del compagno vale metà
@@ -235,7 +246,8 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
       const dancedField = setup ? Math.max(field, withTeam(setup.boosts)) : field;
       counted = Math.min(1, field + SETUP_SHARE * (dancedField - field));
     }
-    return { x: Math.min(1, counted + ONE_USE_COVER * (boosted - x)), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced, team, teamVia, teamMove, combo, comboMove };
+    return { x: Math.min(1, counted + ONE_USE_COVER * (boosted - x)), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced, team, teamVia, teamMove, combo, comboMove,
+      range: hitRange(base), setupRange, teamRange, comboRange };
   });
   hitsCache.set(key, hits);
   return hits;
@@ -286,8 +298,10 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
         ? hits.map((h, m) => (known[m]
           ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup), mult: h[i].move ? moveAttackMultiplier(team[m], h[i].move, targetTypes, targetAbility) : null, move: h[i].move || null,
             teamPct: h[i].team === null ? null : pctOf(h[i].team), teamVia: h[i].teamVia, teamMove: h[i].teamMove,
-            comboPct: h[i].combo === null ? null : pctOf(h[i].combo), comboMove: h[i].comboMove }
-          : { pct: -1, setupPct: null, mult: null, move: null, teamPct: null, teamVia: null, teamMove: null, comboPct: null, comboMove: null }))
+            comboPct: h[i].combo === null ? null : pctOf(h[i].combo), comboMove: h[i].comboMove,
+            range: h[i].range, setupRange: h[i].setupRange, teamRange: h[i].teamRange, comboRange: h[i].comboRange }
+          : { pct: -1, setupPct: null, mult: null, move: null, teamPct: null, teamVia: null, teamMove: null, comboPct: null, comboMove: null,
+            range: null, setupRange: null, teamRange: null, comboRange: null }))
         : null;
       return { label: target.label, species: target.set.species, set: target.set, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
     }),

@@ -16,7 +16,7 @@ import { SpeedTip } from '../dashboard/SpeedTip';
 import { Icon } from '../icons';
 import { offenseSlots } from '../offense/slots';
 import { linkTeamCard } from '../teamLink';
-import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
+import { TIP_NEUTRAL, TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { tileStyle, typeIconUrl } from '../typeIcons';
 import { SpeedMemberDialog } from './SpeedMemberDialog';
 
@@ -76,15 +76,16 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
     return index === null || index === undefined ? null : members[index];
   };
   const shown = tip.anchor ? (() => { const m = memberAt(tip.anchor.key); return m ? laneOf(m, ctx.team[tip.anchor.key]) : null; })() : null;
-  // Il nome del guadagno e la sua fonte nei nomi dei giochi, una volta sola se coincidono ("Rete Vischiosa", non
-  // "Rete Vischiosa · Rete Vischiosa"); la fonte è una mossa, un'abilità o uno strumento
-  const label = (condition: MemberSpeed['gains'][number]['condition'], source: string) => {
+  // Come ogni setup nei tooltip: il nome della mossa (o abilità, strumento) come titolo, sotto che cosa è ("Setup") e chi
+  // la porta; una volta sola se coincidono ("Rete Vischiosa", non "Rete Vischiosa · Rete Vischiosa")
+  const label = (condition: MemberSpeed['gains'][number]['condition'], source: string, by?: string[]) => {
     const name = t(`sdetail.cond.${condition}`);
     const from = anyGameName(source, lang);
-    return name === from ? from : `${name} · ${from}`;
+    const sub = [name === from ? '' : name, by?.join(', ') ?? ''].filter(Boolean).join(' · ');
+    return { title: from, sub: sub || undefined };
   };
-  // Sotto la scala, cosa aggiunge ogni guadagno alla barra: "Setup · Dragodanza" e a destra "+18", gli stessi punti dei
-  // pezzi a righe della barra ("55 +18"); Distortozona no: ha il suo interruttore; in Distortozona nessuno, le spinte lì
+  // Sotto la scala, cosa aggiunge ogni guadagno alla barra: "Dragodanza" (sotto "Setup") e a destra "+18", gli stessi punti
+  // dei pezzi a righe della barra ("55 +18"); Distortozona no: ha il suo interruttore; in Distortozona nessuno, le spinte lì
   // non contano
   const gains = (m: MemberSpeed) => {
     const list = room ? [] : m.gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition) || SHOWN_CONTROL.includes(g.condition));
@@ -93,7 +94,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
         <TipSec label={t('sdetail.gains')} className="stip-gains">
           <TipRows>
             {list.map(g => (
-              <TipRow key={`${g.condition}-${g.source}`} title={label(g.condition, g.source)} sub={g.by ? g.by.join(', ') : undefined}
+              <TipRow key={`${g.condition}-${g.source}`} {...label(g.condition, g.source, g.by)}
                 value={`+${points(g.gain)}`} tone="good" />
             ))}
           </TipRows>
@@ -203,7 +204,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
           </>}
       </span></div>
       {shown && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={room ? 'var(--room)' : 'var(--accent)'} className="tip-w-m speed" side="left">
+        <FloatTip rect={tip.anchor.rect} tone={room ? 'var(--room)' : TIP_NEUTRAL} className="tip-w-m speed" side="left">
           <SpeedTip lane={shown} vsMeta={meta} room={room} extra={gains(memberAt(tip.anchor.key)!)} />
           {/* Il clic apre la finestra coi rivali (non un'altra scheda): lo stesso piede col verbo "apri"; il nome del pulsante lo dice già */}
           <TipGo place={t('sdetail.bar.go')} verb="open" />

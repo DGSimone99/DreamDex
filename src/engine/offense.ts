@@ -1,7 +1,7 @@
 import { usesMeta } from './analysis';
 import { teamFieldSources, type FieldSource } from './partner';
 import { coverageTargets, META_DEPTH, teamCoverage, type CoverageRow } from './coverage';
-import { bestHit, hasZMove, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
+import { bestHit, hasZMove, hitRange, setKey, type FieldCondition, type Hit, type HitOptions, type PctRange, type Target } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel, isDefensiveSet } from './defenders';
 // Import circolare con defense.ts: si usano solo funzioni, chiamate dopo il caricamento
@@ -98,6 +98,18 @@ export interface TargetHit {
   /** Dopo la danza e col meteo/campo del team insieme (null se manca l'uno o l'altro): danno % e mossa. */
   comboPct: number | null;
   comboMove: string | null;
+  /**
+   * La forbice dei tiri (da minimo a massimo, in % dei PS, anche oltre 100) del colpo vero dietro ogni numero: `range` di
+   * `pct`, poi semplice, dopo una danza, con Tera/Z, col meteo/campo del team, e danza + meteo insieme. Null senza quel
+   * colpo e quando il numero non è un colpo solo (media col meteo di un compagno, setup o Tera/Z a quota, precisione sotto
+   * 100, Multiscale, sconto di Band/Specs: hitRange): allora si mostra il numero solo. Il voto usa i danni medi.
+   */
+  range: PctRange | null;
+  plainRange: PctRange | null;
+  setupRange: PctRange | null;
+  onceRange: PctRange | null;
+  teamRange: PctRange | null;
+  comboRange: PctRange | null;
 }
 
 export interface MemberOffense {
@@ -126,7 +138,8 @@ export interface MemberOffense {
 export interface TypeRow {
   label: string;
   level: number;
-  best: { species: string; move: string | null; pct: number; credit: number }[];
+  /** `range`: la forbice dei tiri dietro `pct` (TargetHit.range), null quando `pct` è una media col setup o Tera/Z a quota. */
+  best: { species: string; move: string | null; pct: number; credit: number; range: PctRange | null }[];
 }
 
 export interface CoverageDetail {
@@ -253,6 +266,8 @@ export function fieldCombos(own: FieldCondition[], all: FieldCondition[]): Field
 
 /** Per ognuno dei 18 bersagli del pacchetto: danno senza niente, dopo una danza e con Tera/Z (al massimo 1), e la mossa migliore. */
 interface PerTarget { plain: number[]; danced: number[] | null; once: number[] | null; moves: (string | null)[];
+  /** Le forbici dei tiri dei colpi veri dietro `plain`, `danced`, `once`, `team` e `combo` (solo da mostrare). */
+  ranges: { plain: (PctRange | null)[]; danced: (PctRange | null)[] | null; once: (PctRange | null)[] | null; team: (PctRange | null)[]; combo: (PctRange | null)[] | null };
   /** Il colpo intero col meteo o il campo del team che fa di più (null se non ce n'è) e quali condizioni lo danno. */
   team: (number | null)[]; teamConditions: (FieldCondition[] | null)[]; teamMoves: (string | null)[];
   /** Setup e meteo/campo del team insieme: il colpo intero e la mossa (null senza setup o senza meteo del team). */
@@ -300,8 +315,11 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
   const against = (target: Target, boosts?: HitOptions['boosts'], oneUse = false) => {
     const expected: number[] = [];
     const steps: number[] = [];
+    // La forbice dei tiri, per variante (solo da mostrare): c'è solo se il numero è il colpo col campo del membro, così com'è;
+    // quando vince il meteo di un compagno il numero è una media pesata (metà senza, metà con) e la forbice non c'è
+    const ranges: (PctRange | null)[] = [];
     let move: string | null = null;
-    let teamHit: { expected: number; conditions: FieldCondition[]; move: string | null } | null = null;
+    let teamHit: { expected: number; conditions: FieldCondition[]; move: string | null; range: PctRange | null } | null = null;
     // Multiscale, Tera Shell, Air Balloon del bersaglio: un quarto, metà se si cura (damage.ts)
     const firstHit = firstHitShare(target);
     for (const variant of oneUse ? oneUseVariants : [{ tera: false, z: false }]) {
@@ -314,21 +332,23 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
         step: (1 - share) * stepValue(off) + share * stepValue(hit),
       });
       let pick = mix(off, FIELD_SHARE);
+      let pure = true;
       let on: Hit | null = null;
       for (const conditions of combos) {
         const hit = bestHit(set, target, { ...base, conditions });
         if ((hit?.expected ?? 0) > (on?.expected ?? 0)) on = hit;
-        if ((hit?.expected ?? 0) > Math.max(off?.expected ?? 0, teamHit?.expected ?? 0)) teamHit = { expected: hit!.expected, conditions: conditions.filter(c => !own.includes(c)), move: hit!.move ?? null };
+        if ((hit?.expected ?? 0) > Math.max(off?.expected ?? 0, teamHit?.expected ?? 0)) teamHit = { expected: hit!.expected, conditions: conditions.filter(c => !own.includes(c)), move: hit!.move ?? null, range: hitRange(hit) };
         const value = mix(hit, conditions.some(c => moveOnly.has(c)) ? MOVE_FIELD_SHARE : FIELD_SHARE);
-        if (value.expected > pick.expected) pick = value;
+        if (value.expected > pick.expected) { pick = value; pure = false; }
       }
       if (off || on) known = true;
       move ??= off?.move ?? on?.move ?? null;
       expected.push(pick.expected);
       steps.push(pick.step);
+      ranges.push(pure ? hitRange(off) : null);
     }
     const best = expected.indexOf(Math.max(...expected));
-    return { expected: expected[best] ?? 0, step: steps[best] ?? 0, move, team: teamHit };
+    return { expected: expected[best] ?? 0, step: steps[best] ?? 0, move, team: teamHit, range: ranges[best] ?? null };
   };
 
   const targets = measure === 'power' ? coverageTargets(data, 'types') : coverageTargets(data);
@@ -339,7 +359,8 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
   const plain = plainHits.map(h => h.expected);
   const dancedHits = setup ? targets.map(target => against(target.set, setup.boosts)) : null;
   const danced = dancedHits ? dancedHits.map(h => h.expected) : null;
-  const once = withOneUse ? targets.map((target, i) => Math.max(plain[i], against(target.set, undefined, true).expected)) : null;
+  const onceHits = withOneUse ? targets.map(target => against(target.set, undefined, true)) : null;
+  const once = onceHits ? onceHits.map((h, i) => Math.max(plain[i], h.expected)) : null;
   const weighted = (xs: number[]) => targets.reduce((acc, target, i) => acc + target.weight * xs[i], 0);
   // Quale mossa è più spesso la migliore (per le schede)
   const byMove = new Map<string, number>();
@@ -363,6 +384,14 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
     setupSteps: boosted?.map(r => r.step) ?? null, setupHits: boosted?.map(r => r.expected) ?? null,
     perTarget: measure === 'power' ? {
       plain, danced, once, moves: plainHits.map(h => h.move),
+      ranges: {
+        plain: plainHits.map(h => h.range),
+        danced: dancedHits ? dancedHits.map(h => h.range) : null,
+        // Con Tera/Z solo se fa di più del colpo semplice (come `once`), altrimenti il colpo semplice
+        once: onceHits ? onceHits.map((h, i) => (h.expected > plain[i] ? h.range : plainHits[i].range)) : null,
+        team: plainHits.map(h => h.team?.range ?? null),
+        combo: dancedHits ? dancedHits.map(h => h.team?.range ?? null) : null,
+      },
       team: plainHits.map(h => (h.team ? Math.min(1, h.team.expected) : null)), teamConditions: plainHits.map(h => h.team?.conditions ?? null), teamMoves: plainHits.map(h => h.team?.move ?? null),
       combo: dancedHits ? dancedHits.map(h => (h.team ? Math.min(1, h.team.expected) : null)) : null,
       comboMoves: dancedHits ? dancedHits.map(h => h.team?.move ?? null) : null,
@@ -462,6 +491,13 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
       teamMove: p.teamMoves[i],
       comboPct: p.combo?.[i] == null ? null : Math.floor(100 * p.combo[i]!),
       comboMove: p.comboMoves?.[i] ?? null,
+      // `pct` è il colpo semplice solo se setup e Tera/Z non aggiungono niente (shareDamage), se no una media pesata
+      range: damage[i] === Math.min(1, p.plain[i]) ? p.ranges.plain[i] : null,
+      plainRange: p.ranges.plain[i],
+      setupRange: p.ranges.danced?.[i] ?? null,
+      onceRange: p.ranges.once?.[i] ?? null,
+      teamRange: p.team[i] === null ? null : p.ranges.team[i],
+      comboRange: p.combo?.[i] == null ? null : p.ranges.combo?.[i] ?? null,
     })),
     coverMeta,
     total: coverMeta === null ? value : Math.round(OFFENSE_SHARES.types * value + OFFENSE_SHARES.meta * coverMeta),
@@ -533,7 +569,7 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   const withoutSetup = final(packOf(measured.map(({ set }) => creditsOf(rawOf(set, team, data, 'power')!.perTarget!, 0, ONE_USE_SHARE)), labels.length));
   const rows = labels.map((label, i) => {
     const best = members
-      .map(m => ({ species: m.species, move: m.hits[i].move, pct: m.hits[i].pct, credit: m.hits[i].credit }))
+      .map(m => ({ species: m.species, move: m.hits[i].move, pct: m.hits[i].pct, credit: m.hits[i].credit, range: m.hits[i].range }))
       .filter(b => b.credit > 0)
       .sort((a, b) => b.credit - a.credit)
       .slice(0, OFFENSE_DEPTH.length);

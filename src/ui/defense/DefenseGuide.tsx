@@ -6,8 +6,8 @@ import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { useLang, useT } from '../../i18n/react';
 import { Keys, Rows } from '../guideParts';
 import { Bar } from '../offense/OffenseGuide';
-import { Ask, MetaTargets } from '../offense/TargetsTip';
-import { TypeAttackers } from './HoldBars';
+import { Ask, MetaTargets, metaText, typeStatText } from '../offense/TargetsTip';
+import { attackerCols, TypeAttackers } from './HoldBars';
 
 type Section = 'general' | 'sustain';
 type Key = Parameters<ReturnType<typeof useT>>[0];
@@ -35,8 +35,8 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
       <>
         <h4>{t('guide.off.test.targets')}</h4>
         <Rows compact rows={[
-          [t('detail.coverageTypes'), <>{g('how.targets.types')} <Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={formatId} /></Ask></>],
-          ...(meta && defense.coverageMeta ? [[t('detail.coverageMeta'), <>{t('guide.off.cov.targets.meta', { n: metaSpecies.length })} <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} icon="shield" /></Ask></>] as [ReactNode, ReactNode]] : []),
+          [t('detail.coverageTypes'), <>{g('how.targets.types')} <Ask label={t('hold.attackersTitle')} describe={typeStatText(attackerCols(formatId, t), lang)}><TypeAttackers formatId={formatId} /></Ask></>],
+          ...(meta && defense.coverageMeta ? [[t('detail.coverageMeta'), <>{t('guide.off.cov.targets.meta', { n: metaSpecies.length })} <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} icon="shield" /></Ask></>] as [ReactNode, ReactNode]] : []),
         ]} />
 
         <h4>{t('guide.off.test')}</h4>

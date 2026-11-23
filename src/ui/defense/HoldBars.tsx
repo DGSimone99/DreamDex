@@ -10,7 +10,7 @@ import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
 import { PokemonIcon } from '../PokemonName';
 import { pieceSize, Target } from '../offense/KoBadges';
-import { TypeStatTable } from '../offense/TargetsTip';
+import { TypeStatTable, type TypeStatCol } from '../offense/TargetsTip';
 
 /*
  * La barra a pezzi della Generale della Difesa, sorella di quella dell'Offesa (KoBadges): per un membro (o per il team)
@@ -135,6 +135,12 @@ export function HoldBars({ targets, who, mon, of, alarm = false, quiet = false, 
   );
 }
 
+/** Le colonne degli attaccanti dei 18 tipi (Att e AttSp): la tabella del "?" e la sua descrizione. */
+export const attackerCols = (formatId: FormatId, t: ReturnType<typeof useT>): TypeStatCol[] => [
+  { label: t('stat.atk'), value: type => dummyStats(formatId, type).atk },
+  { label: t('stat.spa'), value: type => dummyStats(formatId, type).spa },
+];
+
 /**
  * Gli attaccanti dei 18 tipi (Coverage tipi della Difesa): Attacco e Attacco Speciale nella tabella dei 18 tipi; la nota
  * è la riga sotto il titolo (l'unico piede è "Clic: apri la guida" quando il "?" apre la guida).
@@ -145,10 +151,7 @@ export function TypeAttackers({ formatId }: { formatId: FormatId }) {
     <>
       <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.attackersTitle')} sub={t('ddetail.attackerTableTip')} />
       <TipSec>
-        <TypeStatTable cols={[
-          { label: t('stat.atk'), value: type => dummyStats(formatId, type).atk },
-          { label: t('stat.spa'), value: type => dummyStats(formatId, type).spa },
-        ]} />
+        <TypeStatTable cols={attackerCols(formatId, t)} />
       </TipSec>
     </>
   );

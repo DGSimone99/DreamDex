@@ -7,12 +7,12 @@ import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { KoBadges, koBands, type KoTarget } from './KoBadges';
 import { offenseSlots } from './slots';
-import { Ask, BarHead, MetaTargets, TypeAverages } from './TargetsTip';
+import { Ask, averageCols, BarHead, MetaTargets, metaText, TypeAverages, typeStatText } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect, useId } from 'react';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
-import { TipHead, TipRow, TipRows, TipSec } from '../TipHead';
+import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { signed } from '../defense/DefenseGeneral';
 import { useRoving } from '../useRoving';
 
@@ -58,12 +58,12 @@ function ShareTip({ who, share, meta }: { who: string; share: MemberShare; meta:
       <span className="def-num total og-share-num">+{share.points}</span>
       <HiddenText id={id}>{`${t('odetail.gen.shareNote')}. ${parts}`}</HiddenText>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="tip-w-s dsh-tip">
-          <TipHead sprite={who} title={who} sub={t('odetail.gen.shareSub')} num={<span className="dsh-total">{signed(share.points)}</span>} />
+        <FloatTip rect={tip.anchor.rect} tone={TIP_NEUTRAL} className="tip-w-s dsh-tip">
+          <TipHead sprite={who} title={who} sub={t('odetail.gen.shareSub')} num={<span className={signTone(share.points)}>{signed(share.points)}</span>} />
           <TipSec>
             <TipRows className="dsh-rows">
-              <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.parts.types)} />
-              {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.parts.meta)} />}
+              <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.parts.types)} tone={signTone(share.parts.types)} />
+              {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.parts.meta)} tone={signTone(share.parts.meta)} />}
             </TipRows>
           </TipSec>
         </FloatTip>
@@ -125,8 +125,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {/* Accanto alle testate il "?" coi bersagli, come nella guida: il Pokémon medio dei 18 tipi, le minacce del meta */}
-              <th scope="col"><BarHead icon="sword" word={t('kob.headTypes')} /><Ask label={t('guide.off.targets.typesTitle')} guide={openGuide}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col"><BarHead icon="sword" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide}><MetaTargets species={metaSpecies} /></Ask></th>}
+              <th scope="col"><BarHead icon="sword" word={t('kob.headTypes')} /><Ask label={t('guide.off.targets.typesTitle')} guide={openGuide} describe={typeStatText(averageCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="sword" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>

@@ -130,7 +130,7 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
           <TipSec>
             {subject.species
               ? <ul className="thr-tip-why"><li className="open">{t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone')}</li></ul>
-              : <p><Typed text={full} /></p>}
+              : <p><Typed text={full} tip /></p>}
           </TipSec>
           {onOpen && <TipGo place={t('analysis.view.coaching')} />}
         </FloatTip>
@@ -163,7 +163,7 @@ export function MoreProblems({ hidden, as: Tag = 'li' }: { hidden: ProblemEntry[
                 return (
                   <TipRow key={`${e.problem.key}|${e.role ?? ''}`} className={`prob-${e.problem.severity}`}
                     lead={subject.species ? <Sprite species={subject.species} size={SPRITE_TIP_ROW} /> : subject.lead}
-                    title={subject.title} sub={<Typed text={texts[i]} />} />
+                    title={subject.title} sub={<Typed text={texts[i]} tip />} />
                 );
               })}
             </TipRows>

@@ -188,7 +188,10 @@ describe('Cruscotto della Panoramica', () => {
     expect(hits).toHaveLength(2);
     expect(hits[0]).toHaveTextContent('Great Tusk');
     expect(hits[0].querySelector('.ko-badge')).toHaveTextContent('2HKO');
-    expect(hits[0].querySelector('.cov-pct')).toHaveTextContent('86%');
+    // La riga di danno: il danno in Text (senza forbice qui: la casella non la porta), la fascia in fondo a destra
+    expect(hits[0].querySelector('.tip-dmg-pct')).toHaveTextContent(/^86%$/);
+    expect(hits[0].querySelector('.tip-dmg > :last-child')).toHaveClass('ko-badge');
+    expect(off.querySelector('.tip-head .tip-qual')).toHaveTextContent('copertura');
     expect(hits[1].querySelector('.ko-badge')).toHaveTextContent('3HKO');
     await user.unhover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
     expect(document.querySelector('.ftip')).toBeNull();
@@ -862,7 +865,13 @@ describe('Cruscotto: misure', () => {
     await user.hover(syn.querySelector('.sum-sec-more')!);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.syn-more'); if (!el) throw new Error('no tip'); return el; });
     expect(tip).toHaveTextContent('Altre 3 sinergie');
-    expect(tip.querySelectorAll('.syn-more-list > li')).toHaveLength(3);
+    // Una sezione per sinergia, etichettata col genere e il titolo; righe con la sprite da 40, mai la catena di sprite
+    // piccole, la frase sotto il primo membro (non un paragrafo)
+    expect(tip.querySelectorAll('.tip-sec')).toHaveLength(3);
+    expect(tip.querySelectorAll('.tip-sec-label')[1]).toHaveTextContent(/^Baton Pass · /);
+    expect(tip.querySelectorAll('.tip-row .sprite').length).toBeGreaterThanOrEqual(3);
+    tip.querySelectorAll('.tip-row .sprite').forEach(s => expect(s).toHaveAttribute('width', '40'));
+    expect(tip.querySelector('.sum-link, p')).toBeNull();
     expect(tip).toHaveTextContent('Hatterene fa entrare Iron Valiant');
   });
 

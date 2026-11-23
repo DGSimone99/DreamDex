@@ -117,9 +117,12 @@ export function TipHost() {
     let current: Element | null = null;
     const find = (target: EventTarget | null) => (target instanceof Element ? target.closest(TIP_SELECTOR) : null);
     const blocked = (el: Element) => !!el.closest('.ftip') || !!el.querySelector('[aria-expanded="true"]');
+    // Il fumetto piccolo non va sopra un tooltip DreamDex aperto (es. il nome dei tipi sulla tessera dentro una pastiglia
+    // che ha già il suo tooltip): uno solo alla volta, vince quello ricco
+    const richOpen = () => !!document.querySelector('.ftip:not(.hint)');
     const start = (el: Element) => {
       const key = keyOf(el);
-      if (!key || blocked(el)) { close(); return; }
+      if (!key || blocked(el) || (key.kind === 'hint' && richOpen())) { close(); return; }
       open(key, el);
     };
     const over = (e: MouseEvent) => {
@@ -149,7 +152,9 @@ export function TipHost() {
     // L'elemento perde il suo fumetto o sparisce (es. la carta del team aperta con Invio: l'editor si apre e la carta non
     // ha più "Trascina…"): il fumetto si chiude invece di restare sopra l'editor
     const gone = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => {
-      if (current && (!current.isConnected || !current.matches(TIP_SELECTOR))) { current = null; close(); }
+      if (current && (!current.isConnected || !current.matches(TIP_SELECTOR))) { current = null; close(); return; }
+      // Un tooltip DreamDex si è aperto dopo il fumetto: il fumetto si chiude (e non si riapre finché il mouse resta lì)
+      if (current && current.hasAttribute('data-hint') && !current.matches('[data-move-tip], [data-item-tip], [data-ability-tip]') && richOpen()) close();
     }) : null;
     gone?.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-hint', 'data-move-tip', 'data-item-tip', 'data-ability-tip'] });
     return () => {

@@ -67,6 +67,35 @@ export interface Hit {
   min: number;
   /** Danno massimo in quota dei PS, senza la precisione: ≥ 1 è un KO possibile (la Difesa conta il caso peggiore). */
   max: number;
+  /**
+   * Vero quando il colpo è un colpo solo del calcolo, così com'è: `expected` è la media dei tiri e `min` / `max` sono i
+   * tiri veri. Falso quando il numero è una stima o una media pesata (precisione sotto 100, Multiscale a quota, mosse a
+   * due turni o con ricarica, lo sconto di Band/Specs, Supreme Overlord, Protean…): allora si mostra solo il numero.
+   */
+  exact?: boolean;
+}
+
+/** Il danno da tiro minimo a tiro massimo in % dei PS, come il calc di Showdown ("79–93%"): solo da mostrare. */
+export type PctRange = readonly [number, number];
+
+/**
+ * La forbice dei tiri di un colpo in % dei PS, arrotondata come la carta della Sfida e senza tetto a 100 (oltre è un KO).
+ * `cut` è il fattore già applicato al numero mostrato (gli schermi del team). Null senza colpo o se non fa danno.
+ */
+export function pctRange(hit: { min: number; max: number } | null | undefined, cut = 1): PctRange | null {
+  if (!hit || hit.max <= 0) return null;
+  // In basso come i numeri dei tooltip (Math.floor): un danno fra il minimo e il massimo resta dentro la forbice
+  return [Math.floor(100 * hit.min * cut + 1e-9), Math.floor(100 * hit.max * cut + 1e-9)];
+}
+
+/**
+ * La forbice dei tiri da mostrare accanto al numero di quel colpo: solo se il colpo è uno vero del calcolo (`exact`) e il
+ * suo danno medio sta fra il minimo e il massimo. Con una stima o una media pesata null: si mostra solo il numero.
+ */
+export function hitRange(hit: Hit | null | undefined): PctRange | null {
+  if (!hit?.exact || hit.max <= 0) return null;
+  if (hit.expected < hit.min - 1e-9 || hit.expected > hit.max + 1e-9) return null;
+  return pctRange(hit);
 }
 
 /**
@@ -204,7 +233,8 @@ function withFirstHit(defender: Target, options: HitOptions, hit: (target: Targe
   const off = hit({ ...defender, noFirstHit: true });
   if (!on || !off) return on ?? off;
   const mix = (a: number, b: number) => b + share * (a - b);
-  return { move: off.move, expected: mix(on.expected, off.expected), min: mix(on.min, off.min), max: mix(on.max, off.max) };
+  // Una media pesata di due colpi: niente forbice
+  return { move: off.move, expected: mix(on.expected, off.expected), min: mix(on.min, off.min), max: mix(on.max, off.max), exact: false };
 }
 
 /** Il nome dello strumento come lo vuole la libreria ("choice band" → "Choice Band"); niente se sconosciuto. */
@@ -358,7 +388,7 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
     if (data.ohko) {
       if (options.superEffectiveOnly && !superEffective(data.type, data.id, types)) continue;
       const immune = !dex.getImmunity(data.type, types) || (data.ohko === 'Ice' && types.includes('Ice'));
-      const hit = { move: data.name, expected: immune ? 0 : accuracy, min: immune ? 0 : 1, max: immune ? 0 : 1 };
+      const hit = { move: data.name, expected: immune ? 0 : accuracy, min: immune ? 0 : 1, max: immune ? 0 : 1, exact: accuracy === 1 };
       if (!best || hit.expected > best.expected) best = hit;
       continue;
     }
@@ -391,7 +421,9 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       const hpScaled = !useZ && HP_SCALED.has(data.id) ? HP_SCALED_SHARE : 1;
       // Supreme Overlord a metà partita, Protean/Libero con lo STAB in più a metà (vedi OVERLORD_SHARE, PROTEAN_STAB)
       const ability = overlordScale(attacker) * proteanScale(attacker, results[0].move.type, !!options.tera && !!attacker.teraType);
-      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn * hpScaled * ability * spread, min: (low / hp) * charge * hpScaled * ability * spread, max: (high / hp) * charge * ability * spread };
+      // Un colpo vero del calcolo (la forbice si può mostrare) solo senza stime sopra: precisione, turni, PS, abilità, sconto di Band/Specs
+      const exact = !perHit && accuracy === 1 && charge === 1 && firstTurn === 1 && hpScaled === 1 && ability === 1 && hp === target.maxHP();
+      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn * hpScaled * ability * spread, min: (low / hp) * charge * hpScaled * ability * spread, max: (high / hp) * charge * ability * spread, exact };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta
@@ -478,7 +510,7 @@ function standardHitOn(attacker: Target, defender: Target, category: 'Physical' 
   const target = toPokemon(defender, { boosts: targetBoosts }, 'defender');
   if (!own || !target) return null;
   // Il colpo tipizzato lo calcola la libreria (Wonder Guard ferma i non super efficaci); senza tipo vale un OHKO
-  if (!options.moveType && toID(battleAbility(defender as TeamSet)) === 'wonderguard') return { move: category, expected: 1, min: 1, max: 1 };
+  if (!options.moveType && toID(battleAbility(defender as TeamSet)) === 'wonderguard') return { move: category, expected: 1, min: 1, max: 1, exact: true };
   // Il colpo fisico è di contatto (come quasi tutte le mosse fisiche: Fluffy, Tough Claws), lo speciale no
   const type = options.moveType ?? '???';
   const move = cached(moves, `standard|${category}|${type}`, () => new CalcMove(gen, 'Tackle', {
@@ -491,7 +523,7 @@ function standardHitOn(attacker: Target, defender: Target, category: 'Physical' 
     const sums = rollSums(result.damage);
     if (!sums) return null;
     const ability = overlordScale(attacker) * proteanScale(attacker, type, !!options.tera && !!attacker.teraType);
-    return { move: category, expected: sums.avg / hp * ability, min: sums.low / hp * ability, max: sums.high / hp * ability };
+    return { move: category, expected: sums.avg / hp * ability, min: sums.low / hp * ability, max: sums.high / hp * ability, exact: ability === 1 && hp === target.maxHP() };
   } catch {
     return null;
   }

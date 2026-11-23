@@ -4,7 +4,8 @@ import type { FormatId } from '../../engine/format';
 import { TYPES, type TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
+import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
+import type { Lang } from '../../i18n';
 import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
@@ -22,17 +23,21 @@ import { TypeIcons } from '../typeIcons';
  * dalla guida (le testate della Generale) il clic apre la guida dell'area, col piede "Clic: apri la guida"; dentro la
  * guida niente piede. `short`: il contenuto è corto (largo M, i tooltip della guida della Velocità).
  */
-export function Ask({ label, guide, short = false, children }: { label: string; guide?: () => void; short?: boolean; children: ReactNode }) {
+export function Ask({ label, guide, short = false, describe, children }: { label: string; guide?: () => void; short?: boolean;
+  /** Il contenuto del tooltip in parole compatte per i lettori di schermo ("Normale: PS 80, Dif 75…", i nomi del meta). */
+  describe?: string; children: ReactNode }) {
   const t = useT();
   const tip = useFloatAnchor<true>();
   const descId = useId();
+  // La descrizione sta qui accanto, nascosta (mai nel body): i dati della tabella e, fuori dalla guida, dove porta il clic
+  const description = [describe, guide ? goText(t, t('tip.guide'), 'open') : ''].filter(Boolean).join('. ');
   return (
     <>
-      <button type="button" className="guide-ask" aria-label={label} aria-describedby={guide ? descId : undefined}
+      <button type="button" className="guide-ask" aria-label={label} aria-describedby={description ? descId : undefined}
         onClick={guide ? () => { tip.close(); guide(); } : undefined}
         onMouseEnter={e => tip.open(true, e.currentTarget)} onMouseLeave={tip.close}
         onFocus={e => tip.open(true, e.currentTarget)} onBlur={tip.close}><Icon name="help" /></button>
-      {guide && <HiddenText id={descId}>{goText(t, t('tip.guide'), 'open')}</HiddenText>}
+      {description && <span id={descId} hidden>{description}</span>}
       {tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className={`gat${short ? ' tip-w-m' : ''}`}>
           {children}
@@ -58,6 +63,23 @@ export function BarHead({ icon, word }: { icon: 'sword' | 'shield'; word: string
 
 /** Una colonna della tabella dei 18 tipi: la testata (PS, ATT…) e il numero di ogni tipo. */
 export interface TypeStatCol { label: string; value: (type: TypeName) => number }
+
+/** La tabella dei 18 tipi in parole, per la descrizione del "?": "Normale: PS 80, Dif 75, DifSp 70; Fuoco: …". */
+export const typeStatText = (cols: TypeStatCol[], lang: Lang): string =>
+  TYPES.map(type => `${typeName(type, lang)}: ${cols.map(c => `${c.label} ${c.value(type)}`).join(', ')}`).join('; ');
+
+/** Le colonne del Pokémon medio dei 18 tipi (PS, Dif, DifSp base nel Pokédex del formato): tabella e descrizione. */
+export const averageCols = (formatId: FormatId, t: ReturnType<typeof useT>): TypeStatCol[] => {
+  const avg = (type: TypeName) => typeAverage(type, { stats: null, sets: null, formatId });
+  return [
+    { label: t('stat.hp'), value: type => avg(type).hp },
+    { label: t('stat.def'), value: type => avg(type).def },
+    { label: t('stat.spd'), value: type => avg(type).spd },
+  ];
+};
+
+/** Le minacce del meta in parole, per la descrizione del "?": il titolo e i nomi, dalla più usata. */
+export const metaText = (title: string, species: string[]): string => `${title}: ${species.join(', ')}`;
 
 /**
  * La tabella dei 18 tipi nei tooltip dei "?" (Offesa: PS/DIF/DIFSP del Pokémon medio; Difesa: ATT/ATTSP
@@ -92,16 +114,11 @@ export function TypeStatTable({ cols }: { cols: TypeStatCol[] }) {
 /** Il Pokémon medio dei 18 tipi: PS, Difesa e Difesa Speciale base nel Pokédex del formato, in due colonne. */
 export function TypeAverages({ formatId }: { formatId: FormatId }) {
   const t = useT();
-  const avg = (type: TypeName) => typeAverage(type, { stats: null, sets: null, formatId });
   return (
     <>
       <TipHead lead={<TipGlyph icon="sword" />} title={t('guide.off.targets.typesTitle')} sub={t('guide.off.targets.tableTip')} />
       <TipSec>
-        <TypeStatTable cols={[
-          { label: t('stat.hp'), value: type => avg(type).hp },
-          { label: t('stat.def'), value: type => avg(type).def },
-          { label: t('stat.spd'), value: type => avg(type).spd },
-        ]} />
+        <TypeStatTable cols={averageCols(formatId, t)} />
       </TipSec>
     </>
   );

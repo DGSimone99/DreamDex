@@ -17,7 +17,7 @@ import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
-import { CoreTip } from './CoreTip';
+import { CoreSideRows, CoreTip } from './CoreTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
 import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
@@ -190,32 +190,38 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
 }
 
 /**
- * Il tooltip DreamDex del "+N" delle Sinergie: le sinergie che non stanno nella card, ognuna con le sue sprite (unite dalla
- * catena nel colore del legame), l'etichetta, il titolo e la frase.
+ * Il tooltip DreamDex del "+N" delle Sinergie: le sinergie che non stanno nella card, con le righe degli altri tooltip
+ * (sprite da 40 senza sovrapposizioni, nome, sotto cosa fa; mai un paragrafo). Una sola: la testata dice cos'è (il titolo
+ * e il genere come targhetta a destra, "Core", come il tooltip del core); più di una: "Altre N sinergie" e una sezione per
+ * sinergia, etichettata col genere e il titolo. Un core: una riga per lato (CoreSideRows, "Great Tusk · para Elettro");
+ * un legame: una riga per membro, la frase sotto il primo.
  */
-function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }) {
+function MoreSynergies({ items, label, taken }: { items: { syn: Synergy; view: SynergyView }[]; label: string; taken: Record<string, Record<string, number>> }) {
+  const body = ({ syn, view }: { syn: Synergy; view: SynergyView }) => (syn.core
+    ? <CoreSideRows core={syn.core} taken={taken} />
+    : (
+      <TipRows className="syn-more-list">
+        {view.mons.map((name, i) => (
+          <TipRow key={`${name}:${i}`} lead={<Sprite species={name} size={SPRITE_TIP_ROW} />} title={name} sub={i === 0 ? view.text : undefined} />
+        ))}
+      </TipRows>
+    ));
+  if (items.length === 1) {
+    const [only] = items;
+    return (
+      <>
+        <TipHead lead={<TipGlyph icon={only.syn.core ? 'shield' : 'chain'} />} title={only.view.title}
+          badge={<span className="tip-kind">{only.view.tag}</span>} />
+        <TipSec>{body(only)}</TipSec>
+      </>
+    );
+  }
   return (
     <>
       <TipHead lead={<TipGlyph icon="chain" />} title={label} />
-      <TipSec>
-        <TipRows className="syn-more-list">
-          {items.map(view => (
-            <TipRow key={view.key} className="syn-more-row"
-              lead={(
-                <span className="syn-more-mons" style={{ '--c': view.color } as CSSProperties}>
-                  {view.mons.map((name, i) => (
-                    <span key={`${name}:${i}`} className="syn-more-mon">
-                      {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
-                      <Sprite species={name} size={SPRITE_TIP_ROW} />
-                    </span>
-                  ))}
-                </span>
-              )}
-              title={<><em className="sum-syn-tag" style={{ '--c': view.color } as CSSProperties}>{view.tag}</em> {view.title}</>}
-              sub={view.text} />
-          ))}
-        </TipRows>
-      </TipSec>
+      {items.map(item => (
+        <TipSec key={item.view.key} label={`${item.view.tag} · ${item.view.title}`}>{body(item)}</TipSec>
+      ))}
     </>
   );
 }
@@ -439,7 +445,7 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
               ? { onMouseEnter: (e: { currentTarget: Element }) => coreTip.open(syn.core!, e.currentTarget), onMouseLeave: coreTip.close } : undefined;
             return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
-          moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
+          moreTip={hidden => <MoreSynergies items={hidden.map(syn => ({ syn, view: synergyView(syn) }))} label={count('sum.moreSyn', hidden.length)} taken={summary.typedTaken ?? {}} />} />
       </div>
       {bmRoom && bonusMalus && <BonusMalusRow net={bonusMalus.net} pieces={bonusMalus.pieces} lang={lang} onOpen={() => onView('bonusMalus')} />}
       {monTip.anchor && setOf(monTip.anchor.key.name) && (

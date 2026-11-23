@@ -3,19 +3,22 @@ import type { TypeCell } from '../../engine/overviewDashboard';
 import type { TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
-import { KoBadge } from '../KoBadge';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
-import { TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from '../TipHead';
+import { TipDmg, TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from '../TipHead';
 import { MovePill } from '../MovePill';
 
 /** Il badge dei colpi (OHKO, 2HKO, 3HKO, 4HKO+) dal danno %, con le soglie della scheda Difesa. */
 const bandOf = (pct: number): HoldBand => holdBand(pct / 100);
 
-/** La testata unica: la tessera del tipo, il nome, sotto cosa misura il danno; a destra il valore del tipo nell'area, in %. */
+/**
+ * La testata unica: la tessera del tipo, il nome, sotto cosa misura il danno; a destra quanto è coperto il tipo nell'area,
+ * in %, con sotto la parola che lo dice ("copertura").
+ */
 function Head({ type, value, sub }: { type: string; value: number; sub: string }) {
+  const t = useT();
   const lang = useLang();
-  return <TipHead lead={<TipTypeIcon type={type} />} title={typeName(type as TypeName, lang)} sub={sub} num={<>{value}<small>%</small></>} />;
+  return <TipHead lead={<TipTypeIcon type={type} />} title={typeName(type as TypeName, lang)} sub={sub} num={<>{value}<small>%</small></>} qualifier={t('tip.covQual')} />;
 }
 
 /** La mossa: icona tonda e nome nel colore del suo tipo (alone leggero), poi categoria (fisico/speciale) e potenza. */
@@ -24,7 +27,7 @@ export function MoveLine({ name, type }: { name: string; type?: string | null })
   return <MovePill name={name} type={type} size="sm" tip={false} className="ftip-move" />;
 }
 
-/** Offesa: i tre migliori colpi del team sul Pokémon medio del tipo, uno per riga (sprite, nome e mossa, danno % e badge). */
+/** Offesa: i tre migliori colpi del team sul Pokémon medio del tipo, uno per riga (sprite, nome e mossa, la riga di danno). */
 export function OffenseTip({ cell }: { cell: TypeCell }) {
   const t = useT();
   const lang = useLang();
@@ -36,14 +39,11 @@ export function OffenseTip({ cell }: { cell: TypeCell }) {
         {hits.length
           ? (
             <TipRows className="cov-rows">
-              {hits.map(hit => {
-                const band = bandOf(hit.pct);
-                return (
-                  <TipRow key={hit.species} className="cov-hit" lead={<Sprite species={hit.species} size={SPRITE_TIP_ROW} />} title={hit.species}
-                    sub={<MoveLine name={hit.move!} />}
-                    value={<><span className={`cov-pct ${band}`}>{hit.pct}<small>%</small></span><KoBadge side="off" band={band} /></>} />
-                );
-              })}
+              {hits.map(hit => (
+                <TipRow key={hit.species} className="cov-hit" lead={<Sprite species={hit.species} size={SPRITE_TIP_ROW} />} title={hit.species}
+                  sub={<MoveLine name={hit.move!} />}
+                  value={<TipDmg pct={hit.pct} range={hit.range} side="off" band={bandOf(hit.pct)} />} />
+              ))}
             </TipRows>
           )
           : <p className="ftip-empty">{t('tip.noHits')}</p>}
@@ -62,7 +62,7 @@ const GROUPS = [
 
 const multLabel = (m: number) => (m === 0 ? '×0' : m <= 0.25 ? '×¼' : m < 1 ? '×½' : m >= 4 ? '×4' : m > 1 ? '×2' : '×1');
 
-/** Difesa: i membri per moltiplicatore (immuni, resistono, neutri, deboli), una sezione per gruppo, ognuno col danno % e il badge. */
+/** Difesa: i membri per moltiplicatore (immuni, resistono, neutri, deboli), una sezione per gruppo, ognuno con la riga di danno. */
 export function DefenseTip({ cell }: { cell: TypeCell }) {
   const t = useT();
   const lang = useLang();
@@ -76,13 +76,10 @@ export function DefenseTip({ cell }: { cell: TypeCell }) {
         return (
           <TipSec key={group.key} className={`cov-group ${group.tone}`} label={<>{t(`tip.${group.key}`)} <small>{mults}</small></>}>
             <TipRows className="cov-rows">
-              {members.map(m => {
-                const band = m.pct === null ? null : bandOf(m.pct);
-                return (
-                  <TipRow key={m.species} className="cov-mon" lead={<Sprite species={m.species} size={SPRITE_TIP_ROW} />} title={m.species}
-                    value={m.pct !== null && band ? <><span className="cov-pct">{m.pct}<small>%</small></span><KoBadge side="def" band={band} /></> : undefined} />
-                );
-              })}
+              {members.map(m => (
+                <TipRow key={m.species} className="cov-mon" lead={<Sprite species={m.species} size={SPRITE_TIP_ROW} />} title={m.species}
+                  value={m.pct !== null ? <TipDmg pct={m.pct} range={m.range} side="def" band={bandOf(m.pct)} /> : undefined} />
+              ))}
             </TipRows>
           </TipSec>
         );

@@ -282,19 +282,7 @@
 .tst-stats span:last-child { border-right: 0; }
 .tst-stats small { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 .tst-stats b { font: 700 italic var(--tip-num)/1 var(--display); font-variant-numeric: tabular-nums; }
-.tht-body { display: flex; align-items: center; gap: var(--sp-4); }
-.tht-body .sprite { flex: none; margin: -6px -4px; image-rendering: pixelated; }
-.tht-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.tht-name { font: 600 var(--tip-body)/1.2 var(--display); }
-.tht-move { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
-.tht-mult { font: 700 italic var(--tip-small)/1 var(--display); color: var(--faint); }
-.tht-mult.se { color: var(--good); }
-.tht-mult.nve { color: var(--bad); }
-.tht-pct { margin-left: auto; font: 700 italic var(--tip-title)/1 var(--display); font-variant-numeric: tabular-nums; }
 .tht-none { color: var(--muted); }
-.tip-sec.tht-extra { gap: var(--sp-2); }
-.tht-extra-h { display: flex; align-items: center; gap: var(--sp-3); font-weight: 600; color: var(--muted); }
-.tht-extra-h .ko-badge { margin-left: auto; }
 
 /* Le tabelle Coverage: freccia, niente cursore del testo; "?" sulle caselle col tooltip */
 .def-frame .ct-table { cursor: default; }
@@ -358,7 +346,6 @@
 .area-legend .area-legend-swatch i.kob-tri, .area-legend .wall-legend-setup i.kob-tri { width: 0; height: 0; background: none; border-radius: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--good) transparent transparent; }
 .area-legend .area-legend-swatch i.kob-tri.team, .area-legend .wall-legend-setup i.kob-tri.team { border-color: transparent var(--accent) transparent transparent; }
 /* L'effetto della danza o del meteo accanto al nome della riga: piccolo e spento ("Att ×2", "Fuoco ×1,5") */
-.tht-eff { display: inline; margin-left: var(--sp-1); font: 600 var(--tip-small)/1 var(--display); color: var(--faint); white-space: nowrap; }
 /* Coverage meta: la riga Team Coverage in fondo al pannello, allo stesso posto e alta come quella della Generale (la
    tabella riempie la cornice, la riga di riempimento prende lo spazio): la linguetta e nelle colonne le pastiglie di quanti
    lo coprono (i numeri del team sono già nella Generale e nel titolo della sottoscheda) */

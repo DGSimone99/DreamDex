@@ -429,7 +429,7 @@ function Entry({ row, index }: { row: ActiveRow; index: number }) {
         <FloatTip rect={tip.anchor.rect} tone={entry.kind === 'malus' ? 'var(--bad)' : 'var(--good)'} className="tip-w-m bm-row-tip">
           <TipHead lead={<Medal entry={entry} className="tip-medal" />} title={entry.name}
             num={<span className={entry.kind === 'malus' ? 'bad' : 'good'}>{pointsOf(row)}</span>} />
-          <TipSec>{details.map((detail, i) => <p key={i}><Typed text={detail} /></p>)}</TipSec>
+          <TipSec>{details.map((detail, i) => <p key={i}><Typed text={detail} tip /></p>)}</TipSec>
         </FloatTip>
       )}
     </li>
@@ -449,12 +449,12 @@ function MoreEntries({ hidden, t }: { hidden: ActiveRow[]; t: T }) {
       <span className="visually-hidden">{t('catalogue.moreSr', { n: hidden.length })} {hidden.map(line).join('; ')}</span>
       {tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={hidden.some(row => row.entry.kind === 'malus') ? 'var(--bad)' : 'var(--good)'} className="tip-w-m bm-more-tip">
-          <TipHead title={t('tip.bm.more', { n: hidden.length })} />
+          <TipHead lead={<TipGlyph icon="trophy" />} title={t('tip.bm.more', { n: hidden.length })} />
           <TipSec>
             <TipRows>
               {hidden.map(row => (
                 <TipRow key={row.key} className="bm-more-line" lead={<Medal entry={row.entry} className="tip-medal" />} title={row.entry.name}
-                  sub={<Typed text={row.details.join(' · ')} />} value={pointsOf(row)} tone={row.entry.kind === 'malus' ? 'bad' : 'good'} />
+                  sub={<Typed text={row.details.join(' · ')} tip />} value={pointsOf(row)} tone={row.entry.kind === 'malus' ? 'bad' : 'good'} />
               ))}
             </TipRows>
           </TipSec>
