@@ -13,7 +13,7 @@ const team = [
   { ...emptySet('Gholdengo'), ability: 'Good as Gold', moves: ['Make It Rain', 'Shadow Ball', 'Nasty Plot', 'Recover'], evs: { spa: 252, spe: 252 } },
 ];
 const analysis = analyzeTeam(team, fixtureData);
-const view = (area: 'strength' | 'defense' = 'strength') => renderIt(<AreaView rating={rateTeam(team, fixtureData, 'it')!} area={area} team={team} analysis={analysis} problems={[]} />);
+const view = (area: 'strength' | 'defense' | 'speed' = 'strength') => renderIt(<AreaView rating={rateTeam(team, fixtureData, 'it')!} area={area} team={team} analysis={analysis} problems={[]} />);
 
 // Telefono e tablet piccolo (fino a 767 px): niente da scorrere di lato
 describe('Offesa sullo schermo stretto', () => {
@@ -75,5 +75,16 @@ describe('Offesa sullo schermo stretto', () => {
     const sus = screen.getByRole('table', { name: 'Difesa: Recupero' });
     expect(sus).toHaveClass('sus-stack');
     expect([...sus.querySelectorAll('tbody.og-stack-mon')[0].querySelectorAll('.og-bar-label')].map(th => th.textContent)).toEqual(['Perde', 'Recupera', 'Netto']);
+  });
+
+  it('Velocità: per ogni membro una fascia col nome e sotto la barra che apre i dettagli; in fondo il team', () => {
+    view('speed');
+    const table = screen.getByRole('table', { name: 'Velocità: Generale' });
+    expect(table).toHaveClass('sp-stack-table');
+    const groups = table.querySelectorAll('tbody.og-stack-mon:not(.og-stack-team)');
+    expect(groups).toHaveLength(2);
+    expect(groups[0].querySelector('.og-mon-row')).toHaveTextContent('Great Tusk');
+    expect(groups[0].querySelector('.og-bar-row button.sp-bar-btn')).toHaveAccessibleName(/Great Tusk/);
+    expect(table.querySelector('.og-stack-team .sp-team')).not.toBeNull();
   });
 });

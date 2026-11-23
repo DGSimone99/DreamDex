@@ -126,3 +126,20 @@
 @media (max-width: 560px) {
   .guide-tiles { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Il bollino "priorità": dopo il nome sul computer largo; sotto i 1280 px sulla riga della Velocità, così il nome resta intero */
+.sp-prio-alt { display: none; }
+@media (max-width: 1279px) {
+  .sp-general .sp-prio-main { display: none; }
+  .sp-general .sp-prio-alt { display: inline-flex; margin-left: var(--sp-3); }
+}
+/* Tablet: la riga "Speed 300 · muro · priorità" resta sotto il nome (nelle altre aree le statistiche si nascondono e i
+   bollini salgono accanto al nome, che qui si tagliava) */
+@media (max-width: 1099px) {
+  .def-frame.sp-general .def-mon-stats { display: flex; align-items: center; }
+  .def-frame.sp-general .def-mon-line > .def-mon-tag.line { display: none; }
+}
+/* Telefono e tablet col team a sinistra (.og-stack): la barra a tutta larghezza sotto il nome, numeri e totale a destra */
+.sp-stack-table .og-bar-row td { padding-top: var(--sp-1); }
+.sp-stack-table .sp-bar-btn { width: 100%; }
+.def-general .sp-stack-table thead th.og-share-h { text-align: right; }
