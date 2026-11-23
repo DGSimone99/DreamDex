@@ -409,10 +409,25 @@ export function megaOf(forme: string): { letter: string } | null {
   return m ? { letter: m[1] ?? '' } : null;
 }
 
+/**
+ * Il nome come sulle carte: la specie base e, accanto, la forma piccola (Zapdos GALAR) o il simbolo della Mega con la
+ * lettera; il nome com'è se non ha forma. Solo a vista (aria-hidden): il nome intero lo dice chi lo usa.
+ */
+export function FormeName({ species }: { species: string }) {
+  const parts = formeParts(species);
+  if (!parts) return <span aria-hidden="true">{species}</span>;
+  const mega = megaOf(parts.forme);
+  return (
+    <span className="pick-name" aria-hidden="true">
+      <b>{parts.base}</b>
+      {mega ? <span className="mega-mark"><MegaIcon />{mega.letter}</span> : <i className="pick-forme">{parts.forme}</i>}
+    </span>
+  );
+}
+
 /** Da tastiera come col mouse: Invio apre il dettaglio (il clic), Maiusc+Invio aggiunge o sostituisce (il doppio clic). */
 export function PickButton({ rank, species, selected, onSelect, onAction, describedBy }: { rank: number; species: string; selected: boolean; onSelect: () => void; onAction?: () => void; describedBy?: string }) {
   const parts = formeParts(species);
-  const mega = parts ? megaOf(parts.forme) : null;
   return (
     <button type="button" className="pick" aria-pressed={selected} {...hint(parts ? species : undefined)} onClick={e => { e.stopPropagation(); onSelect(); }}
       aria-keyshortcuts={onAction ? 'Shift+Enter' : undefined} aria-describedby={describedBy}
@@ -420,12 +435,7 @@ export function PickButton({ rank, species, selected, onSelect, onAction, descri
       {/* Il nome intero per lettori di schermo (e test); a vista la specie base e la forma accanto, piccola (Zapdos GALAR):
           due carte con lo stesso nome si distinguono. Mega e Primal hanno il loro simbolo (con X/Y quando servono) */}
       <strong className={parts ? 'visually-hidden' : undefined}><span className="visually-hidden">{rank}. </span>{species}</strong>
-      {parts && (
-        <span className="pick-name" aria-hidden="true">
-          <b>{parts.base}</b>
-          {mega ? <span className="mega-mark"><MegaIcon />{mega.letter}</span> : <i className="pick-forme">{parts.forme}</i>}
-        </span>
-      )}
+      {parts && <FormeName species={species} />}
     </button>
   );
 }

@@ -120,7 +120,7 @@ describe('SuggestionsPanel', () => {
     expect(document.activeElement?.closest('.detail')).toBeNull();
   });
 
-  it('team vuoto: niente voto da confrontare, quindi niente verso delle aree; i ruoli del set sotto il set', async () => {
+  it('team vuoto: niente voto da confrontare, quindi niente verso delle aree; i ruoli una volta sola, in Risolve', async () => {
     await setup();
 
     // Nessuna nota sopra la lista: si parte dalla lista stessa
@@ -131,9 +131,11 @@ describe('SuggestionsPanel', () => {
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/uso nel meta$/);
     expect(within(detail).queryByRole('list', { name: 'Effetto sul team' })).toBeNull();
     expect(within(detail).queryByText(/→/)).toBeNull();
-    // I ruoli del set in una riga semplice sotto il set (niente lastra in testata), la spiegazione nel tooltip del nome
+    // Niente lastra dei ruoli in testata; col team vuoto i ruoli stanno in Risolve (cosa sa fare) e non si ripetono
+    // nella riga RUOLI sotto il set
     expect(detail.querySelector('.detail-hero .mcard-why')).toBeNull();
-    expect(detail.querySelector('.detail-run .mcard-roles [title]')).not.toBeNull();
+    expect(detail.querySelector('.detail-run .mcard-roles')).toBeNull();
+    expect(detail.querySelector('.detail-why li')).not.toBeNull();
   });
 
   it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
@@ -875,7 +877,9 @@ describe('sprite animato delle carte', () => {
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Great Tusk', item: 'Leftovers', ability: 'Protosynthesis', moves: ['Headlong Rush', 'Stealth Rock', 'Rapid Spin', 'Knock Off'], nature: 'Jolly', evs: { atk: 252, spe: 252 } };
     const item = { species: 'Great Tusk', set, score: 50, components: {}, tags: [], penalty: 0, reasons: [], facts: { clashes: [], roles: { filled: ['hazards'] } } } as never;
-    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    // Con un membro nel team (col team vuoto i ruoli stanno in Risolve e la riga RUOLI non c'è)
+    const mate = { species: 'Corviknight', item: 'Leftovers', ability: 'Pressure', moves: ['Brave Bird', 'Roost'], nature: 'Impish', evs: { hp: 252 } };
+    renderIt(<SuggestionDetail item={item} rank={2} team={[mate] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
     const fresh = [...document.querySelectorAll('.detail-run .mcard-roles .fresh')];
     expect(fresh).toHaveLength(1);
     expect(fresh[0].textContent).toMatch(/\+nuovo per il team: Hazard$/);

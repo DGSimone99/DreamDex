@@ -359,7 +359,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               <h4 className="visually-hidden">{tr('detail.set')}</h4>
               <MemberKit set={set} />
               <MemberMoves set={set} movesLabel={tr('editor.moves')} />
-              <MemberRoles set={set} rules={rulesOf(data)} fresh={freshRoles} />
+              {/* Col team vuoto i ruoli stanno già in Risolve (cosa sa fare il Pokémon): non si ripetono qui */}
+              {!(alone && showWhy) && <MemberRoles set={set} rules={rulesOf(data)} fresh={freshRoles} />}
             </section>
           )}
         </div>

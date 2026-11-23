@@ -16,6 +16,7 @@ import { NatureArrow } from './NatureArrow';
 import { tileStyle, typeIconUrl } from './typeIcons';
 import { hint, kitTip } from './MoveTip';
 import { ItemIcon } from './ItemIcon';
+import { FormeName } from './candidateParts';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
 const HEX_ORDER: StatID[] = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
@@ -171,7 +172,8 @@ export function MemberCard({ set, was, alerts }: { set: TeamSet; was?: TeamSet; 
       <div className="mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         <span className="mcard-mon"><Sprite species={battleName(set)} size={96} /></span>
         <span className="mcard-name">
-          {battleName(set)}
+          {/* Come sulle carte della lista: Charizard + il segno della Mega, Zapdos + GALAR; il nome intero per chi legge */}
+          <FormeName species={battleName(set)} /><span className="visually-hidden">{battleName(set)}</span>
           {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />)}
         </span>
       </div>
