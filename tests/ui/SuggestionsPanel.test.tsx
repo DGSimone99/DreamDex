@@ -49,6 +49,13 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
   });
 
+  it('"al posto di" solo in Sostituisci: in Aggiungi non c’è', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo');
+    expect(document.querySelector('.target-toggle')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Sostituisci' }));
+    expect(document.querySelector('.target-toggle')).not.toBeNull();
+  });
+
   it('la legenda dei segni delle carte si apre dal ? accanto a Candidati e si chiude con Esc', async () => {
     const user = await setup('Great Tusk');
     const open = within(suggestions()).getByRole('button', { name: 'Cosa vogliono dire i segni delle carte' });
@@ -340,8 +347,8 @@ describe('SuggestionsPanel', () => {
       diff: { gains: none, losses: none, lostResists: [] }, reasons: [],
     };
     const shorts = (teamGain: object) => reasonsOf({ ...base, teamGain } as never, 2, null, DEFAULT_FORMAT, 'it').items.map(b => b.short);
-    expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa +13']);
-    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Bonus/Malus +3']);
+    expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa sale']);
+    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Più bonus per il team']);
     expect(shorts({ gain: 0, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 4 }], extras: -4 })).toEqual(['Nessuna differenza rilevante']);
   });
 

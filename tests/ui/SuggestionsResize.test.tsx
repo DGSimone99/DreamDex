@@ -27,7 +27,8 @@ describe('Box: cambio del numero per pagina', () => {
     // Il primo che si vedeva (il 5°) resta in vista: ora a pagina 3
     expect(cards()[0].textContent).toBe(firstName);
     const count = within(panel).getByRole('status', { name: /Pagina/ });
-    const [n, total] = count.textContent!.split('/').map(Number);
+    // A vista "3/5" (il testo per i lettori di schermo dice "Pagina 3 di 5")
+    const [n, total] = count.querySelector('[aria-hidden]')!.textContent!.split('/').map(Number);
     expect(n).toBe(3);
     expect(n).toBeLessThanOrEqual(total);
   });

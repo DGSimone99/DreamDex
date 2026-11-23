@@ -1655,6 +1655,8 @@ export const en = {
   'undo.listRemoved': "removed from {list}",
   'undo.listCleared': "{list} cleared",
   'suggest.noMatchSearch': "No Pokémon with this name",
+  'suggest.rolesUp': "Covers more roles",
+  'suggest.extrasUp': "More team bonuses",
   'suggest.noMatch': "No Pokémon matches the filters",
   'suggest.resultsOne': "1 result",
   'suggest.resultsMany': "{n} results",

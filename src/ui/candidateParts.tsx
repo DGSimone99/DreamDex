@@ -134,10 +134,11 @@ export function reasonsOf(item: Item, n: number, usage: number | null, format: F
   const gain = item.teamGain;
   if (gain && gain.gain > 0) {
     const best = gain.areaGains?.[0];
-    if (best) return { pros: false, items: [plain(`${best.label} +${best.change}`)] };
+    // Il verso, come nel dettaglio ("Difesa sale"), mai un numero per area (le aree pesano diverso a seconda del team)
+    if (best) return { pros: false, items: [plain(t(lang, 'detail.area.up', { area: best.label }))] };
     // Poi i Ruoli e Bonus/Malus, separati come nel voto
-    if ((gain.roles ?? 0) > 0) return { pros: false, items: [plain(`${t(lang, 'area.roles')} +${gain.roles}`)] };
-    if ((gain.extras ?? 0) > 0) return { pros: false, items: [plain(`${t(lang, 'detail.extras')} +${gain.extras}`)] };
+    if ((gain.roles ?? 0) > 0) return { pros: false, items: [plain(t(lang, 'suggest.rolesUp'))] };
+    if ((gain.extras ?? 0) > 0) return { pros: false, items: [plain(t(lang, 'suggest.extrasUp'))] };
   }
   return { pros: false, items: [plain(t(lang, 'suggest.noDifference'))] };
 }

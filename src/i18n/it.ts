@@ -1658,6 +1658,8 @@ export const it: Record<keyof typeof en, string> = {
   'undo.listRemoved': "tolto dai {list}",
   'undo.listCleared': "{list}: lista svuotata",
   'suggest.noMatchSearch': "Nessun Pokémon con questo nome",
+  'suggest.rolesUp': "Copre più ruoli",
+  'suggest.extrasUp': "Più bonus per il team",
   'suggest.noMatch': "Nessun Pokémon corrisponde ai filtri",
   'suggest.resultsOne': "1 risultato",
   'suggest.resultsMany': "{n} risultati",
