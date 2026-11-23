@@ -138,3 +138,21 @@ describe('schede interne di Analisi', () => {
     expect(screen.queryByRole('group', { name: 'Valutazione team' })).toBeNull();
   });
 });
+
+describe('telefono: Analisi senza Panoramica', () => {
+  it('si apre sul Coaching, cinque schede e il voto del team a destra (non è una scheda)', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      await setup();
+      expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('.tab-name')!.textContent)).toEqual(['Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
+      expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
+      const grade = within(panel()).getByRole('img', { name: /^Voto [SABCD], \d+ su 100/ });
+      expect(grade).toHaveClass('analysis-grade');
+      expect(grade.querySelector('.analysis-grade-overall')).toHaveTextContent(/^\d+$/);
+      // Niente link "Panoramica" nel Coaching
+      expect(within(panel()).queryByRole('button', { name: /Panoramica/ })).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

@@ -73,13 +73,19 @@ const badgeTitle = ({ serious, minor }: TabBadge, t: ReturnType<typeof useT>) =>
   minor ? t(minor === 1 ? 'analysis.minorOne' : 'analysis.minorMany', { n: minor }) : null,
 ].filter(Boolean).join(' · ');
 
-export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: TabView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<TabView, number | string | null>>; badges?: Partial<Record<TabView, TabBadge>> }) {
+/** Il voto del team accanto alle schede (telefono, dove la Panoramica non c'è): lettera, punteggio, giudizio; `broken`: team fuori regola (grigio). */
+export interface TabsGrade { grade: string; overall: number; label: string; broken: boolean }
+
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {}, noOverview = false, grade = null }: { view: TabView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<TabView, number | string | null>>; badges?: Partial<Record<TabView, TabBadge>>;
+  /** Telefono: niente scheda Panoramica (l'Analisi si apre sul Coaching) e il voto del team in fondo a destra. */
+  noOverview?: boolean; grade?: TabsGrade | null }) {
 
   const t = useT();
+  const VIEWS = noOverview ? ANALYSIS_VIEWS.filter(item => item !== 'overview') : ANALYSIS_VIEWS;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   // Telefono: la fila delle schede scorre col dito; la scheda aperta si porta in vista (sul desktop non scorre: niente)
   useLayoutEffect(() => {
-    const tab = buttons.current[ANALYSIS_VIEWS.indexOf(view)];
+    const tab = buttons.current[VIEWS.indexOf(view)];
     const strip = tab?.closest<HTMLElement>('.analysis-tabs');
     if (!tab || !strip || strip.scrollWidth <= strip.clientWidth) return;
     const left = tab.offsetLeft;
@@ -89,12 +95,12 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
   }, [view]);
   const go = (index: number) => {
     if (areasDisabled) return;
-    const next = ANALYSIS_VIEWS[(index + ANALYSIS_VIEWS.length) % ANALYSIS_VIEWS.length];
+    const next = VIEWS[(index + VIEWS.length) % VIEWS.length];
     onView(next);
-    buttons.current[ANALYSIS_VIEWS.indexOf(next)]?.focus();
+    buttons.current[VIEWS.indexOf(next)]?.focus();
   };
   const onKey = (e: KeyboardEvent, index: number) => {
-    const moves: Record<string, number> = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: ANALYSIS_VIEWS.length - 1 };
+    const moves: Record<string, number> = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: VIEWS.length - 1 };
     if (!(e.key in moves)) return;
     e.preventDefault();
     go(moves[e.key]);
@@ -102,7 +108,7 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
   return (
     <div className="analysis-tabs">
       <div role="tablist" aria-label={t('analysis.views')}>
-        {ANALYSIS_VIEWS.map((item, i) => (
+        {VIEWS.map((item, i) => (
           <button key={item} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`analysis-view-${item}`}
             aria-selected={item === view} aria-controls={panelId} tabIndex={item === view ? 0 : -1}
             aria-disabled={areasDisabled && item !== 'overview' ? true : undefined}
@@ -119,8 +125,16 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           </button>
         ))}
       </div>
+      {/* Il voto del team, sempre a vista (non è una scheda): a destra, dopo Ruoli */}
+      {grade && (
+        <div className={`analysis-grade grade-${grade.grade}${grade.broken ? ' rules-broken' : ''}`} role="img"
+          aria-label={t('rating.badgeSr', { grade: grade.grade, overall: grade.overall, label: grade.label })}>
+          <span className="analysis-grade-letter" aria-hidden="true">{grade.grade}</span>
+          <span className="analysis-grade-overall" aria-hidden="true">{grade.overall}</span>
+        </div>
+      )}
       {/* Voto e problemi delle schede per i lettori di schermo: descrizione, così il nome della scheda resta il suo nome */}
-      {ANALYSIS_VIEWS.filter(item => scores[item] != null || badges[item]).map(item => (
+      {VIEWS.filter(item => scores[item] != null || badges[item]).map(item => (
         <span key={item} id={`analysis-view-${item}-desc`} hidden>
           {[scores[item] != null ? t('analysis.tabScore', { value: scores[item]! }) : null,
             badges[item] ? `${t(badges[item]!.n === 1 ? 'analysis.tabProblemsOne' : 'analysis.tabProblemsMany', { n: badges[item]!.n })} (${badgeTitle(badges[item]!, t)})` : null,

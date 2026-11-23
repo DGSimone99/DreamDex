@@ -345,3 +345,23 @@
   .fix-row.is-link .fix-go { grid-column: 2; grid-row: 1 / 3; align-self: center; min-width: 44px; min-height: 44px; justify-content: center; font-size: 0; }
   .fix-row.is-link .fix-go > span { font-size: 22px; line-height: 1; }
 }
+
+/* -- Telefono: niente Panoramica. Cinque schede (Coaching e le aree) e in fondo a destra il voto del team, sempre a vista:
+   lettera grande nel colore del voto, sotto il punteggio; non è una scheda (non si tocca), grigio col team fuori regola -- */
+.analysis-grade { display: none; }
+@media (max-width: 599px) {
+  .analysis .analysis-tabs:has(.analysis-grade) { display: flex; align-items: stretch; }
+  .analysis .analysis-tabs:has(.analysis-grade) [role='tablist'] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .analysis-grade { --grade: var(--accent); flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 64px;
+    background: radial-gradient(90% 80% at 50% 30%, color-mix(in srgb, var(--grade) 22%, transparent), transparent 75%), var(--panel);
+    box-shadow: inset 1px 0 0 var(--line), inset 0 -1px 0 var(--line-soft); }
+  .analysis-grade.grade-S { --grade: var(--accent-2); }
+  .analysis-grade.grade-A { --grade: var(--good); }
+  .analysis-grade.grade-B { --grade: var(--accent); }
+  .analysis-grade.grade-C { --grade: var(--warn); }
+  .analysis-grade.grade-D { --grade: var(--bad); }
+  .analysis-grade.rules-broken { --grade: var(--faint); }
+  .analysis-grade-letter { font: italic 800 26px/0.9 var(--display); color: var(--grade); }
+  .analysis-grade-overall { font: 700 var(--fs-small)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--text); }
+  .analysis-grade.rules-broken .analysis-grade-overall { color: var(--muted); }
+}
