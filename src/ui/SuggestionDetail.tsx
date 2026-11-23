@@ -81,6 +81,8 @@ export type DetailTab = 'brings' | 'loses' | 'set';
  *  il dettaglio, non il corpo: il corpo cambia proprio passando a basso (la testata si abbassa), e lì sfarfallerebbe. */
 const LOW_DETAIL = 400;
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
+/** Altezza dell'esagono nel corpo del dettaglio con la sua etichetta e lo spazio sopra (CSS .hex-part). */
+const HEX_PART_H = 168;
 const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
 
 export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, teamCollapsed = false, sheet = false, tab: tabProp, onTab }: {
@@ -194,6 +196,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   useLayoutEffect(() => {
     const body = bodyRef.current;
     if (tabs || !body || !wideScreen()) return;
+    // L'esagono messo nel vuoto (rimasto dal candidato di prima) non conta: se ora sborda lo toglie il suo effetto
+    if (body.querySelector('.hex-part')) return;
     if (body.scrollHeight - body.clientHeight > 1) {
       if (!low && !tight) setTight(true);
       else setTabs(true);
@@ -216,9 +220,28 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     if (!why || !run || why.offsetTop !== run.offsetTop) { if (noneFits) setNoneFits(false); return; }
     // Le colonne si allungano alla più alta: si misura fin dove arriva il contenuto di ciascuna (la riga stessa esclusa)
     const bottom = (col: HTMLElement) => Math.max(col.getBoundingClientRect().top,
-      ...[...col.children].filter(el => !el.classList.contains('why-none-part')).map(el => el.getBoundingClientRect().bottom));
+      ...[...col.children].filter(el => !el.classList.contains('why-none-part') && !el.classList.contains('hex-part')).map(el => el.getBoundingClientRect().bottom));
     const fits = bottom(run) - bottom(why) >= 52;
     if (fits !== noneFits) setNoneFits(fits);
+  });
+  // L'esagono del set nel corpo (sul computer), solo dove c'è un vuoto che lo contiene tutto: nella colonna con più spazio
+  // libero sotto. Altrimenti resta nel fumetto di Stat. Non allunga mai il dettaglio; la riga "Costa: niente" viene prima
+  const hexWanted = !low && !tight && !tabs;
+  const [hexAt, setHexAt] = useState<'why' | 'run' | null>(null);
+  useLayoutEffect(() => {
+    let next: 'why' | 'run' | null = null;
+    const body = bodyRef.current;
+    const why = body?.querySelector<HTMLElement>('.detail-why');
+    const run = body?.querySelector<HTMLElement>('.detail-run');
+    if (hexWanted && wideScreen() && body && why && run && why.offsetTop === run.offsetTop && body.scrollHeight <= body.clientHeight + 1) {
+      const end = body.getBoundingClientRect().bottom - parseFloat(getComputedStyle(body).paddingBottom || '0');
+      const free = (col: HTMLElement) => end - Math.max(col.getBoundingClientRect().top,
+        ...[...col.children].filter(el => !el.classList.contains('hex-part')).map(el => el.getBoundingClientRect().bottom));
+      const room = { why: free(why), run: free(run) };
+      const best = room.why >= room.run ? 'why' : 'run';
+      if (room[best] >= HEX_PART_H) next = best;
+    }
+    if (next !== hexAt) setHexAt(next);
   });
   const shownTab: DetailTab = tab === 'set' ? 'set' : 'brings';
   const showWhy = !tabs || shownTab === 'brings';
@@ -350,10 +373,18 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                   <p className="why-none">{tr('detail.losesNone')}</p>
                 </div>
               )}
+              {hexAt === 'why' && (
+                <div className="why-part hex-part">
+                  <h4>{tr('detail.statsWithSet')}</h4>
+                  <StatHex set={set} compare={out} />
+                  {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+                </div>
+              )}
             </section>
           )}
           {/* Il set consigliato: strumento, abilità, natura, EV (e Tera), le mosse, i ruoli del set (una volta sola, con
-              quelli che mancavano al team in verde). Le statistiche del set (l'esagono) stanno nel fumetto di "Stat" */}
+              quelli che mancavano al team in verde). Le statistiche del set (l'esagono) stanno nel fumetto di "Stat", e qui sotto
+              (o sotto Perché) solo quando avanza lo spazio per tutto l'esagono */}
           {showSet && (
             <section className="detail-run">
               <h4 className="visually-hidden">{tr('detail.set')}</h4>
@@ -361,6 +392,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               <MemberMoves set={set} movesLabel={tr('editor.moves')} />
               {/* Col team vuoto i ruoli stanno già in Risolve (cosa sa fare il Pokémon): non si ripetono qui */}
               {!(alone && showWhy) && <MemberRoles set={set} rules={rulesOf(data)} fresh={freshRoles} />}
+              {hexAt === 'run' && (
+                <div className="hex-part">
+                  <h4>{tr('detail.statsWithSet')}</h4>
+                  <StatHex set={set} compare={out} />
+                  {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -375,7 +413,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <span className="lbl-full">{tr(copied ? 'team.copied' : 'suggest.copySet')}</span><span className="lbl-short">{tr(copied ? 'team.copied' : 'suggest.copySetShort')}</span>
           </span>
         </button>
-        <span className="visually-hidden" role="status">{copied ? tr('team.copied') : ''}</span>
+        {copied && <span className="visually-hidden" role="status">{tr('team.copied')}</span>}
         <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} short />
       </div>
     </aside>

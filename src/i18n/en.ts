@@ -1722,6 +1722,7 @@ export const en = {
   'detail.brings': "Fixes",
   'detail.loses': "Costs",
   'detail.losesNothing': "Nothing notable",
+  'detail.statsWithSet': "Stats with the set",
   'detail.losesNone': "Nothing: the team loses nothing",
   'detail.teamAlone': "Grade with it alone",
   'detail.set': "Suggested set",

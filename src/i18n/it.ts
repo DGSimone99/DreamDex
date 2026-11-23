@@ -1725,6 +1725,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.brings': "Risolve",
   'detail.loses': "Costa",
   'detail.losesNothing': "Niente di rilevante",
+  'detail.statsWithSet': "Statistiche col set",
   'detail.losesNone': "Niente: il team non perde nulla",
   'detail.teamAlone': "Voto con lui da solo",
   'detail.set': "Set consigliato",
