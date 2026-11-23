@@ -294,7 +294,7 @@
    del link qui non serve, si accende la barra) */
 .dash-head.is-link .dash-link { position: static; isolation: auto; }
 .dash-head.is-link .dash-link::before { display: none; }
-.dash-head.is-link .dash-link::after { content: ''; position: absolute; inset: 0; }
+.dash-head.is-link .dash-link::after { content: ''; position: absolute; inset: 0; height: auto; translate: none; }
 /* Al passaggio una luce azzurra da destra (dove c'è la freccia) che svanisce verso il titolo */
 .dash-head.is-link:hover { background: linear-gradient(270deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent 75%), linear-gradient(90deg, var(--champ-band), transparent 72%); }
 .dash-head.is-link .dash-link, .dash-head.is-link .dash-link:hover { background: none; }
@@ -669,6 +669,8 @@
 .sum-duo { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 .sum-syn.sum-duo-core { min-width: 0; flex-direction: column; justify-content: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-1); }
 .dash .sum-syn.sum-duo-core .sum-tri, .dash.tight .sum-syn.sum-duo-core .sum-tri { --tri-w: clamp(52px, calc((100cqh - 54px) * 150 / 128), 118px); }
+/* Normale (1440×900, 1536×864): sotto i core c'è aria, il triangolo può crescere fino a 140px (mai oltre la sua colonna) */
+.dash.normal .sum-syn.sum-duo-core .sum-tri { --tri-w: clamp(52px, calc((100cqh - 54px) * 150 / 128), 140px); max-width: 100%; }
 .sum-duo-title { max-width: 100%; font: 700 var(--fs-caption)/1.2 var(--display); text-align: center; text-wrap: balance; }
 .dash.rich .sum-duo-title { font-size: var(--fs-small); }
 /* Lista bassa (portatili bassi): il titolo lascia il posto al triangolo, che resta leggibile; il titolo è nel tooltip del core */
