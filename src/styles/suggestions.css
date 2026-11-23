@@ -835,3 +835,8 @@ aside.detail .detail-hero:has(.stats-pop.has-side) .detail-id h3 .stats-badge::a
   /* Si legge per colonne: +N, spada, scudo, VS a sinistra (spada e scudo uno sotto l'altro), il resto a destra */
   .sym-legend-pop ul { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: var(--sp-8); }
 }
+
+/* Il "?" della legenda resta un'icona da 20 px, ma si tocca su 24 px col mouse e su 44 col dito */
+.sym-legend .help-button { position: relative; }
+.sym-legend .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; translate: -50% -50%; }
+@media (pointer: coarse) { .sym-legend .help-button::after { width: 44px; height: 44px; } }
