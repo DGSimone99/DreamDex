@@ -93,7 +93,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
     await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
     const label = within(row).getByLabelText(/^Voto del team: /).getAttribute('aria-label')!;
-    const [, after, raw] = /: [SABCD] (\d+) \(([^)]+)\)$/.exec(label)!;
+    const [, after, raw] = /: [SABCD] (\d+) \(([^)]+)\)(?: · Al posto di .+)?$/.exec(label)!;
     const gain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${name}` });
     // Prima e dopo come nella lista (la riga sotto il +N; sotto ancora il verso delle aree); il "prima" è il voto vero, lo

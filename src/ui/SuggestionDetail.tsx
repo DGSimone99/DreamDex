@@ -168,7 +168,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const bodyRef = useRef<HTMLDivElement>(null);
   // Azioni su una riga: se «Metti al posto di …» (nome lungo, inglese) non lascia posto, Copia set e Smogon restano icone
   const actionsRef = useRef<HTMLDivElement>(null);
-  const roomyActions = useFitCount(actionsRef, 1, `${lang}|${actionLabel}`, undefined, true) === 1;
+  // Copia set e Smogon: coi nomi interi se c'è posto (2), coi nomi brevi "Copia" / "Smogon" (1), sennò solo icone (0)
+  const actionsFit = useFitCount(actionsRef, 2, `${lang}|${actionLabel}`, undefined, true);
   const asideRef = useRef<HTMLElement>(null);
   const [low, setLow] = useState(false);
   useEffect(() => {
@@ -199,6 +200,22 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     window.addEventListener('resize', reset);
     return () => window.removeEventListener('resize', reset);
   }, []);
+  // Costa senza perdite: la riga "Niente…" su telefono e tablet (la scheda scorre) e, sul computer, solo se sta nel vuoto
+  // sotto Perché accanto a un set più alto: non allunga mai il dettaglio (non lo fa passare alla versione bassa)
+  const noneWanted = loses.length === 0 && !!before && !lostRoles.length && !low && !tight && !tabs;
+  const [noneFits, setNoneFits] = useState(false);
+  useLayoutEffect(() => {
+    if (!noneWanted) return;
+    if (!wideScreen()) { if (!noneFits) setNoneFits(true); return; }
+    const why = bodyRef.current?.querySelector<HTMLElement>('.detail-why');
+    const run = bodyRef.current?.querySelector<HTMLElement>('.detail-run');
+    if (!why || !run || why.offsetTop !== run.offsetTop) { if (noneFits) setNoneFits(false); return; }
+    // Le colonne si allungano alla più alta: si misura fin dove arriva il contenuto di ciascuna (la riga stessa esclusa)
+    const bottom = (col: HTMLElement) => Math.max(col.getBoundingClientRect().top,
+      ...[...col.children].filter(el => !el.classList.contains('why-none-part')).map(el => el.getBoundingClientRect().bottom));
+    const fits = bottom(run) - bottom(why) >= 52;
+    if (fits !== noneFits) setNoneFits(fits);
+  });
   const shownTab: DetailTab = tab === 'set' ? 'set' : 'brings';
   const showWhy = !tabs || shownTab === 'brings';
   const showSet = !tabs || shownTab === 'set';
@@ -317,10 +334,16 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                   </p>
                 )}
               </div>
-              {loses.length > 0 && (
+              {loses.length > 0 ? (
                 <div className="why-part">
                   <h4>{tr('detail.loses')}</h4>
                   <BringGroups items={loses} side="loss" none={tr('detail.losesNothing')} />
+                </div>
+              ) : noneWanted && noneFits && (
+                // Nessun costo: lo si dice (è un motivo per sceglierlo), dove c'è posto
+                <div className="why-part why-none-part">
+                  <h4>{tr('detail.loses')}</h4>
+                  <p className="why-none">{tr('detail.losesNone')}</p>
                 </div>
               )}
             </section>
@@ -338,13 +361,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         </div>
       </div>
 
-      <div ref={actionsRef} className={roomyActions ? 'detail-actions' : 'detail-actions tight'}>
+      <div ref={actionsRef} className={actionsFit === 2 ? 'detail-actions' : actionsFit === 1 ? 'detail-actions short' : 'detail-actions tight'}>
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
-        {/* Nel dettaglio stretto (tablet, mezzo schermo) resta l'icona: il nome per i lettori di schermo e nel fumetto */}
-        <button type="button" className="detail-copy" onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
-          <Icon name="copy" /> <span className="btn-label">{tr('suggest.copySet')}</span>
+        {/* Nome intero, nome breve o solo l'icona, secondo lo spazio; il nome intero per i lettori di schermo e nel fumetto */}
+        <button type="button" className="detail-copy" aria-label={tr('suggest.copySet')} onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
+          <Icon name="copy" /> <span className="btn-label" aria-hidden="true"><span className="lbl-full">{tr('suggest.copySet')}</span><span className="lbl-short">{tr('suggest.copySetShort')}</span></span>
         </button>
-        <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} />
+        <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} short />
       </div>
     </aside>
   );

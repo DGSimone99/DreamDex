@@ -415,6 +415,14 @@
   .picker.sheet-open > .detail .detail-actions > * { min-height: 44px; margin: 0; white-space: nowrap; }
   .picker.sheet-open > .detail .detail-actions .go { font-size: var(--fs-body); }
 }
+/* Telefono: Copia e Smogon come icona con la parola breve sotto (il tocco non ha fumetti), sempre, qualunque misura */
+@media (max-width: 759px) {
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) { flex-direction: column; gap: 2px; min-width: 56px; padding: var(--sp-2) var(--sp-5); font: 600 var(--fs-label)/1.1 var(--ui); }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .icon { width: 16px; height: 16px; }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .btn-label { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .lbl-full { display: none; }
+  .picker.sheet-open > .detail .detail-actions :is(.detail-copy, .smogon-link) .lbl-short { display: inline; }
+}
 
 /* ── Editor del membro sul telefono e sul tablet ──────────────────── */
 @media (max-width: 1099px) {
