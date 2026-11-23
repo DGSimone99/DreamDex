@@ -1721,6 +1721,7 @@ export const en = {
   'detail.brings': "Fixes",
   'detail.loses': "Costs",
   'detail.losesNothing': "Nothing notable",
+  'detail.losesNone': "Nothing: the team loses nothing",
   'detail.teamAlone': "Grade with it alone",
   'detail.set': "Suggested set",
   'detail.tab.brings': "Why",

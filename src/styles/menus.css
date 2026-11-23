@@ -141,24 +141,28 @@
   select option::checkmark { display: none; }
 }
 
-/* Badge "Stats" con il tooltip delle statistiche base */
+/* Pulsante "Stat" con la finestra delle statistiche base: pieno come un pulsante (Raised, testo chiaro, bordo dei campi)
+   e il piccolo esagono ciano davanti, alto 20 px come l'etichetta della forma accanto; si tocca su 24 px (::after) */
 .stats-badge {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: var(--sp-2);
   flex: none;
-  padding: 0 var(--sp-3);
-  border: 1px solid var(--line);
+  height: 20px;
+  padding: 0 7px 0 5px;
+  border: 1px solid var(--control-line);
   border-radius: 3px;
-  font: 600 var(--fs-label)/1.5 var(--ui);
+  font: 700 var(--fs-label)/1 var(--ui);
   letter-spacing: 0.02em;
   text-transform: none;
-  color: var(--muted);
-  background: none;
+  color: var(--text);
+  background: var(--raised);
   cursor: pointer;
 }
+.stats-badge-icon { flex: none; width: 12px; height: 12px; color: var(--accent-ink); }
 .stats-badge::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
-.stats-badge:hover, .stats-badge:focus-visible, .stats-badge[aria-expanded='true'] { color: var(--text); border-color: var(--accent); outline: none; }
+.stats-badge:hover, .stats-badge:focus-visible, .stats-badge[aria-expanded='true'] { color: var(--text); background: var(--accent-soft); border-color: var(--accent); outline: none; }
 .stats-pop {
   position: absolute;
   z-index: 60;

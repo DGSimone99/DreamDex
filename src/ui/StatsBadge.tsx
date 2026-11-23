@@ -57,6 +57,11 @@ export function StatsBadge({ species, item = '', compare, side }: { species: str
       onClick={e => { e.preventDefault(); e.stopPropagation(); if (!(e.target as Element).closest('.stats-pop')) setOpen(o => !o); }}
       onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false); }}
     >
+      {/* Un piccolo esagono: richiama le statistiche (e l'esagono del set) che si aprono */}
+      <svg className="stats-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" d="M12 2.5 20.5 7.25v9.5L12 21.5 3.5 16.75v-9.5Z" />
+        <path fill="currentColor" opacity=".55" d="M12 6.5 17 9.5v5.5L12 17.5 8 15V9.8Z" />
+      </svg>
       {t('stats.badge')}
       <span id={id} role="tooltip" className={side ? 'stats-pop has-side' : 'stats-pop'}>
         <span className="stats-main">
