@@ -517,6 +517,7 @@ Clicking an item that leads elsewhere opens the target view with that item lit (
 - **No % in tooltips:** tooltips speak in words, bands (OHKO, 2HKO…) and plain numbers (HP out of 100), never percentages. Damage % lives in the cells.
 - **Accessible text stays inside:** the tooltip is visual only (`aria-hidden`); the same words are in the anchor's accessible name or in a `HiddenText` description inside the component, linked with `aria-describedby`. Hidden descriptions are never portalled into the body.
 - **Bubbles:** icon-only controls get a small Ground bubble (12px) under them on hover and focus, closed with Esc; none on touch screens or under 600px.
+- **Never the browser's `title`:** any short text tip (a type name, a "+N" with the hidden names, a note) is the app bubble (`data-hint` via `hint()`), with the same words in the element's accessible name or hidden text. An element that already opens a DreamDex tooltip gets no bubble of its own.
 - **Member card** (`MemberCard`): the Pokémon tooltip reused wherever a Pokémon shows: two-colour striped head with the sprite breaking the edge, why it is there, set in two columns, a summary hexagon of final stats, moves as slanted plates in their type colour.
 
 ### Menus, Popovers and Dialogs
