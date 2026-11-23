@@ -306,7 +306,8 @@ function BonusMalusRow({ net, pieces, lang, onOpen }: { net: number; pieces: Bon
       <em className={`sum-bm-net ${tone(net)}`} aria-hidden="true">{signedPts(net)}</em>
       <span ref={fit.ref} className="sum-bm-list" aria-hidden="true">
         {shown.map(p => <span key={p.key} data-fit className="sum-bm-item">{p.name} <b className={tone(p.points)}>{signedPts(p.points)}</b></span>)}
-        {hidden > 0 && <span data-fit-more className="sum-bm-more">+{hidden}</span>}
+        {/* A parole ("altri 3"), così non si legge come punti accanto ai +N delle voci; al passaggio le voci nascoste */}
+        {hidden > 0 && <span data-fit-more className="sum-bm-more" {...hint(pieces.slice(shown.length).map(p => `${p.name} ${signedPts(p.points)}`).join(' · '))}>{t('sum.bmMore', { n: hidden })}</span>}
       </span>
     </button>
   );

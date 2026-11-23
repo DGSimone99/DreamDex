@@ -9,6 +9,7 @@ import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
 import { SpeedTip } from './SpeedTip';
+import { hint } from '../MoveTip';
 import { MoveName } from '../TypeText';
 import { DashCard } from './DashCard';
 
@@ -42,7 +43,13 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
   return (
     <DashCard className="dash-speed" title={area}
       tooltip={density === 'tight' ? controlText : undefined}
-      meta={<><b>{speed.value}</b> {t(vsMeta ? 'dash.aboveMeta' : 'dash.aboveTier')}</>}
+      meta={(
+        // Il fumetto dice cosa conta il 3/6 e che il voto guarda anche altro (lo stesso testo ai lettori di schermo)
+        <span className="dash-meta-hint" {...hint(t(vsMeta ? 'dash.speedHintMeta' : 'dash.speedHintTier'))}>
+          <b>{speed.value}</b> {t(vsMeta ? 'dash.aboveMeta' : 'dash.aboveTier')}
+          <span className="visually-hidden">. {t(vsMeta ? 'dash.speedHintMeta' : 'dash.speedHintTier')}</span>
+        </span>
+      )}
       onOpen={() => onView('speed')}>
       <div className="dash-ladder" style={{ '--sprite': `${SPRITE[density]}px` } as CSSProperties}>
         <div ref={nav.ref} className="dash-bars" onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>

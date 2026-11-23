@@ -190,6 +190,24 @@ export const roleTableNeed = (roles: DashboardData['roles']) => {
 };
 
 /**
+ * La testata dei Ruoli: "7/8" e i punti tolti scritti come punti ("−4 pt", "punti" per i lettori di schermo), così non si
+ * leggono come un altro conteggio.
+ */
+function RolesHead({ roles }: { roles: DashboardData['roles'] }) {
+  const t = useT();
+  if (roles.count === undefined || !roles.points) return <b>{roles.count ?? roles.value}</b>;
+  const pts = roles.points > 0 ? `+${roles.points}` : `−${-roles.points}`;
+  return (
+    <>
+      <b>{roles.count}</b>{' '}
+      <span className={`dash-pts${roles.points < 0 ? ' bad' : ''}`}>
+        <b>{pts}</b><span aria-hidden="true"> {t('dash.pts')}</span><span className="visually-hidden"> {t('dash.ptsSr')}</span>
+      </span>
+    </>
+  );
+}
+
+/**
  * Ruoli: chip in fasce nello stretto e nel normale, tabella ruoli × membri nell'ampio. Se nell'ampio la card è più bassa
  * di quanto la tabella chiede (schermi bassi col team ridotto, Minacce del meta sopra), si torna alle fasce, che sanno
  * stare nello spazio col loro "+N": mai righe tagliate.
@@ -211,7 +229,7 @@ export function RolesSection({ roles, density, onView }: { roles: DashboardData[
   }, []);
   const table = density === 'roomy' && (!height || height >= roleTableNeed(roles));
   return (
-    <DashCard className="dash-roles" title={t('area.roles')} meta={<b>{roles.value}</b>}
+    <DashCard className="dash-roles" title={t('area.roles')} meta={<RolesHead roles={roles} />}
       onOpen={() => onView('roles')} openLabel={t('dash.openRoles')}>
       <span ref={card} hidden />
       {table ? <RoleTable roles={roles} titles={titles} /> : <RoleBands roles={roles} density={density} titles={titles} />}

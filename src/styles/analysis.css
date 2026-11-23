@@ -255,6 +255,10 @@
 .dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 3px; margin-block: -3px; font-size: var(--fs-caption); color: var(--muted); }
 .dash-meta b { font: 700 var(--fs-section)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
 .dash-meta b.bad { color: var(--bad); }
+/* I punti dei Ruoli: il numero come gli altri numeri della testata (rosso se tolti), "pt" piccolo accanto */
+.dash-pts.bad b { color: var(--bad); }
+/* La testata della Velocità ha il fumetto: il cursore lo dice */
+.dash-meta-hint { cursor: help; }
 .dash-links { flex: none; display: flex; gap: var(--sp-1); margin-left: auto; }
 .dash-link { gap: var(--sp-1); padding: var(--sp-1) var(--sp-3); font-size: var(--fs-caption); font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
 /* Al passaggio: una luce azzurra sfumata senza bordi (come le righe del Riassunto), il testo si accende con un alone
@@ -330,7 +334,7 @@
 .sum-bm-item { white-space: nowrap; }
 .sum-bm-item + .sum-bm-item::before { content: "·"; margin: 0 var(--sp-3); color: var(--faint); }
 .sum-bm-item b { font-weight: 700; font-variant-numeric: tabular-nums; }
-.sum-bm-more { margin-left: var(--sp-4); padding: 0 var(--sp-3); font: 700 var(--fs-caption)/16px var(--display); font-variant-numeric: tabular-nums; color: var(--muted); background: var(--raised); }
+.sum-bm-more { white-space: nowrap; margin-left: var(--sp-4); padding: 0 var(--sp-3); font: 700 var(--fs-caption)/16px var(--display); font-variant-numeric: tabular-nums; color: var(--muted); background: var(--raised); }
 
 /*
  * Ruoli, stretto e normale: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una

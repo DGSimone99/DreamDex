@@ -246,6 +246,26 @@ describe('Cruscotto della Panoramica', () => {
     }
   });
 
+  it('Ruoli: in testata i punti tolti si leggono come punti ("−4 pt", "−4 punti" ai lettori di schermo); senza punti solo il conto', () => {
+    const { unmount } = mount({ data: sample({ roles: { ...sample().roles, value: '7/8 −4', count: '7/8', points: -4 } }) });
+    const head = screen.getByRole('region', { name: 'Ruoli' }).querySelector('.dash-meta')!;
+    expect(head.querySelector('.dash-pts')).toHaveClass('bad');
+    expect([...head.querySelectorAll('b')].map(b => b.textContent)).toEqual(['7/8', '−4']);
+    expect(head).toHaveTextContent('7/8 −4 pt punti');
+    expect(head.querySelector('[aria-hidden="true"]')).toHaveTextContent('pt');
+    unmount();
+    mount({ data: sample({ roles: { ...sample().roles, value: '8/8', count: '8/8', points: 0 } }) });
+    expect(screen.getByRole('region', { name: 'Ruoli' }).querySelector('.dash-meta')).toHaveTextContent(/^8\/8$/);
+  });
+
+  it('Velocità: la testata ha il fumetto con cosa conta il 3/6 (lo stesso testo ai lettori di schermo)', () => {
+    mount();
+    const head = screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-meta-hint')!;
+    expect(head).toHaveAttribute('data-hint', itText['dash.speedHintMeta']);
+    expect(head.querySelector('.visually-hidden')).toHaveTextContent(itText['dash.speedHintMeta']);
+    expect(head).toHaveTextContent(/^1\/2 sopra la media/);
+  });
+
   it('Velocità: la media a vista è solo il numero, per intero ai lettori di schermo', () => {
     mount();
     const avg = screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-avg')!;
@@ -914,6 +934,23 @@ describe('Riassunto: la riga Bonus/Malus', () => {
     mountBm();
     expect(screen.queryByRole('button', { name: /^Bonus\/Malus/ })).toBeNull();
     expect(document.querySelector('.sum-bm')).toBeNull();
+  });
+
+  it('le voci che non stanno: "altri N" a parole (non un +N che sembra punti), le voci nascoste nel fumetto', () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      if (this.classList.contains('sum-body')) return rect(0, 400);
+      if (this.classList.contains('sum-bm-list')) return rect(0, 18);
+      // Solo la prima voce sta sulla riga; il "+N" ci sta
+      if (this.classList.contains('sum-bm-item')) return this === this.parentElement!.firstElementChild ? rect(0, 18) : rect(20, 18);
+      if (this.classList.contains('sum-bm-more')) return rect(0, 18);
+      if (this.closest('.sum-body')) return rect(0, 300);
+      return rect(0, 0);
+    });
+    mountBm();
+    const more = document.querySelector('.sum-bm-more')!;
+    expect(more).toHaveTextContent(/^altri 2$/);
+    expect(more).toHaveAttribute('data-hint', 'Tipi doppioni −1 · Rete di sicurezza +1');
+    expect(screen.getByRole('button', { name: 'Bonus/Malus +6: 2 core +6, Tipi doppioni −1, Rete di sicurezza +1' })).toBeInTheDocument();
   });
 
   it('senza layout (altezza 0) niente riga', () => {
