@@ -7,7 +7,7 @@ import { describe } from './describe';
 import { FloatTip, keyboardFocus, useFloatAnchor } from './FloatTip';
 import { ItemIcon } from './ItemIcon';
 import { typeColor } from './Sprite';
-import { tileStyle, typeIconUrl } from './typeIcons';
+import { TipGlyph, TipHead, TipSec, TipTypeIcon } from './TipHead';
 
 /** I bersagli di Showdown raggruppati come li dice il gioco (in singolo "normal", "any" e "adjacentFoe" sono lo stesso). */
 type TargetKey = 'single' | 'random' | 'self' | 'foes' | 'adjacent' | 'field' | 'foeSide' | 'allySide' | 'allyTeam' | 'allies' | 'ally' | 'allyOrSelf' | 'scripted';
@@ -36,13 +36,8 @@ export function MoveTipBody({ name }: { name: string }) {
   const target: TargetKey = TARGET[move.target] ?? 'single';
   return (
     <>
-      <div className="ftip-head">
-        <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />
-        <b>{gameName('move', move.name, lang)}</b>
-        {move.priority !== 0 && (
-          <span className={`mtip-prio${move.priority < 0 ? ' neg' : ''}`}>{t('moveTip.priority', { n: move.priority > 0 ? `+${move.priority}` : `${move.priority}` })}</span>
-        )}
-      </div>
+      <TipHead lead={<TipTypeIcon type={move.type} />} title={gameName('move', move.name, lang)}
+        badge={move.priority !== 0 && <span className={`mtip-prio${move.priority < 0 ? ' neg' : ''}`}>{t('moveTip.priority', { n: move.priority > 0 ? `+${move.priority}` : `${move.priority}` })}</span>} />
       <div className="mtip-stats">
         <span>
           <small>{t('moveTip.category')}</small>
@@ -71,17 +66,20 @@ export function MoveTip({ name, rect, side = false, layer = false }: { name: str
   );
 }
 
-/** Il tooltip di uno strumento o di un'abilità: testata con l'icona dello strumento e il nome, sotto la descrizione. */
+/**
+ * Il tooltip di uno strumento o di un'abilità (vedi DESIGN.md, "Tooltips"): la testata unica con l'icona dello strumento
+ * (o il tondo dell'abilità), il nome e a destra il genere ("Strumento", "Abilità"); sotto la descrizione dei giochi:
+ * in italiano quella italiana, e se manca quella inglese di Showdown (meglio una descrizione in inglese che nessuna).
+ */
 export function KitTipBody({ kind, name }: { kind: 'item' | 'ability'; name: string }) {
+  const t = useT();
   const lang = useLang();
   const desc = describe[kind](name, lang);
   return (
     <>
-      <div className="ftip-head">
-        {kind === 'item' && <span className="ktip-icon"><ItemIcon item={name} size={24} /></span>}
-        <b>{gameName(kind, name, lang)}</b>
-      </div>
-      {desc && <p className="mtip-desc">{desc}</p>}
+      <TipHead lead={kind === 'item' ? <span className="ktip-icon"><ItemIcon item={name} size={24} /></span> : <TipGlyph icon="spark" />}
+        title={gameName(kind, name, lang)} badge={<span className="tip-kind">{t(kind === 'item' ? 'editor.item' : 'editor.ability')}</span>} />
+      {desc && <TipSec><p className="ktip-desc">{desc}</p></TipSec>}
     </>
   );
 }

@@ -12,6 +12,7 @@ import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect, useId } from 'react';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { useRoving } from '../useRoving';
 
 /** I 18 tipi di un membro come bersagli: colpo semplice, dopo una danza, con Tera/Z. */
@@ -51,7 +52,12 @@ function ShareTip({ points }: { points: number }) {
     <span className="og-share" data-nav="" role="img" aria-label={text} aria-describedby={id} {...tip.bind(true)}>
       <span className="def-num total og-share-num">+{points}</span>
       <HiddenText id={id}>{note}</HiddenText>
-      {tip.anchor && <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot"><p className="kot-none">{text}</p><p className="ftip-foot">{note}</p></FloatTip>}
+      {tip.anchor && (
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot small">
+          <TipHead lead={<TipGlyph icon="sword" />} title={t('odetail.gen.shareHead')} num={`+${points}`} />
+          <TipSec><p className="kot-none">{note}</p></TipSec>
+        </FloatTip>
+      )}
     </span>
   );
 }
@@ -67,6 +73,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const t = useT();
   const lang = useLang();
   const roomy = !!ctx.roomy;
+  // Il "?" delle testate apre la guida dell'Offesa (una pagina sola per le tre schede, la sezione "types")
+  const openGuide = ctx.guide && (() => ctx.guide!('types'));
   const { members, shares } = offense;
   const slots = offenseSlots(ctx.team, members);
   const nMeta = offense.coverageMeta?.rows.length ?? 0;
@@ -107,8 +115,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {/* Accanto alle testate il "?" coi bersagli, come nella guida: il Pokémon medio dei 18 tipi, le minacce del meta */}
-              <th scope="col"><BarHead icon="sword" word={t('kob.headTypes')} /><Ask label={t('guide.off.targets.typesTitle')}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col"><BarHead icon="sword" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
+              <th scope="col"><BarHead icon="sword" word={t('kob.headTypes')} /><Ask label={t('guide.off.targets.typesTitle')} guide={openGuide}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="sword" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide}><MetaTargets species={metaSpecies} /></Ask></th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>

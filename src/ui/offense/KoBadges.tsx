@@ -6,6 +6,7 @@ import { useLang, useT } from '../../i18n/react';
 import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { tileStyle, typeIconUrl } from '../typeIcons';
 
 /** Le due fasce che contano per la Coverage: KO in un colpo e in due (il 3HKO quasi non conta: ignorato). */
@@ -136,15 +137,15 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
       )}
       {key === 'rest' && (
         <FloatTip rect={tip.anchor!.rect} tone={restBad ? 'var(--bad)' : 'var(--faint)'} className="kot">
-          <div className="kot-head"><b>{restBad ? t('kob.uncoveredTitle') : t('kob.restTitle', { name: who })}</b><small>{of}</small></div>
-          {list(bands.rest)}
+          <TipHead lead={<TipGlyph icon="sword" />} title={restBad ? t('kob.uncoveredTitle') : t('kob.restTitle', { name: who })} sub={of} />
+          <TipSec>{list(bands.rest)}</TipSec>
           {picks('rest') && <TipGo place={pickPlace!} />}
         </FloatTip>
       )}
       {key && key !== 'rest' && (
         <FloatTip rect={tip.anchor!.rect} tone="var(--good)" className="kot">
-          <div className="kot-head"><b>{who}</b><span className={`kob labeled ${key}`}><em>{TAG[key]}</em><b>{bands.plain[key].length}</b></span><small>{of}</small></div>
-          {bands.plain[key].length ? list(bands.plain[key]) : <p className="kot-none">{t('kob.none')}</p>}
+          <TipHead lead={<TipGlyph icon="sword" />} title={who} badge={<span className={`kob labeled ${key}`}><em>{TAG[key]}</em><b>{bands.plain[key].length}</b></span>} qualifier={of} />
+          <TipSec>{bands.plain[key].length ? list(bands.plain[key]) : <p className="kot-none">{t('kob.none')}</p>}</TipSec>
           {/* In più col setup o con Tera/Z: solo il nome e quanti, "Danzaspada +15" */}
           {bands.setup[key].length > 0 && <Extra icon={<i className="kob-tri" aria-hidden="true" />} label={`${setupMove ? gameName('move', getMove(setupMove)?.name ?? setupMove, lang) : t('kob.setupWord')} +${bands.setup[key].length}`}>{list(bands.setup[key])}</Extra>}
           {bands.once[key].length > 0 && onceName && <Extra label={`${onceName} +${bands.once[key].length}`}>{list(bands.once[key])}</Extra>}
@@ -163,10 +164,7 @@ export function KoBadges({ bands, who, of, total, setupMove, onceName, onPick, p
 
 function Extra({ icon, label, children }: { icon?: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="kot-extra">
-      <span className="kot-extra-h">{icon}{label}</span>
-      {children}
-    </div>
+    <TipSec className="kot-extra" label={<>{icon}{label}</>}>{children}</TipSec>
   );
 }
 

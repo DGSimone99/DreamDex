@@ -125,9 +125,6 @@
   .mcp .mvp-nm, .mcp .mvp-tail { transition: none; }
 }
 
-/* Guida della Velocità: la nota del tipo immune dentro la pillola, piccola */
-.sp-gd-move small { margin-left: var(--sp-2); font-weight: 500; color: var(--muted); }
-
 /* Nei tooltip la coda è più stretta: lo spazio va al nome */
 .ftip .mvp { --mvp-tail-w: 50px; }
 .ftip .mvp-tail { gap: 2px; padding: 0 var(--sp-3) 0 calc(var(--mvp-cut) + var(--sp-1)); }

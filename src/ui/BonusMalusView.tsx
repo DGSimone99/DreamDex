@@ -9,6 +9,7 @@ import { CoreArt } from './dashboard/CoreTriangle';
 import { DashCard } from './dashboard/DashCard';
 import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
 import { shortCase } from './bonusMalusShort';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from './TipHead';
 import { Typed } from './TypeText';
 import { tileStyle, typeIconUrl } from './typeIcons';
 import { useFitCount } from './useFit';
@@ -181,11 +182,14 @@ function HeldTypes({ core, rows, lang, t }: { core: Core; rows: HoldRow[]; lang:
       </span>
       <HiddenText id={descId}>{`${count}. ${description}`}</HiddenText>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="kot bm-held-tip">
-          <div className="kot-head"><b>{count}</b></div>
-          <span className="bm-core-types">
-            {rows.map(row => <img key={row.type} className={`ti-sq ${held.includes(row) ? 'on' : 'off'}`} style={tileStyle(row.type)} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
-          </span>
+        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="tip-w-m bm-held-tip">
+          <TipHead lead={<TipGlyph icon="shield" />} title={coreTypes(core, lang)}
+            num={<>{held.length}<small>/{rows.length}</small></>} qualifier={t('tip.cores.heldQual')} />
+          <TipSec>
+            <span className="bm-core-types">
+              {rows.map(row => <img key={row.type} className={`ti-sq ${held.includes(row) ? 'on' : 'off'}`} style={tileStyle(row.type)} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
+            </span>
+          </TipSec>
           <p className="ftip-foot">{t('catalogue.cores.heldTip')}</p>
         </FloatTip>
       )}
@@ -416,9 +420,10 @@ function Entry({ row, index }: { row: ActiveRow; index: number }) {
       </span>
       <span className="bm-row-pts">{pointsOf(row)}</span>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={entry.kind === 'malus' ? 'var(--bad)' : 'var(--good)'} className="kot bm-row-tip">
-          <div className="kot-head"><b>{entry.name}</b><em className={`bm-tip-pts ${entry.kind}`}>{pointsOf(row)}</em></div>
-          {details.map((detail, i) => <p key={i} className="kot-none"><Typed text={detail} /></p>)}
+        <FloatTip rect={tip.anchor.rect} tone={entry.kind === 'malus' ? 'var(--bad)' : 'var(--good)'} className="tip-w-m bm-row-tip">
+          <TipHead lead={<Medal entry={entry} className="tip-medal" />} title={entry.name}
+            num={<span className={entry.kind === 'malus' ? 'bad' : 'good'}>{pointsOf(row)}</span>} />
+          <TipSec>{details.map((detail, i) => <p key={i}><Typed text={detail} /></p>)}</TipSec>
         </FloatTip>
       )}
     </li>
@@ -437,13 +442,16 @@ function MoreEntries({ hidden, t }: { hidden: ActiveRow[]; t: T }) {
       <span aria-hidden="true">{t('catalogue.more', { n: hidden.length })}</span>
       <span className="visually-hidden">{t('catalogue.moreSr', { n: hidden.length })} {hidden.map(line).join('; ')}</span>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={hidden.some(row => row.entry.kind === 'malus') ? 'var(--bad)' : 'var(--good)'} className="kot bm-row-tip">
-          {hidden.map(row => (
-            <p key={row.key} className="kot-none bm-more-line">
-              <b>{row.entry.name}</b> <em className={`bm-tip-pts ${row.entry.kind}`}>{pointsOf(row)}</em>
-              <span><Typed text={row.details.join(' · ')} /></span>
-            </p>
-          ))}
+        <FloatTip rect={tip.anchor.rect} tone={hidden.some(row => row.entry.kind === 'malus') ? 'var(--bad)' : 'var(--good)'} className="tip-w-m bm-more-tip">
+          <TipHead title={t('tip.bm.more', { n: hidden.length })} />
+          <TipSec>
+            <TipRows>
+              {hidden.map(row => (
+                <TipRow key={row.key} className="bm-more-line" lead={<Medal entry={row.entry} className="tip-medal" />} title={row.entry.name}
+                  sub={<Typed text={row.details.join(' · ')} />} value={pointsOf(row)} tone={row.entry.kind === 'malus' ? 'bad' : 'good'} />
+              ))}
+            </TipRows>
+          </TipSec>
         </FloatTip>
       )}
     </li>

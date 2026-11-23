@@ -16,7 +16,8 @@ import { byThreat, byUsage } from '../../engine/overviewDashboard';
 import { HpLeft } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipHead, TipSec } from '../TipHead';
 import { MemberMon } from './MemberMon';
 import { EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 
@@ -213,22 +214,20 @@ export function ThreatHitTip({ row, name, hit, mult, koMove }: { row: Row; name:
   const tag = hit === 'ko' ? 'KO' : HOLD_BANDS[band].tag;
   return (
     <>
-      <div className="ftip-head tht-target">
-        <Sprite species={row.species} size={SPRITE_TIP_ROW} />
-        <b>{row.species}</b>
-        <span className={`ftip-ko def ${band} tht-band`}>{tag}</span>
-      </div>
-      <div className="tht-body">
-        <Sprite species={name} size={SPRITE_TIP} />
-        <span className="tht-text">
-          <span className="tht-name">{name}</span>
-          <span className="tht-move">
-            {move ? <MoveLine name={move} type={battleMoveType(row.set, move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}
-            {mult && <span className="tht-mult">{mult}</span>}
-            {hit !== 'ko' && <b className="tht-pct">{hit.pct}<small>%</small></b>}
+      <TipHead sprite={row.species} title={row.species} badge={<span className={`ftip-ko def ${band} tht-band`}>{tag}</span>} />
+      <TipSec>
+        <div className="tht-body">
+          <Sprite species={name} size={SPRITE_TIP_ROW} />
+          <span className="tht-text">
+            <span className="tht-name">{name}</span>
+            <span className="tht-move">
+              {move ? <MoveLine name={move} type={battleMoveType(row.set, move)} /> : <span className="tht-none">{t('ddetail.cm.koTip')}</span>}
+              {mult && <span className="tht-mult">{mult}</span>}
+              {hit !== 'ko' && <b className="tht-pct">{hit.pct}<small>%</small></b>}
+            </span>
           </span>
-        </span>
-      </div>
+        </div>
+      </TipSec>
     </>
   );
 }

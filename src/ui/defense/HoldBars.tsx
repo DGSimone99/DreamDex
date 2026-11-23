@@ -5,6 +5,7 @@ import { TYPES, type TypeName } from '../../engine/types';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
 import { PokemonIcon } from '../PokemonName';
 import { pieceSize, Target } from '../offense/KoBadges';
@@ -101,12 +102,12 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
         })}
         {key && (
           <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
-            <div className="kot-head"><b>{who}</b><span className={`kob labeled hb ${PIECE_CLS[key]}`}><em>{tag(key)}</em><b>{by(key).length}</b></span><small>{of}</small></div>
+            <TipHead lead={<TipGlyph icon="shield" />} title={who} badge={<span className={`kob labeled hb ${PIECE_CLS[key]}`}><em>{tag(key)}</em><b>{by(key).length}</b></span>} qualifier={of} />
             {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO). I pallini hanno i colori delle
                 caselle di Coverage (verde, verde chiaro, giallo, rosso); quello del 2HKO un filo più pieno, se no è piccolo e spento */}
             {(key === 'held' ? (['four', 'three'] as const) : [key]).map(b => {
               const items = targets.filter(x => x.band === b);
-              return items.length ? <div key={b} className={`hb-group${b === 'two' ? ' hb-group-two' : ''}`}><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</div> : null;
+              return items.length ? <TipSec key={b} className={`hb-group${b === 'two' ? ' hb-group-two' : ''}`}><p className="hb-say"><span className={`hb-dot ${HOLD_BANDS[b].cls}`} />{t(`hold.say.${b}`)}</p>{list(items)}</TipSec> : null;
             })}
             {go && <TipGo place={pickPlace!} />}
           </FloatTip>
@@ -118,32 +119,41 @@ export function HoldBars({ targets, who, of, alarm = false, quiet = false, onPic
         <span className="kob-count-line" aria-hidden="true" />
         <HiddenText id={`${id}-count`}>{t('hold.countTitle')}</HiddenText>
       </span>
-      {countTip.anchor && <FloatTip rect={countTip.anchor.rect} tone="var(--accent)" className="kot"><p className="kot-none">{t('hold.countTitle')}</p></FloatTip>}
+      {countTip.anchor && (
+        <FloatTip rect={countTip.anchor.rect} tone="var(--accent)" className="kot small">
+          <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.countHead')} sub={t('hold.countSub')} num={<>{n}<small>/{total}</small></>} />
+        </FloatTip>
+      )}
     </span>
   );
 }
 
-/** Gli attaccanti dei 18 tipi (Coverage tipi della Difesa): Attacco e Attacco Speciale, in due colonne. */
+/**
+ * Gli attaccanti dei 18 tipi (Coverage tipi della Difesa): Attacco e Attacco Speciale, in due colonne, e sotto la nota
+ * (dentro la sezione: l'unico piede è "Clic: apri la guida" quando il "?" apre la guida).
+ */
 export function TypeAttackers({ formatId }: { formatId: FormatId }) {
   const t = useT();
   const lang = useLang();
   return (
     <>
-      <div className="ftip-head"><b>{t('hold.attackersTitle')}</b></div>
-      <div className="gat-cols">
-        {[TYPES.slice(0, 9), TYPES.slice(9)].map((part, col) => (
-          <table key={col} className="gat-table">
-            <thead><tr><th scope="col" /><th scope="col">{t('stat.atk')}</th><th scope="col">{t('stat.spa')}</th></tr></thead>
-            <tbody>
-              {part.map(type => {
-                const a = dummyStats(formatId, type);
-                return <tr key={type}><th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th><td>{a.atk}</td><td>{a.spa}</td></tr>;
-              })}
-            </tbody>
-          </table>
-        ))}
-      </div>
-      <p className="ftip-foot">{t('ddetail.attackerTip')}</p>
+      <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.attackersTitle')} />
+      <TipSec>
+        <div className="gat-cols">
+          {[TYPES.slice(0, 9), TYPES.slice(9)].map((part, col) => (
+            <table key={col} className="gat-table">
+              <thead><tr><th scope="col" /><th scope="col">{t('stat.atk')}</th><th scope="col">{t('stat.spa')}</th></tr></thead>
+              <tbody>
+                {part.map(type => {
+                  const a = dummyStats(formatId, type);
+                  return <tr key={type}><th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th><td>{a.atk}</td><td>{a.spa}</td></tr>;
+                })}
+              </tbody>
+            </table>
+          ))}
+        </div>
+        <p className="tip-more">{t('ddetail.attackerTip')}</p>
+      </TipSec>
     </>
   );
 }

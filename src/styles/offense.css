@@ -62,7 +62,8 @@
 .guide-ask .icon { width: 16px; height: 16px; vertical-align: 0; }
 .guide-ask:hover, .guide-ask:focus-visible { color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .guide-ask:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.ftip.gat { width: var(--tip-l); }
+.ftip.gat:not(.tip-w-m) { width: var(--tip-l); }
+.tip-sec .gat-mons, .tip-sec .gat-cols { padding: 0; }
 .gat-cols { display: flex; gap: var(--sp-9); padding: var(--sp-4) var(--sp-6) var(--sp-5); }
 .gat-table { border-collapse: collapse; font-size: var(--tip-body); font-variant-numeric: tabular-nums; }
 .gat-table th, .gat-table td { padding: var(--sp-1) 0 var(--sp-1) var(--sp-6); border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
@@ -273,6 +274,7 @@
 .tst-stats small { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 .tst-stats b { font: 700 italic var(--tip-num)/1 var(--display); font-variant-numeric: tabular-nums; }
 .ftip-head .tht-band { margin-left: auto; transform: skewX(-12deg); }
+.tip-badge .tht-band { transform: skewX(-12deg); }
 .tht-body { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-5); }
 .tht-body .sprite { flex: none; margin: -6px -2px -6px -4px; image-rendering: pixelated; }
 .tht-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }

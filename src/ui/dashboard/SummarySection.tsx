@@ -15,6 +15,7 @@ import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreTip } from './CoreTip';
 import { CoreTriangle, coreTitle } from './CoreTriangle';
@@ -96,7 +97,7 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, onMore, 
         )
         : <span className={`sum-sec-more${tipped}`} {...hover}><More n={hidden} label={more(hidden, rows.slice(shown))} plain={!!moreTip} /></span>)}
       {moreTip && hidden > 0 && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="syn-more">{moreTip(rows.slice(shown))}</FloatTip>
+        <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="syn-more tip-w-m">{moreTip(rows.slice(shown))}</FloatTip>
       )}
     </div>
   );
@@ -195,25 +196,26 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
 function MoreSynergies({ items, label }: { items: SynergyView[]; label: string }) {
   return (
     <>
-      <div className="ftip-head"><b>{label}</b></div>
-      <ul className="syn-more-list">
-        {items.map(view => (
-          <li key={view.key} style={{ '--c': view.color } as CSSProperties}>
-            <span className="syn-more-mons" aria-hidden="true">
-              {view.mons.map((name, i) => (
-                <span key={`${name}:${i}`} className="syn-more-mon">
-                  {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
-                  <Sprite species={name} size={SPRITE_TIP_ROW} />
+      <TipHead lead={<TipGlyph icon="chain" />} title={label} />
+      <TipSec>
+        <TipRows className="syn-more-list">
+          {items.map(view => (
+            <TipRow key={view.key} className="syn-more-row"
+              lead={(
+                <span className="syn-more-mons" style={{ '--c': view.color } as CSSProperties}>
+                  {view.mons.map((name, i) => (
+                    <span key={`${name}:${i}`} className="syn-more-mon">
+                      {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
+                      <Sprite species={name} size={SPRITE_TIP_ROW} />
+                    </span>
+                  ))}
                 </span>
-              ))}
-            </span>
-            <span className="syn-more-body">
-              <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{view.title}</strong></span>
-              <span className="sum-syn-text">{view.text}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+              )}
+              title={<><em className="sum-syn-tag" style={{ '--c': view.color } as CSSProperties}>{view.tag}</em> {view.title}</>}
+              sub={view.text} />
+          ))}
+        </TipRows>
+      </TipSec>
     </>
   );
 }

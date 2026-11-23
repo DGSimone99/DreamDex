@@ -36,7 +36,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
         <h4>{t('guide.off.test.targets')}</h4>
         <Rows compact rows={[
           [t('detail.coverageTypes'), <>{g('how.targets.types')} <Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={formatId} /></Ask></>],
-          ...(meta && defense.coverageMeta ? [[t('detail.coverageMeta'), <>{t('guide.off.cov.targets.meta', { n: metaSpecies.length })} <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></>] as [ReactNode, ReactNode]] : []),
+          ...(meta && defense.coverageMeta ? [[t('detail.coverageMeta'), <>{t('guide.off.cov.targets.meta', { n: metaSpecies.length })} <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} icon="shield" /></Ask></>] as [ReactNode, ReactNode]] : []),
         ]} />
 
         <h4>{t('guide.off.test')}</h4>

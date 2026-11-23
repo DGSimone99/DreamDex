@@ -106,6 +106,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const t = useT();
   const { members } = defense;
   const roomy = !!ctx.roomy;
+  // Il "?" delle testate apre la guida della Difesa (la pagina "Come funziona" di Generale e Coverage)
+  const openGuide = ctx.guide && (() => ctx.guide!('general'));
   // Quanto porta ogni membro alla Difesa del team (sommati fanno la Difesa del team), e in parole il suo recupero
   const shares = defenseShares(defense);
   const sustainWords = useSustainWords();
@@ -159,8 +161,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
-              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })}><MetaTargets species={metaSpecies} /></Ask></th>}
+              <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')} guide={openGuide}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
+              {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide}><MetaTargets species={metaSpecies} icon="shield" /></Ask></th>}
               <th scope="col">{t('area.defense')}</th>
             </tr>
           </thead>

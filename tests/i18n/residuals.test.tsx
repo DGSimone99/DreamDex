@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { initGameNames } from '../../src/i18n/game';
+import { KitTipBody } from '../../src/ui/MoveTip';
 import { Typed } from '../../src/ui/TypeText';
 import { renderIt } from '../helpers/italian';
 import { fixtureData } from '../fixtures/data';
@@ -41,6 +42,31 @@ describe('tooltip della card', () => {
     fireEvent.mouseOut(slot.querySelector('.held')!, { relatedTarget: document.body });
     fireEvent.mouseOver(slot.querySelector('.ability')!);
     await waitFor(() => expect(document.querySelector('.ftip.kit')).toHaveTextContent('Ferisce chi attacca con un contatto.'));
+  });
+});
+
+describe('tooltip di strumenti e abilità', () => {
+  it('testata col nome e il genere; in italiano la descrizione italiana, e se manca quella inglese di Showdown', () => {
+    initGameNames(NAMES);
+    const helmet = renderIt(<KitTipBody kind="item" name="Rocky Helmet" />);
+    expect(helmet.container.querySelector('.tip-title')).toHaveTextContent('Bitorzolelmo');
+    expect(helmet.container.querySelector('.tip-kind')).toHaveTextContent('Strumento');
+    expect(helmet.container.querySelector('.ktip-desc')).toHaveTextContent('Danneggia chi attacca con un contatto.');
+    helmet.unmount();
+    // Focus Sash non ha la descrizione italiana: c'è quella inglese di Showdown, piuttosto che niente
+    const sash = renderIt(<KitTipBody kind="item" name="Focus Sash" />);
+    expect(sash.container.querySelector('.tip-kind')).toHaveTextContent('Strumento');
+    expect(sash.container.querySelector('.ktip-desc')).toHaveTextContent(/survive/i);
+    sash.unmount();
+    const skin = renderIt(<KitTipBody kind="ability" name="Rough Skin" />);
+    expect(skin.container.querySelector('.tip-kind')).toHaveTextContent('Abilità');
+    expect(skin.container.querySelector('.tip-glyph')).not.toBeNull();
+  });
+
+  it('in inglese la descrizione di Showdown', () => {
+    const { container } = render(<KitTipBody kind="item" name="Focus Sash" />);
+    expect(container.querySelector('.tip-kind')).toHaveTextContent('Item');
+    expect(container.querySelector('.ktip-desc')).toHaveTextContent(/survive/i);
   });
 });
 

@@ -77,11 +77,22 @@ describe('Offesa: navigazione e guida', () => {
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
     expect(within(screen.getByRole('dialog', { name: 'Guida: Offesa' })).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{Escape}');
-    // Accanto alle testate Tipi e Meta il "?" dei bersagli, lo stesso della guida
+    // Accanto alle testate Tipi e Meta il "?" dei bersagli: la tabella intera dei 18 tipi (come nella guida) con un
+    // solo piede, "Clic: apri la guida"; il clic apre la guida
     const typesAsk = screen.getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' });
+    expect(typesAsk).toHaveAccessibleDescription('Clic: apri la guida');
     await user.hover(typesAsk);
     await waitFor(() => expect(document.querySelectorAll('.ftip.gat tbody tr')).toHaveLength(18));
-    await user.unhover(typesAsk);
+    expect(document.querySelectorAll('.ftip.gat .ftip-go, .ftip.gat .ftip-foot')).toHaveLength(1);
+    expect(document.querySelector('.ftip.gat .ftip-go')).toHaveTextContent('Clic: apri la guida');
+    await user.click(typesAsk);
+    const guide = screen.getByRole('dialog', { name: 'Guida: Offesa' });
+    expect(within(guide).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    // Nella guida lo stesso "?" ha la tabella intera dei 18 tipi, senza piede
+    await user.hover(within(guide).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
+    await waitFor(() => expect(document.querySelectorAll('.ftip.gat tbody tr')).toHaveLength(18));
+    expect(document.querySelector('.ftip.gat .ftip-go')).toBeNull();
+    await user.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: /^I \d+ Pokémon più usati$/ })).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     // Il "?" di Coverage meta apre la stessa pagina di Coverage tipi
@@ -340,7 +351,7 @@ describe('Offesa: Generale', () => {
     const move = gameName('move', 'Swords Dance', 'it');
     const extra = [...tip.querySelectorAll('.kot-extra')].find(e => e.textContent!.includes(move))!;
     const more = band === 'ohko' ? c.setupOhko : c.setupTwo;
-    expect(extra.querySelector('.kot-extra-h')!.textContent).toBe(`${move} +${more}`);
+    expect(extra.querySelector('.tip-sec-label')!.textContent).toBe(`${move} +${more}`);
     expect(extra.querySelectorAll('.kot-type')).toHaveLength(more);
   });
 
@@ -356,8 +367,8 @@ describe('Offesa: Generale', () => {
     await user.hover(badge);
     let tip = await tipOf();
     expect(tip).toHaveAttribute('aria-hidden', 'true');
-    expect(tip.querySelector('.kot-head')).toHaveTextContent('Great Tusk');
-    expect(tip.querySelector('.kot-head')).toHaveTextContent('tipi su 18');
+    expect(tip.querySelector('.tip-head')).toHaveTextContent('Great Tusk');
+    expect(tip.querySelector('.tip-head')).toHaveTextContent('tipi su 18');
     const list = mainList(tip)!;
     expect(list.querySelectorAll('.kot-type')).toHaveLength(types[band]);
     expect(list.querySelector('.kot-type img')).not.toBeNull();
@@ -369,7 +380,7 @@ describe('Offesa: Generale', () => {
     expect(meta[mBand]).toBeGreaterThan(0);
     await user.hover(cells[1].querySelector(`.kob.${mBand}`)!);
     tip = await tipOf();
-    expect(tip.querySelector('.kot-head')).toHaveTextContent(`minacce su ${rating.offense.coverageMeta!.rows.length}`);
+    expect(tip.querySelector('.tip-head')).toHaveTextContent(`minacce su ${rating.offense.coverageMeta!.rows.length}`);
     expect(mainList(tip)).toHaveClass('mons');
     expect(mainList(tip)!.querySelectorAll('.kot-mon')).toHaveLength(meta[mBand]);
   });
@@ -399,7 +410,7 @@ describe('Offesa: Generale', () => {
         expect(bad.querySelector('b')).toHaveTextContent(new RegExp(`^${open}$`));
         await user.hover(bad);
         const tip = await tipOf();
-        expect(tip.querySelector('.kot-head')).toHaveTextContent('Nessuno li manda KO in due colpi');
+        expect(tip.querySelector('.tip-head')).toHaveTextContent('Nessuno li manda KO in due colpi');
         expect(mainList(tip)!.children).toHaveLength(open);
         await user.unhover(bad);
       }

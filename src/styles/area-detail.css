@@ -206,14 +206,10 @@
 .bm-more-cell { display: flex; align-items: center; justify-content: center; min-width: 0; height: 54px; border: 1px dashed var(--line); color: var(--muted); font: 600 var(--fs-section) var(--ui); cursor: default; }
 .bm-more-cell:hover { color: var(--text); border-color: var(--muted); }
 /* Il tooltip di una voce e di "+N altre": nome e punti in testa, il caso intero sotto */
-.bm-tip-pts { margin-left: auto; padding-left: var(--sp-6); font: 800 var(--tip-num)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
-.bm-tip-pts.malus { color: var(--bad); }
-.bm-tip-pts.bonus { color: var(--good); }
-.bm-row-tip .kot-none + .kot-none { padding-top: 0; }
-.bm-more-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--sp-3); }
-.bm-more-line b { font: 700 var(--tip-body)/1.2 var(--display); font-style: italic; color: var(--text); }
-.bm-more-line .bm-tip-pts { margin-left: 0; padding-left: 0; font-size: var(--tip-body); }
-.bm-more-line > span { flex-basis: 100%; }
+/* I tooltip delle voci (testata unica): la medaglia piccola come icona di testata e delle righe del "+N" */
+.bm-medal.tip-medal { width: 24px; height: 27px; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45)); }
+.bm-more-line { align-items: flex-start; }
+.bm-more-line .tip-row-val { align-self: flex-start; margin-top: 2px; }
 /* Quando si apre la scheda le medaglie entrano una dopo l'altra: partono già visibili (niente vuoto), solo un piccolo
    ingrandimento e la luce che sale */
 @keyframes bm-pop { from { opacity: 0.35; transform: scale(0.88); } to { opacity: 1; transform: none; } }
@@ -279,7 +275,7 @@
 .bm-core-lines b { color: var(--text); font-weight: 600; }
 /* Nel tooltip di "Reggono": i 18 tipi d'attacco, accesi quelli retti, spenti in grigio quelli che passano */
 .ftip.bm-held-tip { width: auto; }
-.bm-held-tip .bm-core-types { display: grid; grid-template-columns: repeat(9, var(--ti-chip)); gap: var(--sp-3); padding: var(--sp-5) var(--sp-6); }
+.bm-held-tip .bm-core-types { display: grid; grid-template-columns: repeat(9, var(--ti-chip)); justify-content: space-between; gap: var(--sp-3); }
 .bm-held-tip .bm-core-types img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
 .bm-held-tip .bm-core-types img.off { filter: grayscale(1); opacity: 0.25; }
 /* Due posti affiancati (usePairFits): due core aperti, o un core e il posto del secondo, metà carta ciascuno, col

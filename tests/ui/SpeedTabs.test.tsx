@@ -240,20 +240,21 @@ describe('Velocità: una scheda a barre', () => {
     expect(panel.querySelectorAll('.guide-rows > div')).toHaveLength(3);
     expect(panel.querySelectorAll('.guide-ask')).toHaveLength(3);
     expect(panel).not.toHaveTextContent(/×1,5|Shell Smash/);
-    // Abilità e strumenti come etichette, le mosse come pillole (il nome, con la nota del tipo immune dentro)
-    const chips = () => [...document.querySelectorAll('.sp-gd-tip .sp-gd-chip, .sp-gd-tip .sp-gd-move .mvp-nm')].map(c => c.textContent);
+    // Il tooltip è corto: al massimo quattro righe (cosa conta, il moltiplicatore a destra), sotto i primi tre esempi coi
+    // nomi dei giochi e "e altre N" in parole, mai "+N" che sembra un bonus (qui senza i dati italiani restano in inglese) e la regola breve
+    const rows = () => [...document.querySelectorAll('.ftip.gat .tip-row')];
     await user.hover(within(panel).getByRole('button', { name: 'Boost' }));
-    await waitFor(() => expect(chips()).toContain('Shell Smash'));
-    expect(chips()).toContain('Swift Swimpioggia');
-    expect(chips()).toContain('Booster Energy');
-    expect(document.querySelector('.sp-gd-tip')).toHaveTextContent(/×1,5/);
+    await waitFor(() => expect(rows()).toHaveLength(4));
+    expect(rows()[0].querySelector('.tip-row-val')).toHaveTextContent('×1,5');
+    expect(rows()[0].querySelector('.tip-row-sub')).toHaveTextContent(/^Dragon Dance, Quiver Dance, Victory Dance e altre \d+$/);
+    expect(rows()[1].querySelector('.tip-row-sub')).toHaveTextContent(/^Shell Smash, Agility, Rock Polish e altre \d+$/);
+    expect(rows()[3].querySelector('.tip-row-sub')).toHaveTextContent(/^Booster Energy, Protosynthesis, Quark DriveSolo se la Velocità è la più alta$/);
     await user.unhover(within(panel).getByRole('button', { name: 'Boost' }));
     await user.hover(within(panel).getByRole('button', { name: 'Controllo del team' }));
-    await waitFor(() => expect(chips()).toContain('Glare'));
-    // Le mosse che rallentano come etichette, coi tipi immuni dentro; la regola tiene solo l'eccezione comune
-    // (i nomi dei tipi in italiano arrivano coi dati del gioco: qui, senza, restano in inglese)
-    expect(chips()).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
-    const control = document.querySelector('.sp-gd-tip')!;
+    // I controlli in due gruppi (Lunghi, Brevi), ognuno col suo nome; la regola tiene solo l'eccezione comune
+    await waitFor(() => expect([...document.querySelectorAll('.ftip.gat .tip-sec-label')].map(l => l.textContent)).toEqual(['Lunghi', 'Brevi, contano meno']));
+    const control = document.querySelector('.ftip.gat')!;
+    expect(control).toHaveTextContent(/Thunder Wave, Glare, Stun Spore e un'altra/);
     expect(control).toHaveTextContent(/Non sui tipi Elettro/);
     expect(control).toHaveTextContent(/Trick Room/);
     expect(control).toHaveTextContent(/Tailwind/);

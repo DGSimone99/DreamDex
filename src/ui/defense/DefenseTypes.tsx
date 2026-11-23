@@ -6,10 +6,11 @@ import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies } from '../../engine/dex';
 import type { TeamDefense } from '../../engine/defense';
 import type { TypeName } from '../../engine/types';
-import { weatherMitigations } from '../../engine/synergy';
+import { weatherMitigations, type WeatherMitigation } from '../../engine/synergy';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
-import { mitigationNote } from '../AnalysisTables';
+import { mitigationNote, mitigationParts } from '../AnalysisTables';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
@@ -61,7 +62,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
   // Le note del meteo stanno sulla riga della legenda, dopo di lei; se non ci entrano si tagliano coi puntini e il testo intero è nel suggerimento
-  const notes = weatherMitigations(team).map(m => mitigationNote(m, lang));
+  const mitigations = weatherMitigations(team);
+  const notes = mitigations.map(m => mitigationNote(m, lang));
   // Il tooltip DreamDex: sulla casella (slot >= 0) il colpo sui due lati, sul tipo in testata (slot -1) l'attaccante
   const tip = useFloatAnchor<{ slot: number; col: number }>();
   const card = useMemberTip(400, undefined, true);
@@ -189,7 +191,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           ? <FocusNote name={battleName(team[focus.slot])} band="two" text={t(`hold.focus.${focus.band}`, { name: battleName(team[focus.slot]) })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>}
         {!focus && notes.length > 0 && (
-          <NotesLine id={notesId} notes={notes} />
+          <NotesLine id={notesId} notes={notes} mitigations={mitigations} />
         )}
       </div>
     </div>
@@ -247,16 +249,29 @@ function DefenseTypesLegend() {
  * DreamDex (col mouse e col fuoco, prima era il title del browser); per lo screen reader il testo intero c'è sempre e la
  * griglia lo usa come descrizione (`id`).
  */
-function NotesLine({ id, notes }: { id: string; notes: string[] }) {
+function NotesLine({ id, notes, mitigations }: { id: string; notes: string[]; mitigations: WeatherMitigation[] }) {
+  const t = useT();
+  const lang = useLang();
   const tip = useFloatAnchor<true>();
+  const name = (m: WeatherMitigation) => t(`conditionName.${m.condition}` as Parameters<typeof t>[0]);
+  const parts = mitigations.map(m => mitigationParts(m, lang));
+  const one = mitigations.length === 1;
   return (
     <>
       <span id={id} className="ht-notes note" tabIndex={0} {...tip.bind(true)}>
         <Typed text={notes.join(' · ')} />
       </span>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="kot">
-          {notes.map(n => <p key={n} className="kot-none"><Typed text={n} /></p>)}
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="tip-w-s weather-tip">
+          <TipHead lead={<TipGlyph icon={mitigations.every(m => m.condition.endsWith('terrain')) ? 'field' : 'cloud'} />}
+            title={mitigations.map(name).join(' · ')} sub={one ? parts[0].source : undefined} />
+          {mitigations.map((m, i) => (
+            // Un cambio per riga: più effetti di fila in un paragrafo solo non si leggono
+            <TipSec key={m.condition} label={one ? undefined : `${name(m)} · ${parts[i].source}`}>
+              {parts[i].changes.map(c => <p key={c}><Typed text={c} /></p>)}
+            </TipSec>
+          ))}
+          <p className="ftip-foot">{t('tip.weather.notAlways')}</p>
         </FloatTip>
       )}
     </>

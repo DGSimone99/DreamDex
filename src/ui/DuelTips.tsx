@@ -11,10 +11,14 @@ import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
 import { MovePill } from './MovePill';
 import { PokemonIcon } from './PokemonName';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from './TipHead';
 import { typeColor } from './Sprite';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { useMediaQuery } from './useMediaQuery';
 import { TOUCH_QUERY } from './TouchTips';
+
+/** La larghezza S dei tooltip (--tip-s): la scheda del consiglio è vestita da tooltip. */
+const TIP_S = 300;
 
 /** Quanti Pokémon mostra il tooltip di un effetto sul meta prima di "e altri N". */
 export const META_TIP_ROWS = 8;
@@ -77,7 +81,7 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
     setOpen(null);
     if (focus && was) chipRefs.current.get(was)?.focus();
   };
-  useAnchoredPop(anchor, pop, open !== null, { width: 324, prefer: 'above', gap: 8, sheet: true, onDismiss: () => close(false) });
+  useAnchoredPop(anchor, pop, open !== null, { width: TIP_S, prefer: 'above', gap: 8, sheet: true, onDismiss: () => close(false) });
   useEffect(() => {
     if (!open) return undefined;
     const away = (e: PointerEvent) => {
@@ -121,7 +125,7 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
         </button>
       )}
       {open && openQuick && (
-        <div className="duel-tip-card" ref={pop} id={cardId} role="dialog" aria-label={openQuick.label} popover={supportsPopover ? 'manual' : undefined}
+        <div className={`duel-tip-card ${openQuick.id}`} ref={pop} id={cardId} role="dialog" aria-label={openQuick.label} popover={supportsPopover ? 'manual' : undefined}
           onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } }}>
           <TipCard me={me} opp={opp} quick={openQuick} tip={tip} base={result?.overall ?? null} pick={tip ? picked[tip.id] ?? tip.best : 0}
             onPick={i => tip && setPicked(p => ({ ...p, [tip.id]: i }))} onClose={() => close()}
@@ -214,19 +218,24 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
   const diff = score !== null && base !== null ? score - base : null;
   return (
     <>
-      <div className="duel-tip-head">
-        <span className={`duel-tip-icon ${quick.id}`} aria-hidden="true"><Icon name={icon} /></span>
+      {/* La testata dei tooltip DreamDex (TipHead): il tondo col simbolo, la mossa come pillola o gli EV, la × al posto del valore */}
+      <div className="tip-head has-lead duel-tip-head">
+        <span className="tip-lead" aria-hidden="true"><TipGlyph icon={icon} /></span>
         {/* Una mossa: la sua pillola come nella Sfida (tipo, angoli alterni, linguetta con la potenza) */}
         {tip?.move
-          ? <span className="duel-tip-title"><MovePill name={tip.move} size="sm" className="duel-tip-mvp" /></span>
-          : <span className="duel-tip-title">{title}</span>}
-        <button type="button" className="duel-tip-close" aria-label={t('duel.tipClose')} onClick={onClose}><Icon name="close" /></button>
+          ? <span className="tip-title duel-tip-title"><MovePill name={tip.move} size="sm" className="duel-tip-mvp" /></span>
+          : <b className="tip-title duel-tip-title">{title}</b>}
+        <span className="tip-badge">
+          <button type="button" className="duel-tip-close" aria-label={t('duel.tipClose')} onClick={onClose}><Icon name="close" /></button>
+        </span>
       </div>
-      {compare}
-      {source}
+      <div className="tip-sec duel-tip-main">
+        {compare}
+        {source}
+      </div>
       {option && option.effects.length > 0 && (
-        <div className="duel-tip-fx">
-          <span className="duel-tip-label">{t('duel.tipMeta')}</span>
+        <div className="tip-sec duel-tip-fx">
+          <span className="tip-sec-label">{t('duel.tipMeta')}</span>
           {option.effects.map(fx => <EffectLine key={fx.kind} fx={fx} />)}
         </div>
       )}
@@ -295,9 +304,18 @@ function EffectLine({ fx }: { fx: MetaEffect }) {
         {touch && listOpen && <span id={listId} className="duel-fx-inline" aria-hidden="true">{list}</span>}
       </span>
       {!touch && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={up ? 'var(--good)' : 'var(--bad)'} side layer className="duel-fx-tip">
-          <div className="duel-fx-tip-head">{t('duel.fxTipHead')}</div>
-          {list}
+        <FloatTip rect={tip.anchor.rect} tone={up ? 'var(--good)' : 'var(--bad)'} side layer className="duel-fx-tip tip-w-s">
+          <TipHead lead={<TipGlyph icon={fx.kind.startsWith('take') ? 'shield' : 'sword'} />} title={`${before}${count}${after}`.trim()}
+            sub={fx.type ? typeName(fx.type, lang) : undefined} />
+          <TipSec label={t('duel.fxTipHead')}>
+            <TipRows>
+              {shown.map(s => (
+                <TipRow key={s.species} lead={<PokemonIcon name={s.species} />} title={s.species}
+                  value={<>{hits(s.before)} → <b className={up ? 'good' : 'bad'}>{hits(s.after)}</b></>} />
+              ))}
+            </TipRows>
+            {fx.shifts.length > META_TIP_ROWS && <p className="tip-more">{t('duel.fxMore', { n: fx.shifts.length - META_TIP_ROWS })}</p>}
+          </TipSec>
         </FloatTip>
       )}
     </div>

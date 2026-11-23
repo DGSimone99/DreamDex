@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { CoachProblem } from '../engine/coach';
 import { needLabel, type Need } from '../engine/needs';
 import { typeName } from '../i18n/game';
@@ -6,6 +6,9 @@ import { useLang, useT } from '../i18n/react';
 import { FloatTip, HiddenText, TipGo, useFloatAnchor } from './FloatTip';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
+import { Sprite } from './Sprite';
+import { SPRITE_TIP_ROW } from './spriteSizes';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from './TipHead';
 import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
 
@@ -69,6 +72,20 @@ export function ProblemPill({ problem, role }: { problem: CoachProblem; role?: s
   );
 }
 
+/**
+ * Di cosa parla un problema, per la testata del suo tooltip e per le righe del "+N": una minaccia è il Pokémon (la sua
+ * sprite), un ruolo mancante il ruolo, un problema di uno o due tipi i tipi; il resto la gravità ("Problema serio").
+ */
+function problemSubject({ problem, role }: ProblemEntry, t: ReturnType<typeof useT>, lang: ReturnType<typeof useLang>): { species?: string; lead?: ReactNode; title: string; plain: boolean } {
+  const subjects = problem.subjects ?? [];
+  if (isThreat(problem) && subjects.length > 0) return { species: subjects[0], title: subjects[0], plain: false };
+  if (role) return { lead: <TipGlyph icon="roles" />, title: needLabel(role as Need, lang), plain: false };
+  if ((problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0 && subjects.length <= 2) {
+    return { lead: <TipTypeIcon type={subjects[0]} />, title: subjects.map(type => typeName(type, lang)).join(' / '), plain: false };
+  }
+  return { lead: <TipGlyph icon="warning" />, title: t(problem.severity === 'serious' ? 'tip.problem.serious' : 'tip.problem.minor'), plain: true };
+}
+
 /** Una pillola: un problema, o un ruolo mancante (`role`: una pillola per ruolo, possono riempirli Pokémon diversi). */
 export type ProblemEntry = { problem: CoachProblem; role?: string };
 
@@ -88,9 +105,11 @@ const fullText = ({ problem, role }: ProblemEntry, t: ReturnType<typeof useT>, l
  */
 export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemEntry; onOpen?: () => void; as?: 'li' | 'span' }) {
   const t = useT();
+  const lang = useLang();
   const tip = useFloatAnchor<true>();
   const descId = useId();
   const { problem, role } = entry;
+  const subject = problemSubject(entry, t, lang);
   // Il problema intero (anche per un ruolo mancante: la frase con tutti i ruoli che mancano)
   const full = tipOf(problem, t);
   const props = { className: `area-chip ${problem.severity}${onOpen ? ' is-link' : ''}`, 'data-key': problem.key, 'aria-describedby': descId, ...tip.bind(true) };
@@ -103,8 +122,10 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
       {/* Il tooltip è solo visivo: le stesse parole ai lettori di schermo, e dove porta il pulsante */}
       <HiddenText id={descId}>{[full, onOpen ? t('overview.fix.go') : ''].filter(Boolean).join(' · ')}</HiddenText>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="kot area-chip-tip">
-          <p className="kot-none"><Typed text={full} /></p>
+        <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="tip-w-s area-chip-tip">
+          <TipHead sprite={subject.species} lead={subject.lead} title={subject.title}
+            sub={subject.plain ? undefined : t(problem.severity === 'serious' ? 'tip.problem.serious' : 'tip.problem.minor')} />
+          <TipSec><p><Typed text={full} /></p></TipSec>
           {onOpen && <TipGo place={t('analysis.view.coaching')} />}
         </FloatTip>
       )}
@@ -127,8 +148,20 @@ export function MoreProblems({ hidden, as: Tag = 'li' }: { hidden: ProblemEntry[
       <span aria-hidden="true">+{hidden.length}</span>
       <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {texts.join('; ')}</span>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="kot">
-          {hidden.map((e, i) => <p key={`${e.problem.key}|${e.role ?? ''}`} className="kot-none"><Typed text={texts[i]} /></p>)}
+        <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="tip-w-m area-more-tip">
+          <TipHead lead={<TipGlyph icon="warning" />} title={t(hidden.length === 1 ? 'tip.problems.moreOne' : 'tip.problems.moreMany', { n: hidden.length })} />
+          <TipSec>
+            <TipRows>
+              {hidden.map((e, i) => {
+                const subject = problemSubject(e, t, lang);
+                return (
+                  <TipRow key={`${e.problem.key}|${e.role ?? ''}`} className={`prob-${e.problem.severity}`}
+                    lead={subject.species ? <Sprite species={subject.species} size={SPRITE_TIP_ROW} /> : subject.lead}
+                    title={subject.title} sub={<Typed text={texts[i]} />} />
+                );
+              })}
+            </TipRows>
+          </TipSec>
         </FloatTip>
       )}
     </Tag>

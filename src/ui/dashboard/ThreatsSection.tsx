@@ -8,7 +8,7 @@ import type { KoFocus } from '../AreaDetail';
 import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { Icon } from '../icons';
 import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { DashCard, DashLink } from './DashCard';
 
 /**
@@ -126,25 +126,26 @@ export function ThreatsSection({ threats, onView }: {
       </div>
       {tip.anchor && tipThreat && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(firstType(tipThreat.species))} className="thr-tip">
-          <div className="ftip-head">
-            <Sprite species={tipThreat.species} size={SPRITE_TIP_ROW} />
-            <b>{tipThreat.species}</b>
-            <span className="thr-tip-use">{usage(tipThreat)}</span>
-          </div>
-          <ul className="thr-tip-why">
-            {reasonText(tipThreat).map((line, i) => (
-              <li key={line} className={tipThreat.reasons[i].by.length ? 'thin' : 'open'}>{line}</li>
-            ))}
-          </ul>
+          <TipHead sprite={tipThreat.species} title={tipThreat.species} sub={word(tipThreat)}
+            num={formatPercent(lang, tipThreat.usage)} qualifier={t('dash.threatUsageWord')} />
+          <TipSec>
+            <ul className="thr-tip-why">
+              {reasonText(tipThreat).map((line, i) => (
+                <li key={line} className={tipThreat.reasons[i].by.length ? 'thin' : 'open'}>{line}</li>
+              ))}
+            </ul>
+          </TipSec>
           <TipGo place={place} />
         </FloatTip>
       )}
       {moreTip.anchor && (
         <FloatTip rect={moreTip.anchor.rect} tone={hidden.some(x => x.status === 'open') ? 'var(--bad)' : 'var(--warn)'} className="thr-tip">
-          <div className="ftip-head"><b>{t('dash.threatsMoreHead', { n: hidden.length })}</b></div>
-          <ul className="thr-tip-why">
-            {hidden.map(x => <li key={x.species} className={x.status === 'open' ? 'open' : 'thin'}><b>{x.species}</b> {word(x)}</li>)}
-          </ul>
+          <TipHead lead={<TipGlyph icon="warning" />} title={t('dash.threatsMoreHead', { n: hidden.length })} />
+          <TipSec>
+            <ul className="thr-tip-why">
+              {hidden.map(x => <li key={x.species} className={x.status === 'open' ? 'open' : 'thin'}><b>{x.species}</b> {word(x)}</li>)}
+            </ul>
+          </TipSec>
           <TipGo place={place} />
         </FloatTip>
       )}

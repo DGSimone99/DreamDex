@@ -907,7 +907,9 @@ describe('Minacce del meta', () => {
     zama.blur();
     await act(async () => { zama.focus(); });
     const tip = await screen.findByText('Lo manda KO solo Iron Valiant', { selector: '.thr-tip li' }, { timeout: 1000 });
-    expect(tip.closest('.ftip')).toHaveTextContent('14,8% nel meta');
+    // L'uso nel meta a destra della testata: il numero, sotto la parola che lo spiega
+    expect(tip.closest('.ftip')!.querySelector('.tip-num')).toHaveTextContent('14,8%');
+    expect(tip.closest('.ftip')!.querySelector('.tip-qual')).toHaveTextContent('nel meta');
     // In fondo dove porta il clic sulla carta (TipGo)
     expect(tip.closest('.ftip')!.querySelector('.ftip-go')).toHaveTextContent('Clic: vai a Coverage meta');
     expect(zama).toHaveAccessibleDescription('Clic: vai a Coverage meta');

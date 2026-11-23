@@ -405,7 +405,6 @@
 }
 /* Il tooltip di una minaccia: nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
 .ftip.thr-tip { width: var(--tip-s); }
-.thr-tip-use { margin-left: auto; white-space: nowrap; font: 700 italic var(--tip-small)/1 var(--display); color: var(--muted); }
 .thr-tip-why { display: grid; gap: var(--sp-2); margin: 0; padding: 9px var(--sp-5); list-style: none; }
 .thr-tip-why li { padding-left: 9px; border-left: 2px solid var(--warn); }
 .thr-tip-why li.open { border-left-color: var(--bad); }

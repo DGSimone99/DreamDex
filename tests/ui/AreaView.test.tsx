@@ -182,7 +182,9 @@ describe('vista di un\'area sulla pagina', () => {
       const user = userEvent.setup();
       for (let i = 0; i < 20 && document.activeElement !== more; i++) await user.tab();
       expect(more).toHaveFocus();
-      await waitFor(() => expect(document.querySelector('.ftip.kot:not(.area-chip-tip)')).toHaveTextContent('Problema eProblema aProblema d'));
+      // La testata dice quanti, poi una riga per problema (nell'ordine)
+      await waitFor(() => expect(document.querySelector('.ftip.area-more-tip .tip-title')).toHaveTextContent('Altri 3 problemi'));
+      expect([...document.querySelectorAll('.ftip.area-more-tip .tip-row-sub')].map(el => el.textContent)).toEqual(['Problema e', 'Problema a', 'Problema d']);
       expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 3 problemi: Problema e; Problema a; Problema d');
     } finally {
       width.mockRestore();
