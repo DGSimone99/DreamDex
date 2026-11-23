@@ -227,20 +227,29 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     const fits = bottom(run) - bottom(why) >= 52;
     if (fits !== noneFits) setNoneFits(fits);
   });
-  // L'esagono del set nel corpo (sul computer), solo dove c'è un vuoto che lo contiene tutto: nella colonna con più spazio
+  // L'esagono del set nel corpo (computer, e scheda di tablet e telefono), solo dove c'è un vuoto che lo contiene tutto: nella colonna con più spazio
   // libero sotto. Altrimenti resta nel fumetto di Stat. Non allunga mai il dettaglio; la riga "Costa: niente" viene prima
   const hexWanted = !tight && !tabs;
   const [hexAt, setHexAt] = useState<'why' | 'run' | null>(null);
   useLayoutEffect(() => {
     let next: 'why' | 'run' | null = null;
     const body = bodyRef.current;
+    const aside = asideRef.current;
     const why = body?.querySelector<HTMLElement>('.detail-why');
     const run = body?.querySelector<HTMLElement>('.detail-run');
-    if (hexWanted && wideScreen() && body && why && run && why.offsetTop === run.offsetTop && body.scrollHeight <= body.clientHeight + 1) {
-      const end = body.getBoundingClientRect().bottom - parseFloat(getComputedStyle(body).paddingBottom || '0');
+    const actions = aside?.querySelector<HTMLElement>('.detail-actions');
+    // Sul computer il vuoto è in fondo al corpo (che non deve scorrere); nella scheda di tablet e telefono è fra il
+    // contenuto e i pulsanti in basso (la scheda non deve scorrere)
+    const wide = wideScreen();
+    const fits = wide ? !!body && body.scrollHeight <= body.clientHeight + 1 : !!aside && aside.scrollHeight <= aside.clientHeight + 1;
+    if (hexWanted && body && why && run && actions && fits) {
+      const end = wide ? body.getBoundingClientRect().bottom - parseFloat(getComputedStyle(body).paddingBottom || '0')
+        : actions.getBoundingClientRect().top - 12;
       const free = (col: HTMLElement) => end - Math.max(col.getBoundingClientRect().top,
         ...[...col.children].filter(el => !el.classList.contains('hex-part')).map(el => el.getBoundingClientRect().bottom));
-      const room = { why: free(why), run: free(run) };
+      // Colonne affiancate: la più libera; una sotto l'altra: in fondo, sotto il set
+      const side = why.offsetTop === run.offsetTop;
+      const room = { why: side ? free(why) : -1, run: free(run) };
       const best = room.why >= room.run ? 'why' : 'run';
       if (room[best] >= HEX_PART_H) next = best;
     }
