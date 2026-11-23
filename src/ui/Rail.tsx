@@ -9,6 +9,11 @@ import { FormatDialog } from './FormatDialog';
 import { choiceName, choiceSummary } from './formatName';
 import { hint } from './MoveTip';
 import { Icon } from './icons';
+import { useMediaQuery } from './useMediaQuery';
+
+/** Dove la scritta "Impostazioni" della barra è nascosta dal CSS (rail-champions.css, phone.css) e resta solo l'ingranaggio:
+ *  sotto i 1100 px sempre, in italiano anche nella barra stretta (fino a 1279 px) o bassa (fino a 799 px). */
+const SETTINGS_ICON_ONLY = { it: '(max-width: 1279px), (max-height: 799px)', en: '(max-width: 1099px)' } as const;
 
 /** L'icona di ogni famiglia. */
 const FAMILY_ICON = { competitive: 'trophy', game: 'gamepad', free: 'unlock' } as const;
@@ -48,6 +53,8 @@ function monthLabel(month: string): string {
  */
 export function Rail({ choice, memory, onPick, team, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
   const t = useT();
+  // Il fumetto col nome solo quando la scritta non si vede (altrimenti ripeterebbe quello che c'è già scritto)
+  const settingsIconOnly = useMediaQuery(SETTINGS_ICON_ONLY[lang === 'it' ? 'it' : 'en']);
   // La finestra del formato e la famiglia su cui si apre (aprirla non cambia il formato)
   const [open, setOpen] = useState<Family | null>(null);
   const plate = useRef<HTMLButtonElement>(null);
@@ -108,7 +115,7 @@ export function Rail({ choice, memory, onPick, team, meta, lang, onLangChange, t
             ))}
           </div>
           {onSettings && (
-            <button type="button" className="rail-settings" aria-label={t('settings.open')} {...hint(t('settings.open'))} onClick={onSettings}>
+            <button type="button" className="rail-settings" aria-label={t('settings.open')} {...hint(settingsIconOnly ? t('settings.open') : null)} onClick={onSettings}>
               <Icon name="gear" />
               <span className="rail-settings-text" aria-hidden="true">{t('settings.open')}</span>
             </button>

@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { loadPalette, savePalette } from '../../src/storage';
 import { chooseDex } from '../helpers/format';
@@ -27,11 +27,27 @@ describe('palette salvata', () => {
 });
 
 describe('Impostazioni', () => {
-  it("il pulsante della barra ha il fumetto dell'app, non il title del browser", () => {
+  it("con la scritta visibile il pulsante della barra non ripete il nome nel fumetto", () => {
     render(<App initialLang="it" data={fixtureData} storage={memory()} />);
     const button = screen.getByRole('button', { name: 'Impostazioni' });
-    expect(button).toHaveAttribute('data-hint', 'Impostazioni');
-    expect(button).toHaveAttribute('title', '');
+    expect(button).not.toHaveAttribute('data-hint');
+    expect(button).not.toHaveAttribute('title');
+  });
+  it("nella barra stretta (solo l'ingranaggio) il nome è nel fumetto dell'app, non nel title del browser", () => {
+    // jsdom non ha matchMedia: lo finge una barra stretta
+    const narrow = vi.fn((query: string) => ({
+      matches: query.includes('max-width: 1279px'), media: query, onchange: null,
+      addEventListener: () => undefined, removeEventListener: () => undefined, addListener: () => undefined, removeListener: () => undefined, dispatchEvent: () => false,
+    }) as MediaQueryList);
+    vi.stubGlobal('matchMedia', narrow);
+    try {
+      render(<App initialLang="it" data={fixtureData} storage={memory()} />);
+      const button = screen.getByRole('button', { name: 'Impostazioni' });
+      expect(button).toHaveAttribute('data-hint', 'Impostazioni');
+      expect(button).toHaveAttribute('title', '');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
   it('fissare Scarlatto e Violetto cambia la palette, la salva e resta dopo il riavvio', async () => {
     const user = userEvent.setup();
