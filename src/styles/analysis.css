@@ -401,7 +401,8 @@
  * rossa, i minori sono tenui. La tabella si stira fino in fondo: con pochi ruoli le righe si alzano.
  */
 .dash-role-body { display: flex; flex-direction: column; }
-.dash-role-grid { width: 100%; height: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+/* Si stira fino in fondo, ma ogni riga al massimo 36px (fasce 34px, testata 64px): con tanto spazio la tabella resta in alto */
+.dash-role-grid { width: 100%; height: min(100%, calc(64px + var(--seps, 2) * 34px + var(--rows, 8) * 36px)); border-collapse: collapse; font-size: var(--fs-small); }
 .dash-role-grid thead th { padding: 0 0 var(--sp-1); font-weight: 400; text-align: center; vertical-align: bottom; }
 /* Lo sprite si stringe con la sua colonna: le sei colonne stanno sempre tutte */
 .dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
@@ -1015,6 +1016,8 @@
 @media (prefers-reduced-motion: reduce) { .cov-tile { transition: none; } .cov-tile:hover { transform: none; } }
 /* Nessuna minaccia: il segno verde, alto quanto la griglia, così passando di scheda non si muove niente */
 .dash .dash-cov-panel { min-height: 0; }
+/* Cruscotto alto: Tipi e Meta insieme, uno sotto l'altro */
+.dash-cov-panel.both { display: grid; gap: var(--sp-4); }
 .dash .dash-meta-none { height: var(--cov-h); margin: 0; justify-content: center; }
 .dash .dash-meta-none .icon { width: 18px; height: 18px; }
 /* Tooltip della minaccia nella riga META: ogni ragione col segno del suo lato (scudo Difesa, spada Offesa) */

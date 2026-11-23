@@ -523,6 +523,17 @@ describe('Riassunto', () => {
     }
   });
 
+  it('Sinergie: due core a tre affiancati (solo triangolo e titolo); nel Riassunto ricco ognuno intero con chi para cosa', () => {
+    italianNames();
+    const second: Core = { ...trio, members: ['Pelipper', 'Ferrothorn', 'Heatran'] };
+    mount({ summary: summaryOf({ cores: [trio, second] }) });
+    expect(section('Sinergie').querySelector('.sum-duo')).not.toBeNull();
+    cleanup();
+    mount({ density: 'roomy', summary: summaryOf({ cores: [trio, second] }) });
+    expect(section('Sinergie').querySelector('.sum-duo')).toBeNull();
+    expect(section('Sinergie').querySelectorAll('.sum-tri-row.roomy .sum-cover')).toHaveLength(2);
+  });
+
   it('Sinergie: cruscotto basso su uno schermo alto, il triangolo resta', () => {
     italianNames();
     mount({ density: 'tight', summary: summaryOf({ cores: [trio] }) });
@@ -908,6 +919,14 @@ describe('Copertura › schede Tipi e Meta', () => {
     await toMeta(user);
     expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
     expect(cov()).toHaveTextContent('3 senza check · 4 con un solo check');
+  });
+
+  it('cruscotto alto (ricco): Tipi e Meta insieme, senza schede; in testata i numeri di tutti e due', () => {
+    mount({ density: 'roomy' });
+    expect(within(cov()).queryByRole('tablist')).toBeNull();
+    expect(within(cov()).getByRole('table')).toBeInTheDocument();
+    expect(tiles().length).toBeGreaterThan(0);
+    expect(cov()).toHaveTextContent(/offesa · .* difesa · 3 senza check · 4 con un solo check/);
   });
 
   it('team con meno di 6: il numero senza check in testata è neutro come quello della scheda Meta; con 6 è rosso', async () => {

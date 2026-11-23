@@ -89,7 +89,7 @@ export function OverviewDashboard({ data, summary, members, team = [], grade, bo
       <SummarySection summary={summary} members={members} grade={grade} density={density} rich={rich} bonusMalus={bonusMalus} onView={onView} onShowAll={teamCollapsed ? undefined : onCollapseTeam} />
       {/* Le minacce del meta sono la riga META della Copertura (la loro carta è stata tolta il 2026-11-22) */}
       {/* Un membro solo: niente allarmi in Copertura e Ruoli (in cima l'invito ad aggiungerne un altro) */}
-      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members === 1} incomplete={members < 6} onView={onView} />
+      <CoverageSection coverage={data.coverage} threats={threats ? data.threats : undefined} gentle={members === 1} incomplete={members < 6} both={rich} onView={onView} />
       <RolesSection roles={data.roles} density={density} gentle={members === 1} onView={onView} />
       <SpeedSection speed={data.speed} density={density} onView={onView} />
     </div>

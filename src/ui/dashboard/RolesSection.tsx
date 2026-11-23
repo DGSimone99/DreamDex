@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { needLabel } from '../../engine/needs';
 import type { DashboardData, RoleChip } from '../../engine/overviewDashboard';
 import { useLang, useT } from '../../i18n/react';
@@ -172,7 +172,9 @@ function RoleTable({ roles, titles }: { roles: DashboardData['roles']; titles: R
   const bands = LEVELS.map(level => missingFirst(roles.chips.filter(c => c.level === level)));
   return (
     <div className="dash-role-body dash-fit">
-      <table className="dash-role-grid" aria-label={t('area.roles')}>
+      {/* Righe alte al massimo come la riga piena (--rows, --seps in CSS): con tanto spazio la tabella resta in alto */}
+      <table className="dash-role-grid" aria-label={t('area.roles')}
+        style={{ '--rows': bands.reduce((n, band) => n + band.length, 0), '--seps': bands.filter(band => band.length > 0).length } as CSSProperties}>
         <thead>
           <tr>
             <td />

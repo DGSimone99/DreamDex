@@ -351,8 +351,9 @@ export function SummarySection({ summary, members, grade, density, rich = false,
   // core a tre sono righe come quelli a due (tre sprite unite dalla catena); il triangolo resta nelle altre densità
   const short = useMediaQuery(SHORT_SCREEN);
   const flat = density === 'tight' && short;
-  // Due o più core a tre: i primi due affiancati in una riga (solo triangolo e titolo), così stanno entrambi nella card
-  const duo: Synergy[] = trios.length >= 2 && !flat ? [{ duo: [trios[0], trios[1]] }] : [];
+  // Due o più core a tre: i primi due affiancati in una riga (solo triangolo e titolo), così stanno entrambi nella card;
+  // nel Riassunto ricco (cruscotto alto) c'è posto per ognuno intero, con le righe di chi para cosa
+  const duo: Synergy[] = trios.length >= 2 && !flat && !rich ? [{ duo: [trios[0], trios[1]] }] : [];
   const synergies: Synergy[] = [
     ...duo,
     ...trios.slice(duo.length * 2).map(core => ({ core })),
@@ -496,7 +497,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
             const view = synergyView(syn);
             // Sui core (a tre e a due): il tooltip con quanto regge chi para ogni tipo e chi protegge, anche col fuoco da tastiera
             const hover = syn.core ? coreTip.bind(syn.core) : undefined;
-            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!!syn.core && syn.core !== trios[0]} flat={flat} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
+            return <SynergyRow syn={syn} view={view} rich={rich} small={small} hover={hover} goId={hover && goIds.bonusMalus} second={!rich && !!syn.core && syn.core !== trios[0]} flat={flat} onClick={() => onView(syn.core ? 'bonusMalus' : 'roles')} />;
           }}
           moreTip={hidden => <MoreSynergies items={hidden.map(syn => synergyView(syn))} label={count('sum.moreSyn', hidden.length)} />} />
       </div>

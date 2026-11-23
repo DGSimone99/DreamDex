@@ -62,8 +62,13 @@ const TILES_DEFAULT = 7;
  * Al passaggio sulla minaccia il tooltip con i due lati e l'uso; il clic apre la Coverage meta del lato non coperto
  * (la Difesa se lo sono tutti e due) con la colonna della minaccia accesa.
  */
-export function CoverageSection({ coverage, threats, gentle = false, incomplete = false, onView }: {
+export function CoverageSection({ coverage, threats, gentle = false, incomplete = false, both = false, onView }: {
   coverage: DashboardData['coverage'];
+  /**
+   * Cruscotto alto (Riassunto ricco): c'è posto per Tipi e Meta insieme, uno sotto l'altro e senza schede; la testata dice
+   * i numeri di tutti e due. Altrimenti le due schede.
+   */
+  both?: boolean;
   /**
    * Un membro solo: niente allarmi (i buchi sono normali a team appena iniziato). Caselle scoperte e minacce in grigio
    * tratteggiato invece che rosse e gialle, niente numero rosso sulla scheda Meta.
@@ -87,7 +92,8 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
   const [chosen, setView] = useState<'types' | 'meta' | null>(null);
   const allGreen = coverage.cells.every(cell => cell.offense === 'ok' && cell.defense === 'ok');
   const view = chosen ?? (threats && allGreen ? 'meta' : 'types');
-  const meta = view === 'meta' && !!threats;
+  const stacked = both && !!threats;
+  const meta = (view === 'meta' || stacked) && !!threats;
   const reasonText = useReasonText();
   const thrTip = useFloatAnchor<string>();
   const moreTip = useFloatAnchor<true>();
@@ -145,7 +151,7 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
       : t('sr.coverage.none');
 
   // Le due schede: frecce destra e sinistra per passare dall'una all'altra
-  const tabs = threats && (
+  const tabs = threats && !stacked && (
     <span className="dash-tabs" role="tablist" aria-label={t('dash.tabsLabel')} data-view={view}
       onKeyDown={e => {
         if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
@@ -178,16 +184,43 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
 
   return (
     <DashCard className="dash-coverage" title={title} tabs={tabs}
-      meta={meta ? threatsMeta : typesMeta}
+      meta={stacked ? <>{typesMeta}{threatsMeta && <> · {threatsMeta}</>}</> : meta ? threatsMeta : typesMeta}
       links={<>
         {/* Tipi: ognuno porta alla sua Coverage tipi; Meta: alla sua Coverage meta */}
         <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => (meta ? openThreat('offense') : onView('strength', 'types'))} />
         <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => (meta ? openThreat('defense') : onView('defense', 'coverageTypes'))} />
       </>}>
       <p id={summaryId} hidden>{summary}</p>
-      <div ref={panel} role={threats ? 'tabpanel' : undefined} className="dash-cov-panel" aria-describedby={meta ? summaryId : undefined}>
-        {meta
-          ? list.length === 0
+      <div ref={panel} role={threats && !stacked ? 'tabpanel' : undefined} className={`dash-cov-panel${stacked ? ' both' : ''}`} aria-describedby={meta ? summaryId : undefined}>
+        {(!meta || stacked) && (
+            <table ref={nav.ref} className="dash-matrix" aria-label={title} aria-describedby={summaryId} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
+              <thead>
+                <tr>
+                  <td />
+                  {coverage.cells.map((cell, i) => (
+                    <th key={cell.type} scope="col" {...hint(names[i])}>
+                      <TypeIcon type={cell.type} />
+                      <span className="visually-hidden">{names[i]}</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">{offense}</th>
+                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} gentle={gentle} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`}
+                    onEnter={el => tip.open({ side: 'offense', i }, el)} onLeave={tip.close} />)}
+                </tr>
+                <tr>
+                  <th scope="row">{defense}</th>
+                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} gentle={gentle} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`}
+                    onEnter={el => tip.open({ side: 'defense', i }, el)} onLeave={tip.close} />)}
+                </tr>
+              </tbody>
+            </table>
+        )}
+        {meta && (
+          list.length === 0
             ? <p className="dash-note good dash-meta-none"><Icon name="check" />{t('dash.threatsNone')}</p>
             : (
               <ul className="cov-tiles" aria-label={`${title}: ${t('dash.tabMeta')}`} style={{ '--n': slots } as CSSProperties}>
@@ -224,33 +257,7 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
                 )}
               </ul>
             )
-          : (
-            <table ref={nav.ref} className="dash-matrix" aria-label={title} aria-describedby={summaryId} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
-              <thead>
-                <tr>
-                  <td />
-                  {coverage.cells.map((cell, i) => (
-                    <th key={cell.type} scope="col" {...hint(names[i])}>
-                      <TypeIcon type={cell.type} />
-                      <span className="visually-hidden">{names[i]}</span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th scope="row">{offense}</th>
-                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} gentle={gentle} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`}
-                    onEnter={el => tip.open({ side: 'offense', i }, el)} onLeave={tip.close} />)}
-                </tr>
-                <tr>
-                  <th scope="row">{defense}</th>
-                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} gentle={gentle} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`}
-                    onEnter={el => tip.open({ side: 'defense', i }, el)} onLeave={tip.close} />)}
-                </tr>
-              </tbody>
-            </table>
-          )}
+        )}
       </div>
       {/* Dove porta il clic sulle minacce, per i lettori di schermo */}
       {threats && (['defense', 'offense'] as const).map(side => <span key={side} id={goIds[side]} hidden>{goText(t, places[side])}</span>)}
