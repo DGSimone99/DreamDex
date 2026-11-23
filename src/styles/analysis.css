@@ -173,7 +173,7 @@
 .fix-bone { display: block; flex: none; height: 8px; border-radius: 4px; background: var(--raised); }
 @media (prefers-reduced-motion: reduce) { .fix-row.is-link { transition: none; } }
 /* L'etichetta "N problemi" in testa: rossa se ce n'è almeno uno grave, gialla coi soli minori, verde con la spunta senza proposte */
-.fix-label { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; padding: 1px var(--sp-4); border-radius: 3px; font-size: var(--fs-label); line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tone); background: var(--tone-bg); }
+.fix-label { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; padding: 1px var(--sp-4); border-radius: 3px; font-size: var(--fs-label); line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--tone); background: var(--tone-bg); }
 .fix-label .icon { width: 13px; height: 13px; }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fix-more { flex: none; padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; color: var(--muted); background: var(--raised); }
@@ -321,8 +321,8 @@
 }
 .sum-bm:hover { border-color: var(--line-soft); background: color-mix(in srgb, var(--accent) 7%, transparent); }
 .sum-bm:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.sum-bm-label { flex: none; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-.sum-bm-net { flex: none; font: 800 var(--fs-title-s)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+.sum-bm-label { flex: none; font: var(--col-head); line-height: 1; letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--faint); }
+.sum-bm-net { flex: none; font: 800 var(--fs-section)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
 .sum-bm .good { color: var(--good); }
 .sum-bm .bad { color: var(--bad); }
 .sum-bm .zero { color: var(--faint); }
@@ -330,7 +330,7 @@
 .sum-bm-item { white-space: nowrap; }
 .sum-bm-item + .sum-bm-item::before { content: "·"; margin: 0 var(--sp-3); color: var(--faint); }
 .sum-bm-item b { font-weight: 700; font-variant-numeric: tabular-nums; }
-.sum-bm-more { margin-left: var(--sp-4); padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; line-height: 16px; color: var(--muted); background: var(--raised); }
+.sum-bm-more { margin-left: var(--sp-4); padding: 0 var(--sp-3); font: 700 var(--fs-caption)/16px var(--display); font-variant-numeric: tabular-nums; color: var(--muted); background: var(--raised); }
 
 /*
  * Ruoli, stretto e normale: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una
@@ -350,7 +350,7 @@
 .dash-role-tag { --rt-h: 22px; display: inline-flex; align-items: stretch; min-height: var(--rt-h); overflow: hidden; font-size: var(--fs-caption); line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); }
 .dash-role-tag .icon { flex: none; box-sizing: border-box; width: var(--rt-h); height: auto; padding: 0 5px; stroke-width: 2.5; color: var(--good); background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
 .dash-role-tag .dash-role-name { align-self: center; padding: 0 var(--sp-4) 0 var(--sp-3); }
-.dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 22%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
+.dash-role.bad .dash-role-tag { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
 .dash-role.bad .dash-role-tag .icon { color: var(--text); background: color-mix(in srgb, var(--bad) 55%, var(--panel)); }
 /* Minori: più tenui; mancanti tratteggiati (non sono problemi) */
 .dash-role.minor .dash-role-tag { color: var(--muted); }
@@ -367,7 +367,7 @@
 .dash-role:not(.more):hover .dash-role-tag { border-color: color-mix(in srgb, var(--rc, var(--good)) 70%, transparent); }
 .dash-role-row { cursor: default; }
 .dash-role-row:hover > * { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-.dash-role.more { padding: 0 var(--sp-2); font-size: var(--fs-caption); font-weight: 600; color: var(--faint); }
+.dash-role.more { padding: 0 var(--sp-2); font: 700 var(--fs-caption)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--faint); }
 /* Stretto: etichette e chip più fitti */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
 .dash.tight .dash-role-list { gap: 3px var(--sp-4); padding: 3px 0; }
@@ -410,9 +410,9 @@
 /* Colonne come le barre di Champions: angoli dritti, un filo chiaro in cima */
 .dash-bar { position: relative; width: 70%; max-width: 40px; min-height: 2px; background: var(--line); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18); }
 .dash-bar.above { background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--panel))); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45); }
-.dash-bar small { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 1px; font-size: var(--fs-label); font-variant-numeric: tabular-nums; color: var(--muted); }
+.dash-bar small { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 1px; font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
 .dash-avg { position: absolute; left: 0; right: 0; z-index: 1; border-top: 1.5px dashed var(--warn); pointer-events: none; }
-.dash-avg span { position: absolute; left: 0; top: 0; transform: translateY(-50%); padding: 0 3px 0 0; font: 600 var(--fs-label)/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--warn); background: var(--panel); }
+.dash-avg span { position: absolute; left: 0; top: 0; transform: translateY(-50%); padding: 0 3px 0 0; font: 600 var(--fs-caption)/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--warn); background: var(--panel); }
 .dash-sprites { display: flex; gap: var(--sp-3); padding-left: var(--avg-gutter); }
 /* Lo sprite intero (gen 5 ha margine trasparente: un po' più grande della casella nominale), mai ritagliato; parte dalla riga di base delle barre */
 .dash-lane-sprite { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: flex-start; height: calc(var(--sprite) * 1.25); }
@@ -450,7 +450,7 @@
   .dash.tight .sum-tri { --tri-w: clamp(68px, calc((100cqh - 12px) * 150 / 128), 118px); --tri-badge: calc(var(--ti-chip) + 3px); }
   .dash.tight .sum-syn.trio { padding-block: 0; }
   .dash.tight .sum-cover { margin-top: var(--sp-1); gap: 1px; }
-  .dash.tight .sum-cover > span { font-size: var(--fs-label); line-height: 1.1; }
+  .dash.tight .sum-cover > span { font-size: var(--fs-caption); line-height: 1.1; }
   .dash.tight .sum-cover img { width: calc(var(--ti-inline) - 2px); height: calc(var(--ti-inline) - 2px); }
   .dash.tight .sum-sec-h { padding-bottom: 3px; }
 }
@@ -536,7 +536,7 @@
 .sum-tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
 .sum-tags { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .sum-tags .sum-tag { padding: var(--sp-1) var(--sp-3); gap: var(--sp-2); }
-.sum-to { flex: none; color: var(--faint); }
+.sum-to { flex: none; font-size: var(--fs-small); color: var(--faint); }
 /* Chi ne approfitta: mini-sprite accostati; vanno a capo invece di essere tagliati */
 .sum-users { min-width: 0; display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); }
 .sum-user { flex: none; display: flex; margin: calc(var(--sum-mini) * -0.1) calc(var(--sum-mini) * -0.08); }
@@ -583,11 +583,12 @@
 /* Il titolo va a capo invece di finire coi puntini (nel core solo fra un membro e l'altro: ogni "Buio-Acciaio" resta intero) */
 .sum-syn-head { min-width: 0; font-size: var(--fs-small); line-height: 1.15; overflow-wrap: anywhere; }
 .sum-core-part { white-space: nowrap; }
-.sum-syn-tag { margin-right: var(--sp-3); font: 700 var(--fs-label)/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); vertical-align: 1px; }
+.sum-syn-tag { margin-right: var(--sp-3); font: var(--col-head); line-height: 1; font-style: normal; letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--c); vertical-align: 1px; }
 .sum-syn-title { font: 700 var(--fs-small)/1.15 var(--display); }
-.sum-syn-text { font-size: var(--fs-caption); line-height: 1.3; color: var(--muted); }
+.sum-syn-text { font-size: var(--fs-small); line-height: 1.3; color: var(--muted); }
 .dash.rich .sum-syn-title { font-size: var(--fs-section); }
-.dash.rich .sum-syn-text { font-size: var(--fs-caption); }
+/* Nelle frasi i nomi sono grandi come i nomi delle righe di sopra (.sum-name): 14 nel Riassunto ricco largo, se no 13 */
+@media (min-width: 1321px) { .dash.rich .sum-syn-text { font-size: var(--fs-section); } }
 
 /* Core da 3 a triangolo (sinergie-trio, opzione A): sprite ai vertici su un piedistallo verde, frecce del giro, tipo parato su ogni lato */
 .sum-syn.trio { padding: var(--sp-2) var(--sp-2) var(--sp-2) 0; }
@@ -626,7 +627,7 @@
 .dash-summary { position: relative; }
 .dash-summary:has(.sum-more-below) { padding-bottom: var(--sp-10); }
 .sum-syn-sec:has(.sum-more-below) { position: static; }
-.sum-more-below { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; padding: 0 0 var(--sp-1); font: 700 italic var(--fs-label)/1 var(--display); color: var(--accent-ink); background: linear-gradient(to top, var(--field) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); border: 0; border-top: 1px solid var(--line); border-radius: 0; cursor: pointer; }
+.sum-more-below { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; padding: 0 0 var(--sp-1); font: 700 var(--fs-caption)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--accent-ink); background: linear-gradient(to top, var(--field) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); border: 0; border-top: 1px solid var(--line); border-radius: 0; cursor: pointer; }
 .sum-more-below .icon { width: 14px; height: 14px; margin-top: -2px; }
 .sum-more-below:hover { border-top-color: var(--accent); color: var(--accent); }
 .sum-more-below:hover .icon { animation: sum-more-nudge 0.6s ease-in-out infinite alternate; }
@@ -634,7 +635,7 @@
 @keyframes sum-more-nudge { to { transform: translateY(2px); } }
 @media (prefers-reduced-motion: reduce) { .sum-more-below:hover .icon { animation: none; } }
 .sum-cover { margin-top: var(--sp-2); display: flex; flex-direction: column; gap: 3px; }
-.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-caption); line-height: 1.25; white-space: nowrap; color: var(--muted); }
+.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-small); line-height: 1.25; white-space: nowrap; color: var(--muted); }
 .sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-block: var(--sp-1); margin-block: -2px; }
 .sum-cover img { flex: none; width: var(--ti-inline); height: var(--ti-inline); border-radius: 50%; }
 .sum-cover b { font-weight: 600; color: var(--text); }
@@ -866,7 +867,7 @@
 }
 
 /* Sinergie: il "+N" delle sinergie che non stanno è verde (sono sinergie in più); al passaggio il tooltip DreamDex le mostra */
-.sum-more-below.tipped > span, .sum-sec-more.tipped .sum-more { display: inline-block; padding: var(--sp-1) 7px; border-radius: 3px; font: 800 italic var(--fs-caption)/1.1 var(--display); color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); }
+.sum-more-below.tipped > span, .sum-sec-more.tipped .sum-more { display: inline-block; padding: var(--sp-1) 7px; border-radius: 3px; font: 700 var(--fs-caption)/1.1 var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); border: 1px solid color-mix(in srgb, var(--good) 50%, transparent); }
 .dash.rich .sum-more-below.tipped > span, .dash.rich .sum-sec-more.tipped .sum-more { font-size: var(--fs-section); }
 .sum-sec-more.tipped { cursor: help; }
 .sum-more-below.tipped:hover > span, .sum-sec-more.tipped:hover .sum-more { background: color-mix(in srgb, var(--good) 28%, transparent); }

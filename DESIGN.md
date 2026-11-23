@@ -386,6 +386,8 @@ Every size is a role token in `tokens.css` (`--fs-label` 11px up to `--fs-grade`
 ### Named Rules
 **The Readable First Rule.** Pick the size that reads best in its place, from the scale. 11px is the smallest step on the scale, not a target; propose options when in doubt.
 
+**The One Voice Per Role Rule.** Every uppercase label (table heads, CORE, BONUS/MALUS, "5 problemi") is `--col-head` with `--col-head-track`, colour aside. Every "+N" counter of hidden items is 700 `--fs-caption` Kanit upright, tabular. Gains and head numbers in a card are 14px italic (`--fs-section`). A Pokémon name inside a sentence is as big as the names in the rows around it.
+
 **The Official Names Rule.** UI copy follows the EN | IT switch. Pokémon names always stay official English. Moves, abilities, items, types and natures use the official Italian names in Italian. Team data, saves and Showdown text are always English.
 
 **The Names In Text Rule.** A Pokémon name inside prose is bold Text preceded by a type dot (split for dual types); type names take their lightened type colour, move names their type's text colour.
