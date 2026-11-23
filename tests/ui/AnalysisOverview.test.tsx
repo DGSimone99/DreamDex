@@ -364,11 +364,22 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemno single swap solves itGo to Coaching');
   });
 
-  it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto che dice che il Coaching lavora', () => {
-    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} onView={() => {}} /></LangProvider>);
-    const bones = container.querySelector('.fix-row.is-skeleton');
-    expect(bones).toHaveAttribute('aria-live', 'polite');
-    expect(bones).toHaveTextContent(/^Il Coaching sta calcolando…$/);
+  it('consigli ancora da calcolare (advice null): numero e colore subito, aspetta solo la parte delle proposte (senza link)', () => {
+    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })]} advice={null} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveAttribute('aria-live', 'polite');
+    expect(row).toHaveClass('is-waiting', 'serious');
+    expect(row.querySelector('.fix-label')).toHaveTextContent(/^2 problemi$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^Il Coaching sta calcolando…$/);
+    expect(within(row).queryByRole('button')).toBeNull();
+  });
+
+  it('consigli da calcolare con il team incompleto: neutra, "4 di 6 nel team" e i problemi nel testo', () => {
+    render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} members={4} onView={() => {}} /></LangProvider>);
+    const row = screen.getByRole('region', { name: 'Da sistemare' });
+    expect(row).toHaveClass('building');
+    expect(row.querySelector('.fix-label')).toHaveTextContent(/^4 di 6 nel team$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^1 problema · Il Coaching sta calcolando…$/);
   });
 
   it('team incompleto: striscia neutra "4 di 6 nel team", i problemi nel testo, niente rosso', () => {

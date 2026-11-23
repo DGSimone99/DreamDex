@@ -173,8 +173,9 @@
 .fix-row.is-link:hover .fix-go { background: var(--accent-wash); }
 .fix-row.is-link:has(.fix-go:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .fix-row .fix-go:focus-visible { outline: none; }
-/* Mentre i consigli si calcolano: lo stesso posto, tratteggiato e spento, con la luce che passa (.fill-skeleton) */
-.fix-row.is-skeleton { border-style: dashed; border-color: var(--line); border-left-style: solid; background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
+/* Mentre i consigli si calcolano: etichetta e colore già veri; solo la parte delle proposte è tenue, con la luce che
+   passa (.fill-skeleton) */
+.fix-row.is-waiting .fix-items { display: inline-flex; align-items: center; gap: var(--sp-4); }
 .fix-bone { display: block; flex: none; height: 8px; border-radius: 4px; background: var(--raised); }
 @media (prefers-reduced-motion: reduce) { .fix-row.is-link { transition: none; } }
 /* L'etichetta "N problemi" in testa: rossa se ce n'è almeno uno grave, gialla coi soli minori, verde con la spunta senza proposte */
