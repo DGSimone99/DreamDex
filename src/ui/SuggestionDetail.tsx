@@ -77,9 +77,6 @@ function BringGroups({ items, side, none }: { items: Bring[]; side: 'gain' | 'lo
  * esagono, pillole delle mosse), le azioni.
  */
 export type DetailTab = 'brings' | 'loses' | 'set';
-/** Sotto questa altezza del dettaglio intero (portatile basso col team aperto): testata bassa e set su una riga. Si misura
- *  il dettaglio, non il corpo: il corpo cambia proprio passando a basso (la testata si abbassa), e lì sfarfallerebbe. */
-const LOW_DETAIL = 400;
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
 /** Altezza dell'esagono nel corpo del dettaglio con la sua etichetta e lo spazio sopra (CSS .hex-part). */
 const HEX_PART_H = 168;
@@ -173,25 +170,31 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // Copia set e Smogon: coi nomi interi se c'è posto (2), coi nomi brevi "Copia" / "Smogon" (1), sennò solo icone (0)
   const actionsFit = useFitCount(actionsRef, 2, `${lang}|${actionLabel}`, undefined, true);
   const asideRef = useRef<HTMLElement>(null);
-  const [low, setLow] = useState(false);
   // Copia set: per un attimo "Copiato" con la spunta (come la carta del team), detto anche ai lettori di schermo
   const [copied, setCopied] = useState(false);
   useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1500); return () => window.clearTimeout(timer); }, [copied]);
   useEffect(() => setCopied(false), [item.species]);
+  const [tabs, setTabs] = useState(false);
+  // La versione bassa e le linguette dipendono solo dal contenuto che non entra (non dall'altezza del dettaglio): quando
+  // il dettaglio si allunga (sparisce la riga dei filtri, si chiude il team) si riprova la versione piena
   useEffect(() => {
     const aside = asideRef.current;
     if (!aside || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => { if (aside.clientHeight > 0) setLow(wideScreen() && aside.clientHeight < LOW_DETAIL); });
+    let last = aside.clientHeight;
+    const observer = new ResizeObserver(() => {
+      const now = aside.clientHeight;
+      if (now > last + 4) { setTabs(false); setTight(false); }
+      if (now > 0) last = now;
+    });
     observer.observe(aside);
     return () => observer.disconnect();
   }, []);
-  const [tabs, setTabs] = useState(false);
   // Se il corpo non entra, prima il set su due righe di testo (come sul dettaglio basso); solo se non basta, le linguette
   const [tight, setTight] = useState(false);
   const [ownTab, setOwnTab] = useState<DetailTab>('brings');
   const tab = tabProp ?? ownTab;
   const chooseTab = onTab ?? setOwnTab;
-  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${teamCollapsed}|${low}`;
+  const fitKey = `${item.species}|${replaceIndex}|${set.moves.join(',')}|${brings.length}|${loses.length}|${teamCollapsed}`;
   useLayoutEffect(() => { setTabs(false); setTight(false); }, [fitKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const body = bodyRef.current;
@@ -199,7 +202,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     // L'esagono messo nel vuoto (rimasto dal candidato di prima) non conta: se ora sborda lo toglie il suo effetto
     if (body.querySelector('.hex-part')) return;
     if (body.scrollHeight - body.clientHeight > 1) {
-      if (!low && !tight) setTight(true);
+      if (!tight) setTight(true);
       else setTabs(true);
     }
   });
@@ -210,7 +213,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   }, []);
   // Costa senza perdite: la riga "Niente…" su telefono e tablet (la scheda scorre) e, sul computer, solo se sta nel vuoto
   // sotto Perché accanto a un set più alto: non allunga mai il dettaglio (non lo fa passare alla versione bassa)
-  const noneWanted = loses.length === 0 && !!before && !lostRoles.length && !low && !tight && !tabs;
+  const noneWanted = loses.length === 0 && !!before && !lostRoles.length && !tight && !tabs;
   const [noneFits, setNoneFits] = useState(false);
   useLayoutEffect(() => {
     if (!noneWanted) return;
@@ -226,7 +229,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   });
   // L'esagono del set nel corpo (sul computer), solo dove c'è un vuoto che lo contiene tutto: nella colonna con più spazio
   // libero sotto. Altrimenti resta nel fumetto di Stat. Non allunga mai il dettaglio; la riga "Costa: niente" viene prima
-  const hexWanted = !low && !tight && !tabs;
+  const hexWanted = !tight && !tabs;
   const [hexAt, setHexAt] = useState<'why' | 'run' | null>(null);
   useLayoutEffect(() => {
     let next: 'why' | 'run' | null = null;
@@ -249,7 +252,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const tabKeys: DetailTab[] = ['brings', 'set'];
 
   return (
-    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${low || tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+    <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi; a destra quanto sale il voto e, sotto, il verso di ogni area */}
