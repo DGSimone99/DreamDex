@@ -420,6 +420,7 @@ describe('Cruscotto della Panoramica', () => {
     const lanes = screen.getByRole('region', { name: 'Velocità' }).querySelectorAll('.dash-lane');
     expect(lanes[0]).toHaveTextContent(/Dragapult.*421/);
     expect(lanes[1]).toHaveTextContent(/Toxapex.*167/);
+    expect(lanes[0]).toHaveTextContent(/^Dragapult, 421$/);
   });
 
   it('normale: il controllo con chi lo porta', () => {
@@ -782,6 +783,14 @@ describe('Cruscotto: misure', () => {
     expect(within(roles).getByText('+3')).toBeInTheDocument();
   });
 
+  it('Riassunto: il nome di una riga a pezzi separati da virgole (niente "PelipperPioggia" né freccia)', () => {
+    mount({ summary: summaryOf({ conditions: [
+      { member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [{ name: 'Barraskewda', via: 'Swift Swim' }], via: 'Drizzle', item: '' },
+    ] }) });
+    const region = screen.getByRole('region', { name: 'Riassunto' });
+    expect(within(region).getByRole('button', { name: /^Pelipper, Pioggia, aiuta Barraskewda · / })).toBeInTheDocument();
+  });
+
   it('Riassunto: le righe di una sezione che non stanno vanno nel "+N" (al singolare per una)', () => {
     stubSumFit(() => 1);
     mount({ summary: summaryOf({ conditions: [
@@ -855,6 +864,8 @@ describe('Copertura › schede Tipi e Meta', () => {
     mount();
     expect(within(cov()).getByRole('tab', { name: 'Tipi' })).toHaveAttribute('aria-selected', 'true');
     expect(within(cov()).getByRole('tab', { name: /^Meta/ })).toHaveTextContent('Meta3');
+    // Per i lettori di schermo numero e parola separati: niente "Meta3"
+    expect(within(cov()).getByRole('tab', { name: 'Meta, 3 minacce scoperte' })).toBeInTheDocument();
     expect(cov().querySelectorAll('thead .dash-type')).toHaveLength(18);
     expect(screen.queryByRole('region', { name: 'Minacce del meta' })).toBeNull();
     await toMeta(user);

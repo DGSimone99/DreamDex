@@ -63,7 +63,8 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
           )}
           {lanes.map((lane, i) => (
             <span key={`${lane.species}-${i}`} className="dash-lane" data-nav="" {...hover(i)} {...tip.focus(i)}>
-              <span className="visually-hidden">{lane.species}</span>
+              {/* Nome e velocità separati per i lettori di schermo: "Barraskewda, 371" */}
+              <span className="visually-hidden">{`${lane.species}, `}</span>
               <span className={`dash-bar${lane.above ? ' above' : ''}`} style={{ height: pct(lane.speed) }}><small>{lane.speed}</small></span>
             </span>
           ))}

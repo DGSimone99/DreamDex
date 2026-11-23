@@ -1025,6 +1025,7 @@ export const it: Record<keyof typeof en, string> = {
   'tip.special': "Speciale",
   'sum.showMore': "Riduci il team per vedere: {label}",
   'sum.noSynergies': "Nessuna sinergia: ognuno lavora da solo",
+  'sum.helps': "aiuta {names}",
   'sum.link.core': "Core",
   'sum.link.pivot': "Pivot",
   'sum.link.batonpass': "Baton Pass",

@@ -362,6 +362,8 @@ export function SummarySection({ summary, members, grade, density, rich = false,
     return (
       // Al passaggio (o col fuoco) il tooltip della condizione: effetti e chi ne approfitta
       <button type="button" className={`sum-line${packed ? ' sum-pill' : ''}`} onClick={() => onView('roles')}
+        // Il nome a pezzi separati da virgole (niente "PelipperPioggia"; la freccia è solo a vista)
+        aria-label={[row.member, row.label, row.users.length ? t('sum.helps', { names: row.users.map(userLabel).join(', ') }) : ''].filter(Boolean).join(', ')}
         onMouseEnter={e => condTip.open(row, e.currentTarget)} onMouseLeave={condTip.close}
         onFocus={e => condTip.open(row, e.currentTarget)} onBlur={condTip.close} aria-describedby={goIds.roles}>
         <Plinth name={row.member} size={small} />
@@ -371,7 +373,6 @@ export function SummarySection({ summary, members, grade, density, rich = false,
           ? (
             <span className="sum-pill-n more-n">
               <span aria-hidden="true">+{row.users.length}</span>
-              <span className="visually-hidden">{`→ ${row.users.map(userLabel).join(', ')}`}</span>
             </span>
           )
           : (
@@ -388,7 +389,8 @@ export function SummarySection({ summary, members, grade, density, rich = false,
     );
   };
   const hazardLine = (row: HazardRow) => (
-    <button type="button" className={`sum-line${packed ? ' sum-pill' : ''}`} onClick={() => onView('roles')}>
+    <button type="button" className={`sum-line${packed ? ' sum-pill' : ''}`} onClick={() => onView('roles')}
+      aria-label={[row.member, ...row.moves.map(move => gameName('move', move, lang))].join(', ')}>
       <Plinth name={row.member} size={small} />
       <span className="sum-name">{row.member}</span>
       <span className="sum-tags">{row.moves.map(move => <MovePill key={move} name={move} size="sm" />)}</span>

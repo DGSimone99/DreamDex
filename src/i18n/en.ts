@@ -1023,6 +1023,7 @@ export const en = {
   'tip.special': "Special",
   'sum.showMore': "Collapse the team to see: {label}",
   'sum.noSynergies': "No synergies: everyone works alone",
+  'sum.helps': "helps {names}",
   'sum.link.core': "Core",
   'sum.link.pivot': "Pivot",
   'sum.link.batonpass': "Baton Pass",
