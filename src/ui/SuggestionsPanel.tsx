@@ -542,7 +542,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         {!selected && !full && (
           <aside className={`detail detail-empty${stale ? ' is-loading' : ''}`} aria-hidden="true">
             <Icon name="search" />
-            <p>{tr(stale ? 'suggest.detailLoading' : 'suggest.detailEmpty')}</p>
+            {/* Lista vuota per una ricerca o per i filtri: niente "scegli dalla lista", il rimedio sta nella lista */}
+            <p>{tr(stale ? 'suggest.detailLoading' : filtering && items.length === 0 ? 'suggest.detailNoMatch' : 'suggest.detailEmpty')}</p>
           </aside>
         )}
         {/* Tablet: il velo scuro sulla lista; toccarlo chiude la scheda (il CSS lo mostra solo lì) */}

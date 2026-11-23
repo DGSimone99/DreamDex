@@ -1541,6 +1541,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.full': "Team completo: usa Sostituisci su un membro per cercare alternative.",
   'suggest.needData': "Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.",
   'suggest.detailEmpty': "Scegli un Pokémon dalla lista per vedere cosa porta al team",
+  'suggest.detailNoMatch': "Nessun Pokémon da mostrare: cambia la ricerca o i filtri",
   'detail.smogon': "Apri su Smogon",
   'detail.smogonShort': "Smogon",
   'detail.smogonFor': "analisi per {format}",

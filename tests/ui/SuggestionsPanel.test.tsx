@@ -7,6 +7,7 @@ import { App } from '../../src/App';
 import { fixtureData, tusk } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { CARD_WAKE_MS } from '../../src/ui/CandidateCard';
+import { spyClipboard } from '../helpers/clipboard';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
 vi.setConfig({ testTimeout: 60000 });
@@ -46,6 +47,16 @@ describe('SuggestionsPanel', () => {
       .map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
     expect(grades).toHaveLength(4);
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
+  });
+
+  it('Copia set nel dettaglio: copia il set e per un attimo dice Copiato (anche ai lettori di schermo)', async () => {
+    const user = await setup('Great Tusk');
+    const copied = spyClipboard();
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    await user.click(within(detail).getByRole('button', { name: 'Copia set' }));
+    expect(copied()).not.toBe('');
+    expect(await within(detail).findByRole('status')).toHaveTextContent('Copiato');
+    expect(detail.querySelector('.detail-copy.done')).not.toBeNull();
   });
 
   it('col nome della carta i lettori di schermo sentono anche il voto (il numero per cui scegliere)', async () => {

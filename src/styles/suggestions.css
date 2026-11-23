@@ -382,7 +382,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Barra stretta (telefono): «al posto di» piccolo sopra, chi esce sotto (come «Tipo di team»), invece di sparire */
 @container toolbar (max-width: 560px) {
   .toolbar .mode-switch > .segmented .target-toggle { display: grid; grid-template-columns: auto auto; align-content: center; justify-content: center; gap: 3px var(--sp-2); padding: 0 var(--sp-5); }
-  .target-toggle .target-prefix { grid-column: 1 / -1; margin: 0; text-align: center; font: 700 10px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+  .target-toggle .target-prefix { grid-column: 1 / -1; margin: 0; text-align: center; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
   .target-toggle .target-prefix::after { content: none; }
   .target-toggle .chevron { align-self: center; }
 }

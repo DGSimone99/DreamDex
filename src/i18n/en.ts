@@ -1538,6 +1538,7 @@ export const en = {
   'suggest.full': "Team complete: use Replace on a member to look for alternatives.",
   'suggest.needData': "Smogon data is needed for suggestions. You can still search a Pokémon by name.",
   'suggest.detailEmpty': "Pick a Pokémon from the list to see what it brings to the team",
+  'suggest.detailNoMatch': "No Pokémon to show: change the search or the filters",
   'detail.smogon': "Open on Smogon",
   'detail.smogonShort': "Smogon",
   'detail.smogonFor': "analysis for {format}",

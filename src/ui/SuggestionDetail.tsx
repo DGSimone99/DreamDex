@@ -172,6 +172,10 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const actionsFit = useFitCount(actionsRef, 2, `${lang}|${actionLabel}`, undefined, true);
   const asideRef = useRef<HTMLElement>(null);
   const [low, setLow] = useState(false);
+  // Copia set: per un attimo "Copiato" con la spunta (come la carta del team), detto anche ai lettori di schermo
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1500); return () => window.clearTimeout(timer); }, [copied]);
+  useEffect(() => setCopied(false), [item.species]);
   useEffect(() => {
     const aside = asideRef.current;
     if (!aside || typeof ResizeObserver === 'undefined') return;
@@ -364,9 +368,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
       <div ref={actionsRef} className={actionsFit === 2 ? 'detail-actions' : actionsFit === 1 ? 'detail-actions short' : 'detail-actions tight'}>
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
         {/* Nome intero, nome breve o solo l'icona, secondo lo spazio; il nome intero per i lettori di schermo e nel fumetto */}
-        <button type="button" className="detail-copy" aria-label={tr('suggest.copySet')} onClick={() => copyText(exportShowdown([set]))} {...hint(tr('suggest.copySet'))}>
-          <Icon name="copy" /> <span className="btn-label" aria-hidden="true"><span className="lbl-full">{tr('suggest.copySet')}</span><span className="lbl-short">{tr('suggest.copySetShort')}</span></span>
+        <button type="button" className={copied ? 'detail-copy done' : 'detail-copy'} aria-label={tr('suggest.copySet')}
+          onClick={async () => { if (await copyText(exportShowdown([set]))) setCopied(true); }} {...hint(tr('suggest.copySet'))}>
+          <Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label" aria-hidden="true">
+            <span className="lbl-full">{tr(copied ? 'team.copied' : 'suggest.copySet')}</span><span className="lbl-short">{tr(copied ? 'team.copied' : 'suggest.copySetShort')}</span>
+          </span>
         </button>
+        <span className="visually-hidden" role="status">{copied ? tr('team.copied') : ''}</span>
         <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} short />
       </div>
     </aside>
