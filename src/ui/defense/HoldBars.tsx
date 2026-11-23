@@ -137,7 +137,7 @@ export function TypeAttackers({ formatId }: { formatId: FormatId }) {
   const t = useT();
   return (
     <>
-      <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.attackersTitle')} sub={t('ddetail.attackerTip')} />
+      <TipHead lead={<TipGlyph icon="shield" />} title={t('hold.attackersTitle')} sub={t('ddetail.attackerTableTip')} />
       <TipSec>
         <TypeStatTable cols={[
           { label: t('stat.atk'), value: type => dummyStats(formatId, type).atk },
@@ -185,7 +185,7 @@ export function WorstHits({ hits }: { hits: WorstHit[] }) {
         );
       })}
       {open?.tip && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={open.color ?? 'var(--faint)'} className={`tht${open.kind === 'type' ? ' dht' : ''}`}>{open.tip}</FloatTip>
+        <FloatTip rect={tip.anchor.rect} tone={open.color ?? 'var(--faint)'} className={`tip-w-m tht${open.kind === 'type' ? ' dht' : ''}`}>{open.tip}</FloatTip>
       )}
     </span>
   );

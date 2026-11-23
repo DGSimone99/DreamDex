@@ -6,8 +6,8 @@ import { anyGameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { tileStyle, typeIconUrl } from '../typeIcons';
 import { MovePill } from '../MovePill';
+import { TipGlyph, TipHead, TipSec, TipTypeIcon } from '../TipHead';
 
 /**
  * Il tipo che corrisponde a una condizione (meteo, campo, Trick Room, schermi, Ventoincoda): colore e icona della sua
@@ -19,24 +19,28 @@ export const CONDITION_TYPE: Record<string, TypeName> = {
   trickroom: 'Psychic', reflect: 'Psychic', lightscreen: 'Psychic', auroraveil: 'Ice', tailwind: 'Flying',
 };
 
-/** Un effetto della condizione: icona del tipo se c'è, frase, valore con la freccia e il tono (buono o cattivo per chi la porta). */
-interface Effect { type?: TypeName; text: MessageKey; vars?: Record<string, string>; value?: string; dir?: 'up' | 'down'; tone: 'good' | 'bad' | 'plain' }
+/**
+ * Un effetto della condizione, come una casella della scheda mossa di Champions: `label` sulla fascia in maiuscoletto
+ * (col tipo, se c'è), sotto il valore grande con la freccia (`value`, `dir`) o una parola (`word`), e la nota piccola su
+ * chi vale (`note`; senza: "per tutti" o "per il tuo team"). `tone`: buono o cattivo per chi la porta.
+ */
+interface Effect { type?: TypeName; label: MessageKey; value?: string; word?: MessageKey; dir?: 'up' | 'down'; note?: MessageKey; tone: 'good' | 'bad' | 'plain' }
 
 /** Gli effetti di ogni condizione, in breve (il dettaglio vero sta nelle schede). */
 const EFFECTS: Record<string, Effect[]> = {
-  rain: [{ type: 'Water', text: 'ctip.moves', value: '50%', dir: 'up', tone: 'good' }, { type: 'Fire', text: 'ctip.moves', value: '50%', dir: 'down', tone: 'bad' }],
-  sun: [{ type: 'Fire', text: 'ctip.moves', value: '50%', dir: 'up', tone: 'good' }, { type: 'Water', text: 'ctip.moves', value: '50%', dir: 'down', tone: 'bad' }],
-  sand: [{ type: 'Rock', text: 'ctip.typeSpd', value: '50%', dir: 'up', tone: 'good' }, { text: 'ctip.sandChip', value: '6%', tone: 'bad' }],
-  snow: [{ type: 'Ice', text: 'ctip.typeDef', value: '50%', dir: 'up', tone: 'good' }],
-  electricterrain: [{ type: 'Electric', text: 'ctip.movesGround', value: '30%', dir: 'up', tone: 'good' }, { text: 'ctip.noSleep', tone: 'plain' }],
-  psychicterrain: [{ type: 'Psychic', text: 'ctip.movesGround', value: '30%', dir: 'up', tone: 'good' }, { text: 'ctip.noPriority', tone: 'plain' }],
-  grassyterrain: [{ type: 'Grass', text: 'ctip.movesGround', value: '30%', dir: 'up', tone: 'good' }, { text: 'ctip.grassyHeal', value: '6%', dir: 'up', tone: 'good' }],
-  mistyterrain: [{ type: 'Dragon', text: 'ctip.movesOnGround', value: '50%', dir: 'down', tone: 'bad' }, { text: 'ctip.noStatus', tone: 'plain' }],
-  trickroom: [{ text: 'ctip.trickRoom', tone: 'plain' }],
-  reflect: [{ text: 'ctip.physicalTaken', value: '50%', dir: 'down', tone: 'good' }],
-  lightscreen: [{ text: 'ctip.specialTaken', value: '50%', dir: 'down', tone: 'good' }],
-  auroraveil: [{ text: 'ctip.physicalTaken', value: '50%', dir: 'down', tone: 'good' }, { text: 'ctip.specialTaken', value: '50%', dir: 'down', tone: 'good' }],
-  tailwind: [{ text: 'ctip.teamSpeed', value: '×2', dir: 'up', tone: 'good' }],
+  rain: [{ type: 'Water', label: 'ctip.moves', value: '50%', dir: 'up', tone: 'good' }, { type: 'Fire', label: 'ctip.moves', value: '50%', dir: 'down', tone: 'bad' }],
+  sun: [{ type: 'Fire', label: 'ctip.moves', value: '50%', dir: 'up', tone: 'good' }, { type: 'Water', label: 'ctip.moves', value: '50%', dir: 'down', tone: 'bad' }],
+  sand: [{ type: 'Rock', label: 'ctip.l.spd', value: '50%', dir: 'up', note: 'ctip.n.ofType', tone: 'good' }, { label: 'ctip.l.chip', value: '6%', note: 'ctip.n.notRGS', tone: 'bad' }],
+  snow: [{ type: 'Ice', label: 'ctip.l.def', value: '50%', dir: 'up', note: 'ctip.n.ofType', tone: 'good' }],
+  electricterrain: [{ type: 'Electric', label: 'ctip.moves', value: '30%', dir: 'up', note: 'ctip.n.ofGround', tone: 'good' }, { label: 'ctip.l.sleep', word: 'ctip.w.none', note: 'ctip.n.forGround', tone: 'plain' }],
+  psychicterrain: [{ type: 'Psychic', label: 'ctip.moves', value: '30%', dir: 'up', note: 'ctip.n.ofGround', tone: 'good' }, { label: 'ctip.l.priority', word: 'ctip.w.none', note: 'ctip.n.onGround', tone: 'plain' }],
+  grassyterrain: [{ type: 'Grass', label: 'ctip.moves', value: '30%', dir: 'up', note: 'ctip.n.ofGround', tone: 'good' }, { label: 'ctip.l.heal', value: '6%', dir: 'up', note: 'ctip.n.forGround', tone: 'good' }],
+  mistyterrain: [{ type: 'Dragon', label: 'ctip.moves', value: '50%', dir: 'down', note: 'ctip.n.onGround', tone: 'bad' }, { label: 'ctip.l.status', word: 'ctip.w.none', note: 'ctip.n.forGround', tone: 'plain' }],
+  trickroom: [{ label: 'ctip.l.order', word: 'ctip.w.slower', tone: 'plain' }],
+  reflect: [{ label: 'ctip.l.physical', value: '50%', dir: 'down', note: 'ctip.n.taken', tone: 'good' }],
+  lightscreen: [{ label: 'ctip.l.special', value: '50%', dir: 'down', note: 'ctip.n.taken', tone: 'good' }],
+  auroraveil: [{ label: 'ctip.l.physical', value: '50%', dir: 'down', note: 'ctip.n.taken', tone: 'good' }, { label: 'ctip.l.special', value: '50%', dir: 'down', note: 'ctip.n.taken', tone: 'good' }],
+  tailwind: [{ label: 'ctip.l.speed', value: '×2', dir: 'up', tone: 'good' }],
 };
 
 /** Chi ne approfitta: cosa ottiene con la sua abilità o mossa (id), in breve. */
@@ -71,19 +75,20 @@ const Arrow = ({ dir }: { dir: 'up' | 'down' }) => (
   <svg className="ctip-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d={dir === 'up' ? UP : DOWN} /></svg>
 );
 
-/** Abilità come lastra inclinata, mossa col nome nel colore del suo tipo. */
+/** Abilità come lastra inclinata, mossa come pillola (MovePill). */
 function Via({ via }: { via: string }) {
   const lang = useLang();
   const move = getMove(via);
   if (!move) return <span className="ctip-ab">{anyGameName(via, lang)}</span>;
-  return (
-<MovePill name={move.name} size="sm" tip={false} className="ctip-mv" />
-  );
+  return <MovePill name={move.name} size="sm" tip={false} className="ctip-mv" />;
 }
 
 /**
- * Il tooltip di una riga di Meteo e campo: testata nel colore della condizione (con una texture sua: la pioggia scende),
- * chi la porta e quanto dura; gli effetti come lastre inclinate; chi ne approfitta, con cosa e cosa ottiene.
+ * Il tooltip di una riga di Meteo e campo (vedi DESIGN.md, "Tooltips"): la testata unica nel colore della condizione (con
+ * una texture sua: la pioggia scende), la tessera del tipo, il nome, sotto quanto dura, a destra chi la porta (sprite e
+ * abilità o mossa). Gli effetti come le caselle della scheda mossa (MoveTip: fascia tinta in maiuscoletto, valore grande
+ * nello slot incassato, sotto per chi vale); chi ne approfitta a righe alterne come le statistiche dell'editor (sprite in
+ * piedi, nome, sotto la mossa come pillola o l'abilità, a destra cosa ottiene).
  */
 export function ConditionTip({ row }: { row: ConditionRow }) {
   const t = useT();
@@ -97,38 +102,50 @@ export function ConditionTip({ row }: { row: ConditionRow }) {
     ? t('ctip.whileIn', { name: row.member })
     : longer ? t('ctip.turnsItem', { n: 8, item: anyGameName(row.item, lang) }) : t('ctip.turns', { n: turns });
   const scope = t(TEAM_ONLY.has(row.key) ? 'ctip.forTeam' : 'ctip.forAll');
+  const effects = EFFECTS[row.key] ?? [];
   return (
     <>
-      <div className={`ctip-head k-${row.key}`}>
-        {type && <img className="ctip-ico ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />}
-        <b className="ctip-name">{row.label}</b>
-        <span className="ctip-sub">{duration}</span>
-        <span className="ctip-setter">
+      <TipHead className={`ctip-tex k-${row.key}`} lead={type ? <TipTypeIcon type={type} /> : <TipGlyph icon="cloud" />} title={row.label} sub={duration}
+        badge={<span className="ctip-setter">
           <span className="ctip-plinth"><Sprite species={row.member} size={SPRITE_TIP} /></span>
           <Via via={row.via} />
-        </span>
-      </div>
-      <div className="ctip-fx">
-        {(EFFECTS[row.key] ?? []).map((fx, i) => (
-          <div key={i} className={`ctip-plate ${fx.tone}`}>
-            {fx.type && <img className="ti-sq" style={tileStyle(fx.type)} src={typeIconUrl(fx.type)} alt="" draggable={false} />}
-            <span><b>{t(fx.text, { type: fx.type ? typeName(fx.type, lang) : '' })}</b>{scope}</span>
-            {fx.value && <strong>{fx.dir && <Arrow dir={fx.dir} />}{fx.value}</strong>}
-          </div>
-        ))}
-      </div>
-      {row.users.map(user => {
-        // Senza via: chi si potenzia dietro uno schermo; via senza voce nella tabella: Trick Room ("velocità bassa")
-        const benefit = user.via ? BENEFITS[toID(user.via)] : undefined;
-        const text = !user.via ? t('ctip.b.setup') : benefit ? t(benefit.text) : t('ctip.b.slow');
-        return (
-          <div key={user.name} className="ctip-user">
-            <span className="ctip-plinth good"><Sprite species={user.name} size={SPRITE_TIP_ROW} /></span>
-            <span className="ctip-who"><b>{user.name}</b>{user.via && benefit && <span className="ctip-via"><Via via={user.via} /></span>}</span>
-            <span className="ctip-eff">{benefit?.up && <Arrow dir="up" />}{text}</span>
-          </div>
-        );
-      })}
+        </span>} />
+      {effects.length > 0 && (
+        <div className="mtip-stats ctip-cells">
+          {effects.map((fx, i) => {
+            const typeLabel = fx.type ? typeName(fx.type, lang) : '';
+            return (
+              <span key={i} className={`ctip-cell ${fx.tone}`}>
+                <small>{t(fx.label, { type: typeLabel })}</small>
+                <b>
+                  {fx.value
+                    ? <span className="ctip-val">{fx.dir && <Arrow dir={fx.dir} />}{fx.value}</span>
+                    : fx.word && <span className="ctip-val word">{t(fx.word)}</span>}
+                  <span className="ctip-note">{fx.note ? t(fx.note, { type: typeLabel }) : scope}</span>
+                </b>
+              </span>
+            );
+          })}
+        </div>
+      )}
+      {row.users.length > 0 && (
+        <TipSec label={t('ctip.users')} className="ctip-users-sec">
+          <ul className="ctip-users">
+            {row.users.map(user => {
+              // Senza via: chi si potenzia dietro uno schermo; via senza voce nella tabella: Trick Room ("velocità bassa")
+              const benefit = user.via ? BENEFITS[toID(user.via)] : undefined;
+              const text = !user.via ? t('ctip.b.setup') : benefit ? t(benefit.text) : t('ctip.b.slow');
+              return (
+                <li key={user.name} className="ctip-user">
+                  <span className="ctip-mon"><Sprite species={user.name} size={SPRITE_TIP_ROW} /></span>
+                  <span className="ctip-who"><b>{user.name}</b>{user.via && benefit && <span className="ctip-via"><Via via={user.via} /></span>}</span>
+                  <span className="ctip-eff">{benefit?.up && <Arrow dir="up" />}{text}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </TipSec>
+      )}
     </>
   );
 }

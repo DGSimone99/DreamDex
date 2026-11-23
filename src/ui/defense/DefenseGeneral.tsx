@@ -18,6 +18,7 @@ import { effLabel } from '../effTag';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
+import { TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
@@ -74,13 +75,16 @@ function ShareTip({ who, share, words, meta }: { who: string; share: DefenseShar
   const t = useT();
   return (
     <>
-      <div className="ftip-head"><b>{who}</b><span className={`dsh-total${share.points < 0 ? ' neg' : ''}`}>{signed(share.points)}</span></div>
-      <div className="dsh-rows">
-        <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageTypes')}<b>{signed(share.types)}</b></span>
-        {meta && <span className="dsh-row"><i className="dsh-sw cover" />{t('detail.coverageMeta')}<b>{signed(share.meta)}</b></span>}
-        <span className="dsh-row"><i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />{t('ddetail.sustain')}<b>{signed(share.sustain)}</b></span>
-        {words.map((w, k) => <span key={k} className={`dsh-line ${w.tone}`}>{w.text}</span>)}
-      </div>
+      <TipHead sprite={who} title={who} num={<span className={share.points < 0 ? 'bad' : 'dsh-total'}>{signed(share.points)}</span>} />
+      <TipSec>
+        <TipRows className="dsh-rows">
+          <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageTypes')} value={signed(share.types)} />
+          {meta && <TipRow className="dsh-row" lead={<i className="dsh-sw cover" />} title={t('detail.coverageMeta')} value={signed(share.meta)} />}
+          <TipRow className="dsh-row" lead={<i className={`dsh-sw ${share.sustain < 0 ? 'loss' : 'gain'}`} />} title={t('ddetail.sustain')} value={signed(share.sustain)} />
+        </TipRows>
+      </TipSec>
+      {/* Quanto recupera e quanto perde, una cosa per riga */}
+      <TipSec className="dsh-lines">{words.map((w, k) => <p key={k} className={`dsh-line ${w.tone}`}>{w.text}</p>)}</TipSec>
     </>
   );
 }
@@ -97,7 +101,7 @@ function DefShare({ share, tip, label, describe }: { share: DefenseShare; tip: R
     <span className="og-share dsh" data-nav="" role="img" aria-label={label} aria-describedby={id} {...float.bind(true)}>
       <span className={`def-num total og-share-num${share.points < 0 ? ' neg' : ''}`}>{signed(share.points)}</span>
       <HiddenText id={id}>{describe}</HiddenText>
-      {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="dsh-tip">{tip}</FloatTip>}
+      {float.anchor && <FloatTip rect={float.anchor.rect} tone="var(--accent)" className="tip-w-s dsh-tip">{tip}</FloatTip>}
     </span>
   );
 }

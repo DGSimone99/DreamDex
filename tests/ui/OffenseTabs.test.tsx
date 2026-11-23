@@ -58,6 +58,8 @@ describe('Offesa: navigazione e guida', () => {
     await waitFor(() => expect(document.querySelector('.ftip.gat .gat-table')).not.toBeNull());
     const avg = document.querySelector('.ftip.gat')!;
     expect(avg.querySelectorAll('tbody tr')).toHaveLength(18);
+    // La tabella dei 18 tipi dice "di ogni tipo", il tooltip di un tipo solo "di questo tipo"
+    expect(avg.querySelector('.tip-sub')).toHaveTextContent('Il Pokémon medio di ogni tipo');
     await user.unhover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
     const metaAsk = within(panel).getByRole('button', { name: /^I \d+ Pokémon più usati$/ });
     await user.hover(metaAsk);
@@ -470,7 +472,8 @@ describe('Offesa: Generale', () => {
     const chip = memberRows()[0].querySelectorAll('td')[0].querySelector<HTMLElement>('.mcs .mcp:not(.z)')!;
     await user.hover(chip);
     const tip = await tipOf();
-    expect(tip.querySelector('.kot-head')).toHaveTextContent(chip.querySelector('.mvp-nm')!.textContent!);
+    expect(tip.querySelector('.tip-title')).toHaveTextContent(chip.querySelector('.mvp-nm')!.textContent!);
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(chip.querySelector('.mvp-tail')!.textContent!);
     expect(mainList(tip)!.children).toHaveLength(Number(chip.querySelector('.mvp-tail')!.textContent));
     await user.unhover(chip);
     expect(document.querySelector('.og-bands')).toBeNull();
@@ -517,6 +520,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tst'); if (!el) throw new Error('no tip'); return el; });
     expect(tip).toHaveTextContent(typeName('Water', 'it'));
     expect(tip.querySelectorAll('.tst-stats span')).toHaveLength(3);
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent('Il Pokémon medio di questo tipo');
     await user.unhover(water);
     expect(document.querySelector('.ftip.tst')).toBeNull();
   });
@@ -549,7 +553,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     document.querySelectorAll('.ct-table thead th').forEach(th => expect(th).not.toHaveAttribute('title'));
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
+    expect(tip.querySelector('.tip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
     expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
     expect(rating.offense.members.map(m => m.species)).toContain(tip.querySelector('.tht-name')!.textContent);
     // Uscendo dalla casella (anche verso il nome del membro, dentro la tabella) il tooltip si chiude
@@ -727,8 +731,8 @@ describe('Offesa: Coverage meta', () => {
     const cell = bodyRows()[0].querySelectorAll<HTMLElement>('td')[0];
     await user.hover(cell);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.tht'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip.querySelector('.ftip-head')).toHaveTextContent(sorted[0].species);
-    expect(tip.querySelector('.ftip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
+    expect(tip.querySelector('.tip-head')).toHaveTextContent(sorted[0].species);
+    expect(tip.querySelector('.tip-head .ftip-ko')!.textContent).toMatch(/^(OHKO|2HKO|3HKO|4HKO\+)$/);
     expect(tip.querySelector('.tht-body .tht-pct')!.textContent).toMatch(/^[0-9]+%$/);
     await user.unhover(cell);
   });

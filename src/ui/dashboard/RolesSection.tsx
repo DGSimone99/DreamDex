@@ -8,7 +8,8 @@ import type { Density } from '../OverviewDashboard';
 import { FloatTip, useFloatAnchor } from '../FloatTip';
 import { useRoving } from '../useRoving';
 import { Sprite } from '../Sprite';
-import { SPRITE_TIP } from '../spriteSizes';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
@@ -30,24 +31,27 @@ function useRoleText(chip: RoleChip) {
 }
 
 /**
- * Il tooltip DreamDex di un ruolo: il nome col suo livello e solo le sprite di chi lo copre (niente percentuali);
- * se manca, "Nessuno lo copre" in rosso (in grigio se non toglie punti).
+ * Il tooltip DreamDex di un ruolo: la testata unica (il tondo con la spunta o la ×, il nome del ruolo, sotto il livello; a
+ * destra quanti lo coprono, o "Manca"), poi una riga per chi lo copre (sprite e nome, niente percentuali); se manca,
+ * "Nessuno lo copre" in rosso (in grigio se non toglie punti).
  */
 function RoleTip({ chip }: { chip: RoleChip }) {
   const t = useT();
   const lang = useLang();
+  const n = chip.owners.length;
   return (
     <>
-      <div className={`role-tip-head ${stateOf(chip)}`}>
-        <Icon name={chip.covered ? 'check' : 'close'} />
-        <b>{needLabel(chip.need, lang)}</b>
-        <small>{t(`rdetail.level.${chip.level}`)}</small>
-      </div>
-      {chip.covered
-        ? <div className="role-tip-mons">{chip.owners.map(name => (
-          <span key={name} className="role-tip-mon"><span className="ctip-plinth good"><Sprite species={name} size={SPRITE_TIP} /></span><span>{name}</span></span>
-        ))}</div>
-        : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
+      <TipHead lead={<TipGlyph icon={chip.covered ? 'check' : 'close'} />} title={needLabel(chip.need, lang)} sub={t(`rdetail.level.${chip.level}`)}
+        {...(chip.covered
+          ? { num: n, qualifier: t(n === 1 ? 'roleTip.coverOne' : 'roleTip.coverMany') }
+          : { badge: <span className="tip-kind">{t('roleTip.missing')}</span> })} />
+      <TipSec>
+        {chip.covered
+          ? <TipRows className="role-tip-mons">{chip.owners.map(name => (
+            <TipRow key={name} className="role-tip-mon" lead={<Sprite species={name} size={SPRITE_TIP_ROW} />} title={name} />
+          ))}</TipRows>
+          : <p className={`role-tip-none ${chip.soft ? 'soft' : ''}`}>{t('roleTip.nobody')}</p>}
+      </TipSec>
     </>
   );
 }
@@ -57,7 +61,7 @@ function useRoleTip(chip: RoleChip) {
   const tip = useFloatAnchor<RoleChip>();
   const bind = tip.bind(chip);
   const node = tip.anchor && (
-    <FloatTip rect={tip.anchor.rect} tone={chip.covered ? 'var(--good)' : chip.soft ? 'var(--faint)' : 'var(--bad)'} className="role">
+    <FloatTip rect={tip.anchor.rect} tone={chip.covered ? 'var(--good)' : chip.soft ? 'var(--faint)' : 'var(--bad)'} className="tip-w-m role">
       <RoleTip chip={chip} />
     </FloatTip>
   );

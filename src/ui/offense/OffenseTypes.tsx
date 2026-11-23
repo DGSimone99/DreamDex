@@ -172,8 +172,8 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       </div>
       {card.tip}
       {headType && tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(headType)} className="tst">
-          <TypeStatsTip type={headType} foot={t('guide.off.targets.tip')}
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(headType)} className="tip-w-s tst">
+          <TypeStatsTip type={headType} sub={t('guide.off.targets.tip')}
             stats={[[t('stat.hp'), averageOf(headType).hp], [t('stat.def'), averageOf(headType).def], [t('stat.spd'), averageOf(headType).spd]]} />
         </FloatTip>
       )}

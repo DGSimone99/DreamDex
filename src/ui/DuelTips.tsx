@@ -305,8 +305,9 @@ function EffectLine({ fx }: { fx: MetaEffect }) {
       </span>
       {!touch && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={up ? 'var(--good)' : 'var(--bad)'} side layer className="duel-fx-tip tip-w-s">
-          <TipHead lead={<TipGlyph icon={fx.kind.startsWith('take') ? 'shield' : 'sword'} />} title={`${before}${count}${after}`.trim()}
-            sub={fx.type ? typeName(fx.type, lang) : undefined} />
+          {/* Titolo corto (l'effetto in due parole, su una riga a 300px), la frase intera sotto */}
+          <TipHead lead={<TipGlyph icon={fx.kind.startsWith('take') ? 'shield' : 'sword'} />} title={t(`duel.fxShort.${fx.kind}`)}
+            sub={`${before}${count}${after}`.trim() + (fx.type ? ` · ${typeName(fx.type, lang)}` : '')} />
           <TipSec label={t('duel.fxTipHead')}>
             <TipRows>
               {shown.map(s => (

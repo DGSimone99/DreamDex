@@ -95,7 +95,7 @@ export function TypeAverages({ formatId }: { formatId: FormatId }) {
   const avg = (type: TypeName) => typeAverage(type, { stats: null, sets: null, formatId });
   return (
     <>
-      <TipHead lead={<TipGlyph icon="sword" />} title={t('guide.off.targets.typesTitle')} sub={t('guide.off.targets.tip')} />
+      <TipHead lead={<TipGlyph icon="sword" />} title={t('guide.off.targets.typesTitle')} sub={t('guide.off.targets.tableTip')} />
       <TipSec>
         <TypeStatTable cols={[
           { label: t('stat.hp'), value: type => avg(type).hp },

@@ -45,7 +45,7 @@ export function SpeedMeta({ set, tier }: { set: TeamSet; tier: SpeedTier }) {
       <span className="speed-line-hint" aria-hidden="true">{t('editor.speedLineHint')}</span>
       <span id={id} className="visually-hidden">{description}</span>
       {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="speed">
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="tip-w-m speed">
           <SpeedTip lane={lane} vsMeta={tier.vsMeta} />
         </FloatTip>
       )}

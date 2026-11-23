@@ -10,15 +10,15 @@ import { weatherMitigations, type WeatherMitigation } from '../../engine/synergy
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
 import { mitigationNote, mitigationParts } from '../AnalysisTables';
-import { TipGlyph, TipHead, TipSec } from '../TipHead';
+import { TipGlyph, TipHead, TipSec, TipTypeIcon } from '../TipHead';
 import { EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
-import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
+import { TypeIcons } from '../typeIcons';
 import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { Sprite, typeColor } from '../Sprite';
-import { SPRITE_TIP } from '../spriteSizes';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { useMemberTip } from '../MemberCard';
 import { TypeStatsTip } from '../TypeStatsTip';
 import { HOLD_BANDS, HOLD_ORDER } from './holds';
@@ -175,13 +175,13 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
       </div>
       {card.tip}
       {tip.anchor && openType && anchor!.slot < 0 && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tst">
-          <TypeStatsTip type={openType} foot={t('ddetail.attackerTip')}
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tip-w-s tst">
+          <TypeStatsTip type={openType} sub={t('ddetail.attackerTip')}
             stats={[[t('stat.atk'), dummyStats(formatId, openType).atk], [t('stat.spa'), dummyStats(formatId, openType).spa]]} />
         </FloatTip>
       )}
       {tip.anchor && openType && openCell && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tht dht">
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(openType)} className="tip-w-m tht dht">
           <DefenseHitTip type={openType} species={battleName(team[anchor!.slot])} cell={openCell}
             mult={effLabel(multipliers.get(openType as TypeName)?.[anchor!.slot] ?? 1, 'defense')} />
         </FloatTip>
@@ -217,20 +217,18 @@ export function DefenseHitTip({ type, species, cell, mult }: { type: string; spe
   };
   return (
     <>
-      <div className="ftip-head">
-        <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />
-        <b>{typeName(type as TypeName, lang)}</b>
-        {mult && <span className="tht-mult">{mult}</span>}
-        <span className={`ftip-ko def ${cell.band} tht-band`}>{HOLD_BANDS[cell.band].tag}</span>
-      </div>
-      <div className="tht-body">
-        <Sprite species={species} size={SPRITE_TIP} />
-        <span className="tht-text">
-          <span className="tht-name">{species}</span>
-          {side(t('tip.physical'), cell.physical)}
-          {side(t('tip.special'), cell.special)}
-        </span>
-      </div>
+      <TipHead lead={<TipTypeIcon type={type} />} title={typeName(type as TypeName, lang)}
+        badge={<span className={`ftip-ko def ${cell.band} tht-band`}>{HOLD_BANDS[cell.band].tag}</span>} qualifier={mult ?? undefined} />
+      <TipSec>
+        <div className="tht-body">
+          <Sprite species={species} size={SPRITE_TIP_ROW} />
+          <span className="tht-text">
+            <span className="tht-name">{species}</span>
+            {side(t('tip.physical'), cell.physical)}
+            {side(t('tip.special'), cell.special)}
+          </span>
+        </div>
+      </TipSec>
     </>
   );
 }

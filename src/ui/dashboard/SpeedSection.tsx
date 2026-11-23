@@ -66,7 +66,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
       </div>
       {density !== 'tight' && control}
       {tip.anchor && lanes[tip.anchor.key] && (
-        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="speed" side="left">
+        <FloatTip rect={tip.anchor.rect} tone="var(--accent)" className="tip-w-m speed" side="left">
           <SpeedTip lane={lanes[tip.anchor.key]} vsMeta={vsMeta} />
         </FloatTip>
       )}

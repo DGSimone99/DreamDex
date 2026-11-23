@@ -10,8 +10,8 @@ import { useLang, useT } from '../../i18n/react';
 import { MoveLine } from '../dashboard/CoverageTip';
 import { HOLD_BANDS } from '../defense/holds';
 import { Sprite } from '../Sprite';
-import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { tileStyle, typeIconUrl } from '../typeIcons';
+import { SPRITE_TIP_ROW } from '../spriteSizes';
+import { TipHead, TipSec, TipTypeIcon } from '../TipHead';
 
 /** Il badge dei colpi dal danno % (le soglie della Difesa: OHKO, 2HKO, 3HKO, 4HKO+). */
 const bandOf = (pct: number): HoldBand => holdBand(pct / 100);
@@ -39,8 +39,8 @@ function HitLine({ set, move, defTypes, pct }: { set: TeamSet; move: string | nu
 }
 
 /**
- * Il tooltip di una casella di Coverage tipi o Coverage meta dell'Offesa: il bersaglio in testata (icona e nome del tipo,
- * o sprite e nome della minaccia) col badge dei colpi; il membro con la sua mossa migliore (nel colore del tipo, categoria,
+ * Il tooltip di una casella di Coverage tipi o Coverage meta dell'Offesa: il bersaglio nella testata unica (tessera e nome
+ * del tipo, o la minaccia in piedi con la sua sprite) col badge dei colpi; il membro con la sua mossa migliore (nel colore del tipo, categoria,
  * potenza, efficacia, danno %); in righe a parte, con la stessa forma, dopo la danza, col meteo o il campo di un compagno
  * (triangolo azzurro, anche se cambia solo la mossa) o con Tera/Z, quando salgono di fascia.
  */
@@ -78,23 +78,22 @@ export function TypeHitTip({ species, set, type, target, hit, setupMove, onceNam
   ].filter((x): x is { label: string; effect: string; band: HoldBand; kind: 'setup' | 'once' | 'team' | 'combo'; move: string | null; pct: number } => !!x);
   return (
     <>
-      <div className={`ftip-head${target ? ' tht-target' : ''}`}>
-        {type ? <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} /> : <Sprite species={target ?? ''} size={SPRITE_TIP_ROW} />}
-        <b>{type ? typeName(type as TypeName, lang) : target}</b>
-        <span className={`ftip-ko off ${band} tht-band`}>{HOLD_BANDS[band].tag}</span>
-      </div>
-      <div className="tht-body">
-        <Sprite species={species} size={SPRITE_TIP} />
-        <span className="tht-text">
-          <span className="tht-name">{species}</span>
-          <HitLine set={set} move={hit.move} defTypes={defTypes} pct={hit.plainPct} />
-        </span>
-      </div>
+      <TipHead lead={type ? <TipTypeIcon type={type} /> : undefined} sprite={type ? undefined : target ?? ''} title={type ? typeName(type as TypeName, lang) : target}
+        badge={<span className={`ftip-ko off ${band} tht-band`}>{HOLD_BANDS[band].tag}</span>} />
+      <TipSec>
+        <div className="tht-body">
+          <Sprite species={species} size={SPRITE_TIP_ROW} />
+          <span className="tht-text">
+            <span className="tht-name">{species}</span>
+            <HitLine set={set} move={hit.move} defTypes={defTypes} pct={hit.plainPct} />
+          </span>
+        </div>
+      </TipSec>
       {extras.map(x => (
-        <div key={x.label} className="tht-extra">
+        <TipSec key={x.label} className="tht-extra">
           <span className="tht-extra-h">{(x.kind === 'setup' || x.kind === 'combo') && <i className="kob-tri" aria-hidden="true" />}{(x.kind === 'team' || x.kind === 'combo') && <i className="kob-tri team" aria-hidden="true" />}{x.label}{x.effect && <small className="tht-eff">{x.effect}</small>}<span className={`ftip-ko off ${x.band}`}>{HOLD_BANDS[x.band].tag}</span></span>
           <HitLine set={set} move={x.move} defTypes={defTypes} pct={x.pct} />
-        </div>
+        </TipSec>
       ))}
     </>
   );

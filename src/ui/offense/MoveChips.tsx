@@ -6,6 +6,7 @@ import { useLang, useT } from '../../i18n/react';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { typeColor } from '../Sprite';
 import { MovePill } from '../MovePill';
+import { TipHead, TipSec, TipTypeIcon } from '../TipHead';
 import { Target, type KoTarget } from './KoBadges';
 
 /** Mosse che servono ad altro che al danno: a 0 bersagli non sono "inutili", lo dice l'etichetta. */
@@ -67,10 +68,12 @@ export function MoveChips({ shares, of }: { shares: MoveShare[]; of: string }) {
       })}
       {open && tip.anchor && (
         <FloatTip rect={tip.anchor.rect} tone={typeColor(getMove(open.move)?.type ?? '')} className="kot">
-          <div className="kot-head"><b>{gameName('move', open.move, lang)}</b><small>{of}</small></div>
-          {open.targets.length
-            ? <div className={`kot-list${open.targets[0].kind === 'mon' ? ' mons' : ''}`}>{open.targets.map(x => <Target key={x.label} target={x} />)}</div>
-            : <p className="kot-none">{t('kob.moveNone')}{why(open.move) ? ` (${why(open.move)})` : ''}</p>}
+          <TipHead lead={<TipTypeIcon type={getMove(open.move)?.type ?? ''} />} title={gameName('move', open.move, lang)} num={open.targets.length} qualifier={of} />
+          <TipSec>
+            {open.targets.length
+              ? <div className={`kot-list${open.targets[0].kind === 'mon' ? ' mons' : ''}`}>{open.targets.map(x => <Target key={x.label} target={x} />)}</div>
+              : <p className="kot-none">{t('kob.moveNone')}{why(open.move) ? ` (${why(open.move)})` : ''}</p>}
+          </TipSec>
         </FloatTip>
       )}
     </span>

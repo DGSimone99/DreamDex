@@ -88,7 +88,7 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
         </tbody>
       </table>
       {tip.anchor && tipCell && (
-        <FloatTip rect={tip.anchor.rect} tone={typeColor(tipCell.type)} className={tip.anchor.key.side}>
+        <FloatTip rect={tip.anchor.rect} tone={typeColor(tipCell.type)} className={`tip-w-m cov-tip ${tip.anchor.key.side}`}>
           {tip.anchor.key.side === 'offense' ? <OffenseTip cell={tipCell} /> : <DefenseTip cell={tipCell} />}
         </FloatTip>
       )}

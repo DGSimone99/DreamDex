@@ -467,20 +467,14 @@
 
 /* Colonna Difesa della Generale: solo il "+N" di quanto porta; il tooltip coi pezzi e, in parole, il recupero e le perdite */
 .og-share.dsh { cursor: help; }
-.dsh-tip .ftip-head { display: flex; align-items: baseline; gap: var(--sp-5); }
-.dsh-total { margin-left: auto; font: 800 italic var(--tip-num)/1 var(--display); color: var(--accent); }
-.dsh-total.neg { color: var(--bad); }
-.dsh-rows { display: grid; gap: var(--sp-3); padding: 9px var(--sp-6) 11px; }
-.dsh-row { display: flex; align-items: center; gap: var(--sp-4); font-size: var(--tip-body); color: var(--muted); }
-.dsh-row small { color: var(--faint); font-size: var(--tip-small); }
-.dsh-row b { margin-left: auto; font: 700 italic var(--tip-title)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.tip-num .dsh-total { color: var(--accent-ink); }
 .dsh-sw { flex: none; width: 10px; height: 10px; }
 .dsh-sw.cover { background: var(--accent); }
 .dsh-sw.gain { background: repeating-linear-gradient(135deg, var(--good) 0 2px, color-mix(in srgb, var(--good) 55%, transparent) 2px 4px); }
 .dsh-sw.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); }
 /* Il recupero e le perdite in parole, sotto i pezzi: verde quello che recupera, rosso quello che perde */
-.dsh-line { padding-left: var(--sp-9); font-size: var(--tip-small); color: var(--muted); }
+.tip-sec.dsh-lines { gap: var(--sp-2); }
+.dsh-line { margin: 0; font-size: var(--tip-small); color: var(--muted); }
 .dsh-line.gain { color: color-mix(in srgb, var(--good) 70%, var(--text)); }
 .dsh-line.loss { color: color-mix(in srgb, var(--bad) 70%, var(--text)); }
-.ftip.dsh-tip { width: var(--tip-s); }
 

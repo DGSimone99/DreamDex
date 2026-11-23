@@ -165,6 +165,8 @@ const SCENES: Scene[] = [
   { id: 'dash-rain', team: RAIN, setup: async p => { await tab(p, 'analysis'); await wait(1500); return true; }, scope: '.dash', max: 140, wants: [
     { id: 'cond-rain', tip: '.ftip.cond', src: 'SummarySection.tsx (cond)', where: 'Analisi overview (RAIN), Riassunto: hover a condition' },
   ] },
+  { id: 'dash-stress', team: STRESS, setup: async p => { await tab(p, 'analysis'); await wait(1500); return true; }, scope: '.dash', max: 140, wants: [1, 2, 3, 4].map(n => (
+    { id: `cond-stress-${n}`, tip: '.ftip.cond', trigger: 'button.sum-line', src: 'SummarySection.tsx (cond)', where: 'Analisi overview (STRESS: rain, terrain, sand, Trick Room), Riassunto: hover a condition' })) },
   { id: 'def-general', team: SIX, setup: area(/^(Difesa|Defense)/), scope: '.tab-panel.active', max: 120, wants: [
     { id: 'dsh-tip', tip: '.ftip.dsh-tip', trigger: '.og-share.dsh', src: 'defense/DefenseGeneral.tsx (dsh-tip)', where: 'Difesa › Generale: hover a member share (%)' },
     { id: 'kot-hold', tip: '.ftip.kot', trigger: '.kob.hb', src: 'defense/HoldBars.tsx (kot, bar piece)', where: 'Difesa › Generale: hover a hold-bar piece' },

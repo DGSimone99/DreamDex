@@ -180,23 +180,24 @@ describe('Cruscotto della Panoramica', () => {
     // Nessun tooltip del browser sulle caselle: il dettaglio a parole resta nel nome
     expect(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ })).not.toHaveAttribute('title');
     await user.hover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
-    const off = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.offense'); if (!el) throw new Error('no tip'); return el; });
+    const off = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cov-tip.offense'); if (!el) throw new Error('no tip'); return el; });
     expect(off).toHaveAttribute('aria-hidden', 'true');
-    expect(off.querySelector('.ftip-head')).toHaveTextContent(/^(Fuoco|Fire)\s*90%$/);
-    const hits = off.querySelectorAll('.ftip-hit');
+    expect(off.querySelector('.tip-title')).toHaveTextContent(/^(Fuoco|Fire)$/);
+    expect(off.querySelector('.tip-head .tip-num')).toHaveTextContent(/^90%$/);
+    const hits = off.querySelectorAll('.cov-hit');
     expect(hits).toHaveLength(2);
     expect(hits[0]).toHaveTextContent('Great Tusk');
     expect(hits[0].querySelector('.ftip-ko')).toHaveTextContent('2HKO');
-    expect(hits[0].querySelector('.ftip-pct')).toHaveTextContent('86%');
+    expect(hits[0].querySelector('.cov-pct')).toHaveTextContent('86%');
     expect(hits[1].querySelector('.ftip-ko')).toHaveTextContent('3HKO');
     await user.unhover(within(table).getByRole('cell', { name: /^(Fuoco|Fire), offesa:/ }));
     expect(document.querySelector('.ftip')).toBeNull();
 
     await user.hover(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa:/ }));
-    const def = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.defense'); if (!el) throw new Error('no tip'); return el; });
-    const groups = [...def.querySelectorAll('.ftip-group')].map(g => g.querySelector('.ftip-group-label')!.textContent);
+    const def = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cov-tip.defense'); if (!el) throw new Error('no tip'); return el; });
+    const groups = [...def.querySelectorAll('.cov-group')].map(g => g.querySelector('.tip-sec-label')!.textContent);
     expect(groups).toEqual(['Immuni ×0', 'Deboli ×2']);
-    expect(def.querySelector('.ftip-group:last-of-type .ftip-ko')).toHaveTextContent('OHKO');
+    expect([...def.querySelectorAll('.cov-group')].at(-1)!.querySelector('.ftip-ko')).toHaveTextContent('OHKO');
   });
 
   it('Copertura in inglese: righe Defense e Offense, anche in testata', () => {
@@ -385,7 +386,8 @@ describe('Cruscotto della Panoramica', () => {
     expect(removal).not.toHaveAttribute('title');
     await user.hover(removal);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.role'); if (!el) throw new Error('no tip'); return el; });
-    expect(tip.querySelector('.role-tip-head')).toHaveTextContent(/Controllo Hazard\s*Essenziale/);
+    expect(tip.querySelector('.tip-head')).toHaveTextContent(/Controllo Hazard\s*Essenziale/);
+    expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent('3');
     // Solo le sprite coi nomi, niente percentuali
     expect([...tip.querySelectorAll('.role-tip-mon')].map(m => m.textContent)).toEqual(['Great Tusk', 'Corviknight', 'Toxapex']);
     expect(tip).not.toHaveTextContent('%');
@@ -491,14 +493,22 @@ describe('Riassunto', () => {
     await user.hover(row);
     const tip = await vi.waitFor(() => { const el = document.querySelector<HTMLElement>('body > .ftip.cond'); if (!el) throw new Error('no tip'); return el; });
     expect(tip).toHaveAttribute('aria-hidden', 'true');
-    expect(tip.querySelector('.ctip-head')).toHaveClass('k-rain');
-    expect(tip.querySelector('.ctip-name')).toHaveTextContent('Pioggia');
-    expect(tip.querySelector('.ctip-sub')).toHaveTextContent(/^8 turni grazie a (Rocciaumida|Damp Rock)$/);
+    expect(tip.querySelector('.tip-head')).toHaveClass('k-rain');
+    expect(tip.querySelector('.tip-title')).toHaveTextContent('Pioggia');
+    expect(tip.querySelector('.tip-sub')).toHaveTextContent(/^8 turni grazie a (Rocciaumida|Damp Rock)$/);
     expect(tip.querySelector('.ctip-setter')).toHaveTextContent(/^(Piovischio|Drizzle)$/);
-    const plates = [...tip.querySelectorAll('.ctip-plate')];
-    expect(plates.map(p => p.className)).toEqual(['ctip-plate good', 'ctip-plate bad']);
-    expect(plates[0]).toHaveTextContent(/Mosse Acqua\s*per tutti\s*50%/);
-    const rows = [...tip.querySelectorAll('.ctip-user')];
+    // Gli effetti come le caselle della mossa: fascia col nome, il valore con la freccia nel tono, sotto per chi vale
+    const cells = [...tip.querySelectorAll('.mtip-stats.ctip-cells > .ctip-cell')];
+    expect(cells.map(c => c.className)).toEqual(['ctip-cell good', 'ctip-cell bad']);
+    expect(cells.map(c => c.querySelector('small')?.textContent)).toEqual(['Mosse Acqua', 'Mosse Fuoco']);
+    expect(cells.map(c => c.querySelector('.ctip-val')?.textContent)).toEqual(['50%', '50%']);
+    expect(cells.map(c => c.querySelector('.ctip-val path')?.getAttribute('d')?.startsWith('M12 19'))).toEqual([true, false]);
+    expect(cells.map(c => c.querySelector('.ctip-note')?.textContent)).toEqual(['per tutti', 'per tutti']);
+    // Chi ne approfitta: sezione con l'etichetta, una riga a testa con la sprite
+    expect(tip.querySelector('.ctip-users-sec .tip-sec-label')).toHaveTextContent('Chi ne approfitta');
+    const rows = [...tip.querySelectorAll('.ctip-users > .ctip-user')];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].querySelector('.ctip-mon .sprite')).not.toBeNull();
     expect(rows[0]).toHaveTextContent(/Barraskewda\s*Nuotovelox\s*Velocità ×2/);
     // Senza abilità né mossa: chi si potenzia (qui un utente senza via)
     expect(rows[1]).toHaveTextContent('Zapdos');

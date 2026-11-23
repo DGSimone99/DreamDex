@@ -115,7 +115,7 @@ describe('Velocità: Trick Room', () => {
     const self = Number(ladder.querySelector('.stip-rung.self .stip-speed')!.textContent);
     ladder.querySelectorAll('.stip-rung.ahead .stip-speed').forEach(s => expect(Number(s.textContent)).toBeLessThan(self));
     ladder.querySelectorAll('.stip-rung.behind .stip-speed').forEach(s => expect(Number(s.textContent)).toBeGreaterThan(self));
-    expect(document.querySelector('.ftip.speed')).toHaveTextContent(/In Trick Room/);
+    expect(document.querySelector('.ftip.speed')).toHaveTextContent(/Trick Room: sopra chi muove prima di te/);
   });
 
   it('la scelta resta cambiando area: spento in Velocità, spento anche al ritorno', async () => {

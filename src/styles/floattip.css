@@ -11,7 +11,6 @@
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5), 0 0 26px -4px color-mix(in srgb, var(--tc) 45%, transparent), 0 18px 40px rgb(0 0 0 / 0.65);
   animation: ftip-in 0.16s var(--ease);
 }
-.ftip.offense { width: var(--tip-l); }
 /* La punta: un quadrato ruotato sul bordo, alla x della casella */
 .ftip::before { content: ""; position: absolute; top: -7px; left: calc(var(--arrow) - 6px); width: 12px; height: 12px; transform: rotate(45deg);
   background: color-mix(in srgb, var(--tc) 30%, var(--panel)); border-left: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); border-top: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
@@ -30,25 +29,18 @@
 /* Nello strato in cima (popover): via i valori del browser per i popover */
 .ftip[popover] { inset: auto; margin: 0; padding: 0; overflow: visible; color: var(--text); }
 
-/* La testata: righe su una sfumatura nel colore del tooltip (dal 30% al 6%), filo nello stesso colore; la stessa misura
-   per la testata vecchia (.ftip-head) e quella unica (.tip-head, TipHead) */
-.ftip-head, .tip-head { position: relative; min-height: 40px; padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-5);
+/* La testata unica (TipHead): righe su una sfumatura nel colore del tooltip (dal 30% al 6%), filo nello stesso colore */
+.tip-head { position: relative; min-height: 40px; padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-5);
   background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent));
   border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
-.ftip-head { display: flex; align-items: center; gap: var(--sp-4); }
-.ftip-head img { width: var(--ti-tip); height: var(--ti-tip); border-radius: 50%; box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 70%, transparent); }
-/* Un Pokémon al posto del tipo in testata (minacce del meta): la sprite a misura di riga dei tooltip, non schiacciata nel tondo dell icona; esce un po' sopra e sotto senza allungare la testata */
-.ftip-head img.sprite { width: 40px; height: 40px; margin: -10px -4px -10px -6px; border-radius: 0; box-shadow: none; image-rendering: pixelated; }
-.ftip-head b { font: 700 italic var(--tip-title)/1 var(--display); text-shadow: 0 1px 4px rgb(0 0 0 / 0.45); }
-.ftip-val { margin-left: auto; font: 700 italic var(--tip-num)/1 var(--display); color: var(--good); }
 /* Il "/totale" dopo un numero, uguale ovunque (tooltip e tabelle): piccolo, spento, sulla stessa linea */
-.ftip-val small, .ftip-pct small, .tht-pct small, .kob-count-num > small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--faint); }
+.cov-pct small, .tht-pct small, .kob-count-num > small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--faint); }
 /* Dove porta il clic sull'elemento (TipGo): piede Accent Ink sotto il filo, la freccia dei link */
 .ftip-go { display: flex; align-items: center; gap: var(--sp-1); margin: 0; padding: var(--sp-3) var(--sp-6) var(--sp-4); border-top: 1px solid var(--line-soft);
   font: 600 var(--tip-small)/1.3 var(--ui); color: var(--accent-ink); }
 .ftip-go .icon { width: 12px; height: 12px; flex: none; }
 .ftip-foot { margin: 0; padding: var(--sp-3) var(--sp-6) var(--sp-4); border-top: 1px solid var(--line-soft); font-size: var(--tip-small); color: var(--faint); }
-.ftip-empty { margin: 0; padding: var(--sp-6) var(--sp-5); color: var(--muted); }
+.ftip-empty { margin: 0; color: var(--muted); }
 
 /* ===== Testata unica (TipHead): a sinistra l'icona (tipo, tondo col simbolo o la sprite), il titolo con sotto la riga
    facoltativa, a destra il valore (numero o badge, mai tutti e due) con sotto la parola piccola che lo spiega */
@@ -95,7 +87,7 @@
 .tip-sec > p { margin: 0; }
 .tip-sec-label { display: flex; align-items: center; gap: var(--sp-3); font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 /* Le parti vecchie dentro una sezione: l'aria la dà la sezione */
-.tip-sec .kot-list, .tip-sec .tht-body, .tip-sec .thr-tip-why { padding: 0; }
+.tip-sec .kot-list, .tip-sec .tht-body, .tip-sec .thr-tip-why, .tip-sec .ftip-empty { padding: 0; }
 .tip-sec .hb-say { margin: 0; }
 .tip-sec .kot-none { padding: 0; }
 .tip-sec.hb-group + .tip-sec.hb-group { margin-top: 0; }
@@ -117,6 +109,10 @@
 .tip-kind { padding: 2px var(--sp-3) 1px; border: 1px solid color-mix(in srgb, var(--tc) 50%, var(--line)); border-radius: 3px;
   font: 700 var(--tip-small)/1.2 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: color-mix(in srgb, var(--tc) 35%, var(--text)); }
 .ktip-desc { color: var(--text); text-wrap: pretty; }
+/* L'etichetta di una sezione nel tono di quello che raccoglie (immuni e resistenze verdi, deboli rossi) */
+.tip-sec.good > .tip-sec-label { color: var(--good); }
+.tip-sec.bad > .tip-sec-label { color: var(--bad); }
+.tip-sec-label small { font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0; text-transform: none; }
 /* Le tre larghezze, per i tooltip fatti con la testata unica */
 .ftip.tip-w-s { width: var(--tip-s); }
 .ftip.tip-w-m { width: var(--tip-m); }
@@ -137,38 +133,18 @@
 .ftip-ko.def.three { border-color: color-mix(in srgb, var(--good) 85%, transparent); background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
 .ftip-ko.def.four { border-color: color-mix(in srgb, var(--good) 70%, transparent); background: color-mix(in srgb, var(--good) 30%, var(--panel)); }
 
-/* Offesa: podio, una colonna per colpo; il badge a nastro inclinato in alto a destra sulla sprite */
-.ftip-podium { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
-.ftip-hit { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: var(--sp-5) var(--sp-1) 9px; text-align: center; border-right: 1px solid var(--line-soft); }
-.ftip-hit:last-child { border-right: 0; }
-.ftip-hit .ftip-ko { position: absolute; top: 8px; right: 8px; transform: skewX(-12deg); }
-.ftip-plinth { position: relative; display: flex; }
-.ftip-plinth::before { content: ""; position: absolute; left: 50%; bottom: 4px; width: 70%; height: 10px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
-.ftip-plinth .sprite { position: relative; display: block; margin: -8px 0 -6px; image-rendering: pixelated; }
-.ftip-pct { font: 700 italic var(--tip-num)/1 var(--display); color: var(--good); }
-.ftip-pct.three { color: var(--warn); }
-.ftip-pct.four { color: var(--muted); }
-.ftip-pct { white-space: nowrap; }
-.ftip-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+/* Copertura (CoverageTip): una riga per colpo o per membro, a destra il danno % e il badge dei colpi */
+.cov-rows .tip-row-val { display: flex; align-items: center; gap: var(--sp-4); }
+.cov-rows .tip-row-sub { display: flex; min-width: 0; }
+.cov-pct { min-width: 38px; font: 700 italic var(--tip-title)/1 var(--display); text-align: right; color: var(--text); }
+.cov-hit .cov-pct.ohko, .cov-hit .cov-pct.two { color: var(--good); }
+.cov-hit .cov-pct.three { color: var(--warn); }
+.cov-hit .cov-pct.four { color: var(--muted); }
+.cov-rows .ftip-ko { min-width: 46px; text-align: center; }
 /* La mossa: icona tonda e nome nel colore del suo tipo, schiarito per leggersi sul fondo scuro, con un alone leggerissimo;
    poi simbolo della categoria e potenza in Faint */
 /* Mosse nei tooltip: pillole (move-pill.css), mai più larghe della riga */
 .ftip-move.mvp, .ctip-mv.mvp { max-width: 100%; }
-
-/* Difesa: gruppi per moltiplicatore; per membro sprite, nome, danno % e badge */
-.ftip-group { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: start; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--line-soft); }
-.ftip-group:last-of-type { border-bottom: 0; }
-.ftip-group-label { padding-top: 9px; font: 700 var(--tip-small)/1.2 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
-.ftip-group-label small { font-size: var(--tip-small); letter-spacing: 0; text-transform: none; }
-.ftip-group-label.good { color: var(--good); }
-.ftip-group-label.faint { color: var(--faint); }
-.ftip-group-label.bad { color: var(--bad); }
-.ftip-group-mons { display: flex; flex-direction: column; gap: 1px; }
-.ftip-mon { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 46px; align-items: center; gap: var(--sp-3); }
-.ftip-mon .sprite { display: block; margin: -4px -4px -4px -6px; image-rendering: pixelated; }
-.ftip-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ftip-mon-pct { font: 700 italic var(--tip-title)/1 var(--display); text-align: right; }
-.ftip-mon .ftip-ko { text-align: center; }
 
 /* ===== Carta del Pokémon (MemberCard): testata nei due colori dei tipi a strisce con la sprite grande che esce dal bordo,
    lastra azzurra col perché; strumento, abilità, natura ed EV su due colonne; statistiche a esagono come la schermata
@@ -246,62 +222,63 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .mcard-move.is-changed { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); }
 .mcard-move.is-changed .mvp-nm::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: var(--sp-3); border-radius: 50%; vertical-align: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 
-/* ===== Meteo e campo (ConditionTip): testata nel colore della condizione con una texture sua, effetti come lastre
-   inclinate, chi ne approfitta col piedistallo verde. L'unico movimento: la pioggia che scende (spento con riduci animazioni) */
-.ftip.cond { width: var(--tip-m); }
-.ctip-head { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-1) var(--sp-5); padding: var(--sp-5) var(--sp-7) var(--sp-5) var(--sp-5); overflow: hidden;
-  background: linear-gradient(100deg, color-mix(in srgb, var(--tc) 46%, transparent), color-mix(in srgb, var(--tc) 10%, transparent) 75%);
-  border-bottom: 1px solid color-mix(in srgb, var(--tc) 55%, var(--line)); }
-.ctip-head::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
-.ctip-head > * { position: relative; }
-.ctip-head.k-rain::before { inset: -40px 0 0; opacity: 0.5;
+/* ===== Meteo e campo (ConditionTip): testata nel colore della condizione con una texture sua; gli effetti come le caselle
+   della scheda mossa (.mtip-stats: fascia tinta in maiuscoletto, valore grande nello slot incassato, sotto per chi vale);
+   chi ne approfitta a righe alterne come le statistiche dell'editor. L'unico movimento: la pioggia che scende (spento con
+   riduci animazioni) */
+.ctip-tex { overflow: hidden; }
+.ctip-tex::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
+.ctip-tex > * { position: relative; }
+.ctip-tex.k-rain::before { inset: -40px 0 0; opacity: 0.5;
   background: repeating-linear-gradient(105deg, transparent 0 9px, rgb(207 224 255 / 0.45) 9px 10px, transparent 10px 23px);
   mask: linear-gradient(90deg, transparent, #000 35%); animation: ctip-rain 1.6s linear infinite; }
 @keyframes ctip-rain { to { transform: translate(-11px, 40px); } }
-.ctip-head.k-sun::before { background: radial-gradient(60% 140% at 85% 0%, rgb(255 214 120 / 0.45), transparent 70%); }
-.ctip-head.k-sand::before { opacity: 0.55; background: radial-gradient(circle, rgb(240 214 150 / 0.55) 1px, transparent 1.5px) 0 0 / 9px 7px, radial-gradient(circle, rgb(240 214 150 / 0.35) 1px, transparent 1.5px) 4px 3px / 11px 9px; mask: linear-gradient(90deg, transparent, #000 40%); }
-.ctip-head.k-snow::before { opacity: 0.6; background: radial-gradient(circle, rgb(255 255 255 / 0.7) 1.2px, transparent 1.8px) 0 0 / 16px 14px, radial-gradient(circle, rgb(255 255 255 / 0.45) 1px, transparent 1.5px) 7px 6px / 13px 12px; mask: linear-gradient(90deg, transparent, #000 40%); }
-.ctip-head.k-electricterrain::before, .ctip-head.k-psychicterrain::before, .ctip-head.k-grassyterrain::before, .ctip-head.k-mistyterrain::before {
+.ctip-tex.k-sun::before { background: radial-gradient(60% 140% at 85% 0%, rgb(255 214 120 / 0.45), transparent 70%); }
+.ctip-tex.k-sand::before { opacity: 0.55; background: radial-gradient(circle, rgb(240 214 150 / 0.55) 1px, transparent 1.5px) 0 0 / 9px 7px, radial-gradient(circle, rgb(240 214 150 / 0.35) 1px, transparent 1.5px) 4px 3px / 11px 9px; mask: linear-gradient(90deg, transparent, #000 40%); }
+.ctip-tex.k-snow::before { opacity: 0.6; background: radial-gradient(circle, rgb(255 255 255 / 0.7) 1.2px, transparent 1.8px) 0 0 / 16px 14px, radial-gradient(circle, rgb(255 255 255 / 0.45) 1px, transparent 1.5px) 7px 6px / 13px 12px; mask: linear-gradient(90deg, transparent, #000 40%); }
+.ctip-tex.k-electricterrain::before, .ctip-tex.k-psychicterrain::before, .ctip-tex.k-grassyterrain::before, .ctip-tex.k-mistyterrain::before {
   background: radial-gradient(70% 160% at 80% 120%, color-mix(in srgb, var(--tc) 55%, transparent), transparent 70%); }
-@media (prefers-reduced-motion: reduce) { .ctip-head.k-rain::before { animation: none; } }
-.ctip-ico { grid-row: 1 / 3; width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.35), 0 4px 12px rgb(0 0 0 / 0.4); }
-.ctip-name { font: 700 italic var(--tip-title)/1 var(--display); }
-.ctip-sub { grid-column: 2; font-size: var(--tip-small); color: color-mix(in srgb, var(--tc) 30%, var(--text)); }
-.ctip-setter { grid-row: 1 / 3; grid-column: 3; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+@media (prefers-reduced-motion: reduce) { .ctip-tex.k-rain::before { animation: none; } }
+/* Chi la porta, nel posto del valore: la sprite sul piedistallo e sotto l'abilità o la mossa */
+.ctip-setter { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .ctip-plinth { position: relative; display: flex; justify-content: center; }
 .ctip-plinth::before { content: ""; position: absolute; left: 50%; bottom: 2px; width: 72%; height: 8px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgb(255 255 255 / 0.35), transparent 70%); }
 .ctip-plinth.good::before { background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 40%, transparent), transparent 70%); }
 .ctip-plinth .sprite { position: relative; display: block; image-rendering: pixelated; }
-.ctip-setter .sprite { margin: -12px 0 -8px; }
+.ctip-setter .sprite { margin: -10px 0 -8px; }
 /* Abilità: lastra inclinata; mossa: nome nel colore del tipo, alone leggero */
 .ctip-ab { display: inline-flex; align-items: center; padding: var(--sp-1) var(--sp-5) var(--sp-1) var(--sp-4); font: 600 var(--tip-small)/1.2 var(--display); color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
 .ctip-arrow { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.ctip-fx { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--sp-3); padding: var(--sp-5) var(--sp-5) var(--sp-4); }
-.ctip-plate { --c: var(--faint); display: flex; align-items: center; gap: var(--sp-4); padding: 7px var(--sp-7) 7px var(--sp-5); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 18%, transparent), color-mix(in srgb, var(--c) 4%, transparent)); }
-.ctip-plate.good { --c: var(--good); }
-.ctip-plate.bad { --c: var(--bad); }
-.ctip-plate img { width: var(--ti-chip); height: var(--ti-chip); flex: none; border-radius: 50%; }
-.ctip-plate span { flex: 1; min-width: 0; font-size: var(--tip-small); line-height: 1.15; color: var(--muted); }
-.ctip-plate span b { display: block; font: 600 var(--tip-body)/1.2 var(--display); color: var(--text); }
-.ctip-plate strong { display: flex; align-items: center; gap: var(--sp-1); font: 700 italic var(--tip-title)/1 var(--display); color: var(--c); white-space: nowrap; }
-.ctip-user { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 0 var(--sp-4); padding: var(--sp-3) var(--sp-6) var(--sp-3) var(--sp-4); border-top: 1px solid var(--line-soft); }
-.ctip-user .sprite { margin: -6px 0; }
-.ctip-who { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+/* Le caselle degli effetti: le stesse della mossa, una colonna per effetto; lo slot tiene il valore e sotto la nota */
+.mtip-stats.ctip-cells { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding-bottom: var(--sp-4); }
+.ctip-cells small { white-space: normal; }
+.ctip-cells b { flex-direction: column; gap: 3px; min-height: 44px; padding: var(--sp-3) var(--sp-3) var(--sp-2); }
+.ctip-val { display: flex; align-items: center; gap: 2px; }
+.ctip-cell.good .ctip-val { color: var(--good); }
+.ctip-cell.bad .ctip-val { color: var(--bad); }
+.ctip-cells .ctip-arrow { width: 16px; height: 16px; }
+/* Una parola al posto del numero (Niente, I più lenti): come la categoria della mossa */
+.ctip-val.word { font: 600 var(--tip-body)/1.1 var(--display); color: var(--text); }
+.ctip-note { font: 500 var(--tip-small)/1.2 var(--ui); color: var(--muted); text-align: center; text-wrap: balance; }
+/* Chi ne approfitta: una riga sì e una no Raised al 50%, piccoli angoli alternati (come la Generale e le statistiche);
+   la sprite da 40 in piedi sul fondo della riga, il nome con sotto la mossa o l'abilità, a destra cosa ottiene */
+.ctip-users-sec { padding-inline: var(--sp-4); border-top: 1px solid var(--line-soft); }
+.ctip-users-sec > .tip-sec-label { padding-inline: var(--sp-2); }
+.ctip-users { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.ctip-user { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 0 var(--sp-4); min-height: 46px; padding: var(--sp-2) var(--sp-5) var(--sp-2) var(--sp-2); }
+.ctip-user:nth-child(odd) { background: color-mix(in srgb, var(--raised) 50%, transparent); border-radius: 7px 2px 7px 2px; }
+.ctip-mon { position: relative; align-self: stretch; }
+.ctip-mon .sprite { position: absolute; left: 50%; translate: -50% 0; bottom: calc(2px - (var(--feet-dy, 0) + 10 / 96) * 40px); width: 40px; height: 40px; image-rendering: pixelated; }
+.ctip-who { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
 .ctip-who b { font: 600 var(--tip-body)/1.1 var(--display); }
-.ctip-via { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); }
-.ctip-eff { display: inline-flex; align-items: center; gap: 3px; padding: var(--sp-2) var(--sp-6) var(--sp-2) 9px; font: 700 italic var(--tip-body)/1 var(--display); color: var(--good); white-space: nowrap;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--good) 20%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+.ctip-via { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); max-width: 100%; }
+.ctip-eff { display: inline-flex; align-items: center; gap: 3px; font: 700 italic var(--tip-body)/1 var(--display); color: var(--good); white-space: nowrap; }
 
 /* ===== Velocità (SpeedTip): una scala verticale; in alto chi ti supera (rosso), al centro il membro in azzurro, sotto chi
    superi (verde), ognuno con la velocità effettiva; Sciarpa e Booster come piccole lastre inclinate */
-.ftip.speed { width: var(--tip-m); }
-.stip-head { display: flex; align-items: center; gap: var(--sp-4); padding: 9px var(--sp-7) 9px var(--sp-5); background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--accent) 32%, transparent), color-mix(in srgb, var(--accent) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
-.stip-bolt { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--on-accent); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 50%, transparent); }
-.stip-bolt .icon { width: 15px; height: 15px; }
-.stip-head b { font: 700 italic var(--tip-title)/1 var(--display); }
-.stip-own { margin-left: auto; font: 700 italic var(--tip-num)/1 var(--display); color: var(--accent-ink); }
-.stip-ladder { display: flex; flex-direction: column; padding: var(--sp-3) 0; }
+/* Il valore di testata (la velocità del membro) e la sua riga nella scala nel colore del tooltip, schiarito */
+.stip-own, .stip-rung.self .stip-speed { color: color-mix(in srgb, var(--tc) 55%, #fff); }
+.tip-sec.stip-ladder { gap: 0; padding: var(--sp-3) 0; }
 .stip-rung { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 var(--sp-4); padding: 3px var(--sp-7) 3px var(--sp-4); font-size: var(--tip-body); }
 .stip-rung .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 .stip-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
@@ -312,54 +289,35 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .stip-rung.tie .stip-speed { color: var(--warn); }
 .stip-rung.self { margin: 3px 0; padding-block: var(--sp-2); background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 4%, transparent)); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
 .stip-rung.self .stip-name { font: 600 var(--tip-title)/1.1 var(--display); }
-.stip-rung.self .stip-speed { color: var(--accent-ink); }
 .stip-item { grid-column: 3; padding: 1px var(--sp-4) 1px var(--sp-3); font: 700 var(--tip-small)/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: color-mix(in srgb, var(--raised) 90%, transparent); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .stip-item.tie { color: var(--warn); }
-.stip-gains { margin: 0; padding: var(--sp-3) var(--sp-7) var(--sp-3) var(--sp-5); list-style: none; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 3px; font-size: var(--tip-body); color: var(--muted); }
+.stip-gains { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: var(--tip-body); color: var(--muted); }
 .stip-gains li { display: flex; justify-content: space-between; gap: var(--sp-6); }
 .stip-gains b { color: var(--accent-ink); font-variant-numeric: tabular-nums; }
-.stip-empty { margin: 0; padding: var(--sp-4) var(--sp-6); color: var(--muted); }
+.stip-empty { margin: 0; padding: var(--sp-2) var(--sp-6); color: var(--muted); }
 
 /* ===== Core (CoreTip): testata verde come i core, una riga per lato: chi para sul piedistallo, il tipo nel suo colore,
    il badge dei colpi (quanto lo regge, colori della Difesa) e a destra chi protegge */
-.ftip.core { width: var(--tip-l); }
-.core-tip-head { display: flex; align-items: baseline; gap: var(--sp-4); min-width: 0; padding: var(--sp-5) var(--sp-7) var(--sp-5) var(--sp-6); background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--good) 30%, transparent), color-mix(in srgb, var(--good) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--good) 45%, var(--line)); }
-.core-tip-tag { font: 700 var(--tip-small)/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--good); }
-.core-tip-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic var(--tip-title)/1.1 var(--display); }
 .core-tip-side { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto auto; align-items: center; gap: 0 var(--sp-6); padding: var(--sp-4) var(--sp-7) var(--sp-4) var(--sp-4); border-bottom: 1px solid var(--line-soft); }
 .core-tip-side:last-of-type { border-bottom: 0; }
 .core-tip-side .ctip-plinth .sprite { margin: -6px 0; }
 .core-tip-what { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .core-tip-what b { font: 600 var(--tip-title)/1.1 var(--display); }
-.core-tip-type { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--tip-body); font-weight: 600; color: color-mix(in srgb, var(--mc) 72%, white); text-shadow: 0 0 7px color-mix(in srgb, var(--mc) 30%, transparent); }
-.core-tip-type img { width: var(--ti-chip); height: var(--ti-chip); border-radius: 50%; }
+/* Il tipo parato nel colore schiarito dei nomi dei tipi (typeTextColor, nello style): almeno 4.5:1 sul fondo */
+.core-tip-type { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--tip-body); font-weight: 600; }
+.core-tip-type img { width: var(--ti-chip); height: var(--ti-chip); }
 .core-tip-for { display: flex; align-items: center; gap: var(--sp-1); color: var(--faint); }
 .core-tip-for small { display: inline; font-size: var(--tip-small); }
 .core-tip-for .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 
-/* ===== Ruoli (RoleTip): il nome del ruolo col livello, poi solo le sprite di chi lo copre sul piedistallo verde (niente
-   percentuali); se manca, una riga rossa (grigia se è un minore) */
-.ftip.role { width: var(--tip-m); }
-.role-tip-head { display: flex; align-items: center; gap: var(--sp-4); padding: 9px var(--sp-7) 9px var(--sp-6); background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
-.role-tip-head .icon { width: 17px; height: 17px; color: var(--tc); }
-.role-tip-head b { font: 700 italic var(--tip-title)/1.1 var(--display); }
-.role-tip-head small { display: inline; margin-left: auto; padding-left: var(--sp-6); font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
-.role-tip-mons { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-8); padding: var(--sp-6) var(--sp-7) var(--sp-5); }
-.role-tip-mon { display: flex; flex-direction: column; align-items: center; gap: 3px; font: 600 var(--tip-body)/1.1 var(--display); }
-.role-tip-mon .sprite { margin: -6px 0 -4px; }
-.role-tip-none { margin: 0; padding: var(--sp-6) var(--sp-7); font: 600 var(--tip-title)/1.2 var(--display); color: var(--bad); }
+/* ===== Ruoli (RoleTip): la testata unica, poi una riga per chi lo copre (niente percentuali); se manca, una frase rossa
+   (grigia se non toglie punti) */
+.role-tip-none { margin: 0; font: 600 var(--tip-title)/1.2 var(--display); color: var(--bad); }
 .role-tip-none.soft { color: var(--muted); }
 
 /* ===== Badge dei colpi (KoBadges): testata col chi e il badge, poi i bersagli (icone dei tipi o sprite delle minacce),
    in righe a parte quelli in più col setup o con Tera/Z */
 .ftip.kot { width: var(--tip-m); }
-/* Solo una frase (il conto, cosa vuol dire un numero): il tooltip piccolo */
-.ftip.kot:has(> .kot-none:only-child) { width: var(--tip-s); }
-.kot-head { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-5); background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 28%, transparent), color-mix(in srgb, var(--tc) 5%, transparent)); border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
-.kot-head > b { font: 700 italic var(--tip-title)/1.1 var(--display); }
-.kot-head .kob { cursor: default; }
-.kot-head .kob > b { font-size: var(--tip-title); }
-.kot-head small { display: inline; margin-left: auto; padding-left: var(--sp-6); font-size: var(--tip-small); color: var(--faint); }
 .kot-list { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-6); padding: var(--sp-5) var(--sp-6); }
 .kot-list.mons { gap: 0 var(--sp-1); }
 .kot-type { display: inline-flex; align-items: center; gap: var(--sp-2); font: 600 var(--tip-body)/1 var(--display); }
@@ -446,7 +404,6 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
    del tipo e il valore in uno slot scuro incassato (categoria, potenza, precisione); il bersaglio come etichetta in slot
    + fascia lunga col valore; poi la descrizione in chiaro */
 .ftip.move { width: var(--tip-s); }
-.ftip.move .ftip-head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mtip-prio { flex: none; padding: 2px var(--sp-4) 1px; font: 700 var(--tip-small)/1.3 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
   color: var(--on-accent); background: var(--accent); transform: skewX(-12deg); }
 .mtip-prio.neg { color: var(--text); background: color-mix(in srgb, var(--bad) 46%, var(--panel)); }
@@ -478,7 +435,6 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 /* Strumenti e abilità: come il tooltip delle mosse (testata e descrizione), nel colore Accent; lo strumento con la sua icona */
 .ftip.kit .ktip-icon { display: grid; place-items: center; width: var(--ti-tip); height: var(--ti-tip); flex: none; border-radius: 50%;
   background: color-mix(in srgb, var(--field) 70%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 55%, transparent); }
-.ftip.kit .ftip-head b { white-space: normal; }
 
 /* Il fumetto dell'app (data-hint): lo stesso del fumetto dei pulsanti a icona (Hint), ma nel body (mai tagliato dalle
    carte) e su più righe quando il testo è lungo; senza alone né punta */

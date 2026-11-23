@@ -449,13 +449,13 @@ export function SummarySection({ summary, members, team = [], grade, density, ri
         </FloatTip>
       )}
       {coreTip.anchor && (
-        <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="core">
+        <FloatTip rect={coreTip.anchor.rect} tone="var(--good)" className="tip-w-l core">
           <CoreTip core={coreTip.anchor.key} taken={summary.typedTaken ?? {}} />
           <TipGo place={places.bonusMalus} />
         </FloatTip>
       )}
       {condTip.anchor && (
-        <FloatTip rect={condTip.anchor.rect} tone={conditionColor(condTip.anchor.key.key)} className="cond">
+        <FloatTip rect={condTip.anchor.rect} tone={conditionColor(condTip.anchor.key.key)} className="tip-w-m cond">
           <ConditionTip row={condTip.anchor.key} />
           <TipGo place={places.roles} />
         </FloatTip>

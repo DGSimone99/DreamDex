@@ -26,7 +26,7 @@ describe('Velocità nell’editor', () => {
     // Lo stesso tooltip di Analisi › Velocità: il membro al centro con la sua velocità
     const tip = await screen.findByText((_, el) => !!el?.classList.contains('stip-own'));
     expect(tip).toHaveTextContent('333');
-    expect(document.querySelector('.ftip.speed .ftip-foot')).toHaveTextContent('Velocità effettiva dei più usati del meta');
+    expect(document.querySelector('.ftip.speed .tip-sub')).toHaveTextContent('Velocità vera, coi set più usati del meta');
     await user.unhover(line);
     expect(document.querySelector('.ftip.speed')).toBeNull();
     const evs = within(team).getByRole('group', { name: 'Statistiche' });

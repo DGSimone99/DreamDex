@@ -73,8 +73,6 @@
 /* "priorità" dopo il nome: un'etichetta come i tag (fondo Accent Soft, testo ciano); la mossa nel tooltip */
 .sp-prio { flex: none; padding: var(--sp-1) 5px; border-radius: 3px; background: var(--accent-soft); color: var(--accent-ink); font: 700 var(--fs-label)/1 var(--ui); letter-spacing: 0.03em; cursor: help; }
 .sp-prio:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.ftip.sp-prio-ftip { width: var(--tip-s); }
-.sp-prio-tip { margin: 0; padding: var(--sp-4) var(--sp-5); color: var(--muted); }
 @media (min-width: 1100px) and (max-height: 640px) {
   :is(.def-frame, .def-frame.roomy).sp-general { --sp-bar-h: 16px; --sp-scale-h: 12px; --sp-val: 112px; --def-row-min: 25px; }
   .sp-total { font-size: var(--fs-heading); }
