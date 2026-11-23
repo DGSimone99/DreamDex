@@ -1021,3 +1021,28 @@ describe('Telefono › la Panoramica è solo il Riassunto', () => {
     expect(document.querySelectorAll('.dash > .dash-card')).toHaveLength(4);
   });
 });
+
+describe('Un membro solo: niente allarmi', () => {
+  const cov = () => screen.getByRole('region', { name: 'Copertura' });
+  it('caselle scoperte e minacce grigie tratteggiate, niente numero rosso; ruoli mancanti tenui; da due membri come sempre', async () => {
+    const user = userEvent.setup();
+    const strict = sample({ roles: { ...sample().roles, chips: sample().roles.chips.map(c => ({ ...c, soft: false })) } });
+    const { unmount } = mount({ members: 1, data: strict });
+    expect(cov().querySelectorAll('.dash-cell.bad, .dash-cell.minor')).toHaveLength(0);
+    expect(cov().querySelectorAll('.dash-cell.soft')).toHaveLength(3);
+    // Il nome della casella resta quello di sempre (il dettaglio a parole)
+    expect(within(cov()).getByRole('cell', { name: /^(Terra|Ground), difesa: scoperto/i })).toHaveClass('soft');
+    expect(cov().querySelector('.dash-tab-n')).toBeNull();
+    await user.click(within(cov()).getByRole('tab', { name: /^Meta/ }));
+    expect(cov().querySelectorAll('.cov-tile.soft:not(.more)')).toHaveLength(THREATS.length);
+    expect(cov().querySelectorAll('.cov-side.bad, .cov-side.minor')).toHaveLength(0);
+    expect(cov().querySelector('.dash-meta b.bad')).toBeNull();
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    expect(roles.querySelectorAll('.dash-role.bad, .dash-role-row.bad')).toHaveLength(0);
+    unmount();
+    mount({ members: 2, data: strict });
+    expect(cov().querySelectorAll('.dash-cell.bad')).toHaveLength(2);
+    expect(cov().querySelector('.dash-tab-n')).toHaveTextContent('3');
+    expect(screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-role-row.bad, .dash-role.bad').length).toBeGreaterThan(0);
+  });
+});

@@ -239,7 +239,11 @@ function RolesHead({ roles }: { roles: DashboardData['roles'] }) {
  * di quanto la tabella chiede (schermi bassi col team ridotto, Minacce del meta sopra), si torna alle fasce, che sanno
  * stare nello spazio col loro "+N": mai righe tagliate.
  */
-export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
+export function RolesSection({ roles: given, density, gentle = false, onView }: { roles: DashboardData['roles']; density: Density;
+  /** Un membro solo: i ruoli mancanti tenui e tratteggiati, mai rossi (mancano per forza). */
+  gentle?: boolean;
+  onView: (v: AnalysisView) => void }) {
+  const roles = gentle ? { ...given, chips: given.chips.map(chip => (chip.covered ? chip : { ...chip, soft: true })) } : given;
   const t = useT();
   const titles = { essential: t('analysis.essential'), important: t('analysis.important') };
   const card = useRef<HTMLDivElement>(null);

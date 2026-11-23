@@ -29,10 +29,10 @@ function TypeIcon({ type }: { type: string }) {
  * Una casella: coperto appena visibile, minore in giallo, scoperto in rosso con la ✕. Il dettaglio a parole è il suo
  * nome (screen reader); a vista, al passaggio, il tooltip DreamDex (FloatTip) al posto del tooltip del browser.
  */
-function Cell({ state, label, onEnter, onLeave }: { state: CellState; label: string; onEnter: (el: Element) => void; onLeave: () => void }) {
+function Cell({ state, label, gentle, onEnter, onLeave }: { state: CellState; label: string; gentle: boolean; onEnter: (el: Element) => void; onLeave: () => void }) {
   // Raggiungibile con le frecce (data-nav: la tabella è un posto solo nel giro del Tab); col fuoco da tastiera il tooltip
   return (
-    <td className={`dash-cell ${state}`} aria-label={label} data-nav="" onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}
+    <td className={`dash-cell ${gentle && state !== 'ok' ? 'soft' : state}`} aria-label={label} data-nav="" onMouseEnter={e => onEnter(e.currentTarget)} onMouseLeave={onLeave}
       onFocus={e => { if (keyboardFocus(e.currentTarget)) onEnter(e.currentTarget); }} onBlur={onLeave}>
       <Icon name={state === 'ok' ? 'check' : 'close'} />
     </td>
@@ -60,8 +60,13 @@ const PHONE_PANEL = 480;
  * Al passaggio sulla minaccia il tooltip con i due lati e l'uso; il clic apre la Coverage meta del lato non coperto
  * (la Difesa se lo sono tutti e due) con la colonna della minaccia accesa.
  */
-export function CoverageSection({ coverage, threats, onView }: {
+export function CoverageSection({ coverage, threats, gentle = false, onView }: {
   coverage: DashboardData['coverage'];
+  /**
+   * Un membro solo: niente allarmi (i buchi sono normali a team appena iniziato). Caselle scoperte e minacce in grigio
+   * tratteggiato invece che rosse e gialle, niente numero rosso sulla scheda Meta.
+   */
+  gentle?: boolean;
   /** Le minacce del meta (solo col meta): la scheda Meta. */
   threats?: DashboardData['threats'];
   onView: (v: AnalysisView, sub?: string, focus?: KoFocus) => void;
@@ -154,15 +159,15 @@ export function CoverageSection({ coverage, threats, onView }: {
             ? <span className="dash-tab-trio" aria-hidden="true">{(['Fire', 'Water', 'Grass'] as const).map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}</span>
             : <Icon name="globe" />}
           {t(v === 'types' ? 'dash.tabTypes' : 'dash.tabMeta')}
-          {v === 'meta' && openCount > 0 && <span className="dash-tab-n" aria-label={t('dash.tabMetaOpen', { n: openCount })}>{openCount}</span>}
+          {v === 'meta' && openCount > 0 && !gentle && <span className="dash-tab-n" aria-label={t('dash.tabMetaOpen', { n: openCount })}>{openCount}</span>}
         </button>
       ))}
     </span>
   );
   const typesMeta = <>{offense.toLocaleLowerCase()} <b>{coverage.offense}</b> · {defense.toLocaleLowerCase()} <b>{coverage.defense}</b></>;
-  const threatsMeta = list.length > 0 && <>{t('dash.threatOpen')} <b className={openCount ? 'bad' : undefined}>{openCount}</b> · {t('dash.threatThin')} <b>{thinCount}</b></>;
+  const threatsMeta = list.length > 0 && <>{t('dash.threatOpen')} <b className={openCount && !gentle ? 'bad' : undefined}>{openCount}</b> · {t('dash.threatThin')} <b>{thinCount}</b></>;
   const sideMark = (x: MetaThreat, side: Side) => (
-    <span className={`cov-side ${stateOf(x, side)}`}><Icon name={side === 'defense' ? 'shield' : 'sword'} /></span>
+    <span className={`cov-side ${gentle && stateOf(x, side) !== 'ok' ? 'soft' : stateOf(x, side)}`}><Icon name={side === 'defense' ? 'shield' : 'sword'} /></span>
   );
 
   return (
@@ -182,7 +187,7 @@ export function CoverageSection({ coverage, threats, onView }: {
               <ul className="cov-tiles" aria-label={`${title}: ${t('dash.tabMeta')}`} style={{ '--n': width > 0 && width < PHONE_PANEL ? perRow : slots } as CSSProperties}>
                 {shownThreats.map(x => (
                   <li key={x.species}>
-                    <button type="button" className={`cov-tile ${x.status}`}
+                    <button type="button" className={`cov-tile ${x.status}${gentle ? ' soft' : ''}`}
                       aria-label={t('dash.threatLabel', { species: x.species, word: word(x), reasons: (['defense', 'offense'] as const).map(side => `${t(side === 'defense' ? 'area.defense' : 'area.strength')}: ${sideText(x, side)}`).join('. '), usage: usage(x) })}
                       aria-describedby={goIds[sideOf(x)]}
                       onClick={() => { thrTip.close(); openThreat(sideOf(x), x); }}
@@ -225,12 +230,12 @@ export function CoverageSection({ coverage, threats, onView }: {
                 {/* data-label: sul telefono la tabella va su due file da 9 tipi e la seconda ripete il nome della riga */}
                 <tr data-label={offense}>
                   <th scope="row">{offense}</th>
-                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`}
+                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} gentle={gentle} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`}
                     onEnter={el => tip.open({ side: 'offense', i }, el)} onLeave={tip.close} />)}
                 </tr>
                 <tr data-label={defense}>
                   <th scope="row">{defense}</th>
-                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`}
+                  {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} gentle={gentle} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`}
                     onEnter={el => tip.open({ side: 'defense', i }, el)} onLeave={tip.close} />)}
                 </tr>
               </tbody>

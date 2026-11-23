@@ -308,6 +308,8 @@
 .dash .dash-cell.ok .icon { width: 11px; height: 11px; stroke-width: 2.25; }
 .dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+/* Un membro solo: i buchi sono normali, grigi e tratteggiati come i ruoli che non tolgono punti (niente allarme) */
+.dash .dash-cell.soft { background: none; color: var(--faint); border-style: dashed; border-color: var(--line); }
 
 /* Il tooltip di una minaccia (scheda Meta della Copertura): nome e uso nel meta in testa, le ragioni intere col filo nel colore del caso */
 .ftip.thr-tip { width: var(--tip-s); }
@@ -956,6 +958,9 @@
 .cov-side { display: inline-flex; color: color-mix(in srgb, var(--good) 70%, var(--faint)); }
 .cov-side.bad { color: var(--bad); }
 .cov-side.minor { color: var(--warn); }
+.cov-side.soft { color: var(--faint); }
+/* Un membro solo: le minacce senza rosso né giallo, il piedistallo grigio */
+.cov-tile.soft { --k: var(--faint); }
 .cov-side .icon { width: 14px; height: 14px; }
 .cov-tile.more { justify-content: center; background: none; border: 1px dashed var(--line); color: var(--muted); font: 700 var(--fs-section)/1 var(--display); }
 .cov-tile.more:hover { color: var(--text); border-color: var(--control-line); background: none; }
