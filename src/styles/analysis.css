@@ -953,7 +953,8 @@
 .cov-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 italic var(--fs-small)/1.15 var(--display); }
 .dash.tight .cov-name { font-size: var(--fs-caption); }
 .cov-sides { position: absolute; top: 5px; right: 6px; display: flex; gap: 2px; }
-.cov-side { display: inline-flex; color: color-mix(in srgb, var(--good) 70%, var(--faint)); }
+/* Coperto: il verde pieno delle icone (come la spunta dei ruoli); il verde tenue resta solo alle caselle della griglia dei Tipi */
+.cov-side { display: inline-flex; color: var(--good); }
 .cov-side.bad { color: var(--bad); }
 .cov-side.minor { color: var(--warn); }
 .cov-side.soft { color: var(--faint); }
