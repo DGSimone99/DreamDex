@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
@@ -7,9 +7,11 @@ import type { CoachFix } from '../../src/engine/coachFixes';
 import { neutralAsAlternatives, proposalGroups } from '../../src/engine/coachProposals';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { needLabel } from '../../src/engine/needs';
 import { rateTeam } from '../../src/engine/rating';
 import { areaSnapshot, type AreaSnapshot } from '../../src/engine/teamGain';
 import { emptySet, exportShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
+import { gameName } from '../../src/i18n/game';
 import { CoachingView, gainText } from '../../src/ui/CoachingView';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 import { adviceOf } from '../helpers/coach';
@@ -40,10 +42,12 @@ const proposals = () => screen.getByRole('region', { name: 'Proposte, dalla più
 const heroOf = () => within(proposals()).getByRole('article');
 /** Il nome della proposta nella carta grande ("X al posto di Y, voto +N"). */
 const heroName = () => heroOf().querySelector('h4')!.textContent!;
-/** I pulsanti delle righe sotto la carta (pagina corrente). */
-const rowButtons = () => [...proposals().querySelectorAll<HTMLButtonElement>('.coach-item-btn')];
-/** I nomi delle proposte nelle righe della pagina ("Apri: " tolto). */
-const rowNames = () => rowButtons().map(b => b.getAttribute('aria-label')!.replace(/^Apri: /, ''));
+/** La colonna di sinistra: la classifica delle proposte. */
+const rail = () => screen.getByRole('complementary', { name: /^Proposte/ });
+/** Le testate della classifica (una per proposta, pagina corrente): un clic la apre nella carta. */
+const cures = () => [...rail().querySelectorAll<HTMLButtonElement>('.coach-diag-cure')];
+/** I nomi delle proposte nella classifica ("Apri nella carta: " tolto). */
+const cureNames = () => cures().map(b => b.getAttribute('aria-label')!.replace(/^Apri nella carta: /, ''));
 /** Il pulsante della carta grande che mette un'alternativa nella carta. */
 const altTiles = () => [...heroOf().querySelectorAll<HTMLButtonElement>('.coach-alt-tile')];
 const altNames = () => altTiles().map(b => b.getAttribute('aria-label')!.replace(/^Metti nella carta: /, ''));
@@ -63,7 +67,7 @@ async function openCoaching(team: TeamSet[]) {
 
 /**
  * Porta nella carta grande la prima proposta il cui nome rispetta `pattern`: la carta stessa, le sue alternative, poi le
- * righe sfogliando le pagine (un clic la apre); in ultimo le alternative di ogni riga. Torna la carta grande.
+ * testate della classifica (un clic la apre); in ultimo le alternative di ogni proposta. Torna la carta grande.
  */
 async function findRow(user: ReturnType<typeof userEvent.setup>, pattern: RegExp): Promise<HTMLElement> {
   const inHero = async () => {
@@ -73,29 +77,11 @@ async function findRow(user: ReturnType<typeof userEvent.setup>, pattern: RegExp
     return false;
   };
   if (await inHero()) return heroOf();
-  const first = () => within(proposals()).queryByRole<HTMLButtonElement>('button', { name: 'Proposte precedenti' });
-  const next = () => within(proposals()).queryByRole<HTMLButtonElement>('button', { name: 'Proposte successive' });
-  for (let page = 0; page < 30; page++) {
-    const button = rowButtons().find((_, i) => pattern.test(rowNames()[i]));
-    if (button) { await user.click(button); return heroOf(); }
-    const n = next();
-    if (!n || n.disabled) break;
-    await user.click(n);
-  }
-  // Fra le alternative delle altre righe: si aprono una per una, dalla prima pagina
-  while (first() && !first()!.disabled) await user.click(first()!);
-  const seen = new Set<string>();
-  for (let tries = 0; tries < 60; tries++) {
-    const button = rowButtons().find(b => !seen.has(b.getAttribute('aria-label')!));
-    if (!button) {
-      const n = next();
-      if (!n || n.disabled) break;
-      await user.click(n);
-      continue;
-    }
-    seen.add(button.getAttribute('aria-label')!);
-    await user.click(button);
-    seen.add(`Apri: ${heroName()}`);
+  const at = cureNames().findIndex(n => pattern.test(n));
+  if (at >= 0) { await user.click(cures()[at]); return heroOf(); }
+  // Fra le alternative delle altre proposte: si aprono una per una
+  for (let i = 0; i < cures().length; i++) {
+    await user.click(cures()[i]);
     if (await inHero()) return heroOf();
   }
   throw new Error(`nessuna proposta ${pattern}`);
@@ -116,24 +102,18 @@ const rowGain = (species: string) => {
 };
 
 describe('scheda Coaching', () => {
-  it('dalla più utile: la carta grande ha il +N più alto, le righe sotto non salgono, al più 4 per pagina', async () => {
-    const user = await openCoaching(six);
+  it('dalla più utile: la carta grande ha il +N più alto, la classifica a sinistra non sale e parte da lei', async () => {
+    await openCoaching(six);
     const top = gainOf(heroName());
-    const gains: number[] = [];
-    for (let page = 0; page < 30; page++) {
-      const names = rowNames();
-      expect(names.length).toBeLessThanOrEqual(4);
-      gains.push(...names.map(gainOf));
-      const next = within(proposals()).queryByRole('button', { name: 'Proposte successive' });
-      if (!next || (next as HTMLButtonElement).disabled) break;
-      await user.click(next);
-    }
-    expect(gains.length).toBeGreaterThan(0);
+    const names = cureNames();
+    expect(names.length).toBeGreaterThan(1);
+    expect(names[0]).toBe(heroName());
+    const gains = names.map(gainOf);
     expect(gains.every(g => g <= top)).toBe(true);
     expect([...gains].sort((a, b) => b - a)).toEqual(gains);
-    // Niente più mappa dei problemi né tappe numerate
+    // Niente più mappa dei problemi né tappe numerate né lista sotto la carta
     expect(within(analysis()).queryByText('Problemi per area')).toBeNull();
-    expect(analysis().querySelector('.coach-step-num, .coach-map')).toBeNull();
+    expect(analysis().querySelector('.coach-step-num, .coach-map, .coach-list, .coach-item')).toBeNull();
   });
 
   it('"Vedi nella scheda Pokémon": scheda Pokémon, quel membro da sostituire, il candidato aperto, stesso +N', async () => {
@@ -171,6 +151,8 @@ describe('scheda Coaching', () => {
     const user = await openCoaching(trio);
     const hero = await findRow(user, ADD);
     const [, species, gain] = ADD.exec(heroName())!;
+    // Nella carta: "Aggiunta · posto libero" al posto di "Al posto di"
+    expect(hero.querySelector('.coach-hero-title .coach-plate')).toHaveTextContent('Aggiuntaposto libero');
     await user.click(within(hero).getByRole('button', { name: `Vedi nella scheda Pokémon: ${species}` }));
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toHaveAttribute('aria-pressed', 'true');
@@ -236,6 +218,7 @@ describe('CoachingView', () => {
   const pivot: CoachProblem = { severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important', subjects: ['pivot'] };
   const steel: CoachProblem = { severity: 'minor', category: 'redundancy', text: '3 membri di tipo Acciaio', fixes: [], key: 'redundancy:3 membri di tipo Acciaio' };
   const problems = [fire, zapdos, pivot, steel];
+  const pivotName = needLabel('pivot', 'it');
   const swap = (species: string, index: number, gain: number, solves: string[], after?: Partial<AreaSnapshot>): CoachFix => ({
     kind: 'swap', species, set: mostCommonSet(fixtureStats, species) ?? emptySet(species), index, member: six[index].species, gain, solves, reduces: [],
     after: { ...before, ...after },
@@ -248,19 +231,29 @@ describe('CoachingView', () => {
   };
   const list = () => screen.getByRole('region', { name: 'Proposte, dalla più utile' });
   const band = () => list().querySelector('.coach-hero-band h4')!;
-  const othersHead = () => list().querySelector('.coach-list .coach-list-head h4')!;
+  const heroTitle = () => heroOf().querySelector('h4')!;
+  const live = () => list().querySelector('p[aria-live="polite"]')!;
   const six6 = ['Zapdos', 'Heatran', 'Rotom-Wash', 'Landorus-Therian', 'Clefable', 'Dragonite'];
-  /** La colonna "Da sistemare" a sinistra. */
-  const rail = () => screen.getByRole('complementary', { name: /^Da sistemare/ });
-  /** Il pulsante di un problema nella colonna, dal suo testo. */
-  const railItem = (text: string) => [...rail().querySelectorAll<HTMLButtonElement>('.coach-diag-item:not(.is-all)')].find(b => b.textContent!.includes(text))!;
-  const allButton = () => within(rail()).getByRole('button', { name: /^Tutte le proposte/ });
+  /** Il pulsante (o la riga ferma, in "Restano") di un problema nella classifica, dal suo testo. */
+  const railItem = (text: string) => [...rail().querySelectorAll<HTMLElement>('.coach-diag-item')].find(b => b.textContent!.includes(text))!;
+  /**
+   * La classifica come si legge, riga per riga: "cura:Specie" (la testata di una proposta), il problema ("fire", "zapdos",
+   * "pivot", "steel", "slow", "dragonite"), "nota:già sopra" / "nota:alza" e "restano" (la testata dei problemi senza cura).
+   */
+  const order = () => [...rail().querySelectorAll<HTMLLIElement>('ol.coach-diag-list > li')].map(li => {
+    const text = li.textContent!;
+    if (li.querySelector('.coach-diag-cure')) return `cura:${li.querySelector('.coach-diag-cure-text b')!.textContent}`;
+    if (li.classList.contains('is-note')) return text === 'Risolve problemi già scritti sopra' ? 'nota:già sopra' : text === 'Nessun problema: alza solo il voto' ? 'nota:alza' : `nota:${text}`;
+    if (li.classList.contains('is-stuck')) return 'restano';
+    return text.includes('contro Fire') ? 'fire' : text.includes('contro Zapdos') ? 'zapdos' : text.includes(pivotName) ? 'pivot'
+      : text.includes('Acciaio') ? 'steel' : text.includes('lenti') ? 'slow' : text.includes('Dragonite') ? 'dragonite' : `?${text}`;
+  });
 
   it('a pari voto "±0", mai "+0"', () => {
     expect([gainText(3), gainText(0), gainText(-2)]).toEqual(['+3', '±0', '−2']);
   });
 
-  it('la migliore nella carta grande, le altre in righe dalla più utile; nomi "X al posto di Y, voto +N"; quante sono nel titolo', () => {
+  it('la migliore nella carta grande, la classifica a sinistra dalla più utile; nomi "X al posto di Y, voto +N"; quante sono nel titolo', () => {
     view(advice([swap('Rotom-Wash', 4, 2, [fire.key]), swap('Zapdos', 5, 5, [pivot.key]), swap('Heatran', 1, 3, [steel.key])]));
     expect(band()).toHaveTextContent('La proposta migliore');
     expect(within(list()).queryByRole('button', { name: 'Torna alla migliore' })).toBeNull();
@@ -269,56 +262,83 @@ describe('CoachingView', () => {
     expect(heroOf().querySelector('.coach-plate')).toHaveTextContent('Al posto diSunkern');
     expect(heroOf().querySelector('.coach-gain')).toHaveTextContent('+5');
     expect(heroOf().querySelector('.coach-grade-change')).toHaveTextContent(`${rating.grade} ${rating.overall}`);
-    expect(rowNames()).toEqual(['Heatran al posto di Gholdengo, voto +3', 'Rotom-Wash al posto di Magikarp, voto +2']);
-    expect(othersHead()).toHaveTextContent('Altre proposte2');
+    expect(within(rail()).getByRole('heading', { name: /^Proposte/ })).toHaveTextContent('Proposte3');
+    expect(cureNames()).toEqual(['Zapdos al posto di Sunkern, voto +5', 'Heatran al posto di Gholdengo, voto +3', 'Rotom-Wash al posto di Magikarp, voto +2']);
+    // La testata: nome, "al posto di X", +N; quella nella carta ha l'anello (aria-current)
+    expect(cures()[0]).toHaveTextContent('Zapdosal posto di Sunkern+5');
+    expect(cures()[0]).toHaveAttribute('aria-current', 'true');
+    expect(cures()[0]).toHaveClass('is-open');
+    expect(cures()[1]).not.toHaveAttribute('aria-current');
+    // Niente più lista sotto la carta
+    expect(list().querySelector('.coach-list, ol.coach-rows, li.coach-item, .coach-item-btn, .coach-marks')).toBeNull();
+    expect(within(list()).queryByText(/^Altre proposte/)).toBeNull();
     // Pochi: nessuna pagina
-    expect(within(list()).queryByRole('navigation')).toBeNull();
+    expect(within(rail()).queryByRole('navigation')).toBeNull();
   });
 
-  it('un clic su una riga la porta nella carta grande ("La proposta scelta"); "Torna alla migliore" riporta la prima', async () => {
+  it('un clic su una testata della classifica la porta nella carta grande ("La proposta scelta"); "Torna alla migliore" riporta la prima e il fuoco sul titolo della carta', async () => {
     const user = userEvent.setup();
     view(advice([swap('Rotom-Wash', 4, 2, [fire.key]), swap('Zapdos', 5, 5, [pivot.key]), swap('Heatran', 1, 3, [steel.key])]));
-    await user.click(within(list()).getByRole('button', { name: 'Apri: Rotom-Wash al posto di Magikarp, voto +2' }));
+    await user.click(within(rail()).getByRole('button', { name: 'Apri nella carta: Rotom-Wash al posto di Magikarp, voto +2' }));
     expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +2');
     expect(band()).toHaveTextContent('La proposta scelta');
-    // La migliore torna fra le righe, al suo posto (in testa)
-    expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +5', 'Heatran al posto di Gholdengo, voto +3']);
+    // La classifica non cambia ordine: cambia solo l'anello
+    expect(cureNames()).toEqual(['Zapdos al posto di Sunkern, voto +5', 'Heatran al posto di Gholdengo, voto +3', 'Rotom-Wash al posto di Magikarp, voto +2']);
+    expect(cures()[2]).toHaveAttribute('aria-current', 'true');
+    expect(cures()[0]).not.toHaveAttribute('aria-current');
     await user.click(within(list()).getByRole('button', { name: 'Torna alla migliore' }));
     expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
     expect(band()).toHaveTextContent('La proposta migliore');
     expect(within(list()).queryByRole('button', { name: 'Torna alla migliore' })).toBeNull();
+    await waitFor(() => expect(heroTitle()).toHaveFocus());
+    expect(heroTitle()).toHaveAttribute('tabindex', '-1');
   });
 
-  it('il magenta solo su Applica della carta grande, una volta sola (le righe non hanno Applica)', async () => {
+  it('il magenta solo su Applica della carta grande, una volta sola (la classifica non ha Applica)', async () => {
     const user = userEvent.setup();
     view(advice(six6.map((s, i) => swap(s, i, 9 - i, [fire.key]))));
     const primary = () => document.querySelectorAll('.coach-apply.is-primary');
     expect(primary()).toHaveLength(1);
     expect(heroOf().contains(primary()[0])).toBe(true);
     expect(document.querySelectorAll('.coach-apply')).toHaveLength(1);
-    await user.click(within(list()).getByRole('button', { name: 'Proposte successive' }));
-    expect(primary()).toHaveLength(1);
-    await user.click(rowButtons()[0]);
+    expect(rail().querySelector('.coach-apply')).toBeNull();
+    await user.click(cures()[4]);
     expect(primary()).toHaveLength(1);
     expect(heroOf().contains(primary()[0])).toBe(true);
   });
 
-  it('pagine da 4 righe: "‹ 1/2 ›" coi nomi per lo screen reader, avanti e indietro', async () => {
-    const user = userEvent.setup();
-    view(advice(six6.map((s, i) => swap(s, i, 9 - i, [fire.key]))));
-    const pages = within(list()).getByRole('navigation', { name: 'Pagine delle proposte' });
-    expect(pages).toHaveTextContent('1/2');
-    expect(pages).toHaveTextContent('Proposte da 1 a 4');
-    expect(within(pages).getByRole('button', { name: 'Proposte precedenti' })).toBeDisabled();
-    // La migliore (Zapdos) è nella carta: le righe partono dalla seconda
-    expect(rowNames().map(n => n.split(' ')[0])).toEqual(['Heatran', 'Rotom-Wash', 'Landorus-Therian', 'Clefable']);
-    await user.click(within(pages).getByRole('button', { name: 'Proposte successive' }));
-    expect(rowNames().map(n => n.split(' ')[0])).toEqual(['Dragonite']);
-    expect(pages).toHaveTextContent('2/2');
-    expect(pages).toHaveTextContent('Proposte da 5 a 5');
-    expect(within(pages).getByRole('button', { name: 'Proposte successive' })).toBeDisabled();
-    await user.click(within(pages).getByRole('button', { name: 'Proposte precedenti' }));
-    expect(pages).toHaveTextContent('1/2');
+  it('a pagine quando la colonna è bassa: "‹ 1/3 ›" coi nomi per lo screen reader, un blocco non si spezza, avanti e indietro', async () => {
+    // jsdom non misura: una colonna alta 200 e righe da 40 (5 righe per pagina)
+    const realStyle = window.getComputedStyle.bind(window);
+    const style = vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element, pseudo?: string | null) => (el.classList.contains('coach-diag-box')
+      ? ({ getPropertyValue: (p: string) => (p === '--row-h' ? '40' : '') } as unknown as CSSStyleDeclaration) : realStyle(el, pseudo)));
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get(this: HTMLElement) { return this.classList.contains('coach-diag-box') ? 200 : 0; } });
+    const RO = class { constructor(private cb: ResizeObserverCallback) {} observe() { this.cb([], this as unknown as ResizeObserver); } unobserve() {} disconnect() {} };
+    vi.stubGlobal('ResizeObserver', RO);
+    try {
+      const user = userEvent.setup();
+      // Ogni blocco è testata + una riga (il primo: Fuoco; gli altri: "già scritti sopra"): due blocchi per pagina
+      view(advice(six6.map((s, i) => swap(s, i, 9 - i, [fire.key]))), { coaching: coachingOf([fire]) });
+      const pages = within(rail()).getByRole('navigation', { name: 'Pagine delle proposte' });
+      expect(pages).toHaveTextContent('1/3');
+      expect(pages).toHaveTextContent('Pagina 1 di 3');
+      expect(within(pages).getByRole('button', { name: 'Proposte precedenti' })).toBeDisabled();
+      expect(order()).toEqual(['cura:Zapdos', 'fire', 'cura:Heatran', 'nota:già sopra']);
+      await user.click(within(pages).getByRole('button', { name: 'Proposte successive' }));
+      expect(order()).toEqual(['cura:Rotom-Wash', 'nota:già sopra', 'cura:Landorus-Therian', 'nota:già sopra']);
+      expect(pages).toHaveTextContent('Pagina 2 di 3');
+      await user.click(within(pages).getByRole('button', { name: 'Proposte successive' }));
+      expect(pages).toHaveTextContent('3/3');
+      expect(within(pages).getByRole('button', { name: 'Proposte successive' })).toBeDisabled();
+      await user.click(within(pages).getByRole('button', { name: 'Proposte precedenti' }));
+      expect(pages).toHaveTextContent('2/3');
+      // Il titolo conta tutte le proposte, non quelle della pagina
+      expect(within(rail()).getByRole('heading', { name: /^Proposte/ })).toHaveTextContent('Proposte6');
+    } finally {
+      style.mockRestore();
+      delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight;
+      vi.unstubAllGlobals();
+    }
   });
 
   it('cosa cambia: "Risolve" coi problemi risolti (spunte) e le aree che salgono "da → a"; le aree che non cambiano non ci sono; "Costa: Niente"', () => {
@@ -339,28 +359,24 @@ describe('CoachingView', () => {
     expect(costs).not.toHaveClass('is-bad');
   });
 
-  it('un\'area che sale senza problemi risolti: "alza solo il voto" e la sua riga "da → a"; nelle righe la prima area che sale', async () => {
+  it('"Risolve" mostra tutti i problemi risolti, senza "+N altri"', () => {
+    view(advice([swap('Rotom-Wash', 4, 3, [fire.key, zapdos.key, pivot.key, steel.key])]));
+    const solves = within(heroOf()).getByRole('region', { name: 'Risolve' });
+    expect(solves.querySelectorAll('li.coach-solved')).toHaveLength(4);
+    expect(solves).toHaveTextContent(pivotName);
+    expect(solves).not.toHaveTextContent(/\+\d+ altr[io]/);
+  });
+
+  it('un\'area che sale senza problemi risolti: "alza solo il voto" e la sua riga "da → a"; nella classifica la nota sotto la testata', () => {
     const off = Math.round(before.strength!);
-    const def = Math.round(before.defense!);
-    view(advice([swap('Zapdos', 4, 3, [], { strength: off + 2 }), swap('Heatran', 1, 2, [], { defense: def + 1 })]));
+    view(advice([swap('Zapdos', 4, 3, [], { strength: off + 2 }), swap('Heatran', 1, 2, [], { defense: Math.round(before.defense!) + 1 })]));
     const solves = within(heroOf()).getByRole('region', { name: 'Risolve' });
     expect(solves).toHaveTextContent('Nessun problema: alza solo il voto');
     expect(solves.querySelector('li.coach-solved')).toBeNull();
     expect(solves.querySelector('.coach-change b')).toHaveTextContent('Offesa');
     expect(solves.querySelector('.coach-change .coach-to')).toHaveTextContent(String(off + 2));
-    const [row] = list().querySelectorAll('li.coach-item');
-    expect(row.querySelector('.coach-marks')).toBeNull();
-    expect(row.querySelector('.coach-change b')).toHaveTextContent('Difesa');
-  });
-
-  it('nelle righe: la spunta con quanti problemi risolve (il testo per lo screen reader) e "Costa" quando un\'area scende', () => {
-    const def = Math.round(before.defense!);
-    view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 3, [fire.key, zapdos.key], { defense: def - 2 })]));
-    const [row] = list().querySelectorAll('li.coach-item');
-    const marks = row.querySelector('.coach-marks')!;
-    expect(marks.querySelector('.coach-marks-n')).toHaveTextContent('2');
-    expect(marks.querySelector('.visually-hidden')).toHaveTextContent(/^Risolve: .*Fire.*; .*Zapdos/);
-    expect(row.querySelector('.coach-item-cost')).toHaveTextContent('CostaDifesa');
+    // Nessuna proposta risolve un problema: tutti in "Restano"
+    expect(order()).toEqual(['cura:Zapdos', 'nota:alza', 'cura:Heatran', 'nota:alza', 'restano', 'fire', 'zapdos', 'pivot', 'steel']);
   });
 
   it('aperta nella carta, un\'area che scende sta in "Costa" (in rosso), non in "Risolve"', () => {
@@ -380,8 +396,34 @@ describe('CoachingView', () => {
     expect(h.onApplyFix).toHaveBeenLastCalledWith(fix);
     await user.click(within(heroOf()).getByRole('button', { name: 'Vedi nella scheda Pokémon: Rotom-Wash' }));
     expect(h.onFix).toHaveBeenLastCalledWith(fix);
-    // Una proposta sola: nessun'altra
-    expect(within(list()).getByText('Nessun\'altra proposta')).toBeInTheDocument();
+    // Una proposta sola: una testata sola nella classifica, nessuna lista di altre
+    expect(cureNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +3']);
+    expect(within(list()).queryByText(/Nessun'altra proposta/)).toBeNull();
+  });
+
+  it('il set della proposta: Strumento e Abilità come targhette, le quattro mosse', () => {
+    const fix = swap('Rotom-Wash', 4, 3, [fire.key]);
+    view(advice([fix]));
+    const set = within(heroOf()).getByRole('region', { name: 'Set' });
+    expect(set).toHaveClass('coach-set');
+    const plates = [...set.querySelectorAll('.coach-set-kit .coach-plate')];
+    expect(plates.map(p => p.querySelector('.coach-plate-label')!.textContent)).toEqual(['Strumento', 'Abilità']);
+    expect(plates[0].querySelector('.coach-plate-value')).toHaveTextContent(gameName('item', fix.set.item, 'it'));
+    expect(plates[1].querySelector('.coach-plate-value')).toHaveTextContent(gameName('ability', fix.set.ability, 'it'));
+    const moves = [...set.querySelectorAll('.coach-set-moves li')];
+    expect(moves).toHaveLength(fix.set.moves.filter(Boolean).length);
+    expect(fix.set.moves.filter(Boolean)).toHaveLength(4);
+    // In un cambio di Pokémon nessuna mossa è "nuova"
+    expect(set.querySelector('li.is-new')).toBeNull();
+  });
+
+  it('la regione viva dice cosa c\'è nella carta e cambia con lei', async () => {
+    const user = userEvent.setup();
+    view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 4, [fire.key])]));
+    expect(live()).toHaveClass('visually-hidden');
+    expect(live()).toHaveTextContent('Nella carta: Zapdos al posto di Sunkern, voto +5');
+    await user.click(cures()[1]);
+    expect(live()).toHaveTextContent('Nella carta: Rotom-Wash al posto di Magikarp, voto +4');
   });
 
   describe('alternative', () => {
@@ -390,7 +432,7 @@ describe('CoachingView', () => {
     const third = swap('Volcanion', 4, 2, [fire.key, zapdos.key]);
     const other = swap('Zapdos', 5, 1, [pivot.key]);
 
-    it('stesso membro e stesso problema principale: una carta con "Oppure" e le piccole carte delle altre; le righe senza', () => {
+    it('stesso membro e stesso problema principale: una carta con "Oppure" e le piccole carte delle altre; nella classifica una testata sola', () => {
       const adv = advice([second, best, third, other]);
       expect(proposalGroups(problems, adv).map(g => g.options.length)).toEqual([3, 1]);
       view(adv);
@@ -399,31 +441,39 @@ describe('CoachingView', () => {
       expect(alts).toHaveTextContent('Oppure');
       expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3', 'Volcanion al posto di Magikarp, voto +2']);
       expect(altTiles().map(t => t.textContent)).toEqual(['+3', '+2']);
-      expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +1']);
+      expect(cureNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +4', 'Zapdos al posto di Sunkern, voto +1']);
+      expect(order()).toEqual(['cura:Rotom-Wash', 'fire', 'zapdos', 'cura:Zapdos', 'pivot', 'restano', 'steel']);
     });
 
     it('un posto senza alternative non ha "Oppure"', async () => {
       const user = userEvent.setup();
       view(advice([second, best, third, other]));
-      await user.click(rowButtons()[0]);
+      await user.click(cures()[1]);
       expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +1');
       expect(heroOf().querySelector('.coach-alts')).toBeNull();
     });
 
-    it('scegliere un\'alternativa la mette nella carta (nome, +N) e Applica applica quella; la migliore va fra le piccole carte', async () => {
+    it('scegliere un\'alternativa la mette nella carta (nome, +N), il fuoco va sul titolo della carta e Applica applica quella; la migliore va fra le piccole carte', async () => {
       const user = userEvent.setup();
       const h = view(advice([second, best, third, other]));
       await user.click(within(heroOf()).getByRole('button', { name: 'Metti nella carta: Heatran al posto di Magikarp, voto +3' }));
       expect(heroName()).toBe('Heatran al posto di Magikarp, voto +3');
+      await waitFor(() => expect(heroTitle()).toHaveFocus());
       expect(heroOf().querySelector('.coach-gain')).toHaveTextContent('+3');
       expect(altNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +4', 'Volcanion al posto di Magikarp, voto +2']);
+      expect(live()).toHaveTextContent('Nella carta: Heatran al posto di Magikarp, voto +3');
+      // La testata della classifica è la scelta; Zapdos lo risolve solo un'alternativa: resta sotto lo stesso posto, senza spunta
+      expect(cureNames()[0]).toBe('Heatran al posto di Magikarp, voto +3');
+      expect(order()).toEqual(['cura:Heatran', 'fire', 'zapdos', 'cura:Zapdos', 'pivot', 'restano', 'steel']);
+      expect(railItem('contro Fire')).toHaveClass('is-cured');
+      expect(railItem('contro Zapdos')).not.toHaveClass('is-cured');
       await user.click(within(heroOf()).getByRole('button', { name: /^Applica: Heatran/ }));
       expect(h.onApplyFix).toHaveBeenLastCalledWith(second);
       await user.click(within(heroOf()).getByRole('button', { name: 'Vedi nella scheda Pokémon: Heatran' }));
       expect(h.onFix).toHaveBeenLastCalledWith(second);
-      // Aperta un'altra riga, il posto resta con la scelta fra le righe
-      await user.click(rowButtons()[0]);
-      expect(rowNames()).toEqual(['Heatran al posto di Magikarp, voto +3']);
+      // Aperta un'altra proposta, il posto resta con la scelta nella classifica
+      await user.click(cures()[1]);
+      expect(cureNames()[0]).toBe('Heatran al posto di Magikarp, voto +3');
     });
 
     it('tastiera: le piccole carte sono pulsanti, Invio e Spazio scelgono', async () => {
@@ -432,6 +482,8 @@ describe('CoachingView', () => {
       altTiles()[1].focus();
       await user.keyboard('{Enter}');
       expect(heroName()).toBe('Volcanion al posto di Magikarp, voto +2');
+      // Il pulsante usato sparisce: il fuoco va sul titolo della carta (al fotogramma dopo)
+      await waitFor(() => expect(heroTitle()).toHaveFocus());
       altTiles()[0].focus();
       await user.keyboard(' ');
       expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
@@ -448,27 +500,29 @@ describe('CoachingView', () => {
       expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
     });
 
-    it('una proposta che non alza il voto va fra le alternative della prima che risolve il suo problema, non fra le righe', () => {
+    it('una proposta che non alza il voto va fra le alternative della prima che risolve il suo problema, non nella classifica', () => {
       const neutral = swap('Incineroar', 3, 0, [fire.key]);
       view(advice([second, best, other, neutral]));
       expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3', 'Incineroar al posto di Corviknight, voto ±0']);
-      expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +1']);
+      expect(cureNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +4', 'Zapdos al posto di Sunkern, voto +1']);
     });
 
-    it('senza una proposta che alza il voto e risolve il suo problema, resta in coda alle righe', () => {
+    it('senza una proposta che alza il voto e risolve il suo problema, resta in coda alla classifica', () => {
       const neutral = swap('Incineroar', 3, 0, [steel.key]);
       view(advice([best, other, neutral]));
-      expect(rowNames()).toEqual(['Zapdos al posto di Sunkern, voto +1', 'Incineroar al posto di Corviknight, voto ±0']);
+      expect(cureNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +4', 'Zapdos al posto di Sunkern, voto +1', 'Incineroar al posto di Corviknight, voto ±0']);
+      expect(order()).toEqual(['cura:Rotom-Wash', 'fire', 'zapdos', 'cura:Zapdos', 'pivot', 'cura:Incineroar', 'steel']);
     });
   });
 
-  it('cambio di mossa: la mossa nuova protagonista, "Su X", la vecchia barrata; Applica e "Apri il set"', async () => {
+  it('cambio di mossa: la mossa nuova protagonista, "Su X", la vecchia barrata, nel set la mossa nuova segnata; Applica e "Apri il set"', async () => {
     const user = userEvent.setup();
-    const move: MoveFix = { index: 0, member: 'Great Tusk', set: six[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 4, solves: [zapdos.key], after: before };
+    const tusk: TeamSet = { ...six[0], moves: [six[0].moves[0], 'Knock Off', six[0].moves[2], six[0].moves[3]] };
+    const move: MoveFix = { index: 0, member: 'Great Tusk', set: tusk, reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 4, solves: [zapdos.key], after: before };
     const empty: MoveFix = { ...move, index: 1, member: 'Gholdengo', set: six[1], slot: 3, from: '', to: 'Thunderbolt', gain: 1, solves: [pivot.key] };
     const h = view(advice([swap('Rotom-Wash', 4, 2, [fire.key])], [move, empty]));
     expect(heroName()).toBe('Knock Off al posto di Rapid Spin su Great Tusk, voto +4');
-    expect(rowNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +2', 'Thunderbolt in uno slot libero su Gholdengo, voto +1']);
+    expect(cureNames()).toEqual(['Knock Off al posto di Rapid Spin su Great Tusk, voto +4', 'Rotom-Wash al posto di Magikarp, voto +2', 'Thunderbolt in uno slot libero su Gholdengo, voto +1']);
     const hero = heroOf();
     expect(hero).toHaveClass('is-move');
     const title = hero.querySelector('.coach-hero-title.is-move')!;
@@ -478,19 +532,27 @@ describe('CoachingView', () => {
     expect(plates[1]).toHaveClass('is-out');
     expect(plates[1].querySelector('s')).toHaveTextContent('Rapid Spin');
     expect(title).toHaveTextContent('cambio di mossa');
-    // Nelle righe la mossa è segnata come tale
-    expect(list().querySelectorAll('li.coach-item')[1]).toHaveClass('is-move');
+    // Nel set: le quattro mosse, la nuova (slot 1) segnata
+    const moves = [...hero.querySelectorAll('.coach-set-moves li')];
+    expect(moves).toHaveLength(4);
+    expect(moves.map(li => li.classList.contains('is-new'))).toEqual([false, true, false, false]);
+    expect(moves[1]).toHaveTextContent(gameName('move', 'Knock Off', 'it'));
+    // Nella classifica la mossa è segnata come tale: la mossa nuova, "su X, al posto di Y"
+    expect(cures().map(c => c.classList.contains('is-move'))).toEqual([true, false, true]);
+    expect(cures()[0]).toHaveTextContent('su Great Tusk, al posto di Rapid Spin');
+    expect(cures()[2]).toHaveTextContent('su Gholdengo, al posto di slot libero');
     await user.click(within(hero).getByRole('button', { name: /^Applica: Knock Off/ }));
     expect(h.onApplyMove).toHaveBeenLastCalledWith(move);
     await user.click(within(hero).getByRole('button', { name: 'Apri il set: Great Tusk' }));
     expect(h.onMoveFix).toHaveBeenLastCalledWith(move);
     // Uno slot libero: "slot libero" al posto della mossa vecchia
-    await user.click(within(list()).getByRole('button', { name: 'Apri: Thunderbolt in uno slot libero su Gholdengo, voto +1' }));
+    await user.click(within(rail()).getByRole('button', { name: 'Apri nella carta: Thunderbolt in uno slot libero su Gholdengo, voto +1' }));
     expect(heroOf().querySelector('.coach-hero-free')).toHaveTextContent('slot libero');
     expect(heroOf().querySelector('.coach-plate.is-out')).toBeNull();
+    expect(heroOf().querySelectorAll('.coach-set-moves li')[3]).toHaveClass('is-new');
   });
 
-  it('un cambio che lascia il team senza un ruolo d\'aiuto lo dice in "Costa": "Perdi Danno nel Tempo"; anche nella riga; gli altri no', async () => {
+  it('un cambio che lascia il team senza un ruolo d\'aiuto lo dice in "Costa": "Perdi Danno nel Tempo"; gli altri no', async () => {
     const user = userEvent.setup();
     const move: MoveFix = { index: 0, member: 'Great Tusk', set: six[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 6, solves: [zapdos.key], after: before,
       lostHelpers: ['dot', 'phazer'], penalty: 2 };
@@ -501,13 +563,10 @@ describe('CoachingView', () => {
     expect(costs.querySelector('.coach-lost')).toHaveTextContent('Perdi Danno nel Tempo, Anti-setup');
     // Il voto mostrato resta quello vero
     expect(heroOf().querySelector('.coach-gain')).toHaveTextContent('+6');
-    const [clean] = list().querySelectorAll('li.coach-item');
-    expect(clean.querySelector('.coach-item-cost')).toBeNull();
-    await user.click(rowButtons()[0]);
+    expect(cures()[0].querySelector('.coach-diag-cure-gain')).toHaveTextContent('+6');
+    await user.click(cures()[1]);
     expect(heroOf().querySelector('.coach-lost')).toBeNull();
     expect(within(heroOf()).getByRole('region', { name: 'Costa' })).toHaveTextContent('Niente');
-    const [lossy] = list().querySelectorAll('li.coach-item');
-    expect(lossy.querySelector('.coach-item-cost')).toHaveTextContent('CostaDanno nel Tempo, Anti-setup');
   });
 
   it('aperto su un problema dalla testata di un\'area: filtro su quel problema, la prima proposta che lo risolve nella carta, in vista e accesa per 2 secondi', () => {
@@ -521,10 +580,15 @@ describe('CoachingView', () => {
       expect(heroName()).toBe('Dragonite al posto di Sunkern, voto +4');
       expect(hero).toHaveClass('is-flash');
       expect(scroll.mock.contexts[0]).toBe(hero);
-      expect(railItem('Pivot')).toHaveAttribute('aria-pressed', 'true');
-      expect(allButton()).toHaveAttribute('aria-pressed', 'false');
-      expect(othersHead()).toHaveTextContent('Altre proposte per questo problema');
-      expect(rowNames()).toEqual([]);
+      expect(railItem(pivotName)).toHaveAttribute('aria-pressed', 'true');
+      expect(railItem(pivotName)).toHaveClass('is-on');
+      const bar = rail().querySelector('.coach-filter')!;
+      expect(bar).toHaveTextContent(`Solo per: ${pivotName}`);
+      expect(within(bar as HTMLElement).getByRole('button', { name: 'Mostra tutte' })).toBeInTheDocument();
+      // Solo le proposte che lo risolvono, senza "Restano"
+      expect(cureNames()).toEqual(['Dragonite al posto di Sunkern, voto +4']);
+      expect(order()).toEqual(['cura:Dragonite', 'pivot']);
+      expect(within(rail()).getByRole('heading', { name: /^Proposte/ })).toHaveTextContent('Proposte1');
       act(() => { vi.advanceTimersByTime(2100); });
       expect(heroOf()).not.toHaveClass('is-flash');
     } finally {
@@ -533,113 +597,114 @@ describe('CoachingView', () => {
     }
   });
 
-  it('consigli in calcolo: la carta e le righe scheletro (aria-busy) e un avviso per lo screen reader', () => {
+  it('consigli in calcolo: la carta e la classifica scheletro (aria-busy), senza numero, e un avviso per lo screen reader', () => {
     view(null);
     expect(list().querySelector('.coach-hero.skeleton')).not.toBeNull();
     expect(within(list()).queryByRole('article')).toBeNull();
-    const busy = list().querySelector('ol[aria-busy="true"]')!;
-    expect(busy.querySelectorAll('li.coach-item.skeleton')).toHaveLength(4);
+    const busy = rail().querySelector('ol.coach-diag-list[aria-busy="true"]')!;
+    expect(busy.querySelectorAll('li.coach-rank-skeleton')).toHaveLength(6);
+    expect(rail().querySelector('.coach-diag-cure, .coach-diag-item')).toBeNull();
+    expect(within(rail()).getByRole('heading', { name: /^Proposte/ })).toHaveTextContent(/^Proposte$/);
     expect(screen.getByRole('status')).toHaveTextContent('Calcolo dei consigli…');
+    expect(live()).toHaveTextContent(/^$/);
   });
 
-  it('le aree senza problemi in una riga verde sotto i problemi', () => {
+  it('le aree senza problemi in una riga verde sotto la classifica', () => {
     renderIt(<CoachingView coaching={coachingOf([zapdos])} advice={advice([swap('Rotom-Wash', 4, 2, [zapdos.key])])} members={6} rating={rating} {...noop} />);
     const clean = rail().querySelector('.coach-clean')!;
     expect(clean).toHaveTextContent(`Nessun problema in Offesa ${Math.round(before.strength!)} · Ruoli`);
     expect(clean).not.toHaveTextContent('Difesa');
   });
 
-  describe('Da sistemare', () => {
-    const stuck: CoachProblem = { severity: 'minor', category: 'redundancy', text: 'Due membri lenti', fixes: [], key: 'redundancy:slow' };
+  describe('classifica', () => {
+    const slow: CoachProblem = { severity: 'minor', category: 'redundancy', text: 'Due membri lenti', fixes: [], key: 'redundancy:slow' };
+    const hit: CoachProblem = { severity: 'minor', category: 'metaHit', text: 'Senza risposta in attacco contro Dragonite', fixes: [], key: 'metaHit:Dragonite', subjects: ['Dragonite'] };
+    const ranked = () => view(advice([swap('Zapdos', 5, 5, [pivot.key, steel.key]), swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key]), swap('Heatran', 1, 1, [fire.key])]),
+      { coaching: coachingOf([...problems, slow, hit]) });
 
-    it('i problemi una volta sola, col numero di proposte che li risolvono; "Tutte le proposte" acceso; senza proposte spento', () => {
-      view(advice([swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key]), swap('Heatran', 1, 3, [fire.key]), swap('Zapdos', 5, 2, [pivot.key])]),
-        { coaching: coachingOf([...problems, stuck]) });
-      expect(within(rail()).getByRole('heading', { name: /^Da sistemare/ })).toHaveTextContent('Da sistemare5');
-      expect(allButton()).toHaveAttribute('aria-pressed', 'true');
-      expect(allButton().querySelector('.coach-diag-n')).toHaveTextContent('3');
-      const n = (text: string) => railItem(text).querySelector('.coach-diag-n')!;
-      expect(n('contro Fire')).toHaveTextContent('2');
-      expect(n('contro Fire')).toHaveAttribute('aria-label', '2 proposte');
-      expect(n('contro Zapdos')).toHaveTextContent('1');
-      expect(n('Pivot')).toHaveTextContent('1');
-      expect(railItem('Acciaio')).toBeDisabled();
-      expect(railItem('Due membri lenti')).toBeDisabled();
-      expect(n('Acciaio')).toHaveTextContent('–');
-      // Pochi: nessuna pagina
-      expect(within(rail()).queryByRole('navigation')).toBeNull();
+    it('le proposte nell\'ordine dei gruppi, ognuna coi problemi che è la prima a risolvere (una volta sola); senza problemi nuovi la nota; in coda "Restano"', () => {
+      ranked();
+      expect(cureNames()).toEqual(['Zapdos al posto di Sunkern, voto +5', 'Rotom-Wash al posto di Magikarp, voto +4', 'Heatran al posto di Gholdengo, voto +1']);
+      expect(order()).toEqual(['cura:Zapdos', 'pivot', 'steel', 'cura:Rotom-Wash', 'fire', 'zapdos', 'cura:Heatran', 'nota:già sopra', 'restano', 'slow', 'dragonite']);
+      // Ogni problema una volta sola
+      expect(rail().querySelectorAll('.coach-diag-item')).toHaveLength(6);
+      expect(within(rail()).getByText('Restano: nessun cambio singolo li risolve')).toBeInTheDocument();
+      // In "Restano" i problemi non sono pulsanti
+      for (const text of ['Due membri lenti', 'Dragonite']) {
+        expect(railItem(text).tagName).toBe('SPAN');
+        expect(railItem(text)).toHaveClass('is-static');
+        expect(railItem(text)).not.toHaveAttribute('aria-pressed');
+      }
+      expect(railItem('contro Fire').tagName).toBe('BUTTON');
+      expect(railItem('contro Fire')).toHaveAttribute('aria-pressed', 'false');
+      expect(railItem('contro Fire')).toHaveClass('serious');
     });
 
-    it('i problemi con la stessa proposta migliore in un blocco, con in testa chi li risolve tutti; un problema solo non ha testata', () => {
-      view(advice([swap('Zapdos', 5, 5, [pivot.key, steel.key]), swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key]), swap('Heatran', 1, 1, [fire.key])]),
-        { coaching: coachingOf([...problems, stuck]) });
-      const cures = [...rail().querySelectorAll<HTMLButtonElement>('.coach-diag-cure')];
-      expect(cures.map(c => c.getAttribute('aria-label'))).toEqual([
-        'Apri Rotom-Wash al posto di Magikarp, voto +4: risolve tutti e 2 i problemi qui sotto',
-        'Apri Zapdos al posto di Sunkern, voto +5: risolve tutti e 2 i problemi qui sotto',
-      ]);
-      expect(cures[0]).toHaveTextContent('Rotom-Wash');
-      expect(cures[0]).toHaveTextContent('li risolve tutti e 2');
-      // L'ordine: la testata, poi i suoi problemi; in coda quelli che nessuno risolve
-      const order = [...rail().querySelectorAll<HTMLButtonElement>('.coach-diag-cure, .coach-diag-item:not(.is-all)')]
-        .map(b => (b.classList.contains('coach-diag-cure') ? `cura:${b.textContent!.includes('Rotom') ? 'Rotom' : 'Zapdos'}` : b.textContent!.includes('Fire') ? 'fire' : b.textContent!.includes('contro Zapdos') ? 'zapdos'
-          : b.textContent!.includes('Pivot') ? 'pivot' : b.textContent!.includes('Acciaio') ? 'steel' : 'stuck'));
-      expect(order).toEqual(['cura:Rotom', 'fire', 'zapdos', 'cura:Zapdos', 'pivot', 'steel', 'stuck']);
-      // La carta grande (Zapdos) risolve Pivot e Acciaio: righe accese
-      expect(railItem('Pivot')).toHaveClass('is-cured');
-      expect(railItem('Pivot')).toHaveTextContent('lo risolve la proposta nella carta');
-      expect(railItem('contro Fire')).not.toHaveClass('is-cured');
-      expect(cures[1]).toHaveClass('is-open');
+    it('le minacce col perché sotto il nome, i problemi semplici in testo semplice', () => {
+      ranked();
+      expect(railItem('contro Zapdos').querySelector('.coach-rank-why')).toHaveTextContent('Nessuno lo regge bene');
+      expect(railItem('Dragonite').querySelector('.coach-rank-why')).toHaveTextContent('Nessuno lo manda KO in due colpi');
+      expect(railItem('contro Fire').querySelector('.coach-rank-why')).toBeNull();
+      expect(railItem('Acciaio').querySelector('.coach-rank-plain')).toHaveTextContent('3 membri di tipo Acciaio');
+      expect(railItem('contro Fire').querySelector('.coach-rank-plain')).toBeNull();
     });
 
-    it('un clic sulla testata di un blocco apre quella proposta nella carta grande', async () => {
+    it('i problemi della proposta nella carta hanno la spunta e lo dicono allo screen reader; un clic su un\'altra testata li sposta', async () => {
       const user = userEvent.setup();
-      view(advice([swap('Zapdos', 5, 5, [pivot.key, steel.key]), swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key])]));
-      expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
-      await user.click(within(rail()).getByRole('button', { name: /^Apri Rotom-Wash al posto di Magikarp, voto \+4:/ }));
+      ranked();
+      expect(railItem(pivotName)).toHaveClass('is-cured');
+      expect(railItem(pivotName)).toHaveAttribute('aria-label', `${pivotName} · lo risolve la proposta nella carta. Mostra solo le proposte che lo risolvono`);
+      expect(railItem('contro Fire')).not.toHaveClass('is-cured');
+      expect(railItem('contro Fire')).toHaveAttribute('aria-label', `${fire.text}. Mostra solo le proposte che lo risolvono`);
+      await user.click(within(rail()).getByRole('button', { name: 'Apri nella carta: Rotom-Wash al posto di Magikarp, voto +4' }));
       expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
       expect(band()).toHaveTextContent('La proposta scelta');
       expect(railItem('contro Fire')).toHaveClass('is-cured');
+      expect(railItem(pivotName)).not.toHaveClass('is-cured');
+      expect(cures()[1]).toHaveClass('is-open');
       await user.click(within(list()).getByRole('button', { name: 'Torna alla migliore' }));
       expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
     });
 
-    it('un clic su un problema mostra solo le proposte che lo risolvono; di nuovo, o "Mostra tutte", tutte', async () => {
+    it('un clic su un problema mostra solo le proposte che lo risolvono ("Solo per:"); di nuovo, o "Mostra tutte", tutte e il fuoco sul titolo della carta', async () => {
       const user = userEvent.setup();
-      view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 4, [fire.key]), swap('Heatran', 1, 3, [fire.key, zapdos.key]), swap('Clefable', 2, 2, [steel.key])]));
+      ranked();
       await user.click(railItem('contro Fire'));
       expect(railItem('contro Fire')).toHaveAttribute('aria-pressed', 'true');
-      expect(allButton()).toHaveAttribute('aria-pressed', 'false');
+      expect(rail().querySelector('.coach-filter')).toHaveTextContent(/^Solo per:/);
       expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
       expect(band()).toHaveTextContent('La proposta migliore');
-      expect(rowNames()).toEqual(['Heatran al posto di Gholdengo, voto +3']);
-      expect(othersHead()).toHaveTextContent('Altre proposte per questo problema1');
+      expect(cureNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +4', 'Heatran al posto di Gholdengo, voto +1']);
+      expect(order()).toEqual(['cura:Rotom-Wash', 'fire', 'zapdos', 'cura:Heatran', 'nota:già sopra']);
+      expect(within(rail()).getByRole('heading', { name: /^Proposte/ })).toHaveTextContent('Proposte2');
       // Di nuovo sullo stesso problema: tutte
       await user.click(railItem('contro Fire'));
-      expect(allButton()).toHaveAttribute('aria-pressed', 'true');
+      expect(rail().querySelector('.coach-filter')).toBeNull();
       expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
-      expect(rowNames()).toHaveLength(3);
-      // "Mostra tutte" nel titolo della lista
-      await user.click(railItem('Pivot'));
-      expect(rowNames()).toEqual([]);
-      expect(within(list()).getByText('Nessun\'altra proposta risolve questo problema')).toBeInTheDocument();
-      await user.click(within(list()).getByRole('button', { name: 'Mostra tutte' }));
-      expect(othersHead()).toHaveTextContent('Altre proposte3');
-      expect(within(list()).queryByRole('button', { name: 'Mostra tutte' })).toBeNull();
-      expect(railItem('Pivot')).toHaveAttribute('aria-pressed', 'false');
-      // "Tutte le proposte" toglie il filtro
+      expect(cureNames()).toHaveLength(3);
+      // "Mostra tutte" nella barra del filtro: sparisce, il fuoco va sul titolo della carta
       await user.click(railItem('Acciaio'));
-      expect(heroName()).toBe('Clefable al posto di Toxapex, voto +2');
-      await user.click(allButton());
-      expect(heroName()).toBe('Zapdos al posto di Sunkern, voto +5');
+      expect(cureNames()).toEqual(['Zapdos al posto di Sunkern, voto +5']);
+      await user.click(within(rail()).getByRole('button', { name: 'Mostra tutte' }));
+      expect(rail().querySelector('.coach-filter')).toBeNull();
+      expect(within(rail()).queryByRole('button', { name: 'Mostra tutte' })).toBeNull();
+      expect(railItem('Acciaio')).toHaveAttribute('aria-pressed', 'false');
+      expect(cureNames()).toHaveLength(3);
+      await waitFor(() => expect(heroTitle()).toHaveFocus());
+      // Un filtro su un problema che risolve solo la seconda: la carta va su di lei
+      await user.click(railItem('contro Zapdos'));
+      expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
     });
 
-    it('il "?" apre "Come funziona il Coaching"', async () => {
+    it('il "?" (col fumetto dell\'app) apre "Come funziona il Coaching"', async () => {
       const user = userEvent.setup();
       view(advice([swap('Zapdos', 5, 5, [pivot.key])]));
-      await user.click(within(rail()).getByRole('button', { name: 'Come funziona il Coaching' }));
+      const help = within(rail()).getByRole('button', { name: 'Come funziona il Coaching' });
+      expect(help).toHaveAttribute('data-hint', 'Come funziona il Coaching');
+      expect(help.getAttribute('title') ?? '').toBe('');
+      await user.click(help);
       const dialog = screen.getByRole('dialog', { name: 'Come funziona il Coaching' });
-      expect(within(dialog).getAllByRole('heading', { level: 4 }).map(h => h.textContent)).toEqual(['Da sistemare', 'La carta grande', 'Risolve e Costa', 'Applica e Oppure']);
+      expect(within(dialog).getAllByRole('heading', { level: 4 }).map(h => h.textContent)).toEqual(['Proposte', 'La carta grande', 'Risolve e Costa', 'Applica e Oppure']);
     });
   });
 
@@ -657,6 +722,7 @@ describe('CoachingView', () => {
     await user.click(screen.getByRole('button', { name: 'Vedi la Panoramica' }));
     expect(h.onOverview).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('region', { name: 'Proposte, dalla più utile' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: /^Proposte/ })).toBeNull();
   });
 
   it('problemi che nessuna proposta risolve: Eevee pensieroso, i problemi che restano e Migliora i set', async () => {
@@ -671,6 +737,7 @@ describe('CoachingView', () => {
     expect(screen.getByText(/Migliora i set cerca le versioni migliori/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Migliora i set' }));
     expect(h.onImproveSets).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('complementary', { name: /^Proposte/ })).toBeNull();
   });
 
   it('con meno di 2 membri: solo l\'invito ad aggiungere', () => {
@@ -684,30 +751,28 @@ describe('CoachingView', () => {
     expect(screen.getByText('1 bannato escluso')).toBeInTheDocument();
   });
 
-  it('coi consigli veri: ogni gruppo del motore compare (carta, righe, alternative), col +N del motore', async () => {
+  it('coi consigli veri: ogni gruppo del motore compare (testata della classifica, alternative), nell\'ordine e col +N del motore', async () => {
     const user = userEvent.setup();
     const coaching = coachTeam(six, DEFAULT_FORMAT, data);
     const adv = adviceOf(six, DEFAULT_FORMAT, data);
     const groups = neutralAsAlternatives(proposalGroups(coaching.problems, adv));
     expect(groups.length).toBeGreaterThan(0);
     renderIt(<CoachingView coaching={coaching} advice={adv} members={6} rating={rateTeam(six, data, 'it')} {...noop} />);
-    expect(othersHead().querySelector('.coach-count')).toHaveTextContent(String(groups.length - 1));
+    expect(within(rail()).getByRole('heading', { name: /^Proposte/ })).toHaveTextContent(`Proposte${groups.length}`);
     expect(heroOf()).toHaveAttribute('data-row', groups[0].id);
     expect(heroOf().querySelector('.coach-gain')).toHaveTextContent(gainText(groups[0].options[0].fix.gain));
-    expect(altTiles().map(t => t.querySelector('b')!.textContent)).toEqual(groups[0].options.slice(1).map(o => gainText(o.fix.gain)));
-    const ids: string[] = [];
-    const gains: string[] = [];
-    for (let page = 0; page < 30; page++) {
-      for (const li of list().querySelectorAll<HTMLElement>('li.coach-item')) {
-        ids.push(li.getAttribute('data-row')!);
-        gains.push(li.querySelector('.coach-item-gain')!.textContent!);
-      }
-      const next = within(list()).queryByRole('button', { name: 'Proposte successive' });
-      if (!next || (next as HTMLButtonElement).disabled) break;
-      await user.click(next);
+    expect(cures()).toHaveLength(groups.length);
+    expect(cures().map(c => c.querySelector('.coach-diag-cure-gain')!.textContent)).toEqual(groups.map(g => gainText(g.options[0].fix.gain)));
+    // Aperta ogni testata, la carta è quel gruppo e le piccole carte sono le sue alternative
+    for (let i = 0; i < groups.length; i++) {
+      await user.click(cures()[i]);
+      expect(heroOf()).toHaveAttribute('data-row', groups[i].id);
+      expect(heroOf().querySelector('.coach-gain')).toHaveTextContent(gainText(groups[i].options[0].fix.gain));
+      expect(altTiles().map(t => t.querySelector('b')!.textContent)).toEqual(groups[i].options.slice(1).map(o => gainText(o.fix.gain)));
     }
-    expect(ids).toEqual(groups.slice(1).map(g => g.id));
-    expect(gains).toEqual(groups.slice(1).map(g => gainText(g.options[0].fix.gain)));
+    // Ogni problema mostrato una volta sola
+    const keys = [...rail().querySelectorAll('.coach-diag-item')].map(el => el.textContent);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });
 

@@ -28,14 +28,18 @@ describe('analisi in inglese', () => {
     const fix = await within(analysis).findByRole('region', { name: 'To fix' }, { timeout: 5000 });
     expect(within(fix).getByRole('button', { name: /^Go to Coaching/ })).toBeInTheDocument();
     expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent(/^Incomplete · [1-5]\/6$/);
-    // Il Coaching: la carta grande e le righe in inglese, col loro nome e i pulsanti in inglese
+    // Il Coaching: la carta grande e la classifica in inglese, col loro nome e i pulsanti in inglese
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));
     const list = within(analysis).getByRole('region', { name: 'Proposals, most useful first' });
     const name = / (instead of .+|in a free slot|on .+), grade [+±−]\d+$/;
     const hero = await within(list).findByRole('article', {}, { timeout: 5000 });
     expect(hero.querySelector('h4')!.textContent).toMatch(name);
     expect(within(hero).getByRole('button', { name: /^Apply: / })).toHaveTextContent('Apply');
-    for (const row of within(list).queryAllByRole('button', { name: /^Open: / })) expect(row.getAttribute('aria-label')).toMatch(name);
-    expect(within(analysis).getByRole('heading', { name: /^To fix/ })).toBeInTheDocument();
+    // A sinistra la classifica: ogni testata apre una proposta, col suo nome in inglese
+    const rail = within(analysis).getByRole('complementary', { name: /^Proposals/ });
+    const heads = within(rail).getAllByRole('button', { name: /^Open in the card: / });
+    expect(heads.length).toBeGreaterThan(0);
+    for (const row of heads) expect(row.getAttribute('aria-label')!.replace(/^Open in the card: /, '')).toMatch(name);
+    expect(within(rail).getByRole('heading', { name: /^Proposals/ })).toBeInTheDocument();
   });
 });

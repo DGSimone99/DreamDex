@@ -155,9 +155,10 @@ describe('Panoramica di Analisi', () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
     await within(panel()).findByRole('article', {}, { timeout: 8000 });
-    // Il problema della regola nella colonna Da sistemare: grave, con almeno una proposta che lo risolve
-    const rule = [...panel().querySelectorAll<HTMLButtonElement>('.coach-diag-item:not(.is-all)')].find(b => /Dragapult.*(legale|vietat)/.test(b.textContent!))!;
+    // Il problema della regola nella classifica a sinistra: grave, sotto una proposta che lo risolve (un pulsante, non in "Restano")
+    const rule = [...panel().querySelectorAll<HTMLButtonElement>('.coach-diag-item')].find(b => /Dragapult.*(legale|vietat)/.test(b.textContent!))!;
     expect(rule).toBeTruthy();
+    expect(rule.tagName).toBe('BUTTON');
     expect(rule).toHaveClass('serious');
     expect(rule).not.toBeDisabled();
     // Un clic: la carta grande è una proposta al posto di Dragapult, e fra i problemi risolti c'è la regola

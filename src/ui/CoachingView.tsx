@@ -378,14 +378,12 @@ function RankRail({ blocks, total, filter, onFilter, onOpen, heroId, cured, clea
   }
   const pages = pageRows.length;
   const page = Math.min(start, pages - 1);
-  const shownProposals = (n: number) => pageRows.slice(0, n).reduce((sum, rs) => sum + rs.filter(r => r.kind === 'head' && r.block.group).length, 0);
-  const onPage = pageRows[page].filter(r => r.kind === 'head' && r.block.group).length;
   return (
     <aside className="coach-diag" aria-labelledby={headId}>
       <div className="coach-diag-top">
         <h3 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-count">{total}</span>}</h3>
-        <Pager page={page} pages={pages} from={shownProposals(page) + 1} to={shownProposals(page) + onPage} onPage={setStart}
-          labels={{ pages: tr('coach.diag.pages'), prev: tr('coach.diag.prev'), next: tr('coach.diag.next'), page: 'coach.diag.page' }} />
+        <Pager page={page} pages={pages} from={page + 1} to={pages} onPage={setStart}
+          labels={{ pages: tr('coach.list.pages'), prev: tr('coach.list.prev'), next: tr('coach.list.next'), page: 'coach.rank.page' }} />
         <HelpButton title={tr('coach.help.title')} className="coach-help"><CoachingGuide /></HelpButton>
       </div>
       {filter && (
@@ -488,7 +486,7 @@ function useRowsPerPage(ref: RefObject<HTMLElement | null>, max = ROWS_PER_PAGE)
 /** Le pagine: "‹ 1/3 ›" come in Coverage meta, coi nomi per lo screen reader. */
 function Pager({ page, pages, from, to, onPage, labels }: {
   page: number; pages: number; from: number; to: number; onPage: (page: number) => void;
-  labels?: { pages: string; prev: string; next: string; page: 'coach.diag.page' };
+  labels?: { pages: string; prev: string; next: string; page: 'coach.rank.page' };
 }) {
   const tr = useT();
   if (pages <= 1) return null;
@@ -511,9 +509,9 @@ function Pager({ page, pages, from, to, onPage, labels }: {
 }
 
 /**
- * La scheda Coaching, "Diagnosi → Cura": a sinistra i problemi del team, una volta sola, col numero di proposte che li
- * risolvono (un clic mostra solo quelle); a destra la carta grande della proposta scelta (all'inizio la migliore) e sotto
- * le altre in righe compatte, dalla più utile (+N più alto; un clic la porta nella carta grande). Le proposte quasi uguali
+ * La scheda Coaching, "Diagnosi → Cura": a sinistra la classifica delle proposte (dalla più utile, ognuna coi problemi
+ * che è la prima a risolvere; un clic su una proposta la apre, su un problema mostra solo le proposte che lo risolvono);
+ * a destra la carta grande della proposta aperta (all'inizio la migliore), alta quanto la colonna. Le proposte quasi uguali
  * stanno insieme (proposalGroups) e quelle che non alzano il voto vanno fra le alternative (neutralAsAlternatives).
  * Senza problemi: Eevee contento e il team da esportare; con problemi che nessuna proposta risolve: Eevee pensieroso, i
  * problemi e Migliora i set. `advice` null: i consigli si stanno calcolando (lo scheletro). `focus`: un problema scelto

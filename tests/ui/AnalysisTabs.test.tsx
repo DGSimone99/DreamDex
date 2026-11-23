@@ -2,6 +2,9 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
+import { coachTeam } from '../../src/engine/coach';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { emptySet, exportShowdown, type TeamSet } from '../../src/engine/sets';
 import { AnalysisTabs } from '../../src/ui/AnalysisTabs';
 import { fixtureData } from '../fixtures/data';
 
@@ -97,7 +100,7 @@ describe('schede interne di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Offesa' })).toBeInTheDocument();
   });
 
-  it('Coaching: badge con tutti i problemi (lo stesso numero della barra laterale), grigio col team incompleto anche coi gravi; il nome resta "Coaching"', async () => {
+  it('Coaching: badge coi problemi del Coaching (lo stesso numero della barra laterale), grigio col team incompleto anche coi gravi; il nome resta "Coaching"', async () => {
     // Scoperti in difesa contro Fire, Water e Ground (nella Coverage tipi della Difesa): tre problemi gravi (in attacco nessun tipo scoperto)
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
@@ -108,6 +111,30 @@ describe('schede interne di Analisi', () => {
     const total = Number(badge.textContent);
     expect(screen.getByRole('tab', { name: 'Analisi' })).toHaveAccessibleDescription(new RegExp(`${total} problemi`));
     expect(tab.getAttribute('title')).toMatch(/^3 gravi( · \d+ minor[ei])?$/);
+  });
+
+  it('Coaching: badge e barra laterale non contano le debolezze in comune (non sono nella lista del Coaching)', async () => {
+    const set = (species: string, item: string, ability: string, moves: string[]): TeamSet =>
+      ({ ...emptySet(species), item, ability, moves, nature: 'Jolly', evs: { hp: 0, atk: 252, def: 0, spa: 0, spd: 4, spe: 252 } });
+    // Tre deboli al Ghiaccio e nessuno che lo resiste (come in coachSharedWeak.test.ts)
+    const team = [
+      set('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake']), set('Landorus-Therian', 'Choice Band', 'Intimidate', ['Earthquake']),
+      set('Dragapult', 'Choice Band', 'Infiltrator', ['Dragon Darts']), set('Tyranitar', 'Leftovers', 'Sand Stream', ['Stone Edge']),
+      set('Rotom-Wash', 'Leftovers', 'Levitate', ['Hydro Pump']),
+      { ...set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast']), nature: 'Bold', evs: { hp: 252, atk: 0, def: 128, spa: 0, spd: 128, spe: 0 } },
+    ];
+    const all = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'it').problems;
+    const counted = all.filter(p => !p.key.startsWith('redundancy:sharedWeak:'));
+    expect(counted.length).toBeLessThan(all.length);
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.click(screen.getByLabelText('Testo Showdown'));
+    await user.paste(exportShowdown(team));
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    const badge = within(views()).getByRole('tab', { name: 'Coaching' }).querySelector('.tab-badge')!;
+    expect(Number(badge.textContent)).toBe(counted.length);
+    expect(screen.getByRole('tab', { name: 'Analisi' })).toHaveAccessibleDescription(new RegExp(`${counted.length} problemi`));
   });
 
   it('badge rosso coi gravi solo a team completo', () => {
