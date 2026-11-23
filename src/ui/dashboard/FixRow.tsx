@@ -48,7 +48,7 @@ export function FixRow({ problems, advice, members = 6, onView }: { problems: Co
   }
   if (!advice) {
     return (
-      <div className="fix-row is-skeleton fill-skeleton" role="status">
+      <div className="fix-row is-skeleton fill-skeleton" aria-live="polite">
         <span className="fix-wait">{t('overview.fix.wait')}</span>
         <span className="fix-bone" aria-hidden="true" style={{ width: 220 }} />
         <span className="fix-bone" aria-hidden="true" style={{ width: 96, marginLeft: 'auto' }} />

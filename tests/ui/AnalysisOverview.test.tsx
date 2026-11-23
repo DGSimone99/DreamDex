@@ -367,7 +367,7 @@ describe('Panoramica: la riga del Coaching', () => {
   it('consigli ancora da calcolare (advice null): uno scheletro nello stesso posto che dice che il Coaching lavora', () => {
     const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} advice={null} onView={() => {}} /></LangProvider>);
     const bones = container.querySelector('.fix-row.is-skeleton');
-    expect(screen.getByRole('status')).toBe(bones);
+    expect(bones).toHaveAttribute('aria-live', 'polite');
     expect(bones).toHaveTextContent(/^Il Coaching sta calcolando…$/);
   });
 
