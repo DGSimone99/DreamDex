@@ -266,9 +266,10 @@ function useFitLimit(count: number, key: string) {
 }
 
 /**
- * I tipi dei motivi come icone (14 px, come gli altri segni della riga), su una riga sola: sempre icone, così le carte
- * vicine si leggono allo stesso modo (coi nomi solo dove entravano, una carta diceva "FUOCO PSICO" e quella accanto
- * no); quelle che non entrano diventano "+N" (la lista intera è nel tooltip). Il nome del tipo nel fumetto.
+ * I tipi dei motivi come icone (14 px, come gli altri segni della riga), su una riga sola: quelle che non entrano
+ * diventano "+N" (la lista intera è nel tooltip), il nome del tipo nel fumetto. Una regola fissa, non lo spazio, decide
+ * i nomi (coi nomi solo dove entravano, una carta diceva "FUOCO PSICO" e quella accanto no): con un tipo solo anche il
+ * nome, come il Pokémon della riga VS (icona e nome in grassetto, che si accorcia coi puntini); con due o più solo icone.
  * Gli immuni per primi, senza segni in più (lo scudo davanti alla riga basta a dire che li regge); immune a parole
  * nel fumetto.
  */
@@ -277,12 +278,14 @@ function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: re
   const lang = useLang();
   const all = [...immune, ...types];
   const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
+  const single = all.length === 1;
   return (
-    <span className="sym-chips icons-only" ref={row}>
+    <span className={`sym-chips icons-only${single ? ' single' : ''}`} ref={row}>
       {all.slice(0, limit).map((type, i) => (
         <span key={type} className={`sym-chip${i < immune.length ? ' immune' : ''}`}
           {...hint(i < immune.length ? tr('reason.immuneTo', { type: typeName(type, lang) }) : typeName(type, lang))}>
           <TypeChip type={type} />
+          {single && <strong className="sym-type-name">{typeName(type, lang)}</strong>}
         </span>
       ))}
       <More total={all.length} shown={limit} />
