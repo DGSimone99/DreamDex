@@ -531,6 +531,18 @@
 .sum-alert b { color: var(--bad); }
 .sum-alert:hover { border-color: var(--bad); }
 .sum-alert:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Stretto o schermo basso (1280×620, 1366×657): niente riga in più (toglierebbe i titoli ai core): la pillola sulla riga
+   del tipo, solo segno e punti (il nome nel fumetto e ai lettori di schermo) */
+.dash.tight .sum-hero:has(.sum-alerts) { display: flex; align-items: center; gap: var(--sp-4); }
+.dash.tight .sum-hero:has(.sum-alerts) .sum-type { flex: 0 1 auto; min-width: 0; }
+.dash.tight .sum-alerts { flex: none; flex-wrap: nowrap; margin-top: 0; }
+.dash.tight .sum-alert-name { display: none; }
+@media (min-width: 1100px) and (max-height: 759px) {
+  .dash .sum-hero:has(.sum-alerts) { display: flex; align-items: center; gap: var(--sp-4); }
+  .dash .sum-hero:has(.sum-alerts) .sum-type { flex: 0 1 auto; min-width: 0; }
+  .dash .sum-alerts { flex: none; flex-wrap: nowrap; margin-top: 0; }
+  .dash .sum-alert-name { display: none; }
+}
 /* Area debole (C, D) a team completo: il suo numero nella testata della card nel colore del voto */
 .dash-meta b.weak-C { color: var(--warn); }
 .dash-meta b.weak-D { color: var(--bad); }

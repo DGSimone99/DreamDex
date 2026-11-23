@@ -464,7 +464,7 @@ export function SummarySection({ summary, members, grade, density, rich = false,
             {heavy.length > 0 && (
               <div className="sum-alerts">
                 {heavy.map(p => (
-                  <button key={p.key} type="button" className="sum-alert" onClick={() => onView('bonusMalus')}
+                  <button key={p.key} type="button" className="sum-alert" onClick={() => onView('bonusMalus')} {...hint(p.name)}
                     aria-label={`${p.name} ${signedPts(p.points)}, ${goText(t, places.bonusMalus)}`}>
                     <Icon name="warning" /><span className="sum-alert-name">{p.name}</span><b>{signedPts(p.points)}</b>
                   </button>
