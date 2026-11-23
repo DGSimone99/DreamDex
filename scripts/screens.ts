@@ -123,8 +123,12 @@ const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-/** Come hash, con qualche impostazione del formato cambiata (es. meta spento). */
-const hashWith = (team: unknown[], format: Partial<typeof FORMAT>) => '#team=' + Buffer.from(JSON.stringify({ team, format: { ...FORMAT, ...format } })).toString('base64')
+/**
+ * Come hash, con qualche impostazione del formato cambiata. Il link condiviso porta la scelta del formato (`choice`), non le
+ * regole: il meta non si spegne più a mano (è automatico), quindi "meta spento" è No Format, che il meta non lo ha.
+ */
+const hashWith = (team: unknown[], format: Partial<typeof FORMAT>) => '#team=' + Buffer.from(JSON.stringify({ team,
+  ...(format.meta === false ? { choice: { family: 'free', genLimit: format.genLimit ?? 9, multipleMegas: false } } : { format: { ...FORMAT, ...format } }) })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 /** Clic sul primo elemento visibile del selettore il cui testo o aria-label corrisponde. */
