@@ -4,9 +4,10 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { fixtureData } from '../fixtures/data';
+import { fixtureData, tusk } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { CARD_WAKE_MS } from '../../src/ui/CandidateCard';
+import { spyClipboard } from '../helpers/clipboard';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
 vi.setConfig({ testTimeout: 60000 });
@@ -48,16 +49,66 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
   });
 
-  it('il dettaglio mostra il primo candidato: quanto sale il voto del team, in tutto e per area', async () => {
-    const user = await setup('Great Tusk');
-    // La riga per area c'è solo nella versione estesa (team chiuso)
-    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+  it('"al posto di" solo in Sostituisci: in Aggiungi non c’è', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo');
+    expect(document.querySelector('.target-toggle')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Sostituisci' }));
+    expect(document.querySelector('.target-toggle')).not.toBeNull();
+  });
 
+  it('la legenda dei segni delle carte si apre dal ? accanto a Candidati e si chiude con Esc', async () => {
+    const user = await setup('Great Tusk');
+    const open = within(suggestions()).getByRole('button', { name: 'Cosa vogliono dire i segni delle carte' });
+    await user.click(open);
+    const legend = screen.getByRole('group', { name: 'I segni delle carte' });
+    expect(within(legend).getAllByRole('listitem')).toHaveLength(7);
+    expect(legend).toHaveTextContent('Colpisce superefficace tipi che il team non copriva');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'I segni delle carte' })).toBeNull();
+  });
+
+  it('Copia set nel dettaglio: copia il set e per un attimo dice Copiato (anche ai lettori di schermo)', async () => {
+    const user = await setup('Great Tusk');
+    const copied = spyClipboard();
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    await user.click(within(detail).getByRole('button', { name: 'Copia set' }));
+    expect(copied()).not.toBe('');
+    expect(await within(detail).findByRole('status')).toHaveTextContent('Copiato');
+    expect(detail.querySelector('.detail-copy.done')).not.toBeNull();
+  });
+
+  it('col nome della carta i lettori di schermo sentono anche il voto (il numero per cui scegliere)', async () => {
+    await setup('Great Tusk', 'Gholdengo');
+    const picks = [...list().querySelectorAll<HTMLElement>(':scope > li .pick')];
+    expect(picks.length).toBeGreaterThan(0);
+    for (const pick of picks) expect(pick).toHaveAccessibleDescription(/^Voto del team: [SABCD] \d+ \((\+\d+|−\d+|±0)\)$/);
+    // Il voto è un'immagine con etichetta: uno span senza ruolo verrebbe ignorato
+    expect(within(list()).getAllByRole('img', { name: /^Voto del team: / })).toHaveLength(picks.length);
+  });
+
+  it('il dettaglio mostra il primo candidato: quanto sale il voto del team in tutto (+N, B → A) e, area per area, solo il verso', async () => {
+    await setup('Great Tusk');
     const first = rowNames()[0];
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${first}` });
-    expect(detail.querySelector('.detail-score')).toHaveTextContent(/^(\+\d+|−\d+|±0)voto del team [SABCD] \d+ → [SABCD] \d+$/);
-    const areas = [...detail.querySelectorAll('.detail-areas dt')].map(dt => dt.textContent);
-    expect(areas).toEqual(expect.arrayContaining(['Difesa', 'Offesa']));
+    const score = detail.querySelector('.detail-score')!;
+    expect(score.querySelector('strong')).toHaveTextContent(/^(\+\d+|−\d+|±0)$/);
+    expect(score.querySelector(':scope > span')).toHaveTextContent(/^voto del team [SABCD] \d+ → [SABCD] \d+$/);
+    // Sotto "B 79 → A 88" un segno per area: nome breve e freccia, niente numeri; la frase per i lettori e nel fumetto
+    const marks = within(detail).getByRole('list', { name: 'Effetto sul team' });
+    expect(marks.closest('.detail-hero')).not.toBeNull();
+    const items = [...marks.querySelectorAll('li')];
+    expect(items.map(li => li.querySelector('[aria-hidden="true"]')!.textContent)).toEqual(expect.arrayContaining(['Dif', 'Off']));
+    for (const li of items) {
+      const way = li.className;
+      expect(['up', 'same', 'down']).toContain(way);
+      const said = li.querySelector('.visually-hidden')!.textContent!;
+      expect(said).toMatch({ up: / sale$/, same: / resta uguale$/, down: / scende$/ }[way as 'up']);
+      expect(li).toHaveAttribute('data-hint', said);
+      expect(li.querySelector('svg.area-arrow')).not.toBeNull();
+      expect(li.textContent).not.toMatch(/\d/);
+    }
+    expect(items.map(li => li.querySelector('.visually-hidden')!.textContent)).toEqual(expect.arrayContaining([expect.stringMatching(/^Difesa /), expect.stringMatching(/^Offesa /)]));
+    expect(detail.querySelector('.detail-areas, .effect')).toBeNull();
     expect(within(detail).getByRole('list', { name: 'Mosse' }).children.length).toBeGreaterThan(0);
   });
 
@@ -87,10 +138,8 @@ describe('SuggestionsPanel', () => {
     expect(document.activeElement?.closest('.detail')).toBeNull();
   });
 
-  it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
-    const user = await setup();
-    // La riga per area c'è solo nella versione estesa (team chiuso)
-    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+  it('team vuoto: niente voto da confrontare, quindi niente verso delle aree; i ruoli una volta sola, in Risolve', async () => {
+    await setup();
 
     // Nessuna nota sopra la lista: si parte dalla lista stessa
     expect(within(suggestions()).queryByText(/come si adatta al team/)).toBeNull();
@@ -98,19 +147,19 @@ describe('SuggestionsPanel', () => {
     expect(usages).toEqual([...usages].sort((a, b) => b - a));
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/uso nel meta$/);
-    expect(within(detail).getByText('Voto con lui da solo')).toBeInTheDocument();
-    expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
-    // Un'area a zero col team vuoto non sembra un errore: si legge "—"
-    expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
-    // I ruoli del set nella lastra della testata, con la spiegazione nel tooltip
-    const slab = detail.querySelector('.detail-why')!;
-    expect(slab.getAttribute('aria-label')).toMatch(/^Ruoli del set: /);
-    expect(slab.getAttribute('title')).toBeTruthy();
+    expect(within(detail).queryByRole('list', { name: 'Effetto sul team' })).toBeNull();
+    expect(within(detail).queryByText(/→/)).toBeNull();
+    // Niente lastra dei ruoli in testata; col team vuoto i ruoli stanno in Risolve (cosa sa fare) e non si ripetono
+    // nella riga RUOLI sotto il set
+    expect(detail.querySelector('.detail-hero .mcard-why')).toBeNull();
+    expect(detail.querySelector('.detail-run .mcard-roles')).toBeNull();
+    expect(detail.querySelector('.detail-why li')).not.toBeNull();
   });
 
-  it('mostra i tag sulle righe', async () => {
+  it('sulle carte niente segno "Spesso usati insieme" (i compagni del meta stanno nel dettaglio)', async () => {
     await setup('Great Tusk', 'Gholdengo');
-    expect(within(list()).getByText('Spesso usati insieme: Great Tusk (25%)')).toBeInTheDocument();
+    expect(within(list()).queryByText(/Spesso usati insieme/)).toBeNull();
+    expect(list().querySelector('.alert-mark .icon-spark, [data-icon="spark"]')).toBeNull();
   });
 
   it('Carte: pagine da 6, la seconda continua la numerazione', async () => {
@@ -120,7 +169,7 @@ describe('SuggestionsPanel', () => {
     expect(rowNames()).toHaveLength(6);
     expect(within(pager).getByRole('button', { name: 'Pagina precedente' })).toBeDisabled();
     await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('li')!)).toBe(7);
   });
 
@@ -156,7 +205,7 @@ describe('SuggestionsPanel', () => {
       expect(mark).not.toBeNull();
       expect(mark.previousElementSibling!.tagName).toBe('STRONG');
       const member = mark.querySelector('.visually-hidden')!.textContent!.replace('Al posto di ', '');
-      expect(mark).toHaveAttribute('title', `Esce ${member}`);
+      expect(mark).toHaveAttribute('data-hint', `Esce ${member}`);
       expect(mark.querySelector('.icon')).not.toBeNull();
       expect(mark.querySelector('.out-mon .mon-icon')).not.toBeNull();
       expect(mark.querySelector('.out-mon')).toHaveAttribute('aria-hidden', 'true');
@@ -166,7 +215,7 @@ describe('SuggestionsPanel', () => {
     const rows = Number(list().style.getPropertyValue('--reasons'));
     expect(rows).toBeGreaterThan(1);
     expect(first.querySelectorAll('.who small > .reason')).toHaveLength(rows);
-    expect(first.querySelector('.tag .out')).toHaveAttribute('title', `Esce ${out}`);
+    expect(first.querySelector('.tag .out')).toHaveAttribute('data-hint', `Esce ${out}`);
     const name = rowNames()[0];
     await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
@@ -231,7 +280,7 @@ describe('SuggestionsPanel', () => {
     expect(buttons[0]).toHaveAccessibleName('Pagina precedente');
     expect(buttons[buttons.length - 1]).toHaveAccessibleName('Pagina successiva');
     await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
   });
 
   it('chi esce è una tendina attaccata a Sostituisci, nella barra comandi', async () => {
@@ -271,11 +320,11 @@ describe('SuggestionsPanel', () => {
     await user.type(search, 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
     for (let i = 0; i < 6; i++) await user.keyboard('{ArrowDown}');
-    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(7);
     // E indietro, prima della prima, alla precedente
     await user.keyboard('{ArrowUp}');
-    expect(within(pager).getByRole('status', { name: 'Pagina 1' })).toBeInTheDocument();
+    expect(within(pager).getByRole('status', { name: /^Pagina 1 di \d+$/ })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(6);
   });
 
@@ -298,8 +347,8 @@ describe('SuggestionsPanel', () => {
       diff: { gains: none, losses: none, lostResists: [] }, reasons: [],
     };
     const shorts = (teamGain: object) => reasonsOf({ ...base, teamGain } as never, 2, null, DEFAULT_FORMAT, 'it').items.map(b => b.short);
-    expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa +13']);
-    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Bonus/Malus +3']);
+    expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa sale']);
+    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Più bonus per il team']);
     expect(shorts({ gain: 0, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 4 }], extras: -4 })).toEqual(['Nessuna differenza rilevante']);
   });
 
@@ -319,7 +368,7 @@ describe('SuggestionsPanel', () => {
     // Testo letto: "+" e la frase intera (le icone sono decorative)
     const spoken = (el: HTMLElement) => [...el.querySelectorAll('.visually-hidden')].map(e => e.textContent).join(' ');
     expect(spoken(reasons[0])).toBe('+ Colpisce super efficace Acqua, Erba, scoperti dal team');
-    expect(reasons[0]).toHaveAttribute('title', 'Colpisce super efficace Acqua, Erba, scoperti dal team');
+    expect(reasons[0]).toHaveAttribute('data-hint', 'Colpisce super efficace Acqua, Erba, scoperti dal team');
     expect(reasons[0].querySelector('.sym')).toHaveAttribute('aria-hidden', 'true');
     // La spada + i chip dei due tipi
     expect(reasons[0].querySelector('.sym-icon .icon')).not.toBeNull();
@@ -328,8 +377,9 @@ describe('SuggestionsPanel', () => {
     expect(reasons[1].querySelector('.sym-icon .icon')).not.toBeNull();
     const chips = [...reasons[1].querySelectorAll('.sym-chip')];
     expect(chips.map(c => c.querySelectorAll('.icon').length)).toEqual([0, 0]);
-    expect(chips[0]).toHaveAttribute('title', expect.stringMatching(/^Immune a /));
-    expect(chips[1]).not.toHaveAttribute('title');
+    // Sempre solo icone: il tipo (e l'immune) nel fumetto
+    expect(chips[0]).toHaveAttribute('data-hint', expect.stringMatching(/^Immune a /));
+    expect(chips[1]).toHaveAttribute('data-hint', expect.not.stringMatching(/^Immune/));
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
     // vs: il primo col pallino del tipo e il nome, come nel dettaglio; gli altri "+N" (niente mini sprite)
     expect(reasons[2].querySelector('.sym')!.textContent).toBe('VSZapdos');
@@ -369,7 +419,7 @@ describe('SuggestionsPanel', () => {
     expect(roles.items[0].short).not.toContain(',');
   });
 
-  it('Porta: il dettaglio raggruppa le voci per tipo (ruoli, difesa, offesa, minacce, sinergie) senza "Usato con"; le caselle le prime voci in ordine di peso', async () => {
+  it('Risolve: il dettaglio raggruppa le voci per tipo (difesa, offesa, minacce, sinergie), senza ruoli né "Usato con"; le caselle le prime voci in ordine di peso', async () => {
     const { bringsOf, reasonsOf } = await import('../../src/ui/candidateParts');
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { formatRules } = await import('../../src/engine/formatRules');
@@ -387,17 +437,19 @@ describe('SuggestionsPanel', () => {
         reason('threats', 2, 'Ferma Kingambit', 'Ferma Kingambit'),
       ],
     } as never;
-    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
-    // I gruppi sempre nello stesso ordine, ognuno con le sue voci; "Usato con" no (è un dato del meta)
+    renderIt(<SuggestionDetail item={item} rank={2} team={[tusk] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const porta = screen.getByRole('heading', { name: 'Risolve' }).closest('.why-part')!;
+    // I gruppi sempre nello stesso ordine, ognuno con le sue voci; "Usato con" no (è un dato del meta), i ruoli no
+    // (stanno una volta sola nel set)
     const groups = [...porta.querySelectorAll('.bring-group')];
-    expect(groups.map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense', 'offense', 'threats', 'synergy']);
+    expect(groups.map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['defense', 'offense', 'threats', 'synergy']);
+    expect(porta.textContent).not.toMatch(/Pivot/);
     const texts = (kind: string) => [...porta.querySelectorAll(`.bring-group.${kind} li`)].map(li => li.textContent);
     // Difesa, Offesa e Minacce nella forma breve (il gruppo dice già il resto), la frase intera nel tooltip
     expect(texts('defense')).toEqual(['Resiste ad Acqua']);
     expect(texts('offense')).toEqual(['Colpisce Fuoco']);
     expect(texts('threats')).toEqual(['Ferma Kingambit']);
-    expect(porta.querySelector('.bring-group.offense li')).toHaveAttribute('title', 'Colpisce super efficace Fuoco, scoperti dal team');
+    expect(porta.querySelector('.bring-group.offense li')).toHaveAttribute('data-hint', 'Colpisce super efficace Fuoco, scoperti dal team');
     expect(texts('synergy')).toEqual(['Abilita Venusaur: Siccità → Clorofilla']);
     expect(porta.textContent).not.toMatch(/Usato con/);
     // Le caselle: le prime voci in ordine di peso, in forma breve, senza "Usato con"
@@ -423,7 +475,7 @@ describe('SuggestionsPanel', () => {
 });
 
 describe('dettaglio: abilità in battaglia', () => {
-  it('gli avvisi (meteo in conflitto) non finiscono in Porta: aggiungendo compaiono in Toglie', async () => {
+  it('gli avvisi (meteo in conflitto) non finiscono in Risolve: aggiungendo compaiono in Costa', async () => {
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Pelipper', item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane'], nature: 'Bold', evs: { hp: 252 } };
@@ -434,13 +486,14 @@ describe('dettaglio: abilità in battaglia', () => {
       reasons: [{ component: 'roles', weight: 2, text: 'Porta Pivot' }, { component: 'synergy', weight: -1, text: clash }],
     } as never;
     renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    const porta = screen.getByRole('heading', { name: 'Risolve' }).closest('.why-part')!;
     expect(porta.textContent).not.toMatch(/pioggia/);
-    const toglie = screen.getByRole('heading', { name: 'Toglie' }).closest('section')!;
-    expect(toglie.textContent).toMatch(/La pioggia si scontra/);
+    const costa = screen.getByRole('heading', { name: 'Costa' }).closest('.why-part')!;
+    expect(costa.textContent).toMatch(/La pioggia si scontra/);
+    expect(costa.closest('section')).toHaveClass('detail-why');
   });
 
-  it('Porta: niente "Usato con" nel dettaglio (è un dato del meta), le altre voci nei loro gruppi', async () => {
+  it('Risolve: niente "Usato con" (è un dato del meta) e niente ruoli (stanno nel set), le altre voci nei loro gruppi', async () => {
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
@@ -452,10 +505,34 @@ describe('dettaglio: abilità in battaglia', () => {
         { component: 'roles', weight: 2, text: 'Porta Pivot (mancanti nel team)', short: '' },
       ],
     } as never;
-    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
-    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[tusk] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const porta = screen.getByRole('heading', { name: 'Risolve' }).closest('.why-part')!;
     expect(porta.textContent).not.toMatch(/Usato con/);
-    expect([...porta.querySelectorAll('.bring-group')].map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['roles', 'defense']);
+    expect(porta.textContent).not.toMatch(/Pivot/);
+    expect([...porta.querySelectorAll('.bring-group')].map(g => [...g.classList].find(c => c !== 'bring-group'))).toEqual(['defense']);
+  });
+
+  it('aggiungendo, se un’area scende e non c’è altro da dire, Costa dice quale (senza numeri)', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const { rateTeam } = await import('../../src/engine/rating');
+    const { tusk } = await import('../fixtures/data');
+    const real = rateTeam([tusk] as never, fixtureData)!;
+    // Un "prima" con la Difesa al massimo: col candidato non può che scendere
+    const before = { ...real, areas: real.areas.map(area => (area.key === 'defense' ? { ...area, value: 100, inactive: false } : area)) };
+    const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
+    const item = {
+      species: 'Rotom-Wash', set, score: 50, components: {}, tags: [], penalty: 0, facts: { clashes: [] },
+      reasons: [{ component: 'defense', weight: 5, text: 'Resiste ad Acqua: debolezze del team', short: '' }],
+      teamGain: { grade: 'B', overall: 70, gain: 1 },
+    } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[tusk] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={before as never} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const costa = screen.getByRole('heading', { name: 'Costa' }).closest('.why-part')!;
+    expect([...costa.querySelectorAll('li')].map(li => li.textContent)).toContain('Difesa scende');
+    expect(costa.textContent).not.toMatch(/\d/);
+    // E nella testata la Difesa ha la freccia giù
+    const marks = screen.getByRole('list', { name: 'Effetto sul team' });
+    expect(within(marks).getByText('Difesa scende').closest('li')).toHaveClass('down');
   });
 
   it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {
@@ -474,7 +551,7 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.stats-badge')).not.toBeNull();
   });
 
-  it('stall: la Velocità nel dettaglio conta (10%), quindi non è grigia e non ha la nota', async () => {
+  it('stall: la Velocità conta, quindi ha il suo segno (Vel) fra le aree della testata', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -529,15 +606,12 @@ Bold Nature
 - Toxic Spikes`,
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    // La riga per area c'è solo nella versione estesa (team chiuso)
-    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    const areas = screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.detail-areas')!;
-    // Dal 2026-11-03 nessuna area è inattiva nello stall: niente grigio, niente nota
-    expect(areas.querySelector('.inactive')).toBeNull();
-    const speed = [...areas.querySelectorAll('div')].find(d => d.querySelector('dt')?.textContent === 'Velocità')!;
+    // Dal 2026-11-03 nessuna area è inattiva nello stall (le inattive non hanno segno): la Velocità c'è
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    const marks = within(detail).getByRole('list', { name: 'Effetto sul team' });
+    const speed = [...marks.querySelectorAll('li')].find(li => li.querySelector('[aria-hidden="true"]')?.textContent === 'Vel')!;
     expect(speed).toBeDefined();
-    expect(speed.querySelector('dt')).not.toHaveAttribute('aria-description');
-    expect(speed.querySelector('.change')).not.toBeNull();
+    expect(speed.querySelector('.visually-hidden')!.textContent).toMatch(/^Velocità (sale|resta uguale|scende)$/);
   });
 });
 
@@ -601,7 +675,7 @@ describe('riga della lista', () => {
     rerender(<SuggestionsPanel {...props} focus={{ species: eleventh, mode: 'add', nonce: 1 }} />);
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eleventh}` }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByLabelText('Aggiungi Pokémon')).toHaveValue('');
-    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('status', { name: /^Pagina 2 di \d+$/ })).toBeInTheDocument();
     expect(rowNames()).toContain(eleventh);
   });
 
@@ -615,19 +689,19 @@ describe('riga della lista', () => {
 describe('scheda del candidato', () => {
   const FULL = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'];
   const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
-  const section = (name: string) => within(detail()).getByRole('heading', { name }).closest('section')!;
+  const section = (name: string) => within(detail()).getByRole('heading', { name }).closest('.why-part')!;
 
-  it('Migliora: prima cosa porta e cosa toglie, niente più Perché', async () => {
+  it('Migliora: cosa risolve e cosa costa, chi esce sotto la testata; il verso delle aree nella testata col team aperto e chiuso', async () => {
     const user = await setup(...FULL);
-    expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
-    expect(within(detail()).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
+    expect(within(detail()).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
+    expect(within(detail()).getByRole('heading', { name: 'Costa' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
-    expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
-    // Senza la versione estesa niente riga per area; col team chiuso c'è
-    expect(detail().querySelector('.detail-areas')).toBeNull();
-    // La riga per area c'è solo nella versione estesa (team chiuso)
+    expect(section('Risolve').textContent).not.toMatch(/Uso nel meta/);
+    expect(detail().querySelector('.detail-swap')).toHaveTextContent(/^Esce/);
+    const marks = () => within(detail()).getByRole('list', { name: 'Effetto sul team' });
+    expect(marks()).toHaveTextContent(/Difesa/);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
+    expect(marks()).toHaveTextContent(/Difesa/);
   }, 60000);
 
   it("team vuoto: la riga dice i ruoli, non ripete l'uso già a destra", async () => {
@@ -635,17 +709,21 @@ describe('scheda del candidato', () => {
     expect(list().querySelector('li .who small')!.textContent).not.toMatch(/Uso nel meta/);
   });
 
-  it('team vuoto: Porta dice cosa sa fare il Pokémon, non "nessuna differenza"', async () => {
+  it('team vuoto: Risolve dice cosa sa fare il Pokémon, non "nessuna differenza"', async () => {
     await setup();
-    expect(section('Porta').textContent).not.toMatch(/Nessuna differenza/);
-    expect(section('Porta').querySelectorAll('li').length).toBeGreaterThan(0);
+    expect(section('Risolve').textContent).not.toMatch(/Nessuna differenza/);
+    expect(section('Risolve').querySelectorAll('li').length).toBeGreaterThan(0);
   });
 
-  it('Aggiungi: solo Porta, senza uso nel meta', async () => {
+  it('Aggiungi: Risolve senza uso nel meta, nessuna striscia di chi esce; Costa solo se un’area scende', async () => {
     await setup('Great Tusk');
-    expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
-    expect(within(detail()).queryByRole('heading', { name: 'Toglie' })).toBeNull();
-    expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+    expect(within(detail()).getByRole('heading', { name: 'Risolve' })).toBeInTheDocument();
+    expect(section('Risolve').textContent).not.toMatch(/Uso nel meta/);
+    expect(detail().querySelector('.detail-swap')).toBeNull();
+    const downs = [...detail().querySelectorAll('.detail-area-marks li.down')];
+    const costa = within(detail()).queryByRole('heading', { name: 'Costa' });
+    if (!downs.length) expect(costa).toBeNull();
+    else expect(costa).toBeInTheDocument();
   });
 });
 
@@ -665,11 +743,11 @@ describe('stile Carte', () => {
     expect(list()).toHaveClass('cards');
     const first = list().querySelector<HTMLElement>('li')!;
     expect(first).toHaveClass('card');
-    // Tipi come icone tonde (decorative), il nome dei tipi nel tooltip; nessun chip
+    // Tipi come icone tonde (decorative), il nome di ognuno nel fumetto dell'icona; nessun chip
     const types = getSpecies(rowNames()[0])!.types;
     const icons = first.querySelector('.type-icons')!;
     expect(icons.querySelectorAll('img')).toHaveLength(types.length);
-    expect(icons).toHaveAttribute('title', types.map(type => typeName(type, 'it')).join(' / '));
+    expect([...icons.querySelectorAll('img')].map(img => img.getAttribute('data-hint'))).toEqual(types.map(type => typeName(type, 'it')));
     expect([...first.querySelectorAll('.type-chip')].filter(c => !c.closest('.reason'))).toHaveLength(0);
     // Quanto sale il voto, sulla targhetta in alto a sinistra
     expect(first.querySelector('.tag')!.textContent).toMatch(/^(\+\d+|−\d+|±0)$/);
@@ -704,46 +782,33 @@ describe('stile Carte', () => {
   });
 });
 
-describe('sprite Icona box', () => {
-  it('Icona box: la lista usa le icone del box', async () => {
-    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
-    const { renderIt } = await import('../helpers/italian');
-    const { tusk } = await import('../fixtures/data');
-    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="box" />);
-    const tiles = list().querySelectorAll('.card');
-    expect(tiles.length).toBeGreaterThan(0);
-    for (const tile of tiles) {
-      expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
-      expect(tile.querySelector('img.sprite')).toBeNull();
-    }
-  });
-
-  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato; con l’icona box mai la GIF', async () => {
+describe('sprite animato delle carte', () => {
+  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     const { fireEvent } = await import('@testing-library/react');
-    for (const listSprite of ['normal', 'box'] as const) {
+    {
       const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite={listSprite} />);
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
       const cards = [...list().querySelectorAll<HTMLElement>('.card')];
       expect(cards.length).toBeGreaterThan(1);
-      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
+      // Animata = la GIF, o lo statico che "respira" per chi la GIF non ce l'ha
+      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani, .sprite.idle'));
       // A riposo solo la selezionata (la prima)
       expect(cards[0].classList.contains('selected')).toBe(true);
-      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+      expect(animated()).toEqual([cards[0]]);
       vi.useFakeTimers();
       try {
         // Sotto il mouse lo sprite esce (e parte la GIF) solo dopo CARD_WAKE_MS fermi sulla carta
         fireEvent.mouseEnter(cards[1]);
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(animated()).toEqual([cards[0]]);
         expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
         act(() => { vi.advanceTimersByTime(CARD_WAKE_MS); });
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
+        expect(animated()).toEqual([cards[0], cards[1]]);
         expect(cards[1].querySelector('.card-sprite.popped')).not.toBeNull();
         fireEvent.mouseLeave(cards[1]);
-        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(animated()).toEqual([cards[0]]);
         expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
       } finally {
         vi.useRealTimers();
@@ -807,35 +872,61 @@ describe('sprite Icona box', () => {
     expect(cards[1].style.getPropertyValue('--wake')).toBe(`${CARD_WAKE_MS}ms`);
   });
 
-  it("la lastra della testata: il ruolo principale e quanti altri, l'elenco intero per i lettori di schermo e nel tooltip", async () => {
+  it('i ruoli del set: una riga sotto il set, tutti, senza doppioni, ognuno con la sua spiegazione', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="normal" />);
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
-    const slab = detail.querySelector('.detail-hero .detail-why')!;
-    const roles = slab.getAttribute('aria-label')!.replace('Ruoli del set: ', '').split(', ');
+    const line = detail.querySelector('.detail-run .mcard-roles')!;
+    const roles = [...line.querySelectorAll(':scope > span > span')].map(role => role.textContent!.replace(/^ · /, ''));
     expect(roles.length).toBeGreaterThan(0);
     expect(new Set(roles).size).toBe(roles.length);
-    // A vista il principale (il primo dell'elenco) e "+N" per gli altri
-    expect(slab.textContent).toBe(roles.length > 1 ? `${roles[0]} +${roles.length - 1}` : roles[0]);
-    expect(slab.getAttribute('title')).toBeTruthy();
+    expect(line.textContent).toBe(`Ruoli${roles.join(' · ')}`);
+    for (const role of line.querySelectorAll(':scope > span > span')) expect(role).toHaveAttribute('data-hint');
+    // Una volta sola: Risolve non ripete i ruoli
+    expect(detail.querySelectorAll('.mcard-roles')).toHaveLength(1);
+    expect(detail.querySelector('.bring-group.roles')).toBeNull();
   });
 
-  it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {
+  it('i ruoli che mancavano al team sono segnati nel set: "+" visibile e "nuovo per il team:" per i lettori', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const set = { species: 'Great Tusk', item: 'Leftovers', ability: 'Protosynthesis', moves: ['Headlong Rush', 'Stealth Rock', 'Rapid Spin', 'Knock Off'], nature: 'Jolly', evs: { atk: 252, spe: 252 } };
+    const item = { species: 'Great Tusk', set, score: 50, components: {}, tags: [], penalty: 0, reasons: [], facts: { clashes: [], roles: { filled: ['hazards'] } } } as never;
+    // Con un membro nel team (col team vuoto i ruoli stanno in Risolve e la riga RUOLI non c'è)
+    const mate = { species: 'Corviknight', item: 'Leftovers', ability: 'Pressure', moves: ['Brave Bird', 'Roost'], nature: 'Impish', evs: { hp: 252 } };
+    renderIt(<SuggestionDetail item={item} rank={2} team={[mate] as never} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const fresh = [...document.querySelectorAll('.detail-run .mcard-roles .fresh')];
+    expect(fresh).toHaveLength(1);
+    expect(fresh[0].textContent).toMatch(/\+nuovo per il team: Hazard$/);
+    expect(fresh[0].querySelector('b')).toHaveTextContent('+');
+    expect(fresh[0].querySelector('.visually-hidden')).toHaveTextContent('nuovo per il team:');
+    // Gli altri ruoli senza segno
+    expect(document.querySelectorAll('.detail-run .mcard-roles > span > span:not(.fresh)').length).toBeGreaterThan(0);
+  });
+
+  it('niente sezione Meta: in Risolve "Spesso con" nomina i compagni frequenti già nel team (non chi esce), e senza meta sparisce', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
-    const { tusk } = await import('../fixtures/data');
+    const { tusk, gholdengo } = await import('../fixtures/data');
     const props = { team: [tusk] as never, format: DEFAULT_FORMAT, data: fixtureData, replaceIndex: null,
       onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
     const { rerender } = renderIt(<SuggestionsPanel {...props} />);
     const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
     expect(within(detail()).queryByRole('heading', { name: 'Meta' })).toBeNull();
-    rerender(<SuggestionsPanel {...props} teamCollapsed />);
-    const meta = within(detail()).getByRole('heading', { name: 'Meta' }).closest('section')!;
-    expect(meta).toHaveTextContent(/\d.*uso nel meta/);
-    expect(meta.querySelectorAll('.meta-mates li').length).toBeLessThanOrEqual(5);
+    expect(detail().querySelector('.meta-sec, .meta-mates')).toBeNull();
+    const mates = () => detail().querySelector('.detail-mates');
+    expect(mates()!.closest('.why-part')!.querySelector('h4')).toHaveTextContent('Risolve');
+    expect(mates()).toHaveTextContent(/^Spesso con.*Great Tusk/);
+    expect(within(mates() as HTMLElement).getByText('Great Tusk').tagName).toBe('STRONG');
+    // Chi esce non conta come compagno
+    rerender(<SuggestionsPanel {...props} team={[tusk, gholdengo] as never} replaceIndex={0} />);
+    expect(mates()?.textContent ?? '').not.toMatch(/Great Tusk/);
+    // Meta ignorato: niente "Spesso con"
+    rerender(<SuggestionsPanel {...props} data={{ ...fixtureData, ignoreMeta: true }} />);
+    expect(mates()).toBeNull();
   });
 
   it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {
@@ -874,5 +965,65 @@ describe('nome dei candidati con la forma', () => {
     expect(formeParts('Ogerpon-Wellspring')).toEqual({ base: 'Ogerpon', forme: 'Wellspring' });
     expect(formeParts('Urshifu-Rapid-Strike')).toEqual({ base: 'Urshifu', forme: 'Rapid Strike' });
     expect(formeParts('Great Tusk')).toBeNull();
+  });
+});
+
+describe('carta Pedana', () => {
+  it('solo la carta selezionata ha la luce dall’alto, non quella sotto il mouse', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+    expect(cards.length).toBeGreaterThan(2);
+    expect(cards[0].classList.contains('beam-on')).toBe(true);
+    expect(cards.slice(1).some(card => card.classList.contains('beam-on'))).toBe(false);
+    vi.useFakeTimers();
+    try {
+      fireEvent.mouseEnter(cards[2]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS + 50); });
+      expect(cards[2].classList.contains('beam-on')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+    // Ogni carta ha la pedana e la luce (spenta) nel suo palco
+    for (const card of cards) {
+      expect(card.querySelector('.pedana-stage .pedana-disc')).not.toBeNull();
+      expect(card.querySelector('.pedana-beam')).not.toBeNull();
+    }
+  });
+
+  it('ogni carta ha i colori dei due tipi per la riga in cima', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    for (const card of list().querySelectorAll<HTMLElement>('.card')) {
+      expect(card.style.getPropertyValue('--t1')).not.toBe('');
+      expect(card.style.getPropertyValue('--t2')).not.toBe('');
+    }
+  });
+});
+
+describe('motivi delle carte', () => {
+  it('i motivi partono da sinistra, con 2 px fra una riga e l’altra; una riga troppo larga finisce coi puntini', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/suggestions.css'), 'utf8');
+    const rule = css.match(/\.reason\.has-sym \{[^}]*\}/)![0];
+    expect(rule).toContain('justify-content: flex-start');
+    const box = css.match(/\.card \.who small \{[^}]*\}/)![0];
+    expect(box).toContain('align-items: stretch');
+    expect(box).toContain('gap: calc(2px + var(--foot-air) / 4)');
+    expect(css).toMatch(/\.card \.reason \{[^}]*max-width: 100%/);
+    expect(css).toMatch(/\.card \.reason \{[^}]*text-align: left/);
+  });
+
+  it('chi esce (Sostituisci): l’icona del box a grandezza vera, nitida', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/suggestions.css'), 'utf8');
+    const icon = css.match(/\.card \.tag \.out-mon \.mon-icon \{[^}]*\}/)![0];
+    expect(icon).not.toContain('scale(');
+    expect(icon).toContain('image-rendering: pixelated');
   });
 });

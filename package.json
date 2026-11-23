@@ -8,7 +8,6 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "fetch-data": "tsx scripts/fetch-data.ts",
-    "bench": "tsx scripts/bench.ts",
     "screens": "tsx scripts/screens.ts"
   },
   "dependencies": {

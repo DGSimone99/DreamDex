@@ -4,6 +4,7 @@ import { battleSpecies, getSpecies, toID } from '../engine/dex';
 import type { TypeName } from '../engine/types';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
+import { FEET_ROW, FEET_X, SPRITE_FEET } from './spriteFeet';
 import { typeIconUrl } from './typeIcons';
 
 /** Colori classici dei tipi. */
@@ -74,8 +75,10 @@ const reducedMotion = () =>
 
 /**
  * Sprite del Pokémon (la forma Mega se tiene la sua pietra). Se manca, resta lo spazio vuoto.
- * Con `animated` sopra lo statico va l'idle animato di Showdown (gen5ani): lo statico resta visibile
- * finché l'animato non è caricato, e resta da solo se l'animazione non esiste o il sistema riduce le animazioni.
+ * Con `animated` sopra lo statico va l'idle animato di Showdown (gen5ani): lo statico resta visibile finché l'animato non
+ * è caricato, poi si danno il cambio con una dissolvenza breve, l'animato appoggiato dove stava lo statico. Chi non ha
+ * l'animazione (spriteFeet.ts lo sa, senza chiederla a Showdown) o la perde per strada "respira" da fermo (.idle).
+ * Col sistema che riduce le animazioni resta lo statico, fermo.
  */
 export function Sprite({ species, item = '', size = 96, animated = false, shiny = false }: { species: string; item?: string; size?: number; animated?: boolean; shiny?: boolean }) {
   const name = battleSpecies({ species, item })?.name ?? species;
@@ -84,25 +87,38 @@ export function Sprite({ species, item = '', size = 96, animated = false, shiny 
   const [ani, setAni] = useState<{ id: string; ready: boolean; failed: boolean; height?: number } | null>(null);
   if (!id || failed === id) return <span className="sprite missing" style={{ width: size, height: size }} aria-hidden="true" />;
   const state = ani?.id === id ? ani : { id, ready: false, failed: false };
-  const showAni = animated && !state.failed && !reducedMotion();
+  // [riga dei piedi, centro del corpo, (se c'è la GIF) altezza, spostamento di lato, righe sotto i piedi]; chi non è in
+  // tabella (Pokémon nuovi) prova la GIF
+  const feet = SPRITE_FEET[id];
+  const hasAni = feet === undefined || feet.length > 2;
+  const motion = animated && !reducedMotion();
+  const showAni = motion && hasAni && !state.failed;
+  // Quanto spostare lo statico perché i piedi stiano alla riga FEET_ROW e il corpo al centro (FEET_X), in frazioni del suo
+  // lato: lo usano solo le carte con la pedana (suggestions.css). La GIF è il riquadro ritagliato su tutta l'animazione:
+  // --ani-dx e --ani-lift la spostano perché il suo primo fotogramma abbia corpo e piedi dove li ha lo statico
+  const feetStyle = feet === undefined ? undefined : { '--feet-dy': (FEET_ROW - feet[0]) / 96, '--feet-dx': (FEET_X - feet[1]) / 96 } as CSSProperties;
+  // Altezza vera della GIF (ritagliata sul Pokémon, da ~40 a 143 px): il CSS la usa per farla grande quanto lo statico. Dalla
+  // tabella è nota prima che arrivi, così la GIF non cambia misura quando compare
+  const aniHeight = state.height ?? feet?.[2];
+  const aniStyle = { ...(aniHeight ? { '--ani-h': aniHeight } : {}), ...(feet?.length === 5 ? { '--ani-dx': feet[3] / 96, '--ani-lift': feet[4] / 96 } : {}) } as CSSProperties;
   return (
     <>
       <img
-        className={`sprite${showAni && state.ready ? ' covered' : ''}`}
+        className={`sprite${showAni && state.ready ? ' covered' : ''}${motion && !showAni ? ' idle' : ''}`}
         src={`https://play.pokemonshowdown.com/sprites/gen5${shiny ? '-shiny' : ''}/${id}.png`}
         alt=""
         width={size}
         height={size}
+        style={feetStyle}
         loading="lazy"
         onError={() => setFailed(id)}
       />
       {showAni && (
         <img
-          className="sprite-ani"
+          className={`sprite-ani${state.ready ? ' ready' : ''}`}
           src={`https://play.pokemonshowdown.com/sprites/gen5ani${shiny ? '-shiny' : ''}/${id}.gif`}
           alt=""
-          // Altezza vera della GIF (ritagliata sul Pokémon, da ~40 a 143 px): il CSS la usa per farla stare nella card
-          style={state.height ? { '--ani-h': state.height } as CSSProperties : undefined}
+          style={aniStyle}
           onLoad={e => setAni({ id, ready: true, failed: false, height: e.currentTarget.naturalHeight || undefined })}
           onError={() => setAni({ id, ready: false, failed: true })}
         />

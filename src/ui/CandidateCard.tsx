@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type CSSProperties, type FocusEvent, type PointerEvent } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type FocusEvent, type PointerEvent } from 'react';
 import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
 import { useMemberTip } from './MemberCard';
 import { TypeIcons } from './typeIcons';
-import { endSetDrag, startSetDrag } from './teamDrag';
+import { endSetDrag, hideDragImage, startSetDrag } from './teamDrag';
 import { CandidateMarks, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
 /** Quanto il mouse deve restare sulla carta prima che lo sprite esca e parta la GIF (ms): passando sopra la griglia di corsa
@@ -18,9 +18,9 @@ const keyboardFocus = (el: Element): boolean => {
 };
 
 /**
- * Stile "Carte": una casella a forma di carta Masters. Targhetta col +N in alto a sinistra (#1 su magenta),
- * icone dei tipi in colonna a destra, sprite in alto al centro, nome e motivi in basso; chi esce nella targhetta, dopo il +N.
- * La carta ritagliata è `.card-face`: la sua cornice (anche selezionata) segue l'angolo tagliato.
+ * Carta "Pedana" (pedana.css): targhetta col +N in alto a sinistra, icone dei tipi in colonna a destra, lo sprite in piedi
+ * sulla pedana al centro, nome e motivi sotto; chi esce nella targhetta, dopo il +N. A riposo è spenta, sotto il mouse si
+ * accende un po', scelta si accende del tutto e ha la luce dall'alto (beam-on).
  */
 export function CandidateCard(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
@@ -43,6 +43,11 @@ export function CandidateCard(props: CandidateProps) {
   };
   const leave = () => { stop(); setHover(false); };
   const popped = hover || focused;
+  // Trascinata sul team: al suo posto resta uno spazio vuoto finché non la si lascia
+  const [dragOrigin, setDragOrigin] = useState(false);
+  // Al clic la luce dall'alto si accende di colpo e si assesta (CSS .beam-flash): solo al clic, non quando la carta è
+  // scelta da sola (all'apertura, dalla ricerca)
+  const [flash, setFlash] = useState(false);
   // Sulla carta, dopo 0,7 s fermi: la carta del set proposto (strumento, abilità, statistiche, mosse). Su tutta la carta:
   // la sprite non prende il mouse (è decorativa, i clic vanno alla carta)
   // Non sul candidato scelto (il suo dettaglio è già aperto) e si chiude al clic, che lo sceglie
@@ -52,27 +57,40 @@ export function CandidateCard(props: CandidateProps) {
   useEffect(() => { if (selected) closeTip(); }, [selected, closeTip]);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
-  const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
+  const resultId = useId();
+  const className = ['card', isLead(rank, item) && 'first', selected && 'beam-on', flash && 'beam-flash', dragOrigin && 'drag-origin', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
-    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
+    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => { pointer.current = e.pointerType; }}
+      onClickCapture={() => setFlash(true)} onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}
       // Uscendo dalla carta si chiude anche la carta del set
       onMouseEnter={e => { enter(); if (!selected) tipHandlers.onMouseEnter(e); }}
       onPointerDown={closeTip} onMouseLeave={() => { leave(); memberTip.close(); }}
       // Trascinata sul team: sopra un membro lo sostituisce, sopra uno slot vuoto lo aggiunge (teamDrag.ts)
-      draggable onDragStart={e => { leave(); memberTip.close(); startSetDrag(e, item.set); }} onDragEnd={endSetDrag}
+      // Mentre la si trascina, segue il mouse la carta del team di questo set (la disegna TeamPanel, non la copia sfumata
+      // del browser); al suo posto nella lista resta lo spazio vuoto
+      draggable onDragStart={e => {
+        hideDragImage(e);
+        leave(); memberTip.close(); startSetDrag(e, item.set);
+        setTimeout(() => setDragOrigin(true), 0);
+      }}
+      onDragEnd={() => { setDragOrigin(false); endSetDrag(); }}
       onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
-      <div className="card-face">
+      <div className="card-face pedana-face">
+        <span className="pedana-stripe" aria-hidden="true" />
+        <span className="pedana-beam" aria-hidden="true" />
+        <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
         {!popped && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
-        <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
-        <TypeIcons types={types} className="card-types" title={typeNames} />
+        <ResultCell id={resultId} item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
+        <TypeIcons types={types} className="card-types" hints />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}
         <span className="visually-hidden">{typeNames}</span>
         <span className="who">
           <span className="name-line">
-            <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} />
+            {/* Col nome si sente anche il voto (+N), il numero per cui scegliere */}
+            <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} onAction={props.onAction} describedBy={resultId} />
             <CandidateMarks item={item} format={format} lists={lists} />
           </span>
           <Reasons reasons={reasons} />

@@ -79,8 +79,11 @@ export const PROPOSALS_PER_ROUND = 6;
  * con gli stessi esclusi il giro dopo sarebbe identico).
  */
 export type FillEnd = 'complete' | 'stopped' | 'exhausted';
-/** Voto minimo di una proposta: sotto non si mostra, e il motore cerca un'altra strada. */
-export const MIN_OVERALL = 70;
+/**
+ * Voto minimo di una proposta: sotto non si mostra, e il motore cerca un'altra strada. 2026-11-21: da 70 a 68, quanto è
+ * sceso in media il voto togliendo i punti dei ruoli minori (le stesse proposte di prima restano sopra la soglia).
+ */
+export const MIN_OVERALL = 68;
 /** Candidati per slot, dopo le restrizioni di tipo, stile e Mega. */
 export const CANDIDATES = 25;
 /** Candidati per slot su cui si calcola il voto del team. */

@@ -10,7 +10,7 @@ import { DashCard } from './dashboard/DashCard';
 import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
 import { shortCase } from './bonusMalusShort';
 import { Typed } from './TypeText';
-import { typeIconUrl } from './typeIcons';
+import { tileStyle, typeIconUrl } from './typeIcons';
 import { useFitCount } from './useFit';
 
 type T = ReturnType<typeof useT>;
@@ -21,7 +21,7 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 type Family = 'types' | 'roles' | 'hazards' | 'conditions' | 'members' | 'core';
 const FAMILY: Record<CatalogKey, Family> = {
   sharedWeak: 'types', sameType: 'types', defenseHole: 'types', unanswered: 'types', weakCovered: 'types', typeVariety: 'types',
-  essentialRole: 'roles', importantRole: 'roles', minorRole: 'roles',
+  essentialRole: 'roles', importantRole: 'roles', pivotLink: 'roles',
   hazardDuplicate: 'hazards',
   weatherClash: 'conditions', weatherSabotage: 'conditions', unmetCondition: 'conditions', unusedEnabler: 'conditions', conditionUsed: 'conditions', weatherHelp: 'conditions', trickRoomFast: 'conditions',
   weakMember: 'members', lockedStatus: 'members',
@@ -86,7 +86,7 @@ interface ActiveRow { key: string; entry: CatalogEntry; points: number; details:
  * Le voci dei Ruoli nel catalogo: nella scheda Bonus/Malus non ci sono (hanno i loro punti nella sottoscheda Ruoli, qui
  * sembrerebbero contare due volte); il catalogo della guida le elenca ancora.
  */
-const ROLE_KEYS = new Set<CatalogKey>(['essentialRole', 'importantRole', 'minorRole']);
+const ROLE_KEYS = new Set<CatalogKey>(['essentialRole', 'importantRole']);
 const notRole = (item: Redundancy) => !item.catalog || !ROLE_KEYS.has(item.catalog);
 
 /**
@@ -104,7 +104,7 @@ export function bonusMalusTotals(rating: Pick<TeamRating, 'bonus' | 'penalty'>):
 function detailOf(item: Redundancy, name: string): string {
   const prefix = `${name}:`.toLowerCase();
   const text = item.text.toLowerCase().startsWith(prefix) ? item.text.slice(prefix.length).trim().replace(/^./, c => c.toUpperCase()) : item.text;
-  // E senza il nome dietro ("Pivot: ruolo extra" → "Pivot")
+  // E senza il nome dietro (una voce scritta "X: nome" → "X")
   const at = text.lastIndexOf(': ');
   return at > 0 && text.slice(at + 2).toLowerCase() === name.toLowerCase() ? text.slice(0, at) : text;
 }
@@ -184,7 +184,7 @@ function HeldTypes({ core, rows, lang, t }: { core: Core; rows: HoldRow[]; lang:
         <FloatTip rect={tip.anchor.rect} tone="var(--good)" className="kot bm-held-tip">
           <div className="kot-head"><b>{count}</b></div>
           <span className="bm-core-types">
-            {rows.map(row => <img key={row.type} className={held.includes(row) ? 'on' : 'off'} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
+            {rows.map(row => <img key={row.type} className={`ti-sq ${held.includes(row) ? 'on' : 'off'}`} style={tileStyle(row.type)} src={typeIconUrl(row.type)} alt="" draggable={false} />)}
           </span>
           <p className="ftip-foot">{t('catalogue.cores.heldTip')}</p>
         </FloatTip>
@@ -249,7 +249,7 @@ function CoreCard({ core, open, rows, toggle, onOpen, lang, t }: {
             const line = t('catalogue.cores.parry', { name: side.from, to: side.to, type: typeName(side.type, lang) });
             return (
               <li key={side.from}>
-                <img src={typeIconUrl(side.type)} alt="" draggable={false} />
+                <img className="ti-sq" style={tileStyle(side.type)} src={typeIconUrl(side.type)} alt="" draggable={false} />
                 <span>{line.startsWith(side.from) ? <><b>{side.from}</b>{line.slice(side.from.length)}</> : line}</span>
               </li>
             );

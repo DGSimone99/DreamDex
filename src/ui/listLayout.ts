@@ -1,6 +1,6 @@
-// Calcolo puro del layout della lista candidati (le carte).
-// Gli input sono altezze/larghezze in px del contenitore; valori non validi
-// (0, negativi, NaN) sono portati a 0 cosi nulla diventa NaN/Infinity.
+// Calcolo puro del layout della lista candidati a "Box" (le carte Pedana).
+// Gli input sono altezze/larghezze in px; valori non validi (0, negativi, NaN) sono portati a 0 così nulla diventa
+// NaN/Infinity.
 
 const num = (n: number): number => (Number.isFinite(n) && n > 0 ? n : 0);
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
@@ -11,45 +11,69 @@ export interface CardsLayout {
   perPage: number;
   tileHeight: number;
   reasons: number;
+  /** Larghezza fissa della lista (bordo compreso): il dettaglio prende il resto. */
+  listWidth: number;
 }
 
-/** Carte per pagina: al massimo 3 × 2 (una pagina = un team possibile); meno colonne o una riga sola quando non entrano. */
-export const CARDS_COLUMNS = 3;
-export const CARDS_ROWS = 2;
-/** Altezza massima di una carta: oltre, la griglia resta a questa misura e si centra in verticale. */
-export const CARDS_MAX_TILE = 260;
-/** Larghezza minima di una carta (CSS .suggestions.cards, minmax(130px, 1fr)) e spazio fra le carte. */
-export const CARDS_MIN_WIDTH = 130;
+/** Spazio fra le carte e margine interno della griglia (CSS .suggestions.cards): lo spazio per la carta che si alza. */
 export const CARDS_GAP = 8;
-/** Lo sprite più piccolo che si accetta sulla carta: sotto, la targhetta lo coprirebbe e non si leggerebbe bene. */
-export const CARDS_MIN_SPRITE = 60;
+export const CARDS_PAD = 14;
+/** Carta più alta: oltre, le carte non si allungano e la griglia si centra. */
+export const CARDS_MAX_TILE = 232;
+export const CARDS_MAX_ROWS = 4;
+/** La quarta fila (schermi alti, team nascosto) solo se le carte restano almeno così alte: niente carte schiacciate. */
+export const CARDS_FOURTH_ROW_TILE = 196;
+/** Larghezza della carta: 150 px sugli schermi normali, 140 su quelli compatti. */
+export const CARDS_WIDE_W = 150;
+export const CARDS_NARROW_W = 140;
 
-/** Motivi sotto il nome delle carte: 2 col team aperto, 3 col team nascosto. */
+/** Spazio fra la lista e il dettaglio (CSS .picker.has-detail) e larghezza minima del dettaglio: sotto, Perché e Set
+ *  non stanno più affiancati e il dettaglio finisce a linguette. Una colonna di carte in meno piuttosto che un dettaglio
+ *  stretto (1280: 3 colonne anche col team nascosto). */
+export const DETAIL_GAP = 16;
+export const DETAIL_MIN_W = 500;
+
+/** Carta bassa senza motivi (solo nome e sprite da 64 px): per avere 2 file dove ne entrerebbe una sola. */
+export const CARDS_SHORT_TILE = 120;
+
+/** Motivi sotto il nome delle carte: 2 col team aperto, 3 col team nascosto (0 sulle carte basse, vedi cardsLayout). */
 export const cardsReasons = (teamCollapsed: boolean): number => (teamCollapsed ? 3 : 2);
 
-/** Margine interno della griglia delle carte (CSS .suggestions.cards): lo spazio per la carta inclinata sotto il mouse. */
-export const CARDS_PAD = 14;
+/** Altezza minima di una carta: 18 sopra + sprite 72 + pedana 16 + nome 20 + 8 sotto, più 16 per motivo. */
+export const cardsMinTile = (reasons: number): number => 134 + 16 * reasons;
 
-/** Altezza minima di una carta: bordo e margini (11) + targhetta (CSS --plate-h: 37 + 16 per motivo) + sprite minimo.
- *  Con 2 motivi 140 px. */
-export const cardsMinTile = (reasons: number): number => 11 + 37 + 16 * reasons + CARDS_MIN_SPRITE;
-
-/** Colonne che entrano nella larghezza della lista (padding compreso), da 1 a 3; senza misura 3. */
-export function cardsColumns(width: number): number {
-  const w = num(width);
-  if (!w) return CARDS_COLUMNS;
-  return clamp(Math.floor((w - 2 * CARDS_PAD + CARDS_GAP) / (CARDS_MIN_WIDTH + CARDS_GAP)), 1, CARDS_COLUMNS);
+/** Colonne dalla larghezza della scheda (lista + dettaglio): 3 sotto 1000 px, 4 fino a 1500, 5 fino a 1600, poi 6
+ *  (anche senza misura 4). Da 1600 il dettaglio resta sui 650-800 px (come a 1440) e lo spazio in più va alla lista,
+ *  invece di una scheda larga e vuota. */
+export function cardsColumns(pickerWidth: number): number {
+  const w = num(pickerWidth);
+  if (!w) return 4;
+  return w < 1000 ? 3 : w < 1500 ? 4 : w < 1600 ? 5 : 6;
 }
 
-// Carte: 2 righe che riempiono l'altezza attuale della lista (al massimo 260 px); se due righe farebbero carte più basse
-// del minimo (sprite coperto dalla targhetta), una riga sola. Le colonne vengono dalla larghezza (3, o 2 se non entrano).
-export function cardsLayout(height: number, teamCollapsed: boolean, width = 0): CardsLayout {
+/** Larghezza di una carta: 150 da 1150 px di scheda, sennò 140. */
+export const cardsWidth = (pickerWidth: number): number => (num(pickerWidth) >= 1150 ? CARDS_WIDE_W : CARDS_NARROW_W);
+
+/** Larghezza della lista: le colonne, gli spazi, il margine interno e il bordo di 1 px per lato. */
+export function cardsListWidth(pickerWidth: number, cols = cardsColumns(pickerWidth)): number {
+  return cols * cardsWidth(pickerWidth) + (cols - 1) * CARDS_GAP + 2 * CARDS_PAD + 2;
+}
+
+/** Da 1 a 4 file che riempiono l'altezza della lista (la quarta solo con carte da 196 px in su); le carte fino a 232 px.
+ *  Se entra una fila sola ma ne entrano 2 di carte basse (120 px), carte senza motivi su 2 file da 3.
+ *  Senza misura 2 file e l'altezza al CSS. */
+export function cardsLayout(height: number, teamCollapsed: boolean, pickerWidth = 0): CardsLayout {
   const h = num(height);
-  const reasons = cardsReasons(teamCollapsed);
-  const columns = cardsColumns(width);
-  const fit = (rows: number) => Math.floor((h - 2 * CARDS_PAD + CARDS_GAP) / rows) - CARDS_GAP;
-  // Senza misura (0) restano 2 righe: l'altezza della carta la decide il CSS
-  const rows = !h || fit(CARDS_ROWS) >= cardsMinTile(reasons) ? CARDS_ROWS : 1;
-  const tileHeight = clamp(fit(rows), 0, CARDS_MAX_TILE);
-  return { columns, rows, perPage: columns * rows, tileHeight, reasons };
+  let columns = cardsColumns(pickerWidth);
+  const fit = (tile: number) => Math.floor((h - 2 * CARDS_PAD + CARDS_GAP) / (tile + CARDS_GAP));
+  let reasons = cardsReasons(teamCollapsed);
+  let rows = h ? (fit(CARDS_FOURTH_ROW_TILE) >= 4 ? CARDS_MAX_ROWS : clamp(fit(cardsMinTile(reasons)), 1, 3)) : 2;
+  // Schermi bassi col team aperto: con i motivi entrerebbe una fila sola; senza, le carte si abbassano e le file sono 2,
+  // da 3 carte al massimo: il dettaglio accanto (stretto su questi schermi) prende la larghezza della quarta colonna
+  if (h && rows === 1 && fit(CARDS_SHORT_TILE) >= 2) { reasons = 0; rows = 2; columns = Math.min(columns, 3); }
+  // Il dettaglio accanto almeno largo DETAIL_MIN_W, col team aperto o nascosto: mai meno spazio chiudendo il team
+  const w = num(pickerWidth);
+  while (w && columns > 3 && w - cardsListWidth(w, columns) - DETAIL_GAP < DETAIL_MIN_W) columns--;
+  const tileHeight = h ? clamp(Math.floor((h - 2 * CARDS_PAD - (rows - 1) * CARDS_GAP) / rows), 0, CARDS_MAX_TILE) : 0;
+  return { columns, rows, perPage: columns * rows, tileHeight, reasons, listWidth: cardsListWidth(pickerWidth, columns) };
 }

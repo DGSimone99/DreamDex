@@ -27,7 +27,7 @@ import type { MoveFix } from './engine/moveFixes';
 import { Rail } from './ui/Rail';
 import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadListSprite, loadLists, loadPalette, loadFormatMemory, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveFormatMemory, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
+import { loadLang, loadLists, loadPalette, loadFormatMemory, loadSession, loadTab, loadTeamCollapsed, saveLang, saveFormatMemory, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { CreditsDialog } from './ui/CreditsDialog';
 import { FeedbackDialog } from './ui/FeedbackDialog';
@@ -35,15 +35,16 @@ import { EMPTY_LISTS, effectiveLists, listContext, type UserLists } from './engi
 import { formatPercent, t, type Lang } from './i18n';
 import { metaBoard } from './engine/metaBoard';
 import { LangProvider } from './i18n/react';
+import { RulesContext } from './ui/rulesContext';
+import { formatRules } from './engine/formatRules';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { TouchTips } from './ui/TouchTips';
 import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
-import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
+import { paletteFor, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
-import { SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
-import { SHEET_QUERY } from './ui/useAnchoredPop';
+import { AUTO_BAND_QUERY, SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
 import { AutoBand } from './ui/AutoBand';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -93,12 +94,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setPalette(next);
     if (storage) savePalette(next, storage);
   };
-  // Lista candidati: sprite (normale/icona box), salvato come la palette
-  const [listSprite, setListSprite] = useState<ListSprite>(() => (storage ? loadListSprite(storage) : null) ?? 'normal');
-  const changeListSprite = (next: ListSprite) => {
-    setListSprite(next);
-    if (storage) saveListSprite(next, storage);
-  };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const closeCredits = useCallback(() => setCreditsOpen(false), []);
@@ -112,10 +107,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
   }, []);
-  // Con le icone del box, il foglio di sprite di Showdown si scarica in anticipo (una volta sola)
-  useEffect(() => {
-    if (listSprite === 'box') new Image().src = 'https://play.pokemonshowdown.com/sprites/pokemonicons-sheet.png';
-  }, [listSprite]);
   useEffect(() => {
     document.documentElement.dataset.palette = paletteFor(palette, format.formatId, format.game);
   }, [palette, format.formatId, format.game]);
@@ -180,14 +171,15 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto il team non si riduce e non si riapre a mano: aperto sugli schermi normali (l'editor ha la sua
   // altezza giusta), compresso su quelli bassi (se no l'editor non ci sta); chiuso l'editor torna la scelta salvata
   const editingOpen = editingIndex !== null;
-  // Telefono: niente tasto, il team si riduce scorrendo la pagina e torna grande in cima (useAutoCollapse)
-  const phone = useMediaQuery(SHEET_QUERY);
+  // Telefono e tablet piccolo: niente tasto, il team si riduce scorrendo la pagina e torna grande in cima (useAutoCollapse)
   const bandControl = useRef<(() => void) | null>(null);
   // Fuori dal telefono; sul telefono decide AutoBand (le sezioni lo vedono sempre grande: lì la pagina scorre)
   // Tablet in orizzontale: il team è la colonna a sinistra, sempre intera (niente fascia da ridurre)
   const tabletSide = useMediaQuery(TABLET_SIDE_QUERY);
+  // Team che si riduce da solo: telefono e tablet piccolo in verticale (fino a 767 px), non col team in colonna
+  const autoBand = useMediaQuery(AUTO_BAND_QUERY) && !tabletSide;
   const collapsed = tabletSide ? false : editingOpen ? short : savedCollapsed;
-  const sectionsCollapsed = phone ? false : collapsed;
+  const sectionsCollapsed = autoBand ? false : collapsed;
   const toggleCollapsed = () => {
     if (editingOpen) return;
     setCollapsed(c => {
@@ -390,11 +382,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione),
   // col nome che ha sulla carta (il soprannome, o la forma Mega)
   const editing = editingIndex !== null ? team[editingIndex] : undefined;
+  // Le regole del formato per la carta del tooltip (la lista dei ruoli del set)
+  const shownRules = useMemo(() => formatRules(data.formatId), [data.formatId]);
   const withEditing = <T extends { id: string; status?: React.ReactNode; hint?: string }>(tabs: T[]): T[] => editing
     ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.name || battleName(editing) })}</span>, hint: t(lang, 'rail.editing', { species: editing.name || battleName(editing) }) } : tab))
     : tabs;
   return (
     <LangProvider lang={lang}>
+    <RulesContext.Provider value={shownRules}>
     <div className="app">
       {/* Per chi usa la tastiera: il primo Tab mostra questo link, che salta la barra laterale */}
       <a className="skip-link" href="#main-content" onClick={e => {
@@ -458,7 +453,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <p>{t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}</p>
         </div>
       )}
-      <AutoBand phone={phone} collapsed={collapsed} control={bandControl}>{collapsed => (<>
+      <AutoBand phone={autoBand} collapsed={collapsed} control={bandControl}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
           grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
           io={<ShowdownPanel team={team} format={format} choice={choice} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
@@ -473,7 +468,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
           incomplete={team.length < 6} members={team.length} teamType={coaching?.teamType?.archetype ?? null} collapsed={collapsed} onOpen={area => { navTo('analysis'); setAnalysisView(area); }} />
         {/* Niente freccia mentre l'editor è aperto: lì il team ha una posizione fissa */}
-        {!editingOpen && !phone && !tabletSide && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
+        {!editingOpen && !autoBand && !tabletSide && <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />
         </button>}
@@ -493,8 +488,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focus={candidateFocus}
             onTarget={setReplaceIndex}
             focusSearch={searchRequest}
-            listSprite={listSprite}
-            onListSpriteChange={changeListSprite}
             teamCollapsed={sectionsCollapsed}
           />
         </TabPanel>
@@ -519,7 +512,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       </div>
       </div>
-      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listSprite={listSprite} onListSpriteChange={changeListSprite}
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette}
         onCredits={() => { setSettingsOpen(false); setCreditsOpen(true); }}
         onFeedback={() => { setSettingsOpen(false); setFeedbackOpen(true); }} onClose={closeSettings} />}
       {creditsOpen && <CreditsDialog onClose={closeCredits} />}
@@ -538,6 +531,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onUndo={() => { changeTeam(undo.before); if (undo.choice) setChoice(undo.choice); setUndo(null); }} />
       )}
     </div>
+    </RulesContext.Provider>
     </LangProvider>
   );
 }

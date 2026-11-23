@@ -72,14 +72,13 @@ describe('doppio: la guida "Come funziona il voto"', () => {
     expect(dialog).toHaveTextContent(tr('help.general.2.doubles'));
   });
 
-  it("l'argomento Doppio elenca le nove voci per livello", () => {
+  it("l'argomento Doppio elenca le voci essenziali e importanti (i minori non ci sono più)", () => {
     const dialog = open('doubles', doublesData);
     fireEvent.click(within(dialog).getByRole('tab', { name: /^Doppio/ }));
     const lists = [...dialog.querySelectorAll('.help-points')].map(list => texts(list.querySelectorAll('li')));
     expect(lists).toEqual([
       ['Attaccante', 'Protect (2 membri)'],
       ['Muro', 'Mossa a più bersagli', 'Fake Out'],
-      ['Redirector', 'Hazard', 'Pivot', 'Priorità (2 membri)'],
     ]);
   });
 
@@ -100,11 +99,11 @@ describe('doppio: la scheda e la guida dei Ruoli', () => {
     return renderIt(<RolesGeneral rating={rating} ctx={{ team, analysis: analyzeTeam(team, data) }} />).container;
   };
 
-  it('le nove voci nelle tre fasce, sotto il nome Doppio', () => {
+  it('le cinque voci nelle due fasce, sotto il nome Doppio (i minori non ci sono più)', () => {
     const view = general(full, doublesData);
     expect(view.querySelector('.rl-type')).toHaveTextContent('Doppio');
     expect(texts(view.querySelectorAll('.rl-name')).sort()).toEqual(
-      ['Attaccante', 'Protect (2 membri)', 'Muro', 'Mossa a più bersagli', 'Fake Out', 'Redirector', 'Hazard', 'Pivot', 'Priorità (2 membri)'].sort());
+      ['Attaccante', 'Protect (2 membri)', 'Muro', 'Mossa a più bersagli', 'Fake Out'].sort());
     expect(view.querySelectorAll('.rl-row.bad, .rl-row.warn')).toHaveLength(0);
   });
 
@@ -118,7 +117,7 @@ describe('doppio: la scheda e la guida dei Ruoli', () => {
     expect(row).toHaveAttribute('title', tr('rdetail.needTwo', { name: 'Amoonguss' }));
   });
 
-  it('in singolo "2° Attaccante" con un solo attaccante dice ancora "Nessuno" (la riga col membro solo è del doppio)', () => {
+  it('in singolo "2° Attaccante" è un minore: il voto lo misura ancora, ma la lista non lo mostra', () => {
     const bulkyEvs = { hp: 248, def: 252, spd: 8 };
     const stall: TeamSet[] = [
       mk('Chansey', 'Eviolite', 'Natural Cure', ['Seismic Toss', 'Soft-Boiled', 'Toxic', 'Stealth Rock'], 'Bold', bulkyEvs),
@@ -132,9 +131,8 @@ describe('doppio: la scheda e la guida dei Ruoli', () => {
     const second = rating.roles.rows.find(r => r.key === 'secondAttacker')!;
     expect(second.by.filter(b => b.value >= 0.5).map(b => b.species)).toEqual(['Kingambit']);
     const view = renderIt(<RolesGeneral rating={rating} ctx={{ team: stall, analysis: analyzeTeam(stall, ouData) }} />).container;
-    const row = [...view.querySelectorAll<HTMLElement>('.rl-row')].find(r => r.querySelector('.rl-name')?.textContent === '2° Attaccante')!;
-    expect(row.querySelector('.rl-by')).toHaveTextContent('Nessuno');
-    expect(row.getAttribute('title') ?? '').not.toContain('Ne servono due');
+    expect(second.level).toBe('minor');
+    expect(texts(view.querySelectorAll('.rl-name'))).not.toContain('2° Attaccante');
   });
 
   it('in singolo la scheda non ha nessuna voce del doppio', () => {
@@ -148,11 +146,13 @@ describe('doppio: la scheda e la guida dei Ruoli', () => {
     const { container } = renderIt(<RolesGuideSection section="types" archetype="doubles" typeRule="oneType" />);
     expect(texts(container.querySelectorAll('thead th')).slice(1)).toEqual(['Doppio']);
     const names = texts(container.querySelectorAll('tbody tr:not(.rl-fam) th'));
-    expect(names.sort()).toEqual(['Attaccante', 'Protect (2 membri)', 'Muro', 'Mossa a più bersagli', 'Fake Out', 'Redirector', 'Hazard', 'Pivot', 'Priorità (2 membri)'].sort());
+    expect(names.sort()).toEqual(['Attaccante', 'Protect (2 membri)', 'Muro', 'Mossa a più bersagli', 'Fake Out'].sort());
     expect(container).not.toHaveTextContent('Controllo Hazard');
     expect(container).not.toHaveTextContent('Recupero');
-    // Niente riga "Non contano in nessun tipo di team"
-    expect(container.querySelector('.guide-foot')).toBeNull();
+    // I minori del doppio stanno nella riga sotto, senza la frase del bonus pivot (solo nel singolo)
+    const foot = container.querySelector('.guide-foot')!;
+    for (const name of ['Redirector', 'Hazard', 'Pivot', 'Priorità (2 membri)']) expect(foot).toHaveTextContent(name);
+    expect(foot).not.toHaveTextContent('bonus');
     // Come funziona: il tipo è Doppio
     const how = renderIt(<RolesGuideSection section="general" archetype="doubles" typeRule="oneType" />).container;
     expect(how).toHaveTextContent('Doppio');
@@ -274,7 +274,7 @@ describe("doppio: nell'app", () => {
     expect(band).toHaveTextContent('Doppio');
     expect(band).not.toHaveTextContent('Incompleto');
     expect(screen.queryByRole('button', { name: 'Tipi di team: come si riconoscono' })).toBeNull();
-    expect(screen.queryByLabelText('Tipo di team')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Tipo di team:/ })).toBeNull();
   });
 
   /** I ruoli del membro i nel riquadro Ruoli del suo editor. */
@@ -284,12 +284,10 @@ describe("doppio: nell'app", () => {
     return within(within(slot).getByRole('group', { name: 'Ruoli' })).getAllByRole('listitem').map(li => li.textContent!).join(' · ');
   };
 
-  it('in doppio la carta di Incineroar mostra un ruolo del doppio (spiegato nel fumetto) e nei Ruoli Fake Out, Priorità e Pivot; niente ruoli del singolo', async () => {
+  it('in doppio Incineroar ha per primo un ruolo del doppio e nei Ruoli Fake Out, Priorità e Pivot; niente ruoli del singolo', async () => {
     const user = await start(true);
-    const roles = [...document.querySelectorAll<HTMLElement>('.slot .roles')][0];
-    expect(roles.textContent).toMatch(/^(Attaccante|Muro)$/);
-    expect(roles.getAttribute('data-hint')).toMatch(/^(Attaccante|Muro): /);
     const all = await rolesOf(user, 0);
+    expect(all.split(' · ')[0]).toMatch(/^(Attaccante|Muro)$/);
     for (const name of ['Fake Out', 'Priorità', 'Pivot']) expect(all).toContain(name);
     for (const name of ['Rimozione Strumenti', 'Sweeper', 'Wallbreaker', 'Muro Fisico']) expect(all).not.toContain(name);
     // Amoonguss: Redirector, non gli stati
@@ -310,7 +308,7 @@ describe("doppio: nell'app", () => {
     const band = document.querySelector<HTMLElement>('.band')!;
     expect(band).toHaveTextContent('Incompleto');
     expect(band).not.toHaveTextContent('Doppio');
-    expect(screen.getByLabelText('Tipo di team')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Tipo di team:/ })).toBeInTheDocument();
   });
 });
 
@@ -319,11 +317,13 @@ describe('doppio: filtri e carte dei candidati', () => {
 
   it('in doppio i filtri per ruolo sono quelli del doppio', () => {
     renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={DOUBLES_RULES} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
     expect(chips()).toEqual(['Attaccante', 'Muro', 'Fake Out', 'Redirector', 'Mossa a più bersagli', 'Protect', 'Pivot', 'Hazard', 'Priorità', 'Setup']);
   });
 
   it('in singolo i filtri per ruolo restano quelli di sempre', () => {
     renderIt(<FilterBar filters={EMPTY_FILTERS} onChange={() => {}} rules={NATDEX_OU_RULES} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
     const names = chips();
     expect(names).toHaveLength(19);
     expect(names).not.toContain('Fake Out');

@@ -47,20 +47,22 @@ describe('dashboardData', () => {
     expect(dash.coverage.offense).toBe(tile('strength').value);
   });
 
-  it('ruoli: tutti i livelli, coperti con i loro membri', () => {
+  it('ruoli: essenziali e importanti (i minori non si mostrano), coperti con i loro membri', () => {
     const { analysis, tile, dash } = build();
-    const expected = LEVEL_KEYS.filter(k => analysis.needs.levels[k] !== 'ignored');
+    const expected = LEVEL_KEYS.filter(k => analysis.needs.levels[k] === 'essential' || analysis.needs.levels[k] === 'important');
     expect(dash.roles.chips.map(c => c.need)).toEqual(expected);
     for (const chip of dash.roles.chips) expect(chip.covered).toBe(chip.owners.length > 0);
-    expect(dash.roles.chips.some(c => c.level === 'minor')).toBe(true);
+    // Il team ha voci minori, ma la lista non le porta
+    expect(LEVEL_KEYS.some(k => analysis.needs.levels[k] === 'minor')).toBe(true);
+    expect(dash.roles.chips.every(c => c.level === 'essential' || c.level === 'important')).toBe(true);
     // Il numero della carta: voci coperte sul totale, come il pannello del voto
     const rating = rateTeam(team, fixtureData)!;
     expect(dash.roles.value).toBe(rolesValue(rating.roles));
     // Le colonne della tabella: i membri in ordine, scritti come chi copre i ruoli
     expect(dash.roles.members).toHaveLength(team.length);
     for (const chip of dash.roles.chips) for (const owner of chip.owners) expect(dash.roles.members).toContain(owner);
-    // soft: con 6 membri solo le voci minori (una mancanza che non toglie punti)
-    for (const chip of dash.roles.chips) expect(chip.soft).toBe(chip.level === 'minor');
+    // soft: con 6 membri nessuna voce (ogni mancanza toglie punti)
+    for (const chip of dash.roles.chips) expect(chip.soft).toBe(false);
   });
 
   it('ruoli con meno di 6 membri: ogni voce è soft (il voto è provvisorio, le mancanze non tolgono punti)', () => {
@@ -70,7 +72,7 @@ describe('dashboardData', () => {
     expect(rating.provisional).toBe(true);
     const problems = findProblems(two, DEFAULT_FORMAT, fixtureData, analysis, [], 'it', rating);
     const { chips } = dashboardData(two, analysis, rating, problems, fixtureData, 'it').roles;
-    expect(chips.some(c => c.level !== 'minor' && !c.covered)).toBe(true);
+    expect(chips.some(c => !c.covered)).toBe(true);
     expect(chips.every(c => c.soft)).toBe(true);
   });
 

@@ -20,6 +20,7 @@ import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
 import { moveFixes, type MoveFix } from './moveFixes';
+import { PIVOT_POINTS } from './pivotBonus';
 import type { ScoredArea, TeamGain, TypeShift } from './teamGain';
 import { teamOffense } from './offense';
 import { DEFENSE_DEPTH } from './defense';
@@ -333,6 +334,8 @@ export interface WeightedChange {
   area: ScoredArea;
   /** Solo fra i pro: la forma a segni per le caselle della lista (⚔️ tipi colpiti, 🛡️ tipi retti). */
   symbol?: ReasonSymbol;
+  /** Una voce di Bonus/Malus (il pivot sfruttato) coi suoi punti fissi: non prende una quota dei punti dell'area. */
+  bonus?: true;
 }
 
 /**
@@ -363,8 +366,8 @@ export function voteDiff(diff: Diff, shift: TypeShift | undefined): Diff {
 export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lang = 'it'): { pros: WeightedChange[]; cons: WeightedChange[] } {
   const diff = voteDiff(given, gain?.typeShift);
   const areaPoints = gain?.areaPoints;
-  const side = (change: Contribution, gain: boolean, extra: { text: string; area: ScoredArea }[] = []) => {
-    const items: { text: string; area: ScoredArea; symbol?: ReasonSymbol }[] = [
+  const side = (change: Contribution, gain: boolean, extra: { text: string; area: ScoredArea; fixed?: number }[] = []) => {
+    const items: { text: string; area: ScoredArea; symbol?: ReasonSymbol; fixed?: number }[] = [
       ...change.roles.map(role => ({ text: roleLabel(role, lang), area: 'roles' as const })),
       ...(change.covers.length ? [{
         text: groupChanges({ roles: [], covers: change.covers, resists: [] }, gain, lang)[0], area: 'strength' as const,
@@ -376,9 +379,10 @@ export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lan
       }] : []),
       ...extra,
     ];
-    const count = (area: ScoredArea) => items.filter(i => i.area === area).length;
+    const count = (area: ScoredArea) => items.filter(i => i.area === area && i.fixed === undefined).length;
     return items
       .map(item => {
+        if (item.fixed !== undefined) return { text: item.text, points: item.fixed, area: item.area, bonus: true as const };
         const total = areaPoints?.[item.area] ?? 0;
         const share = (gain ? Math.max(0, total) : Math.min(0, total)) / count(item.area);
         return { text: item.text, points: Math.round(share * 10) / 10 + 0, area: item.area, ...(item.symbol && { symbol: item.symbol }) };
@@ -387,9 +391,18 @@ export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lan
       .sort((a, b) => Math.abs(b.item.points) - Math.abs(a.item.points) || a.i - b.i)
       .map(({ item }) => item);
   };
+  // Il bonus "Pivot sfruttato" guadagnato o perso col cambio: una voce col suo punto, fra i pro o fra i contro
+  const pivot = (kind: 'gained' | 'lost') => (gain?.pivot === kind
+    ? [{ text: t(lang, kind === 'gained' ? 'diff.pivotGained' : 'diff.pivotLost'), area: 'roles' as const, fixed: kind === 'gained' ? PIVOT_POINTS : -PIVOT_POINTS }]
+    : []);
   return {
-    pros: side(diff.gains, true),
-    cons: side(diff.losses, false, diff.lostResists.length ? [{ text: t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang)), area: 'defense' }] : []),
+    pros: side(diff.gains, true, pivot('gained')),
+    cons: side(diff.losses, false, [
+      ...(diff.lostResists.length ? [{ text: t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang)), area: 'defense' as const }] : []),
+      ...pivot('lost'),
+      // I ruoli d'aiuto che il team perde: il voto non li misura (0 punti), ma il cambio scende in classifica (swapGuard.ts)
+      ...(gain?.lostHelpers ?? []).map(key => ({ text: t(lang, 'diff.teamWithout', { role: needLabel(key, lang) }), area: 'roles' as const, fixed: 0 })),
+    ]),
   };
 }
 

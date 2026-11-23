@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { battleSpecies } from '../engine/dex';
 import { STAT_IDS } from '../engine/sets';
 import { statShort } from '../i18n/game';
@@ -19,11 +19,24 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
 /**
  * Badge "Stat" ("Stats" in inglese): passandoci sopra (o col focus) mostra le statistiche base con barre e totale.
  * Con `compare` (il membro che esce in una sostituzione) ogni riga dice anche quanto si guadagna o si perde.
+ * `side`: accanto alle base, le statistiche del set (l'esagono, nel dettaglio del candidato).
+ * È un pulsante vero: col mouse si apre passandoci sopra, col tocco o con Invio/Spazio si apre e si chiude (Esc, un tocco
+ * fuori o il focus altrove lo chiudono); i lettori di schermo sentono "Stat", pulsante, aperto/chiuso.
  */
-export function StatsBadge({ species, item = '', compare }: { species: string; item?: string; compare?: { species: string; item?: string } }) {
+export function StatsBadge({ species, item = '', compare, side }: { species: string; item?: string; compare?: { species: string; item?: string }; side?: ReactNode }) {
   const id = useId();
   const lang = useLang();
   const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', esc); };
+  }, [open]);
   const forme = battleSpecies({ species, item });
   if (!forme) return null;
   const stats = forme.baseStats;
@@ -32,15 +45,26 @@ export function StatsBadge({ species, item = '', compare }: { species: string; i
   const otherTotal = other ? STAT_IDS.reduce((sum, stat) => sum + other.baseStats[stat], 0) : 0;
   const diff = (n: number) => <span className={`stats-diff${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>{signed(n)}</span>;
   return (
-    <span
+    <button
+      ref={ref}
+      type="button"
       className="stats-badge"
-      tabIndex={0}
+      // Il nome è solo "Stat": senza etichetta il pulsante prenderebbe anche il testo della finestra che contiene
+      aria-label={t('stats.badge')}
+      aria-expanded={open}
       aria-describedby={id}
-      // Dentro un <summary>: il badge non deve aprire o chiudere la card
-      onClick={e => { e.preventDefault(); e.stopPropagation(); }}
+      // Il clic non arriva a chi sta sotto (il dettaglio, la carta); dentro la finestra delle statistiche non la chiude
+      onClick={e => { e.preventDefault(); e.stopPropagation(); if (!(e.target as Element).closest('.stats-pop')) setOpen(o => !o); }}
+      onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false); }}
     >
+      {/* Un piccolo esagono: richiama le statistiche (e l'esagono del set) che si aprono */}
+      <svg className="stats-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" d="M12 2.5 20.5 7.25v9.5L12 21.5 3.5 16.75v-9.5Z" />
+        <path fill="currentColor" opacity=".55" d="M12 6.5 17 9.5v5.5L12 17.5 8 15V9.8Z" />
+      </svg>
       {t('stats.badge')}
-      <span id={id} role="tooltip" className="stats-pop">
+      <span id={id} role="tooltip" className={side ? 'stats-pop has-side' : 'stats-pop'}>
+        <span className="stats-main">
         <span className="stats-title">
           {t('stats.title')}{forme.name !== species ? <small>{forme.name}</small> : null}
         </span>
@@ -54,7 +78,9 @@ export function StatsBadge({ species, item = '', compare }: { species: string; i
           </span>
         ))}
         <span className="stats-total"><span>{t('stats.total')}</span><span>{total}{other && <> {diff(total - otherTotal)}</>}</span></span>
+        </span>
+        {side && <span className="stats-side"><span className="stats-title">{t('stats.withSet')}</span>{side}</span>}
       </span>
-    </span>
+    </button>
   );
 }

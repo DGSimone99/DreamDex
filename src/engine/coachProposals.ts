@@ -2,7 +2,7 @@ import type { CoachAdvice, CoachProblem, ProblemCategory } from './coach';
 import type { CoachFix } from './coachFixes';
 import { leads } from './coachSteps';
 import type { MoveFix } from './moveFixes';
-import type { AreaSnapshot } from './teamGain';
+import { netGain, type AreaSnapshot } from './teamGain';
 
 /** Una proposta del Coaching: un cambio di Pokémon (sostituzione o aggiunta) o un cambio di mossa. */
 export type Proposal = { kind: 'fix'; fix: CoachFix } | { kind: 'move'; fix: MoveFix };
@@ -60,7 +60,8 @@ export function proposalGroups(problems: CoachProblem[], advice: Pick<CoachAdvic
   const all: Proposal[] = [...advice.fixes.map(fix => ({ kind: 'fix' as const, fix })), ...(advice.moves ?? []).map(fix => ({ kind: 'move' as const, fix }))];
   const solved = (p: Proposal) => p.fix.solves.filter(k => order.has(k)).length;
   const seriousSolved = (p: Proposal) => p.fix.solves.filter(k => serious.has(k)).length;
-  const better = (a: Proposal, b: Proposal) => b.fix.gain - a.fix.gain || seriousSolved(b) - seriousSolved(a) || solved(b) - solved(a);
+  // Dal voto in più, senza un punto per ogni ruolo d'aiuto che il team perde (swapGuard.ts)
+  const better = (a: Proposal, b: Proposal) => netGain(b.fix) - netGain(a.fix) || seriousSolved(b) - seriousSolved(a) || solved(b) - solved(a);
   const groups = new Map<string, { id: string; lead: string | null; items: { p: Proposal; i: number }[] }>();
   all.forEach((p, i) => {
     const lead = leadOf(p.fix.solves);

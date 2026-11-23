@@ -6,7 +6,7 @@ import { useLang, useT } from '../../i18n/react';
 import { HOLD_BANDS } from '../defense/holds';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP, SPRITE_TIP_ROW } from '../spriteSizes';
-import { typeIconUrl } from '../typeIcons';
+import { tileStyle, typeIconUrl } from '../typeIcons';
 import { coreTitle } from './CoreTriangle';
 
 /**
@@ -32,7 +32,7 @@ export function CoreTip({ core, taken }: { core: Core; taken: Record<string, Rec
             <span className="core-tip-what">
               <b>{side.from}</b>
               <span className="core-tip-type" style={{ '--mc': typeColor(side.type) } as CSSProperties}>
-                <img src={typeIconUrl(side.type)} alt="" draggable={false} />{t('coreTip.holds', { type: typeName(side.type, lang) })}
+                <img className="ti-sq" style={tileStyle(side.type)} src={typeIconUrl(side.type)} alt="" draggable={false} />{t('coreTip.holds', { type: typeName(side.type, lang) })}
               </span>
             </span>
             {band && <span className={`ftip-ko def ${band}`}>{HOLD_BANDS[band].tag}</span>}

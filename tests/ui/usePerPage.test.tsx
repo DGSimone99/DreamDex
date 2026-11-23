@@ -22,11 +22,13 @@ function box(size: { width: number; height: number }) {
   return el;
 }
 
-function setup(size: { width: number; height: number }, collapsed = false) {
+function setup(size: { width: number; height: number }, collapsed = false, pickerWidth = 0) {
   const el = box(size);
+  const picker = box({ width: pickerWidth, height: 0 });
   return renderHook(({ collapsed }) => {
     const ref = useRef<HTMLElement>(el);
-    return usePerPage(ref, collapsed);
+    const pickerRef = useRef<HTMLElement>(picker);
+    return usePerPage(ref, pickerRef, collapsed);
   }, { initialProps: { collapsed } });
 }
 
@@ -39,43 +41,22 @@ describe('usePerPage', () => {
     expect(setup({ width: 0, height: 0 }, true).result.current.reasons).toBe(3);
   });
 
-  it('il per-pagina non cambia chiudendo il team', () => {
+  it('Box: colonne dalla larghezza della scheda, file dall’altezza della lista', () => {
     const fire = stubObservers();
-    const size = { width: 560, height: 532 };
-    const { result, rerender } = setup(size);
+    const { result } = setup({ width: 654, height: 456 }, false, 1182);
     fire();
-    const open = result.current;
-    expect(open.perPage).toBeGreaterThan(0);
-    // Team chiuso: il contenitore cresce, il numero per pagina resta
-    size.height = 712;
-    rerender({ collapsed: true });
-    fire();
-    expect(result.current.perPage).toBe(open.perPage);
-    expect(result.current.reasons).toBeGreaterThanOrEqual(open.reasons);
-    // E riaprendolo, ancora lo stesso
-    size.height = 532;
-    rerender({ collapsed: false });
-    fire();
-    expect(result.current.perPage).toBe(open.perPage);
+    expect(result.current).toEqual({ perPage: 8, columns: 4, tileHeight: 210, reasons: 2, listWidth: 654 });
   });
 
-  it('Carte: 6 per pagina, carta dall’altezza (max 260), motivi 2 → 3 nascondendo il team', () => {
+  it('nascondendo il team la lista cresce e le carte per pagina aumentano', () => {
     const fire = stubObservers();
-    const size = { width: 560, height: 400 };
-    const { result, rerender } = setup(size);
+    const size = { width: 654, height: 456 };
+    const { result, rerender } = setup(size, false, 1182);
     fire();
-    expect(result.current).toEqual({ perPage: 6, columns: 3, tileHeight: 182, reasons: 2 });
-    size.height = 900;
+    expect(result.current.perPage).toBe(8);
+    size.height = 656;
     rerender({ collapsed: true });
     fire();
-    expect(result.current).toEqual({ perPage: 6, columns: 3, tileHeight: 260, reasons: 3 });
-  });
-
-  it('Carte: colonne e altezza della tessera', () => {
-    const fire = stubObservers();
-    const cards = setup({ width: 560, height: 532 });
-    fire();
-    expect(cards.result.current.columns).toBeGreaterThanOrEqual(2);
-    expect(cards.result.current.tileHeight).toBeGreaterThan(0);
+    expect(result.current).toMatchObject({ perPage: 12, reasons: 3 });
   });
 });

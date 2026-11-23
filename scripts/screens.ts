@@ -519,14 +519,7 @@ const STATES: Record<string, State> = {
     await wait(400);
     if (!await clickText(p, '.mode-switch button, .toolbar button', /^Sostituisci$/)) return 'no replace button';
     await wait(1500);
-    // Allineamento: per ogni gruppo, la base della scritta dell'etichetta e quella della prima riga delle voci (stessa = 0)
-    // (codice come stringa: tsx aggiunge __name alle funzioni con nome, che nella pagina non esiste)
-    console.log(`bringAlign=${await p.evaluate(`[...document.querySelectorAll('.detail .bring-group')].map(g => {
-      const textOf = el => { if (!el) return null; const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: n => n.textContent.trim() ? 1 : 3 }); return walker.nextNode(); };
-      const bottom = el => { const n = textOf(el); if (!n) return NaN; const r = document.createRange(); r.selectNodeContents(n); const b = r.getClientRects()[0]; return b ? b.bottom : NaN; };
-      return g.classList[1] + ':' + (bottom(g.querySelector('.bring-label')) - bottom(g.querySelector('li'))).toFixed(1);
-    }).join(' ')`)}`);
-    return (await p.evaluate(() => !!document.querySelector('.detail .bring-groups.loss, .detail .loses'))) || 'no Toglie';
+    return (await p.evaluate(() => !!document.querySelector('.detail .bring-groups.loss, .detail .loses, .detail #detail-tab-loses'))) || 'no Toglie';
   } },
   'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
   'pokemon-hover-last': { run: async p => hoverCard(p, 5) },
@@ -538,7 +531,6 @@ const STATES: Record<string, State> = {
     return clickText(p, 'button.band-toggle', /./);
   } },
   // Icone del box al posto degli sprite normali (Carte e Menu)
-  'pokemon-box': { storage: { 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-hover': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => {
     await tab(p, 'pokemon');
     await wait(1500);
@@ -548,16 +540,15 @@ const STATES: Record<string, State> = {
     await wait(1200);
     return true;
   } },
-  'pokemon-menu-box': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   // Team nascosto (tessere/righe più alte) e nomi lunghi, in ogni stile e sprite
   'pokemon-collapsed': { run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
-  'pokemon-collapsed-box': { storage: { 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
-  'pokemon-menu-collapsed-box': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
   // Preferiti dell'utente nella lista: il ♥ sul +N (Carte e Menu)
   'pokemon-fav': { storage: { 'dreamdex.lists': JSON.stringify({ universal: { favorites: FAVS, bans: [] }, byFormat: {} }) }, run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-fav': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.lists': JSON.stringify({ universal: { favorites: FAVS, bans: [] }, byFormat: {} }) }, run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long-en': { hash: hash(LONG), lang: 'en', run: async p => { await tab(p, 'pokemon'); return true; } },
+  // Gen 9: il set del candidato ha anche la Tera (cinque dati del set nel dettaglio)
+  'pokemon-gen9': { hash: hashWith(TEAM, { formatId: 'gen9ou' }), run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
@@ -1040,7 +1031,7 @@ const STATES: Record<string, State> = {
   saved: { run: async p => clickText(p, 'details.popover > summary', /Team salvati/) },
   import: { run: async p => clickText(p, 'details.popover > summary', /Import/) },
   rules: { run: async p => { await p.click('.format-card > summary'); return true; } },
-  filters: { run: async p => { await tab(p, 'pokemon'); return clickText(p, 'details.filters > summary', /./); } },
+  filters: { run: async p => { await tab(p, 'pokemon'); return clickText(p, '.toolbar .filters-trigger', /./); } },
   combobox: { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
     await wait(500);
@@ -1159,13 +1150,17 @@ const STATES: Record<string, State> = {
   } },
   'filters-chips': { run: async p => {
     await tab(p, 'pokemon');
-    return p.evaluate(() => {
-      const select = document.querySelector<HTMLSelectElement>('select[aria-label="Uso nel meta"]');
-      if (!select) return false;
-      select.value = 'common';
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
+    await p.evaluate(() => (document.querySelector('.toolbar .filters-trigger') as HTMLElement | null)?.click());
+    await wait(300);
+    const ok = await p.evaluate(() => {
+      const group = document.querySelector('.filters-dialog [role="group"][aria-label="Ruolo"]');
+      const button = [...(group?.querySelectorAll('button') ?? [])].find(b => (b.textContent ?? '').trim() === 'Hazard') as HTMLElement | undefined;
+      button?.click();
+      return !!button;
     });
+    await p.keyboard.press('Escape');
+    await wait(300);
+    return ok;
   } },
   empty: { hash: '' },
   // Team con 1, 3 o 5 Pokémon: solo il primo slot libero ha la scritta, gli altri sono cornici tenui
@@ -1179,7 +1174,24 @@ const STATES: Record<string, State> = {
   'fill-open': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await wait(2500); return true; } },
   'fill-tournament': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await clickText(p, '[role="tab"]', /Team da torneo/); await wait(800); return true; } },
   'fill-unlocked': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await p.evaluate(() => (document.querySelector('.fill-panel input[type="checkbox"]') as HTMLElement | null)?.click()); await wait(3500); return true; } },
-  'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
+  'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters-trigger') as HTMLElement | null)?.click()); await wait(400); return true; } },
+  // Finestra dei filtri con qualche scelta accesa (in un evaluate solo l'ultima resta: basta per vedere una tessera accesa)
+  'filters-busy': { run: async p => {
+    await tab(p, 'pokemon');
+    await p.evaluate(() => (document.querySelector('.toolbar .filters-trigger') as HTMLElement | null)?.click());
+    await wait(300);
+    // Niente funzioni con nome dentro evaluate: tsx ci aggiunge __name, che nella pagina non esiste
+    await p.evaluate(() => {
+      for (const [group, text] of [['Resiste a', 'Terra'], ['Ruolo', 'Muro Fisico'], ['Ruolo', 'Hazard']]) {
+        const g = document.querySelector(`.filters-dialog [role="group"][aria-label="${group}"]`);
+        ([...(g?.querySelectorAll('button') ?? [])].find(b => (b.textContent ?? '').trim() === text) as HTMLElement | undefined)?.click();
+      }
+    });
+    // La casella Tipo 1 aperta: si vede la tendina dei tipi
+    await p.evaluate(() => (document.querySelector('.filters-dialog .type-slot-btn') as HTMLElement | null)?.click());
+    await wait(500);
+    return true;
+  } },
   'format-menu': { run: async p => { await p.click('.rail-format'); await wait(500); return true; } },
   'saved-menu': { storage: { 'dreamdex.savedTeams': JSON.stringify([{ name: 'Pioggia NatDex', text: 'Pelipper' }, { name: 'Un nome di team davvero molto lungo per vedere se va a capo', text: 'Garchomp' }]) }, run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-empty': { hash: '', run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
@@ -1407,7 +1419,7 @@ for (const [w, h] of sizes) {
       const aside = document.querySelector<HTMLElement>('aside.detail');
       const hint = document.querySelector<HTMLElement>('.list-head .dbl-hint');
       const favs = ol.querySelectorAll('.result.fav').length;
-      const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} hintW=${hint ? `${hint.clientWidth}/${document.querySelector<HTMLElement>('.list-head')?.clientWidth}` : '-'} dashes=${document.querySelectorAll('.pager-dash').length} favs=${favs}`;
+      const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} hintW=${hint ? `${hint.clientWidth}/${document.querySelector<HTMLElement>('.list-head')?.clientWidth}` : '-'} dashes=${document.querySelectorAll('.pager-dash').length} favs=${favs} detailLv=${aside ? (aside.classList.contains('tabbed') ? 'tabs' : aside.classList.contains('why-2col') ? (aside.classList.contains('compact') ? 'low2col' : '2col') : aside.classList.contains('compact') ? 'low' : 'full') : '-'} detailParts=${aside ? [...aside.querySelectorAll(':scope > *, .detail-panel > *')].map(el => `${String(el.getAttribute("class") ?? "").split(' ').at(-1)}:${Math.round(el.getBoundingClientRect().height)}`).join(',') : '-'} detailFree=${body ? body.clientHeight - [...body.querySelectorAll('.detail-panel > *')].reduce((sum, el) => sum + el.getBoundingClientRect().height, 0) : '-'}`;
       return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} rowH=${ol.style.getPropertyValue('--row-h') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut} whoOver=${whoOver} wideCut=${wideCut} nameCut=${nameCut}${extra}`;
     });
     // Fascia del team: altezza, carte, chip dei tipi fuori dalla carta, nomi spezzati a metà parola, pulsanti della testata

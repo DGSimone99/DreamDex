@@ -8,6 +8,7 @@ import { RatingHelp } from './RatingHelp';
 import { type DetailArea, signed } from './AreaDetail';
 import { Icon } from './icons';
 import { useT } from '../i18n/react';
+import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import { ANALYSIS_VIEWS } from './AnalysisTabs';
 import type { TabView } from './analysisView';
 import { EeveeMoment } from './EeveeMoment';
@@ -69,6 +70,12 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
   // Il team si riapre (o il voto sparisce): la tendina si chiude, alla prossima riduzione riparte chiusa
   useEffect(() => { if (!withPop) setPopOpen(false); }, [withPop]);
   const closePop = (refocus: boolean) => { setPopOpen(false); if (refocus) popButton.current?.focus(); };
+  // Telefono e tablet, team aperto: di base solo la prima riga (lettera, punteggio, giudizio e tipo di team); toccando la
+  // targa compaiono le righe delle aree sotto, come sul computer
+  const small = useMediaQuery(EDITOR_TABS_QUERY);
+  const foldable = small && !collapsed && !!rating;
+  const [areasOpen, setAreasOpen] = useState(false);
+  const areasId = useId();
   // Regole infrante: lettera, punteggio e giudizio in grigio finché il team non è legale (il voto si calcola uguale), e sotto
   // il perché (in quale formato e quanti membri; chi e il motivo nel tooltip). Niente triangolo sul voto
   const broken = ruleIssues.length > 0;
@@ -99,7 +106,9 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
     </>
   );
   return (
-    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}${flash?.letter ? ' letter-changed' : ''}`}>
+    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}${flash?.letter ? ' letter-changed' : ''}${foldable ? ` foldable${areasOpen ? ' areas-open' : ''}` : ''}`}
+      // Tutta la targa apre e chiude le righe (tranne i suoi pulsanti: aiuto, regole, le righe stesse)
+      onClick={foldable ? e => { if (!(e.target as Element).closest('button, a, [role="button"]')) setAreasOpen(o => !o); } : undefined}>
       {withPop ? (
         // Team ridotto: lettera e punteggio aprono la tendina con le righe delle aree (stessa frase per i lettori di schermo)
         <button ref={popButton} type="button" className="grade-pop-toggle" aria-haspopup="dialog" aria-expanded={popOpen}
@@ -129,10 +138,18 @@ export function GradeBadge({ rating: computed, ruleIssues = [], illegalCount = 0
           ]} />}
           {/* Col team ridotto il "?" sta nella tendina delle aree */}
           {rating && !withPop && <RatingHelp incomplete={incomplete} teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}
+          {/* Telefono e tablet: la freccetta che apre e chiude le righe delle aree, ultima della fila (per la tastiera e i
+              lettori di schermo; toccare la targa fa lo stesso) */}
+          {foldable && (
+            <button type="button" className="grade-fold" aria-expanded={areasOpen} aria-controls={areasId}
+              aria-label={t(areasOpen ? 'rating.areasHide' : 'rating.areasShow')} onClick={() => setAreasOpen(o => !o)}>
+              <Icon name="down" />
+            </button>
+          )}
         </span>
       )}
       {/* Le tre aree, i Ruoli e Bonus/Malus: ogni riga porta alla sua scheda in Analisi (col team ridotto, nella tendina) */}
-      {rating && !collapsed && <GradeAreaRows rating={rating} onOpen={onOpen} />}
+      {rating && !collapsed && (!foldable || areasOpen) && <span id={foldable ? areasId : undefined} className="grade-areas-wrap"><GradeAreaRows rating={rating} onOpen={onOpen} /></span>}
       {withPop && popOpen && (
         <GradePopover id={popId} button={popButton} onClose={closePop}
           help={<RatingHelp incomplete={incomplete} teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}>

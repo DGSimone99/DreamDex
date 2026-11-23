@@ -134,7 +134,7 @@ describe('candidati del Coaching dalla classifica di Sostituisci', () => {
 describe('keepSwaps', () => {
   type Delta = { solves: string[]; reduces: string[]; introduces: string[] };
   const delta = (solves: string[] = [], introduces: string[] = []): Delta => ({ solves, reduces: [], introduces });
-  const c = (species: string, gain: number, d: Delta) => ({ species, teamGain: { gain }, d });
+  const c = (species: string, gain: number, d: Delta): { species: string; teamGain: { gain: number; penalty?: number }; d: Delta } => ({ species, teamGain: { gain }, d });
   const keep = (items: ReturnType<typeof c>[], limit = 5) => {
     const asked: string[] = [];
     const kept = keepSwaps(items, x => { asked.push(x.species); return x.d; }, limit);
@@ -152,6 +152,13 @@ describe('keepSwaps', () => {
     expect(all[2]).toMatchObject({ solves: ['a'], reduces: [] });
     expect(all[2]).not.toHaveProperty('introduces');
     expect(keep([c('up3', 3, delta()), c('up2', 2, delta()), c('up1', 1, delta())], 2).kept).toEqual(['up3', 'up2']);
+  });
+
+  it('un ruolo d\'aiuto perso toglie un punto al voto in più: il +1 vale come un pari', () => {
+    const lossy = (species: string, gain: number, penalty: number, d: Delta) => ({ species, teamGain: { gain, penalty }, d });
+    // +1 che perde un ruolo: fuori (pari senza niente di risolto); +1 che perde un ruolo ma risolve: dentro; +3 che ne perde uno: dentro, dopo il +3 pulito
+    expect(keep([lossy('plusOneLoses', 1, 1, delta()), c('up3', 3, delta()), lossy('up3Loses', 3, 1, delta()), lossy('plusOneSolves', 1, 1, delta(['a']))]).kept)
+      .toEqual(['up3', 'up3Loses', 'plusOneSolves']);
   });
 
   it(`a pari voto se ne provano al massimo ${ZERO_GAIN_SWAPS} per membro`, () => {

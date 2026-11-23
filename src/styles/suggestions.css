@@ -21,47 +21,120 @@
 }
 .search-hint strong { color: var(--accent); font-weight: 600; }
 kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; background: var(--raised); color: var(--text); }
-.filters > summary { font-weight: 600; }
-.filters-reset { margin-left: var(--sp-6); padding: var(--sp-1) var(--sp-4); font-size: var(--fs-small); font-weight: 500; color: var(--muted); vertical-align: middle; }
+/* Il pulsante Filtri nella barra: apre la finestra dei filtri. Con filtri attivi si accende di ciano */
+.filters { display: flex; align-items: center; gap: var(--sp-4); }
+.filters-trigger { font-weight: 600; white-space: nowrap; }
+.filters-trigger.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.filters-reset { padding: var(--sp-1) var(--sp-4); font-size: var(--fs-small); font-weight: 500; color: var(--muted); border-color: transparent; background: none; }
 .filters-reset .icon { width: 14px; height: 14px; }
 .filters-reset:hover { color: var(--text); }
-.filters[open] .filters-reset { display: none; }
-.filters h3, .filters .control-label { font: 600 var(--fs-caption)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 var(--sp-4); }
-.filters[open] > summary { margin-bottom: var(--sp-7); }
 
-/* Tre griglie di tipi affiancate */
-.type-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-9); padding-bottom: var(--sp-8); border-bottom: 1px solid var(--line-soft); }
-.type-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
-.type-grid button {
-  justify-content: center;
-  padding: 3px 0;
-  border-radius: 2px;
-  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
-  background: color-mix(in srgb, var(--c) 12%, transparent);
-  font: 600 var(--fs-label)/1.5 var(--ui);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--tc);
+/* ── Finestra Filtri come un menu del gioco ──
+   Testa a fascia (Filtri, quanti attivi, Azzera, chiudi); sopra i tre gruppi di tipi affiancati (il tipo del Pokémon,
+   Resiste a, Superefficace contro), poi Ruolo e Formato e meta in due colonne, sotto il Campo; ogni gruppo sotto la sua
+   fascia con la targhetta inclinata (come le teste dell'Analisi). I filtri valgono subito; il piede dice quanti
+   Pokémon restano e chiude. Dimensione fissa: non cambia mentre si sceglie. */
+.help-dialog.filters-dialog { width: min(1200px, 100%); height: min(600px, calc(100dvh - 48px)); max-height: none; }
+.filters-head { justify-content: flex-start; padding-block: var(--sp-5); }
+.filters-head h3 { margin: 0; font: italic 800 var(--fs-heading)/1 var(--display); letter-spacing: 0.01em; }
+.filters-head-count { font-size: var(--fs-small); color: var(--faint); font-variant-numeric: tabular-nums; }
+.filters-head-count.on { color: var(--accent-ink); font-weight: 600; }
+.filters-head-fav { margin-left: auto; height: auto; gap: var(--sp-3); font-size: var(--fs-small); color: var(--muted); }
+.filters-head-fav:has(input:checked) { color: var(--text); }
+.filters-head-fav .icon { width: 14px; height: 14px; color: var(--accent-2-ink); }
+.filters-head-fav input { margin: 0; accent-color: var(--accent); }
+.filters-head-fav + .filters-head-reset { margin-left: var(--sp-4); }
+.filters-head-reset { margin-left: auto; gap: var(--sp-3); padding: var(--sp-2) var(--sp-6); border-radius: var(--alt-r); font-size: var(--fs-small); font-weight: 600; color: var(--muted); background: var(--raised); }
+.filters-head-reset .icon { width: 13px; height: 13px; }
+.filters-head-reset:hover:not(:disabled) { color: var(--text); }
+.filters-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--sp-8) var(--sp-9) var(--sp-9); display: flex; flex-direction: column; gap: var(--sp-9); }
+.filters-foot { display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-6); padding: var(--sp-6) var(--sp-9); border-top: 1px solid var(--line-soft); background: var(--panel); }
+.filters-foot .primary { min-width: 220px; justify-content: center; }
+.filters-foot .filters-none { margin: 0 auto 0 0; font: 500 var(--fs-body)/1.3 var(--ui); color: var(--muted); }
+
+/* Titoli dei gruppi come i riquadri dell'editor (stile Pokémon Champions): fascia chiara centrata che sfuma ai due lati,
+   con un filo sotto che sfuma uguale */
+.fgroup-head { position: relative; display: flex; align-items: center; justify-content: center; width: 60%; margin: 0 auto var(--sp-6);
+  background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
+.fgroup-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
+.fgroup-plate { margin: 0; padding: 4px 0; text-align: center; font: 600 var(--fs-section)/1.2 var(--display); letter-spacing: 0.01em; color: var(--text); }
+/* Tipo del Pokémon: due caselle (Tipo 1, Tipo 2) che aprono la griglia dei tipi, poi Solo monotipo */
+.own-types { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-5) var(--sp-10); }
+.type-slot { position: relative; display: flex; align-items: center; gap: var(--sp-5); }
+.type-slot .fchoice-label { padding-top: 0; }
+.type-slot-btn {
+  width: 190px; height: 30px; justify-content: flex-start; gap: 0; padding: 0 var(--sp-6) 0 0; overflow: hidden;
+  border-radius: 4px; border: 0; background: var(--field); box-shadow: inset 0 0 0 1px var(--control-line);
+  font: 700 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text);
 }
-.type-grid button:hover:not(:disabled) { border-color: var(--c); background: color-mix(in srgb, var(--c) 25%, transparent); }
-.type-grid button[aria-pressed='true'] { background: var(--c); border-color: var(--c); color: var(--ink); box-shadow: 0 0 0 1px var(--ground), 0 0 0 2px var(--c); }
-.type-grid button:disabled { opacity: 0.3; }
+/* Nella finestra i pulsanti hanno un margine interno: qui no, l'icona tocca sopra, sotto e a sinistra */
+.filters-dialog .type-slot-btn { padding: 0 var(--sp-6) 0 0; }
+.type-slot-btn.set { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, var(--raised)), var(--field)); box-shadow: inset 0 0 0 1px var(--c); color: var(--tc); }
+.type-slot-btn.set > i { background: var(--c); }
+.type-slot-btn.set > i img { opacity: 1; }
+.type-slot-btn:hover:not(:disabled), .type-slot-btn.open { box-shadow: inset 0 0 0 1px var(--accent); }
+.type-slot-btn > .type-slot-any { flex: 1; padding-left: var(--sp-6); text-align: left; font: 500 var(--fs-small)/1 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted); }
+.type-slot-chev { flex: none; width: 7px; height: 7px; margin-top: -3px; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.type-slot-btn.open .type-slot-chev { margin-top: 3px; transform: rotate(-135deg); }
+.type-slot-menu {
+  position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: 640px;
+  display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5);
+  --slot-cols: 6;
+  background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.type-slot.up .type-slot-menu { top: auto; bottom: calc(100% + 6px); }
+.type-slot-menu .type-grid { grid-template-columns: repeat(var(--slot-cols), minmax(0, 1fr)); }
+.type-slot-clear { align-self: flex-end; padding: var(--sp-1) var(--sp-6); border-radius: var(--alt-r-sm); font-size: var(--fs-small); color: var(--muted); background: var(--raised); }
+.fmono { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-caption); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.fmono:has(input:disabled) { opacity: 0.45; cursor: default; }
+.fmono input { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); }
 
-.filter-section { padding: var(--sp-7) 0; border-bottom: 1px solid var(--line-soft); }
-.filters .chips { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
-.filters .chips button { font-size: var(--fs-small); padding: var(--sp-2) 11px; border-radius: 14px; background: transparent; }
-.filters .chips button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+/* Scelte a tessere: nome a sinistra in colonna, tessere ad angoli alterni (una sola accesa) */
+.fchoice-label { padding-top: 5px; font: italic 700 var(--fs-caption)/1.2 var(--display); color: var(--muted); white-space: nowrap; }
 
-/* Tendine e scelte tutti / no / solo */
-.filter-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-7) var(--sp-7); padding: var(--sp-7) 0; }
-.filters .control { display: flex; flex-direction: column; min-width: 0; }
-.filters .control select { width: 100%; font-size: var(--fs-section); color: var(--text); }
+/* Due griglie di tipi affiancate, 6 per riga */
+.type-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-9); }
+.type-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-2); }
+.type-grid button {
+  justify-content: flex-start; gap: 0; height: 24px; padding: 0; overflow: hidden;
+  border-radius: 4px; border: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 16%, var(--raised)), var(--field));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, var(--line));
+  font: 700 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.02em; color: var(--tc);
+  transition: background-color 0.12s var(--ease), box-shadow 0.12s var(--ease);
+}
+/* Il quadretto dell'icona è quadrato, alto quanto il bottone (24 px, 30 nelle caselle): l'icona non si schiaccia */
+.type-grid button > i, .type-slot-btn > i { flex: none; width: 24px; height: 24px; background: color-mix(in srgb, var(--c) 55%, var(--field)); }
+.type-slot-btn > i { width: 30px; height: 30px; }
+.type-grid button > i img, .type-slot-btn > i img { display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0.85; }
+.type-grid button > span, .type-slot-btn > span { flex: 1; min-width: 0; padding: 0 3px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.type-grid button > span.long, .type-slot-btn > span.long { font-size: 10px; letter-spacing: 0; }
+.type-grid button:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--c); background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, var(--raised)), color-mix(in srgb, var(--c) 8%, var(--field))); }
+.type-grid button[aria-pressed='true'] { background: var(--c); color: var(--ink); box-shadow: 0 0 0 1px var(--ground), 0 0 0 2px var(--c); }
+.type-grid button[aria-pressed='true'] > i { background: color-mix(in srgb, var(--c) 70%, black); }
+.type-grid button[aria-pressed='true'] > i img { opacity: 1; }
+.type-grid button:disabled { opacity: 0.3; cursor: default; }
+
+/* Ruoli: un blocco solo che va a capo; ogni famiglia è un pezzo che non si spezza, col suo nome in piccolo davanti */
+.role-flow { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-9); }
+.role-fam { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.role-fam-label { margin-right: var(--sp-2); font: italic 700 var(--fs-caption)/1 var(--display); color: var(--faint); white-space: nowrap; }
+.role-tiles { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.role-tiles button, .role-flow button {
+  padding: var(--sp-1) var(--sp-4); min-height: 24px;
+  border-radius: var(--alt-r-sm); border: 1px solid var(--line); background: var(--raised);
+  font-size: var(--fs-small); font-weight: 500; color: var(--muted);
+  transition: background-color 0.12s var(--ease), border-color 0.12s var(--ease), color 0.12s var(--ease);
+}
+.role-tiles button:hover, .role-flow button:hover { color: var(--text); border-color: var(--control-line); }
+.role-tiles button[aria-pressed='true'], .role-flow button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 600; }
+
+/* Scelte tutti / no / solo */
 .segmented { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--field); }
 .segmented button { flex: 1; justify-content: center; border: 0; border-radius: 0; background: transparent; padding: var(--sp-3) var(--sp-2); font-size: var(--fs-small); color: var(--muted); }
 .segmented button + button { border-left: 1px solid var(--line); }
 .segmented button:hover { color: var(--text); }
 .segmented button[aria-pressed='true'] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
-.filter-footer { display: flex; justify-content: flex-end; padding-top: var(--sp-6); border-top: 1px solid var(--line-soft); }
 
 /* Suggerimenti: lista compatta a sinistra, il candidato selezionato a destra */
 .picker { margin-top: var(--sp-6); }
@@ -89,24 +162,14 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .list-head .dbl-hint { flex: none; font-size: var(--fs-caption); color: var(--faint); white-space: nowrap; }
 /* Niente min-width 0: se i trattini al minimo non entrano la fascia sborda, e SuggestionsPanel lo vede (toglie il
    suggerimento, poi mostra la pagina come numero) */
-.pager { flex: 0 1 auto; margin-left: auto; display: flex; align-items: center; gap: var(--sp-1); height: var(--pager-h); }
-.pager .step { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
-.pager .step:hover:not(:disabled) { color: var(--text); }
+.pager { flex: 0 1 auto; margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); height: var(--pager-h); }
+/* Come il pager di DESIGN.md: 28×26, fondo Raised, bordo Line, angoli da 3 px; al passaggio testo e bordo ciano */
+.pager .step { flex: none; display: grid; place-items: center; width: 28px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); }
+.pager .step:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
 /* La pagina come numero, "3/9", a ogni misura (scelta dell'utente: niente trattini) */
-.pager-count { min-width: 34px; padding: 0 var(--sp-1); font: 600 var(--fs-caption)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; white-space: nowrap; }
-/* Vista della lista: in fondo alla fascia, dopo la paginazione; il riquadro scende sopra la lista */
-.list-view { position: relative; flex: none; margin-left: auto; }
-.pager ~ .list-view { margin-left: var(--sp-1); }
-.list-view-toggle { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); }
-.list-view-toggle:hover, .list-view-toggle[aria-expanded='true'] { color: var(--text); background: var(--accent-soft); }
-.list-view-toggle .icon { width: 14px; height: 14px; }
-.list-view-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: grid; gap: var(--sp-6); min-width: 190px; padding: var(--sp-6) var(--sp-7);
-  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
-.list-view-pop fieldset { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-7); margin: 0; padding: 0; border: 0; }
-.list-view-pop legend { width: 100%; margin: 0 0 var(--sp-3); padding: 0; font: 600 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
-.list-view-pop label { display: inline-flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-small); color: var(--text); white-space: nowrap; cursor: pointer; }
+.pager-count { min-width: 34px; padding: 0 var(--sp-1); font: 600 var(--fs-small)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--text); text-align: center; white-space: nowrap; }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
@@ -127,21 +190,13 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   background: var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.detail-sprite { position: relative; display: block; width: 88px; height: 88px; }
-.detail-sprite .sprite { image-rendering: pixelated; width: 100%; height: 100%; }
-.detail-sprite .sprite.covered { visibility: hidden; }
-/* Con la lista a sprite Normale il dettaglio mostra l'icona del box, ingrandita a misura del riquadro (--box-scale, una per
-   misura del dettaglio) e saltellante come la carta selezionata */
-.detail-sprite .box-icon { display: grid; place-items: center; width: 100%; height: 100%; animation: box-hop 0.7s ease-in-out infinite; }
-.detail-sprite .box-icon .mon-icon { margin: 0; transform: scale(var(--box-scale, 2)); }
-@media (prefers-reduced-motion: reduce) { .detail-sprite .box-icon { animation: none; } }
-.detail-sprite .sprite-ani { position: absolute; left: 50%; top: 50%; max-width: none; image-rendering: pixelated; pointer-events: none; transform: translate(-50%, -50%) scale(0.9167); }
 .detail-id { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
 .detail-id h3 { display: flex; align-items: center; gap: var(--sp-5); font-size: var(--fs-display); line-height: 1; letter-spacing: 0.02em; }
 .detail-id h3 > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Nome con la forma, come sulle carte: la specie base e la forma come etichetta accanto (va a capo intera se non entra) */
 .detail-id .detail-name { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: var(--sp-4); row-gap: var(--sp-2); }
-.detail-id .detail-name .forme { padding: var(--sp-1) var(--sp-3); border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink); font: 700 var(--fs-caption)/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
+/* La forma sta sopra il colore del tipo (anche chiaro, Elettro): fondo pieno scuro, cosi il ciano si legge sempre */
+.detail-id .detail-name .forme { padding: 0 var(--sp-3); border: 1px solid transparent; border-radius: 3px; background: var(--field); color: var(--accent-ink); font: 700 var(--fs-label)/1.5 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
 .detail-id .types { display: flex; gap: var(--sp-3); }
 .detail-id .tags { margin: 0; }
 .detail-score { text-align: right; }
@@ -151,30 +206,11 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .detail-score strong.worse { color: var(--bad); }
 .detail-score strong.same { color: var(--muted); }
 .detail-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.detail-sec { min-width: 0; padding: 11px var(--sp-9); border-bottom: 1px solid var(--line-soft); }
-.detail-sec.wide { grid-column: 1 / -1; }
-.detail-sec:not(.wide) + .detail-sec:not(.wide) { border-left: 1px solid var(--line-soft); }
-.detail-sec h4 { font: 600 var(--fs-caption)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 var(--sp-4); }
 .detail .swap-head { margin-bottom: var(--sp-2); }
 .detail .note { margin: 0 0 var(--sp-3); }
-.detail-areas { display: grid; gap: var(--sp-2); margin: 0; }
-.detail-areas div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(60px, 96px) 28px 32px; gap: var(--sp-5); align-items: center; font-size: var(--fs-small); }
-.detail-areas dt { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.detail-areas dd { margin: 0; }
-.detail-areas meter { display: block; width: 100%; }
-.detail-areas .value { font: 700 var(--fs-body)/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; }
-.detail-areas .change { font-size: var(--fs-caption); font-weight: 600; color: var(--good); text-align: right; font-variant-numeric: tabular-nums; }
-.detail-areas .change.worse { color: var(--bad); }
-.detail-areas .inactive dt { color: var(--faint); }
-.detail-areas .inactive dd { opacity: 0.5; }
 .detail-reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); font-size: var(--fs-small); }
 .detail-reasons li { position: relative; padding-left: var(--sp-7); }
 .detail-reasons li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; border-radius: 1px; background: var(--accent); }
-.detail-sec.set-sec { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 var(--sp-10); align-items: start; }
-.set-sec h4 { grid-column: 1 / -1; justify-self: start; }
-.detail-set { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--sp-2) var(--sp-8); margin: 0; font-size: var(--fs-small); }
-.detail-set dt { color: var(--muted); font-size: var(--fs-caption); }
-.detail-set dd { margin: 0; display: flex; align-items: center; gap: var(--sp-3); font-weight: 500; }
 .detail-moves { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
 .detail-moves li { padding: var(--sp-2) 9px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; font-size: var(--fs-section); font-weight: 500; }
 .detail-actions { display: flex; gap: var(--sp-4); padding: var(--sp-5) var(--sp-9); }
@@ -186,10 +222,12 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .hidden-note .link { padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; font: inherit; }
 /* Bannati dall'utente esclusi da proposte e sostituzioni */
 .banned-note { margin: var(--sp-3) 0 0; font-size: var(--fs-small); color: var(--muted); }
-.smogon-link { display: inline-flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: inherit; font-weight: 500; text-decoration: none; white-space: nowrap; transition: border-color 0.15s; }
+/* Come un pulsante (angoli alternati di Champions, stesso bordo e peso di Copia set) */
+.smogon-link { display: inline-flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); border: 1px solid var(--line); border-radius: var(--alt-r); background: var(--raised); color: inherit; font-weight: 500; text-decoration: none; white-space: nowrap; transition: border-color 0.15s; }
 .smogon-link:hover { border-color: var(--accent); }
 .editor-actions .smogon-link { height: 36px; }
-.detail-actions .go { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+/* Gli altri candidati: la stessa scritta del primo (maiuscolo, 700), in ciano invece del magenta */
+.detail-actions .go { background: var(--accent-soft); border-color: var(--accent); font: 700 var(--fs-body) var(--display); text-transform: uppercase; letter-spacing: 0.04em; }
 
 .tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: 3px; }
 .tag { font-size: var(--fs-caption); font-weight: 600; padding: 1px 7px; border-radius: 3px; background: var(--good-bg); color: var(--good); }
@@ -212,39 +250,23 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .errors { color: var(--bad); }
 .favorite { cursor: pointer; }
 
-
 /* Sezione Pokémon come Box: una riga di strumenti, poi lista dei candidati e scheda di riepilogo che scorrono dentro */
 .suggestions-panel { display: flex; flex-direction: column; gap: var(--sp-5); }
-.toolbar { position: relative; display: flex; align-items: center; gap: var(--sp-5); }
+/* Un'altezza sola per tutta la riga (--tb-h: 38, 34 sui portatili bassi, 44 al tocco): ricerca, Aggiungi | Sostituisci,
+   Tipo di team e Filtri allineati */
+.toolbar { --tb-h: 38px; position: relative; display: flex; align-items: center; gap: var(--sp-5); }
+.toolbar .search-field input { height: var(--tb-h); padding-block: 0; }
+.toolbar .mode-switch > .segmented > button { height: calc(var(--tb-h) - 2px); min-height: 0; }
 .toolbar .search { flex: 1; min-width: 0; margin: 0; }
-.toolbar .filters { flex: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
-.toolbar .filters > summary { height: 38px; padding: 0 var(--sp-6); gap: var(--sp-5); border: 1px solid var(--line); border-radius: 4px; background: var(--raised); white-space: nowrap; }
-.toolbar .filters > summary:hover, .toolbar .filters[open] > summary { border-color: var(--accent); }
-.toolbar .filters[open] > summary { margin-bottom: 0; }
-.toolbar .filters-reset { margin-left: 0; }
-/* I filtri si aprono sopra la lista, senza spingerla in basso */
-.toolbar .filters::details-content { position: absolute; }
-.toolbar .filters[open]::details-content {
-  position: absolute;
-  z-index: 20;
-  /* Sopra la scheda del candidato: la lista resta visibile e si aggiorna mentre scegli */
-  left: calc((100% - var(--picker-gap, 16px)) * 0.4 + var(--picker-gap, 16px));
-  right: 0;
-  top: calc(100% + 8px);
-  max-height: calc(var(--ws-h, 70vh) - 90px);
-  overflow: auto;
-  padding: var(--sp-7) var(--sp-8);
-  background: var(--ground);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-}
+.toolbar .filters { flex: none; }
+.toolbar .filters-trigger { height: var(--tb-h); padding: 0 var(--sp-6); border-radius: 4px; background: var(--raised); }
+.toolbar .filters-trigger.on { background: var(--accent-soft); }
 /* Chi esce: la tendina attaccata a Sostituisci (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
    sotto, Tutti e i membri con icona e nome */
 .mode-switch { position: relative; flex: none; }
-.toolbar .mode-switch > .segmented button { gap: var(--sp-3); padding: var(--sp-4) var(--sp-7); font-size: var(--fs-section); white-space: nowrap; }
+.toolbar .mode-switch > .segmented button { gap: var(--sp-3); padding: 0 var(--sp-7); font-size: var(--fs-section); white-space: nowrap; }
 .toolbar .mode-switch > .segmented .icon { width: 14px; height: 14px; }
-.toolbar .mode-switch > .segmented .target-toggle { flex: none; gap: var(--sp-1); padding: var(--sp-4) 11px; }
+.toolbar .mode-switch > .segmented .target-toggle { flex: none; gap: var(--sp-1); padding: 0 11px; }
 .target-toggle .target-prefix { margin-right: var(--sp-2); font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); white-space: nowrap; }
 .target-toggle .target-prefix::after { content: ':'; }
 .target-toggle.on .target-prefix { color: var(--muted); }
@@ -289,16 +311,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   background: var(--stripes), var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.detail-hero .detail-sprite { --box-scale: 1.9; width: 64px; height: 64px; }
-/* Sostituendo: dopo nome e tipi una colonna in più con ⇄ e chi esce (ingrigito, più piccolo) */
-.detail-hero:has(> .detail-out) { grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr) auto; }
-/* Subito dopo nome, Stats e tipi, centrato in altezza: si legge insieme a chi entra */
-.detail-out { display: flex; align-items: center; justify-self: start; align-self: center; gap: var(--sp-3); margin-left: var(--sp-3); }
-.detail-hero .detail-sprite.out { --box-scale: 1.4; width: 46px; height: 46px; filter: grayscale(1); opacity: 0.45; }
-.detail-hero .detail-sprite.out .sprite { animation: none; }
 .detail-swap-mark { display: grid; place-items: center; color: var(--faint); }
 .detail-swap-mark .icon { width: 18px; height: 18px; }
-.detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.6667); }
 .detail-hero .detail-id h3 { flex-wrap: wrap; font-size: var(--fs-headline-l); }
 .detail-hero .detail-id h3 > span:first-child { white-space: normal; overflow-wrap: break-word; }
 .detail-hero .swap-head { margin: 0; font-size: var(--fs-small); }
@@ -306,68 +320,25 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .detail-hero .detail-score strong { font-size: var(--fs-score); }
 .detail-hero .detail-score span { display: block; margin-top: var(--sp-2); white-space: nowrap; }
 .detail:not(.detail-empty) > .detail-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-content: start; }
-.detail .detail-sec:not(.wide) + .detail-sec:not(.wide) { border-left: 1px solid var(--line-soft); }
 .detail:not(.detail-empty) > .detail-actions { border-top: 1px solid var(--line-soft); }
-/* Porta in verde, Toglie in rosso: un segno davanti a ogni voce */
-/* Effetto sul team: una riga di pillole per area */
-.detail .effect .detail-areas { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
-.detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) var(--sp-4); border: 0; border-radius: var(--alt-r-sm); background: linear-gradient(90deg, var(--raised), var(--fade-end) var(--fade-stop)); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-section); }
-.detail .effect .detail-areas .change { font: 700 var(--fs-section)/1 var(--display); font-style: italic; color: var(--good); min-width: 0; }
-.detail .effect .detail-areas .change.worse { color: var(--bad); }
-.detail .effect .detail-areas .change.same { color: var(--faint); }
-.detail .effect .detail-areas .change.same::before { content: '±0'; }
-.detail .effect .detail-areas .value { font-size: var(--fs-section); }
-.detail .effect .detail-areas .inactive { border-color: var(--line-soft); }
-/* Set: due righe di voci (strumento e abilità, poi natura, EV e Tera), poi le mosse 2×2 */
-.detail .detail-set { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-7); margin: 0 0 var(--sp-3); font-size: var(--fs-section); font-weight: 500; }
-.detail .detail-set span { display: inline-flex; align-items: center; gap: var(--sp-3); }
-.detail .detail-set .set-line { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-7); width: 100%; }
-.detail .detail-set .evs { color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Ruoli del set consigliato, in una zona sotto il set con la sua etichetta: neutri, il ruolo principale (quello delle carte
    del team) in ciano */
 
 .detail-roles { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; }
 .detail-roles li { padding: 1px var(--sp-4); border: 1px solid var(--line); border-radius: 4px; font-size: var(--fs-small); font-weight: 500; color: var(--muted); white-space: nowrap; }
-/* Meta (team chiuso): a sinistra l'uso grande (come il +N dell'intestazione, in piccolo) col posto in classifica; a destra
-   "Spesso usato con" e la classifica dei compagni: icona, nome, barra lunga quanto la quota (rispetto al primo, nel colore
-   del tipo del compagno), percentuale. Chi è già nel team: nome in ciano e spunta */
-.detail-meta { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0 var(--sp-10); align-items: start; }
-.meta-usage { display: grid; gap: var(--sp-1); margin: 0; padding-right: var(--sp-10); border-right: 1px solid var(--line-soft); }
-.meta-usage strong { font: 800 var(--fs-stat)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
-.meta-usage span { font-size: var(--fs-small); color: var(--muted); }
-.meta-usage .meta-place { color: var(--faint); font-size: var(--fs-caption); }
-.meta-mates-box { min-width: 0; }
-.meta-mates-box .meta-label { display: block; margin-bottom: var(--sp-2); font-size: var(--fs-caption); color: var(--faint); }
 .meta-mates { list-style: none; max-width: 560px; margin: 0; padding: 0; display: grid; gap: var(--sp-1); }
 .meta-mates li { display: grid; grid-template-columns: 26px minmax(0, 8.6em) 13px minmax(24px, 1fr) 46px; align-items: center; gap: 0 var(--sp-3); height: 22px; font-size: var(--fs-section); font-weight: 500; }
 .meta-mates .mon-icon { margin: -6px -8px -4px -6px; }
 .meta-mates .mate-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meta-mates .mate-check { display: grid; place-items: center; }
 .meta-mates .icon { width: 13px; height: 13px; color: var(--accent); }
-.meta-mates .mate-bar { height: 7px; box-shadow: var(--slot-inset); background: linear-gradient(var(--slot-shine) 0 1px, transparent 1px) 0 0 / calc(var(--share) * 100%) 100% no-repeat, linear-gradient(90deg, var(--mate-c) calc(var(--share) * 100%), var(--field) 0); }
 .meta-mates strong { font-size: var(--fs-small); font-weight: 600; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .meta-mates li.in-team .mate-name { color: var(--accent); }
 .meta-mates li.in-team strong { color: var(--text); }
 .detail-roles li.main { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; }
 .detail-id h3 { font-style: italic; }
 .detail-score strong { font-style: italic; }
-/* I titoli dei gruppi della scheda (Porta, Toglie, Set consigliato, Meta) come la fascia di Pokémon Champions: a sinistra
-   (le colonne affiancate non hanno un centro comune), una fascia chiara che sfuma verso destra e un filo sotto */
-.detail-sec h4 {
-  position: relative;
-  display: block;
-  padding: 4px 24px 4px 9px;
-  font: 600 var(--fs-small)/1.2 var(--display);
-  letter-spacing: 0.01em;
-  text-transform: none;
-  color: var(--text);
-  background: linear-gradient(90deg, var(--champ-band), transparent 70%);
-}
-.detail-sec h4::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
-.detail-sec h4.visually-hidden::after { content: none; }
 .detail-reasons li::before { background: var(--accent); }
-/* Etichetta solo per gli screen reader (Effetto sul team): niente targhetta magenta, il ritaglio resta quello che la nasconde */
-.detail-sec h4.visually-hidden { padding: 0; clip-path: inset(50%); }
 .detail.first .detail-actions .go {
   background: var(--accent-2);
   border-color: var(--accent-2);
@@ -379,13 +350,15 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   #panel-pokemon.active { overflow: hidden; }
   .suggestions-panel { height: 100%; min-height: 0; padding-bottom: var(--sp-6); }
   .picker { flex: 1; min-height: 0; }
-  /* Lista circa 2/5, scheda del candidato 3/5. La lista non scende sotto i 436 px in cui stanno 3 carte da 130 (3 × 130 +
-     spazi 2 × 8 + margini 2 × 14 + bordo 2), finché alla scheda restano almeno 520 px: sotto, le carte vanno su 2 colonne */
-  .picker.has-detail { grid-template-columns: minmax(min(436px, calc(100% - 532px)), 2fr) minmax(0, 3fr); gap: var(--sp-8); align-items: stretch; height: 100%; }
+  /* Box + scheda laterale: la lista è larga quanto le sue colonne (--list-w da usePerPage: 3-5 carte da 140-150 px),
+     la scheda del candidato prende il resto. Prima della misura: circa 3/5 alla lista; dopo, il dettaglio prende tutto il resto (2fr da solo) */
+  .picker.has-detail { grid-template-columns: var(--list-w, minmax(0, 3fr)) minmax(0, 2fr); gap: var(--sp-8); align-items: stretch; height: 100%; }
   .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   /* La lista prende lo spazio che resta: la sua altezza dice quanti candidati per pagina (niente scrollbar) */
   .picker-list > .suggestions { flex: 1 1 0; min-height: 0; overflow: hidden; }
   .detail { position: static; top: auto; max-height: none; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+  /* Scorre il corpo, non la scheda: così lo sprite della fascia può uscire dal bordo alto */
+  .detail:not(.detail-empty) { overflow: visible; }
 }
 
 @media (max-width: 1099px) {
@@ -398,28 +371,55 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 }
 
 /* Tipo di team: tendina accanto a Filtri, alta come la barra */
-.toolbar .team-type { flex: none; position: relative; display: flex; align-items: center; height: 38px; margin: 0; gap: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--field); }
-.toolbar .team-type:hover, .toolbar .team-type:focus-within { border-color: var(--accent); }
-.toolbar .team-type > span { padding-left: var(--sp-6); font: 600 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+/* Tipo di team: una casella come le altre della barra (nome piccolo e scelta) che apre la sua tendina: i tipi in ordine,
+   ognuno con la spiegazione breve, la spunta su quello scelto */
+.toolbar .team-type { flex: none; position: relative; width: 232px; height: var(--tb-h); }
+.tt-trigger { display: flex; align-items: center; gap: var(--sp-4); width: 100%; height: 100%; padding: 0 var(--sp-5) 0 var(--sp-6);
+  border: 1px solid var(--line); border-radius: 4px; background: var(--field); text-align: left; color: var(--text); }
+.tt-trigger:hover, .tt-trigger.open { border-color: var(--accent); }
+/* Barra stretta (tablet intorno ai 780 px): prima va via "al posto di:" accanto a Sostituisci, poi, se la casella del
+   tipo di team resta stretta, la sua etichetta (resta la scelta; il nome intero è nell'etichetta accessibile) */
+.toolbar { container: toolbar / inline-size; }
+/* Barra stretta (telefono): «al posto di» piccolo sopra, chi esce sotto (come «Tipo di team»), invece di sparire */
+@container toolbar (max-width: 560px) {
+  .toolbar .mode-switch > .segmented .target-toggle { display: grid; grid-template-columns: auto auto; align-content: center; justify-content: center; gap: 3px var(--sp-2); padding: 0 var(--sp-5); }
+  .target-toggle .target-prefix { grid-column: 1 / -1; margin: 0; text-align: center; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+  .target-toggle .target-prefix::after { content: none; }
+  .target-toggle .chevron { align-self: center; }
+}
+
+.toolbar .team-type { container: ttbox / inline-size; }
+@container ttbox (max-width: 200px) { .tt-label { display: none; } }
+.tt-label { flex: none; font: 600 var(--fs-label)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+.tt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-section); font-weight: 600; }
+.tt-chev { flex: none; width: 7px; height: 7px; margin: -3px 0 0 var(--sp-1); border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.tt-trigger.open .tt-chev { margin-top: 3px; transform: rotate(-135deg); }
+.tt-menu {
+  position: absolute; z-index: 25; top: calc(100% + 6px); right: 0; width: 330px;
+  display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-4);
+  background: var(--ground); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.tt-menu.up { top: auto; bottom: calc(100% + 6px); }
+.tt-option { display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-6); width: 100%; padding: var(--sp-3) var(--sp-5);
+  border: 1px solid transparent; border-radius: var(--alt-r-sm); background: none; text-align: left; color: var(--text); }
+.tt-option:hover, .tt-option:focus-visible { background: var(--raised); border-color: var(--line); }
+.tt-option[aria-selected='true'] { background: var(--accent-soft); border-color: var(--accent); }
+.tt-option > .icon { flex: none; width: 16px; height: 16px; margin-left: auto; color: var(--accent-ink); }
+.tt-option-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tt-option-text strong { font: 600 var(--fs-section)/1.2 var(--display); }
+.tt-option-text small { font-size: var(--fs-caption); line-height: 1.3; color: var(--muted); }
+.tt-option[aria-selected='true'] small { color: color-mix(in srgb, var(--accent-ink) 55%, var(--text)); }
 /* Larghezza fissa: cambiare tipo non sposta la ricerca (i nomi lunghi finiscono coi puntini) */
 .toolbar .team-type { width: 232px; }
-.toolbar .team-type select { flex: 1; min-width: 0; height: 100%; padding: 0 30px 0 var(--sp-4); border: 0; background-color: transparent; font-size: var(--fs-section); text-overflow: ellipsis; }
 
 /* Filtri attivi come chip sotto la barra; la × toglie quel filtro */
 .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-top: -2px; }
-.filter-chip { gap: var(--sp-3); padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-5); border-radius: 14px; border-color: var(--accent); background: var(--accent-soft); font-size: var(--fs-small); color: var(--text); }
+.filter-chip { gap: var(--sp-3); padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-5); border-radius: var(--alt-r-sm); border-color: var(--accent); background: var(--accent-soft); font-size: var(--fs-small); color: var(--text); }
 .filter-chip .icon { width: 12px; height: 12px; color: var(--muted); }
 .filter-chip:hover .icon { color: var(--text); }
 .active-filters .link { padding: var(--sp-1) var(--sp-2); border: 0; background: none; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; font-size: var(--fs-small); }
 
-/* Nel pannello dei suggerimenti: tendine in una riga, due griglie di tipi affiancate, poi ruoli e scelte */
-.toolbar .filters .filter-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 0; }
-.toolbar .filters .type-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: var(--sp-7); border-top: 1px solid var(--line-soft); }
-.filters .filter-switches { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; border-bottom: 0; }
-.filters .switch { display: flex; align-items: center; gap: var(--sp-4); height: 32px; font-size: var(--fs-section); color: var(--text); cursor: pointer; white-space: nowrap; }
-.detail .effect .detail-areas .inactive .change.same::before { content: none; }
-.detail:not(.detail-empty) .detail-sec { padding: 7px var(--sp-9) var(--sp-4); }
-.detail:not(.detail-empty) .detail-sec h4 { margin-bottom: var(--sp-3); }
+.filters-dialog .switch { display: flex; align-items: center; gap: var(--sp-4); height: 32px; font-size: var(--fs-section); color: var(--text); cursor: pointer; white-space: nowrap; }
 
 /* Lista e scheda nella stessa cornice: un riquadro Panel con la fascia a righe in alto e la paginazione dentro, in fondo */
 @media (min-width: 1100px) {
@@ -437,21 +437,24 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   @media (hover: hover) { .picker-list > .suggestions.cards:has(> .card:hover) { z-index: 3; } }
 }
 .list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
-/* Bonus/Malus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
-.detail .effect .detail-areas .extras { border-style: dashed; }
 
-/* Stile "Carte": 6 carte verticali (3 × 2) a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons).
+/* Carte Pedana (pedana.css) in griglia: colonne, file e altezza da usePerPage (--cols, --tile-h, --reasons).
    Oltre l'altezza massima la griglia resta a quella misura e si centra in verticale.
-   Margine di 14px (CARDS_PAD in listLayout.ts): ci sta la carta inclinata e ingrandita sotto il mouse senza essere tagliata */
+   Margine di 14px (CARDS_PAD in listLayout.ts): ci sta la carta che si alza sotto il mouse senza essere tagliata */
 .suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(min(130px, 100%), 1fr)); gap: var(--sp-4); padding: var(--sp-7); align-content: center; }
 .suggestions.cards > li + li { border-top: 0; }
 .card {
-  /* Targhetta in basso alta uguale in ogni carta (dai motivi che entrano): 7 + nome 18 + 2 + 16 × motivi + 10 */
-  --plate-h: calc(37px + 16px * var(--reasons, 2));
-  /* Sprite nella zona dell'immagine: altezza − bordo 3 − targhetta − 8, al massimo 140 */
-  --sprite-w: clamp(48px, calc(var(--tile-h, 220px) - 11px - var(--plate-h)), 140px);
-  /* La forma della carta: angolo in alto a destra tagliato */
-  --card-shape: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  /* Piede (nome e motivi) alto uguale in ogni carta, dai motivi che entrano: nome 18 + 4 + 16 per motivo + 12 (sopra la
+     riga dei tipi in fondo). Sulle
+     carte alte (oltre 180 px) il piede prende fino a 24 px d'aria in più, sopra il nome e fra i motivi: lo sprite sale */
+  --foot-air: clamp(0px, calc((var(--tile-h, 220px) - 180px) / 2), 24px);
+  --foot-h: calc(34px + 16px * var(--reasons, 2) + var(--foot-air));
+  /* Palco: dal bordo alto (sotto targhetta e riga dei tipi) fino al piede; lo sprite ci sta dentro, al massimo 112 px */
+  --stage-top: 16px;
+  --stage-h: calc(var(--tile-h, 220px) - var(--foot-h) - var(--stage-top));
+  --sprite-w: clamp(56px, calc(var(--stage-h) - 6px), 112px);
+  /* Spenta a riposo: la lista resta calma accanto al team, sempre acceso */
+  --lit: 0.45;
   position: relative;
   height: var(--tile-h, 220px);
   min-width: 0;
@@ -460,10 +463,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   cursor: pointer;
   user-select: none;
 }
-/* La carta vera, ritagliata; la casella (li) resta senza ritaglio */
+/* La carta vera (squadrata, come il team): fondo e riga dei tipi da pedana.css */
 .card-face {
-  /* Cornice sottile nel colore del tipo; scelta dalla ricerca o selezionata: ciano */
-  --frame-c: color-mix(in srgb, var(--t1) 30%, var(--line));
+  /* Cornice sottile; scelta dalla ricerca o selezionata: ciano */
+  --frame-c: var(--line-soft);
   --fw: 1px;
   position: relative;
   height: 100%;
@@ -471,39 +474,31 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
-  /* Zona dell'immagine: tinta piatta del tipo primario */
-  background: color-mix(in srgb, var(--t1) 16%, var(--raised));
-  border-bottom: 3px solid var(--t1);
-  clip-path: var(--card-shape);
-  transition: background 0.15s;
 }
-/* Cornice sopra a tutto (anche alla targhetta), senza prendere i clic: un anello che segue anche il taglio
-   (fuori la forma della carta, dentro la stessa rientrata di --fw; 0.4142 = √2 − 1 per il lato a 45°) */
-.card-face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background: var(--frame-c);
-  clip-path: polygon(evenodd,
-    0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%, 0 0,
-    var(--fw) var(--fw), var(--fw) calc(100% - var(--fw)), calc(100% - var(--fw)) calc(100% - var(--fw)),
-    calc(100% - var(--fw)) calc(16px + var(--fw) * 0.4142), calc(100% - 16px - var(--fw) * 0.4142) var(--fw), var(--fw) var(--fw), 0 0);
-}
+/* Cornice sopra a tutto, senza prendere i clic */
+.card-face::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border: var(--fw) solid var(--frame-c); }
 /* Il "sotto il mouse" solo con un mouse: sul telefono il tocco lascerebbe la carta sollevata */
-@media (hover: hover) { .card:hover .card-face { background: color-mix(in srgb, var(--t1) 24%, var(--raised)); } }
+@media (hover: hover) { .card:hover { --lit: 0.8; } }
+.card.picked { --lit: 0.8; }
+.card.selected { --lit: 1; }
 .card.picked .card-face { --frame-c: var(--accent); }
 .card.selected .card-face { --frame-c: var(--accent); --fw: 2px; }
-.card-sprite { position: absolute; left: 50%; top: 4px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
-.card-sprite .box-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
-.card-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
-.card-sprite .box-icon.big .mon-icon { transform: scale(2.4); }
-.card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+/* Lo sprite in piedi sulla pedana: i piedi (circa al 90% del riquadro di 96) al centro dell'ellisse */
+.card-sprite { position: absolute; left: 50%; top: calc(var(--stage-top) + var(--stage-h) - 10px - var(--sprite-w) * 0.9); z-index: 1; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
+.card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
+/* Ogni sprite ha i piedi a un'altezza sua (Joltik a 63 px su 96, Kingambit a 90) e il corpo spesso un po' di lato:
+   --feet-dy e --feet-dx (Sprite, da spriteFeet.ts) lo spostano perché stiano tutti in piedi al centro della pedana, invece
+   di fluttuare. La GIF è già appoggiata in basso */
+.card-sprite .sprite, .slot > .slot-card .sprite-wrap > .sprite { translate: calc(var(--feet-dx, 0) * 100%) calc(var(--feet-dy, 0) * 100%); }
 /* Sotto il mouse lo sprite animato di Showdown, grande quanto lo statico: la GIF è il riquadro di 96px ritagliato
-   sul Pokémon, quindi alta --ani-h/96 della casella; appoggiata in basso come i piedi dello statico */
-.card-sprite .sprite.covered { visibility: hidden; }
-.card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) / 24); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
+   sul Pokémon, quindi alta --ani-h/96 della casella; i piedi del primo fotogramma (--ani-lift sopra il suo fondo) alla
+   riga dei piedi dello statico (FEET_ROW, 9/96 sopra il fondo) e spostata di lato di --ani-dx, così cade proprio sullo statico. I due si danno il cambio con una
+   dissolvenza breve (Sprite: .covered sullo statico, .ready sulla GIF quando è arrivata) */
+.card-sprite .sprite { transition: opacity 0.18s ease-out; }
+.card-sprite .sprite.covered { opacity: 0; }
+.card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) * (9 / 96 - var(--ani-lift, 0))); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated;
+  transform: translateX(-50%); translate: calc(var(--ani-dx, 0) * var(--sprite-w)) 0; pointer-events: none; opacity: 0; transition: opacity 0.18s ease-out; }
+.card-sprite .sprite-ani.ready { opacity: 1; }
 /* Carta "sollevata": sotto il mouse sale subito di 4px con un'ombra (drop-shadow sul li, che non è ritagliato, così segue
    l'angolo tagliato) e il fondo si tinge un po' di più: dice su che carta sei, e costa poco. Il resto aspetta che il mouse
    resti fermo sulla carta --wake (CARD_WAKE_MS in CandidateCard, che lo mette sulla carta): la luce nel colore del tipo dietro
@@ -517,37 +512,25 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
   .card:hover { z-index: 5; transform: translateY(-4px); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
 }
 .card.selected { z-index: 4; }
-/* Riflettore dall'alto: un cono di luce (bianca appena tinta del tipo) che scende dal centro del bordo alto e si apre sul
-   Pokémon, e la pozza di luce ai suoi piedi; sfuma verso la targhetta */
-.card-face::before { --spot: color-mix(in srgb, var(--t1) 25%, #fff);
-  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s ease-out;
-  background:
-    radial-gradient(ellipse calc(var(--sprite-w) * 0.55) calc(var(--sprite-w) * 0.11) at 50% calc(4px + var(--sprite-w) * 0.94),
-      color-mix(in srgb, var(--spot) 55%, transparent), transparent),
-    conic-gradient(from 156deg at 50% -56px, transparent 0deg, color-mix(in srgb, var(--spot) 20%, transparent) 11deg,
-      color-mix(in srgb, var(--spot) 30%, transparent) 24deg, color-mix(in srgb, var(--spot) 20%, transparent) 37deg, transparent 48deg);
-  -webkit-mask-image: linear-gradient(#000 60%, transparent 90%); mask-image: linear-gradient(#000 60%, transparent 90%); }
-/* La riga del tipo sotto la targhetta (il bordo del tipo più spesso) solo sulla selezionata, non sotto il mouse */
-.card .who::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--t1); opacity: 0; transition: opacity 0.18s ease-out; pointer-events: none; }
-.card.selected .who::after { opacity: 1; }
-@media (hover: hover) { .card:hover .card-face::before { opacity: 1; transition-delay: var(--wake); } }
-.card.selected .card-face::before, .card:has(:focus-visible) .card-face::before { opacity: 1; transition-delay: 0s; }
-.card-sprite.popped { z-index: 1; transform-origin: 50% 100%; animation: sprite-pop 0.22s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+/* Trascinata sul team: segue il mouse la carta del team di quel set (TeamPanel, .slot-ghost) e al suo posto resta lo
+   spazio vuoto, tratteggiato come lo slot libero del team. Gli sprite non si trascinano da soli */
+.card img { -webkit-user-drag: none; }
+.card.drag-origin, .card.drag-origin:hover { transform: none; filter: none; outline: 2px dashed var(--line); outline-offset: -2px; }
+.card.drag-origin > * { visibility: hidden; }
+.card-sprite.popped { z-index: 4; transform-origin: 50% 100%; animation: sprite-pop 0.22s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
 @keyframes sprite-pop {
   from { transform: translateX(-50%); }
   to { transform: translateX(-50%) translateY(-10px) scale(1.15); }
 }
-/* Icona del box: quando esce dalla carta (dopo l'attesa sotto il mouse, subito col fuoco) e sulla selezionata saltella
-   come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
-.card-sprite.popped .box-icon, .card.selected .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .card, .card-face::before, .card .who::after { transition: none; }
+  .card { transition: none; }
   .card-sprite.popped { animation: none; }
-  .card-sprite.popped .box-icon, .card.selected .card-sprite .box-icon { animation: none; }
 }
 /* Targhetta in alto a sinistra: +N (#1 su azzurro scuro), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
-.card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-2); margin: 0; padding: 5px var(--sp-8) 5px var(--sp-4); border-radius: 0; background: var(--tag-bg); color: var(--text);
-  font: 800 var(--fs-body)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+.card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-2); margin: 0; padding: 5px var(--sp-8) 5px var(--sp-4); border-radius: 0; background: none; color: var(--text);
+  font: 800 var(--fs-body)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
+/* La forma della targhetta (taglio obliquo a destra) sta in un fondo a parte: così l'icona di chi esce può uscirne */
+.card .tag::after { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--tag-bg); clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
 .card .tag strong { font: inherit; }
 .card .tag strong.worse { color: var(--bad); }
 .card .tag strong.same { color: var(--muted); }
@@ -555,7 +538,8 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Il #1: targhetta azzurro scuro con la cifra ciano. Il magenta resta al suo Aggiungi al team, l'azione migliore */
 .card.first .tag { --tag-bg: var(--accent-soft); color: var(--accent-ink); }
 /* Preferito: ♥ davanti al numero e bordo di 2px nel colore dei Preferiti (anche sul lato obliquo), sopra la cornice */
-.card .tag.fav { z-index: 4; background: var(--accent); }
+.card .tag.fav { z-index: 4; }
+.card .tag.fav::after { background: var(--accent); }
 .card .tag.fav::before { content: ''; position: absolute; inset: 2px; z-index: -1; background: var(--tag-bg); clip-path: polygon(0 0, calc(100% - 0.85px) 0, calc(100% - 6.4px) 100%, 0 100%); }
 .fav-heart { display: inline-flex; color: var(--accent); }
 .fav-heart .icon { width: 12px; height: 12px; fill: currentColor; }
@@ -565,35 +549,39 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    rimpicciolita dentro un riquadro 20×16: la targhetta cresce solo a destra quanto basta */
 .card .tag .out { display: flex; align-items: center; gap: var(--sp-1); height: 15px; margin-left: 1px; }
 .card .tag .out > .icon { width: 13px; height: 13px; vertical-align: 0; opacity: 0.72; }
-.card .tag .out-mon { position: relative; flex: none; width: 20px; height: 16px; overflow: hidden; }
-.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -54%) scale(0.56); image-rendering: auto; }
+/* L'icona di chi esce a grandezza vera (40×30, la pixel art rimpicciolita sbava e non si riconosce): il riquadro di 28×22
+   taglia solo il bordo vuoto dell'icona */
+.card .tag .out-mon { position: relative; flex: none; width: 28px; height: 22px; margin: -4px 0; }
+/* In Sostituisci la targhetta sale sopra la cornice e i motivi: l'icona di chi esce può uscire dal suo riquadro, ma
+   resta sotto lo sprite che si anima (quello scelto, z-index 4) */
+.card.swap .tag:not(.fav) { z-index: 3; }
+.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -56%); image-rendering: pixelated; }
 /* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: var(--sp-2); }
-.card .card-types img { width: 20px; height: 20px; box-shadow: none; }
+.card .card-types img { width: var(--ti-tip); height: var(--ti-tip); box-shadow: none; }
 .card .card-types img + img { margin: 0; }
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
-.card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: var(--sp-1);
-  box-sizing: border-box; height: var(--plate-h); padding: 7px var(--sp-5) var(--sp-5);
-  background: color-mix(in srgb, var(--ground) 70%, var(--raised)); border-top: 1px solid color-mix(in srgb, var(--t1) 45%, var(--line)); }
-.card.selected .who { background: color-mix(in srgb, var(--accent) 14%, var(--ground)); }
-.card .name-line { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; height: 18px; }
+.card .who { position: relative; z-index: 2; flex: none; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: calc(var(--sp-2) + var(--foot-air) / 4);
+  box-sizing: border-box; height: var(--foot-h); padding: calc(var(--foot-air) * 0.4) var(--sp-4) calc(var(--sp-5) + 4px); text-align: center; }
+.card .name-line { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); max-width: 100%; min-width: 0; height: 18px; }
 .card .name-line > :not(.pick) { flex: none; }
-.card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+.card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: center; }
 .card .pick[aria-pressed='true'] { background: none; }
 .card .pick strong { display: block; font: 800 var(--fs-body)/1.15 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .name-line .list-mark { font-size: var(--fs-caption); }
 /* Nome con la forma (Charizard + MEGA Y): la specie base intera, la forma un'etichetta che cede per prima */
 .pick-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
-.pick-name b { flex: none; font: 800 var(--fs-body)/1.15 var(--display); font-style: italic; white-space: nowrap; }
-.pick-name .forme { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 1px 5px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink); font: 700 var(--fs-label)/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; }
-.card.first .pick-name .forme { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-/* Sulle carte la forma sta sul bordo alto della targhetta del nome, a destra (spazio libero sotto lo sprite): il nome e
-   le icone tengono la loro riga e la forma si legge sempre intera */
-.card .pick-name .forme { position: absolute; z-index: 1; top: -10px; right: 8px; max-width: calc(100% - 16px); padding: 1px var(--sp-3); background: var(--ground); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
-.card.first .pick-name .forme { background: var(--ground); }
-.card .who small { display: flex; flex-direction: column; min-width: 0; }
-.card .reason { display: block; min-width: 0; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick-name b { flex: none; font: 800 var(--fs-title-s)/1.15 var(--display); font-style: italic; white-space: nowrap; }
+/* La forma accanto al nome, piccola come la lettera delle Mega (Zapdos GALAR): due carte con lo stesso nome si
+   distinguono. Se manca spazio si accorcia lei, mai il nome. Mega e Primal hanno invece il loro simbolo, con la lettera
+   quando le Mega sono due (Charizard X / Y) */
+.pick-name .pick-forme { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 700 var(--fs-label)/1 var(--display); font-style: italic; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.pick-name .mega-mark { display: inline-flex; flex: none; align-items: center; gap: 1px; color: var(--accent-ink); font: 800 var(--fs-label)/1 var(--display); font-style: italic; }
+.pick-name .mega-mark .mega-icon { display: block; width: 15px; height: 15px; }
+.card .who small { display: flex; flex-direction: column; align-items: stretch; gap: calc(2px + var(--foot-air) / 4); width: 100%; max-width: 100%; min-width: 0; }
+.card .reason { display: block; max-width: 100%; min-width: 0; text-align: left; font: 500 var(--fs-caption)/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 
 /* Motivi a segni: ⚔️ chip dei tipi colpiti, 🛡️ chip dei tipi retti (gli immuni con la parola), "vs" chi
@@ -604,7 +592,7 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
    ancora le liste di Pokémon fermati, quindi restano a segni */
 .suggestions > li { container: cand / inline-size; }
 .reason.has-sym .words { display: none; }
-.reason.has-sym { display: flex; align-items: center; overflow: visible; text-overflow: clip; }
+.reason.has-sym { display: flex; align-items: center; justify-content: flex-start; max-width: 100%; overflow: visible; text-overflow: clip; }
 .reason.has-sym > b { flex: none; }
 .reason .syms { display: contents; }
 @container cand (min-width: 560px) {
@@ -619,10 +607,9 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .reason .sym-vs { flex: none; font: 800 var(--fs-label)/1 var(--display); font-style: italic; letter-spacing: 0.04em; color: var(--accent-ink); }
 .reason .sym-chips { display: flex; align-items: center; gap: 0 3px; min-width: 0; height: 16px; overflow: hidden; }
 .reason .sym-chip { display: inline-flex; flex: none; align-items: center; height: 16px; }
-/* Chip compatti: larghi quanto il nome (mai tagliati), più bassi e col testo più piccolo di quelli del team */
-.reason .type-chip { --tc-h: 16px; }
-.reason .type-chip.type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); text-align: left; letter-spacing: 0.02em; }
-.reason .type-chip.type-chip.long > span { font-size: var(--fs-label); }
+/* I tipi dei motivi: solo l'icona, 14 px come gli altri segni della riga (spada, scudo, catena) */
+.reason .type-chip { --tc-h: var(--ti-inline); }
+.reason .sym-chips.icons-only .type-chip > span { display: none; }
 /* La "×" davanti a un tipo a cui il candidato è immune */
 /* "vs" + pallino del tipo + nome, come nel dettaglio; il nome si accorcia, il "+N" resta */
 .reason .sym-mons { display: flex; align-items: center; min-width: 0; }
@@ -631,6 +618,10 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
 .reason .sym-more { flex: none; margin-left: var(--sp-2); font: 500 var(--fs-label)/1 var(--ui); color: var(--faint); }
+/* I ruoli portati: quelli interi che entrano, poi "+N" (RoleRow); i puntini solo se nemmeno il primo entra */
+.reason .role-row { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; overflow: hidden; vertical-align: top; }
+.reason .role-names { flex: none; white-space: nowrap; }
+.reason .role-names.last { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 /* Esclusiva di una versione del gioco (Solo Scarlatto / Solo Violetto): pastiglia piccola nel colore della versione */
 .version-mark { display: inline-block; padding: 1px var(--sp-3); border-radius: 999px; font-size: var(--fs-label); line-height: 1.4; font-weight: 600; white-space: nowrap; }
@@ -644,9 +635,9 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 /* Sagome delle carte mentre la prima lista si calcola (critique 2026-11-21): la forma della carta vera (angolo tagliato,
    zona dell'immagine, targhetta in basso), senza colore di tipo, con la luce che passa piano come in Completa team */
 .card-skel { cursor: default; pointer-events: none; }
-.card-skel { display: flex; flex-direction: column; clip-path: var(--card-shape); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); overflow: hidden; }
-.card-skel-art { flex: 1; background: radial-gradient(40% 45% at 50% 55%, color-mix(in srgb, var(--raised) 70%, transparent), transparent 70%), var(--band); }
-.card-skel-plate { display: grid; gap: var(--sp-3); height: var(--plate-h); padding: var(--sp-4) var(--sp-5); border-top: 3px solid var(--line-soft); }
+.card-skel { display: flex; flex-direction: column; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); overflow: hidden; }
+.card-skel-art { flex: 1; background: radial-gradient(42% 9% at 50% 88%, color-mix(in srgb, var(--raised) 80%, transparent), transparent 70%), var(--panel); }
+.card-skel-plate { display: grid; justify-items: center; align-content: start; gap: var(--sp-3); height: var(--foot-h); padding: 0 var(--sp-5); box-shadow: inset 0 -3px 0 var(--line-soft); }
 .card-skel-line { display: block; width: 62%; height: 12px; border-radius: 3px; background: var(--raised); }
 .card-skel-line.short { width: 40%; height: 10px; }
 .card-skel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.05) 50%, transparent 70%);
@@ -654,12 +645,198 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 @keyframes card-skel-light { to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .card-skel::after { animation: none; display: none; } }
 
-/* Azioni del dettaglio su una riga sola (critique 2026-11-21): nel dettaglio stretto «Copia set» e «Apri su Smogon»
-   restano icone (il nome nel fumetto e per i lettori di schermo), «Aggiungi al team» intero, mai su due righe */
-.detail-actions { container: dactions / inline-size; }
+/* Azioni del dettaglio su una riga sola, «Aggiungi al team» intero, mai su due righe. «Copia set» e «Apri su Smogon»
+   secondo lo spazio misurato (SuggestionDetail): coi nomi interi, coi nomi brevi «Copia» e «Smogon» (.short), o solo
+   icone (.tight, il nome nel fumetto e per i lettori di schermo) */
 .detail-actions > * { white-space: nowrap; }
 .detail-copy .icon { width: 15px; height: 15px; }
-@container dactions (max-width: 459px) {
-  .detail-actions .detail-copy, .detail-actions .smogon-link { padding-inline: var(--sp-5); }
-  .detail-actions :is(.detail-copy, .smogon-link) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.detail-actions .lbl-short { display: none; }
+.detail-actions.short .lbl-full { display: none; }
+.detail-actions.short .lbl-short { display: inline; }
+.detail-actions.short :is(.detail-copy, .smogon-link) { padding-inline: var(--sp-6); }
+/* Solo icone; e se il pulsante principale non sta ancora, cede lui coi puntini invece di uscire dal dettaglio */
+.detail-actions.tight .detail-copy, .detail-actions.tight .smogon-link { padding-inline: var(--sp-5); }
+.detail-actions.tight :is(.detail-copy, .smogon-link) .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.detail-actions.tight > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.detail { container: detailbox / inline-size; }
+.detail-tabs { grid-column: 1 / -1; display: flex; border-bottom: 1px solid var(--line-soft); }
+.detail-tabs [role='tab'] { flex: 1; min-height: 34px; margin: 0; padding: 0 var(--sp-6); border: 0; border-radius: 0; background: none; box-shadow: none;
+  font: 700 var(--fs-body)/1 var(--display); font-style: italic; color: var(--muted); cursor: pointer; }
+.detail-tabs [role='tab']:hover { color: var(--text); }
+.detail-tabs [role='tab'].on { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.detail.compact .detail-hero.mcard-head { min-height: 0; padding-top: var(--sp-2); padding-bottom: var(--sp-2); grid-template-columns: 44px minmax(0, 1fr) auto; }
+.detail.compact .detail-hero .detail-id { flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-5); }
+.detail.compact .detail-hero .detail-id h3 { font-size: var(--fs-title-l); }
+.detail.compact .detail-hero .detail-score { display: flex; align-items: baseline; gap: var(--sp-4); }
+.detail.compact .detail-hero .detail-score strong { font-size: 30px; }
+.detail.compact .detail-hero .detail-score span { margin-top: 0; }
+/* Dettaglio stretto: Porta e Toglie uno sotto l'altro */
+@container detailbox (max-width: 470px) {
+  .detail:not(.detail-empty) > .detail-body { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Da tastiera il fuoco sta sul nome (il pulsante della carta): il contorno gira intorno a tutta la carta */
+.card:has(.pick:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card .pick:focus-visible { outline: none; }
+
+/* ── Dettaglio del candidato come "verdetto" (critique 2026-11-22) ─────────────────────────────────────────────────
+   Testata (voto e, sotto, il verso di ogni area), la striscia di chi esce in Sostituisci, poi due colonne: Perché
+   (Risolve, Spesso con, Costa) | Set (.detail-run: strumento, abilità, natura, EV; mosse; ruoli). Due colonne o una
+   dalla larghezza del corpo (container dbody); basso (.compact, dall'altezza del dettaglio intero): set su una riga;
+   se non entra: due linguette (SuggestionDetail). L'esagono del set sta nel fumetto di "Stat" */
+aside.detail:not(.detail-empty) > .detail-body { display: block; padding: 0; container: dbody / inline-size; }
+aside.detail .detail-cols { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-8); padding: var(--sp-7) var(--sp-9); }
+@container dbody (min-width: 440px) {
+  aside.detail .detail-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: var(--sp-9); }
+}
+/* Dettaglio sui 500 px (1366, 1440 col team aperto): più posto al set, così i suoi dati restano in due colonne coi nomi */
+@container dbody (min-width: 440px) and (max-width: 599px) {
+  aside.detail .detail-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+}
+aside.detail.compact .detail-cols { padding-block: var(--sp-5); }
+
+/* Le aree nella testata, sotto "B 79 → A 88": il nome corto e il verso (su, uguale, giù), mai il numero */
+.detail-hero .detail-score .detail-area-marks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sp-2) var(--sp-5); margin: var(--sp-3) 0 0; padding: 0; list-style: none; }
+.detail-hero .detail-score .detail-area-marks li { display: inline-flex; align-items: center; gap: 3px; font: 700 var(--fs-caption)/1 var(--ui); color: rgb(255 255 255 / 0.9); text-shadow: 0 1px 2px rgb(0 0 0 / 0.6); white-space: nowrap; }
+.detail-hero .detail-score .detail-area-marks li > span[aria-hidden] { color: inherit; }
+.area-arrow { flex: none; width: 10px; height: 10px; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.55)); }
+.detail-area-marks .up .area-arrow { fill: var(--good); }
+.detail-area-marks .down .area-arrow { fill: var(--bad); }
+.detail-area-marks .same .area-arrow { fill: rgb(255 255 255 / 0.65); }
+aside.detail.compact .detail-area-marks { margin-top: var(--sp-1); }
+
+/* Chi esce: ⇄, lo sprite ingrigito, "Esce" e il nome barrato, i ruoli che il team perde */
+.detail-swap { flex: none; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-9);
+  background: color-mix(in srgb, var(--bad) 8%, var(--panel)); border-bottom: 1px solid var(--line-soft); }
+.detail-swap-mark { display: grid; color: var(--faint); }
+.detail-swap-mark .icon { width: 18px; height: 18px; }
+.detail-swap-mon .sprite { display: block; width: 48px; height: 48px; margin: -8px 0; filter: grayscale(0.85) brightness(0.85); }
+.detail-swap-text { display: flex; flex-direction: column; min-width: 0; margin: 0; }
+.detail-swap-text small { font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.detail-swap-text > span { display: flex; align-items: baseline; gap: var(--sp-4); min-width: 0; }
+.detail-swap-text b { flex: none; font: 800 italic var(--fs-title-s)/1.15 var(--display); color: var(--text);
+  text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--bad) 70%, transparent); }
+.detail-swap-text em { min-width: 0; font-style: normal; font-size: var(--fs-small); font-weight: 500; color: var(--bad); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Perché: Risolve (+ verde), Spesso con (catena), Costa (− rosso, ! giallo per gli avvisi) */
+.detail-why { display: flex; flex-direction: column; gap: var(--sp-7); min-width: 0; }
+.detail-why .why-part { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+.detail-why h4 { margin: 0; font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+/* Linguette su un dettaglio largo: Risolve e Costa affiancate */
+@container dbody (min-width: 480px) { aside.detail.tabbed .detail-why { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-9); } }
+.detail-why .bring-groups, .detail-why .bring-group, .detail-why .bring-items { display: contents; }
+aside.detail .detail-why .visually-hidden { position: absolute; margin: 0; padding: 0; }
+.detail-why li { position: relative; display: block; padding-left: var(--sp-7); font-size: var(--fs-section); line-height: 1.35; }
+.detail-why li::before { position: absolute; left: 0; top: 0; font: 800 italic var(--fs-section)/1.35 var(--display); }
+.detail-why .gain li::before { content: '+'; color: var(--good); }
+.detail-why .loss li::before { content: '−'; color: var(--bad); }
+.detail-why .bring-group.warning li::before { content: '!'; color: var(--warn); }
+.detail-why .bring-none { margin: 0; font-size: var(--fs-section); color: var(--muted); }
+.detail-mates { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin: 0; font-size: var(--fs-section); line-height: 1.35; color: var(--muted); }
+.detail-mates > .icon { flex: none; width: 14px; height: 14px; color: var(--good); }
+.detail-mates .mon-ref { display: inline-flex; align-items: center; color: var(--text); }
+.detail-mates .mon-icon { margin: -6px var(--sp-1) -4px -6px; }
+
+/* Set: i dati in due colonne (nome sopra il valore), le mosse, i ruoli (l'esagono sta nel fumetto di "Stat") */
+.detail-run { display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-6); min-width: 0; container: drun / inline-size; }
+.detail-run > * { width: 100%; box-sizing: border-box; }
+aside.detail .detail-run .mcard-kit { display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, auto); grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: minmax(0, 1fr); align-items: baseline; gap: 1px var(--sp-7); padding: 0; border: 0; font-size: var(--fs-small); }
+aside.detail .detail-run .mcard-kit > small:nth-child(4n + 3) { margin-top: var(--sp-4); }
+aside.detail .detail-run .mcard-kit > span { max-width: 100%; white-space: normal; }
+aside.detail .detail-run .mcard-kit > span > .item-icon { vertical-align: -1px; }
+.detail-run .mcard-moves { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); min-width: 0; }
+@container drun (min-width: 520px) { .detail-run .mcard-moves { grid-template-columns: 1fr 1fr; } }
+/* Colonna del set stretta: i dati come testo che va a capo, senza nomi (in due colonne natura ed EV si tagliavano,
+   uno sotto l'altro non entravano) */
+@container drun (max-width: 259px) {
+  aside.detail .detail-run .mcard-kit { display: block; line-height: 1.45; }
+  aside.detail .detail-run .mcard-kit > small { display: none; }
+  aside.detail .detail-run .mcard-kit > span { display: inline; white-space: normal; }
+  aside.detail .detail-run .mcard-kit > span:not(:nth-child(2))::before { content: ' · '; color: var(--faint); font-weight: 400; }
+  aside.detail .detail-run .mcard-kit .kit-nature { display: none; }
+}
+.detail-run .mvp-sm { --mvp-tail-w: 54px; }
+.detail-run .mvp-sm .mvp-cat .cat-icon { width: 11px; height: 9px; }
+.detail-run .mvp-sm .mvp-tail { gap: 2px; padding-right: var(--sp-3); }
+.detail-run .mcard-roles { margin: 0; padding: 0; border: 0; font-size: var(--fs-small); }
+.detail-run .mcard-roles > span { display: block; min-width: 0; }
+.detail-run .mcard-roles > span > span { display: inline; }
+.mcard-roles .fresh { color: var(--good); font-weight: 700; }
+.mcard-roles .fresh b { margin-right: 1px; }
+
+/* Basso (portatile col team aperto): i dati del set come testo su due righe al massimo (su una gli EV si tagliavano);
+   le mosse più vicine per fargli posto */
+aside.detail.compact .detail-run { gap: var(--sp-3); }
+aside.detail.compact .detail-run .mcard-moves { gap: 1px; }
+aside.detail.compact .detail-run .mcard-kit { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.3; white-space: normal; }
+aside.detail.compact .detail-run .mcard-kit > small { display: none; }
+aside.detail.compact .detail-run .mcard-kit > span { display: inline; white-space: normal; }
+aside.detail.compact .detail-run .mcard-kit > span:not(:nth-child(2))::before { content: ' · '; color: var(--faint); font-weight: 400; }
+aside.detail.compact .detail-run .mcard-kit .kit-nature { display: none; }
+/* Linguette (il corpo non entra): una parte alla volta, a tutta larghezza */
+aside.detail.tabbed .detail-cols { grid-template-columns: minmax(0, 1fr); }
+/* Basso: la striscia di chi esce su una riga sottile ("Esce" resta per gli screen reader, il ⇄ e il nome barrato lo dicono) */
+aside.detail.compact .detail-swap { padding-block: 2px; gap: var(--sp-4); }
+aside.detail.compact .detail-swap-mon .sprite { width: 36px; height: 36px; margin: -4px 0; }
+aside.detail.compact .detail-swap-text small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Dettaglio stretto (telefono, mezzo schermo): le aree su due righe corte, il nome del Pokémon resta intero */
+@container detailbox (max-width: 479px) {
+  .detail-hero .detail-score .detail-area-marks { max-width: 96px; gap: var(--sp-1) var(--sp-4); }
+}
+
+/* Il fumetto di "Stat" nel dettaglio: accanto alle base, le statistiche del set (l'esagono); sul dettaglio stretto sotto */
+.stats-pop.has-side { width: auto; }
+.stats-pop .stats-main, .stats-pop .stats-side { display: flex; flex-direction: column; gap: var(--sp-2); }
+.stats-pop.has-side .stats-main { width: 206px; }
+.stats-pop .stats-side .mcard-hex { width: 190px; height: calc(190px * 0.67); }
+.stats-badge:is(:hover, :focus-visible, [aria-expanded='true']) .stats-pop.has-side { flex-direction: column; }
+@container detailbox (min-width: 480px) {
+  .stats-badge:is(:hover, :focus-visible, [aria-expanded='true']) .stats-pop.has-side { flex-direction: row; gap: var(--sp-9); }
+}
+/* Si apre sotto la testata, dentro il dettaglio (dal badge andrebbe sopra la lista): il badge non fa da riferimento */
+.detail-hero:has(.stats-pop.has-side) :is(.detail-id, .detail-id h3, .stats-badge) { position: static; }
+/* Senza riferimento, la zona invisibile intorno a Stat (::after, larga il 100%) si misurava sulla testata intera e il
+   fumetto si apriva da qualunque punto del banner: qui niente zona, conta solo la targhetta (al tocco la allarga il padding) */
+aside.detail .detail-hero:has(.stats-pop.has-side) .detail-id h3 .stats-badge::after { content: none; }
+@media (pointer: coarse) { aside.detail .detail-hero .detail-id h3 .stats-badge { padding-block: var(--sp-3); margin-block: calc(-1 * var(--sp-3)); } }
+.detail-hero .stats-pop.has-side { top: calc(100% - 6px); left: var(--sp-6); right: auto; }
+
+/* Costa senza perdite (con un team): una riga che lo dice, invece della colonna vuota; non nel dettaglio basso */
+.why-part .why-none { margin: var(--sp-2) 0 0; font: 500 var(--fs-small)/1.3 var(--ui); color: var(--muted); }
+
+/* L'esagono del set nel corpo del dettaglio, solo dove avanza lo spazio (SuggestionDetail, HEX_PART_H = 168) */
+.hex-part { display: flex; flex-direction: column; gap: var(--sp-3); }
+.detail-run .hex-part { margin-top: var(--sp-4); }
+.hex-part h4 { margin: 0; font: 700 var(--fs-label)/1.2 var(--display); letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); }
+.hex-part .mcard-hex { align-self: flex-start; width: 190px; height: 127px; }
+
+/* Legenda dei segni delle carte: il "?" accanto a "Candidati" e la finestrella sotto (come quella di Stat) */
+.sym-legend { position: relative; display: inline-flex; flex: none; align-items: center; }
+.sym-legend .help-button:hover, .sym-legend .help-button[aria-expanded='true'] { color: var(--accent-ink); }
+.sym-legend-pop { position: absolute; z-index: 60; top: calc(100% + 8px); left: -8px; width: 300px; padding: var(--sp-6) var(--sp-7);
+  background: var(--ground); border: 1px solid var(--line); border-top: 2px solid var(--accent); border-radius: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  animation: tip 0.15s var(--ease); }
+.sym-legend-title { margin: 0 0 var(--sp-4); font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.sym-legend-pop ul { display: grid; gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
+.sym-legend-pop li { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: var(--sp-4); font: 500 var(--fs-small)/1.3 var(--ui); color: var(--text); }
+.sym-legend-pop .lg-sign { display: inline-flex; justify-content: center; }
+.sym-legend-pop .sym-icon .icon, .sym-legend-pop .lg-swap .icon, .sym-legend-pop .lg-heart .icon { width: 16px; height: 16px; }
+.sym-legend-pop .sym-icon { color: var(--accent-ink); }
+.sym-legend-pop .sym-vs { font: 800 var(--fs-label)/1 var(--display); font-style: italic; letter-spacing: 0.04em; color: var(--accent-ink); }
+.sym-legend-pop .lg-plus { font: 800 italic var(--fs-body)/1 var(--display); color: var(--text); }
+.sym-legend-pop .lg-swap { color: var(--muted); }
+.sym-legend-pop .lg-heart { color: var(--accent); }
+.sym-legend-pop .lg-heart .icon { fill: currentColor; }
+/* Con la legenda aperta la fascia "Candidati" sta sopra le carte (che si alzano e hanno i loro livelli) */
+.list-head:has(.sym-legend-pop) { position: relative; z-index: 20; }
+/* Sul computer due colonne: più bassa, sta anche sopra le carte dei portatili bassi (1280×620) */
+@media (min-width: 1100px) {
+  .sym-legend-pop { width: 520px; }
+  /* Si legge per colonne: +N, spada, scudo, VS a sinistra (spada e scudo uno sotto l'altro), il resto a destra */
+  .sym-legend-pop ul { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: var(--sp-8); }
+}
+
+/* Il "?" della legenda resta un'icona da 20 px, ma si tocca su 24 px col mouse e su 44 col dito */
+.sym-legend .help-button { position: relative; }
+.sym-legend .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; translate: -50% -50%; }
+@media (pointer: coarse) { .sym-legend .help-button::after { width: 44px; height: 44px; } }

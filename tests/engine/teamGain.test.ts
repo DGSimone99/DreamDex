@@ -94,20 +94,20 @@ describe('cosa spiega il cambio di voto oltre alle aree', () => {
     areas: areas.map(([key, value, inactive]) => ({ key, label: key, value, ...(inactive ? { inactive } : {}) })),
   }) as never;
 
-  // Voci del voto: [punti, catalogo]; i ruoli mancanti (malus) e minori (bonus) fanno i punti dei Ruoli
-  const graded = (malus: [number, string?][], bonus: [number, string?][], roles: { failures: number[]; bonuses: number[] }) => ({
+  // Voci del voto: [punti, catalogo]; i ruoli mancanti (malus) fanno i punti dei Ruoli
+  const graded = (malus: [number, string?][], bonus: [number, string?][], roles: { failures: number[] }) => ({
     penalty: { total: malus.reduce((n, [p]) => n + p, 0), items: malus.map(([points, catalog]) => ({ text: '', points, catalog })) },
     bonus: { total: bonus.reduce((n, [p]) => n + p, 0), items: bonus.map(([points, catalog]) => ({ text: '', points, catalog })) },
-    roles: { failures: roles.failures.map(points => ({ points })), bonuses: roles.bonuses.map(points => ({ points })) },
+    roles: { failures: roles.failures.map(points => ({ points })) },
     areas: [],
   }) as never;
 
   it('Bonus/Malus: quanto cambiano penalità e bonus insieme, senza i ruoli; i Ruoli a parte', () => {
-    const before = graded([[10, 'sameType'], [4, 'essentialRole']], [], { failures: [4], bonuses: [] });
-    const after = graded([[2, 'hazardDuplicate']], [[1, 'minorRole'], [3, 'core']], { failures: [], bonuses: [1] });
+    const before = graded([[10, 'sameType'], [4, 'essentialRole']], [], { failures: [4] });
+    const after = graded([[2, 'hazardDuplicate']], [[3, 'core']], { failures: [] });
     expect(extrasDelta(before, after)).toBe(11);
-    expect(rolesDelta(before, after)).toBe(5);
-    expect(extrasDelta(graded([], [], { failures: [], bonuses: [] }), graded([[3, 'sameType']], [], { failures: [], bonuses: [] }))).toBe(-3);
+    expect(rolesDelta(before, after)).toBe(4);
+    expect(extrasDelta(graded([], [], { failures: [] }), graded([[3, 'sameType']], [], { failures: [] }))).toBe(-3);
   });
 
   it('aree in calo, dalla più grande; le inattive e senza valore no', () => {

@@ -1,5 +1,9 @@
 import { Icon } from './icons';
-import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react';
+import { useContext, type CSSProperties, type FocusEvent, type MouseEvent } from 'react';
+import { cardRoles } from '../engine/archetype';
+import type { FormatRules } from '../engine/formatRules';
+import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
+import { RulesContext } from './rulesContext';
 import { battleAbility, battleName, battleSpecies, dex } from '../engine/dex';
 import type { StatID, TeamSet } from '../engine/sets';
 import { statLines } from '../engine/statCalc';
@@ -9,8 +13,10 @@ import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Sprite, typeColor } from './Sprite';
 import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
-import { typeIconUrl } from './typeIcons';
-import { kitTip } from './MoveTip';
+import { tileStyle, typeIconUrl } from './typeIcons';
+import { hint, kitTip } from './MoveTip';
+import { ItemIcon } from './ItemIcon';
+import { FormeName } from './candidateParts';
 
 /** L'ordine dell'esagono, come la schermata riassunto di Spada e Scudo: dall'alto in senso orario. */
 const HEX_ORDER: StatID[] = ['hp', 'atk', 'def', 'spe', 'spd', 'spa'];
@@ -26,17 +32,23 @@ const at = (i: number, r: number) => {
 const ring = (f: number) => HEX_ORDER.map((_, i) => at(i, R * f).map(n => n.toFixed(1)).join(',')).join(' ');
 
 /** Le statistiche finali a esagono; quella che la natura alza in verde, quella che abbassa in rosso. */
-export function StatHex({ set }: { set: TeamSet }) {
+/** L'esagono delle statistiche del set. Con `compare` (chi esce, in Sostituisci) anche il suo esagono, grigio e
+ *  tratteggiato dietro: dove il nuovo è più forte si vede a colpo d'occhio; i numeri restano quelli del set. */
+export function StatHex({ set, compare }: { set: TeamSet; compare?: TeamSet }) {
   const lang = useLang();
   const lines = statLines(set);
   const byId = new Map(lines.map(l => [l.stat, l]));
-  const value = HEX_ORDER.map((stat, i) => at(i, R * Math.min(1, (byId.get(stat)?.value ?? 0) / HEX_FULL)).map(n => n.toFixed(1)).join(',')).join(' ');
+  const shape = (by: Map<string, { value: number }>) =>
+    HEX_ORDER.map((stat, i) => at(i, R * Math.min(1, (by.get(stat)?.value ?? 0) / HEX_FULL)).map(n => n.toFixed(1)).join(',')).join(' ');
+  const value = shape(byId);
+  const other = compare ? shape(new Map(statLines(compare).map(l => [l.stat, l]))) : null;
   return (
     <svg className="mcard-hex" viewBox="-40 -6 220 146" aria-hidden="true">
       <polygon className="hx-ring" points={ring(1)} />
       <polygon className="hx-ring soft" points={ring(2 / 3)} />
       <polygon className="hx-ring soft" points={ring(1 / 3)} />
       {HEX_ORDER.map((stat, i) => { const [x, y] = at(i, R); return <line key={stat} className="hx-axis" x1={CX} y1={CY} x2={x} y2={y} />; })}
+      {other && <polygon className="hx-out" points={other} />}
       <polygon className="hx-val" points={value} />
       {HEX_ORDER.map((stat, i) => {
         const [x, y] = at(i, R + 13);
@@ -75,14 +87,14 @@ export function MemberKit({ set, was }: { set: TeamSet; was?: TeamSet }) {
   const diff = (same: boolean) => (was && !same ? 'is-changed' : undefined);
   return (
     <div className="mcard-kit">
-      <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)} {...kitTip('item', set.item)}>{set.item ? anyGameName(set.item, lang) : '—'}</span>
+      <small>{t('mcard.item')}</small><span className={diff(was?.item === set.item)} {...kitTip('item', set.item)}>{set.item && <ItemIcon item={set.item} />}{set.item ? anyGameName(set.item, lang) : '—'}</span>
+      {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
+      <small>{t('mcard.ability')}</small><span className={diff(was?.ability === set.ability)} {...kitTip('ability', battleAbility(set) || set.ability)}>{battleAbility(set) || set.ability ? anyGameName(battleAbility(set) || set.ability, lang) : '—'}</span>
       <small>{t('mcard.nature')}</small>
       <span className={diff(was?.nature === set.nature)}>{set.nature ? natureName(set.nature, lang) : '—'}{nature?.plus && nature.minus && (
         // Le freccette di Champions; il segno resta nel testo per chi legge senza vedere
         <em className="kit-nature"> <span className="up"><NatureArrow dir="up" /><span className="visually-hidden">+</span>{statShort(nature.plus as StatID, lang)}</span>{' '}<span className="down"><NatureArrow dir="down" /><span className="visually-hidden">−</span>{statShort(nature.minus as StatID, lang)}</span></em>
       )}</span>
-      {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
-      <small>{t('mcard.ability')}</small><span className={diff(was?.ability === set.ability)} {...kitTip('ability', battleAbility(set) || set.ability)}>{battleAbility(set) || set.ability ? anyGameName(battleAbility(set) || set.ability, lang) : '—'}</span>
       <small>EV</small><span className={diff(!was || evLine(was, lang) === evs)}><em>{evs || '—'}</em></span>
       {set.teraType && <><small>{t('editor.tera')}</small><span className={diff(was?.teraType === set.teraType)}>{typeName(set.teraType, lang)}</span></>}
     </div>
@@ -123,7 +135,36 @@ export function MemberMoves({ set, was, movesLabel, className = '' }: { set: Tea
 /** Un problema del membro (rosso non legale, giallo da controllare), detto nella carta: nel team compresso non c'è il triangolo. */
 export interface MemberAlert { level: 'danger' | 'warn'; text: string }
 
-export function MemberCard({ set, why, was, alerts }: { set: TeamSet; why?: ReactNode; was?: TeamSet; alerts?: MemberAlert[] }) {
+/**
+ * I ruoli del set in una riga semplice, in fondo alla carta: prima il principale (lo stesso delle carte del team), poi gli
+ * altri; la spiegazione di ognuno nel tooltip del nome. Le regole del formato dal contesto dell'app, o passate (il
+ * dettaglio dei candidati); senza regole niente riga.
+ */
+/** I ruoli del set; `fresh`: quelli che mancavano al team (dettaglio del candidato), in verde col "+". */
+export function MemberRoles({ set, rules, fresh = [] }: { set: TeamSet; rules?: FormatRules; fresh?: readonly string[] }) {
+  const t = useT();
+  const lang = useLang();
+  const fromApp = useContext(RulesContext);
+  const used = rules ?? fromApp;
+  if (!used) return null;
+  const main = cardRoles(set, used)[0];
+  const roles = [...(main ? [main] : []), ...shownRoles(detectRoles(set, used), used).filter(role => role !== main)];
+  if (!roles.length) return null;
+  return (
+    <p className="mcard-roles">
+      <small>{t('area.roles')}</small>
+      <span>
+        {roles.map((role, i) => (
+          <span key={role} {...hint(role === 'weather' ? undefined : roleDescription(role, lang))} className={fresh.includes(role) ? 'fresh' : undefined}>
+            {i > 0 && ' · '}{fresh.includes(role) && <b aria-hidden="true">+</b>}{fresh.includes(role) && <span className="visually-hidden">{t('detail.newRole')} </span>}{role === 'weather' ? t('card.weather') : roleLabel(role, lang)}
+          </span>
+        ))}
+      </span>
+    </p>
+  );
+}
+
+export function MemberCard({ set, was, alerts }: { set: TeamSet; was?: TeamSet; alerts?: MemberAlert[] }) {
   const species = battleSpecies(set);
   const types = (species?.types ?? []) as string[];
   return (
@@ -131,10 +172,10 @@ export function MemberCard({ set, why, was, alerts }: { set: TeamSet; why?: Reac
       <div className="mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
         <span className="mcard-mon"><Sprite species={battleName(set)} size={96} /></span>
         <span className="mcard-name">
-          {battleName(set)}
-          {types.map(type => <img key={type} src={typeIconUrl(type)} alt="" draggable={false} />)}
+          {/* Come sulle carte della lista: Charizard + il segno della Mega, Zapdos + GALAR; il nome intero per chi legge */}
+          <FormeName species={battleName(set)} /><span className="visually-hidden">{battleName(set)}</span>
+          {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />)}
         </span>
-        {why && <span className="mcard-why">{why}</span>}
       </div>
       {!!alerts?.length && (
         <ul className="mcard-alerts">
@@ -143,26 +184,27 @@ export function MemberCard({ set, why, was, alerts }: { set: TeamSet; why?: Reac
       )}
       <MemberKit set={set} was={was} />
       <MemberStatsMoves set={set} was={was} />
+      <MemberRoles set={set} />
     </>
   );
 }
 
 /**
  * La carta del Pokémon come tooltip DreamDex dove serve (Completa team, carte del team, candidati, Coaching, minacce):
- * `bind(set, why)` dà i gestori da mettere sull'elemento (mouse e fuoco), `tip` è il tooltip da rendere una volta.
+ * `bind(set)` dà i gestori da mettere sull'elemento (mouse e fuoco), `tip` è il tooltip da rendere una volta.
  * `delay`: quanto aspetta prima di aprirsi (più lungo dove il mouse passa spesso); `near`: il selettore dell'antenato
  * sotto cui aprirsi (la carta del team: sotto la carta intera, non sotto la sprite); `side`: di lato (le tabelle di
  * Analisi, così la carta non copre le righe sotto).
  */
 export function useMemberTip(delay?: number, near?: string, side?: boolean | 'left') {
-  const anchor = useFloatAnchor<{ set: TeamSet; why?: ReactNode; was?: TeamSet; alerts?: MemberAlert[] }>(delay);
-  const show = (set: TeamSet, why?: ReactNode, was?: TeamSet, alerts?: MemberAlert[]) => (e: MouseEvent<Element> | FocusEvent<Element>) =>
-    anchor.open({ set, why, was, alerts }, (near && e.currentTarget.closest(near)) || e.currentTarget);
-  const bind = (set: TeamSet, why?: ReactNode, was?: TeamSet, alerts?: MemberAlert[]) => ({ onMouseEnter: show(set, why, was, alerts), onMouseLeave: anchor.close, onFocus: show(set, why, was, alerts), onBlur: anchor.close });
+  const anchor = useFloatAnchor<{ set: TeamSet; was?: TeamSet; alerts?: MemberAlert[] }>(delay);
+  const show = (set: TeamSet, was?: TeamSet, alerts?: MemberAlert[]) => (e: MouseEvent<Element> | FocusEvent<Element>) =>
+    anchor.open({ set, was, alerts }, (near && e.currentTarget.closest(near)) || e.currentTarget);
+  const bind = (set: TeamSet, was?: TeamSet, alerts?: MemberAlert[]) => ({ onMouseEnter: show(set, was, alerts), onMouseLeave: anchor.close, onFocus: show(set, was, alerts), onBlur: anchor.close });
   const current = anchor.anchor;
   const tip = current && (
     <FloatTip rect={current.rect} tone={typeColor((battleSpecies(current.key.set)?.types[0] as string | undefined) ?? '')} className="member" side={side}>
-      <MemberCard set={current.key.set} why={current.key.why} was={current.key.was} alerts={current.key.alerts} />
+      <MemberCard set={current.key.set} was={current.key.was} alerts={current.key.alerts} />
     </FloatTip>
   );
   return { bind, tip, close: anchor.close };

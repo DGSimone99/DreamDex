@@ -48,11 +48,11 @@ describe('giro dei punti piccoli (2)', () => {
     expect(value('Prankster')).toBeLessThan(value('Magician'));
   });
 
-  it('1.26: negli scambi i Ruoli hanno i loro punti (malus e bonus dei ruoli)', () => {
+  it('1.26: negli scambi i Ruoli hanno i loro punti (i malus dei ruoli)', () => {
     const base = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Toxapex'].map(n => set(n, '', '', ['Protect']));
     const before = rateTeam([...base, set('Corviknight', '', '', ['Brave Bird'])], fixtureData)!;
     const after = rateTeam([...base, set('Corviknight', '', '', ['Brave Bird', 'Stealth Rock'])], fixtureData)!;
-    const net = (r: typeof before) => r.roles.bonuses.reduce((a, i) => a + i.points, 0) - r.roles.failures.reduce((a, i) => a + i.points, 0);
+    const net = (r: typeof before) => -r.roles.failures.reduce((a, i) => a + i.points, 0);
     expect(areaPointsOf(before, after).roles).toBe(net(after) - net(before));
     expect(net(after) - net(before)).toBeGreaterThan(0);
   });

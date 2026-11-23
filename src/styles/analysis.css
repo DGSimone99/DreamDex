@@ -833,6 +833,9 @@
 .coach-ar.is-merged { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-9); }
 .coach-ar-who { display: flex; align-items: baseline; gap: var(--sp-4); white-space: nowrap; }
 .coach-ar-who b { font: 600 var(--fs-caption)/1 var(--ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+/* "Perdi Danno nel Tempo": i ruoli d'aiuto che il team perde col cambio, in rosso come un valore che scende */
+.coach-lost { min-width: 0; }
+.coach-lost-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--bad); }
 .coach-change { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
 .coach-from { font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); font-variant-numeric: tabular-nums; }
 .coach-to { font: italic 700 var(--fs-section)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }

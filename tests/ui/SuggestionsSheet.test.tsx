@@ -40,9 +40,10 @@ describe('ricerca: annunci per i lettori di schermo', () => {
   });
 });
 
-describe('scheda del candidato sul telefono', () => {
+describe('scheda del candidato sul telefono e sul tablet', () => {
   it('apre come una finestra: fuoco dentro, lista inerte, Esc chiude e il fuoco torna sulla carta', async () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 759px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    // Tablet (sotto i 1100 px): la scheda si apre toccando la carta, come sul telefono
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
     const user = await setup('Great Tusk');
     const card = suggestions().querySelector<HTMLElement>('.suggestions > li button[aria-pressed]')!;
     await user.click(card);
@@ -62,5 +63,26 @@ describe('scheda del candidato sul telefono', () => {
     expect(screen.queryByRole('dialog', { name: /^Dettaglio di / })).toBeNull();
     expect(suggestions().querySelector('.picker-list')).not.toHaveAttribute('inert');
     expect(within(suggestions()).getByRole('complementary', { name: /^Dettaglio di / })).toBeInTheDocument();
+  });
+});
+
+describe('Tipo di team sul telefono', () => {
+  it('sta dentro Filtri, in cima: la barra ha una riga in meno; sceglierlo accende Filtri', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    const user = await setup('Great Tusk');
+    const toolbar = suggestions().querySelector('.toolbar')!;
+    expect(within(toolbar as HTMLElement).queryByRole('button', { name: /^Tipo di team/ })).toBeNull();
+    const trigger = within(toolbar as HTMLElement).getByRole('button', { name: 'Filtri' });
+    await user.click(trigger);
+    const dialog = screen.getByRole('dialog', { name: 'Filtri' });
+    const picker = within(dialog).getByRole('button', { name: /^Tipo di team: Qualunque/ });
+    await user.click(picker);
+    await user.click(within(screen.getByRole('listbox', { name: 'Tipo di team' })).getAllByRole('option')[1]);
+    expect(trigger).toHaveClass('on');
+  });
+
+  it('sul computer resta nella barra', async () => {
+    await setup('Great Tusk');
+    expect(within(suggestions().querySelector('.toolbar') as HTMLElement).getByRole('button', { name: /^Tipo di team/ })).toBeInTheDocument();
   });
 });

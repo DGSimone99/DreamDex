@@ -250,7 +250,7 @@
   position: relative;
   isolation: isolate;
   /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
-  min-height: 200px;
+  min-height: 220px;
   padding: var(--sp-4) var(--sp-6) 20px;
   display: flex;
   flex-direction: column;
@@ -258,20 +258,27 @@
   gap: 3px;
 }
 .slot > .slot-card {
+  /* Carta Pedana (pedana.css), sempre accesa; il palco arriva fino ai piedi dello sprite (per la luce dall'alto) */
+  --lit: 1;
+  --sprite-w: 96px;
+  --stage-top: 0px;
+  --stage-h: 112px;
   cursor: pointer;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 42%, var(--panel)) 0%, var(--panel) 50%);
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--line-soft);
   transition: transform 0.3s var(--ease), box-shadow 0.2s;
 }
-/* Riflesso diagonale, come nelle schede di Masters EX */
-.slot > .slot-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(115deg, transparent 38%, #ffffff14 39%, transparent 54%);
-  pointer-events: none;
-}
-/* Striscia dei tipi in fondo: metà e metà per i doppi tipi */
+/* La luce parte dal bordo alto della carta (il riquadro dello sprite sta poco sotto; la carta taglia quel che sporge) e
+   finisce sulla pedana, in fondo al riquadro dello sprite */
+.slot > .slot-card .sprite-wrap > .pedana-beam { z-index: -1; top: auto; bottom: 2px; height: calc(100% + 24px); }
+/* La pedana sotto i piedi dello sprite, dietro lo sprite: i piedi stanno a 10/96 del lato sopra il fondo (FEET_ROW in
+   spriteFeet.ts, il lato è quello dello sprite: tutto il riquadro, fino a 176 px) e lì va il centro della pedana (alta 26 px) */
+.slot > .slot-card .sprite-wrap .pedana-disc { bottom: calc(min(100cqh, 100cqw, 176px) * 10 / 96 - 13px); z-index: 0; }
+.slot > .slot-card .sprite-wrap > .sprite { position: relative; z-index: 1; }
+.slot > .slot-card .sprite-wrap > .sprite-ani { z-index: 1; }
+.slot > .slot-card .sprite { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
+/* Team ridotto: la riga in fondo della pillola (tipi, o magenta se aperta). La carta grande usa .pedana-stripe */
 .slot > .slot-card::after {
   content: '';
   position: absolute;
@@ -279,11 +286,13 @@
   right: 0;
   bottom: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%);
+  background: transparent;
 }
 .slot > .slot-card:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .slot.open > .slot-card { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
-.slot.open > .slot-card::after { background: var(--accent-2); }
+.band.collapsed .slot.open > .slot-card::after { background: var(--accent-2); }
+/* Carta aperta: la riga dei tipi in fondo diventa magenta ("sei qui"), una riga sola */
+.slot.open > .slot-card .pedana-stripe { background: var(--accent-2); opacity: 1; }
 /* La punta magenta: sotto la carta aperta, appoggiata sul filo magenta dell'editor (left misurato in TeamPanel). Con il team
    compresso basta il contorno magenta della pillola */
 .slot-pointer { display: none; }
@@ -300,11 +309,10 @@
     box-shadow: inset 0 0 0 1px var(--line), 0 6px 14px rgba(0, 0, 0, 0.35);
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
   }
-  .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover::after { height: 4px; filter: brightness(1.25); }
   .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover .sprite { transform-origin: 50% 92%; transform: scale(1.05); transition: transform 0.15s ease-out; }
 }
 @media (hover: hover) and (prefers-reduced-motion: reduce) {
-  /* Niente movimento: resta solo la striscia dei tipi più accesa */
+  /* Niente movimento: resta solo il bordo più chiaro */
   .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover { transform: none; box-shadow: inset 0 0 0 1px var(--line); }
   .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover .sprite { transform: none; }
 }
@@ -317,11 +325,14 @@
 .slot > .slot-card > * { flex-shrink: 0; }
 /* Con l'avviso aperto il suo fumetto passa sopra sprite, nome e righe sotto */
 .slot > .slot-card .slot-alerts:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
-.slot > .slot-card .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
+.slot > .slot-card .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease), opacity 0.18s ease-out; }
 /* Card aperta: lo sprite cresce un poco e gioca l'animazione */
 .slot.open > .slot-card { --open-scale: 1.12; }
 .slot.open > .slot-card .sprite { transform-origin: 50% 92%; transform: scale(var(--open-scale)); }
-.slot > .slot-card .sprite.covered { visibility: hidden; }
+/* Statico e GIF si danno il cambio con una dissolvenza breve (Sprite: .covered e .ready) */
+.slot > .slot-card .sprite.covered { opacity: 0; }
+.slot > .slot-card .sprite-ani { opacity: 0; transition: opacity 0.18s ease-out; }
+.slot > .slot-card .sprite-ani.ready { opacity: 1; }
 .slot > .slot-card .sprite-ani {
   position: absolute;
   /* Appoggiato in basso e mai più alto di --fit (px dello sprite): le GIF alte si rimpiccioliscono per stare nella card */
@@ -347,8 +358,7 @@
 /* Nome troppo lungo anche rimpicciolito e senza forma (TeamPanel): una riga sola coi puntini */
 .slot .name.dots { display: block; white-space: nowrap; text-overflow: ellipsis; }
 /* Altezza riga in px interi: con 12px × 1.45 (17.4px) i tipi sopra finivano a mezzo pixel e la scritta saliva verso il bordo alto */
-.slot .roles { font-size: var(--fs-caption); line-height: 18px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.slot .types { display: flex; gap: var(--sp-2); flex-wrap: nowrap; margin: var(--sp-1) 0; }
+.slot .types { display: flex; justify-content: center; gap: var(--sp-2); flex-wrap: nowrap; margin: var(--sp-1) 0; }
 /* I chip devono stare dentro la carta: la fila è larga quanto la carta e, se due chip col nome non entrano, TeamPanel
    mostra le icone tonde dei tipi (come sulle carte dei candidati) */
 .band:not(.collapsed) .slot .types { align-self: stretch; height: 19px; overflow: hidden; }
@@ -422,8 +432,28 @@
 /* Piastrina scura dietro la scritta: il ciano resta leggibile (>=4.5:1) su ogni colore di tipo */
 
 /* Riordino trascinando */
-.slot.dragging > .slot-card { opacity: 0.45; }
+/* Trascinando un membro: al suo posto lo slot vuoto tratteggiato (la carta piena segue il mouse, .slot-ghost) */
+.slot.dragging > .slot-card { background: none; box-shadow: none; outline: 2px dashed var(--line); outline-offset: -2px; }
+.slot.dragging > .slot-card > *, .slot.dragging > .slot-card::before, .slot.dragging > .slot-card::after, .slot.dragging > :not(.slot-card) { visibility: hidden; }
+/* La carta del team che segue il mouse trascinando (SlotGhost in TeamPanel): piena, appena inclinata, con l'ombra; i
+   contenitori del team ci sono solo per gli stili, senza scatola */
+.slot-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; rotate: 3deg; filter: drop-shadow(0 14px 18px rgb(0 0 0 / 0.55)); }
+.slot-ghost > .band, .slot-ghost .team, .slot-ghost .slots { display: contents; }
+.slot-ghost .slot { width: 100%; height: 100%; margin: 0; }
+.slot-ghost .slot > .slot-card { height: 100%; view-transition-name: none; }
+@media (prefers-reduced-motion: reduce) { .slot-ghost { rotate: none; } }
 .slot.drop-target > .slot-card { outline: 2px dashed var(--accent); outline-offset: 3px; }
+/* Il membro che sta per essere sostituito (o scambiato) si fa da parte dal lato opposto a quello da cui arriva la carta
+   trascinata: scivola di lato e si inclina, girando sulla base */
+.slot.filled > .slot-card { transform-origin: 50% 100%; transition: translate 0.2s var(--ease), rotate 0.2s var(--ease), box-shadow 0.15s var(--ease); }
+/* Sopra le carte vicine: inclinandosi le copre invece di finirci sotto */
+.slot.filled.drop-target > .slot-card { z-index: 3; }
+.slot.filled.drop-target > .slot-card[data-lean='right'] { translate: 12px 0; rotate: 5deg; }
+.slot.filled.drop-target > .slot-card[data-lean='left'] { translate: -12px 0; rotate: -5deg; }
+@media (prefers-reduced-motion: reduce) {
+  .slot.filled > .slot-card { transition: none; }
+  .slot.filled.drop-target > .slot-card[data-lean] { rotate: none; }
+}
 /* Candidato della lista sopra uno slot vuoto: come al passaggio del mouse */
 .slot.empty.drop-target { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 /* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
@@ -594,3 +624,5 @@
   .team-head :is(.team-saved .popover > summary, .team-io .popover > summary, .team-io .export-tab > button) { width: auto; padding: 0 var(--sp-8); }
   .team-head .team-io :is(.popover > summary, .export-tab > button) { padding: 0 var(--sp-6); }
 }
+/* Team ridotto: la pillola tiene la riga dei tipi in fondo (la carta grande l'ha in cima) */
+.band.collapsed .slot:not(.open) > .slot-card::after { background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); }

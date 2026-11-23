@@ -9,8 +9,9 @@ import type { TeamRating } from '../engine/rating';
 import { rankKey } from '../engine/teamGain';
 import { MAX } from '../engine/candidateRanking';
 import { useRanking } from './useRanking';
-import { PHONE, useBackClose } from './useBackClose';
+import { DETAIL_SHEET, useBackClose } from './useBackClose';
 import { useMediaQuery } from './useMediaQuery';
+import { hint } from './MoveTip';
 import { useSheet } from './useSheet';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
@@ -21,19 +22,21 @@ import { bannedNames } from '../engine/scoring';
 import { EMPTY_FILTERS, filtersFor, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
+import { TeamTypePicker } from './TeamTypePicker';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
 import { Sprite } from './Sprite';
 import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
-import { SuggestionDetail } from './SuggestionDetail';
+import { SuggestionDetail, type DetailTab } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { BanMark, BoxIcon, ExclusiveMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
-import type { ListSprite } from './theme';
+import { BanMark, ExclusiveMark, SymbolLegend, memberLabel, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import { useLang, useT } from '../i18n/react';
-import { usePerPage } from './usePerPage';
+import { PAGE, usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
-import { ListViewMenu } from './ListViewMenu';
 import { ModeSwitch } from './ModeSwitch';
+
+/** Quanto dura l'uscita della scheda del candidato (phone.css, sheet-out). */
+const SHEET_OUT_MS = 220;
 
 /** Candidati in tutto: MAX (candidateRanking.ts). Per pagina: misurato (PAGE senza misura). */
 export { MAX };
@@ -58,10 +61,6 @@ interface Props {
   focusSearch?: number;
   /** Candidato da mostrare (dal Coaching): a ogni `nonce` nuovo si va alla sua pagina e lo si apre nel dettaglio. */
   focus?: CandidateFocus;
-  /** Sprite della lista (impostazioni): normale o icona box. */
-  listSprite?: ListSprite;
-  /** Cambia lo sprite dalla fascia "Candidati" (la stessa impostazione del dialogo). */
-  onListSpriteChange?: (sprite: ListSprite) => void;
   /** Team nascosto: la lista ha più spazio, il numero per pagina resta quello a team aperto. */
   teamCollapsed?: boolean;
 }
@@ -88,13 +87,25 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listSprite = 'normal', onListSpriteChange, teamCollapsed = false }: Props) {
+/** Telefono: la lista senza pagine, che si scorre; le carte arrivano a gruppi di SCROLL_STEP. */
+const PHONE_LIST = '(max-width: 599px)';
+const SCROLL_STEP = 12;
+
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
   const [pageState, setPage] = useState(0);
   // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
   const listRef = useRef<HTMLOListElement>(null);
-  const { perPage, columns, tileHeight, reasons } = usePerPage(listRef, teamCollapsed);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  // Linguetta del dettaglio a linguette (schermi bassi): resta cambiando candidato
+  const [detailTab, setDetailTab] = useState<DetailTab>('brings');
+  const { perPage: pagePerPage, columns, tileHeight, reasons, listWidth } = usePerPage(listRef, pickerRef, teamCollapsed);
+  // Telefono: niente pagine, la lista si scorre; le carte arrivano a gruppi mentre si scende (SCROLL_STEP alla volta)
+  const scrollList = useMediaQuery(PHONE_LIST);
+  const [shown, setShown] = useState(SCROLL_STEP);
+  const perPage = scrollList ? Math.max(shown, PAGE) : pagePerPage;
+  const moreRef = useRef<HTMLLIElement>(null);
   const [chosenFilters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // I ruoli scelti in un formato che questo non offre (singolo → doppio) qui non valgono: né accesi né contati
   const filterRules = useMemo(() => formatRules(format.formatId), [format.formatId]);
@@ -132,6 +143,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Doppio: un tipo di team solo, la scelta non c'è (e un tipo scelto prima di cambiare formato non conta)
   const oneType = isOneType(formatRules(format.formatId));
   const typeChoice = oneType ? null : pickedType;
+  const narrowPhone = useMediaQuery('(max-width: 599px)');
+  const typePicker = <TeamTypePicker types={TEAM_TYPES} value={typeChoice ?? null} onChange={setPickedType} />;
   // Vale in tutte le modalità: aggiungendo cerca chi aiuta a costruire quel tipo, migliorando chi lo raggiunge o lo mantiene
   const archetype = typeChoice ?? undefined;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
@@ -193,6 +206,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   useEffect(() => {
     setCursor(null);
     setPage(0);
+    setShown(SCROLL_STEP);
     setSelectedName(name => (name && items.some(item => item.species === name) ? name : null));
   }, [items]);
   // Candidato dal Coaching: dopo l'effetto qui sopra, appena la lista aggiornata lo contiene (o non lo contiene più)
@@ -211,6 +225,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const index = items.findIndex(item => item.species === focusing);
     // Non c'è (filtri attivi): resta la lista com'è
     if (index >= 0) {
+      if (scrollList) setShown(n => Math.max(n, index + 1));
       setPage(Math.floor(index / perPage));
       setCursor(null);
       setSelectedName(focusing);
@@ -230,7 +245,18 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }, [perPage]); // eslint-disable-line react-hooks/exhaustive-deps
   const pages = Math.ceil(items.length / perPage);
   // Il numero per pagina può cambiare (finestra): la pagina resta fra quelle che ci sono
-  const page = Math.max(0, Math.min(pageState, pages - 1));
+  const page = scrollList ? 0 : Math.max(0, Math.min(pageState, pages - 1));
+  // Telefono: in fondo alla lista arrivano le carte successive
+  const more = scrollList && shown < items.length;
+  useEffect(() => {
+    const el = moreRef.current;
+    if (!more || !el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) setShown(n => n + SCROLL_STEP);
+    }, { rootMargin: '600px 0px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [more, shown]);
   const pageItems = items.slice(page * perPage, (page + 1) * perPage);
   // Fascia "Candidati": la pagina è sempre un numero ("3/9"); se titolo, suggerimento e paginazione non entrano su una riga
   // si toglie il suggerimento del doppio clic (1 = tutto, 0 = senza suggerimento)
@@ -265,6 +291,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const next = Math.min(items.length - 1, Math.max(0, from + delta));
     setCursor(next);
     setSelectedName(null);
+    if (scrollList) setShown(n => Math.max(n, next + 1));
     setPage(Math.floor(next / perPage));
   };
   const goToPage = (next: number) => {
@@ -290,8 +317,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const outOf = (item: Item) => (item.replaces !== undefined ? item.replaces : replacing ? replaceIndex : null);
   // Il nome dal team per cui la lista è stata calcolata: per un attimo può essere quello di prima (es. team appena svuotato)
   const memberName = (index: number) => { const member = deferred.team[index] ?? team[index]; return member ? battleName(member) : ''; };
+  // Nel pulsante il nome come sulla carta del team (Garchomp, non Garchomp-Mega)
+  const memberText = (index: number) => { const member = deferred.team[index] ?? team[index]; return member ? memberLabel(member) : ''; };
   const actionLabelOf = (item: Item) => (item.replaces !== undefined
-    ? tr('suggest.swapAction', { member: memberName(item.replaces) })
+    ? tr('suggest.swapAction', { member: memberText(item.replaces) })
     : tr(replacing ? 'suggest.replaceWith' : 'suggest.add'));
   /** Modalità: aggiungere o migliorare (tutto il team o un membro). */
   const chooseMode = (next: 'add' | 'improve') => {
@@ -302,14 +331,25 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     }
     if (view === 'add') setScope('all');
   };
-  // Telefono: la scheda copre la lista e si apre solo toccando un candidato; Indietro (o il gesto) la chiude
+  // Telefono e tablet: la scheda si apre solo toccando un candidato (a tutto schermo sul telefono, da destra sul tablet);
+  // Indietro (o il gesto, o un tocco fuori sul tablet) la chiude
   const [sheetOpen, setSheetOpen] = useState(false);
-  const closeSheet = useBackClose(sheetOpen, () => setSheetOpen(false), PHONE);
+  // Chiudendo, la scheda esce com'è entrata (verso destra sul tablet, verso il basso sul telefono), poi sparisce
+  const [sheetClosing, setSheetClosing] = useState(false);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const finishClose = () => {
+    window.clearTimeout(closeTimer.current);
+    const still = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still || typeof window.matchMedia !== 'function') { setSheetOpen(false); return; }
+    setSheetClosing(true);
+    closeTimer.current = window.setTimeout(() => { setSheetClosing(false); setSheetOpen(false); }, SHEET_OUT_MS);
+  };
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+  const closeSheet = useBackClose(sheetOpen, finishClose, DETAIL_SHEET);
   /** Apre il candidato nel dettaglio. */
-  const select = (item: Item) => { setSelectedName(item.species); setSheetOpen(true); };
-  // Sul telefono la scheda è una finestra: il fuoco ci entra, Esc la chiude, la lista sotto non si raggiunge
-  const phone = useMediaQuery(PHONE);
-  const pickerRef = useRef<HTMLDivElement>(null);
+  const select = (item: Item) => { window.clearTimeout(closeTimer.current); setSheetClosing(false); setSelectedName(item.species); setSheetOpen(true); };
+  // Sul telefono e sul tablet la scheda è una finestra: il fuoco ci entra, Esc la chiude, la lista sotto non si raggiunge
+  const phone = useMediaQuery(DETAIL_SHEET);
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;
@@ -331,7 +371,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   const full = view === 'add' && team.length >= 6;
   const sheetModal = phone && sheetOpen && !!selected && !full;
-  useSheet(sheetModal, pickerRef, '.sheet-back, .detail', closeSheet);
+  useSheet(sheetModal, pickerRef, '.sheet-back, .detail, .sheet-scrim', closeSheet);
   const search = full ? null : (
     <>
       <div className="search">
@@ -342,7 +382,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             aria-label={tr('suggest.search')}
             aria-keyshortcuts="/"
             aria-describedby={target ? 'search-hint' : undefined}
-            placeholder={tr('suggest.searchPlaceholder')}
+            // Telefono e tablet: niente tasto / da ricordare (si tocca il campo), il testo resta corto
+            placeholder={tr(phone ? 'suggest.searchPlaceholderTouch' : 'suggest.searchPlaceholder')}
             value={filters.query}
             onChange={e => { setFilters({ ...filters, query: e.target.value }); setSelectedName(null); }}
             onKeyDown={e => {
@@ -365,17 +406,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           )}
         </span>
       </div>
-      {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca) */}
-      {!oneType && (
-        <label className="team-type" title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}>
-          <span aria-hidden="true">{tr('suggest.teamTypeShort')}</span>
-          <select aria-label={tr('suggest.teamType')} value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
-            <option value="">{tr('suggest.anyType')}</option>
-            {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
-          </select>
-        </label>
-      )}
-      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} />
+      {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca). Sul telefono sta dentro Filtri,
+          in cima: la barra perde una riga e la prima carta sale */}
+      {!oneType && !narrowPhone && typePicker}
+      <FilterBar filters={filters} onChange={setFilters} game={!!format.game} rules={filterRules} resultCount={stale ? undefined : items.length}
+        extra={!oneType && narrowPhone ? { label: tr('suggest.teamType'), summary: typeChoice ? tr(`archetype.${typeChoice}`) : tr('suggest.anyType'), on: !!typeChoice, node: typePicker } : undefined} />
     </>
   );
 
@@ -407,9 +442,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     body = (
       <div className="list-empty">
         <EeveeMoment pose="thinking" />
-        <p>{tr('suggest.noMatch')}</p>
+        {/* Senza filtri il colpevole è la ricerca: lo si dice (niente "ai filtri" se non ce ne sono) */}
+        <p>{tr(isFiltering({ ...filters, query: '' }) ? 'suggest.noMatch' : 'suggest.noMatchSearch')}</p>
         {typeEmpty}
         {filters.query && <button type="button" onClick={() => setFilters({ ...filters, query: '' })}>{tr('suggest.clear')}</button>}
+        {/* Vuota per colpa dei filtri: si azzerano da qui (la ricerca resta) */}
+        {isFiltering({ ...filters, query: '' }) && <button type="button" onClick={() => setFilters({ ...EMPTY_FILTERS, query: filters.query })}>{tr('filters.reset')}</button>}
       </div>
     );
   } else {
@@ -437,14 +475,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               rank: page * perPage + i + 1,
               item,
               reasons: reasonsOf(item, reasons, usage, format, lang),
-              // Icona del box: mai la GIF (sotto il mouse saltella col CSS)
-              sprite: animated => listSprite === 'box'
-                ? <BoxIcon set={item.set} big={teamCollapsed} />
-                : <Sprite species={item.species} item={item.set.item} size={96} animated={animated} />,
+              sprite: animated => <Sprite species={item.species} item={item.set.item} size={96} animated={animated} />,
               usage,
               out,
               picked: page * perPage + i === pickedIndex,
-              selected: item === selected,
+              selected: item === selected && (!phone || sheetOpen),
               onSelect: () => select(item),
               actionLabel: actionLabelOf(item),
               onAction: () => act(item),
@@ -454,6 +489,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             return <CandidateCard key={item.species} {...candidate} />;
           })}
           {/* Prima lista in calcolo: le sagome delle carte al loro posto (la griglia vera), non un riquadro vuoto */}
+          {more && <li ref={moreRef} className="list-more" aria-hidden="true" />}
           {stale && pageItems.length === 0 && Array.from({ length: perPage }, (_, i) => (
             <li key={`skel-${i}`} className="card card-skel" aria-hidden="true">
               <span className="card-skel-art" />
@@ -466,12 +502,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }
 
   // Paginazione nella fascia "Candidati (N)", su una riga: ‹ un trattino per pagina ›
-  const pager = pages > 1 && (
+  const pager = pages > 1 && !scrollList && (
     <nav className="pager" aria-label={tr('suggest.pages')}>
       <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
         <Icon name="prev" />
       </button>
-      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1 })}>{page + 1}/{pages}</span>
+      {/* A vista "2/7"; detto e annunciato "Pagina 2 di 7" (l'annuncio legge il testo, non l'etichetta) */}
+      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1, total: pages })}>
+        <span aria-hidden="true">{page + 1}/{pages}</span><span className="visually-hidden">{tr('suggest.page', { n: page + 1, total: pages })}</span>
+      </span>
       <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
         <Icon name="next" />
       </button>
@@ -491,14 +530,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <p className="visually-hidden" aria-live="polite">{cursorText}</p>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {notes}
-      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`} ref={pickerRef}>
+      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}${sheetClosing ? ' sheet-closing' : ''}`} ref={pickerRef}
+        style={listWidth ? { '--list-w': `${listWidth}px` } as CSSProperties : undefined}>
         <div className="picker-list" ref={pickerListRef}>
           {!full && items.length > 0 && (
             <div className="list-head" ref={headRef}>
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
-              {headFit > 0 && <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
+              <SymbolLegend />
+              {headFit > 0 && <span className="dbl-hint" {...hint(tr('suggest.keyHint'))}>{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
               {pager}
-              {onListSpriteChange && <ListViewMenu listSprite={listSprite} onListSpriteChange={onListSpriteChange} />}
             </div>
           )}
           {body}
@@ -509,11 +549,14 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         {!selected && !full && (
           <aside className={`detail detail-empty${stale ? ' is-loading' : ''}`} aria-hidden="true">
             <Icon name="search" />
-            <p>{tr(stale ? 'suggest.detailLoading' : 'suggest.detailEmpty')}</p>
+            {/* Lista vuota per una ricerca o per i filtri: niente "scegli dalla lista", il rimedio sta nella lista */}
+            <p>{tr(stale ? 'suggest.detailLoading' : filtering && items.length === 0 ? (isFiltering({ ...filters, query: '' }) ? 'suggest.detailNoMatch' : 'suggest.detailNoMatchSearch') : 'suggest.detailEmpty')}</p>
           </aside>
         )}
+        {/* Tablet: il velo scuro sulla lista; toccarlo chiude la scheda (il CSS lo mostra solo lì) */}
+        {selected && !full && sheetOpen && <div className="sheet-scrim" aria-hidden="true" onClick={closeSheet} />}
         {selected && !full && sheetOpen && (
-          // Solo sul telefono (il CSS la nasconde altrove): torna alla lista
+          // Solo sul telefono e sul tablet (il CSS la nasconde altrove): torna alla lista
           <button type="button" className="sheet-back" onClick={closeSheet}>
             <Icon name="prev" /> {tr('suggest.backToList')}
           </button>
@@ -534,8 +577,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             banMark={<><BanMark species={selected.species} format={format} /><ExclusiveMark species={battleName(selected.set)} format={format} /></>}
             actionLabel={actionLabelOf(selected)}
             onAction={() => act(selected)}
-            listSprite={listSprite}
             teamCollapsed={teamCollapsed}
+            tab={detailTab}
+            onTab={setDetailTab}
             sheet={sheetModal}
           />
         )}

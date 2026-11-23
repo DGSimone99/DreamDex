@@ -22,17 +22,36 @@ describe('sprite animato', () => {
     expect(still).toHaveClass('covered');
   });
 
-  it('animazione mancante (es. Kingambit): resta lo statico', () => {
+  it('animazione che Showdown non ha (es. Kingambit): non la chiede e lo statico "respira"', () => {
     const { container } = render(<Sprite species="Kingambit" animated />);
+    expect(aniOf(container)).toBeNull();
+    const still = container.querySelector('img.sprite')!;
+    expect(still).not.toHaveClass('covered');
+    expect(still).toHaveClass('idle');
+  });
+
+  it('animazione che non arriva: resta lo statico, che "respira"', () => {
+    const { container } = render(<Sprite species="Garchomp" animated />);
     fireEvent.error(aniOf(container)!);
     expect(aniOf(container)).toBeNull();
     expect(container.querySelector('img.sprite')).not.toHaveClass('covered');
+    expect(container.querySelector('img.sprite')).toHaveClass('idle');
+  });
+
+  it('la GIF arriva in dissolvenza e sa già quanto è alta (dalla tabella)', () => {
+    const { container } = render(<Sprite species="Garchomp" animated />);
+    const gif = aniOf(container)!;
+    expect(gif).not.toHaveClass('ready');
+    expect(gif.style.getPropertyValue('--ani-h')).not.toBe('');
+    fireEvent.load(gif);
+    expect(gif).toHaveClass('ready');
   });
 
   it('con "riduci animazioni" del sistema niente idle animato', () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('reduce'), media: query, addEventListener() {}, removeEventListener() {} }));
     const { container } = render(<Sprite species="Garchomp" animated />);
     expect(aniOf(container)).toBeNull();
+    expect(container.querySelector('img.sprite')).not.toHaveClass('idle');
   });
 });
 

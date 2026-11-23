@@ -69,9 +69,8 @@ describe('editor del set', () => {
     const slot = await openFirst(user, container);
     const roles = within(slot).getByRole('group', { name: 'Ruoli' });
     const items = within(roles).getAllByRole('listitem').map(li => li.textContent);
-    // Il primo è quello della carta (che nel fumetto spiega solo lui)
-    expect(items[0]).toBe(container.querySelector('.slot .roles')!.textContent);
-    expect(container.querySelector('.slot .roles')!.getAttribute('data-hint')).toMatch(new RegExp(`^${items[0]}: `));
+    // La carta del team non mostra ruoli: sono tutti qui
+    expect(container.querySelector('.slot .roles')).toBeNull();
     expect(items.length).toBeGreaterThan(1);
     // Ogni ruolo spiegato nel tooltip
     expect(within(roles).getAllByRole('listitem')[0]).toHaveAttribute('data-hint', expect.stringMatching(/\S/));
