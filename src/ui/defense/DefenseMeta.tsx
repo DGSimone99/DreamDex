@@ -250,7 +250,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         <div className="rob-legend cm-foot"><MetaOrderSwitch order={order} onChange={setOrder} />{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
-          : <span className="area-legend" aria-hidden="true"><DefenseMetaLegend /></span>}</div>
+          : <span className="area-legend" aria-hidden="true"><span className="dmg-legend">{t('common.pctDmg')}</span><DefenseMetaLegend /></span>}</div>
       </div>
     );
   };
@@ -318,7 +318,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                     <span className="ct-sheet-name">{names[m] ?? ctx.team[m].species}{(() => { const mv = c === null ? null : c === 'ko' ? openRow.hits?.[knownIndex[m]]?.move : c.move; return mv ? <small className="ct-sheet-sub">{gameName('move', mv, lang)}</small> : null; })()}</span>
                     {c === null ? <span className="ct-sheet-none">—</span>
                       : c === 'ko' ? <><span className="cm-ko small">OHKO</span><EffTag label={tag} side="defense" /><span className="ct-sheet-pct" /></>
-                      : <><HpLeft pct={c.pct} /><EffTag label={tag} side="defense" /><span className="ct-sheet-pct">{c.pct}<i>%</i></span></>}
+                      : <><HpLeft pct={c.pct} /><EffTag label={tag} side="defense" /><span className="ct-sheet-pct">{c.pct}<i>%</i><small className="ct-sheet-unit">{t('common.dmgWord')}</small></span></>}
                   </li>
                 );
               })}

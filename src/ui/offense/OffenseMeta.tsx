@@ -270,7 +270,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
       <div className="rob-legend cm-foot"><MetaOrderSwitch order={order} onChange={setOrder} />{focus
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
         : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
-        : <span className="area-legend" aria-hidden="true"><OffenseMetaLegend /></span>}</div>
+        : <span className="area-legend" aria-hidden="true"><span className="dmg-legend">{t('common.pctDmg')}</span><OffenseMetaLegend /></span>}</div>
     </div>
   );
 
@@ -345,7 +345,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                       ? <>
                         {k === 'ohko' ? <span className="cm-ko small win">OHKO</span> : <HpLeft pct={c!.pct} band={k} />}
                         <EffTag label={tag} side="offense" />
-                        <span className="ct-sheet-pct">{c!.pct}<i>%</i></span>
+                        <span className="ct-sheet-pct">{c!.pct}<i>%</i><small className="ct-sheet-unit">{t('common.dmgWord')}</small></span>
                       </>
                       : <span className="ct-sheet-none">—</span>}
                   </li>

@@ -177,7 +177,7 @@
 .area-legend { display: inline-flex; flex: none; align-items: center; gap: var(--legend-item); white-space: nowrap; font-size: var(--legend-size); color: var(--legend-ink); }
 .area-legend .hold-chip { padding: 1px var(--sp-3); font-size: var(--fs-label); line-height: 16px; white-space: nowrap; }
 /* Il danno della fascia fra parentesi ("2HKO (50–99%)"): lo stesso inchiostro del nome, solo più leggero */
-.area-legend .hold-chip small { font-weight: 500; font-size: inherit; color: inherit; }
+.area-legend .hold-chip small { display: inline; font-weight: 500; font-size: inherit; color: inherit; }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
 
 /* Panoramica: il cruscotto che prende il resto, in fondo la riga Da sistemare (il giudizio in cima solo con un membro); scorre solo sotto la misura minima */

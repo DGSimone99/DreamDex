@@ -344,8 +344,11 @@
 /* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
 .off-frame.def-walls .wall-h { line-height: 1; }
 .cm-head-mon { cursor: help; }
-/* Il nome della minaccia sotto la sprite in testa alla colonna (computer): piccolo, una riga, i puntini se non ci sta */
-.cm-head-name { display: block; max-width: 100%; margin-top: var(--sp-1); padding: 0 var(--sp-1); overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+/* Il nome della minaccia sotto la sprite in testa alla colonna (computer): piccolo, fino a due righe (va a capo agli spazi e
+   ai trattini, "Landorus-" / "Therian"), i puntini solo oltre la seconda; lo spazio delle due righe è sempre tenuto, così la
+   testata ha la stessa altezza su ogni pagina */
+.analysis thead th:has(> .cm-head-name) { max-width: none; }
+.cm-head-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-width: 100%; min-height: 2.4em; margin-top: var(--sp-1); padding: 0 var(--sp-1); overflow: hidden; white-space: normal; overflow-wrap: break-word; hyphens: manual;
   font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); }
 .cm-flag { display: block; width: 34px; height: 3px; margin: 3px auto 0; border-radius: 2px; background: var(--good); }
 .cm-flag.warn { background: var(--warn); }
@@ -399,3 +402,5 @@
 /* Coverage tipi: dal 34% al 49% il danno scritto in una casella grigia (non conta, ma si vede quanto manca) */
 .off-frame .ct-table td.ct-cell.ok-low { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(11px, calc(var(--def-row) * 0.2), 16px); font-variant-numeric: tabular-nums; color: var(--muted); cursor: help; }
 .area-legend-swatch i.ok-low { background: var(--raised); border-color: var(--line); }
+/* Coverage meta sul computer: prima delle fasce "Il % è il danno" (le caselle sono strette per scriverlo in ognuna) */
+.area-legend .dmg-legend { color: var(--legend-ink); }

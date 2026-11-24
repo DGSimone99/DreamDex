@@ -324,7 +324,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
     // Prima l'ordine (Uso · Minaccia), poi la legenda
     expect(document.querySelector('.def-frame > .rob-legend > .cm-order:first-child')).toHaveTextContent('OrdineUsoMinaccia');
-    expect(document.querySelector('.def-frame > .rob-legend > .area-legend')).toHaveTextContent('4HKO+ (sotto il 33%)3HKO (33–49%)2HKO (50–99%)OHKO');
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend')).toHaveTextContent('Il % è il danno4HKO+ (sotto il 33%)3HKO (33–49%)2HKO (50–99%)OHKO');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));

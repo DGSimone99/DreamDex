@@ -394,7 +394,7 @@ function Stack({ raw, own, team, total, bare = false }: Parts & { bare?: boolean
           senza guadagni (e in Trick Room) ha solo il totale: il pezzo ripeterebbe lo stesso numero */}
       <span className="sp-val">
         {(bare || own > 0 || team > 0) && <span className="sp-parts">
-          <span>{raw}</span>
+          <span>{raw}<small className="sp-unit">%</small></span>
           {own > 0 && <span className="sp-part-own">+{own}</span>}
           {team > 0 && <span className="sp-part-team">+{team}</span>}
         </span>}

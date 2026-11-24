@@ -356,3 +356,17 @@
 .og-card .kob-row > .kob.hb { --kob-min: 15px; padding: 0; }
 .og-card .kob-row > .kob.hb .kob-num { margin: 0 auto; }
 .og-card .kob-row > .kob.hb .kob-num > b { font-size: var(--fs-small); }
+/* Numeri piccoli sulle carte (almeno 4,5:1 anche sul punto più colorato della sfumatura): "/18" e "/6" in Muted schiarito
+   verso Text (come nei tooltip), il #N della riga del telefono in Text; sulle carte delle minacce anche del tablet il pezzo
+   OHKO pieno sul Panel e il pezzo a zero Panel con scritta Muted, come sul telefono */
+.og-card .kob-count-num > small, .og-hero .kob-count-num > small { color: color-mix(in srgb, var(--muted) 50%, var(--text)); }
+.cm-card .kob.ohko:not(.zero) { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
+.cm-card .kob.zero { --kob-ink: var(--muted); background: var(--panel); color: var(--muted); }
+.cm-card .kob.zero .kob-num > b { color: var(--muted); }
+@media (max-width: 599px) {
+  .cm-card .kob-count-num > small { color: color-mix(in srgb, var(--muted) 50%, var(--text)); }
+  .cm-card .og-card-tag.cm-card-rank { color: var(--text); }
+}
+/* Fogli di Coverage meta: sotto il % la parola "danno" (piccola, dritta), così il numero non si confonde coi PS della barra */
+.ct-sheet-pct .ct-sheet-unit { margin-top: 2px; font: 500 var(--fs-caption)/1 var(--ui); font-style: normal; color: var(--muted); }
+.ct-sheet-row:is(.hold-ohko, .hold-2, .hold-3, .hold-4, .ko-ohko, .ko-two, .ko-three) .ct-sheet-pct .ct-sheet-unit { color: color-mix(in srgb, var(--text) 85%, transparent); }

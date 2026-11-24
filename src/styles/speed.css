@@ -56,6 +56,7 @@
 .sp-bar-btn.bad { --k: var(--bad); }
 .sp-bar-btn.wall { --k: var(--muted); }
 .sp-parts { display: flex; gap: var(--sp-2); font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sp-parts .sp-unit { display: inline; font: inherit; color: inherit; }
 .sp-parts .sp-part-own { color: var(--accent-ink); }
 .sp-parts .sp-part-team { color: var(--muted); }
 /* La scala sotto le righe dei membri: 0, 25, 50, 75, 100, allineata alla barra */
