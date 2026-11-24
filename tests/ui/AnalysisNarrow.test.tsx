@@ -103,6 +103,10 @@ describe('Offesa sullo schermo stretto', () => {
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const list = screen.getByRole('list', { name: 'Coverage meta' });
     expect(list.querySelectorAll('.cm-card').length).toBeGreaterThan(0);
+    // Quali sono le minacce del conto "/40": dei 40 più usati, quelle che attaccano
+    expect(screen.getByRole('region', { name: 'Team Coverage' })).toHaveTextContent("Dei 40 più usati, quelli con una mossa d'attacco");
+    // La legenda delle barre ha le quattro fasce della Difesa
+    expect(document.querySelector('.cards-legend-keys')).toHaveTextContent('4HKO+3HKO2HKOOHKO');
     const name = list.querySelector('.og-card-name')!.textContent!;
     await user.click(within(list).getByRole('button', { name: `Dettagli di ${name}` }));
     expect(screen.getByRole('dialog', { name }).querySelectorAll('.cm-sheet-row')).toHaveLength(2);
