@@ -648,7 +648,7 @@ describe('CoachingView', () => {
       expect(scroll.mock.contexts[0]).toBe(hero);
       // Il filtro è su quel problema (la tendina lo mostra), con "Mostra tutte"
       expect(filter()).toHaveValue(pivot.key);
-      expect(filter().selectedOptions[0]).toHaveTextContent(pivotName);
+      expect(filter().selectedOptions[0]).toHaveTextContent(pivot.text);
       const bar = rail().querySelector<HTMLElement>('.coach-filter')!;
       expect(bar).toHaveClass('is-on');
       expect(within(bar).getByRole('button', { name: 'Mostra tutte' })).toBeInTheDocument();
@@ -657,7 +657,7 @@ describe('CoachingView', () => {
       expect(railPills()).toEqual([['pivot']]);
       expect(ranks()[0]).toHaveAttribute('aria-current', 'true');
       expect(stuckLine()).toBeNull();
-      expect(railHead()).toHaveTextContent(/^Proposte1 cambi$/);
+      expect(railHead()).toHaveTextContent(/^Proposte1 cambio$/);
       act(() => { vi.advanceTimersByTime(2100); });
       expect(heroOf()).not.toHaveClass('is-flash');
     } finally {
@@ -742,13 +742,14 @@ describe('CoachingView', () => {
       expect([...filter().options].map(o => o.value)).not.toContain(slow.key);
     });
 
-    it('il filtro "Problema": "Tutti i problemi" e un problema per riga (quelli che un cambio risolve), coi testi e i ruoli col nome', () => {
+    it('il filtro "Problema": "Tutti i problemi" e un problema per riga (quelli che un cambio risolve), col testo intero del problema', () => {
       ranked();
       const select = filter();
       expect(select.closest('.coach-filter')).not.toHaveClass('is-on');
       expect(select).toHaveValue('');
       expect([...select.options].map(o => o.value)).toEqual(['', fire.key, zapdos.key, pivot.key, steel.key]);
-      expect([...select.options].map(o => o.textContent)).toEqual(['Tutti i problemi', fire.text, zapdos.text, pivotName, steel.text]);
+      // Ogni voce è il testo intero del problema (anche per i ruoli)
+      expect([...select.options].map(o => o.textContent)).toEqual(['Tutti i problemi', fire.text, zapdos.text, pivot.text, steel.text]);
       expect(within(rail()).queryByRole('button', { name: 'Mostra tutte' })).toBeNull();
     });
 
@@ -875,14 +876,13 @@ describe('CoachingView', () => {
     const groups = neutralAsAlternatives(proposalGroups(coaching.problems, adv));
     expect(groups.length).toBeGreaterThan(0);
     renderIt(<CoachingView coaching={coaching} advice={adv} members={6} rating={rateTeam(six, data, 'it')} {...noop} />);
-    expect(railHead()).toHaveTextContent(`Proposte${groups.length} cambi`);
+    expect(railHead()).toHaveTextContent(groups.length === 1 ? 'Proposte1 cambio' : `Proposte${groups.length} cambi`);
     expect(heroOf()).toHaveAttribute('data-row', groups[0].id);
     expect(heroOf().querySelector('.coach-gain')).toHaveTextContent(gainText(groups[0].options[0].fix.gain));
     expect(ranks()).toHaveLength(groups.length);
     expect(ranks().map(c => c.querySelector('.coach-rank-gain')!.textContent)).toEqual(groups.map(g => gainText(g.options[0].fix.gain)));
     // Ogni riga dice allo screen reader cosa risolve (o che alza solo il voto)
-    // Il testo per id: l'id nasce dalla chiave del problema guida, che può avere spazi (aria-describedby allora non lo trova)
-    for (const row of ranks()) expect(document.getElementById(row.getAttribute('aria-describedby')!)).toHaveTextContent(/^(Risolve: .+|Nessun problema: alza solo il voto)$/);
+    for (const row of ranks()) expect(row).toHaveAccessibleDescription(/^(Risolve: .+|Nessun problema: alza solo il voto)$/);
     // Il filtro: ogni problema risolto da una proposta una volta sola
     const values = [...filter().options].map(o => o.value).slice(1);
     expect(new Set(values).size).toBe(values.length);

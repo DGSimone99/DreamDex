@@ -25,9 +25,9 @@ describe('coachTeam', () => {
     const { weak } = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes;
     expect(weak).toEqual(['Fire', 'Water', 'Ground', 'Ghost']);
     expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual(weak.map(type => `defense:${type}`));
-    // 4 gravi e 6 minori in difesa, una riga di ruoli, 2 tipi coperti poco (sotto 60); Pivot e Rimozione Strumenti sono voci minori:
-    // nessun problema "Ruoli importanti mancanti"
-    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(13);
+    // 4 gravi in difesa e una riga di ruoli: "coperto poco" in difesa e in attacco non è più un problema del Coaching (2026-11-24);
+    // Pivot e Rimozione Strumenti sono voci minori: nessun problema "Ruoli importanti mancanti"
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(5);
   });
 
   it('punti di forza', () => {
@@ -67,20 +67,24 @@ describe('coachTeam', () => {
     expect(coaching.threatFixes.Dragapult).toBeUndefined();
   });
 
-  it('problemi minori: debolezze, ruoli, coverage', () => {
+  it('problemi minori: solo i ruoli; i tipi coperti poco in difesa e in attacco non sono problemi', () => {
     const minor = coaching.problems.filter(p => p.severity === 'minor' && p.category !== 'meta').map(p => p.text);
     expect(minor).toEqual([
-      // In difesa: i tipi sotto il livello 50 della Coverage tipi che qualcuno regge almeno in parte
-      ...['Ice', 'Psychic', 'Dragon', 'Dark', 'Steel', 'Fairy'].map(type => `Coperto poco in difesa contro ${type}: pochi reggono bene i suoi colpi`),
       // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali); Pivot e Rimozione Strumenti sono minori,
       // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
-      // Il pacchetto dei tipi dell'Offesa: un problema per tipo sotto 60, nell'ordine dei tipi (due membri arrivano al massimo a 90)
-      ...['Bug', 'Dragon'].map(type => `Coperto poco in attacco contro ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
     ]);
-    const rows = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes.rows;
-    const minorTypes = coaching.problems.filter(p => p.category === 'defense' && p.severity === 'minor').map(p => p.subjects![0]);
-    expect(minorTypes.every(type => rows.find(r => r.type === type)!.level < HELD_LEVEL)).toBe(true);
+    // In difesa: i tipi sotto il livello 50 della Coverage tipi che qualcuno regge almeno in parte ci sono, ma non sono problemi
+    const { rows, weak } = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes;
+    const half = rows.filter(r => r.level < HELD_LEVEL && !weak.includes(r.type)).map(r => r.type);
+    expect(half).toEqual(['Ice', 'Psychic', 'Dragon', 'Dark', 'Steel', 'Fairy']);
+    expect(coaching.problems.some(p => p.category === 'defense' && half.includes(p.subjects![0]))).toBe(false);
+    // In attacco: Bug e Dragon sotto 60 ma non buchi (due membri arrivano al massimo a 90): nessun problema
+    const offense = teamOffense([tusk, gholdengo], { ...fixtureData, formatId: DEFAULT_FORMAT.formatId }).types;
+    expect(offense.rows.filter(r => r.level < COVERED_LEVEL).map(r => r.label)).toEqual(['Bug', 'Dragon']);
+    expect(offense.holes).toEqual([]);
+    expect(coaching.problems.some(p => p.category === 'coverage')).toBe(false);
+    expect(coaching.problems.some(p => p.text.startsWith('Coperto poco'))).toBe(false);
     const fire = coaching.problems.find(p => p.key === 'defense:Fire')!;
     expect(fire).toMatchObject({ severity: 'serious', text: 'Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi' });
     expect([...fire.fixes].sort()).toEqual(['Rotom-Wash', 'Toxapex']);
@@ -224,32 +228,42 @@ describe('chiavi dei problemi e minacce del meta', () => {
     expect(problems.filter(p => p.category !== 'defense').every(p => p.counts === undefined)).toBe(true);
   });
 
-  it('col meta, una minaccia che nessuno regge (Coverage meta della Difesa) è un problema minore', () => {
+  it('col meta, una minaccia scoperta da un lato solo non è un problema', () => {
     const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
-    const threats = ratingThreats(rateTeam(team, fixtureData, 'it'), fixtureData);
-    const open = threats.filter(t => !t.handledBy.length);
-    expect(open.length).toBeGreaterThan(0);
-    // Chi qualcuno regge del tutto non è un problema
-    for (const threat of threats.filter(t => t.handledBy.length)) expect(coaching.problems.some(p => p.key === `meta:${threat.name}`)).toBe(false);
-    for (const threat of open) {
-      const problem = coaching.problems.find(p => p.key === `meta:${threat.name}`)!;
-      expect(problem).toMatchObject({ category: 'meta', severity: 'minor' });
-      expect(problem.fixes).toEqual(coaching.threatFixes[threat.name]);
-    }
+    const rating = rateTeam(team, fixtureData, 'it');
+    const open = ratingThreats(rating, fixtureData).filter(t => !t.handledBy.length);
+    // Nessuno regge Great Tusk e Gholdengo (Coverage meta della Difesa), ma qualcuno li manda KO in due colpi
+    expect(open.map(t => t.name)).toEqual(['Great Tusk', 'Gholdengo']);
+    expect(rating!.offense.coverageMeta!.holes).toEqual([]);
+    expect(coaching.problems.some(p => p.category === 'meta')).toBe(false);
+    // I rimedi delle minacce restano (threatFixes)
+    expect(Object.keys(coaching.threatFixes)).toEqual(open.map(t => t.name));
   });
 
-  it("col meta, un Pokémon del meta che nessuno manda KO in due colpi (Coverage meta dell'Offesa) è un problema minore", () => {
-    // Solo Splash: nessuno manda KO nessuno
-    const weak = [junk('Magikarp'), junk('Sunkern')];
+  it('col meta, una minaccia scoperta dai due lati (nessuno la regge, nessuno la manda KO in due colpi) è un problema minore, uno solo', () => {
+    // Set vuoti: nessuna mossa, nessuno manda KO nessuno; Snorlax e Tyranitar reggono qualcuno
+    const weak = [emptySet('Snorlax'), emptySet('Tyranitar')];
     const coaching = coachTeam(weak, DEFAULT_FORMAT, fixtureData);
-    // I buchi sono combinazioni di tipi: il problema nomina il Pokémon che le rappresenta (come la Coverage meta dell'Offesa)
-    const meta = rateTeam(weak, fixtureData, 'it')?.offense.coverageMeta;
-    const holes = (meta?.holes ?? []).map(label => meta!.rows.find(r => r.label === label)!.species);
-    expect(holes.length).toBeGreaterThan(0);
-    expect(coaching.problems.filter(p => p.category === 'metaHit').map(p => p.key)).toEqual(holes.map(s => `metaHit:${s}`));
-    for (const species of holes) {
-      expect(coaching.problems.find(p => p.key === `metaHit:${species}`)).toMatchObject({ severity: 'minor', subjects: [species], text: `Senza check in attacco contro ${species}: nessuno lo manda KO in due colpi` });
+    const rating = rateTeam(weak, fixtureData, 'it');
+    const open = ratingThreats(rating, fixtureData).filter(t => !t.handledBy.length).map(t => t.name);
+    // I buchi sono combinazioni di tipi: si nomina il Pokémon che le rappresenta (come la Coverage meta dell'Offesa)
+    const meta = rating!.offense.coverageMeta!;
+    const unhit = meta.holes.map(label => meta.rows.find(r => r.label === label)!.species);
+    const both = open.filter(name => unhit.includes(name));
+    expect(both).toEqual(['Great Tusk', 'Kingambit', 'Garchomp']);
+    // Scoperte da un lato solo (qualcuno le regge, nessuno le manda KO): nessun problema
+    expect(unhit.filter(name => !open.includes(name)).length).toBeGreaterThan(0);
+    expect(coaching.problems.filter(p => p.category === 'meta').map(p => p.key)).toEqual(both.map(s => `meta:${s}`));
+    for (const species of both) {
+      const problem = coaching.problems.find(p => p.key === `meta:${species}`)!;
+      expect(problem).toMatchObject({ severity: 'minor', subjects: [species],
+        text: `Minaccia scoperta: ${species}. Nessuno regge bene i suoi colpi e nessuno lo manda KO in due colpi` });
+      expect(problem.fixes).toEqual(coaching.threatFixes[species]);
     }
+    // Niente più problemi "Senza check in attacco" a parte
+    expect(coaching.problems.some(p => p.category === 'metaHit')).toBe(false);
+    expect(coachTeam(weak, DEFAULT_FORMAT, fixtureData, 'en').problems.find(p => p.key === 'meta:Great Tusk')!.text)
+      .toBe('Unanswered threat: Great Tusk. Nobody takes its hits well and nobody 2HKOs it');
   });
 
   it('senza meta, nessun problema minaccia', () => {
@@ -257,36 +271,34 @@ describe('chiavi dei problemi e minacce del meta', () => {
     expect(problems.some(p => p.category === 'meta' || p.category === 'metaHit')).toBe(false);
   });
 
-  it("coverage: un problema per tipo del pacchetto dei tipi dell'Offesa (livello sotto 60)", () => {
-    const { problems } = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+  it("coverage: un problema per buco del pacchetto dei tipi dell'Offesa (nessuno lo manda KO in due colpi); i coperti poco no", () => {
+    // Great Tusk e Magikarp con Splash: Bug è un buco, altri tipi sono sotto 60 ma qualcuno li manda KO in due colpi
+    const holed = [tusk, junk('Magikarp')];
+    const { problems } = coachTeam(holed, DEFAULT_FORMAT, fixtureData);
     const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
-    const coverage = teamOffense(team, data).types;
+    const coverage = teamOffense(holed, data).types;
     expect(COVERED_LEVEL).toBe(60);
-    const weights = analyzeTeam(team, data).typeWeights as Record<string, number>;
+    const weights = analyzeTeam(holed, data).typeWeights as Record<string, number>;
     const open = coverage.rows.filter(r => r.level < COVERED_LEVEL);
     const found = problems.filter(p => p.category === 'coverage');
+    expect(coverage.holes).toEqual(['Bug']);
     expect(open.length).toBeGreaterThan(1);
-    expect(found.map(p => p.key).sort()).toEqual(open.map(r => `coverage:${r.label}`).sort());
-    for (const row of open) {
-      const p = found.find(x => x.key === `coverage:${row.label}`)!;
-      expect(p.subjects).toEqual([row.label]);
-      if (coverage.holes.includes(row.label)) {
-        expect(p).toMatchObject({ size: 2, text: `Scoperto in attacco contro ${row.label}: nessuno lo manda KO in due colpi`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
-      } else {
-        expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto poco in attacco contro ${row.label}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte` });
-      }
+    expect(found.map(p => p.key)).toEqual(coverage.holes.map(type => `coverage:${type}`));
+    for (const type of coverage.holes) {
+      const p = found.find(x => x.key === `coverage:${type}`)!;
+      expect(p).toMatchObject({ subjects: [type], size: 2, text: `Scoperto in attacco contro ${type}: nessuno lo manda KO in due colpi`, severity: weights[type] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
     }
+    expect(problems.some(p => p.text.startsWith('Coperto poco in attacco'))).toBe(false);
     // In inglese
-    const en = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'en').problems.filter(p => p.category === 'coverage').map(p => p.text);
-    expect(en.some(text => /^(Uncovered on offense vs \w+: nobody 2HKOs it|Weakly covered on offense vs \w+: nobody OHKOs it and few hit it hard)$/.test(text))).toBe(true);
+    const en = coachTeam(holed, DEFAULT_FORMAT, fixtureData, 'en').problems.filter(p => p.category === 'coverage').map(p => p.text);
+    expect(en).toEqual(['Uncovered on offense vs Bug: nobody 2HKOs it']);
   });
 
-  it('coverage: i rimedi sono candidati con una mossa super efficace contro il tipo (anche per i coperti a metà)', () => {
-    const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+  it('coverage: i rimedi sono candidati con una mossa super efficace contro il tipo', () => {
+    const coaching = coachTeam([tusk, junk('Magikarp')], DEFAULT_FORMAT, fixtureData);
     const found = coaching.problems.filter(p => p.category === 'coverage');
-    const half = found.filter(p => p.size === 1);
-    expect(half.length).toBeGreaterThan(0);
-    expect(half.some(p => p.fixes.length > 0)).toBe(true);
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.some(p => p.fixes.length > 0)).toBe(true);
     // Solo le specie con statistiche: senza, il set è vuoto e non c'è nulla da verificare
     const withStats = found.flatMap(p => p.fixes.filter(species => mostCommonSet(fixtureStats, species)).map(species => ({ p, species })));
     expect(withStats.length).toBeGreaterThan(0);

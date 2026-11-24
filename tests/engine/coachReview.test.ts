@@ -40,8 +40,8 @@ describe('Mega scritta in due modi: stesso punteggio', () => {
   });
 });
 
-describe('difesa retta poco anche se qualcuno regge in parte: i rimedi ci sono', () => {
-  it('Psychic: livello sotto 50 nella Coverage tipi, Corviknight proposto', () => {
+describe('difesa retta poco ma qualcuno regge in parte: non è un problema del Coaching (2026-11-24)', () => {
+  it('Psychic: livello sotto 50 nella Coverage tipi, nessun problema; il voto lo conta lo stesso', () => {
     const data: EngineData = {
       stats: {
         meta: { month: '2026-09', cutoff: 1630, battles: 1 },
@@ -50,12 +50,14 @@ describe('difesa retta poco anche se qualcuno regge in parte: i rimedi ci sono',
       sets: {},
     };
     const team = ['Great Tusk', 'Dragapult', 'Garchomp', 'Gholdengo', 'Blissey', 'Rotom-Wash'].map(emptySet);
-    const row = rateTeam(team, data, 'it')!.defense.coverageTypes.rows.find(r => r.type === 'Psychic')!;
+    const coverage = rateTeam(team, data, 'it')!.defense.coverageTypes;
+    const row = coverage.rows.find(r => r.type === 'Psychic')!;
     expect(row.level).toBeLessThan(HELD_LEVEL);
     expect(row.level).toBeGreaterThan(0);
-    const psychic = coachTeam(team, DEFAULT_FORMAT, data).problems.find(p => p.key === 'defense:Psychic')!;
-    expect(psychic).toMatchObject({ severity: 'minor', text: 'Coperto poco in difesa contro Psychic: pochi reggono bene i suoi colpi' });
-    expect(psychic.fixes).toEqual(['Corviknight']);
+    expect(coverage.weak).not.toContain('Psychic');
+    const problems = coachTeam(team, DEFAULT_FORMAT, data).problems;
+    expect(problems.find(p => p.key === 'defense:Psychic')).toBeUndefined();
+    expect(problems.some(p => p.text.startsWith('Coperto poco in difesa'))).toBe(false);
   });
 });
 

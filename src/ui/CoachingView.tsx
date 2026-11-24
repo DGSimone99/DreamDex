@@ -363,6 +363,8 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
   const lang = useLang();
   const headId = useId();
   const filterId = useId();
+  // L'id della descrizione di ogni riga: dal prefisso di useId e dall'indice (le chiavi dei gruppi hanno spazi)
+  const descBase = useId();
   const box = useRef<HTMLDivElement>(null);
   const { perPage, rows } = useRowsPerPage(box, 12);
   const [start, setStart] = useState(0);
@@ -374,14 +376,11 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
   useEffect(() => { setStart(0); }, [filter]);
   const solvable = entries.filter(e => !stuck.includes(e));
   const keys = [...new Set(solvable.map(e => e.problem.key))];
-  const label = (key: string) => {
-    const e = entries.find(x => x.problem.key === key)!;
-    return e.role ? needLabel(e.role as Need, lang) : e.problem.text;
-  };
+  const label = (key: string) => entries.find(x => x.problem.key === key)!.problem.text;
   return (
     <aside className="coach-diag" aria-labelledby={headId}>
       <div className="coach-diag-top">
-        <h3 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-diag-total">{tr('coach.rank.count', { n: groups.length })}</span>}</h3>
+        <h3 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-diag-total">{tr(groups.length === 1 ? 'coach.rank.count1' : 'coach.rank.count', { n: groups.length })}</span>}</h3>
         <HelpButton title={tr('coach.help.title')} className="coach-help"><CoachingGuide /></HelpButton>
       </div>
       {keys.length > 0 && (
@@ -401,7 +400,7 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
           </ol>
         ) : (
           <ol className="coach-diag-list">
-            {shown.map(group => {
+            {shown.map((group, row) => {
               const pick = pickOf(group);
               const name = proposalName(pick, tr, lang);
               const fx = effectsOf(pick, problems, null);
@@ -413,7 +412,7 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
                 <li key={group.id}>
                   <button type="button" className={`coach-rank${open ? ' is-open' : ''}${pick.kind === 'move' ? ' is-move' : ''}`} aria-current={open ? 'true' : undefined}
                     style={{ '--t1': typeColor(firstType(pick)) } as CSSProperties} aria-label={tr('coach.rank.openAria', { name })}
-                    aria-describedby={`${group.id}-solves`} onClick={() => onOpen(group.id)}>
+                    aria-describedby={`${descBase}-${row}`} onClick={() => onOpen(group.id)}>
                     <span className="coach-rank-mon" aria-hidden="true"><PokemonIcon name={subjectOf(pick)} /></span>
                     <span className="coach-rank-who" aria-hidden="true">
                       <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
@@ -426,7 +425,7 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
                             {fx.solved.length > PILLS && <span className="coach-pill-more">+{fx.solved.length - PILLS}</span>}</>
                         : <span className="coach-pill-none">{tr('coach.hero.raisesOnly')}</span>}
                     </span>
-                    <span id={`${group.id}-solves`} className="visually-hidden">
+                    <span id={`${descBase}-${row}`} className="visually-hidden">
                       {fx.solved.length ? `${tr('coach.hero.solves')}: ${fx.solved.map(e => solvedText(e, lang)).join('; ')}` : tr('coach.hero.raisesOnly')}
                     </span>
                   </button>

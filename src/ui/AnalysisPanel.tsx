@@ -22,7 +22,7 @@ import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
  * nessuno manda KO; Ruoli e Bonus i ruoli che mancano, le condizioni del tipo di team e i malus del Coaching (le ripetizioni), senza le
  * debolezze in comune (le dice già la Difesa, come nel Coaching). Le regole restano nella Panoramica e nel Coaching.
  */
-const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit'], speed: [], bonusMalus: ['roles', 'conditions', 'redundancy'] };
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit', 'meta'], speed: [], bonusMalus: ['roles', 'conditions', 'redundancy'] };
 export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? [])
   .filter(p => AREA_PROBLEMS[area].includes(p.category) && !p.key.startsWith('redundancy:sharedWeak:'));
 
