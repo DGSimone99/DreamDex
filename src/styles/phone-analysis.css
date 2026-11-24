@@ -9,6 +9,10 @@
   .area-panel { flex: none; min-height: 0; overflow: visible; }
   /* Le misure "a contenitore" contano solo la larghezza: l'altezza è quella del contenuto */
   .coaching { container-type: inline-size; }
+  /* Il Coaching non scorre dentro (scorre la pagina): niente contenitore di scorrimento che si mangi la rotella o il dito
+     (.coach-cure sul desktop ha overflow auto e overscroll contain, più specifico della riga sopra) */
+  .coaching, .coaching.coach-cure { height: auto; overflow: visible; overscroll-behavior: auto; }
+  .coach-hero, .coach-hero-body, .coach-hero-scroll { overflow: visible; mask-image: none; }
 
   /* ── Schede di Analisi: una fila che scorre col dito, la scheda aperta sempre in vista ── */
   .analysis-tabs {
@@ -149,7 +153,9 @@
   .coach-hero { flex: none; }
   .coach-diag-box { --row-h: auto; flex: none; }
   .coach-diag-list { grid-auto-rows: auto; }
-  .coach-apply, .coach-see, .coach-alt-tile, .coach-filter select { height: 44px; }
+  .coach-apply, .coach-see, .coach-alt-tile, .coach-alt-more, .coach-filter select { height: 44px; }
+  .coach-plan-step { height: 44px; }
+  .coach-plan-who { flex-direction: column; align-items: flex-start; gap: 0; }
   .coach-rank { min-height: 60px; }
   .coach-empty { flex-direction: column; gap: var(--sp-8); padding: 20px; }
   .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }

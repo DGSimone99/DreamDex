@@ -99,12 +99,12 @@ describe('malus stesso tipo nel voto', () => {
   it('tre membri Steel: −1 con la chiave di catalogo', () => {
     const team = ['Gholdengo', 'Kingambit', 'Corviknight'].map(n => mk(n));
     expect(redundancies(team, analyzeTeam(team, fixtureData)).items)
-      .toContainEqual(expect.objectContaining({ text: '3 membri di tipo Steel', points: SAME_TYPE_POINTS, catalog: 'sameType' }));
+      .toContainEqual(expect.objectContaining({ text: '3 membri di tipo Steel: le stesse debolezze', points: SAME_TYPE_POINTS, catalog: 'sameType' }));
   });
   it('quattro membri Steel: −2', () => {
     const team = ['Gholdengo', 'Kingambit', 'Corviknight', 'Heatran'].map(n => mk(n));
     expect(redundancies(team, analyzeTeam(team, fixtureData)).items)
-      .toContainEqual(expect.objectContaining({ text: '4 membri di tipo Steel', points: 2 * SAME_TYPE_POINTS }));
+      .toContainEqual(expect.objectContaining({ text: '4 membri di tipo Steel: le stesse debolezze', points: 2 * SAME_TYPE_POINTS }));
   });
 });
 

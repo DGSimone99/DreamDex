@@ -110,7 +110,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
-    body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating}
+    body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} team={team} data={data}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} focus={coachFocus}
       onExport={onExport} onImproveSets={onImproveSets} onOverview={phone ? undefined : () => openView('overview')} />;

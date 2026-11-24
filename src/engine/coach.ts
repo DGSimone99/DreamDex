@@ -142,12 +142,10 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // regge: "coperto poco" (pochi lo reggono) non è più un problema del Coaching (scelta di Simone, 2026-11-24: ne trovava
   // troppi; sui team da torneo 1,5 a team). Il voto non cambia
   for (const row of rating?.defense.coverageTypes.rows ?? []) {
-    const severity = holdSeverity(rating!, row.type);
-    if (severity !== 'serious') continue;
-    const isSerious = severity === 'serious';
-    const text = t(lang, isSerious ? 'coach.problem.notHeld' : 'coach.problem.halfHeld', { type: typeName(row.type, lang) });
+    if (holdSeverity(rating!, row.type) !== 'serious') continue;
+    const text = t(lang, 'coach.problem.notHeld', { type: typeName(row.type, lang) });
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type as TypeName, s.set) < 1));
-    add('defense', isSerious, text, fixes, `defense:${row.type}`, 100 - row.level, [row.type], { held: row.heldBy.length });
+    add('defense', true, text, fixes, `defense:${row.type}`, 100 - row.level, [row.type], { held: row.heldBy.length });
   }
 
   const repeated = duplicateSpecies(team, format.formatId);

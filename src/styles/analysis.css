@@ -752,7 +752,7 @@
 .coach-list-head .coach-sec::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }
 /* ── Diagnosi → Cura: a sinistra i problemi del team (una volta sola, col numero di proposte), a destra la carta grande
    della proposta scelta e sotto le altre in righe compatte. Margine sotto come le altre schede ── */
-.coaching.coach-cure { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: stretch; gap: var(--sp-6); padding-bottom: var(--sp-8); overflow: hidden auto; }
+.coaching.coach-cure { display: grid; grid-template-columns: clamp(300px, 22vw, 400px) minmax(0, 1fr); align-items: stretch; gap: var(--sp-6); padding-bottom: var(--sp-8); overflow: hidden auto; }
 
 /* La diagnosi: un pannello con la fascia del titolo, i problemi come righe-pulsante (filtrano la lista), le aree pulite in fondo */
 .coach-diag { display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; padding: var(--sp-5) var(--sp-4) var(--sp-4); background: var(--panel); }
@@ -776,15 +776,15 @@
 .coach-rank-mon { grid-row: 1 / span 2; display: flex; align-items: center; justify-content: center; height: 40px; border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--ground) 45%, transparent); }
 .coach-rank-mon .mon-icon { margin: -6px; }
 .coach-rank-who { display: flex; align-items: baseline; gap: var(--sp-3); min-width: 0; }
-.coach-rank-who b { flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-section)/1.15 var(--display); }
-.coach-rank-who small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); color: var(--muted); }
+.coach-rank-who b { flex: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 var(--fs-section)/1.15 var(--display); }
+.coach-rank-who small { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); color: var(--muted); }
 .coach-rank-gain { grid-row: 1; grid-column: 3; font: italic 800 var(--fs-title-l)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .coach-rank-pills { grid-row: 2; grid-column: 2 / 4; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; overflow: hidden; }
 /* Un problema risolto in piccolo: spunta verde, il soggetto (minaccia, tipo, ruolo) o il testo corto */
-.coach-pill { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; max-width: 100%; height: 22px; padding: 0 var(--sp-4) 0 var(--sp-3); border-radius: var(--alt-r-sm);
+.coach-pill { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; height: 22px; padding: 0 var(--sp-4) 0 var(--sp-3); border-radius: var(--alt-r-sm);
   font: 600 var(--fs-caption)/1 var(--ui); color: var(--text); background: color-mix(in srgb, var(--good) 12%, var(--ground)); }
-.coach-pill:first-child { flex: 0 1 auto; }
-.coach-pill + .coach-pill { flex: 0 1 auto; }
+/* Una pillola non si stringe (mai tagliata a metà parola): se non sta, la riga la toglie e la conta nel "+N" (RankPills) */
+.coach-pill { flex: none; }
 .coach-pill > .icon { flex: none; width: 11px; height: 11px; color: var(--good); }
 .coach-pill-text { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .coach-pill-text .mon-icon { margin: -10px -6px -8px -6px; }
@@ -793,11 +793,19 @@
 .coach-pill-more { flex: none; font: 700 var(--fs-caption)/1 var(--ui); color: var(--muted); }
 .coach-pill-none { font-size: var(--fs-caption); color: var(--muted); }
 .coach-diag-total { font: 500 var(--fs-caption)/1 var(--ui); color: var(--muted); }
+/* Sotto il titolo: un cambio per posto, le alternative stanno nella carta */
+.coach-diag-sub { flex: none; margin: calc(-1 * var(--sp-1)) 0 0; padding: 0 var(--sp-1); font: 500 var(--fs-label)/1.3 var(--ui); color: var(--muted); }
 /* Il filtro per problema: una tendina sopra la classifica; acceso in ciano quando sceglie un problema */
 .coach-filter { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
-.coach-filter label { flex: none; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.coach-filter select { flex: 1; min-width: 0; height: 30px; padding: 0 var(--sp-4); border: 1px solid var(--line); border-radius: var(--alt-r-sm); background: var(--field); color: var(--text); font: 500 var(--fs-small)/1 var(--ui); }
+.coach-filter label { flex: none; }
+/* Il valore scelto resta su una riga, coi puntini se è lungo; la freccia della tendina non si stringe */
+.coach-filter select { flex: 1; min-width: 0; height: 30px; padding: 0 var(--sp-4); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: 1px solid var(--line); border-radius: var(--alt-r-sm);
+  background: var(--field); color: var(--text); font: 500 var(--fs-small)/1 var(--ui); transition: border-color 0.15s var(--ease), background 0.15s var(--ease); }
+.coach-filter select::picker-icon { flex: none; }
+.coach-filter select > button, .coach-filter select selectedcontent { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.coach-filter select:hover { border-color: var(--control-line); background: color-mix(in srgb, var(--text) 4%, var(--field)); }
 .coach-filter.is-on select { border-color: var(--accent); background: var(--accent-wash); }
+.coach-filter.is-on select:hover { background: color-mix(in srgb, var(--accent) 14%, var(--field)); }
 .coach-diag-foot { flex: none; display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-3); }
 .coach-diag-foot .coach-pages { align-self: center; }
 .coach-rank-stuck { display: flex; align-items: center; gap: var(--sp-3); margin: 0; padding: var(--sp-3) var(--sp-4); border-radius: var(--alt-r-sm); font: 600 var(--fs-caption)/1.3 var(--ui); color: var(--text); background: color-mix(in srgb, var(--warn) 10%, transparent); cursor: help; }
@@ -813,9 +821,11 @@
 .coach-back .icon { width: 12px; height: 12px; }
 .coach-main { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; min-height: 0; }
 
-/* La carta grande: zona del Pokémon (come le carte Pedana) e il corpo: titolo e voto, Risolve | Costa, azioni */
-.coach-hero { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr); background: var(--panel); }
-.coach-hero.skeleton { flex: 1;  border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
+/* La carta grande: in testa la fascia VS (chi esce | +N e voto | chi entra), sotto Risolve | Costa e il Set (scorrono se
+   sono lunghi), in fondo le azioni. La carta è alta quanto il suo contenuto (niente fascia vuota sopra le azioni) e al
+   più quanto la colonna */
+.coach-hero { --in-w: 144px; --out-w: 104px; --vs-pad: var(--sp-5); position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
+.coach-hero.skeleton { flex: 1; border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-hero.is-flash { animation: coach-flash 2s ease-out forwards; }
 @keyframes coach-flash {
   0%, 60% { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -824,41 +834,60 @@
 @media (prefers-reduced-motion: reduce) {
   .coach-hero.is-flash { animation: none; box-shadow: inset 0 0 0 1px var(--accent); }
 }
-.coach-pad { position: relative; overflow: hidden; min-width: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 24%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 6%, var(--panel)) 80%);
-  box-shadow: inset -1px 0 0 var(--line-soft); }
-.coach-pad::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--t1); opacity: 0.8; }
-.coach-stage { position: absolute; left: 0; right: 0; top: 30px; height: 150px; display: flex; justify-content: center; align-items: flex-end; }
-.coach-stage .pedana-disc { --sprite-w: 144px; bottom: -10px; width: 150px; }
-.coach-art-in { position: relative; z-index: 1; flex: none; display: flex; }
-.coach-art-in .sprite { width: 144px; height: 144px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0006); }
-.coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 144px); translate: -50% 0; }
-/* Chi esce: in alto al centro, spento, con "esce" e la freccia verso chi entra (lo scambio si legge dall'alto in basso) */
-.coach-pad-out { position: absolute; z-index: 2; top: var(--sp-5); left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 0; }
-.coach-pad-out small { margin-top: 2px; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.coach-pad-out .coach-pad-swap { margin: var(--sp-2) 0 0; }
-.coach-pad.has-out .coach-stage { top: 128px; }
-.coach-pad-out .sprite { width: 64px; height: 64px; margin: -6px; image-rendering: pixelated; filter: grayscale(1) brightness(0.8); }
-.coach-pad-swap { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 2px; border-radius: 50%;
-  background: color-mix(in srgb, var(--ground) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 30%, transparent); color: var(--text); }
-.coach-pad-swap .icon { width: 12px; height: 12px; }
 
-.coach-hero-body { display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; min-height: 0; padding: var(--sp-6) var(--sp-9) var(--sp-6); overflow: hidden; }
-/* La parte centrale (Risolve, Costa, Set) scorre se è lunga, con una sfumatura in fondo; titolo e azioni restano fissi */
-.coach-hero-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-6); overflow: hidden auto; padding-right: var(--sp-2);
-  mask-image: linear-gradient(180deg, #000 calc(100% - 14px), transparent); scrollbar-width: thin; }
-.coach-hero-focus { min-width: 0; border-radius: var(--alt-r-sm); outline-offset: 4px; }
-.coach-hero-focus:focus-visible { outline: 2px solid var(--accent); }
-.coach-hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-8); }
-.coach-hero-title { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); min-width: 0; }
-.coach-hero-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-block: 0.1em; margin-block: -0.1em; font: italic 800 var(--fs-display)/1 var(--display); color: var(--text); }
-.coach-hero-title.is-move .mvp { max-width: 100%; }
-.coach-hero-plates { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
-.coach-hero-free { font: 500 var(--fs-small)/1.2 var(--ui); color: var(--muted); }
-/* Il voto: +N grande in verde, sotto "B 70 → A 81" */
-.coach-hero-grade { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-2); }
+/* La fascia VS: tre colonne da bordo a bordo; la luce del tipo di chi entra scende solo sulla metà di destra (--wash:
+   per Psico e Folletto il secondo tipo o il colore smorzato, così non compete con Applica); la metà di sinistra resta
+   neutra. In fondo la riga: grigia a sinistra, nel colore del tipo a destra */
+.coach-vs { position: relative; flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--faint) 9%, var(--panel)), var(--panel) 80%); }
+.coach-vs::before { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 50%; pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wash, var(--t1)) 19%, var(--panel)) 0%, color-mix(in srgb, var(--wash, var(--t1)) 4%, var(--panel)) 85%); }
+.coach-vs::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--faint) 45%, transparent) 0 50%, var(--t1) 50%); opacity: 0.85; }
+.coach-vs-side { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-width: 0; padding: var(--vs-pad) var(--sp-6) calc(var(--vs-pad) + 3px); }
+.coach-vs-stage { position: relative; display: flex; justify-content: center; align-items: flex-end; height: var(--in-w); margin-bottom: var(--sp-3); }
+.coach-vs-stage .pedana-disc { --sprite-w: var(--in-w); bottom: -9px; width: calc(var(--in-w) + 8px); }
+.coach-art-in { position: relative; z-index: 1; flex: none; display: flex; }
+.coach-art-in .sprite { width: var(--in-w); height: var(--in-w); image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0006); }
+.coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--in-w)); translate: -50% 0; }
+/* Chi esce: più piccolo, grigio e spento, su una pedana grigia (mai trasparente: i contorni restano netti) */
+.coach-vs-stage.is-out { height: var(--out-w); }
+.coach-vs-disc { position: absolute; left: 50%; bottom: -7px; width: calc(var(--out-w) + 4px); height: clamp(12px, calc(var(--out-w) * 0.26), 26px); transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--faint) 55%, transparent), color-mix(in srgb, var(--faint) 14%, transparent) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--faint) 45%, transparent); }
+.coach-art-out { position: relative; z-index: 1; display: flex; }
+.coach-art-out .sprite { width: var(--out-w); height: var(--out-w); image-rendering: pixelated; filter: grayscale(1) brightness(0.72); }
+.coach-art-out .sprite-ani { display: none; }
+.coach-vs-label { font: var(--col-head); letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--col-head-ink); }
+.coach-vs-out-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 0.1em; font: italic 600 var(--fs-section)/1.2 var(--display); color: var(--muted); }
+/* Un'aggiunta: il posto libero tratteggiato, alto quanto chi esce */
+.coach-vs-free { display: flex; align-items: center; justify-content: center; align-self: center; width: min(100%, 150px); height: var(--out-w); margin-block: auto; border: 1px dashed var(--line); border-radius: var(--alt-r-sm);
+  font: italic 600 var(--fs-section)/1.2 var(--display); color: var(--muted); background: color-mix(in srgb, var(--ground) 35%, transparent); }
+.coach-vs-free.is-slot { height: 30px; width: auto; padding: 0 var(--sp-6); margin-block: 0; font-style: normal; font: 500 var(--fs-small)/1 var(--ui); }
+/* Un cambio di mossa: a sinistra la mossa che esce, grigia e barrata; a destra il membro e sotto la mossa nuova */
+.coach-vs.is-move .coach-vs-side.is-out { justify-content: center; gap: var(--sp-3); }
+.coach-move-out { filter: grayscale(1); max-width: 100%; }
+.coach-move-out .mvp-nm { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 70%, transparent); }
+/* Il centro: il segno dello scambio, il +N grande in verde e il voto prima → dopo (il dopo nel colore del voto) */
+.coach-vs-mid { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3); min-width: 150px; padding: var(--vs-pad) var(--sp-4); }
+.coach-vs-arrow { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%;
+  background: color-mix(in srgb, var(--ground) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 28%, transparent); color: var(--text); }
+.coach-vs-arrow .icon { width: 15px; height: 15px; }
 .coach-gain { font: italic 800 var(--fs-score)/0.9 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-.coach-grade-change { font: 600 var(--fs-small)/1 var(--display); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.coach-grade-change { display: inline-flex; align-items: baseline; gap: 0; font: 600 var(--fs-small)/1 var(--display); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.coach-grade-arrow { white-space: pre; }
+.coach-grade-tag { --grade: var(--accent); font: italic 800 var(--fs-title-l)/1 var(--display); color: var(--grade); }
+.coach-grade-tag.grade-S { --grade: var(--accent-2-ink); }
+.coach-grade-tag.grade-A { --grade: var(--good); }
+.coach-grade-tag.grade-C { --grade: var(--warn); }
+.coach-grade-tag.grade-D { --grade: var(--bad); }
+/* Il titolo (chi entra): il nome in corsivo display, protagonista */
+.coach-hero-focus { max-width: 100%; min-width: 0; border-radius: var(--alt-r-sm); outline-offset: 3px; }
+.coach-hero-focus:focus-visible { outline: 2px solid var(--accent); }
+.coach-hero-title { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); min-width: 0; }
+.coach-hero-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0.1em 0.15em; margin-block: -0.1em; font: italic 800 var(--fs-headline-l)/1 var(--display); color: var(--text); }
+.coach-hero-title.is-move .coach-hero-name { font-size: var(--fs-title-l); }
+.coach-hero-title.is-move .mvp { max-width: 100%; }
 
 /* La targhetta come nell'editor: etichetta chiara col taglio obliquo, il valore sul fondo che sfuma */
 .coach-plate { display: flex; align-items: stretch; min-width: 0; height: 26px; border-radius: var(--alt-r-sm);
@@ -868,20 +897,27 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 .coach-plate-value { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; padding: 0 var(--sp-6) 0 var(--sp-3); overflow: hidden; white-space: nowrap; font: 600 var(--fs-small)/1 var(--ui); color: var(--text); }
 .coach-plate-value .mon-icon { margin: -10px -4px -8px -6px; }
-/* La mossa che esce: grigia e barrata (mai trasparente: i testi restano leggibili) */
-.coach-plate.is-out .coach-plate-value { color: var(--muted); }
-.coach-plate.is-out s { text-decoration-color: color-mix(in srgb, var(--muted) 80%, transparent); }
 
-/* Risolve | Costa: due colonne con l'etichetta piccola in maiuscolo come le sezioni dei fumetti */
-.coach-hero-facts { flex: none; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(180px, 1fr); gap: var(--sp-9); min-height: 0; }
-.coach-fact { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
-.coach-fact h5 { margin: 0; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
-.coach-fact.is-good h5 { color: color-mix(in srgb, var(--good) 75%, var(--text)); }
-.coach-fact.is-bad h5 { color: color-mix(in srgb, var(--bad) 75%, var(--text)); }
+.coach-hero-body { flex: 0 1 auto; display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; min-height: 0; padding: var(--sp-5) var(--sp-9) var(--sp-5); overflow: hidden; }
+/* La parte centrale (Risolve, Costa, Set) scorre se è lunga, con una sfumatura in fondo; le azioni restano fisse */
+.coach-hero-scroll { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-5); overflow: hidden auto; padding-right: var(--sp-2); scrollbar-width: thin; }
+.coach-hero-scroll:has(+ .coach-hero-foot) { mask-image: linear-gradient(180deg, #000 calc(100% - 10px), transparent); }
+
+/* La voce delle intestazioni di colonna (One Voice Per Role): Risolve, Costa, Set, Problema, Piano, Perdi */
+.coach-head { margin: 0; font: var(--col-head); letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--col-head-ink); }
+
+/* Risolve | Costa affiancati (al più ~900 px: su 1920 Costa resta vicino a Risolve) */
+.coach-hero-facts { flex: none; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(170px, 1fr); gap: var(--sp-5) var(--sp-9); max-width: 900px; min-height: 0; }
+/* Il Set sotto Risolve | Costa, da bordo a bordo (nelle carte larghe e basse va in una terza colonna, vedi sotto) */
+.coach-hero-facts > .coach-set { grid-column: 1 / -1; }
+/* overflow: le righe "da → a" (allineate alla base) sbordavano di 3 px e facevano scorrere la carta per niente */
+.coach-fact { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; overflow: hidden; }
+.coach-fact.is-good .coach-head { color: color-mix(in srgb, var(--good) 75%, var(--text)); }
+.coach-fact.is-bad .coach-head { color: color-mix(in srgb, var(--bad) 75%, var(--text)); }
 .coach-fact-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
 .coach-solved-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 /* Un problema risolto: spunta verde e il problema in chiaro, su una riga a strisce leggere; se è lungo va a capo */
-.coach-solved { display: grid; grid-template-columns: 14px minmax(0, 1fr); align-items: start; gap: var(--sp-4); padding: 3px var(--sp-5) 3px var(--sp-4); border-radius: var(--alt-r-sm);
+.coach-solved { display: grid; grid-template-columns: 14px minmax(0, 1fr); align-items: start; gap: var(--sp-4); padding: 2px var(--sp-5) 2px var(--sp-4); border-radius: var(--alt-r-sm);
   font: 500 var(--fs-small)/1.35 var(--ui); color: var(--text); background: color-mix(in srgb, var(--good) 9%, transparent); }
 .coach-solved > .icon { width: 14px; height: 14px; margin-top: 2px; color: var(--good); }
 .coach-solved .coach-prob-text { display: inline; overflow: visible; white-space: normal; }
@@ -889,19 +925,17 @@
 .coach-solved .coach-prob-text .type-icons, .coach-solved .mon-icon { vertical-align: middle; }
 .coach-solved .coach-prob-text .type-icons { margin-right: var(--sp-2); }
 .coach-solved .mon-icon { margin: -10px -2px -8px -6px; }
-.coach-solved-more { padding: 2px var(--sp-4); font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); cursor: help; }
 .coach-moves { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-7); margin: 0; }
 .coach-change { display: inline-flex; align-items: baseline; gap: var(--sp-3); white-space: nowrap; }
-.coach-change b { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.coach-change b { font: var(--col-head); letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--muted); }
 .coach-from { font: 500 var(--fs-caption)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 .coach-to { font: italic 700 var(--fs-section)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .coach-change.is-down .coach-to { color: var(--bad); font-style: normal; }
 .coach-lost { margin: 0; font: 600 var(--fs-small)/1.3 var(--ui); color: var(--bad); }
-.coach-lost b { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-right: var(--sp-2); }
+.coach-lost b { font: var(--col-head); letter-spacing: var(--col-head-track); text-transform: uppercase; color: var(--muted); margin-right: var(--sp-2); }
 
 /* Il set proposto: strumento e abilità come targhette dell'editor, le quattro mosse come pillole (la nuova con l'anello ciano) */
 .coach-set { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
-.coach-set h5 { margin: 0; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 .coach-set-kit { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .coach-set-kit .coach-plate-value .item-icon, .coach-set-kit .coach-plate-value img { width: 20px; height: 20px; }
 .coach-set-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 280px)); gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
@@ -909,8 +943,8 @@
 .coach-set-moves li .mvp { flex: 1; min-width: 0; }
 .coach-set-moves li.is-new { box-shadow: 0 0 0 2px var(--accent); }
 
-/* Le azioni: Applica (l'unico magenta: l'azione migliore sullo schermo), la scheda Pokémon, le alternative a destra */
-.coach-hero-foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-6); min-width: 0; }
+/* Le azioni: Applica (l'unico magenta: l'azione migliore sullo schermo), la scheda Pokémon, Copia, le alternative a destra */
+.coach-hero-foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-5); min-width: 0; }
 .coach-apply { height: 34px; padding: 0 var(--sp-9); border: 0; border-radius: var(--alt-r-sm); font: 700 var(--fs-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); background: var(--raised); }
 .coach-apply.is-primary { color: var(--on-accent-2); background: var(--accent-2); }
 .coach-apply.is-primary:hover { background: var(--accent-2-ink); }
@@ -918,15 +952,37 @@
 .coach-see:hover { border-color: var(--accent); color: var(--text); }
 .coach-see .icon { width: 14px; height: 14px; }
 .coach-copy.is-done { border-color: var(--good); color: var(--good); }
-.coach-alts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); min-width: 0; margin-left: auto; }
-.coach-alts-word { margin-right: var(--sp-2); font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); white-space: nowrap; }
-/* Un'alternativa: piccola carta col colore del tipo dall'alto, l'icona del Box e il +N; un clic la mette nella carta grande */
-.coach-alt-tile { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); height: 34px; padding: 0 var(--sp-4) 0 var(--sp-2); border: 1px solid var(--line-soft); border-radius: var(--alt-r-sm); cursor: pointer;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 28%, var(--panel)), var(--panel)); color: var(--text); }
+.coach-alts { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-3); min-width: 0; margin-left: auto; }
+.coach-alts-word { margin-right: var(--sp-1); font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); white-space: nowrap; }
+/* Un'alternativa: piccola carta col colore del tipo dall'alto, l'icona del Box, il nome (o la mossa) e il +N; un clic la mette nella carta grande */
+.coach-alt-tile { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); max-width: 170px; height: 34px; padding: 0 var(--sp-4) 0 var(--sp-2); border: 1px solid var(--line-soft); border-radius: var(--alt-r-sm); cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 26%, var(--panel)), var(--panel)); color: var(--text); }
 .coach-alt-tile:hover { border-color: color-mix(in srgb, var(--t1) 70%, var(--line)); }
-.coach-alt-tile .mon-icon { margin: -10px -4px -8px -4px; }
-.coach-alt-tile b { font: italic 800 var(--fs-small)/1 var(--display); color: var(--good); }
-.coach-alt-move { max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 var(--fs-caption)/1 var(--ui); }
+.coach-alt-tile .mon-icon { flex: none; margin: -10px -4px -8px -4px; }
+.coach-alt-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 600 var(--fs-small)/1.2 var(--display); }
+.coach-alt-tile b { flex: none; font: italic 800 var(--fs-small)/1 var(--display); color: var(--good); }
+.coach-alt-more { flex: none; height: 34px; padding: 0 var(--sp-5); border: 1px dashed var(--line); border-radius: var(--alt-r-sm); background: none; color: var(--muted); font: 600 var(--fs-caption)/1 var(--ui); white-space: nowrap; cursor: pointer; }
+.coach-alt-more:hover { border-color: var(--control-line); color: var(--text); }
+.coach-alt-more[aria-expanded='true'] { border-style: solid; }
+
+/* Il Piano: sopra la carta, una riga compatta coi passi da fare insieme e il voto vero dopo ognuno */
+.coach-plan { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); min-width: 0; margin: 0; padding: var(--sp-2) var(--sp-5); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); }
+.coach-plan-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); min-width: 0; margin: 0; padding: 0; list-style: none; }
+.coach-plan-steps > li { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.coach-plan-arrow { color: var(--faint); font: 600 var(--fs-small)/1 var(--ui); }
+.coach-plan-step { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; height: 28px; padding: 0 var(--sp-5) 0 var(--sp-2); border: 0; border-radius: var(--alt-r-sm); cursor: pointer; color: var(--text); text-align: left;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 22%, var(--panel)), color-mix(in srgb, var(--t1) 5%, var(--panel))); box-shadow: inset 0 0 0 1px var(--line-soft); }
+.coach-plan-step:hover { box-shadow: inset 0 0 0 1px var(--control-line); }
+.coach-plan-step .mon-icon { flex: none; margin: -10px -6px -8px -6px; }
+.coach-plan-n { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; font: 700 var(--fs-label)/1 var(--display); color: var(--text); background: color-mix(in srgb, var(--ground) 70%, transparent); box-shadow: inset 0 0 0 1px var(--line); }
+.coach-plan-who { display: flex; align-items: baseline; gap: var(--sp-3); min-width: 0; white-space: nowrap; }
+.coach-plan-who b { font: italic 700 var(--fs-small)/1.2 var(--display); }
+.coach-plan-who small { font-size: var(--fs-caption); color: var(--muted); }
+.coach-plan-grade { display: inline-flex; align-items: baseline; gap: var(--sp-4); margin-left: auto; white-space: nowrap; }
+.coach-plan-path { display: inline-flex; align-items: baseline; font: 600 var(--fs-small)/1 var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.coach-plan-path .coach-grade-tag { font-size: var(--fs-section); }
+.coach-plan-path .coach-grade-tag:not(.is-last) { font-weight: 600; font-style: normal; }
+.coach-plan-after { font-size: var(--fs-caption); color: var(--muted); }
 
 .coaching:has(> .coach-empty) { padding-bottom: var(--sp-8); }
 .coach-empty { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 30px; background: var(--panel); }
@@ -951,52 +1007,92 @@
 .coach-note.coach-top { margin: 0 0 var(--sp-2); }
 .coach-main > .coach-note { flex: none; }
 
-/* Portatili (team aperto, 1280): la diagnosi si stringe, la carta grande pure */
-@container coaching (max-width: 1000px) {
-  .coaching.coach-cure { grid-template-columns: 232px minmax(0, 1fr); gap: var(--sp-5); }
-  .coach-hero { grid-template-columns: 160px minmax(0, 1fr); }
-  .coach-stage { top: 26px; height: 120px; }
-  .coach-pad.has-out .coach-stage { top: 116px; }
-  .coach-art-in .sprite { width: 112px; height: 112px; }
-  .coach-hero-name { font-size: var(--fs-headline-l); }
-  .coach-gain { font-size: var(--fs-stat); }
-  .coach-hero-facts { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
-  .coach-alts-word { display: none; }
+/* Larghe: le mosse del set in una riga sola */
+@container coaching (min-width: 1001px) {
+  .coach-set-moves { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 900px; }
+}
+/* Larghe ma basse (1440×900 col team aperto): il Set in una terza colonna accanto a Costa, le mosse due per riga, così
+   la carta sta intera senza scorrere; Vedi e Copia solo con l'icona (il fumetto dice cosa fanno) */
+@container coaching (min-width: 1100px) and (max-height: 640px) {
+  .coach-hero-facts { grid-template-columns: minmax(0, 1.45fr) minmax(120px, 0.55fr) minmax(330px, 1.3fr); column-gap: var(--sp-8); max-width: 1200px; }
+  .coach-hero-facts > .coach-set { grid-column: auto; }
+  .coach-set-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Le mosse due per riga: senza la coda (categoria e potenza) il nome sta intero */
+  .coach-set-moves .mvp-tail { display: none; }
+}
+@container coaching (max-width: 1250px) {
   .coach-see { width: 34px; padding: 0; justify-content: center; }
   .coach-see > span { display: none; }
+  .coach-alts-word { display: none; }
+  /* Un Piano di tre passi: il posto di ogni passo resta nel nome per lo screen reader e nella carta */
+  .coach-plan:has(.coach-plan-steps > li:nth-child(3)) .coach-plan-who small { display: none; }
+}
+/* Altezze medie (1440×900): la fascia VS più bassa */
+@container coaching (max-height: 640px) {
+  .coach-hero { --in-w: 108px; --out-w: 76px; --vs-pad: var(--sp-3); }
+  .coach-hero-body { gap: var(--sp-3); padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+  .coach-hero-scroll { gap: var(--sp-4); }
+  .coach-hero-facts { row-gap: var(--sp-4); }
+  .coach-solved { padding-block: 1px; }
+  .coach-fact { gap: var(--sp-2); }
+}
+/* Basse (1280×620 col team ridotto) */
+@container coaching (max-height: 500px) {
+  .coach-hero { --in-w: 88px; --out-w: 62px; }
+  .coach-gain { font-size: var(--fs-stat); }
+  .coach-hero-name { font-size: var(--fs-title-l); }
+}
+/* Portatili (team aperto, 1280): la classifica si stringe, la carta grande pure */
+@container coaching (max-width: 1000px) {
+  .coaching.coach-cure { grid-template-columns: 232px minmax(0, 1fr); gap: var(--sp-5); }
+  .coach-hero { --in-w: 112px; --out-w: 84px; }
+  .coach-vs-mid { min-width: 120px; }
+  .coach-gain { font-size: var(--fs-stat); }
+  .coach-hero-name { font-size: var(--fs-title-l); }
+  .coach-hero-facts { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+  .coach-alt-tile { max-width: 122px; padding-right: var(--sp-3); }
+  .coach-plan-who small, .coach-plan-after { display: none; }
 }
 /* Carta stretta (tablet in verticale): Risolve sopra Costa, le mosse del set una sotto l'altra (intere) */
 @container coaching (max-width: 860px) {
   .coach-hero-facts { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
   .coach-set-moves { grid-template-columns: minmax(0, 1fr); }
 }
-/* Molto stretto (telefono): la carta in colonna, con lo scambio di lato in una fascia bassa (chi esce a sinistra, chi entra al centro) */
+/* Molto stretto (telefono): la fascia VS resta una riga, più bassa (chi esce piccolo a sinistra, il +N al centro, chi
+   entra grande a destra) */
 @container coaching (max-width: 560px) {
-  .coach-hero { grid-template-columns: minmax(0, 1fr); }
-  .coach-pad { height: 150px; box-shadow: inset 0 -1px 0 var(--line-soft); }
-  .coach-pad-out { top: 50%; left: var(--sp-6); right: auto; translate: 0 -50%; }
-  .coach-pad-out .coach-pad-swap { rotate: -90deg; position: absolute; left: calc(100% + 14px); top: 22px; }
-  .coach-stage, .coach-pad.has-out .coach-stage { top: 8px; height: 132px; }
-  .coach-art-in .sprite { width: 120px; height: 120px; }
-  .coach-hero-body { padding: var(--sp-6); }
-  .coach-hero-head { flex-wrap: wrap; gap: var(--sp-4); }
-  .coach-hero-name { font-size: var(--fs-headline-l); }
+  .coach-hero { --in-w: 96px; --out-w: 56px; --vs-pad: var(--sp-4); }
+  .coach-vs-side { padding-inline: var(--sp-3); }
+  .coach-vs-mid { min-width: 0; padding-inline: var(--sp-2); gap: var(--sp-2); }
+  .coach-vs-arrow { width: 22px; height: 22px; }
   .coach-gain { font-size: var(--fs-stat); }
+  .coach-grade-change { font-size: var(--fs-caption); }
+  .coach-grade-tag { font-size: var(--fs-section); }
+  .coach-hero-name { font-size: var(--fs-section); }
+  .coach-vs-out-name { font-size: var(--fs-caption); }
+  .coach-vs-free { height: 56px; font-size: var(--fs-small); }
+  .coach-hero-body { padding: var(--sp-6); }
   .coach-set-moves { grid-template-columns: minmax(0, 1fr); }
-  .coach-alts { margin-left: 0; }
+  .coach-alts { margin-left: 0; justify-content: flex-start; }
+  .coach-plan-grade { margin-left: 0; }
 }
-/* Poca altezza (1280×620 col team aperto): carta grande più bassa */
+/* Poca altezza (1280×620 col team aperto): la fascia VS più bassa, così scorre meno la parte centrale */
 @container coaching (max-height: 430px) {
-  .coach-stage { top: 20px; height: 100px; }
-  .coach-pad-out .sprite { width: 48px; height: 48px; }
-  .coach-pad.has-out .coach-stage { top: 96px; }
+  .coach-hero { --in-w: 72px; --out-w: 52px; --vs-pad: var(--sp-2); }
+  .coach-vs-stage { margin-bottom: var(--sp-2); }
+  .coach-vs-mid { gap: var(--sp-2); }
+  .coach-vs-arrow { width: 22px; height: 22px; }
+  .coach-gain { font-size: var(--fs-stat); }
+  .coach-hero-name { font-size: var(--fs-title-l); }
   .coach-diag-box { --row-h: 58px; }
   .coach-hero-body { gap: var(--sp-3); padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
-  .coach-art-in .sprite { width: 88px; height: 88px; }
+  .coach-hero-scroll { gap: var(--sp-4); }
   .coach-hero-facts { gap: var(--sp-6); }
   .coach-solved { padding-block: 1px; line-height: 1.25; }
   .coach-fact { gap: var(--sp-2); }
-  .coach-apply, .coach-see, .coach-alt-tile { height: 30px; }
+  .coach-apply, .coach-see, .coach-alt-tile, .coach-alt-more { height: 30px; }
+  .coach-plan { padding-block: var(--sp-2); }
+  .coach-plan-step { height: 26px; }
 }
 
 /* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga
