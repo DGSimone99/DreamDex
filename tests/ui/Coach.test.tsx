@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { coachTeam, type CoachAdvice, type Coaching, type CoachProblem } from '../../src/engine/coach';
 import type { CoachFix } from '../../src/engine/coachFixes';
-import { neutralAsAlternatives, proposalGroups } from '../../src/engine/coachProposals';
+import { neutralAsAlternatives, proposalGroups, proposalSeat } from '../../src/engine/coachProposals';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { needLabel } from '../../src/engine/needs';
@@ -203,6 +203,34 @@ describe('scheda Coaching', () => {
     expect(filled()).toBe(3);
   });
 
+  it('Applica il piano: fa tutti i passi insieme (stessi set di Applica), un solo Annulla riporta il team di prima', async () => {
+    const user = await openCoaching(six);
+    const strip = await waitFor(() => { const el = analysis().querySelector<HTMLElement>('nav.coach-plan'); expect(el).not.toBeNull(); return el!; }, { timeout: 10000 });
+    const steps = [...strip.querySelectorAll<HTMLButtonElement>('button.coach-plan-step')].map(b => b.getAttribute('aria-label')!);
+    expect(steps.length).toBeGreaterThanOrEqual(2);
+    const cards = () => [...document.querySelectorAll('.slot.filled .slot-card')].map(el => el.textContent ?? '');
+    const start = cards();
+    const apply = within(strip).getByRole('button', { name: new RegExp(`^Applica il piano: ${steps.length} cambi, voto [SABCD] \\d+$`) });
+    // Secondario: il magenta resta solo su Applica della carta
+    expect(apply).not.toHaveClass('is-primary');
+    await user.click(apply);
+    // Ogni passo è fatto: chi entra c'è, chi esce non c'è più
+    for (const label of steps) {
+      const [, species, member] = /^Passo \d+: (.+) al posto di (.+), voto /.exec(label) ?? [];
+      if (!species) continue;
+      expect(cards().some(text => text.includes(species))).toBe(true);
+      expect(cards().some(text => text.includes(member))).toBe(false);
+    }
+    expect(cards()).not.toEqual(start);
+    const undo = document.querySelector<HTMLElement>('.undo-toast')!;
+    expect(undo).toHaveTextContent(`Piano applicato: ${steps.length} cambi`);
+    // Un solo Annulla: il team torna com'era prima di tutto il piano
+    expect(within(undo).getAllByRole('button', { name: 'Annulla' })).toHaveLength(1);
+    await user.click(within(undo).getByRole('button', { name: 'Annulla' }));
+    expect(cards()).toEqual(start);
+    expect(document.querySelector('.undo-toast')).toBeNull();
+  });
+
   it('invito ad aggiungere con meno di 2 membri', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
@@ -359,7 +387,10 @@ describe('CoachingView', () => {
       expect(species()).toEqual(['Zapdos', 'Heatran']);
       await user.click(within(pages).getByRole('button', { name: 'Proposte successive' }));
       expect(species()).toEqual(['Rotom-Wash', 'Landorus-Therian']);
-      expect(railPills()).toEqual([['fire'], ['fire']]);
+      // Tutte e sei risolvono Fuoco: lo dice una volta la riga sopra la lista, a ogni pagina (si conta su tutte le
+      // proposte, non sulla pagina in vista), e le righe restano senza pillola
+      expect(rail().querySelector('.coach-rank-lead')).toHaveTextContent('Tutte queste proposte risolvono:');
+      expect(railPills()).toEqual([[], []]);
       expect(pages).toHaveTextContent('Pagina 2 di 3');
       await user.click(within(pages).getByRole('button', { name: 'Proposte successive' }));
       expect(pages).toHaveTextContent('3/3');
@@ -473,6 +504,27 @@ describe('CoachingView', () => {
       // Un'altra riga aperta: "2 di 3"
       await user.click(ranks()[1]);
       expect(band()).toHaveTextContent('La proposta scelta · 2 di 3');
+      // "Tutte le proposte" con la freccia in giù scritta (non il segno di una tendina), "Torna alla migliore" accanto
+      const all = within(list()).getByRole('button', { name: 'Tutte le proposte' });
+      expect(all).toHaveTextContent('Tutte le proposte↓');
+      expect(all.querySelector('.icon')).toBeNull();
+      expect(all.parentElement).toBe(within(list()).getByRole('button', { name: 'Torna alla migliore' }).parentElement);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("telefono: con un'alternativa aperta il titolo dice di chi è l'alternativa (\"· alternativa a Rotom-Wash\"), non \"1 di N\"", async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      const user = userEvent.setup();
+      view(advice([swap('Rotom-Wash', 4, 4, [fire.key]), swap('Heatran', 4, 3, [fire.key]), swap('Zapdos', 5, 1, [pivot.key])]));
+      expect(band()).toHaveTextContent('La proposta migliore · 1 di 2');
+      await user.click(altTiles()[0]);
+      expect(heroName()).toBe('Heatran al posto di Magikarp, voto +3');
+      expect(band()).toHaveTextContent(/^La proposta scelta · alternativa a Rotom-Wash$/);
+      await user.click(within(list()).getByRole('button', { name: 'Torna alla migliore' }));
+      expect(band()).toHaveTextContent('La proposta migliore · 1 di 2');
     } finally {
       vi.unstubAllGlobals();
     }
@@ -513,6 +565,13 @@ describe('CoachingView', () => {
     // Una proposta sola: una riga sola nella classifica, nessuna lista di altre
     expect(rankNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +3']);
     expect(within(list()).queryByText(/Nessun'altra proposta/)).toBeNull();
+  });
+
+  it('un posto libero che non costa niente: niente riga Costa (non "Costa: Niente"); Vedi con l\'icona della scheda Pokémon', () => {
+    const add: CoachFix = { kind: 'add', species: 'Zapdos', set: mostCommonSet(fixtureStats, 'Zapdos') ?? emptySet('Zapdos'), index: null, member: null, gain: 4, solves: [pivot.key], reduces: [], after: before };
+    view(advice([add]), { members: 5 });
+    expect(heroOf().querySelector('.coach-vs')).toHaveClass('is-add');
+    expect(within(heroOf()).queryByRole('region', { name: 'Costa' })).toBeNull();
   });
 
   it('il set della proposta: Strumento e Abilità come targhette, le quattro mosse', () => {
@@ -685,11 +744,15 @@ describe('CoachingView', () => {
       expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +4');
     });
 
-    it('una proposta che non alza il voto va fra le alternative della prima che risolve il suo problema, non nella classifica', () => {
-      const neutral = swap('Incineroar', 3, 0, [fire.key]);
+    it('una proposta che non alza il voto va fra le alternative della prima che risolve il suo problema, non nella classifica (in Oppure solo se è per lo stesso posto)', () => {
+      const neutral = swap('Incineroar', 4, 0, [fire.key]);
       view(advice([second, best, other, neutral]));
-      expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3', 'Incineroar al posto di Corviknight, voto ±0']);
+      expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3', 'Incineroar al posto di Magikarp, voto ±0']);
       expect(rankNames()).toEqual(['Rotom-Wash al posto di Magikarp, voto +4', 'Zapdos al posto di Sunkern, voto +1']);
+      cleanup();
+      // Per un altro posto (Corviknight): non sta in Oppure, che mostra solo chi prende il posto dello stesso membro
+      view(advice([second, best, other, swap('Incineroar', 3, 0, [fire.key])]));
+      expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3']);
     });
 
     it('senza una proposta che alza il voto e risolve il suo problema, resta in coda alla classifica', () => {
@@ -1014,15 +1077,16 @@ describe('CoachingView', () => {
     const values = [...filter().options].map(o => o.value).slice(1);
     expect(new Set(values).size).toBe(values.length);
     expect(values.every(key => groups.some(g => g.options.some(o => o.fix.solves.includes(key))))).toBe(true);
-    // Aperta ogni riga, la carta è quel gruppo e le piccole carte sono le sue alternative
+    // Aperta ogni riga, la carta è quel gruppo e le piccole carte sono le sue alternative per lo stesso posto
     for (let i = 0; i < groups.length; i++) {
       await user.click(ranks()[i]);
       expect(heroOf()).toHaveAttribute('data-row', groups[i].id);
       expect(heroOf().querySelector('.coach-gain')).toHaveTextContent(gainText(groups[i].options[0].fix.gain));
+      const same = groups[i].options.slice(1).filter(o => proposalSeat(o) === proposalSeat(groups[i].options[0]));
       // Al più tre piccole carte in vista; le altre dietro "altre N"
-      expect(altTiles().length).toBe(Math.min(3, groups[i].options.length - 1));
+      expect(altTiles().length).toBe(Math.min(3, same.length));
       await allAlts(user);
-      expect(altTiles().map(t => t.querySelector('b')!.textContent)).toEqual(groups[i].options.slice(1).map(o => gainText(o.fix.gain)));
+      expect(altTiles().map(t => t.querySelector('b')!.textContent)).toEqual(same.map(o => gainText(o.fix.gain)));
     }
   });
   describe('Oppure: le alternative col nome, al più tre in vista', () => {
@@ -1055,13 +1119,25 @@ describe('CoachingView', () => {
       expect(heroName()).toBe('Clefable al posto di Magikarp, voto +2');
     });
 
-    it("un'alternativa che ha già la sua riga per un altro posto lo dice (\"anche al posto di X\"): il +N della carta vale per questo posto", () => {
+    it('Oppure solo per lo stesso posto: niente riga piccola "al posto di …" né "anche al posto di …"', () => {
       // Heatran: +5 al posto di Sunkern (la sua riga), +3 qui al posto di Magikarp (alternativa di Rotom-Wash)
       view(advice([swap('Rotom-Wash', 4, 6, [fire.key]), swap('Heatran', 4, 3, [fire.key]), swap('Heatran', 5, 5, [pivot.key])]));
       expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +6');
       expect(rankNames()).toContain('Heatran al posto di Sunkern, voto +5');
-      expect(altTiles().map(t => t.textContent)).toEqual(['Heatrananche al posto di Sunkern+3']);
+      expect(altTiles().map(t => t.textContent)).toEqual(['Heatran+3']);
       expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3']);
+      expect(heroOf().querySelector('.coach-alt-sub')).toBeNull();
+    });
+
+    it('lo stesso Pokémon in un altro posto nel gruppo (stessi problemi): non è in Oppure, "altre N" conta solo lo stesso posto', () => {
+      // Heatran al posto di Sunkern risolve gli stessi problemi di Heatran al posto di Magikarp: un gruppo solo
+      const adv = advice([swap('Heatran', 4, 6, [fire.key]), swap('Volcanion', 4, 4, [fire.key]), swap('Heatran', 5, 5, [fire.key])]);
+      expect(neutralAsAlternatives(proposalGroups(problems, adv))[0].options).toHaveLength(3);
+      view(adv);
+      expect(heroName()).toBe('Heatran al posto di Magikarp, voto +6');
+      expect(altNames()).toEqual(['Volcanion al posto di Magikarp, voto +4']);
+      expect(within(heroOf()).getByRole('group', { name: 'Altre 1 proposte per questo posto' })).toBeInTheDocument();
+      expect(altMore()).toBeNull();
     });
 
     it('con tre alternative o meno niente "altre"', () => {
@@ -1153,6 +1229,49 @@ describe('CoachingView', () => {
       planView([zap, rotom], [move]);
       const strip = await waitFor(() => { const el = plan(); expect(el).not.toBeNull(); return el!; });
       expect([...strip.querySelectorAll('.coach-plan-who b')].map(b => b.textContent)).toEqual(['Zapdos', 'Rotom-Wash']);
+    });
+
+    it('"Applica il piano": il nome dice quanti cambi e il voto finale; manda tutti i passi in ordine col voto finale', async () => {
+      const user = userEvent.setup();
+      const onApplyPlan = vi.fn();
+      view(advice([zap, heat, rotom]), { team: six, data, onApplyPlan });
+      const strip = await waitFor(() => { const el = plan(); expect(el).not.toBeNull(); return el!; });
+      const two = real(withSet(withSet(six, 4, zap.set), 5, rotom.set));
+      const button = within(strip).getByRole('button', { name: `Applica il piano: 2 cambi, voto ${two.grade} ${two.overall}` });
+      expect(button).toHaveTextContent('Applica il piano');
+      expect(button).not.toHaveClass('is-primary');
+      await user.click(button);
+      expect(onApplyPlan).toHaveBeenCalledTimes(1);
+      expect(onApplyPlan).toHaveBeenCalledWith([{ kind: 'fix', fix: zap }, { kind: 'fix', fix: rotom }], `${two.grade} ${two.overall}`);
+    });
+
+    it('senza chi applica il piano (la vista da sola) niente pulsante', async () => {
+      planView([zap, heat, rotom]);
+      const strip = await waitFor(() => { const el = plan(); expect(el).not.toBeNull(); return el!; });
+      expect(within(strip).queryByRole('button', { name: /^Applica il piano/ })).toBeNull();
+    });
+
+    it("telefono: ogni passo col nome (la mossa con l'icona del suo tipo), \"Applica il piano\" sotto", async () => {
+      vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+      try {
+        const corv: TeamSet = { ...six[3], moves: [...six[3].moves.slice(0, 3), 'Defog'] };
+        const move: MoveFix = { index: 3, member: six[3].species, set: corv, reduces: [], slot: 3, from: six[3].moves[3], to: 'Defog', gain: 2, solves: [steel.key], after: before };
+        view(advice([zap, rotom], [move]), { team: six, data, onApplyPlan: vi.fn() });
+        const strip = await waitFor(() => { const el = plan(); expect(el).not.toBeNull(); return el!; });
+        expect(strip).toHaveClass('is-compact');
+        const names = [...strip.querySelectorAll('.coach-plan-step .coach-plan-who b')].map(b => b.textContent);
+        expect(names.slice(0, 2)).toEqual(['Zapdos', 'Rotom-Wash']);
+        // Un passo di mossa: l'icona del tipo della mossa, non quella di un Pokémon
+        const moveStep = strip.querySelector('.coach-plan-step.is-move');
+        if (moveStep) {
+          expect(moveStep.querySelector('.coach-plan-mv img')).not.toBeNull();
+          expect(moveStep.querySelector('.mon-icon')).toBeNull();
+          expect(moveStep.querySelector('.coach-plan-who b')).toHaveTextContent(gameName('move', 'Defog', 'it'));
+        }
+        expect(within(strip).getByRole('button', { name: /^Applica il piano: / })).toBeInTheDocument();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
 
     it('con meno di due passi niente Piano (due proposte sullo stesso posto, o una sola)', async () => {

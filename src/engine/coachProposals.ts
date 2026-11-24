@@ -22,7 +22,7 @@ export interface ProposalGroup {
 }
 
 /** Chi lascia il posto: il membro sostituito (o ritoccato, per una mossa), o un posto libero per un'aggiunta. */
-const seatOf = (p: Proposal) => (p.kind === 'move' ? `move:${p.fix.index}` : p.fix.kind === 'add' ? 'add' : `swap:${p.fix.index}`);
+export const proposalSeat = (p: Proposal) => (p.kind === 'move' ? `move:${p.fix.index}` : p.fix.kind === 'add' ? 'add' : `swap:${p.fix.index}`);
 
 /**
  * Le proposte del Coaching come righe, dalla più utile (+N più alto).
@@ -65,7 +65,7 @@ export function proposalGroups(problems: CoachProblem[], advice: Pick<CoachAdvic
   const groups = new Map<string, { id: string; lead: string | null; items: { p: Proposal; i: number }[] }>();
   all.forEach((p, i) => {
     const lead = leadOf(p.fix.solves);
-    const id = `${seatOf(p)}|${lead ?? ''}`;
+    const id = `${proposalSeat(p)}|${lead ?? ''}`;
     let group = groups.get(id);
     if (!group) groups.set(id, (group = { id, lead, items: [] }));
     group.items.push({ p, i });

@@ -1,11 +1,11 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { CoachAdvice, Coaching, CoachProblem } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
-import { areaValue, neutralAsAlternatives, PROPOSAL_AREAS, proposalGroups, type Proposal, type ProposalArea, type ProposalGroup } from '../engine/coachProposals';
+import { areaValue, neutralAsAlternatives, PROPOSAL_AREAS, proposalGroups, proposalSeat, type Proposal, type ProposalArea, type ProposalGroup } from '../engine/coachProposals';
 import { columnOf } from '../engine/coachSteps';
 import { coachPlan, type PlanStep } from '../engine/coachPlan';
 import type { EngineData } from '../engine/data';
-import { battleSpecies } from '../engine/dex';
+import { battleSpecies, getMove } from '../engine/dex';
 import type { MoveFix } from '../engine/moveFixes';
 import { needLabel, type Need } from '../engine/needs';
 import { gradeFor, type TeamRating } from '../engine/rating';
@@ -24,7 +24,7 @@ import { Icon } from './icons';
 import { useMemberTip } from './MemberCard';
 import { MovePill } from './MovePill';
 import { copyText } from './clipboard';
-import { TypeIcons } from './typeIcons';
+import { TypeIcons, typeIconUrl } from './typeIcons';
 import { PokemonIcon } from './PokemonName';
 import { hint } from './MoveTip';
 import { isMissingRoles, isThreat, MoreProblems, problemEntries, ProblemChip, ProblemPill, type ProblemEntry } from './ProblemPill';
@@ -44,6 +44,8 @@ export const ROWS_PER_PAGE = 4;
 /** Le azioni sulle proposte: applicarle (Applica) e aprirle nella scheda Pokémon o nell'editor. */
 interface RowActions {
   onFix: (fix: CoachFix) => void; onMoveFix: (fix: MoveFix) => void; onApplyFix: (fix: CoachFix) => void; onApplyMove: (fix: MoveFix) => void;
+  /** Applica il piano: tutti i suoi passi in ordine, con un solo Annulla (`to`: il voto dopo l'ultimo passo, "A 84"). */
+  onApplyPlan?: (steps: Proposal[], to: string) => void;
 }
 
 /** Le debolezze in comune (un malus di Bonus/Malus) le dice già la Difesa ("0 reggono"): non si ripetono fra le pillole. */
@@ -264,13 +266,16 @@ function VsBand({ p, fx, rating, headId, titleRef, bind }: {
             <GradeTag score={after} />
           </span>
         )}
-        {/* Costa accanto al voto: cosa scende o cosa perdi, sempre in vista (mai sotto lo scorrimento della carta) */}
-        <section className={`coach-vs-cost${costs ? ' is-bad' : ''}`} aria-label={tr('coach.hero.costs')}>
-          <h5 className="coach-head">{tr('coach.hero.costs')}</h5>
-          {costs === 0 && <p className="coach-fact-none">{tr('coach.hero.nothing')}</p>}
-          {fx.downs.length > 0 && <p className="coach-moves">{fx.downs.map(m => <Change key={m.area} move={m} />)}</p>}
-          {fx.lost.length > 0 && <p className="coach-lost"><b>{tr('coach.row.lost')}</b> {fx.lost.map(key => needLabel(key, lang)).join(', ')}</p>}
-        </section>
+        {/* Costa accanto al voto: cosa scende o cosa perdi, sempre in vista (mai sotto lo scorrimento della carta). In un
+            posto libero (nessuno esce) che non costa niente la riga non c'è: "Costa: Niente" non direbbe nulla */}
+        {(costs > 0 || p.kind === 'move' || p.fix.kind !== 'add') && (
+          <section className={`coach-vs-cost${costs ? ' is-bad' : ''}`} aria-label={tr('coach.hero.costs')}>
+            <h5 className="coach-head">{tr('coach.hero.costs')}</h5>
+            {costs === 0 && <p className="coach-fact-none">{tr('coach.hero.nothing')}</p>}
+            {fx.downs.length > 0 && <p className="coach-moves">{fx.downs.map(m => <Change key={m.area} move={m} />)}</p>}
+            {fx.lost.length > 0 && <p className="coach-lost"><b>{tr('coach.row.lost')}</b> {fx.lost.map(key => needLabel(key, lang)).join(', ')}</p>}
+          </section>
+        )}
       </div>
       <div className="coach-vs-side is-in">
         <span className="coach-vs-stage is-in">
@@ -299,36 +304,53 @@ const shownName = (o: Proposal, lang: ReturnType<typeof useLang>) => (o.kind ===
 
 /**
  * La riga piccola di un'alternativa che ha lo stesso nome di un'altra proposta del posto (la carta compresa): cosa cambia.
- * Chi esce se è diverso ("al posto di X", "in un posto libero"; per una mossa la mossa che toglie), se no lo strumento, se
- * no l'abilità. Nessuna riga se il nome è unico.
+ * Le alternative sono tutte per lo stesso posto (chi esce è lo stesso della carta): per un Pokémon lo strumento, se no
+ * l'abilità; per una mossa la mossa che toglie. Nessuna riga se il nome è unico.
  */
 function altSub(o: Proposal, options: Proposal[], tr: ReturnType<typeof useT>, lang: ReturnType<typeof useLang>): string | null {
   const twins = options.filter(x => x !== o && x.kind === o.kind && shownName(x, lang) === shownName(o, lang));
   if (twins.length === 0) return null;
   if (o.kind === 'move') {
-    return twins.some(x => x.kind === 'move' && (x.fix.member !== o.fix.member || x.fix.from !== o.fix.from))
+    return twins.some(x => x.kind === 'move' && x.fix.from !== o.fix.from)
       ? (o.fix.from ? tr('coach.row.instead', { member: gameName('move', o.fix.from, lang) }) : tr('coach.row.emptySlot')) : null;
   }
-  const seat = (x: Proposal) => (x.kind === 'fix' && x.fix.kind === 'swap' ? x.fix.member ?? '' : '');
-  if (twins.some(x => seat(x) !== seat(o))) return o.fix.kind === 'swap' ? tr('coach.row.instead', { member: o.fix.member ?? '' }) : tr('coach.row.free');
   if (o.fix.set.item && twins.some(x => x.fix.set.item !== o.fix.set.item)) return gameName('item', o.fix.set.item, lang);
   if (o.fix.set.ability && twins.some(x => x.fix.set.ability !== o.fix.set.ability)) return gameName('ability', o.fix.set.ability, lang);
   return null;
 }
 
 /**
- * Un'alternativa che in classifica ha già la sua riga per un altro posto (Tyranitar +10 al posto di Kingambit, qui +6 al
- * posto di Toxapex): la riga piccola lo dice, "anche al posto di Kingambit", così è chiaro che il +N della carta vale per
- * questo posto. Solo per i Pokémon (non per le mosse).
+ * Vero quando la fila sa scorrere di lato e c'è ancora qualcosa a destra (o a sinistra): la fila Oppure col dito sfuma
+ * sul bordo invece di tagliare una tessera di netto. Si ricontrolla scorrendo e cambiando misura.
  */
-function alsoRanked(o: Proposal, group: ProposalGroup, ranked: ProposalGroup[], tr: ReturnType<typeof useT>): string | null {
-  if (o.kind !== 'fix') return null;
-  const seat = o.fix.kind === 'swap' ? o.fix.member ?? '' : '';
-  const other = ranked.find(g => g.id !== group.id && g.options[0].kind === 'fix' && g.options[0].fix.species === o.fix.species
-    && (g.options[0].fix.kind === 'swap' ? g.options[0].fix.member ?? '' : '') !== seat);
-  if (!other || other.options[0].kind !== 'fix') return null;
-  const there = other.options[0].fix;
-  return there.kind === 'swap' ? tr('coach.alt.alsoAt', { member: there.member ?? '' }) : tr('coach.alt.alsoFree');
+function useSideFade(ref: RefObject<HTMLElement | null>, key: string): { left: boolean; right: boolean } {
+  const [fade, setFade] = useState({ left: false, right: false });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const check = () => {
+      const right = el.scrollWidth - el.clientWidth - el.scrollLeft > 2;
+      const left = el.scrollLeft > 2;
+      setFade(f => (f.left === left && f.right === right ? f : { left, right }));
+    };
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    el.addEventListener('scroll', check, { passive: true });
+    check();
+    return () => { observer.disconnect(); el.removeEventListener('scroll', check); };
+  }, [ref, key]);
+  return fade;
+}
+
+/**
+ * Il fuoco sul titolo della carta senza far saltare la pagina: resta dov'è; solo se il titolo è fuori dallo schermo la
+ * pagina scorre quel tanto che basta per vederlo.
+ */
+function focusTitle(el: HTMLElement | null) {
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  const box = el.getBoundingClientRect();
+  if (box.bottom <= 0 || box.top >= window.innerHeight) el.scrollIntoView?.({ block: 'nearest' });
 }
 
 /** Dove il piede della carta si ferma: sotto i 1100 px (la pagina scorre). */
@@ -373,6 +395,88 @@ function usePinnedFoot(ref: RefObject<HTMLElement | null>): boolean {
   return pinned;
 }
 
+/** Quanto può crescere chi entra nella fascia VS al più (px, il lato della figura sulla pedana). */
+const VS_ART_MAX = 220;
+
+/**
+ * Sugli schermi alti (la colonna del Coaching almeno 641 px, sul desktop e sul tablet) la fascia VS prende lo spazio che avanza nella
+ * carta: invece di lasciarlo vuoto sopra le pedane, chi entra (e chi esce) crescono fino a riempirlo, al più VS_ART_MAX.
+ * Ogni volta misura senza la crescita (--in-boost a 0): lo spazio libero sopra chi entra (la colonna è allineata in
+ * basso), meno quanto deve scorrere la parte centrale della carta; il risultato va in --in-boost (px in più sul lato della
+ * figura). Così riempie solo lo spazio che c'è già e non allunga mai la carta (nessun giro di misure).
+ */
+function useVsBoost(cardRef: RefObject<HTMLElement | null>, scrollRef: RefObject<HTMLElement | null>, key: string) {
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    const scroll = scrollRef.current;
+    if (!card || typeof ResizeObserver === 'undefined' || typeof window.matchMedia !== 'function') return;
+    // Sul telefono la fascia VS è una riga bassa: niente; sul tablet la carta riempie lo schermo (useFillScreen) e lo
+    // spazio che avanza va alle figure come sul desktop alto
+    const narrow = window.matchMedia(PHONE_QUERY);
+    let frame = 0;
+    let boost = 0;
+    const set = (next: number) => { boost = next; card.style.setProperty('--in-boost', `${Math.round(next)}px`); };
+    const check = () => {
+      frame = 0;
+      const side = card.querySelector<HTMLElement>('.coach-vs-side.is-in');
+      const stage = side?.querySelector<HTMLElement>('.coach-vs-stage');
+      const box = card.closest<HTMLElement>('.coaching');
+      if (!side || !stage || !box || narrow.matches || box.clientHeight < 641) { if (boost) set(0); return; }
+      const k = parseFloat(getComputedStyle(card).getPropertyValue('--art-k')) || 1;
+      const was = boost;
+      if (was) set(0);
+      // Lo spazio vuoto sopra la prima cosa della colonna (allineata in basso), meno quanto deve scorrere la parte centrale
+      const spare = (side.firstElementChild as HTMLElement | null)?.offsetTop ?? 0;
+      const top = parseFloat(getComputedStyle(side).paddingTop) || 0;
+      const over = scroll ? Math.max(0, scroll.scrollHeight - scroll.clientHeight) : 0;
+      const room = spare - top - over;
+      const base = stage.offsetHeight / k;
+      const next = Math.max(0, Math.min(VS_ART_MAX - base, room / k));
+      set(Math.abs(next - was) >= 2 ? next : was);
+    };
+    const soon = () => { if (!frame) frame = requestAnimationFrame(check); };
+    const observer = new ResizeObserver(soon);
+    observer.observe(card);
+    if (scroll?.firstElementChild) observer.observe(scroll.firstElementChild);
+    narrow.addEventListener('change', soon);
+    check();
+    return () => { observer.disconnect(); narrow.removeEventListener('change', soon); if (frame) cancelAnimationFrame(frame); card.style.removeProperty('--in-boost'); };
+  }, [cardRef, scrollRef, key]);
+}
+
+/** Il tablet (due colonne, la pagina scorre): fra il telefono e il desktop. */
+const TABLET_QUERY = '(min-width: 600px) and (max-width: 1099px)';
+
+/**
+ * Sul tablet il Coaching arriva almeno fino alla barra delle sezioni in fondo allo schermo: la carta e la classifica
+ * usano l'altezza invece di lasciare la pagina vuota sotto di loro (la fascia VS prende lo spazio, useVsBoost). Altrove
+ * niente altezza minima.
+ */
+function useFillScreen(ref: RefObject<HTMLElement | null>, on: boolean) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (!on || typeof ResizeObserver === 'undefined') { el.style.removeProperty('min-height'); return; }
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bottom-h')) || 0;
+      const box = el.getBoundingClientRect();
+      const body = el.closest('.tab-body');
+      // Sotto il Coaching resta il margine della pagina (tab-body): conta anche lui
+      const tail = body ? Math.max(0, body.getBoundingClientRect().bottom - box.bottom) : 0;
+      const want = Math.floor(window.innerHeight - bar - (box.top + window.scrollY) - tail);
+      el.style.minHeight = want > 0 ? `${want}px` : '';
+    };
+    const soon = () => { if (!frame) frame = requestAnimationFrame(check); };
+    const observer = new ResizeObserver(soon);
+    observer.observe(el.closest('.main') ?? document.body);
+    window.addEventListener('resize', soon);
+    check();
+    return () => { observer.disconnect(); window.removeEventListener('resize', soon); if (frame) cancelAnimationFrame(frame); el.style.removeProperty('min-height'); };
+  }, [ref, on]);
+}
+
 /** Le alternative visibili subito in "Oppure"; le altre dietro "altre N". */
 export const ALTS_SHOWN = 3;
 
@@ -382,10 +486,8 @@ export const ALTS_SHOWN = 3;
  * fondo Applica (magenta: è l'azione migliore sullo schermo), il link alla scheda Pokémon o al set, Copia e, se il posto
  * ha altre proposte, "Oppure" con le piccole carte delle alternative (le prime tre col nome, le altre dietro "altre N").
  */
-function Hero({ group, ranked, choice, onChoose, problems, before, rating, actions, flash, titleRef }: {
+function Hero({ group, choice, onChoose, problems, before, rating, actions, flash, titleRef }: {
   group: ProposalGroup;
-  /** Le righe della classifica: un'alternativa che ha già la sua riga per un altro posto lo dice ("anche al posto di X"). */
-  ranked: ProposalGroup[];
   choice: number; onChoose: (index: number) => void; problems: CoachProblem[];
   before: AreaSnapshot | null; rating: TeamRating | null; actions: RowActions; flash: boolean;
   /** Il titolo visibile della carta: riceve il fuoco quando il pulsante usato sparisce (un'alternativa scelta). */
@@ -425,8 +527,16 @@ function Hero({ group, ranked, choice, onChoose, problems, before, rating, actio
   // salita sopra di lui: così non copre mai il +N, il voto, Costa e i nomi (prima resta al suo posto, in fondo alla carta)
   const cardRef = useRef<HTMLElement>(null);
   const pinned = usePinnedFoot(cardRef);
-  const alts = group.options.map((o, i) => ({ o, i })).filter(x => x.i !== at);
+  // Schermi alti: lo spazio che avanza nella fascia VS va alle figure (fino a 220 px), non resta vuoto
+  useVsBoost(cardRef, scrollRef, `${at}|${allAlts}`);
+  // Oppure: solo le alternative per lo stesso posto della carta (chi esce è lo stesso); quelle per un altro posto stanno
+  // nella classifica
+  const seat = proposalSeat(p);
+  const alts = group.options.map((o, i) => ({ o, i })).filter(x => x.i !== at && proposalSeat(x.o) === seat);
   const shownAlts = allAlts ? alts : alts.slice(0, ALTS_SHOWN);
+  // La fila Oppure che scorre col dito sfuma sul bordo dove c'è ancora qualcosa
+  const altsRef = useRef<HTMLDivElement>(null);
+  const altFade = useSideFade(altsRef, `${shownAlts.length}|${at}`);
   return (
     <article ref={cardRef} className={`coach-hero${p.kind === 'move' ? ' is-move' : ''}${flash ? ' is-flash' : ''}${pinned ? ' is-pinned' : ''}`} data-row={group.id} aria-labelledby={headId}
       style={{ '--t1': typeColor(firstType(p)), '--wash': heroTone(p) } as CSSProperties}>
@@ -452,7 +562,7 @@ function Hero({ group, ranked, choice, onChoose, problems, before, rating, actio
           <button type="button" className="coach-apply is-primary" aria-label={tr('coach.row.applyAria', { name })} onClick={apply}>{tr('coach.row.apply')}</button>
           <button type="button" className="coach-see" onClick={see} {...hint(tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet'))}
             aria-label={p.kind === 'fix' ? tr('coach.row.seeAria', { species: p.fix.species }) : tr('coach.row.openSetAria', { member: p.fix.member })}>
-            <Icon name="search" /><span aria-hidden="true">{tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet')}</span>
+            <Icon name={p.kind === 'fix' ? 'team' : 'edit'} /><span aria-hidden="true">{tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet')}</span>
           </button>
           <button type="button" className={`coach-see coach-copy${copied ? ' is-done' : ''}`} aria-label={tr('suggest.copySet')} {...hint(tr('suggest.copySet'))}
             onClick={async () => { if (await copyText(exportShowdown([p.fix.set]))) setCopied(true); }}>
@@ -460,14 +570,14 @@ function Hero({ group, ranked, choice, onChoose, problems, before, rating, actio
           </button>
           {copied && <span className="visually-hidden" role="status">{tr('team.copied')}</span>}
           {alts.length > 0 && (
-            <div className="coach-alts" id={altsId} role="group" aria-label={tr('coach.alt.title', { n: alts.length })}>
+            <div className={`coach-alts${altFade.right ? ' fade-right' : ''}${altFade.left ? ' fade-left' : ''}`} id={altsId} ref={altsRef} role="group" aria-label={tr('coach.alt.title', { n: alts.length })}>
               <span className="coach-alts-word" aria-hidden="true">{tr('coach.alt.or')}</span>
               {shownAlts.map(({ o, i }) => {
-                const sub = altSub(o, group.options, tr, lang) ?? alsoRanked(o, group, ranked, tr);
+                const sub = altSub(o, [p, ...alts.map(x => x.o)], tr, lang);
                 return (
                   <button key={i} type="button" className={`coach-alt-tile${o.kind === 'move' ? ' is-move' : ''}${sub ? ' has-sub' : ''}`} style={{ '--t1': typeColor(firstType(o)) } as CSSProperties}
                     aria-label={tr('coach.alt.pick', { name: proposalName(o, tr, lang) })} {...hint(proposalName(o, tr, lang))}
-                    onClick={() => { onChoose(i); requestAnimationFrame(() => titleRef.current?.focus()); }}>
+                    onClick={() => { onChoose(i); requestAnimationFrame(() => focusTitle(titleRef.current)); }}>
                     <PokemonIcon name={subjectOf(o)} />
                     <span className="coach-alt-who" aria-hidden="true">
                       <span className="coach-alt-name">{o.kind === 'move' ? gameName('move', o.fix.to, lang) : o.fix.species}</span>
@@ -592,12 +702,14 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
   const label = (key: string) => shortProblem(entries.find(x => x.problem.key === key)!.problem, tr, lang);
   // Ogni riga mostra sempre la migliore del suo posto (la prima): un'alternativa scelta cambia solo la carta
   const items = shown.map(group => ({ group, pick: group.options[0], fx: effectsOf(group.options[0], problems, before) }));
-  // Lo stesso primo problema risolto in almeno tre righe: si dice una volta sopra la lista e si toglie da quelle righe
+  // Lo stesso primo problema risolto in almeno tre proposte: si dice una volta sopra la lista e si toglie da quelle righe.
+  // Si conta su tutte le proposte del filtro (non solo la pagina in vista), così la classifica è uguale a ogni misura
   const leadKey = (fx: Effects) => (fx.solved[0] ? `${fx.solved[0].problem.key}|${fx.solved[0].role ?? ''}` : null);
+  const allFx = useMemo(() => groups.map(g => effectsOf(g.options[0], problems, before)), [groups, problems, before]);
   const counts = new Map<string, number>();
-  for (const r of items) { const k = leadKey(r.fx); if (k) counts.set(k, (counts.get(k) ?? 0) + 1); }
+  for (const fx of allFx) { const k = leadKey(fx); if (k) counts.set(k, (counts.get(k) ?? 0) + 1); }
   const [sharedKey, sharedN] = [...counts].reduce<[string | null, number]>((best, [k, n]) => (n > best[1] ? [k, n] : best), [null, 0]);
-  const shared = !busy && sharedN >= 3 ? items.find(r => leadKey(r.fx) === sharedKey)!.fx.solved[0] : null;
+  const shared = !busy && sharedN >= 3 ? allFx.find(fx => leadKey(fx) === sharedKey)!.solved[0] : null;
   const filterLabel = filter ? label(filter) : tr('coach.rank.allProblems');
   // Il posto di ogni riga ("al posto di X") non si taglia mai: se non sta su una riga va a capo (seatWrap)
   const listRef = useRef<HTMLOListElement>(null);
@@ -629,7 +741,7 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
       )}
       {shared && (
         <p className="coach-diag-sub coach-rank-lead">
-          <span>{tr(sharedN === items.length ? 'coach.rank.sharedAll' : 'coach.rank.sharedSome', { n: sharedN })}</span>
+          <span>{tr(sharedN === groups.length ? 'coach.rank.sharedAll' : 'coach.rank.sharedSome', { n: sharedN })}</span>
           <span aria-hidden="true"><SolvedPill entry={shared} /></span>
           <span className="visually-hidden">{solvedText(shared, lang)}</span>
         </p>
@@ -697,21 +809,27 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
  * Il Piano, sopra la carta grande: i cambi migliori da fare insieme (coachPlan: uno per posto, ognuno alza il voto vero
  * del team coi cambi prima di lui). Ogni passo è una piccola carta (il numero, l'icona del Box, chi entra o la mossa nuova
  * e il posto); un clic la apre nella carta grande. In fondo il voto vero dopo ogni passo ("B 70 → A 81 → A 84"), il dopo
- * nel colore del voto, e "dopo N cambi".
+ * nel colore del voto, e "dopo N cambi"; poi "Applica il piano", che fa tutti i passi insieme (un solo Annulla). È un
+ * pulsante secondario (bordo, niente magenta): l'unico magenta resta Applica della carta.
  */
-function PlanStrip({ steps, start, onOpen, compact = false }: {
+function PlanStrip({ steps, start, onOpen, onApply, compact = false }: {
   steps: PlanStep[]; start: TeamRating; onOpen: (groupId: string) => void;
-  /** Telefono: una riga sola, i passi piccoli (numero e icona; il nome e il posto restano nel nome del pulsante) e il voto
-   *  di ora → quello finale con "N cambi". */
+  /** Applica tutti i passi del piano insieme; senza, niente pulsante. */
+  onApply?: () => void;
+  /** Telefono: i passi piccoli (numero, l'icona e il nome corto; per una mossa l'icona del tipo e la mossa) in una fila che
+   *  scorre di lato, il voto di ora → quello finale con "N cambi" e "Applica il piano" sotto. */
   compact?: boolean;
 }) {
   const tr = useT();
   const lang = useLang();
   const path = [`${start.grade} ${start.overall}`, ...steps.map(st => `${st.grade} ${st.overall}`)].join(' → ');
+  const last = steps[steps.length - 1];
+  const stepsRef = useRef<HTMLOListElement>(null);
+  const fade = useSideFade(stepsRef, `${steps.length}|${compact}`);
   return (
     <nav className={`coach-plan${compact ? ' is-compact' : ''}`} aria-label={tr('coach.plan.region')}>
       <span className="coach-plan-title coach-head" aria-hidden="true">{tr('coach.plan.title')}</span>
-      <ol className="coach-plan-steps">
+      <ol className={`coach-plan-steps${fade.right ? ' fade-right' : ''}${fade.left ? ' fade-left' : ''}`} ref={stepsRef}>
         {steps.map((st, i) => {
           const p = st.proposal;
           // Il nome intero del membro, come nella carta e nella classifica
@@ -724,13 +842,13 @@ function PlanStrip({ steps, start, onOpen, compact = false }: {
                 aria-label={tr('coach.plan.stepAria', { n: i + 1, name: proposalName(p, tr, lang), grade: `${st.grade} ${st.overall}` })} {...hint(proposalName(p, tr, lang))}
                 onClick={() => onOpen(st.groupId)}>
                 <span className="coach-plan-n" aria-hidden="true">{i + 1}</span>
-                <PokemonIcon name={subjectOf(p)} />
-                {!compact && (
-                  <span className="coach-plan-who" aria-hidden="true">
-                    <b>{p.kind === 'move' ? gameName('move', p.fix.to, lang) : p.fix.species}</b>
-                    <small>{seat}</small>
-                  </span>
-                )}
+                {compact && p.kind === 'move'
+                  ? <PlanMoveIcon move={p.fix.to} />
+                  : <PokemonIcon name={subjectOf(p)} />}
+                <span className="coach-plan-who" aria-hidden="true">
+                  <b>{p.kind === 'move' ? gameName('move', p.fix.to, lang) : p.fix.species}</b>
+                  {!compact && <small>{seat}</small>}
+                </span>
               </button>
             </li>
           );
@@ -744,8 +862,21 @@ function PlanStrip({ steps, start, onOpen, compact = false }: {
         </span>
         <small className="coach-plan-after" aria-hidden={compact || undefined}>{compact ? `· ${tr('coach.rank.count', { n: steps.length })}` : tr('coach.plan.after', { n: steps.length })}</small>
       </span>
+      {onApply && last && (
+        <button type="button" className="coach-plan-apply" onClick={onApply}
+          aria-label={tr('coach.plan.applyAria', { n: steps.length, grade: `${last.grade} ${last.overall}` })}>
+          <span aria-hidden="true">{tr('coach.plan.apply')}</span>
+        </button>
+      )}
     </nav>
   );
+}
+
+/** Un passo di mossa del Piano sul telefono: l'icona del tipo della mossa nuova (così non sembra un cambio di Pokémon). */
+function PlanMoveIcon({ move }: { move: string }) {
+  const type = getMove(move)?.type;
+  const url = type ? typeIconUrl(type) : undefined;
+  return <span className="coach-plan-mv" aria-hidden="true">{url && <img src={url} alt="" draggable={false} />}</span>;
 }
 
 /**
@@ -855,7 +986,7 @@ function Pager({ page, pages, from, to, onPage, labels }: {
  * problemi e Migliora i set. `advice` null: i consigli si stanno calcolando (lo scheletro). `focus`: un problema scelto
  * nella testata di un'area (`nonce` cambia a ogni clic): la lista si filtra su quel problema e la carta grande si accende.
  */
-export function CoachingView({ coaching, advice, members, rating, team, data, onFix, onMoveFix, onApplyFix, onApplyMove, onExport, onImproveSets, onOverview, focus = null }: {
+export function CoachingView({ coaching, advice, members, rating, team, data, onFix, onMoveFix, onApplyFix, onApplyMove, onApplyPlan, onExport, onImproveSets, onOverview, focus = null }: {
   coaching: Coaching; advice: CoachAdvice | null; members: number; rating: TeamRating | null;
   /** Il team e i dati del voto: servono al Piano (il voto vero coi cambi fatti insieme); senza, niente Piano. */
   team?: TeamSet[]; data?: EngineData;
@@ -887,6 +1018,9 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   // Telefono (una colonna, sotto i 600 px come phone-analysis.css): la carta viene prima della classifica anche nel codice,
   // così il Tab segue l'ordine che si vede. Sul tablet in verticale restano due colonne, la classifica a sinistra
   const oneColumn = useMediaQuery(PHONE_QUERY);
+  // Tablet: il Coaching arriva fino alla barra in fondo (niente pagina vuota sotto la carta)
+  const tablet = useMediaQuery(TABLET_QUERY);
+  useFillScreen(root, tablet && !!groups && groups.length > 0 && members >= 2 && coaching.problems.length > 0);
   // Il Piano: si calcola dopo il primo disegno (rifà il voto del team qualche volta, ~150 ms su un team lungo) e si
   // rifà quando cambiano i consigli o il team; fino ad allora resta quello di prima (o niente). Usa la migliore di ogni
   // posto, come le righe della classifica
@@ -1014,7 +1148,7 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const heroPick = hero ? pickOf(hero) : null;
   // I problemi che nessun cambio singolo risolve: in fondo alla classifica
   const stuck = entries.filter(e => !groups?.some(g => solvesKey(g, e.problem.key)));
-  const actions: RowActions = { onFix, onMoveFix, onApplyFix, onApplyMove };
+  const actions: RowActions = { onFix, onMoveFix, onApplyFix, onApplyMove, onApplyPlan };
   const choose = (groupId: string, i: number) => setPicks(s => ({ advice, chosen: { ...(s.advice === advice ? s.chosen : {}), [groupId]: i } }));
   /** Dimentica l'alternativa scelta di questi posti (tornano alla loro migliore). */
   const forget = (...ids: string[]) => setPicks(s => {
@@ -1025,7 +1159,7 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const pickFilter = (key: string | null) => {
     setFilter(key); setHeroId(null);
     // "Mostra tutte" sparisce col filtro: il fuoco va sul titolo della carta (che ora mostra la migliore)
-    if (key === null && document.activeElement?.classList.contains('coach-back')) requestAnimationFrame(() => heroTitle.current?.focus());
+    if (key === null && document.activeElement?.classList.contains('coach-back')) requestAnimationFrame(() => focusTitle(heroTitle.current));
   };
   // Una riga mostra la migliore del suo posto: aprirla mette nella carta quella (l'alternativa scelta prima si dimentica)
   const open = (groupId: string) => { forget(groupId); setHeroId(groupId); setFlash(f => ({ nonce: (f?.nonce ?? 0) - 1, id: groupId })); };
@@ -1036,14 +1170,16 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const backToBest = () => {
     if (hero) forget(hero.id, ...(visible[0] ? [visible[0].id] : []));
     setHeroId(null);
-    requestAnimationFrame(() => heroTitle.current?.focus());
+    requestAnimationFrame(() => focusTitle(heroTitle.current));
   };
   const rail = (
     <RankRail key="rail" groups={visible} problems={problems} before={before} entries={entries} stuck={stuck} filter={active} onFilter={pickFilter} onOpen={open}
       heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} headRef={oneColumn ? railHead : undefined} />
   );
-  // Sul telefono la classifica sta sotto la carta: il titolo dice quale proposta è ("1 di 5") e un tasto porta alla lista
+  // Sul telefono la classifica sta sotto la carta: il titolo dice quale proposta è ("1 di 5"; con un'alternativa aperta
+  // "alternativa a X", X la migliore di quel posto) e un tasto porta alla lista
   const at = hero ? visible.indexOf(hero) + 1 : 0;
+  const altOpen = !!hero && Math.min(chosen[hero.id] ?? 0, hero.options.length - 1) !== 0;
   const toRanking = () => {
     const head = railHead.current;
     if (!head) return;
@@ -1053,22 +1189,31 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   };
   const main = (
     <section key="main" aria-labelledby={`${id}-list`} className="coach-main">
-      <div className="coach-list-head coach-hero-band">
+      <div className={`coach-list-head coach-hero-band${oneColumn ? ' is-phone' : ''}`}>
         <h4 className="coach-sec">{tr(chosenNotBest ? 'coach.hero.chosen' : 'coach.hero.best')}
-          {oneColumn && at > 0 && <span className="coach-hero-of">{tr('coach.hero.of', { n: at, total: visible.length })}</span>}
+          {oneColumn && at > 0 && hero && (
+            <span className="coach-hero-of">{altOpen ? tr('coach.hero.altOf', { name: shownName(hero.options[0], lang) }) : tr('coach.hero.of', { n: at, total: visible.length })}</span>
+          )}
         </h4>
-        {oneColumn && groups && visible.length > 1 && (
-          <button type="button" className="coach-back coach-to-rank" onClick={toRanking}>{tr('coach.hero.all')}<Icon name="down" /></button>
-        )}
-        {chosenNotBest && (
-          <button type="button" className="coach-back" onClick={backToBest}>
-            <Icon name="undo" />{tr('coach.hero.back')}
-          </button>
+        {((oneColumn && groups && visible.length > 1) || chosenNotBest) && (
+          <div className="coach-hero-acts">
+            {oneColumn && groups && visible.length > 1 && (
+              <button type="button" className="coach-back coach-to-rank" onClick={toRanking}>{tr('coach.hero.all')}<span className="coach-to-arrow" aria-hidden="true">↓</span></button>
+            )}
+            {chosenNotBest && (
+              <button type="button" className="coach-back" onClick={backToBest}>
+                <Icon name="undo" />{tr('coach.hero.back')}
+              </button>
+            )}
+          </div>
         )}
       </div>
-      {groups && rating && planSteps.length >= 2 && <PlanStrip steps={planSteps} start={rating} onOpen={openStep} compact={oneColumn} />}
+      {groups && rating && planSteps.length >= 2 && (
+        <PlanStrip steps={planSteps} start={rating} onOpen={openStep} compact={oneColumn}
+          onApply={onApplyPlan ? () => { const last = planSteps[planSteps.length - 1]; onApplyPlan(planSteps.map(st => st.proposal), `${last.grade} ${last.overall}`); } : undefined} />
+      )}
       {groups ? (
-        hero && <Hero key={hero.id} group={hero} ranked={visible} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}
+        hero && <Hero key={hero.id} group={hero} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}
           rating={rating} actions={actions} flash={flash?.id === hero.id} titleRef={heroTitle} />
       ) : (
         <>

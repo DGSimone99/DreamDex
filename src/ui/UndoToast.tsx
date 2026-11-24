@@ -15,7 +15,7 @@ export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
   /** Membro rimosso o sostituito (`setChange`: il suo set cambiato per intero nell'editor), o team caricato da un link, importato o preso dai team salvati (`loadSaved`, il nome in `from`). */
-  kind: 'remove' | 'add' | 'replace' | 'paste' | 'setChange' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | ListUndo['kind'] | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
+  kind: 'remove' | 'add' | 'replace' | 'paste' | 'setChange' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | ListUndo['kind'] | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament' | 'plan';
   from: string;
   to?: string;
   /** Completa team: Pokémon aggiunti negli slot vuoti. */
@@ -28,7 +28,7 @@ export interface UndoAction {
  *  intera). Sta al centro dello schermo: dura poco, e passandoci sopra si ferma (scelta dell'utente, 2026-11-14). */
 export const UNDO_MS = 3000;
 export const UNDO_BIG_MS = 6000;
-const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'clearList', 'listReplace', 'savedDelete'];
+const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'plan', 'clearList', 'listReplace', 'savedDelete'];
 export const undoDuration = (kind: UndoAction['kind']) => (BIG.includes(kind) ? UNDO_BIG_MS : UNDO_MS);
 
 /**
@@ -162,6 +162,7 @@ export function UndoToast({ action, onUndo, onClose, docked = false }: { action:
           : action.kind === 'loadSaved' ? t('undo.loadedSaved', { name: action.from })
           : action.kind === 'clear' ? t('undo.cleared')
           : action.kind === 'tournament' ? t('undo.tournament')
+          : action.kind === 'plan' ? t(action.added === 1 ? 'undo.planOne' : 'undo.plan', { n: action.added ?? 0, from: action.from, to: action.to ?? '' })
           : action.kind === 'presets' && action.created ? t('undo.created', { to: action.to ?? '' })
           : action.kind === 'presets' ? (action.added
             ? t(action.added === 1 ? 'undo.filledOne' : 'undo.filledMany', { n: action.added, from: action.from, to: action.to ?? '' })
