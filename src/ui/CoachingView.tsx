@@ -30,7 +30,7 @@ import { hint } from './MoveTip';
 import { isMissingRoles, isThreat, MoreProblems, problemEntries, ProblemChip, ProblemPill, type ProblemEntry } from './ProblemPill';
 import { useFitCount } from './useFit';
 import { Sprite, typeColor } from './Sprite';
-import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
+import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
 
 /** Il voto in più di una proposta: "+3", a pari voto "±0" (mai "+0"). */
 export const gainText = (gain: number) => (gain > 0 ? `+${gain}` : gain < 0 ? `−${-gain}` : '±0');
@@ -766,9 +766,9 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const [flash, setFlash] = useState<{ nonce: number; id: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const handled = useRef<number | null>(null);
-  // Telefono e tablet (una colonna): la carta viene prima della classifica anche nel codice, così il Tab segue l'ordine
-  // che si vede
-  const oneColumn = useMediaQuery(EDITOR_TABS_QUERY);
+  // Telefono (una colonna, sotto i 600 px come phone-analysis.css): la carta viene prima della classifica anche nel codice,
+  // così il Tab segue l'ordine che si vede. Sul tablet in verticale restano due colonne, la classifica a sinistra
+  const oneColumn = useMediaQuery(PHONE_QUERY);
   // Il Piano: si calcola dopo il primo disegno (rifà il voto del team qualche volta, ~150 ms su un team lungo) e si
   // rifà quando cambiano i consigli o il team; fino ad allora resta quello di prima (o niente). Usa la migliore di ogni
   // posto, come le righe della classifica

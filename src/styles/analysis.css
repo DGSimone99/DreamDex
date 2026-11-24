@@ -1056,6 +1056,10 @@
   /* Un Piano di tre passi: il posto di ogni passo resta nel nome per lo screen reader e nella carta */
   .coach-plan:has(.coach-plan-steps > li:nth-child(3)) .coach-plan-who small { display: none; }
 }
+/* Alte (1920×1080): la classifica più stretta in alto, così ci sta una riga in più */
+@container coaching (min-height: 641px) {
+  .coach-diag { gap: var(--sp-2); }
+}
 /* Altezze medie (1440×900): la fascia VS più bassa */
 @container coaching (max-height: 640px) {
   .coach-hero { --in-w: 108px; --out-w: 76px; --vs-pad: var(--sp-3); --art-k: 1.1; }
@@ -1098,7 +1102,8 @@
   .coach-gain { font-size: var(--fs-stat); }
   .coach-grade-change { font-size: var(--fs-caption); }
   .coach-grade-tag { font-size: var(--fs-section); }
-  .coach-hero-name { font-size: var(--fs-section); }
+  /* Chi entra: il nome intero, su due righe se serve ("Raging Bolt" a 360 px), mai tagliato */
+  .coach-hero-name { font-size: var(--fs-section); white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.1; }
   .coach-vs-out-name { font-size: var(--fs-caption); }
   .coach-vs-free { height: 56px; font-size: var(--fs-small); }
   .coach-hero-body { padding: var(--sp-6) var(--sp-6) var(--sp-5); }

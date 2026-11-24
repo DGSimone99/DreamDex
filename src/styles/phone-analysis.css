@@ -13,6 +13,16 @@
      (.coach-cure sul desktop ha overflow auto e overscroll contain, più specifico della riga sopra) */
   .coaching, .coaching.coach-cure { height: auto; overflow: visible; overscroll-behavior: auto; }
   .coach-hero, .coach-hero-body, .coach-hero-scroll { overflow: visible; mask-image: none; }
+  /* Il piede della carta (Applica, Vedi, Copia set, Oppure) resta fermo in fondo allo schermo, sopra la barra delle sezioni,
+     finché la carta è in vista: Applica non finisce mai sotto il bordo. Il piede sta nel flusso della carta: in fondo alla
+     carta torna al suo posto, dopo l'ultima riga, e non copre niente */
+  .coach-hero-foot { position: sticky; bottom: calc(var(--bottom-h) + var(--safe-b)); z-index: 3; padding-top: var(--sp-4); box-shadow: 0 -1px 0 var(--line-soft); }
+  /* Oppure in una riga sola che scorre col dito (niente righe a capo): il piede resta basso, non si mangia lo schermo */
+  .coaching .coach-alts { flex: 1 1 100%; flex-wrap: nowrap; justify-content: flex-start; margin-left: 0; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity; scrollbar-width: none; padding-block: 1px; }
+  .coaching .coach-alts::-webkit-scrollbar { display: none; }
+  .coaching .coach-alts > * { flex: none; scroll-snap-align: start; }
+  .coaching .coach-alt-name, .coaching .coach-alt-sub { overflow: visible; }
 
   /* ── Schede di Analisi: una fila che scorre col dito, la scheda aperta sempre in vista ── */
   .analysis-tabs {
@@ -153,9 +163,6 @@
   .coach-hero { flex: none; }
   .coach-diag-box { --row-h: auto; flex: none; }
   .coach-diag-list { grid-auto-rows: auto; }
-  /* Il piede della carta (Applica, Vedi, Copia set, Oppure) resta fermo in fondo allo schermo, sopra la barra delle sezioni,
-     finché la carta è in vista: Applica non finisce mai sotto il bordo */
-  .coach-hero-foot { position: sticky; bottom: calc(var(--bottom-h) + var(--safe-b)); z-index: 3; padding-top: var(--sp-4); box-shadow: 0 -1px 0 var(--line-soft); }
   .coach-plan-who { flex-direction: column; align-items: flex-start; gap: 0; }
   /* Il posto di ogni passo resta scritto ("su Landorus-Therian"): sotto il nome c'è spazio */
   .coaching.coach-cure .coach-plan .coach-plan-steps > li .coach-plan-who small { display: block; }
