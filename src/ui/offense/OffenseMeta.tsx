@@ -290,9 +290,9 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         <p id={summaryId} hidden>{open.length ? t('sr.cm.offense', { list: open.join(', ') }) : t('sr.cm.offenseNone')}</p>
         <section className="og-hero" aria-label={t('odetail.gen.total')}>
           <span className="og-plate">{t('odetail.gen.total')}</span>
-          <p className="og-hero-line"><b className={countClass(covered, all.length)}>{covered}</b><small>/{all.length}</small> {t('odetail.cards.threatsCovered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
-          {/* Perché sono meno delle minacce della Difesa: dei più usati, una per coppia di tipi */}
-          <p className="og-hero-note">{t('guide.off.targets.metaSubOff', { top: TARGET_SCAN })}</p>
+          <p className="og-hero-line"><b className={countClass(covered, all.length)}>{covered}</b><small>/{all.length}</small> {t('odetail.cards.threatsCovered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}
+            {/* Perché sono meno delle minacce della Difesa: dei più usati, una per coppia di tipi (sulla stessa riga se ci sta) */}
+            <span className="og-hero-note">{t('guide.off.targets.metaSubOff', { top: TARGET_SCAN })}</span></p>
         </section>
         <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />
           {/* Telefono e tablet: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga in più) */}
