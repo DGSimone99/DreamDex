@@ -8,7 +8,7 @@ import type { Lang } from '../../i18n';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
-import { attackerCols, HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
+import { attackerCols, HOLD_LEGEND, HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
 import { Ask, BarHead, MetaTargets, metaText, typeStatText } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies } from '../../engine/dex';
@@ -221,7 +221,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></div>
           {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></div>}
         </section>
-        <CardsLegend side="def" pieces={[['held', '3HKO+'], ['two', '2HKO'], ['ohko', 'OHKO']]} />
+        <CardsLegend side="def" pieces={HOLD_LEGEND} />
         <ul className="og-cards" aria-label={t('detail.member')}>
           {members.map((m, i) => {
             const set = setOf(ctx.team, m.species);
@@ -371,6 +371,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           </tfoot>
         </table>
       </div>
+      {/* In alto a destra la chiave dei quattro pezzi (4HKO+, 3HKO, 2HKO, OHKO), come la legenda di Coverage meta: quando la
+          riga è stretta i pezzi perdono l'etichetta e restano numero e colore */}
+      <div className="rob-legend og-legend" aria-hidden="true"><CardsLegend side="def" pieces={HOLD_LEGEND} /></div>
     </div>
   );
 }

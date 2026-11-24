@@ -190,6 +190,10 @@
 /* Se la riga non ha posto per tre pezzi col minimo (3 × 66 + 2 × 3 = 204px), le etichette spariscono tutte insieme e il
    minimo scende a 36px (solo il numero), in tutte e due le tabelle */
 @container kobrow (max-width: 203px) { .kob-row > .kob { --kob-min: 36px; } .kob-row > .kob > em { display: none; } }
+/* Difesa: con quattro pezzi (4HKO+, 3HKO, 2HKO, OHKO) il minimo scende a 62px (padding più stretto: etichetta e numero ci
+   stanno ancora), 4 × 62 + 3 × 3 = 257px; sotto, la stessa regola (solo il numero) */
+.def-members .kob-row:has(> .kob.hb:nth-child(4)) > .kob { --kob-min: 62px; padding: 0 var(--sp-2) 0 4px; }
+@container kobrow (max-width: 256px) { .def-members .kob-row:has(> .kob.hb:nth-child(4)) > .kob { --kob-min: 36px; } .def-members .kob-row:has(> .kob.hb:nth-child(4)) > .kob > em { display: none; } }
 /* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
 .kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }

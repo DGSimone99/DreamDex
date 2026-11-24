@@ -6,7 +6,7 @@ import { TypeIcons } from '../typeIcons';
 import { HoldBars, type HoldTarget } from './HoldBars';
 import { battleName, battleSpecies } from '../../engine/dex';
 import { holdBand, type HoldBand, type TeamDefense } from '../../engine/defense';
-import { pieceOf, type HoldPiece } from './HoldBars';
+import { HOLD_LEGEND, type HoldPiece } from './HoldBars';
 
 /** Telefono e tablet: quante minacce si vedono all'inizio e quante ne aggiunge "Altre". */
 const CARDS_STEP = 12;
@@ -93,7 +93,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const focus = ctx.focus?.kind === 'dmeta' ? ctx.focus : null;
   const pieceAt = (row: Row, m: number): HoldPiece | null => {
     const c = cellsOf(row, names)[m];
-    return c === null ? null : c === 'ko' ? 'ohko' : pieceOf(c.band);
+    return c === null ? null : c === 'ko' ? 'ohko' : c.band;
   };
   const lit = (row: Row) => !!focus && pieceAt(row, focus.slot) === focus.band;
   // Aperta da una minaccia della Panoramica: la sua colonna per prima (prima pagina) e accesa, le altre spente
@@ -275,7 +275,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
           {focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
-          : <CardsLegend side="def" text={t('ddetail.cards.threatBar')} pieces={[['held', '3HKO+'], ['two', '2HKO'], ['ohko', 'OHKO']]} />}</div>
+          : <CardsLegend side="def" text={t('ddetail.cards.threatBar')} pieces={HOLD_LEGEND} />}</div>
         <ul className="og-cards cm-cards" aria-label={t('detail.coverageMeta')}>
           {visible.map(r => {
             const types = battleSpecies(r.set)?.types ?? [];

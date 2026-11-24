@@ -452,12 +452,15 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
 });
 
 describe('Difesa Generale: clic sui pezzi delle barre', () => {
-  it('ogni pezzo ha la sua etichetta (3HKO+, 2HKO, OHKO); clic su un pezzo di Tipi: Coverage tipi con la riga del membro e quei tipi accesi, "Mostra tutti" li spegne', async () => {
+  it('ogni pezzo ha la sua etichetta (4HKO+, 3HKO, 2HKO, OHKO); clic su un pezzo di Tipi: Coverage tipi con la riga del membro e quei tipi accesi, "Mostra tutti" li spegne', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
     const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
     const pieces = Array.from(row.querySelectorAll('td')[0].querySelectorAll<HTMLElement>('.kob.hb'));
-    for (const p of pieces) expect(p.querySelector('em')).toHaveTextContent(/^(3HKO\+|2HKO|OHKO)$/);
+    for (const p of pieces) expect(p.querySelector('em')).toHaveTextContent(/^(4HKO\+|3HKO|2HKO|OHKO)$/);
+    // Il conto "n/18" è quanti ne regge: i pezzi 4HKO+ e 3HKO insieme
+    const held = pieces.filter(p => /^(4HKO\+|3HKO)$/.test(p.querySelector('em')!.textContent!)).reduce((s, p) => s + Number(p.querySelector('.kob-num')!.textContent), 0);
+    expect(Number(row.querySelectorAll('td')[0].querySelector('.kob-count-num b')!.textContent)).toBe(held);
     const piece = pieces[0];
     const n = Number(piece.querySelector('.kob-num')!.textContent);
     expect(piece).toHaveAttribute('role', 'button');

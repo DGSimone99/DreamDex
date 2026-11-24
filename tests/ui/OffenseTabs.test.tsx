@@ -708,7 +708,7 @@ describe('Offesa: Coverage meta', () => {
         expect(cell).toHaveClass(`ko-${ko(pct)}`);
         if (ko(pct) === 'ohko') {
           // In un colpo: il timbro KO al posto del numero (il % e la fascia a parole per chi legge lo schermo), niente barra
-          expect(cell.querySelector('.cm-ko')!.textContent).toBe('KO');
+          expect(cell.querySelector('.cm-ko')!.textContent).toBe('OHKO');
           expect(cell.querySelector('.wall-pct')).toBeNull();
           expect(cell.querySelector('.cm-hp')).toBeNull();
           expect(cell).toHaveTextContent(`${pct}% OHKO`);

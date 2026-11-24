@@ -300,7 +300,8 @@
 .cards-legend.off i.cl-ohko { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
 .cards-legend.off i.cl-two { background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
 .cards-legend.off i.cl-rest { background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
-.cards-legend.def i.cl-held { background: color-mix(in srgb, var(--good) 35%, var(--panel)); }
+.cards-legend.def i.cl-four { background: color-mix(in srgb, var(--good) 22%, var(--panel)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good) 60%, transparent); }
+.cards-legend.def i.cl-three { background: color-mix(in srgb, var(--good) 46%, var(--panel)); }
 .cards-legend.def i.cl-two { background: color-mix(in srgb, var(--warn) 35%, var(--panel)); }
 .cards-legend.def i.cl-ohko { background: color-mix(in srgb, var(--bad) 35%, var(--panel)); }
 .cards-legend i.kob-tri { width: 9px; height: 9px; border-radius: 0; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
@@ -349,3 +350,9 @@
 .sus-pill.bad b { color: var(--bad); }
 .og-hero-line b.plain { font-size: 30px; color: var(--text); }
 .sus-cards { align-items: start; }
+/* Difesa a carte: quattro pezzi (4HKO+, 3HKO, 2HKO, OHKO) nella barra stretta della carta, minimo più basso e numero più
+   piccolo, così stanno anche a 360px (4 × 15 + 3 × 2 = 66px) */
+.og-card .kob-row:has(> .kob.hb) { gap: 2px; }
+.og-card .kob-row > .kob.hb { --kob-min: 15px; padding: 0; }
+.og-card .kob-row > .kob.hb .kob-num { margin: 0 auto; }
+.og-card .kob-row > .kob.hb .kob-num > b { font-size: var(--fs-small); }

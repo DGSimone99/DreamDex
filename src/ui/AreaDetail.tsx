@@ -80,7 +80,7 @@ export const familyAt = (ctx: AreaContext, slot: number) => ctx.analysis.needs.p
 
 /** Il dettaglio di una tessera: che tabella, quale membro (posto nel team) e quale fascia (KO in un colpo o in due). */
 /** `band`: OHKO, 2HKO o 'rest' (quelli che il membro non manda KO in due colpi). */
-/** Nella Difesa (kind 'dtypes' / 'dmeta') `band` è il pezzo della barra: 'held' (3HKO+), 2HKO o OHKO. */
+/** Nella Difesa (kind 'dtypes' / 'dmeta') `band` è il pezzo della barra: la fascia (4HKO+, 3HKO, 2HKO o OHKO). */
 /** `threat` (dalla carta Minacce del meta della Panoramica): in Coverage meta della Difesa o dell'Offesa la colonna di quella minaccia, prima nell'ordine e accesa. */
 /** `type` (da una pillola di problema della testata): in Coverage tipi la colonna di quel tipo accesa. */
 /** `open` (pillola della testata): sulle carte (sotto i 1100 px) si apre anche il foglio dal basso della minaccia o del tipo. */

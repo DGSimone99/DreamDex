@@ -143,7 +143,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         onFocus={e => { hover.enter(k0).onFocus(); tip.focus({ species: row.species, m }).onFocus(e); }} onBlur={tip.close}>
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
         {k === 'ohko'
-          ? <span className="cm-ko win" aria-hidden="true">KO</span>
+          ? <span className="cm-ko win" aria-hidden="true">OHKO</span>
           : <><span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} band={k} /></>}
         {k === 'ohko' && <span className="visually-hidden">{c.pct}%</span>}
         {TAG[k] && <span className="visually-hidden"> {TAG[k]}</span>}
@@ -343,7 +343,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                     <span className="ct-sheet-name">{names[m]}{known && c!.move && <small className="ct-sheet-sub">{gameName('move', c!.move, lang)}</small>}</span>
                     {known
                       ? <>
-                        {k === 'ohko' ? <span className="cm-ko small win">KO</span> : <HpLeft pct={c!.pct} band={k} />}
+                        {k === 'ohko' ? <span className="cm-ko small win">OHKO</span> : <HpLeft pct={c!.pct} band={k} />}
                         <EffTag label={tag} side="offense" />
                         <span className="ct-sheet-pct">{c!.pct}<i>%</i></span>
                       </>
@@ -368,7 +368,7 @@ function OffenseMetaLegend() {
   const t = useT();
   return (
     <>
-      <span className="cm-ko small win">KO</span>
+      <span className="cm-ko small win">OHKO</span>
       {KO_ORDER.filter(b => b !== 'ohko').map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
       <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
       <span className="wall-legend-setup"><i className="kob-tri team" />{t('kob.legendTeam')}</span>

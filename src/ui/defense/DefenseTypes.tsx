@@ -29,7 +29,6 @@ import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { useMemberTip } from '../MemberCard';
 import { TypeStatsTip } from '../TypeStatsTip';
 import { HOLD_BANDS, HOLD_ORDER } from './holds';
-import { pieceOf } from './HoldBars';
 import { FocusNote } from '../offense/KoBadges';
 import { PokemonIcon } from '../PokemonName';
 import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
@@ -133,7 +132,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
     const band = HOLD_BANDS[cell.band];
     const tag = effLabel(multipliers.get(row.type as TypeName)?.[member] ?? 1, 'defense');
     return (
-      <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : typeFocus ? (i === typeCol ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && cell.band === focus.band ? ' kf-hit' : ' kf-dim') : typeFocus ? (i === typeCol ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
         {...focusAt(member, i, { slot: member, col: i })}>
         <span className="ct-num">{cell.band !== 'ohko' && cell.pct >= 100 ? 99 : cell.pct}<i>%</i></span>
@@ -159,7 +158,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
       if (typeFocus) return i === typeCol;
       if (!focus || slots[focus.slot] === null) return null;
       const cell = defense.typed[slots[focus.slot]!].cells[i];
-      return !!cell && pieceOf(cell.band) === focus.band;
+      return !!cell && cell.band === focus.band;
     };
     const openRow = sheetCol === null ? null : rows[sheetCol];
     return (

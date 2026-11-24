@@ -16,24 +16,25 @@ import { TypeStatTable, type TypeStatCol } from '../offense/TargetsTip';
 /*
  * La barra a pezzi della Generale della Difesa, sorella di quella dell'Offesa (KoBadges): per un membro (o per il team)
  * quanti dei 18 tipi o delle minacce del meta lo mandano KO in un colpo, in due, in tre, in quattro o più. I colori sono
- * un semaforo, come i colori di stato dell'app: verde regge (3HKO+), giallo cade in due colpi (2HKO), rosso in uno (OHKO);
- * i pezzi vanno dal migliore (regge, a sinistra) al peggiore.
+ * un semaforo, come i colori di stato dell'app: verde regge (4HKO+ verde pieno, 3HKO verde chiaro a righe), giallo cade
+ * in due colpi (2HKO), rosso in uno (OHKO); i pezzi vanno dal migliore (a sinistra) al peggiore, come la legenda di Coverage meta.
  */
 
 /** Un bersaglio (tipo o minaccia del meta) con la fascia del colpo che il membro prende. */
 export interface HoldTarget { label: string; kind: 'type' | 'mon'; band: HoldBand }
 
-/** Le fasce dalla migliore. */
+/** Le fasce dalla migliore: i pezzi della barra da sinistra (4HKO+, 3HKO, 2HKO, OHKO), come la legenda di Coverage meta. */
 const ORDER: HoldBand[] = ['four', 'three', 'two', 'ohko'];
-/** I tre pezzi da sinistra: quelli che regge (4HKO+ e 3HKO insieme), poi 2HKO e OHKO. */
-export type HoldPiece = 'held' | 'two' | 'ohko';
+/** Un pezzo della barra è una fascia: le quattro di Coverage tipi e meta (4HKO+ e 3HKO sono quelle che regge). */
+export type HoldPiece = HoldBand;
 type Piece = HoldPiece;
-const PIECES: Piece[] = ['held', 'two', 'ohko'];
-const PIECE_CLS: Record<Piece, string> = { held: 'hb-held', two: 'hb-2', ohko: 'hb-ohko' };
-/** Il pezzo della barra di una fascia: 3HKO e 4HKO+ insieme ("3HKO+"), poi 2HKO e OHKO. */
-export const pieceOf = (b: HoldBand): Piece => (b === 'four' || b === 'three' ? 'held' : b);
+const PIECE_CLS: Record<Piece, string> = { four: 'hb-4', three: 'hb-3', two: 'hb-2', ohko: 'hb-ohko' };
 /** L'etichetta del pezzo, nella barra e nel tooltip. */
-export const PIECE_TAG: Record<Piece, string> = { held: '3HKO+', two: '2HKO', ohko: 'OHKO' };
+export const PIECE_TAG: Record<Piece, string> = { four: '4HKO+', three: '3HKO', two: '2HKO', ohko: 'OHKO' };
+/** Regge: gli tolgono meno di metà PS (4HKO+ o 3HKO); è il conto "12/18" e "La reggono N/6". */
+export const isHeld = (b: HoldBand) => b === 'four' || b === 'three';
+/** La legenda corta dei pezzi (carte, telefono), dalla migliore. */
+export const HOLD_LEGEND: [string, string][] = ORDER.map(b => [b, PIECE_TAG[b]]);
 
 /** I 18 tipi per un membro: la fascia del lato peggiore (fisico o speciale). */
 export const typeHolds = (cells: { band: HoldBand }[]): HoldTarget[] =>
@@ -80,9 +81,9 @@ export function HoldBars({ targets, who, mon, of, alarm = false, onPick, pickPla
   // Dove porta il clic: in fondo al tooltip e alla descrizione di ogni pezzo
   const go = onPick && pickPlace ? goText(t, pickPlace) : '';
   const total = targets.length;
-  const by = (p: Piece) => targets.filter(x => pieceOf(x.band) === p);
+  const by = (p: Piece) => targets.filter(x => x.band === p);
   const tag = (p: Piece) => PIECE_TAG[p];
-  const n = by('held').length;
+  const n = targets.filter(x => isHeld(x.band)).length;
   const ratio = total ? n / total : 0;
   // In testata il membro con la sua sprite (un tooltip su un Pokémon), la riga del team con lo scudo
   const lead = mon ? { sprite: mon } : { lead: <TipGlyph icon="shield" /> };
@@ -91,11 +92,11 @@ export function HoldBars({ targets, who, mon, of, alarm = false, onPick, pickPla
   return (
     <span className="kob-line hb-line">
       <span className="kob-row">
-        {PIECES.map(p => {
+        {ORDER.map(p => {
           const items = by(p);
           if (!items.length) return null;
           return (
-            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && p !== 'held' ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={pieceSize(items.length)}
+            <span key={p} className={`kob hb ${PIECE_CLS[p]}${alarm && !isHeld(p) ? ' hb-alarm' : ''}${onPick ? ' pick' : ''}`} style={pieceSize(items.length)}
               data-nav="" {...tip.bind(p)} aria-describedby={`${id}-${p}`}
               {...(onPick ? { role: 'button', onClick: () => { tip.close(); onPick(p); }, onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tip.close(); onPick(p); } } } : { role: 'img' })}
               aria-label={`${tag(p)} ${items.length}`}>
@@ -106,16 +107,10 @@ export function HoldBars({ targets, who, mon, of, alarm = false, onPick, pickPla
           );
         })}
         {key && (
-          <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
+          <FloatTip rect={tip.anchor!.rect} tone={isHeld(key) ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
             <TipHead {...lead} title={who} sub={<><KoBadge side="def" band={key} />{t(`hold.say.${key}`)}</>}
               num={<>{by(key).length}<small>/{total}</small></>} qualifier={of} />
-            {/* "Regge" in due gruppi: meno di un terzo dei PS (4HKO+) e meno di metà (3HKO). I pallini hanno i colori delle
-                caselle di Coverage (verde, verde chiaro, giallo, rosso); quello del 2HKO un filo più pieno, se no è piccolo e spento */}
-            {(key === 'held' ? (['four', 'three'] as const) : [key]).map(b => {
-              const items = targets.filter(x => x.band === b);
-              // La frase della fascia sta già sotto il titolo: qui solo per i due gruppi di "Regge" (4HKO+ e 3HKO)
-              return items.length ? <TipSec key={b} className="hb-group" label={key === 'held' ? <><KoBadge side="def" band={b} />{t(`hold.say.${b}`)}</> : undefined}>{list(items)}</TipSec> : null;
-            })}
+            <TipSec>{list(by(key))}</TipSec>
             {go && <TipGo place={pickPlace!} />}
           </FloatTip>
         )}
