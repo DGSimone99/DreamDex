@@ -1476,7 +1476,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.off.doubles.spread': "In doppio una mossa che colpisce più bersagli fa meno danno su ciascuno.",
   'guide.off.targets.typesTitle': "Il Pokémon medio dei 18 tipi",
   'guide.off.targets.metaTitle': "I {n} Pokémon più usati",
-  'guide.off.targets.metaSub': "Dal più usato, coi loro set più comuni",
+  'guide.off.targets.metaSub': "Dei {top} più usati, quelli con una mossa d'attacco",
   'guide.off.targets.metaSubOff': "Dei {top} più usati, uno per coppia di tipi",
   'guide.off.cov.targets.meta': "I {n} Pokémon più usati, coi loro set più comuni",
   'guide.off.cov.depth': "Quanti lo coprono",

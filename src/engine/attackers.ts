@@ -5,7 +5,7 @@ import { mostCommonSet, type TeamSet } from './sets';
 import { topThreats, usageOf } from './stats';
 
 /** Quante minacce del meta misurano la Coverage difensiva meta. */
-const THREATS = 40;
+export const THREATS = 40;
 
 const damaging = (set: TeamSet) => set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
 

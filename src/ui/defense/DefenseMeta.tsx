@@ -6,6 +6,7 @@ import { TypeIcons } from '../typeIcons';
 import { HoldBars, type HoldTarget } from './HoldBars';
 import { battleName, battleSpecies } from '../../engine/dex';
 import { holdBand, type HoldBand, type TeamDefense } from '../../engine/defense';
+import { THREATS } from '../../engine/attackers';
 import { HOLD_LEGEND, type HoldPiece } from './HoldBars';
 
 /** Telefono e tablet: quante minacce si vedono all'inizio e quante ne aggiunge "Altre". */
@@ -267,7 +268,9 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         <p id={summaryId} hidden>{open.length ? t('sr.cm.defense', { list: open.join(', ') }) : t('sr.cm.defenseNone')}</p>
         <section className="og-hero" aria-label={t('odetail.gen.total')}>
           <span className="og-plate">{t('odetail.gen.total')}</span>
-          <p className="og-hero-line"><b className={countClass(allHeld, all.length)}>{allHeld}</b><small>/{all.length}</small> {t('ddetail.cards.threatsHeld')}</p>
+          <p className="og-hero-line"><b className={countClass(allHeld, all.length)}>{allHeld}</b><small>/{all.length}</small> {t('ddetail.cards.threatsHeld')}
+            {/* Quali sono: dei 40 più usati, quelli che attaccano (come la riga dell'Offesa; sulla stessa riga se ci sta) */}
+            <span className="og-hero-note">{t('guide.off.targets.metaSub', { top: THREATS })}</span></p>
         </section>
         <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />
           {/* Telefono e tablet: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga in più) */}
