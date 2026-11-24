@@ -291,7 +291,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                 </button>
                 <span className="og-card-tag cm-card-rank" aria-label={t('odetail.cards.rank', { n: rank.get(r.species) ?? 0 })}>#{rank.get(r.species)}</span>
                 <TypeIcons types={types} className="og-card-types" />
-                <div className="og-card-row cm-card-row"><HoldBars targets={targetsOf(r)} who={r.species} mon={r.species} of={t('odetail.cards.ofTeam')} quiet /></div>
+                <div className="og-card-row cm-card-row"><HoldBars targets={targetsOf(r)} who={r.species} mon={r.species} of={t('odetail.cards.ofTeam')} /></div>
               </li>
             );
           })}

@@ -19,6 +19,7 @@ import { CardsLegend, countClass } from '../CardsLegend';
 import { TypeHitTip } from './TypeHitTip';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
+import { TARGET_SCAN } from '../../engine/coverage';
 import { MetaCount, MetaFrame, MetaOrderSwitch, type MetaOrder } from '../MetaFrame';
 import { byThreat, byUsage } from '../../engine/overviewDashboard';
 import { EffLegend, EffTag, effClass, effLabel, useColumnHover, EffSwitch } from '../effTag';
@@ -290,6 +291,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         <section className="og-hero" aria-label={t('odetail.gen.total')}>
           <span className="og-plate">{t('odetail.gen.total')}</span>
           <p className="og-hero-line"><b className={countClass(covered, all.length)}>{covered}</b><small>/{all.length}</small> {t('odetail.cards.threatsCovered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
+          {/* Perché sono meno delle minacce della Difesa: dei più usati, una per coppia di tipi */}
+          <p className="og-hero-note">{t('guide.off.targets.metaSubOff', { top: TARGET_SCAN })}</p>
         </section>
         <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />
           {/* Telefono e tablet: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga in più) */}
@@ -314,7 +317,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                 </button>
                 <span className="og-card-tag cm-card-rank" aria-label={t('odetail.cards.rank', { n: rank.get(r.species) ?? 0 })}>#{rank.get(r.species)}</span>
                 <TypeIcons types={types} className="og-card-types" />
-                <div className="og-card-row cm-card-row"><KoBadges bands={bandsOf(r)} who={r.species} mon={r.species} of={t('odetail.cards.ofTeam')} total={ctx.team.length} quiet /></div>
+                <div className="og-card-row cm-card-row"><KoBadges bands={bandsOf(r)} who={r.species} mon={r.species} of={t('odetail.cards.ofTeam')} total={ctx.team.length} /></div>
               </li>
             );
           })}
