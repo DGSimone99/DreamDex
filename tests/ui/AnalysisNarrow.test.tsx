@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
@@ -42,29 +42,36 @@ describe('Offesa sullo schermo stretto', () => {
     expect(screen.queryByRole('dialog', { name: 'Great Tusk' })).toBeNull();
   });
 
-  it('Coverage tipi girata: 18 tipi in riga, i membri in colonna, senza la colonna Team (il filo sotto il tipo dice se è coperto)', async () => {
+  it('Coverage tipi a tessere: 18 tipi con la coverage del team; una tessera apre il foglio coi membri', async () => {
     const user = userEvent.setup();
     view();
     await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
-    const table = screen.getByRole('table', { name: 'Offesa: Coverage tipi' });
-    expect(table).toHaveClass('ct-flip-table');
-    expect(table.querySelectorAll('tbody tr')).toHaveLength(18);
-    expect([...table.querySelectorAll('thead th.ct-mon-h')].map(th => th.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    for (const row of table.querySelectorAll('tbody tr')) expect(row.querySelectorAll('td')).toHaveLength(2);
-    expect(table.querySelector('.ct-level')).toBeNull();
+    const list = screen.getByRole('list', { name: 'Coverage tipi' });
+    expect(list.querySelectorAll('.ct-tile')).toHaveLength(18);
+    expect(screen.getByRole('region', { name: 'Team Coverage' })).toHaveTextContent(/\/18 tipi coperti · \d+ con un OHKO/);
+    await user.click(within(list).getByRole('button', { name: /^(Fuoco|Fire): Team Coverage \d+%/ }));
+    const sheet = screen.getByRole('dialog', { name: /^(Fuoco|Fire)$/ });
+    expect([...sheet.querySelectorAll('.ct-sheet-name')].map(x => x.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('Coverage meta girata: le minacce in riga, i membri in colonna, senza la colonna Team', async () => {
+  it('Coverage meta a carte: le minacce con la barra dei membri, "Altre N" ne aggiunge; una carta apre il foglio', async () => {
     const user = userEvent.setup();
     view();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    const table = screen.getByRole('table', { name: 'Offesa: Coverage meta' });
-    expect(table).toHaveClass('ct-flip-table');
-    const rows = table.querySelectorAll('tbody tr');
-    expect(rows.length).toBeGreaterThan(0);
-    expect(rows.length).toBeLessThanOrEqual(8);
-    for (const row of rows) expect(row.querySelectorAll('td')).toHaveLength(2);
-    expect(screen.getByRole('navigation', { name: /pagine/i })).toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Coverage meta' });
+    const cards = list.querySelectorAll('.cm-card');
+    expect(cards.length).toBeGreaterThan(0);
+    expect(cards.length).toBeLessThanOrEqual(12);
+    expect(cards[0].querySelector('.og-card-tag')).toHaveTextContent(/^#\d+$/);
+    expect(screen.getByRole('region', { name: 'Team Coverage' })).toHaveTextContent(/minacce coperte/);
+    const more = screen.queryByRole('button', { name: /^Altre \d+ minacce/ });
+    if (more) { await user.click(more); expect(list.querySelectorAll('.cm-card').length).toBeGreaterThan(12); }
+    const name = cards[0].querySelector('.og-card-name')!.textContent!;
+    await user.click(within(list).getByRole('button', { name: `Dettagli di ${name}` }));
+    const sheet = screen.getByRole('dialog', { name });
+    expect(sheet.querySelectorAll('.cm-sheet-row')).toHaveLength(2);
   });
 
   it('Difesa: Generale a barre impilate, Coverage tipi e meta girate, Recupero una riga per voce', async () => {

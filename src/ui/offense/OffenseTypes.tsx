@@ -21,7 +21,9 @@ import { FocusNote, inBand, koBandOf } from './KoBadges';
 import { TypeHitTip } from './TypeHitTip';
 import { offenseSlots } from './slots';
 import { PokemonIcon } from '../PokemonName';
-import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { AnalysisSheet } from '../AnalysisSheet';
+import type { CSSProperties } from 'react';
 
 /** Da qui il danno si scrive anche se non conta (3HKO, la soglia di Coverage meta), in una casella grigia. */
 const LOW_PCT = 34;
@@ -46,6 +48,9 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const { team } = ctx;
   const roomy = !!ctx.roomy;
   const phone = useMediaQuery(FLIP_TABLES_QUERY);
+  // Telefono: 18 tessere, una per tipo (la coverage del team e chi colpisce più forte); toccandone una il foglio coi 6 membri
+  const tiles = useMediaQuery(NARROW_TABLES_QUERY);
+  const [sheetType, setSheetType] = useState<(typeof TYPES)[number] | null>(null);
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const { rows, holes } = offense.types;
   const byType = new Map(rows.map(row => [row.label, row]));
@@ -141,6 +146,83 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     return <td key={`lv-${type}`} className={colClass(i, 'ct-level')} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}><span className={`ct-pill ${coverTone(level)}`}>{level}%</span></td>;
   };
   const nameOf = (slot: number) => battleSpecies(team[slot])?.name ?? team[slot].species;
+
+  if (tiles) {
+    /** Il colpo di un membro su un tipo come nella casella del computer: la fascia, il danno, la mossa, l'efficacia. */
+    const hitOf = (slot: number, type: (typeof TYPES)[number]) => {
+      const member = memberAt(slot);
+      const found = member?.hits.find(h => h.label === type);
+      if (!found || slots[slot] === null) return null;
+      const tag = effLabel(found.move ? moveAttackMultiplier(team[slot], found.move, [type], '', field) : null, 'offense');
+      const hit = found.credit > 0;
+      const cls = hit ? (found.pct >= 100 ? 'ok-full ok-ohko' : found.credit >= STRONG_CREDIT ? 'ok-full' : 'ok-half') : found.pct >= LOW_PCT ? 'ok-low' : 'ok-none';
+      return { found, tag, hit, cls };
+    };
+    const covered = TYPES.length - holes.length;
+    const ohkos = best.filter(b => b !== null && b.pct >= 100).length;
+    // Aperta da una barra della Generale: si accendono i tipi che quel membro manda KO in quella fascia
+    const lit = (type: (typeof TYPES)[number]) => {
+      if (!focus) return null;
+      const pct = memberAt(focus.slot)?.hits.find(h => h.label === type)?.plainPct;
+      return pct !== undefined && inBand(pct, focus.band);
+    };
+    const open = sheetType;
+    const openIndex = open ? TYPES.indexOf(open) : -1;
+    return (
+      <div className="off-frame def-types ct-tiles-frame">
+        <section className="og-hero" aria-label={t('detail.level')}>
+          <span className="og-plate">{t('detail.level')}</span>
+          <p className="og-hero-line"><b className={holes.length ? 'bad' : 'full'}>{covered}</b><small>/{TYPES.length}</small> {t('odetail.tiles.covered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
+        </section>
+        <ul className="ct-tiles" aria-label={t('detail.coverageTypes')}>
+          {TYPES.map((type, i) => {
+            const level = byType.get(type)?.level ?? 0;
+            const top = best[i];
+            const on = lit(type);
+            return (
+              <li key={type} className={`ct-tile ${coverTone(level)}${on === null ? '' : on ? ' kf-hit' : ' kf-dim'}`} style={{ '--tc': typeColor(type) } as CSSProperties}>
+                <button type="button" className="ct-tile-open" onClick={() => setSheetType(type)}
+                  aria-label={`${typeName(type, lang)}: ${t('detail.level')} ${level}%${top ? `, ${t('odetail.types.best')} ${nameOf(top.slot)}` : `, ${t('odetail.types.hole')}`}`}>
+                  <span className="ct-tile-type" aria-hidden="true"><TypeIcons types={[type]} />{typeName(type, lang)}</span>
+                  <span className="ct-tile-pct" aria-hidden="true">{level}<i>%</i></span>
+                  {top && <span className="ct-tile-best" aria-hidden="true"><PokemonIcon name={nameOf(top.slot)} /></span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="rob-legend ht-foot">{focus
+          ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+          : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
+        {open && (
+          <AnalysisSheet title={typeName(open, lang)} lead={<TypeIcons types={[open]} />} onClose={() => setSheetType(null)} className="ct-sheet"
+            sub={`${t('detail.level')} ${byType.get(open)?.level ?? 0}%${best[openIndex] ? ` · ${t('odetail.types.best')}: ${nameOf(best[openIndex]!.slot)}` : ''}`}>
+            <ul className="ct-sheet-rows">
+              {team.map((_, slot) => {
+                const h = hitOf(slot, open);
+                const show = h && (h.hit || h.cls === 'ok-low');
+                const dim = ctx.effOnly && !h?.tag;
+                return (
+                  <li key={`${nameOf(slot)}-${slot}`} className={`ct-sheet-row ${show ? h!.cls : 'ok-none'}${dim ? ' eff-dim' : ''}`}>
+                    <PokemonIcon name={nameOf(slot)} />
+                    <span className="ct-sheet-name">{nameOf(slot)}</span>
+                    {show
+                      ? <>
+                        <span className="ct-sheet-move">{h!.found.move ? gameName('move', h!.found.move, lang) : ''}</span>
+                        <EffTag label={h!.tag} side="offense" />
+                        <span className="ct-sheet-pct">{h!.found.pct}<i>%</i></span>
+                      </>
+                      : <span className="ct-sheet-none">—</span>}
+                  </li>
+                );
+              })}
+            </ul>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><OffenseTypesLegend /></span>
+          </AnalysisSheet>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`def-frame off-frame def-types${roomy ? ' roomy' : ''}${phone ? ' ct-flip' : ''}`}>

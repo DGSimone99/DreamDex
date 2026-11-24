@@ -74,3 +74,76 @@
 .og-sheet-sec { display: grid; gap: var(--sp-4); }
 .og-sheet-sec h4 { margin: 0; font: 700 var(--fs-label)/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .og-sheet-sec .mcs { width: 100%; max-height: none; flex-wrap: wrap; }
+
+/* Riga del team con un conto ("18/18 tipi coperti · 2 con un OHKO") */
+.og-hero-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--sp-2); font: 500 var(--fs-small)/1.3 var(--ui); color: var(--muted); }
+.og-hero-line b { font: 800 italic var(--fs-headline)/1 var(--display); color: var(--text); }
+.og-hero-line b.full { font-size: 30px; color: color-mix(in srgb, var(--good) 70%, white); }
+.og-hero-line b.bad { font-size: 30px; color: var(--bad); }
+.og-hero-line small { margin-right: var(--sp-2); font: 700 italic var(--fs-small) var(--display); color: var(--muted); }
+
+/* ── Coverage tipi a tessere: 18 tipi su tre colonne; la % è la coverage del team, il filo sotto il suo colore, in
+   basso a destra chi colpisce più forte. Una tessera apre il foglio coi 6 membri ── */
+.ct-tiles-frame { display: flex; flex-direction: column; gap: var(--sp-6); }
+.ct-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
+.ct-tile { --tone: var(--good); position: relative; border-radius: 8px 2px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-soft);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tc) 22%, var(--panel)), var(--panel) 55%); transition: opacity 0.15s var(--ease); }
+.ct-tile.warn { --tone: var(--warn); }
+.ct-tile.bad { --tone: var(--bad); background: linear-gradient(135deg, color-mix(in srgb, var(--bad) 22%, var(--panel)), var(--panel) 60%); }
+.ct-tile::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--tone); pointer-events: none; }
+.ct-tile.kf-dim { opacity: 0.35; }
+.ct-tile.kf-hit { box-shadow: inset 0 0 0 2px var(--good); }
+.ct-tile-open { position: relative; display: grid; grid-template-rows: auto 1fr; width: 100%; height: 76px; padding: var(--sp-4) var(--sp-4) var(--sp-5); border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.ct-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: inherit; }
+.ct-tile-type { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; font: 600 var(--fs-caption)/1 var(--display); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-tile-type .ti-sq { flex: none; width: 18px; height: 18px; }
+.ct-tile-pct { align-self: end; font: 800 italic var(--fs-headline)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--text); }
+.ct-tile.good .ct-tile-pct { color: color-mix(in srgb, var(--good) 70%, white); }
+.ct-tile.warn .ct-tile-pct { color: var(--warn); }
+.ct-tile.bad .ct-tile-pct { color: var(--bad); }
+.ct-tile-pct i { font-size: var(--fs-caption); color: var(--muted); }
+.ct-tile-best { position: absolute; right: 0; bottom: 8px; pointer-events: none; }
+
+/* Il foglio di un tipo: i 6 membri, ognuno con la mossa, l'efficacia e il danno nel colore della casella del computer */
+.an-sheet-lead .ti-sq { width: 32px; height: 32px; }
+.ct-sheet-rows { margin: 0; padding: 0; list-style: none; }
+.ct-sheet-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 26px 56px; align-items: center; gap: var(--sp-3); min-height: 46px; border-bottom: 1px solid var(--line-soft); }
+.ct-sheet-row .eff-tag { position: static; justify-self: center; }
+.ct-sheet-name { font: 700 var(--fs-small)/1.2 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-sheet-move { font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); text-align: right; }
+.ct-sheet-pct { grid-column: 5; text-align: right; font: 800 italic var(--fs-title-l)/1 var(--display); font-variant-numeric: tabular-nums; }
+.ct-sheet-pct i { font-size: var(--fs-caption); color: var(--muted); }
+.ct-sheet-row.ok-ohko .ct-sheet-pct { color: color-mix(in srgb, var(--good) 70%, white); }
+.ct-sheet-row.ok-full .ct-sheet-pct { color: color-mix(in srgb, var(--good) 55%, var(--text)); }
+.ct-sheet-row.ok-half .ct-sheet-pct { color: var(--warn); }
+.ct-sheet-row.ok-low .ct-sheet-pct { color: var(--faint); }
+.ct-sheet-none { grid-column: 3 / -1; justify-self: end; color: var(--faint); }
+.ct-sheet-row.ok-none .ct-sheet-name { color: var(--faint); }
+.ct-sheet-row.eff-dim { opacity: 0.4; }
+.ct-sheet-legend { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); font: 500 var(--fs-caption) var(--ui); color: var(--muted); }
+
+/* ── Coverage meta a carte: le minacce come carte Pedana (più basse: una barra sola, quanti dei tuoi la mandano KO in uno
+   o due colpi); il filo in fondo dice quanti la coprono (rosso nessuno, giallo uno). "Altre N" aggiunge carte ── */
+.cm-cards-frame { display: flex; flex-direction: column; gap: var(--sp-6); }
+.cm-cards-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); margin: 0; padding: 0; }
+.cm-card { --stage-top: 30px; --stage-h: 64px; --sprite-w: 72px; min-height: 182px; }
+.cm-card .og-card-open { min-height: 128px; }
+.cm-card .og-card-open::before { height: 136px; }
+.cm-card .og-card-sprite { top: 18px; }
+.og-card-tag.cm-card-rank { background: var(--ground); font: 800 italic var(--fs-small)/1 var(--display); color: var(--text); }
+.cm-card.warn .pedana-stripe { background: var(--warn); opacity: 1; height: 4px; }
+.cm-card.bad .pedana-stripe { background: var(--bad); opacity: 1; height: 4px; }
+.cm-card-row { grid-template-columns: minmax(0, 1fr); }
+.og-card.kf-dim { opacity: 0.4; }
+.og-card.kf-hit { box-shadow: inset 0 0 0 2px var(--good); }
+.cm-cards-more { display: block; width: 100%; min-height: 44px; padding: var(--sp-5); border: 0; border-radius: var(--alt-r); background: var(--raised); color: var(--text); font: 600 var(--fs-small) var(--display); cursor: pointer; }
+.cm-cards-more:hover, .cm-cards-more:focus-visible { background: color-mix(in srgb, var(--accent) 14%, var(--raised)); }
+.cm-cards-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Il foglio di una minaccia: per ogni membro i PS che le restano dopo il suo colpo (o il timbro KO) */
+.cm-sheet-row { grid-template-columns: 40px minmax(0, 1fr) 110px 26px 56px; }
+.cm-sheet-row .cm-hp { width: 100%; margin: 0; }
+.cm-sheet-row .cm-ko { justify-self: start; }
+.cm-sheet-row.ko-ohko .ct-sheet-pct { color: color-mix(in srgb, var(--good) 70%, white); }
+.cm-sheet-row.ko-two .ct-sheet-pct { color: color-mix(in srgb, var(--good) 55%, var(--text)); }
+.cm-sheet-row.ko-three .ct-sheet-pct { color: var(--warn); }
+.cm-sheet-row.ko-none .ct-sheet-pct { color: var(--faint); }

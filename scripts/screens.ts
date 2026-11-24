@@ -278,6 +278,8 @@ const sheetState = (sub: RegExp | null, selector: string, index = 0): State => (
   return true;
 } });
 OFFENSE_STATES['analysis-offense-card-sheet'] = sheetState(OFFENSE_SUBS.general, '.og-card-open');
+OFFENSE_STATES['analysis-offense-tile-sheet'] = sheetState(OFFENSE_SUBS.types, '.ct-tile-open', 2);
+OFFENSE_STATES['analysis-offense-threat-sheet'] = sheetState(OFFENSE_SUBS.meta, '.cm-card .og-card-open');
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
 OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/), lang: 'en' };
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
