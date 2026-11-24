@@ -240,6 +240,9 @@
   .dash-tabs [role='tab']::after, .analysis .dash-head:not(.is-link) .dash-link::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; translate: 0 -50%; }
   /* Testata tutta cliccabile (Ruoli, Velocità): la zona sale e scende fino a 44 px */
   .analysis .dash-head.is-link .dash-link::after { inset: min(0px, calc((100% - 44px) / 2)) 0; }
+  /* "Mostra tutti" nella nota di un elemento evidenziato: piccolo da vedere, 44 px col dito */
+  .kf-clear { position: relative; }
+  .kf-clear::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: 44px; translate: -50% -50%; }
 }
 
 
@@ -271,6 +274,8 @@
 @media (max-width: 370px) { .analysis-tabs [role='tab'] .tab-short { font-size: 10.5px; } }
 /* Telefono: sottoschede più strette, così anche le quattro della Difesa stanno senza scorrere */
 @media (max-width: 599px) { .area-subs [role='tab'] { padding: 0 var(--sp-3); } }
+/* Telefono stretto (360): un filo meno ancora, così "Recupero" non sporge e la fila non scorre */
+@media (max-width: 374px) { .area-subs [role='tab'] { padding: 0 var(--sp-2); } }
 
 /* -- Telefono, Analisi come una pagina: la barra delle schede da bordo a bordo, attaccata sotto il team ridotto; subito
    sotto, attaccate, le sottoschede dell'area (se ci sono) col "?" in fondo. Il voto dell'area e i suoi problemi non ci

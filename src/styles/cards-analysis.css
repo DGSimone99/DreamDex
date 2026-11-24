@@ -64,7 +64,7 @@
 @media (prefers-reduced-motion: reduce) { .help-dialog.an-sheet { animation: none; } }
 .an-sheet-grab { flex: none; width: 40px; height: 4px; margin: var(--sp-4) auto 0; border-radius: 2px; background: var(--line); }
 .an-sheet-head { flex: none; display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) var(--sp-4) var(--sp-5) var(--sp-6); border-bottom: 1px solid var(--line-soft); }
-.an-sheet-lead { flex: none; display: grid; place-items: center; width: 56px; height: 48px; overflow: hidden; }
+.an-sheet-lead { flex: none; display: grid; place-items: center; width: 56px; height: 56px; overflow: hidden; }
 .an-sheet-lead .sprite { image-rendering: pixelated; }
 .an-sheet-titles { flex: 1; min-width: 0; display: grid; gap: var(--sp-2); }
 .an-sheet-titles h3 { margin: 0; font: 800 italic var(--fs-heading)/1.1 var(--display); }
@@ -207,6 +207,8 @@
   .cm-card .cm-card-row { grid-column: 2 / -1; grid-row: 2; pointer-events: none; }
   .cm-card .cm-card-row .kob-line { width: 100%; gap: var(--sp-4); }
   .cm-card .kob-row > .kob { height: 20px; }
+  /* Sul fondo della riga (il colore del tipo) il verde trasparente si schiariva: qui pieno sul Panel, così l'OHKO bianco resta sopra 4,5:1 */
+  .cm-card .kob.ohko { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
   .cm-card .kob-count { flex-direction: row; align-items: baseline; min-width: 36px; justify-content: flex-end; }
   .cm-card .kob-count-line { display: none; }
   .cm-card .kob-count-num > b { font-size: var(--fs-title-s); }

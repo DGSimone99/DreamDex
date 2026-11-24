@@ -228,6 +228,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                     onFocus={e => { hover.enter(k).onFocus(); if (keyboardFocus(e.currentTarget)) card.bind(r.set).onFocus(e); }} onBlur={card.bind(r.set).onBlur}>
                     {/* Sulla sprite la carta del Pokémon col suo set più usato; sotto un filo col colore di Lo coprono */}
                     <span className="def-box cm-head-mon" {...card.bind(r.set)}><PokemonIcon name={r.species} /></span>
+                    {/* Il nome sotto la sprite (corto, coi puntini se non ci sta): la colonna si legge senza passarci sopra */}
+                    <span className="cm-head-name" aria-hidden="true">{r.species}</span>
                     <span className={`cm-flag ${coverTone(n)}`} aria-hidden="true" />
                   </th>
                 );

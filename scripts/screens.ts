@@ -381,7 +381,7 @@ for (const [key, n] of [['boost', 0], ['priority', 1], ['control', 2]] as const)
 }
 for (const key of ['boost', 'priority', 'control']) SPEED_STATES[`analysis-speed-guide-${key}-en`] = { ...SPEED_STATES[`analysis-speed-guide-${key}`], lang: 'en' } as State;
 SPEED_STATES['analysis-speed-guide-en'] = { ...SPEED_STATES['analysis-speed-guide'], lang: 'en' } as State;
-const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^(Sostenibilit|Recupero)/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const SUBS: Record<string, RegExp | null> = { general: null, sustain: /^(Sostenibilit|Recupero)/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
     [`analysis-defense-${k}`, defenseState(re)],
@@ -465,13 +465,6 @@ const DEFENSE_STATES: Record<string, State> = {
   } },
   'analysis-defense-guide-sus': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.sustain).run!(p);
-    if (ok !== true) return ok;
-    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
-    await wait(400);
-    return true;
-  } },
-  'analysis-defense-guide-rob': { hash: hash(SIX), run: async p => {
-    const ok = await defenseState(SUBS.robustness).run!(p);
     if (ok !== true) return ok;
     if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);

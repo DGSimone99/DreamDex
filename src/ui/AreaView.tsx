@@ -186,7 +186,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         )}
         {/* Un'area che non conta nel voto (Velocità nello stall) lo dice accanto al voto */}
         {areaInfo?.inactive && <span className="area-inactive" role="note">{t('rating.notCounted')}</span>}
-        <AreaProblems area={title} problems={problems} advice={advice} onCoaching={onCoaching} low={grade?.grade === 'C' || grade?.grade === 'D'}
+        <AreaProblems area={title} problems={problems} advice={advice} onCoaching={onCoaching} low={grade?.grade === 'C' || grade?.grade === 'D'} lowKey={area === 'strength' ? 'offense' : area === 'defense' || area === 'speed' ? area : null}
           jumpOf={jumpOf} onJump={jump => openFocus(jump.key, jump.focus)} />
         {!single && (
           <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
@@ -250,10 +250,12 @@ type Jump = { key: string; place: string; focus: KoFocus };
  * Con almeno un problema, in fondo alla riga il link "Sistemalo nel Coaching" (sul problema più in alto che il Coaching
  * sa risolvere, se c'è).
  */
-function AreaProblems({ area, problems, advice, onCoaching, low = false, jumpOf, onJump }: {
+function AreaProblems({ area, problems, advice, onCoaching, low = false, lowKey = null, jumpOf, onJump }: {
   area: string; problems: CoachProblem[]; advice: CoachAdvice | null; onCoaching?: (problemKey?: string) => void;
   /** Voto C o D: senza problemi la pillola non è verde (il voto è basso per la media, non per un buco). */
   low?: boolean;
+  /** Le parole della pillola gialla per l'area (Offesa, Difesa, Velocità); le altre la frase comune. */
+  lowKey?: 'offense' | 'defense' | 'speed' | null;
   jumpOf: (problem: CoachProblem) => Jump | null;
   onJump: (jump: Jump) => void;
 }) {
@@ -280,7 +282,7 @@ function AreaProblems({ area, problems, advice, onCoaching, low = false, jumpOf,
       <ul ref={listRef} className="area-chips" aria-label={t('analysis.areaProblems', { area })}>
         {entries.length === 0 ? (
           low
-            ? <li><span className="area-chip low">{t('area.problems.lowAverage')}</span></li>
+            ? <li><span className="area-chip low">{t(lowKey ? `area.problems.lowAverage.${lowKey}` : 'area.problems.lowAverage')}</span></li>
             : <li><span className="area-chip good"><Icon name="check" />{t('area.problems.clear')}</span></li>
         ) : entries.slice(0, fit).map(entry => {
           const action = actionOf(entry);

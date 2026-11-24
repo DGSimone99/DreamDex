@@ -334,6 +334,9 @@
 /* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
 .off-frame.def-walls .wall-h { line-height: 1; }
 .cm-head-mon { cursor: help; }
+/* Il nome della minaccia sotto la sprite in testa alla colonna (computer): piccolo, una riga, i puntini se non ci sta */
+.cm-head-name { display: block; max-width: 100%; margin-top: var(--sp-1); padding: 0 var(--sp-1); overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); }
 .cm-flag { display: block; width: 34px; height: 3px; margin: 3px auto 0; border-radius: 2px; background: var(--good); }
 .cm-flag.warn { background: var(--warn); }
 .cm-flag.bad { background: var(--bad); }

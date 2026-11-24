@@ -100,6 +100,29 @@ const fullText = ({ problem, role }: ProblemEntry, t: ReturnType<typeof useT>, l
   (role ? needLabel(role as Need, lang) : tipOf(problem, t));
 
 /**
+ * Il testo di una riga del "+N", senza ripetere il soggetto che sta già in grassetto: "Scoperto in difesa contro Zapdos:
+ * nessuno regge bene i suoi colpi" sotto "Zapdos" diventa "Nessuno regge bene i suoi colpi" (più quanti lo reggono, se
+ * qualcuno); un ruolo mancante non ha riga sotto (il nome è già il titolo); il resto resta intero.
+ */
+const rowText = (entry: ProblemEntry, full: string, title: string) => {
+  if (entry.role || full === title) return '';
+  const cut = entry.problem.text.indexOf(': ');
+  if (cut < 0 || !entry.problem.text.slice(0, cut).includes(title)) return full;
+  const rest = full.slice(cut + 2);
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+};
+
+/**
+ * Le righe del "+N": il testo di ogni riga (rowText) e, se tutte dicono la stessa cosa, quella frase una volta sola in
+ * testa (`shared`) e le righe col solo soggetto, così si distinguono al volo.
+ */
+const moreRows = (hidden: ProblemEntry[], texts: string[], subjects: ReturnType<typeof problemSubject>[]) => {
+  const rows = hidden.map((e, i) => rowText(e, texts[i], subjects[i].title));
+  const shared = rows.length > 1 && rows[0] !== '' && rows.every(r => r === rows[0]) ? rows[0] : '';
+  return { rows: shared ? rows.map(() => '') : rows, shared };
+};
+
+/**
  * Una pillola di problema, uguale nella testata delle aree e nelle righe del Coaching: il testo corto (ProblemPill) nel
  * colore della gravità. Mouse e fuoco: il tooltip DreamDex col problema intero. `onOpen`: la pillola è un pulsante (nella
  * testata: il Coaching ha una proposta per lei; il tooltip finisce con "Clic: vai a Coaching", TipGo); senza, si raggiunge col Tab solo per il tooltip. `as`: l'elemento
@@ -160,21 +183,22 @@ export function MoreProblems({ hidden, as: Tag = 'li', onPick, placeOf }: { hidd
   const title = t(hidden.length === 1 ? 'tip.problems.moreOne' : 'tip.problems.moreMany', { n: hidden.length });
   const subjects = hidden.map(e => problemSubject(e, t, lang));
   const srText = `${t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} ${texts.join('; ')}`;
+  const rows = moreRows(hidden, texts, subjects);
   const tipEl = tip.anchor && (
     <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="tip-w-m area-more-tip">
-      <TipHead lead={<TipGlyph icon="warning" />} title={title} />
+      <TipHead lead={<TipGlyph icon="warning" />} title={title} sub={rows.shared || undefined} />
       <TipSec>
         <TipRows>
           {hidden.map((e, i) => (
             <TipRow key={`${e.problem.key}|${e.role ?? ''}`} className={`prob-${e.problem.severity}`}
-              lead={leadOf(subjects[i])} title={subjects[i].title} sub={<Typed text={texts[i]} tip />} />
+              lead={leadOf(subjects[i])} title={subjects[i].title} sub={rows.rows[i] ? <Typed text={rows.rows[i]} tip /> : undefined} />
           ))}
         </TipRows>
       </TipSec>
     </FloatTip>
   );
   if (onPick) {
-    return <MoreMenu hidden={hidden} texts={texts} subjects={subjects} title={title} srText={srText} tip={tip} tipEl={tipEl}
+    return <MoreMenu hidden={hidden} rows={rows} subjects={subjects} title={title} srText={srText} tip={tip} tipEl={tipEl}
       onPick={onPick} placeOf={placeOf} as={Tag} />;
   }
   return (
@@ -193,8 +217,8 @@ const leadOf = (subject: ReturnType<typeof problemSubject>) => (subject.species 
  * Il "+N" come pulsante con la sua tendina (vedi MoreProblems): col mouse il tooltip resta finché la tendina è chiusa.
  * Frecce, Home e Fine fra le voci; Esc (il fuoco torna al "+N"), Tab o un clic fuori chiudono.
  */
-function MoreMenu({ hidden, texts, subjects, title, srText, tip, tipEl, onPick, placeOf, as: Tag }: {
-  hidden: ProblemEntry[]; texts: string[]; subjects: ReturnType<typeof problemSubject>[]; title: string; srText: string;
+function MoreMenu({ hidden, rows, subjects, title, srText, tip, tipEl, onPick, placeOf, as: Tag }: {
+  hidden: ProblemEntry[]; rows: ReturnType<typeof moreRows>; subjects: ReturnType<typeof problemSubject>[]; title: string; srText: string;
   tip: ReturnType<typeof useFloatAnchor<true>>; tipEl: ReactNode;
   onPick: (entry: ProblemEntry) => void; placeOf?: (entry: ProblemEntry) => string | null; as: 'li' | 'span';
 }) {
@@ -238,7 +262,7 @@ function MoreMenu({ hidden, texts, subjects, title, srText, tip, tipEl, onPick, 
       {open && (
         <div ref={pop} id={menuId} className="more-probs-menu" role="menu" aria-label={title} onKeyDown={onKey}
           popover={supportsPopover ? 'manual' : undefined}>
-          <p className="more-probs-title" aria-hidden="true">{title}</p>
+          <p className="more-probs-title" aria-hidden="true">{title}{rows.shared && <small className="more-probs-shared"><Typed text={rows.shared} tip /></small>}</p>
           {hidden.map((e, i) => {
             const place = placeOf?.(e) ?? null;
             return (
@@ -247,7 +271,7 @@ function MoreMenu({ hidden, texts, subjects, title, srText, tip, tipEl, onPick, 
                 <span className="more-probs-lead" aria-hidden="true">{leadOf(subjects[i])}</span>
                 <span className="more-probs-text">
                   <b>{subjects[i].title}</b>
-                  <small><Typed text={texts[i]} tip /></small>
+                  {rows.rows[i] && <small><Typed text={rows.rows[i]} tip /></small>}
                 </span>
                 {place && <span className="more-probs-go" aria-hidden="true">{place}<Icon name="next" /></span>}
                 {place && <span className="visually-hidden">{` · ${t('area.problems.goTo', { place })}`}</span>}

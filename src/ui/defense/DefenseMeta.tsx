@@ -208,6 +208,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                     onFocus={e => { hover.enter(k).onFocus(); if (keyboardFocus(e.currentTarget)) card.bind(r.set).onFocus(e); }} onBlur={card.bind(r.set).onBlur}>
                     {/* Sulla sprite la carta del Pokémon col suo set più usato; sotto un filo col colore di quanti la reggono */}
                     <span className="def-box cm-head-mon" {...card.bind(r.set)}><PokemonIcon name={r.species} /></span>
+                    <span className="cm-head-name" aria-hidden="true">{r.species}</span>
                     <span className={`cm-flag ${countTone(held(r))}`} aria-hidden="true" />
                   </th>
                 ))}
