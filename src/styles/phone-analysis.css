@@ -141,22 +141,16 @@
   .def-frame .def-mon-name { font-size: var(--fs-caption); }
   .def-frame .def-mon-tag .def-weak { padding: 0 var(--sp-2); font-size: var(--fs-label); letter-spacing: 0; }
 
-  /* ── Coaching: una colonna sola (i problemi sopra, poi la carta grande, poi le altre), alta quanto serve ── */
-  .coaching.coach-cure { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); padding-bottom: var(--sp-6); overflow: visible; }
-  .coach-diag-box { --row-h: auto; }
+  /* ── Coaching sul telefono: la pagina scorre (niente pagine né scorrimenti dentro); bersagli da 44px ── */
+  /* Una colonna sola: prima la carta della proposta aperta, sotto la classifica */
+  .coaching.coach-cure { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; align-content: start; overflow: visible; padding-bottom: var(--sp-6); }
+  .coach-main { order: -1; }
+  .coach-hero, .coach-hero-body, .coach-hero-scroll { overflow: visible; mask-image: none; }
+  .coach-hero { flex: none; }
+  .coach-diag-box { --row-h: auto; flex: none; }
   .coach-diag-list { grid-auto-rows: auto; }
-  .coach-diag-item, .coach-diag-cure { min-height: 44px; }
-  .coach-diag-item { min-height: 44px; }
-  .coach-hero { grid-template-columns: minmax(0, 1fr); }
-  .coach-pad { height: 136px; }
-  .coach-stage { top: 6px; bottom: 14px; }
-  .coach-hero-head { flex-wrap: wrap; }
-  .coach-hero-facts { grid-template-columns: minmax(0, 1fr); }
-  .coach-apply, .coach-see, .coach-alt-tile { height: 44px; }
-  .coach-list-box { --row-h: auto; }
-  .coach-rows { grid-auto-rows: auto; }
-  .coach-item-btn { grid-template-columns: 40px 40px minmax(0, 1fr) 16px; min-height: 52px; padding-block: var(--sp-2); }
-  .coach-item-solves { grid-column: 2 / 4; }
+  .coach-apply, .coach-see, .coach-alt-tile, .coach-filter select { height: 44px; }
+  .coach-rank { min-height: 60px; }
   .coach-empty { flex-direction: column; gap: var(--sp-8); padding: 20px; }
   .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }
 

@@ -10,7 +10,9 @@ import { gradeFor, type TeamRating } from '../engine/rating';
 import type { LevelKey } from '../engine/roleLevels';
 import { rolesPointsLabel } from '../engine/rolesArea';
 import { areaSnapshot, type AreaSnapshot } from '../engine/teamGain';
-import { gameName } from '../i18n/game';
+import { exportShowdown } from '../engine/sets';
+import type { TypeName } from '../engine/types';
+import { gameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { rolesValue } from './AreaDetail';
 import { HelpButton } from './AnalysisTabs';
@@ -19,6 +21,8 @@ import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { useMemberTip } from './MemberCard';
 import { MovePill } from './MovePill';
+import { copyText } from './clipboard';
+import { TypeIcons } from './typeIcons';
 import { PokemonIcon } from './PokemonName';
 import { hint } from './MoveTip';
 import { MoreProblems, problemEntries, ProblemChip, ProblemPill, type ProblemEntry } from './ProblemPill';
@@ -211,7 +215,7 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
   group: ProposalGroup; choice: number; onChoose: (index: number) => void; problems: CoachProblem[];
   before: AreaSnapshot | null; rating: TeamRating | null; actions: RowActions; flash: boolean;
   /** Il titolo (nascosto) della carta: riceve il fuoco quando il pulsante usato sparisce (un'alternativa scelta). */
-  titleRef: RefObject<HTMLHeadingElement | null>;
+  titleRef: RefObject<HTMLDivElement | null>;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -225,15 +229,22 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
   const apply = () => (p.kind === 'fix' ? actions.onApplyFix(p.fix) : actions.onApplyMove(p.fix));
   const see = () => (p.kind === 'fix' ? actions.onFix(p.fix) : actions.onMoveFix(p.fix));
   const costs = fx.downs.length + fx.lost.length;
+  // Copia set: per un attimo "Copiato" con la spunta, come nel dettaglio dei candidati
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1500); return () => window.clearTimeout(timer); }, [copied]);
   return (
     <article className={`coach-hero${p.kind === 'move' ? ' is-move' : ''}${flash ? ' is-flash' : ''}`} data-row={group.id} aria-labelledby={headId}
       style={{ '--t1': typeColor(firstType(p)) } as CSSProperties}>
-      <h4 id={headId} ref={titleRef} tabIndex={-1} className="visually-hidden">{name}</h4>
-      <div className="coach-pad">
+      <h4 id={headId} className="visually-hidden">{name}</h4>
+      {/* Lo scambio si vede: in alto chi esce (spento, "esce"), la freccia, sotto chi entra sulla pedana */}
+      <div className={`coach-pad${p.kind === 'fix' && p.fix.kind === 'swap' ? ' has-out' : ''}`}>
         {p.kind === 'fix' && p.fix.kind === 'swap' && (
-          <span className="coach-pad-out" aria-hidden="true"><Sprite species={p.fix.member ?? ''} size={48} /><span className="coach-pad-swap"><Icon name="swap" /></span></span>
+          <span className="coach-pad-out" aria-hidden="true">
+            <Sprite species={p.fix.member ?? ''} size={64} /><small>{tr('coach.pad.out')}</small>
+            <span className="coach-pad-swap"><Icon name="down" /></span>
+          </span>
         )}
-        {p.kind === 'fix' && p.fix.kind === 'add' && <span className="coach-pad-out" aria-hidden="true"><span className="coach-pad-swap"><Icon name="plus" /></span></span>}
+        {p.kind === 'fix' && p.fix.kind === 'add' && <span className="coach-pad-out is-add" aria-hidden="true"><span className="coach-pad-swap"><Icon name="plus" /></span></span>}
         <span className="coach-stage">
           <span className="pedana-disc" aria-hidden="true" />
           <span className="coach-art-in" {...(p.kind === 'fix' ? memberTip.bind(p.fix.set) : {})}><Sprite species={subjectOf(p)} size={96} /></span>
@@ -241,7 +252,10 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
       </div>
       <div className="coach-hero-body">
         <div className="coach-hero-head">
-          <HeroTitle p={p} bind={p.kind === 'fix' ? memberTip.bind(p.fix.set) : undefined} />
+          {/* Il titolo visibile riceve il fuoco quando il pulsante usato sparisce (un'alternativa, "Torna alla migliore", "Mostra tutte") */}
+          <div className="coach-hero-focus" ref={titleRef} tabIndex={-1} aria-labelledby={headId}>
+            <HeroTitle p={p} bind={p.kind === 'fix' ? memberTip.bind(p.fix.set) : undefined} />
+          </div>
           <div className="coach-hero-grade">
             <b className="coach-gain">{gainText(p.fix.gain)}</b>
             {rating && after !== null && (
@@ -252,6 +266,8 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
             )}
           </div>
         </div>
+        {/* La parte centrale scorre se è lunga; Applica e le altre azioni restano sempre in vista sotto */}
+        <div className="coach-hero-scroll">
         <div className="coach-hero-facts">
           <section className="coach-fact is-good" aria-label={tr('coach.hero.solves')}>
             <h5>{tr('coach.hero.solves')}</h5>
@@ -268,12 +284,18 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
           </section>
         </div>
         <SetSummary p={p} />
+        </div>
         <div className="coach-hero-foot">
           <button type="button" className="coach-apply is-primary" aria-label={tr('coach.row.applyAria', { name })} onClick={apply}>{tr('coach.row.apply')}</button>
           <button type="button" className="coach-see" onClick={see} {...hint(tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet'))}
             aria-label={p.kind === 'fix' ? tr('coach.row.seeAria', { species: p.fix.species }) : tr('coach.row.openSetAria', { member: p.fix.member })}>
             <Icon name="search" /><span aria-hidden="true">{tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet')}</span>
           </button>
+          <button type="button" className={`coach-see coach-copy${copied ? ' is-done' : ''}`} aria-label={tr('suggest.copySet')} {...hint(tr('suggest.copySet'))}
+            onClick={async () => { if (await copyText(exportShowdown([p.fix.set]))) setCopied(true); }}>
+            <Icon name={copied ? 'check' : 'copy'} /><span aria-hidden="true">{tr(copied ? 'team.copied' : 'suggest.copySetShort')}</span>
+          </button>
+          {copied && <span className="visually-hidden" role="status">{tr('team.copied')}</span>}
           {group.options.length > 1 && (
             <div className="coach-alts" role="group" aria-label={tr('coach.alt.title', { n: group.options.length - 1 })}>
               <span className="coach-alts-word" aria-hidden="true">{tr('coach.alt.or')}</span>
@@ -310,146 +332,118 @@ function CoachingGuide() {
   );
 }
 
-/**
- * Un blocco della classifica: una proposta (`group`, con la scelta del posto `pick`) e i problemi che è la prima a
- * risolvere (`entries`; così ogni problema è scritto una volta sola). `note`: niente problemi nuovi, perché risolve solo
- * problemi già scritti sopra ('already') o alza solo il voto ('raise'). `group` null: i problemi che nessun cambio risolve.
- */
-interface RankBlock { group: ProposalGroup | null; pick: Proposal | null; entries: ProblemEntry[]; note: 'already' | 'raise' | null }
-
-/** Una riga della colonna a pagine (tutte alte uguali): la testata di un blocco, un problema o la nota di un blocco senza problemi nuovi. */
-type RankRow = { kind: 'head'; block: RankBlock } | { kind: 'entry'; block: RankBlock; entry: ProblemEntry } | { kind: 'note'; block: RankBlock };
-
-/** Perché una minaccia è un problema, in poche parole sotto il suo nome: chi nessuno regge, o chi nessuno manda KO. */
-function ThreatWhy({ problem }: { problem: CoachProblem }) {
-  const tr = useT();
-  if (problem.category !== 'meta' && problem.category !== 'metaHit') return null;
-  return <small className="coach-rank-why" aria-hidden="true">{tr(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone')}</small>;
-}
-
-/** Il problema come si legge in colonna: minacce, ruoli e tipi con la loro pillola, il resto in testo semplice (va a capo). */
-function RankProblem({ entry }: { entry: ProblemEntry }) {
+/** Un problema risolto in piccolo per la riga della classifica: la minaccia (icona e nome), i tipi (icone e nome), un ruolo (×), il resto in testo corto. */
+function SolvedPill({ entry }: { entry: ProblemEntry }) {
+  const lang = useLang();
   const { problem, role } = entry;
-  const rich = role || problem.category === 'meta' || problem.category === 'metaHit' || problem.category === 'defense' || problem.category === 'coverage';
-  return (
-    <span className="coach-rank-text">
-      {rich ? <ProblemPill problem={problem} role={role} /> : <span className="coach-rank-plain">{problem.text}</span>}
-      <ThreatWhy problem={problem} />
-    </span>
-  );
+  const subjects = problem.subjects ?? [];
+  let body: ReactNode;
+  if (role) body = <><Icon name="close" />{needLabel(role as Need, lang)}</>;
+  else if ((problem.category === 'meta' || problem.category === 'metaHit') && subjects[0]) body = <><PokemonIcon name={subjects[0]} />{subjects[0]}</>;
+  else if ((problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0) body = <><TypeIcons types={subjects.slice(0, 2)} />{subjects.slice(0, 2).map(t => typeName(t as TypeName, lang)).join(' / ')}</>;
+  else body = problem.text;
+  return <span className="coach-pill"><Icon name="check" /><span className="coach-pill-text">{body}</span></span>;
 }
 
+/** Quanti problemi risolti in piccolo stanno nella riga della classifica; gli altri in "+N". */
+const PILLS = 2;
+
 /**
- * La colonna di sinistra è la classifica: le proposte dalla più utile (+N più alto), ognuna una testata (icona del Box sul
- * colore del tipo, nome, "al posto di X", +N; un clic la apre nella carta grande, quella aperta ha l'anello ciano) con
- * sotto i problemi che è la prima a risolvere. Un clic su un problema mostra solo le proposte che lo risolvono ("Mostra
- * tutte" torna alla lista intera). I problemi della proposta aperta hanno la spunta verde. In coda "Restano": i problemi che
- * nessun cambio singolo risolve. A pagine come le altre liste (un blocco va intero alla pagina dopo se lì sta, altrimenti
- * si spezza e la testata si ripete).
+ * La classifica: una riga per proposta, dalla più utile (+N più alto): l'icona del Box sul colore del tipo, il nome (o la
+ * mossa nuova), "al posto di X", il +N e sotto i primi problemi che risolve in piccolo (tutti contano, anche quelli che
+ * risolve anche un'altra proposta) con "+N". Un clic la apre nella carta grande (quella aperta ha l'anello ciano). Sopra la
+ * lista il filtro per problema (una tendina: "Tutti i problemi" o un problema, col numero di proposte che lo risolvono);
+ * in fondo "Restano N problemi" che nessun cambio singolo risolve (i nomi nel fumetto). A pagine come le altre liste.
  */
-function RankRail({ blocks, total, filter, onFilter, onOpen, heroId, cured, clean, busy }: {
-  blocks: RankBlock[]; total: number; filter: ProblemEntry | null; onFilter: (key: string | null) => void; onOpen: (groupId: string) => void;
-  heroId: string | null; cured: Set<string>; clean: ReactNode; busy: boolean;
+function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy }: {
+  groups: ProposalGroup[]; pickOf: (g: ProposalGroup) => Proposal; problems: CoachProblem[]; entries: ProblemEntry[]; stuck: ProblemEntry[];
+  filter: string | null; onFilter: (key: string | null) => void; onOpen: (groupId: string) => void; heroId: string | null; clean: ReactNode; busy: boolean;
 }) {
   const tr = useT();
   const lang = useLang();
   const headId = useId();
+  const filterId = useId();
   const box = useRef<HTMLDivElement>(null);
-  const allButton = useRef<HTMLButtonElement>(null);
-  const { perPage, rows } = useRowsPerPage(box, 20);
+  const { perPage, rows } = useRowsPerPage(box, 12);
   const [start, setStart] = useState(0);
-  const room = rows ? Math.max(3, perPage) : Number.POSITIVE_INFINITY;
-  const pageRows: RankRow[][] = [[]];
-  for (const block of blocks) {
-    const own: RankRow[] = [
-      { kind: 'head' as const, block },
-      ...block.entries.map(entry => ({ kind: 'entry' as const, block, entry })),
-      ...(block.note ? [{ kind: 'note' as const, block }] : []),
-    ];
-    let cur = pageRows[pageRows.length - 1];
-    if (cur.length > 0 && cur.length + own.length > room && own.length <= room && room - cur.length < 3) pageRows.push((cur = []));
-    for (const row of own) {
-      if (cur.length >= room) {
-        pageRows.push((cur = []));
-        if (row.kind !== 'head') cur.push(own[0]);
-      }
-      cur.push(row);
-    }
-  }
-  const pages = pageRows.length;
-  const page = Math.min(start, pages - 1);
+  const size = rows ? perPage : Math.max(1, groups.length);
+  const pages = Math.max(1, Math.ceil(groups.length / size));
+  const page = Math.min(Math.floor(start / size), pages - 1);
+  const shown = groups.slice(page * size, (page + 1) * size);
+  // Il filtro cambia la lista: si riparte dalla prima pagina
+  useEffect(() => { setStart(0); }, [filter]);
+  const solvable = entries.filter(e => !stuck.includes(e));
+  const keys = [...new Set(solvable.map(e => e.problem.key))];
+  const label = (key: string) => {
+    const e = entries.find(x => x.problem.key === key)!;
+    return e.role ? needLabel(e.role as Need, lang) : e.problem.text;
+  };
   return (
     <aside className="coach-diag" aria-labelledby={headId}>
       <div className="coach-diag-top">
-        <h3 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-count">{total}</span>}</h3>
-        <Pager page={page} pages={pages} from={page + 1} to={pages} onPage={setStart}
-          labels={{ pages: tr('coach.list.pages'), prev: tr('coach.list.prev'), next: tr('coach.list.next'), page: 'coach.rank.page' }} />
+        <h3 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-diag-total">{tr('coach.rank.count', { n: groups.length })}</span>}</h3>
         <HelpButton title={tr('coach.help.title')} className="coach-help"><CoachingGuide /></HelpButton>
       </div>
-      {filter && (
-        <div className="coach-filter">
-          <span className="coach-filter-text"><b>{tr('coach.rank.only')}</b> <RankProblem entry={filter} /></span>
-          <button ref={allButton} type="button" className="coach-back" onClick={() => onFilter(null)}><Icon name="close" />{tr('coach.list.showAll')}</button>
+      {keys.length > 0 && (
+        <div className={`coach-filter${filter ? ' is-on' : ''}`}>
+          <label htmlFor={filterId}>{tr('coach.rank.filter')}</label>
+          <select id={filterId} value={filter ?? ''} onChange={e => onFilter(e.target.value || null)}>
+            <option value="">{tr('coach.rank.allProblems')}</option>
+            {keys.map(key => <option key={key} value={key}>{label(key)}</option>)}
+          </select>
+          {filter && <button type="button" className="coach-back" onClick={() => onFilter(null)}><Icon name="close" />{tr('coach.list.showAll')}</button>}
         </div>
       )}
       <div className="coach-diag-box" ref={box}>
         {busy ? (
           <ol className="coach-diag-list" aria-busy="true">
-            {Array.from({ length: 6 }, (_, i) => <li key={i} className="coach-rank-skeleton" aria-hidden="true" />)}
+            {Array.from({ length: rows ? perPage : 4 }, (_, i) => <li key={i} className="coach-rank-skeleton" aria-hidden="true" />)}
           </ol>
         ) : (
           <ol className="coach-diag-list">
-            {pageRows[page].map((row, i) => {
-              const next = pageRows[page][i + 1];
-              const last = !next || next.block !== row.block;
-              const cls = `in-block${row.kind === 'head' ? ' is-head' : ''}${last ? ' is-last' : ''}${row.block.group && row.block.group.id === heroId ? ' is-open' : ''}`;
-              if (row.kind === 'head') {
-                const { group, pick } = row.block;
-                if (!group || !pick) return <li key="stuck|head" className={`${cls} is-stuck`}><span className="coach-rank-stuck">{tr('coach.rank.stuck')}</span></li>;
-                const name = proposalName(pick, tr, lang);
-                const seat = pick.kind === 'move'
-                  ? tr('coach.item.move', { member: pick.fix.member, from: pick.fix.from ? gameName('move', pick.fix.from, lang) : tr('coach.row.emptySlot') })
-                  : pick.fix.kind === 'swap' ? tr('coach.row.instead', { member: pick.fix.member ?? '' }) : tr('coach.row.free');
-                return (
-                  <li key={`head|${group.id}`} className={cls}>
-                    <button type="button" className={`coach-diag-cure${group.id === heroId ? ' is-open' : ''}${pick.kind === 'move' ? ' is-move' : ''}`} aria-current={group.id === heroId ? 'true' : undefined}
-                      style={{ '--t1': typeColor(firstType(pick)) } as CSSProperties} aria-label={tr('coach.rank.openAria', { name })} onClick={() => onOpen(group.id)}>
-                      <span className="coach-diag-cure-mon" aria-hidden="true"><PokemonIcon name={subjectOf(pick)} /></span>
-                      <span className="coach-diag-cure-text" aria-hidden="true">
-                        <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
-                        <small>{seat}</small>
-                      </span>
-                      <b className="coach-diag-cure-gain" aria-hidden="true">{gainText(pick.fix.gain)}</b>
-                    </button>
-                  </li>
-                );
-              }
-              if (row.kind === 'note') {
-                return <li key={`note|${row.block.group?.id}`} className={`${cls} is-note`}><span className="coach-rank-note">{tr(row.block.note === 'already' ? 'coach.rank.already' : 'coach.hero.raisesOnly')}</span></li>;
-              }
-              const { entry } = row;
-              const key = entry.problem.key;
-              const ok = cured.has(key);
-              // I problemi che nessun cambio risolve non sono pulsanti (non c'è niente da filtrare): il motivo è il titolo del blocco
-              if (!row.block.group) {
-                return (
-                  <li key={`stuck|${key}|${entry.role ?? ''}`} className={cls}>
-                    <span className={`coach-diag-item ${entry.problem.severity} is-static`}><Icon name="warning" /><RankProblem entry={entry} /></span>
-                  </li>
-                );
-              }
+            {shown.map(group => {
+              const pick = pickOf(group);
+              const name = proposalName(pick, tr, lang);
+              const fx = effectsOf(pick, problems, null);
+              const seat = pick.kind === 'move'
+                ? tr('coach.item.move', { member: pick.fix.member, from: pick.fix.from ? gameName('move', pick.fix.from, lang) : tr('coach.row.emptySlot') })
+                : pick.fix.kind === 'swap' ? tr('coach.row.instead', { member: pick.fix.member ?? '' }) : tr('coach.row.free');
+              const open = group.id === heroId;
               return (
-                <li key={`${key}|${entry.role ?? ''}`} className={cls}>
-                  <button type="button" className={`coach-diag-item ${entry.problem.severity}${filter?.problem.key === key ? ' is-on' : ''}${ok ? ' is-cured' : ''}`}
-                    aria-pressed={filter?.problem.key === key} onClick={() => onFilter(filter?.problem.key === key ? null : key)}
-                    aria-label={`${solvedText(entry, lang)}${ok ? ` · ${tr('coach.diag.cured')}` : ''}. ${tr('coach.rank.filterAria')}`}>
-                    <Icon name={ok ? 'check' : 'warning'} />
-                    <RankProblem entry={entry} />
+                <li key={group.id}>
+                  <button type="button" className={`coach-rank${open ? ' is-open' : ''}${pick.kind === 'move' ? ' is-move' : ''}`} aria-current={open ? 'true' : undefined}
+                    style={{ '--t1': typeColor(firstType(pick)) } as CSSProperties} aria-label={tr('coach.rank.openAria', { name })}
+                    aria-describedby={`${group.id}-solves`} onClick={() => onOpen(group.id)}>
+                    <span className="coach-rank-mon" aria-hidden="true"><PokemonIcon name={subjectOf(pick)} /></span>
+                    <span className="coach-rank-who" aria-hidden="true">
+                      <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
+                      <small>{seat}</small>
+                    </span>
+                    <b className="coach-rank-gain" aria-hidden="true">{gainText(pick.fix.gain)}</b>
+                    <span className="coach-rank-pills" aria-hidden="true">
+                      {fx.solved.length > 0
+                        ? <>{fx.solved.slice(0, PILLS).map(e => <SolvedPill key={`${e.problem.key}|${e.role ?? ''}`} entry={e} />)}
+                            {fx.solved.length > PILLS && <span className="coach-pill-more">+{fx.solved.length - PILLS}</span>}</>
+                        : <span className="coach-pill-none">{tr('coach.hero.raisesOnly')}</span>}
+                    </span>
+                    <span id={`${group.id}-solves`} className="visually-hidden">
+                      {fx.solved.length ? `${tr('coach.hero.solves')}: ${fx.solved.map(e => solvedText(e, lang)).join('; ')}` : tr('coach.hero.raisesOnly')}
+                    </span>
                   </button>
                 </li>
               );
             })}
           </ol>
+        )}
+      </div>
+      <div className="coach-diag-foot">
+        <Pager page={page} pages={pages} from={page + 1} to={pages} onPage={n => setStart(n * size)}
+          labels={{ pages: tr('coach.list.pages'), prev: tr('coach.list.prev'), next: tr('coach.list.next'), page: 'coach.rank.page' }} />
+        {stuck.length > 0 && !filter && (
+          <p className="coach-rank-stuck" tabIndex={0} {...hint(stuck.map(e => solvedText(e, lang)).join('; '))}>
+            <Icon name="warning" />{tr(stuck.length === 1 ? 'coach.rank.stuck1' : 'coach.rank.stuckN', { n: stuck.length })}
+            <span className="visually-hidden">: {stuck.map(e => solvedText(e, lang)).join('; ')}</span>
+          </p>
         )}
       </div>
       {clean}
@@ -530,7 +524,7 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
   const tr = useT();
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
-  const heroTitle = useRef<HTMLHeadingElement>(null);
+  const heroTitle = useRef<HTMLDivElement>(null);
   const lang = useLang();
   const { problems, bannedCount = 0 } = coaching;
   const groups = useMemo(() => (advice ? neutralAsAlternatives(proposalGroups(problems, advice)) : null), [problems, advice]);
@@ -656,41 +650,21 @@ export function CoachingView({ coaching, advice, members, rating, onFix, onMoveF
   const visible = groups ? (active ? groups.filter(g => solvesKey(g, active)) : groups) : [];
   const hero = visible.find(g => g.id === heroId) ?? visible[0] ?? null;
   const heroPick = hero ? pickOf(hero) : null;
-  const cured = new Set(heroPick?.fix.solves ?? []);
-  // I blocchi della classifica: ogni proposta (nell'ordine della lista) coi problemi che è la prima a risolvere; i problemi
-  // che risolve solo una sua alternativa vanno sotto di lei; senza filtro, in coda quelli che nessun cambio risolve
-  const entryId = (e: ProblemEntry) => `${e.problem.key}|${e.role ?? ''}`;
-  const taken = new Set<string>();
-  const blocks: RankBlock[] = visible.map(group => {
-    const pick = pickOf(group);
-    const own = entries.filter(e => !taken.has(entryId(e)) && pick.fix.solves.includes(e.problem.key));
-    own.forEach(e => taken.add(entryId(e)));
-    return { group, pick, entries: own, note: null };
-  });
-  for (const e of entries) {
-    if (taken.has(entryId(e))) continue;
-    const block = blocks.find(b => b.group && solvesKey(b.group, e.problem.key));
-    if (block) { block.entries.push(e); taken.add(entryId(e)); }
-  }
-  for (const block of blocks) {
-    if (block.entries.length === 0) block.note = block.pick!.fix.solves.some(k => mapped.some(x => x.key === k)) ? 'already' : 'raise';
-  }
-  const stuck = entries.filter(e => !taken.has(entryId(e)) && !groups?.some(g => solvesKey(g, e.problem.key)));
-  if (!active && groups && stuck.length) blocks.push({ group: null, pick: null, entries: stuck, note: null });
-  const filterEntry = active ? entries.find(e => e.problem.key === active) ?? null : null;
+  // I problemi che nessun cambio singolo risolve: in fondo alla classifica
+  const stuck = entries.filter(e => !groups?.some(g => solvesKey(g, e.problem.key)));
   const actions: RowActions = { onFix, onMoveFix, onApplyFix, onApplyMove };
   const choose = (groupId: string, i: number) => setPicks(s => ({ advice, chosen: { ...(s.advice === advice ? s.chosen : {}), [groupId]: i } }));
   const pickFilter = (key: string | null) => {
     setFilter(key); setHeroId(null);
     // "Mostra tutte" sparisce col filtro: il fuoco va sul titolo della carta (che ora mostra la migliore)
-    if (key === null) requestAnimationFrame(() => heroTitle.current?.focus());
+    if (key === null && document.activeElement?.classList.contains('coach-back')) requestAnimationFrame(() => heroTitle.current?.focus());
   };
   const open = (groupId: string) => { setHeroId(groupId); setFlash(f => ({ nonce: (f?.nonce ?? 0) - 1, id: groupId })); };
   const chosenNotBest = !!(hero && heroId && hero.id === heroId && hero !== visible[0]);
   return (
     <div className="coaching coach-cure" ref={root}>
-      <RankRail blocks={blocks} total={visible.length} filter={filterEntry} onFilter={pickFilter} onOpen={open} heroId={hero?.id ?? null} cured={cured}
-        busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} />
+      <RankRail groups={visible} pickOf={pickOf} problems={problems} entries={entries} stuck={stuck} filter={active} onFilter={pickFilter} onOpen={open}
+        heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} />
       <section aria-labelledby={`${id}-list`} className="coach-main">
         <h3 className="visually-hidden" id={`${id}-list`}>{tr('coach.list.title')}</h3>
         <div className="coach-list-head coach-hero-band">

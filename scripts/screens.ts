@@ -853,9 +853,9 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
     await p.waitForSelector('.coach-diag-list:not([aria-busy])', { timeout: 20000 });
-    if (!await clickText(p, 'button.coach-diag-item', /./)) return 'no problem';
+    if (!await p.evaluate(() => { const sel = document.querySelector<HTMLSelectElement>('.coach-filter select'); if (!sel || sel.options.length < 2) return false; sel.value = sel.options[1].value; sel.dispatchEvent(new Event('change', { bubbles: true })); return true; })) return 'no problem';
     await wait(300);
-    if (!await clickText(p, '.coach-diag-cure:not(.is-open)', /./)) return 'no other proposal';
+    await clickText(p, '.coach-rank:not(.is-open)', /./);
     await wait(300);
     return true;
   } },
@@ -1065,13 +1065,13 @@ const STATES: Record<string, State> = {
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
     await p.waitForSelector('.coach-diag-list:not([aria-busy])', { timeout: 20000 });
     // La prima proposta di mossa: nella carta grande, o nella lista (pagina dopo pagina) e da lì nella carta
-    for (let i = 0; i < 8 && !await p.evaluate(() => !!document.querySelector('.coach-hero.is-move, .coach-diag-cure.is-move')); i++) {
+    for (let i = 0; i < 8 && !await p.evaluate(() => !!document.querySelector('.coach-hero.is-move, .coach-rank.is-move')); i++) {
       const next = await p.$('.coach-diag .coach-pages .cm-step:last-child:not(:disabled)');
       if (!next) break;
       await next.click();
       await wait(300);
     }
-    if (!await p.evaluate(() => !!document.querySelector('.coach-hero.is-move')) && !await clickText(p, '.coach-diag-cure.is-move', /./)) return 'no move proposal';
+    if (!await p.evaluate(() => !!document.querySelector('.coach-hero.is-move')) && !await clickText(p, '.coach-rank.is-move', /./)) return 'no move proposal';
     await wait(300);
     if (!await clickText(p, '.coach-hero.is-move button.coach-see', /./)) return 'no move proposal';
     await wait(600);
@@ -1468,15 +1468,15 @@ for (const [w, h] of sizes) {
       const box = document.querySelector<HTMLElement>('.coaching');
       if (!box) return '';
       const hero = box.querySelector<HTMLElement>('.coach-hero:not(.skeleton)');
-      const rows = [...box.querySelectorAll<HTMLElement>('.coach-diag-cure')];
+      const rows = [...box.querySelectorAll<HTMLElement>('.coach-rank')];
       const rail = [...box.querySelectorAll<HTMLElement>('.coach-diag-list > li')];
       // (niente funzioni con nome qui dentro: tsx aggiunge __name, che nella pagina non c'è)
       const listB = box.querySelector('.coach-diag-box')?.getBoundingClientRect().bottom ?? Infinity;
       const railB = box.querySelector('.coach-diag-box')?.getBoundingClientRect().bottom ?? Infinity;
-      const wide = [...box.querySelectorAll<HTMLElement>('.coach-hero-name, .coach-plate-value, .coach-diag-cure-text b, .coach-rank-plain')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
-      const heroOver = hero ? hero.scrollHeight - hero.clientHeight : 0;
+      const wide = [...box.querySelectorAll<HTMLElement>('.coach-hero-name, .coach-plate-value, .coach-rank-who b')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      const sc = hero?.querySelector<HTMLElement>('.coach-hero-scroll'); const foot = hero?.querySelector('.coach-hero-foot')?.getBoundingClientRect(); const heroOver = hero ? Math.max(hero.scrollHeight - hero.clientHeight, foot && foot.bottom > hero.getBoundingClientRect().bottom + 1 ? 1 : 0) : 0; const heroScroll = sc ? sc.scrollHeight - sc.clientHeight : 0;
       const last = rows.at(-1)?.getBoundingClientRect().bottom ?? 0;
-      return `coach: hero=${hero ? Math.round(hero.getBoundingClientRect().height) : 0} heroOverflow=${heroOver} rows=${rows.length} rowOverflow=${rows.filter(r => r.scrollHeight - r.clientHeight > 1).length} rowsBelow=${rows.filter(r => r.getBoundingClientRect().bottom > listB + 1).length} rail=${rail.length} railOverflow=${rail.filter(r => r.scrollHeight - r.clientHeight > 1).length} railBelow=${rail.filter(r => r.getBoundingClientRect().bottom > railB + 1).length} clipped=${wide} lastBottom=${Math.round(last)} coachBottom=${Math.round(box.getBoundingClientRect().bottom)} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
+      return `coach: hero=${hero ? Math.round(hero.getBoundingClientRect().height) : 0} heroOverflow=${heroOver} heroScroll=${heroScroll} rows=${rows.length} rowOverflow=${rows.filter(r => r.scrollHeight - r.clientHeight > 1).length} rowsBelow=${rows.filter(r => r.getBoundingClientRect().bottom > listB + 1).length} rail=${rail.length} railOverflow=${rail.filter(r => r.scrollHeight - r.clientHeight > 1).length} railBelow=${rail.filter(r => r.getBoundingClientRect().bottom > railB + 1).length} clipped=${wide} lastBottom=${Math.round(last)} coachBottom=${Math.round(box.getBoundingClientRect().bottom)} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
     // Lista candidati: scorrimento interno, caselle tagliate dal fondo, misure delle Carte
     const list = await page.evaluate(() => {

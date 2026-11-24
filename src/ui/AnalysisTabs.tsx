@@ -31,7 +31,11 @@ export function HelpButton({ title, label = title, className, children }: { titl
   useEffect(() => {
     if (!open) return;
     closeButton.current?.focus();
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    // Esc chiude; Tab resta nella finestra (l'unico punto da fuoco è la ×: il fuoco non cade sulla pagina dietro)
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+      else if (e.key === 'Tab') { e.preventDefault(); closeButton.current?.focus(); }
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
