@@ -113,7 +113,17 @@ describe('Offesa sullo schermo stretto', () => {
     expect(cards[0].querySelector('.sp-card-tag')).toHaveTextContent(/^Vel \d+/);
     expect(cards[0].querySelector('.sp-big')).toHaveTextContent(/\d+%del meta superato/);
     expect(screen.getByRole('switch', { name: /Distortozona/ })).toBeDisabled();
+    // La carta apre il foglio dal basso come in Offesa e Difesa: in testa lo stesso numero della carta con le stesse parole,
+    // sotto fra quanti rivali e quanti ne supera; il conteggio della lista sulle stesse specie
     await user.click(cards[0].querySelector('button.og-card-open') as HTMLElement);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    const sheet = screen.getByRole('dialog', { name: 'Great Tusk' });
+    expect(sheet).toHaveClass('an-sheet');
+    const pct = cards[0].querySelector('.sp-big')!.textContent!.match(/^\d+/)![0];
+    expect(sheet.querySelector('.sp-dlg-total')).toHaveTextContent(`${pct}% del meta superato`);
+    const base = sheet.querySelector('.sp-dlg-base')!.textContent!.match(/^Fra i (\d+) Pokémon più usati del meta ne supera (\d+)/)!;
+    expect(within(sheet).getByText(/^Supera \d+ su \d+/)).toHaveTextContent(`Supera ${base[2]} su ${base[1]}`);
+    expect(within(sheet).getByRole('list', { name: /rivali/i })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

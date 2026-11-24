@@ -90,6 +90,14 @@ describe('Velocità: una scheda a barre', () => {
     view();
     await user.click(barOf('Dragonite'));
     const dialog = dialogOf('Dragonite');
+    // In testa lo stesso numero della barra con le parole della carta; sotto fra quanti rivali, quanti ne supera da solo e
+    // i pezzi dei guadagni (gli stessi della barra); niente altre percentuali
+    const d = withMeta().speed.members.find(m => m.species === 'Dragonite')!;
+    const species = poolSpecies(fixtureData).filter(sp => sp !== 'Dragonite').length;
+    expect(dialog.querySelector('.sp-dlg-total')).toHaveTextContent(`${Math.round(100 * d.total)}% del meta superato`);
+    expect(dialog.querySelector('.sp-dlg-base')).toHaveTextContent(new RegExp(`^Fra i ${species} Pokémon più usati del meta ne supera ${Math.round(d.raw * species)} · \\+\\d+ potenziamenti e priorità · \\+\\d+ controllo del team$`));
+    expect(within(dialog).getByText(/^Supera \d+ su \d+/)).toHaveTextContent(`Supera ${Math.round(d.raw * species)} su ${species}`);
+    expect(dialog.querySelector('.sp-dlg-stat')).toHaveTextContent(/^Vel \d+$/);
     expect(checks(dialog)).toEqual(expect.arrayContaining(['Dragon Dance', 'Sticky Web', 'Stun Spore']));
     expect(checks(dialog).filter(c => ['Dragon Dance', 'Sticky Web', 'Stun Spore', 'Booster Energy', 'Tailwind', 'Trick Room'].includes(c!))).toEqual(['Dragon Dance', 'Sticky Web', 'Stun Spore']);
     expect(dialog).not.toHaveTextContent('il voto non cambia');

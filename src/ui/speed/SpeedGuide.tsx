@@ -139,6 +139,7 @@ export function SpeedGuideSection({ speed, meta, doubles = false }: { speed: Tea
       <ul className="guide-lines">
         <li>{g('what.rule')}</li>
         <li>{rivals}</li>
+        <li>{g('pct')}</li>
       </ul>
 
       <h4>{g('gains')}</h4>

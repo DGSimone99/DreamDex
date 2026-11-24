@@ -325,6 +325,15 @@ const SPEED_STATES: Record<string, State> = {
     if (ok !== true) return ok;
     if (!await clickText(p, '.sp-bar-btn', /./) && !await clickText(p, '.sp-card .og-card-open', /./)) return 'no bar';
     await wait(400);
+    // Sotto i 1100 px il foglio dal basso (an-sheet), sul computer la finestra: il numero in testa, la × e i check (44 px col dito)
+    console.log(`speedMember=${await p.evaluate(() => {
+      const box = document.querySelector('.an-sheet, .sp-dialog');
+      if (!box) return 'none';
+      const x = box.querySelector('.help-close')?.getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      const checks = [...box.querySelectorAll('.sp-check')].map(c => Math.round(c.getBoundingClientRect().height)).join(',');
+      return `${box.classList.contains('an-sheet') ? 'sheet' : 'dialog'} box=${Math.round(b.left)},${Math.round(b.top)},${Math.round(b.right)},${Math.round(b.bottom)} close=${x ? `${Math.round(x.width)}x${Math.round(x.height)}` : '-'} checks=${checks} total="${box.querySelector('.sp-dlg-total')?.textContent}" base="${box.querySelector('.sp-dlg-base')?.textContent}" count="${box.querySelector('.sp-dlg-count')?.textContent}" overflowX=${box.scrollWidth > box.clientWidth}`;
+    })}`);
     return true;
   } },
   // Trick Room: Hatterene al posto di Ribombee; l'interruttore "Trick Room · Hatterene" è acceso di base (le barre in

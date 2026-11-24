@@ -87,8 +87,17 @@
 .help-dialog.sp-dialog { width: min(560px, 100%); max-height: min(760px, calc(100vh - 48px)); }
 .sp-dialog .help-head h3 { display: flex; align-items: center; gap: var(--sp-4); }
 .sp-dialog-body { display: flex; flex-direction: column; gap: var(--sp-5); min-height: 0; padding: var(--sp-7) var(--sp-9) var(--sp-8); overflow: auto; }
-.sp-dlg-head { display: flex; align-items: baseline; gap: var(--sp-5); margin: 0; color: var(--muted); }
-.sp-dlg-speed { font: italic 700 var(--fs-display)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+/* In alto il numero della carta con le sue parole ("87% del meta superato"), sotto da dove viene */
+.sp-dlg-head { display: grid; gap: var(--sp-2); }
+.sp-dlg-total { display: flex; align-items: baseline; gap: var(--sp-3); margin: 0; font-weight: 600; color: var(--muted); }
+.sp-dlg-total b { font: italic 800 var(--fs-display)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.sp-dlg-total b i { font-size: 0.55em; font-style: inherit; color: var(--muted); }
+.sp-dlg-total.good b { color: color-mix(in srgb, var(--good) 70%, white); }
+.sp-dlg-total.warn b { color: var(--warn); }
+.sp-dlg-total.bad b { color: var(--bad); }
+.sp-dlg-base { margin: 0; font-size: var(--fs-small); line-height: 1.4; color: var(--muted); }
+.sp-dlg-stat { margin-left: auto; font: 700 var(--fs-small)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sp-rivals { display: grid; gap: var(--sp-3); }
 .sp-checks { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0; padding: var(--sp-4) var(--sp-5) var(--sp-5); border: 1px solid var(--line); border-radius: 4px; }
 .sp-checks legend { padding: 0 var(--sp-2); font-size: var(--fs-label); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .sp-check { display: inline-flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); border: 1px solid var(--line); border-radius: 999px; font-size: var(--fs-small); cursor: pointer; }
@@ -143,3 +152,14 @@
 .sp-stack-table .og-bar-row td { padding-top: var(--sp-1); }
 .sp-stack-table .sp-bar-btn { width: 100%; }
 .def-general .sp-stack-table thead th.og-share-h { text-align: right; }
+
+/* Il foglio dal basso (telefono e tablet): come quelli di Offesa e Difesa, i titoletti come og-sheet-sec h4 */
+.sp-sheet .sp-checks { display: flex; flex-wrap: wrap; gap: var(--sp-3); padding: 0; border: 0; }
+.sp-sheet .sp-checks legend, .sp-sheet .sp-dlg-count { float: none; width: 100%; margin: 0 0 var(--sp-4); padding: 0; font: 700 var(--fs-label)/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.sp-sheet .sp-dlg-count { margin: 0; }
+.sp-sheet .sp-dlg-total b { font-size: var(--fs-stat-s, var(--fs-display)); }
+/* Col dito tutta l'etichetta è il bersaglio, alta almeno 44 px (la × del foglio è 44 px in cards-analysis.css) */
+@media (pointer: coarse) {
+  .sp-check { min-height: 44px; padding: var(--sp-2) var(--sp-6); }
+  .sp-check input { width: 20px; height: 20px; }
+}

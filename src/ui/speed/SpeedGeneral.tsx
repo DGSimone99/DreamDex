@@ -22,7 +22,7 @@ import { offenseSlots } from '../offense/slots';
 import { linkTeamCard } from '../teamLink';
 import { TIP_NEUTRAL, TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { tileStyle, typeIconUrl } from '../typeIcons';
-import { SpeedMemberDialog } from './SpeedMemberDialog';
+import { SpeedMemberDialog, SpeedMemberSheet, type SpeedParts } from './SpeedMemberDialog';
 import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
 
 const points = (x: number) => Math.round(100 * x);
@@ -44,7 +44,7 @@ function laneOf(m: MemberSpeed, set: TeamSet): SpeedLane {
 }
 
 /** I numeri di una barra: la velocità pura, i guadagni suoi, il controllo del team mostrato e il totale (0-100). */
-interface Parts { raw: number; own: number; team: number; total: number }
+type Parts = SpeedParts;
 
 /**
  * La scheda della Velocità, nella cornice comune (`def-frame`) e con la stessa tabella delle altre aree: i membri
@@ -64,11 +64,11 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
   const t = useT();
   const lang = useLang();
   const stacked = useStackedTables();
-  // Telefono e tablet: i membri come carte Pedana, come Offesa e Difesa; la carta apre la finestra coi rivali
+  // Telefono e tablet: i membri come carte Pedana, come Offesa e Difesa; la carta apre il foglio coi rivali (AnalysisSheet, come Offesa e Difesa)
   const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const { members } = speed;
   const slots = offenseSlots(ctx.team, members);
-  const [open, setOpen] = useState<{ m: MemberSpeed; set: TeamSet; slot: number } | null>(null);
+  const [open, setOpen] = useState<{ m: MemberSpeed; set: TeamSet; slot: number; parts: Parts; tone: string } | null>(null);
   const bars = useRef(new Map<number, HTMLButtonElement | null>());
   const tip = useFloatAnchor<number>();
   const prio = useFloatAnchor<number>();
@@ -153,7 +153,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
     const bar = m && parts
       ? (
         <button ref={el => { bars.current.set(slot, el); }} type="button" className={`sp-bar-btn ${cls}`}
-          aria-label={t('sdetail.bar.open', { name: m.species })} onClick={() => { tip.close(); setOpen({ m, set, slot }); }}
+          aria-label={t('sdetail.bar.open', { name: m.species })} onClick={() => { tip.close(); setOpen({ m, set, slot, parts, tone: cls }); }}
           onMouseEnter={e => tip.open(slot, e.currentTarget)} onMouseLeave={tip.close}
           onFocus={e => tip.open(slot, e.currentTarget)} onBlur={tip.close}>
           <Stack {...parts} />
@@ -209,7 +209,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
                 <span className="pedana-stripe" aria-hidden="true" />
                 <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
                 <button ref={el => { bars.current.set(slot, el); }} type="button" className="og-card-open" disabled={!m}
-                  aria-label={t('sdetail.bar.open', { name })} onClick={() => m && setOpen({ m, set, slot })}>
+                  aria-label={t('sdetail.bar.open', { name })} onClick={() => m && parts && setOpen({ m, set, slot, parts, tone: cls })}>
                   <span className="og-card-sprite" aria-hidden="true"><Sprite species={set.species} item={set.item} size={80} /></span>
                   <span className="og-card-name">{name}</span>
                 </button>
@@ -249,7 +249,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
             </TipSec>
           </FloatTip>
         )}
-        {open && <SpeedMemberDialog member={open.m} set={open.set} team={ctx.team} meta={meta} room={room} onClose={close} />}
+        {open && <SpeedMemberSheet member={open.m} set={open.set} parts={open.parts} tone={open.tone} team={ctx.team} meta={meta} room={room} onClose={close} />}
       </div>
     );
   }
@@ -356,7 +356,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
           </TipSec>
         </FloatTip>
       )}
-      {open && <SpeedMemberDialog member={open.m} set={open.set} team={ctx.team} meta={meta} room={room} onClose={close} />}
+      {open && <SpeedMemberDialog member={open.m} set={open.set} parts={open.parts} tone={open.tone} team={ctx.team} meta={meta} room={room} onClose={close} />}
     </div>
   );
 }
