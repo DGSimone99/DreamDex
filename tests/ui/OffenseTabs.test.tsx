@@ -9,6 +9,7 @@ import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
 import { gameName, typeName } from '../../src/i18n/game';
 import { offenseSlots } from '../../src/ui/offense/slots';
+import { countClass } from '../../src/ui/CardsLegend';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -423,10 +424,10 @@ describe('Offesa: Generale', () => {
       expectBadges(cells[k], hits);
       const open = hits.filter(h => h.plain < 50).length;
       expect(cells[k]).not.toHaveTextContent('tutti');
-      // A destra della barra il conto "17/18": quanti KO in due colpi o meglio, verde se tutti, rosso se no
+      // A destra della barra il conto "17/18": quanti KO in due colpi o meglio, colori dei conti delle carte (verde pieno, giallo da 85%, rosso sotto)
       const count = cells[k].querySelector('.kob-count')!;
       expect(count).toHaveTextContent(`${hits.length - open}/${hits.length}`);
-      expect(count).toHaveClass(open === 0 ? 'full' : 'bad');
+      expect(count).toHaveClass(countClass(hits.length - open, hits.length));
       expect(count).toHaveAttribute('aria-label', `${hits.length - open} su ${hits.length} KO in due colpi o meglio`);
       if (open === 0) {
         expect(cells[k].querySelector('.kob.bad')).toBeNull();
@@ -832,6 +833,6 @@ describe('Offesa Generale: il colore del conto segue il ruolo (voce 3.3)', () =>
     // Il testo per lo screen reader non cambia e non dice "muro"
     expect(rows[1].querySelector('.kob-count')!.getAttribute('aria-label')).toMatch(/^\d+ su \d+ KO in due colpi o meglio$/);
     expect(rows[1].querySelector('td')).not.toHaveTextContent(/muro/i);
-    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'bad')).toBe(true);
+    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'warn' || k === 'bad')).toBe(true);
   });
 });

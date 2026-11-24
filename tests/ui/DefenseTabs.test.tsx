@@ -506,6 +506,6 @@ describe('Difesa Generale: il colore del conto segue il ruolo (voce 3.3)', () =>
     // Il testo per lo screen reader non cambia e non dice "muro"
     expect(rows[0].querySelector('.kob-count')!.getAttribute('aria-label')).toMatch(/^ne regge \d+ su \d+$/);
     expect(rows[0].querySelector('td')).not.toHaveTextContent(/muro/i);
-    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'bad')).toBe(true);
+    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'warn' || k === 'bad')).toBe(true);
   });
 });

@@ -218,8 +218,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
         <section className="og-hero" aria-label={teamName}>
           <span className="og-plate">{teamName}</span>
           <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>
-          <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm scale /></div>
-          {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm scale /></div>}
+          <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></div>
+          {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></div>}
         </section>
         <CardsLegend side="def" pieces={[['held', '3HKO+'], ['two', '2HKO'], ['ohko', 'OHKO']]} />
         <ul className="og-cards" aria-label={t('detail.member')}>

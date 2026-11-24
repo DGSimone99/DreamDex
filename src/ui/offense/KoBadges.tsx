@@ -63,20 +63,18 @@ export const pieceSize = (n: number) => ({ '--n': Math.max(0, n) } as CSSPropert
  * non c'è (salvo che il setup ci porti qualcuno: allora resta, spento, col triangolo). `alarm` (la riga del team): il
  * pezzo che resta è in rosso, sono gli scoperti. Passando su un pezzo il tooltip DreamDex elenca i bersagli, poi in righe a
  * parte quelli in più dopo la danza o con Tera/Z. A destra della barra il conto "11/18": quanti ne manda KO in due colpi o
- * meglio (nella riga del team verde se li copre tutti, rosso se no). `who`: il nome nella testata (il membro o il team);
+ * meglio (nella riga del team i colori dei conti delle carte, countClass, su ogni schermo). `who`: il nome nella testata (il membro o il team);
  * `mon`: il membro (la sua sprite in testata; la riga del team ha la spada); `of`: la parola sotto il conto ("tipi").
  * La testata dice la fascia nella riga sotto il nome (il badge OHKO o 2HKO e la frase) e a destra il conto "5/18".
  * Coi pezzi cliccabili (`onPick`) il tooltip finisce col piede TipGo verso `pickPlace` ("Clic: vai a Coverage tipi").
  */
-export function KoBadges({ bands, who, mon, of, total, setupMove, onceName, onPick, pickPlace, alarm = false, scale = false, quiet = false }: {
+export function KoBadges({ bands, who, mon, of, total, setupMove, onceName, onPick, pickPlace, alarm = false, quiet = false }: {
   bands: KoBands; who: string; mon?: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
   /** Clic su un pezzo OHKO / 2HKO: apre il dettaglio su quei bersagli. */
   onPick?: (band: KoBand | 'rest') => void;
   /** Dove porta il clic su un pezzo (il nome della sottoscheda, es. "Coverage tipi"): il piede TipGo del tooltip e la descrizione. */
   pickPlace?: string;
   alarm?: boolean;
-  /** Con `alarm`, le carte sotto i 1100 px: il conto ha i colori dei conti delle carte (countClass: verde pieno, giallo da 85%, rosso sotto). */
-  scale?: boolean;
   /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per colpire (un muro). I pezzi restano uguali. */
   quiet?: boolean;
 }) {
@@ -110,11 +108,11 @@ export function KoBadges({ bands, who, mon, of, total, setupMove, onceName, onPi
   // Quanti bersagli manda KO in due colpi o meglio (colpo semplice): "11/18", da leggere al volo
   const hit = bands.plain.ohko.length + bands.plain.two.length;
   // Il colore dice quanto copre: pieno verde, da due terzi verde, da un terzo giallo, sotto rosso (zero spento); nella riga
-  // del team basta uno scoperto per il rosso; `quiet` (un muro) lo lascia neutro
+  // del team countClass (verde pieno, giallo da 85%, rosso sotto); `quiet` (un muro) lo lascia neutro
   const ratio = total ? hit / total : 0;
   // In testata il membro con la sua sprite (un tooltip su un Pokémon), la riga del team con la spada
   const lead = mon ? { sprite: mon } : { lead: <TipGlyph icon="sword" /> };
-  const countTone = alarm ? (scale ? ` ${countClass(hit, total)}` : rest > 0 ? ' bad' : ' full') : quiet ? ' quiet' : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
+  const countTone = alarm ? ` ${countClass(hit, total)}` : quiet ? ' quiet' : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   return (
     <span className="kob-line">
     <span className="kob-row">
