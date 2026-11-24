@@ -1868,6 +1868,7 @@ export const en = {
   'editor.duelSet': "Opponent's set",
   'editor.duelPick': "Pick an opponent",
   'common.hpBar': "HP",
+  'common.hpLegend': "HP left after the hit (the % is the damage)",
   'editor.duelSpeedFirst': "First",
   'editor.duelSpeedSecond': "Second",
   'editor.duelSpeedEven': "Tie",

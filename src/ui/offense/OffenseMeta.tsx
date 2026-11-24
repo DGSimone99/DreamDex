@@ -46,6 +46,20 @@ export function HpLeft({ pct, band }: { pct: number; /** Offesa: il colore dice 
   );
 }
 
+/**
+ * La voce della legenda dei fogli (Offesa e Difesa, le stesse parole): la barra "PS" piccola e cosa dice, i PS che restano
+ * dopo il colpo, come nel gioco; il % accanto è il danno.
+ */
+export function HpLegend() {
+  const t = useT();
+  return (
+    <span className="hp-legend">
+      <span className="cm-hp" data-hp={t('common.hpBar')}><span className="cm-hp-bar legend"><i className="quiet" style={{ width: '60%' }} /></span></span>
+      {t('common.hpLegend')}
+    </span>
+  );
+}
+
 /** Quanti membri lo mandano KO in due colpi col colpo semplice (Lo coprono, il numero della riga Team Coverage). */
 const coveredCount = (row: Row) => (row.cells ?? []).filter(c => c.pct >= 50).length;
 /** Quanti membri lo mandano KO in due colpi: 0 rosso, 1 giallo, da 2 verde. */
@@ -334,7 +348,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                 );
               })}
             </ul>
-            <span className="area-legend ct-sheet-legend" aria-hidden="true"><OffenseMetaLegend /><EffLegend side="offense" /></span>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><HpLegend /><OffenseMetaLegend /><EffLegend side="offense" /></span>
           </AnalysisSheet>
         )}
       </div>

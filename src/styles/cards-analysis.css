@@ -126,6 +126,8 @@
 .ct-sheet-none { grid-column: 3 / -1; justify-self: end; color: var(--faint); }
 .ct-sheet-row.ok-none .ct-sheet-name { color: var(--faint); }
 .ct-sheet-row.eff-dim { opacity: 0.4; }
+.ct-sheet-legend .hp-legend { flex-basis: 100%; display: inline-flex; align-items: center; gap: var(--sp-2); }
+.ct-sheet-legend .hp-legend .cm-hp { width: auto; margin: 0; }
 .ct-sheet-legend { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); font: 500 var(--fs-caption) var(--ui); color: var(--muted); }
 
 /* ── Coverage meta a carte: le minacce come carte Pedana (più basse: una barra sola, quanti dei tuoi la mandano KO in uno

@@ -23,7 +23,7 @@ import { GRID_CELLS, useRoving } from '../useRoving';
 import { useMemberTip } from '../MemberCard';
 import { MetaFrame, MetaOrderSwitch, type MetaOrder } from '../MetaFrame';
 import { byThreat, byUsage } from '../../engine/overviewDashboard';
-import { HpLeft } from '../offense/OffenseMeta';
+import { HpLeft, HpLegend } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
@@ -316,7 +316,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                 );
               })}
             </ul>
-            <span className="area-legend ct-sheet-legend" aria-hidden="true"><DefenseMetaLegend /><EffLegend side="defense" /></span>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><HpLegend /><DefenseMetaLegend /><EffLegend side="defense" /></span>
           </AnalysisSheet>
         )}
       </div>

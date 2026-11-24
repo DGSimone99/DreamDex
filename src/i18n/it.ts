@@ -1871,6 +1871,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.duelSet': "Set dell'avversario",
   'editor.duelPick': "Scegli un avversario",
   'common.hpBar': "PS",
+  'common.hpLegend': "PS che restano dopo il colpo (il % è il danno)",
   'editor.duelSpeedFirst': "Primo",
   'editor.duelSpeedSecond': "Secondo",
   'editor.duelSpeedEven': "Pari",
