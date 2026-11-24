@@ -858,8 +858,10 @@
 
 /* La carta grande: in testa la fascia VS (chi esce | +N e voto | chi entra), sotto Risolve | Costa e il Set (scorrono se
    sono lunghi), in fondo le azioni. La carta è alta quanto il suo contenuto (niente fascia vuota sopra le azioni) e al
-   più quanto la colonna */
-.coach-hero { --in-w: clamp(144px, 26cqh, 196px); --out-w: calc(var(--in-w) * 0.72); --vs-pad: clamp(var(--sp-5), 2.4cqh, 26px); --art-k: 1.2; position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
+   più quanto la colonna: sugli schermi alti finisce dove finisce il contenuto (sotto può restare spazio libero). La
+   fascia VS ha un'altezza fissa a ogni misura del computer (figure di circa 138 px, 119 a 1440×900): non cresce mai
+   per riempire lo spazio */
+.coach-hero { --in-w: 120px; --out-w: calc(var(--in-w) * 0.72); --vs-pad: var(--sp-6); --art-k: 1.15; position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
 .coach-hero.skeleton { flex: 1; border: 1px dashed var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-hero.is-flash { animation: coach-flash 2s ease-out forwards; }
 @keyframes coach-flash {
@@ -873,12 +875,16 @@
 /* La fascia VS: tre colonne da bordo a bordo; la luce del tipo di chi entra scende solo sulla metà di destra (--wash:
    per Psico e Folletto il secondo tipo o il colore smorzato, così non compete con Applica); la metà di sinistra resta
    neutra. In fondo la riga: grigia a sinistra, nel colore del tipo a destra */
-/* Lo spazio che avanza nella colonna (team di sei a 1920×1080) va alla fascia VS, che cresce verso l'alto: le pedane
-   restano in basso, le azioni subito sotto il Set (mai una fascia vuota sopra le azioni) */
-/* --in-x, --out-x: il lato delle figure, più --in-boost (px) che useVsBoost dà sugli schermi alti dove la fascia ha
-   spazio che avanza (al più 220 px) */
-.coach-vs { --in-x: calc(var(--in-w) + var(--in-boost, 0px)); --out-x: calc(var(--out-w) + var(--in-boost, 0px) * 0.72); position: relative; flex: 1 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; overflow: hidden;
+/* --in-x, --out-x: il lato delle figure (chi entra, chi esce) */
+.coach-vs { --in-x: var(--in-w); --out-x: var(--out-w); position: relative; flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch;
   background: linear-gradient(180deg, color-mix(in srgb, var(--faint) 9%, var(--panel)), var(--panel) 80%); }
+/* Gli sprite possono uscire dalla fascia (niente overflow nascosto): un Pokémon alto (Gholdengo, Kingambit) o largo
+   (Great Tusk) tiene la sua misura e sporge sopra la fascia o di lato. Le luci del tipo (::before, ::after) stanno già
+   dentro la fascia, non serve tagliare niente. Gli sprite stanno sopra la fascia e i vicini (z-index 1), ma mai sopra i
+   testi: il +N, il voto, Costa e i nomi (z-index 2), né sopra la fascia del titolo e il Piano (z-index 3) */
+.coach-vs-side, .coach-vs-stage { overflow: visible; }
+.coach-vs-mid, .coach-vs-label, .coach-vs-out-name, .coach-hero-focus { position: relative; z-index: 2; }
+.coach-hero-band, .coach-main > .coach-plan { position: relative; z-index: 3; }
 .coach-vs::before { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 50%; pointer-events: none;
   background: linear-gradient(180deg, color-mix(in srgb, var(--wash, var(--t1)) 19%, var(--panel)) 0%, color-mix(in srgb, var(--wash, var(--t1)) 4%, var(--panel)) 85%); }
 .coach-vs::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; pointer-events: none;
@@ -911,8 +917,8 @@
 .coach-move-out { filter: grayscale(1); max-width: 100%; }
 .coach-move-out .mvp-nm { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 70%, transparent); }
 /* Il centro: il segno dello scambio, il +N grande in verde e il voto prima → dopo (il dopo nel colore del voto) */
-/* In basso come le pedane: quando la fascia cresce (colonna alta) il +N resta accanto a chi esce e a chi entra */
-.coach-vs-mid { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: var(--sp-3); min-width: 150px; padding: var(--vs-pad) var(--sp-4); }
+/* In basso come le pedane: il +N resta all'altezza di chi esce e di chi entra */
+.coach-vs-mid { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: var(--sp-3); min-width: 150px; padding: var(--vs-pad) var(--sp-4); }
 .coach-vs-arrow { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%;
   background: color-mix(in srgb, var(--ground) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 28%, transparent); color: var(--text); }
 .coach-vs-arrow .icon { width: 15px; height: 15px; }
@@ -1092,13 +1098,16 @@
 @container coaching (min-width: 1001px) {
   .coach-set-moves { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 900px; }
 }
-/* Larghe ma basse (1440×900 col team aperto): il Set in una terza colonna accanto a Costa, le mosse due per riga, così
-   la carta sta intera senza scorrere; Vedi e Copia solo con l'icona (il fumetto dice cosa fanno) */
-@container coaching (min-width: 1100px) and (max-height: 640px) {
+/* Larghe (1440×900, 1920×1080): il Set in una seconda colonna accanto a Risolve, le mosse due per riga, così la carta
+   resta corta (sugli schermi alti l'altezza in più non va a una fascia VS gigante: la carta finisce col contenuto) */
+@container coaching (min-width: 1100px) {
   .coach-hero-facts { grid-template-columns: minmax(0, 1.3fr) minmax(330px, 1.3fr); column-gap: var(--sp-8); max-width: 1100px; }
   .coach-hero-facts > .coach-set { grid-column: auto; }
   .coach-set-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* Le mosse due per riga: senza la coda (categoria e potenza) il nome sta intero */
+}
+/* Larghe ma basse (1440×900): le mosse senza la coda (categoria e potenza), il nome sta intero; Vedi e Copia solo con
+   l'icona sotto i 1250 px (il fumetto dice cosa fanno) */
+@container coaching (min-width: 1100px) and (max-height: 640px) {
   .coach-set-moves .mvp-tail { display: none; }
 }
 /* Carte basse e un po' meno larghe (1280×620): Risolve | Set affiancati anche qui, così la parte che scorre resta corta */
@@ -1119,14 +1128,14 @@
   /* Un Piano di tre passi: il posto di ogni passo resta nel nome per lo screen reader e nella carta */
   .coach-plan:has(.coach-plan-steps > li:nth-child(3)) .coach-plan-who small { display: none; }
 }
-/* Alte (1920×1080): la classifica più stretta in alto, così ci sta una riga in più */
+/* Alte (1920×1080): la classifica più stretta in alto, così ci sta una riga in più (la fascia VS resta quella di
+   1440×900, poco più grande: figure di 138 px) */
 @container coaching (min-height: 641px) {
   .coach-diag { gap: var(--sp-2); }
 }
 /* Altezze medie (1440×900): la fascia VS più bassa */
 @container coaching (max-height: 640px) {
-  .coach-hero { --in-w: 108px; --out-w: 76px; --vs-pad: var(--sp-3); --art-k: 1.1; }
-  .coach-hero-body { gap: var(--sp-3); padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+  .coach-hero { --in-w: 108px; --out-w: 76px; --vs-pad: var(--sp-3); --art-k: 1.1; }  .coach-hero-body { gap: var(--sp-3); padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
   .coach-hero-foot { padding-bottom: var(--sp-3); }
   .coach-hero-scroll { gap: var(--sp-4); }
   .coach-hero-facts { row-gap: var(--sp-4); }

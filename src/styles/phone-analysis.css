@@ -172,6 +172,72 @@
   /* Il posto di ogni passo resta scritto ("su Landorus-Therian"): sotto il nome c'è spazio */
   .coaching.coach-cure .coach-plan .coach-plan-steps > li .coach-plan-who small { display: block; }
   .coach-rank { min-height: 60px; }
+
+  /* ── Coaching sul telefono a tutto schermo: niente riquadri. Il Coaching va da bordo a bordo (attaccato sotto la barra
+     delle schede); le parti si separano con le fasce dei titoli (la fascia chiara di Champions, a tutta larghezza) e con
+     fili sottili, non con scatole. Il testo resta a 16 px dai bordi; la fascia VS e il piede vanno da bordo a bordo ── */
+  .coaching.coach-cure { --gut: var(--sp-8); gap: 0; margin: calc(-1 * var(--sp-6)) -14px 0; padding-bottom: 0; }
+  /* Uno sprite largo che sporge di lato si ferma al bordo dello schermo (clip non fa un contenitore che scorre: il piede
+     fermo in fondo continua a funzionare) */
+  .coaching.coach-cure { overflow-x: clip; }
+  .coaching.coach-cure .coach-main { gap: 0; }
+  /* Le fasce dei titoli ("La proposta migliore · 1 di 5", "Proposte"): da bordo a bordo, un filo sotto */
+  .coaching.coach-cure :is(.coach-hero-band, .coach-diag-top) { position: relative; min-height: 44px; margin: 0; padding: 0 var(--sp-3) 0 var(--gut);
+    background: linear-gradient(90deg, var(--champ-band), color-mix(in srgb, var(--champ-band) 30%, var(--ground)) 75%); box-shadow: inset 0 -1px 0 var(--line-soft); }
+  .coaching.coach-cure :is(.coach-hero-band .coach-sec, .coach-diag-head) { margin: 0; padding: var(--sp-4) 0; background: none; font: italic 700 var(--fs-section)/1.25 var(--display); }
+  .coaching.coach-cure :is(.coach-hero-band .coach-sec, .coach-diag-head)::after { content: none; }
+  .coaching.coach-cure .coach-diag-head:focus-visible { box-shadow: inset 0 -2px 0 var(--accent); }
+  .coaching.coach-cure .coach-hero-of, .coaching.coach-cure .coach-diag-total { font: 500 var(--fs-small)/1.25 var(--ui); font-style: normal; }
+  /* Riga 1 il titolo col numero; a destra (o sotto, se non sta) "Tutte le proposte ↓" e "Torna alla migliore" come
+     collegamenti leggeri, alti 44 px per il dito */
+  .coaching.coach-cure .coach-hero-band.is-phone { flex-wrap: wrap; row-gap: 0; }
+  .coaching.coach-cure .coach-hero-band.is-phone .coach-sec { flex: 1 1 auto; }
+  .coaching.coach-cure .coach-hero-acts { margin-left: auto; gap: 0; }
+  .coaching.coach-cure .coach-hero-band .coach-back { height: 44px; padding: 0 var(--sp-4); border: 0; border-radius: 0; background: none; color: var(--accent); font: 600 var(--fs-small)/1 var(--ui); }
+  .coaching.coach-cure .coach-hero-band .coach-back:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+  .coaching.coach-cure .coach-hero-band .coach-back:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+  .coaching.coach-cure .coach-to-arrow { margin-left: var(--sp-2); }
+  /* Il Piano: una striscia a tutta larghezza sotto il titolo, senza bordo; un filo la separa dalla carta */
+  .coaching.coach-cure .coach-plan.is-compact { padding: var(--sp-3) var(--gut); background: none; box-shadow: inset 0 -1px 0 var(--line-soft); }
+  /* La carta: nessun fondo a riquadro; la fascia VS da bordo a bordo, più alta (figure di circa 119 px) */
+  .coaching.coach-cure .coach-hero { --in-w: 108px; --out-w: 64px; --vs-pad: var(--sp-6); --art-k: 1.1; background: none; }
+  .coaching.coach-cure .coach-vs-side { padding-inline: var(--sp-3); }
+  .coaching.coach-cure .coach-vs-side.is-out { padding-left: var(--gut); }
+  .coaching.coach-cure .coach-vs-side.is-in { padding-right: var(--gut); }
+  .coaching.coach-cure .coach-vs-mid { gap: var(--sp-3); }
+  .coaching.coach-cure .coach-gain { font-size: var(--fs-stat); }
+  .coaching.coach-cure .coach-grade-change { font-size: var(--fs-small); }
+  .coaching.coach-cure .coach-grade-tag { font-size: var(--fs-title-s); }
+  .coaching.coach-cure .coach-hero-name { font-size: var(--fs-title-s); }
+  .coaching.coach-cure .coach-vs-cost .coach-change b { font-size: var(--fs-label); }
+  /* Risolve e Set: due parti a tutta larghezza, separate da un filo (niente scatole) */
+  .coaching.coach-cure .coach-hero-body { padding: 0; }
+  .coaching.coach-cure .coach-hero-scroll { gap: 0; padding: 0; }
+  .coaching.coach-cure .coach-hero-facts { gap: 0; max-width: none; }
+  .coaching.coach-cure .coach-hero-facts > * { padding: var(--sp-6) var(--gut); }
+  .coaching.coach-cure .coach-hero-facts > * + * { box-shadow: inset 0 1px 0 var(--line-soft); }
+  .coaching.coach-cure .coach-set .coach-set-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Il piede: a tutta larghezza, fondo pieno e un filo sopra; Applica largo (sotto il pollice), Vedi e Copia set
+     secondari accanto, Oppure in una fila piccola sotto */
+  .coaching.coach-cure .coach-hero-foot { gap: var(--sp-4); padding: var(--sp-5) var(--gut) var(--sp-5); background: var(--panel); box-shadow: 0 -1px 0 var(--line-soft); }
+  .coaching.coach-cure .coach-apply { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; height: 48px; font-size: var(--fs-section); }
+  .coaching.coach-cure .coach-hero-foot .coach-see { height: 48px; }
+  .coaching.coach-cure .coach-see:not(.coach-copy) { width: 48px; min-width: 48px; padding: 0; justify-content: center; }
+  .coaching.coach-cure .coach-see:not(.coach-copy) > span { display: none; }
+  .coaching.coach-cure .coach-alts { gap: var(--sp-2); }
+  /* La classifica: righe da bordo a bordo coi fili fra loro, non carte */
+  .coaching.coach-cure .coach-diag { gap: 0; padding: 0; background: none; }
+  .coaching.coach-cure .coach-diag-sub { margin: 0; padding: var(--sp-4) var(--gut) 0; }
+  .coaching.coach-cure .coach-filter { padding: var(--sp-4) var(--gut); }
+  .coaching.coach-cure .coach-rank-lead { padding-bottom: var(--sp-3); }
+  .coaching.coach-cure .coach-diag-list { gap: 0; padding: 0; box-shadow: inset 0 1px 0 var(--line-soft); }
+  .coaching.coach-cure .coach-rank { padding: var(--sp-4) var(--gut) var(--sp-4) calc(var(--gut) - var(--sp-1)); border-radius: 0;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 16%, var(--ground)), var(--ground) 55%); box-shadow: inset 0 -1px 0 var(--line-soft); }
+  .coaching.coach-cure .coach-rank.is-open { background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 22%, var(--ground)), color-mix(in srgb, var(--accent) 7%, var(--ground)) 55%); box-shadow: inset 0 0 0 2px var(--accent); }
+  .coaching.coach-cure .coach-diag-foot { padding: var(--sp-4) var(--gut) 0; }
+  .coaching.coach-cure .coach-diag-foot:empty { display: none; }
+  .coaching.coach-cure .coach-diag-clean { padding: var(--sp-4) var(--gut) 0; }
+  .coaching.coach-cure .coach-main > .coach-note { padding: var(--sp-4) var(--gut) 0; }
   .coach-empty { flex-direction: column; gap: var(--sp-8); padding: 20px; }
   .coach-empty .eevee-moment, .coach-empty.is-stuck .eevee-moment { width: 120px; }
 

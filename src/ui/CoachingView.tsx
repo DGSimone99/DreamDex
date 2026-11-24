@@ -395,62 +395,13 @@ function usePinnedFoot(ref: RefObject<HTMLElement | null>): boolean {
   return pinned;
 }
 
-/** Quanto può crescere chi entra nella fascia VS al più (px, il lato della figura sulla pedana). */
-const VS_ART_MAX = 220;
-
-/**
- * Sugli schermi alti (la colonna del Coaching almeno 641 px, sul desktop e sul tablet) la fascia VS prende lo spazio che avanza nella
- * carta: invece di lasciarlo vuoto sopra le pedane, chi entra (e chi esce) crescono fino a riempirlo, al più VS_ART_MAX.
- * Ogni volta misura senza la crescita (--in-boost a 0): lo spazio libero sopra chi entra (la colonna è allineata in
- * basso), meno quanto deve scorrere la parte centrale della carta; il risultato va in --in-boost (px in più sul lato della
- * figura). Così riempie solo lo spazio che c'è già e non allunga mai la carta (nessun giro di misure).
- */
-function useVsBoost(cardRef: RefObject<HTMLElement | null>, scrollRef: RefObject<HTMLElement | null>, key: string) {
-  useLayoutEffect(() => {
-    const card = cardRef.current;
-    const scroll = scrollRef.current;
-    if (!card || typeof ResizeObserver === 'undefined' || typeof window.matchMedia !== 'function') return;
-    // Sul telefono la fascia VS è una riga bassa: niente; sul tablet la carta riempie lo schermo (useFillScreen) e lo
-    // spazio che avanza va alle figure come sul desktop alto
-    const narrow = window.matchMedia(PHONE_QUERY);
-    let frame = 0;
-    let boost = 0;
-    const set = (next: number) => { boost = next; card.style.setProperty('--in-boost', `${Math.round(next)}px`); };
-    const check = () => {
-      frame = 0;
-      const side = card.querySelector<HTMLElement>('.coach-vs-side.is-in');
-      const stage = side?.querySelector<HTMLElement>('.coach-vs-stage');
-      const box = card.closest<HTMLElement>('.coaching');
-      if (!side || !stage || !box || narrow.matches || box.clientHeight < 641) { if (boost) set(0); return; }
-      const k = parseFloat(getComputedStyle(card).getPropertyValue('--art-k')) || 1;
-      const was = boost;
-      if (was) set(0);
-      // Lo spazio vuoto sopra la prima cosa della colonna (allineata in basso), meno quanto deve scorrere la parte centrale
-      const spare = (side.firstElementChild as HTMLElement | null)?.offsetTop ?? 0;
-      const top = parseFloat(getComputedStyle(side).paddingTop) || 0;
-      const over = scroll ? Math.max(0, scroll.scrollHeight - scroll.clientHeight) : 0;
-      const room = spare - top - over;
-      const base = stage.offsetHeight / k;
-      const next = Math.max(0, Math.min(VS_ART_MAX - base, room / k));
-      set(Math.abs(next - was) >= 2 ? next : was);
-    };
-    const soon = () => { if (!frame) frame = requestAnimationFrame(check); };
-    const observer = new ResizeObserver(soon);
-    observer.observe(card);
-    if (scroll?.firstElementChild) observer.observe(scroll.firstElementChild);
-    narrow.addEventListener('change', soon);
-    check();
-    return () => { observer.disconnect(); narrow.removeEventListener('change', soon); if (frame) cancelAnimationFrame(frame); card.style.removeProperty('--in-boost'); };
-  }, [cardRef, scrollRef, key]);
-}
-
 /** Il tablet (due colonne, la pagina scorre): fra il telefono e il desktop. */
 const TABLET_QUERY = '(min-width: 600px) and (max-width: 1099px)';
 
 /**
  * Sul tablet il Coaching arriva almeno fino alla barra delle sezioni in fondo allo schermo: la carta e la classifica
- * usano l'altezza invece di lasciare la pagina vuota sotto di loro (la fascia VS prende lo spazio, useVsBoost). Altrove
- * niente altezza minima.
+ * usano l'altezza invece di lasciare la pagina vuota sotto di loro (la classifica mostra più righe; la carta resta alta
+ * quanto il suo contenuto). Altrove niente altezza minima.
  */
 function useFillScreen(ref: RefObject<HTMLElement | null>, on: boolean) {
   useLayoutEffect(() => {
@@ -527,8 +478,6 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
   // salita sopra di lui: così non copre mai il +N, il voto, Costa e i nomi (prima resta al suo posto, in fondo alla carta)
   const cardRef = useRef<HTMLElement>(null);
   const pinned = usePinnedFoot(cardRef);
-  // Schermi alti: lo spazio che avanza nella fascia VS va alle figure (fino a 220 px), non resta vuoto
-  useVsBoost(cardRef, scrollRef, `${at}|${allAlts}`);
   // Oppure: solo le alternative per lo stesso posto della carta (chi esce è lo stesso); quelle per un altro posto stanno
   // nella classifica
   const seat = proposalSeat(p);

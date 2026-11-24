@@ -1591,7 +1591,8 @@ for (const [w, h] of sizes) {
     const file = join(out, `${w}x${h}-${name}.png`);
     // --clip "sel": la foto solo di quell'elemento (se c'è)
     const clipEl = arg('clip') ? await page.$(arg('clip')!) : null;
-    if (clipEl) await clipEl.screenshot({ path: file }); else await page.screenshot({ path: file });
+    // --full: la foto di tutta la pagina (anche la parte sotto lo schermo, per il telefono)
+    if (clipEl) await clipEl.screenshot({ path: file }); else await page.screenshot({ path: file, fullPage: process.argv.includes('--full') });
     console.log(`${file} pageScroll=${scroll} clipped=${clipped}${fixStrip}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
     await page.close();
   }
