@@ -14,9 +14,14 @@
   .coaching, .coaching.coach-cure { height: auto; overflow: visible; overscroll-behavior: auto; }
   .coach-hero, .coach-hero-body, .coach-hero-scroll { overflow: visible; mask-image: none; }
   /* Il piede della carta (Applica, Vedi, Copia set, Oppure) resta fermo in fondo allo schermo, sopra la barra delle sezioni,
-     finché la carta è in vista: Applica non finisce mai sotto il bordo. Il piede sta nel flusso della carta: in fondo alla
-     carta torna al suo posto, dopo l'ultima riga, e non copre niente */
-  .coach-hero-foot { position: sticky; bottom: calc(var(--bottom-h) + var(--safe-b)); z-index: 3; padding-top: var(--sp-4); box-shadow: 0 -1px 0 var(--line-soft); }
+     finché la carta è in vista, ma solo da quando la fascia VS è salita sopra di lui (is-pinned, usePinnedFoot): così non
+     copre mai il +N, il voto, Costa e i nomi. Il piede sta nel flusso della carta: in fondo alla carta torna al suo posto,
+     dopo l'ultima riga, e non copre niente */
+  .coach-hero-foot { bottom: calc(var(--bottom-h) + var(--safe-b)); z-index: 3; padding-top: var(--sp-4); box-shadow: 0 -1px 0 var(--line-soft); }
+  .coach-hero.is-pinned .coach-hero-foot { position: sticky; box-shadow: 0 -1px 0 var(--line-soft), 0 -8px 16px rgb(0 0 0 / 0.3); }
+  /* Sopra il piede fermo una breve sfumatura: quello che ci passa sotto (una pillola del Set) non spunta a fettine */
+  .coach-hero.is-pinned .coach-hero-foot::before { content: ''; position: absolute; left: 0; right: 0; bottom: calc(100% + 1px); height: 18px; pointer-events: none;
+    background: linear-gradient(180deg, transparent, var(--panel)); }
   /* Oppure in una riga sola che scorre col dito (niente righe a capo): il piede resta basso, non si mangia lo schermo */
   .coaching .coach-alts { flex: 1 1 100%; flex-wrap: nowrap; justify-content: flex-start; margin-left: 0; overflow-x: auto; overscroll-behavior-x: contain;
     scroll-snap-type: x proximity; scrollbar-width: none; padding-block: 1px; }

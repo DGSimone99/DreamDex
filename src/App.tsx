@@ -196,7 +196,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Fuori dal telefono; sul telefono decide AutoBand (le sezioni lo vedono sempre grande: lì la pagina scorre)
   // Tablet in orizzontale: il team è la colonna a sinistra, sempre intera (niente fascia da ridurre)
   const tabletSide = useMediaQuery(TABLET_SIDE_QUERY);
-  // Team che si riduce da solo: telefono e tablet piccolo in verticale (fino a 767 px), non col team in colonna
+  // Team che si riduce da solo: telefono, tablet piccolo (fino a 767 px) e tablet in verticale (fino a 1024 px), non col
+  // team in colonna
   const autoBand = useMediaQuery(AUTO_BAND_QUERY) && !tabletSide;
   const phone = useMediaQuery(PHONE_QUERY);
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi

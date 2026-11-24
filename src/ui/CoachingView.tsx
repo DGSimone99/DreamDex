@@ -95,7 +95,9 @@ function effectsOf(p: Proposal, problems: CoachProblem[], before: AreaSnapshot |
       moves.push({ area, from, to, up: now > was, delta });
     }
   }
-  return { solved, ups: moves.filter(m => m.up), downs: moves.filter(m => !m.up), lost: p.fix.lostHelpers ?? [] };
+  // Le aree che scendono dalla più colpita: la prima è la stessa che la riga della classifica scrive in rosso ("−3 Dif")
+  const downs = moves.filter(m => !m.up).sort((a, b) => b.delta - a.delta);
+  return { solved, ups: moves.filter(m => m.up), downs, lost: p.fix.lostHelpers ?? [] };
 }
 
 /** "Difesa 75 → 80": il nome dell'area, il valore di prima tenue, quello dopo in verde (o rosso se scende); a parole per lo screen reader. */
@@ -314,6 +316,63 @@ function altSub(o: Proposal, options: Proposal[], tr: ReturnType<typeof useT>, l
   return null;
 }
 
+/**
+ * Un'alternativa che in classifica ha già la sua riga per un altro posto (Tyranitar +10 al posto di Kingambit, qui +6 al
+ * posto di Toxapex): la riga piccola lo dice, "anche al posto di Kingambit", così è chiaro che il +N della carta vale per
+ * questo posto. Solo per i Pokémon (non per le mosse).
+ */
+function alsoRanked(o: Proposal, group: ProposalGroup, ranked: ProposalGroup[], tr: ReturnType<typeof useT>): string | null {
+  if (o.kind !== 'fix') return null;
+  const seat = o.fix.kind === 'swap' ? o.fix.member ?? '' : '';
+  const other = ranked.find(g => g.id !== group.id && g.options[0].kind === 'fix' && g.options[0].fix.species === o.fix.species
+    && (g.options[0].fix.kind === 'swap' ? g.options[0].fix.member ?? '' : '') !== seat);
+  if (!other || other.options[0].kind !== 'fix') return null;
+  const there = other.options[0].fix;
+  return there.kind === 'swap' ? tr('coach.alt.alsoAt', { member: there.member ?? '' }) : tr('coach.alt.alsoFree');
+}
+
+/** Dove il piede della carta si ferma: sotto i 1100 px (la pagina scorre). */
+const PIN_QUERY = '(max-width: 1099px)';
+
+/**
+ * Vero quando il piede della carta può restare fermo in fondo allo schermo: sotto i 1100 px e con la fascia VS tutta sopra
+ * la riga dove il piede si ferma (l'altezza dello schermo meno la barra delle sezioni e il piede stesso). Si ricontrolla
+ * scorrendo e cambiando misura (una volta per fotogramma).
+ */
+function usePinnedFoot(ref: RefObject<HTMLElement | null>): boolean {
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    const card = ref.current;
+    if (!card || typeof window.matchMedia !== 'function') return;
+    const narrow = window.matchMedia(PIN_QUERY);
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const vs = card.querySelector('.coach-vs');
+      const foot = card.querySelector<HTMLElement>('.coach-hero-foot');
+      if (!narrow.matches || !vs || !foot) { setPinned(false); return; }
+      const line = window.innerHeight - (parseFloat(getComputedStyle(foot).bottom) || 0) - foot.offsetHeight;
+      setPinned(vs.getBoundingClientRect().bottom <= line + 1);
+    };
+    const soon = () => { if (!frame) frame = requestAnimationFrame(check); };
+    check();
+    // La carta cambia altezza (un'alternativa, "altre N"): si ricontrolla anche senza scorrere
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(soon);
+    observer?.observe(card);
+    window.addEventListener('scroll', soon, { passive: true });
+    window.addEventListener('resize', soon);
+    narrow.addEventListener('change', soon);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('scroll', soon);
+      window.removeEventListener('resize', soon);
+      narrow.removeEventListener('change', soon);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [ref]);
+  return pinned;
+}
+
 /** Le alternative visibili subito in "Oppure"; le altre dietro "altre N". */
 export const ALTS_SHOWN = 3;
 
@@ -323,8 +382,11 @@ export const ALTS_SHOWN = 3;
  * fondo Applica (magenta: è l'azione migliore sullo schermo), il link alla scheda Pokémon o al set, Copia e, se il posto
  * ha altre proposte, "Oppure" con le piccole carte delle alternative (le prime tre col nome, le altre dietro "altre N").
  */
-function Hero({ group, choice, onChoose, problems, before, rating, actions, flash, titleRef }: {
-  group: ProposalGroup; choice: number; onChoose: (index: number) => void; problems: CoachProblem[];
+function Hero({ group, ranked, choice, onChoose, problems, before, rating, actions, flash, titleRef }: {
+  group: ProposalGroup;
+  /** Le righe della classifica: un'alternativa che ha già la sua riga per un altro posto lo dice ("anche al posto di X"). */
+  ranked: ProposalGroup[];
+  choice: number; onChoose: (index: number) => void; problems: CoachProblem[];
   before: AreaSnapshot | null; rating: TeamRating | null; actions: RowActions; flash: boolean;
   /** Il titolo visibile della carta: riceve il fuoco quando il pulsante usato sparisce (un'alternativa scelta). */
   titleRef: RefObject<HTMLDivElement | null>;
@@ -359,10 +421,14 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
     check();
     return () => { observer.disconnect(); el.removeEventListener('scroll', check); };
   }, []);
+  // Sotto i 1100 px il piede (Applica e il resto) resta fermo in fondo allo schermo, ma solo da quando la fascia VS è
+  // salita sopra di lui: così non copre mai il +N, il voto, Costa e i nomi (prima resta al suo posto, in fondo alla carta)
+  const cardRef = useRef<HTMLElement>(null);
+  const pinned = usePinnedFoot(cardRef);
   const alts = group.options.map((o, i) => ({ o, i })).filter(x => x.i !== at);
   const shownAlts = allAlts ? alts : alts.slice(0, ALTS_SHOWN);
   return (
-    <article className={`coach-hero${p.kind === 'move' ? ' is-move' : ''}${flash ? ' is-flash' : ''}`} data-row={group.id} aria-labelledby={headId}
+    <article ref={cardRef} className={`coach-hero${p.kind === 'move' ? ' is-move' : ''}${flash ? ' is-flash' : ''}${pinned ? ' is-pinned' : ''}`} data-row={group.id} aria-labelledby={headId}
       style={{ '--t1': typeColor(firstType(p)), '--wash': heroTone(p) } as CSSProperties}>
       <h4 id={headId} className="visually-hidden">{name}</h4>
       <VsBand p={p} fx={fx} rating={rating} headId={headId} titleRef={titleRef} bind={p.kind === 'fix' ? memberTip.bind(p.fix.set) : undefined} />
@@ -397,7 +463,7 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
             <div className="coach-alts" id={altsId} role="group" aria-label={tr('coach.alt.title', { n: alts.length })}>
               <span className="coach-alts-word" aria-hidden="true">{tr('coach.alt.or')}</span>
               {shownAlts.map(({ o, i }) => {
-                const sub = altSub(o, group.options, tr, lang);
+                const sub = altSub(o, group.options, tr, lang) ?? alsoRanked(o, group, ranked, tr);
                 return (
                   <button key={i} type="button" className={`coach-alt-tile${o.kind === 'move' ? ' is-move' : ''}${sub ? ' has-sub' : ''}`} style={{ '--t1': typeColor(firstType(o)) } as CSSProperties}
                     aria-label={tr('coach.alt.pick', { name: proposalName(o, tr, lang) })} {...hint(proposalName(o, tr, lang))}
@@ -500,9 +566,11 @@ function shortProblem(problem: CoachProblem, tr: ReturnType<typeof useT>, lang: 
  * lista il filtro per problema (una tendina: "Tutti i problemi" o un problema, col numero di proposte che lo risolvono);
  * in fondo "Restano N problemi" che nessun cambio singolo risolve (i nomi nel fumetto). A pagine come le altre liste.
  */
-function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy }: {
+function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy, headRef }: {
   groups: ProposalGroup[]; problems: CoachProblem[]; before: AreaSnapshot | null; entries: ProblemEntry[]; stuck: ProblemEntry[];
   filter: string | null; onFilter: (key: string | null) => void; onOpen: (groupId: string) => void; heroId: string | null; clean: ReactNode; busy: boolean;
+  /** Il titolo della classifica: riceve il fuoco da "Tutte le proposte" (telefono, la carta sta sopra). */
+  headRef?: RefObject<HTMLHeadingElement | null>;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -531,21 +599,19 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
   const [sharedKey, sharedN] = [...counts].reduce<[string | null, number]>((best, [k, n]) => (n > best[1] ? [k, n] : best), [null, 0]);
   const shared = !busy && sharedN >= 3 ? items.find(r => leadKey(r.fx) === sharedKey)!.fx.solved[0] : null;
   const filterLabel = filter ? label(filter) : tr('coach.rank.allProblems');
+  // Il posto di ogni riga ("al posto di X") non si taglia mai: se non sta su una riga va a capo (seatWrap)
+  const listRef = useRef<HTMLOListElement>(null);
+  const wraps = useSeatWrap(listRef, items.map(r => `${r.group.id}|${r.pick.kind}`).join('\n') + lang);
   return (
     <aside className="coach-diag" aria-labelledby={headId}>
       <div className="coach-diag-top">
-        <h4 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-diag-total">{tr(groups.length === 1 ? 'coach.rank.count1' : 'coach.rank.count', { n: groups.length })}</span>}</h4>
+        <h4 id={headId} className="coach-diag-head" ref={headRef} tabIndex={headRef ? -1 : undefined}>{tr('coach.rank.title')}{!busy && <span className="coach-diag-total">{tr(groups.length === 1 ? 'coach.rank.count1' : 'coach.rank.count', { n: groups.length })}</span>}</h4>
         <HelpButton title={tr('coach.help.title')} className="coach-help"><CoachingGuide /></HelpButton>
       </div>
-      {/* Sotto il titolo la riga che spiega; quando tre righe o più hanno lo stesso primo problema risolto, al suo posto
-          (stessa altezza: le righe per pagina non cambiano) quel problema una volta sola */}
-      {shared ? (
-        <p className="coach-diag-sub coach-rank-lead">
-          <span>{tr(sharedN === items.length ? 'coach.rank.sharedAll' : 'coach.rank.sharedSome', { n: sharedN })}</span>
-          <span aria-hidden="true"><SolvedPill entry={shared} /></span>
-          <span className="visually-hidden">{solvedText(shared, lang)}</span>
-        </p>
-      ) : <p className="coach-diag-sub">{tr('coach.rank.sub')}</p>}
+      {/* Sotto il titolo la riga che spiega; quando tre righe o più hanno lo stesso primo problema risolto, quel problema
+          è detto una volta sola sopra le righe (il riassunto delle righe, non un filtro) al posto di questa riga: stessa
+          altezza, le righe per pagina non cambiano */}
+      {!shared && <p className="coach-diag-sub">{tr('coach.rank.sub')}</p>}
       {keys.length > 0 && (
         <div className={`coach-filter${filter ? ' is-on' : ''}`}>
           <label htmlFor={filterId} className="coach-head">{tr('coach.rank.filter')}</label>
@@ -561,13 +627,20 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
           {filter && <button type="button" className="coach-back" onClick={() => onFilter(null)}><Icon name="close" />{tr('coach.list.showAll')}</button>}
         </div>
       )}
+      {shared && (
+        <p className="coach-diag-sub coach-rank-lead">
+          <span>{tr(sharedN === items.length ? 'coach.rank.sharedAll' : 'coach.rank.sharedSome', { n: sharedN })}</span>
+          <span aria-hidden="true"><SolvedPill entry={shared} /></span>
+          <span className="visually-hidden">{solvedText(shared, lang)}</span>
+        </p>
+      )}
       <div className="coach-diag-box" ref={box}>
         {busy ? (
           <ol className="coach-diag-list" aria-busy="true">
             {Array.from({ length: rows ? perPage : 4 }, (_, i) => <li key={i} className="coach-rank-skeleton" aria-hidden="true" />)}
           </ol>
         ) : (
-          <ol className="coach-diag-list">
+          <ol className="coach-diag-list" ref={listRef}>
             {items.map(({ group, pick, fx }, row) => {
               const name = proposalName(pick, tr, lang);
               // Il nome intero del membro, come nella carta ("al posto di Garchomp-Mega")
@@ -582,7 +655,8 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
                 ...(fx.downs.length ? [`${tr('coach.hero.costs')}: ${lossText(fx.downs, tr)}`] : [])].join('. ');
               return (
                 <li key={group.id}>
-                  <button type="button" className={`coach-rank${open ? ' is-open' : ''}${pick.kind === 'move' ? ' is-move' : ''}`} aria-current={open ? 'true' : undefined}
+                  <button type="button" className={`coach-rank${open ? ' is-open' : ''}${pick.kind === 'move' ? ' is-move' : ''}${wraps.has(group.id) ? ' is-wrap' : ''}`} aria-current={open ? 'true' : undefined}
+                    data-group={group.id}
                     style={{ '--t1': typeColor(firstType(pick)) } as CSSProperties} aria-label={tr('coach.rank.openAria', { name })}
                     aria-describedby={`${descBase}-${row}`} onClick={() => onOpen(group.id)}>
                     <span className="coach-rank-mon" aria-hidden="true"><PokemonIcon name={subjectOf(pick)} /></span>
@@ -590,9 +664,10 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
                       <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
                       <small>{seat}</small>
                     </span>
+                    {/* A destra, una sotto l'altra: il +N verde e, se un'area scende, il costo in rosso ("−3 DIF") */}
                     <span className="coach-rank-end" aria-hidden="true">
-                      {loss && <small className="coach-rank-cost">−{loss.delta} {tr(AREA_SHORT[loss.area as Exclude<ProposalArea, 'rules'>])}</small>}
                       <b className="coach-rank-gain">{gainText(pick.fix.gain)}</b>
+                      {loss && <small className="coach-rank-cost">−{loss.delta}{' '}<span className="coach-rank-area">{tr(AREA_SHORT[loss.area as Exclude<ProposalArea, 'rules'>])}</span></small>}
                     </span>
                     <RankPills solved={pills} sharedOnly={pills.length === 0 && fx.solved.length > 0} />
                     <span id={`${descBase}-${row}`} className="visually-hidden">{desc}</span>
@@ -624,12 +699,17 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
  * e il posto); un clic la apre nella carta grande. In fondo il voto vero dopo ogni passo ("B 70 → A 81 → A 84"), il dopo
  * nel colore del voto, e "dopo N cambi".
  */
-function PlanStrip({ steps, start, onOpen }: { steps: PlanStep[]; start: TeamRating; onOpen: (groupId: string) => void }) {
+function PlanStrip({ steps, start, onOpen, compact = false }: {
+  steps: PlanStep[]; start: TeamRating; onOpen: (groupId: string) => void;
+  /** Telefono: una riga sola, i passi piccoli (numero e icona; il nome e il posto restano nel nome del pulsante) e il voto
+   *  di ora → quello finale con "N cambi". */
+  compact?: boolean;
+}) {
   const tr = useT();
   const lang = useLang();
   const path = [`${start.grade} ${start.overall}`, ...steps.map(st => `${st.grade} ${st.overall}`)].join(' → ');
   return (
-    <nav className="coach-plan" aria-label={tr('coach.plan.region')}>
+    <nav className={`coach-plan${compact ? ' is-compact' : ''}`} aria-label={tr('coach.plan.region')}>
       <span className="coach-plan-title coach-head" aria-hidden="true">{tr('coach.plan.title')}</span>
       <ol className="coach-plan-steps">
         {steps.map((st, i) => {
@@ -645,10 +725,12 @@ function PlanStrip({ steps, start, onOpen }: { steps: PlanStep[]; start: TeamRat
                 onClick={() => onOpen(st.groupId)}>
                 <span className="coach-plan-n" aria-hidden="true">{i + 1}</span>
                 <PokemonIcon name={subjectOf(p)} />
-                <span className="coach-plan-who" aria-hidden="true">
-                  <b>{p.kind === 'move' ? gameName('move', p.fix.to, lang) : p.fix.species}</b>
-                  <small>{seat}</small>
-                </span>
+                {!compact && (
+                  <span className="coach-plan-who" aria-hidden="true">
+                    <b>{p.kind === 'move' ? gameName('move', p.fix.to, lang) : p.fix.species}</b>
+                    <small>{seat}</small>
+                  </span>
+                )}
               </button>
             </li>
           );
@@ -658,12 +740,47 @@ function PlanStrip({ steps, start, onOpen }: { steps: PlanStep[]; start: TeamRat
         <span className="visually-hidden">{tr('coach.plan.gradeAria', { path })}</span>
         <span className="coach-plan-path" aria-hidden="true">
           <span className="coach-grade-from">{start.grade} {start.overall}</span>
-          {steps.map((st, i) => <span key={st.groupId}><span className="coach-grade-arrow"> → </span><GradeTag score={st.overall} className={i === steps.length - 1 ? 'is-last' : ''} /></span>)}
+          {(compact ? steps.slice(-1) : steps).map(st => <span key={st.groupId}><span className="coach-grade-arrow"> → </span><GradeTag score={st.overall} className={st === steps[steps.length - 1] ? 'is-last' : ''} /></span>)}
         </span>
-        <small className="coach-plan-after">{tr('coach.plan.after', { n: steps.length })}</small>
+        <small className="coach-plan-after" aria-hidden={compact || undefined}>{compact ? `· ${tr('coach.rank.count', { n: steps.length })}` : tr('coach.plan.after', { n: steps.length })}</small>
       </span>
     </nav>
   );
+}
+
+/**
+ * Le righe della classifica il cui posto ("al posto di X", "su X, al posto di Y") non sta intero su una riga: lì il posto
+ * va a capo su due righe invece di tagliarsi (e sul desktop, dove le righe sono alte uguali, le pillole lasciano il
+ * posto). Misura il testo senza a capo con un pezzetto nascosto dentro la riga stessa (stesso carattere); si rifà quando
+ * cambia la larghezza della lista o le righe (`key`). Senza misura (jsdom) nessuna riga va a capo.
+ */
+function useSeatWrap(ref: RefObject<HTMLElement | null>, key: string): Set<string> {
+  const [ids, setIds] = useState('');
+  useLayoutEffect(() => {
+    const list = ref.current;
+    if (!list || typeof ResizeObserver === 'undefined') return;
+    const check = () => {
+      const out: string[] = [];
+      for (const row of list.querySelectorAll<HTMLElement>('.coach-rank')) {
+        const seat = row.querySelector<HTMLElement>('.coach-rank-who small');
+        if (!seat || !seat.clientWidth) continue;
+        const probe = document.createElement('span');
+        probe.className = 'coach-rank-probe';
+        probe.textContent = seat.textContent;
+        seat.appendChild(probe);
+        const wide = probe.getBoundingClientRect().width;
+        probe.remove();
+        if (wide > seat.clientWidth + 0.5 && row.dataset.group) out.push(row.dataset.group);
+      }
+      const next = out.join('\n');
+      setIds(was => (was === next ? was : next));
+    };
+    const observer = new ResizeObserver(check);
+    observer.observe(list);
+    check();
+    return () => observer.disconnect();
+  }, [ref, key]);
+  return useMemo(() => new Set(ids ? ids.split('\n') : []), [ids]);
 }
 
 /**
@@ -754,6 +871,7 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const heroTitle = useRef<HTMLDivElement>(null);
+  const railHead = useRef<HTMLHeadingElement>(null);
   const lang = useLang();
   const { problems, bannedCount = 0 } = coaching;
   const groups = useMemo(() => (advice ? neutralAsAlternatives(proposalGroups(problems, advice)) : null), [problems, advice]);
@@ -922,21 +1040,35 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   };
   const rail = (
     <RankRail key="rail" groups={visible} problems={problems} before={before} entries={entries} stuck={stuck} filter={active} onFilter={pickFilter} onOpen={open}
-      heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} />
+      heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} headRef={oneColumn ? railHead : undefined} />
   );
+  // Sul telefono la classifica sta sotto la carta: il titolo dice quale proposta è ("1 di 5") e un tasto porta alla lista
+  const at = hero ? visible.indexOf(hero) + 1 : 0;
+  const toRanking = () => {
+    const head = railHead.current;
+    if (!head) return;
+    const still = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    head.scrollIntoView?.({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    head.focus({ preventScroll: true });
+  };
   const main = (
     <section key="main" aria-labelledby={`${id}-list`} className="coach-main">
       <div className="coach-list-head coach-hero-band">
-        <h4 className="coach-sec">{tr(chosenNotBest ? 'coach.hero.chosen' : 'coach.hero.best')}</h4>
+        <h4 className="coach-sec">{tr(chosenNotBest ? 'coach.hero.chosen' : 'coach.hero.best')}
+          {oneColumn && at > 0 && <span className="coach-hero-of">{tr('coach.hero.of', { n: at, total: visible.length })}</span>}
+        </h4>
+        {oneColumn && groups && visible.length > 1 && (
+          <button type="button" className="coach-back coach-to-rank" onClick={toRanking}>{tr('coach.hero.all')}<Icon name="down" /></button>
+        )}
         {chosenNotBest && (
           <button type="button" className="coach-back" onClick={backToBest}>
             <Icon name="undo" />{tr('coach.hero.back')}
           </button>
         )}
       </div>
-      {groups && rating && planSteps.length >= 2 && <PlanStrip steps={planSteps} start={rating} onOpen={openStep} />}
+      {groups && rating && planSteps.length >= 2 && <PlanStrip steps={planSteps} start={rating} onOpen={openStep} compact={oneColumn} />}
       {groups ? (
-        hero && <Hero key={hero.id} group={hero} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}
+        hero && <Hero key={hero.id} group={hero} ranked={visible} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}
           rating={rating} actions={actions} flash={flash?.id === hero.id} titleRef={heroTitle} />
       ) : (
         <>

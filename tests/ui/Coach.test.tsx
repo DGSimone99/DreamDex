@@ -433,30 +433,55 @@ describe('CoachingView', () => {
     expect(within(heroOf()).getAllByRole('region', { name: 'Costa' })).toHaveLength(1);
   });
 
-  it('il costo nella riga della classifica: l\'area che scende di più in rosso accanto al +N ("−3 Dif"), tutte a parole nella descrizione; senza costo niente', () => {
+  it('il costo nella riga della classifica: l\'area che scende di più in rosso sotto il +N ("−3 Dif"), la stessa per prima in Costa nella carta, tutte a parole nella descrizione; senza costo niente', () => {
     const def = Math.round(before.defense!);
     const spe = Math.round(before.speed!);
     view(advice([swap('Rotom-Wash', 4, 3, [fire.key], { defense: def - 3, speed: spe - 1 }), swap('Zapdos', 5, 2, [pivot.key])]));
     const [costly, free] = ranks();
     expect(costly.querySelector('.coach-rank-cost')).toHaveTextContent(/^−3 Dif$/);
-    expect(costly.querySelector('.coach-rank-end')).toHaveTextContent('−3 Dif+3');
+    expect(costly.querySelector('.coach-rank-end')).toHaveTextContent('+3−3 Dif');
+    // Nella carta Costa comincia dalla stessa area (quella che scende di più), col nome intero
+    expect(document.querySelector('.coach-vs-cost .coach-change')).toHaveTextContent(/^Difesa/);
     expect(costly).toHaveAccessibleDescription(`Risolve: ${fire.text}. Costa: Difesa scende di 3; Velocità scende di 1`);
     expect(free.querySelector('.coach-rank-cost')).toBeNull();
     expect(free).toHaveAccessibleDescription(`Risolve: ${pivotName}`);
   });
 
-  it('lo stesso primo problema risolto in tre righe o più: detto una volta sopra la lista ("Risolvono tutte"), tolto dalle righe', () => {
+  it('lo stesso primo problema risolto in tre righe o più: detto una volta sopra le righe ("Tutte queste proposte risolvono"), tolto dalle righe', () => {
     // (le pillole seguono l'ordine dei problemi: qui Acciaio è il primo)
     view(advice([swap('Zapdos', 5, 5, [steel.key, pivot.key]), swap('Rotom-Wash', 4, 4, [steel.key]), swap('Heatran', 1, 3, [steel.key, fire.key])]),
       { coaching: coachingOf([steel, fire, zapdos, pivot]) });
     const lead = rail().querySelector('.coach-rank-lead')!;
-    expect(lead).toHaveTextContent('Risolvono tutte:');
+    expect(lead).toHaveTextContent('Tutte queste proposte risolvono:');
     expect(lead).toHaveTextContent('3 membri di tipo Acciaio');
-    // Al posto della riga che spiega (stessa altezza)
+    // Il riassunto delle righe: subito sopra la lista (dopo il filtro), al posto della riga che spiega (stessa altezza)
     expect(rail().querySelector('.coach-diag-sub:not(.coach-rank-lead)')).toBeNull();
+    expect(lead.nextElementSibling).toHaveClass('coach-diag-box');
     // Le righe senza quella pillola (l'unica: niente "Non risolve problemi"); la descrizione la dice sempre
     expect(railPills()).toEqual([['pivot'], [], ['fire']]);
     expect(ranks()[1]).toHaveAccessibleDescription(`Risolve: ${steel.text}`);
+  });
+
+  it('telefono: il titolo della carta dice quale proposta è ("· 1 di 3") e "Tutte le proposte" porta alla classifica (il fuoco sul suo titolo)', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      const user = userEvent.setup();
+      view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 4, [fire.key]), swap('Heatran', 1, 3, [steel.key])]));
+      expect(band()).toHaveTextContent('La proposta migliore · 1 di 3');
+      await user.click(within(list()).getByRole('button', { name: 'Tutte le proposte' }));
+      expect(railHead()).toHaveFocus();
+      // Un'altra riga aperta: "2 di 3"
+      await user.click(ranks()[1]);
+      expect(band()).toHaveTextContent('La proposta scelta · 2 di 3');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('desktop: niente "1 di N" né "Tutte le proposte" (la classifica è accanto alla carta)', () => {
+    view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 4, [fire.key])]));
+    expect(band()).toHaveTextContent(/^La proposta migliore$/);
+    expect(within(list()).queryByRole('button', { name: 'Tutte le proposte' })).toBeNull();
   });
 
   it('un solo titolo di livello 3 (nascosto) per la scheda; la classifica e la carta coi titoli di livello 4', () => {
@@ -1028,6 +1053,15 @@ describe('CoachingView', () => {
       await user.click(more);
       await user.click(within(heroOf()).getByRole('button', { name: 'Metti nella carta: Clefable al posto di Magikarp, voto +2' }));
       expect(heroName()).toBe('Clefable al posto di Magikarp, voto +2');
+    });
+
+    it("un'alternativa che ha già la sua riga per un altro posto lo dice (\"anche al posto di X\"): il +N della carta vale per questo posto", () => {
+      // Heatran: +5 al posto di Sunkern (la sua riga), +3 qui al posto di Magikarp (alternativa di Rotom-Wash)
+      view(advice([swap('Rotom-Wash', 4, 6, [fire.key]), swap('Heatran', 4, 3, [fire.key]), swap('Heatran', 5, 5, [pivot.key])]));
+      expect(heroName()).toBe('Rotom-Wash al posto di Magikarp, voto +6');
+      expect(rankNames()).toContain('Heatran al posto di Sunkern, voto +5');
+      expect(altTiles().map(t => t.textContent)).toEqual(['Heatrananche al posto di Sunkern+3']);
+      expect(altNames()).toEqual(['Heatran al posto di Magikarp, voto +3']);
     });
 
     it('con tre alternative o meno niente "altre"', () => {
