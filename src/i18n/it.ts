@@ -1333,6 +1333,7 @@ export const it: Record<keyof typeof en, string> = {
   'odetail.gen.shareNote': "I punti dei membri sommati fanno l'Offesa del team",
   'odetail.gen.shareSub': "Punti portati all'Offesa",
   'odetail.gen.total': "Team Coverage",
+  'odetail.gen.shareUnit': "punti nel voto",
   'odetail.cards.threatsCovered': "minacce coperte",
   'odetail.cards.rank': "{n}° più usato del meta",
   'odetail.cards.ofTeam': "dei tuoi membri",

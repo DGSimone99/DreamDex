@@ -334,7 +334,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')} guide={openGuide} describe={typeStatText(attackerCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
               {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} icon="shield" /></Ask></th>}
-              <th scope="col">{t('area.defense')}</th>
+              <th scope="col" className="og-share-col">{t('area.defense')} <small className="og-share-unit">{t('odetail.gen.shareUnit')}</small></th>
             </tr>
           </thead>
           <tbody>

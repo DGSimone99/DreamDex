@@ -75,6 +75,8 @@ describe('Offesa sullo schermo stretto', () => {
     expect(cards.length).toBeLessThanOrEqual(12);
     expect(cards[0].querySelector('.og-card-tag')).toHaveTextContent(/^#\d+$/);
     expect(screen.getByRole('region', { name: 'Team Coverage' })).toHaveTextContent(/minacce coperte/);
+    // Perché le minacce dell'Offesa sono meno dei 40 più usati: una per coppia di tipi
+    expect(screen.getByRole('region', { name: 'Team Coverage' })).toHaveTextContent('Dei 40 più usati, uno per coppia di tipi');
     const more = screen.queryByRole('button', { name: /^Altre \d+ minacce/ });
     if (more) { await user.click(more); expect(list.querySelectorAll('.cm-card').length).toBeGreaterThan(12); }
     const name = cards[0].querySelector('.og-card-name')!.textContent!;

@@ -1331,6 +1331,7 @@ export const en = {
   'odetail.gen.shareNote': "The members' points add up to the team's Offense",
   'odetail.gen.shareSub': "Points brought to the Offense",
   'odetail.gen.total': "Team Coverage",
+  'odetail.gen.shareUnit': "points in the grade",
   'odetail.cards.threatsCovered': "threats covered",
   'odetail.cards.rank': "#{n} most used in the meta",
   'odetail.cards.ofTeam': "of your members",

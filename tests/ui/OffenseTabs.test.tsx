@@ -225,7 +225,8 @@ describe('Offesa: Generale', () => {
     expect(heads[0]).toBe('Pokémon');
     expect(heads[1].startsWith('Tipi')).toBe(true);
     expect(heads[2].startsWith('Meta')).toBe(true);
-    expect(heads[3]).toBe('Offesa');
+    // L'ultima con sopra l'unità del +N (punti nel voto)
+    expect(heads[3]).toBe('Offesa punti nel voto');
     // Le testate con la spada (solo per gli occhi) e solo la parola: "Tipi", "Meta"
     expect(screen.getByRole('columnheader', { name: /^Tipi$/ }).querySelector('.bar-head-ic svg')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('columnheader', { name: /^Meta$/ }).querySelector('.guide-ask')).not.toBeNull();
@@ -237,7 +238,7 @@ describe('Offesa: Generale', () => {
     expect(heads).toHaveLength(3);
     expect(heads[0]).toBe('Pokémon');
     expect(heads[1].startsWith('Tipi')).toBe(true);
-    expect(heads[2]).toBe('Offesa');
+    expect(heads[2]).toBe('Offesa punti nel voto');
     expect(document.querySelector('.def-members tfoot th')).toHaveTextContent('Team Coverage');
     expect(document.querySelectorAll('.def-members tfoot td')).toHaveLength(2);
   });

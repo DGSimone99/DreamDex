@@ -273,7 +273,8 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
               {/* Accanto alle testate il "?" coi bersagli, come nella guida: il Pokémon medio dei 18 tipi, le minacce del meta */}
               <th scope="col"><BarHead icon="sword" word={t('kob.headTypes')} /><Ask label={t('guide.off.targets.typesTitle')} guide={openGuide} describe={typeStatText(averageCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
               {meta && <th scope="col"><BarHead icon="sword" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} /></Ask></th>}
-              <th scope="col">{t('area.strength')}</th>
+              {/* Il +N di ogni membro: quanti punti porta al voto dell'Offesa (la piccola riga sopra lo dice) */}
+              <th scope="col" className="og-share-col">{t('area.strength')} <small className="og-share-unit">{t('odetail.gen.shareUnit')}</small></th>
             </tr>
           </thead>
           <tbody>

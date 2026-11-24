@@ -101,6 +101,11 @@
    una colonna stretta uguale nelle due Generali, numero e testata allineati a destra; Tipi e Meta si dividono il resto.
    Non nella Velocità (anche lei .def-general, con la sua barra nell'ultima colonna) */
 :is(.off-general, .def-general:not(.sp-general)) .def-members col:last-child { width: var(--og-share-w, 76px); }
+/* La testata della colonna +N: sopra la parola dell'area una riga piccola che dice l'unità ("punti nel voto"), a destra
+   come i numeri; fuori dal flusso (può sporgere a sinistra sopra la testata vuota accanto), così la testata resta alta
+   come nelle altre schede e le righe partono allo stesso punto */
+.def-members thead th.og-share-col { position: relative; text-align: right; }
+.og-share-unit { position: absolute; top: var(--sp-2); right: var(--sp-4); white-space: nowrap; font: 500 var(--fs-caption)/1 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted); }
 :is(.off-general, .def-general:not(.sp-general)) .def-members tr > :last-child:not(:first-child) { text-align: right; }
 :is(.off-general, .def-general) .og-share { display: inline-block; cursor: help; }
 :is(.off-general, .def-general) .og-share-num { display: inline-block; color: var(--accent); }
@@ -255,8 +260,8 @@
 
 /* Tessere cliccabili: aprono il dettaglio */
 .kob.pick { cursor: pointer; }
-/* Il pezzo è tagliato in obliquo (clip-path): l'anello del fuoco fuori non si vedrebbe, sta dentro (bordo e alone interno) */
-.kob:focus-visible { outline: none; border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* Il pezzo è tagliato in obliquo (clip-path): l'anello del fuoco fuori non si vedrebbe, sta dentro: 2 px Accent come le altre caselle */
+.kob:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-color: var(--accent); }
 /* Coverage tipi / meta aperte da una tessera: accese la riga del membro e le caselle di quella fascia, il resto spento */
 /* Spenti senza opacità: grigi e un filo più scuri, i numeri restano leggibili (almeno 4,5:1 sul loro fondo) */
 .ct-table tr.kf-off > *, .ct-table td.kf-dim { filter: grayscale(1) brightness(0.8); }

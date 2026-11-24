@@ -80,6 +80,7 @@
 /* Riga del team con un conto ("18/18 tipi coperti · 2 con un OHKO") */
 .og-hero-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--sp-2); font: 500 var(--fs-small)/1.3 var(--ui); color: var(--muted); }
 .og-hero-line b { font: 800 italic var(--fs-headline)/1 var(--display); color: var(--text); }
+.og-hero-note { margin: 0; font: 500 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
 .og-hero-line b.full { font-size: 30px; color: color-mix(in srgb, var(--good) 70%, white); }
 .og-hero-line b.bad { font-size: 30px; color: var(--bad); }
 .og-hero-line small { margin-right: var(--sp-2); font: 700 italic var(--fs-small) var(--display); color: var(--muted); }
@@ -209,7 +210,11 @@
   .cm-card .cm-card-row .kob-line { width: 100%; gap: var(--sp-4); }
   .cm-card .kob-row > .kob { height: 20px; }
   /* Sul fondo della riga (il colore del tipo) il verde trasparente si schiariva: qui pieno sul Panel, così l'OHKO bianco resta sopra 4,5:1 */
-  .cm-card .kob.ohko { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
+  .cm-card .kob.ohko:not(.zero) { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
+  /* Un pezzo a zero (resta solo per il triangolo del setup): fondo Panel pieno e scritta Muted, mai verde, così si legge
+     anche sul colore del tipo */
+  .cm-card .kob.zero { --kob-ink: var(--muted); background: var(--panel); color: var(--muted); }
+  .cm-card .kob.zero .kob-num > b { color: var(--muted); }
   .cm-card .kob-count { flex-direction: row; align-items: baseline; min-width: 36px; justify-content: flex-end; }
   .cm-card .kob-count-line { display: none; }
   .cm-card .kob-count-num > b { font-size: var(--fs-title-s); }
