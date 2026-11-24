@@ -27,10 +27,10 @@ import { copyText } from './clipboard';
 import { TypeIcons } from './typeIcons';
 import { PokemonIcon } from './PokemonName';
 import { hint } from './MoveTip';
-import { formeParts } from './candidateParts';
 import { isMissingRoles, isThreat, MoreProblems, problemEntries, ProblemChip, ProblemPill, type ProblemEntry } from './ProblemPill';
 import { useFitCount } from './useFit';
 import { Sprite, typeColor } from './Sprite';
+import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 
 /** Il voto in più di una proposta: "+3", a pari voto "±0" (mai "+0"). */
 export const gainText = (gain: number) => (gain > 0 ? `+${gain}` : gain < 0 ? `−${-gain}` : '±0');
@@ -64,7 +64,7 @@ function areaText(snapshot: AreaSnapshot, area: ProposalArea): string | null {
 }
 
 /** Un'area che cambia con una proposta: il nome e "da → a" (su o giù). */
-interface AreaMove { area: ProposalArea; from: string; to: string; up: boolean }
+interface AreaMove { area: ProposalArea; from: string; to: string; up: boolean; delta: number }
 
 /** Cosa fa una proposta: i problemi che risolve (pillole), le aree che salgono e quelle che scendono, i ruoli d'aiuto persi. */
 interface Effects { solved: ProblemEntry[]; ups: AreaMove[]; downs: AreaMove[]; lost: LevelKey[] }
@@ -88,7 +88,11 @@ function effectsOf(p: Proposal, problems: CoachProblem[], before: AreaSnapshot |
       const from = areaText(before, area);
       const to = areaText(after, area);
       if (was === null || now === null || was === now || from === null || to === null) continue;
-      moves.push({ area, from, to, up: now > was });
+      // Di quanto cambia (Ruoli: i ruoli coperti se cambiano, se no i punti)
+      const delta = area === 'roles'
+        ? Math.abs(after.roles.covered - before.roles.covered) || Math.abs(after.roles.points - before.roles.points)
+        : Math.abs(now - was);
+      moves.push({ area, from, to, up: now > was, delta });
     }
   }
   return { solved, ups: moves.filter(m => m.up), downs: moves.filter(m => !m.up), lost: p.fix.lostHelpers ?? [] };
@@ -106,6 +110,19 @@ function Change({ move }: { move: AreaMove }) {
     </span>
   );
 }
+
+/** Il nome corto di un'area per la riga della classifica ("Dif"), accanto al costo. */
+const AREA_SHORT: Record<Exclude<ProposalArea, 'rules'>, 'coach.short.strength' | 'coach.short.defense' | 'coach.short.speed' | 'coach.short.roles' | 'coach.short.bonusMalus'> = {
+  strength: 'coach.short.strength', defense: 'coach.short.defense', speed: 'coach.short.speed', roles: 'coach.short.roles', bonusMalus: 'coach.short.bonusMalus',
+};
+
+/** L'area che scende di più con una proposta (il costo da mostrare nella riga), o null se non scende niente. */
+const biggestLoss = (downs: AreaMove[]): AreaMove | null =>
+  downs.filter(m => m.area !== 'rules' && m.delta > 0).reduce<AreaMove | null>((best, m) => (!best || m.delta > best.delta ? m : best), null);
+
+/** Le aree che scendono a parole, per lo screen reader: "Difesa scende di 3; Velocità scende di 2". */
+const lossText = (downs: AreaMove[], tr: ReturnType<typeof useT>) =>
+  downs.filter(m => m.area !== 'rules').map(m => tr('coach.cost.drops', { area: tr(AREA_NAME[m.area]), n: m.delta })).join('; ');
 
 /** Un problema risolto: la spunta verde e il testo corto del problema (come la pillola, ma "fatto"); va a capo se è lungo. */
 function Solved({ entry }: { entry: ProblemEntry }) {
@@ -152,9 +169,6 @@ function heroTone(p: Proposal): string {
 
 /** Chi entra (o il membro che cambia mossa): lo sprite della proposta. */
 const subjectOf = (p: Proposal) => (p.kind === 'fix' ? p.fix.species : p.fix.member);
-
-/** Il nome corto di un membro nelle righe ("su Landorus"): la specie base, senza la forma. */
-const shortName = (name: string) => formeParts(name)?.base ?? name;
 
 /** La lettera e il numero di un voto ("A 81") nel colore del voto (S magenta, A verde, B ciano, C giallo, D rosso). */
 function GradeTag({ score, className = '' }: { score: number; className?: string }) {
@@ -206,10 +220,12 @@ function SetSummary({ p }: { p: Proposal }) {
  * nome (per una mossa: il membro, "Su X", e sotto la mossa nuova). La luce del primo tipo scende solo sulla metà di
  * destra. Il titolo visibile (`titleRef`) riceve il fuoco quando il pulsante usato sparisce.
  */
-function VsBand({ p, rating, headId, titleRef, bind }: {
-  p: Proposal; rating: TeamRating | null; headId: string; titleRef: RefObject<HTMLDivElement | null>; bind?: object;
+function VsBand({ p, fx, rating, headId, titleRef, bind }: {
+  p: Proposal; fx: Effects; rating: TeamRating | null; headId: string; titleRef: RefObject<HTMLDivElement | null>; bind?: object;
 }) {
   const tr = useT();
+  const lang = useLang();
+  const costs = fx.downs.length + fx.lost.length;
   const after = rating ? Math.max(0, Math.min(100, rating.overall + p.fix.gain)) : null;
   let out: ReactNode;
   if (p.kind === 'move') {
@@ -246,6 +262,13 @@ function VsBand({ p, rating, headId, titleRef, bind }: {
             <GradeTag score={after} />
           </span>
         )}
+        {/* Costa accanto al voto: cosa scende o cosa perdi, sempre in vista (mai sotto lo scorrimento della carta) */}
+        <section className={`coach-vs-cost${costs ? ' is-bad' : ''}`} aria-label={tr('coach.hero.costs')}>
+          <h5 className="coach-head">{tr('coach.hero.costs')}</h5>
+          {costs === 0 && <p className="coach-fact-none">{tr('coach.hero.nothing')}</p>}
+          {fx.downs.length > 0 && <p className="coach-moves">{fx.downs.map(m => <Change key={m.area} move={m} />)}</p>}
+          {fx.lost.length > 0 && <p className="coach-lost"><b>{tr('coach.row.lost')}</b> {fx.lost.map(key => needLabel(key, lang)).join(', ')}</p>}
+        </section>
       </div>
       <div className="coach-vs-side is-in">
         <span className="coach-vs-stage is-in">
@@ -267,6 +290,28 @@ function VsBand({ p, rating, headId, titleRef, bind }: {
       </div>
     </div>
   );
+}
+
+/** Il nome scritto di una proposta (chi entra, o la mossa nuova): due proposte con lo stesso nome si distinguono con altSub. */
+const shownName = (o: Proposal, lang: ReturnType<typeof useLang>) => (o.kind === 'move' ? gameName('move', o.fix.to, lang) : o.fix.species);
+
+/**
+ * La riga piccola di un'alternativa che ha lo stesso nome di un'altra proposta del posto (la carta compresa): cosa cambia.
+ * Chi esce se è diverso ("al posto di X", "in un posto libero"; per una mossa la mossa che toglie), se no lo strumento, se
+ * no l'abilità. Nessuna riga se il nome è unico.
+ */
+function altSub(o: Proposal, options: Proposal[], tr: ReturnType<typeof useT>, lang: ReturnType<typeof useLang>): string | null {
+  const twins = options.filter(x => x !== o && x.kind === o.kind && shownName(x, lang) === shownName(o, lang));
+  if (twins.length === 0) return null;
+  if (o.kind === 'move') {
+    return twins.some(x => x.kind === 'move' && (x.fix.member !== o.fix.member || x.fix.from !== o.fix.from))
+      ? (o.fix.from ? tr('coach.row.instead', { member: gameName('move', o.fix.from, lang) }) : tr('coach.row.emptySlot')) : null;
+  }
+  const seat = (x: Proposal) => (x.kind === 'fix' && x.fix.kind === 'swap' ? x.fix.member ?? '' : '');
+  if (twins.some(x => seat(x) !== seat(o))) return o.fix.kind === 'swap' ? tr('coach.row.instead', { member: o.fix.member ?? '' }) : tr('coach.row.free');
+  if (o.fix.set.item && twins.some(x => x.fix.set.item !== o.fix.set.item)) return gameName('item', o.fix.set.item, lang);
+  if (o.fix.set.ability && twins.some(x => x.fix.set.ability !== o.fix.set.ability)) return gameName('ability', o.fix.set.ability, lang);
+  return null;
 }
 
 /** Le alternative visibili subito in "Oppure"; le altre dietro "altre N". */
@@ -295,22 +340,36 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
   const name = proposalName(p, tr, lang);
   const apply = () => (p.kind === 'fix' ? actions.onApplyFix(p.fix) : actions.onApplyMove(p.fix));
   const see = () => (p.kind === 'fix' ? actions.onFix(p.fix) : actions.onMoveFix(p.fix));
-  const costs = fx.downs.length + fx.lost.length;
   // Copia set: per un attimo "Copiato" con la spunta, come nel dettaglio dei candidati
   const [copied, setCopied] = useState(false);
   useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1500); return () => window.clearTimeout(timer); }, [copied]);
   // Oppure: le prime ALTS_SHOWN alternative, le altre dietro "altre N" (un clic le mostra tutte, un altro le richiude)
   const [allAlts, setAllAlts] = useState(false);
+  // La sfumatura in fondo alla parte che scorre solo quando sotto c'è ancora qualcosa da vedere
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const check = () => setMore(el.scrollHeight - el.clientHeight - el.scrollTop > 2);
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    el.addEventListener('scroll', check, { passive: true });
+    check();
+    return () => { observer.disconnect(); el.removeEventListener('scroll', check); };
+  }, []);
   const alts = group.options.map((o, i) => ({ o, i })).filter(x => x.i !== at);
   const shownAlts = allAlts ? alts : alts.slice(0, ALTS_SHOWN);
   return (
     <article className={`coach-hero${p.kind === 'move' ? ' is-move' : ''}${flash ? ' is-flash' : ''}`} data-row={group.id} aria-labelledby={headId}
       style={{ '--t1': typeColor(firstType(p)), '--wash': heroTone(p) } as CSSProperties}>
       <h4 id={headId} className="visually-hidden">{name}</h4>
-      <VsBand p={p} rating={rating} headId={headId} titleRef={titleRef} bind={p.kind === 'fix' ? memberTip.bind(p.fix.set) : undefined} />
+      <VsBand p={p} fx={fx} rating={rating} headId={headId} titleRef={titleRef} bind={p.kind === 'fix' ? memberTip.bind(p.fix.set) : undefined} />
+      {/* La parte centrale scorre se è lunga; Applica e le altre azioni restano sempre in vista sotto (sul telefono e sul
+          tablet in verticale il piede resta fermo in fondo allo schermo finché la carta è in vista) */}
       <div className="coach-hero-body">
-        {/* La parte centrale scorre se è lunga; Applica e le altre azioni restano sempre in vista sotto */}
-        <div className="coach-hero-scroll">
+        <div className={`coach-hero-scroll${more ? ' has-more' : ''}`} ref={scrollRef}>
           <div className="coach-hero-facts">
             <section className="coach-fact is-good" aria-label={tr('coach.hero.solves')}>
               <h5 className="coach-head">{tr('coach.hero.solves')}</h5>
@@ -319,16 +378,11 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
                 : <p className="coach-fact-none">{tr('coach.hero.raisesOnly')}</p>}
               {fx.ups.length > 0 && <p className="coach-moves">{fx.ups.map(m => <Change key={m.area} move={m} />)}</p>}
             </section>
-            <section className={`coach-fact${costs ? ' is-bad' : ''}`} aria-label={tr('coach.hero.costs')}>
-              <h5 className="coach-head">{tr('coach.hero.costs')}</h5>
-              {costs === 0 && <p className="coach-fact-none">{tr('coach.hero.nothing')}</p>}
-              {fx.downs.length > 0 && <p className="coach-moves">{fx.downs.map(m => <Change key={m.area} move={m} />)}</p>}
-              {fx.lost.length > 0 && <p className="coach-lost"><b>{tr('coach.row.lost')}</b> {fx.lost.map(key => needLabel(key, lang)).join(', ')}</p>}
-            </section>
             <SetSummary p={p} />
           </div>
         </div>
-        <div className="coach-hero-foot">
+      </div>
+      <div className="coach-hero-foot">
           <button type="button" className="coach-apply is-primary" aria-label={tr('coach.row.applyAria', { name })} onClick={apply}>{tr('coach.row.apply')}</button>
           <button type="button" className="coach-see" onClick={see} {...hint(tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet'))}
             aria-label={p.kind === 'fix' ? tr('coach.row.seeAria', { species: p.fix.species }) : tr('coach.row.openSetAria', { member: p.fix.member })}>
@@ -336,21 +390,27 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
           </button>
           <button type="button" className={`coach-see coach-copy${copied ? ' is-done' : ''}`} aria-label={tr('suggest.copySet')} {...hint(tr('suggest.copySet'))}
             onClick={async () => { if (await copyText(exportShowdown([p.fix.set]))) setCopied(true); }}>
-            <Icon name={copied ? 'check' : 'copy'} /><span aria-hidden="true">{tr(copied ? 'team.copied' : 'suggest.copySetShort')}</span>
+            <Icon name={copied ? 'check' : 'copy'} /><span aria-hidden="true">{tr(copied ? 'team.copied' : 'suggest.copySet')}</span>
           </button>
           {copied && <span className="visually-hidden" role="status">{tr('team.copied')}</span>}
           {alts.length > 0 && (
             <div className="coach-alts" id={altsId} role="group" aria-label={tr('coach.alt.title', { n: alts.length })}>
               <span className="coach-alts-word" aria-hidden="true">{tr('coach.alt.or')}</span>
-              {shownAlts.map(({ o, i }) => (
-                <button key={i} type="button" className={`coach-alt-tile${o.kind === 'move' ? ' is-move' : ''}`} style={{ '--t1': typeColor(firstType(o)) } as CSSProperties}
-                  aria-label={tr('coach.alt.pick', { name: proposalName(o, tr, lang) })} {...hint(proposalName(o, tr, lang))}
-                  onClick={() => { onChoose(i); requestAnimationFrame(() => titleRef.current?.focus()); }}>
-                  <PokemonIcon name={subjectOf(o)} />
-                  <span className="coach-alt-name" aria-hidden="true">{o.kind === 'move' ? gameName('move', o.fix.to, lang) : o.fix.species}</span>
-                  <b aria-hidden="true">{gainText(o.fix.gain)}</b>
-                </button>
-              ))}
+              {shownAlts.map(({ o, i }) => {
+                const sub = altSub(o, group.options, tr, lang);
+                return (
+                  <button key={i} type="button" className={`coach-alt-tile${o.kind === 'move' ? ' is-move' : ''}${sub ? ' has-sub' : ''}`} style={{ '--t1': typeColor(firstType(o)) } as CSSProperties}
+                    aria-label={tr('coach.alt.pick', { name: proposalName(o, tr, lang) })} {...hint(proposalName(o, tr, lang))}
+                    onClick={() => { onChoose(i); requestAnimationFrame(() => titleRef.current?.focus()); }}>
+                    <PokemonIcon name={subjectOf(o)} />
+                    <span className="coach-alt-who" aria-hidden="true">
+                      <span className="coach-alt-name">{o.kind === 'move' ? gameName('move', o.fix.to, lang) : o.fix.species}</span>
+                      {sub && <small className="coach-alt-sub">{sub}</small>}
+                    </span>
+                    <b aria-hidden="true">{gainText(o.fix.gain)}</b>
+                  </button>
+                );
+              })}
               {alts.length > ALTS_SHOWN && (
                 <button type="button" className="coach-alt-more" aria-expanded={allAlts} aria-controls={altsId}
                   aria-label={tr(allAlts ? 'coach.alt.lessAria' : 'coach.alt.moreAria', { n: alts.length - ALTS_SHOWN })} onClick={() => setAllAlts(v => !v)}>
@@ -359,7 +419,6 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
               )}
             </div>
           )}
-        </div>
       </div>
       {memberTip.tip}
     </article>
@@ -403,11 +462,13 @@ const PILLS = 2;
  * I problemi risolti in piccolo sotto una riga della classifica: al più PILLS, e solo quelli che stanno interi nella riga
  * (una pillola che non sta non si taglia a metà parola: si toglie e conta nel "+N"). Senza problemi risolti lo dice in tenue.
  */
-function RankPills({ solved }: { solved: ProblemEntry[] }) {
+function RankPills({ solved, sharedOnly = false }: { solved: ProblemEntry[]; sharedOnly?: boolean }) {
   const tr = useT();
   const ref = useRef<HTMLSpanElement>(null);
   const top = solved.slice(0, PILLS);
   const n = useFitCount(ref, top.length, top.map(e => `${e.problem.key}|${e.role ?? ''}`).join(','), undefined, true);
+  // L'unico problema risolto è quello scritto sopra la lista (comune a più righe): la riga resta senza pillole
+  if (sharedOnly) return <span className="coach-rank-pills" aria-hidden="true" />;
   if (solved.length === 0) return <span className="coach-rank-pills" aria-hidden="true"><span className="coach-pill-none">{tr('coach.hero.raisesOnly')}</span></span>;
   return (
     <span className="coach-rank-pills" ref={ref} aria-hidden="true">
@@ -439,8 +500,8 @@ function shortProblem(problem: CoachProblem, tr: ReturnType<typeof useT>, lang: 
  * lista il filtro per problema (una tendina: "Tutti i problemi" o un problema, col numero di proposte che lo risolvono);
  * in fondo "Restano N problemi" che nessun cambio singolo risolve (i nomi nel fumetto). A pagine come le altre liste.
  */
-function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy }: {
-  groups: ProposalGroup[]; pickOf: (g: ProposalGroup) => Proposal; problems: CoachProblem[]; entries: ProblemEntry[]; stuck: ProblemEntry[];
+function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy }: {
+  groups: ProposalGroup[]; problems: CoachProblem[]; before: AreaSnapshot | null; entries: ProblemEntry[]; stuck: ProblemEntry[];
   filter: string | null; onFilter: (key: string | null) => void; onOpen: (groupId: string) => void; heroId: string | null; clean: ReactNode; busy: boolean;
 }) {
   const tr = useT();
@@ -450,7 +511,7 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
   // L'id della descrizione di ogni riga: dal prefisso di useId e dall'indice (le chiavi dei gruppi hanno spazi)
   const descBase = useId();
   const box = useRef<HTMLDivElement>(null);
-  const { perPage, rows } = useRowsPerPage(box, 12);
+  const { perPage, rows } = useRowsPerPage(box, 12, busy ? 0 : groups.length);
   const [start, setStart] = useState(0);
   const size = rows ? perPage : Math.max(1, groups.length);
   const pages = Math.max(1, Math.ceil(groups.length / size));
@@ -461,20 +522,42 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
   const solvable = entries.filter(e => !stuck.includes(e));
   const keys = [...new Set(solvable.map(e => e.problem.key))];
   const label = (key: string) => shortProblem(entries.find(x => x.problem.key === key)!.problem, tr, lang);
+  // Ogni riga mostra sempre la migliore del suo posto (la prima): un'alternativa scelta cambia solo la carta
+  const items = shown.map(group => ({ group, pick: group.options[0], fx: effectsOf(group.options[0], problems, before) }));
+  // Lo stesso primo problema risolto in almeno tre righe: si dice una volta sopra la lista e si toglie da quelle righe
+  const leadKey = (fx: Effects) => (fx.solved[0] ? `${fx.solved[0].problem.key}|${fx.solved[0].role ?? ''}` : null);
+  const counts = new Map<string, number>();
+  for (const r of items) { const k = leadKey(r.fx); if (k) counts.set(k, (counts.get(k) ?? 0) + 1); }
+  const [sharedKey, sharedN] = [...counts].reduce<[string | null, number]>((best, [k, n]) => (n > best[1] ? [k, n] : best), [null, 0]);
+  const shared = !busy && sharedN >= 3 ? items.find(r => leadKey(r.fx) === sharedKey)!.fx.solved[0] : null;
+  const filterLabel = filter ? label(filter) : tr('coach.rank.allProblems');
   return (
     <aside className="coach-diag" aria-labelledby={headId}>
       <div className="coach-diag-top">
-        <h3 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-diag-total">{tr(groups.length === 1 ? 'coach.rank.count1' : 'coach.rank.count', { n: groups.length })}</span>}</h3>
+        <h4 id={headId} className="coach-diag-head">{tr('coach.rank.title')}{!busy && <span className="coach-diag-total">{tr(groups.length === 1 ? 'coach.rank.count1' : 'coach.rank.count', { n: groups.length })}</span>}</h4>
         <HelpButton title={tr('coach.help.title')} className="coach-help"><CoachingGuide /></HelpButton>
       </div>
-      <p className="coach-diag-sub">{tr('coach.rank.sub')}</p>
+      {/* Sotto il titolo la riga che spiega; quando tre righe o più hanno lo stesso primo problema risolto, al suo posto
+          (stessa altezza: le righe per pagina non cambiano) quel problema una volta sola */}
+      {shared ? (
+        <p className="coach-diag-sub coach-rank-lead">
+          <span>{tr(sharedN === items.length ? 'coach.rank.sharedAll' : 'coach.rank.sharedSome', { n: sharedN })}</span>
+          <span aria-hidden="true"><SolvedPill entry={shared} /></span>
+          <span className="visually-hidden">{solvedText(shared, lang)}</span>
+        </p>
+      ) : <p className="coach-diag-sub">{tr('coach.rank.sub')}</p>}
       {keys.length > 0 && (
         <div className={`coach-filter${filter ? ' is-on' : ''}`}>
           <label htmlFor={filterId} className="coach-head">{tr('coach.rank.filter')}</label>
-          <select id={filterId} value={filter ?? ''} onChange={e => onFilter(e.target.value || null)}>
-            <option value="">{tr('coach.rank.allProblems')}</option>
-            {keys.map(key => <option key={key} value={key}>{label(key)}</option>)}
-          </select>
+          {/* La tendina vera (per tastiera, tocco e lettori di schermo) col testo scelto ricopiato sopra: così un nome lungo
+              finisce coi puntini invece di tagliarsi a metà parola */}
+          <span className="coach-filter-box">
+            <select id={filterId} value={filter ?? ''} onChange={e => onFilter(e.target.value || null)}>
+              <option value="">{tr('coach.rank.allProblems')}</option>
+              {keys.map(key => <option key={key} value={key}>{label(key)}</option>)}
+            </select>
+            <span className="coach-filter-shown" aria-hidden="true">{filterLabel}</span>
+          </span>
           {filter && <button type="button" className="coach-back" onClick={() => onFilter(null)}><Icon name="close" />{tr('coach.list.showAll')}</button>}
         </div>
       )}
@@ -485,14 +568,18 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
           </ol>
         ) : (
           <ol className="coach-diag-list">
-            {shown.map((group, row) => {
-              const pick = pickOf(group);
+            {items.map(({ group, pick, fx }, row) => {
               const name = proposalName(pick, tr, lang);
-              const fx = effectsOf(pick, problems, null);
+              // Il nome intero del membro, come nella carta ("al posto di Garchomp-Mega")
               const seat = pick.kind === 'move'
-                ? tr('coach.item.move', { member: shortName(pick.fix.member), from: pick.fix.from ? gameName('move', pick.fix.from, lang) : tr('coach.row.emptySlot') })
+                ? tr('coach.item.move', { member: pick.fix.member, from: pick.fix.from ? gameName('move', pick.fix.from, lang) : tr('coach.row.emptySlot') })
                 : pick.fix.kind === 'swap' ? tr('coach.row.instead', { member: pick.fix.member ?? '' }) : tr('coach.row.free');
               const open = group.id === heroId;
+              // Il costo: l'area che scende di più ("−3 Dif", rosso accanto al +N); tutte a parole nella descrizione
+              const loss = biggestLoss(fx.downs);
+              const pills = shared ? fx.solved.filter(e => e !== fx.solved[0] || leadKey(fx) !== sharedKey) : fx.solved;
+              const desc = [fx.solved.length ? `${tr('coach.hero.solves')}: ${fx.solved.map(e => solvedText(e, lang)).join('; ')}` : tr('coach.hero.raisesOnly'),
+                ...(fx.downs.length ? [`${tr('coach.hero.costs')}: ${lossText(fx.downs, tr)}`] : [])].join('. ');
               return (
                 <li key={group.id}>
                   <button type="button" className={`coach-rank${open ? ' is-open' : ''}${pick.kind === 'move' ? ' is-move' : ''}`} aria-current={open ? 'true' : undefined}
@@ -503,11 +590,12 @@ function RankRail({ groups, pickOf, problems, entries, stuck, filter, onFilter, 
                       <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
                       <small>{seat}</small>
                     </span>
-                    <b className="coach-rank-gain" aria-hidden="true">{gainText(pick.fix.gain)}</b>
-                    <RankPills solved={fx.solved} />
-                    <span id={`${descBase}-${row}`} className="visually-hidden">
-                      {fx.solved.length ? `${tr('coach.hero.solves')}: ${fx.solved.map(e => solvedText(e, lang)).join('; ')}` : tr('coach.hero.raisesOnly')}
+                    <span className="coach-rank-end" aria-hidden="true">
+                      {loss && <small className="coach-rank-cost">−{loss.delta} {tr(AREA_SHORT[loss.area as Exclude<ProposalArea, 'rules'>])}</small>}
+                      <b className="coach-rank-gain">{gainText(pick.fix.gain)}</b>
                     </span>
+                    <RankPills solved={pills} sharedOnly={pills.length === 0 && fx.solved.length > 0} />
+                    <span id={`${descBase}-${row}`} className="visually-hidden">{desc}</span>
                   </button>
                 </li>
               );
@@ -546,8 +634,9 @@ function PlanStrip({ steps, start, onOpen }: { steps: PlanStep[]; start: TeamRat
       <ol className="coach-plan-steps">
         {steps.map((st, i) => {
           const p = st.proposal;
-          const seat = p.kind === 'move' ? tr('coach.vs.on', { member: shortName(p.fix.member) })
-            : p.fix.kind === 'swap' ? tr('coach.row.instead', { member: shortName(p.fix.member ?? '') }) : tr('coach.row.free');
+          // Il nome intero del membro, come nella carta e nella classifica
+          const seat = p.kind === 'move' ? tr('coach.vs.on', { member: p.fix.member })
+            : p.fix.kind === 'swap' ? tr('coach.row.instead', { member: p.fix.member ?? '' }) : tr('coach.row.free');
           return (
             <li key={st.groupId}>
               {i > 0 && <span className="coach-plan-arrow" aria-hidden="true">→</span>}
@@ -581,7 +670,7 @@ function PlanStrip({ steps, start, onOpen }: { steps: PlanStep[]; start: TeamRat
  * Quante righe stanno nell'altezza della lista (fino a ROWS_PER_PAGE), con l'altezza delle righe e lo spazio fra loro
  * dal CSS (--row-h, --row-gap); senza misura (jsdom) o con le righe alte quanto serve (telefono) ROWS_PER_PAGE.
  */
-function useRowsPerPage(ref: RefObject<HTMLElement | null>, max = ROWS_PER_PAGE): { perPage: number; rows: number } {
+function useRowsPerPage(ref: RefObject<HTMLElement | null>, max = ROWS_PER_PAGE, total = 0): { perPage: number; rows: number } {
   const [fit, setFit] = useState({ perPage: ROWS_PER_PAGE, rows: 0 });
   useLayoutEffect(() => {
     const el = ref.current;
@@ -597,12 +686,21 @@ function useRowsPerPage(ref: RefObject<HTMLElement | null>, max = ROWS_PER_PAGE)
       // Il margine interno della lista (sopra e sotto) conta: senza, l'ultima riga può finire sotto il fondo del riquadro
       const list = el.firstElementChild;
       const pad = list ? (parseFloat(getComputedStyle(list).paddingTop) || 0) + (parseFloat(getComputedStyle(list).paddingBottom) || 0) : 0;
-      const rows = Math.max(1, Math.min(max, Math.floor((height - pad + gap) / (row + gap))));
+      let rows = Math.max(1, Math.min(max, Math.floor((height - pad + gap) / (row + gap))));
+      // Le pagine ("‹ 1/2 ›") prendono posto: se senza di loro ci stanno tutte le righe, una pagina sola (così la lista
+      // non resta a pagine solo perché le pagine ci sono già)
+      const pager = el.parentElement?.querySelector<HTMLElement>('.coach-pages');
+      if (total && rows < total && pager) {
+        const foot = pager.parentElement;
+        const footGap = foot && foot.childElementCount > 1 ? parseFloat(getComputedStyle(foot).rowGap) || 0 : 0;
+        const all = Math.floor((height + pager.offsetHeight + footGap - pad + gap) / (row + gap));
+        if (all >= total) rows = Math.min(max, total);
+      }
       setFit(f => (f.rows === rows && f.perPage === cols * rows ? f : { perPage: cols * rows, rows }));
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [ref, max]);
+  }, [ref, max, total]);
   return fit;
 }
 
@@ -668,18 +766,20 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const [flash, setFlash] = useState<{ nonce: number; id: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const handled = useRef<number | null>(null);
+  // Telefono e tablet (una colonna): la carta viene prima della classifica anche nel codice, così il Tab segue l'ordine
+  // che si vede
+  const oneColumn = useMediaQuery(EDITOR_TABS_QUERY);
   // Il Piano: si calcola dopo il primo disegno (rifà il voto del team qualche volta, ~150 ms su un team lungo) e si
-  // rifà quando cambiano i consigli, il team o le alternative scelte; fino ad allora resta quello di prima (o niente)
-  const choiceKey = JSON.stringify(chosen);
+  // rifà quando cambiano i consigli o il team; fino ad allora resta quello di prima (o niente). Usa la migliore di ogni
+  // posto, come le righe della classifica
   const [plan, setPlan] = useState<{ groups: ProposalGroup[]; steps: PlanStep[] } | null>(null);
   useEffect(() => {
     if (!groups || !team || !data || !rating || groups.length < 2) return;
     const timer = window.setTimeout(() => {
-      const pick = (g: ProposalGroup) => g.options[Math.min(chosen[g.id] ?? 0, g.options.length - 1)];
-      setPlan({ groups, steps: coachPlan(groups, pick, team, data, lang, rating.overall) });
+      setPlan({ groups, steps: coachPlan(groups, g => g.options[0], team, data, lang, rating.overall) });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [groups, team, data, rating, lang, choiceKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [groups, team, data, rating, lang]);
   const planSteps = plan && plan.groups === groups ? plan.steps : [];
   useEffect(() => {
     // Una volta per clic, e solo coi consigli pronti (mentre si calcolano si aspetta)
@@ -798,43 +898,62 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const stuck = entries.filter(e => !groups?.some(g => solvesKey(g, e.problem.key)));
   const actions: RowActions = { onFix, onMoveFix, onApplyFix, onApplyMove };
   const choose = (groupId: string, i: number) => setPicks(s => ({ advice, chosen: { ...(s.advice === advice ? s.chosen : {}), [groupId]: i } }));
+  /** Dimentica l'alternativa scelta di questi posti (tornano alla loro migliore). */
+  const forget = (...ids: string[]) => setPicks(s => {
+    const kept = { ...(s.advice === advice ? s.chosen : {}) };
+    for (const groupId of ids) delete kept[groupId];
+    return { advice, chosen: kept };
+  });
   const pickFilter = (key: string | null) => {
     setFilter(key); setHeroId(null);
     // "Mostra tutte" sparisce col filtro: il fuoco va sul titolo della carta (che ora mostra la migliore)
     if (key === null && document.activeElement?.classList.contains('coach-back')) requestAnimationFrame(() => heroTitle.current?.focus());
   };
-  const open = (groupId: string) => { setHeroId(groupId); setFlash(f => ({ nonce: (f?.nonce ?? 0) - 1, id: groupId })); };
+  // Una riga mostra la migliore del suo posto: aprirla mette nella carta quella (l'alternativa scelta prima si dimentica)
+  const open = (groupId: string) => { forget(groupId); setHeroId(groupId); setFlash(f => ({ nonce: (f?.nonce ?? 0) - 1, id: groupId })); };
   // Un passo del Piano fuori dal filtro: il filtro si toglie, così la proposta si vede nella classifica e nella carta
   const openStep = (groupId: string) => { if (!visible.some(g => g.id === groupId)) setFilter(null); open(groupId); };
-  const chosenNotBest = !!(hero && heroId && hero.id === heroId && hero !== visible[0]);
+  // "La proposta scelta": nella carta c'è un altro posto della prima riga, o un'alternativa al posto della migliore
+  const chosenNotBest = !!(hero && (hero !== visible[0] || Math.min(chosen[hero.id] ?? 0, hero.options.length - 1) !== 0));
+  const backToBest = () => {
+    if (hero) forget(hero.id, ...(visible[0] ? [visible[0].id] : []));
+    setHeroId(null);
+    requestAnimationFrame(() => heroTitle.current?.focus());
+  };
+  const rail = (
+    <RankRail key="rail" groups={visible} problems={problems} before={before} entries={entries} stuck={stuck} filter={active} onFilter={pickFilter} onOpen={open}
+      heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} />
+  );
+  const main = (
+    <section key="main" aria-labelledby={`${id}-list`} className="coach-main">
+      <div className="coach-list-head coach-hero-band">
+        <h4 className="coach-sec">{tr(chosenNotBest ? 'coach.hero.chosen' : 'coach.hero.best')}</h4>
+        {chosenNotBest && (
+          <button type="button" className="coach-back" onClick={backToBest}>
+            <Icon name="undo" />{tr('coach.hero.back')}
+          </button>
+        )}
+      </div>
+      {groups && rating && planSteps.length >= 2 && <PlanStrip steps={planSteps} start={rating} onOpen={openStep} />}
+      {groups ? (
+        hero && <Hero key={hero.id} group={hero} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}
+          rating={rating} actions={actions} flash={flash?.id === hero.id} titleRef={heroTitle} />
+      ) : (
+        <>
+          <div className="coach-hero skeleton" aria-hidden="true" />
+          <p className="visually-hidden" role="status">{tr('coach.computing')}</p>
+        </>
+      )}
+      {/* Cosa c'è nella carta, detto a chi usa il lettore di schermo quando cambia (proposta aperta, alternativa, filtro) */}
+      <p className="visually-hidden" aria-live="polite">{heroPick ? tr('coach.hero.now', { name: proposalName(heroPick, tr, lang) }) : ''}</p>
+      {banned}
+    </section>
+  );
   return (
     <div className="coaching coach-cure" ref={root}>
-      <RankRail groups={visible} pickOf={pickOf} problems={problems} entries={entries} stuck={stuck} filter={active} onFilter={pickFilter} onOpen={open}
-        heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} />
-      <section aria-labelledby={`${id}-list`} className="coach-main">
-        <h3 className="visually-hidden" id={`${id}-list`}>{tr('coach.list.title')}</h3>
-        <div className="coach-list-head coach-hero-band">
-          <h4 className="coach-sec">{tr(chosenNotBest ? 'coach.hero.chosen' : 'coach.hero.best')}</h4>
-          {chosenNotBest && (
-            <button type="button" className="coach-back" onClick={() => { setHeroId(null); requestAnimationFrame(() => heroTitle.current?.focus()); }}>
-              <Icon name="undo" />{tr('coach.hero.back')}
-            </button>
-          )}
-        </div>
-        {groups && rating && planSteps.length >= 2 && <PlanStrip steps={planSteps} start={rating} onOpen={openStep} />}
-        {groups ? (
-          hero && <Hero key={hero.id} group={hero} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}
-            rating={rating} actions={actions} flash={flash?.id === hero.id} titleRef={heroTitle} />
-        ) : (
-          <>
-            <div className="coach-hero skeleton" aria-hidden="true" />
-            <p className="visually-hidden" role="status">{tr('coach.computing')}</p>
-          </>
-        )}
-        {/* Cosa c'è nella carta, detto a chi usa il lettore di schermo quando cambia (proposta aperta, alternativa, filtro) */}
-        <p className="visually-hidden" aria-live="polite">{heroPick ? tr('coach.hero.now', { name: proposalName(heroPick, tr, lang) }) : ''}</p>
-        {banned}
-      </section>
+      {/* Un solo titolo di livello 3 per la scheda (nascosto): sotto, la classifica e la carta coi loro titoli di livello 4 */}
+      <h3 className="visually-hidden" id={`${id}-list`}>{tr('coach.list.title')}</h3>
+      {oneColumn ? [main, rail] : [rail, main]}
     </div>
   );
 }

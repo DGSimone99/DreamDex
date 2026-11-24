@@ -658,6 +658,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
               trailing={<MoveTail name={move} titled={false} />}
               label={t('editor.move', { n: i + 1 })}
               value={move}
+              valueLabel={move ? gameName('move', move, lang) : undefined}
               options={moveOptionsFor[i]}
               commonLabel={commonLabel(common?.moves)}
               description={describe.move(move, lang)}
