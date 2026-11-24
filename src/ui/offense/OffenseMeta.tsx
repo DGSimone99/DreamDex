@@ -1,4 +1,4 @@
-import { useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { battleSpecies } from '../../engine/dex';
 import type { MemberOffense, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
@@ -12,6 +12,7 @@ import { offenseSlots } from './slots';
 import { FLIP_TABLES_QUERY, PHONE_QUERY, useMediaQuery } from '../useMediaQuery';
 import { Sprite } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
+import { SheetCoachLink } from '../CoachLink';
 import { AnalysisSheet } from '../AnalysisSheet';
 import { KoBadges, koBands } from './KoBadges';
 import { CardsLegend, countClass } from '../CardsLegend';
@@ -88,6 +89,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const lit = (row: Row) => !!focus && inBand(Math.max(0, row.cells?.[focus.slot]?.pct ?? 0), focus.band);
   // Aperta da una minaccia della Panoramica: la sua colonna per prima (prima pagina) e accesa, le altre spente
   const threat = ctx.focus?.kind === 'threat' && ctx.focus.side === 'offense' ? ctx.focus.species : null;
+  // Da una pillola della testata, sulle carte: si apre anche il foglio della minaccia
+  useEffect(() => { if (cards && ctx.focus?.kind === 'threat' && ctx.focus.side === 'offense' && ctx.focus.open) setSheet(ctx.focus.species); }, [ctx.focus]); // eslint-disable-line react-hooks/exhaustive-deps
   // Ordine scelto: Minaccia (prima chi nessuno manda KO in due colpi, poi chi uno solo, come la Panoramica) o Uso
   const [order, setOrder] = useState<MetaOrder>('threat');
   const all = offense.coverageMeta?.rows ?? [];
@@ -308,6 +311,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         )}
         {openRow && (
           <AnalysisSheet title={openRow.species} lead={<Sprite species={openRow.set.species} item={openRow.set.item} size={56} />} onClose={() => setSheet(null)} className="cm-sheet"
+            foot={<SheetCoachLink ctx={ctx} subject={openRow.species} onClose={() => setSheet(null)} />}
             sub={`#${rank.get(openRow.species)} · ${t('odetail.cm.coveredBy')} ${coveredCount(openRow)}/${ctx.team.length}`}>
             <ul className="ct-sheet-rows">
               {ctx.team.map((_, m) => {

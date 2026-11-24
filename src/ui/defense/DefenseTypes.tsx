@@ -1,5 +1,6 @@
-import { useId, useState, type CSSProperties, type FocusEvent } from 'react';
+import { useEffect, useId, useState, type CSSProperties, type FocusEvent } from 'react';
 import { AnalysisSheet } from '../AnalysisSheet';
+import { SheetCoachLink } from '../CoachLink';
 import { countClass } from '../CardsLegend';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { HELD_LEVEL } from '../../engine/coach';
@@ -62,6 +63,12 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   // Aperta da un pezzo della barra in Generale: la riga del membro e i tipi di quel pezzo accesi, il resto spento
   const focus = ctx.focus?.kind === 'dtypes' ? ctx.focus : null;
   const { rows, weak } = defense.coverageTypes;
+  // Da una pillola della testata: la colonna (o la tessera) di quel tipo accesa, le altre spente; sulle carte anche il foglio
+  const typeFocus = ctx.focus?.kind === 'type' && ctx.focus.side === 'defense' ? ctx.focus.type : null;
+  const typeCol = typeFocus ? rows.findIndex(row => row.type === typeFocus) : -1;
+  useEffect(() => {
+    if (narrow && ctx.focus?.kind === 'type' && ctx.focus.side === 'defense' && ctx.focus.open && typeCol >= 0) setSheetCol(typeCol);
+  }, [ctx.focus]); // eslint-disable-line react-hooks/exhaustive-deps
   const multipliers = new Map(analysis.weakness.map(row => [row.type, row.multipliers]));
   // Il membro del motore per ogni posto del team (i Pokémon sconosciuti non ci sono)
   let next = 0;
@@ -122,11 +129,11 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const hitCell = (member: number, row: (typeof rows)[number], i: number) => {
     const s = slots[member];
     const cell = s === null ? null : defense.typed[s].cells[i];
-    if (!cell) return <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} {...focusAt(member, i)}>—</td>;
+    if (!cell) return <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell hold-none${ctx.effOnly ? ' eff-dim' : ''}${focus || typeFocus ? ' kf-dim' : ''}`)} {...focusAt(member, i)}>—</td>;
     const band = HOLD_BANDS[cell.band];
     const tag = effLabel(multipliers.get(row.type as TypeName)?.[member] ?? 1, 'defense');
     return (
-      <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={`${member}-${row.type}`} className={colClass(i, `rob-cell ht-cell ${band.cls}${effClass(tag, 'defense', ctx.effOnly)}${focus ? (member === focus.slot && pieceOf(cell.band) === focus.band ? ' kf-hit' : ' kf-dim') : typeFocus ? (i === typeCol ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { setHover({ row: member, col: i }); tip.open({ slot: member, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
         {...focusAt(member, i, { slot: member, col: i })}>
         <span className="ct-num">{cell.band !== 'ohko' && cell.pct >= 100 ? 99 : cell.pct}<i>%</i></span>
@@ -149,6 +156,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
     const held = rows.length - weak.length;
     // Aperta da un pezzo della barra in Generale: si accendono i tipi di quel pezzo per quel membro
     const lit = (i: number) => {
+      if (typeFocus) return i === typeCol;
       if (!focus || slots[focus.slot] === null) return null;
       const cell = defense.typed[slots[focus.slot]!].cells[i];
       return !!cell && pieceOf(cell.band) === focus.band;
@@ -180,11 +188,13 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
         <div className="rob-legend ht-foot">
           {focus
             ? <FocusNote name={battleName(team[focus.slot])} band="two" text={t(`hold.focus.${focus.band}`, { name: battleName(team[focus.slot]) })} onClear={ctx.clearFocus} />
+            : typeFocus ? <FocusNote name={typeFocus} band="two" text={t('kob.focusThreat', { name: typeName(typeFocus as TypeName, lang) })} onClear={ctx.clearFocus} />
             : <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>}
-          {!focus && notes.length > 0 && <NotesLine id={notesId} notes={notes} mitigations={mitigations} />}
+          {!focus && !typeFocus && notes.length > 0 && <NotesLine id={notesId} notes={notes} mitigations={mitigations} />}
         </div>
         {openRow && sheetCol !== null && (
           <AnalysisSheet title={typeName(openRow.type as TypeName, lang)} lead={<TypeIcons types={[openRow.type]} />} onClose={() => setSheetCol(null)} className="ct-sheet"
+            foot={<SheetCoachLink ctx={ctx} subject={openRow.type} onClose={() => setSheetCol(null)} />}
             sub={`${t('detail.level')} ${openRow.level}%${best[sheetCol] ? ` · ${t('ddetail.tiles.bestHolder')}: ${nameOf(best[sheetCol]!.slot)}` : ''}`}>
             <ul className="ct-sheet-rows">
               {team.map((_, slot) => {
@@ -302,8 +312,9 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
       <div className="rob-legend ht-foot">
         {focus
           ? <FocusNote name={battleName(team[focus.slot])} band="two" text={t(`hold.focus.${focus.band}`, { name: battleName(team[focus.slot]) })} onClear={ctx.clearFocus} />
+          : typeFocus ? <FocusNote name={typeFocus} band="two" text={t('kob.focusThreat', { name: typeName(typeFocus as TypeName, lang) })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>}
-        {!focus && notes.length > 0 && (
+        {!focus && !typeFocus && notes.length > 0 && (
           <NotesLine id={notesId} notes={notes} mitigations={mitigations} />
         )}
       </div>

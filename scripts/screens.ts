@@ -389,6 +389,25 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
+  // Una pillola di problema toccata nella testata (va dove parla: Coverage meta o tipi, sulle carte col foglio) e il "+N" aperto
+  'analysis-defense-chip': { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const chip = await p.$('.area-head .area-chip.is-link');
+    if (!chip) return 'no chip';
+    await chip.click();
+    await wait(700);
+    return true;
+  } },
+  'analysis-defense-more': { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const more = await p.$('.area-head .area-chips-more.is-link');
+    if (!more) return 'no +N';
+    await more.click();
+    await wait(500);
+    return true;
+  } },
   // Generale col puntatore sul "+N" di un membro (Toxapex): il tooltip coi pezzi e il recupero in parole
   ...Object.fromEntries([['member', '.def-general tbody tr:nth-child(3) .og-share.dsh']].map(([k, sel]) => [`analysis-defense-general-share-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null).run!(p);

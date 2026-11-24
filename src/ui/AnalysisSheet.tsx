@@ -9,8 +9,10 @@ import { ModalLock } from './ModalLock';
  * scheda. È una finestra modale (la pagina sotto inerte, Esc o un tocco fuori la chiude, il fuoco torna alla carta): in
  * testa `lead` (la sprite o il tipo), il titolo, una riga sotto e la ×; poi il contenuto, che scorre se è lungo.
  */
-export function AnalysisSheet({ title, sub, lead, onClose, className = '', children }: {
+export function AnalysisSheet({ title, sub, lead, onClose, className = '', children, foot }: {
   title: string; sub?: ReactNode; lead?: ReactNode; onClose: () => void; className?: string; children: ReactNode;
+  /** In fondo, fuori dalla parte che scorre (es. "Sistemalo nel Coaching" quando il soggetto è un problema). */
+  foot?: ReactNode;
 }) {
   const t = useT();
   const id = useId();
@@ -38,6 +40,7 @@ export function AnalysisSheet({ title, sub, lead, onClose, className = '', child
           <button ref={closeButton} type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
         </header>
         <div className="an-sheet-body">{children}</div>
+        {foot && <footer className="an-sheet-foot">{foot}</footer>}
       </section>
     </div>,
     document.body,

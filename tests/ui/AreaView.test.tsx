@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet } from '../../src/engine/sets';
@@ -106,7 +106,7 @@ describe('vista di un\'area sulla pagina', () => {
     expect(onCoaching).toHaveBeenCalledTimes(3);
   });
 
-  it('col fuoco una pillola mostra il problema intero nel tooltip DreamDex', async () => {
+  it('col fuoco una pillola mostra il problema intero nel tooltip DreamDex (e dove porta: Coverage tipi)', async () => {
     const user = userEvent.setup();
     const fire = { severity: 'serious' as const, category: 'defense' as const, text: 'Nessuno regge Fuoco', fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } };
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} onCoaching={() => {}}
@@ -120,7 +120,8 @@ describe('vista di un\'area sulla pagina', () => {
     expect(document.querySelector('.ftip.area-chip-tip')!.textContent).not.toMatch(/%/);
     // In fondo dove porta il clic (TipGo)
     expect(document.querySelector('.ftip.area-chip-tip')!.lastElementChild).toHaveClass('ftip-go');
-    expect(document.querySelector('.ftip.area-chip-tip')!.lastElementChild).toHaveTextContent('Clic: vai a Coaching');
+    expect(document.querySelector('.ftip.area-chip-tip')!.lastElementChild).toHaveTextContent('Clic: vai a Coverage tipi');
+    expect(chip).toHaveAccessibleDescription('Nessuno regge Fuoco · Vai a Coverage tipi');
   });
 
   it('problemi che nessuna proposta del Coaching risolve, o consigli ancora da calcolare: la pillola mostra solo il tooltip', async () => {
@@ -180,10 +181,9 @@ describe('vista di un\'area sulla pagina', () => {
       const list = screen.getByRole('list', { name: /Problemi/ });
       const items = within(list).getAllByRole('listitem');
       expect(items.map(li => li.textContent)).toEqual(['Problema c', 'Problema b', expect.stringMatching(/^\+3/)]);
-      const more = items[2];
-      // Niente title del browser: il "+N" si raggiunge col Tab e col fuoco il tooltip DreamDex li elenca
+      const more = within(items[2]).getByRole('button', { name: /^Altri 3 problemi:/ });
+      // Niente title del browser: il "+N" è un pulsante (col Tab) e col fuoco il tooltip DreamDex li elenca
       expect(more).not.toHaveAttribute('title');
-      expect(more).toHaveAttribute('tabindex', '0');
       const user = userEvent.setup();
       for (let i = 0; i < 20 && document.activeElement !== more; i++) await user.tab();
       expect(more).toHaveFocus();
@@ -264,6 +264,141 @@ describe('problemi delle aree', () => {
     expect(tip).toHaveClass('tip-w-m');
     expect(tip.querySelector('.thr-tip-why li.open')).toHaveTextContent('Nessuno lo regge bene');
     expect(document.getElementById(chip.getAttribute('aria-describedby')!)).toHaveTextContent(threat.text);
+  });
+});
+
+describe('dai problemi delle aree a dove si sistemano', () => {
+  const threatOf = (side: 'defense' | 'strength') => {
+    const rating = withMeta();
+    const rows = side === 'defense' ? rating.defense.coverageMeta!.rows : rating.offense.coverageMeta!.rows;
+    return rows.at(-1)!.species;
+  };
+  const metaProblem = (species: string, category: 'meta' | 'metaHit' = 'meta'): CoachProblem =>
+    ({ severity: 'minor', category, text: `Senza check contro ${species}`, fixes: [], key: `${category}:${species}`, subjects: [species] });
+  const fireProblem: CoachProblem = { severity: 'serious', category: 'defense', text: 'Nessuno regge Fuoco', fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } };
+  const adviceFor = (...keys: string[]): CoachAdvice =>
+    ({ fixes: [{ kind: 'swap', species: 'Rotom-Wash', set: emptySet('Rotom-Wash'), index: 0, member: 'X', gain: 1, solves: keys, reduces: [] } as CoachFix], moves: [], steps: [] });
+
+  it('"Sistemalo nel Coaching" solo con almeno un problema; apre il Coaching sul problema che una proposta risolve', async () => {
+    const user = userEvent.setup();
+    const onCoaching = vi.fn();
+    const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} onCoaching={onCoaching} />);
+    expect(screen.queryByRole('button', { name: 'Sistemalo nel Coaching' })).toBeNull();
+    unmount();
+    // Senza onCoaching (nessun Coaching da aprire) niente link
+    const second = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[fireProblem]} />);
+    expect(screen.queryByRole('button', { name: 'Sistemalo nel Coaching' })).toBeNull();
+    second.unmount();
+    const zap = metaProblem(threatOf('defense'));
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[fireProblem, zap]} advice={adviceFor(zap.key)} onCoaching={onCoaching} />);
+    const link = screen.getByRole('button', { name: 'Sistemalo nel Coaching' });
+    expect(link.closest('.area-head')).not.toBeNull();
+    await user.click(link);
+    expect(onCoaching).toHaveBeenLastCalledWith(zap.key);
+  });
+
+  it('senza proposte il link apre il Coaching e basta', async () => {
+    const user = userEvent.setup();
+    const onCoaching = vi.fn();
+    renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} onCoaching={onCoaching}
+      problems={[{ severity: 'minor', category: 'coverage', text: 'Nessuno colpisce Acciaio', fixes: [], key: 'coverage:Steel', subjects: ['Steel'] }]} advice={{ fixes: [], moves: [], steps: [] }} />);
+    await user.click(screen.getByRole('button', { name: 'Sistemalo nel Coaching' }));
+    expect(onCoaching).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('una minaccia nella testata porta a Coverage meta con la minaccia accesa (prima colonna), non al Coaching', async () => {
+    const user = userEvent.setup();
+    const onCoaching = vi.fn();
+    for (const area of ['defense', 'strength'] as const) {
+      const species = threatOf(area);
+      const problem = metaProblem(species, area === 'defense' ? 'meta' : 'metaHit');
+      const { unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[problem]} advice={adviceFor(problem.key)} onCoaching={onCoaching} />);
+      const chip = within(screen.getByRole('list', { name: /^Problemi in / })).getByRole('button', { name: new RegExp(species) });
+      expect(chip).toHaveAccessibleDescription(`${problem.text} · Vai a Coverage meta`);
+      await user.click(chip);
+      expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByText(`Evidenziato: ${species}`)).toBeInTheDocument();
+      // La minaccia è la prima colonna, accesa
+      const table = screen.getByRole('table');
+      expect(table.querySelector('thead th[scope="col"][aria-label]')).toHaveAttribute('aria-label', species);
+      expect(table.querySelectorAll('td.kf-hit').length).toBeGreaterThan(0);
+      expect(onCoaching).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+
+  it('un tipo nella testata porta a Coverage tipi con la colonna del tipo accesa', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[fireProblem]} onCoaching={() => {}} />);
+    await user.click(screen.getByRole('button', { name: /Nessuno regge Fuoco/ }));
+    expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText(/^Evidenziato: (Fuoco|Fire)$/)).toBeInTheDocument();
+    expect(screen.getByRole('table').querySelectorAll('td.kf-hit')).toHaveLength(team.length);
+    // "Mostra tutti" spegne l'evidenziazione
+    await user.click(screen.getByRole('button', { name: 'Mostra tutti' }));
+    expect(screen.queryByText(/^Evidenziato: (Fuoco|Fire)$/)).toBeNull();
+  });
+
+  it('il "+N" apre la tendina delle pillole nascoste: ognuna porta dove porta la sua pillola; Esc la chiude', async () => {
+    const width = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-chips') ? 200 : 0; });
+    const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-chips') ? 100 * this.children.length : 0; });
+    try {
+      const user = userEvent.setup();
+      const species = threatOf('defense');
+      const water: CoachProblem = { ...fireProblem, key: 'defense:Water', text: 'Nessuno regge Acqua', subjects: ['Water'] };
+      renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[fireProblem, water, metaProblem(species)]} onCoaching={() => {}} />);
+      const more = screen.getByRole('button', { name: /^Altri 2 problemi:/ });
+      expect(more).toHaveAttribute('aria-expanded', 'false');
+      await user.click(more);
+      const menu = screen.getByRole('menu', { name: 'Altri 2 problemi' });
+      const items = within(menu).getAllByRole('menuitem');
+      expect(items).toHaveLength(2);
+      expect(items[0]).toHaveFocus();
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('menu')).toBeNull();
+      expect(more).toHaveFocus();
+      await user.click(more);
+      await user.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: new RegExp(`${species}.*Vai a Coverage meta`) }));
+      expect(screen.queryByRole('menu')).toBeNull();
+      expect(screen.getByRole('tab', { name: /^Coverage meta/ })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByText(`Evidenziato: ${species}`)).toBeInTheDocument();
+    } finally {
+      width.mockRestore();
+      scroll.mockRestore();
+    }
+  });
+});
+
+describe('dai problemi ai fogli, sulle carte', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: ['(max-width: 1099px)'].includes(query), media: query, addEventListener() {}, removeEventListener() {} }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('la pillola di una minaccia apre Coverage meta col foglio della minaccia; nel foglio "Sistemalo nel Coaching" sul problema', async () => {
+    const user = userEvent.setup();
+    const onCoaching = vi.fn();
+    const rating = withMeta();
+    const species = rating.defense.coverageMeta!.rows.at(-1)!.species;
+    const problem: CoachProblem = { severity: 'minor', category: 'meta', text: `Senza check contro ${species}`, fixes: [], key: `meta:${species}`, subjects: [species] };
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[problem]} onCoaching={onCoaching} />);
+    await user.click(within(screen.getByRole('list', { name: 'Problemi in Difesa' })).getByRole('button', { name: new RegExp(species) }));
+    const sheet = await screen.findByRole('dialog', { name: species });
+    await user.click(within(sheet).getByRole('button', { name: 'Sistemalo nel Coaching' }));
+    expect(onCoaching).toHaveBeenLastCalledWith(problem.key);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('il foglio di un tipo che non è un problema non ha il link; quello di un tipo scoperto sì', async () => {
+    const user = userEvent.setup();
+    const problem: CoachProblem = { severity: 'serious', category: 'defense', text: 'Nessuno regge Fuoco', fixes: [], key: 'defense:Fire', subjects: ['Fire'] };
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[problem]} onCoaching={() => {}} />);
+    await user.click(screen.getByRole('button', { name: /Nessuno regge Fuoco/ }));
+    const fire = await screen.findByRole('dialog', { name: /^(Fuoco|Fire)$/ });
+    expect(within(fire).getByRole('button', { name: 'Sistemalo nel Coaching' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await user.click(within(screen.getByRole('list', { name: 'Coverage tipi' })).getByRole('button', { name: /^(Acqua|Water):/ }));
+    expect(within(screen.getByRole('dialog', { name: /^(Acqua|Water)$/ })).queryByRole('button', { name: 'Sistemalo nel Coaching' })).toBeNull();
   });
 });
 

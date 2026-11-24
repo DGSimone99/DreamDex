@@ -65,7 +65,12 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   /** Apre la sottoscheda `key` col dettaglio `focus` (le tessere della Generale). */
   openFocus?: (key: string, focus: KoFocus) => void;
   /** Spegne il dettaglio evidenziato. */
-  clearFocus?: () => void }
+  clearFocus?: () => void;
+  /**
+   * Il Coaching dei problemi dell'area: `keyOf` dice se un soggetto (una minaccia, un tipo) è un problema dell'area (la
+   * sua chiave), `go` apre il Coaching su quel problema. Nei fogli dal basso il link "Sistemalo nel Coaching".
+   */
+  coach?: { keyOf: (subject: string) => string | undefined; go: (key?: string) => void } }
 
 /**
  * La famiglia principale del membro al posto `slot` ('attack', 'wall' o null), la stessa regola dei Ruoli. La usano le
@@ -77,9 +82,12 @@ export const familyAt = (ctx: AreaContext, slot: number) => ctx.analysis.needs.p
 /** `band`: OHKO, 2HKO o 'rest' (quelli che il membro non manda KO in due colpi). */
 /** Nella Difesa (kind 'dtypes' / 'dmeta') `band` è il pezzo della barra: 'held' (3HKO+), 2HKO o OHKO. */
 /** `threat` (dalla carta Minacce del meta della Panoramica): in Coverage meta della Difesa o dell'Offesa la colonna di quella minaccia, prima nell'ordine e accesa. */
+/** `type` (da una pillola di problema della testata): in Coverage tipi la colonna di quel tipo accesa. */
+/** `open` (pillola della testata): sulle carte (sotto i 1100 px) si apre anche il foglio dal basso della minaccia o del tipo. */
 export type KoFocus = { kind: 'types' | 'meta'; slot: number; band: 'ohko' | 'two' | 'rest' }
   | { kind: 'dtypes' | 'dmeta'; slot: number; band: HoldPiece }
-  | { kind: 'threat'; side: 'defense' | 'offense'; species: string };
+  | { kind: 'threat'; side: 'defense' | 'offense'; species: string; open?: boolean }
+  | { kind: 'type'; side: 'defense' | 'offense'; type: string; open?: boolean };
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola

@@ -910,6 +910,8 @@ export const en = {
   'area.problems.clear': "No problems",
   'area.problems.lowAverage': "No single gap: the average is low",
   'area.problems.go': "Go to Coaching: {what}",
+  'area.problems.goTo': "Go to {place}",
+  'area.fixInCoaching': "Fix it in Coaching",
   'area.problems.one': "1 problem",
   'area.problems.many': "{n} problems",
   'area.problems.moreOne': "1 more problem:",

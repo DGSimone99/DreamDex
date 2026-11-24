@@ -1,4 +1,5 @@
-import { useId, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useId, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactNode } from 'react';
+import { SheetCoachLink } from '../CoachLink';
 import { AnalysisSheet } from '../AnalysisSheet';
 import { CardsLegend, countClass } from '../CardsLegend';
 import { TypeIcons } from '../typeIcons';
@@ -92,6 +93,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const lit = (row: Row) => !!focus && pieceAt(row, focus.slot) === focus.band;
   // Aperta da una minaccia della Panoramica: la sua colonna per prima (prima pagina) e accesa, le altre spente
   const threat = ctx.focus?.kind === 'threat' && ctx.focus.side === 'defense' ? ctx.focus.species : null;
+  // Da una pillola della testata, sulle carte: si apre anche il foglio della minaccia
+  useEffect(() => { if (narrow && ctx.focus?.kind === 'threat' && ctx.focus.side === 'defense' && ctx.focus.open) setSheet(ctx.focus.species); }, [ctx.focus]); // eslint-disable-line react-hooks/exhaustive-deps
   // Quanti membri la reggono del tutto (la regola della Panoramica e del Coaching, il numero della riga Team Coverage)
   const held = (row: Row) => row.heldBy.filter(h => !h.partial).length;
   // Ordine scelto: Minaccia (prima quelle che nessuno regge, poi quelle che regge uno solo, come la Panoramica) o Uso
@@ -294,6 +297,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         )}
         {openRow && (
           <AnalysisSheet title={openRow.species} lead={<Sprite species={openRow.set.species} item={openRow.set.item} size={56} />} onClose={() => setSheet(null)} className="cm-sheet"
+            foot={<SheetCoachLink ctx={ctx} subject={openRow.species} onClose={() => setSheet(null)} />}
             sub={`#${rank.get(openRow.species)} · ${t('ddetail.cards.heldBy', { n: held(openRow), total: ctx.team.length })}`}>
             <ul className="ct-sheet-rows">
               {cellsOf(openRow, names).map((c, m) => {

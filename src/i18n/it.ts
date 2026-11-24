@@ -912,6 +912,8 @@ export const it: Record<keyof typeof en, string> = {
   'area.problems.clear': "Nessun problema",
   'area.problems.lowAverage': "Nessun buco singolo: è bassa la media",
   'area.problems.go': "Vai al Coaching: {what}",
+  'area.problems.goTo': "Vai a {place}",
+  'area.fixInCoaching': "Sistemalo nel Coaching",
   'area.problems.one': "1 problema",
   'area.problems.many': "{n} problemi",
   'area.problems.moreOne': "Altro 1 problema:",

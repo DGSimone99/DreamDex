@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { CoachProblem } from '../engine/coach';
 import { needLabel, type Need } from '../engine/needs';
 import { typeName } from '../i18n/game';
@@ -10,6 +10,7 @@ import { Sprite } from './Sprite';
 import { SPRITE_TIP_ROW } from './spriteSizes';
 import { TipGlyph, TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from './TipHead';
 import { TypeIcons } from './typeIcons';
+import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { Typed } from './TypeText';
 import { ThreatTip } from './dashboard/ThreatTip';
 
@@ -104,7 +105,9 @@ const fullText = ({ problem, role }: ProblemEntry, t: ReturnType<typeof useT>, l
  * testata: il Coaching ha una proposta per lei; il tooltip finisce con "Clic: vai a Coaching", TipGo); senza, si raggiunge col Tab solo per il tooltip. `as`: l'elemento
  * esterno (li in una lista, span altrove).
  */
-export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemEntry; onOpen?: () => void; as?: 'li' | 'span' }) {
+export function ProblemChip({ entry, onOpen, go, as: Tag = 'li' }: { entry: ProblemEntry; onOpen?: () => void; as?: 'li' | 'span';
+  /** Dove porta il clic (es. "Coverage meta"); senza, il Coaching. */
+  go?: string }) {
   const t = useT();
   const lang = useLang();
   const tip = useFloatAnchor<true>();
@@ -121,20 +124,20 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
         ? <button type="button" {...props} onClick={onOpen}>{content}</button>
         : <span tabIndex={0} {...props}>{content}</span>}
       {/* Il tooltip è solo visivo: le stesse parole ai lettori di schermo, e dove porta il pulsante */}
-      <HiddenText id={descId}>{[full, onOpen ? t('overview.fix.go') : ''].filter(Boolean).join(' · ')}</HiddenText>
+      <HiddenText id={descId}>{[full, onOpen ? (go ? t('area.problems.goTo', { place: go }) : t('overview.fix.go')) : ''].filter(Boolean).join(' · ')}</HiddenText>
       {/* Una minaccia del meta: lo stesso tooltip delle minacce della Panoramica (ThreatTip, scheda Meta della Copertura: la sprite, "Minaccia senza check"
           sotto il nome, l'uso nel meta, la ragione "Nessuno lo regge bene" o "Nessuno lo manda KO in due colpi") */}
       {tip.anchor && subject.species && (
         <ThreatTip rect={tip.anchor.rect} species={subject.species} status="open" usage={problem.usage}
           reasons={[{ text: t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone'), state: 'open' }]}
-          go={onOpen ? t('analysis.view.coaching') : undefined} />
+          go={onOpen ? go ?? t('analysis.view.coaching') : undefined} />
       )}
       {tip.anchor && !subject.species && (
         <FloatTip rect={tip.anchor.rect} tone={problem.severity === 'serious' ? 'var(--bad)' : 'var(--warn)'} className="tip-w-m area-chip-tip">
           <TipHead lead={subject.lead} title={subject.title}
             sub={subject.plain ? undefined : t(problem.severity === 'serious' ? 'tip.problem.serious' : 'tip.problem.minor')} />
           <TipSec><p><Typed text={full} tip /></p></TipSec>
-          {onOpen && <TipGo place={t('analysis.view.coaching')} />}
+          {onOpen && <TipGo place={go ?? t('analysis.view.coaching')} />}
         </FloatTip>
       )}
     </Tag>
@@ -143,34 +146,115 @@ export function ProblemChip({ entry, onOpen, as: Tag = 'li' }: { entry: ProblemE
 
 /**
  * Il "+N" in fondo alle pillole: quelle che non stanno in riga, nel tooltip DreamDex col mouse e col fuoco; per lo screen
- * reader sono scritte nel testo nascosto.
+ * reader sono scritte nel testo nascosto. `onPick` (testata delle aree): il "+N" è un pulsante che apre una tendina con
+ * le pillole nascoste, ognuna un pulsante che porta dove porta la sua pillola (`placeOf`: dove; null: da nessuna parte);
+ * sul telefono la tendina è un foglio dal basso.
  */
-export function MoreProblems({ hidden, as: Tag = 'li' }: { hidden: ProblemEntry[]; as?: 'li' | 'span' }) {
+export function MoreProblems({ hidden, as: Tag = 'li', onPick, placeOf }: { hidden: ProblemEntry[]; as?: 'li' | 'span';
+  onPick?: (entry: ProblemEntry) => void; placeOf?: (entry: ProblemEntry) => string | null }) {
   const t = useT();
   const lang = useLang();
   const tip = useFloatAnchor<true>();
   const serious = hidden.some(e => e.problem.severity === 'serious');
   const texts = hidden.map(e => fullText(e, t, lang));
+  const title = t(hidden.length === 1 ? 'tip.problems.moreOne' : 'tip.problems.moreMany', { n: hidden.length });
+  const subjects = hidden.map(e => problemSubject(e, t, lang));
+  const srText = `${t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} ${texts.join('; ')}`;
+  const tipEl = tip.anchor && (
+    <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="tip-w-m area-more-tip">
+      <TipHead lead={<TipGlyph icon="warning" />} title={title} />
+      <TipSec>
+        <TipRows>
+          {hidden.map((e, i) => (
+            <TipRow key={`${e.problem.key}|${e.role ?? ''}`} className={`prob-${e.problem.severity}`}
+              lead={leadOf(subjects[i])} title={subjects[i].title} sub={<Typed text={texts[i]} tip />} />
+          ))}
+        </TipRows>
+      </TipSec>
+    </FloatTip>
+  );
+  if (onPick) {
+    return <MoreMenu hidden={hidden} texts={texts} subjects={subjects} title={title} srText={srText} tip={tip} tipEl={tipEl}
+      onPick={onPick} placeOf={placeOf} as={Tag} />;
+  }
   return (
     <Tag className="area-chips-more" tabIndex={0} {...tip.bind(true)}>
       <span aria-hidden="true">+{hidden.length}</span>
-      <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {texts.join('; ')}</span>
-      {tip.anchor && (
-        <FloatTip rect={tip.anchor.rect} tone={serious ? 'var(--bad)' : 'var(--warn)'} className="tip-w-m area-more-tip">
-          <TipHead lead={<TipGlyph icon="warning" />} title={t(hidden.length === 1 ? 'tip.problems.moreOne' : 'tip.problems.moreMany', { n: hidden.length })} />
-          <TipSec>
-            <TipRows>
-              {hidden.map((e, i) => {
-                const subject = problemSubject(e, t, lang);
-                return (
-                  <TipRow key={`${e.problem.key}|${e.role ?? ''}`} className={`prob-${e.problem.severity}`}
-                    lead={subject.species ? <Sprite species={subject.species} size={SPRITE_TIP_ROW} /> : subject.lead}
-                    title={subject.title} sub={<Typed text={texts[i]} tip />} />
-                );
-              })}
-            </TipRows>
-          </TipSec>
-        </FloatTip>
+      <span className="visually-hidden">{srText}</span>
+      {tipEl}
+    </Tag>
+  );
+}
+
+/** La testa di una riga del "+N": la sprite della minaccia, o l'icona del tipo, del ruolo, della gravità. */
+const leadOf = (subject: ReturnType<typeof problemSubject>) => (subject.species ? <Sprite species={subject.species} size={SPRITE_TIP_ROW} /> : subject.lead);
+
+/**
+ * Il "+N" come pulsante con la sua tendina (vedi MoreProblems): col mouse il tooltip resta finché la tendina è chiusa.
+ * Frecce, Home e Fine fra le voci; Esc (il fuoco torna al "+N"), Tab o un clic fuori chiudono.
+ */
+function MoreMenu({ hidden, texts, subjects, title, srText, tip, tipEl, onPick, placeOf, as: Tag }: {
+  hidden: ProblemEntry[]; texts: string[]; subjects: ReturnType<typeof problemSubject>[]; title: string; srText: string;
+  tip: ReturnType<typeof useFloatAnchor<true>>; tipEl: ReactNode;
+  onPick: (entry: ProblemEntry) => void; placeOf?: (entry: ProblemEntry) => string | null; as: 'li' | 'span';
+}) {
+  const t = useT();
+  const menuId = useId();
+  const [open, setOpen] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
+  const close = (refocus: boolean) => { setOpen(false); if (refocus) button.current?.focus(); };
+  useAnchoredPop(button, pop, open, { sheet: true, width: 320, align: 'end', gap: 6, onDismiss: () => setOpen(false) });
+  useEffect(() => {
+    if (!open) return;
+    pop.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus({ preventScroll: true });
+    const away = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (pop.current?.contains(target) || button.current?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [open]);
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const list = [...(pop.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ?? [])];
+    const at = list.indexOf(document.activeElement as HTMLElement);
+    const go = (i: number) => { e.preventDefault(); list[(i + list.length) % list.length]?.focus(); };
+    if (e.key === 'ArrowDown') go(at + 1);
+    else if (e.key === 'ArrowUp') go(at - 1);
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(list.length - 1);
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(true); }
+    else if (e.key === 'Tab') close(false);
+  };
+  return (
+    <Tag className="area-chip-item">
+      <button ref={button} type="button" className="area-chips-more is-link" aria-haspopup="menu" aria-expanded={open}
+        aria-controls={open ? menuId : undefined} {...(open ? {} : tip.bind(true))} onClick={() => { tip.close(); setOpen(o => !o); }}>
+        <span aria-hidden="true">+{hidden.length}</span>
+        <span className="visually-hidden">{srText}</span>
+      </button>
+      {!open && tipEl}
+      {open && (
+        <div ref={pop} id={menuId} className="more-probs-menu" role="menu" aria-label={title} onKeyDown={onKey}
+          popover={supportsPopover ? 'manual' : undefined}>
+          <p className="more-probs-title" aria-hidden="true">{title}</p>
+          {hidden.map((e, i) => {
+            const place = placeOf?.(e) ?? null;
+            return (
+              <button key={`${e.problem.key}|${e.role ?? ''}`} type="button" role="menuitem" className={`more-probs-item prob-${e.problem.severity}`}
+                disabled={!place} onClick={() => { setOpen(false); onPick(e); }}>
+                <span className="more-probs-lead" aria-hidden="true">{leadOf(subjects[i])}</span>
+                <span className="more-probs-text">
+                  <b>{subjects[i].title}</b>
+                  <small><Typed text={texts[i]} tip /></small>
+                </span>
+                {place && <span className="more-probs-go" aria-hidden="true">{place}<Icon name="next" /></span>}
+                {place && <span className="visually-hidden">{` · ${t('area.problems.goTo', { place })}`}</span>}
+              </button>
+            );
+          })}
+        </div>
       )}
     </Tag>
   );

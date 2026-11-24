@@ -1,4 +1,4 @@
-import { useId, useState, type FocusEvent } from 'react';
+import { useEffect, useId, useState, type FocusEvent } from 'react';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
@@ -23,6 +23,7 @@ import { offenseSlots } from './slots';
 import { PokemonIcon } from '../PokemonName';
 import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { AnalysisSheet } from '../AnalysisSheet';
+import { SheetCoachLink } from '../CoachLink';
 import { countClass } from '../CardsLegend';
 import type { CSSProperties } from 'react';
 
@@ -52,6 +53,11 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   // Telefono e tablet: 18 tessere, una per tipo (la coverage del team e chi colpisce più forte); toccandone una il foglio coi 6 membri
   const tiles = useMediaQuery(FLIP_TABLES_QUERY);
   const [sheetType, setSheetType] = useState<(typeof TYPES)[number] | null>(null);
+  // Da una pillola della testata: la colonna (o la tessera) di quel tipo accesa, le altre spente; sulle carte anche il foglio
+  const typeFocus = ctx.focus?.kind === 'type' && ctx.focus.side === 'offense' ? ctx.focus.type as (typeof TYPES)[number] : null;
+  useEffect(() => {
+    if (tiles && ctx.focus?.kind === 'type' && ctx.focus.side === 'offense' && ctx.focus.open && TYPES.includes(ctx.focus.type as (typeof TYPES)[number])) setSheetType(ctx.focus.type as (typeof TYPES)[number]);
+  }, [ctx.focus]); // eslint-disable-line react-hooks/exhaustive-deps
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const { rows, holes } = offense.types;
   const byType = new Map(rows.map(row => [row.label, row]));
@@ -110,7 +116,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const hitCell = (slot: number, type: (typeof TYPES)[number], i: number) => {
     const set = team[slot];
     const member = memberAt(slot);
-    if (slots[slot] === null) return <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })} {...focusAt(slot, i)}>—</td>;
+    if (slots[slot] === null) return <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}${focus || typeFocus ? ' kf-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })} {...focusAt(slot, i)}>—</td>;
     // ×2 / ×4 solo se è superefficace la mossa che fa il danno della casella (Pixilate & co. compresi)
     const found = member?.hits.find(h => h.label === type);
     const tag = effLabel(found?.move ? moveAttackMultiplier(set, found.move, [type], '', field) : null, 'offense');
@@ -129,7 +135,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
     const bothUp = !!found && !lifted && !teamUp && found.comboPct !== null && rank(found.comboPct) > rank(found.plainPct);
     return (
-      <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : low ? ' ok-low' : ''}${lifted || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
+      <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : low ? ' ok-low' : ''}${lifted || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : typeFocus ? (type === typeFocus ? ' kf-hit' : ' kf-dim') : ''}`)}
         onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit || low) tip.open({ slot, type }, e.currentTarget); else tip.leave(); }} onMouseLeave={tip.close}
         {...focusAt(slot, i, hit || low ? { slot, type } : undefined)}>
         {hit && <>
@@ -163,6 +169,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     const ohkos = best.filter(b => b !== null && b.pct >= 100).length;
     // Aperta da una barra della Generale: si accendono i tipi che quel membro manda KO in quella fascia
     const lit = (type: (typeof TYPES)[number]) => {
+      if (typeFocus) return type === typeFocus;
       if (!focus) return null;
       const pct = memberAt(focus.slot)?.hits.find(h => h.label === type)?.plainPct;
       return pct !== undefined && inBand(pct, focus.band);
@@ -194,9 +201,11 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
         </ul>
         <div className="rob-legend ht-foot">{focus
           ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+          : typeFocus ? <FocusNote name={typeFocus} band="two" text={t('kob.focusThreat', { name: typeName(typeFocus, lang) })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
         {open && (
           <AnalysisSheet title={typeName(open, lang)} lead={<TypeIcons types={[open]} />} onClose={() => setSheetType(null)} className="ct-sheet"
+            foot={<SheetCoachLink ctx={ctx} subject={open} onClose={() => setSheetType(null)} />}
             sub={`${t('detail.level')} ${byType.get(open)?.level ?? 0}%${best[openIndex] ? ` · ${t('odetail.types.best')}: ${nameOf(best[openIndex]!.slot)}` : ''}`}>
             <ul className="ct-sheet-rows">
               {team.map((_, slot) => {
@@ -314,6 +323,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       )}
       <div className="rob-legend ht-foot">{focus
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+        : typeFocus ? <FocusNote name={typeFocus} band="two" text={t('kob.focusThreat', { name: typeName(typeFocus, lang) })} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
     </div>
   );
