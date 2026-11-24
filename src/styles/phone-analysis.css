@@ -283,8 +283,13 @@
   .area-view .area-head { flex-wrap: nowrap; gap: var(--sp-2); min-height: 0; margin: calc(-1 * var(--sp-6)) -14px var(--sp-5); padding: 0 var(--sp-2) 0 0;
     border: 0; border-radius: 0; background: var(--field); box-shadow: inset 0 -1px 0 var(--line-soft); overflow-x: clip; }
   /* (overflow-x: clip: la zona di tocco da 44 del "?" in fondo sporgerebbe oltre lo schermo e il telefono rimpicciolirebbe la pagina) */
-  .area-view .area-head :is(.area-grade, .area-chips) { display: none; }
-  .area-view .area-head .area-subs { order: 0; flex: 1 1 auto; min-width: 0; border-radius: 0; box-shadow: none; background: none; }
+  .area-view .area-head .area-grade { display: none; }
+  /* I problemi dell'area (es. le minacce che nessuno regge) in una riga sotto le sottoschede, a tutta larghezza; senza
+     problemi niente (il "Nessun problema" verde non ruba una riga) */
+  .area-view .area-head { flex-wrap: wrap; }
+  .area-view .area-head .area-chips { order: 2; flex: 1 0 100%; min-width: 0; padding: var(--sp-3) var(--sp-4); box-shadow: inset 0 1px 0 var(--line-soft); }
+  .area-view .area-head .area-chips:has(> li > .area-chip.good) { display: none; }
+  .area-view .area-head .area-subs { order: 0; flex: 1 1 0; min-width: 0; border-radius: 0; box-shadow: none; background: none; }
   .area-view .area-head .area-help { order: 1; flex: none; margin-left: auto; }
   /* Senza sottoschede (una sola parte) resta solo il "?", a destra */
   .area-view .area-head:not(:has(.area-subs)) { justify-content: flex-end; padding: var(--sp-2) var(--sp-4); }
