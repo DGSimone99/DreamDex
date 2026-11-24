@@ -13,7 +13,7 @@ import { EffSwitch, PanelSwitch } from './effTag';
 import { Icon } from './icons';
 import { MoreProblems, problemEntries, ProblemChip } from './ProblemPill';
 import { useFitCount } from './useFit';
-import { FLIP_TABLES_QUERY, useMediaQuery } from './useMediaQuery';
+import { FLIP_TABLES_QUERY, PHONE_QUERY, useMediaQuery } from './useMediaQuery';
 
 /** La scelta dell'interruttore Trick Room nella sessione del browser ("0" spento); senza scelta, o senza memoria, acceso. */
 const ROOM_KEY = 'dreamdex.speedTrickRoom';
@@ -87,13 +87,15 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // per la sessione, anche cambiando area (la vista si rimonta a ogni area: la scelta sta nella sessione del browser)
   const [trickRoom, setTrickRoomState] = useState(readRoomPick);
   const cards = useMediaQuery(FLIP_TABLES_QUERY);
+  // Telefono: in Coverage meta l'interruttore dell'efficacia sta sulla riga di Ordine (lo disegna la sottoscheda)
+  const phone = useMediaQuery(PHONE_QUERY);
   const setTrickRoom = (on: boolean) => { setTrickRoomState(on); writeRoomPick(on); };
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
   const [guide, setGuide] = useState<string | null>(null);
   // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
   const opener = useRef<HTMLElement | null>(null);
   const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], trickRoom, guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null) });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], setEffOnly: on => setEffOnly(s => ({ ...s, [area]: on })), trickRoom, guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null) });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
@@ -192,7 +194,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         aria-labelledby={single ? undefined : `${id}-${current.key}`} aria-label={single ? title : undefined}>
         {/* L'interruttore dell'efficacia, in alto a sinistra sulla riga della legenda, solo sulle sottoschede con l'etichetta
             nelle caselle */}
-        {current.effSide && (
+        {current.effSide && !(phone && current.key === 'coverageMeta') && (
           <span className="panel-switch">
             <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
           </span>

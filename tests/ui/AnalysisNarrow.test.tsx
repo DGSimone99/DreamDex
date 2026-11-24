@@ -61,6 +61,13 @@ describe('Offesa sullo schermo stretto', () => {
     view();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const list = screen.getByRole('list', { name: 'Coverage meta' });
+    // Telefono: "Solo superefficaci" sulla riga di Ordine, una volta sola (non anche in cima al pannello)
+    const effSwitch = screen.getByRole('switch', { name: 'Solo superefficaci' });
+    expect(effSwitch.closest('.cm-cards-bar')).not.toBeNull();
+    expect(screen.getByRole('group', { name: 'Ordine' }).closest('.cm-cards-bar')).toBe(effSwitch.closest('.cm-cards-bar'));
+    await user.click(effSwitch);
+    expect(screen.getByRole('switch', { name: 'Solo superefficaci' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByRole('switch', { name: 'Solo superefficaci' }));
     const cards = list.querySelectorAll('.cm-card');
     expect(cards.length).toBeGreaterThan(0);
     expect(cards.length).toBeLessThanOrEqual(12);

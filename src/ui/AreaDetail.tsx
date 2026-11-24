@@ -45,6 +45,8 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
    * acceso: le caselle senza etichetta si spengono (restano al loro posto). Uno per area.
    */
   effOnly?: boolean;
+  /** Accende o spegne "Solo superefficaci": sul telefono Coverage meta lo mette sulla riga di Ordine (non in cima al pannello). */
+  setEffOnly?: (on: boolean) => void;
   /**
    * Interruttore Trick Room della Velocità acceso (in alto nel pannello, solo se un membro ha Trick Room): le barre dicono
    * prima di quanti del meta muove ogni membro in Trick Room. Acceso all'inizio, poi resta per la sessione come lo mette l'utente.

@@ -9,8 +9,11 @@ export function CardsLegend({ pieces, text, setup, side = 'off' }: {
   return (
     <p className={`cards-legend ${side}`} aria-hidden="true">
       {text && <span className="cards-legend-text">{text}</span>}
-      {pieces.map(([key, label]) => <span key={key}><i className={`cl-${key}`} />{label}</span>)}
-      {setup && <span><i className="kob-tri" />{setup}</span>}
+      {/* I pezzi insieme: vanno a capo tutti insieme, mai uno solo (es. "OHKO") su una riga sua */}
+      <span className="cards-legend-keys">
+        {pieces.map(([key, label]) => <span key={key}><i className={`cl-${key}`} />{label}</span>)}
+        {setup && <span><i className="kob-tri" />{setup}</span>}
+      </span>
     </p>
   );
 }

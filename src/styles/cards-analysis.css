@@ -148,6 +148,67 @@
 .cm-sheet-row.ko-three .ct-sheet-pct { color: var(--warn); }
 .cm-sheet-row.ko-none .ct-sheet-pct { color: var(--faint); }
 
+/* ── Telefono (sotto i 600 px): le minacce di Coverage meta (Offesa e Difesa) come righe basse da 52 px, stesso DOM delle
+   carte. Sprite piccola a sinistra, in piedi sul fondo della riga (i piedi dalla tabella di spriteFeet.ts, così chi è alto
+   non si taglia in cima) sul colore del primo tipo che sfuma; in alto #N, nome e tipi; sotto la barra dei 6 (solo da
+   leggere) col conto n/6 nel colore della minaccia; il filo in fondo come oggi. Tutta la riga apre il foglio.
+   In cima: Ordine a sinistra e Solo superefficaci a destra sulla stessa riga, sotto la legenda ── */
+@media (max-width: 599px) {
+  /* L'interruttore da solo in cima al pannello (Coverage tipi, Velocità): sale nel margine del pannello, niente riga vuota
+     sopra (resta alto 44 px col dito) */
+  .area-panel > .panel-switch { margin-top: calc(-1 * var(--sp-6)); margin-bottom: 0; }
+  .cm-cards-frame { gap: var(--sp-5); }
+  .cm-cards-bar { column-gap: var(--sp-4); row-gap: var(--sp-2); }
+  .cm-cards-bar > .cm-order { flex: 0 1 auto; }
+  .cm-cards-bar > .cm-order .segmented button { padding: 0 var(--sp-6); }
+  .cm-bar-switch { display: flex; margin-left: auto; }
+  .cm-bar-switch .eff-switch { min-height: 44px; }
+  .cm-cards-bar .cards-legend { column-gap: var(--sp-4); }
+  .cm-cards-bar .cards-legend > .cards-legend-keys { column-gap: var(--sp-4); }
+  .cm-cards-bar .cards-legend i { width: 12px; }
+
+  .og-cards.cm-cards { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .cm-cards > .cm-card {
+    --stage-top: 0; --stage-h: 0; --sprite-w: 0; --row-s: 50px;
+    min-height: 0; height: 52px; margin: 0; padding: 4px var(--sp-5) 4px var(--sp-2);
+    display: grid; grid-template-columns: 48px auto minmax(0, 1fr) auto; grid-template-rows: 20px 20px;
+    column-gap: var(--sp-3); row-gap: var(--sp-2); align-content: center; align-items: center;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 24%, var(--panel)) 0, var(--panel) 34%);
+  }
+  .cm-card .pedana-stage { display: none; }
+  .cm-card .pedana-stripe, .cm-card.warn .pedana-stripe, .cm-card.bad .pedana-stripe { height: 3px; }
+  /* Il pulsante copre tutta la riga (::before), nome nella sua colonna */
+  .cm-card .og-card-open {
+    grid-column: 1 / -1; grid-row: 1 / 3; min-height: 0;
+    display: grid; grid-template-columns: subgrid; grid-template-rows: subgrid; align-items: center; justify-items: start; gap: inherit;
+  }
+  .cm-card .og-card-open::before { inset: 0; height: auto; z-index: 3; }
+  /* La sprite: un riquadro alto quanto la riga, la figura in piedi 3 px sopra il fondo (sopra il filo) */
+  .cm-card .og-card-sprite { position: absolute; left: var(--sp-2); top: 0; bottom: 0; width: 48px; transform: none; overflow: hidden; }
+  .cm-card .og-card-sprite .sprite { position: absolute; left: 50%; width: var(--row-s); height: var(--row-s); max-width: none;
+    translate: calc(-50% + var(--feet-dx, 0) * var(--row-s)) 0; bottom: calc(3px - (var(--feet-dy, 0) + 10 / 96) * var(--row-s)); }
+  .cm-card .og-card-name { grid-column: 3; grid-row: 1; font: 800 italic var(--fs-title-s)/1.1 var(--display); text-align: left; }
+  /* #N in testa al nome, come una classifica */
+  .cm-card .og-card-tag.cm-card-rank { position: static; grid-column: 2; grid-row: 1; clip-path: none; padding: 0; background: none;
+    font: 800 italic var(--fs-small)/1 var(--display); color: var(--muted); min-width: 24px; }
+  .cm-card .og-card-types { position: static; grid-column: 4; grid-row: 1; flex-direction: row; gap: 3px; }
+  .cm-card .og-card-types .ti-sq { width: 18px; height: 18px; }
+  /* La barra dei 6 sotto, dal #N al bordo destro; solo da leggere, il tocco va alla riga */
+  .cm-card .cm-card-row { grid-column: 2 / -1; grid-row: 2; pointer-events: none; }
+  .cm-card .cm-card-row .kob-line { width: 100%; gap: var(--sp-4); }
+  .cm-card .kob-row > .kob { height: 20px; }
+  .cm-card .kob-count { flex-direction: row; align-items: baseline; min-width: 36px; justify-content: flex-end; }
+  .cm-card .kob-count-line { display: none; }
+  .cm-card .kob-count-num > b { font-size: var(--fs-title-s); }
+  .cm-card .kob-count-num > small { font-size: var(--fs-caption); color: var(--muted); }
+  /* Il conto n/6 nel colore della minaccia (come il filo): rosso nessuno, giallo uno, verde da due */
+  .cm-card.bad .kob-count { --c: var(--bad); }
+  .cm-card.warn .kob-count { --c: var(--warn); }
+  .cm-card.good .kob-count { --c: var(--good); }
+  .cm-card.bad .kob-count-num > b, .cm-card.warn .kob-count-num > b, .cm-card.good .kob-count-num > b { color: var(--c); }
+  .cm-card:has(.og-card-open:active) { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+}
+
 /* ── Tablet (pannello largo da ~600 px): più carte per riga, misurate sulla larghezza del pannello ── */
 .og-cards-frame, .ct-tiles-frame, .cm-cards-frame { container-type: inline-size; }
 @container (min-width: 560px) {
@@ -207,7 +268,8 @@
 /* ── Giro 2 della critica ── */
 /* La legenda corta delle barre sotto la riga del team (i pezzi nelle carte non hanno etichetta) */
 .cards-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-6); margin: 0; font: 500 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
-.cards-legend > span { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.cards-legend > span, .cards-legend-keys > span { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.cards-legend > .cards-legend-keys { flex-wrap: wrap; gap: var(--sp-2) var(--sp-6); }
 .cards-legend .cards-legend-text { color: var(--text); }
 .cards-legend i { width: 14px; height: 10px; border-radius: 3px 1px; }
 .cards-legend.off i.cl-ohko { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
