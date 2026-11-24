@@ -5,8 +5,9 @@ import { App } from '../../src/App';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet, exportShowdown, type TeamSet } from '../../src/engine/sets';
-import { AnalysisTabs } from '../../src/ui/AnalysisTabs';
+import { AnalysisTabs, HelpButton } from '../../src/ui/AnalysisTabs';
 import { fixtureData } from '../fixtures/data';
+import { renderIt } from '../helpers/italian';
 
 // File lento (calcola le proposte o monta l'App intera): sotto il carico della suite completa supera i 15 s del default
 vi.setConfig({ testTimeout: 60000 });
@@ -217,5 +218,27 @@ describe('telefono: Analisi senza Panoramica', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('il "?" (HelpButton)', () => {
+  it('il fuoco sulla chiusura, il Tab (avanti e indietro) resta nella finestra; Esc chiude e torna sul "?"', async () => {
+    const user = userEvent.setup();
+    renderIt(<><button type="button">Prima</button><HelpButton title="Aiuto di prova"><p>Testo</p></HelpButton><button type="button">Dopo</button></>);
+    const help = screen.getByRole('button', { name: 'Aiuto di prova' });
+    await user.click(help);
+    const dialog = screen.getByRole('dialog', { name: 'Aiuto di prova' });
+    const close = within(dialog).getByRole('button', { name: 'Chiudi' });
+    expect(close).toHaveFocus();
+    for (const shift of [false, true, false]) {
+      await user.tab({ shift });
+      expect(close).toHaveFocus();
+    }
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(help).toHaveFocus();
+    // Chiusa la finestra il Tab torna normale
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Dopo' })).toHaveFocus();
   });
 });

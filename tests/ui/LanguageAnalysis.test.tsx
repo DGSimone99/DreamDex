@@ -35,7 +35,7 @@ describe('analisi in inglese', () => {
     const hero = await within(list).findByRole('article', {}, { timeout: 5000 });
     expect(hero.querySelector('h4')!.textContent).toMatch(name);
     expect(within(hero).getByRole('button', { name: /^Apply: / })).toHaveTextContent('Apply');
-    // A sinistra la classifica: ogni testata apre una proposta, col suo nome in inglese
+    // A sinistra la classifica: ogni riga apre una proposta, col suo nome in inglese
     const rail = within(analysis).getByRole('complementary', { name: /^Proposals/ });
     const heads = within(rail).getAllByRole('button', { name: /^Open in the card: / });
     expect(heads.length).toBeGreaterThan(0);

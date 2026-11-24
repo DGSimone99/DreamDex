@@ -151,21 +151,25 @@ describe('Panoramica di Analisi', () => {
     expect(panel().querySelector('.overview-headline .alert-mark')).toBeNull();
   });
 
-  it('Coaching: un membro fuori regola ha una proposta che lo toglie: il problema grave a sinistra, la proposta lo risolve', async () => {
+  it('Coaching: un membro fuori regola ha una proposta che lo toglie: il problema nel filtro a sinistra, la proposta lo risolve', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
     await within(panel()).findByRole('article', {}, { timeout: 8000 });
-    // Il problema della regola nella classifica a sinistra: grave, sotto una proposta che lo risolve (un pulsante, non in "Restano")
-    const rule = [...panel().querySelectorAll<HTMLButtonElement>('.coach-diag-item')].find(b => /Dragapult.*(legale|vietat)/.test(b.textContent!))!;
+    // Il problema della regola è fra quelli del filtro della classifica (una proposta lo risolve: non in "Restano")
+    const select = within(panel()).getByRole('combobox', { name: 'Problema' }) as HTMLSelectElement;
+    const rule = [...select.options].find(o => /Dragapult.*(legale|vietat)/.test(o.textContent!))!;
     expect(rule).toBeTruthy();
-    expect(rule.tagName).toBe('BUTTON');
-    expect(rule).toHaveClass('serious');
-    expect(rule).not.toBeDisabled();
-    // Un clic: la carta grande è una proposta al posto di Dragapult, e fra i problemi risolti c'è la regola
-    await user.click(rule);
+    expect(panel().querySelector('.coach-rank-stuck')?.textContent ?? '').not.toMatch(/Dragapult/);
+    // Scelto nel filtro: la carta grande è una proposta al posto di Dragapult, e fra i problemi risolti c'è la regola
+    await user.selectOptions(select, rule.value);
+    expect(select).toHaveValue(rule.value);
     const hero = within(panel()).getByRole('article');
     expect(hero.querySelector('h4')).toHaveTextContent(/al posto di Dragapult, voto/);
     expect([...hero.querySelectorAll('li.coach-solved')].some(li => /Dragapult.*(legale|vietat)/.test(li.textContent!))).toBe(true);
+    // La classifica filtrata: ogni riga rimasta risolve la regola (lo dice il suo testo per lo screen reader)
+    const rows = [...panel().querySelectorAll<HTMLElement>('.coach-rank')];
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(document.getElementById(row.getAttribute('aria-describedby')!)).toHaveTextContent(/Dragapult.*(legale|vietat)/);
   });
 
   it('team stall: niente più la nota "valutato come stall"', async () => {
