@@ -147,3 +147,16 @@
 .cm-sheet-row.ko-two .ct-sheet-pct { color: color-mix(in srgb, var(--good) 55%, var(--text)); }
 .cm-sheet-row.ko-three .ct-sheet-pct { color: var(--warn); }
 .cm-sheet-row.ko-none .ct-sheet-pct { color: var(--faint); }
+
+/* ── Tablet (pannello largo da ~600 px): più carte per riga, misurate sulla larghezza del pannello ── */
+.og-cards-frame, .ct-tiles-frame, .cm-cards-frame { container-type: inline-size; }
+@container (min-width: 560px) {
+  .og-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-5); }
+  .ct-tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .og-hero .og-card-row { grid-template-columns: 40px minmax(0, 1fr); }
+}
+@container (min-width: 740px) {
+  .cm-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+/* Dal tablet la lettera e la parola sono già nella testata dell'area: nella riga del team solo sul telefono */
+@media (min-width: 600px) { .og-hero-grade { display: none; } }

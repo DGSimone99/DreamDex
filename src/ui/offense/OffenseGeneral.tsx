@@ -11,7 +11,7 @@ import { Ask, averageCols, BarHead, MetaTargets, metaText, TypeAverages, typeSta
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
 import { useEffect, useId, useState, type CSSProperties, type ReactNode } from 'react';
-import { NARROW_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
 import { gradeFor } from '../../engine/rating';
 import { AnalysisSheet } from '../AnalysisSheet';
 import { Sprite, typeColor } from '../Sprite';
@@ -89,8 +89,8 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
   const lang = useLang();
   const roomy = !!ctx.roomy;
   const phone = useStackedTables();
-  // Telefono: i membri come carte Pedana, due per riga, con la riga del team in cima (OffenseCards)
-  const cards = useMediaQuery(NARROW_TABLES_QUERY);
+  // Telefono e tablet (sotto i 1100 px): i membri come carte Pedana (due per riga sul telefono, tre sul tablet), con la riga del team in cima (OffenseCards)
+  const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const [sheet, setSheet] = useState<number | null>(null);
   // Il "?" delle testate apre la guida dell'Offesa (una pagina sola per le tre schede, la sezione "types")
   const openGuide = ctx.guide && (() => ctx.guide!('types'));

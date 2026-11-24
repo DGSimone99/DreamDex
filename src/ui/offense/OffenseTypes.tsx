@@ -21,7 +21,7 @@ import { FocusNote, inBand, koBandOf } from './KoBadges';
 import { TypeHitTip } from './TypeHitTip';
 import { offenseSlots } from './slots';
 import { PokemonIcon } from '../PokemonName';
-import { FLIP_TABLES_QUERY, NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { AnalysisSheet } from '../AnalysisSheet';
 import type { CSSProperties } from 'react';
 
@@ -48,8 +48,8 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const { team } = ctx;
   const roomy = !!ctx.roomy;
   const phone = useMediaQuery(FLIP_TABLES_QUERY);
-  // Telefono: 18 tessere, una per tipo (la coverage del team e chi colpisce più forte); toccandone una il foglio coi 6 membri
-  const tiles = useMediaQuery(NARROW_TABLES_QUERY);
+  // Telefono e tablet: 18 tessere, una per tipo (la coverage del team e chi colpisce più forte); toccandone una il foglio coi 6 membri
+  const tiles = useMediaQuery(FLIP_TABLES_QUERY);
   const [sheetType, setSheetType] = useState<(typeof TYPES)[number] | null>(null);
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const { rows, holes } = offense.types;

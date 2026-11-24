@@ -9,7 +9,7 @@ import { useMemberTip } from '../MemberCard';
 import { typeColor } from '../Sprite';
 import { PokemonIcon } from '../PokemonName';
 import { offenseSlots } from './slots';
-import { FLIP_TABLES_QUERY, NARROW_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { Sprite } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
 import { AnalysisSheet } from '../AnalysisSheet';
@@ -66,8 +66,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const lang = useLang();
   const hover = useColumnHover();
   const phone = useMediaQuery(FLIP_TABLES_QUERY);
-  // Telefono: le minacce come carte Pedana, due per riga; la carta apre il foglio coi 6 membri
-  const cards = useMediaQuery(NARROW_TABLES_QUERY);
+  // Telefono e tablet: le minacce come carte Pedana (due, tre o quattro per riga); la carta apre il foglio coi 6 membri
+  const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const [shownCards, setShownCards] = useState(CARDS_STEP);
   const [sheet, setSheet] = useState<string | null>(null);
   const tip = useFloatAnchor<{ species: string; m: number }>();
