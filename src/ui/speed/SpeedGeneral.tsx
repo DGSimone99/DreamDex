@@ -184,7 +184,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
           {/* La legenda con parole vere: cosa sono i pezzi della barra (in Trick Room una riga sola) */}
           <p className="sp-legend" aria-hidden="true">
             {room
-              ? <span className="sp-room-note">{t('sdetail.room.legend')}</span>
+              ? <><span className="sp-room-note">{t('sdetail.room.legend')}</span><span className="sp-room-note">{t('sdetail.cards.roomGrade')}</span></>
               : <>
                 <span><i className="sp-leg raw" />{t('sdetail.cards.base')}</span>
                 <span><i className="sp-leg own" />{t('sdetail.legendOwn')}</span>

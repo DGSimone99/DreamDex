@@ -23,6 +23,7 @@ import { offenseSlots } from './slots';
 import { PokemonIcon } from '../PokemonName';
 import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { AnalysisSheet } from '../AnalysisSheet';
+import { countClass } from '../CardsLegend';
 import type { CSSProperties } from 'react';
 
 /** Da qui il danno si scrive anche se non conta (3HKO, la soglia di Coverage meta), in una casella grigia. */
@@ -172,7 +173,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       <div className="off-frame def-types ct-tiles-frame">
         <section className="og-hero" aria-label={t('detail.level')}>
           <span className="og-plate">{t('detail.level')}</span>
-          <p className="og-hero-line"><b className={holes.length ? 'bad' : 'full'}>{covered}</b><small>/{TYPES.length}</small> {t('odetail.tiles.covered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
+          <p className="og-hero-line"><b className={countClass(covered, TYPES.length)}>{covered}</b><small>/{TYPES.length}</small> {t('odetail.tiles.covered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
         </section>
         <ul className="ct-tiles" aria-label={t('detail.coverageTypes')}>
           {TYPES.map((type, i) => {

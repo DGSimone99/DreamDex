@@ -16,6 +16,7 @@ import { gradeFor } from '../../engine/rating';
 import { AnalysisSheet } from '../AnalysisSheet';
 import { Sprite, typeColor } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
+import { CardsLegend } from '../CardsLegend';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { signed } from '../defense/DefenseGeneral';
@@ -130,10 +131,11 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
 
   if (cards) {
     const grade = value === null ? null : gradeFor(value, lang);
-    const typeRow = (slot: number, m: MemberOffense, quiet: boolean, name: string) => <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
-      onPick={ctx.openFocus && (band => { setSheet(null); ctx.openFocus!('types', { kind: 'types', slot, band }); })} pickPlace={t('detail.coverageTypes')} />;
-    const metaRow = (slot: number, m: MemberOffense, quiet: boolean, name: string) => <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
-      onPick={ctx.openFocus && (band => { setSheet(null); ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }); })} pickPlace={t('detail.coverageMeta')} />;
+    // Nelle carte le barre sono basse (20 px): solo da guardare, la carta si apre toccandola; nel foglio, alte, portano alla sottoscheda
+    const typeRow = (slot: number, m: MemberOffense, quiet: boolean, name: string, pick = false) => <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
+      onPick={pick && ctx.openFocus ? (band => { setSheet(null); ctx.openFocus!('types', { kind: 'types', slot, band }); }) : undefined} pickPlace={t('detail.coverageTypes')} />;
+    const metaRow = (slot: number, m: MemberOffense, quiet: boolean, name: string, pick = false) => <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
+      onPick={pick && ctx.openFocus ? (band => { setSheet(null); ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }); }) : undefined} pickPlace={t('detail.coverageMeta')} />;
     const open = sheet === null ? null : (() => {
       const set = ctx.team[sheet];
       const index = slots[sheet];
@@ -149,6 +151,7 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
           <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm /></div>
           {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm /></div>}
         </section>
+        <CardsLegend pieces={[['ohko', 'OHKO'], ['two', '2HKO'], ['rest', t('odetail.cards.noKo')]]} setup={t('kob.legendSetupShort')} />
         <ul className="og-cards" aria-label={t('detail.member')}>
           {ctx.team.map((set, slot) => {
             const species = battleSpecies(set);
@@ -179,21 +182,18 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
             );
           })}
         </ul>
-        <div className="rob-legend og-legend" aria-hidden="true">
-          <span><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
-        </div>
         {open && (
           <AnalysisSheet title={open.name} lead={<Sprite species={open.set.species} item={open.set.item} size={56} />} onClose={() => setSheet(null)}
             sub={t('odetail.gen.shareTitle', { n: open.s.points })} className="og-sheet">
             <section className="og-sheet-sec">
               <h4>{t('detail.coverageTypes')}</h4>
-              {typeRow(open.slot, open.m, open.quiet, open.name)}
+              {typeRow(open.slot, open.m, open.quiet, open.name, true)}
               <MoveChips shares={typeMoves(open.m, open.slot)} of={ofTypes} total={18} />
             </section>
             {meta && (
               <section className="og-sheet-sec">
                 <h4>{t('detail.coverageMeta')}</h4>
-                {metaRow(open.slot, open.m, open.quiet, open.name)}
+                {metaRow(open.slot, open.m, open.quiet, open.name, true)}
                 <MoveChips shares={metaMoves(open.slot)} of={ofMeta} total={nMeta} />
               </section>
             )}

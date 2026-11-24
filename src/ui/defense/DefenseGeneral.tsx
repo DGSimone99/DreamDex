@@ -22,6 +22,7 @@ import { gradeFor } from '../../engine/rating';
 import { AnalysisSheet } from '../AnalysisSheet';
 import { Sprite } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
+import { CardsLegend } from '../CardsLegend';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
@@ -206,10 +207,11 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
 
   if (cards) {
     const grade = gradeFor(defense.value, lang);
-    const typesBar = (i: number) => <HoldBars targets={typeBars[i]} who={members[i].species} mon={members[i].species} of={ofTypes} quiet={quiet(i)}
-      onPick={ctx.openFocus && ((band: HoldPiece) => { setSheet(null); pick('coverageTypes', 'dtypes', i)!(band); })} pickPlace={t('detail.coverageTypes')} />;
-    const metaBar = (i: number) => <HoldBars targets={metaBars[i]} who={members[i].species} mon={members[i].species} of={ofMeta} quiet={quiet(i)}
-      onPick={ctx.openFocus && ((band: HoldPiece) => { setSheet(null); pick('coverageMeta', 'dmeta', i)!(band); })} pickPlace={t('detail.coverageMeta')} />;
+    // Come nell'Offesa: nelle carte le barre si guardano soltanto, nel foglio portano alla sottoscheda
+    const typesBar = (i: number, tap = false) => <HoldBars targets={typeBars[i]} who={members[i].species} mon={members[i].species} of={ofTypes} quiet={quiet(i)}
+      onPick={tap && ctx.openFocus ? ((band: HoldPiece) => { setSheet(null); pick('coverageTypes', 'dtypes', i)!(band); }) : undefined} pickPlace={t('detail.coverageTypes')} />;
+    const metaBar = (i: number, tap = false) => <HoldBars targets={metaBars[i]} who={members[i].species} mon={members[i].species} of={ofMeta} quiet={quiet(i)}
+      onPick={tap && ctx.openFocus ? ((band: HoldPiece) => { setSheet(null); pick('coverageMeta', 'dmeta', i)!(band); }) : undefined} pickPlace={t('detail.coverageMeta')} />;
     const open = sheet === null ? null : members[sheet] ?? null;
     return (
       <div className="def-general og-cards-frame">
@@ -219,6 +221,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></div>
           {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></div>}
         </section>
+        <CardsLegend side="def" pieces={[['held', '3HKO+'], ['two', '2HKO'], ['ohko', 'OHKO']]} />
         <ul className="og-cards" aria-label={t('detail.member')}>
           {members.map((m, i) => {
             const set = setOf(ctx.team, m.species);
@@ -251,13 +254,13 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               sub={t('ddetail.shareTitle', { n: signed(shares[sheet].points) })} className="og-sheet">
               <section className="og-sheet-sec">
                 <h4>{t('detail.coverageTypes')}</h4>
-                {typesBar(sheet)}
+                {typesBar(sheet, true)}
                 <WorstHits hits={worstTypes(sheet)} />
               </section>
               {meta && (
                 <section className="og-sheet-sec">
                   <h4>{t('detail.coverageMeta')}</h4>
-                  {metaBar(sheet)}
+                  {metaBar(sheet, true)}
                   <WorstHits hits={worstMeta(sheet)} />
                 </section>
               )}

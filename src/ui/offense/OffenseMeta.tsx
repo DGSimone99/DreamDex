@@ -14,6 +14,7 @@ import { Sprite } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
 import { AnalysisSheet } from '../AnalysisSheet';
 import { KoBadges, koBands } from './KoBadges';
+import { CardsLegend, countClass } from '../CardsLegend';
 import { TypeHitTip } from './TypeHitTip';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
@@ -33,10 +34,10 @@ const bucket = (pct: number): Bucket => (pct >= 100 ? 'ohko' : pct >= 50 ? 'two'
 const TAG: Record<Bucket, string> = { ohko: 'OHKO', two: '2HKO', three: '3HKO', none: '' };
 const KO_ORDER: Bucket[] = ['ohko', 'two', 'three'];
 /** I PS che restano al bersaglio dopo il colpo, coi colori del gioco: verde oltre metà, giallo fino a 1/5, rosso sotto. */
-export function HpLeft({ pct }: { pct: number }) {
+export function HpLeft({ pct, band }: { pct: number; /** Offesa: il colore dice la fascia del tuo colpo (verde 2HKO, giallo 3HKO, grigio sotto), non i PS dell'avversario. */ band?: Bucket }) {
   const t = useT();
   const left = Math.max(0, 100 - pct);
-  const tone = left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
+  const tone = band ? (band === 'ohko' || band === 'two' ? 'good' : band === 'three' ? 'warn' : 'quiet') : left > 50 ? 'good' : left > 20 ? 'warn' : 'bad';
   return (
     <span className="cm-hp" aria-hidden="true" data-hp={t('common.hpBar')}>
       <span className="cm-hp-bar"><i className={tone} style={{ width: `${left}%` }} /></span>
@@ -124,7 +125,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         {/* In un colpo: il timbro KO al posto del numero; altrimenti il danno e sotto la barra dei PS che restano */}
         {k === 'ohko'
           ? <span className="cm-ko win" aria-hidden="true">KO</span>
-          : <><span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} /></>}
+          : <><span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} band={k} /></>}
         {k === 'ohko' && <span className="visually-hidden">{c.pct}%</span>}
         {TAG[k] && <span className="visually-hidden"> {TAG[k]}</span>}
         {up && <span className="visually-hidden"> setup {c.setupPct}%</span>}
@@ -268,11 +269,12 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         <p id={summaryId} hidden>{open.length ? t('sr.cm.offense', { list: open.join(', ') }) : t('sr.cm.offenseNone')}</p>
         <section className="og-hero" aria-label={t('odetail.gen.total')}>
           <span className="og-plate">{t('odetail.gen.total')}</span>
-          <p className="og-hero-line"><b className={covered < all.length ? 'bad' : 'full'}>{covered}</b><small>/{all.length}</small> {t('odetail.cards.threatsCovered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
+          <p className="og-hero-line"><b className={countClass(covered, all.length)}>{covered}</b><small>/{all.length}</small> {t('odetail.cards.threatsCovered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
         </section>
         <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band={focus.band} onClear={ctx.clearFocus} />
-          : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} /> : null}</div>
+          : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
+          : <CardsLegend text={t('odetail.cards.threatBar')} pieces={[['ohko', 'OHKO'], ['two', '2HKO']]} />}</div>
         <ul className="og-cards cm-cards" aria-label={t('detail.coverageMeta')}>
           {visible.map(r => {
             const types = battleSpecies(r.set)?.types ?? [];
@@ -311,10 +313,10 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                 return (
                   <li key={`${names[m]}-${m}`} className={`ct-sheet-row cm-sheet-row ko-${k}${ctx.effOnly && !tag ? ' eff-dim' : ''}`}>
                     <PokemonIcon name={names[m]} />
-                    <span className="ct-sheet-name">{names[m]}</span>
+                    <span className="ct-sheet-name">{names[m]}{known && c!.move && <small className="ct-sheet-sub">{gameName('move', c!.move, lang)}</small>}</span>
                     {known
                       ? <>
-                        {k === 'ohko' ? <span className="cm-ko small win">KO</span> : <HpLeft pct={c!.pct} />}
+                        {k === 'ohko' ? <span className="cm-ko small win">KO</span> : <HpLeft pct={c!.pct} band={k} />}
                         <EffTag label={tag} side="offense" />
                         <span className="ct-sheet-pct">{c!.pct}<i>%</i></span>
                       </>

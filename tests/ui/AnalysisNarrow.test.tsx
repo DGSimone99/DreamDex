@@ -74,7 +74,7 @@ describe('Offesa sullo schermo stretto', () => {
     expect(sheet.querySelectorAll('.cm-sheet-row')).toHaveLength(2);
   });
 
-  it('Difesa a carte come in Offesa: Generale, tessere dei tipi, carte delle minacce col foglio; Recupero una riga per voce', async () => {
+  it('Difesa a carte come in Offesa: Generale, tessere dei tipi, carte delle minacce col foglio; Recupero col team in cima e un membro per riga', async () => {
     const user = userEvent.setup();
     view('defense');
     expect(screen.getByRole('region', { name: 'Team Coverage' })).toBeInTheDocument();
@@ -95,9 +95,12 @@ describe('Offesa sullo schermo stretto', () => {
     expect(screen.getByRole('dialog', { name }).querySelectorAll('.cm-sheet-row')).toHaveLength(2);
     await user.keyboard('{Escape}');
     await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
-    const sus = screen.getByRole('table', { name: 'Difesa: Recupero' });
-    expect(sus).toHaveClass('sus-stack');
-    expect([...sus.querySelectorAll('tbody.og-stack-mon')[0].querySelectorAll('.og-bar-label')].map(th => th.textContent)).toEqual(['Perde', 'Recupera', 'Netto']);
+    // Recupero: la risposta del team in cima, poi un membro per riga con solo le fonti vere
+    expect(screen.getByRole('region', { name: 'Recupero del team' })).toHaveTextContent(/\/2 membri si curano/);
+    const sus = document.querySelectorAll('.sus-cards > .sus-card');
+    expect(sus).toHaveLength(2);
+    expect(sus[0].querySelector('.sus-card-name')).toHaveTextContent('Great Tusk');
+    expect(sus[0].querySelector('.sus-card-net')).toHaveTextContent(/Netto/);
   });
 
   it('Velocità a carte: la riga del team con la legenda a parole, una carta per membro (Vel, % del meta superato) che apre i rivali; Distortozona spenta se nessuno la usa', async () => {

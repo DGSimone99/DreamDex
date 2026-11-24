@@ -1,5 +1,6 @@
 import { useId, useState, type CSSProperties, type FocusEvent } from 'react';
 import { AnalysisSheet } from '../AnalysisSheet';
+import { countClass } from '../CardsLegend';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { HELD_LEVEL } from '../../engine/coach';
 import { dummyStats, holdBand, type HoldBand } from '../../engine/defense';
@@ -158,7 +159,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
         <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
         <section className="og-hero" aria-label={t('detail.level')}>
           <span className="og-plate">{t('detail.level')}</span>
-          <p className="og-hero-line"><b className={weak.length ? 'bad' : 'full'}>{held}</b><small>/{rows.length}</small> {t('ddetail.tiles.held')}</p>
+          <p className="og-hero-line"><b className={countClass(held, rows.length)}>{held}</b><small>/{rows.length}</small> {t('ddetail.tiles.held')}</p>
         </section>
         <ul className="ct-tiles" aria-label={t('detail.coverageTypes')} aria-describedby={summaryId}>
           {rows.map((row, i) => {

@@ -203,3 +203,54 @@
 /* L'interruttore di Distortozona spento e fermo, con accanto il perché */
 .eff-switch:disabled { opacity: 0.5; cursor: default; }
 .panel-switch-note { margin-left: var(--sp-4); font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); }
+
+/* ── Giro 2 della critica ── */
+/* La legenda corta delle barre sotto la riga del team (i pezzi nelle carte non hanno etichetta) */
+.cards-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-6); margin: 0; font: 500 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
+.cards-legend > span { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.cards-legend .cards-legend-text { color: var(--text); }
+.cards-legend i { width: 14px; height: 10px; border-radius: 3px 1px; }
+.cards-legend.off i.cl-ohko { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
+.cards-legend.off i.cl-two { background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
+.cards-legend.off i.cl-rest { background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
+.cards-legend.def i.cl-held { background: color-mix(in srgb, var(--good) 35%, var(--panel)); }
+.cards-legend.def i.cl-two { background: color-mix(in srgb, var(--warn) 35%, var(--panel)); }
+.cards-legend.def i.cl-ohko { background: color-mix(in srgb, var(--bad) 35%, var(--panel)); }
+.cards-legend i.kob-tri { width: 9px; height: 9px; border-radius: 0; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.cm-cards-bar .cards-legend { flex: 1 1 100%; }
+/* Il conto grande giallo da 85% (rosso solo sotto) */
+.og-hero-line b.warn { font-size: 30px; color: var(--warn); }
+/* Offesa: la barra dei PS nel colore della fascia del tuo colpo; sotto il 3HKO grigia */
+.cm-hp-bar i.quiet { background: var(--faint); }
+/* Nel foglio le barre portano alla sottoscheda: pezzi alti (40 px) da toccare col dito */
+.og-sheet-sec .kob-row > .kob { height: 40px; }
+/* Nei fogli delle minacce la mossa del colpo sotto il nome */
+.ct-sheet-name { display: grid; }
+.ct-sheet-sub { font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Le tessere dei tipi: la mini icona dentro la tessera (prima sporgeva di 2 px) */
+.ct-tile-best { right: 3px; }
+.ct-tile-best .mon-icon { margin-right: 0; }
+
+/* ── Recupero a carte: la risposta del team in cima, poi un membro per riga (nome, valore, netto, solo le fonti vere) ── */
+.sus-hero-rocks { margin: 0; font: 500 var(--fs-small)/1.35 var(--ui); color: var(--muted); }
+.sus-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
+@container (min-width: 560px) { .sus-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sus-card { display: grid; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6) var(--sp-6); border-radius: var(--alt-r); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); }
+.sus-card-head { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.sus-card-head .mon-icon { flex: none; margin: -4px -4px -6px -6px; }
+.sus-card-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 italic var(--fs-title-s)/1.1 var(--display); }
+.sus-card-types { display: inline-flex; gap: 2px; }
+.sus-card-types .ti-sq { width: 16px; height: 16px; }
+.sus-card-head .ct-pill { margin-left: auto; }
+.sus-card-net { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: var(--sp-3); }
+.sus-card-net small { font: 700 var(--fs-label)/1 var(--display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.sus-card-pills { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.sus-pill { display: inline-flex; align-items: baseline; gap: var(--sp-3); padding: 5px var(--sp-4); border-radius: 6px 2px; background: var(--raised); font: 500 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
+.sus-pill b { font: 800 italic var(--fs-small)/1 var(--display); }
+.sus-pill em { font-style: normal; color: var(--faint); }
+.sus-pill.good { background: var(--good-bg); color: var(--text); }
+.sus-pill.good b { color: var(--good); }
+.sus-pill.bad { background: var(--bad-bg); color: var(--text); }
+.sus-pill.bad b { color: var(--bad); }
+.og-hero-line b.plain { font-size: 30px; color: var(--text); }
+.sus-cards { align-items: start; }

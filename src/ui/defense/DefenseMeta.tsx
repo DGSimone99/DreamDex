@@ -1,5 +1,6 @@
 import { useId, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactNode } from 'react';
 import { AnalysisSheet } from '../AnalysisSheet';
+import { CardsLegend, countClass } from '../CardsLegend';
 import { TypeIcons } from '../typeIcons';
 import { HoldBars, type HoldTarget } from './HoldBars';
 import { battleName, battleSpecies } from '../../engine/dex';
@@ -255,11 +256,12 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         <p id={summaryId} hidden>{open.length ? t('sr.cm.defense', { list: open.join(', ') }) : t('sr.cm.defenseNone')}</p>
         <section className="og-hero" aria-label={t('odetail.gen.total')}>
           <span className="og-plate">{t('odetail.gen.total')}</span>
-          <p className="og-hero-line"><b className={allHeld < all.length ? 'bad' : 'full'}>{allHeld}</b><small>/{all.length}</small> {t('ddetail.cards.threatsHeld')}</p>
+          <p className="og-hero-line"><b className={countClass(allHeld, all.length)}>{allHeld}</b><small>/{all.length}</small> {t('ddetail.cards.threatsHeld')}</p>
         </section>
         <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
-          : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} /> : null}</div>
+          : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
+          : <CardsLegend side="def" text={t('ddetail.cards.threatBar')} pieces={[['held', '3HKO+'], ['two', '2HKO'], ['ohko', 'OHKO']]} />}</div>
         <ul className="og-cards cm-cards" aria-label={t('detail.coverageMeta')}>
           {visible.map(r => {
             const types = battleSpecies(r.set)?.types ?? [];
@@ -295,7 +297,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                 return (
                   <li key={`${names[m] ?? m}-${m}`} className={`ct-sheet-row cm-sheet-row dt-sheet-row ${band ? HOLD_BANDS[band].cls : 'hold-none'}${ctx.effOnly && !tag ? ' eff-dim' : ''}`}>
                     <PokemonIcon name={names[m] ?? ctx.team[m].species} />
-                    <span className="ct-sheet-name">{names[m] ?? ctx.team[m].species}</span>
+                    <span className="ct-sheet-name">{names[m] ?? ctx.team[m].species}{(() => { const mv = c === null ? null : c === 'ko' ? openRow.hits?.[knownIndex[m]]?.move : c.move; return mv ? <small className="ct-sheet-sub">{mv}</small> : null; })()}</span>
                     {c === null ? <span className="ct-sheet-none">—</span>
                       : c === 'ko' ? <><span className="cm-ko small">KO</span><EffTag label={tag} side="defense" /><span className="ct-sheet-pct" /></>
                       : <><HpLeft pct={c.pct} /><EffTag label={tag} side="defense" /><span className="ct-sheet-pct">{c.pct}<i>%</i></span></>}
