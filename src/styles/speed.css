@@ -118,7 +118,8 @@
 .sp-rival-name { display: flex; align-items: center; gap: var(--sp-3); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .sp-row.sp-boosted .sp-rival-name { font-style: italic; }
 /* La versione con lo strumento non sembra un doppione: accanto all'icona la parola (Sciarpa, Capsula) */
-.sp-rival-sp { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Il nome accanto alla parola dello strumento: se non ci sta va a capo (sui trattini), non si taglia */
+.sp-rival-sp { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.2; }
 .sp-rival-item { flex: none; padding: 1px var(--sp-2); border-radius: 3px; background: var(--raised); font: 600 var(--fs-label)/1.2 var(--ui); font-style: normal; color: var(--muted); }
 .sp-row .item-icon { flex: none; display: inline-block; }
 .sp-rival-speed { text-align: right; }

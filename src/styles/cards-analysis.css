@@ -148,6 +148,8 @@
 /* Il foglio di una minaccia: per ogni membro i PS che le restano dopo il suo colpo (o il timbro KO) */
 .cm-sheet-row { grid-template-columns: 40px minmax(0, 1fr) 110px 26px 56px; }
 .cm-sheet-row .cm-hp { width: 100%; margin: 0; }
+/* Sul telefono stretto la barra dei PS cede spazio al nome e alla mossa sotto ("Scontro Frontale" intero a 360 px) */
+@media (max-width: 380px) { .cm-sheet-row { grid-template-columns: 40px minmax(0, 1fr) 88px 26px 56px; } }
 .cm-sheet-row .cm-ko { justify-self: start; }
 .cm-sheet-row.ko-ohko .ct-sheet-pct { color: color-mix(in srgb, var(--good) 70%, white); }
 .cm-sheet-row.ko-two .ct-sheet-pct { color: color-mix(in srgb, var(--good) 55%, var(--text)); }
@@ -274,6 +276,9 @@
    apre sul contenitore (il pulsante spento non riceve il puntatore) */
 .sp-room-off { margin-left: auto; display: inline-flex; cursor: help; }
 .sp-room-off .eff-switch { min-height: 0; pointer-events: none; font-size: var(--fs-caption); }
+/* Spenta si vede dalla levetta smorzata; la parola resta leggibile (Faint pieno, non mezza opacità) */
+.sp-room-off .eff-switch:disabled { opacity: 1; color: var(--faint); }
+.sp-room-off .eff-switch:disabled .eff-switch-track { opacity: 0.5; }
 
 /* ── Giro 2 della critica ── */
 /* La legenda corta delle barre sotto la riga del team (i pezzi nelle carte non hanno etichetta) */
