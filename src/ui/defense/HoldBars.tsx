@@ -109,7 +109,7 @@ export function HoldBars({ targets, who, mon, of, alarm = false, onPick, pickPla
           <FloatTip rect={tip.anchor!.rect} tone={key === 'held' ? 'var(--good)' : key === 'two' ? 'var(--warn)' : 'var(--bad)'} className="kot">
             <TipHead {...lead} title={who} sub={<><KoBadge side="def" band={key} />{t(`hold.say.${key}`)}</>}
               num={<>{by(key).length}<small>/{total}</small></>} qualifier={of} />
-            {/* "Regge" in due gruppi: meno di un quarto dei PS (4HKO+) e meno di metà (3HKO). I pallini hanno i colori delle
+            {/* "Regge" in due gruppi: meno di un terzo dei PS (4HKO+) e meno di metà (3HKO). I pallini hanno i colori delle
                 caselle di Coverage (verde, verde chiaro, giallo, rosso); quello del 2HKO un filo più pieno, se no è piccolo e spento */}
             {(key === 'held' ? (['four', 'three'] as const) : [key]).map(b => {
               const items = targets.filter(x => x.band === b);

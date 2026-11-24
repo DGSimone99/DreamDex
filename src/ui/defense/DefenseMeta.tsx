@@ -27,7 +27,7 @@ import { HpLeft, HpLegend } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite, typeColor } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
-import { KoBadge } from '../KoBadge';
+import { KO_TAG, KoBadge } from '../KoBadge';
 import { TipDmg, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import type { DmgRange } from '../dmgText';
 import { MemberMon } from './MemberMon';
@@ -40,7 +40,11 @@ type Holder = Row['heldBy'][number];
 const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 /** Le soglie con un numero, coi colori e i crediti di Coverage tipi: pieno sotto un terzo dei PS, metà sotto la metà, niente
  * se lo manda KO in due colpi; KO a parte. */
-const LEGEND = [{ cls: 'hold-4', tag: '< 33%' }, { cls: 'hold-3', tag: '33–49%' }, { cls: 'hold-2', tag: '50–99%' }] as const;
+/**
+ * Le fasce della legenda coi nomi della Generale (KO_TAG) e il danno fra parentesi: 4HKO+ sotto un terzo dei PS, 3HKO
+ * fino a metà, 2HKO da metà in su (holdBand), poi il timbro OHKO. Dalla migliore alla peggiore, come la barra.
+ */
+const LEGEND = [{ cls: 'hold-4', band: 'four', pct: 'under' }, { cls: 'hold-3', band: 'three', pct: '33–49%' }, { cls: 'hold-2', band: 'two', pct: '50–99%' }] as const;
 
 /**
  * Per ogni posto del team, cosa prende dal colpo migliore della minaccia: `null` se il motore non conosce il membro,
@@ -124,8 +128,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     if (c === 'ko') {
       return (
         <td key={key} className={hover.cls(k, `rob-cell hold-ohko dm-cell${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close} onFocus={focusIn} onBlur={tip.close}>
-          <span className="cm-ko" aria-hidden="true">KO</span>
-          <span className="visually-hidden">{row.species}: KO</span>
+          <span className="cm-ko" aria-hidden="true">OHKO</span>
+          <span className="visually-hidden">{row.species}: OHKO</span>
           <EffTag label={tag} side="defense" />
         </td>
       );
@@ -311,7 +315,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                     <PokemonIcon name={names[m] ?? ctx.team[m].species} />
                     <span className="ct-sheet-name">{names[m] ?? ctx.team[m].species}{(() => { const mv = c === null ? null : c === 'ko' ? openRow.hits?.[knownIndex[m]]?.move : c.move; return mv ? <small className="ct-sheet-sub">{gameName('move', mv, lang)}</small> : null; })()}</span>
                     {c === null ? <span className="ct-sheet-none">—</span>
-                      : c === 'ko' ? <><span className="cm-ko small">KO</span><EffTag label={tag} side="defense" /><span className="ct-sheet-pct" /></>
+                      : c === 'ko' ? <><span className="cm-ko small">OHKO</span><EffTag label={tag} side="defense" /><span className="ct-sheet-pct" /></>
                       : <><HpLeft pct={c.pct} /><EffTag label={tag} side="defense" /><span className="ct-sheet-pct">{c.pct}<i>%</i></span></>}
                   </li>
                 );
@@ -359,10 +363,11 @@ export function ThreatHitTip({ row, name, hit, mult, koHit }: { row: Row; name: 
 }
 
 function DefenseMetaLegend() {
+  const t = useT();
   return (
     <>
-      <span className="cm-ko small">KO</span>
-      {LEGEND.map(l => <span key={l.cls} className={`hold-chip ${l.cls}`}>{l.tag}</span>)}
+      {LEGEND.map(l => <span key={l.cls} className={`hold-chip ${l.cls}`}>{KO_TAG[l.band]} <small>({l.pct === 'under' ? t('ddetail.legend.under33') : l.pct})</small></span>)}
+      <span className="cm-ko small">OHKO</span>
     </>
   );
 }

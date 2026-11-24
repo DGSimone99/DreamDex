@@ -339,7 +339,7 @@ A dark, cool ground with two saturated version colours that swap per game, plus 
 ### Tertiary (status only)
 - **Alarm Red** (bad on bad-bg): legality and serious problems, banned tags, falling values, destructive hovers, OHKO taken in Difesa.
 - **Caution Yellow** (warn on warn-bg): "check this", minor problems, the C grade, 2HKO taken in Difesa.
-- **Pitch Green** (good on good-bg): strengths and gains, the A grade, rising values, hits that hold in Difesa, KOs dealt in Offesa (the Offesa KO stamp is dark green, the Difesa one red).
+- **Pitch Green** (good on good-bg): strengths and gains, the A grade, rising values, hits that hold in Difesa, KOs dealt in Offesa (the Offesa KO stamp is dark green, the Difesa one red and written "OHKO"). In Difesa Coverage meta, table and threat sheet, the legend names the bands like the Generale, best to worst, with the damage in brackets: "4HKO+ (sotto il 33%)", "3HKO (33–49%)", "2HKO (50–99%)", then the red OHKO stamp; each item stays on one line.
 - **Room Violet** (room, room-ink, room-soft): Trick Room only, in the Velocità tab, the same in every palette.
 
 ### Neutral
