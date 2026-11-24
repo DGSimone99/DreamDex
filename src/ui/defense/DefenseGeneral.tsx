@@ -179,7 +179,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
   // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta
   const slotOf = (i: number) => ctx.team.findIndex(set => battleName(set) === members[i].species);
-  // Il conto di un attaccante resta neutro: reggere poco non è un difetto per lui (la riga del team no)
+  // Un attaccante: "· attacca" accanto al membro (reggere poco non è il suo lavoro)
   const quiet = (i: number) => familyAt(ctx, slotOf(i)) === 'attack';
   // Clic su un pezzo di Tipi o Meta: apre la sottoscheda con la riga del membro e quei bersagli accesi, come nell'Offesa
   const pick = (key: string, kind: 'dtypes' | 'dmeta', i: number) => (ctx.openFocus
@@ -208,9 +208,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   if (cards) {
     const grade = gradeFor(defense.value, lang);
     // Come nell'Offesa: nelle carte le barre si guardano soltanto, nel foglio portano alla sottoscheda
-    const typesBar = (i: number, tap = false) => <HoldBars targets={typeBars[i]} who={members[i].species} mon={members[i].species} of={ofTypes} quiet={quiet(i)}
+    const typesBar = (i: number, tap = false) => <HoldBars targets={typeBars[i]} who={members[i].species} mon={members[i].species} of={ofTypes}
       onPick={tap && ctx.openFocus ? ((band: HoldPiece) => { setSheet(null); pick('coverageTypes', 'dtypes', i)!(band); }) : undefined} pickPlace={t('detail.coverageTypes')} />;
-    const metaBar = (i: number, tap = false) => <HoldBars targets={metaBars[i]} who={members[i].species} mon={members[i].species} of={ofMeta} quiet={quiet(i)}
+    const metaBar = (i: number, tap = false) => <HoldBars targets={metaBars[i]} who={members[i].species} mon={members[i].species} of={ofMeta}
       onPick={tap && ctx.openFocus ? ((band: HoldPiece) => { setSheet(null); pick('coverageMeta', 'dmeta', i)!(band); }) : undefined} pickPlace={t('detail.coverageMeta')} />;
     const open = sheet === null ? null : members[sheet] ?? null;
     return (
@@ -238,7 +238,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 </button>
                 <span className={`og-card-tag${shares[i].points === 0 ? ' zero' : shares[i].points < 0 ? ' neg' : ''}`}>
                   {share(m, i)}
-                  {calm && <small>{t('ddetail.cards.attacker')}</small>}
+                  {calm && <small>· {t('ddetail.cards.attacker')}</small>}
                 </span>
                 <TypeIcons types={types} className="og-card-types" />
                 <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typesBar(i)}</div>
@@ -303,11 +303,11 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <tbody key={`${m.species}-${i}`} className={`og-stack-mon${i % 2 === 0 ? ' og-alt' : ''}`}>
                 {i > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>}
                 <tr className="og-mon-row">
-                  <th scope="rowgroup" colSpan={2}><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats /></th>
+                  <th scope="rowgroup" colSpan={2}><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>{quiet(i) ? <span className="role-note">· {t('ddetail.cards.attacker')}</span> : undefined}</MemberMon></th>
                   <td>{share(m, i)}</td>
                 </tr>
-                {bars(t('kob.headTypes'), <HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />, 'types')}
-                {meta && bars(t('kob.headMeta'), <HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />, 'meta')}
+                {bars(t('kob.headTypes'), <HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />, 'types')}
+                {meta && bars(t('kob.headMeta'), <HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />, 'meta')}
               </tbody>
             ))}
             <tbody className="og-stack-mon og-stack-team">
@@ -341,11 +341,11 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             {members.map((m, i) => (
               <tr key={`${m.species}-${i}`}>
                 <th scope="row">
-                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
+                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>{quiet(i) ? <span className="role-note">· {t('ddetail.cards.attacker')}</span> : undefined}</MemberMon>
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team, solo il numero: i pezzi e il recupero nel tooltip */}
                   {(() => {

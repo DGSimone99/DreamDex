@@ -1338,7 +1338,7 @@ export const en = {
   'ddetail.tiles.bestHolder': "best holder",
   'ddetail.cards.threatsHeld': "threats the team holds",
   'ddetail.cards.heldBy': "Held by {n}/{total}",
-  'ddetail.cards.attacker': "attacker, not a tank",
+  'ddetail.cards.attacker': "attacker",
   'odetail.cards.noKo': "no KO",
   'odetail.cards.threatBar': "Bar: how many of yours KO it",
   'ddetail.cards.threatBar': "Bar: how many of yours it KOs",

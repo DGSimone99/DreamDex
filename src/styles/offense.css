@@ -159,19 +159,20 @@
    colore, tooltip e nome per i lettori di schermo) */
 .kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 0; container: kobrow / inline-size; }
 /* Il conto a destra della barra, "11/18": staccato dai pezzi (niente fondo né inclinazione), il numero grande in corsivo
-   col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); il colore dice quanto copre */
+   col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); i colori solo sul conto del team
+   (countClass: full, warn, bad), quello di un membro resta neutro (testo, lineetta grigia) */
 .kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: var(--sp-2); min-width: 42px; color: var(--c); cursor: default; }
 .kob-count-num { display: inline-flex; align-items: baseline; justify-content: flex-start; gap: 1px; font-variant-numeric: tabular-nums; }
 .kob-count-num > b { font: 800 italic var(--fs-plate)/1 var(--display); }
 .kob-count-line { position: relative; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--c) 18%, transparent); overflow: hidden; }
 .kob-count-line::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--r, 0) * 100%); border-radius: 2px; background: var(--c); box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
-.kob-count.full, .kob-count.good { --c: var(--good); }
+.kob-count:not(.full, .warn, .bad) .kob-count-line::before { background: var(--muted); box-shadow: none; }
+.kob-count.full { --c: var(--good); }
 .kob-count.full .kob-count-num > b { color: color-mix(in srgb, var(--good) 70%, white); }
 .kob-count.warn { --c: var(--warn); }
 .kob-count.bad { --c: var(--bad); }
-.kob-count.zero { --c: var(--faint); }
-/* Neutro: il conto di un muro nell'Offesa, di un attaccante nella Difesa (non è il suo lavoro); la riga del team mai */
-.kob-count.quiet { --c: var(--muted); }
+/* "· muro" / "· attacca" dopo il membro che non fa quel lavoro (un muro nell'Offesa, un attaccante nella Difesa): piccolo, grigio */
+.role-note { font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); white-space: nowrap; }
 /* I pezzi con gli angoli alternati delle mosse (Pokémon Champions), senza bordo: OHKO pieno, 2HKO tenue, il resto grigio */
 .kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); height: 26px; padding: 0 var(--sp-6) 0 var(--sp-5); border: 1px solid transparent; border-radius: var(--alt-r-sm); overflow: hidden; cursor: help;
   transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }

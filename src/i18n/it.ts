@@ -1340,7 +1340,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.tiles.bestHolder': "lo regge meglio",
   'ddetail.cards.threatsHeld': "minacce rette dal team",
   'ddetail.cards.heldBy': "La reggono {n}/{total}",
-  'ddetail.cards.attacker': "attacca, non incassa",
+  'ddetail.cards.attacker': "attacca",
   'odetail.cards.noKo': "non KO",
   'odetail.cards.threatBar': "Barra: quanti dei tuoi la mandano KO",
   'ddetail.cards.threatBar': "Barra: quanti dei tuoi manda KO",

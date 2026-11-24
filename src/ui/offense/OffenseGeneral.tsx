@@ -132,15 +132,15 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
   if (cards) {
     const grade = value === null ? null : gradeFor(value, lang);
     // Nelle carte le barre sono basse (20 px): solo da guardare, la carta si apre toccandola; nel foglio, alte, portano alla sottoscheda
-    const typeRow = (slot: number, m: MemberOffense, quiet: boolean, name: string, pick = false) => <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
+    const typeRow = (slot: number, m: MemberOffense, name: string, pick = false) => <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
       onPick={pick && ctx.openFocus ? (band => { setSheet(null); ctx.openFocus!('types', { kind: 'types', slot, band }); }) : undefined} pickPlace={t('detail.coverageTypes')} />;
-    const metaRow = (slot: number, m: MemberOffense, quiet: boolean, name: string, pick = false) => <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
+    const metaRow = (slot: number, m: MemberOffense, name: string, pick = false) => <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
       onPick={pick && ctx.openFocus ? (band => { setSheet(null); ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }); }) : undefined} pickPlace={t('detail.coverageMeta')} />;
     const open = sheet === null ? null : (() => {
       const set = ctx.team[sheet];
       const index = slots[sheet];
       if (!set || index === null) return null;
-      return { set, slot: sheet, name: battleSpecies(set)?.name ?? set.species, m: members[index], s: shares[index], quiet: familyAt(ctx, sheet) === 'wall' };
+      return { set, slot: sheet, name: battleSpecies(set)?.name ?? set.species, m: members[index], s: shares[index] };
     })();
     return (
       <div className="off-frame off-general og-cards-frame">
@@ -173,11 +173,11 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
                 </button>
                 <span className={`og-card-tag${s && s.points === 0 ? ' zero' : ''}`}>
                   {s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}
-                  {quiet && <small>{t('sdetail.wall')}</small>}
+                  {quiet && <small>· {t('sdetail.wall')}</small>}
                 </span>
                 <TypeIcons types={types} className="og-card-types" />
-                {m && <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typeRow(slot, m, quiet, name)}</div>}
-                {m && meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span>{metaRow(slot, m, quiet, name)}</div>}
+                {m && <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typeRow(slot, m, name)}</div>}
+                {m && meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span>{metaRow(slot, m, name)}</div>}
               </li>
             );
           })}
@@ -187,14 +187,14 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
             sub={t('odetail.gen.shareTitle', { n: open.s.points })} className="og-sheet">
             <section className="og-sheet-sec">
               <h4>{t('detail.coverageTypes')}</h4>
-              {typeRow(open.slot, open.m, open.quiet, open.name, true)}
+              {typeRow(open.slot, open.m, open.name, true)}
               <p className="og-sheet-cap">{t('kob.movesCaption')}</p>
               <MoveChips shares={typeMoves(open.m, open.slot)} of={ofTypes} total={18} />
             </section>
             {meta && (
               <section className="og-sheet-sec">
                 <h4>{t('detail.coverageMeta')}</h4>
-                {metaRow(open.slot, open.m, open.quiet, open.name, true)}
+                {metaRow(open.slot, open.m, open.name, true)}
                 <p className="og-sheet-cap">{t('kob.movesCaption')}</p>
                 <MoveChips shares={metaMoves(open.slot)} of={ofMeta} total={nMeta} />
               </section>
@@ -237,12 +237,12 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
                 <tbody key={`${name}-${slot}`} className={`og-stack-mon${slot % 2 === 0 ? ' og-alt' : ''}`}>
                   {slot > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>}
                   <tr className="og-mon-row">
-                    <th scope="rowgroup" colSpan={2}><MemberMon name={name} set={set} stats="offense" /></th>
+                    <th scope="rowgroup" colSpan={2}><MemberMon name={name} set={set} stats="offense">{quiet ? <span className="role-note">· {t('sdetail.wall')}</span> : undefined}</MemberMon></th>
                     <td>{s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}</td>
                   </tr>
-                  {m && bars(t('kob.headTypes'), <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
+                  {m && bars(t('kob.headTypes'), <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
                     onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} pickPlace={t('detail.coverageTypes')} />, 'types')}
-                  {m && meta && bars(t('kob.headMeta'), <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
+                  {m && meta && bars(t('kob.headMeta'), <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
                     onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} pickPlace={t('detail.coverageMeta')} />, 'meta')}
                 </tbody>
               );
@@ -282,18 +282,18 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
               const index = slots[slot];
               const m = index === null ? null : members[index];
               const s = index === null ? null : shares[index];
-              // Il conto di un muro resta neutro: colpire poco non è un difetto per lui (la riga del team no)
+              // Un muro: "· muro" accanto alle statistiche (colpire poco non è il suo lavoro)
               const quiet = familyAt(ctx, slot) === 'wall';
               return (
                 // Passando sulla riga si accende anche la carta del membro nel team in alto
                 <tr key={`${name}-${slot}`} onMouseEnter={() => linkTeamCard(slot)} onMouseLeave={() => linkTeamCard(null)}>
-                  <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
+                  <th scope="row"><MemberMon name={name} set={set} stats="offense">{quiet ? <span className="role-note">· {t('sdetail.wall')}</span> : undefined}</MemberMon></th>
                   {m && s
                     ? <>
-                      <td><KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
+                      <td><KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} pickPlace={t('detail.coverageTypes')} />
                         {roomy && <MoveChips shares={typeMoves(m, slot)} of={ofTypes} total={18} />}</td>
-                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
+                      {meta && <td><KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
                         onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} pickPlace={t('detail.coverageMeta')} />
                         {roomy && <MoveChips shares={metaMoves(slot)} of={ofMeta} total={nMeta} />}</td>}
                       <td>
