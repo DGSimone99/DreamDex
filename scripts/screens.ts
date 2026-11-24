@@ -267,6 +267,17 @@ const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: h
   await wait(300);
   return true;
 } });
+// Telefono: il foglio dal basso aperto toccando la carta di un membro (Generale a carte) o una tessera / una minaccia
+const sheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), run: async p => {
+  const ok = await offenseState(sub).run!(p);
+  if (ok !== true) return ok;
+  const items = await p.$$(selector);
+  if (!items[index]) return `no ${selector}`;
+  await items[index].click();
+  await wait(500);
+  return true;
+} });
+OFFENSE_STATES['analysis-offense-card-sheet'] = sheetState(OFFENSE_SUBS.general, '.og-card-open');
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
 OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/), lang: 'en' };
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);

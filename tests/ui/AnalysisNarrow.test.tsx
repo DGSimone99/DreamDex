@@ -22,14 +22,24 @@ describe('Offesa sullo schermo stretto', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('Generale: per ogni membro il nome e quanto porta, sotto la barra Tipi e la barra Meta', () => {
+  it('Generale a carte: in cima la riga del team, poi una carta per membro (+N, nome, barre Tipi e Meta); la carta apre il foglio', async () => {
+    const user = userEvent.setup();
     view();
-    const groups = document.querySelectorAll('.og-stack-table tbody.og-stack-mon:not(.og-stack-team)');
-    expect(groups).toHaveLength(2);
-    expect(groups[0].querySelector('.og-mon-row')).toHaveTextContent('Great Tusk');
-    expect(groups[0].querySelector('.og-share-num')).toHaveTextContent(/^\+\d+$/);
-    expect([...groups[0].querySelectorAll('.og-bar-label')].map(th => th.textContent)).toEqual(['Tipi', 'Meta']);
-    expect(document.querySelector('.og-stack-team')).toHaveTextContent('Team Coverage');
+    const hero = screen.getByRole('region', { name: 'Team Coverage' });
+    expect([...hero.querySelectorAll('.og-card-label')].map(x => x.textContent)).toEqual(['Tipi', 'Meta']);
+    const cards = document.querySelectorAll('.og-cards > .og-card');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].querySelector('.og-card-name')).toHaveTextContent('Great Tusk');
+    expect(cards[0].querySelector('.og-share-num')).toHaveTextContent(/^\+\d+$/);
+    expect([...cards[0].querySelectorAll('.og-card-label')].map(x => x.textContent)).toEqual(['Tipi', 'Meta']);
+    // La parte alta della carta apre il foglio col dettaglio: le barre e le mosse; Esc lo chiude
+    await user.click(screen.getByRole('button', { name: 'Dettagli di Great Tusk' }));
+    const sheet = screen.getByRole('dialog', { name: 'Great Tusk' });
+    expect(sheet).toHaveTextContent(/Porta \+\d+ all'Offesa del team/);
+    expect([...sheet.querySelectorAll('h4')].map(h => h.textContent)).toEqual(['Coverage tipi', 'Coverage meta']);
+    expect(sheet.querySelectorAll('.mcs').length).toBe(2);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Great Tusk' })).toBeNull();
   });
 
   it('Coverage tipi girata: 18 tipi in riga, i membri in colonna, senza la colonna Team (il filo sotto il tipo dice se è coperto)', async () => {

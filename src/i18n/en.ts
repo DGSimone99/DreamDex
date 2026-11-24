@@ -1318,6 +1318,7 @@ export const en = {
   'odetail.gen.shareNote': "The members' points add up to the team's Offense",
   'odetail.gen.shareSub': "Points brought to the Offense",
   'odetail.gen.total': "Team Coverage",
+  'odetail.cards.open': "{name} details",
   'odetail.gen.metaCount': "{n}/{total} 2HKO'd",
   'odetail.cm.targets': "{n} targets",
   'odetail.cm.covered': "covered",

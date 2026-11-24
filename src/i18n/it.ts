@@ -1320,6 +1320,7 @@ export const it: Record<keyof typeof en, string> = {
   'odetail.gen.shareNote': "I punti dei membri sommati fanno l'Offesa del team",
   'odetail.gen.shareSub': "Punti portati all'Offesa",
   'odetail.gen.total': "Team Coverage",
+  'odetail.cards.open': "Dettagli di {name}",
   'odetail.gen.metaCount': "{n}/{total} KO in due colpi",
   'odetail.cm.targets': "{n} bersagli",
   'odetail.cm.covered': "coperti",

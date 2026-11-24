@@ -10,8 +10,12 @@ import { offenseSlots } from './slots';
 import { Ask, averageCols, BarHead, MetaTargets, metaText, TypeAverages, typeStatText } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
-import { useEffect, useId, type ReactNode } from 'react';
-import { useStackedTables } from '../useMediaQuery';
+import { useEffect, useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { NARROW_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
+import { gradeFor } from '../../engine/rating';
+import { AnalysisSheet } from '../AnalysisSheet';
+import { Sprite, typeColor } from '../Sprite';
+import { TypeIcons } from '../typeIcons';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { signed } from '../defense/DefenseGeneral';
@@ -80,11 +84,14 @@ function ShareTip({ who, share, meta }: { who: string; share: MemberShare; meta:
  * numero ("+18"). In fondo, sempre allo stesso posto, la riga Team Coverage: per ogni bersaglio il membro migliore, gli
  * scoperti in rosso; nell'ultima colonna niente (il voto sta nella testata dell'area).
  */
-export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
+export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: TeamOffense; meta: boolean; ctx: AreaContext; /** Il voto dell'Offesa (la lettera nella riga del team delle carte). */ value?: number | null }) {
   const t = useT();
   const lang = useLang();
   const roomy = !!ctx.roomy;
   const phone = useStackedTables();
+  // Telefono: i membri come carte Pedana, due per riga, con la riga del team in cima (OffenseCards)
+  const cards = useMediaQuery(NARROW_TABLES_QUERY);
+  const [sheet, setSheet] = useState<number | null>(null);
   // Il "?" delle testate apre la guida dell'Offesa (una pagina sola per le tre schede, la sezione "types")
   const openGuide = ctx.guide && (() => ctx.guide!('types'));
   const { members, shares } = offense;
@@ -120,6 +127,81 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
 
   const typesAsk = <Ask label={t('guide.off.targets.typesTitle')} guide={openGuide} describe={typeStatText(averageCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAverages formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask>;
   const metaAsk = <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} /></Ask>;
+
+  if (cards) {
+    const grade = value === null ? null : gradeFor(value, lang);
+    const typeRow = (slot: number, m: MemberOffense, quiet: boolean, name: string) => <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)} quiet={quiet}
+      onPick={ctx.openFocus && (band => { setSheet(null); ctx.openFocus!('types', { kind: 'types', slot, band }); })} pickPlace={t('detail.coverageTypes')} />;
+    const metaRow = (slot: number, m: MemberOffense, quiet: boolean, name: string) => <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove} quiet={quiet}
+      onPick={ctx.openFocus && (band => { setSheet(null); ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }); })} pickPlace={t('detail.coverageMeta')} />;
+    const open = sheet === null ? null : (() => {
+      const set = ctx.team[sheet];
+      const index = slots[sheet];
+      if (!set || index === null) return null;
+      return { set, slot: sheet, name: battleSpecies(set)?.name ?? set.species, m: members[index], s: shares[index], quiet: familyAt(ctx, sheet) === 'wall' };
+    })();
+    return (
+      <div className="off-frame off-general og-cards-frame">
+        {/* La riga del team in cima: la risposta prima dei dettagli */}
+        <section className="og-hero" aria-label={teamName}>
+          <span className="og-plate">{teamName}</span>
+          {grade && <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>}
+          <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm /></div>
+          {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm /></div>}
+        </section>
+        <ul className="og-cards" aria-label={t('detail.member')}>
+          {ctx.team.map((set, slot) => {
+            const species = battleSpecies(set);
+            const name = species?.name ?? set.species;
+            const index = slots[slot];
+            const m = index === null ? null : members[index];
+            const s = index === null ? null : shares[index];
+            const quiet = familyAt(ctx, slot) === 'wall';
+            const types = species?.types ?? [];
+            return (
+              <li key={`${name}-${slot}`} className={`og-card pedana-face${quiet ? ' wall' : ''}`}
+                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+                <span className="pedana-stripe" aria-hidden="true" />
+                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
+                {/* La carta si apre toccando la parte alta (sprite e nome): sotto, le barre portano alle loro schede */}
+                <button type="button" className="og-card-open" disabled={!m} aria-label={t('odetail.cards.open', { name })} onClick={() => setSheet(slot)}>
+                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={set.species} item={set.item} size={80} /></span>
+                  <span className="og-card-name">{name}</span>
+                </button>
+                <span className={`og-card-tag${s && s.points === 0 ? ' zero' : ''}`}>
+                  {s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}
+                  {quiet && <small>{t('sdetail.wall')}</small>}
+                </span>
+                <TypeIcons types={types} className="og-card-types" />
+                {m && <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typeRow(slot, m, quiet, name)}</div>}
+                {m && meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span>{metaRow(slot, m, quiet, name)}</div>}
+              </li>
+            );
+          })}
+        </ul>
+        <div className="rob-legend og-legend" aria-hidden="true">
+          <span><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
+        </div>
+        {open && (
+          <AnalysisSheet title={open.name} lead={<Sprite species={open.set.species} item={open.set.item} size={56} />} onClose={() => setSheet(null)}
+            sub={t('odetail.gen.shareTitle', { n: open.s.points })} className="og-sheet">
+            <section className="og-sheet-sec">
+              <h4>{t('detail.coverageTypes')}</h4>
+              {typeRow(open.slot, open.m, open.quiet, open.name)}
+              <MoveChips shares={typeMoves(open.m, open.slot)} of={ofTypes} total={18} />
+            </section>
+            {meta && (
+              <section className="og-sheet-sec">
+                <h4>{t('detail.coverageMeta')}</h4>
+                {metaRow(open.slot, open.m, open.quiet, open.name)}
+                <MoveChips shares={metaMoves(open.slot)} of={ofMeta} total={nMeta} />
+              </section>
+            )}
+          </AnalysisSheet>
+        )}
+      </div>
+    );
+  }
 
   if (phone) {
     // Telefono: per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la barra Meta larghe quanto lo
