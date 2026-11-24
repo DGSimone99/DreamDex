@@ -18,7 +18,7 @@ import { speedTabs } from './speed/speedTabs';
 export type T = ReturnType<typeof useT>;
 
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode;
-  /** Le schede con l'etichetta di efficacia nelle caselle: nel pannello l'interruttore "Solo superefficaci" / "Solo efficacia". */
+  /** Le schede con l'etichetta di efficacia nelle caselle: nel pannello l'interruttore "Solo superefficaci" (Offesa e Difesa). */
   effSide?: EffSide;
   /** La Velocità con Trick Room nel team: chi lo porta. Nel pannello l'interruttore "Trick Room · chi" (le barre in Trick Room). */
   roomBy?: string[];
@@ -41,7 +41,7 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
   /** Formato scelto (la guida dell'Offesa mostra i bersagli del suo Pokédex, e Tera / mosse Z solo dove ci sono). */
   formatId?: FormatId;
   /**
-   * Interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia", in alto nel pannello della sottoscheda)
+   * Interruttore dell'efficacia ("Solo superefficaci" (Offesa e Difesa), in alto nel pannello della sottoscheda)
    * acceso: le caselle senza etichetta si spengono (restano al loro posto). Uno per area.
    */
   effOnly?: boolean;

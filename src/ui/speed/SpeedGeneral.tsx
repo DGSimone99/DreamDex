@@ -163,9 +163,10 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
       : '—';
     return { name, mon, bar };
   };
+  // La riga del team come i membri: i pezzi e il totale col % ("59 +7 66%"), lo stesso numero della carta del team sotto i 1100 px
   const teamBar = (
     <span className={`sp-bar-btn sp-team ${tone(teamParts.total)}`}>
-      <Stack {...teamParts} bare />
+      <Stack {...teamParts} />
       <span aria-hidden="true" />
     </span>
   );
@@ -365,8 +366,8 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
  * La barra a segmenti, a tutta larghezza e col lato destro inclinato come i pezzi di Offesa e Difesa: la velocità pura
  * (piena, nel colore del voto o grigia per i muri, con un filo di luce in alto), i guadagni propri (righe ciano) e quelli
  * del team (righe neutre); la riga tratteggiata a metà. A destra i pezzi piccoli ("55 +20") e il totale grande. Per i
- * membri sta in un bottone che apre il modale; nella riga del team senza il totale (`bare`: il voto della Velocità sta
- * nella testata dell'area).
+ * membri sta in un bottone che apre il modale; nella barra della carta del team senza il totale (`bare`: il numero grande sta
+ * accanto, sp-big).
  */
 function Stack({ raw, own, team, total, bare = false }: Parts & { bare?: boolean }): ReactNode {
   return (

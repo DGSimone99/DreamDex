@@ -910,7 +910,7 @@
   .coach-apply { padding: 7px var(--sp-7); }
 }
 
-/* L'interruttore dell'efficacia ("Solo superefficaci" / "Solo efficacia"): in alto a sinistra nel pannello, sulla riga
+/* L'interruttore dell'efficacia ("Solo superefficaci", Offesa e Difesa): in alto a sinistra nel pannello, sulla riga
    della legenda (alta --def-legend, sopra la tabella); la legenda a destra gli lascia il posto. Neutro e ciano, mai magenta */
 .area-panel:has(> .panel-switch) { position: relative; }
 .panel-switch { position: absolute; z-index: 2; top: 6px; left: 22px; display: flex; align-items: center; height: 20px; }

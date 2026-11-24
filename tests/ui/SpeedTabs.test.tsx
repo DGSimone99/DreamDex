@@ -54,9 +54,9 @@ describe('Velocità: una scheda a barre', () => {
     const bar = barOf('Dragonite');
     expect(bar).toHaveTextContent(`${Math.round(100 * d.raw)}`);
     expect(bar).not.toHaveAttribute('title');
-    // In fondo la riga del team, senza il numero (il voto dell'area sta nella testata)
+    // In fondo la riga del team come i membri: i pezzi e il totale col %
     expect(document.querySelector('.def-members tfoot')).toHaveTextContent(/^Velocità del team\d/);
-    expect(document.querySelector('.def-members tfoot')).not.toHaveTextContent(`${rating.speed.value}%`);
+    expect(document.querySelector('.def-members tfoot .sp-total')).toHaveTextContent(/^\d+%$/);
   });
 
   it('passando sulla barra: la scala dei rivali vicini e cosa aggiunge ogni guadagno, icona della Booster accanto al nome', async () => {

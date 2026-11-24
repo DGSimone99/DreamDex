@@ -32,7 +32,7 @@ export function effLabel(mult: number | null | undefined, side: EffSide): string
 }
 
 /**
- * Classi della casella per l'interruttore ("Solo superefficaci" / "Solo efficacia"): restano accese le caselle con
+ * Classi della casella per l'interruttore ("Solo superefficaci", Offesa e Difesa): restano accese le caselle con
  * l'etichetta (nell'Offesa i superefficaci, nella Difesa tutto quello che non è neutro), le altre si spengono.
  */
 export const effClass = (label: string | null, _side: EffSide, only: boolean | undefined) =>

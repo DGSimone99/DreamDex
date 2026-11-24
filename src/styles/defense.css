@@ -371,7 +371,7 @@
 .def-frame .ct-table .eff-tag { position: absolute; left: 3px; bottom: 2px; font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0; color: var(--text); pointer-events: none; }
 /* Sulla casella OHKO (verde acceso) bianco pieno */
 .def-frame .ct-table .ct-cell.ok-ohko .eff-tag, .def-frame .ct-table .rob-cell.ko-ohko .eff-tag { color: #fff; }
-/* "Solo superefficaci" / "Solo efficacia": le altre caselle restano al loro posto ma quasi spente */
+/* "Solo superefficaci" (Offesa e Difesa): le altre caselle restano al loro posto ma quasi spente */
 .def-frame .ct-table td { transition: opacity 0.16s ease-out, filter 0.16s ease-out; }
 .def-frame .ct-table td.eff-dim { opacity: 0.2; filter: saturate(0.1); }
 /* La colonna sotto il puntatore si accende appena; sotto l'intestazione il nome (sopra le righe, non sposta niente) */

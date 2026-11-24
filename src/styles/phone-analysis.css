@@ -52,7 +52,7 @@
   .area-subs [role='tab'] { min-height: 44px; padding: 0 var(--sp-5); justify-content: center; border: 0; border-radius: 6px; background: none; font: 600 var(--fs-small)/1 var(--display); }
   .area-subs [role='tab'][aria-selected='true'] { background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
 
-  /* L'interruttore Solo superefficaci / Solo efficacia: va sotto la testata, nel flusso, alto quanto un dito */
+  /* L'interruttore Solo superefficaci (Offesa e Difesa): va sotto la testata, nel flusso, alto quanto un dito */
   .panel-switch { position: static; height: auto; margin-bottom: var(--sp-3); }
   .panel-switch .eff-switch { min-height: 44px; }
   .area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 0; }

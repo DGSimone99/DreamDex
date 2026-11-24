@@ -213,10 +213,10 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 
-  it('"Solo efficacia" spegne solo le caselle neutre (restano al loro posto); vale anche per Coverage meta', async () => {
+  it('"Solo superefficaci" spegne solo le caselle neutre (restano al loro posto); vale anche per Coverage meta', async () => {
     const user = userEvent.setup();
     const { table } = await openTypes();
-    const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
+    const sw = screen.getByRole('switch', { name: 'Solo superefficaci' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
     // Sta in alto nel pannello, non nella tabella né nella testata dell'area; la tabella ha di nuovo "Pokémon"
     expect(sw.closest('.area-panel .panel-switch')).not.toBeNull();
@@ -233,7 +233,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     });
     expect(cells.filter(td => !td.classList.contains('eff-dim')).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
+    const metaSwitch = screen.getByRole('switch', { name: 'Solo superefficaci' });
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
     expect(metaSwitch.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();

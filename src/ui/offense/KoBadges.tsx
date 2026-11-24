@@ -7,6 +7,7 @@ import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip
 import { Sprite } from '../Sprite';
 import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { KoBadge } from '../KoBadge';
+import { countClass } from '../CardsLegend';
 import { TipGlyph, TipHead, TipSec } from '../TipHead';
 import { tileStyle, typeIconUrl } from '../typeIcons';
 
@@ -67,13 +68,15 @@ export const pieceSize = (n: number) => ({ '--n': Math.max(0, n) } as CSSPropert
  * La testata dice la fascia nella riga sotto il nome (il badge OHKO o 2HKO e la frase) e a destra il conto "5/18".
  * Coi pezzi cliccabili (`onPick`) il tooltip finisce col piede TipGo verso `pickPlace` ("Clic: vai a Coverage tipi").
  */
-export function KoBadges({ bands, who, mon, of, total, setupMove, onceName, onPick, pickPlace, alarm = false, quiet = false }: {
+export function KoBadges({ bands, who, mon, of, total, setupMove, onceName, onPick, pickPlace, alarm = false, scale = false, quiet = false }: {
   bands: KoBands; who: string; mon?: string; of: string; total: number; setupMove?: string | null; onceName?: string | null;
   /** Clic su un pezzo OHKO / 2HKO: apre il dettaglio su quei bersagli. */
   onPick?: (band: KoBand | 'rest') => void;
   /** Dove porta il clic su un pezzo (il nome della sottoscheda, es. "Coverage tipi"): il piede TipGo del tooltip e la descrizione. */
   pickPlace?: string;
   alarm?: boolean;
+  /** Con `alarm`, le carte sotto i 1100 px: il conto ha i colori dei conti delle carte (countClass: verde pieno, giallo da 85%, rosso sotto). */
+  scale?: boolean;
   /** Conto neutro (grigio, niente verde/giallo/rosso): il membro non è fatto per colpire (un muro). I pezzi restano uguali. */
   quiet?: boolean;
 }) {
@@ -111,7 +114,7 @@ export function KoBadges({ bands, who, mon, of, total, setupMove, onceName, onPi
   const ratio = total ? hit / total : 0;
   // In testata il membro con la sua sprite (un tooltip su un Pokémon), la riga del team con la spada
   const lead = mon ? { sprite: mon } : { lead: <TipGlyph icon="sword" /> };
-  const countTone = alarm ? (rest > 0 ? ' bad' : ' full') : quiet ? ' quiet' : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
+  const countTone = alarm ? (scale ? ` ${countClass(hit, total)}` : rest > 0 ? ' bad' : ' full') : quiet ? ' quiet' : hit === 0 ? ' zero' : hit === total ? ' full' : ratio >= 2 / 3 ? ' good' : ratio >= 1 / 3 ? ' warn' : ' bad';
   return (
     <span className="kob-line">
     <span className="kob-row">

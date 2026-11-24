@@ -148,8 +148,8 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
         <section className="og-hero" aria-label={teamName}>
           <span className="og-plate">{teamName}</span>
           {grade && <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>}
-          <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm /></div>
-          {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm /></div>}
+          <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm scale /></div>
+          {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm scale /></div>}
         </section>
         <CardsLegend pieces={[['ohko', 'OHKO'], ['two', '2HKO'], ['rest', t('odetail.cards.noKo')]]} setup={t('kob.legendSetupShort')} />
         <ul className="og-cards" aria-label={t('detail.member')}>

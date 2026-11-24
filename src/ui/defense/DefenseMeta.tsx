@@ -65,7 +65,7 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
  * tooltip DreamDex (minaccia, membro, mossa, efficacia, danno); sulla sprite in testata la carta del Pokémon col suo set
  * più usato e sotto un filo col colore di quanti la reggono. In fondo la riga Team Coverage, come nell'Offesa: nelle
  * colonne quanti membri la reggono del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra; in basso
- * la legenda corta. In basso a sinistra l'efficacia della mossa della minaccia quando non è neutra; "Solo efficacia"
+ * la legenda corta. In basso a sinistra l'efficacia della mossa della minaccia quando non è neutra; "Solo superefficaci"
  * (`ctx.effOnly`) spegne le caselle neutre. Col puntatore la colonna si accende.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
