@@ -225,7 +225,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
                 </button>
                 <span className="og-card-tag sp-card-tag">
                   {t('sdetail.mon.speed')} {speedStat(set).value}
-                  {wall && <small>{t('sdetail.wall')}</small>}
+                  {wall && <small>· {t('sdetail.wall')}</small>}
                 </span>
                 <TypeIcons types={types} className="og-card-types" />
                 {moves.length > 0 && (
@@ -337,6 +337,9 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
         {room
           ? <span className="sp-room-note">{t('sdetail.room.legend')}</span>
           : <>
+            {/* I numeri accanto alle barre ("55 +20 +12", "87%") sono punti in %: Base + potenziamenti + team */}
+            <span className="sp-leg-pct">{t('sdetail.legendPct')}</span>
+            <span className="area-legend-swatch"><i className="sp-leg raw" />{t('sdetail.cards.base')}</span>
             <span className="area-legend-swatch"><i className="sp-leg own" />{t('sdetail.legendOwn')}</span>
             <span className="area-legend-swatch"><i className="sp-leg team" />{t('guide.speed.gains.control')}</span>
             <span className="area-legend-swatch"><i className="sp-leg half" />{t('sdetail.legendHalf')}</span>

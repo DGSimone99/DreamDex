@@ -25,6 +25,9 @@
 @media (prefers-reduced-motion: reduce) { .sp-bar-btn svg { transition: none; } .def-members tbody tr:hover .sp-bar-btn svg { transform: none; } }
 /* La legenda: gli stessi pezzi a righe della barra, in piccolo, e la riga tratteggiata della metà */
 .area-legend-swatch i.sp-leg { border-color: transparent; border-radius: 0; box-shadow: none; }
+.area-legend-swatch i.sp-leg.raw { background: var(--warn); }
+/* Prima dei pezzi: i numeri accanto alle barre sono punti in % */
+.sp-leg-pct { color: var(--muted); }
 .area-legend-swatch i.sp-leg.own { background: repeating-linear-gradient(-60deg, var(--accent) 0 2px, color-mix(in srgb, var(--accent) 30%, var(--panel)) 2px 4px); }
 .area-legend-swatch i.sp-leg.team { background: repeating-linear-gradient(-60deg, var(--muted) 0 2px, color-mix(in srgb, var(--muted) 25%, var(--panel)) 2px 4px); }
 .area-legend-swatch i.sp-leg.half { width: 1px; background: none; border-left: 1px dashed var(--muted); }
@@ -96,6 +99,8 @@
 .sp-dlg-total.warn b { color: var(--warn); }
 .sp-dlg-total.bad b { color: var(--bad); }
 .sp-dlg-base { margin: 0; font-size: var(--fs-small); line-height: 1.4; color: var(--muted); }
+/* Sotto i gruppi dei rivali: perché le righe sono più del conto (chi usa a volte Sciarpa o Capsula ha due righe) */
+.sp-versions-note { margin: var(--sp-3) 0 0; font-size: var(--fs-caption); line-height: 1.4; color: var(--muted); }
 .sp-dlg-stat { margin-left: auto; font: 700 var(--fs-small)/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sp-rivals { display: grid; gap: var(--sp-3); }
 .sp-checks { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0; padding: var(--sp-4) var(--sp-5) var(--sp-5); border: 1px solid var(--line); border-radius: 4px; }

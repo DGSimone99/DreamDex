@@ -102,21 +102,26 @@ function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = fal
     const effect = o.trickRoom ? t('sdetail.opt.trickroom') : o.rivalFactor ? t('sdetail.opt.rivals') : t('sdetail.opt.member', { x: String(o.memberFactor).replace('.', lang === 'it' ? ',' : '.') });
     return `${effect}${o.by ? ` · ${t('sdetail.opt.by', { by: o.by.join(', ') })}` : ''}`;
   };
-  // Da dove viene il numero in alto: fra quanti rivali, quanti ne supera da solo (in Distortozona prima di quanti muove)
+  // Da dove viene il numero in alto, tutto in %: da solo (fra quanti rivali, quanti ne supera; in Distortozona prima di
+  // quanti muove), poi i pezzi della barra che ci sono e il totale ("Da solo 54% (21 su 39) · +20 … · +12 col team = 87%")
   const base = Math.round((room ? 1 - member.raw : member.raw) * rows.length);
-  const baseText = t(room ? (meta ? 'sdetail.dlg.base.roomMeta' : 'sdetail.dlg.base.roomTier') : meta ? 'sdetail.dlg.base.meta' : 'sdetail.dlg.base.tier', { m: rows.length, n: base });
+  const baseText = t(room ? (meta ? 'sdetail.dlg.base.roomMeta' : 'sdetail.dlg.base.roomTier') : meta ? 'sdetail.dlg.base.meta' : 'sdetail.dlg.base.tier', { m: rows.length, n: base, pct: parts.raw });
   const pieces = room ? [] : [
     parts.own > 0 ? t('sdetail.dlg.plusOwn', { n: parts.own }) : '',
     parts.team > 0 ? t('sdetail.dlg.plusTeam', { n: parts.team }) : '',
   ].filter(Boolean);
+  const baseLine = `${[baseText, ...pieces].join(' · ')}${pieces.length ? ` ${t('sdetail.dlg.equals', { n: parts.total })}` : ''}`;
+  // Chi usa a volte Sciarpa o Capsula ha due righe (ognuna per la sua parte): i gruppi hanno più righe del loro conto
+  const twoRows = list.length > rows.length;
 
-  // Il membro in testa alla lista, come metro: la sua Velocità coi check accesi; i +N / −N delle righe sono rispetto a lui
+  // Il membro in testa alla lista, come metro (il nome in grassetto): la sua Velocità coi check accesi; i +N / −N delle
+  // righe sono rispetto a lui
   const memberRow = (
     <p className="sp-row sp-me">
       <span className="def-box"><PokemonIcon name={member.species} /></span>
-      <span className="sp-rival-name">{member.species}</span>
+      <b className="sp-rival-name">{member.species}</b>
       <b className="sp-rival-speed">{mySpeed}</b>
-      <span className="sp-rival-diff">{t('sdetail.dlg.you')}</span>
+      <span className="sp-rival-diff" />
     </p>
   );
 
@@ -124,7 +129,7 @@ function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = fal
     <>
       <div className="sp-dlg-head">
         <p className={`sp-dlg-total ${tone}`}><b>{parts.total}<i>%</i></b> <span>{t(room ? 'sdetail.cards.beatsRoom' : 'sdetail.cards.beats')}</span></p>
-        <p className="sp-dlg-base">{[baseText, ...pieces].join(' · ')}</p>
+        <p className="sp-dlg-base">{baseLine}</p>
       </div>
       {(options.length > 0 || withVersions) && (
         <fieldset className="sp-checks">
@@ -155,6 +160,7 @@ function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = fal
             </ul>
           </div>
         ))}
+        {twoRows && <p className="sp-versions-note">{t('sdetail.dlg.versionsNote')}</p>}
       </section>
     </>
   );

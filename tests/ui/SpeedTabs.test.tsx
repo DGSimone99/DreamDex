@@ -95,7 +95,8 @@ describe('Velocità: una scheda a barre', () => {
     const d = withMeta().speed.members.find(m => m.species === 'Dragonite')!;
     const species = poolSpecies(fixtureData).filter(sp => sp !== 'Dragonite').length;
     expect(dialog.querySelector('.sp-dlg-total')).toHaveTextContent(`${Math.round(100 * d.total)}% del meta superato`);
-    expect(dialog.querySelector('.sp-dlg-base')).toHaveTextContent(new RegExp(`^Fra i ${species} Pokémon più usati del meta ne supera ${Math.round(d.raw * species)} · \\+\\d+ potenziamenti e priorità · \\+\\d+ controllo del team$`));
+    // Tutto in %: da solo, poi i pezzi della barra e il totale
+    expect(dialog.querySelector('.sp-dlg-base')).toHaveTextContent(new RegExp(`^Da solo ${Math.round(100 * d.raw)}% \\(${Math.round(d.raw * species)} su ${species}\\) · \\+\\d+ con potenziamenti e priorità · \\+\\d+ col team = ${Math.round(100 * d.total)}%$`));
     expect(within(dialog).getByText(/^Supera \d+ su \d+/)).toHaveTextContent(`Supera ${Math.round(d.raw * species)} su ${species}`);
     expect(dialog.querySelector('.sp-dlg-stat')).toHaveTextContent(/^Vel \d+$/);
     expect(checks(dialog)).toEqual(expect.arrayContaining(['Dragon Dance', 'Sticky Web', 'Stun Spore']));
@@ -103,7 +104,10 @@ describe('Velocità: una scheda a barre', () => {
     expect(dialog).not.toHaveTextContent('il voto non cambia');
     // Il membro in testa come metro, poi i rivali in due gruppi col loro conto: prima quelli che supera, poi i più veloci
     const me = dialog.querySelector('.sp-me')!;
-    expect(me).toHaveTextContent('Dragonite');
+    expect(me.querySelector('b.sp-rival-name')).toHaveTextContent('Dragonite');
+    expect(me).not.toHaveTextContent(/\btu\b/);
+    // Gholdengo ha due righe (anche con la Sciarpa): la nota lo dice sotto i gruppi
+    expect(dialog.querySelector('.sp-versions-note')).toHaveTextContent('Chi a volte usa Sciarpa o Capsula ha due righe');
     const mySpeed = Number(me.querySelector('.sp-rival-speed')!.textContent);
     const beaten = within(dialog).getByRole('list', { name: /^Li supera \(\d+\)$/ });
     const faster = within(dialog).getByRole('list', { name: /^Più veloci di lui \(\d+\)$/ });
