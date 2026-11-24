@@ -14,7 +14,7 @@ import { Icon } from './icons';
 import { CoachLink } from './CoachLink';
 import { isThreat, MoreProblems, problemEntries, ProblemChip, type ProblemEntry } from './ProblemPill';
 import { useFitCount } from './useFit';
-import { FLIP_TABLES_QUERY, PHONE_QUERY, useMediaQuery } from './useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from './useMediaQuery';
 
 /** La scelta dell'interruttore Trick Room nella sessione del browser ("0" spento); senza scelta, o senza memoria, acceso. */
 const ROOM_KEY = 'dreamdex.speedTrickRoom';
@@ -88,9 +88,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Interruttore Trick Room della Velocità (solo con Trick Room nel team): acceso all'inizio, poi resta com'è stato messo
   // per la sessione, anche cambiando area (la vista si rimonta a ogni area: la scelta sta nella sessione del browser)
   const [trickRoom, setTrickRoomState] = useState(readRoomPick);
+  // Telefono e tablet (a carte): in Coverage meta l'interruttore dell'efficacia sta sulla riga di Ordine (lo disegna la sottoscheda)
   const cards = useMediaQuery(FLIP_TABLES_QUERY);
-  // Telefono: in Coverage meta l'interruttore dell'efficacia sta sulla riga di Ordine (lo disegna la sottoscheda)
-  const phone = useMediaQuery(PHONE_QUERY);
   const setTrickRoom = (on: boolean) => { setTrickRoomState(on); writeRoomPick(on); };
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
   const [guide, setGuide] = useState<string | null>(null);
@@ -216,8 +215,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`}
         aria-labelledby={single ? undefined : `${id}-${current.key}`} aria-label={single ? title : undefined}>
         {/* L'interruttore dell'efficacia, in alto a sinistra sulla riga della legenda, solo sulle sottoschede con l'etichetta
-            nelle caselle */}
-        {current.effSide && !(phone && current.key === 'coverageMeta') && (
+            nelle caselle; a carte (telefono e tablet) Coverage meta lo ha sulla riga di Ordine */}
+        {current.effSide && !(cards && current.key === 'coverageMeta') && (
           <span className="panel-switch">
             <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
           </span>

@@ -143,3 +143,23 @@ describe('Offesa sullo schermo stretto', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+// Tablet (600–1099 px, sempre a carte): in Coverage meta "Solo superefficaci" sta sulla riga di Ordine come sul telefono
+describe('Coverage meta sul tablet', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('Offesa e Difesa: l\'interruttore una volta sola, sulla riga di Ordine (non in cima al pannello)', async () => {
+    const user = userEvent.setup();
+    for (const area of ['strength', 'defense'] as const) {
+      const { unmount } = view(area);
+      await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+      const effSwitch = screen.getByRole('switch', { name: area === 'strength' ? 'Solo superefficaci' : /^Solo/ });
+      expect(effSwitch.closest('.cm-cards-bar')).toBe(screen.getByRole('group', { name: 'Ordine' }).closest('.cm-cards-bar'));
+      expect(document.querySelector('.area-panel > .panel-switch')).toBeNull();
+      unmount();
+    }
+  });
+});

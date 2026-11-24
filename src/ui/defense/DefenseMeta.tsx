@@ -11,7 +11,7 @@ import { pieceOf, type HoldPiece } from './HoldBars';
 /** Telefono e tablet: quante minacce si vedono all'inizio e quante ne aggiunge "Altre". */
 const CARDS_STEP = 12;
 import { HOLD_BANDS } from './holds';
-import { FLIP_TABLES_QUERY, PHONE_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { FocusNote } from '../offense/KoBadges';
 import { battleMoveType } from '../../engine/types';
 import { useLang, useT } from '../../i18n/react';
@@ -80,7 +80,6 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const hover = useColumnHover();
   const narrow = useMediaQuery(FLIP_TABLES_QUERY);
   // Telefono (sotto i 600 px): le minacce come righe basse e l'interruttore sulla riga di Ordine
-  const phoneRows = useMediaQuery(PHONE_QUERY);
   // Telefono e tablet: le minacce come carte, come nell'Offesa; la carta apre il foglio coi colpi su ogni membro
   const [shownCards, setShownCards] = useState(CARDS_STEP);
   const [sheet, setSheet] = useState<string | null>(null);
@@ -271,8 +270,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
           <p className="og-hero-line"><b className={countClass(allHeld, all.length)}>{allHeld}</b><small>/{all.length}</small> {t('ddetail.cards.threatsHeld')}</p>
         </section>
         <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />
-          {/* Telefono: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga vuota) */}
-          {phoneRows && ctx.setEffOnly && <span className="cm-bar-switch"><EffSwitch side="defense" on={!!ctx.effOnly} onChange={ctx.setEffOnly} /></span>}
+          {/* Telefono e tablet: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga in più) */}
+          {ctx.setEffOnly && <span className="cm-bar-switch"><EffSwitch side="defense" on={!!ctx.effOnly} onChange={ctx.setEffOnly} /></span>}
           {focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />

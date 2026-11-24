@@ -487,3 +487,9 @@
   .ct-flip-table .ct-mon-box { height: 46px; }
   .ct-flip-table .ct-mon-box .mon-icon { transform: scale(1.5); }
 }
+
+/* Tablet da 768 px: i problemi dell'area sulla riga del voto (quanti ne stanno, gli altri nel "+N"), col "?" in fondo; le
+   sottoschede sotto. Una riga in meno sopra il pannello */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .area-head .area-probs { order: 0; flex: 1 1 0; min-width: 0; }
+}

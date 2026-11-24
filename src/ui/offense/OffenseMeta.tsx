@@ -9,7 +9,7 @@ import { useMemberTip } from '../MemberCard';
 import { typeColor } from '../Sprite';
 import { PokemonIcon } from '../PokemonName';
 import { offenseSlots } from './slots';
-import { FLIP_TABLES_QUERY, PHONE_QUERY, useMediaQuery } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { Sprite } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
 import { SheetCoachLink } from '../CoachLink';
@@ -85,7 +85,6 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   // Telefono e tablet: le minacce come carte Pedana (due, tre o quattro per riga); la carta apre il foglio coi 6 membri
   const cards = useMediaQuery(FLIP_TABLES_QUERY);
   // Telefono (sotto i 600 px): le minacce come righe basse e l'interruttore sulla riga di Ordine
-  const phoneRows = useMediaQuery(PHONE_QUERY);
   const [shownCards, setShownCards] = useState(CARDS_STEP);
   const [sheet, setSheet] = useState<string | null>(null);
   const tip = useFloatAnchor<{ species: string; m: number }>();
@@ -293,8 +292,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           <p className="og-hero-line"><b className={countClass(covered, all.length)}>{covered}</b><small>/{all.length}</small> {t('odetail.cards.threatsCovered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
         </section>
         <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />
-          {/* Telefono: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga vuota) */}
-          {phoneRows && ctx.setEffOnly && <span className="cm-bar-switch"><EffSwitch side="offense" on={!!ctx.effOnly} onChange={ctx.setEffOnly} /></span>}
+          {/* Telefono e tablet: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga in più) */}
+          {ctx.setEffOnly && <span className="cm-bar-switch"><EffSwitch side="offense" on={!!ctx.effOnly} onChange={ctx.setEffOnly} /></span>}
           {focus
           ? <FocusNote name={names[focus.slot] ?? ''} band={focus.band} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
