@@ -160,3 +160,14 @@
 }
 /* Dal tablet la lettera e la parola sono già nella testata dell'area: nella riga del team solo sul telefono */
 @media (min-width: 600px) { .og-hero-grade { display: none; } }
+
+/* ── Difesa a carte: stessa forma dell'Offesa; un membro che toglie ha la targhetta rossa, un attaccante è spento ── */
+.og-card-tag.neg { background: var(--bad-bg); }
+.og-card-tag.neg .og-share-num { color: var(--bad); }
+.og-sheet-text { margin: 0; font: 500 var(--fs-small)/1.4 var(--ui); color: var(--text); }
+.og-sheet-sec .worst { flex-wrap: wrap; }
+/* Il foglio di un tipo in Difesa: la fascia del colpo preso, col semaforo della Difesa */
+.dt-sheet-band { font: 800 italic var(--fs-caption)/1 var(--display); text-align: right; }
+.dt-sheet-row.hold-ohko .dt-sheet-band, .dt-sheet-row.hold-ohko .ct-sheet-pct { color: var(--bad); }
+.dt-sheet-row.hold-2 .dt-sheet-band, .dt-sheet-row.hold-2 .ct-sheet-pct { color: var(--warn); }
+.dt-sheet-row.hold-3 .dt-sheet-band, .dt-sheet-row.hold-3 .ct-sheet-pct, .dt-sheet-row.hold-4 .dt-sheet-band, .dt-sheet-row.hold-4 .ct-sheet-pct { color: color-mix(in srgb, var(--good) 70%, white); }

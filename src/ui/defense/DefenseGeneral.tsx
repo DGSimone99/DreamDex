@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { type SustainParts, type TeamDefense } from '../../engine/defense';
 import { defenseShares, type DefenseShare } from '../../engine/defenseShares';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
@@ -17,7 +17,11 @@ import { typeColor } from '../Sprite';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
-import { useStackedTables } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
+import { gradeFor } from '../../engine/rating';
+import { AnalysisSheet } from '../AnalysisSheet';
+import { Sprite } from '../Sprite';
+import { TypeIcons } from '../typeIcons';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
@@ -167,6 +171,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   // Tutti i pezzi della tabella (barre, colpi peggiori, quanto porta) sono un posto solo nel giro del Tab, poi le frecce
   const nav = useRoving<HTMLTableElement>();
   const narrow = useStackedTables();
+  // Telefono e tablet: i membri come carte Pedana, come nell'Offesa (OffenseGeneral)
+  const cards = useMediaQuery(FLIP_TABLES_QUERY);
+  const [sheet, setSheet] = useState<number | null>(null);
 
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
   // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta
@@ -196,6 +203,76 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     return <DefShare share={shares[i]} label={t('ddetail.shareTitle', { n: signed(shares[i].points) })} describe={describe(shares[i], words)}
       tip={<ShareTip who={m.species} share={shares[i]} words={words} meta={hasMeta} />} />;
   };
+
+  if (cards) {
+    const grade = gradeFor(defense.value, lang);
+    const typesBar = (i: number) => <HoldBars targets={typeBars[i]} who={members[i].species} mon={members[i].species} of={ofTypes} quiet={quiet(i)}
+      onPick={ctx.openFocus && ((band: HoldPiece) => { setSheet(null); pick('coverageTypes', 'dtypes', i)!(band); })} pickPlace={t('detail.coverageTypes')} />;
+    const metaBar = (i: number) => <HoldBars targets={metaBars[i]} who={members[i].species} mon={members[i].species} of={ofMeta} quiet={quiet(i)}
+      onPick={ctx.openFocus && ((band: HoldPiece) => { setSheet(null); pick('coverageMeta', 'dmeta', i)!(band); })} pickPlace={t('detail.coverageMeta')} />;
+    const open = sheet === null ? null : members[sheet] ?? null;
+    return (
+      <div className="def-general og-cards-frame">
+        <section className="og-hero" aria-label={teamName}>
+          <span className="og-plate">{teamName}</span>
+          <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>
+          <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></div>
+          {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></div>}
+        </section>
+        <ul className="og-cards" aria-label={t('detail.member')}>
+          {members.map((m, i) => {
+            const set = setOf(ctx.team, m.species);
+            const types = (set && battleSpecies(set)?.types) || [];
+            const calm = quiet(i);
+            return (
+              <li key={`${m.species}-${i}`} className={`og-card pedana-face${calm ? ' wall' : ''}`}
+                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+                <span className="pedana-stripe" aria-hidden="true" />
+                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
+                <button type="button" className="og-card-open" aria-label={t('odetail.cards.open', { name: m.species })} onClick={() => setSheet(i)}>
+                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={set?.species ?? m.species} item={set?.item} size={80} /></span>
+                  <span className="og-card-name">{m.species}</span>
+                </button>
+                <span className={`og-card-tag${shares[i].points === 0 ? ' zero' : shares[i].points < 0 ? ' neg' : ''}`}>
+                  {share(m, i)}
+                  {calm && <small>{t('ddetail.cards.attacker')}</small>}
+                </span>
+                <TypeIcons types={types} className="og-card-types" />
+                <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typesBar(i)}</div>
+                {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span>{metaBar(i)}</div>}
+              </li>
+            );
+          })}
+        </ul>
+        {open && sheet !== null && (() => {
+          const set = setOf(ctx.team, open.species);
+          return (
+            <AnalysisSheet title={open.species} lead={<Sprite species={set?.species ?? open.species} item={set?.item} size={56} />} onClose={() => setSheet(null)}
+              sub={t('ddetail.shareTitle', { n: signed(shares[sheet].points) })} className="og-sheet">
+              <section className="og-sheet-sec">
+                <h4>{t('detail.coverageTypes')}</h4>
+                {typesBar(sheet)}
+                <WorstHits hits={worstTypes(sheet)} />
+              </section>
+              {meta && (
+                <section className="og-sheet-sec">
+                  <h4>{t('detail.coverageMeta')}</h4>
+                  {metaBar(sheet)}
+                  <WorstHits hits={worstMeta(sheet)} />
+                </section>
+              )}
+              {sustainWords(open.sustainParts).length > 0 && (
+                <section className="og-sheet-sec">
+                  <h4>{t('ddetail.sustain')}</h4>
+                  <p className="og-sheet-text">{sustainWords(open.sustainParts).map(w => w.text).join(' · ')}</p>
+                </section>
+              )}
+            </AnalysisSheet>
+          );
+        })()}
+      </div>
+    );
+  }
 
   if (narrow) {
     // Telefono e tablet piccolo, come l'Offesa: per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la

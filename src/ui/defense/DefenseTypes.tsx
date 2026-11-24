@@ -1,4 +1,5 @@
-import { useId, useState, type FocusEvent } from 'react';
+import { useId, useState, type CSSProperties, type FocusEvent } from 'react';
+import { AnalysisSheet } from '../AnalysisSheet';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { HELD_LEVEL } from '../../engine/coach';
 import { dummyStats, holdBand, type HoldBand } from '../../engine/defense';
@@ -54,6 +55,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const { team, analysis } = ctx;
   const roomy = !!ctx.roomy;
   const narrow = useMediaQuery(FLIP_TABLES_QUERY);
+  // Telefono e tablet: 18 tessere come nell'Offesa (quanto il team regge il tipo, chi lo regge meglio); il foglio coi membri
+  const [sheetCol, setSheetCol] = useState<number | null>(null);
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   // Aperta da un pezzo della barra in Generale: la riga del membro e i tipi di quel pezzo accesi, il resto spento
   const focus = ctx.focus?.kind === 'dtypes' ? ctx.focus : null;
@@ -139,6 +142,74 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const plate = (long: string, short: string) => (
     <span className="row-plate"><span className="plate-long">{long}</span><span className="plate-short" aria-hidden="true">{short}</span></span>
   );
+
+  if (narrow) {
+    const nameOf = (slot: number) => battleName(team[slot]);
+    const held = rows.length - weak.length;
+    // Aperta da un pezzo della barra in Generale: si accendono i tipi di quel pezzo per quel membro
+    const lit = (i: number) => {
+      if (!focus || slots[focus.slot] === null) return null;
+      const cell = defense.typed[slots[focus.slot]!].cells[i];
+      return !!cell && pieceOf(cell.band) === focus.band;
+    };
+    const openRow = sheetCol === null ? null : rows[sheetCol];
+    return (
+      <div className="def-types ct-tiles-frame">
+        <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
+        <section className="og-hero" aria-label={t('detail.level')}>
+          <span className="og-plate">{t('detail.level')}</span>
+          <p className="og-hero-line"><b className={weak.length ? 'bad' : 'full'}>{held}</b><small>/{rows.length}</small> {t('ddetail.tiles.held')}</p>
+        </section>
+        <ul className="ct-tiles" aria-label={t('detail.coverageTypes')} aria-describedby={summaryId}>
+          {rows.map((row, i) => {
+            const top = best[i];
+            const on = lit(i);
+            return (
+              <li key={row.type} className={`ct-tile ${levelTone(row.level)}${on === null ? '' : on ? ' kf-hit' : ' kf-dim'}`} style={{ '--tc': typeColor(row.type) } as CSSProperties}>
+                <button type="button" className="ct-tile-open" onClick={() => setSheetCol(i)}
+                  aria-label={`${typeName(row.type as TypeName, lang)}: ${t('detail.level')} ${row.level}%${top ? `, ${t('ddetail.tiles.bestHolder')} ${nameOf(top.slot)}` : `, ${t('analysis.shortfallSerious')}`}`}>
+                  <span className="ct-tile-type" aria-hidden="true"><TypeIcons types={[row.type]} />{typeName(row.type as TypeName, lang)}</span>
+                  <span className="ct-tile-pct" aria-hidden="true">{row.level}<i>%</i></span>
+                  {top && <span className="ct-tile-best" aria-hidden="true"><PokemonIcon name={nameOf(top.slot)} /></span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="rob-legend ht-foot">
+          {focus
+            ? <FocusNote name={battleName(team[focus.slot])} band="two" text={t(`hold.focus.${focus.band}`, { name: battleName(team[focus.slot]) })} onClear={ctx.clearFocus} />
+            : <span className="area-legend" aria-hidden="true"><DefenseTypesLegend /></span>}
+          {!focus && notes.length > 0 && <NotesLine id={notesId} notes={notes} mitigations={mitigations} />}
+        </div>
+        {openRow && sheetCol !== null && (
+          <AnalysisSheet title={typeName(openRow.type as TypeName, lang)} lead={<TypeIcons types={[openRow.type]} />} onClose={() => setSheetCol(null)} className="ct-sheet"
+            sub={`${t('detail.level')} ${openRow.level}%${best[sheetCol] ? ` · ${t('ddetail.tiles.bestHolder')}: ${nameOf(best[sheetCol]!.slot)}` : ''}`}>
+            <ul className="ct-sheet-rows">
+              {team.map((_, slot) => {
+                const cell = slots[slot] === null ? null : defense.typed[slots[slot]!].cells[sheetCol];
+                const tag = effLabel(multipliers.get(openRow.type as TypeName)?.[slot] ?? 1, 'defense');
+                return (
+                  <li key={`${nameOf(slot)}-${slot}`} className={`ct-sheet-row dt-sheet-row ${cell ? HOLD_BANDS[cell.band].cls : 'hold-none'}${ctx.effOnly && !tag ? ' eff-dim' : ''}`}>
+                    <PokemonIcon name={nameOf(slot)} />
+                    <span className="ct-sheet-name">{nameOf(slot)}</span>
+                    {cell
+                      ? <>
+                        <span className="dt-sheet-band">{HOLD_BANDS[cell.band].tag}</span>
+                        <EffTag label={tag} side="defense" />
+                        <span className="ct-sheet-pct">{cell.band !== 'ohko' && cell.pct >= 100 ? 99 : cell.pct}<i>%</i></span>
+                      </>
+                      : <span className="ct-sheet-none">—</span>}
+                  </li>
+                );
+              })}
+            </ul>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><DefenseTypesLegend /></span>
+          </AnalysisSheet>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`def-frame def-types${roomy ? ' roomy' : ''}${narrow ? ' ct-flip' : ''}`}>

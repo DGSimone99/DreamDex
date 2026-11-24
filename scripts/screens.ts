@@ -529,6 +529,19 @@ const effOn = (base: State, hover = false): State => ({ ...base, run: async p =>
   await wait(250);
   return true;
 } });
+// Telefono e tablet, Difesa: il foglio dal basso di una carta, di una tessera o di una minaccia
+const dsheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), run: async p => {
+  const ok = await defenseState(sub).run!(p);
+  if (ok !== true) return ok;
+  const items = await p.$$(selector);
+  if (!items[index]) return `no ${selector}`;
+  await items[index].click();
+  await wait(500);
+  return true;
+} });
+DEFENSE_STATES['analysis-defense-card-sheet'] = dsheetState(SUBS.general, '.og-card-open');
+DEFENSE_STATES['analysis-defense-tile-sheet'] = dsheetState(SUBS.types, '.ct-tile-open', 2);
+DEFENSE_STATES['analysis-defense-threat-sheet'] = dsheetState(SUBS.meta, '.cm-card .og-card-open');
 for (const [k, re] of [['types', OFFENSE_SUBS.types], ['meta', OFFENSE_SUBS.meta]] as const) {
   OFFENSE_STATES[`analysis-offense-${k}-eff`] = effOn(offenseState(re));
   OFFENSE_STATES[`analysis-offense-${k}-hover`] = effOn(offenseState(re), true);

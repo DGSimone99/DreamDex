@@ -74,20 +74,26 @@ describe('Offesa sullo schermo stretto', () => {
     expect(sheet.querySelectorAll('.cm-sheet-row')).toHaveLength(2);
   });
 
-  it('Difesa: Generale a barre impilate, Coverage tipi e meta girate, Recupero una riga per voce', async () => {
+  it('Difesa a carte come in Offesa: Generale, tessere dei tipi, carte delle minacce col foglio; Recupero una riga per voce', async () => {
     const user = userEvent.setup();
     view('defense');
-    const groups = document.querySelectorAll('.og-stack-table tbody.og-stack-mon:not(.og-stack-team)');
-    expect(groups).toHaveLength(2);
-    expect([...groups[0].querySelectorAll('.og-bar-label')].map(th => th.textContent)).toEqual(['Tipi', 'Meta']);
+    expect(screen.getByRole('region', { name: 'Team Coverage' })).toBeInTheDocument();
+    const cards = document.querySelectorAll('.og-cards > .og-card');
+    expect(cards).toHaveLength(2);
+    expect([...cards[0].querySelectorAll('.og-card-label')].map(x => x.textContent)).toEqual(['Tipi', 'Meta']);
+    await user.click(screen.getByRole('button', { name: 'Dettagli di Great Tusk' }));
+    expect(screen.getByRole('dialog', { name: 'Great Tusk' })).toHaveTextContent(/Difesa del team/);
+    await user.keyboard('{Escape}');
     await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
-    const types = screen.getByRole('table', { name: 'Difesa: Coverage tipi' });
-    expect(types).toHaveClass('ct-flip-table');
-    expect(types.querySelectorAll('tbody tr')).toHaveLength(18);
+    expect(screen.getByRole('list', { name: 'Coverage tipi' }).querySelectorAll('.ct-tile')).toHaveLength(18);
+    expect(screen.getByRole('region', { name: 'Team Coverage' })).toHaveTextContent(/tipi retti dal team/);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    const meta = screen.getByRole('table', { name: 'Difesa: Coverage meta' });
-    expect(meta).toHaveClass('ct-flip-table');
-    for (const row of meta.querySelectorAll('tbody tr')) expect(row.querySelectorAll('td')).toHaveLength(2);
+    const list = screen.getByRole('list', { name: 'Coverage meta' });
+    expect(list.querySelectorAll('.cm-card').length).toBeGreaterThan(0);
+    const name = list.querySelector('.og-card-name')!.textContent!;
+    await user.click(within(list).getByRole('button', { name: `Dettagli di ${name}` }));
+    expect(screen.getByRole('dialog', { name }).querySelectorAll('.cm-sheet-row')).toHaveLength(2);
+    await user.keyboard('{Escape}');
     await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     const sus = screen.getByRole('table', { name: 'Difesa: Recupero' });
     expect(sus).toHaveClass('sus-stack');

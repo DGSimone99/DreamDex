@@ -1,7 +1,13 @@
-import { useId, useState, type FocusEvent, type MouseEvent, type ReactNode } from 'react';
+import { useId, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactNode } from 'react';
+import { AnalysisSheet } from '../AnalysisSheet';
+import { TypeIcons } from '../typeIcons';
+import { HoldBars, type HoldTarget } from './HoldBars';
 import { battleName, battleSpecies } from '../../engine/dex';
 import { holdBand, type HoldBand, type TeamDefense } from '../../engine/defense';
 import { pieceOf, type HoldPiece } from './HoldBars';
+
+/** Telefono e tablet: quante minacce si vedono all'inizio e quante ne aggiunge "Altre". */
+const CARDS_STEP = 12;
 import { HOLD_BANDS } from './holds';
 import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { FocusNote } from '../offense/KoBadges';
@@ -65,6 +71,9 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const t = useT();
   const hover = useColumnHover();
   const narrow = useMediaQuery(FLIP_TABLES_QUERY);
+  // Telefono e tablet: le minacce come carte, come nell'Offesa; la carta apre il foglio coi colpi su ogni membro
+  const [shownCards, setShownCards] = useState(CARDS_STEP);
+  const [sheet, setSheet] = useState<string | null>(null);
   const tip = useFloatAnchor<{ species: string; m: number }>();
   const card = useMemberTip(400, undefined, true);
   // Tastiera: la griglia è un posto solo nel giro del Tab, le frecce vanno di casella in casella (col fuoco la colonna e il tooltip)
@@ -232,6 +241,74 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
       </div>
     );
   };
+
+  if (narrow) {
+    // Per ogni minaccia i membri come bersagli della barra: chi va KO in un colpo, in due, chi la regge (3HKO o meglio)
+    const targetsOf = (row: Row): HoldTarget[] => cellsOf(row, names).flatMap((c, m) => (c === null ? []
+      : [{ label: names[m]!, kind: 'mon' as const, band: c === 'ko' ? 'ohko' as const : c.band ?? holdBand(c.pct / 100) }]));
+    const rank = new Map(byUsage(all).map((r, i) => [r.species, i + 1]));
+    const allHeld = all.filter(r => held(r) > 0).length;
+    const visible = rows.slice(0, shownCards);
+    const openRow = sheet === null ? null : all.find(r => r.species === sheet) ?? null;
+    return (
+      <div className="def-meta-grid cm-cards-frame">
+        <p id={summaryId} hidden>{open.length ? t('sr.cm.defense', { list: open.join(', ') }) : t('sr.cm.defenseNone')}</p>
+        <section className="og-hero" aria-label={t('odetail.gen.total')}>
+          <span className="og-plate">{t('odetail.gen.total')}</span>
+          <p className="og-hero-line"><b className={allHeld < all.length ? 'bad' : 'full'}>{allHeld}</b><small>/{all.length}</small> {t('ddetail.cards.threatsHeld')}</p>
+        </section>
+        <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />{focus
+          ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
+          : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} /> : null}</div>
+        <ul className="og-cards cm-cards" aria-label={t('detail.coverageMeta')}>
+          {visible.map(r => {
+            const types = battleSpecies(r.set)?.types ?? [];
+            const on = focus ? lit(r) : threat ? r.species === threat : null;
+            return (
+              <li key={r.species} className={`og-card pedana-face cm-card ${countTone(held(r))}${on === null ? '' : on ? ' kf-hit' : ' kf-dim'}`}
+                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+                <span className="pedana-stripe" aria-hidden="true" />
+                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
+                <button type="button" className="og-card-open" aria-label={t('odetail.cards.open', { name: r.species })} onClick={() => setSheet(r.species)}>
+                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={r.set.species} item={r.set.item} size={72} /></span>
+                  <span className="og-card-name">{r.species}</span>
+                </button>
+                <span className="og-card-tag cm-card-rank" aria-label={t('odetail.cards.rank', { n: rank.get(r.species) ?? 0 })}>#{rank.get(r.species)}</span>
+                <TypeIcons types={types} className="og-card-types" />
+                <div className="og-card-row cm-card-row"><HoldBars targets={targetsOf(r)} who={r.species} mon={r.species} of={t('odetail.cards.ofTeam')} quiet /></div>
+              </li>
+            );
+          })}
+        </ul>
+        {rows.length > shownCards && (
+          <button type="button" className="cm-cards-more" onClick={() => setShownCards(n => n + CARDS_STEP)}>
+            {t('odetail.cards.more', { n: Math.min(CARDS_STEP, rows.length - shownCards), left: rows.length - shownCards })}
+          </button>
+        )}
+        {openRow && (
+          <AnalysisSheet title={openRow.species} lead={<Sprite species={openRow.set.species} item={openRow.set.item} size={56} />} onClose={() => setSheet(null)} className="cm-sheet"
+            sub={`#${rank.get(openRow.species)} · ${t('ddetail.cards.heldBy', { n: held(openRow), total: ctx.team.length })}`}>
+            <ul className="ct-sheet-rows">
+              {cellsOf(openRow, names).map((c, m) => {
+                const tag = c === null ? null : effLabel(openRow.mults?.[knownIndex[m]], 'defense');
+                const band = c === null ? null : c === 'ko' ? 'ohko' : c.band ?? holdBand(c.pct / 100);
+                return (
+                  <li key={`${names[m] ?? m}-${m}`} className={`ct-sheet-row cm-sheet-row dt-sheet-row ${band ? HOLD_BANDS[band].cls : 'hold-none'}${ctx.effOnly && !tag ? ' eff-dim' : ''}`}>
+                    <PokemonIcon name={names[m] ?? ctx.team[m].species} />
+                    <span className="ct-sheet-name">{names[m] ?? ctx.team[m].species}</span>
+                    {c === null ? <span className="ct-sheet-none">—</span>
+                      : c === 'ko' ? <><span className="cm-ko small">KO</span><EffTag label={tag} side="defense" /><span className="ct-sheet-pct" /></>
+                      : <><HpLeft pct={c.pct} /><EffTag label={tag} side="defense" /><span className="ct-sheet-pct">{c.pct}<i>%</i></span></>}
+                  </li>
+                );
+              })}
+            </ul>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><DefenseMetaLegend /></span>
+          </AnalysisSheet>
+        )}
+      </div>
+    );
+  }
 
   return <MetaFrame rows={rows} summary={null} body={body} resetKey={order}
     labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
