@@ -138,7 +138,7 @@ describe('Offesa sullo schermo stretto', () => {
     expect(sheet.querySelector('.sp-dlg-total')).toHaveTextContent(`${pct}% del meta superato`);
     const base = sheet.querySelector('.sp-dlg-base')!.textContent!.match(/^Fra i (\d+) Pokémon più usati del meta ne supera (\d+)/)!;
     expect(within(sheet).getByText(/^Supera \d+ su \d+/)).toHaveTextContent(`Supera ${base[2]} su ${base[1]}`);
-    expect(within(sheet).getByRole('list', { name: /rivali/i })).toBeInTheDocument();
+    expect(within(sheet).getByRole('list', { name: /^Li supera \(\d+\)$/ })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
   });

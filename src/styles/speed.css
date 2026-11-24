@@ -105,6 +105,12 @@
 .sp-check input { margin: 0; }
 .sp-check-effect { color: var(--muted); font-size: var(--fs-label); }
 .sp-dlg-count { margin: 0; font-weight: 700; }
+/* I rivali in gruppi (Li supera, Pari, Più veloci di lui): il titoletto col conto nel colore del gruppo */
+.sp-group { display: grid; gap: var(--sp-2); }
+.sp-group-title { margin: var(--sp-3) 0 0; font: 700 var(--fs-label)/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.sp-group-beats .sp-group-title { color: color-mix(in srgb, var(--good) 75%, white); }
+.sp-group-tie .sp-group-title { color: var(--warn); }
+.sp-group-loses .sp-group-title { color: color-mix(in srgb, var(--bad) 70%, white); }
 .sp-list { display: flex; flex-direction: column; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
 .sp-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 6ch 5ch; align-items: center; gap: var(--sp-4); padding: var(--sp-1) var(--sp-4); border-left: 3px solid var(--line); border-radius: 3px; font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
 .sp-row .def-box { --bs: 0.8; }
@@ -114,7 +120,7 @@
 .sp-row.sp-loses .sp-rival-diff { color: var(--bad); }
 .sp-row.sp-tie { border-left-color: var(--warn); }
 .sp-row.sp-tie .sp-rival-diff { color: var(--warn); }
-.sp-row.sp-me { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.sp-row.sp-me { margin: 0; border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
 .sp-rival-name { display: flex; align-items: center; gap: var(--sp-3); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .sp-row.sp-boosted .sp-rival-name { font-style: italic; }
 /* La versione con lo strumento non sembra un doppione: accanto all'icona la parola (Sciarpa, Capsula) */

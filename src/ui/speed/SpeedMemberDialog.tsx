@@ -52,12 +52,14 @@ const CREDIT = { beats: 1, tie: 0.5, loses: 0 } as const;
  * superato") e sotto da dove viene: fra quanti rivali e quanti ne supera da solo (ogni specie conta uno; chi usa spesso la
  * Sciarpa o la Booster conta in parte anche in quella versione, come nel voto), più i pezzi dei guadagni ("+18 potenziamenti
  * e priorità", "+14 controllo del team", gli stessi della barra). Poi i check che il membro e il team hanno davvero (setup,
- * Booster, Sticky Web di un compagno, paralisi, Tailwind, Trick Room) e l'interruttore "Strumenti avversari"; poi la lista
- * dei rivali dal più veloce col membro al suo posto, e sopra quanti ne supera coi check scelti (sulle stesse specie).
+ * Booster, Sticky Web di un compagno, paralisi, Tailwind, Trick Room) e l'interruttore "Strumenti avversari"; poi quanti ne
+ * supera coi check scelti (sulle stesse specie), il membro come metro e i rivali in gruppi col loro conto: "Li supera (21)",
+ * i pari se ci sono, "Più veloci di lui (18)" (in Distortozona chi muove prima); in ogni gruppo prima i più vicini.
  * I check non cambiano il voto: il voto resta quello della formula.
  */
 function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = false }: Omit<Props, 'onClose'>) {
   const t = useT();
+  const id = useId();
   const lang = useLang();
   const options = useMemo(() => speedOptions(set, team), [set, team]);
   const rows = useMemo(() => rivalRows(member), [member]);
@@ -86,10 +88,16 @@ function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = fal
   // Quanti ne supera, sulle stesse specie del numero in alto: ogni specie conta uno (le sue versioni per la loro quota; a
   // versioni spente la sola versione in lista), il pareggio a metà
   const beaten = Math.round(list.reduce((acc, x) => acc + (versions ? x.rival.weight : 1) * CREDIT[beats(x.value)], 0));
-  const ties = list.filter(x => beats(x.value) === 'tie').length;
-  // Il membro va inserito al suo posto, dal più veloce (con Trick Room l'ordine della lista non cambia: cambia chi vince)
-  const myIndex = list.findIndex(x => x.value < mySpeed || (x.value === mySpeed));
-  const insertAt = myIndex < 0 ? list.length : myIndex;
+  // La lista in due gruppi (più i pari in mezzo): prima quelli che supera, poi quelli più veloci di lui; in ogni gruppo
+  // prima i più vicini al membro. I conti sulle stesse specie del numero sopra (le versioni per la loro quota), così
+  // "Li supera" è il numero di "Supera N su M" quando non ci sono pari, e i tre gruppi fanno M
+  const share = (x: typeof list[number]) => (versions ? x.rival.weight : 1);
+  const groupOf = (r: 'beats' | 'tie' | 'loses') => list.filter(x => beats(x.value) === r).sort((a, b) => Math.abs(a.value - mySpeed) - Math.abs(b.value - mySpeed));
+  const groups = (['beats', 'tie', 'loses'] as const).map(r => ({ r, items: groupOf(r) }));
+  const beatsN = Math.round(groups[0].items.reduce((a, x) => a + share(x), 0));
+  const tieN = groups[1].items.length ? Math.max(1, Math.round(groups[1].items.reduce((a, x) => a + share(x), 0))) : 0;
+  const groupCount = { beats: beatsN, tie: tieN, loses: Math.max(0, rows.length - beatsN - tieN) };
+  const groupTitle = (r: 'beats' | 'tie' | 'loses') => t(r === 'tie' ? 'sdetail.dlg.groupTie' : `sdetail.dlg.group${r === 'beats' ? 'Beats' : 'Loses'}${trickRoom ? 'Room' : ''}`, { n: groupCount[r] });
   const optionLabel = (o: SpeedOption) => {
     const effect = o.trickRoom ? t('sdetail.opt.trickroom') : o.rivalFactor ? t('sdetail.opt.rivals') : t('sdetail.opt.member', { x: String(o.memberFactor).replace('.', lang === 'it' ? ',' : '.') });
     return `${effect}${o.by ? ` · ${t('sdetail.opt.by', { by: o.by.join(', ') })}` : ''}`;
@@ -102,13 +110,14 @@ function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = fal
     parts.team > 0 ? t('sdetail.dlg.plusTeam', { n: parts.team }) : '',
   ].filter(Boolean);
 
+  // Il membro in testa alla lista, come metro: la sua Velocità coi check accesi; i +N / −N delle righe sono rispetto a lui
   const memberRow = (
-    <li key="me" className="sp-row sp-me" aria-current="true">
+    <p className="sp-row sp-me">
       <span className="def-box"><PokemonIcon name={member.species} /></span>
       <span className="sp-rival-name">{member.species}</span>
       <b className="sp-rival-speed">{mySpeed}</b>
       <span className="sp-rival-diff">{t('sdetail.dlg.you')}</span>
-    </li>
+    </p>
   );
 
   return (
@@ -136,12 +145,16 @@ function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = fal
         </fieldset>
       )}
       <section className="sp-rivals">
-        <p className="sp-dlg-count" aria-live="polite">{t('sdetail.dlg.count', { n: beaten, m: rows.length })}{ties > 0 && ` · ${t('sdetail.dlg.ties', { n: ties })}`}{trickRoom && ` · ${t('sdetail.dlg.underRoom')}`}</p>
-        <ul className="sp-list" aria-label={t('sdetail.dlg.list')}>
-          {list.slice(0, insertAt).map(x => rivalItem(x.row, x.rival, x.boosted, x.value))}
-          {memberRow}
-          {list.slice(insertAt).map(x => rivalItem(x.row, x.rival, x.boosted, x.value))}
-        </ul>
+        <p className="sp-dlg-count" aria-live="polite">{t('sdetail.dlg.count', { n: beaten, m: rows.length })}{tieN > 0 && ` · ${t('sdetail.dlg.ties', { n: tieN })}`}{trickRoom && ` · ${t('sdetail.dlg.underRoom')}`}</p>
+        {memberRow}
+        {groups.filter(g => g.items.length > 0).map(g => (
+          <div key={g.r} className={`sp-group sp-group-${g.r}`}>
+            <h4 className="sp-group-title" id={`${id}-${g.r}`}>{groupTitle(g.r)}</h4>
+            <ul className="sp-list" aria-labelledby={`${id}-${g.r}`}>
+              {g.items.map(x => rivalItem(x.row, x.rival, x.boosted, x.value))}
+            </ul>
+          </div>
+        ))}
       </section>
     </>
   );
