@@ -214,7 +214,8 @@
 /* A squadra chiusa, sotto la barra dei colpi: quanto lavora ogni mossa d'attacco, una pastiglia per mossa nel colore del
    suo tipo (icona e numero dei bersagli); passandoci sopra si allarga col nome, e il tooltip elenca i bersagli.
    A 0 spenta. Sempre una riga: le pastiglie hanno tutte la stessa forma */
-.mcs { display: flex; gap: var(--sp-3); width: calc(100% - 36px); min-width: 150px; margin-top: var(--sp-2); overflow: hidden; }
+/* Le pastiglie che non stanno intere vanno a capo e restano nascoste (una riga alta come una pastiglia): mai una tagliata */
+.mcs { display: flex; flex-wrap: wrap; gap: var(--sp-3); width: calc(100% - 36px); min-width: 150px; max-height: 24px; margin-top: var(--sp-2); overflow: hidden; }
 .mc { display: inline-flex; flex: none; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-2); border-radius: 2px; font: 600 var(--fs-caption)/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
   background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
 .mc:hover, .mc:focus-visible { background: color-mix(in srgb, var(--c) 32%, transparent); }

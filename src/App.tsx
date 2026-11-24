@@ -44,7 +44,7 @@ import { TipHost } from './ui/MoveTip';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
-import { AUTO_BAND_QUERY, PHONE_QUERY, SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
+import { AUTO_BAND_QUERY, FLIP_TABLES_QUERY, PHONE_QUERY, SHORT_SCREEN, TABLET_SIDE_QUERY, useMediaQuery } from './ui/useMediaQuery';
 import { AutoBand } from './ui/AutoBand';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -205,7 +205,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Schermo basso, Analisi aperta senza editor: il team parte compresso (la Panoramica sta in una schermata); se il giocatore
   // lo riapre lì resta aperto in Analisi per tutta la sessione (solo in memoria: la scelta salvata vale per le altre schede)
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
-  const analysisShort = short && shownTab === 'analysis' && !editingOpen && !tabletSide;
+  // Lo stesso sul tablet in verticale (768-1099 px, team in alto a tutta larghezza): le tabelle partono in cima allo schermo
+  const tabletTall = useMediaQuery(FLIP_TABLES_QUERY) && !autoBand && !tabletSide;
+  const analysisShort = (short || tabletTall) && shownTab === 'analysis' && !editingOpen && !tabletSide;
   const collapsed = tabletSide ? false : editingOpen ? short : analysisShort ? !analysisExpanded : savedCollapsed;
   const sectionsCollapsed = autoBand ? false : collapsed;
   const toggleCollapsed = () => {
