@@ -104,7 +104,7 @@
 /* La testata della colonna +N: sopra la parola dell'area una riga piccola che dice l'unità ("punti nel voto"), a destra
    come i numeri; fuori dal flusso (può sporgere a sinistra sopra la testata vuota accanto), così la testata resta alta
    come nelle altre schede e le righe partono allo stesso punto */
-.def-members thead th.og-share-col { position: relative; text-align: right; }
+.def-members thead th.og-share-col { position: relative; text-align: right; overflow: visible; }
 .og-share-unit { position: absolute; top: var(--sp-2); right: var(--sp-4); white-space: nowrap; font: 500 var(--fs-caption)/1 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted); }
 :is(.off-general, .def-general:not(.sp-general)) .def-members tr > :last-child:not(:first-child) { text-align: right; }
 :is(.off-general, .def-general) .og-share { display: inline-block; cursor: help; }
