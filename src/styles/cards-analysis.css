@@ -73,7 +73,9 @@
 .an-sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-6) var(--sp-6) calc(var(--sp-10) + env(safe-area-inset-bottom)); display: grid; gap: var(--sp-8); align-content: start; }
 .og-sheet-sec { display: grid; gap: var(--sp-4); }
 .og-sheet-sec h4 { margin: 0; font: 700 var(--fs-label)/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-.og-sheet-sec .mcs { width: 100%; max-height: none; flex-wrap: wrap; }
+.og-sheet-sec .mcs { width: 100%; max-height: none; flex-wrap: wrap; margin-top: 0; }
+/* Sopra le pillole delle mosse: cosa conta il numero (i bersagli che la mossa manda KO in due colpi) */
+.og-sheet-cap { margin: var(--sp-2) 0 0; font: 500 var(--fs-caption)/1.3 var(--ui); color: var(--muted); }
 
 /* Riga del team con un conto ("18/18 tipi coperti · 2 con un OHKO") */
 .og-hero-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--sp-2); font: 500 var(--fs-small)/1.3 var(--ui); color: var(--muted); }
@@ -233,9 +235,10 @@
 .og-sheet-sec .worst { flex-wrap: wrap; }
 /* Il foglio di un tipo in Difesa: la fascia del colpo preso, col semaforo della Difesa */
 .dt-sheet-band { font: 800 italic var(--fs-caption)/1 var(--display); text-align: right; }
-.dt-sheet-row.hold-ohko .dt-sheet-band, .dt-sheet-row.hold-ohko .ct-sheet-pct { color: var(--bad); }
+/* Sulla riga rossa il rosso pieno non si legge: lo stesso rosso schiarito dei pezzi OHKO */
+.dt-sheet-row.hold-ohko .dt-sheet-band, .dt-sheet-row.hold-ohko .ct-sheet-pct { color: color-mix(in srgb, var(--bad) 40%, white); }
 .dt-sheet-row.hold-2 .dt-sheet-band, .dt-sheet-row.hold-2 .ct-sheet-pct { color: var(--warn); }
-.dt-sheet-row.hold-3 .dt-sheet-band, .dt-sheet-row.hold-3 .ct-sheet-pct, .dt-sheet-row.hold-4 .dt-sheet-band, .dt-sheet-row.hold-4 .ct-sheet-pct { color: color-mix(in srgb, var(--good) 70%, white); }
+.dt-sheet-row.hold-3 .dt-sheet-band, .dt-sheet-row.hold-3 .ct-sheet-pct, .dt-sheet-row.hold-4 .dt-sheet-band, .dt-sheet-row.hold-4 .ct-sheet-pct { color: color-mix(in srgb, var(--good) 35%, white); }
 
 /* ── Velocità a carte: la riga del team (barra e %, legenda a parole), poi le carte dei membri con "Vel 300" nella
    targhetta, la % grande nel colore del voto e la barra a pezzi; i muri spenti e grigi. La carta apre la finestra coi rivali ── */
@@ -267,7 +270,10 @@
 .sp-room .sp-room-note { color: var(--room-ink); }
 /* L'interruttore di Distortozona spento e fermo, con accanto il perché */
 .eff-switch:disabled { opacity: 0.5; cursor: default; }
-.panel-switch-note { margin-left: var(--sp-4); font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); }
+/* Nessuno usa Trick Room: l'interruttore spento in fondo alla legenda (non una riga sua); il perché nel fumetto, che si
+   apre sul contenitore (il pulsante spento non riceve il puntatore) */
+.sp-room-off { margin-left: auto; display: inline-flex; cursor: help; }
+.sp-room-off .eff-switch { min-height: 0; pointer-events: none; font-size: var(--fs-caption); }
 
 /* ── Giro 2 della critica ── */
 /* La legenda corta delle barre sotto la riga del team (i pezzi nelle carte non hanno etichetta) */
@@ -289,10 +295,18 @@
 /* Offesa: la barra dei PS nel colore della fascia del tuo colpo; sotto il 3HKO grigia */
 .cm-hp-bar i.quiet { background: var(--faint); }
 /* Nel foglio le barre portano alla sottoscheda: pezzi alti (40 px) da toccare col dito */
-.og-sheet-sec .kob-row > .kob { height: 40px; }
+.og-sheet-sec .kob-row > .kob { height: 44px; }
 /* Nei fogli delle minacce la mossa del colpo sotto il nome */
 .ct-sheet-name { display: grid; }
 .ct-sheet-sub { font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Sulle righe colorate (rossa, gialle, verde) il grigio non basta (sotto 4,5:1): la mossa e il "%" prendono il chiaro del testo */
+.ct-sheet-row:is(.hold-ohko, .hold-2, .hold-3, .hold-4, .ko-ohko, .ko-two, .ko-three) :is(.ct-sheet-sub, .ct-sheet-move) { color: color-mix(in srgb, var(--text) 85%, transparent); }
+.ct-sheet-row:is(.hold-ohko, .hold-2, .hold-3, .hold-4, .ko-ohko, .ko-two, .ko-three) .ct-sheet-pct i { color: var(--text); }
+/* In fondo alla legenda dei fogli: cosa vuol dire ×2 (×½, 0) accanto al danno */
+.ct-sheet-legend .eff-legends { display: inline-flex; gap: var(--sp-5); white-space: nowrap; }
+.ct-sheet-legend .eff-legend b { font: 600 var(--fs-caption)/1 var(--ui); color: var(--text); }
+/* "Priorità" sulla carta della Velocità: col dito si tocca su 44 px (apre la sua spiegazione) */
+@media (pointer: coarse) { .sp-card-prio::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: 44px; translate: -50% -50%; } }
 /* Le tessere dei tipi: la mini icona dentro la tessera (prima sporgeva di 2 px) */
 .ct-tile-best { right: 3px; }
 .ct-tile-best .mon-icon { margin-right: 0; }

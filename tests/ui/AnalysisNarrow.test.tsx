@@ -38,6 +38,8 @@ describe('Offesa sullo schermo stretto', () => {
     expect(sheet).toHaveTextContent(/Porta \+\d+ all'Offesa del team/);
     expect([...sheet.querySelectorAll('h4')].map(h => h.textContent)).toEqual(['Coverage tipi', 'Coverage meta']);
     expect(sheet.querySelectorAll('.mcs').length).toBe(2);
+    // Sopra le pillole delle mosse cosa conta il numero
+    expect([...sheet.querySelectorAll('.og-sheet-cap')].map(x => x.textContent)).toEqual(Array(2).fill('Ogni mossa: quanti ne manda KO in due colpi'));
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Great Tusk' })).toBeNull();
   });
@@ -79,6 +81,8 @@ describe('Offesa sullo schermo stretto', () => {
     await user.click(within(list).getByRole('button', { name: `Dettagli di ${name}` }));
     const sheet = screen.getByRole('dialog', { name });
     expect(sheet.querySelectorAll('.cm-sheet-row')).toHaveLength(2);
+    // In fondo alla legenda del foglio cosa vuol dire ×2
+    expect(sheet.querySelector('.ct-sheet-legend')).toHaveTextContent('×2 superefficace');
   });
 
   it('Difesa a carte come in Offesa: Generale, tessere dei tipi, carte delle minacce col foglio; Recupero col team in cima e un membro per riga', async () => {
@@ -100,6 +104,7 @@ describe('Offesa sullo schermo stretto', () => {
     const name = list.querySelector('.og-card-name')!.textContent!;
     await user.click(within(list).getByRole('button', { name: `Dettagli di ${name}` }));
     expect(screen.getByRole('dialog', { name }).querySelectorAll('.cm-sheet-row')).toHaveLength(2);
+    expect(screen.getByRole('dialog', { name }).querySelector('.ct-sheet-legend')).toHaveTextContent('×2 debole×½ resiste0 immune');
     await user.keyboard('{Escape}');
     await user.click(screen.getByRole('tab', { name: /^Recupero/ }));
     // Recupero: la risposta del team in cima, poi un membro per riga con solo le fonti vere
@@ -120,6 +125,10 @@ describe('Offesa sullo schermo stretto', () => {
     expect(cards[0].querySelector('.sp-card-tag')).toHaveTextContent(/^Vel \d+/);
     expect(cards[0].querySelector('.sp-big')).toHaveTextContent(/\d+%del meta superato/);
     expect(screen.getByRole('switch', { name: /Distortozona/ })).toBeDisabled();
+    // Spenta in fondo alla legenda della riga del team (non una riga sua), il perché nel fumetto
+    const off = screen.getByRole('switch', { name: /Distortozona/ }).closest('.sp-room-off')!;
+    expect(off.closest('.sp-legend')).not.toBeNull();
+    expect(off).toHaveAttribute('data-hint', 'nessuno nel team la usa');
     // La carta apre il foglio dal basso come in Offesa e Difesa: in testa lo stesso numero della carta con le stesse parole,
     // sotto fra quanti rivali e quanti ne supera; il conteggio della lista sulle stesse specie
     await user.click(cards[0].querySelector('button.og-card-open') as HTMLElement);

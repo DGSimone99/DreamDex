@@ -13,6 +13,6 @@ export const roomSetters = (ctx: AreaContext): string[] =>
 export function speedTabs(speed: TeamSpeed, meta: boolean, t: T, ctx: AreaContext): DetailTab[] {
   const roomBy = roomSetters(ctx);
   return [
-    { key: 'general', label: t('detail.tab.general'), value: speed.value, roomBy, panel: <SpeedGeneral speed={speed} meta={meta} ctx={ctx} room={!!ctx.trickRoom && roomBy.length > 0} value={speed.value} />, help: <SpeedGuideSection speed={speed} meta={meta} doubles={isOneType(formatRules(ctx.formatId))} /> },
+    { key: 'general', label: t('detail.tab.general'), value: speed.value, roomBy, panel: <SpeedGeneral speed={speed} meta={meta} ctx={ctx} room={!!ctx.trickRoom && roomBy.length > 0} roomNone={roomBy.length === 0} value={speed.value} />, help: <SpeedGuideSection speed={speed} meta={meta} doubles={isOneType(formatRules(ctx.formatId))} /> },
   ];
 }

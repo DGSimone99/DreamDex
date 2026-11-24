@@ -188,12 +188,14 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
             <section className="og-sheet-sec">
               <h4>{t('detail.coverageTypes')}</h4>
               {typeRow(open.slot, open.m, open.quiet, open.name, true)}
+              <p className="og-sheet-cap">{t('kob.movesCaption')}</p>
               <MoveChips shares={typeMoves(open.m, open.slot)} of={ofTypes} total={18} />
             </section>
             {meta && (
               <section className="og-sheet-sec">
                 <h4>{t('detail.coverageMeta')}</h4>
                 {metaRow(open.slot, open.m, open.quiet, open.name, true)}
+                <p className="og-sheet-cap">{t('kob.movesCaption')}</p>
                 <MoveChips shares={metaMoves(open.slot)} of={ofMeta} total={nMeta} />
               </section>
             )}

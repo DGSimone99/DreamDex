@@ -229,13 +229,6 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
               label={`${t('sdetail.room.switch')} · ${current.roomBy.join(', ')}`} title={t('sdetail.room.title')} />
           </span>
         )}
-        {/* Telefono e tablet: l'interruttore c'è sempre, spento e fermo se nessuno nel team usa Distortozona (così si sa che c'è) */}
-        {area === 'speed' && cards && current.roomBy && current.roomBy.length === 0 && (
-          <span className="panel-switch">
-            <PanelSwitch tone="room" on={false} onChange={() => {}} disabled label={t('sdetail.room.switch')} title={t('sdetail.room.none')} />
-            <span className="panel-switch-note">{t('sdetail.room.none')}</span>
-          </span>
-        )}
         {/* Offesa, Difesa e Velocità non hanno titoli nelle loro schede: per i lettori di schermo la sottoscheda aperta (h4),
             sotto l'area (h3); Ruoli e Bonus hanno già i loro (le fasce, Sul voto) */}
         {(area === 'strength' || area === 'defense' || area === 'speed') && <h4 className="visually-hidden">{current.label}</h4>}

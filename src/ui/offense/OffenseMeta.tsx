@@ -21,7 +21,7 @@ import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { MetaCount, MetaFrame, MetaOrderSwitch, type MetaOrder } from '../MetaFrame';
 import { byThreat, byUsage } from '../../engine/overviewDashboard';
-import { EffTag, effClass, effLabel, useColumnHover, EffSwitch } from '../effTag';
+import { EffLegend, EffTag, effClass, effLabel, useColumnHover, EffSwitch } from '../effTag';
 import { FocusNote, inBand, koBandOf } from './KoBadges';
 
 /** Telefono: quante minacce si vedono all'inizio e quante ne aggiunge "Altre". */
@@ -334,7 +334,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
                 );
               })}
             </ul>
-            <span className="area-legend ct-sheet-legend" aria-hidden="true"><OffenseMetaLegend /></span>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><OffenseMetaLegend /><EffLegend side="offense" /></span>
           </AnalysisSheet>
         )}
       </div>

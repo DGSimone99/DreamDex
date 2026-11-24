@@ -18,6 +18,7 @@ import { MemberMon } from '../defense/MemberMon';
 import { FloatTip, TipGo, useFloatAnchor } from '../FloatTip';
 import { SpeedTip } from '../dashboard/SpeedTip';
 import { Icon } from '../icons';
+import { PanelSwitch } from '../effTag';
 import { offenseSlots } from '../offense/slots';
 import { linkTeamCard } from '../teamLink';
 import { TIP_NEUTRAL, TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
@@ -60,7 +61,7 @@ type Parts = SpeedParts;
  * Chi il motore non conosce resta con "—". I muri: chi ha come famiglia principale i muri (`needs.primary`, la stessa
  * decisione dei ruoli sulla carta del team e dei bisogni: il verdetto degli EV, poi il valore migliore fra Attacco e muri).
  */
-export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext; room?: boolean; /** Il voto della Velocità (la lettera nella riga del team delle carte). */ value?: number | null }) {
+export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false, value = null }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext; room?: boolean; /** Nessuno nel team usa Trick Room: sulle carte l'interruttore spento in fondo alla legenda. */ roomNone?: boolean; /** Il voto della Velocità (la lettera nella riga del team delle carte). */ value?: number | null }) {
   const t = useT();
   const lang = useLang();
   const stacked = useStackedTables();
@@ -182,17 +183,25 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, value = null }: {
             <span className="sp-card-bar"><Stack {...teamParts} bare /></span>
             <span className="sp-big" aria-label={t('sdetail.cards.teamAria', { n: teamParts.total })}>{teamParts.total}<i>%</i></span>
           </div>
-          {/* La legenda con parole vere: cosa sono i pezzi della barra (in Trick Room una riga sola) */}
-          <p className="sp-legend" aria-hidden="true">
+          {/* La legenda con parole vere: cosa sono i pezzi della barra (in Trick Room una riga sola). Se nessuno nel team usa
+              Trick Room l'interruttore c'è lo stesso (così si sa che c'è), spento e fermo, in fondo alla stessa riga: il
+              perché nel fumetto */}
+          <div className="sp-legend">
             {room
-              ? <><span className="sp-room-note">{t('sdetail.room.legend')}</span><span className="sp-room-note">{t('sdetail.cards.roomGrade')}</span></>
+              ? <><span className="sp-room-note" aria-hidden="true">{t('sdetail.room.legend')}</span><span className="sp-room-note" aria-hidden="true">{t('sdetail.cards.roomGrade')}</span></>
               : <>
-                <span><i className="sp-leg raw" />{t('sdetail.cards.base')}</span>
-                <span><i className="sp-leg own" />{t('sdetail.legendOwn')}</span>
-                <span><i className="sp-leg team" />{t('guide.speed.gains.control')}</span>
-                <span><i className="sp-leg half" />{t('sdetail.legendHalf')}</span>
+                <span aria-hidden="true"><i className="sp-leg raw" />{t('sdetail.cards.base')}</span>
+                <span aria-hidden="true"><i className="sp-leg own" />{t('sdetail.legendOwn')}</span>
+                <span aria-hidden="true"><i className="sp-leg team" />{t('guide.speed.gains.control')}</span>
+                <span aria-hidden="true"><i className="sp-leg half" />{t('sdetail.legendHalf')}</span>
               </>}
-          </p>
+            {roomNone && (
+              <span className="sp-room-off" data-hint={t('sdetail.room.none')}>
+                <PanelSwitch tone="room" on={false} onChange={() => {}} disabled label={t('sdetail.room.switch')} />
+                <span className="visually-hidden">{t('sdetail.room.none')}</span>
+              </span>
+            )}
+          </div>
         </section>
         <ul className="og-cards" aria-label={t('detail.member')}>
           {ctx.team.map((set, slot) => {

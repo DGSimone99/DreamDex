@@ -95,3 +95,15 @@ export function PanelSwitch({ on, onChange, label, title, tone, disabled = false
     </button>
   );
 }
+
+/**
+ * Nei fogli dal basso (telefono e tablet), in fondo alla legenda: cosa vuol dire l'etichetta accanto al danno. Offesa
+ * "×2 superefficace"; Difesa "×2 debole · ×½ resiste · 0 immune".
+ */
+export function EffLegend({ side }: { side: EffSide }) {
+  const t = useT();
+  const items: [string, string][] = side === 'offense'
+    ? [['×2', t('eff.legend.se')]]
+    : [['×2', t('eff.legend.weak')], ['×½', t('eff.legend.resist')], ['0', t('eff.immune')]];
+  return <span className="eff-legends">{items.map(([m, word]) => <span key={m} className="eff-legend"><b>{m}</b> {word}</span>)}</span>;
+}

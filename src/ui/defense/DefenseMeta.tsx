@@ -14,7 +14,8 @@ import { HOLD_BANDS } from './holds';
 import { FLIP_TABLES_QUERY, PHONE_QUERY, useMediaQuery } from '../useMediaQuery';
 import { FocusNote } from '../offense/KoBadges';
 import { battleMoveType } from '../../engine/types';
-import { useT } from '../../i18n/react';
+import { useLang, useT } from '../../i18n/react';
+import { gameName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { MoveLine } from '../dashboard/CoverageTip';
 import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
@@ -30,7 +31,7 @@ import { KoBadge } from '../KoBadge';
 import { TipDmg, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import type { DmgRange } from '../dmgText';
 import { MemberMon } from './MemberMon';
-import { EffTag, effClass, effLabel, effWord, useColumnHover, EffSwitch } from '../effTag';
+import { EffLegend, EffTag, effClass, effLabel, effWord, useColumnHover, EffSwitch } from '../effTag';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 type Holder = Row['heldBy'][number];
@@ -71,6 +72,7 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
+  const lang = useLang();
   const hover = useColumnHover();
   const narrow = useMediaQuery(FLIP_TABLES_QUERY);
   // Telefono (sotto i 600 px): le minacce come righe basse e l'interruttore sulla riga di Ordine
@@ -131,7 +133,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     return (
       <td key={key} className={hover.cls(k, `rob-cell dm-cell ${HOLD_BANDS[c.band].cls}${eff}`)} onMouseEnter={enter} onMouseLeave={tip.close} onFocus={focusIn} onBlur={tip.close}>
         <span className="wall-pct ct-num">{c.pct}<i>%</i></span><HpLeft pct={c.pct} />
-        <span className="visually-hidden"> {row.species}: {c.move ? `${c.move} ` : ''}{c.pct}%</span>
+        <span className="visually-hidden"> {row.species}: {c.move ? `${gameName('move', c.move, lang)} ` : ''}{c.pct}%</span>
         <EffTag label={tag} side="defense" />
       </td>
     );
@@ -306,7 +308,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                 return (
                   <li key={`${names[m] ?? m}-${m}`} className={`ct-sheet-row cm-sheet-row dt-sheet-row ${band ? HOLD_BANDS[band].cls : 'hold-none'}${ctx.effOnly && !tag ? ' eff-dim' : ''}`}>
                     <PokemonIcon name={names[m] ?? ctx.team[m].species} />
-                    <span className="ct-sheet-name">{names[m] ?? ctx.team[m].species}{(() => { const mv = c === null ? null : c === 'ko' ? openRow.hits?.[knownIndex[m]]?.move : c.move; return mv ? <small className="ct-sheet-sub">{mv}</small> : null; })()}</span>
+                    <span className="ct-sheet-name">{names[m] ?? ctx.team[m].species}{(() => { const mv = c === null ? null : c === 'ko' ? openRow.hits?.[knownIndex[m]]?.move : c.move; return mv ? <small className="ct-sheet-sub">{gameName('move', mv, lang)}</small> : null; })()}</span>
                     {c === null ? <span className="ct-sheet-none">—</span>
                       : c === 'ko' ? <><span className="cm-ko small">KO</span><EffTag label={tag} side="defense" /><span className="ct-sheet-pct" /></>
                       : <><HpLeft pct={c.pct} /><EffTag label={tag} side="defense" /><span className="ct-sheet-pct">{c.pct}<i>%</i></span></>}
@@ -314,7 +316,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                 );
               })}
             </ul>
-            <span className="area-legend ct-sheet-legend" aria-hidden="true"><DefenseMetaLegend /></span>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><DefenseMetaLegend /><EffLegend side="defense" /></span>
           </AnalysisSheet>
         )}
       </div>

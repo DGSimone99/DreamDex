@@ -16,7 +16,7 @@ import { formatMultiplier, mitigationNote, mitigationParts } from '../AnalysisTa
 import { CONDITION_TYPE } from '../dashboard/ConditionTip';
 import { KoBadge } from '../KoBadge';
 import { TipDmg, TipHead, TipRow, TipRows, TipSec, TipTypeIcon } from '../TipHead';
-import { EffTag, effClass, effLabel, effWord } from '../effTag';
+import { EffLegend, EffTag, effClass, effLabel, effWord } from '../effTag';
 import { CategoryIcon } from '../CategoryIcon';
 import type { DmgRange } from '../dmgText';
 import type { AreaContext } from '../AreaDetail';
@@ -215,7 +215,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                 );
               })}
             </ul>
-            <span className="area-legend ct-sheet-legend" aria-hidden="true"><DefenseTypesLegend /></span>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><DefenseTypesLegend /><EffLegend side="defense" /></span>
           </AnalysisSheet>
         )}
       </div>

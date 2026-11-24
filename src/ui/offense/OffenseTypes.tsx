@@ -7,7 +7,7 @@ import { STRONG_CREDIT } from '../../engine/offense';
 import { typeAverage } from '../../engine/coverage';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { moveAttackMultiplier, teamField, TYPES } from '../../engine/types';
-import { EffTag, effClass, effLabel } from '../effTag';
+import { EffLegend, EffTag, effClass, effLabel } from '../effTag';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
@@ -227,7 +227,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                 );
               })}
             </ul>
-            <span className="area-legend ct-sheet-legend" aria-hidden="true"><OffenseTypesLegend /></span>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><OffenseTypesLegend /><EffLegend side="offense" /></span>
           </AnalysisSheet>
         )}
       </div>

@@ -155,7 +155,7 @@ function SpeedMemberBody({ member, set, team, meta, parts, tone = '', room = fal
     return (
       <li key={`${row.species}-${boosted}`} className={`sp-row sp-${result}${boosted ? ' sp-boosted' : ''}`} title={title}>
         <span className="def-box"><PokemonIcon name={row.species} /></span>
-        <span className="sp-rival-name">{row.species}{boosted && <><ItemIcon item={item} size={16} tip /><span className="visually-hidden"> {item}</span></>}</span>
+        <span className="sp-rival-name"><span className="sp-rival-sp">{row.species}</span>{boosted && <><ItemIcon item={item} size={16} tip /><small className="sp-rival-item"> {t(rival.scarf ? 'stip.scarf' : 'stip.booster')}</small></>}</span>
         <b className="sp-rival-speed">{value}</b>
         <span className="sp-rival-diff">{result === 'tie' ? t('sdetail.cell.tie') : `${diff > 0 ? '+' : '−'}${Math.abs(diff)}`}</span>
       </li>
