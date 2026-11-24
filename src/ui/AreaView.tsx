@@ -13,6 +13,7 @@ import { EffSwitch, PanelSwitch } from './effTag';
 import { Icon } from './icons';
 import { MoreProblems, problemEntries, ProblemChip } from './ProblemPill';
 import { useFitCount } from './useFit';
+import { FLIP_TABLES_QUERY, useMediaQuery } from './useMediaQuery';
 
 /** La scelta dell'interruttore Trick Room nella sessione del browser ("0" spento); senza scelta, o senza memoria, acceso. */
 const ROOM_KEY = 'dreamdex.speedTrickRoom';
@@ -85,6 +86,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Interruttore Trick Room della Velocità (solo con Trick Room nel team): acceso all'inizio, poi resta com'è stato messo
   // per la sessione, anche cambiando area (la vista si rimonta a ogni area: la scelta sta nella sessione del browser)
   const [trickRoom, setTrickRoomState] = useState(readRoomPick);
+  const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const setTrickRoom = (on: boolean) => { setTrickRoomState(on); writeRoomPick(on); };
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
   const [guide, setGuide] = useState<string | null>(null);
@@ -200,6 +202,13 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
           <span className="panel-switch">
             <PanelSwitch tone="room" on={trickRoom} onChange={setTrickRoom}
               label={`${t('sdetail.room.switch')} · ${current.roomBy.join(', ')}`} title={t('sdetail.room.title')} />
+          </span>
+        )}
+        {/* Telefono e tablet: l'interruttore c'è sempre, spento e fermo se nessuno nel team usa Distortozona (così si sa che c'è) */}
+        {area === 'speed' && cards && current.roomBy && current.roomBy.length === 0 && (
+          <span className="panel-switch">
+            <PanelSwitch tone="room" on={false} onChange={() => {}} disabled label={t('sdetail.room.switch')} title={t('sdetail.room.none')} />
+            <span className="panel-switch-note">{t('sdetail.room.none')}</span>
           </span>
         )}
         {/* Offesa, Difesa e Velocità non hanno titoli nelle loro schede: per i lettori di schermo la sottoscheda aperta (h4),

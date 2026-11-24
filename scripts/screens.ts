@@ -323,7 +323,7 @@ const SPEED_STATES: Record<string, State> = {
   'analysis-speed-member': { hash: hash(SPEED_SIX), run: async p => {
     const ok = await speedState(null).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.sp-bar-btn', /./)) return 'no bar';
+    if (!await clickText(p, '.sp-bar-btn', /./) && !await clickText(p, '.sp-card .og-card-open', /./)) return 'no bar';
     await wait(400);
     return true;
   } },

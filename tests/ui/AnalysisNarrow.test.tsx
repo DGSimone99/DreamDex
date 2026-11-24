@@ -100,14 +100,17 @@ describe('Offesa sullo schermo stretto', () => {
     expect([...sus.querySelectorAll('tbody.og-stack-mon')[0].querySelectorAll('.og-bar-label')].map(th => th.textContent)).toEqual(['Perde', 'Recupera', 'Netto']);
   });
 
-  it('Velocità: per ogni membro una fascia col nome e sotto la barra che apre i dettagli; in fondo il team', () => {
+  it('Velocità a carte: la riga del team con la legenda a parole, una carta per membro (Vel, % del meta superato) che apre i rivali; Distortozona spenta se nessuno la usa', async () => {
+    const user = userEvent.setup();
     view('speed');
-    const table = screen.getByRole('table', { name: 'Velocità: Generale' });
-    expect(table).toHaveClass('sp-stack-table');
-    const groups = table.querySelectorAll('tbody.og-stack-mon:not(.og-stack-team)');
-    expect(groups).toHaveLength(2);
-    expect(groups[0].querySelector('.og-mon-row')).toHaveTextContent('Great Tusk');
-    expect(groups[0].querySelector('.og-bar-row button.sp-bar-btn')).toHaveAccessibleName(/Great Tusk/);
-    expect(table.querySelector('.og-stack-team .sp-team')).not.toBeNull();
+    const hero = screen.getByRole('region', { name: 'Velocità del team' });
+    expect(hero).toHaveTextContent('Base');
+    const cards = document.querySelectorAll('.og-cards > .sp-card');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].querySelector('.sp-card-tag')).toHaveTextContent(/^Vel \d+/);
+    expect(cards[0].querySelector('.sp-big')).toHaveTextContent(/\d+%del meta superato/);
+    expect(screen.getByRole('switch', { name: /Distortozona/ })).toBeDisabled();
+    await user.click(cards[0].querySelector('button.og-card-open') as HTMLElement);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

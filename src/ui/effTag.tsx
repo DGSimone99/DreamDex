@@ -86,10 +86,10 @@ export function EffSwitch({ side, on, onChange }: { side: EffSide; on: boolean; 
  * L'interruttore in alto a sinistra nel pannello, sulla riga della legenda (`.panel-switch`): quello dell'efficacia e,
  * nella Velocità, quello di Trick Room (`tone="room"`: acceso in viola, il colore della stanza).
  */
-export function PanelSwitch({ on, onChange, label, title, tone }: { on: boolean; onChange: (on: boolean) => void; label: string; title?: string; tone?: 'room' }) {
+export function PanelSwitch({ on, onChange, label, title, tone, disabled = false }: { on: boolean; onChange: (on: boolean) => void; label: string; title?: string; tone?: 'room'; /** Spento e fermo (es. Distortozona senza nessuno che la usa): `title` dice perché. */ disabled?: boolean }) {
   return (
     <button type="button" role="switch" aria-checked={on} className={`eff-switch${tone ? ` ${tone}` : ''}${on ? ' on' : ''}`}
-      title={title} onClick={() => onChange(!on)}>
+      title={title} disabled={disabled} onClick={() => onChange(!on)}>
       <span className="eff-switch-track" aria-hidden="true"><span className="eff-switch-knob" /></span>
       {label}
     </button>
