@@ -1049,6 +1049,19 @@ describe('CoachingView', () => {
     expect(screen.queryByRole('complementary', { name: /^Proposte/ })).toBeNull();
   });
 
+  it('nessun problema ma manca un membro: non "il team è a posto", le aggiunte nella classifica', () => {
+    const add: CoachFix = { kind: 'add', species: 'Zapdos', set: mostCommonSet(fixtureStats, 'Zapdos') ?? emptySet('Zapdos'), index: null, member: null, gain: 12, solves: [], reduces: [], after: before };
+    view(advice([add]), { members: 5, coaching: coachingOf([]) });
+    expect(screen.queryByText('Il team è a posto')).toBeNull();
+    expect(screen.getByRole('complementary', { name: /^Proposte/ })).toBeInTheDocument();
+    expect(heroOf().querySelector('.coach-vs')).toHaveClass('is-add');
+  });
+
+  it('nessun problema, manca un membro ma nessuna aggiunta alza il voto: "il team è a posto" (non la schermata dei problemi irrisolti)', () => {
+    view(advice([]), { members: 5, coaching: coachingOf([]) });
+    expect(screen.getByRole('heading', { name: 'Il team è a posto' })).toBeInTheDocument();
+  });
+
   it('problemi che nessuna proposta risolve: Eevee sdraiato a terra, i problemi che restano e Migliora i set', async () => {
     const user = userEvent.setup();
     const h = view(advice([]));

@@ -997,8 +997,9 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
     </p>
   );
 
-  // Nessun problema: il team è a posto
-  if (problems.length === 0) {
+  // Nessun problema: il team è a posto. Con un posto libero però le aggiunte alzano il voto: si mostra la classifica
+  // (anche mentre si calcola); "a posto" solo se nessuna aggiunta lo alza
+  if (problems.length === 0 && (members >= 6 || groups?.length === 0)) {
     return (
       <div className="coaching" ref={root}>
         <div className="coach-empty is-clear">
