@@ -39,8 +39,6 @@ React 19, TypeScript e Vite, con test in Vitest e Testing Library. La logica del
 
 A ogni push su `master` partono i test, si costruisce il sito e si pubblica su Cloudflare Pages. Ogni lunedì il sito si ricostruisce coi dati appena scaricati. Se un test fallisce o un download non riesce non si pubblica niente e resta online la versione di prima.
 
-Sviluppato con l'aiuto dell'AI (Claude Code).
-
 Per avviarlo sul tuo computer serve Node.js 22:
 
 ```sh
