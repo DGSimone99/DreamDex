@@ -33,7 +33,7 @@ describe('tabelle complete nelle schede d\'area', () => {
     expect(view().querySelector('.area-legend')).toBeNull();
     expect(view().querySelector('.area-tools-row')).toBeNull();
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(legend()).toHaveTextContent('OHKO2HKO3HKO4HKO+');
+    expect(legend()).toHaveTextContent('4HKO+3HKO2HKOOHKO');
     // La riga in fondo viene dopo la tabella
     const table = within(view()).getByRole('table');
     expect(table.compareDocumentPosition(legend()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -43,7 +43,7 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(headers[0]).toBe('Pokémon');
     expect(headers[1]).toBe('Tipi');
     expect(headers[2]).toBe('Meta');
-    expect(headers[3]).toBe('Offesa');
+    expect(headers[3]).toBe('Offesa punti nel voto');
     const rows = [...table.querySelectorAll('tbody tr:not(.og-fill)')] as HTMLElement[];
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
@@ -93,7 +93,7 @@ describe("dettaglio dell'Offesa a schede", () => {
     // Intestazione, due membri, Lo coprono
     expect(rows).toHaveLength(4);
     for (const row of rows.slice(1, 3)) {
-      for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^(KO)?\d+%( (OHKO|2HKO|3HKO))?( ?setup \d+%)?(×[24] superefficace ×[24])?$/);
+      for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^(OHKO)?\d+%( (OHKO|2HKO|3HKO))?( ?setup \d+%)?(×[24] superefficace ×[24])?$/);
     }
     expect(rows[3]).toHaveTextContent(/^Team CoverageLo coprono/);
   });
@@ -114,7 +114,7 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(headers[0]).toBe('Pokémon');
     expect(headers[1]).toBe('Types');
     expect(headers[2]).toBe('Meta');
-    expect(headers[3]).toBe('Offense');
+    expect(headers[3]).toBe('Offense points in the grade');
     const foot = document.querySelector('.def-members tfoot tr')!;
     // Gli scoperti in inglese nel nome accessibile
     const bad = foot.querySelector('.kob.rest.bad');
@@ -136,7 +136,7 @@ describe('dettaglio della Difesa a schede', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(visibleText)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
+    expect(within(table).getAllByRole('columnheader').map(visibleText)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa punti nel voto']);
     const all = within(table).getAllByRole('row');
     const rows = all.slice(1, -1);
     expect(rows.map(r => within(r).getByRole('rowheader').querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
@@ -218,7 +218,7 @@ describe('dettaglio della Difesa a schede', () => {
     await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
     expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Team Coverage' })).toBeInTheDocument();
     await user.click(within(dialog).getByRole('tab', { name: /^General/ }));
-    expect(within(dialog).getAllByRole('columnheader').map(visibleText)).toEqual(['Pokémon', 'Types', 'Meta', 'Defense']);
+    expect(within(dialog).getAllByRole('columnheader').map(visibleText)).toEqual(['Pokémon', 'Types', 'Meta', 'Defense points in the grade']);
   });
 });
 

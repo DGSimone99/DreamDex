@@ -130,4 +130,24 @@ describe('team compresso', () => {
       vi.unstubAllGlobals();
     }
   });
+  it("tablet in verticale (768-1099 px, team in alto): l'Analisi parte col team compresso, la scheda Pokémon no", async () => {
+    const tall = vi.fn((query: string) => ({
+      // Solo "fino a 1099 px": non il telefono (767), non il tablet in orizzontale (orientation), non lo schermo basso
+      matches: query === '(max-width: 1099px)', media: query, onchange: null,
+      addEventListener: () => undefined, removeEventListener: () => undefined, addListener: () => undefined, removeListener: () => undefined, dispatchEvent: () => false,
+    }) as MediaQueryList);
+    vi.stubGlobal('matchMedia', tall);
+    try {
+      const user = userEvent.setup();
+      const { container } = renderTeam(memory());
+      const band = () => container.querySelector('.band')!;
+      expect(band()).not.toHaveClass('collapsed');
+      await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+      expect(band()).toHaveClass('collapsed');
+      await user.click(screen.getByRole('tab', { name: /^Pokémon/ }));
+      expect(band()).not.toHaveClass('collapsed');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

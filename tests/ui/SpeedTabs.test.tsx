@@ -54,9 +54,9 @@ describe('Velocità: una scheda a barre', () => {
     const bar = barOf('Dragonite');
     expect(bar).toHaveTextContent(`${Math.round(100 * d.raw)}`);
     expect(bar).not.toHaveAttribute('title');
-    // In fondo la riga del team, senza il numero (il voto dell'area sta nella testata)
+    // In fondo la riga del team come i membri: i pezzi e il totale col %
     expect(document.querySelector('.def-members tfoot')).toHaveTextContent(/^Velocità del team\d/);
-    expect(document.querySelector('.def-members tfoot')).not.toHaveTextContent(`${rating.speed.value}%`);
+    expect(document.querySelector('.def-members tfoot .sp-total')).toHaveTextContent(/^\d+%$/);
   });
 
   it('passando sulla barra: la scala dei rivali vicini e cosa aggiunge ogni guadagno, icona della Booster accanto al nome', async () => {
@@ -90,22 +90,44 @@ describe('Velocità: una scheda a barre', () => {
     view();
     await user.click(barOf('Dragonite'));
     const dialog = dialogOf('Dragonite');
+    // In testa lo stesso numero della barra con le parole della carta; sotto fra quanti rivali, quanti ne supera da solo e
+    // i pezzi dei guadagni (gli stessi della barra); niente altre percentuali
+    const d = withMeta().speed.members.find(m => m.species === 'Dragonite')!;
+    const species = poolSpecies(fixtureData).filter(sp => sp !== 'Dragonite').length;
+    expect(dialog.querySelector('.sp-dlg-total')).toHaveTextContent(`${Math.round(100 * d.total)}% del meta superato`);
+    // Tutto in %: da solo, poi i pezzi della barra e il totale
+    expect(dialog.querySelector('.sp-dlg-base')).toHaveTextContent(new RegExp(`^Da solo ${Math.round(100 * d.raw)}% \\(${Math.round(d.raw * species)} su ${species}\\) · \\+\\d+ con potenziamenti e priorità · \\+\\d+ col team = ${Math.round(100 * d.total)}%$`));
+    expect(within(dialog).getByText(/^Supera \d+ su \d+/)).toHaveTextContent(`Supera ${Math.round(d.raw * species)} su ${species}`);
+    expect(dialog.querySelector('.sp-dlg-stat')).toHaveTextContent(/^Vel \d+$/);
     expect(checks(dialog)).toEqual(expect.arrayContaining(['Dragon Dance', 'Sticky Web', 'Stun Spore']));
     expect(checks(dialog).filter(c => ['Dragon Dance', 'Sticky Web', 'Stun Spore', 'Booster Energy', 'Tailwind', 'Trick Room'].includes(c!))).toEqual(['Dragon Dance', 'Sticky Web', 'Stun Spore']);
     expect(dialog).not.toHaveTextContent('il voto non cambia');
-    const list = within(dialog).getByRole('list', { name: /rivali/i });
-    const rows = within(list).getAllByRole('listitem');
-    // Una riga per specie, più la seconda versione di chi usa spesso la Sciarpa o la Booster (Gholdengo), più il membro
-    expect(rows).toHaveLength(poolSpecies(fixtureData).filter(sp => sp !== 'Dragonite').length + 1 + 1);
-    const me = rows.find(r => r.getAttribute('aria-current') === 'true')!;
-    expect(me).toHaveTextContent('Dragonite');
-    // Dal più veloce: il primo rivale è più veloce dell'ultimo
-    const speeds = rows.filter(r => r !== me).map(r => Number(r.querySelector('.sp-rival-speed')!.textContent));
-    expect(speeds).toEqual([...speeds].sort((a, b) => b - a));
-    // Chi sta sopra è rosso, chi sta sotto verde
-    const meIndex = rows.indexOf(me);
-    expect(rows[meIndex - 1]?.classList.contains('sp-loses') ?? true).toBe(true);
-    expect(rows[meIndex + 1]?.classList.contains('sp-beats') ?? true).toBe(true);
+    // Il membro in testa come metro, poi i rivali in due gruppi col loro conto: prima quelli che supera, poi i più veloci
+    const me = dialog.querySelector('.sp-me')!;
+    expect(me.querySelector('b.sp-rival-name')).toHaveTextContent('Dragonite');
+    expect(me).not.toHaveTextContent(/\btu\b/);
+    // Gholdengo ha due righe (anche con la Sciarpa): la nota lo dice sotto i gruppi
+    expect(dialog.querySelector('.sp-versions-note')).toHaveTextContent('Chi a volte usa Sciarpa o Capsula ha due righe');
+    const mySpeed = Number(me.querySelector('.sp-rival-speed')!.textContent);
+    const beaten = within(dialog).getByRole('list', { name: /^Li supera \(\d+\)$/ });
+    const faster = within(dialog).getByRole('list', { name: /^Più veloci di lui \(\d+\)$/ });
+    expect(beaten.compareDocumentPosition(faster) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const rows = [...within(beaten).getAllByRole('listitem'), ...within(faster).getAllByRole('listitem')];
+    // Una riga per specie, più la seconda versione di chi usa spesso la Sciarpa o la Booster (Gholdengo)
+    expect(rows.length + (dialog.querySelectorAll('.sp-group-tie li').length)).toBe(poolSpecies(fixtureData).filter(sp => sp !== 'Dragonite').length + 1);
+    const speedsOf = (l: HTMLElement) => within(l).getAllByRole('listitem').map(r => Number(r.querySelector('.sp-rival-speed')!.textContent));
+    // Tutti i superati sono più lenti, tutti gli altri più veloci, e in ogni gruppo prima i più vicini al membro
+    expect(speedsOf(beaten).every(v => v < mySpeed)).toBe(true);
+    expect(speedsOf(faster).every(v => v > mySpeed)).toBe(true);
+    expect(speedsOf(beaten)).toEqual([...speedsOf(beaten)].sort((a, b) => b - a));
+    expect(speedsOf(faster)).toEqual([...speedsOf(faster)].sort((a, b) => a - b));
+    for (const r of within(beaten).getAllByRole('listitem')) expect(r).toHaveClass('sp-beats');
+    for (const r of within(faster).getAllByRole('listitem')) expect(r).toHaveClass('sp-loses');
+    // Il conto di "Li supera" è quello di "Supera N su M" (qui nessun pari); i gruppi fanno M
+    const head = within(dialog).getByText(/^Supera \d+ su \d+/).textContent!.match(/(\d+) su (\d+)/)!;
+    const nOf = (l: HTMLElement) => Number(l.getAttribute('aria-labelledby') && document.getElementById(l.getAttribute('aria-labelledby')!)!.textContent!.match(/\d+/)![0]);
+    expect(nOf(beaten)).toBe(Number(head[1]));
+    expect(nOf(beaten) + nOf(faster)).toBe(Number(head[2]));
     // Niente riga delle priorità né note sull'interruttore degli strumenti
     expect(dialog).not.toHaveTextContent(/colpisce prima|compare due volte|Le righe con l'icona/);
   });
@@ -116,9 +138,13 @@ describe('Velocità: una scheda a barre', () => {
     await user.click(barOf('Dragonite'));
     const dialog = dialogOf('Dragonite');
     const count = () => Number(within(dialog).getByText(/^Supera \d+ su \d+$/).textContent!.match(/\d+/)![0]);
+    const group = () => Number(within(dialog).getByRole('heading', { name: /^Li supera \(\d+\)$/ }).textContent!.match(/\d+/)![0]);
     const before = count();
+    expect(group()).toBe(before);
     await user.click(within(dialog).getByRole('checkbox', { name: 'Dragon Dance' }));
     expect(count()).toBeGreaterThan(before);
+    // Il conto del gruppo cambia insieme
+    expect(group()).toBe(count());
     // Gholdengo con la Sciarpa sul 38% dei set: di base compare due volte, la versione con la Sciarpa ha l'icona e il tooltip
     const rowsOf = (name: string) => within(dialog).getAllByRole('listitem').filter(r => r.textContent!.includes(name));
     expect(rowsOf('Gholdengo')).toHaveLength(2);
@@ -202,7 +228,7 @@ describe('Velocità: una scheda a barre', () => {
     const dialog = dialogOf('Dragonite');
     expect(dialog).toHaveTextContent(/tier/);
     expect(within(dialog).queryByRole('checkbox', { name: 'Strumenti avversari' })).toBeNull();
-    expect(within(dialog).getAllByRole('listitem').length).toBe(poolSpecies(noMetaData).filter(sp => sp !== 'Dragonite').length + 1);
+    expect(within(dialog).getAllByRole('listitem').length).toBe(poolSpecies(noMetaData).filter(sp => sp !== 'Dragonite').length);
   });
 
   it('la velocità nella riga è quella reale, con la Sciarpa: Victini 328 diventa 492', () => {

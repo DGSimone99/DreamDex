@@ -223,12 +223,6 @@
 .ad-panel .def-frame > .rob-legend { position: absolute; top: 0; left: 0; right: 0; height: var(--def-legend); margin: 0; padding: 0;
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: var(--legend-gap); white-space: nowrap; line-height: 1.1; }
 .ad-panel .def-frame > .rob-legend > .area-legend { order: 2; }
-/* Coverage meta: l'ordine delle colonne (Uso · Minaccia), a sinistra sulla riga della legenda dopo l'interruttore
-   dell'efficacia; piccolo come la legenda (alto quanto la riga), la scelta in ciano come le altre .segmented */
-.cm-order { display: inline-flex; align-items: center; gap: var(--sp-3); order: -1; margin-right: auto; }
-.cm-order-label { font-size: var(--legend-size); color: var(--legend-ink); }
-.cm-order .segmented { height: 20px; }
-.cm-order .segmented button { flex: none; padding: 0 9px; font-size: var(--fs-caption); line-height: 18px; }
 .ad-panel .def-frame > .rob-legend .cm-summary { margin: 0; }
 .ad-panel .ht-notes { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; cursor: help; }
 .ad-panel .cm-summary { display: inline-flex; align-items: center; gap: var(--sp-3); margin: 0 0 0 auto; }
@@ -371,7 +365,7 @@
 .def-frame .ct-table .eff-tag { position: absolute; left: 3px; bottom: 2px; font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0; color: var(--text); pointer-events: none; }
 /* Sulla casella OHKO (verde acceso) bianco pieno */
 .def-frame .ct-table .ct-cell.ok-ohko .eff-tag, .def-frame .ct-table .rob-cell.ko-ohko .eff-tag { color: #fff; }
-/* "Solo superefficaci" / "Solo efficacia": le altre caselle restano al loro posto ma quasi spente */
+/* "Solo superefficaci" (Offesa e Difesa): le altre caselle restano al loro posto ma quasi spente */
 .def-frame .ct-table td { transition: opacity 0.16s ease-out, filter 0.16s ease-out; }
 .def-frame .ct-table td.eff-dim { opacity: 0.2; filter: saturate(0.1); }
 /* La colonna sotto il puntatore si accende appena; sotto l'intestazione il nome (sopra le righe, non sposta niente) */
@@ -413,16 +407,22 @@
 .kob.hb { cursor: help; }
 /* Un pezzo non è mai più stretto di etichetta e numero */
 .kob.hb > em { text-transform: uppercase; }
-/* Etichetta (3HKO+, 2HKO, OHKO) e numero come nei pezzi dell'Offesa; il numero a 15px, così "3HKO+ 27" sta nel minimo */
+/* Etichetta (4HKO+, 3HKO, 2HKO, OHKO) e numero come nei pezzi dell'Offesa; il numero a 15px, così "4HKO+ 27" sta nel minimo */
 .kob-row > .kob.hb .kob-num > b { font-size: var(--fs-body); }
-.kob.hb-held { color: var(--good); background: color-mix(in srgb, var(--good) 34%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
-.kob.hb-held .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
+/* Le due fasce che regge, coi verdi delle caselle e della legenda di Coverage: 3HKO verde chiaro (pieno, più luminoso),
+   4HKO+ verde scuro con un filo verde intorno; così si distinguono anche senza guardare la tinta (luminanza circa 0,16
+   contro 0,06, e il filo) */
+.kob.hb-3 { color: var(--good); background: color-mix(in srgb, var(--good) 44%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent); }
+.kob.hb-3 .kob-num > b, .kob.hb-3 > em { color: white; }
+.kob.hb-4 { color: var(--good); background: color-mix(in srgb, var(--good) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good) 60%, transparent); }
+.kob.hb-4 .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
 /* Il semaforo: verde regge, giallo (Warn, "da controllare") cade in due colpi, rosso in uno. Il giallo un filo più pieno
    del rosso di prima, se no sul fondo scuro sembra grigio; etichetta 9,3:1 e numero 7,5:1 sul pezzo (col mouse 7,1 e 5,7) */
 .kob.hb-2 { --kob-ink: color-mix(in srgb, var(--warn) 35%, var(--text)); color: var(--warn); background: color-mix(in srgb, var(--warn) 22%, transparent); }
 .kob.hb-ohko { color: var(--bad); background: color-mix(in srgb, var(--bad) 36%, transparent); }
 .kob.hb-ohko .kob-num > b { color: color-mix(in srgb, var(--bad) 55%, white); }
-.kob.hb-held:hover { background: color-mix(in srgb, var(--good) 42%, transparent); }
+.kob.hb-3:hover { background: color-mix(in srgb, var(--good) 56%, transparent); }
+.kob.hb-4:hover { background: color-mix(in srgb, var(--good) 32%, transparent); }
 .kob.hb-2:hover { background: color-mix(in srgb, var(--warn) 32%, transparent); }
 .kob.hb-ohko:hover { background: color-mix(in srgb, var(--bad) 50%, transparent); }
 
@@ -468,3 +468,34 @@
 .dsh-sw.loss { background: repeating-linear-gradient(135deg, var(--bad) 0 2px, color-mix(in srgb, var(--bad) 45%, transparent) 2px 4px); }
 /* Il recupero e le perdite in parole, sotto i pezzi: verde quello che recupera, rosso quello che perde */
 
+
+/* Computer stretto (1100–1279 px): la colonna dei membri si stringe a quanto servono sprite, nome e statistiche, così le
+   18 caselle di Coverage tipi (e le barre della Generale, le pagine di Coverage meta) hanno posto. Uguale in tutte le
+   schede, così le colonne restano allineate passando da una all'altra */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .def-frame, .def-frame.roomy { --def-mon: 200px; }
+}
+/* Coverage tipi sul computer stretto e sul tablet: caselle da ~32 px, il numero senza il "%" piccolo (lo dice la riga
+   Team Coverage; resta per lo screen reader) */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .def-frame .ct-table:not(.ct-flip-table) td:is(.ct-cell, .ht-cell) .ct-num i { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+/* Le targhette delle righe di riepilogo: la forma corta solo dove la colonna dei membri è stretta */
+.row-plate .plate-short { display: none; }
+/* Coverage tipi sul tablet e sul computer stretto (768–1279 px): la colonna dei membri solo con la sprite (nome e
+   statistiche nella carta del Pokémon col mouse e per lo screen reader), così le 18 caselle stanno senza scorrere di lato
+   (da 1100 px larghe ~40 px col "%"); le targhette delle righe in fondo nella forma corta (Team, Top) */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .def-frame .ct-table.ct-table:not(.ct-flip-table) { min-width: 0; }
+  .def-types .ct-table:not(.ct-flip-table) { --def-mon: 76px; }
+  .def-types .ct-table:not(.ct-flip-table) .def-mon-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .def-types .ct-table:not(.ct-flip-table) tbody th[scope='row'] .def-mon { justify-content: center; }
+  .def-types .ct-table:not(.ct-flip-table) .row-plate .plate-long { display: none; }
+  .def-types .ct-table:not(.ct-flip-table) .row-plate .plate-short { display: inline; }
+}
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .def-frame.def-types .ct-table:not(.ct-flip-table) td:is(.ct-cell, .ht-cell) .ct-num i { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+}
+/* Difesa Generale sul computer: la chiave dei quattro pezzi sulla riga della legenda, a destra, su una riga sola */
+.ad-panel .def-frame > .rob-legend > .cards-legend { order: 2; align-self: center; margin: 0; flex-wrap: nowrap; line-height: 1; font-size: var(--legend-size); color: var(--legend-ink); }
+.ad-panel .def-frame > .rob-legend > .cards-legend > .cards-legend-keys { flex-wrap: nowrap; gap: var(--legend-item); }

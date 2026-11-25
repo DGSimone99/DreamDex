@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { type SustainParts, type TeamDefense } from '../../engine/defense';
 import { defenseShares, type DefenseShare } from '../../engine/defenseShares';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
@@ -8,7 +8,7 @@ import type { Lang } from '../../i18n';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
-import { attackerCols, HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
+import { attackerCols, HOLD_LEGEND, HoldBars, type HoldPiece, metaHolds, teamHolds, typeHolds, TypeAttackers, WorstHits, worstOf } from './HoldBars';
 import { Ask, BarHead, MetaTargets, metaText, typeStatText } from '../offense/TargetsTip';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies } from '../../engine/dex';
@@ -17,6 +17,12 @@ import { typeColor } from '../Sprite';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
+import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
+import { gradeFor } from '../../engine/rating';
+import { AnalysisSheet } from '../AnalysisSheet';
+import { Sprite } from '../Sprite';
+import { TypeIcons } from '../typeIcons';
+import { CardsLegend } from '../CardsLegend';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
@@ -165,11 +171,15 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const teamName = t('odetail.gen.total');
   // Tutti i pezzi della tabella (barre, colpi peggiori, quanto porta) sono un posto solo nel giro del Tab, poi le frecce
   const nav = useRoving<HTMLTableElement>();
+  const narrow = useStackedTables();
+  // Telefono e tablet: i membri come carte Pedana, come nell'Offesa (OffenseGeneral)
+  const cards = useMediaQuery(FLIP_TABLES_QUERY);
+  const [sheet, setSheet] = useState<number | null>(null);
 
   // Squadra chiusa: sotto le barre i tre colpi che fanno più male (tipi: il lato peggiore; meta: chi lo manda KO in un
   // colpo prima, dalla minaccia più usata, poi dal danno più alto), col tooltip delle caselle di Coverage tipi e meta
   const slotOf = (i: number) => ctx.team.findIndex(set => battleName(set) === members[i].species);
-  // Il conto di un attaccante resta neutro: reggere poco non è un difetto per lui (la riga del team no)
+  // Un attaccante: "· attacca" accanto al membro (reggere poco non è il suo lavoro)
   const quiet = (i: number) => familyAt(ctx, slotOf(i)) === 'attack';
   // Clic su un pezzo di Tipi o Meta: apre la sottoscheda con la riga del membro e quei bersagli accesi, come nell'Offesa
   const pick = (key: string, kind: 'dtypes' | 'dmeta', i: number) => (ctx.openFocus
@@ -187,6 +197,131 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={x.row.mults?.[i]} koHit={x.row.hits?.[i]} /> }));
 
 
+  const typesAsk = <Ask label={t('hold.attackersTitle')} guide={openGuide} describe={typeStatText(attackerCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask>;
+  const metaAsk = <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} icon="shield" /></Ask>;
+  const share = (m: (typeof members)[number], i: number) => {
+    const words = sustainWords(m.sustainParts);
+    return <DefShare share={shares[i]} label={t('ddetail.shareTitle', { n: signed(shares[i].points) })} describe={describe(shares[i], words)}
+      tip={<ShareTip who={m.species} share={shares[i]} words={words} meta={hasMeta} />} />;
+  };
+
+  if (cards) {
+    const grade = gradeFor(defense.value, lang);
+    // Come nell'Offesa: nelle carte le barre si guardano soltanto, nel foglio portano alla sottoscheda
+    const typesBar = (i: number, tap = false) => <HoldBars targets={typeBars[i]} who={members[i].species} mon={members[i].species} of={ofTypes}
+      onPick={tap && ctx.openFocus ? ((band: HoldPiece) => { setSheet(null); pick('coverageTypes', 'dtypes', i)!(band); }) : undefined} pickPlace={t('detail.coverageTypes')} />;
+    const metaBar = (i: number, tap = false) => <HoldBars targets={metaBars[i]} who={members[i].species} mon={members[i].species} of={ofMeta}
+      onPick={tap && ctx.openFocus ? ((band: HoldPiece) => { setSheet(null); pick('coverageMeta', 'dmeta', i)!(band); }) : undefined} pickPlace={t('detail.coverageMeta')} />;
+    const open = sheet === null ? null : members[sheet] ?? null;
+    return (
+      <div className="def-general og-cards-frame">
+        <section className="og-hero" aria-label={teamName}>
+          <span className="og-plate">{teamName}</span>
+          <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>
+          <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></div>
+          {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></div>}
+        </section>
+        <CardsLegend side="def" pieces={HOLD_LEGEND} />
+        <ul className="og-cards" aria-label={t('detail.member')}>
+          {members.map((m, i) => {
+            const set = setOf(ctx.team, m.species);
+            const types = (set && battleSpecies(set)?.types) || [];
+            const calm = quiet(i);
+            return (
+              <li key={`${m.species}-${i}`} className={`og-card pedana-face${calm ? ' wall' : ''}`}
+                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+                <span className="pedana-stripe" aria-hidden="true" />
+                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
+                <button type="button" className="og-card-open" aria-label={t('odetail.cards.open', { name: m.species })} onClick={() => setSheet(i)}>
+                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={set?.species ?? m.species} item={set?.item} size={80} /></span>
+                  <span className="og-card-name">{m.species}</span>
+                </button>
+                <span className={`og-card-tag${shares[i].points === 0 ? ' zero' : shares[i].points < 0 ? ' neg' : ''}`}>
+                  {share(m, i)}
+                  {calm && <small>· {t('ddetail.cards.attacker')}</small>}
+                </span>
+                <TypeIcons types={types} className="og-card-types" />
+                <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typesBar(i)}</div>
+                {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span>{metaBar(i)}</div>}
+              </li>
+            );
+          })}
+        </ul>
+        {open && sheet !== null && (() => {
+          const set = setOf(ctx.team, open.species);
+          return (
+            <AnalysisSheet title={open.species} lead={<Sprite species={set?.species ?? open.species} item={set?.item} size={56} />} onClose={() => setSheet(null)}
+              sub={t('ddetail.shareTitle', { n: signed(shares[sheet].points) })} className="og-sheet">
+              <section className="og-sheet-sec">
+                <h4>{t('detail.coverageTypes')}</h4>
+                {typesBar(sheet, true)}
+                <WorstHits hits={worstTypes(sheet)} />
+              </section>
+              {meta && (
+                <section className="og-sheet-sec">
+                  <h4>{t('detail.coverageMeta')}</h4>
+                  {metaBar(sheet, true)}
+                  <WorstHits hits={worstMeta(sheet)} />
+                </section>
+              )}
+              {sustainWords(open.sustainParts).length > 0 && (
+                <section className="og-sheet-sec">
+                  <h4>{t('ddetail.sustain')}</h4>
+                  <p className="og-sheet-text">{sustainWords(open.sustainParts).map(w => w.text).join(' · ')}</p>
+                </section>
+              )}
+            </AnalysisSheet>
+          );
+        })()}
+      </div>
+    );
+  }
+
+  if (narrow) {
+    // Telefono e tablet piccolo, come l'Offesa: per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la
+    // barra Meta larghe quanto lo schermo; in fondo il team allo stesso modo
+    const bars = (label: string, cell: ReactNode, key: string) => (
+      <tr key={key} className="og-bar-row">
+        <th scope="row" className="og-bar-label">{label}</th>
+        <td colSpan={2}>{cell}</td>
+      </tr>
+    );
+    return (
+      <div className={`def-frame def-general og-stack${roomy ? ' roomy' : ''}`}>
+        <div className="ad-scroll">
+          <table ref={nav.ref} className="def-grid def-members og-stack-table" aria-label={`${t('area.defense')}: ${t('detail.tab.general')}`} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
+            <colgroup><col className="og-col-label" /><col /><col className="og-col-share" /></colgroup>
+            <thead>
+              <tr>
+                <th scope="col" colSpan={2} className="def-mon-h og-stack-head">
+                  <span className="og-stack-asks"><BarHead icon="shield" word={t('kob.headTypes')} />{typesAsk}{meta && <><BarHead icon="shield" word={t('kob.headMeta')} />{metaAsk}</>}</span>
+                </th>
+                <th scope="col" className="og-share-h">{t('area.defense')}</th>
+              </tr>
+            </thead>
+            {members.map((m, i) => (
+              <tbody key={`${m.species}-${i}`} className={`og-stack-mon${i % 2 === 0 ? ' og-alt' : ''}`}>
+                {i > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>}
+                <tr className="og-mon-row">
+                  <th scope="rowgroup" colSpan={2}><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>{quiet(i) ? <span className="role-note">· {t('ddetail.cards.attacker')}</span> : undefined}</MemberMon></th>
+                  <td>{share(m, i)}</td>
+                </tr>
+                {bars(t('kob.headTypes'), <HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />, 'types')}
+                {meta && bars(t('kob.headMeta'), <HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />, 'meta')}
+              </tbody>
+            ))}
+            <tbody className="og-stack-mon og-stack-team">
+              <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>
+              <tr className="og-mon-row"><th scope="rowgroup" colSpan={3}><span className="og-plate">{teamName}</span></th></tr>
+              {bars(t('kob.headTypes'), <HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm />, 'types')}
+              {meta && bars(t('kob.headMeta'), <HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm />, 'meta')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
@@ -199,18 +334,18 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               <th scope="col"><BarHead icon="shield" word={t('kob.headTypes')} /><Ask label={t('hold.attackersTitle')} guide={openGuide} describe={typeStatText(attackerCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask></th>
               {meta && <th scope="col"><BarHead icon="shield" word={t('kob.headMeta')} /><Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} icon="shield" /></Ask></th>}
-              <th scope="col">{t('area.defense')}</th>
+              <th scope="col" className="og-share-col">{t('area.defense')} <small className="og-share-unit">{t('odetail.gen.shareUnit')}</small></th>
             </tr>
           </thead>
           <tbody>
             {members.map((m, i) => (
               <tr key={`${m.species}-${i}`}>
                 <th scope="row">
-                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats />
+                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>{quiet(i) ? <span className="role-note">· {t('ddetail.cards.attacker')}</span> : undefined}</MemberMon>
                 </th>
                 {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
-                <td><HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} quiet={quiet(i)} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
-                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} quiet={quiet(i)} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
+                <td><HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />{roomy && <WorstHits hits={worstTypes(i)} />}</td>
+                {meta && <td><HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />{roomy && <WorstHits hits={worstMeta(i)} />}</td>}
                 <td>
                   {/* Quanto porta alla Difesa del team, solo il numero: i pezzi e il recupero nel tooltip */}
                   {(() => {
@@ -236,6 +371,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           </tfoot>
         </table>
       </div>
+      {/* In alto a destra la chiave dei quattro pezzi (4HKO+, 3HKO, 2HKO, OHKO), come la legenda di Coverage meta: quando la
+          riga è stretta i pezzi perdono l'etichetta e restano numero e colore */}
+      <div className="rob-legend og-legend" aria-hidden="true"><CardsLegend side="def" pieces={HOLD_LEGEND} /></div>
     </div>
   );
 }

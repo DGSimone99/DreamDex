@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { gradeFor } from '../../engine/rating';
+import { speedStat } from '../../engine/speed';
+import { Sprite, typeColor } from '../Sprite';
+import { TypeIcons } from '../typeIcons';
 import { battleSpecies, getMove } from '../../engine/dex';
 import { laneNear, speedItem, type SpeedLane } from '../../engine/overviewDashboard';
 import { speedNeighbours } from '../../engine/speed';
@@ -14,11 +18,13 @@ import { MemberMon } from '../defense/MemberMon';
 import { FloatTip, TipGo, useFloatAnchor } from '../FloatTip';
 import { SpeedTip } from '../dashboard/SpeedTip';
 import { Icon } from '../icons';
+import { PanelSwitch } from '../effTag';
 import { offenseSlots } from '../offense/slots';
 import { linkTeamCard } from '../teamLink';
 import { TIP_NEUTRAL, TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { tileStyle, typeIconUrl } from '../typeIcons';
-import { SpeedMemberDialog } from './SpeedMemberDialog';
+import { SpeedMemberDialog, SpeedMemberSheet, type SpeedParts } from './SpeedMemberDialog';
+import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
 
 const points = (x: number) => Math.round(100 * x);
 
@@ -39,7 +45,7 @@ function laneOf(m: MemberSpeed, set: TeamSet): SpeedLane {
 }
 
 /** I numeri di una barra: la velocità pura, i guadagni suoi, il controllo del team mostrato e il totale (0-100). */
-interface Parts { raw: number; own: number; team: number; total: number }
+type Parts = SpeedParts;
 
 /**
  * La scheda della Velocità, nella cornice comune (`def-frame`) e con la stessa tabella delle altre aree: i membri
@@ -55,12 +61,15 @@ interface Parts { raw: number; own: number; team: number; total: number }
  * Chi il motore non conosce resta con "—". I muri: chi ha come famiglia principale i muri (`needs.primary`, la stessa
  * decisione dei ruoli sulla carta del team e dei bisogni: il verdetto degli EV, poi il valore migliore fra Attacco e muri).
  */
-export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext; room?: boolean }) {
+export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false, value = null }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext; room?: boolean; /** Nessuno nel team usa Trick Room: sulle carte l'interruttore spento in fondo alla legenda. */ roomNone?: boolean; /** Il voto della Velocità (la lettera nella riga del team delle carte). */ value?: number | null }) {
   const t = useT();
   const lang = useLang();
+  const stacked = useStackedTables();
+  // Telefono e tablet: i membri come carte Pedana, come Offesa e Difesa; la carta apre il foglio coi rivali (AnalysisSheet, come Offesa e Difesa)
+  const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const { members } = speed;
   const slots = offenseSlots(ctx.team, members);
-  const [open, setOpen] = useState<{ m: MemberSpeed; set: TeamSet; slot: number } | null>(null);
+  const [open, setOpen] = useState<{ m: MemberSpeed; set: TeamSet; slot: number; parts: Parts; tone: string } | null>(null);
   const bars = useRef(new Map<number, HTMLButtonElement | null>());
   const tip = useFloatAnchor<number>();
   const prio = useFloatAnchor<number>();
@@ -121,52 +130,186 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
   const head = t(room ? (meta ? 'sdetail.head.roomMeta' : 'sdetail.head.roomTier') : meta ? 'sdetail.head.meta' : 'sdetail.head.tier');
   const prioOpen = prio.anchor ? priorityMoves(ctx.team[prio.anchor.key], ctx.team) : [];
 
+  /** Una riga di un membro: il membro (nome, tipi, Velocità reale, "muro", "priorità") e la barra che apre il modale. */
+  const rowOf = (set: TeamSet, slot: number) => {
+    const name = battleSpecies(set)?.name ?? set.species;
+    const m = memberAt(slot);
+    const wall = familyAt(ctx, slot) === 'wall';
+    const moves = m ? priorityMoves(set, ctx.team) : [];
+    // Il bollino "priorità": dopo il nome sul computer largo; sotto i 1280 px sulla riga della Velocità (sp-prio-alt), così
+    // il nome resta intero
+    const prioTag = (where: 'main' | 'alt') => moves.length > 0 && (
+      <span className={`sp-prio sp-prio-${where}`} tabIndex={0} aria-label={t('sdetail.prio.label', { moves: moves.map(x => gameName('move', x, lang)).join(', ') })} {...prio.bind(slot)}>
+        {t('sdetail.prio')}
+      </span>
+    );
+    const parts = m ? partsOf(m) : null;
+    // I muri restano grigi, anche in Trick Room: la Velocità non è il loro lavoro
+    const cls = parts ? (wall ? 'wall' : tone(parts.total)) : '';
+    const mon = (
+      <MemberMon name={name} set={set} stats="speed" nameTag={prioTag('main') || undefined}>
+        {(wall || moves.length > 0) ? <>{prioTag('alt')}{wall && <span className="sp-wall">· {t('sdetail.wall')}</span>}</> : undefined}
+      </MemberMon>
+    );
+    const bar = m && parts
+      ? (
+        <button ref={el => { bars.current.set(slot, el); }} type="button" className={`sp-bar-btn ${cls}`}
+          aria-label={t('sdetail.bar.open', { name: m.species })} onClick={() => { tip.close(); setOpen({ m, set, slot, parts, tone: cls }); }}
+          onMouseEnter={e => tip.open(slot, e.currentTarget)} onMouseLeave={tip.close}
+          onFocus={e => tip.open(slot, e.currentTarget)} onBlur={tip.close}>
+          <Stack {...parts} />
+          <Icon name="next" />
+        </button>
+      )
+      : '—';
+    return { name, mon, bar };
+  };
+  // La riga del team come i membri: i pezzi e il totale col % ("59 +7 66%"), lo stesso numero della carta del team sotto i 1100 px
+  const teamBar = (
+    <span className={`sp-bar-btn sp-team ${tone(teamParts.total)}`}>
+      <Stack {...teamParts} />
+      <span aria-hidden="true" />
+    </span>
+  );
+
+  if (cards) {
+    const grade = value === null ? null : gradeFor(value, lang);
+    return (
+      <div className={`sp-general og-cards-frame sp-cards-frame${room ? ' sp-room' : ''}`}>
+        <section className="og-hero sp-hero" aria-label={t('sdetail.gen.total')}>
+          <span className="og-plate">{t('sdetail.gen.total')}</span>
+          {grade && <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>}
+          <div className={`sp-hero-bar ${tone(teamParts.total)}`}>
+            <span className="sp-card-bar"><Stack {...teamParts} bare /></span>
+            <span className="sp-big" aria-label={t('sdetail.cards.teamAria', { n: teamParts.total })}>{teamParts.total}<i>%</i></span>
+          </div>
+          {/* La legenda con parole vere: cosa sono i pezzi della barra (in Trick Room una riga sola). Se nessuno nel team usa
+              Trick Room l'interruttore c'è lo stesso (così si sa che c'è), spento e fermo, in fondo alla stessa riga: il
+              perché nel fumetto */}
+          <div className="sp-legend">
+            {room
+              ? <><span className="sp-room-note" aria-hidden="true">{t('sdetail.room.legend')}</span><span className="sp-room-note" aria-hidden="true">{t('sdetail.cards.roomGrade')}</span></>
+              : <>
+                <span aria-hidden="true"><i className="sp-leg raw" />{t('sdetail.cards.base')}</span>
+                <span aria-hidden="true"><i className="sp-leg own" />{t('sdetail.legendOwn')}</span>
+                <span aria-hidden="true"><i className="sp-leg team" />{t('guide.speed.gains.control')}</span>
+                <span aria-hidden="true"><i className="sp-leg half" />{t('sdetail.legendHalf')}</span>
+              </>}
+            {roomNone && (
+              <span className="sp-room-off" data-hint={t('sdetail.room.none')}>
+                <PanelSwitch tone="room" on={false} onChange={() => {}} disabled label={t('sdetail.room.switch')} />
+                <span className="visually-hidden">{t('sdetail.room.none')}</span>
+              </span>
+            )}
+          </div>
+        </section>
+        <ul className="og-cards" aria-label={t('detail.member')}>
+          {ctx.team.map((set, slot) => {
+            const species = battleSpecies(set);
+            const name = species?.name ?? set.species;
+            const types = species?.types ?? [];
+            const m = memberAt(slot);
+            const wall = familyAt(ctx, slot) === 'wall';
+            const parts = m ? partsOf(m) : null;
+            const cls = parts ? (wall ? 'wall' : tone(parts.total)) : '';
+            const moves = m ? priorityMoves(set, ctx.team) : [];
+            return (
+              <li key={`${name}-${slot}`} className={`og-card pedana-face sp-card${wall ? ' wall' : ''}`}
+                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+                <span className="pedana-stripe" aria-hidden="true" />
+                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
+                <button ref={el => { bars.current.set(slot, el); }} type="button" className="og-card-open" disabled={!m}
+                  aria-label={t('sdetail.bar.open', { name })} onClick={() => m && parts && setOpen({ m, set, slot, parts, tone: cls })}>
+                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={set.species} item={set.item} size={80} /></span>
+                  <span className="og-card-name">{name}</span>
+                </button>
+                <span className="og-card-tag sp-card-tag">
+                  {t('sdetail.mon.speed')} {speedStat(set).value}
+                  {wall && <small>· {t('sdetail.wall')}</small>}
+                </span>
+                <TypeIcons types={types} className="og-card-types" />
+                {moves.length > 0 && (
+                  <span className="sp-prio sp-card-prio" tabIndex={0} aria-label={t('sdetail.prio.label', { moves: moves.map(x => gameName('move', x, lang)).join(', ') })} {...prio.bind(slot)}>
+                    {t('sdetail.prio')}
+                  </span>
+                )}
+                {parts && (
+                  <>
+                    <span className={`sp-big ${cls}`}>{parts.total}<i>%</i><small>{t(room ? 'sdetail.cards.beatsRoom' : 'sdetail.cards.beats')}</small></span>
+                    <span className={`sp-card-bar ${cls}`}><Stack {...parts} bare /></span>
+                  </>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        {prio.anchor && prioOpen.length > 0 && (
+          <FloatTip rect={prio.anchor.rect} tone="var(--accent)" className="tip-w-s sp-prio-ftip">
+            <TipHead lead={<TipGlyph icon="speed" />} title={t('sdetail.prio.title')} sub={t('sdetail.prio.sub')} />
+            <TipSec>
+              <TipRows>
+                {prioOpen.map(n => {
+                  const move = getMove(n);
+                  return (
+                    <TipRow key={n} title={gameName('move', n, lang)} value={<span className="mtip-prio">{`+${Math.max(1, move?.priority ?? 1)}`}</span>}
+                      lead={move && <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />} />
+                  );
+                })}
+              </TipRows>
+            </TipSec>
+          </FloatTip>
+        )}
+        {open && <SpeedMemberSheet member={open.m} set={open.set} parts={open.parts} tone={open.tone} team={ctx.team} meta={meta} room={room} onClose={close} />}
+      </div>
+    );
+  }
+
   return (
-    <div className={`def-frame def-general sp-general${room ? ' sp-room' : ''}`}>
+    <div className={`def-frame def-general sp-general${room ? ' sp-room' : ''}${stacked ? ' og-stack' : ''}`}>
       <div className="ad-scroll">
+        {stacked ? (
+          // Telefono e tablet col team a sinistra: come la Generale di Offesa e Difesa, per ogni membro una fascia col nome
+          // in alto e sotto la barra a tutta larghezza (numeri e totale a destra); in fondo il team
+          <table className="def-grid def-members og-stack-table sp-stack-table" aria-label={`${t('area.speed')}: ${t('detail.tab.general')}`}>
+            <thead>
+              <tr>
+                <th scope="col" className="def-mon-h og-stack-head">{t('detail.member')}</th>
+                <th scope="col" className="og-share-h">{head}</th>
+              </tr>
+            </thead>
+            {ctx.team.map((set, slot) => {
+              const { name, mon, bar } = rowOf(set, slot);
+              return (
+                <tbody key={`${name}-${slot}`} className={`og-stack-mon${slot % 2 === 0 ? ' og-alt' : ''}`}>
+                  {slot > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={2} /></tr>}
+                  <tr className="og-mon-row"><th scope="rowgroup" colSpan={2}>{mon}</th></tr>
+                  <tr className="og-bar-row"><td colSpan={2}>{bar}</td></tr>
+                </tbody>
+              );
+            })}
+            <tbody className="og-stack-mon og-stack-team">
+              <tr className="og-gap" aria-hidden="true"><td colSpan={2} /></tr>
+              <tr className="og-mon-row"><th scope="rowgroup" colSpan={2}><span className="og-plate">{t('sdetail.gen.total')}</span></th></tr>
+              <tr className="og-bar-row"><td colSpan={2}>{teamBar}</td></tr>
+            </tbody>
+          </table>
+        ) : (
         <table className="def-grid def-members" aria-label={`${t('area.speed')}: ${t('detail.tab.general')}`}>
           <colgroup><col className="def-col-mon" /><col /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col"><span className="sp-head"><span>{head}</span><span className="sp-head-val">{t('area.speed')}</span></span></th>
+              <th scope="col"><span className="sp-head"><span>{head}</span>{/* A destra la parola solo in Trick Room: fuori la testata dice già "Velocità" */}<span className="sp-head-val">{room ? t('area.speed') : null}</span></span></th>
             </tr>
           </thead>
           <tbody>
             {ctx.team.map((set, slot) => {
-              const name = battleSpecies(set)?.name ?? set.species;
-              const m = memberAt(slot);
-              const wall = familyAt(ctx, slot) === 'wall';
-              const moves = m ? priorityMoves(set, ctx.team) : [];
-              const prioTag = moves.length > 0 && (
-                <span className="sp-prio" tabIndex={0} aria-label={t('sdetail.prio.label', { moves: moves.map(m => gameName('move', m, lang)).join(', ') })} {...prio.bind(slot)}>
-                  {t('sdetail.prio')}
-                </span>
-              );
-              const parts = m ? partsOf(m) : null;
-              // I muri restano grigi (solo fuori da Trick Room): per loro la lentezza non è un difetto
-              const cls = parts ? (wall && !room ? 'wall' : tone(parts.total)) : '';
+              const { name, mon, bar } = rowOf(set, slot);
               return (
                 // Passando sulla riga si accende anche la carta del membro nel team in alto
                 <tr key={`${name}-${slot}`} onMouseEnter={() => linkTeamCard(slot)} onMouseLeave={() => linkTeamCard(null)}>
-                  <th scope="row">
-                    <MemberMon name={name} set={set} stats="speed" nameTag={prioTag || undefined}>
-                      {wall ? <span className="sp-wall">· {t('sdetail.wall')}</span> : undefined}
-                    </MemberMon>
-                  </th>
-                  <td>
-                    {m && parts
-                      ? (
-                        <button ref={el => { bars.current.set(slot, el); }} type="button" className={`sp-bar-btn ${cls}`}
-                          aria-label={t('sdetail.bar.open', { name: m.species })} onClick={() => { tip.close(); setOpen({ m, set, slot }); }}
-                          onMouseEnter={e => tip.open(slot, e.currentTarget)} onMouseLeave={tip.close}
-                          onFocus={e => tip.open(slot, e.currentTarget)} onBlur={tip.close}>
-                          <Stack {...parts} />
-                          <Icon name="next" />
-                        </button>
-                      )
-                      : '—'}
-                  </td>
+                  <th scope="row">{mon}</th>
+                  <td>{bar}</td>
                 </tr>
               );
             })}
@@ -183,21 +326,20 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
           <tfoot>
             <tr className="og-total">
               <th scope="row"><span className="og-plate">{t('sdetail.gen.total')}</span></th>
-              <td>
-                <span className={`sp-bar-btn sp-team ${tone(teamParts.total)}`}>
-                  <Stack {...teamParts} bare />
-                  <span aria-hidden="true" />
-                </span>
-              </td>
+              <td>{teamBar}</td>
             </tr>
           </tfoot>
         </table>
+        )}
       </div>
       {/* In alto a destra, come nelle altre aree: cosa sono i pezzi a righe della barra (in Trick Room una riga sola) */}
       <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">
         {room
           ? <span className="sp-room-note">{t('sdetail.room.legend')}</span>
           : <>
+            {/* I numeri accanto alle barre ("55 +20 +12", "87%") sono punti in %: Base + potenziamenti + team */}
+            <span className="sp-leg-pct">{t('sdetail.legendPct')}</span>
+            <span className="area-legend-swatch"><i className="sp-leg raw" />{t('sdetail.cards.base')}</span>
             <span className="area-legend-swatch"><i className="sp-leg own" />{t('sdetail.legendOwn')}</span>
             <span className="area-legend-swatch"><i className="sp-leg team" />{t('guide.speed.gains.control')}</span>
             <span className="area-legend-swatch"><i className="sp-leg half" />{t('sdetail.legendHalf')}</span>
@@ -227,7 +369,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
           </TipSec>
         </FloatTip>
       )}
-      {open && <SpeedMemberDialog member={open.m} set={open.set} team={ctx.team} meta={meta} room={room} onClose={close} />}
+      {open && <SpeedMemberDialog member={open.m} set={open.set} parts={open.parts} tone={open.tone} team={ctx.team} meta={meta} room={room} onClose={close} />}
     </div>
   );
 }
@@ -236,8 +378,8 @@ export function SpeedGeneral({ speed, meta, ctx, room = false }: { speed: TeamSp
  * La barra a segmenti, a tutta larghezza e col lato destro inclinato come i pezzi di Offesa e Difesa: la velocità pura
  * (piena, nel colore del voto o grigia per i muri, con un filo di luce in alto), i guadagni propri (righe ciano) e quelli
  * del team (righe neutre); la riga tratteggiata a metà. A destra i pezzi piccoli ("55 +20") e il totale grande. Per i
- * membri sta in un bottone che apre il modale; nella riga del team senza il totale (`bare`: il voto della Velocità sta
- * nella testata dell'area).
+ * membri sta in un bottone che apre il modale; nella barra della carta del team senza il totale (`bare`: il numero grande sta
+ * accanto, sp-big).
  */
 function Stack({ raw, own, team, total, bare = false }: Parts & { bare?: boolean }): ReactNode {
   return (
@@ -252,7 +394,7 @@ function Stack({ raw, own, team, total, bare = false }: Parts & { bare?: boolean
           senza guadagni (e in Trick Room) ha solo il totale: il pezzo ripeterebbe lo stesso numero */}
       <span className="sp-val">
         {(bare || own > 0 || team > 0) && <span className="sp-parts">
-          <span>{raw}</span>
+          <span>{raw}<small className="sp-unit">%</small></span>
           {own > 0 && <span className="sp-part-own">+{own}</span>}
           {team > 0 && <span className="sp-part-team">+{team}</span>}
         </span>}

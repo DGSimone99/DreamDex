@@ -101,6 +101,11 @@
    una colonna stretta uguale nelle due Generali, numero e testata allineati a destra; Tipi e Meta si dividono il resto.
    Non nella Velocità (anche lei .def-general, con la sua barra nell'ultima colonna) */
 :is(.off-general, .def-general:not(.sp-general)) .def-members col:last-child { width: var(--og-share-w, 76px); }
+/* La testata della colonna +N: sopra la parola dell'area una riga piccola che dice l'unità ("punti nel voto"), a destra
+   come i numeri; fuori dal flusso (può sporgere a sinistra sopra la testata vuota accanto), così la testata resta alta
+   come nelle altre schede e le righe partono allo stesso punto */
+.def-members thead th.og-share-col { position: relative; text-align: right; overflow: visible; }
+.og-share-unit { position: absolute; top: var(--sp-2); right: var(--sp-4); white-space: nowrap; font: 500 var(--fs-caption)/1 var(--ui); text-transform: none; letter-spacing: 0; color: var(--muted); }
 :is(.off-general, .def-general:not(.sp-general)) .def-members tr > :last-child:not(:first-child) { text-align: right; }
 :is(.off-general, .def-general) .og-share { display: inline-block; cursor: help; }
 :is(.off-general, .def-general) .og-share-num { display: inline-block; color: var(--accent); }
@@ -159,19 +164,20 @@
    colore, tooltip e nome per i lettori di schermo) */
 .kob-row { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 0; container: kobrow / inline-size; }
 /* Il conto a destra della barra, "11/18": staccato dai pezzi (niente fondo né inclinazione), il numero grande in corsivo
-   col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); il colore dice quanto copre */
+   col totale piccolo e sotto una lineetta sottile che si riempie quanto copre (--r); i colori solo sul conto del team
+   (countClass: full, warn, bad), quello di un membro resta neutro (testo, lineetta grigia) */
 .kob-count { --c: var(--text); flex: none; display: inline-flex; flex-direction: column; align-items: stretch; gap: var(--sp-2); min-width: 42px; color: var(--c); cursor: default; }
 .kob-count-num { display: inline-flex; align-items: baseline; justify-content: flex-start; gap: 1px; font-variant-numeric: tabular-nums; }
 .kob-count-num > b { font: 800 italic var(--fs-plate)/1 var(--display); }
 .kob-count-line { position: relative; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--c) 18%, transparent); overflow: hidden; }
 .kob-count-line::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--r, 0) * 100%); border-radius: 2px; background: var(--c); box-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
-.kob-count.full, .kob-count.good { --c: var(--good); }
+.kob-count:not(.full, .warn, .bad) .kob-count-line::before { background: var(--muted); box-shadow: none; }
+.kob-count.full { --c: var(--good); }
 .kob-count.full .kob-count-num > b { color: color-mix(in srgb, var(--good) 70%, white); }
 .kob-count.warn { --c: var(--warn); }
 .kob-count.bad { --c: var(--bad); }
-.kob-count.zero { --c: var(--faint); }
-/* Neutro: il conto di un muro nell'Offesa, di un attaccante nella Difesa (non è il suo lavoro); la riga del team mai */
-.kob-count.quiet { --c: var(--muted); }
+/* "· muro" / "· attacca" dopo il membro che non fa quel lavoro (un muro nell'Offesa, un attaccante nella Difesa): piccolo, grigio */
+.role-note { font: 600 var(--fs-caption)/1 var(--ui); color: var(--muted); white-space: nowrap; }
 /* I pezzi con gli angoli alternati delle mosse (Pokémon Champions), senza bordo: OHKO pieno, 2HKO tenue, il resto grigio */
 .kob { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); height: 26px; padding: 0 var(--sp-6) 0 var(--sp-5); border: 1px solid transparent; border-radius: var(--alt-r-sm); overflow: hidden; cursor: help;
   transition: background-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
@@ -184,6 +190,10 @@
 /* Se la riga non ha posto per tre pezzi col minimo (3 × 66 + 2 × 3 = 204px), le etichette spariscono tutte insieme e il
    minimo scende a 36px (solo il numero), in tutte e due le tabelle */
 @container kobrow (max-width: 203px) { .kob-row > .kob { --kob-min: 36px; } .kob-row > .kob > em { display: none; } }
+/* Difesa: con quattro pezzi (4HKO+, 3HKO, 2HKO, OHKO) il minimo scende a 62px (padding più stretto: etichetta e numero ci
+   stanno ancora), 4 × 62 + 3 × 3 = 257px; sotto, la stessa regola (solo il numero) */
+.def-members .kob-row:has(> .kob.hb:nth-child(4)) > .kob { --kob-min: 62px; padding: 0 var(--sp-2) 0 4px; }
+@container kobrow (max-width: 256px) { .def-members .kob-row:has(> .kob.hb:nth-child(4)) > .kob { --kob-min: 36px; } .def-members .kob-row:has(> .kob.hb:nth-child(4)) > .kob > em { display: none; } }
 /* Un filo di luce sul bordo alto: i pezzi meno piatti (dentro la forma tagliata, come una lastra) */
 .kob.ohko, .kob.two { box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
 .kob-num { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
@@ -191,7 +201,8 @@
 /* Il triangolo del setup nell'angolo in alto a destra (quasi dritto), dall'angolo esterno del pezzo (-1px: sopra il bordo) */
 .kob.has-setup::after { content: ""; position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; background: var(--good); clip-path: polygon(0 0, 100% 0, 100% 100%); }
 .kob.ohko { color: var(--good); background: color-mix(in srgb, var(--good) 42%, transparent); }
-.kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 60%, white); }
+/* Quasi bianco sul verde dell'OHKO: almeno 4,5:1 anche sul verde più chiaro del telefono */
+.kob.ohko .kob-num > b { color: color-mix(in srgb, var(--good) 20%, white); }
 .kob.two { color: var(--good); background: color-mix(in srgb, var(--good) 22%, transparent); }
 .kob.two { --kob-ink: color-mix(in srgb, var(--good) 35%, var(--text)); }
 .kob.ohko:hover { box-shadow: inset 0 1px 0 color-mix(in srgb, white 22%, transparent), 0 0 8px color-mix(in srgb, var(--good) 35%, transparent); }
@@ -213,7 +224,8 @@
 /* A squadra chiusa, sotto la barra dei colpi: quanto lavora ogni mossa d'attacco, una pastiglia per mossa nel colore del
    suo tipo (icona e numero dei bersagli); passandoci sopra si allarga col nome, e il tooltip elenca i bersagli.
    A 0 spenta. Sempre una riga: le pastiglie hanno tutte la stessa forma */
-.mcs { display: flex; gap: var(--sp-3); width: calc(100% - 36px); min-width: 150px; margin-top: var(--sp-2); overflow: hidden; }
+/* Le pastiglie che non stanno intere vanno a capo e restano nascoste (una riga alta come una pastiglia): mai una tagliata */
+.mcs { display: flex; flex-wrap: wrap; gap: var(--sp-3); width: calc(100% - 36px); min-width: 150px; max-height: 24px; margin-top: var(--sp-2); overflow: hidden; }
 .mc { display: inline-flex; flex: none; align-items: center; gap: var(--sp-2); padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-2); border-radius: 2px; font: 600 var(--fs-caption)/1.35 var(--display); color: var(--text); white-space: nowrap; cursor: help;
   background: color-mix(in srgb, var(--c) 18%, transparent); transition: background-color 0.15s var(--ease); }
 .mc:hover, .mc:focus-visible { background: color-mix(in srgb, var(--c) 32%, transparent); }
@@ -252,8 +264,8 @@
 
 /* Tessere cliccabili: aprono il dettaglio */
 .kob.pick { cursor: pointer; }
-/* Il pezzo è tagliato in obliquo (clip-path): l'anello del fuoco fuori non si vedrebbe, sta dentro (bordo e alone interno) */
-.kob:focus-visible { outline: none; border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* Il pezzo è tagliato in obliquo (clip-path): l'anello del fuoco fuori non si vedrebbe, sta dentro: 2 px Accent come le altre caselle */
+.kob:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-color: var(--accent); }
 /* Coverage tipi / meta aperte da una tessera: accese la riga del membro e le caselle di quella fascia, il resto spento */
 /* Spenti senza opacità: grigi e un filo più scuri, i numeri restano leggibili (almeno 4,5:1 sul loro fondo) */
 .ct-table tr.kf-off > *, .ct-table td.kf-dim { filter: grayscale(1) brightness(0.8); }
@@ -324,11 +336,20 @@
 .cm-ko { display: inline-block; padding: 3px 11px; font: 800 italic var(--fs-title-s)/1 var(--display); letter-spacing: 0.06em; color: #fff; background: color-mix(in srgb, var(--bad) 40%, #a00d24);
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--bad) 60%, transparent)); }
 .cm-ko.small { padding: var(--sp-1) 7px; font-size: var(--fs-label); filter: none; }
+/* In Offesa il KO è un colpo dato: verde scuro (il verde dei KO dati), il bianco si legge (almeno 4,5:1) */
+.cm-ko.win { background: color-mix(in srgb, var(--good) 20%, #075c3a); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--good) 45%, transparent)); }
+.cm-ko.small.win { filter: none; }
 /* Righe basse: niente barra, resta il numero */
 @container (max-height: 330px) { .cm-hp { display: none; } }
 /* Testata: l'icona del box del bersaglio e sotto un filo col colore di Lo coprono */
 .off-frame.def-walls .wall-h { line-height: 1; }
 .cm-head-mon { cursor: help; }
+/* Il nome della minaccia sotto la sprite in testa alla colonna (computer): piccolo, fino a due righe (va a capo agli spazi e
+   ai trattini, "Landorus-" / "Therian"), i puntini solo oltre la seconda; lo spazio delle due righe è sempre tenuto, così la
+   testata ha la stessa altezza su ogni pagina */
+.analysis thead th:has(> .cm-head-name) { max-width: none; }
+.cm-head-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-width: 100%; min-height: 2.4em; margin-top: var(--sp-1); padding: 0 var(--sp-1); overflow: hidden; white-space: normal; overflow-wrap: break-word; hyphens: manual;
+  font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); }
 .cm-flag { display: block; width: 34px; height: 3px; margin: 3px auto 0; border-radius: 2px; background: var(--good); }
 .cm-flag.warn { background: var(--warn); }
 .cm-flag.bad { background: var(--bad); }
@@ -378,3 +399,8 @@
 .def-members thead th:has(> .bar-head) :is(.bar-head-ic, .bar-head ~ *) { position: relative; top: -1px; }
 .bar-head-ic { display: inline-flex; flex: none; color: var(--muted); }
 .bar-head-ic .icon { width: 14px; height: 14px; }
+/* Coverage tipi: dal 34% al 49% il danno scritto in una casella grigia (non conta, ma si vede quanto manca) */
+.off-frame .ct-table td.ct-cell.ok-low { font-family: var(--display); font-style: italic; font-weight: 700; font-size: clamp(11px, calc(var(--def-row) * 0.2), 16px); font-variant-numeric: tabular-nums; color: var(--muted); cursor: help; }
+.area-legend-swatch i.ok-low { background: var(--raised); border-color: var(--line); }
+/* Coverage meta sul computer: prima delle fasce "Il % è il danno" (le caselle sono strette per scriverlo in ognuna) */
+.area-legend .dmg-legend { color: var(--legend-ink); }

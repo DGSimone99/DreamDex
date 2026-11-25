@@ -106,6 +106,7 @@
   transition: background 0.15s var(--ease);
 }
 .grade-pop-toggle:hover, .grade-pop-toggle[aria-expanded='true'] { background: var(--raised); }
+@media (pointer: coarse) { .grade-pop-toggle { min-height: 44px; } }
 .grade-pop-caret { align-self: center; display: inline-flex; color: var(--faint); transition: transform 0.2s var(--ease), color 0.15s var(--ease); }
 .grade-pop-caret .icon { width: 12px; height: 12px; transform: rotate(90deg); }
 .grade-pop-toggle:hover .grade-pop-caret { color: var(--accent); }

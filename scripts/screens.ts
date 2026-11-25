@@ -151,7 +151,9 @@ async function gradeRow(page: Page, text: RegExp): Promise<boolean> {
     return true;
   });
   if (opened) await wait(200);
-  return clickText(page, '.band button.grade-area', text);
+  if (await clickText(page, '.band button.grade-area', text)) return true;
+  // Senza il riquadro del voto nella fascia (tablet verticale, telefono): la scheda dell'area nella barra dell'Analisi
+  return clickText(page, '[role="tab"]', text);
 }
 
 async function focus(page: Page, selector: string): Promise<boolean> {
@@ -265,6 +267,19 @@ const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: h
   await wait(300);
   return true;
 } });
+// Telefono: il foglio dal basso aperto toccando la carta di un membro (Generale a carte) o una tessera / una minaccia
+const sheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), run: async p => {
+  const ok = await offenseState(sub).run!(p);
+  if (ok !== true) return ok;
+  const items = await p.$$(selector);
+  if (!items[index]) return `no ${selector}`;
+  await items[index].click();
+  await wait(500);
+  return true;
+} });
+OFFENSE_STATES['analysis-offense-card-sheet'] = sheetState(OFFENSE_SUBS.general, '.og-card-open');
+OFFENSE_STATES['analysis-offense-tile-sheet'] = sheetState(OFFENSE_SUBS.types, '.ct-tile-open', 2);
+OFFENSE_STATES['analysis-offense-threat-sheet'] = sheetState(OFFENSE_SUBS.meta, '.cm-card .og-card-open');
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
 OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/), lang: 'en' };
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
@@ -308,8 +323,17 @@ const SPEED_STATES: Record<string, State> = {
   'analysis-speed-member': { hash: hash(SPEED_SIX), run: async p => {
     const ok = await speedState(null).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.sp-bar-btn', /./)) return 'no bar';
+    if (!await clickText(p, '.sp-bar-btn', /./) && !await clickText(p, '.sp-card .og-card-open', /./)) return 'no bar';
     await wait(400);
+    // Sotto i 1100 px il foglio dal basso (an-sheet), sul computer la finestra: il numero in testa, la × e i check (44 px col dito)
+    console.log(`speedMember=${await p.evaluate(() => {
+      const box = document.querySelector('.an-sheet, .sp-dialog');
+      if (!box) return 'none';
+      const x = box.querySelector('.help-close')?.getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      const checks = [...box.querySelectorAll('.sp-check')].map(c => Math.round(c.getBoundingClientRect().height)).join(',');
+      return `${box.classList.contains('an-sheet') ? 'sheet' : 'dialog'} box=${Math.round(b.left)},${Math.round(b.top)},${Math.round(b.right)},${Math.round(b.bottom)} close=${x ? `${Math.round(x.width)}x${Math.round(x.height)}` : '-'} checks=${checks} total="${box.querySelector('.sp-dlg-total')?.textContent}" base="${box.querySelector('.sp-dlg-base')?.textContent}" count="${box.querySelector('.sp-dlg-count')?.textContent}" overflowX=${box.scrollWidth > box.clientWidth}`;
+    })}`);
     return true;
   } },
   // Trick Room: Hatterene al posto di Ribombee; l'interruttore "Trick Room · Hatterene" è acceso di base (le barre in
@@ -357,7 +381,7 @@ for (const [key, n] of [['boost', 0], ['priority', 1], ['control', 2]] as const)
 }
 for (const key of ['boost', 'priority', 'control']) SPEED_STATES[`analysis-speed-guide-${key}-en`] = { ...SPEED_STATES[`analysis-speed-guide-${key}`], lang: 'en' } as State;
 SPEED_STATES['analysis-speed-guide-en'] = { ...SPEED_STATES['analysis-speed-guide'], lang: 'en' } as State;
-const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^(Sostenibilit|Recupero)/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const SUBS: Record<string, RegExp | null> = { general: null, sustain: /^(Sostenibilit|Recupero)/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
     [`analysis-defense-${k}`, defenseState(re)],
@@ -365,6 +389,25 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
+  // Una pillola di problema toccata nella testata (va dove parla: Coverage meta o tipi, sulle carte col foglio) e il "+N" aperto
+  'analysis-defense-chip': { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const chip = await p.$('.area-head .area-chip.is-link');
+    if (!chip) return 'no chip';
+    await chip.click();
+    await wait(700);
+    return true;
+  } },
+  'analysis-defense-more': { hash: hash(SIX), run: async (p: Page) => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    const more = await p.$('.area-head .area-chips-more.is-link');
+    if (!more) return 'no +N';
+    await more.click();
+    await wait(500);
+    return true;
+  } },
   // Generale col puntatore sul "+N" di un membro (Toxapex): il tooltip coi pezzi e il recupero in parole
   ...Object.fromEntries([['member', '.def-general tbody tr:nth-child(3) .og-share.dsh']].map(([k, sel]) => [`analysis-defense-general-share-${k}`, { hash: hash(SIX), run: async (p: Page) => {
     const ok = await defenseState(null).run!(p);
@@ -422,13 +465,6 @@ const DEFENSE_STATES: Record<string, State> = {
   } },
   'analysis-defense-guide-sus': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.sustain).run!(p);
-    if (ok !== true) return ok;
-    if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
-    await wait(400);
-    return true;
-  } },
-  'analysis-defense-guide-rob': { hash: hash(SIX), run: async p => {
-    const ok = await defenseState(SUBS.robustness).run!(p);
     if (ok !== true) return ok;
     if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
@@ -514,6 +550,19 @@ const effOn = (base: State, hover = false): State => ({ ...base, run: async p =>
   await wait(250);
   return true;
 } });
+// Telefono e tablet, Difesa: il foglio dal basso di una carta, di una tessera o di una minaccia
+const dsheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), run: async p => {
+  const ok = await defenseState(sub).run!(p);
+  if (ok !== true) return ok;
+  const items = await p.$$(selector);
+  if (!items[index]) return `no ${selector}`;
+  await items[index].click();
+  await wait(500);
+  return true;
+} });
+DEFENSE_STATES['analysis-defense-card-sheet'] = dsheetState(SUBS.general, '.og-card-open');
+DEFENSE_STATES['analysis-defense-tile-sheet'] = dsheetState(SUBS.types, '.ct-tile-open', 2);
+DEFENSE_STATES['analysis-defense-threat-sheet'] = dsheetState(SUBS.meta, '.cm-card .og-card-open');
 for (const [k, re] of [['types', OFFENSE_SUBS.types], ['meta', OFFENSE_SUBS.meta]] as const) {
   OFFENSE_STATES[`analysis-offense-${k}-eff`] = effOn(offenseState(re));
   OFFENSE_STATES[`analysis-offense-${k}-hover`] = effOn(offenseState(re), true);

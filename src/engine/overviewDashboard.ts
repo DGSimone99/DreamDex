@@ -76,7 +76,7 @@ export const offenseHandlers = (row: { coveredBy: { species: string }[] }): stri
   [...new Set(row.coveredBy.map(c => c.species))];
 
 /**
- * L'ordine "Minaccia" di Coverage meta, con la regola delle carte della Panoramica (metaThreats) su un lato solo: prima
+ * L'ordine di Coverage meta (prima le minacce coperte peggio), con la regola delle carte della Panoramica (metaThreats) su un lato solo: prima
  * le scoperte (nessuno le gestisce), poi quelle a fatica (uno solo), poi le altre; dentro, la più usata e poi il nome.
  * `count`: quanti membri la gestiscono, lo stesso numero che la tabella mostra nella riga Team Coverage (così i fili
  * rossi, gialli e verdi in testata vengono in quest'ordine).
@@ -85,7 +85,7 @@ export function byThreat<R extends { species: string; weight: number }>(rows: re
   const rank = (row: R) => Math.min(2, count(row));
   return [...rows].sort((a, b) => rank(a) - rank(b) || b.weight - a.weight || a.species.localeCompare(b.species));
 }
-/** L'ordine "Uso" di Coverage meta: il più usato nel meta per primo, poi il nome. */
+/** Il più usato nel meta per primo, poi il nome: il #N d'uso sulle carte di Coverage meta. */
 export const byUsage = <R extends { species: string; weight: number }>(rows: readonly R[]): R[] =>
   [...rows].sort((a, b) => b.weight - a.weight || a.species.localeCompare(b.species));
 
