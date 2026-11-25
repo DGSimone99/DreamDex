@@ -9,9 +9,15 @@ export const SHORT_SCREEN = '(min-width: 1100px) and (max-height: 759px)';
 export const PHONE_QUERY = '(max-width: 599px)';
 /** Editor a schede (Set, Statistiche, Sfida) sotto la testata a riepilogo: telefono e tablet. */
 export const EDITOR_TABS_QUERY = '(max-width: 1099px)';
-/** Telefono e tablet piccolo in verticale (fino a 767 px): il team si riduce da solo scorrendo e toccando una sezione si
- *  torna in cima col team ridotto (AutoBand). Più larghi resta il tasto per ridurlo a mano. */
-export const AUTO_BAND_QUERY = '(max-width: 767px)';
+/** Telefono e tablet piccolo in verticale (fino a 767 px): le tabelle dell'Analisi in colonna stretta (Generale con le
+ *  barre una sopra l'altra, Coverage tipi e meta girate coi membri in colonna). */
+export const NARROW_TABLES_QUERY = '(max-width: 767px)';
+/** Telefono e tablet (fino a 1099 px): Coverage tipi e meta girate (tipi o minacce in riga, i membri in colonna). */
+export const FLIP_TABLES_QUERY = '(max-width: 1099px)';
+/** Telefono, tablet piccolo (fino a 767 px) e tablet in verticale (fino a 1024 px, es. 768×1024 e 820×1180): il team si
+ *  riduce da solo scorrendo e toccando una sezione si torna in cima col team ridotto (AutoBand). Più larghi, e col team
+ *  in colonna (TABLET_SIDE_QUERY), resta il tasto per ridurlo a mano. */
+export const AUTO_BAND_QUERY = '(max-width: 767px), (max-width: 1024px) and (orientation: portrait)';
 /** Tablet in orizzontale, e il computer a mezzo schermo (da 900 px col mouse, anche con la finestra più alta che larga):
  *  il team è una colonna a sinistra (come la squadra nei giochi), la sezione e l'editor a destra. */
 export const TABLET_SIDE_QUERY = '(min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px), (min-width: 900px) and (max-width: 1099px) and (pointer: fine)';
@@ -30,4 +36,11 @@ export function useMediaQuery(query: string): boolean {
     return () => list.removeEventListener('change', change);
   }, [query]);
   return value;
+}
+
+/** Le tabelle a righe (Generale di Offesa, Difesa e Velocità, Recupero): sotto i 1100 px, telefono e ogni tablet (col team
+ *  a sinistra il pannello resta largo ~660 px, in verticale ~780): le colonne affiancate sono troppo strette. */
+export function useStackedTables(): boolean {
+  // Tutto sotto i 1100 px: telefono, tablet in verticale (team in alto) e in orizzontale (team a sinistra)
+  return useMediaQuery(FLIP_TABLES_QUERY);
 }

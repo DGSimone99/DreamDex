@@ -163,7 +163,7 @@ describe('scheda Liste: i box', () => {
     expect(bansList().querySelectorAll('.lslot')).toHaveLength(20);
     expect(bansList().querySelectorAll('.lslot.on')).toHaveLength(1);
     expect(within(box('favorites')).getByText('31')).toBeInTheDocument();
-    expect(within(box('favorites')).getByText('passano davanti quasi alla pari')).toBeInTheDocument();
+    expect(within(box('favorites')).getByText('hanno la precedenza nei suggerimenti')).toBeInTheDocument();
     expect(within(box('bans')).getByText('mai suggeriti')).toBeInTheDocument();
     expect(within(box('bans')).queryByRole('button', { name: /Pagina successiva/ })).toBeNull();
     await user.click(within(box('favorites')).getByRole('button', { name: 'Pagina successiva: Preferiti' }));

@@ -1,4 +1,4 @@
-import { useId, useState, type FocusEvent } from 'react';
+import { useEffect, useId, useState, type FocusEvent } from 'react';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
@@ -7,7 +7,7 @@ import { STRONG_CREDIT } from '../../engine/offense';
 import { typeAverage } from '../../engine/coverage';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { moveAttackMultiplier, teamField, TYPES } from '../../engine/types';
-import { EffTag, effClass, effLabel } from '../effTag';
+import { EffLegend, EffTag, effClass, effLabel } from '../effTag';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
@@ -20,6 +20,15 @@ import { useMemberTip } from '../MemberCard';
 import { FocusNote, inBand, koBandOf } from './KoBadges';
 import { TypeHitTip } from './TypeHitTip';
 import { offenseSlots } from './slots';
+import { PokemonIcon } from '../PokemonName';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { AnalysisSheet } from '../AnalysisSheet';
+import { SheetCoachLink } from '../CoachLink';
+import { countClass } from '../CardsLegend';
+import type { CSSProperties } from 'react';
+
+/** Da qui il danno si scrive anche se non conta (3HKO, la soglia di Coverage meta), in una casella grigia. */
+const LOW_PCT = 34;
 
 /** Colore della riga Copertura: rosso a 0, giallo sotto il livello coperto (COVERED_LEVEL, 60), verde da lì. */
 const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVEL ? 'warn' : 'good');
@@ -40,6 +49,15 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const lang = useLang();
   const { team } = ctx;
   const roomy = !!ctx.roomy;
+  const phone = useMediaQuery(FLIP_TABLES_QUERY);
+  // Telefono e tablet: 18 tessere, una per tipo (la coverage del team e chi colpisce più forte); toccandone una il foglio coi 6 membri
+  const tiles = useMediaQuery(FLIP_TABLES_QUERY);
+  const [sheetType, setSheetType] = useState<(typeof TYPES)[number] | null>(null);
+  // Da una pillola della testata: la colonna (o la tessera) di quel tipo accesa, le altre spente; sulle carte anche il foglio
+  const typeFocus = ctx.focus?.kind === 'type' && ctx.focus.side === 'offense' ? ctx.focus.type as (typeof TYPES)[number] : null;
+  useEffect(() => {
+    if (tiles && ctx.focus?.kind === 'type' && ctx.focus.side === 'offense' && ctx.focus.open && TYPES.includes(ctx.focus.type as (typeof TYPES)[number])) setSheetType(ctx.focus.type as (typeof TYPES)[number]);
+  }, [ctx.focus]); // eslint-disable-line react-hooks/exhaustive-deps
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const { rows, holes } = offense.types;
   const byType = new Map(rows.map(row => [row.label, row]));
@@ -81,80 +99,200 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const summaryId = useId();
   const holeNames = TYPES.filter(type => holes.includes(type)).map(type => typeName(type, lang));
 
+  /** La testata di un tipo: in colonna sul computer, in riga sul telefono (tabella girata). */
+  const typeHead = (type: (typeof TYPES)[number], i: number, scope: 'col' | 'row') => {
+    const hole = holes.includes(type);
+    return (
+      <th key={type} scope={scope} className={colClass(i, `${hole ? 'sev-serious' : ''}${scope === 'row' ? ' ct-type-h' : ''}`)}
+        onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, type }, e.currentTarget); }} onMouseLeave={tip.close}
+        {...focusAt(-1, i, { slot: -1, type })}>
+        <TypeIcons types={[type]} />
+        <span className="ct-flag" aria-hidden="true" />
+        <span className="visually-hidden">{typeName(type, lang)}{hole && ` ${t('odetail.types.hole')}`}{` · ${statsLabel(averageOf(type))}`}</span>
+      </th>
+    );
+  };
+  /** La casella di un membro su un tipo: il danno del colpo migliore, colorato per soglia. */
+  const hitCell = (slot: number, type: (typeof TYPES)[number], i: number) => {
+    const set = team[slot];
+    const member = memberAt(slot);
+    if (slots[slot] === null) return <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}${focus || typeFocus ? ' kf-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })} {...focusAt(slot, i)}>—</td>;
+    // ×2 / ×4 solo se è superefficace la mossa che fa il danno della casella (Pixilate & co. compresi)
+    const found = member?.hits.find(h => h.label === type);
+    const tag = effLabel(found?.move ? moveAttackMultiplier(set, found.move, [type], '', field) : null, 'offense');
+    const hit = found && found.credit > 0 ? found : undefined;
+    // Dal 34% (3HKO, come Coverage meta) al 49%: non conta, ma il danno si vede in una casella grigia; sotto la casella è
+    // vuota e senza ×2 (un ×2 senza numero non dice niente)
+    const low = !hit && found && found.pct >= LOW_PCT ? found : undefined;
+    const strong = !!hit && hit.credit >= STRONG_CREDIT;
+    // Il 100%: un verde a parte, più acceso (come i pezzi OHKO della Generale)
+    const ohko = !!hit && hit.pct >= 100;
+    // Il triangolo del setup, come nella Generale: solo se la danza fa salire di fascia (fino al 2HKO o all'OHKO)
+    const rank = (pct: number | null | undefined) => { const b = pct == null ? null : koBandOf(pct); return b === 'ohko' ? 2 : b === 'two' ? 1 : 0; };
+    const lifted = !!found && found.setupPct !== null && rank(found.setupPct) > rank(found.plainPct);
+    // Il triangolo azzurro: il meteo o il campo di un compagno lo fa salire di fascia
+    const teamUp = !!found && found.teamPct !== null && rank(found.teamPct) > rank(found.plainPct);
+    // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
+    const bothUp = !!found && !lifted && !teamUp && found.comboPct !== null && rank(found.comboPct) > rank(found.plainPct);
+    return (
+      <td key={`${slot}-${type}`} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : low ? ' ok-low' : ''}${lifted || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : typeFocus ? (type === typeFocus ? ' kf-hit' : ' kf-dim') : ''}`)}
+        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit || low) tip.open({ slot, type }, e.currentTarget); else tip.leave(); }} onMouseLeave={tip.close}
+        {...focusAt(slot, i, hit || low ? { slot, type } : undefined)}>
+        {hit && <>
+          <span className="ct-num">{hit.pct}<i>%</i></span>
+          <span className="visually-hidden"> {ohko ? 'OHKO' : t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>
+        </>}
+        {low && <span className="ct-num">{low.pct}<i>%</i></span>}
+        {(hit || low) && <EffTag label={tag} side="offense" />}
+      </td>
+    );
+  };
+  /** La casella Team Coverage di un tipo: la pillola col livello. */
+  const levelCell = (type: (typeof TYPES)[number], i: number) => {
+    const level = byType.get(type)?.level ?? 0;
+    return <td key={`lv-${type}`} className={colClass(i, 'ct-level')} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}><span className={`ct-pill ${coverTone(level)}`}>{level}%</span></td>;
+  };
+  const nameOf = (slot: number) => battleSpecies(team[slot])?.name ?? team[slot].species;
+
+  if (tiles) {
+    /** Il colpo di un membro su un tipo come nella casella del computer: la fascia, il danno, la mossa, l'efficacia. */
+    const hitOf = (slot: number, type: (typeof TYPES)[number]) => {
+      const member = memberAt(slot);
+      const found = member?.hits.find(h => h.label === type);
+      if (!found || slots[slot] === null) return null;
+      const tag = effLabel(found.move ? moveAttackMultiplier(team[slot], found.move, [type], '', field) : null, 'offense');
+      const hit = found.credit > 0;
+      const cls = hit ? (found.pct >= 100 ? 'ok-full ok-ohko' : found.credit >= STRONG_CREDIT ? 'ok-full' : 'ok-half') : found.pct >= LOW_PCT ? 'ok-low' : 'ok-none';
+      return { found, tag, hit, cls };
+    };
+    const covered = TYPES.length - holes.length;
+    const ohkos = best.filter(b => b !== null && b.pct >= 100).length;
+    // Aperta da una barra della Generale: si accendono i tipi che quel membro manda KO in quella fascia
+    const lit = (type: (typeof TYPES)[number]) => {
+      if (typeFocus) return type === typeFocus;
+      if (!focus) return null;
+      const pct = memberAt(focus.slot)?.hits.find(h => h.label === type)?.plainPct;
+      return pct !== undefined && inBand(pct, focus.band);
+    };
+    const open = sheetType;
+    const openIndex = open ? TYPES.indexOf(open) : -1;
+    return (
+      <div className="off-frame def-types ct-tiles-frame">
+        <section className="og-hero" aria-label={t('detail.level')}>
+          <span className="og-plate">{t('detail.level')}</span>
+          <p className="og-hero-line"><b className={countClass(covered, TYPES.length)}>{covered}</b><small>/{TYPES.length}</small> {t('odetail.tiles.covered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
+        </section>
+        <ul className="ct-tiles" aria-label={t('detail.coverageTypes')}>
+          {TYPES.map((type, i) => {
+            const level = byType.get(type)?.level ?? 0;
+            const top = best[i];
+            const on = lit(type);
+            return (
+              <li key={type} className={`ct-tile ${coverTone(level)}${on === null ? '' : on ? ' kf-hit' : ' kf-dim'}`} style={{ '--tc': typeColor(type) } as CSSProperties}>
+                <button type="button" className="ct-tile-open" onClick={() => setSheetType(type)}
+                  aria-label={`${typeName(type, lang)}: ${t('detail.level')} ${level}%${top ? `, ${t('odetail.types.best')} ${nameOf(top.slot)}` : `, ${t('odetail.types.hole')}`}`}>
+                  <span className="ct-tile-type" aria-hidden="true"><TypeIcons types={[type]} />{typeName(type, lang)}</span>
+                  <span className="ct-tile-pct" aria-hidden="true">{level}<i>%</i></span>
+                  {top && <span className="ct-tile-best" aria-hidden="true"><PokemonIcon name={nameOf(top.slot)} /></span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="rob-legend ht-foot">{focus
+          ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+          : typeFocus ? <FocusNote name={typeFocus} band="two" text={t('kob.focusThreat', { name: typeName(typeFocus, lang) })} onClear={ctx.clearFocus} />
+          : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
+        {open && (
+          <AnalysisSheet title={typeName(open, lang)} lead={<TypeIcons types={[open]} />} onClose={() => setSheetType(null)} className="ct-sheet"
+            foot={<SheetCoachLink ctx={ctx} subject={open} onClose={() => setSheetType(null)} />}
+            sub={`${t('detail.level')} ${byType.get(open)?.level ?? 0}%${best[openIndex] ? ` · ${t('odetail.types.best')}: ${nameOf(best[openIndex]!.slot)}` : ''}`}>
+            <ul className="ct-sheet-rows">
+              {team.map((_, slot) => {
+                const h = hitOf(slot, open);
+                const show = h && (h.hit || h.cls === 'ok-low');
+                const dim = ctx.effOnly && !h?.tag;
+                return (
+                  <li key={`${nameOf(slot)}-${slot}`} className={`ct-sheet-row ${show ? h!.cls : 'ok-none'}${dim ? ' eff-dim' : ''}`}>
+                    <PokemonIcon name={nameOf(slot)} />
+                    <span className="ct-sheet-name">{nameOf(slot)}</span>
+                    {show
+                      ? <>
+                        <span className="ct-sheet-move">{h!.found.move ? gameName('move', h!.found.move, lang) : ''}</span>
+                        <EffTag label={h!.tag} side="offense" />
+                        <span className="ct-sheet-pct">{h!.found.pct}<i>%</i></span>
+                      </>
+                      : <span className="ct-sheet-none">—</span>}
+                  </li>
+                );
+              })}
+            </ul>
+            <span className="area-legend ct-sheet-legend" aria-hidden="true"><OffenseTypesLegend /><EffLegend side="offense" /></span>
+          </AnalysisSheet>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className={`def-frame off-frame def-types${roomy ? ' roomy' : ''}`}>
+    <div className={`def-frame off-frame def-types${roomy ? ' roomy' : ''}${phone ? ' ct-flip' : ''}`}>
       <div className="ad-scroll">
         <p id={summaryId} hidden>{holeNames.length ? t('sr.types.offense', { list: holeNames.join(', ') }) : t('sr.types.offenseNone')}</p>
+        {phone ? (
+          // Telefono: la tabella girata, i 18 tipi in riga e i membri in colonna (icona in testata), così sta in larghezza
+          // senza scorrere di lato; in fondo a ogni riga il Team Coverage del tipo. "Il migliore" non c'è: è la casella più
+          // forte della riga.
+          <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} aria-describedby={summaryId} className="def-grid spaced ct-table ct-flip-table"
+            onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
+            <thead>
+              <tr>
+                <th scope="col" className="def-mon-h"><span className="visually-hidden">{t('flip.type')}</span></th>
+                {team.map((set, slot) => (
+                  <th key={`${nameOf(slot)}-${slot}`} scope="col" className={`ct-mon-h${focus && slot === focus.slot ? ' kf-col' : ''}`} {...focusAt(slot, -1)}>
+                    <span className="ct-mon-box" {...card.bind(set)}><PokemonIcon name={nameOf(slot)} /></span>
+                    <span className="visually-hidden">{nameOf(slot)}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {TYPES.map((type, i) => (
+                <tr key={type}>
+                  {typeHead(type, i, 'row')}
+                  {team.map((_, slot) => hitCell(slot, type, i))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
         <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
           onMouseLeave={e => { setHover(null); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              {TYPES.map((type, i) => {
-                const hole = holes.includes(type);
-                return (
-                  <th key={type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
-                    onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, type }, e.currentTarget); }} onMouseLeave={tip.close}
-                    {...focusAt(-1, i, { slot: -1, type })}>
-                    <TypeIcons types={[type]} />
-                    <span className="ct-flag" aria-hidden="true" />
-                    <span className="visually-hidden">{typeName(type, lang)}{hole && ` ${t('odetail.types.hole')}`}{` · ${statsLabel(averageOf(type))}`}</span>
-                  </th>
-                );
-              })}
+              {TYPES.map((type, i) => typeHead(type, i, 'col'))}
             </tr>
           </thead>
           <tbody>
             {team.map((set, slot) => {
-              const name = battleSpecies(set)?.name ?? set.species;
-              const member = slots[slot] === null ? null : offense.members[slots[slot]!];
+              const name = nameOf(slot);
               return (
                 <tr key={`${name}-${slot}`} className={[hover?.row === slot && 'x-row', focus && (slot === focus.slot ? 'kf-row' : 'kf-off')].filter(Boolean).join(' ') || undefined}>
                   <th scope="row" onMouseEnter={() => { setHover({ row: slot, col: -1 }); tip.close(); }} {...focusAt(slot, -1)}><MemberMon name={name} set={set} stats="offense" /></th>
-                  {TYPES.map((type, i) => {
-                    if (slots[slot] === null) return <td key={type} className={colClass(i, `ct-cell${ctx.effOnly ? ' eff-dim' : ''}${focus ? ' kf-dim' : ''}`)} onMouseEnter={() => setHover({ row: slot, col: i })} {...focusAt(slot, i)}>—</td>;
-                    // ×2 / ×4 solo se è superefficace la mossa che fa il danno della casella (Pixilate & co. compresi)
-                    const found = member?.hits.find(h => h.label === type);
-                    const tag = effLabel(found?.move ? moveAttackMultiplier(set, found.move, [type], '', field) : null, 'offense');
-                    const hit = found && found.credit > 0 ? found : undefined;
-                    const strong = !!hit && hit.credit >= STRONG_CREDIT;
-                    // Il 100%: un verde a parte, più acceso (come i pezzi OHKO della Generale)
-                    const ohko = !!hit && hit.pct >= 100;
-                    // Il triangolo del setup, come nella Generale: solo se la danza fa salire di fascia (fino al 2HKO o all'OHKO)
-                    const rank = (pct: number | null | undefined) => { const b = pct == null ? null : koBandOf(pct); return b === 'ohko' ? 2 : b === 'two' ? 1 : 0; };
-                    const lifted = !!found && found.setupPct !== null && rank(found.setupPct) > rank(found.plainPct);
-                    // Il triangolo azzurro: il meteo o il campo di un compagno lo fa salire di fascia
-                    const teamUp = !!found && found.teamPct !== null && rank(found.teamPct) > rank(found.plainPct);
-                    // Solo coi due insieme (setup e meteo del team): tutti e due i triangoli, il tooltip dice che servono entrambi
-                    const bothUp = !!found && !lifted && !teamUp && found.comboPct !== null && rank(found.comboPct) > rank(found.plainPct);
-                    return (
-                      <td key={type} className={colClass(i, `ct-cell${hit ? (ohko ? ' ok-full ok-ohko' : strong ? ' ok-full' : ' ok-half') : ''}${lifted || bothUp ? ' has-setup' : ''}${teamUp || bothUp ? ' has-team' : ''}${effClass(tag, 'offense', ctx.effOnly)}${focus ? (slot === focus.slot && found && inBand(found.plainPct, focus.band) ? ' kf-hit' : ' kf-dim') : ''}`)}
-                        onMouseEnter={e => { setHover({ row: slot, col: i }); if (hit) tip.open({ slot, type }, e.currentTarget); else tip.leave(); }} onMouseLeave={tip.close}
-                        {...focusAt(slot, i, hit ? { slot, type } : undefined)}>
-                        {hit && <>
-                          <span className="ct-num">{hit.pct}<i>%</i></span>
-                          <span className="visually-hidden"> {ohko ? 'OHKO' : t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>
-                        </>}
-                        <EffTag label={tag} side="offense" />
-                      </td>
-                    );
-                  })}
+                  {TYPES.map((type, i) => hitCell(slot, type, i))}
                 </tr>
               );
             })}
             <tr className="ct-sum ct-sum-first">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('detail.level')}</span></th>
-              {TYPES.map((type, i) => {
-                const level = byType.get(type)?.level ?? 0;
-                return <td key={type} className={colClass(i)} onMouseEnter={() => setHover({ row: -1, col: i })} {...focusAt(-1, i)}><span className={`ct-pill ${coverTone(level)}`}>{level}%</span></td>;
-              })}
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate"><span className="plate-long">{t('detail.level')}</span><span className="plate-short" aria-hidden="true">{t('flip.team')}</span></span></th>
+              {TYPES.map((type, i) => levelCell(type, i))}
             </tr>
             <tr className="ct-sum ct-best">
-              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate">{t('odetail.types.best')}</span></th>
+              <th scope="row" onMouseEnter={() => setHover(null)} onFocus={() => setHover(null)}><span className="row-plate"><span className="plate-long">{t('odetail.types.best')}</span><span className="plate-short" aria-hidden="true">{t('flip.best')}</span></span></th>
               {TYPES.map((type, i) => {
                 const top = best[i];
-                const who = top === null ? null : battleSpecies(team[top.slot])?.name ?? team[top.slot].species;
+                const who = top === null ? null : nameOf(top.slot);
                 // Col fuoco sulla casella la carta del migliore (col mouse si apre sulla sprite)
                 const cardFocus = top ? card.bind(team[top.slot]) : null;
                 return (
@@ -169,6 +307,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
             </tr>
           </tbody>
         </table>
+        )}
       </div>
       {card.tip}
       {headType && tip.anchor && (
@@ -184,6 +323,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       )}
       <div className="rob-legend ht-foot">{focus
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
+        : typeFocus ? <FocusNote name={typeFocus} band="two" text={t('kob.focusThreat', { name: typeName(typeFocus, lang) })} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><OffenseTypesLegend /></span>}</div>
     </div>
   );
@@ -197,6 +337,7 @@ function OffenseTypesLegend() {
       <span className="area-legend-swatch"><i className="ok-full ok-ohko" />OHKO</span>
       <span className="area-legend-swatch"><i className="ok-full" />{t('odetail.types.legendFull')}</span>
       <span className="area-legend-swatch"><i className="ok-half" />{t('odetail.types.legendHalf')}</span>
+      <span className="area-legend-swatch"><i className="ok-low" />{t('odetail.types.legendLow')}</span>
       <span className="area-legend-swatch"><i className="kob-tri" />{t('kob.legendSetupShort')}</span>
       <span className="area-legend-swatch"><i className="kob-tri team" />{t('kob.legendTeam')}</span>
     </>

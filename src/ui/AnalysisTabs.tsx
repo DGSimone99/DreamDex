@@ -1,6 +1,8 @@
+import { hint } from './MoveTip';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
+import { gradeFor } from '../engine/rating';
 import type { AnalysisView, TabView } from './analysisView';
 import { ModalLock } from './ModalLock';
 import { EeveePeek } from './EeveePeek';
@@ -30,14 +32,18 @@ export function HelpButton({ title, label = title, className, children }: { titl
   useEffect(() => {
     if (!open) return;
     closeButton.current?.focus();
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    // Esc chiude; Tab resta nella finestra (l'unico punto da fuoco è la ×: il fuoco non cade sulla pagina dietro)
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+      else if (e.key === 'Tab') { e.preventDefault(); closeButton.current?.focus(); }
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
   return (
     <>
-      <button ref={button} type="button" className="help-button" aria-label={label} title={label} onClick={() => setOpen(true)}>
+      <button ref={button} type="button" className="help-button" aria-label={label} {...hint(label)} onClick={() => setOpen(true)}>
         <Icon name="help" />
       </button>
       {open && createPortal(
@@ -119,7 +125,7 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
             {/* Il voto dell'area si vede ma non entra nel nome della scheda */}
             {/* Problemi: numero fuori dal nome della scheda, rosso con almeno un grave (a team completo) */}
             {!!badges[item] && <span className={`tab-badge${badges[item]!.serious && !badges[item]!.neutral ? '' : ' minor'}`} aria-hidden="true">{badges[item]!.n}</span>}
-            {scores[item] != null && <span className="tab-score" aria-hidden="true">{scores[item]}</span>}
+            {scores[item] != null && <span className={`tab-score${typeof scores[item] === 'number' ? ` grade-${gradeFor(scores[item] as number).grade}` : ''}`} aria-hidden="true">{scores[item]}</span>}
           </button>
         ))}
       </div>

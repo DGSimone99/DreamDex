@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { COVERED_LEVEL, findProblems, HELD_LEVEL, holdSeverity } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { teamOffense } from '../../src/engine/offense';
 import { summarizeTeam } from '../../src/engine/overviewSummary';
 import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
@@ -65,7 +66,10 @@ describe('summarizeTeam', () => {
     expect(unhit.length).toBeGreaterThan(0);
     expect(tile('strength').value).toBe(`${18 - unhit.length}/18`);
     expect(tile('strength').missing).toEqual(unhit.map(r => ({ kind: 'type', type: r.label })));
-    expect(unhit.map(r => `coverage:${r.label}`)).toEqual(problems.filter(p => p.category === 'coverage').map(p => p.key));
+    // Il coach dice solo i buchi veri (nessuno lo manda KO in due colpi, 2026-11-24); la tessera tutti i tipi sotto 60
+    const holes = teamOffense(two, fixtureData).types.holes;
+    expect(holes.map(type => `coverage:${type}`)).toEqual(problems.filter(p => p.category === 'coverage').map(p => p.key));
+    expect(holes.every(type => unhit.some(r => r.label === type))).toBe(true);
     expect(tile('strength').status).toBe(unhit.length ? 'mid' : 'good');
   });
 

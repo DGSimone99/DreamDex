@@ -518,7 +518,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, team, subRoles, pro
       <div
         className={`slot-card pedana-face${open ? ' beam-on' : ''}${flash ? ' beam-flash' : ''}`}
         onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}
-        draggable
+        // Schermi touch: niente trascinamento (col dito si tiene premuto per il menu del membro)
+        draggable={!touch}
         // Team ridotto: la carta del Pokémon su tutta la carta (al posto del fumetto "Trascina…"). Carta aperta: niente
         // fumetto (col mouse ancora sopra, ridisegnando la pagina si riapriva sopra l'editor)
         {...(open || collapsed || touch ? {} : bubble(`${tr('team.dragTitle')}

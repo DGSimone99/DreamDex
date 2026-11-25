@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { loadBans, loadDataOrEmpty, loadGameDex, loadItalianNames, loadSource, loadTiers } from './data/load';
 import { initGames } from './engine/games';
 import { initBans } from './engine/formats';
@@ -60,7 +61,10 @@ function bootFailed(error: unknown) {
 Promise.all([loadTiers().then(initTiers).then(loadDataOrEmpty), loadBans().then(initBans), loadGameDex().then(initGames), initLearnsets(), names]).then(([data]) => {
   root.render(
     <StrictMode>
-      <App data={data} loadSource={loadSource} storage={storage} loadNames={loadNames} />
+      {/* Un errore imprevisto non lascia mai la pagina vuota: una schermata con Ricarica (il team resta nella sessione) */}
+      <ErrorBoundary>
+        <App data={data} loadSource={loadSource} storage={storage} loadNames={loadNames} />
+      </ErrorBoundary>
     </StrictMode>,
   );
   hideBoot();

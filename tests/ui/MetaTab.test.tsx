@@ -1,7 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MetaTab } from '../../src/ui/meta/MetaTab';
+import { dex } from '../../src/engine/dex';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 import { LangProvider } from '../../src/i18n/react';
@@ -58,7 +59,21 @@ describe('scheda Meta', () => {
     expect(row).toHaveTextContent('#1');
     expect(row).toHaveTextContent('30,0%');
     expect(within(row).getByRole('button', { name: /Magikarp/ })).toBeDisabled();
+    // Senza statistiche: "#–" e "–" (la casella resta corta), il perché per lo screen reader e nel fumetto
+    expect(within(row).getByRole('button', { name: /Magikarp/ })).toHaveTextContent('#––');
+    expect(within(row).getByRole('button', { name: /Magikarp/ })).toHaveAccessibleName(/non presente nelle statistiche/);
     expect(row).toHaveTextContent('Uso medio 27,5%');
+  });
+
+  it('fuori dai più usati: "#–" al posto di una scritta lunga, uso visibile, il perché nel nome', () => {
+    // 40 nomi veri più usati di Toxapex: Toxapex scende al 41° posto
+    const filler = Object.fromEntries(dex.species.all().filter(s => s.num > 0 && !s.forme).slice(0, 40).map(s => [s.name, { ...fixtureData.stats!.pokemon['Toxapex'], usage: 0.5 }]));
+    const data = { ...fixtureData, stats: { ...fixtureData.stats!, pokemon: { ...fixtureData.stats!.pokemon, ...filler } } };
+    renderIt(<MetaTab team={[tusk, { ...tusk, species: 'Toxapex', item: '' }]} data={data} />);
+    const apex = within(screen.getByRole('group', { name: 'Il tuo team' })).getByRole('button', { name: /Toxapex/ });
+    expect(apex).toBeEnabled();
+    expect(apex).toHaveTextContent(/^Toxapex #– \d/);
+    expect(apex).toHaveAccessibleName(/fuori dai 40 più usati/);
   });
 
   it('team vuoto: niente riga del team, la griglia c\'è', () => {
@@ -98,23 +113,54 @@ describe('scheda Meta', () => {
   });
 });
 
-describe('scheda Meta su schermo stretto', () => {
-  it('scegliendo una carta la scheda del Pokémon scorre in vista (sta sotto la griglia)', async () => {
+describe('scheda Meta su telefono e tablet', () => {
+  const narrow = () => vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('toccando una carta la scheda si apre come finestra; "Torna al meta" la chiude', async () => {
+    narrow();
     const user = userEvent.setup();
-    const original = window.matchMedia;
-    window.matchMedia = ((query: string) => ({ matches: query.includes('max-width'), media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
-    const scrolled: Element[] = [];
-    const proto = Element.prototype as unknown as { scrollIntoView?: () => void };
-    const before = proto.scrollIntoView;
-    proto.scrollIntoView = function (this: Element) { scrolled.push(this); };
-    try {
-      renderIt(<MetaTab team={[]} data={fixtureData} />);
-      expect(scrolled).toHaveLength(0);
-      await user.click(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ }));
-      expect(scrolled).toEqual([screen.getByRole('complementary', { name: 'Scheda' })]);
-    } finally {
-      window.matchMedia = original;
-      proto.scrollIntoView = before;
-    }
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Torna al meta' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ }));
+    const sheet = screen.getByRole('dialog', { name: 'Scheda' });
+    expect(sheet).toHaveTextContent('Gholdengo');
+    expect(sheet).toHaveFocus();
+    expect(document.querySelector('.meta-tab')).toHaveClass('sheet-open');
+    // La griglia sotto è inerte finché la scheda è aperta
+    expect(document.querySelector('.meta-main')).toHaveAttribute('inert');
+    await user.click(screen.getByRole('button', { name: 'Torna al meta' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.querySelector('.meta-main')).not.toHaveAttribute('inert');
+  });
+
+  it('tablet: un clic fuori dalla scheda (sul velo) la chiude', async () => {
+    narrow();
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    await user.click(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ }));
+    const scrim = document.querySelector<HTMLElement>('.meta-tab > .sheet-scrim')!;
+    expect(scrim).not.toHaveAttribute('inert');
+    await user.click(scrim);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('Esc chiude la scheda', async () => {
+    narrow();
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[tusk]} data={fixtureData} />);
+    await user.click(within(screen.getByRole('group', { name: 'Il tuo team' })).getByRole('button', { name: /Great Tusk/ }));
+    expect(screen.getByRole('dialog', { name: 'Scheda' })).toHaveTextContent('Great Tusk');
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('sul PC la scheda resta a destra: niente finestra', async () => {
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    await user.click(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('complementary', { name: 'Scheda' })).toHaveTextContent('Gholdengo');
   });
 });

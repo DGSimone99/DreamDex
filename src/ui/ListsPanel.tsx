@@ -18,7 +18,11 @@ import { ListsPicker, menuKeys, useFocusFirst, useMenu } from './ListsPicker';
 import { PokemonIcon } from './PokemonName';
 import { Sprite, typeColor } from './Sprite';
 import type { ListUndo } from './UndoToast';
+import { DETAIL_SHEET, useBackClose } from './useBackClose';
+import { TOUCH_QUERY } from './TouchTips';
+import { useMediaQuery } from './useMediaQuery';
 import { useRoving } from './useRoving';
+import { useSheet } from './useSheet';
 
 interface Props {
   lists: UserLists;
@@ -47,6 +51,10 @@ const DEX_WIDE = 1100;
 const CARD_H = 104;
 const CARD_GAP = 8;
 const DEX_PAGE = 60;
+/** Telefono e tablet: chiudendo, il foglio di una lista esce com'è entrato (come il dettaglio della lista Pokémon). */
+const SHEET_OUT_MS = 220;
+/** Sul pulsante di una lista (tablet): le prime icone, per riconoscerla a colpo d'occhio. */
+const PEEK = 6;
 /** Vista grande: carte per pagina con le due liste affiancate o con una sola. */
 const BIG_BOTH = 12;
 const BIG_ONE = 24;
@@ -117,9 +125,11 @@ const DexCard = memo(function DexCard({ name, fav, ban, favHere, banHere, target
   onDragEnd?: () => void;
 }) {
   const tr = useT();
+  // Schermi touch: niente trascinamento (il dito che scorre prendeva la carta); si usano i pulsanti
+  const touch = useMediaQuery(TOUCH_QUERY);
   return (
     <li className={`dex-card${fav ? ' fav' : ''}${ban ? ' ban' : ''}${target ? ' target' : ''}`} style={{ '--t': typeColor(firstType(name)) } as CSSProperties}
-      draggable={!!onDragStart} onDragStart={onDragStart && (e => onDragStart(e, name))} onDragEnd={onDragEnd} title={name}>
+      draggable={!!onDragStart && !touch} onDragStart={onDragStart && (e => onDragStart(e, name))} onDragEnd={onDragEnd} title={name}>
       <span className="dex-no" aria-hidden="true">{dexNo(name)}</span>
       <span className="dex-sprite" aria-hidden="true"><Sprite species={name} size={96} /></span>
       <span className="dex-name">{name}</span>
@@ -195,8 +205,11 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   const here = pairOf(lists, editing);
   const kindLabel = (kind: ListKind) => tr(kind === 'favorites' ? 'lists.favorites' : 'lists.bans');
 
-  const [view, setViewState] = useState<View>(loadView);
+  const [storedView, setViewState] = useState<View>(loadView);
   const setView = (next: View) => { setViewState(next); saveView(next); };
+  // Telefono e tablet: niente vista espansa né box in alto; due pulsanti fissi aprono ogni lista in un foglio
+  const small = useMediaQuery(DETAIL_SHEET);
+  const view: View = small ? { ...storedView, expanded: false } : storedView;
 
   // Le voci delle due liste: prima quelle della raccolta (nell'ordine in cui sono entrate), poi le universali sotto
   const entries = useMemo(() => {
@@ -336,6 +349,23 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   const [boxPage, setBoxPage] = useState<Record<ListKind, number>>({ favorites: 0, bans: 0 });
   const usageLabel = tr('lists.order.usage', { format: formatLabel(format, lang) });
 
+  // ── Telefono e tablet: il foglio di una lista (dal basso sul telefono, da destra sul tablet) ──
+  const [sheet, setSheet] = useState<ListKind | null>(null);
+  const [sheetClosing, setSheetClosing] = useState(false);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const finishClose = () => {
+    window.clearTimeout(closeTimer.current);
+    const still = typeof window.matchMedia !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) { setSheet(null); return; }
+    setSheetClosing(true);
+    closeTimer.current = window.setTimeout(() => { setSheetClosing(false); setSheet(null); }, SHEET_OUT_MS);
+  };
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+  const sheetOn = small && sheet !== null;
+  const closeSheet = useBackClose(sheetOn, finishClose, DETAIL_SHEET);
+  const openSheet = (kind: ListKind) => { window.clearTimeout(closeTimer.current); setSheetClosing(false); setSheet(kind); };
+  useSheet(sheetOn, panelRef, '.lists-sheet-scrim, .lists-sheet-back, .lists-sheet', closeSheet);
+
   const picker = <ListsPicker lists={lists} format={format} context={context} shown={editing} onChange={onChange} onShow={scope => setPicked({ context, scope })} />;
 
   if (view.expanded) {
@@ -392,7 +422,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
       <div className="lists-bar">
         <span className={`search-field${target ? ' has-hint' : ''}`}>
           <Icon name="search" />
-          <input aria-label={tr('lists.search')} placeholder={tr('lists.searchPlaceholder')} value={filters.query}
+          <input aria-label={tr('lists.search')} placeholder={tr(small ? 'lists.searchPlaceholderTouch' : 'lists.searchPlaceholder')} value={filters.query}
             onChange={e => setFilters({ ...filters, query: e.target.value })} onKeyDown={onKey} />
           {target && (
             <span className="search-hint">
@@ -401,11 +431,30 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
           )}
         </span>
         {picker}
-        <button type="button" className="lists-expand" onClick={() => setView({ ...view, expanded: true })}>
-          <Icon name="expand" /> {tr('lists.expand')}
-        </button>
+        {!small && (
+          <button type="button" className="lists-expand" onClick={() => setView({ ...view, expanded: true })}>
+            <Icon name="expand" /> {tr('lists.expand')}
+          </button>
+        )}
       </div>
-      <div className="lists-boxes">
+      {/* Telefono e tablet: i due pulsanti delle liste, sempre in alto mentre si scorre il Pokédex */}
+      {small && (
+        <div className="lists-tabs" role="group" aria-label={tr('lists.yours')}>
+          {KINDS.map(kind => (
+            <button key={kind} type="button" className={`lists-tab ${kind}${over === kind ? ' over' : ''}`} aria-haspopup="dialog"
+              aria-expanded={sheet === kind} aria-label={tr('lists.openBox', { list: kindLabel(kind), n: entries[kind].length })}
+              onClick={() => openSheet(kind)} onDragOver={overBox(kind)} onDrop={dropOn(kind)} onDragLeave={() => setOver(o => (o === kind ? null : o))}>
+              <span className="lists-tab-plate"><Icon name={MARK[kind]} filled={kind === 'favorites'} /> {kindLabel(kind)}</span>
+              <b className="lists-tab-count">{entries[kind].length}</b>
+              <span className="lists-tab-peek" aria-hidden="true">
+                {entries[kind].slice(0, PEEK).map(name => <PokemonIcon key={name} name={name} />)}
+              </span>
+              <Icon name="next" />
+            </button>
+          ))}
+        </div>
+      )}
+      {!small && <div className="lists-boxes">
         {KINDS.map(kind => {
           const names = entries[kind];
           const pages = Math.max(1, Math.ceil(names.length / cap));
@@ -418,7 +467,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
               onDragLeave={() => setOver(o => (o === kind ? null : o))} />
           );
         })}
-      </div>
+      </div>}
       <section className="lists-dex" aria-label={tr('lists.pokedex')}>
         <div className="dex-head">
           <h3>{tr('lists.pokedex')}</h3>
@@ -447,6 +496,30 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
           ))}
         </ol>
       </section>
+      {small && sheet && <div className={`lists-sheet-scrim${sheetClosing ? ' closing' : ''}`} aria-hidden="true" onClick={closeSheet} />}
+      {small && sheet && (
+        <button type="button" className={`lists-sheet-back${sheetClosing ? ' closing' : ''}`} onClick={closeSheet}>
+          <Icon name="prev" /> {tr('lists.backToLists')}
+        </button>
+      )}
+      {small && sheet && (
+        <section className={`lists-sheet lists-big ${sheet}${sheetClosing ? ' closing' : ''}`} role="dialog" aria-modal="true" aria-label={kindLabel(sheet)} tabIndex={-1}>
+          <BoxHead kind={sheet} count={entries[sheet].length} label={kindLabel(sheet)} page={0} pages={1} onPage={() => {}}
+            note={tr(sheet === 'favorites' ? 'lists.favMeaning' : 'lists.banMeaning')} />
+          {entries[sheet].length === 0
+            ? <p className="lists-sheet-empty">{tr(sheet === 'favorites' ? 'lists.noFavoritesTouch' : 'lists.noBansTouch')}</p>
+            : <p className="lists-sheet-note">{tr('lists.sheetKeys')}</p>}
+          <ol className="lists-big-grid" aria-label={kindLabel(sheet)}>
+            {entries[sheet].map(name => {
+              const owner = pairOf(lists, ownerOf(name));
+              return (
+                <DexCard key={name} name={name} fav={sheet === 'favorites'} ban={sheet === 'bans'}
+                  favHere={owner.favorites.includes(name)} banHere={owner.bans.includes(name)} onToggle={toggleOwner} />
+              );
+            })}
+          </ol>
+        </section>
+      )}
       <p className="visually-hidden" aria-live="polite">{announce}</p>
     </section>
   );
@@ -495,6 +568,7 @@ function ListBox({ kind, label, names, cap, count, page, pages, onPage, effectiv
   const tr = useT();
   const hintId = useId();
   const roving = useRoving<HTMLUListElement>('.lslot-mon');
+  const touch = useMediaQuery(TOUCH_QUERY);
   // Dopo Canc o M il fuoco resta nel box, sulla casella che prende il posto (o sull'ultima)
   const refocus = useRef<number | null>(null);
   useEffect(() => {
@@ -534,7 +608,7 @@ function ListBox({ kind, label, names, cap, count, page, pages, onPage, effectiv
             const title = [name, universal && tr('lists.universalTag'), overridden && tr(overridden === 'favorites' ? 'lists.overriddenFav' : 'lists.overriddenBan')].filter(Boolean).join(' · ');
             return (
               <li key={name} className={`lslot on${dragFrom === name ? ' lifted' : ''}`} style={{ '--t': typeColor(firstType(name)) } as CSSProperties}>
-                <span className="lslot-mon" data-name={name} tabIndex={-1} draggable title={title} aria-describedby={hintId}
+                <span className="lslot-mon" data-name={name} tabIndex={-1} draggable={!touch} title={title} aria-describedby={hintId}
                   onDragStart={e => onDragStart(e, { name, from: kind })} onDragEnd={onDragEnd}>
                   <PokemonIcon name={name} />
                   <span className="visually-hidden">{name}</span>

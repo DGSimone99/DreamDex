@@ -32,7 +32,7 @@ export function effLabel(mult: number | null | undefined, side: EffSide): string
 }
 
 /**
- * Classi della casella per l'interruttore ("Solo superefficaci" / "Solo efficacia"): restano accese le caselle con
+ * Classi della casella per l'interruttore ("Solo superefficaci", Offesa e Difesa): restano accese le caselle con
  * l'etichetta (nell'Offesa i superefficaci, nella Difesa tutto quello che non è neutro), le altre si spengono.
  */
 export const effClass = (label: string | null, _side: EffSide, only: boolean | undefined) =>
@@ -86,12 +86,24 @@ export function EffSwitch({ side, on, onChange }: { side: EffSide; on: boolean; 
  * L'interruttore in alto a sinistra nel pannello, sulla riga della legenda (`.panel-switch`): quello dell'efficacia e,
  * nella Velocità, quello di Trick Room (`tone="room"`: acceso in viola, il colore della stanza).
  */
-export function PanelSwitch({ on, onChange, label, title, tone }: { on: boolean; onChange: (on: boolean) => void; label: string; title?: string; tone?: 'room' }) {
+export function PanelSwitch({ on, onChange, label, title, tone, disabled = false }: { on: boolean; onChange: (on: boolean) => void; label: string; title?: string; tone?: 'room'; /** Spento e fermo (es. Distortozona senza nessuno che la usa): `title` dice perché. */ disabled?: boolean }) {
   return (
     <button type="button" role="switch" aria-checked={on} className={`eff-switch${tone ? ` ${tone}` : ''}${on ? ' on' : ''}`}
-      title={title} onClick={() => onChange(!on)}>
+      title={title} disabled={disabled} onClick={() => onChange(!on)}>
       <span className="eff-switch-track" aria-hidden="true"><span className="eff-switch-knob" /></span>
       {label}
     </button>
   );
+}
+
+/**
+ * Nei fogli dal basso (telefono e tablet), in fondo alla legenda: cosa vuol dire l'etichetta accanto al danno. Offesa
+ * "×2 superefficace"; Difesa "×2 debole · ×½ resiste · 0 immune".
+ */
+export function EffLegend({ side }: { side: EffSide }) {
+  const t = useT();
+  const items: [string, string][] = side === 'offense'
+    ? [['×2', t('eff.legend.se')]]
+    : [['×2', t('eff.legend.weak')], ['×½', t('eff.legend.resist')], ['0', t('eff.immune')]];
+  return <span className="eff-legends">{items.map(([m, word]) => <span key={m} className="eff-legend"><b>{m}</b> {word}</span>)}</span>;
 }

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { rulesOf, type FormatChoice } from '../engine/formatChoice';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
-import { encodeShare } from '../share';
+import { shareUrl } from '../share';
 import { EeveeMoment } from './EeveeMoment';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
@@ -48,7 +48,7 @@ export function FeedbackDialog({ team, choice, onClose, accessKey = import.meta.
     e.preventDefault();
     if (!accessKey || !message.trim() || status === 'sending') return;
     setStatus('sending');
-    const link = attach && team.length ? `${location.origin}${location.pathname}#team=${encodeShare(team, choice)}` : '';
+    const link = attach && team.length ? shareUrl(team, choice) : '';
     try {
       const response = await send(ENDPOINT, {
         method: 'POST',

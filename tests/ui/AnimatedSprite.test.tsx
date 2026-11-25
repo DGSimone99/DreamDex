@@ -22,6 +22,11 @@ describe('sprite animato', () => {
     expect(still).toHaveClass('covered');
   });
 
+  it('lo statico si chiede subito, non in modo pigro (col "lazy" arrivava dopo il resto della pagina)', () => {
+    const { container } = render(<Sprite species="Garchomp" />);
+    expect(container.querySelector('img.sprite')).not.toHaveAttribute('loading', 'lazy');
+  });
+
   it('animazione che Showdown non ha (es. Kingambit): non la chiede e lo statico "respira"', () => {
     const { container } = render(<Sprite species="Kingambit" animated />);
     expect(aniOf(container)).toBeNull();

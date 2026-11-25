@@ -9,6 +9,7 @@ import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
 import { gameName, typeName } from '../../src/i18n/game';
 import { offenseSlots } from '../../src/ui/offense/slots';
+import { countClass } from '../../src/ui/CardsLegend';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -61,15 +62,15 @@ describe('Offesa: navigazione e guida', () => {
     // La tabella dei 18 tipi dice "di ogni tipo", il tooltip di un tipo solo "di questo tipo"
     expect(avg.querySelector('.tip-sub')).toHaveTextContent('Il Pokémon medio di ogni tipo');
     await user.unhover(within(panel).getByRole('button', { name: 'Il Pokémon medio dei 18 tipi' }));
-    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
+    // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+    expect(document.querySelector('.ftip:not(.hint)')).toBeNull();
     const metaAsk = within(panel).getByRole('button', { name: /^I \d+ Pokémon più usati$/ });
     await user.hover(metaAsk);
     await waitFor(() => expect(document.querySelector('.ftip.gat .gat-mons')).not.toBeNull());
     expect(document.querySelectorAll('.ftip.gat .gat-mons > span').length).toBe(withMeta().offense.coverageMeta!.rows.length);
     await user.unhover(metaAsk);
-    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
+    // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+    expect(document.querySelector('.ftip:not(.hint)')).toBeNull();
     // Una sezione sola anche se il "?" c'è in tutte e tre le schede
     expect(within(dialog).queryByRole('tab', { name: 'Generale' })).toBeNull();
     await user.keyboard('{Escape}');
@@ -224,7 +225,8 @@ describe('Offesa: Generale', () => {
     expect(heads[0]).toBe('Pokémon');
     expect(heads[1].startsWith('Tipi')).toBe(true);
     expect(heads[2].startsWith('Meta')).toBe(true);
-    expect(heads[3]).toBe('Offesa');
+    // L'ultima con sopra l'unità del +N (punti nel voto)
+    expect(heads[3]).toBe('Offesa punti nel voto');
     // Le testate con la spada (solo per gli occhi) e solo la parola: "Tipi", "Meta"
     expect(screen.getByRole('columnheader', { name: /^Tipi$/ }).querySelector('.bar-head-ic svg')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('columnheader', { name: /^Meta$/ }).querySelector('.guide-ask')).not.toBeNull();
@@ -236,7 +238,7 @@ describe('Offesa: Generale', () => {
     expect(heads).toHaveLength(3);
     expect(heads[0]).toBe('Pokémon');
     expect(heads[1].startsWith('Tipi')).toBe(true);
-    expect(heads[2]).toBe('Offesa');
+    expect(heads[2]).toBe('Offesa punti nel voto');
     expect(document.querySelector('.def-members tfoot th')).toHaveTextContent('Team Coverage');
     expect(document.querySelectorAll('.def-members tfoot td')).toHaveLength(2);
   });
@@ -396,8 +398,8 @@ describe('Offesa: Generale', () => {
     expect(list.querySelectorAll('.kot-type')).toHaveLength(types[band]);
     expect(list.querySelector('.kot-type img')).not.toBeNull();
     await user.unhover(badge);
-    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-    await vi.waitFor(() => expect(document.querySelector('.ftip')).toBeNull());
+    // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+    expect(document.querySelector('.ftip')).toBeNull();
     // Il meta: le minacce come sprite
     const meta = count(metaHits(rating, 0));
     const mBand = meta.ohko > 0 ? 'ohko' : 'two';
@@ -423,10 +425,10 @@ describe('Offesa: Generale', () => {
       expectBadges(cells[k], hits);
       const open = hits.filter(h => h.plain < 50).length;
       expect(cells[k]).not.toHaveTextContent('tutti');
-      // A destra della barra il conto "17/18": quanti KO in due colpi o meglio, verde se tutti, rosso se no
+      // A destra della barra il conto "17/18": quanti KO in due colpi o meglio, colori dei conti delle carte (verde pieno, giallo da 85%, rosso sotto)
       const count = cells[k].querySelector('.kob-count')!;
       expect(count).toHaveTextContent(`${hits.length - open}/${hits.length}`);
-      expect(count).toHaveClass(open === 0 ? 'full' : 'bad');
+      expect(count).toHaveClass(countClass(hits.length - open, hits.length));
       expect(count).toHaveAttribute('aria-label', `${hits.length - open} su ${hits.length} KO in due colpi o meglio`);
       if (open === 0) {
         expect(cells[k].querySelector('.kob.bad')).toBeNull();
@@ -438,8 +440,8 @@ describe('Offesa: Generale', () => {
         expect(tip.querySelector('.tip-head')).toHaveTextContent('Nessuno li manda KO in due colpi');
         expect(mainList(tip)!.children).toHaveLength(open);
         await user.unhover(bad);
-        // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-        await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
+        // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+        expect(document.querySelector('.ftip:not(.hint)')).toBeNull();
       }
     }
     // Nell'ultima colonna niente: il voto dell'Offesa sta nella testata dell'area
@@ -501,8 +503,8 @@ describe('Offesa: Generale', () => {
     expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(chip.querySelector('.mvp-tail')!.textContent!);
     expect(mainList(tip)!.children).toHaveLength(Number(chip.querySelector('.mvp-tail')!.textContent));
     await user.unhover(chip);
-    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-    await vi.waitFor(() => expect(document.querySelector('.og-bands')).toBeNull());
+    // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+    expect(document.querySelector('.og-bands')).toBeNull();
     expect(document.querySelector('.og-meta')).toBeNull();
     expect(document.querySelector('.og-detail')).toBeNull();
   });
@@ -548,8 +550,8 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(tip.querySelectorAll('.tst-stats span')).toHaveLength(3);
     expect(tip.querySelector('.tip-sub')).toHaveTextContent('Le statistiche del Pokémon medio');
     await user.unhover(water);
-    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-    await vi.waitFor(() => expect(document.querySelector('.ftip.tst')).toBeNull());
+    // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+    expect(document.querySelector('.ftip.tst')).toBeNull();
   });
 
   it('il triangolo del setup sulla casella solo se la danza fa salire di fascia (fino al 2HKO o all’OHKO)', async () => {
@@ -593,7 +595,7 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
     expect(document.querySelector('.ct-table tr.x-row')).not.toBeNull();
   });
 
-  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66%, gialla dal 50% (KO in due colpi), vuota sotto', async () => {
+  it('ogni casella è il danno del membro: verde acceso al 100% (OHKO), verde da 66%, gialla dal 50% (KO in due colpi), grigia col numero dal 34%, vuota sotto', async () => {
     const rating = await open();
     const rows = document.querySelectorAll('.ct-table tbody tr');
     const slots = offenseSlots(team, rating.offense.members);
@@ -603,9 +605,13 @@ describe('Offesa: Coverage tipi (il pacchetto dei tipi)', () => {
       TYPES.forEach((type, i) => {
         const hit = m.hits.find(h => h.label === type)!;
         const cell = cells[i];
-        if (hit.credit === 0) {
-          // Vuota: al massimo l'etichetta ×2 / ×4 di una mossa superefficace che non arriva al 50%
-          expect(cell.textContent).toMatch(/^(×[24] superefficace ×[24])?$/);
+        if (hit.credit === 0 && hit.pct >= 34) {
+          // Dal 34% al 49%: il danno in una casella grigia (non conta), col ×2 / ×4 se la mossa è superefficace
+          expect(cell).toHaveClass('ok-low');
+          expect(cell.textContent).toMatch(new RegExp(`^${hit.pct}%(×[24] superefficace ×[24])?$`));
+        } else if (hit.credit === 0) {
+          // Vuota sotto il 34%: niente numero e niente ×2 / ×4
+          expect(cell.textContent).toBe('');
         } else {
           expect(cell).toHaveTextContent(`${hit.pct}%`);
           expect(cell).toHaveClass(hit.credit >= 2 / 3 ? 'ok-full' : 'ok-half');
@@ -661,7 +667,7 @@ describe('Offesa: Coverage meta', () => {
     const rating = rateTeam(t, fixtureData, 'it')!;
     renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    // Ordine Minaccia (quello di partenza), la regola della Panoramica: prima chi nessuno manda KO in due colpi, poi chi uno
+    // L'ordine di Coverage meta (uno solo), la regola della Panoramica: prima chi nessuno manda KO in due colpi, poi chi uno
     // solo, poi gli altri; dentro, il più usato
     const n = (r: { cells: { pct: number }[] | null }) => Math.min(2, (r.cells ?? []).filter(c => c.pct >= 50).length);
     const sorted = [...rating.offense.coverageMeta!.rows].sort((a, b) => n(a) - n(b) || b.weight - a.weight || a.species.localeCompare(b.species));
@@ -702,7 +708,7 @@ describe('Offesa: Coverage meta', () => {
         expect(cell).toHaveClass(`ko-${ko(pct)}`);
         if (ko(pct) === 'ohko') {
           // In un colpo: il timbro KO al posto del numero (il % e la fascia a parole per chi legge lo schermo), niente barra
-          expect(cell.querySelector('.cm-ko')!.textContent).toBe('KO');
+          expect(cell.querySelector('.cm-ko')!.textContent).toBe('OHKO');
           expect(cell.querySelector('.wall-pct')).toBeNull();
           expect(cell.querySelector('.cm-hp')).toBeNull();
           expect(cell).toHaveTextContent(`${pct}% OHKO`);
@@ -765,8 +771,8 @@ describe('Offesa: Coverage meta', () => {
     expect(tip.querySelector('.tht-row .tip-dmg-pct')!.textContent).toMatch(/^[0-9]+–[0-9]+%$/);
     expect(tip.querySelector('.tht-row .tip-dmg > :last-child')).toHaveClass('ko-badge');
     await user.unhover(cell);
-    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
+    // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+    expect(document.querySelector('.ftip:not(.hint)')).toBeNull();
   });
 
   it('Lo coprono conta chi lo manda KO in due colpi', async () => {
@@ -812,22 +818,23 @@ describe('Offesa: Coverage meta', () => {
   });
 });
 
-describe('Offesa Generale: il colore del conto segue il ruolo (voce 3.3)', () => {
+describe('Offesa Generale: i colori solo sui conti del team, "· muro" sui muri', () => {
   const corv: TeamSet = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', nature: 'Impish', evs: { hp: 248, def: 168, spd: 92 }, moves: ['Roost', 'Brave Bird', 'Defog', 'U-turn'] };
   const mixed = [team[0], corv];
-  it('il conto di un muro è neutro, quello di un attaccante colorato; la riga Team Coverage resta colorata', () => {
+  it('il conto di ogni membro è neutro, il muro ha "· muro"; la riga Team Coverage resta colorata', () => {
     const a = analyzeTeam(mixed, fixtureData);
     expect(a.needs.primary).toEqual(['attack', 'wall']);
     renderIt(<AreaView rating={rateTeam(mixed, fixtureData, 'it')!} area="strength" team={mixed} analysis={a} problems={[]} />);
     const rows = [...document.querySelectorAll<HTMLElement>('.def-members tbody tr:not(.og-fill)')];
     const tones = (el: Element) => [...el.querySelectorAll('.kob-count')].map(c => [...c.classList].filter(k => k !== 'kob-count'));
-    // Great Tusk (attaccante): un colore del semaforo; Corviknight (muro): solo neutro
-    for (const tone of tones(rows[0])) expect(tone.some(k => ['full', 'good', 'warn', 'bad', 'zero'].includes(k))).toBe(true);
+    // Great Tusk (attaccante) e Corviknight (muro): conti neutri, senza classi di colore
     expect(tones(rows[1]).length).toBe(2);
-    for (const tone of tones(rows[1])) expect(tone).toEqual(['quiet']);
+    for (const row of rows.slice(0, 2)) for (const tone of tones(row)) expect(tone).toEqual([]);
+    expect(rows[1].querySelector('th .role-note')).toHaveTextContent('· muro');
+    expect(rows[0].querySelector('th .role-note')).toBeNull();
     // Il testo per lo screen reader non cambia e non dice "muro"
     expect(rows[1].querySelector('.kob-count')!.getAttribute('aria-label')).toMatch(/^\d+ su \d+ KO in due colpi o meglio$/);
     expect(rows[1].querySelector('td')).not.toHaveTextContent(/muro/i);
-    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'bad')).toBe(true);
+    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'warn' || k === 'bad')).toBe(true);
   });
 });

@@ -151,12 +151,25 @@ describe('Panoramica di Analisi', () => {
     expect(panel().querySelector('.overview-headline .alert-mark')).toBeNull();
   });
 
-  it('Coaching: un membro fuori regola ha una proposta che lo toglie, con la pillola grave nella riga Regole', async () => {
+  it('Coaching: un membro fuori regola ha una proposta che lo toglie: il problema nel filtro a sinistra, la proposta lo risolve', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
-    const chip = (await within(panel()).findAllByText((_, el) => !!el?.matches('.area-chip[data-key^="rules:"]')))[0];
-    expect(chip).toHaveClass('serious');
-    expect(chip.closest('.coach-ar')!.querySelector('.coach-ar-who b')).toHaveTextContent('Regole');
+    await within(panel()).findByRole('article', {}, { timeout: 8000 });
+    // Il problema della regola è fra quelli del filtro della classifica (una proposta lo risolve: non in "Restano")
+    const select = within(panel()).getByRole('combobox', { name: 'Problema' }) as HTMLSelectElement;
+    const rule = [...select.options].find(o => /Dragapult.*(legale|vietat)/.test(o.textContent!))!;
+    expect(rule).toBeTruthy();
+    expect(panel().querySelector('.coach-rank-stuck')?.textContent ?? '').not.toMatch(/Dragapult/);
+    // Scelto nel filtro: la carta grande è una proposta al posto di Dragapult, e fra i problemi risolti c'è la regola
+    await user.selectOptions(select, rule.value);
+    expect(select).toHaveValue(rule.value);
+    const hero = within(panel()).getByRole('article');
+    expect(hero.querySelector('h4')).toHaveTextContent(/al posto di Dragapult, voto/);
+    expect([...hero.querySelectorAll('li.coach-solved')].some(li => /Dragapult.*(legale|vietat)/.test(li.textContent!))).toBe(true);
+    // La classifica filtrata: ogni riga rimasta risolve la regola (lo dice il suo testo per lo screen reader)
+    const rows = [...panel().querySelectorAll<HTMLElement>('.coach-rank')];
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(document.getElementById(row.getAttribute('aria-describedby')!)).toHaveTextContent(/Dragapult.*(legale|vietat)/);
   });
 
   it('team stall: niente più la nota "valutato come stall"', async () => {
@@ -300,7 +313,7 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = await within(panel()).findByRole('region', { name: 'Da sistemare' }, { timeout: 5000 });
     const go = await within(row).findByRole('button', { name: /^Vai al Coaching/ }, { timeout: 8000 });
     expect(row).toHaveTextContent(/\d+ problemi?/);
-    expect(row).toHaveTextContent(/Il Coaching ha \d+ propost[ae]|Nessuna sostituzione singola/);
+    expect(row).toHaveTextContent(/Il Coaching ha \d+ propost[ae]|Nessun cambio singolo/);
     await user.click(go);
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
   });
@@ -357,7 +370,7 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(coachingOffer([p], advice)).toEqual({ count: 1, best: 3 });
   });
 
-  it('problemi senza proposta: "N problemi · Nessuna sostituzione singola li risolve", e porta comunque al Coaching', async () => {
+  it('problemi senza proposta: "N problemi · Nessun cambio singolo li risolve", e porta comunque al Coaching', async () => {
     const user = userEvent.setup();
     const onView = vi.fn();
     const problems = [problem({ text: 'x', severity: 'serious' }), problem({ text: 'y' })];
@@ -365,7 +378,7 @@ describe('Panoramica: la riga del Coaching', () => {
     const row = screen.getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveClass('is-link', 'serious');
     expect(row).toHaveTextContent('2 problemi');
-    expect(row).toHaveTextContent('Nessuna sostituzione singola li risolve');
+    expect(row).toHaveTextContent('Nessun cambio singolo li risolve');
     await user.click(within(row).getByRole('button', { name: /^Vai al Coaching/ }));
     expect(onView).toHaveBeenCalledWith('coaching');
   });
@@ -373,7 +386,7 @@ describe('Panoramica: la riga del Coaching', () => {
   it('in inglese', () => {
     const p = problem({ text: 'x', key: 'x' });
     render(<LangProvider lang="en"><FixRow problems={[p]} advice={NO_ADVICE} onView={() => {}} /></LangProvider>);
-    expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemNo single swap solves itGo to Coaching');
+    expect(screen.getByRole('region', { name: 'To fix' })).toHaveTextContent('1 problemNo single change solves itGo to Coaching');
   });
 
   it('nessun problema col team incompleto: neutra "5 di 6 nel team · Nessun problema finora", verde solo a team completo', () => {
@@ -412,7 +425,7 @@ describe('Panoramica: la riga del Coaching', () => {
     expect(row).toHaveClass('is-link', 'building');
     expect(row).not.toHaveClass('serious');
     expect(row.querySelector('.fix-label')).toHaveTextContent(/^4 di 6 nel team$/);
-    expect(row.querySelector('.fix-items')).toHaveTextContent(/^2 problemi · Nessuna sostituzione singola li risolve$/);
+    expect(row.querySelector('.fix-items')).toHaveTextContent(/^2 problemi · Nessun cambio singolo li risolve$/);
     expect(within(row).getByRole('button', { name: /^Vai al Coaching: 2 problemi/ })).toBeInTheDocument();
   });
 

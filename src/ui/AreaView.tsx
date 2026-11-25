@@ -11,7 +11,8 @@ import { AreaGuide } from './AreaGuide';
 import { solvable } from './dashboard/FixRow';
 import { EffSwitch, PanelSwitch } from './effTag';
 import { Icon } from './icons';
-import { MoreProblems, problemEntries, ProblemChip } from './ProblemPill';
+import { CoachLink } from './CoachLink';
+import { isThreat, MoreProblems, problemEntries, ProblemChip, type ProblemEntry } from './ProblemPill';
 import { useFitCount } from './useFit';
 
 /** La scelta dell'interruttore Trick Room nella sessione del browser ("0" spento); senza scelta, o senza memoria, acceso. */
@@ -27,8 +28,8 @@ function writeRoomPick(on: boolean) {
  * Un'area del voto sulla pagina (scheda di Analisi). In alto una testata sola: a sinistra la lettera del voto dell'area e
  * la sua parola (Ruoli e Bonus non ha un voto solo: niente), poi i problemi dell'area come pillole in una riga (quelli che
  * non stanno nel "+N"), a destra il selettore delle sottoschede (solo i nomi; con una sottoscheda sola non c'è) e il "?".
- * Ogni pillola mostra il problema intero nel tooltip (mouse e fuoco) e, se il Coaching ha una proposta per lei, è un
- * pulsante che apre il Coaching su quel problema. Sotto, il dettaglio della sottoscheda scelta a tutta larghezza.
+ * Ogni pillola mostra il problema intero nel tooltip (mouse e fuoco) ed è un pulsante che porta a quello di cui parla
+ * (vedi AreaProblems); in fondo alla riga "Sistemalo nel Coaching". Sotto, il dettaglio della sottoscheda scelta a tutta larghezza.
  */
 export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId, onCoaching, advice = null, initialFocus = null }: {
   rating: TeamRating;
@@ -74,7 +75,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
       && (e.offsetX > el.clientWidth || e.offsetY > el.clientHeight);
     const clear = (e: MouseEvent) => {
       const el = e.target as Element | null;
-      if (el?.closest?.('.cm-pages, .ftip, .rob-legend') || (el && onBar(e, el))) return;
+      // (nemmeno una pillola della testata: ne accende un'altra, o la stessa di nuovo)
+      if (el?.closest?.('.cm-pages, .ftip, .rob-legend, .area-chip-item, .more-probs-menu') || (el && onBar(e, el))) return;
       setFocus(null);
     };
     const timer = window.setTimeout(() => document.addEventListener('click', clear), 0);
@@ -91,7 +93,27 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
   const opener = useRef<HTMLElement | null>(null);
   const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], trickRoom, guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null) });
+  // I soggetti (minacce, tipi) che sono problemi dell'area: i fogli dal basso di Coverage tipi e meta portano al Coaching
+  const subjectKeys = new Map(problems.filter(p => isThreat(p) || p.category === 'defense' || p.category === 'coverage')
+    .flatMap(p => (p.subjects ?? []).map(subject => [subject, p.key] as const)));
+  const coach = onCoaching ? { keyOf: (subject: string) => subjectKeys.get(subject), go: onCoaching } : undefined;
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], trickRoom, guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null), coach });
+  // Dove porta una pillola della testata: una minaccia del meta a Coverage meta (la sua colonna accesa, sulle carte il
+  // suo foglio), un tipo a Coverage tipi; il resto (Ruoli e Bonus) da nessuna parte (null)
+  const jumpOf = (p: CoachProblem): Jump | null => {
+    if (area !== 'defense' && area !== 'strength') return null;
+    const subject = p.subjects?.[0];
+    if (!subject) return null;
+    const side = area === 'defense' ? 'defense' as const : 'offense' as const;
+    const tab = (key: string) => tabs.find(x => x.key === key);
+    if (isThreat(p)) {
+      const meta = tab('coverageMeta');
+      return meta ? { key: meta.key, place: meta.label, focus: { kind: 'threat', side, species: subject, open: true } } : null;
+    }
+    if (p.category !== 'defense' && p.category !== 'coverage') return null;
+    const types = tab(area === 'defense' ? 'coverageTypes' : 'types');
+    return types ? { key: types.key, place: types.label, focus: { kind: 'type', side, type: subject, open: true } } : null;
+  };
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
@@ -160,7 +182,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         )}
         {/* Un'area che non conta nel voto (Velocità nello stall) lo dice accanto al voto */}
         {areaInfo?.inactive && <span className="area-inactive" role="note">{t('rating.notCounted')}</span>}
-        <AreaProblems area={title} problems={problems} advice={advice} onCoaching={onCoaching} />
+        <AreaProblems area={title} problems={problems} advice={advice} onCoaching={onCoaching} low={grade?.grade === 'C' || grade?.grade === 'D'} lowKey={area === 'strength' ? 'offense' : area === 'defense' || area === 'speed' ? area : null}
+          jumpOf={jumpOf} onJump={jump => openFocus(jump.key, jump.focus)} />
         {!single && (
           <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
             {tabs.map((tab, i) => (
@@ -189,7 +212,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`}
         aria-labelledby={single ? undefined : `${id}-${current.key}`} aria-label={single ? title : undefined}>
         {/* L'interruttore dell'efficacia, in alto a sinistra sulla riga della legenda, solo sulle sottoschede con l'etichetta
-            nelle caselle */}
+            nelle caselle (a carte, telefono e tablet, in cima al pannello in ogni sottoscheda) */}
         {current.effSide && (
           <span className="panel-switch">
             <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
@@ -211,14 +234,26 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   );
 }
 
+/** Dove porta una pillola: la sottoscheda, il suo nome e il dettaglio da accendere. */
+type Jump = { key: string; place: string; focus: KoFocus };
+
 /**
  * I problemi dell'area nella testata, come pillole in una riga sola: prima quelli che il Coaching sa risolvere, poi i
  * gravi, poi l'ordine delle categorie; quelli che non stanno nel "+N". Senza problemi una pillola verde "Nessun problema".
- * Una pillola è un pulsante (apre il Coaching sulla prima proposta che la risolve) solo se almeno una proposta del
- * Coaching la risolve; mentre i consigli si calcolano, o senza proposte, mostra solo il tooltip.
+ * Una pillola porta a quello di cui parla (`jumpOf`: Coverage meta sulla minaccia, Coverage tipi sul tipo); dove non
+ * porta da nessuna parte (Ruoli e Bonus) apre il Coaching sulla prima proposta che la risolve, se una proposta la
+ * risolve; se no mostra solo il tooltip. Il "+N" apre la tendina delle pillole nascoste, ognuna con lo stesso salto.
+ * Con almeno un problema, in fondo alla riga il link "Sistemalo nel Coaching" (sul problema più in alto che il Coaching
+ * sa risolvere, se c'è).
  */
-function AreaProblems({ area, problems, advice, onCoaching }: {
+function AreaProblems({ area, problems, advice, onCoaching, low = false, lowKey = null, jumpOf, onJump }: {
   area: string; problems: CoachProblem[]; advice: CoachAdvice | null; onCoaching?: (problemKey?: string) => void;
+  /** Voto C o D: senza problemi la pillola non è verde (il voto è basso per la media, non per un buco). */
+  low?: boolean;
+  /** Le parole della pillola gialla per l'area (Offesa, Difesa, Velocità); le altre la frase comune. */
+  lowKey?: 'offense' | 'defense' | 'speed' | null;
+  jumpOf: (problem: CoachProblem) => Jump | null;
+  onJump: (jump: Jump) => void;
 }) {
   const t = useT();
   const lang = useLang();
@@ -231,15 +266,32 @@ function AreaProblems({ area, problems, advice, onCoaching }: {
   const hidden = entries.slice(fit);
   // Quali problemi il Coaching sa risolvere: almeno una sua proposta li risolve
   const fixable = new Set(onCoaching && advice ? solvable(problems, advice).map(p => p.key) : []);
+  // Il salto di ogni pillola, o il Coaching se lì c'è una proposta per lei
+  const actionOf = (entry: ProblemEntry): { run: () => void; place: string; jump: boolean } | null => {
+    const jump = jumpOf(entry.problem);
+    if (jump) return { run: () => onJump(jump), place: jump.place, jump: true };
+    return fixable.has(entry.problem.key) ? { run: () => onCoaching!(entry.problem.key), place: t('analysis.view.coaching'), jump: false } : null;
+  };
+  const firstFixable = sorted.find(p => fixable.has(p.key))?.key;
   return (
-    <ul ref={listRef} className="area-chips" aria-label={t('analysis.areaProblems', { area })}>
-      {entries.length === 0 ? (
-        <li><span className="area-chip good"><Icon name="check" />{t('area.problems.clear')}</span></li>
-      ) : entries.slice(0, fit).map(entry => (
-        <ProblemChip key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry}
-          onOpen={fixable.has(entry.problem.key) ? () => onCoaching!(entry.problem.key) : undefined} />
-      ))}
-      {hidden.length > 0 && <MoreProblems hidden={hidden} />}
-    </ul>
+    <div className="area-probs">
+      <ul ref={listRef} className="area-chips" aria-label={t('analysis.areaProblems', { area })}>
+        {entries.length === 0 ? (
+          low
+            ? <li><span className="area-chip low">{t(lowKey ? `area.problems.lowAverage.${lowKey}` : 'area.problems.lowAverage')}</span></li>
+            : <li><span className="area-chip good"><Icon name="check" />{t('area.problems.clear')}</span></li>
+        ) : entries.slice(0, fit).map(entry => {
+          const action = actionOf(entry);
+          return (
+            <ProblemChip key={`${entry.problem.key}|${entry.role ?? ''}`} entry={entry}
+              onOpen={action?.run} go={action?.jump ? action.place : undefined} />
+          );
+        })}
+        {hidden.length > 0 && (
+          <MoreProblems hidden={hidden} onPick={entry => actionOf(entry)?.run()} placeOf={entry => actionOf(entry)?.place ?? null} />
+        )}
+      </ul>
+      {entries.length > 0 && onCoaching && <CoachLink className="area-coach" onClick={() => onCoaching(firstFixable)} />}
+    </div>
   );
 }

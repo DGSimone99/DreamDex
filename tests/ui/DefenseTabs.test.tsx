@@ -16,7 +16,7 @@ import { fixtureData } from '../fixtures/data';
 import { visibleText } from '../helpers/visibleText';
 import { renderIt } from '../helpers/italian';
 
-/** Ordine Minaccia di Coverage meta (quello di partenza), la regola della Panoramica: prima le minacce che nessuno regge del
+/** L'ordine di Coverage meta (uno solo), la regola della Panoramica: prima le minacce che nessuno regge del
  *  tutto, poi quelle che regge uno solo, poi le altre; dentro, la più usata. */
 const threatOrder = <R extends { species: string; weight: number; heldBy: { partial: boolean }[] }>(rows: R[]) => {
   const n = (r: R) => Math.min(2, r.heldBy.filter(h => !h.partial).length);
@@ -190,8 +190,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(hit).toHaveTextContent(`Fisica${dmgText(c.physical, r.physicalRange)}%${HOLD[holdBand(c.physical / 100)]}`);
     expect(hit).toHaveTextContent(`Speciale${dmgText(c.special, r.specialRange)}%${HOLD[holdBand(c.special / 100)]}`);
     await user.unhover(cell);
-    // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-    await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
+    // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+    expect(document.querySelector('.ftip:not(.hint)')).toBeNull();
     const head = within(table).getAllByRole('columnheader')[1];
     expect(head).toHaveTextContent(/Att \d+, AttSp \d+/);
     await user.hover(head);
@@ -213,10 +213,10 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 
-  it('"Solo efficacia" spegne solo le caselle neutre (restano al loro posto); vale anche per Coverage meta', async () => {
+  it('"Solo superefficaci" spegne solo le caselle neutre (restano al loro posto); vale anche per Coverage meta', async () => {
     const user = userEvent.setup();
     const { table } = await openTypes();
-    const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
+    const sw = screen.getByRole('switch', { name: 'Solo superefficaci' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
     // Sta in alto nel pannello, non nella tabella né nella testata dell'area; la tabella ha di nuovo "Pokémon"
     expect(sw.closest('.area-panel .panel-switch')).not.toBeNull();
@@ -233,7 +233,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     });
     expect(cells.filter(td => !td.classList.contains('eff-dim')).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
+    const metaSwitch = screen.getByRole('switch', { name: 'Solo superefficaci' });
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
     expect(metaSwitch.closest('.area-panel .panel-switch')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
@@ -293,7 +293,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       expected.slice(0, 8).forEach((r, k) => {
         const h = r.heldBy.find(x => x.species === set.species);
         if (!h) {
-          expect(cells[k]).toHaveTextContent(/^KO/);
+          expect(cells[k]).toHaveTextContent(/^OHKO/);
           expect(cells[k]).toHaveClass('hold-ohko');
         } else {
           expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));
@@ -322,9 +322,9 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
     // La legenda corta (KO e le tre fasce col loro %, come Coverage tipi), niente conteggi
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
-    // Prima l'ordine (Uso · Minaccia), poi la legenda
-    expect(document.querySelector('.def-frame > .rob-legend > .cm-order:first-child')).toHaveTextContent('OrdineUsoMinaccia');
-    expect(document.querySelector('.def-frame > .rob-legend > .area-legend')).toHaveTextContent('KO< 33%33–49%50–99%');
+    // Niente scelta dell'ordine: sulla riga solo la legenda
+    expect(screen.queryByRole('group', { name: 'Ordine' })).toBeNull();
+    expect(document.querySelector('.def-frame > .rob-legend > .area-legend')).toHaveTextContent('Il % è il danno4HKO+ (sotto il 33%)3HKO (33–49%)2HKO (50–99%)OHKO');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));
@@ -432,7 +432,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   it('a squadra chiusa sotto Tipi e Meta i tre colpi peggiori senza colonne in più; altrimenti niente pastiglie', () => {
     const rating = withMeta();
     const { unmount } = renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
-    expect(screen.getAllByRole('columnheader').map(visibleText)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa']);
+    expect(screen.getAllByRole('columnheader').map(visibleText)).toEqual(['Pokémon', 'Tipi', 'Meta', 'Difesa punti nel voto']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr:not(.og-fill)'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {
@@ -442,7 +442,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
       // Ogni pastiglia: il nome (si apre passando sopra) e il danno, KO o %
       for (const pill of lists[0].querySelectorAll('.mc')) {
         expect(pill.querySelector('.mc-name')!.textContent).not.toBe('');
-        expect(pill.querySelector('b')).toHaveTextContent(/^(KO|\d+%)$/);
+        expect(pill.querySelector('b')).toHaveTextContent(/^(OHKO|\d+%)$/);
       }
     });
     unmount();
@@ -452,12 +452,15 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
 });
 
 describe('Difesa Generale: clic sui pezzi delle barre', () => {
-  it('ogni pezzo ha la sua etichetta (3HKO+, 2HKO, OHKO); clic su un pezzo di Tipi: Coverage tipi con la riga del membro e quei tipi accesi, "Mostra tutti" li spegne', async () => {
+  it('ogni pezzo ha la sua etichetta (4HKO+, 3HKO, 2HKO, OHKO); clic su un pezzo di Tipi: Coverage tipi con la riga del membro e quei tipi accesi, "Mostra tutti" li spegne', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
     const row = document.querySelectorAll('.def-members tbody tr:not(.og-fill)')[0];
     const pieces = Array.from(row.querySelectorAll('td')[0].querySelectorAll<HTMLElement>('.kob.hb'));
-    for (const p of pieces) expect(p.querySelector('em')).toHaveTextContent(/^(3HKO\+|2HKO|OHKO)$/);
+    for (const p of pieces) expect(p.querySelector('em')).toHaveTextContent(/^(4HKO\+|3HKO|2HKO|OHKO)$/);
+    // Il conto "n/18" è quanti ne regge: i pezzi 4HKO+ e 3HKO insieme
+    const held = pieces.filter(p => /^(4HKO\+|3HKO)$/.test(p.querySelector('em')!.textContent!)).reduce((s, p) => s + Number(p.querySelector('.kob-num')!.textContent), 0);
+    expect(Number(row.querySelectorAll('td')[0].querySelector('.kob-count-num b')!.textContent)).toBe(held);
     const piece = pieces[0];
     const n = Number(piece.querySelector('.kob-num')!.textContent);
     expect(piece).toHaveAttribute('role', 'button');
@@ -490,22 +493,23 @@ describe('Difesa Generale: clic sui pezzi delle barre', () => {
   });
 });
 
-describe('Difesa Generale: il colore del conto segue il ruolo (voce 3.3)', () => {
+describe('Difesa Generale: i colori solo sui conti del team, "· attacca" sugli attaccanti', () => {
   const corv: TeamSet = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', nature: 'Impish', evs: { hp: 248, def: 168, spd: 92 }, moves: ['Roost', 'Brave Bird', 'Defog', 'U-turn'] };
   const mixed = [team[0], corv];
-  it('il conto di un attaccante è neutro, quello di un muro colorato; la riga Team Coverage resta colorata', () => {
+  it('il conto di ogni membro è neutro, chi attacca ha "· attacca"; la riga Team Coverage resta colorata', () => {
     const a = analyzeTeam(mixed, fixtureData);
     expect(a.needs.primary).toEqual(['attack', 'wall']);
     renderIt(<AreaView rating={rateTeam(mixed, fixtureData, 'it')!} area="defense" team={mixed} analysis={a} problems={[]} />);
     const rows = [...document.querySelectorAll<HTMLElement>('.def-members tbody tr:not(.og-fill)')];
     const tones = (el: Element) => [...el.querySelectorAll('.kob-count')].map(c => [...c.classList].filter(k => k !== 'kob-count'));
-    // Great Tusk (attaccante): solo neutro; Corviknight (muro): un colore del semaforo
+    // Great Tusk (attaccante) e Corviknight (muro): conti neutri, senza classi di colore
     expect(tones(rows[0]).length).toBe(2);
-    for (const tone of tones(rows[0])) expect(tone).toEqual(['quiet']);
-    for (const tone of tones(rows[1])) expect(tone.some(k => ['full', 'good', 'warn', 'bad', 'zero'].includes(k))).toBe(true);
+    for (const row of rows.slice(0, 2)) for (const tone of tones(row)) expect(tone).toEqual([]);
+    expect(rows[0].querySelector('th .role-note')).toHaveTextContent('· attacca');
+    expect(rows[1].querySelector('th .role-note')).toBeNull();
     // Il testo per lo screen reader non cambia e non dice "muro"
     expect(rows[0].querySelector('.kob-count')!.getAttribute('aria-label')).toMatch(/^ne regge \d+ su \d+$/);
     expect(rows[0].querySelector('td')).not.toHaveTextContent(/muro/i);
-    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'bad')).toBe(true);
+    for (const tone of tones(document.querySelector('.def-members tfoot')!)) expect(tone.some(k => k === 'full' || k === 'warn' || k === 'bad')).toBe(true);
   });
 });
