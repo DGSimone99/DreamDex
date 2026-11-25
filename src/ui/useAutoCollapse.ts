@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 
+/** Un campo di testo ha il fuoco (sul telefono: tastiera aperta). */
+const typing = () => {
+  const el = document.activeElement;
+  return el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'range'].includes(el.type))
+    || (el instanceof HTMLElement && el.isContentEditable);
+};
+
 /**
  * Telefono: il team si riduce da solo appena della fascia grande resta in vista quanto la striscia ridotta (il fondo
  * delle ultime carte) e resta fermo in alto, sotto la barra; torna grande risalendo fino in cima (o tirando giù
@@ -39,7 +46,8 @@ export function useAutoCollapse(enabled: boolean, bandRef: RefObject<HTMLElement
     const html = document.documentElement;
     const topH = () => parseFloat(getComputedStyle(html).getPropertyValue('--top-h')) || 0;
     // Con un pannello a tutto schermo aperto la pagina sotto non conta
-    const blocked = () => html.classList.contains('modal-open');
+    // e mentre si scrive (tastiera aperta): il browser sposta la pagina per mostrare il campo, non è il giocatore che scorre
+    const blocked = () => html.classList.contains('modal-open') || typing();
     // Si riduce quando della fascia grande resta in vista quanto la striscia ridotta: la striscia ne prende il posto
     // esatto e non copre niente. Prima non si può: la pagina dovrebbe salire oltre la cima e il contenuto salterebbe
     let lastY = window.scrollY;

@@ -19,6 +19,7 @@ import { PokemonIcon } from './PokemonName';
 import { Sprite, typeColor } from './Sprite';
 import type { ListUndo } from './UndoToast';
 import { DETAIL_SHEET, useBackClose } from './useBackClose';
+import { TOUCH_QUERY } from './TouchTips';
 import { useMediaQuery } from './useMediaQuery';
 import { useRoving } from './useRoving';
 import { useSheet } from './useSheet';
@@ -124,9 +125,11 @@ const DexCard = memo(function DexCard({ name, fav, ban, favHere, banHere, target
   onDragEnd?: () => void;
 }) {
   const tr = useT();
+  // Schermi touch: niente trascinamento (il dito che scorre prendeva la carta); si usano i pulsanti
+  const touch = useMediaQuery(TOUCH_QUERY);
   return (
     <li className={`dex-card${fav ? ' fav' : ''}${ban ? ' ban' : ''}${target ? ' target' : ''}`} style={{ '--t': typeColor(firstType(name)) } as CSSProperties}
-      draggable={!!onDragStart} onDragStart={onDragStart && (e => onDragStart(e, name))} onDragEnd={onDragEnd} title={name}>
+      draggable={!!onDragStart && !touch} onDragStart={onDragStart && (e => onDragStart(e, name))} onDragEnd={onDragEnd} title={name}>
       <span className="dex-no" aria-hidden="true">{dexNo(name)}</span>
       <span className="dex-sprite" aria-hidden="true"><Sprite species={name} size={96} /></span>
       <span className="dex-name">{name}</span>
@@ -565,6 +568,7 @@ function ListBox({ kind, label, names, cap, count, page, pages, onPage, effectiv
   const tr = useT();
   const hintId = useId();
   const roving = useRoving<HTMLUListElement>('.lslot-mon');
+  const touch = useMediaQuery(TOUCH_QUERY);
   // Dopo Canc o M il fuoco resta nel box, sulla casella che prende il posto (o sull'ultima)
   const refocus = useRef<number | null>(null);
   useEffect(() => {
@@ -604,7 +608,7 @@ function ListBox({ kind, label, names, cap, count, page, pages, onPage, effectiv
             const title = [name, universal && tr('lists.universalTag'), overridden && tr(overridden === 'favorites' ? 'lists.overriddenFav' : 'lists.overriddenBan')].filter(Boolean).join(' · ');
             return (
               <li key={name} className={`lslot on${dragFrom === name ? ' lifted' : ''}`} style={{ '--t': typeColor(firstType(name)) } as CSSProperties}>
-                <span className="lslot-mon" data-name={name} tabIndex={-1} draggable title={title} aria-describedby={hintId}
+                <span className="lslot-mon" data-name={name} tabIndex={-1} draggable={!touch} title={title} aria-describedby={hintId}
                   onDragStart={e => onDragStart(e, { name, from: kind })} onDragEnd={onDragEnd}>
                   <PokemonIcon name={name} />
                   <span className="visually-hidden">{name}</span>
