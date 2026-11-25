@@ -57,3 +57,7 @@ DreamDex è un progetto non ufficiale fatto da un fan, gratuito e senza scopo di
 ## Feedback
 
 Un voto che non ti torna, un errore o un'idea? Usa "Segnala o suggerisci" in fondo alla barra a sinistra oppure [apri una issue](https://github.com/DGSimone99/DreamDex/issues).
+
+## Licenza
+
+Il codice è distribuito con [licenza MIT](LICENSE). Nomi, sprite e immagini dei Pokémon non rientrano nella licenza e appartengono ai rispettivi proprietari.

@@ -57,3 +57,7 @@ DreamDex is an unofficial fan project, free and non-commercial. It is not affili
 ## Feedback
 
 Found a grade that looks wrong, a bug, or have an idea? Use Feedback at the bottom of the sidebar or [open an issue](https://github.com/DGSimone99/DreamDex/issues).
+
+## License
+
+The code is released under the [MIT License](LICENSE). Pokémon names, sprites and artwork are not covered by it and belong to their owners.
