@@ -199,6 +199,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Team che si riduce da solo: telefono e tablet piccolo in verticale (fino a 767 px), non col team in colonna
   const autoBand = useMediaQuery(AUTO_BAND_QUERY) && !tabletSide;
   const phone = useMediaQuery(PHONE_QUERY);
+  // Tablet in verticale (team in fascia sopra, non in colonna): in Meta e Liste il team grande spingeva la pagina sotto
+  const tabletUpright = useMediaQuery('(max-width: 1099px)') && !tabletSide && !phone;
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi
   const metaOn = !data.ignoreMeta && !!data.stats;
   const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
@@ -485,9 +487,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           <p>{t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}</p>
         </div>
       )}
-      {/* Telefono: il team si vede solo nella scheda Pokémon (in Analisi, Meta e Liste i membri sono già nelle loro tabelle e il
+      {/* Tablet in verticale: in Meta e Liste il team non c'è (Meta ha già "Il tuo team", Liste non lo usa).
+          Telefono: il team si vede solo nella scheda Pokémon (in Analisi, Meta e Liste i membri sono già nelle loro tabelle e il
           voto nella barra in basso); resta montato e torna quando si apre l'editor o Completa team */}
-      <AutoBand phone={autoBand} collapsed={collapsed} control={bandControl} off={phone && shownTab !== 'pokemon' && !editingOpen && !fillOpen}>{collapsed => (<>
+      <AutoBand phone={autoBand} collapsed={collapsed} control={bandControl} off={!editingOpen && !fillOpen && ((phone && shownTab !== 'pokemon') || (tabletUpright && (shownTab === 'meta' || shownTab === 'lists')))}>{collapsed => (<>
         <TeamPanel team={team} format={format} data={data}
           grade={rating && !blockedReason(team, format.formatId) ? { letter: rating.grade, overall: rating.overall, illegal: !!coaching?.problems.some(p => p.category === 'rules') } : null}
           io={<ShowdownPanel team={team} format={format} choice={choice} tera={teraAllowed(format)} onExport={exportTeam} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}

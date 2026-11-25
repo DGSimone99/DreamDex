@@ -581,8 +581,16 @@
   .lists-expgrid { grid-template-columns: minmax(0, 1fr); }
   .lists-big-grid, .lists-expgrid.one .lists-big-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 120px; }
 }
+/* Al tocco: tutto ciò che si preme almeno 44 px. Cuore e divieto restano 36 px a vista (stanno sulla carta) ma si
+   prendono su 44 px, e fra loro c'è più spazio: un tocco sul cuore non banna */
 @media (pointer: coarse) {
-  .dex-actions button { width: 36px; height: 36px; }
+  .dex-actions { gap: var(--sp-4); }
+  .dex-actions button { position: relative; width: 36px; height: 36px; }
+  .dex-actions button::after { content: ''; position: absolute; inset: -4px; }
+  .lists-pager button { width: 44px; height: 44px; }
+  .lists-bar .search-field input, .lists-pick, .lists-expand { height: 44px; }
+  .lists-more { width: 44px; height: 44px; }
+  .dex-order-pick, .dex-head .filters-trigger { height: 44px; }
 }
 
 /*
@@ -992,8 +1000,10 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
       un Pokémon trascinato dal Pokédex ── */
 .lists-tabs, .lists-sheet-back, .lists-sheet-scrim { display: none; }
 @media (max-width: 1099px) {
+  /* Il fondo copre le carte che scorrono sotto, sporgendo di poco ai lati (solo nel margine della colonna: sul tablet
+     orizzontale a sinistra c'è il team, che non va coperto) */
   .lists-tabs { position: sticky; top: var(--top-h, 0px); z-index: 25; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4);
-    margin-block: calc(-1 * var(--sp-3)); padding-block: var(--sp-3); background: var(--ground); box-shadow: 0 0 0 100vmax var(--ground); clip-path: inset(0 -100vmax -12px); }
+    margin-block: calc(-1 * var(--sp-3)); padding-block: var(--sp-3); background: var(--ground); box-shadow: 0 0 0 12px var(--ground); clip-path: inset(0 -12px); }
   .lists-tab { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); min-width: 0; height: 48px; padding: 0 var(--sp-4) 0 0;
     border: 1px solid var(--line); border-radius: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 75%, var(--band)), var(--panel));
     color: var(--text); font: inherit; text-align: left; cursor: pointer; overflow: hidden; transition: border-color 0.15s, background 0.15s; }
@@ -1025,6 +1035,8 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
   .lists-sheet-empty { margin-top: var(--sp-10); text-align: center; font-size: var(--fs-section); }
   .lists-sheet .lists-big-grid { flex: none; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 120px; padding: var(--sp-5) var(--sp-7); }
   .lists-sheet .dex-card:hover { transform: none; box-shadow: none; }
+  /* Le carte del foglio come quelle del Pokédex: nome alla stessa misura */
+  .lists-sheet .dex-name { font-size: var(--fs-caption); }
   .lists-sheet-back { position: fixed; z-index: 56; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: var(--sp-3); height: 52px;
     padding: 0 var(--sp-8); border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: var(--panel); color: var(--accent-ink);
     font: 600 var(--fs-body) var(--ui); text-align: left; animation: sheet-up 0.24s var(--ease); }

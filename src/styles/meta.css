@@ -8,6 +8,7 @@
 /* Testa di una parte (Il tuo team, Pokémon del meta): la targhetta a sinistra, la nota grigia a destra */
 .meta-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-6); margin-bottom: var(--sp-3); }
 .meta-note { color: var(--muted); font-size: var(--fs-small); text-align: right; }
+.meta-note .meta-legend { color: var(--faint); white-space: nowrap; }
 
 /* Il tuo team: sei caselle uguali, in colonna con le carte sotto (stessa griglia, stesso passo); sprite, posizione e uso,
    in fondo la riga dei tipi come le carte del team ridotto. Fuori dai più usati "#–" (il perché nel fumetto) */
@@ -72,7 +73,7 @@
   background: linear-gradient(135deg, color-mix(in srgb, var(--t1) 30%, var(--panel)), var(--panel) 72%); border-bottom: 3px solid var(--t1); }
 .meta-hero .sprite { width: 96px; height: 96px; image-rendering: pixelated; }
 .meta-hero-id { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
-.meta-hero-id strong { max-width: 100%; font: 800 var(--fs-title-l)/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; }
+.meta-hero-id strong { max-width: 100%; font: 800 var(--fs-headline-l)/1.1 var(--display); font-style: italic; overflow-wrap: anywhere; }
 .meta-hero-id .forme { display: inline-block; padding: 1px 5px; border-radius: 3px; background: var(--field); color: var(--accent-ink);
   font: 700 var(--fs-label)/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; vertical-align: 3px; }
 .meta-hero-use b { font: 800 var(--fs-display)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
@@ -91,11 +92,11 @@
 .meta-moves li .mvp { flex: 1; }
 /* Solo nella scheda Meta (ul): la scheda del candidato ha una lista con lo stesso nome (ol), con righe nome + barra */
 ul.meta-mates { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
-ul.meta-mates li > * { display: grid; place-items: center; width: 44px; height: 42px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
+ul.meta-mates li > * { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: var(--panel); }
 ul.meta-mates button { cursor: pointer; color: inherit; }
 @media (hover: hover) { ul.meta-mates button:hover { border-color: var(--accent); background: var(--accent-wash); } }
 ul.meta-mates .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
-ul.meta-mates span[title] { opacity: 0.7; }
+ul.meta-mates .meta-mate-off { opacity: 0.7; }
 /* Contro il tuo team: sotto "Spesso con", separato da un filo; testa con l'etichetta e la targhetta inclinata delle
    minacce della Panoramica (scoperta rossa, a fatica gialla, gestito verde, nel tuo team ciano), poi le righe dello
    scudo e della spada su Raised (sprite 28px dei membri, parole, conto colorato) e i link ciano alla Coverage meta */
@@ -127,6 +128,7 @@ ul.meta-mates span[title] { opacity: 0.7; }
   .meta-profile { gap: var(--sp-4); padding-top: var(--sp-5); }
   .meta-hero { grid-template-columns: 72px minmax(0, 1fr); padding: var(--sp-3) var(--sp-4); }
   .meta-hero .sprite, .meta-hero .sprite.missing { width: 72px; height: 72px; }
+  .meta-hero-id strong { font-size: var(--fs-title-l); }
   .meta-vs { gap: var(--sp-2); padding-top: var(--sp-4); }
   .meta-profile .mvs-row { min-height: 28px; gap: var(--sp-3); }
   .mvs-member { width: auto; height: auto; }
@@ -168,3 +170,9 @@ ul.meta-mates span[title] { opacity: 0.7; }
   .meta-tab.sheet-closing > :is(.meta-profile, .meta-back) { animation: sheet-down-out 0.22s ease-in both; }
 }
 @media (prefers-reduced-motion: reduce) { .meta-tab.sheet-open > :is(.meta-profile, .meta-back, .sheet-scrim) { animation: none; } }
+
+/* Al tocco i collegamenti alla Coverage meta alti 44 px (il testo resta piccolo) */
+@media (pointer: coarse) {
+  .mvs-links { gap: 0 var(--sp-4); }
+  .mvs-links .dash-link { height: 44px; line-height: 44px; display: inline-flex; align-items: center; }
+}

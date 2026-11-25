@@ -419,7 +419,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
       <div className="lists-bar">
         <span className={`search-field${target ? ' has-hint' : ''}`}>
           <Icon name="search" />
-          <input aria-label={tr('lists.search')} placeholder={tr('lists.searchPlaceholder')} value={filters.query}
+          <input aria-label={tr('lists.search')} placeholder={tr(small ? 'lists.searchPlaceholderTouch' : 'lists.searchPlaceholder')} value={filters.query}
             onChange={e => setFilters({ ...filters, query: e.target.value })} onKeyDown={onKey} />
           {target && (
             <span className="search-hint">
