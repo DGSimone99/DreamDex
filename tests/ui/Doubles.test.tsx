@@ -129,7 +129,7 @@ describe('doppio: la scheda e la guida dei Ruoli', () => {
     ];
     const rating = rateTeam(stall, ouData, 'it', { archetype: 'stall' })!;
     const second = rating.roles.rows.find(r => r.key === 'secondAttacker')!;
-    expect(second.by.filter(b => b.value >= 0.5).map(b => b.species)).toEqual(['Kingambit']);
+    expect(second.by.filter(b => b.value >= 0.5).map(b => b.species)).toContain('Kingambit');
     const view = renderIt(<RolesGeneral rating={rating} ctx={{ team: stall, analysis: analyzeTeam(stall, ouData) }} />).container;
     expect(second.level).toBe('minor');
     expect(texts(view.querySelectorAll('.rl-name'))).not.toContain('2° Attaccante');

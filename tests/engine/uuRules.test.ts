@@ -37,13 +37,13 @@ describe('tier National Dex di Showdown', () => {
     expect(parseTiers(source)).toEqual({ natdex: { slowbro: 'UU', chansey: 'RU' }, gen9: { slowbro: 'RU', chansey: 'RU' } });
   });
 
-  it('aggiornano quelli della libreria: Slowbro passa da OU a UU ed è legale in UU', () => {
-    const slowbro = getSpecies('Slowbro')!;
-    expect(natDexTier(slowbro)).toBe('OU');
-    expect(isLegalIn(slowbro, uu)).toBe(false);
-    initTiers({ natdex: { slowbro: 'UU' }, gen9: {} });
-    expect(natDexTier(slowbro)).toBe('UU');
-    expect(isLegalIn(slowbro, uu)).toBe(true);
+  it('aggiornano quelli della libreria: Ferrothorn passa da OU a UU ed è legale in UU', () => {
+    const ferrothorn = getSpecies('Ferrothorn')!;
+    expect(natDexTier(ferrothorn)).toBe('OU');
+    expect(isLegalIn(ferrothorn, uu)).toBe(false);
+    initTiers({ natdex: { ferrothorn: 'UU' }, gen9: {} });
+    expect(natDexTier(ferrothorn)).toBe('UU');
+    expect(isLegalIn(ferrothorn, uu)).toBe(true);
   });
 
   it('solo dove la libreria ha già un tier: le forme senza tier restano come sono', () => {
