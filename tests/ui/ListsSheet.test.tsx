@@ -47,4 +47,15 @@ describe('Liste su telefono e tablet', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
+
+  it('tablet: un clic fuori dal foglio (sul velo) lo chiude', async () => {
+    narrow();
+    const user = userEvent.setup();
+    renderIt(<ListsPanel lists={ou(['Great Tusk'])} format={DEFAULT_FORMAT} data={fixtureData} onChange={() => {}} />);
+    await user.click(screen.getByRole('button', { name: 'Preferiti: 1, apri' }));
+    const scrim = document.querySelector<HTMLElement>('.lists-sheet-scrim')!;
+    expect(scrim).not.toHaveAttribute('inert');
+    await user.click(scrim);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
 });

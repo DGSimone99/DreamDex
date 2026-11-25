@@ -75,7 +75,7 @@ export function MetaTab({ team, data, rating = null, onCoverage, onCollapseTeam,
   const profile = selected ? metaProfile(data?.stats ?? null, selected) : null;
   const versus = profile && !data?.ignoreMeta ? metaVersus(rating, profile.name, team) : null;
   const sheetModal = small && sheetOpen && !!profile;
-  useSheet(sheetModal, section, '.meta-back, .meta-profile', closeSheet);
+  useSheet(sheetModal, section, '.sheet-scrim, .meta-back, .meta-profile', closeSheet);
   // Dalla scheda alla Coverage meta: la finestra si chiude subito (la sezione cambia)
   const toCoverage = onCoverage && ((side: 'defense' | 'offense', species: string) => {
     if (sheetModal) { window.clearTimeout(closeTimer.current); setSheetClosing(false); setSheetOpen(false); }

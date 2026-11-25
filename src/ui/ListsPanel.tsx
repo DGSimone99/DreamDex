@@ -361,7 +361,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   const sheetOn = small && sheet !== null;
   const closeSheet = useBackClose(sheetOn, finishClose, DETAIL_SHEET);
   const openSheet = (kind: ListKind) => { window.clearTimeout(closeTimer.current); setSheetClosing(false); setSheet(kind); };
-  useSheet(sheetOn, panelRef, '.lists-sheet-back, .lists-sheet', closeSheet);
+  useSheet(sheetOn, panelRef, '.lists-sheet-scrim, .lists-sheet-back, .lists-sheet', closeSheet);
 
   const picker = <ListsPicker lists={lists} format={format} context={context} shown={editing} onChange={onChange} onShow={scope => setPicked({ context, scope })} />;
 
