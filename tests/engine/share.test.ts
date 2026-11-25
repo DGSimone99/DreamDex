@@ -23,15 +23,23 @@ const six: TeamSet[] = [
 describe('team nel link', () => {
   it('andata e ritorno: team (anche con accenti) e formato', () => {
     const code = encodeShare(team, choice);
-    expect(code).toMatch(/^[A-Za-z0-9_.~!%-]+$/);
+    expect(code).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(decodeShare(`#t=${code}`)).toEqual({ team, choice });
   });
 
-  it('un team da 6 sta in circa un terzo del link di prima', () => {
+  it('un team da 6 sta in meno di 160 caratteri (prima quasi 1800)', () => {
     const code = encodeShare(six, DEFAULT_CHOICE);
     expect(decodeShare(`#t=${code}`)).toEqual({ team: six, choice: DEFAULT_CHOICE });
-    expect(code.length).toBeLessThan(json(six, DEFAULT_CHOICE).length / 2.5);
+    expect(code.length).toBeLessThan(160);
+    expect(json(six, DEFAULT_CHOICE).length).toBeGreaterThan(1500);
+  });
+
+  it('un set che il codice a bit non sa scrivere (più di 7 mosse) va a testo e torna uguale', () => {
+    const many: TeamSet[] = [{ ...six[0], moves: ['Tackle', 'Growl', 'Ember', 'Bite', 'Surf', 'Fly', 'Cut', 'Strength'] }];
+    const code = encodeShare(many, choice);
+    expect(code).toContain('~');
     expect(code).not.toMatch(/\.$/);
+    expect(decodeShare(`#t=${code}`)).toEqual({ team: many, choice });
   });
 
   it('nomi fuori dal Pokédex, soprannome, shiny, preferito, IV vuoti, slot di mossa vuoto: tornano uguali', () => {
@@ -62,6 +70,7 @@ describe('team nel link', () => {
     expect(decodeShare('#team=!!!')).toBeNull();
     expect(decodeShare('#t=~nonesiste')).toBeNull();
     expect(decodeShare('#t=~')).toBeNull();
+    expect(decodeShare(`#t=${encodeShare(six, DEFAULT_CHOICE).slice(0, 40)}`)).toBeNull();
     expect(decodeShare('#altro=abc')).toBeNull();
   });
 });
