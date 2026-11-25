@@ -80,7 +80,9 @@ interface Effects { solved: ProblemEntry[]; ups: AreaMove[]; downs: AreaMove[]; 
 function effectsOf(p: Proposal, problems: CoachProblem[], before: AreaSnapshot | null): Effects {
   const solves = new Set(p.fix.solves);
   const self = p.kind === 'fix' ? p.fix.species : null;
-  const solved = problemEntries(problems.filter(x => solves.has(x.key) && shown(x) && !(x.category === 'meta' && self && x.subjects?.includes(self))));
+  // Un problema delle Regole (due Mega, un Pokémon bannato) viene per primo: Showdown rifiuta il team finché c'è
+  const solved = problemEntries(problems.filter(x => solves.has(x.key) && shown(x) && !(x.category === 'meta' && self && x.subjects?.includes(self))))
+    .sort((a, b) => Number(isRule(b)) - Number(isRule(a)));
   const after = p.fix.after ?? null;
   const moves: AreaMove[] = [];
   if (before && after) {
@@ -128,11 +130,14 @@ const biggestLoss = (downs: AreaMove[]): AreaMove | null =>
 const lossText = (downs: AreaMove[], tr: ReturnType<typeof useT>) =>
   downs.filter(m => m.area !== 'rules').map(m => tr('coach.cost.drops', { area: tr(AREA_NAME[m.area]), n: m.delta })).join('; ');
 
+/** Un problema delle Regole (Showdown rifiuta il team): primo fra i risolti e in rosso. */
+const isRule = (entry: ProblemEntry) => entry.problem.category === 'rules';
+
 /** Un problema risolto: la spunta verde e il testo corto del problema (come la pillola, ma "fatto"); va a capo se è lungo. */
 function Solved({ entry }: { entry: ProblemEntry }) {
   const lang = useLang();
   return (
-    <li className="coach-solved">
+    <li className={`coach-solved${isRule(entry) ? ' is-rule' : ''}`}>
       <Icon name="check" />
       {/* Un ruolo: solo il nome (la spunta verde dice già che ora è coperto, niente ×) */}
       {entry.role ? <span className="coach-prob-text">{needLabel(entry.role as Need, lang)}</span> : <ProblemPill problem={entry.problem} role={entry.role} />}
@@ -481,7 +486,7 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
           <button type="button" className="coach-apply is-primary" aria-label={tr('coach.row.applyAria', { name })} onClick={apply}>{tr('coach.row.apply')}</button>
           <button type="button" className="coach-see" onClick={see} {...hint(tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet'))}
             aria-label={p.kind === 'fix' ? tr('coach.row.seeAria', { species: p.fix.species }) : tr('coach.row.openSetAria', { member: p.fix.member })}>
-            <Icon name={p.kind === 'fix' ? 'team' : 'edit'} /><span aria-hidden="true">{tr(p.kind === 'fix' ? 'coach.row.see' : 'coach.row.openSet')}</span>
+            <Icon name={p.kind === 'fix' ? 'team' : 'edit'} /><span aria-hidden="true">{tr(p.kind === 'fix' ? 'coach.row.seeShort' : 'coach.row.openSetShort')}</span>
           </button>
           <button type="button" className={`coach-see coach-copy${copied ? ' is-done' : ''}`} aria-label={tr('suggest.copySet')} {...hint(tr('suggest.copySet'))}
             onClick={async () => { if (await copyText(exportShowdown([p.fix.set]))) setCopied(true); }}>
@@ -520,18 +525,33 @@ function Hero({ group, choice, onChoose, problems, before, rating, actions, flas
   );
 }
 
-/** La guida del Coaching (il "?" in testa alla diagnosi): come si legge la scheda, in quattro punti. */
+/** La guida del Coaching (il "?" in testa alla diagnosi): come si legge la scheda, in cinque punti (il Piano a sé). */
 function CoachingGuide() {
   const tr = useT();
   return (
     <div className="coach-guide">
-      {(['diag', 'card', 'facts', 'apply'] as const).map(k => (
+      {(['diag', 'card', 'plan', 'facts', 'apply'] as const).map(k => (
         <section key={k}>
           <h4>{tr(`coach.help.${k}.title`)}</h4>
           <p>{tr(`coach.help.${k}.text`)}</p>
         </section>
       ))}
     </div>
+  );
+}
+
+/**
+ * Esporta per Showdown in fondo alla classifica, anche coi problemi che restano: secondario (un collegamento leggero con
+ * l'icona), per un attimo la spunta quando il team è copiato (l'avviso dell'app dice "Team copiato").
+ */
+function ExportLink({ onExport }: { onExport: () => Promise<boolean> }) {
+  const tr = useT();
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1800); return () => window.clearTimeout(timer); }, [copied]);
+  return (
+    <button type="button" className="coach-link coach-export" aria-label={tr('coach.clear.export')} {...hint(tr('coach.clear.export'))} onClick={async () => setCopied(await onExport())}>
+      <Icon name={copied ? 'check' : 'copy'} /><span aria-hidden="true">{tr('coach.rank.export')}</span>
+    </button>
   );
 }
 
@@ -545,9 +565,10 @@ function SolvedPill({ entry }: { entry: ProblemEntry }) {
   if (role) body = needLabel(role as Need, lang);
   else if ((problem.category === 'meta' || problem.category === 'metaHit') && subjects[0]) body = <><PokemonIcon name={subjects[0]} />{subjects[0]}</>;
   else if ((problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0) body = <><TypeIcons types={subjects.slice(0, 2)} />{subjects.slice(0, 2).map(t => typeName(t as TypeName, lang)).join(' / ')}</>;
-  // Il resto in breve: la parte prima dei due punti ("3 membri di tipo Acciaio"), il testo intero è nella descrizione della riga
-  else body = problem.text.split(':')[0];
-  return <span className="coach-pill"><Icon name="check" /><span className="coach-pill-text">{body}</span></span>;
+  // Il resto in breve: la parte prima dei due punti ("3 membri di tipo Acciaio"; una regola prima della parentesi: "Più Mega
+  // nel team", così sta nella riga anche se viene per prima), il testo intero è nella descrizione della riga
+  else body = problem.text.split(problem.category === 'rules' ? /[:(]/ : ':')[0].trim();
+  return <span className={`coach-pill${isRule(entry) ? ' is-rule' : ''}`}><Icon name="check" /><span className="coach-pill-text">{body}</span></span>;
 }
 
 /** Quanti problemi risolti in piccolo stanno nella riga della classifica al più; gli altri in "+N". */
@@ -595,9 +616,11 @@ function shortProblem(problem: CoachProblem, tr: ReturnType<typeof useT>, lang: 
  * lista il filtro per problema (una tendina: "Tutti i problemi" o un problema, col numero di proposte che lo risolvono);
  * in fondo "Restano N problemi" che nessun cambio singolo risolve (i nomi nel fumetto). A pagine come le altre liste.
  */
-function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy, headRef }: {
+function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy, headRef, onExport }: {
   groups: ProposalGroup[]; problems: CoachProblem[]; before: AreaSnapshot | null; entries: ProblemEntry[]; stuck: ProblemEntry[];
   filter: string | null; onFilter: (key: string | null) => void; onOpen: (groupId: string) => void; heroId: string | null; clean: ReactNode; busy: boolean;
+  /** Copia il team per Showdown anche coi problemi che restano (secondario, sulla riga delle pagine a destra). */
+  onExport?: () => Promise<boolean>;
   /** Il titolo della classifica: riceve il fuoco da "Tutte le proposte" (telefono e tablet, la carta sta sopra). */
   headRef?: RefObject<HTMLHeadingElement | null>;
 }) {
@@ -628,7 +651,11 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
   const counts = new Map<string, number>();
   for (const fx of allFx) { const k = leadKey(fx); if (k) counts.set(k, (counts.get(k) ?? 0) + 1); }
   const [sharedKey, sharedN] = [...counts].reduce<[string | null, number]>((best, [k, n]) => (n > best[1] ? [k, n] : best), [null, 0]);
-  const shared = !busy && sharedN >= 3 ? allFx.find(fx => leadKey(fx) === sharedKey)!.solved[0] : null;
+  // Con un problema scelto nel filtro la riga non serve: direbbe di nuovo il problema scelto
+  const shared = !busy && !filter && sharedN >= 3 ? allFx.find(fx => leadKey(fx) === sharedKey)!.solved[0] : null;
+  // "Restano N problemi": un clic (o un tocco) apre l'elenco sotto la riga
+  const [stuckOpen, setStuckOpen] = useState(false);
+  const stuckId = useId();
   const filterLabel = filter ? label(filter) : tr('coach.rank.allProblems');
   // Il posto di ogni riga ("al posto di X") non si taglia mai: se non sta su una riga va a capo (seatWrap)
   const listRef = useRef<HTMLOListElement>(null);
@@ -690,7 +717,14 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
                     data-group={group.id}
                     style={{ '--t1': typeColor(firstType(pick)) } as CSSProperties} aria-label={tr('coach.rank.openAria', { name })}
                     aria-describedby={`${descBase}-${row}`} onClick={() => onOpen(group.id)}>
-                    <span className="coach-rank-mon" aria-hidden="true"><PokemonIcon name={subjectOf(pick)} /></span>
+                    {/* L'icona di chi entra e, piccola e grigia nell'angolo, quella di chi esce (un posto libero: un quadratino
+                        tratteggiato); così due righe con lo stesso Pokémon si distinguono a colpo d'occhio */}
+                    <span className={`coach-rank-mon${pick.kind === 'fix' ? ` is-${pick.fix.kind}` : ''}`} aria-hidden="true">
+                      <PokemonIcon name={subjectOf(pick)} />
+                      {pick.kind === 'fix' && (pick.fix.kind === 'swap'
+                        ? <span className="coach-rank-out"><PokemonIcon name={pick.fix.member ?? ''} /></span>
+                        : <span className="coach-rank-out is-free" />)}
+                    </span>
                     <span className="coach-rank-who" aria-hidden="true">
                       <b>{pick.kind === 'move' ? gameName('move', pick.fix.to, lang) : pick.fix.species}</b>
                       <small>{seat}</small>
@@ -712,14 +746,25 @@ function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, 
       <div className="coach-diag-foot">
         <Pager page={page} pages={pages} from={page + 1} to={pages} onPage={n => setStart(n * size)}
           labels={{ pages: tr('coach.list.pages'), prev: tr('coach.list.prev'), next: tr('coach.list.next'), page: 'coach.rank.page' }} />
+        {/* Esporta per Showdown sulla riga delle pagine, a destra: non toglie righe alla classifica */}
+        {onExport && !busy && <ExportLink onExport={onExport} />}
         {stuck.length > 0 && !filter && (
-          <p className="coach-rank-stuck" tabIndex={0} {...hint(stuck.map(e => solvedText(e, lang)).join('; '))}>
-            <Icon name="warning" />{tr(stuck.length === 1 ? 'coach.rank.stuck1' : 'coach.rank.stuckN', { n: stuck.length })}
-            <span className="visually-hidden">: {stuck.map(e => solvedText(e, lang)).join('; ')}</span>
-          </p>
+          <div className="coach-stuck">
+            {/* Un pulsante che apre l'elenco sotto (col dito il fumetto non c'è); col mouse il fumetto resta */}
+            <button type="button" className={`coach-rank-stuck${stuckOpen ? ' is-open' : ''}`} aria-expanded={stuckOpen} aria-controls={stuckId}
+              onClick={() => setStuckOpen(v => !v)} {...hint(stuck.map(e => solvedText(e, lang)).join('; '))}>
+              <Icon name="warning" /><span className="coach-stuck-text">{tr(stuck.length === 1 ? 'coach.rank.stuck1' : 'coach.rank.stuckN', { n: stuck.length })}</span>
+              <Icon name="down" />
+            </button>
+            {stuckOpen && (
+              <ul className="coach-stuck-list" id={stuckId}>
+                {stuck.map(e => <li key={`${e.problem.key}|${e.role ?? ''}`}>{solvedText(e, lang)}</li>)}
+              </ul>
+            )}
+          </div>
         )}
       </div>
-      {clean}
+      {clean && <div className="coach-diag-clean">{clean}</div>}
     </aside>
   );
 }
@@ -857,7 +902,8 @@ function useRowsPerPage(ref: RefObject<HTMLElement | null>, max = ROWS_PER_PAGE,
       // Le pagine ("‹ 1/2 ›") prendono posto: se senza di loro ci stanno tutte le righe, una pagina sola (così la lista
       // non resta a pagine solo perché le pagine ci sono già)
       const pager = el.parentElement?.querySelector<HTMLElement>('.coach-pages');
-      if (total && rows < total && pager) {
+      // (con Esporta sulla stessa riga la riga resta anche senza le pagine: niente spazio in più)
+      if (total && rows < total && pager && !pager.parentElement?.querySelector('.coach-export')) {
         const foot = pager.parentElement;
         const footGap = foot && foot.childElementCount > 1 ? parseFloat(getComputedStyle(foot).rowGap) || 0 : 0;
         const all = Math.floor((height + pager.offsetHeight + footGap - pad + gap) / (row + gap));
@@ -978,6 +1024,21 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
     return () => window.clearTimeout(timer);
   }, [copied]);
 
+  // Il voto di prima dell'ultimo Applica fatto qui (team: quello di allora; after: il team subito dopo). Vale solo finché
+  // il team resta quello uscito da quell'Applica: un altro cambio (o Annulla) lo dimentica
+  const teamKey: unknown = team ?? coaching;
+  const [applied, setApplied] = useState<{ from: TeamRating; key: unknown; after?: unknown } | null>(null);
+  const markApply = () => { if (rating) setApplied({ from: rating, key: teamKey }); };
+  useEffect(() => {
+    setApplied(a => {
+      if (!a) return a;
+      if (a.after === undefined) return a.key === teamKey ? a : { ...a, after: teamKey };
+      return a.after === teamKey ? a : null;
+    });
+  }, [teamKey]);
+  const justApplied = !!applied && (applied.after === teamKey || (applied.after === undefined && applied.key !== teamKey));
+  const wasGrade = justApplied && rating && applied!.from.overall !== rating.overall ? applied!.from : null;
+
   // Sotto i 2 membri il coach non cerca problemi: l'invito ad aggiungere, non "nessun problema"
   if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
 
@@ -1006,7 +1067,16 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
           <EeveeMoment pose="happy" />
           <div className="coach-empty-text">
             <h3>{tr('coach.clear.title')}</h3>
-            <p>{tr('coach.clear.text')}</p>
+            {/* Il voto grande (lettera e numero nel colore del voto) e, subito dopo un Applica fatto qui, quello di prima */}
+            {rating && (
+              <p className="coach-clear-grade">
+                <span className="visually-hidden">{tr('coach.clear.gradeAria', { grade: `${rating.grade} ${rating.overall}` })}{wasGrade ? `, ${tr('coach.clear.was', { grade: `${wasGrade.grade} ${wasGrade.overall}` })}` : ''}</span>
+                <span aria-hidden="true"><GradeTag score={rating.overall} className="is-big" /></span>
+                {wasGrade && <span className="coach-clear-was" aria-hidden="true">{tr('coach.clear.was', { grade: `${wasGrade.grade} ${wasGrade.overall}` })}</span>}
+              </p>
+            )}
+            {/* Onesto: "nessun cambio singolo alza il voto" solo quando è vero (nessuna proposta); se no, niente problemi */}
+            <p>{tr(groups?.length === 0 ? 'coach.clear.text' : 'coach.clear.textNoProblems')}</p>
             {rating && (
               <p className="coach-empty-areas"><Icon name="check" />
                 <span>{columns.map((c, i) => <span key={c.key}>{i > 0 && ' · '}{c.name} <b>{c.text}</b></span>)}</span>
@@ -1068,7 +1138,13 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const heroPick = hero ? pickOf(hero) : null;
   // I problemi che nessun cambio singolo risolve: in fondo alla classifica
   const stuck = entries.filter(e => !groups?.some(g => solvesKey(g, e.problem.key)));
-  const actions: RowActions = { onFix, onMoveFix, onApplyFix, onApplyMove, onApplyPlan };
+  // Applica (e Applica il piano): si ricorda il voto di prima, per "prima B 70" se il team arriva a posto
+  const actions: RowActions = {
+    onFix, onMoveFix,
+    onApplyFix: fix => { markApply(); onApplyFix(fix); },
+    onApplyMove: fix => { markApply(); onApplyMove(fix); },
+    onApplyPlan: onApplyPlan && ((steps, to) => { markApply(); onApplyPlan(steps, to); }),
+  };
   const choose = (groupId: string, i: number) => setPicks(s => ({ advice, chosen: { ...(s.advice === advice ? s.chosen : {}), [groupId]: i } }));
   /** Dimentica l'alternativa scelta di questi posti (tornano alla loro migliore). */
   const forget = (...ids: string[]) => setPicks(s => {
@@ -1094,7 +1170,7 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   };
   const rail = (
     <RankRail key="rail" groups={visible} problems={problems} before={before} entries={entries} stuck={stuck} filter={active} onFilter={pickFilter} onOpen={open}
-      heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} headRef={stacked ? railHead : undefined} />
+      heroId={hero?.id ?? null} busy={!groups} clean={cleanLine || null} headRef={stacked ? railHead : undefined} onExport={onExport} />
   );
   // Sul telefono e sul tablet la classifica sta sotto la carta: il titolo dice quale proposta è ("1 di 5"; con un'alternativa aperta
   // "alternativa a X", X la migliore di quel posto) e un tasto porta alla lista
@@ -1130,7 +1206,7 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
       </div>
       {groups && rating && planSteps.length >= 2 && (
         <PlanStrip steps={planSteps} start={rating} onOpen={openStep} compact={oneColumn}
-          onApply={onApplyPlan ? () => { const last = planSteps[planSteps.length - 1]; onApplyPlan(planSteps.map(st => st.proposal), `${last.grade} ${last.overall}`); } : undefined} />
+          onApply={actions.onApplyPlan ? () => { const last = planSteps[planSteps.length - 1]; actions.onApplyPlan!(planSteps.map(st => st.proposal), `${last.grade} ${last.overall}`); } : undefined} />
       )}
       {groups ? (
         hero && <Hero key={hero.id} group={hero} choice={chosen[hero.id] ?? 0} onChoose={i => choose(hero.id, i)} problems={problems} before={before}

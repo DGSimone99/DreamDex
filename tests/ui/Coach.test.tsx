@@ -277,7 +277,7 @@ describe('CoachingView', () => {
   /** Il filtro per problema (la tendina "Problema"). */
   const filter = () => within(rail()).getByRole('combobox', { name: 'Problema' }) as HTMLSelectElement;
   /** La riga "Restano N problemi" in fondo alla classifica. */
-  const stuckLine = () => rail().querySelector<HTMLElement>('p.coach-rank-stuck');
+  const stuckLine = () => rail().querySelector<HTMLElement>('button.coach-rank-stuck');
   /** Il titolo della classifica: "Proposte" e il numero di cambi. */
   const railHead = () => within(rail()).getByRole('heading', { name: /^Proposte/ });
   /**
@@ -936,14 +936,22 @@ describe('CoachingView', () => {
       expect([...filter().options].map(o => o.value)).toEqual(['', fire.key]);
     });
 
-    it('in fondo "Restano N problemi" che nessun cambio singolo risolve: raggiungibile col Tab, i nomi nel fumetto e per lo screen reader', () => {
+    it('in fondo "Restano N problemi" che nessun cambio singolo risolve: un pulsante (anche col dito) che apre la lista sotto; col mouse i nomi nel fumetto', async () => {
+      const user = userEvent.setup();
       ranked();
       const line = stuckLine()!;
-      expect(line).toHaveTextContent(/^Restano 2 problemi che nessun cambio singolo risolve/);
+      expect(line).toHaveTextContent(/^Restano 2 problemi che nessun cambio singolo risolve$/);
       expect(line.closest('.coach-diag-foot')).not.toBeNull();
-      expect(line).toHaveAttribute('tabindex', '0');
+      expect(line).toHaveAttribute('aria-expanded', 'false');
       expect(line).toHaveAttribute('data-hint', `${slow.text}; ${hit.text}`);
-      expect(line.querySelector('.visually-hidden')).toHaveTextContent(`: ${slow.text}; ${hit.text}`);
+      expect(rail().querySelector('.coach-stuck-list')).toBeNull();
+      await user.click(line);
+      expect(line).toHaveAttribute('aria-expanded', 'true');
+      const open = document.getElementById(line.getAttribute('aria-controls')!)!;
+      expect([...open.querySelectorAll('li')].map(li => li.textContent)).toEqual([slow.text, hit.text]);
+      await user.click(line);
+      expect(line).toHaveAttribute('aria-expanded', 'false');
+      expect(rail().querySelector('.coach-stuck-list')).toBeNull();
       // I problemi senza cura non sono nel filtro
       expect([...filter().options].map(o => o.value)).not.toContain(slow.key);
     });
@@ -1018,7 +1026,9 @@ describe('CoachingView', () => {
       expect(help.getAttribute('title') ?? '').toBe('');
       await user.click(help);
       const dialog = screen.getByRole('dialog', { name: 'Come funziona il Coaching' });
-      expect(within(dialog).getAllByRole('heading', { level: 4 }).map(h => h.textContent)).toEqual(['Proposte', 'La carta grande', 'Risolve e Costa', 'Applica e Oppure']);
+      expect(within(dialog).getAllByRole('heading', { level: 4 }).map(h => h.textContent)).toEqual(['Proposte', 'La carta grande', 'Il Piano', 'Risolve e Costa', 'Applica e Oppure']);
+      // Il Piano spiegato in una frase
+      expect(dialog).toHaveTextContent(/Il Piano, sopra la carta, mette in fila i cambi migliori da fare insieme/);
       // Il fuoco sulla chiusura; il Tab (avanti e indietro) resta nella finestra
       const close = within(dialog).getByRole('button', { name: 'Chiudi' });
       expect(close).toHaveFocus();
@@ -1036,7 +1046,13 @@ describe('CoachingView', () => {
     const user = userEvent.setup();
     const h = view(advice([]), { coaching: coachingOf([]) });
     expect(screen.getByRole('heading', { name: 'Il team è a posto' })).toBeInTheDocument();
-    expect(screen.getByText('Nessun problema da sistemare: il Coaching non ha niente da suggerire.')).toBeInTheDocument();
+    // Il voto grande (lettera e numero nel colore del voto); senza un Applica fatto qui, niente "prima"
+    const big = document.querySelector('.coach-clear-grade .coach-grade-tag.is-big')!;
+    expect(big).toHaveTextContent(`${rating.grade} ${rating.overall}`);
+    expect(big).toHaveClass(`grade-${rating.grade}`);
+    expect(document.querySelector('.coach-clear-was')).toBeNull();
+    expect(screen.getByText('Nessun cambio singolo alza ancora il voto.')).toBeInTheDocument();
+    expect(screen.queryByText(/il Coaching non ha niente da suggerire/)).toBeNull();
     expect(document.querySelector('.coach-empty .eevee-moment.happy')).not.toBeNull();
     expect(document.querySelector('.coach-empty-areas')).toHaveTextContent(`Offesa ${Math.round(before.strength!)} · Difesa ${Math.round(before.defense!)}`);
     await user.click(screen.getByRole('button', { name: 'Esporta per Showdown' }));
@@ -1317,6 +1333,85 @@ describe('CoachingView', () => {
       view(advice([zap, heat, rotom]));
       await settle();
       expect(plan()).toBeNull();
+    });
+  });
+
+  describe('rifiniture (giro 8)', () => {
+    it('nella riga, accanto a chi entra, chi esce piccolo e grigio; un posto libero: il quadratino; un cambio di mossa: niente; "al posto di X" resta', () => {
+      const add: CoachFix = { kind: 'add', species: 'Heatran', set: mostCommonSet(fixtureStats, 'Heatran') ?? emptySet('Heatran'), index: null, member: null, gain: 3, solves: [steel.key], reduces: [], after: before };
+      const tusk: TeamSet = { ...six[0], moves: [six[0].moves[0], 'Knock Off', six[0].moves[2], six[0].moves[3]] };
+      const move: MoveFix = { index: 0, member: 'Great Tusk', set: tusk, reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 1, solves: [zapdos.key], after: before };
+      view(advice([swap('Zapdos', 5, 5, [pivot.key]), add], [move]), { members: 5 });
+      const row = (name: RegExp) => ranks().find(b => name.test(b.getAttribute('aria-label')!))!;
+      const swapMon = row(/Sunkern/).querySelector('.coach-rank-mon')!;
+      expect(swapMon).toHaveClass('is-swap');
+      expect(swapMon.querySelectorAll('.mon-icon')).toHaveLength(2);
+      expect(swapMon.querySelector('.coach-rank-out .mon-icon')).not.toBeNull();
+      expect(row(/Sunkern/).querySelector('.coach-rank-who small')).toHaveTextContent('al posto di Sunkern');
+      const addMon = row(/^Apri nella carta: Heatran/).querySelector('.coach-rank-mon')!;
+      expect(addMon.querySelector('.coach-rank-out.is-free')).not.toBeNull();
+      expect(addMon.querySelector('.coach-rank-out .mon-icon')).toBeNull();
+      expect(row(/Knock Off/).querySelector('.coach-rank-out')).toBeNull();
+    });
+
+    it('"Scheda" scritto accanto all\'icona (il nome intero per lo screen reader e nel fumetto), come "Copia set"', () => {
+      view(advice([swap('Zapdos', 5, 5, [pivot.key])]));
+      const see = within(heroOf()).getByRole('button', { name: 'Vedi nella scheda Pokémon: Zapdos' });
+      expect(see).toHaveTextContent(/^Scheda$/);
+      expect(see).toHaveAttribute('data-hint', 'Vedi nella scheda Pokémon');
+    });
+
+    it('con un problema scelto nel filtro la riga "N proposte risolvono: X" non c\'è (direbbe di nuovo il filtro)', async () => {
+      const user = userEvent.setup();
+      view(advice([swap('Zapdos', 5, 5, [fire.key]), swap('Rotom-Wash', 4, 4, [fire.key, zapdos.key]), swap('Heatran', 1, 3, [fire.key])]));
+      expect(rail().querySelector('.coach-rank-lead')).toHaveTextContent('Tutte queste proposte risolvono:');
+      await user.selectOptions(filter(), fire.key);
+      expect(rail().querySelector('.coach-rank-lead')).toBeNull();
+      expect(rail().querySelector('.coach-diag-sub')).toHaveTextContent('Un cambio per ogni posto');
+      // Le righe tornano a dire il problema
+      expect(railPills()[0]).toContain('fire');
+    });
+
+    it('un problema delle Regole risolto (due Mega) viene per primo e in rosso, nella carta e nella riga', () => {
+      const megas: CoachProblem = { severity: 'serious', category: 'rules', text: 'Due Mega nel team: Showdown accetta un solo Mega', fixes: [], key: 'rules:megas', subjects: ['Zapdos'] };
+      view(advice([swap('Zapdos', 5, 5, [fire.key, megas.key])]), { coaching: coachingOf([fire, megas]) });
+      const solved = [...heroOf().querySelectorAll('li.coach-solved')];
+      expect(solved[0]).toHaveClass('is-rule');
+      expect(solved[0]).toHaveTextContent('Due Mega');
+      expect(solved[1]).not.toHaveClass('is-rule');
+      expect(ranks()[0].querySelector('.coach-pill')).toHaveClass('is-rule');
+      // Nella riga il testo corto (prima dei due punti o della parentesi), così la pillola sta anche se viene per prima
+      expect(ranks()[0].querySelector('.coach-pill')).toHaveTextContent(/^Due Mega nel team$/);
+      expect(ranks()[0]).toHaveAccessibleDescription(`Risolve: ${megas.text}; ${fire.text}`);
+    });
+
+    it('coi problemi che restano, Esporta per Showdown in fondo alla classifica (secondario)', async () => {
+      const user = userEvent.setup();
+      const h = view(advice([swap('Zapdos', 5, 5, [pivot.key])]));
+      const exp = within(rail()).getByRole('button', { name: 'Esporta per Showdown' });
+      expect(exp).toHaveClass('coach-link');
+      expect(exp.closest('.coach-diag-foot')).not.toBeNull();
+      expect(exp).toHaveTextContent(/^Esporta$/);
+      await user.click(exp);
+      expect(h.onExport).toHaveBeenCalledTimes(1);
+    });
+
+    it('il team arriva a posto con Applica: il voto grande e "prima" col voto di prima; un altro cambio lo dimentica', async () => {
+      const user = userEvent.setup();
+      const handlers = { onFix: vi.fn(), onMoveFix: vi.fn(), onApplyFix: vi.fn(), onApplyMove: vi.fn() };
+      const up = Math.min(100, rating.overall + 9);
+      const better = { ...rating, overall: up, grade: up >= 90 ? 'S' : up >= 80 ? 'A' : up >= 70 ? 'B' : up >= 60 ? 'C' : 'D' } as typeof rating;
+      const { rerender } = renderIt(<CoachingView coaching={coachingOf([fire])} advice={advice([swap('Zapdos', 5, 5, [fire.key])])} members={6} rating={rating} {...handlers} />);
+      await user.click(within(heroOf()).getByRole('button', { name: /^Applica: Zapdos/ }));
+      expect(handlers.onApplyFix).toHaveBeenCalledTimes(1);
+      rerender(<CoachingView coaching={coachingOf([])} advice={advice([])} members={6} rating={better} {...handlers} />);
+      expect(screen.getByRole('heading', { name: 'Il team è a posto' })).toBeInTheDocument();
+      expect(document.querySelector('.coach-clear-grade .coach-grade-tag.is-big')).toHaveTextContent(`${better.grade} ${up}`);
+      expect(document.querySelector('.coach-clear-was')).toHaveTextContent(`prima ${rating.grade} ${rating.overall}`);
+      expect(document.querySelector('.coach-clear-grade')).toHaveTextContent(`Voto del team: ${better.grade} ${up}, prima ${rating.grade} ${rating.overall}`);
+      // Un altro cambio (un altro team): "prima" sparisce
+      rerender(<CoachingView coaching={coachingOf([])} advice={advice([])} members={6} rating={better} {...handlers} />);
+      expect(document.querySelector('.coach-clear-was')).toBeNull();
     });
   });
 });

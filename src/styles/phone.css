@@ -630,6 +630,8 @@
   .undo-toast .undo-actions { margin-top: 0; flex: none; }
   .undo-toast .undo-button { min-height: 40px; }
   .undo-toast .undo-close { top: 50%; translate: 0 -50%; width: 40px; height: 40px; display: grid; place-items: center; right: 2px; }
+  /* Applica il piano: la frase va a capo su due righe, così i voti ("B 70 → A 84") restano in vista anche a 360 px */
+  .undo-toast.is-plan .undo-text { flex-wrap: wrap; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; }
   .done-toast { padding: var(--sp-5) 44px var(--sp-5) var(--sp-6); }
 }
 /* Barra in alto sul telefono: il formato su una riga sola (il nome lungo finisce coi puntini, intero nella finestra) */

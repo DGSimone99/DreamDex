@@ -151,7 +151,7 @@ export function UndoToast({ action, onUndo, onClose, docked = false }: { action:
     <div
       key={action.id}
       ref={dock}
-      className="undo-toast"
+      className={`undo-toast${action.kind === 'plan' ? ' is-plan' : ''}`}
       role="status"
       {...handlers}
     >

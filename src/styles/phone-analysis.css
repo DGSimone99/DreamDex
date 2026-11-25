@@ -172,6 +172,8 @@
   /* Il posto di ogni passo resta scritto ("su Landorus-Therian"): sotto il nome c'è spazio */
   .coaching.coach-cure .coach-plan .coach-plan-steps > li .coach-plan-who small { display: block; }
   .coach-rank { min-height: 60px; }
+  /* Lo scheletro mentre si calcolano le proposte: righe alte come quelle vere, così la pagina non salta quando arrivano */
+  .coach-diag-list[aria-busy] > .coach-rank-skeleton { min-height: 60px; }
 
   /* ── Coaching sul telefono a tutto schermo: niente riquadri. Il Coaching va da bordo a bordo (attaccato sotto la barra
      delle schede); le parti si separano con le fasce dei titoli (la fascia chiara di Champions, a tutta larghezza) e con
@@ -222,8 +224,7 @@
   .coaching.coach-cure .coach-hero-foot { gap: var(--sp-4); padding: var(--sp-5) var(--gut) var(--sp-5); background: var(--panel); box-shadow: 0 -1px 0 var(--line-soft); }
   .coaching.coach-cure .coach-apply { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; height: 48px; font-size: var(--fs-section); }
   .coaching.coach-cure .coach-hero-foot .coach-see { height: 48px; }
-  .coaching.coach-cure .coach-see:not(.coach-copy) { width: 48px; min-width: 48px; padding: 0; justify-content: center; }
-  .coaching.coach-cure .coach-see:not(.coach-copy) > span { display: none; }
+  .coaching.coach-cure .coach-see:not(.coach-copy) { min-width: 48px; padding: 0 var(--sp-5); justify-content: center; }
   .coaching.coach-cure .coach-alts { gap: var(--sp-2); }
   /* La classifica: righe da bordo a bordo coi fili fra loro, non carte */
   .coaching.coach-cure .coach-diag { gap: 0; padding: 0; background: none; }
@@ -260,6 +261,7 @@
   .coach-diag-box { --row-h: auto; flex: none; }
   .coach-diag-list { grid-auto-rows: auto; }
   .coach-rank { min-height: 60px; }
+  .coach-diag-list[aria-busy] > .coach-rank-skeleton { min-height: 60px; }
   .coach-filter-box { flex: 0 1 420px; }
   /* Il titolo della carta col numero ("La proposta migliore · 1 di 5") e i tasti sulla stessa riga, a capo se non ci stanno */
   .coach-hero-band.is-stacked { flex-wrap: wrap; row-gap: var(--sp-2); }
