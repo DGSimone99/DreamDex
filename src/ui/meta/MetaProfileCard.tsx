@@ -19,7 +19,7 @@ import { kitTip } from '../MoveTip';
  * team, poi i compagni, poi le mosse) lasciano il posto al pulsante in fondo della Panoramica (MoreBelow) che riduce il
  * team: niente scorrimento dentro la scheda. Col team ridotto (niente `onMore`) si vede tutto, e se ancora non ci sta scorre.
  */
-export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCoverage, onMore }: {
+export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCoverage, onMore, sheet = false }: {
   profile: MetaProfile;
   inTop: (name: string) => boolean;
   onSelect: (name: string) => void;
@@ -29,6 +29,8 @@ export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCov
   onCoverage?: (side: 'defense' | 'offense', species: string) => void;
   /** Riduce il team (c'è solo col team aperto): le parti che non stanno vanno nel pulsante in fondo. */
   onMore?: () => void;
+  /** Telefono e tablet: la scheda è una finestra sopra la griglia (prende il fuoco, Esc la chiude). */
+  sheet?: boolean;
 }) {
   const t = useT();
   const lang = useLang();
@@ -44,7 +46,8 @@ export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCov
   const hidden = cuttable.slice(cuttable.length - fit.cut);
   const shows = (key: string) => !hidden.some(c => c.key === key);
   return (
-    <aside ref={fit.ref} className="meta-profile" aria-label={t('meta.profile')}>
+    <aside ref={fit.ref} className="meta-profile" aria-label={t('meta.profile')}
+      {...(sheet ? { role: 'dialog', 'aria-modal': true, tabIndex: -1 } : {})}>
       <h3 className="meta-plate" aria-hidden="true">{t('meta.profile')}</h3>
       <div className="meta-hero" style={{ '--t1': typeColor(profile.types[0] ?? '') } as CSSProperties}>
         <Sprite species={profile.name} size={96} />

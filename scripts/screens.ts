@@ -1099,6 +1099,10 @@ const STATES: Record<string, State> = {
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
   // Scheda Meta (sopra: team di 5): team di 6, in inglese, col mouse sulla carta #4
   'meta-six': { hash: hash(SIX), run: async p => { await tab(p, 'meta'); return true; } },
+  // Il tuo team con chi è fuori dai 40 (#–) e chi non è nelle statistiche
+  'meta-out': { hash: hash([TEAM[0], member('Magikarp', '', 'Swift Swim', ['Splash'], 'Jolly', {}), member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane'], 'Bold', {}), member('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume'], 'Bold', {})]), run: async p => { await tab(p, 'meta'); return true; } },
+  // Telefono e tablet: tocca la quarta carta, la scheda entra (da destra sul tablet, dal basso sul telefono)
+  'meta-sheet': { hash: hash(SIX), run: async p => { await tab(p, 'meta'); await wait(800); const cards = await p.$$('.meta-card'); await cards[3]?.evaluate(el => (el as HTMLElement).click()); await wait(600); return cards.length > 3; } },
   'meta-en': { lang: 'en', run: async p => { await tab(p, 'meta'); return true; } },
   'meta-hover': { run: async p => { await tab(p, 'meta'); await wait(800); const box = await p.evaluate(() => { const r = document.querySelectorAll('.meta-card')[3]?.getBoundingClientRect(); return r ? [r.x + r.width / 2, r.y + 40] : null; }); if (!box) return false; await p.mouse.move(box[0], box[1]); await wait(400); return true; } },
   fill: { run: async p => clickText(p, 'button', /^\s*Completa team/) },

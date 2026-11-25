@@ -74,7 +74,7 @@ describe('Riquadro Voto', () => {
     const team = screen.getByRole('group', { name: 'Il tuo team' });
     expect(team).toHaveTextContent('Great Tusk #1 30,0%');
     expect(team).toHaveTextContent('Gholdengo #2 25,0%');
-    expect(team).toHaveTextContent('Magikarp non presente nelle statistiche');
+    expect(team).toHaveTextContent('Magikarp #–– non presente nelle statistiche');
   });
 
   it('barra a sinistra: sotto Meta l\'uso medio del team, non le minacce', async () => {
