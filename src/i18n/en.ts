@@ -1129,6 +1129,7 @@ export const en = {
   'meta.board': "Meta Pokémon",
   'meta.boardNote': "top {n} by usage · usage = % of teams that bring it",
   'meta.outside': "outside the top {n}",
+  'meta.back': "Back to the meta",
   'meta.mine': "Yours",
   'meta.profile': "Profile",
   'meta.item': "Item",
