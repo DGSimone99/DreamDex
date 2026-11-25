@@ -57,8 +57,23 @@ function bootFailed(error: unknown) {
     : 'DreamDex non è partito. Ricarica la pagina.';
 }
 
+/**
+ * Il CSS dell'app (index.html lo carica senza bloccare la schermata di caricamento, vedi fastBoot in vite.config.ts):
+ * l'app si disegna solo quando c'è, così non appare mai senza stili. In sviluppo non c'è il link: subito.
+ */
+function stylesReady(): Promise<void> {
+  const link = document.querySelector<HTMLLinkElement>('link[data-app-css]');
+  if (!link || (link.sheet && link.media === 'all')) return Promise.resolve();
+  return new Promise(resolve => {
+    const done = () => { link.media = 'all'; resolve(); };
+    link.addEventListener('load', done, { once: true });
+    // Se il CSS non arriva l'app parte lo stesso (meglio senza stili che ferma)
+    link.addEventListener('error', done, { once: true });
+  });
+}
+
 // I tier di Showdown prima dei dati: decidono chi è legale in ogni formato
-Promise.all([loadTiers().then(initTiers).then(loadDataOrEmpty), loadBans().then(initBans), loadGameDex().then(initGames), initLearnsets(), names]).then(([data]) => {
+Promise.all([loadTiers().then(initTiers).then(loadDataOrEmpty), loadBans().then(initBans), loadGameDex().then(initGames), initLearnsets(), names, stylesReady()]).then(([data]) => {
   root.render(
     <StrictMode>
       {/* Un errore imprevisto non lascia mai la pagina vuota: una schermata con Ricarica (il team resta nella sessione) */}
