@@ -75,7 +75,7 @@ export function MetaTab({ team, data, rating = null, onCoverage, onCollapseTeam,
   const profile = selected ? metaProfile(data?.stats ?? null, selected) : null;
   const versus = profile && !data?.ignoreMeta ? metaVersus(rating, profile.name, team) : null;
   const sheetModal = small && sheetOpen && !!profile;
-  useSheet(sheetModal, section, '.meta-back, .meta-profile', closeSheet);
+  useSheet(sheetModal, section, '.sheet-scrim, .meta-back, .meta-profile', closeSheet);
   // Dalla scheda alla Coverage meta: la finestra si chiude subito (la sezione cambia)
   const toCoverage = onCoverage && ((side: 'defense' | 'offense', species: string) => {
     if (sheetModal) { window.clearTimeout(closeTimer.current); setSheetClosing(false); setSheetOpen(false); }
@@ -83,7 +83,7 @@ export function MetaTab({ team, data, rating = null, onCoverage, onCollapseTeam,
   });
 
   // Meta spento (la sezione è disattivata nella barra): niente da mostrare
-  if (data?.ignoreMeta) return <section aria-label={t('tabs.meta')} className="meta-tab" />;
+  if (data?.ignoreMeta) return <section aria-label={t('tabs.meta')} className="meta-tab"><p className="note">{t('meta.off')}</p></section>;
   if (!data?.stats) return <section aria-label={t('tabs.meta')} className="meta-tab"><p className="note">{t('meta.missingStats')}</p></section>;
   const open = sheetOpen && !!profile;
   const className = ['meta-tab', open && 'sheet-open', open && sheetClosing && 'sheet-closing'].filter(Boolean).join(' ');
@@ -94,7 +94,13 @@ export function MetaTab({ team, data, rating = null, onCoverage, onCollapseTeam,
           <div className="meta-team" role="group" aria-label={t('meta.team')}>
             <div className="meta-head">
               <h3 className="meta-plate" aria-hidden="true">{t('meta.team')}</h3>
-              {board.average !== null && <span className="meta-note">{t('meta.average', { pct: formatPercent(lang, board.average) })}</span>}
+              {/* "#–" si spiega anche senza fumetto (al tocco non c'è): una nota accanto all'uso medio */}
+              <span className="meta-note">
+                {board.average !== null && t('meta.average', { pct: formatPercent(lang, board.average) })}
+                {board.team.some(m => m.rank === null) && (
+                  <span className="meta-legend" aria-hidden="true">{board.average !== null ? ' · ' : ''}{t('meta.legendOut', { n: board.top.length })}</span>
+                )}
+              </span>
             </div>
             <div className="meta-members">
               {board.team.map((m, i) => {

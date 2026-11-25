@@ -135,6 +135,17 @@ describe('scheda Meta su telefono e tablet', () => {
     expect(document.querySelector('.meta-main')).not.toHaveAttribute('inert');
   });
 
+  it('tablet: un clic fuori dalla scheda (sul velo) la chiude', async () => {
+    narrow();
+    const user = userEvent.setup();
+    renderIt(<MetaTab team={[]} data={fixtureData} />);
+    await user.click(screen.getByRole('button', { name: /^2\.\s*Gholdengo$/ }));
+    const scrim = document.querySelector<HTMLElement>('.meta-tab > .sheet-scrim')!;
+    expect(scrim).not.toHaveAttribute('inert');
+    await user.click(scrim);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
   it('Esc chiude la scheda', async () => {
     narrow();
     const user = userEvent.setup();

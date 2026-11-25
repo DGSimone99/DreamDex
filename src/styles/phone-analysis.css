@@ -303,7 +303,7 @@
 }
 
 /* -- Telefono: fuori dalla scheda Pokémon il team non c'è (la fascia resta montata, nascosta) -- */
-@media (max-width: 599px) { .band.off { display: none; } }
+@media (max-width: 1099px) { .band.off { display: none; } }
 
 /* -- Tablet piccolo e telefono grande (600-759): le sette schede non stavano e la fila tagliava l'ultima a metà; qui stanno
    tutte in sei colonne uguali, coi nomi un po' più piccoli -- */
