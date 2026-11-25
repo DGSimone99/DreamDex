@@ -395,38 +395,8 @@ function usePinnedFoot(ref: RefObject<HTMLElement | null>): boolean {
   return pinned;
 }
 
-/** Il tablet (due colonne, la pagina scorre): fra il telefono e il desktop. */
+/** Il tablet (la carta in alto, la classifica sotto; la pagina scorre): fra il telefono e il desktop. */
 const TABLET_QUERY = '(min-width: 600px) and (max-width: 1099px)';
-
-/**
- * Sul tablet il Coaching arriva almeno fino alla barra delle sezioni in fondo allo schermo: la carta e la classifica
- * usano l'altezza invece di lasciare la pagina vuota sotto di loro (la classifica mostra più righe; la carta resta alta
- * quanto il suo contenuto). Altrove niente altezza minima.
- */
-function useFillScreen(ref: RefObject<HTMLElement | null>, on: boolean) {
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (!on || typeof ResizeObserver === 'undefined') { el.style.removeProperty('min-height'); return; }
-    let frame = 0;
-    const check = () => {
-      frame = 0;
-      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bottom-h')) || 0;
-      const box = el.getBoundingClientRect();
-      const body = el.closest('.tab-body');
-      // Sotto il Coaching resta il margine della pagina (tab-body): conta anche lui
-      const tail = body ? Math.max(0, body.getBoundingClientRect().bottom - box.bottom) : 0;
-      const want = Math.floor(window.innerHeight - bar - (box.top + window.scrollY) - tail);
-      el.style.minHeight = want > 0 ? `${want}px` : '';
-    };
-    const soon = () => { if (!frame) frame = requestAnimationFrame(check); };
-    const observer = new ResizeObserver(soon);
-    observer.observe(el.closest('.main') ?? document.body);
-    window.addEventListener('resize', soon);
-    check();
-    return () => { observer.disconnect(); window.removeEventListener('resize', soon); if (frame) cancelAnimationFrame(frame); el.style.removeProperty('min-height'); };
-  }, [ref, on]);
-}
 
 /** Le alternative visibili subito in "Oppure"; le altre dietro "altre N". */
 export const ALTS_SHOWN = 3;
@@ -628,7 +598,7 @@ function shortProblem(problem: CoachProblem, tr: ReturnType<typeof useT>, lang: 
 function RankRail({ groups, problems, before, entries, stuck, filter, onFilter, onOpen, heroId, clean, busy, headRef }: {
   groups: ProposalGroup[]; problems: CoachProblem[]; before: AreaSnapshot | null; entries: ProblemEntry[]; stuck: ProblemEntry[];
   filter: string | null; onFilter: (key: string | null) => void; onOpen: (groupId: string) => void; heroId: string | null; clean: ReactNode; busy: boolean;
-  /** Il titolo della classifica: riceve il fuoco da "Tutte le proposte" (telefono, la carta sta sopra). */
+  /** Il titolo della classifica: riceve il fuoco da "Tutte le proposte" (telefono e tablet, la carta sta sopra). */
   headRef?: RefObject<HTMLHeadingElement | null>;
 }) {
   const tr = useT();
@@ -964,12 +934,12 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   const [flash, setFlash] = useState<{ nonce: number; id: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const handled = useRef<number | null>(null);
-  // Telefono (una colonna, sotto i 600 px come phone-analysis.css): la carta viene prima della classifica anche nel codice,
-  // così il Tab segue l'ordine che si vede. Sul tablet in verticale restano due colonne, la classifica a sinistra
+  // Telefono (una colonna, sotto i 600 px come phone-analysis.css) e tablet (600–1099 px, col team a sinistra o sopra):
+  // la carta a tutta larghezza in alto, la classifica sotto. La carta viene prima anche nel codice, così il Tab segue
+  // l'ordine che si vede; il titolo dice quale proposta è ("1 di 5") e "Tutte le proposte ↓" porta alla classifica
   const oneColumn = useMediaQuery(PHONE_QUERY);
-  // Tablet: il Coaching arriva fino alla barra in fondo (niente pagina vuota sotto la carta)
   const tablet = useMediaQuery(TABLET_QUERY);
-  useFillScreen(root, tablet && !!groups && groups.length > 0 && members >= 2 && coaching.problems.length > 0);
+  const stacked = oneColumn || tablet;
   // Il Piano: si calcola dopo il primo disegno (rifà il voto del team qualche volta, ~150 ms su un team lungo) e si
   // rifà quando cambiano i consigli o il team; fino ad allora resta quello di prima (o niente). Usa la migliore di ogni
   // posto, come le righe della classifica
@@ -1123,9 +1093,9 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   };
   const rail = (
     <RankRail key="rail" groups={visible} problems={problems} before={before} entries={entries} stuck={stuck} filter={active} onFilter={pickFilter} onOpen={open}
-      heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} headRef={oneColumn ? railHead : undefined} />
+      heroId={hero?.id ?? null} busy={!groups} clean={cleanLine ? <div className="coach-diag-clean">{cleanLine}</div> : null} headRef={stacked ? railHead : undefined} />
   );
-  // Sul telefono la classifica sta sotto la carta: il titolo dice quale proposta è ("1 di 5"; con un'alternativa aperta
+  // Sul telefono e sul tablet la classifica sta sotto la carta: il titolo dice quale proposta è ("1 di 5"; con un'alternativa aperta
   // "alternativa a X", X la migliore di quel posto) e un tasto porta alla lista
   const at = hero ? visible.indexOf(hero) + 1 : 0;
   const altOpen = !!hero && Math.min(chosen[hero.id] ?? 0, hero.options.length - 1) !== 0;
@@ -1138,15 +1108,15 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
   };
   const main = (
     <section key="main" aria-labelledby={`${id}-list`} className="coach-main">
-      <div className={`coach-list-head coach-hero-band${oneColumn ? ' is-phone' : ''}`}>
+      <div className={`coach-list-head coach-hero-band${oneColumn ? ' is-phone' : tablet ? ' is-stacked' : ''}`}>
         <h4 className="coach-sec">{tr(chosenNotBest ? 'coach.hero.chosen' : 'coach.hero.best')}
-          {oneColumn && at > 0 && hero && (
+          {stacked && at > 0 && hero && (
             <span className="coach-hero-of">{altOpen ? tr('coach.hero.altOf', { name: shownName(hero.options[0], lang) }) : tr('coach.hero.of', { n: at, total: visible.length })}</span>
           )}
         </h4>
-        {((oneColumn && groups && visible.length > 1) || chosenNotBest) && (
+        {((stacked && groups && visible.length > 1) || chosenNotBest) && (
           <div className="coach-hero-acts">
-            {oneColumn && groups && visible.length > 1 && (
+            {stacked && groups && visible.length > 1 && (
               <button type="button" className="coach-back coach-to-rank" onClick={toRanking}>{tr('coach.hero.all')}<span className="coach-to-arrow" aria-hidden="true">↓</span></button>
             )}
             {chosenNotBest && (
@@ -1179,7 +1149,7 @@ export function CoachingView({ coaching, advice, members, rating, team, data, on
     <div className="coaching coach-cure" ref={root}>
       {/* Un solo titolo di livello 3 per la scheda (nascosto): sotto, la classifica e la carta coi loro titoli di livello 4 */}
       <h3 className="visually-hidden" id={`${id}-list`}>{tr('coach.list.title')}</h3>
-      {oneColumn ? [main, rail] : [rail, main]}
+      {stacked ? [main, rail] : [rail, main]}
     </div>
   );
 }

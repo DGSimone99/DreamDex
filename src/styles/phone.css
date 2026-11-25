@@ -1390,6 +1390,9 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .slot.empty .empty-ring { width: 32px; height: 32px; }
   .band:not(.collapsed) .slot > .slot-card .sprite-wrap { grid-column: 1; grid-row: 1 / -1; flex: none; width: 64px; height: 64px; min-height: 0; display: grid; place-items: center; }
   .band:not(.collapsed) .slot > .slot-card .sprite { width: 64px; height: 64px; }
+  /* La pedana sotto lo sprite piccolo (64 px): alta in proporzione e col centro sotto i piedi, dentro la riga (prima, a
+     misura dello sprite grande, usciva di qualche pixel sotto la carta) */
+  .band:not(.collapsed) .slot > .slot-card .sprite-wrap .pedana-disc { --sprite-w: 64px; bottom: calc(100cqh * 10 / 96 - clamp(14px, calc(var(--sprite-w) * 0.27), 30px) / 2); }
   /* I tipi come icone (il nome nel fumetto): accanto c'è il ruolo */
   .band:not(.collapsed) .slot > .slot-card .type-chip > span { display: none; }
   .band:not(.collapsed) .slot > .slot-card .types { gap: 3px; }

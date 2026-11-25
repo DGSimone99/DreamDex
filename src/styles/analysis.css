@@ -891,11 +891,18 @@
   background: linear-gradient(90deg, color-mix(in srgb, var(--faint) 45%, transparent) 0 50%, var(--t1) 50%); opacity: 0.85; }
 .coach-vs-side { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-width: 0; padding: var(--vs-pad) var(--sp-6) calc(var(--vs-pad) + 3px); }
 .coach-vs-stage { position: relative; display: flex; justify-content: center; align-items: flex-end; height: calc(var(--in-x) * var(--art-k)); margin-bottom: var(--sp-3); }
+/* Di lato la fascia VS non sborda mai: ogni lato è un contenitore (la sua larghezza meno il margine interno, almeno 12 px
+   dal bordo della carta) e la figura (sprite e pedana) prende al più quella larghezza; di solito resta la misura della
+   fascia (--in-w, --out-w), si stringe solo dove il lato è stretto (tablet col team a sinistra, telefono a 360). In
+   altezza gli sprite possono ancora uscire sopra la fascia */
+.coach-vs-side { container-type: inline-size; }
+.coach-vs-stage { --in-x: min(var(--in-w), 100cqi / var(--art-k)); --out-x: min(var(--out-w), 100cqi / var(--art-k)); }
 .coach-vs-stage .pedana-disc { --sprite-w: var(--in-x); bottom: -9px; width: calc(var(--in-x) + 8px); }
 .coach-art-in { position: relative; z-index: 1; flex: none; display: flex; }
 .coach-art-in .sprite { width: calc(var(--in-x) * var(--art-k)); height: calc(var(--in-x) * var(--art-k)); margin-inline: calc(var(--in-x) * (1 - var(--art-k)) / 2); image-rendering: pixelated;
   translate: calc(var(--feet-dx, 0) * 100%) calc(var(--feet-dy, 0) * 100%); filter: drop-shadow(0 4px 4px #0006); }
-.coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--in-x)); translate: -50% 0; }
+.coach-art-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: 100cqi; height: calc(var(--ani-h, 96) / 96 * var(--in-x)); translate: -50% 0;
+  object-fit: contain; object-position: 50% 100%; }
 /* Chi esce: più piccolo, grigio e spento, su una pedana grigia (mai trasparente: i contorni restano netti) */
 .coach-vs-stage.is-out { height: calc(var(--out-x) * var(--art-k)); }
 .coach-vs-disc { position: absolute; left: 50%; bottom: -7px; width: calc(var(--out-x) + 4px); height: clamp(12px, calc(var(--out-x) * 0.26), 26px); transform: translateX(-50%); border-radius: 50%;

@@ -514,6 +514,22 @@ describe('CoachingView', () => {
     }
   });
 
+  it('tablet: la carta in alto a tutta larghezza e la classifica sotto (anche nel codice), "1 di N" e "Tutte le proposte" come sul telefono', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(min-width: 600px) and (max-width: 1099px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      const user = userEvent.setup();
+      view(advice([swap('Zapdos', 5, 5, [pivot.key]), swap('Rotom-Wash', 4, 4, [fire.key]), swap('Heatran', 1, 3, [steel.key])]));
+      // La carta prima della classifica: il Tab segue l'ordine che si vede
+      expect(heroOf().compareDocumentPosition(rail()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(list().querySelector('.coach-hero-band')).toHaveClass('is-stacked');
+      expect(band()).toHaveTextContent('La proposta migliore · 1 di 3');
+      await user.click(within(list()).getByRole('button', { name: 'Tutte le proposte' }));
+      expect(railHead()).toHaveFocus();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("telefono: con un'alternativa aperta il titolo dice di chi è l'alternativa (\"· alternativa a Rotom-Wash\"), non \"1 di N\"", async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 599px)' || query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
     try {

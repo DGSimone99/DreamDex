@@ -201,7 +201,7 @@
   .coaching.coach-cure .coach-plan.is-compact { padding: var(--sp-3) var(--gut); background: none; box-shadow: inset 0 -1px 0 var(--line-soft); }
   /* La carta: nessun fondo a riquadro; la fascia VS da bordo a bordo, più alta (figure di circa 119 px) */
   .coaching.coach-cure .coach-hero { --in-w: 108px; --out-w: 64px; --vs-pad: var(--sp-6); --art-k: 1.1; background: none; }
-  .coaching.coach-cure .coach-vs-side { padding-inline: var(--sp-3); }
+  .coaching.coach-cure .coach-vs-side { padding-inline: var(--sp-2); }
   .coaching.coach-cure .coach-vs-side.is-out { padding-left: var(--gut); }
   .coaching.coach-cure .coach-vs-side.is-in { padding-right: var(--gut); }
   .coaching.coach-cure .coach-vs-mid { gap: var(--sp-3); }
@@ -251,6 +251,26 @@
   .analysis-tabs { margin-inline: -14px; }
 }
 @media (min-width: 600px) and (max-width: 1099px) {
+  /* ── Coaching sul tablet (col team a sinistra o sopra): niente due colonne strette. In alto la carta a tutta larghezza
+     (la fascia VS comoda, Risolve e Set affiancati se c'è posto, il piede con Applica), sotto la classifica a tutta
+     larghezza, tutte le righe (niente pagine: scorre la pagina), su due colonne di righe se è larga. La carta viene prima
+     anche nel codice (CoachingView) ── */
+  .coaching.coach-cure { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; align-content: start; gap: var(--sp-6); }
+  .coach-hero { flex: none; }
+  .coach-diag-box { --row-h: auto; flex: none; }
+  .coach-diag-list { grid-auto-rows: auto; }
+  .coach-rank { min-height: 60px; }
+  .coach-filter-box { flex: 0 1 420px; }
+  /* Il titolo della carta col numero ("La proposta migliore · 1 di 5") e i tasti sulla stessa riga, a capo se non ci stanno */
+  .coach-hero-band.is-stacked { flex-wrap: wrap; row-gap: var(--sp-2); }
+  .coach-hero-band.is-stacked .coach-sec { flex: 1 1 auto; }
+  @container coaching (min-width: 640px) {
+    .coach-diag-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .coach-hero-facts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--sp-8); max-width: none; }
+    .coach-hero-facts > .coach-set { grid-column: auto; }
+    .coach-set-moves { grid-template-columns: minmax(0, 1fr); }
+  }
+
   .analysis-tabs { margin-inline: -18px; padding-inline: var(--sp-9); scroll-padding-inline: 18px; }
   /* Tablet: le sette schede stanno quasi tutte; si stringono un poco e riempiono la riga */
   .analysis-tabs [role='tablist'] { min-width: 100%; }
