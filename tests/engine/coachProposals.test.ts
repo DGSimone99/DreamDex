@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CoachProblem, ProblemCategory } from '../../src/engine/coach';
 import type { CoachFix } from '../../src/engine/coachFixes';
-import { areaOfProblem, MAX_ALTERNATIVES, proposalGroups, solvedKeys } from '../../src/engine/coachProposals';
+import { areaOfProblem, MAX_ALTERNATIVES, neutralAsAlternatives, proposalGroups, solvedKeys, type ProposalGroup } from '../../src/engine/coachProposals';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { emptySet } from '../../src/engine/sets';
 
@@ -71,5 +71,56 @@ describe('proposalGroups', () => {
   it('areaOfProblem: le aree delle testate', () => {
     expect(['defense', 'meta', 'coverage', 'metaHit', 'roles', 'conditions', 'redundancy', 'rules'].map(c => areaOfProblem(c as ProblemCategory)))
       .toEqual(['defense', 'defense', 'strength', 'strength', 'roles', 'bonusMalus', 'bonusMalus', 'rules']);
+  });
+});
+
+describe('neutralAsAlternatives', () => {
+  const fix = (species: string, gain: number, solves: string[]) => ({ kind: 'fix' as const, fix: swap(species, 0, gain, solves) });
+  const group = (id: string, lead: string | null, ...options: ProposalGroup['options']): ProposalGroup => ({ id, lead, options });
+  const ids = (groups: ProposalGroup[]) => groups.map(g => g.id);
+
+  it('un gruppo che non alza il voto va fra le alternative del primo che lo alza e risolve il suo problema principale', () => {
+    const groups = [
+      group('a', 'meta:A', fix('A', 4, ['meta:A'])),
+      group('b', 'meta:B', fix('B', 3, ['meta:B', 'defense:Fire'])),
+      group('n', 'defense:Fire', fix('N', 0, ['defense:Fire']), fix('N2', -1, ['defense:Fire'])),
+    ];
+    const out = neutralAsAlternatives(groups);
+    expect(ids(out)).toEqual(['a', 'b']);
+    expect(names(out)).toEqual([['A'], ['B', 'N', 'N2']]);
+  });
+
+  it('conta solo la proposta mostrata dell\'ospite (la prima), non le sue alternative', () => {
+    const groups = [
+      group('a', 'meta:A', fix('A', 4, ['meta:A']), fix('A2', 2, ['meta:A', 'defense:Fire'])),
+      group('b', 'defense:Fire', fix('B', 1, ['defense:Fire'])),
+      group('n', 'defense:Fire', fix('N', 0, ['defense:Fire'])),
+    ];
+    expect(names(neutralAsAlternatives(groups))).toEqual([['A', 'A2'], ['B', 'N']]);
+  });
+
+  it('senza un ospite (o senza problema principale) resta in coda, nell\'ordine di prima', () => {
+    const groups = [
+      group('z', null, fix('Z', 0, [])),
+      group('a', 'meta:A', fix('A', 2, ['meta:A'])),
+      group('n', 'meta:B', fix('N', 0, ['meta:B'])),
+    ];
+    const out = neutralAsAlternatives(groups);
+    expect(ids(out)).toEqual(['a', 'z', 'n']);
+    expect(names(out)).toEqual([['A'], ['Z'], ['N']]);
+  });
+
+  it('l\'ospite resta al più con MAX_ALTERNATIVES alternative', () => {
+    const host = group('a', 'meta:A', ...Array.from({ length: MAX_ALTERNATIVES }, (_, i) => fix(`A${i}`, 5 - i, ['meta:A'])));
+    const out = neutralAsAlternatives([host, group('n', 'meta:A', fix('N', 0, ['meta:A']), fix('M', 0, ['meta:A']))]);
+    expect(out).toHaveLength(1);
+    expect(out[0].options).toHaveLength(MAX_ALTERNATIVES + 1);
+    expect(names(out)[0].slice(-1)).toEqual(['N']);
+  });
+
+  it('non cambia i gruppi di partenza', () => {
+    const host = group('a', 'meta:A', fix('A', 2, ['meta:A']));
+    neutralAsAlternatives([host, group('n', 'meta:A', fix('N', 0, ['meta:A']))]);
+    expect(host.options).toHaveLength(1);
   });
 });

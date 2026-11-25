@@ -28,7 +28,6 @@ import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types'
 import { withUsableMoves } from './lockedMoves';
 import { duplicateSpecies, missingFormeItem, voteTeam } from './legalTeam';
 import { EV_TOTAL, evTotal } from './statCalc';
-import { usageOf } from './stats';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
@@ -139,14 +138,14 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`, size?: number, subjects?: string[], counts?: CoachProblem['counts']) =>
     (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key, ...(size === undefined ? {} : { size }), ...(subjects ? { subjects } : {}), ...(counts ? { counts } : {}) });
 
-  // Difesa: la Coverage tipi del voto (chi regge il colpo più forte di quel tipo, coi danni veri)
+  // Difesa: la Coverage tipi del voto (chi regge il colpo più forte di quel tipo, coi danni veri). Solo i tipi che nessuno
+  // regge: "coperto poco" (pochi lo reggono) non è più un problema del Coaching (scelta di Simone, 2026-11-24: ne trovava
+  // troppi; sui team da torneo 1,5 a team). Il voto non cambia
   for (const row of rating?.defense.coverageTypes.rows ?? []) {
-    const severity = holdSeverity(rating!, row.type);
-    if (!severity) continue;
-    const isSerious = severity === 'serious';
-    const text = t(lang, isSerious ? 'coach.problem.notHeld' : 'coach.problem.halfHeld', { type: typeName(row.type, lang) });
+    if (holdSeverity(rating!, row.type) !== 'serious') continue;
+    const text = t(lang, 'coach.problem.notHeld', { type: typeName(row.type, lang) });
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type as TypeName, s.set) < 1));
-    add('defense', isSerious, text, fixes, `defense:${row.type}`, 100 - row.level, [row.type], { held: row.heldBy.length });
+    add('defense', true, text, fixes, `defense:${row.type}`, 100 - row.level, [row.type], { held: row.heldBy.length });
   }
 
   const repeated = duplicateSpecies(team, format.formatId);
@@ -241,11 +240,13 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // Scoperto (nessuno lo manda KO in due colpi): grave se il tipo pesa; coperto poco (nessuno lo manda KO in un colpo, pochi lo colpiscono forte): minore.
   // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (un'approssimazione, senza calcolo dei danni).
   // Cosa si risolve davvero lo dicono le proposte del Coaching, con problemChanges.
+  // Solo i buchi veri (nessuno lo manda KO in due colpi): "coperto poco" non è più un problema del Coaching (2026-11-24)
   const coverage = teamOffense(team.map(withUsableMoves), data).types;
   for (const row of coverage.rows) {
     if (row.level >= COVERED_LEVEL) continue;
     const type = row.label;
     const hole = coverage.holes.includes(type);
+    if (!hole) continue;
     const text = hole
       ? t(lang, 'coach.problem.uncovered', { type: typeName(type, lang) })
       : t(lang, 'coach.problem.halfCovered', { type: typeName(type, lang) });
@@ -253,22 +254,18 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
       fixesFor(candidates, s => Number(superEffectiveMove(s.set, type as TypeName) !== null)), `coverage:${type}`, hole ? 2 : 1, [type]);
   }
 
-  // Minacce del meta che nessuno regge, come nella Coverage meta della Difesa (la lista è vuota senza meta)
+  // Minacce del meta scoperte da due lati: nessuno le regge (Coverage meta della Difesa) E nessuno le manda KO in due colpi
+  // (Coverage meta dell'Offesa; i buchi sono combinazioni di tipi, nominate col Pokémon più usato che le rappresenta).
+  // Un problema solo per minaccia. Una minaccia scoperta da un lato solo è gestita dall'altro (chi la manda KO, o chi la
+  // regge) e non è più un problema del Coaching (scelta di Simone, 2026-11-24: sui team da torneo erano 5,4 a team).
+  // Le liste sono vuote senza meta. Il voto non cambia
+  const offenseMeta = rating?.offense.coverageMeta;
+  const unhit = new Set((offenseMeta?.holes ?? []).map(label => offenseMeta!.rows.find(row => row.label === label)?.species ?? label));
   for (const threat of ratingThreats(rating, data)) {
-    if (threat.handledBy.length) continue;
-    add('meta', false, t(lang, 'coach.problem.threat', { species: threat.name }),
+    if (threat.handledBy.length || !unhit.has(threat.name)) continue;
+    add('meta', false, t(lang, 'coach.problem.threatBoth', { species: threat.name }),
       fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`, undefined, [threat.name]);
     minor[minor.length - 1].usage = threat.usage;
-  }
-
-  // Pokémon del meta che nessuno manda KO in due colpi, come nella Coverage meta dell'Offesa (vuota senza meta).
-  // Nessun rimedio stimato: chi li risolve lo dicono le proposte del Coaching
-  // I buchi sono combinazioni di tipi (Volante/Terra): si nomina il Pokémon più usato che le rappresenta, come nella scheda
-  const offenseMeta = rating?.offense.coverageMeta;
-  for (const label of offenseMeta?.holes ?? []) {
-    const species = offenseMeta!.rows.find(row => row.label === label)?.species ?? label;
-    add('metaHit', false, t(lang, 'coach.problem.metaHit', { species }), [], `metaHit:${species}`, undefined, [species]);
-    minor[minor.length - 1].usage = usageOf(data.stats, species);
   }
 
   return [...serious, ...minor];

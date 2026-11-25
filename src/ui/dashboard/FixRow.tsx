@@ -27,7 +27,7 @@ export function coachingOffer(problems: CoachProblem[], advice: Pick<CoachAdvice
 /**
  * In fondo alla Panoramica, una riga sola per il Coaching (la Panoramica riassume, il Coaching non si copia qui):
  * "N problemi · il Coaching ha M proposte, la migliore +X · Vai al Coaching ›". Rossa con almeno un problema grave,
- * gialla coi soli minori; con problemi ma nessuna proposta "N problemi · nessuna sostituzione singola li risolve" (porta
+ * gialla coi soli minori; con problemi ma nessuna proposta "N problemi · nessun cambio singolo li risolve" (porta
  * comunque al Coaching, dove c'è Migliora i set). Senza problemi "Nessun problema da sistemare", verde e ferma. Mentre i
  * consigli si calcolano (`advice` null) uno scheletro alto uguale che dice "Il Coaching sta calcolando…" (anche ai lettori
  * di schermo), così la pagina non salta. N è il numero della scheda Coaching (tutti i problemi).

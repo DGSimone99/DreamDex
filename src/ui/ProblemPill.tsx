@@ -152,7 +152,9 @@ export function ProblemChip({ entry, onOpen, go, as: Tag = 'li' }: { entry: Prob
           sotto il nome, l'uso nel meta, la ragione "Nessuno lo regge bene" o "Nessuno lo manda KO in due colpi") */}
       {tip.anchor && subject.species && (
         <ThreatTip rect={tip.anchor.rect} species={subject.species} status="open" usage={problem.usage}
-          reasons={[{ text: t(problem.category === 'metaHit' ? 'dash.threatOffNone' : 'dash.threatDefNone'), state: 'open' }]}
+          reasons={problem.category === 'metaHit' ? [{ text: t('dash.threatOffNone'), state: 'open' }]
+            // Una minaccia del Coaching è scoperta da due lati: le due ragioni
+            : [{ text: t('dash.threatDefNone'), state: 'open', side: 'defense' }, { text: t('dash.threatOffNone'), state: 'open', side: 'offense' }]}
           go={onOpen ? go ?? t('analysis.view.coaching') : undefined} />
       )}
       {tip.anchor && !subject.species && (

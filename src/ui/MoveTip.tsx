@@ -116,8 +116,6 @@ export function TipHost() {
   useEffect(() => {
     let current: Element | null = null;
     const find = (target: EventTarget | null) => (target instanceof Element ? target.closest(TIP_SELECTOR) : null);
-    // Il mouse dentro il tooltip aperto (raggiungibile, WCAG 1.4.13): resta aperto, lo tiene useFloatAnchor
-    const inTip = (target: EventTarget | null) => target instanceof Element && !!target.closest('.ftip:not(.hint)');
     const blocked = (el: Element) => !!el.closest('.ftip') || !!el.querySelector('[aria-expanded="true"]');
     // Il fumetto piccolo non va sopra un tooltip DreamDex aperto (es. il nome dei tipi sulla tessera dentro una pastiglia
     // che ha già il suo tooltip): uno solo alla volta, vince quello ricco
@@ -128,7 +126,6 @@ export function TipHost() {
       open(key, el);
     };
     const over = (e: MouseEvent) => {
-      if (inTip(e.target)) return;
       const el = find(e.target);
       if (el === current) return;
       current = el;
