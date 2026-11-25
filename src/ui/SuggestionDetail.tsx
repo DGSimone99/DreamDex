@@ -231,7 +231,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // libero sotto. Altrimenti resta nel fumetto di Stat. Non allunga mai il dettaglio; la riga "Costa: niente" viene prima
   const hexWanted = !tight && !tabs;
   const [hexAt, setHexAt] = useState<'why' | 'run' | null>(null);
+  // L'esagono messo e poi tolto perché in realtà non ci stava (era più alto di HEX_PART_H: il corpo scorreva) non
+  // rientra finché non cambiano il contenuto o la finestra: se no entrava ed usciva all'infinito ("Maximum update depth",
+  // pagina bianca)
+  const hexVeto = useRef<string | null>(null);
   useLayoutEffect(() => {
+    const vetoKey = `${fitKey}|${hexWanted}|${window.innerWidth}x${window.innerHeight}`;
     let next: 'why' | 'run' | null = null;
     const body = bodyRef.current;
     const aside = asideRef.current;
@@ -253,6 +258,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
       const best = room.why >= room.run ? 'why' : 'run';
       if (room[best] >= HEX_PART_H) next = best;
     }
+    if (next !== null && hexVeto.current === vetoKey) next = null;
+    if (next === null && hexAt !== null) hexVeto.current = vetoKey;
     if (next !== hexAt) setHexAt(next);
   });
   const shownTab: DetailTab = tab === 'set' ? 'set' : 'brings';
