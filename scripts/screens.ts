@@ -1097,6 +1097,12 @@ const STATES: Record<string, State> = {
   } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
+  // Telefono e tablet: tocca il pulsante dei Preferiti, la lista si apre nel foglio
+  'lists-sheet': { storage: { 'dreamdex.lists': JSON.stringify({ byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit', 'Gholdengo', 'Dragapult', 'Corviknight', 'Toxapex', 'Iron Valiant', 'Garchomp', 'Zamazenta', 'Landorus-Therian', 'Rotom-Wash', 'Ferrothorn', 'Heatran', 'Slowking-Galar', 'Clefable'], bans: ['Magikarp'] } } }) }, run: async p => { await tab(p, 'lists'); await wait(500); const b = await p.$('.lists-tab.favorites'); await b?.evaluate(el => (el as HTMLElement).click()); await wait(600); return !!b; } },
+  // Scorrendo il Pokédex i due pulsanti restano in alto
+  'lists-scrolled': { storage: { 'dreamdex.lists': JSON.stringify({ byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit', 'Gholdengo'], bans: ['Magikarp'] } } }) }, run: async p => { await tab(p, 'lists'); await wait(500); await p.evaluate(() => window.scrollTo(0, 500)); await wait(300); return true; } },
+  // Preferiti e bannati pieni (anche oltre una pagina): la forma su telefono e tablet
+  'lists-full': { storage: { 'dreamdex.lists': JSON.stringify({ byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit', 'Gholdengo', 'Dragapult', 'Corviknight', 'Toxapex', 'Iron Valiant', 'Garchomp', 'Zamazenta', 'Landorus-Therian', 'Rotom-Wash', 'Ferrothorn', 'Heatran', 'Slowking-Galar', 'Clefable'], bans: ['Magikarp', 'Pikachu', 'Ditto', 'Smeargle'] } } }) }, run: async p => { await tab(p, 'lists'); return true; } },
   // Scheda Meta (sopra: team di 5): team di 6, in inglese, col mouse sulla carta #4
   'meta-six': { hash: hash(SIX), run: async p => { await tab(p, 'meta'); return true; } },
   // Il tuo team con chi è fuori dai 40 (#–) e chi non è nelle statistiche

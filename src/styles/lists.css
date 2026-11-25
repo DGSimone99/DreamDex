@@ -581,8 +581,16 @@
   .lists-expgrid { grid-template-columns: minmax(0, 1fr); }
   .lists-big-grid, .lists-expgrid.one .lists-big-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 120px; }
 }
+/* Al tocco: tutto ciò che si preme almeno 44 px. Cuore e divieto restano 36 px a vista (stanno sulla carta) ma si
+   prendono su 44 px, e fra loro c'è più spazio: un tocco sul cuore non banna */
 @media (pointer: coarse) {
-  .dex-actions button { width: 36px; height: 36px; }
+  .dex-actions { gap: var(--sp-4); }
+  .dex-actions button { position: relative; width: 36px; height: 36px; }
+  .dex-actions button::after { content: ''; position: absolute; inset: -4px; }
+  .lists-pager button { width: 44px; height: 44px; }
+  .lists-bar .search-field input, .lists-pick, .lists-expand { height: 44px; }
+  .lists-more { width: 44px; height: 44px; }
+  .dex-order-pick, .dex-head .filters-trigger { height: 44px; }
 }
 
 /*
@@ -984,3 +992,67 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
   .band:not(.collapsed) .grade-badge .grade-area .meter { display: none; }
   .band:not(.collapsed) .grade-badge button.grade-area:not(.grade-roles) { grid-template-columns: minmax(0, 1fr) 24px 10px; }
 }
+
+/* ── Telefono e tablet: al posto dei due box in alto, due pulsanti fissi sotto la barra in alto (restano mentre si
+      scorre il Pokédex): targhetta della lista, conto, le prime icone (dal tablet) e la freccia. Toccandone uno la lista
+      si apre in un foglio come il dettaglio della lista Pokémon (sale dal basso sul telefono, entra da destra sul
+      tablet), con le carte del Pokédex: il cuore e il divieto tolgono o spostano. Col mouse ci si può rilasciare sopra
+      un Pokémon trascinato dal Pokédex ── */
+.lists-tabs, .lists-sheet-back, .lists-sheet-scrim { display: none; }
+@media (max-width: 1099px) {
+  /* Il fondo copre le carte che scorrono sotto, sporgendo di poco ai lati (solo nel margine della colonna: sul tablet
+     orizzontale a sinistra c'è il team, che non va coperto) */
+  .lists-tabs { position: sticky; top: var(--top-h, 0px); z-index: 25; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4);
+    margin-block: calc(-1 * var(--sp-3)); padding-block: var(--sp-3); background: var(--ground); box-shadow: 0 0 0 12px var(--ground); clip-path: inset(0 -12px); }
+  .lists-tab { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-4); min-width: 0; height: 48px; padding: 0 var(--sp-4) 0 0;
+    border: 1px solid var(--line); border-radius: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--raised) 75%, var(--band)), var(--panel));
+    color: var(--text); font: inherit; text-align: left; cursor: pointer; overflow: hidden; transition: border-color 0.15s, background 0.15s; }
+  @media (hover: hover) { .lists-tab:hover { border-color: var(--control-line); } }
+  .lists-tab:active { background: var(--raised); }
+  .lists-tab[aria-expanded='true'] { border-color: var(--k); }
+  .lists-tab.favorites { --k: var(--accent); }
+  .lists-tab.bans { --k: var(--bad); }
+  .lists-tab-plate { display: flex; align-items: center; gap: var(--sp-3); align-self: stretch; padding: 0 22px 0 var(--sp-6); white-space: nowrap;
+    font: italic 800 var(--fs-body)/1 var(--display); color: var(--on-plate); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+  .lists-tab-plate .icon { width: 15px; height: 15px; }
+  .lists-tab.favorites .lists-tab-plate { background: var(--stripes), color-mix(in srgb, var(--accent) 30%, var(--plate)); }
+  .lists-tab.bans .lists-tab-plate { background: var(--stripes), color-mix(in srgb, var(--bad) 28%, var(--plate)); }
+  .lists-tab-count { font: italic 700 var(--fs-title, 20px)/1 var(--display); font-variant-numeric: tabular-nums; }
+  .lists-tab-peek { display: flex; justify-content: flex-end; gap: 0; min-width: 0; overflow: hidden; }
+  .lists-tab-peek .mon-icon { flex: none; image-rendering: pixelated; }
+  .lists-tab.bans .lists-tab-peek .mon-icon { filter: grayscale(0.6); }
+  .lists-tab > .icon { width: 16px; height: 16px; color: var(--muted); }
+  .lists-tab.over { outline: 2px dashed var(--k); outline-offset: -4px; }
+
+  /* Il foglio della lista: le carte grandi della vista espansa, tutte (scorrono), in fondo il conto e il significato */
+  html:has(.lists-sheet) { overflow: hidden; }
+  .lists-sheet.lists-big { position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column; min-height: 0; padding: 52px 0 calc(var(--sp-6) + var(--safe-b, 0px));
+    overflow: auto; overscroll-behavior: contain; background: var(--panel); animation: sheet-up 0.24s var(--ease); }
+  .lists-sheet:focus { outline: none; }
+  .lists-sheet .lbox-head { flex: none; margin-top: var(--sp-6); }
+  .lists-sheet .lbox-note { white-space: normal; }
+  .lists-sheet-note, .lists-sheet-empty { margin: var(--sp-4) var(--sp-7) 0; color: var(--muted); font-size: var(--fs-small); line-height: 1.35; }
+  .lists-sheet-empty { margin-top: var(--sp-10); text-align: center; font-size: var(--fs-section); }
+  .lists-sheet .lists-big-grid { flex: none; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 120px; padding: var(--sp-5) var(--sp-7); }
+  .lists-sheet .dex-card:hover { transform: none; box-shadow: none; }
+  /* Le carte del foglio come quelle del Pokédex: nome alla stessa misura */
+  .lists-sheet .dex-name { font-size: var(--fs-caption); }
+  .lists-sheet-back { position: fixed; z-index: 56; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: var(--sp-3); height: 52px;
+    padding: 0 var(--sp-8); border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: var(--panel); color: var(--accent-ink);
+    font: 600 var(--fs-body) var(--ui); text-align: left; animation: sheet-up 0.24s var(--ease); }
+  .lists-sheet-back .icon { width: 20px; height: 20px; }
+}
+@media (max-width: 599px) { .lists-tab-peek { display: none; } .lists-tab { grid-template-columns: auto auto minmax(0, 1fr) auto; } }
+@media (max-width: 759px) {
+  :is(.lists-sheet, .lists-sheet-back).closing { animation: sheet-down-out 0.22s ease-in both; }
+}
+@media (min-width: 760px) and (max-width: 1099px) {
+  .lists-sheet.lists-big, .lists-sheet-back { left: auto; width: min(620px, 100vw); }
+  .lists-sheet.lists-big { border-left: 1px solid var(--line); box-shadow: -18px 0 44px rgb(0 0 0 / 0.5); animation: sheet-left 0.24s var(--ease); }
+  .lists-sheet-back { animation: sheet-left 0.24s var(--ease); }
+  .lists-sheet .lists-big-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 128px; }
+  .lists-sheet-scrim { position: fixed; inset: 0; z-index: 54; display: block; background: rgb(6 7 12 / 0.6); animation: scrim-in 0.2s ease-out; }
+  :is(.lists-sheet, .lists-sheet-back).closing { animation: sheet-right-out 0.22s ease-in both; }
+  .lists-sheet-scrim.closing { animation: scrim-out 0.22s ease-in both; }
+}
+@media (prefers-reduced-motion: reduce) { .lists-sheet, .lists-sheet-back, .lists-sheet-scrim { animation: none !important; } }

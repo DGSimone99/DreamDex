@@ -9,7 +9,7 @@ import { MoreBelow } from '../MoreBelow';
 import { MovePill } from '../MovePill';
 import { Sprite, TypeChip, typeColor } from '../Sprite';
 import { MetaVersus } from './MetaVersus';
-import { kitTip } from '../MoveTip';
+import { hint, kitTip } from '../MoveTip';
 
 /**
  * La scheda del Pokémon scelto nella scheda Meta: uso e posizione, strumento e abilità più usati con la loro %, le 4
@@ -80,8 +80,8 @@ export function MetaProfileCard({ profile, inTop, onSelect, versus = null, onCov
             {profile.mates.map(mate => (
               <li key={mate}>
                 {inTop(mate)
-                  ? <button type="button" aria-label={mate} title={mate} onClick={() => onSelect(mate)}><Sprite species={mate} size={40} /></button>
-                  : <span title={mate}><Sprite species={mate} size={40} /><span className="visually-hidden">{mate}</span></span>}
+                  ? <button type="button" aria-label={mate} {...hint(mate)} onClick={() => onSelect(mate)}><Sprite species={mate} size={40} /></button>
+                  : <span className="meta-mate-off" {...hint(mate)}><Sprite species={mate} size={40} /><span className="visually-hidden">{mate}</span></span>}
               </li>
             ))}
           </ul>
