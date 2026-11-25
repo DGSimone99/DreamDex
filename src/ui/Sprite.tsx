@@ -110,7 +110,8 @@ export function Sprite({ species, item = '', size = 96, animated = false, shiny 
         width={size}
         height={size}
         style={feetStyle}
-        loading="lazy"
+        // Subito, non "lazy": lo statico pesa ~1 KB, e col caricamento pigro il browser lo chiedeva solo dopo il resto della
+        // pagina (team all'avvio ~720 ms invece di ~240) e nei tooltip solo dopo averli messi al loro posto
         onError={() => setFailed(id)}
       />
       {showAni && (
