@@ -565,6 +565,8 @@ export const it: Record<keyof typeof en, string> = {
   'showdown.quickCopy': "Esporta",
   'showdown.quickCopyTitle': "Copia il team in formato Showdown",
   'showdown.quickCopied': "Team copiato per Showdown",
+  'team.addAlready': "{name} è già nel team",
+  'team.addFull': "Il team è pieno: {name} non è entrato",
   'undo.loaded': "Team caricato dal link",
   'undo.imported': "Team importato",
   'undo.loadedSaved': "Caricato «{name}»",

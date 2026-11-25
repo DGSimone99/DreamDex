@@ -15,7 +15,7 @@ import { exportShowdown, type TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { MetaTab } from './ui/meta/MetaTab';
 import { GradeBadge } from './ui/RatingPanel';
-import { blockedReason } from './engine/legalTeam';
+import { blockedReason, duplicateSpecies } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
 import type { KoFocus } from './ui/AreaDetail';
 import { SavedPlateName, SavedTeams } from './ui/SavedTeams';
@@ -367,15 +367,26 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Proposta di mossa del coach, aperta nell'editor del membro: ogni modifica del team o chiusura dell'editor la toglie
   const [moveProposal, setMoveProposal] = useState<MoveProposal | null>(null);
   const proposalNonce = useRef(0);
+  // Il team più recente, anche fra un clic e il disegno dopo: due aggiunte di fila contano la prima
+  const teamNow = useRef(team);
+  teamNow.current = team;
   const changeTeam = (next: TeamSet[]) => {
     const value = next.slice(0, 6);
+    teamNow.current = value;
     setTeam(value);
     setMoveProposal(null);
     setReplaceIndex(null);
     return value;
   };
+  // La lista dei candidati si ricalcola in sottofondo: finché non è pronta mostra ancora quella del team di prima, col
+  // Pokémon appena aggiunto. Una seconda aggiunta veloce non fa entrare la stessa specie due volte (Species Clause: il
+  // voto si bloccava e la lista restava vuota) né un settimo membro: non passa e un avviso dice perché
   const addSet = (set: TeamSet) => {
-    if (team.length < 6) changeTeam([...team, set]);
+    const current = teamNow.current;
+    const name = battleName(set);
+    if (current.length >= 6) { setDone({ id: ++undoId.current, kind: 'full', name }); return; }
+    if (duplicateSpecies([...current, set], format.formatId).includes(current.length)) { setDone({ id: ++undoId.current, kind: 'already', name }); return; }
+    changeTeam([...current, set]);
   };
   // Rimozioni e sostituzioni si possono annullare per qualche secondo
   // (vale finché il team resta quello lasciato dall'azione: un'altra modifica chiude l'avviso)

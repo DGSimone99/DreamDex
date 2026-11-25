@@ -563,6 +563,8 @@ export const en = {
   'showdown.quickCopy': "Export",
   'showdown.quickCopyTitle': "Copy the team in Showdown format",
   'showdown.quickCopied': "Team copied for Showdown",
+  'team.addAlready': "{name} is already on the team",
+  'team.addFull': "The team is full: {name} was not added",
   'undo.loaded': "Team loaded from the link",
   'undo.imported': "Team imported",
   'undo.loadedSaved': "Loaded “{name}”",

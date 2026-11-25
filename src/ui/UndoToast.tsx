@@ -68,8 +68,13 @@ function useToastTimer(id: number, duration: number, onClose: () => void) {
   };
 }
 
-/** Un lavoro finito da dire con un avviso (senza Annulla): per ora il team copiato per Showdown, col voto del team. */
-export interface DoneNote { id: number; kind: 'exported'; grade?: { grade: string; overall: number } | null }
+/**
+ * Un avviso senza Annulla: il team copiato per Showdown (col voto del team), o un'aggiunta che non è passata perché la
+ * specie è già nel team (`already`) o il team è pieno (`full`), col nome del Pokémon.
+ */
+export type DoneNote =
+  | { id: number; kind: 'exported'; grade?: { grade: string; overall: number } | null }
+  | { id: number; kind: 'already' | 'full'; name: string };
 
 /**
  * Il momento "team pronto": lo stesso avviso di Annulla (al centro, bordo ciano, la barra del tempo), con la spunta verde,
@@ -80,11 +85,11 @@ export function DoneToast({ note, onClose }: { note: DoneNote; onClose: () => vo
   const t = useT();
   const handlers = useToastTimer(note.id, UNDO_MS, onClose);
   return (
-    <div key={note.id} className="undo-toast done-toast" role="status" {...handlers}>
+    <div key={note.id} className={`undo-toast done-toast${note.kind === 'exported' ? '' : ' skipped'}`} role="status" {...handlers}>
       <p className="undo-text">
-        <Icon name="check" />
-        <strong>{t('showdown.quickCopied')}</strong>
-        {note.grade && (
+        <Icon name={note.kind === 'exported' ? 'check' : 'warning'} />
+        <strong>{note.kind === 'exported' ? t('showdown.quickCopied') : t(note.kind === 'full' ? 'team.addFull' : 'team.addAlready', { name: note.name })}</strong>
+        {note.kind === 'exported' && note.grade && (
           <b className={`done-grade grade-${note.grade.grade}`}>
             <span className="visually-hidden">{t('showdown.readyGrade')} </span>{note.grade.grade} {note.grade.overall}
           </b>
