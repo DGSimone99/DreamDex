@@ -46,7 +46,7 @@ describe('copiare il link', () => {
     render(<App data={fixtureData} initialLang="it" />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Garchomp{Enter}');
     await user.click(screen.getByRole('button', { name: 'Copia link' }));
-    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/#t=~[A-Za-z0-9_.~!%-]+$/));
+    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/#t=[A-Za-z0-9_-]+$/));
     expect(await screen.findByText('Link copiato')).toBeInTheDocument();
   });
 });
