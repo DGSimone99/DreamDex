@@ -166,7 +166,7 @@ export function worstOf<T extends WorstHit>(hits: T[], n = 3): T[] {
 
 /**
  * Sotto la barra di Tipi o di Meta, a squadra chiusa: i colpi peggiori come pastiglie, come le mosse dell'Offesa: nel
- * colore del tipo, l'icona del tipo o la sprite della minaccia e il danno ("KO" se lo manda KO in un colpo, colorato
+ * colore del tipo, l'icona del tipo o la sprite della minaccia e il danno ("OHKO" se lo manda KO in un colpo, colorato
  * dalla fascia); passando sopra si apre il nome e compare il tooltip DreamDex col dettaglio del colpo.
  */
 export function WorstHits({ hits }: { hits: WorstHit[] }) {
@@ -181,10 +181,10 @@ export function WorstHits({ hits }: { hits: WorstHit[] }) {
         const name = h.kind === 'type' ? typeName(h.label, lang) : h.label;
         return (
           <span key={h.label} className={`mc wh-${h.band}`} style={{ '--c': h.color ?? 'var(--faint)' } as CSSProperties}
-            data-nav="" role="img" {...tip.bind(h.label)} aria-label={`${name} ${h.pct === null || h.pct >= 100 ? 'KO' : `${h.pct}%`}`}>
+            data-nav="" role="img" {...tip.bind(h.label)} aria-label={`${name} ${h.pct === null || h.pct >= 100 ? 'OHKO' : `${h.pct}%`}`}>
             {h.kind === 'type' ? <img className="ti-sq" style={tileStyle(h.label)} src={typeIconUrl(h.label)} alt="" draggable={false} /> : <span className="wh-mon"><PokemonIcon name={h.label} /></span>}
             <span className="mc-name">{name}</span>
-            <b>{h.pct === null || h.pct >= 100 ? 'KO' : <>{h.pct}<small>%</small></>}</b>
+            <b>{h.pct === null || h.pct >= 100 ? 'OHKO' : <>{h.pct}<small>%</small></>}</b>
           </span>
         );
       })}

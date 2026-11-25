@@ -442,7 +442,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
       // Ogni pastiglia: il nome (si apre passando sopra) e il danno, KO o %
       for (const pill of lists[0].querySelectorAll('.mc')) {
         expect(pill.querySelector('.mc-name')!.textContent).not.toBe('');
-        expect(pill.querySelector('b')).toHaveTextContent(/^(KO|\d+%)$/);
+        expect(pill.querySelector('b')).toHaveTextContent(/^(OHKO|\d+%)$/);
       }
     });
     unmount();

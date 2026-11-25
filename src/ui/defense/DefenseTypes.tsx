@@ -348,11 +348,11 @@ export function DefenseHitTip({ type, species, cell, mult }: { type: string; spe
   );
 }
 
-/** La legenda dei colori di Coverage tipi della Difesa, in alto a destra come nell'Offesa: le quattro soglie del colpo. */
+/** La legenda dei colori di Coverage tipi della Difesa: dalla fascia migliore (4HKO+) alla peggiore (OHKO), come le barre e Coverage meta. */
 function DefenseTypesLegend() {
   return (
     <>
-      {HOLD_ORDER.map(b => <span key={b} className="area-legend-swatch"><i className={HOLD_BANDS[b].cls} />{HOLD_BANDS[b].tag}</span>)}
+      {[...HOLD_ORDER].reverse().map(b => <span key={b} className="area-legend-swatch"><i className={HOLD_BANDS[b].cls} />{HOLD_BANDS[b].tag}</span>)}
     </>
   );
 }
