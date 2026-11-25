@@ -141,8 +141,8 @@ describe('vista di un\'area sulla pagina', () => {
       await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).not.toBeNull());
       expect(document.querySelector('.ftip.area-chip-tip .ftip-go')).toBeNull();
       await user.unhover(chip);
-      // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-      await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
+      // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+      expect(document.querySelector('.ftip:not(.hint)')).toBeNull();
       await user.click(chip);
       expect(onCoaching).not.toHaveBeenCalled();
       unmount();
@@ -234,20 +234,20 @@ describe('vista di un\'area sulla pagina', () => {
 });
 
 describe('problemi delle aree', () => {
-  it('le stesse colonne della mappa del Coaching: le minacce del meta in Difesa e Offesa, le condizioni in Ruoli e Bonus, niente debolezze in comune né regole', () => {
+  it('le stesse colonne della mappa del Coaching: le minacce del meta (scoperte dai due lati) in Difesa e in Offesa, le condizioni in Ruoli e Bonus, niente debolezze in comune né regole', () => {
     const p = (category: CoachProblem['category'], key: string): CoachProblem => ({ severity: 'minor', category, text: key, fixes: [], key });
     const all = [p('defense', 'defense:Fire'), p('meta', 'meta:Zapdos'), p('coverage', 'coverage:Fairy'), p('metaHit', 'metaHit:Toxapex'),
       p('roles', 'roles:important'), p('conditions', 'conditions:pivot'), p('redundancy', 'redundancy:hazards'), p('redundancy', 'redundancy:sharedWeak:Ice'), p('rules', 'rules:ban')];
     const keys = (area: Parameters<typeof problemsOf>[1]) => problemsOf(all, area).map(x => x.key);
     expect(keys('defense')).toEqual(['defense:Fire', 'meta:Zapdos']);
-    expect(keys('strength')).toEqual(['coverage:Fairy', 'metaHit:Toxapex']);
+    expect(keys('strength')).toEqual(['meta:Zapdos', 'coverage:Fairy', 'metaHit:Toxapex']);
     expect(keys('bonusMalus')).toEqual(['roles:important', 'conditions:pivot', 'redundancy:hazards']);
     expect(keys('speed')).toEqual([]);
   });
 
   it('una minaccia del meta nella testata della Difesa: icona e nome del Pokémon, il testo intero nel tooltip', async () => {
     const user = userEvent.setup();
-    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Senza check in difesa contro Zapdos: nessuno regge bene i suoi colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'], usage: 0.118 };
+    const threat: CoachProblem = { severity: 'minor', category: 'meta', text: 'Minaccia scoperta: Zapdos. Nessuno regge bene i suoi colpi e nessuno lo manda KO in due colpi', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'], usage: 0.118 };
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[threat]} />);
     const list = screen.getByRole('list', { name: 'Problemi in Difesa' });
     const chip = list.querySelector<HTMLElement>('.area-chip')!;
@@ -262,7 +262,8 @@ describe('problemi delle aree', () => {
     expect(tip.querySelector('.tip-head .tip-num')).toHaveTextContent(/^11,8%$/);
     expect(tip.querySelector('.tip-head .tip-qual')).toHaveTextContent('nel meta');
     expect(tip).toHaveClass('tip-w-m');
-    expect(tip.querySelector('.thr-tip-why li.open')).toHaveTextContent('Nessuno lo regge bene');
+    // Scoperta dai due lati: le due ragioni, difesa e attacco
+    expect([...tip.querySelectorAll('.thr-tip-why li.open')].map(li => li.textContent)).toEqual(['Difesa Nessuno lo regge bene', 'Offesa Nessuno lo manda KO in due colpi']);
     expect(document.getElementById(chip.getAttribute('aria-describedby')!)).toHaveTextContent(threat.text);
   });
 });

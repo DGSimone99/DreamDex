@@ -15,7 +15,7 @@ export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
   /** Membro rimosso o sostituito (`setChange`: il suo set cambiato per intero nell'editor), o team caricato da un link, importato o preso dai team salvati (`loadSaved`, il nome in `from`). */
-  kind: 'remove' | 'add' | 'replace' | 'paste' | 'setChange' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | ListUndo['kind'] | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
+  kind: 'remove' | 'add' | 'replace' | 'paste' | 'setChange' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | ListUndo['kind'] | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament' | 'plan';
   from: string;
   to?: string;
   /** Completa team: Pokémon aggiunti negli slot vuoti. */
@@ -28,7 +28,7 @@ export interface UndoAction {
  *  intera). Sta al centro dello schermo: dura poco, e passandoci sopra si ferma (scelta dell'utente, 2026-11-14). */
 export const UNDO_MS = 3000;
 export const UNDO_BIG_MS = 6000;
-const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'clearList', 'listReplace', 'savedDelete'];
+const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'plan', 'clearList', 'listReplace', 'savedDelete'];
 export const undoDuration = (kind: UndoAction['kind']) => (BIG.includes(kind) ? UNDO_BIG_MS : UNDO_MS);
 
 /**
@@ -68,8 +68,13 @@ function useToastTimer(id: number, duration: number, onClose: () => void) {
   };
 }
 
-/** Un lavoro finito da dire con un avviso (senza Annulla): per ora il team copiato per Showdown, col voto del team. */
-export interface DoneNote { id: number; kind: 'exported'; grade?: { grade: string; overall: number } | null }
+/**
+ * Un avviso senza Annulla: il team copiato per Showdown (col voto del team), o un'aggiunta che non è passata perché la
+ * specie è già nel team (`already`) o il team è pieno (`full`), col nome del Pokémon.
+ */
+export type DoneNote =
+  | { id: number; kind: 'exported'; grade?: { grade: string; overall: number } | null }
+  | { id: number; kind: 'already' | 'full'; name: string };
 
 /**
  * Il momento "team pronto": lo stesso avviso di Annulla (al centro, bordo ciano, la barra del tempo), con la spunta verde,
@@ -80,11 +85,11 @@ export function DoneToast({ note, onClose }: { note: DoneNote; onClose: () => vo
   const t = useT();
   const handlers = useToastTimer(note.id, UNDO_MS, onClose);
   return (
-    <div key={note.id} className="undo-toast done-toast" role="status" {...handlers}>
+    <div key={note.id} className={`undo-toast done-toast${note.kind === 'exported' ? '' : ' skipped'}`} role="status" {...handlers}>
       <p className="undo-text">
-        <Icon name="check" />
-        <strong>{t('showdown.quickCopied')}</strong>
-        {note.grade && (
+        <Icon name={note.kind === 'exported' ? 'check' : 'warning'} />
+        <strong>{note.kind === 'exported' ? t('showdown.quickCopied') : t(note.kind === 'full' ? 'team.addFull' : 'team.addAlready', { name: note.name })}</strong>
+        {note.kind === 'exported' && note.grade && (
           <b className={`done-grade grade-${note.grade.grade}`}>
             <span className="visually-hidden">{t('showdown.readyGrade')} </span>{note.grade.grade} {note.grade.overall}
           </b>
@@ -146,7 +151,7 @@ export function UndoToast({ action, onUndo, onClose, docked = false }: { action:
     <div
       key={action.id}
       ref={dock}
-      className="undo-toast"
+      className={`undo-toast${action.kind === 'plan' ? ' is-plan' : ''}`}
       role="status"
       {...handlers}
     >
@@ -162,6 +167,7 @@ export function UndoToast({ action, onUndo, onClose, docked = false }: { action:
           : action.kind === 'loadSaved' ? t('undo.loadedSaved', { name: action.from })
           : action.kind === 'clear' ? t('undo.cleared')
           : action.kind === 'tournament' ? t('undo.tournament')
+          : action.kind === 'plan' ? t(action.added === 1 ? 'undo.planOne' : 'undo.plan', { n: action.added ?? 0, from: action.from, to: action.to ?? '' })
           : action.kind === 'presets' && action.created ? t('undo.created', { to: action.to ?? '' })
           : action.kind === 'presets' ? (action.added
             ? t(action.added === 1 ? 'undo.filledOne' : 'undo.filledMany', { n: action.added, from: action.from, to: action.to ?? '' })

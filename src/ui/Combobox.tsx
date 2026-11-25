@@ -60,6 +60,8 @@ interface Props {
   description?: string;
   /** Come mostrare il valore scelto nel campo chiuso (solo con `restricted`). */
   display?: ReactNode;
+  /** Il nome da scrivere per un valore che non è fra le voci (es. una mossa non legale, nella lingua scelta). */
+  valueLabel?: string;
   placeholder?: string;
   disabled?: boolean;
   /** Elemento dentro il campo, a sinistra del testo (es. l'icona dello strumento scelto). */
@@ -85,7 +87,7 @@ interface Props {
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined, descriptionFooter = false, optionTip, invalid }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, searchable = false, description, display, valueLabel, placeholder, disabled, leading, trailing, className, commonLabel, menuMinWidth, menuJoined, descriptionFooter = false, optionTip, invalid }: Props) {
   const t = useT();
   const listId = useId();
   // Si scrive nel campo: sempre senza `restricted`, e con `restricted` se è `searchable`
@@ -173,7 +175,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   }, [listed, ordered, query, up]);
   const shown = up ? matches.slice(-MAX_SHOWN) : matches.slice(0, MAX_SHOWN);
   // Il campo mostra l'etichetta del valore (es. il nome italiano); il valore salvato resta quello della voce
-  const shownValue = options.find(o => o.value === value)?.label ?? value;
+  const shownValue = options.find(o => o.value === value)?.label ?? valueLabel ?? value;
   useLayoutEffect(() => {
     if (!tips || !open || !tipOn || active < 0) { setTipRect(null); return; }
     const item = document.getElementById(`${listId}-${active}`);

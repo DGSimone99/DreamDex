@@ -38,9 +38,9 @@ describe('ridondanze', () => {
 
   it('tre o più membri dello stesso tipo: −1 nel voto e nel coach', () => {
     const team = ['Gholdengo', 'Kingambit', 'Corviknight'].map(n => withMoves(n, []));
-    expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 membri di tipo Steel', points: 1, catalog: 'sameType' }));
+    expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 membri di tipo Steel: le stesse debolezze', points: 1, catalog: 'sameType' }));
     expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems)
-      .toContainEqual(expect.objectContaining({ category: 'redundancy', text: '3 membri di tipo Steel' }));
+      .toContainEqual(expect.objectContaining({ category: 'redundancy', text: '3 membri di tipo Steel: le stesse debolezze' }));
   });
 
   it('team senza ridondanze', () => {

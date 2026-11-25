@@ -4,6 +4,7 @@ import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../en
 import type { CoachFix } from '../engine/coachFixes';
 import type { EngineData } from '../engine/data';
 import type { MoveFix } from '../engine/moveFixes';
+import type { Proposal } from '../engine/coachProposals';
 import type { TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
 import { useT } from '../i18n/react';
@@ -22,7 +23,7 @@ import { PHONE_QUERY, useMediaQuery } from './useMediaQuery';
  * nessuno manda KO; Ruoli e Bonus i ruoli che mancano, le condizioni del tipo di team e i malus del Coaching (le ripetizioni), senza le
  * debolezze in comune (le dice già la Difesa, come nel Coaching). Le regole restano nella Panoramica e nel Coaching.
  */
-const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit'], speed: [], bonusMalus: ['roles', 'conditions', 'redundancy'] };
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense', 'meta'], strength: ['coverage', 'metaHit', 'meta'], speed: [], bonusMalus: ['roles', 'conditions', 'redundancy'] };
 export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? [])
   .filter(p => AREA_PROBLEMS[area].includes(p.category) && !p.key.startsWith('redundancy:sharedWeak:'));
 
@@ -30,7 +31,7 @@ export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) 
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, jump = null, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, onExport, onImproveSets, onCollapseTeam, teamCollapsed = false }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, jump = null, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, onApplyPlan, onExport, onImproveSets, onCollapseTeam, teamCollapsed = false }: {
   /** Team ridotto: la Panoramica usa la densità ampia. */
   teamCollapsed?: boolean;
   /** Riduce il team (dal Riassunto della Panoramica). */
@@ -42,6 +43,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   /** Clic su una proposta del Coaching: il cambio di Pokémon o di mossa si applica subito (annullabile). */
   onApplyFix?: (fix: CoachFix) => void;
   onApplyMove?: (fix: MoveFix) => void;
+  /** Applica il piano del Coaching: tutti i passi insieme, un solo Annulla. */
+  onApplyPlan?: (steps: Proposal[], to: string) => void;
   /** Il Coaching senza problemi: copia il team per Showdown (come Esporta del team); vero se è andata. */
   onExport?: () => Promise<boolean>;
   /** Il Coaching con problemi che nessuna sostituzione risolve: apre Migliora i set. */
@@ -94,7 +97,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   useEffect(() => { if (!showCoaching) setCoachFocus(null); }, [showCoaching]);
   useEffect(() => { if (areaFocus && areaFocus.area !== (area ?? 'overview')) setAreaFocus(null); }, [area]);
   // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
-  const problems = coaching?.problems ?? [];
+  // Come la lista del Coaching: senza le debolezze in comune (le dice già la Difesa)
+  const problems = (coaching?.problems ?? []).filter(p => !p.key.startsWith('redundancy:sharedWeak:'));
   const serious = problems.filter(p => p.severity === 'serious').length;
   const tabView: TabView = area ?? (showCoaching ? 'coaching' : 'overview');
   let body;
@@ -109,9 +113,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
-    body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating}
+    body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} team={team} data={data}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
-      onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} focus={coachFocus}
+      onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} onApplyPlan={onApplyPlan} focus={coachFocus}
       onExport={onExport} onImproveSets={onImproveSets} onOverview={phone ? undefined : () => openView('overview')} />;
   } else {
     body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} advice={advice} data={data}

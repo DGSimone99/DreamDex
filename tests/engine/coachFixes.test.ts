@@ -104,11 +104,13 @@ describe('candidati del Coaching dalla classifica di Sostituisci', () => {
     const level = (team: TeamSet[], type: string) => {
       return teamOffense(team, data).types.rows.find(r => r.label === type)!.level;
     };
-    const keys = problemsOf(three).filter(p => p.category === 'coverage').map(p => p.key);
-    expect(keys.length).toBeGreaterThan(0);
-    const list = fixesThree.flatMap(f => [...f.solves, ...f.reduces].filter(key => keys.includes(key)).map(key => ({ f, type: key.slice('coverage:'.length) })));
+    // Solo i buchi veri sono problemi (2026-11-24): Great Tusk con due Splash lascia Bug scoperto
+    const holed = [six[0], junk('Magikarp'), junk('Sunkern')];
+    const keys = problemsOf(holed).filter(p => p.category === 'coverage').map(p => p.key);
+    expect(keys).toEqual(['coverage:Bug']);
+    const list = fixesOf(holed).flatMap(f => [...f.solves, ...f.reduces].filter(key => keys.includes(key)).map(key => ({ f, type: key.slice('coverage:'.length) })));
     expect(list.length).toBeGreaterThan(0);
-    for (const { f, type } of list) expect(level(withCandidate(three, f.set, f.index), type)).toBeGreaterThan(level(three, type));
+    for (const { f, type } of list) expect(level(withCandidate(holed, f.set, f.index), type)).toBeGreaterThan(level(holed, type));
   });
 
   it('difesa grave che il candidato alza senza risolverla: è fra quelli che la riducono, non fra quelli che la risolvono', () => {

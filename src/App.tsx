@@ -2,6 +2,7 @@ import { startTransition, useCallback, useDeferredValue, useEffect, useLayoutEff
 import { analyzeTeam } from './engine/analysis';
 import { coachTeam, type Coaching } from './engine/coach';
 import type { CoachFix } from './engine/coachFixes';
+import type { Proposal } from './engine/coachProposals';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
@@ -14,7 +15,7 @@ import { exportShowdown, type TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { MetaTab } from './ui/meta/MetaTab';
 import { GradeBadge } from './ui/RatingPanel';
-import { blockedReason } from './engine/legalTeam';
+import { blockedReason, duplicateSpecies } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
 import type { KoFocus } from './ui/AreaDetail';
 import { SavedPlateName, SavedTeams } from './ui/SavedTeams';
@@ -196,7 +197,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Fuori dal telefono; sul telefono decide AutoBand (le sezioni lo vedono sempre grande: lì la pagina scorre)
   // Tablet in orizzontale: il team è la colonna a sinistra, sempre intera (niente fascia da ridurre)
   const tabletSide = useMediaQuery(TABLET_SIDE_QUERY);
-  // Team che si riduce da solo: telefono e tablet piccolo in verticale (fino a 767 px), non col team in colonna
+  // Team che si riduce da solo: telefono, tablet piccolo (fino a 767 px) e tablet in verticale (fino a 1024 px), non col
+  // team in colonna
   const autoBand = useMediaQuery(AUTO_BAND_QUERY) && !tabletSide;
   const phone = useMediaQuery(PHONE_QUERY);
   // Tablet in verticale (team in fascia sopra, non in colonna): in Meta e Liste il team grande spingeva la pagina sotto
@@ -313,6 +315,33 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       remember({ kind: 'add', from: battleName(fix.set) }, after);
     }
   };
+  // Applica il piano del Coaching: i passi uno dopo l'altro, con gli stessi set di Applica su ognuno (sostituzione per
+  // nome, mossa solo se lo slot ha ancora quella di partenza, aggiunta se c'è posto); un solo Annulla riporta il team di
+  // prima di tutto il piano
+  const applyPlan = (steps: Proposal[], to: string) => {
+    let next = team;
+    let done = 0;
+    for (const p of steps) {
+      if (p.kind === 'move') {
+        const fix = p.fix;
+        const index = next.findIndex(set => battleName(set) === fix.member);
+        if (index < 0 || (next[index].moves[fix.slot] ?? '') !== fix.from) continue;
+        const moves = [0, 1, 2, 3].map(i => next[index].moves[i] ?? '');
+        moves[fix.slot] = fix.to;
+        next = next.map((s, i) => (i === index ? { ...s, moves } : s));
+      } else if (p.fix.kind === 'swap') {
+        const index = next.findIndex(set => battleName(set) === p.fix.member);
+        if (index < 0) continue;
+        next = next.map((s, i) => (i === index ? p.fix.set : s));
+      } else if (next.length < 6) {
+        next = [...next, p.fix.set];
+      } else continue;
+      done++;
+    }
+    if (!done) return;
+    const after = changeTeam(next);
+    remember({ kind: 'plan', from: rating ? `${rating.grade} ${rating.overall}` : '—', to, added: done }, after);
+  };
   const analysis = useMemo(() => (booted ? analyzeTeam(team, rated) : null), [booted, team, rated]);
   const rating = useMemo(() => (booted ? rateTeam(team, rated, lang) : null), [booted, team, rated, lang]);
   /** Il voto del team non c'è ancora: si sta calcolando (solo al primo disegno, vedi PAINT_FIRST). */
@@ -325,7 +354,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const coaching = useMemo(() => (booted ? coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang) : COACHING_WAIT), [booted, coachSource]);
 
   // Contatori delle schede: i problemi del coach; sotto Meta l'uso medio del team (la scheda è solo informativa)
-  const problems = coaching.problems;
+  // Le debolezze in comune non sono nella lista del Coaching (le dice già la Difesa): non si contano
+  const problems = coaching.problems.filter(p => !p.key.startsWith('redundancy:sharedWeak:'));
   const metaAverage = metaOn ? metaBoard(data.stats, team).average : null;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
   if (shownTab === 'analysis' && !analysisOpened) setAnalysisOpened(true);
@@ -341,15 +371,26 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Proposta di mossa del coach, aperta nell'editor del membro: ogni modifica del team o chiusura dell'editor la toglie
   const [moveProposal, setMoveProposal] = useState<MoveProposal | null>(null);
   const proposalNonce = useRef(0);
+  // Il team più recente, anche fra un clic e il disegno dopo: due aggiunte di fila contano la prima
+  const teamNow = useRef(team);
+  teamNow.current = team;
   const changeTeam = (next: TeamSet[]) => {
     const value = next.slice(0, 6);
+    teamNow.current = value;
     setTeam(value);
     setMoveProposal(null);
     setReplaceIndex(null);
     return value;
   };
+  // La lista dei candidati si ricalcola in sottofondo: finché non è pronta mostra ancora quella del team di prima, col
+  // Pokémon appena aggiunto. Una seconda aggiunta veloce non fa entrare la stessa specie due volte (Species Clause: il
+  // voto si bloccava e la lista restava vuota) né un settimo membro: non passa e un avviso dice perché
   const addSet = (set: TeamSet) => {
-    if (team.length < 6) changeTeam([...team, set]);
+    const current = teamNow.current;
+    const name = battleName(set);
+    if (current.length >= 6) { setDone({ id: ++undoId.current, kind: 'full', name }); return; }
+    if (duplicateSpecies([...current, set], format.formatId).includes(current.length)) { setDone({ id: ++undoId.current, kind: 'already', name }); return; }
+    changeTeam([...current, set]);
   };
   // Rimozioni e sostituzioni si possono annullare per qualche secondo
   // (vale finché il team resta quello lasciato dall'azione: un'altra modifica chiude l'avviso)
@@ -531,7 +572,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         <TabPanel id="analysis" active={shownTab}>
           {analysisOpened && analysis && <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={setAnalysisView}
             jump={analysisJump}
-            onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onAdd={startAdd}
+            onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} onApplyPlan={applyPlan} onAdd={startAdd}
             onExport={exportTeam} onImproveSets={() => setImproveSignal(n => n + 1)}
             onCollapseTeam={() => { if (!collapsed) toggleCollapsed(); }} teamCollapsed={sectionsCollapsed} />}
         </TabPanel>

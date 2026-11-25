@@ -4,10 +4,10 @@
 
 /* Tooltip DreamDex (FloatTip): pannello nel body, alone nel colore --tc (es. il tipo), fondo sfumato e ombra profonda per
    staccarlo dallo sfondo; testata a strisce con l'icona tonda, punta verso la casella di partenza. Solo a vista: il
-   testo per gli screen reader sta sulla casella. Si lascia raggiungere col mouse (WCAG 1.4.13: resta aperto finché il
-   mouse sta sulla casella o sul tooltip, useFloatAnchor); il fumetto piccolo (.hint) no. */
+   testo per gli screen reader sta sulla casella. Si chiude appena il mouse lascia la casella (useFloatAnchor) e non
+   prende il mouse: passa alla casella sotto, così il tooltip non la copre e non resta aperto (scelta dell'utente, 2026-11-25). */
 .ftip {
-  position: fixed; z-index: 1000; width: var(--tip-m); max-width: calc(100vw - 16px);
+  position: fixed; z-index: 1000; width: var(--tip-m); max-width: calc(100vw - 16px); pointer-events: none;
   color: var(--text); font-size: var(--tip-body); line-height: 1.3;
   background:
     radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tc) 16%, transparent), transparent 70%),
@@ -469,7 +469,6 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
   background: var(--ground); box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); font: 500 var(--fs-caption)/1.35 var(--ui); white-space: pre-line;
   text-wrap: pretty; animation-duration: 0.14s; }
 .ftip.hint::before { display: none; }
-.ftip.hint { pointer-events: none; }
 /* Uno solo alla volta: con un tooltip DreamDex aperto il fumetto piccolo non si vede (anche se si apre per primo) */
 body:has(.ftip:not(.hint)) .ftip.hint { display: none; }
 

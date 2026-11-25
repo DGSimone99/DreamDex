@@ -22,7 +22,7 @@ export interface ProposalGroup {
 }
 
 /** Chi lascia il posto: il membro sostituito (o ritoccato, per una mossa), o un posto libero per un'aggiunta. */
-const seatOf = (p: Proposal) => (p.kind === 'move' ? `move:${p.fix.index}` : p.fix.kind === 'add' ? 'add' : `swap:${p.fix.index}`);
+export const proposalSeat = (p: Proposal) => (p.kind === 'move' ? `move:${p.fix.index}` : p.fix.kind === 'add' ? 'add' : `swap:${p.fix.index}`);
 
 /**
  * Le proposte del Coaching come righe, dalla più utile (+N più alto).
@@ -65,7 +65,7 @@ export function proposalGroups(problems: CoachProblem[], advice: Pick<CoachAdvic
   const groups = new Map<string, { id: string; lead: string | null; items: { p: Proposal; i: number }[] }>();
   all.forEach((p, i) => {
     const lead = leadOf(p.fix.solves);
-    const id = `${seatOf(p)}|${lead ?? ''}`;
+    const id = `${proposalSeat(p)}|${lead ?? ''}`;
     let group = groups.get(id);
     if (!group) groups.set(id, (group = { id, lead, items: [] }));
     group.items.push({ p, i });
@@ -90,6 +90,23 @@ export function proposalGroups(problems: CoachProblem[], advice: Pick<CoachAdvic
     const [first, ...rest] = g.items;
     return { id: g.id, lead: g.lead, options: [first, ...rest.sort((a, b) => better(a.p, b.p) || a.i - b.i)].slice(0, MAX_ALTERNATIVES + 1).map(x => x.p) };
   });
+}
+
+/**
+ * Le proposte che non alzano il voto (±0 o meno) non hanno una riga loro: vanno fra le alternative della prima riga che
+ * alza il voto e risolve il loro problema principale (scelta di Simone, 2026-11-23). Senza una riga così restano in coda
+ * alla lista (sono l'unico modo di risolvere quel problema con un cambio solo).
+ */
+export function neutralAsAlternatives(groups: ProposalGroup[]): ProposalGroup[] {
+  const up = groups.filter(g => g.options[0].fix.gain > 0).map(g => ({ ...g, options: [...g.options] }));
+  const left: ProposalGroup[] = [];
+  for (const g of groups) {
+    if (g.options[0].fix.gain > 0) continue;
+    const host = g.lead ? up.find(h => h.options[0].fix.solves.includes(g.lead!)) : undefined;
+    if (host) host.options.push(...g.options.slice(0, Math.max(0, MAX_ALTERNATIVES + 1 - host.options.length)));
+    else left.push(g);
+  }
+  return [...up, ...left];
 }
 
 /** I problemi che almeno una proposta del Coaching risolve (le pillole delle aree sono link solo per loro). */
