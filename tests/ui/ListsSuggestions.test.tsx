@@ -49,10 +49,19 @@ describe('liste nella scheda Pokémon', () => {
     const user = await setup(storage, 'Great Tusk');
     await waitFor(() => expect(rowNames().length).toBeGreaterThan(1));
     expect(rowNames()).not.toContain(first);
-    const hidden = within(suggestions()).getByText(/1 Pokémon nascost[oi] dalla tua lista Ban/);
-    await user.click(within(hidden.closest('p')!).getByRole('button', { name: 'mostra' }));
+    // Il pulsante ⊘ nella fascia "Candidati": li mostra e resta acceso, ripremuto li nasconde di nuovo
+    const pill = within(suggestions()).getByRole('button', { name: '1 Pokémon nascosto dalla tua lista Ban. Clicca per mostrarlo' });
+    expect(pill).toHaveAttribute('aria-pressed', 'false');
+    expect(pill).toHaveTextContent('1');
+    await user.click(pill);
     await waitFor(() => expect(rowNames()).toContain(first));
     expect(within(suggestions()).getAllByLabelText('Nella tua lista Ban').length).toBeGreaterThan(0);
+    const shown = within(suggestions()).getByRole('button', { name: '1 Pokémon della tua lista Ban in vista. Clicca per nasconderlo' });
+    expect(shown).toHaveAttribute('aria-pressed', 'true');
+    await user.click(shown);
+    await waitFor(() => expect(rowNames()).not.toContain(first));
+    await user.click(within(suggestions()).getByRole('button', { name: /nascosto dalla tua lista Ban/ }));
+    await waitFor(() => expect(rowNames()).toContain(first));
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Gholdengo{Enter}');
     await waitFor(() => expect(rowNames()).not.toContain(first));
   });
@@ -66,7 +75,7 @@ describe('liste nella scheda Pokémon', () => {
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kingambit');
     await waitFor(() => expect(rowNames()).toEqual(['Kingambit']));
     expect(within(suggestions()).getAllByLabelText('Nella tua lista Ban').length).toBeGreaterThan(0);
-    expect(within(suggestions()).queryByText(/nascost[oi] dalla tua lista Ban/)).toBeNull();
+    expect(within(suggestions()).queryByRole('button', { name: /dalla tua lista Ban/ })).toBeNull();
   });
 
   it('un preferito quasi alla pari passa davanti e ha il cuore', async () => {
@@ -109,9 +118,9 @@ describe('liste: nascosti anche negli scambi', () => {
     const { storage } = withLists(bans('Kingambit'));
     const user = await setup(storage, 'Great Tusk', 'Gholdengo');
     await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
-    expect(await within(suggestions()).findByText(/1 Pokémon nascost[oi] dalla tua lista Ban/)).toBeInTheDocument();
+    expect(await within(suggestions()).findByRole('button', { name: /^1 Pokémon nascosto dalla tua lista Ban/ })).toBeInTheDocument();
     await user.click(within(suggestions()).getByRole('button', { name: /^Chi sostituire/ }));
     await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci Gholdengo' }));
-    expect(await within(suggestions()).findByText(/1 Pokémon nascost[oi] dalla tua lista Ban/)).toBeInTheDocument();
+    expect(await within(suggestions()).findByRole('button', { name: /^1 Pokémon nascosto dalla tua lista Ban/ })).toBeInTheDocument();
   });
 });

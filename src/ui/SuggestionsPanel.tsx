@@ -152,6 +152,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   // Bannati dall'utente: fuori dalla lista, tranne quello cercato col nome esatto e, con "mostra", tutti
   const [revealed, setRevealed] = useState(false);
+  // Quanti erano nascosti quando si sono mostrati: il pulsante ⊘ resta acceso con quel numero e li rinasconde
+  const [revealedCount, setRevealedCount] = useState(0);
   useEffect(() => setRevealed(false), [team, format.formatId]);
   const exactQuery = getSpecies(applied.query.trim())?.name ?? null;
   const ranking = useMemo(() => {
@@ -262,7 +264,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // si toglie il suggerimento del doppio clic (1 = tutto, 0 = senza suggerimento)
   const headRef = useRef<HTMLDivElement>(null);
   const pickerListRef = useRef<HTMLDivElement>(null);
-  const headFit = useFitCount(headRef, 1, `${lang}|${view}|${pages}`, pickerListRef, true);
+  const headFit = useFitCount(headRef, 1, `${lang}|${view}|${pages}|${hiddenCount > 0 || revealed}`, pickerListRef, true);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;
   const fallback = fresh ? items[0] : undefined;
   const pickedIndex = !fresh ? -1
@@ -456,12 +458,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         {setterNote && <p className="note">{setterNote}</p>}
         {typeEmpty}
         {/* Il numero dei risultati si vede una volta sola, nella fascia "Candidati (N)"; qui solo per i lettori di schermo */}
-        {hiddenCount > 0 && (
-          <p className="note hidden-note">
-            {tr(hiddenCount === 1 ? 'lists.hiddenOne' : 'lists.hidden', { n: hiddenCount })}{' '}
-            <button type="button" className="link" onClick={() => setRevealed(true)}>{tr('lists.show')}</button>
-          </p>
-        )}
       </>
     );
     body = (
@@ -517,6 +513,19 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     </nav>
   );
 
+  // Bannati nascosti: un pulsante ⊘ col numero nella fascia "Candidati (N)" (una riga sopra la lista spostava tutto);
+  // il fumetto dice cosa fa: premuto li mostra e resta acceso, ripremuto li nasconde di nuovo
+  const banCount = revealed ? revealedCount : hiddenCount;
+  const banLabel = banCount > 0
+    ? tr(revealed ? (banCount === 1 ? 'lists.shownOne' : 'lists.shown') : (banCount === 1 ? 'lists.hiddenOne' : 'lists.hidden'), { n: banCount })
+    : '';
+  const banPill = banCount > 0 && (
+    <button type="button" className="ban-pill" aria-pressed={revealed} aria-label={banLabel} {...hint(banLabel)}
+      onClick={() => { if (!revealed) setRevealedCount(hiddenCount); setRevealed(!revealed); }}>
+      <Icon name="ban" /><span aria-hidden="true">{banCount}</span>
+    </button>
+  );
+
   return (
     <section aria-label={tr('suggest.title')} className="suggestions-panel">
       <div className="toolbar">
@@ -538,6 +547,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
               <SymbolLegend />
               {headFit > 0 && <span className="dbl-hint" {...hint(tr('suggest.keyHint'))}>{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
+              {banPill}
               {pager}
             </div>
           )}

@@ -169,6 +169,13 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
 /* La pagina come numero, "3/9", a ogni misura (scelta dell'utente: niente trattini) */
+/* Bannati nascosti: ⊘ e numero, a destra prima del pager, come i suoi pulsanti; acceso (ciano) quando sono in vista */
+.list-head .ban-pill { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--pager-h); padding: 0 var(--sp-3);
+  border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); font: 600 var(--fs-small)/1 var(--ui); font-variant-numeric: tabular-nums; }
+.list-head .ban-pill .icon { width: 14px; height: 14px; }
+.list-head .ban-pill:hover { color: var(--text); border-color: var(--accent); }
+.list-head .ban-pill[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.list-head .ban-pill + .pager { margin-left: 0; }
 .pager-count { min-width: 34px; padding: 0 var(--sp-1); font: 600 var(--fs-small)/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--text); text-align: center; white-space: nowrap; }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
@@ -219,7 +226,6 @@ kbd { font: 600 var(--fs-label)/1 var(--ui); padding: var(--sp-1) var(--sp-3); b
 .list-mark { font-size: var(--fs-section); line-height: 1; }
 .list-mark.fav { color: var(--accent); }
 .list-mark.ban { color: var(--bad); }
-.hidden-note .link { padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; font: inherit; }
 /* Bannati dall'utente esclusi da proposte e sostituzioni */
 .banned-note { margin: var(--sp-3) 0 0; font-size: var(--fs-small); color: var(--muted); }
 /* Come un pulsante (angoli alternati di Champions, stesso bordo e peso di Copia set) */
