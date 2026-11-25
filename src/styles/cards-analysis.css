@@ -135,10 +135,6 @@
    o due colpi); il filo in fondo dice quanti la coprono (rosso nessuno, giallo uno). "Altre N" aggiunge carte ── */
 .cm-cards-frame { display: flex; flex-direction: column; gap: var(--sp-6); }
 .cm-cards-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); margin: 0; padding: 0; }
-/* Telefono e tablet: Ordine a sinistra e Solo superefficaci a destra sulla stessa riga (44 px col dito), sotto la legenda */
-.cm-cards-bar > .cm-order { flex: 0 1 auto; }
-.cm-bar-switch { display: flex; margin-left: auto; }
-.cm-bar-switch .eff-switch { min-height: 44px; }
 .cm-card { --stage-top: 30px; --stage-h: 64px; --sprite-w: 72px; min-height: 182px; }
 .cm-card .og-card-open { min-height: 128px; }
 .cm-card .og-card-open::before { height: 136px; }
@@ -167,14 +163,13 @@
    carte. Sprite piccola a sinistra, in piedi sul fondo della riga (i piedi dalla tabella di spriteFeet.ts, così chi è alto
    non si taglia in cima) sul colore del primo tipo che sfuma; in alto #N, nome e tipi; sotto la barra dei 6 (solo da
    leggere) col conto n/6 nel colore della minaccia; il filo in fondo come oggi. Tutta la riga apre il foglio.
-   In cima: Ordine a sinistra e Solo superefficaci a destra sulla stessa riga, sotto la legenda ── */
+   In cima Solo superefficaci (come in Coverage tipi), poi il blocco del team e la legenda ── */
 @media (max-width: 599px) {
   /* L'interruttore da solo in cima al pannello (Coverage tipi, Velocità): sale nel margine del pannello, niente riga vuota
      sopra (resta alto 44 px col dito) */
   .area-panel > .panel-switch { margin-top: calc(-1 * var(--sp-6)); margin-bottom: 0; }
   .cm-cards-frame { gap: var(--sp-5); }
   .cm-cards-bar { column-gap: var(--sp-4); row-gap: var(--sp-2); }
-  .cm-cards-bar > .cm-order .segmented button { padding: 0 var(--sp-6); }
   .cm-cards-bar .cards-legend { column-gap: var(--sp-4); }
   .cm-cards-bar .cards-legend > .cards-legend-keys { column-gap: var(--sp-4); }
   .cm-cards-bar .cards-legend i { width: 12px; }

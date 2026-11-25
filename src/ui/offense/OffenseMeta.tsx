@@ -20,9 +20,9 @@ import { TypeHitTip } from './TypeHitTip';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { TARGET_SCAN } from '../../engine/coverage';
-import { MetaCount, MetaFrame, MetaOrderSwitch, type MetaOrder } from '../MetaFrame';
+import { MetaCount, MetaFrame } from '../MetaFrame';
 import { byThreat, byUsage } from '../../engine/overviewDashboard';
-import { EffLegend, EffTag, effClass, effLabel, useColumnHover, EffSwitch } from '../effTag';
+import { EffLegend, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 import { FocusNote, inBand, koBandOf } from './KoBadges';
 
 /** Telefono: quante minacce si vedono all'inizio e quante ne aggiunge "Altre". */
@@ -68,8 +68,8 @@ const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 
 /**
  * Coverage meta dell'Offesa: i membri in riga (nello stesso punto delle altre schede), i Pokémon del meta in colonna,
- * 8 per pagina nell'ordine scelto sulla riga della legenda: Minaccia (prima chi nessuno manda KO in due colpi, poi chi uno
- * solo, poi gli altri, dentro il più usato: la regola della Panoramica) o Uso (il più usato). In ogni casella il danno % del colpo semplice (senza
+ * 8 per pagina, prima i meno coperti: prima chi nessuno manda KO in due colpi, poi chi uno
+ * solo, poi gli altri, dentro il più usato (la regola della Panoramica). In ogni casella il danno % del colpo semplice (senza
  * Tera, Z e setup) colorato per soglia, con "setup N%" quando la danza cambia soglia; in fondo "Lo coprono" conta chi
  * lo manda KO in due colpi. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra, al posto di "Pokémon";
  * in alto a destra la legenda dei colori, in fondo la riga Team Coverage (Lo coprono, la barra del team cliccabile). Sulla casella il tooltip DreamDex (minaccia, colpi, mossa, setup);
@@ -85,7 +85,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const phone = useMediaQuery(FLIP_TABLES_QUERY);
   // Telefono e tablet: le minacce come carte Pedana (due, tre o quattro per riga); la carta apre il foglio coi 6 membri
   const cards = useMediaQuery(FLIP_TABLES_QUERY);
-  // Telefono (sotto i 600 px): le minacce come righe basse e l'interruttore sulla riga di Ordine
+  // Telefono (sotto i 600 px): le minacce come righe basse
   const [shownCards, setShownCards] = useState(CARDS_STEP);
   const [sheet, setSheet] = useState<string | null>(null);
   const tip = useFloatAnchor<{ species: string; m: number }>();
@@ -105,10 +105,9 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   const threat = ctx.focus?.kind === 'threat' && ctx.focus.side === 'offense' ? ctx.focus.species : null;
   // Da una pillola della testata, sulle carte: si apre anche il foglio della minaccia
   useEffect(() => { if (cards && ctx.focus?.kind === 'threat' && ctx.focus.side === 'offense' && ctx.focus.open) setSheet(ctx.focus.species); }, [ctx.focus]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Ordine scelto: Minaccia (prima chi nessuno manda KO in due colpi, poi chi uno solo, come la Panoramica) o Uso
-  const [order, setOrder] = useState<MetaOrder>('threat');
+  // Prima i meno coperti: chi nessuno manda KO in due colpi, poi chi uno solo (come la Panoramica)
   const all = offense.coverageMeta?.rows ?? [];
-  const sorted = order === 'usage' ? byUsage(all) : byThreat(all, coveredCount);
+  const sorted = byThreat(all, coveredCount);
   const rows = focus ? [...sorted.filter(lit), ...sorted.filter(r => !lit(r))]
     : threat ? [...sorted.filter(r => r.species === threat), ...sorted.filter(r => r.species !== threat)] : sorted;
   const covered = rows.filter(r => r.level > 0).length;
@@ -267,7 +266,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
       </div>
       {tipCell(shown)}
       {card.tip}
-      <div className="rob-legend cm-foot"><MetaOrderSwitch order={order} onChange={setOrder} />{focus
+      <div className="rob-legend cm-foot">{focus
         ? <FocusNote name={battleSpecies(ctx.team[focus.slot])?.name ?? ctx.team[focus.slot]?.species ?? ''} band={focus.band} onClear={ctx.clearFocus} />
         : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
         : <span className="area-legend" aria-hidden="true"><span className="dmg-legend">{t('common.pctDmg')}</span><OffenseMetaLegend /></span>}</div>
@@ -294,10 +293,8 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
             {/* Perché sono meno delle minacce della Difesa: dei più usati, una per coppia di tipi (sulla stessa riga se ci sta) */}
             <span className="og-hero-note">{t('guide.off.targets.metaSubOff', { top: TARGET_SCAN })}</span></p>
         </section>
-        <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />
-          {/* Telefono e tablet: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga in più) */}
-          {ctx.setEffOnly && <span className="cm-bar-switch"><EffSwitch side="offense" on={!!ctx.effOnly} onChange={ctx.setEffOnly} /></span>}
-          {focus
+        {/* Telefono e tablet: solo la legenda ("Solo superefficaci" sta in cima al pannello, come in Coverage tipi) */}
+        <div className="rob-legend cm-foot cm-cards-bar">{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band={focus.band} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
           : <CardsLegend text={t('odetail.cards.threatBar')} pieces={[['ohko', 'OHKO'], ['two', '2HKO']]} />}</div>
@@ -359,7 +356,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     );
   }
 
-  return <MetaFrame rows={rows} summary={summary} body={body} resetKey={order}
+  return <MetaFrame rows={rows} summary={summary} body={body}
     labels={{ pages: t('odetail.cm.pages'), prev: t('odetail.cm.prev'), next: t('odetail.cm.next'), page: (from, to) => t('odetail.cm.page', { from, to }) }} />;
 }
 

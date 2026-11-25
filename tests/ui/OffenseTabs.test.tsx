@@ -667,7 +667,7 @@ describe('Offesa: Coverage meta', () => {
     const rating = rateTeam(t, fixtureData, 'it')!;
     renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    // Ordine Minaccia (quello di partenza), la regola della Panoramica: prima chi nessuno manda KO in due colpi, poi chi uno
+    // L'ordine di Coverage meta (uno solo), la regola della Panoramica: prima chi nessuno manda KO in due colpi, poi chi uno
     // solo, poi gli altri; dentro, il più usato
     const n = (r: { cells: { pct: number }[] | null }) => Math.min(2, (r.cells ?? []).filter(c => c.pct >= 50).length);
     const sorted = [...rating.offense.coverageMeta!.rows].sort((a, b) => n(a) - n(b) || b.weight - a.weight || a.species.localeCompare(b.species));

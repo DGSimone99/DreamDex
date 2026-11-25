@@ -16,7 +16,7 @@ import { fixtureData } from '../fixtures/data';
 import { visibleText } from '../helpers/visibleText';
 import { renderIt } from '../helpers/italian';
 
-/** Ordine Minaccia di Coverage meta (quello di partenza), la regola della Panoramica: prima le minacce che nessuno regge del
+/** L'ordine di Coverage meta (uno solo), la regola della Panoramica: prima le minacce che nessuno regge del
  *  tutto, poi quelle che regge uno solo, poi le altre; dentro, la più usata. */
 const threatOrder = <R extends { species: string; weight: number; heldBy: { partial: boolean }[] }>(rows: R[]) => {
   const n = (r: R) => Math.min(2, r.heldBy.filter(h => !h.partial).length);
@@ -322,8 +322,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
     // La legenda corta (KO e le tre fasce col loro %, come Coverage tipi), niente conteggi
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toBeNull();
-    // Prima l'ordine (Uso · Minaccia), poi la legenda
-    expect(document.querySelector('.def-frame > .rob-legend > .cm-order:first-child')).toHaveTextContent('OrdineUsoMinaccia');
+    // Niente scelta dell'ordine: sulla riga solo la legenda
+    expect(screen.queryByRole('group', { name: 'Ordine' })).toBeNull();
     expect(document.querySelector('.def-frame > .rob-legend > .area-legend')).toHaveTextContent('Il % è il danno4HKO+ (sotto il 33%)3HKO (33–49%)2HKO (50–99%)OHKO');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));

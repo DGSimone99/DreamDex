@@ -22,7 +22,7 @@ import { MoveLine } from '../dashboard/CoverageTip';
 import { FloatTip, keyboardFocus, useFloatAnchor } from '../FloatTip';
 import { GRID_CELLS, useRoving } from '../useRoving';
 import { useMemberTip } from '../MemberCard';
-import { MetaFrame, MetaOrderSwitch, type MetaOrder } from '../MetaFrame';
+import { MetaFrame } from '../MetaFrame';
 import { byThreat, byUsage } from '../../engine/overviewDashboard';
 import { HpLeft, HpLegend } from '../offense/OffenseMeta';
 import { PokemonIcon } from '../PokemonName';
@@ -32,7 +32,7 @@ import { KO_TAG, KoBadge } from '../KoBadge';
 import { TipDmg, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import type { DmgRange } from '../dmgText';
 import { MemberMon } from './MemberMon';
-import { EffLegend, EffTag, effClass, effLabel, effWord, useColumnHover, EffSwitch } from '../effTag';
+import { EffLegend, EffTag, effClass, effLabel, effWord, useColumnHover } from '../effTag';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 type Holder = Row['heldBy'][number];
@@ -64,9 +64,9 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
 
 /**
  * Coverage meta della Difesa, con la grafica di quella dell'Offesa: i membri in riga (nello stesso punto delle altre
- * schede), le minacce del meta in colonna, 8 per pagina nell'ordine scelto sulla riga della legenda: Minaccia (prima quelle
- * che nessuno regge del tutto, poi quelle che regge uno solo, poi le altre, dentro la più usata: la regola della
- * Panoramica) o Uso (la più usata). In ogni casella
+ * schede), le minacce del meta in colonna, 8 per pagina, prima le meno coperte: prima quelle
+ * che nessuno regge del tutto, poi quelle che regge uno solo, poi le altre, dentro la più usata (la regola della
+ * Panoramica). In ogni casella
  * il danno che il membro prende dal colpo migliore della minaccia (corsivo, "%" piccolo) con la barra dei PS che gli
  * restano, coi colori di Coverage tipi (4HKO+ sotto un terzo dei PS, 3HKO sotto la metà, 2HKO); il timbro KO se va KO in un colpo. Sulla casella il
  * tooltip DreamDex (minaccia, membro, mossa, efficacia, danno); sulla sprite in testata la carta del Pokémon col suo set
@@ -80,7 +80,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const lang = useLang();
   const hover = useColumnHover();
   const narrow = useMediaQuery(FLIP_TABLES_QUERY);
-  // Telefono (sotto i 600 px): le minacce come righe basse e l'interruttore sulla riga di Ordine
+  // Telefono (sotto i 600 px): le minacce come righe basse
   // Telefono e tablet: le minacce come carte, come nell'Offesa; la carta apre il foglio coi colpi su ogni membro
   const [shownCards, setShownCards] = useState(CARDS_STEP);
   const [sheet, setSheet] = useState<string | null>(null);
@@ -103,10 +103,9 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   useEffect(() => { if (narrow && ctx.focus?.kind === 'threat' && ctx.focus.side === 'defense' && ctx.focus.open) setSheet(ctx.focus.species); }, [ctx.focus]); // eslint-disable-line react-hooks/exhaustive-deps
   // Quanti membri la reggono del tutto (la regola della Panoramica e del Coaching, il numero della riga Team Coverage)
   const held = (row: Row) => row.heldBy.filter(h => !h.partial).length;
-  // Ordine scelto: Minaccia (prima quelle che nessuno regge, poi quelle che regge uno solo, come la Panoramica) o Uso
-  const [order, setOrder] = useState<MetaOrder>('threat');
+  // Prima le meno coperte: quelle che nessuno regge, poi quelle che regge uno solo (come la Panoramica)
   const all = defense.coverageMeta?.rows ?? [];
-  const sorted = order === 'usage' ? byUsage(all) : byThreat(all, held);
+  const sorted = byThreat(all, held);
   // Per i lettori di schermo, prima della tabella: le minacce che nessuno regge (di tutte le pagine)
   const summaryId = useId();
   const open = sorted.filter(r => held(r) === 0).map(r => r.species);
@@ -247,7 +246,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
         </div>
         {tipCell(shown)}
         {card.tip}
-        <div className="rob-legend cm-foot"><MetaOrderSwitch order={order} onChange={setOrder} />{focus
+        <div className="rob-legend cm-foot">{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
           : <span className="area-legend" aria-hidden="true"><span className="dmg-legend">{t('common.pctDmg')}</span><DefenseMetaLegend /></span>}</div>
@@ -272,10 +271,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             {/* Quali sono: dei 40 più usati, quelli che attaccano (come la riga dell'Offesa; sulla stessa riga se ci sta) */}
             <span className="og-hero-note">{t('guide.off.targets.metaSub', { top: THREATS })}</span></p>
         </section>
-        <div className="rob-legend cm-foot cm-cards-bar"><MetaOrderSwitch order={order} onChange={o => { setOrder(o); setShownCards(CARDS_STEP); }} />
-          {/* Telefono e tablet: "Solo superefficaci" sulla riga di Ordine, a destra (in cima al pannello lascerebbe una riga in più) */}
-          {ctx.setEffOnly && <span className="cm-bar-switch"><EffSwitch side="defense" on={!!ctx.effOnly} onChange={ctx.setEffOnly} /></span>}
-          {focus
+        {/* Telefono e tablet: solo la legenda ("Solo superefficaci" sta in cima al pannello, come in Coverage tipi) */}
+        <div className="rob-legend cm-foot cm-cards-bar">{focus
           ? <FocusNote name={names[focus.slot] ?? ''} band="two" text={t(`hold.focus.${focus.band}`, { name: names[focus.slot] ?? '' })} onClear={ctx.clearFocus} />
           : threat ? <FocusNote name={threat} band="two" text={t('kob.focusThreat', { name: threat })} onClear={ctx.clearFocus} />
           : <CardsLegend side="def" text={t('ddetail.cards.threatBar')} pieces={HOLD_LEGEND} />}</div>
@@ -330,7 +327,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     );
   }
 
-  return <MetaFrame rows={rows} summary={null} body={body} resetKey={order}
+  return <MetaFrame rows={rows} summary={null} body={body}
     labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
 }
 

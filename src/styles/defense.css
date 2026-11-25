@@ -223,12 +223,6 @@
 .ad-panel .def-frame > .rob-legend { position: absolute; top: 0; left: 0; right: 0; height: var(--def-legend); margin: 0; padding: 0;
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: var(--legend-gap); white-space: nowrap; line-height: 1.1; }
 .ad-panel .def-frame > .rob-legend > .area-legend { order: 2; }
-/* Coverage meta: l'ordine delle colonne (Uso · Minaccia), a sinistra sulla riga della legenda dopo l'interruttore
-   dell'efficacia; piccolo come la legenda (alto quanto la riga), la scelta in ciano come le altre .segmented */
-.cm-order { display: inline-flex; align-items: center; gap: var(--sp-3); order: -1; margin-right: auto; }
-.cm-order-label { font-size: var(--legend-size); color: var(--legend-ink); }
-.cm-order .segmented { height: 20px; }
-.cm-order .segmented button { flex: none; padding: 0 9px; font-size: var(--fs-caption); line-height: 18px; }
 .ad-panel .def-frame > .rob-legend .cm-summary { margin: 0; }
 .ad-panel .ht-notes { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; cursor: help; }
 .ad-panel .cm-summary { display: inline-flex; align-items: center; gap: var(--sp-3); margin: 0 0 0 auto; }

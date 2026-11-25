@@ -14,7 +14,6 @@ import { Icon } from './icons';
 import { CoachLink } from './CoachLink';
 import { isThreat, MoreProblems, problemEntries, ProblemChip, type ProblemEntry } from './ProblemPill';
 import { useFitCount } from './useFit';
-import { FLIP_TABLES_QUERY, useMediaQuery } from './useMediaQuery';
 
 /** La scelta dell'interruttore Trick Room nella sessione del browser ("0" spento); senza scelta, o senza memoria, acceso. */
 const ROOM_KEY = 'dreamdex.speedTrickRoom';
@@ -88,8 +87,6 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Interruttore Trick Room della Velocità (solo con Trick Room nel team): acceso all'inizio, poi resta com'è stato messo
   // per la sessione, anche cambiando area (la vista si rimonta a ogni area: la scelta sta nella sessione del browser)
   const [trickRoom, setTrickRoomState] = useState(readRoomPick);
-  // Telefono e tablet (a carte): in Coverage meta l'interruttore dell'efficacia sta sulla riga di Ordine (lo disegna la sottoscheda)
-  const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const setTrickRoom = (on: boolean) => { setTrickRoomState(on); writeRoomPick(on); };
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
   const [guide, setGuide] = useState<string | null>(null);
@@ -100,7 +97,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const subjectKeys = new Map(problems.filter(p => isThreat(p) || p.category === 'defense' || p.category === 'coverage')
     .flatMap(p => (p.subjects ?? []).map(subject => [subject, p.key] as const)));
   const coach = onCoaching ? { keyOf: (subject: string) => subjectKeys.get(subject), go: onCoaching } : undefined;
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], setEffOnly: on => setEffOnly(s => ({ ...s, [area]: on })), trickRoom, guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null), coach });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], trickRoom, guide: openGuide, focus, openFocus, clearFocus: () => setFocus(null), coach });
   // Dove porta una pillola della testata: una minaccia del meta a Coverage meta (la sua colonna accesa, sulle carte il
   // suo foglio), un tipo a Coverage tipi; il resto (Ruoli e Bonus) da nessuna parte (null)
   const jumpOf = (p: CoachProblem): Jump | null => {
@@ -215,8 +212,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`}
         aria-labelledby={single ? undefined : `${id}-${current.key}`} aria-label={single ? title : undefined}>
         {/* L'interruttore dell'efficacia, in alto a sinistra sulla riga della legenda, solo sulle sottoschede con l'etichetta
-            nelle caselle; a carte (telefono e tablet) Coverage meta lo ha sulla riga di Ordine */}
-        {current.effSide && !(cards && current.key === 'coverageMeta') && (
+            nelle caselle (a carte, telefono e tablet, in cima al pannello in ogni sottoscheda) */}
+        {current.effSide && (
           <span className="panel-switch">
             <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
           </span>

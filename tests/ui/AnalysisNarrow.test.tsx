@@ -63,10 +63,10 @@ describe('Offesa sullo schermo stretto', () => {
     view();
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const list = screen.getByRole('list', { name: 'Coverage meta' });
-    // Telefono: "Solo superefficaci" sulla riga di Ordine, una volta sola (non anche in cima al pannello)
+    // Telefono: "Solo superefficaci" in cima al pannello come in Coverage tipi, una volta sola; niente scelta dell'ordine
     const effSwitch = screen.getByRole('switch', { name: 'Solo superefficaci' });
-    expect(effSwitch.closest('.cm-cards-bar')).not.toBeNull();
-    expect(screen.getByRole('group', { name: 'Ordine' }).closest('.cm-cards-bar')).toBe(effSwitch.closest('.cm-cards-bar'));
+    expect(effSwitch.closest('.area-panel > .panel-switch')).not.toBeNull();
+    expect(screen.queryByRole('group', { name: 'Ordine' })).toBeNull();
     await user.click(effSwitch);
     expect(screen.getByRole('switch', { name: 'Solo superefficaci' })).toHaveAttribute('aria-checked', 'true');
     await user.click(screen.getByRole('switch', { name: 'Solo superefficaci' }));
@@ -150,21 +150,22 @@ describe('Offesa sullo schermo stretto', () => {
   });
 });
 
-// Tablet (600–1099 px, sempre a carte): in Coverage meta "Solo superefficaci" sta sulla riga di Ordine come sul telefono
+// Tablet (600–1099 px, sempre a carte): in Coverage meta "Solo superefficaci" sta in cima al pannello come in Coverage tipi
 describe('Coverage meta sul tablet', () => {
   beforeEach(() => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(max-width: 1099px)', media: query, addEventListener() {}, removeEventListener() {} }));
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('Offesa e Difesa: l\'interruttore una volta sola, sulla riga di Ordine (non in cima al pannello)', async () => {
+  it('Offesa e Difesa: l\'interruttore una volta sola, in cima al pannello (come Coverage tipi), niente Ordine', async () => {
     const user = userEvent.setup();
     for (const area of ['strength', 'defense'] as const) {
       const { unmount } = view(area);
       await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
       const effSwitch = screen.getByRole('switch', { name: area === 'strength' ? 'Solo superefficaci' : /^Solo/ });
-      expect(effSwitch.closest('.cm-cards-bar')).toBe(screen.getByRole('group', { name: 'Ordine' }).closest('.cm-cards-bar'));
-      expect(document.querySelector('.area-panel > .panel-switch')).toBeNull();
+      expect(effSwitch.closest('.area-panel > .panel-switch')).not.toBeNull();
+      expect(screen.getAllByRole('switch', { name: area === 'strength' ? 'Solo superefficaci' : /^Solo/ })).toHaveLength(1);
+      expect(screen.queryByRole('group', { name: 'Ordine' })).toBeNull();
       unmount();
     }
   });
