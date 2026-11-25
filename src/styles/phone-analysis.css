@@ -44,7 +44,7 @@
      che scorrono col dito se non stanno; ogni sottoscheda alta quanto un dito ── */
   .area-head { flex-wrap: wrap; gap: var(--sp-4) var(--sp-6); padding: var(--sp-4) var(--sp-6); }
   .area-help { margin-left: auto; }
-  .area-chips { order: 3; flex: 1 1 100%; }
+  .area-probs { order: 3; flex: 1 1 100%; }
   /* Le sottoschede come quelle dell'editor: un binario incassato, la scelta una piastra chiara col filo azzurro */
   .area-subs { order: 4; flex: 1 1 100%; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); gap: 2px; padding: 3px;
     overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; border: 0; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
@@ -52,7 +52,7 @@
   .area-subs [role='tab'] { min-height: 44px; padding: 0 var(--sp-5); justify-content: center; border: 0; border-radius: 6px; background: none; font: 600 var(--fs-small)/1 var(--display); }
   .area-subs [role='tab'][aria-selected='true'] { background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
 
-  /* L'interruttore Solo superefficaci / Solo efficacia: va sotto la testata, nel flusso, alto quanto un dito */
+  /* L'interruttore Solo superefficaci (Offesa e Difesa): va sotto la testata, nel flusso, alto quanto un dito */
   .panel-switch { position: static; height: auto; margin-bottom: var(--sp-3); }
   .panel-switch .eff-switch { min-height: 44px; }
   .area-panel:has(> .panel-switch) .def-frame > .rob-legend { padding-left: 0; }
@@ -62,10 +62,6 @@
   .def-frame { padding-top: 0; }
   .ad-panel .def-frame > .rob-legend { position: static; height: auto; margin-top: var(--sp-4); justify-content: flex-start; flex-wrap: wrap; white-space: normal; row-gap: var(--sp-2); }
   .ad-panel .def-frame > .rob-legend > .area-legend { order: 0; }
-  /* L'ordine di Coverage meta: su una riga sua, pulsanti alti quanto un dito */
-  .cm-order { flex: 1 0 100%; margin-right: 0; }
-  .cm-order .segmented { height: auto; }
-  .cm-order .segmented button { min-height: 44px; padding: 0 var(--sp-7); }
   .ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: auto; flex-wrap: wrap; white-space: normal; row-gap: var(--sp-2); }
   .area-legend { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; white-space: normal; }
   /* La striscia Da sistemare della Panoramica: "Vai al Coaching" alto quanto un dito */
@@ -87,9 +83,7 @@
   /* Generale: le intestazioni vanno a capo invece di tagliarsi */
   .def-general .def-members thead th:not(.def-mon-h) { white-space: normal; overflow: visible; overflow-wrap: anywhere; hyphens: auto; text-overflow: clip; max-width: none; line-height: 1.15; padding-inline: var(--sp-2); text-transform: none; letter-spacing: 0; }
   .def-general .def-members td { padding: 0 var(--sp-2); }
-  /* Offesa Generale: le barre dei colpi col conto "11/18" hanno bisogno di posto; la tabella scorre col dito, il membro resta fermo */
-  .off-general .def-members { min-width: calc(var(--def-mon) + 2 * 250px + 110px); }
-  .off-general .def-members:not(:has(colgroup > col:nth-child(4))) { min-width: calc(var(--def-mon) + 250px + 110px); }
+  /* Offesa Generale sul tablet: la tabella sta nella cornice (le barre si stringono), sul telefono le barre una sopra l'altra (.og-stack) */
 
   /* Ruoli: le voci di ogni fascia su una colonna sola; il link alla guida va a capo sotto */
   .rl-general, .rl-general.three { --cols: 1; }
@@ -235,11 +229,16 @@
    senza cambiare come appaiono ── */
 @media (pointer: coarse) {
   /* I "?" e le icone piccole restano piccoli da vedere; la zona che si tocca è di 44 px */
-  .analysis .help-button { position: relative; }
+  .analysis .help-button, .guide-ask { position: relative; }
+  /* Anche nelle guide (la finestra sta fuori da .analysis) */
+  .guide-ask::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
   .analysis .help-button::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
   .dash-tabs [role='tab']::after, .analysis .dash-head:not(.is-link) .dash-link::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; translate: 0 -50%; }
   /* Testata tutta cliccabile (Ruoli, Velocità): la zona sale e scende fino a 44 px */
   .analysis .dash-head.is-link .dash-link::after { inset: min(0px, calc((100% - 44px) / 2)) 0; }
+  /* "Mostra tutti" nella nota di un elemento evidenziato: piccolo da vedere, 44 px col dito */
+  .kf-clear { position: relative; }
+  .kf-clear::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: 44px; translate: -50% -50%; }
 }
 
 
@@ -271,6 +270,8 @@
 @media (max-width: 370px) { .analysis-tabs [role='tab'] .tab-short { font-size: 10.5px; } }
 /* Telefono: sottoschede più strette, così anche le quattro della Difesa stanno senza scorrere */
 @media (max-width: 599px) { .area-subs [role='tab'] { padding: 0 var(--sp-3); } }
+/* Telefono stretto (360): un filo meno ancora, così "Recupero" non sporge e la fila non scorre */
+@media (max-width: 374px) { .area-subs [role='tab'] { padding: 0 var(--sp-2); } }
 
 /* -- Telefono, Analisi come una pagina: la barra delle schede da bordo a bordo, attaccata sotto il team ridotto; subito
    sotto, attaccate, le sottoschede dell'area (se ci sono) col "?" in fondo. Il voto dell'area e i suoi problemi non ci
@@ -284,8 +285,17 @@
   .area-view .area-head { flex-wrap: nowrap; gap: var(--sp-2); min-height: 0; margin: calc(-1 * var(--sp-6)) -14px var(--sp-5); padding: 0 var(--sp-2) 0 0;
     border: 0; border-radius: 0; background: var(--field); box-shadow: inset 0 -1px 0 var(--line-soft); overflow-x: clip; }
   /* (overflow-x: clip: la zona di tocco da 44 del "?" in fondo sporgerebbe oltre lo schermo e il telefono rimpicciolirebbe la pagina) */
-  .area-view .area-head :is(.area-grade, .area-chips) { display: none; }
-  .area-view .area-head .area-subs { order: 0; flex: 1 1 auto; min-width: 0; border-radius: 0; box-shadow: none; background: none; }
+  .area-view .area-head .area-grade { display: none; }
+  /* I problemi dell'area (es. le minacce che nessuno regge) in una riga sotto le sottoschede, a tutta larghezza; senza
+     problemi il "✓ Nessun problema" verde come sul computer, in una riga bassa (piccolo, senza fondo) */
+  .area-view .area-head { flex-wrap: wrap; }
+  .area-view .area-head .area-probs { order: 2; flex: 1 0 100%; min-width: 0; gap: var(--sp-3); padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-4); box-shadow: inset 0 1px 0 var(--line-soft); }
+  .area-view .area-head .area-probs:has(.area-chip.good) { padding-block: 0; }
+  .area-view .area-head .area-probs:has(.area-chip.good) .area-chips { min-height: 0; margin-block: 0; padding-block: 0; }
+  .area-view .area-head .area-chip.good { min-height: 0; padding: 3px 0; background: none; box-shadow: none; font-size: var(--fs-caption); }
+  /* Senza sottoschede (Velocità) i problemi stanno sulla riga del "?", non su una riga loro */
+  .area-view .area-head:not(:has(.area-subs)) .area-probs { order: 0; flex: 1 1 0; padding: 0; box-shadow: none; }
+  .area-view .area-head .area-subs { order: 0; flex: 1 1 0; min-width: 0; border-radius: 0; box-shadow: none; background: none; }
   .area-view .area-head .area-help { order: 1; flex: none; margin-left: auto; }
   /* Senza sottoschede (una sola parte) resta solo il "?", a destra */
   .area-view .area-head:not(:has(.area-subs)) { justify-content: flex-end; padding: var(--sp-2) var(--sp-4); }
@@ -364,4 +374,120 @@
 /* Telefono, team vuoto: solo l'invito (le carte della Panoramica lì non ci sono) */
 @media (max-width: 599px) {
   .dash.ghost { display: none; }
+}
+
+/* Telefono e tablet (fino a 1099 px, FLIP_TABLES_QUERY): le tabelle di Coverage girate (.ct-flip-table): i tipi (o le minacce) in riga, i 6 membri in colonna con
+   l'icona del box in testata, in fondo a ogni riga il Team Coverage. Stanno nei 390 px senza scorrere di lato. */
+.ct-flip-table { width: 100%; table-layout: fixed; }
+.ct-flip-table thead th.def-mon-h { width: 36px; padding: 0; }
+.ct-flip-table thead th.ct-level-h { width: 48px; padding: 0 0 var(--sp-2); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); vertical-align: bottom; }
+.ct-flip-table thead th.ct-mon-h { padding: 0 0 var(--sp-2); vertical-align: bottom; }
+.ct-flip-table .ct-mon-box { display: inline-grid; place-items: center; width: 100%; height: 30px; }
+.ct-flip-table .ct-mon-box .mon-icon { image-rendering: pixelated; }
+.ct-flip-table thead th.kf-col .ct-mon-box { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 3px; }
+/* La testata del tipo in riga: icona a sinistra, il filo dei tipi scoperti diventa una tacca sotto l'icona */
+.ct-flip-table th.ct-type-h { padding: 0; text-align: center; vertical-align: middle; }
+.ct-flip-table th.ct-type-h .type-icons { display: block; }
+.ct-flip-table th.ct-type-h .type-icons img { display: block; width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; }
+.ct-flip-table th.ct-type-h .ct-flag { width: 18px; margin-top: 3px; }
+.ct-flip-table tbody tr { height: 36px; }
+.def-frame .ct-flip-table td.ct-cell { font-size: var(--fs-caption); }
+.ct-flip-table td.ct-level { padding: 0 0 0 var(--sp-1); text-align: center; }
+.ct-flip-table td.ct-level .ct-pill { min-width: 0; width: 100%; padding: 2px 0; font-size: var(--fs-label); }
+/* Il numero in alto, il ×2 sotto: nelle caselle strette non si sovrappongono */
+.ct-flip-table tbody tr { height: 42px; }
+.def-frame .ct-flip-table td:is(.ct-cell, .ht-cell) { vertical-align: top; padding-top: 7px; }
+/* Coverage meta girata: le pagine sopra la tabella, a destra; nelle caselle niente barra dei PS (è nel tooltip), il timbro
+   KO più piccolo; la testata della minaccia con l'icona del box e il filo di Lo coprono */
+.cm-flip-pager { display: flex; justify-content: flex-end; margin-bottom: var(--sp-2); }
+/* (la barra dei PS solo dove la casella è larga: tablet) */
+@media (max-width: 767px) { .ct-flip-table .cm-hp { display: none; } }
+.def-frame.cm-matrix .ct-flip-table td.rob-cell { vertical-align: middle; padding: 0; }
+.ct-flip-table .cm-ko { padding: 2px 6px; font-size: var(--fs-caption); }
+.ct-flip-table th.ct-type-h .def-box { --bs: 1; width: 100%; }
+.ct-flip-table th.ct-type-h .cm-flag { width: 22px; }
+.off-frame.def-walls .ct-flip-table .eff-tag, .def-meta-grid .ct-flip-table .eff-tag { top: auto; bottom: 2px; }
+.def-frame.cm-matrix .ct-flip-table td.rob-cell:has(.eff-tag) { vertical-align: top; padding-top: 7px; }
+
+/* Telefono e tablet piccolo (fino a 767 px), Offesa Generale (.og-stack): per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la barra
+   Meta larghe quanto lo schermo, con l'etichetta corta a sinistra; i membri separati da un filo; in fondo il team */
+.og-stack-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.og-stack-table col.og-col-label { width: 44px; }
+.og-stack-table col.og-col-share { width: 56px; }
+.def-frame .og-stack-table thead th.og-stack-head { position: static; padding: 0 0 var(--sp-3); }
+.og-stack-asks { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.og-stack-asks .bar-head + * { margin-right: var(--sp-6); }
+.def-general .og-stack-table thead th.og-share-h { padding: 0 0 var(--sp-3); text-align: right; vertical-align: bottom; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
+.og-stack-mon { border-top: 1px solid var(--line-soft); }
+.og-stack-table tr.og-mon-row { height: 40px; }
+.def-frame .og-stack-table tr.og-mon-row th { position: static; padding: var(--sp-3) 0 var(--sp-1); text-align: left; background: none; }
+.def-general .og-stack-table tr.og-mon-row td { padding: var(--sp-3) 0 var(--sp-1); text-align: right; background: none; }
+.og-stack-table tr.og-bar-row { height: 34px; }
+.def-frame .og-stack-table th.og-bar-label { position: static; padding: 0; text-align: left; background: none; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
+.def-general .og-stack-table tr.og-bar-row td { padding: 0 0 var(--sp-2); }
+.og-stack-mon tr:last-child td { padding-bottom: var(--sp-4); }
+/* Il team: la targa nel flusso (non sopra la riga), staccato dai membri da un filo più forte */
+.og-stack-team { border-top: 1px solid var(--line); }
+.og-stack-team .og-plate { position: relative !important; top: 0; }
+/* Niente righe a strisce (qui ogni membro ha tre righe): lo stacco lo fa il filo fra i membri */
+.def-frame .og-stack-table.def-members tbody tr:not(.og-fill) > * { background: none; border-bottom: 0; }
+/* Recupero sullo schermo stretto (.sus-stack): etichette Perde / Recupera / Netto più larghe, le due perdite affiancate
+   col loro nome piccolo, il netto con la barra larga quanto la riga */
+.sus-stack col.sus-col-label { width: 72px; }
+.sus-stack .sus-losses { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-7); }
+.sus-stack .sus-loss-item { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.sus-stack .sus-loss-item > small { font-size: var(--fs-label); color: var(--muted); }
+.sus-stack .sus-net-wrap { width: 100%; }
+.def-frame .sus-stack tr.og-mon-row td.sus-val { text-align: right; }
+.sus-stack col.og-col-share { width: 84px; }
+
+/* Telefono: niente riquadro attorno alle tabelle dell'Analisi (bordo e fondo del pannello), le tabelle prendono quasi
+   tutta la larghezza dello schermo (8 px di margine) */
+@media (max-width: 599px) {
+  .area-view > .area-panel { border: 0; background: none; margin-inline: -6px; }
+  .area-view > .area-panel.ad-panel { padding-inline: 0; }
+}
+
+/* Generale e Recupero a righe: i membri a fasce alternate (chiara, scura) al posto del filo, così si distinguono; il
+   contenuto non tocca i bordi della fascia */
+.def-frame .og-stack-table tbody.og-stack-mon { border-top: 0; }
+.def-frame .og-stack-table.def-members tbody.og-alt > tr:not(.og-gap) > * { background: var(--raised); }
+.def-frame .og-stack-table tbody.og-stack-mon > tr > :first-child { padding-left: var(--sp-3); }
+.def-frame .og-stack-table tbody.og-stack-mon > tr > :last-child { padding-right: var(--sp-3); }
+.def-frame .og-stack-table tbody.og-stack-team { border-top: 1px solid var(--line); }
+/* Il "pacchetto" di un membro (nome, Tipi, Meta) è una fascia sola: niente spazi fra le sue righe */
+.def-frame .def-grid.og-stack-table { border-collapse: collapse; border-spacing: 0; }
+/* Angoli arrotondati solo ai quattro capi della fascia (non a ogni riga), e niente luce della singola riga sotto il dito */
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr > * { border-radius: 0; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr.og-mon-row > :first-child { border-top-left-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr.og-mon-row > :last-child { border-top-right-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:last-child > :first-child { border-bottom-left-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon > tr:last-child > :last-child { border-bottom-right-radius: 7px; }
+.def-frame .og-stack-table.def-members tbody.og-stack-mon:not(.og-alt) > tr:hover > *, .def-frame .og-stack-table.def-members tbody.og-alt > tr.og-gap:hover > * { background: none; }
+.def-frame .og-stack-table.def-members tbody.og-alt > tr:not(.og-gap):hover > * { background: var(--raised); }
+/* Lo spazio fra un membro e l'altro (una riga vuota in testa al pacchetto); il team staccato da un filo nello spazio */
+.def-frame .og-stack-table tr.og-gap { height: 10px; }
+.def-frame .og-stack-table tr.og-gap > td { padding: 0; background: none; }
+.def-frame .og-stack-table tbody.og-stack-team { border-top: 0; }
+/* La testata sopra le tabelle a righe (Tipi ? Meta ?, Offesa/Difesa/Recupero): solo le parole, niente riquadro */
+.def-frame .og-stack-table thead th, .def-frame .og-stack-table thead th .bar-head { background: none; box-shadow: none; }
+.def-frame .og-stack-table thead th::before, .def-frame .og-stack-table thead th::after { content: none; }
+/* Telefono: le tabelle non scorrono più di lato, la prima colonna non serve ferma col fondo del pannello (senza il
+   riquadro il fondo si vedeva come una scatola dietro le testate) */
+@media (max-width: 599px) {
+  .def-frame .def-grid tbody th[scope='row'], .def-frame .def-grid thead th.def-mon-h { position: static; background: none; }
+}
+/* Coverage meta girata: righe più alte, l'icona della minaccia e il suo filo stanno nella riga senza toccare le vicine */
+.cm-matrix .ct-flip-table tbody tr { height: 54px; }
+.cm-matrix .ct-flip-table th.ct-type-h .def-box { height: 34px; }
+/* Tablet: colonne larghe, le icone dei membri in testata più grandi */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .ct-flip-table .ct-mon-box { height: 46px; }
+  .ct-flip-table .ct-mon-box .mon-icon { transform: scale(1.5); }
+}
+
+/* Tablet da 768 px: i problemi dell'area sulla riga del voto (quanti ne stanno, gli altri nel "+N"), col "?" in fondo; le
+   sottoschede sotto. Una riga in meno sopra il pannello */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .area-head .area-probs { order: 0; flex: 1 1 0; min-width: 0; }
 }

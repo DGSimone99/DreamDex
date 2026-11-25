@@ -28,7 +28,7 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
  * stesse righe (GradeAreaRows) e il "?"; col team aperto la carta resta com'è.
  * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating: computed, grading = false, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, onOpen }: { rating: TeamRating | null; /** Il voto si sta calcolando (all'apertura del sito, subito dopo il primo disegno). */ grading?: boolean; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
+export function GradeBadge({ rating: computed, grading = false, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, members = 0, teamType = null, collapsed = false, foldReset, onOpen }: { rating: TeamRating | null; /** Telefono e tablet: cambiando questo valore (sezione o scheda aperta) le righe delle aree si richiudono. */ foldReset?: string; /** Il voto si sta calcolando (all'apertura del sito, subito dopo il primo disegno). */ grading?: boolean; collapsed?: boolean; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; members?: number; onOpen?: (area: DetailArea) => void }) {
   const t = useT();
   // Voto bloccato (EV oltre il massimo, specie sconosciuta): si sa subito dal team, mentre il voto nuovo arriva un attimo
   // dopo. Nel frattempo il voto vecchio non si mostra, se no per un istante comparirebbe con l'avviso delle regole sotto
@@ -75,7 +75,9 @@ export function GradeBadge({ rating: computed, grading = false, ruleIssues = [],
   // targa compaiono le righe delle aree sotto, come sul computer
   const small = useMediaQuery(EDITOR_TABS_QUERY);
   const foldable = small && !collapsed && !!rating;
+  // Di base sempre ridotto: si richiude a ogni cambio di sezione o di scheda (anche dopo aver scelto un'area dalle righe)
   const [areasOpen, setAreasOpen] = useState(false);
+  useEffect(() => { setAreasOpen(false); }, [foldReset]);
   const areasId = useId();
   // Regole infrante: lettera, punteggio e giudizio in grigio finché il team non è legale (il voto si calcola uguale), e sotto
   // il perché (in quale formato e quanti membri; chi e il motivo nel tooltip). Niente triangolo sul voto
