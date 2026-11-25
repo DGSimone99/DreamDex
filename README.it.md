@@ -1,14 +1,7 @@
-<div align="left">
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/img/logo-dark.svg">
-        <img alt="Logo di DreamDex: due lettere D schiena contro schiena a forma di Poké Ball" src="docs/img/logo-light.svg" width="360">
-    </picture>
-
-<h1>DreamDex</h1>
-
-![Controllo](https://github.com/DGSimone99/DreamDex/workflows/Controllo/badge.svg)
-
-</div>
+<picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/logo-dark.svg">
+    <img alt="DreamDex" src="docs/img/logo-light.svg" width="360">
+</picture>
 
 DreamDex è un team builder per il Pokémon competitivo, in singolo e in doppio. Inserisci uno o più Pokémon e ti mostra in ordine quelli che completano meglio il team, gli dà un voto da S a D e spiega ogni numero, partendo dalle statistiche d'uso mensili di Smogon. L'interfaccia è in italiano o in inglese.
 
@@ -31,10 +24,6 @@ Si usa su **[dreamdex.pages.dev](https://dreamdex.pages.dev)**, direttamente nel
 | --- | --- |
 | ![Analisi di un team da sei: riassunto, copertura contro le minacce del meta, ruoli e velocità](docs/img/analysis.png) | ![Coaching: la proposta migliore mette Victini al posto di Gholdengo e porta il voto da A 82 ad A 88](docs/img/coaching.png) |
 
-| Editor del set | Telefono |
-| --- | --- |
-| ![Editor del set di Great Tusk: statistiche ed EV, strumento, abilità, mosse e il matchup peggiore](docs/img/set-editor.png) | <img alt="DreamDex sul telefono: voto, team e ricerca dei candidati" src="docs/img/phone.png" width="260"> |
-
 ## Formati
 
 - Smogon: Gen 9 OU, Ubers, UU e Anything Goes; National Dex OU, Ubers, UU e Doubles.
@@ -43,49 +32,22 @@ Si usa su **[dreamdex.pages.dev](https://dreamdex.pages.dev)**, direttamente nel
 
 I ban di ogni formato vengono da Pokémon Showdown e compaiono come problemi di regole sul team. Il meta entra nel voto quando Smogon ha pubblicato le statistiche del mese per quel formato.
 
-## Requisiti
-
-- Node.js 22 (la versione usata dai controlli su GitHub)
-- npm
-
-## Installazione
-
-```sh
-git clone https://github.com/DGSimone99/DreamDex.git
-cd DreamDex
-npm install
-npm run fetch-data
-```
-
-`npm run fetch-data` scarica in `data/` le statistiche d'uso e i set di Smogon, i formati e i ban di Showdown e i nomi italiani da PokeAPI. La cartella non è nel repository e l'app si costruisce da lì, quindi va lanciato prima del primo avvio. Se i server di Smogon sono lenti ci vogliono diversi minuti. Rilancialo per avere i dati di un mese più recente.
-
-## Configurazione
-
-Il modulo di feedback manda i messaggi con Web3Forms e prende la chiave da `VITE_WEB3FORMS_KEY`, per esempio in `.env.local`. Senza chiave il modulo mostra solo il link alle issue di GitHub. Non c'è altro da configurare.
-
-## Avvio rapido
-
-```sh
-npm run dev
-```
-
-Vite scrive l'indirizzo locale, di solito `http://localhost:5173`. Scegli un formato nella barra a sinistra e aggiungi un Pokémon per vedere i primi suggerimenti.
-
-## Test
-
-```sh
-npm test
-```
-
-`npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`.
-
 ## Come è fatto
 
-React 19, TypeScript e Vite, con test in Vitest e Testing Library. La logica del team sta in `src/engine/`, senza codice dell'interfaccia; l'interfaccia è in `src/ui/` e i testi in italiano e inglese in `src/i18n/`. `DESIGN.md` descrive lo stile grafico e `PRODUCT.md` il prodotto.
+React 19, TypeScript e Vite, con test in Vitest e Testing Library. La logica del team sta in `src/engine/`, senza codice dell'interfaccia; l'interfaccia è in `src/ui/` e i testi in italiano e inglese in `src/i18n/`.
 
 A ogni push su `master` partono i test, si costruisce il sito e si pubblica su Cloudflare Pages. Ogni lunedì il sito si ricostruisce coi dati appena scaricati. Se un test fallisce o un download non riesce non si pubblica niente e resta online la versione di prima.
 
 Sviluppato con l'aiuto dell'AI (Claude Code).
+
+Per avviarlo sul tuo computer serve Node.js 22:
+
+```sh
+npm install
+npm run fetch-data   # dati di Smogon, Showdown e PokeAPI in data/, può volerci qualche minuto
+npm run dev
+npm test
+```
 
 ## Crediti
 
