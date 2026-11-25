@@ -30,7 +30,7 @@ describe('Segnala o suggerisci', () => {
     expect(await screen.findByText('Grazie, ricevuto!')).toBeInTheDocument();
     const body = JSON.parse((send as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0][1].body as string);
     expect(body).toMatchObject({ access_key: 'test-key', tipo: 'grade', messaggio: 'Il voto di Tusk è basso', email: 'a@b.it', formato: DEFAULT_FORMAT.formatId });
-    expect(body.team).toContain('#team=');
+    expect(body.team).toContain('#t=');
   });
 
   it('senza allegare il team non manda il link; se l\'invio fallisce propone GitHub', async () => {
