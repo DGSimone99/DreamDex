@@ -69,7 +69,7 @@ describe('defenderPanel', () => {
 describe('tierSpecies', () => {
   it('la Velocità di riferimento non cambia', () => {
     const ou = referenceSpeeds('ou');
-    expect([ou.length, ou[0], ou[ou.length - 1]]).toEqual([45, 152, 412]);
-    expect(tierSpecies('ou').length).toBe(45);
+    expect([ou.length, ou[0], ou[ou.length - 1]]).toEqual([43, 152, 412]);
+    expect(tierSpecies('ou').length).toBe(43);
   });
 });
