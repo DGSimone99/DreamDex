@@ -27,6 +27,8 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
     { name: 'Smogon', url: 'https://www.smogon.com/stats/', what: t('credits.smogon') },
     { name: 'Pokémon Showdown', url: 'https://pokemonshowdown.com', what: t('credits.showdown') },
     { name: 'PokeAPI', url: 'https://pokeapi.co', what: t('credits.pokeapi') },
+    { name: 'data.pkmn.cc', url: 'https://data.pkmn.cc', what: t('credits.pkmnData') },
+    { name: 'Serebii', url: 'https://www.serebii.net/scarletviolet/exclusives.shtml', what: t('credits.serebii') },
   ];
   const libs: Source[] = [
     { name: '@pkmn', url: 'https://github.com/pkmn/ps', what: t('credits.pkmnLibs') },
@@ -66,6 +68,7 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
                 <div><dt>{t('credits.sprites')}</dt><dd>{t('credits.spritesWhat')}</dd></div>
                 <div><dt>{t('credits.typeIcons')}</dt><dd>{t('credits.typeIconsWhat')}</dd></div>
                 <div><dt><a href="https://x.com/dreamworldsvg" target="_blank" rel="noreferrer">Eevee · dreamworld.svg</a></dt><dd>{t('credits.eevee')}</dd></div>
+                <div><dt>{t('credits.logos')}</dt><dd>{t('credits.logosWhat')}</dd></div>
               </dl>
             </section>
             <section><h4>{t('credits.libs')}</h4>{list(libs)}</section>

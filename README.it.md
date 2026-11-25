@@ -50,9 +50,9 @@ npm test
 
 ## Crediti
 
-Dati da [Smogon](https://www.smogon.com/stats/) (statistiche d'uso e set), [Pokémon Showdown](https://pokemonshowdown.com) (formati, ban e sprite) e [PokeAPI](https://pokeapi.co) (nomi italiani). Librerie di [@pkmn](https://github.com/pkmn/ps) e [@smogon/calc](https://github.com/smogon/damage-calc). I disegni di Eevee sono di [dreamworld.svg](https://x.com/dreamworldsvg).
+Dati da [Smogon](https://www.smogon.com/stats/) (statistiche d'uso e set), [Pokémon Showdown](https://pokemonshowdown.com) (formati, ban e sprite), [PokeAPI](https://pokeapi.co) (nomi italiani), [data.pkmn.cc](https://data.pkmn.cc) (set di Smogon e team da torneo) e [Serebii](https://www.serebii.net) (Pokémon esclusivi di versione). Librerie di [@pkmn](https://github.com/pkmn/ps) e [@smogon/calc](https://github.com/smogon/damage-calc). I disegni di Eevee sono di [dreamworld.svg](https://x.com/dreamworldsvg).
 
-DreamDex è un progetto non ufficiale fatto da un fan, gratuito e senza scopo di lucro. Non è affiliato né approvato da Nintendo, Creatures, GAME FREAK, The Pokémon Company, Smogon o Pokémon Showdown. Pokémon e i nomi dei personaggi sono marchi di Nintendo, Creatures Inc. e GAME FREAK inc.
+DreamDex è un progetto non ufficiale fatto da un fan, gratuito e senza scopo di lucro. Non è affiliato né approvato da Nintendo, Creatures, GAME FREAK, The Pokémon Company, Smogon o Pokémon Showdown. Pokémon e i nomi dei personaggi sono marchi di Nintendo, Creatures Inc. e GAME FREAK inc. I loghi dei formati e dei giochi appartengono ai rispettivi proprietari.
 
 ## Feedback
 
