@@ -140,8 +140,8 @@ describe('vista di un\'area sulla pagina', () => {
       await waitFor(() => expect(document.querySelector('.ftip.area-chip-tip')).not.toBeNull());
       expect(document.querySelector('.ftip.area-chip-tip .ftip-go')).toBeNull();
       await user.unhover(chip);
-      // Il tooltip si lascia raggiungere col mouse: si chiude poco dopo (LEAVE_GRACE), non subito
-      await vi.waitFor(() => expect(document.querySelector('.ftip:not(.hint)')).toBeNull());
+      // Uscendo dalla casella il tooltip si chiude subito (non resta aperto per farsi raggiungere)
+      expect(document.querySelector('.ftip:not(.hint)')).toBeNull();
       await user.click(chip);
       expect(onCoaching).not.toHaveBeenCalled();
       unmount();
