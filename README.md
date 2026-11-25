@@ -20,8 +20,8 @@ Try it at **[dreamdex.pages.dev](https://dreamdex.pages.dev)**. It runs in the b
 - The set editor has Smogon presets, EVs, natures, Tera and moves, plus a matchup tester against the meta.
 - Showdown import and export, saved teams and a short link that holds the whole team.
 
-| Analysis | Coaching |
-| --- | --- |
+| Analysis                                                                                                         | Coaching                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | ![Analysis of a six-member team: summary, coverage against meta threats, roles and speed](docs/img/analysis.png) | ![Coaching: the best proposal swaps Gholdengo for Victini and raises the grade from A 82 to A 88](docs/img/coaching.png) |
 
 ## Formats
@@ -29,6 +29,7 @@ Try it at **[dreamdex.pages.dev](https://dreamdex.pages.dev)**. It runs in the b
 - Smogon: Gen 9 OU, Ubers, UU and Anything Goes; National Dex OU, Ubers, UU and Doubles.
 - Games: Pokémon Scarlet and Violet.
 - No Format: anything goes, with an optional generation limit.
+- More to come: VGC, Pokémon Champions and the older Smogon generations.
 
 The bans for each format come from Pokémon Showdown and appear as rule problems on the team. The meta counts in the grade whenever Smogon has published that month's statistics for the format.
 
@@ -37,8 +38,6 @@ The bans for each format come from Pokémon Showdown and appear as rule problems
 React 19, TypeScript and Vite, tested with Vitest and Testing Library. The team logic lives in `src/engine/` with no UI code in it; the interface is in `src/ui/` and the English and Italian texts in `src/i18n/`.
 
 Every push to `master` runs the tests, builds the site and deploys it to Cloudflare Pages. Every Monday the site is rebuilt with freshly downloaded data. If a test fails or a download breaks, nothing is published and the previous version stays online.
-
-Developed with AI assistance (Claude Code).
 
 To run it locally you need Node.js 22:
 

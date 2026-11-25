@@ -29,6 +29,7 @@ Si usa su **[dreamdex.pages.dev](https://dreamdex.pages.dev)**, direttamente nel
 - Smogon: Gen 9 OU, Ubers, UU e Anything Goes; National Dex OU, Ubers, UU e Doubles.
 - Giochi: Pokémon Scarlatto e Violetto.
 - No Format: tutto permesso, con un limite di generazione se vuoi.
+- In arrivo: VGC, Pokémon Champions e le generazioni Smogon precedenti.
 
 I ban di ogni formato vengono da Pokémon Showdown e compaiono come problemi di regole sul team. Il meta entra nel voto quando Smogon ha pubblicato le statistiche del mese per quel formato.
 
