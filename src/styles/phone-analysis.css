@@ -270,6 +270,18 @@
     .coach-hero-facts > .coach-set { grid-column: auto; }
     .coach-set-moves { grid-template-columns: minmax(0, 1fr); }
   }
+  /* Tablet basso (1024×768, 960×600): il Set compatto come sul telefono, così le quattro mosse si vedono tutte sopra il
+     piede con Applica appena si apre la pagina (strumento · abilità in una riga, le mosse due per riga senza coda) */
+  @media (max-height: 900px) {
+    .coach-set { gap: var(--sp-2); }
+    .coach-set-kit { gap: 0 var(--sp-3); align-items: center; }
+    .coach-set-kit .coach-plate { height: 22px; background: none; box-shadow: none; }
+    .coach-set-kit .coach-plate-label { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .coach-set-kit .coach-plate-value { padding: 0; }
+    .coach-set-kit .coach-plate + .coach-plate::before { content: '·'; align-self: center; margin-right: var(--sp-3); color: var(--muted); font: 600 var(--fs-small)/1 var(--ui); }
+    .coach-set .coach-set-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+    .coach-set-moves .mvp-tail { display: none; }
+  }
 
   .analysis-tabs { margin-inline: -18px; padding-inline: var(--sp-9); scroll-padding-inline: 18px; }
   /* Tablet: le sette schede stanno quasi tutte; si stringono un poco e riempiono la riga */
