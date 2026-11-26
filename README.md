@@ -5,7 +5,7 @@
 
 DreamDex is a team builder for competitive Pokémon, singles and doubles. Add one or more Pokémon and it ranks the ones that complete your team best, rates the team from S to D and explains every number, using the monthly Smogon usage statistics. The interface is in English or Italian.
 
-Try it at **[dreamdex.pages.dev](https://dreamdex.pages.dev)**. It runs in the browser and needs no account.
+Try it at **[dreamdex.dev](https://dreamdex.dev)**. It runs in the browser and needs no account.
 
 [Leggi in italiano](README.it.md)
 
