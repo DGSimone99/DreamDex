@@ -11,6 +11,7 @@ import earSide from '../assets/eevee/peek-ear-side.svg';
 import paw from '../assets/eevee/peek-paw.svg';
 import tail from '../assets/eevee/peek-tail.svg';
 import tailWag from '../assets/eevee/peek-tail-wag.svg';
+import { reducedMotion } from './useMediaQuery';
 
 /** Durate delle uscite (blocks.css): saltello della testa in alto, coda che si ritira, faccia di lato che rientra. */
 const HOP_MS = 420;
@@ -69,7 +70,6 @@ function pickSpot(marker: HTMLElement | null, last: Spot, first: boolean): Spot 
   return ofKind[Math.floor(Math.random() * ofKind.length)];
 }
 
-const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * I pezzi della testa (orecchi, collare, faccia e facce che compaiono per un attimo), uguali in ogni posa con la testa.

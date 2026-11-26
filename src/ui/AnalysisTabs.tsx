@@ -1,12 +1,11 @@
 import { hint } from './MoveTip';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { gradeFor } from '../engine/rating';
 import type { AnalysisView, TabView } from './analysisView';
-import { ModalLock } from './ModalLock';
-import { EeveePeek } from './EeveePeek';
 import { Icon, type IconName } from './icons';
+import { ModalShell } from './ModalShell';
+import { tabStep } from './tabStep';
 
 /**
  * Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa e Velocità, con "Ruoli e Bonus" in
@@ -46,24 +45,14 @@ export function HelpButton({ title, label = title, className, children }: { titl
       <button ref={button} type="button" className="help-button" aria-label={label} {...hint(label)} onClick={() => setOpen(true)}>
         <Icon name="help" />
       </button>
-      {open && createPortal(
-        <div className="help-backdrop" onClick={close}>
-          <ModalLock />
-          {/* Eevee sbircia da dietro la finestra, come in "Come funziona il voto" */}
-          <div className="help-frame with-peek">
-          <EeveePeek />
-          <div className={`help-dialog view-help${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-            <header className="help-head">
-              <h3 id={titleId}>{title}</h3>
-              <button ref={closeButton} type="button" className="help-close" aria-label={t('help.close')} onClick={close}><Icon name="close" /></button>
-            </header>
+      {open && (
+        // Eevee sbircia da dietro la finestra, come in "Come funziona il voto"
+        <ModalShell className={`view-help${className ? ` ${className}` : ''}`} titleId={titleId} title={title} closeLabel={t('help.close')} onClose={close}
+          closeRef={closeButton} peek>
             <div className="help-panel">
               {children}
             </div>
-          </div>
-          </div>
-        </div>,
-        document.body,
+        </ModalShell>
       )}
     </>
   );
@@ -104,10 +93,10 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
     buttons.current[VIEWS.indexOf(next)]?.focus();
   };
   const onKey = (e: KeyboardEvent, index: number) => {
-    const moves: Record<string, number> = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: VIEWS.length - 1 };
-    if (!(e.key in moves)) return;
+    const next = tabStep(e.key, index, VIEWS.length);
+    if (next === null) return;
     e.preventDefault();
-    go(moves[e.key]);
+    go(next);
   };
   return (
     <div className="analysis-tabs">

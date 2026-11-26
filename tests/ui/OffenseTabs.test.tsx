@@ -218,7 +218,6 @@ describe('Offesa: Generale', () => {
   it('le colonne: Pokémon, Tipi, Meta (solo col meta), Offesa, coi titoli sulla stessa riga; i punti dei membri sommati fanno il voto', () => {
     const rating = withMeta();
     const { unmount } = view(team, rating);
-    const n = rating.offense.coverageMeta!.rows.length;
     // Le testate di Meta e Tipi possono avere sotto le etichette OHKO / 2HKO: si guarda come iniziano
     let heads = screen.getAllByRole('columnheader').map(h => h.textContent!);
     expect(heads).toHaveLength(4);
@@ -257,7 +256,6 @@ describe('Offesa: Generale', () => {
     const slots = offenseSlots(team, rating.offense.members);
     rows.forEach((row, slot) => {
       const i = slots[slot]!;
-      const m = rating.offense.members[i];
       const cells = row.querySelectorAll('td');
       expect(cells).toHaveLength(3);
       expectBadges(cells[0], typeHits(rating, i));

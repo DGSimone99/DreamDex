@@ -8,7 +8,7 @@ import { rolesValue as rolesValueOf } from '../engine/rolesArea';
 import { BonusMalusView, bonusMalusTotals, CatalogueList } from './BonusMalusView';
 import type { EffSide } from './effTag';
 import { useT } from '../i18n/react';
-import type { Lang } from '../i18n';
+import { signed, type Lang } from '../i18n';
 import { defenseTabs } from './defense/defenseTabs';
 import { offenseTabs } from './offense/offenseTabs';
 import { rolesTab } from './roles/rolesTabs';
@@ -100,8 +100,6 @@ export type DetailArea = AreaKey | 'roles';
 /** La sottoscheda di Bonus/Malus coi Ruoli. */
 export const ROLES_SUB = 'roles';
 
-/** Punti col segno tipografico (meno vero, non il trattino). */
-export const signed = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '0');
 
 /** Le schede di un'area (sottostatistiche col loro valore e contenuto): le usano la finestra e la vista in Analisi. */
 export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {

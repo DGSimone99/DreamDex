@@ -28,6 +28,8 @@ import { MoveTail, moveTint } from './MovePill';
 import { CategoryIcon } from './CategoryIcon';
 import { StatIcon } from './StatIcon';
 import { typeIconUrl } from './typeIcons';
+import { tabStep } from './tabStep';
+import { useClickAway } from './useClickAway';
 
 function NatureEffect({ name }: { name: string }) {
   const lang = useLang();
@@ -350,11 +352,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   const [spreadsOpen, setSpreadsOpen] = useState(false);
   // Sotto la targhetta Spread, allineato a destra e largo quanto serve agli EV; sopra se sotto non c'è posto
   useAnchoredPop(spreadToggle, spreadList, spreadsOpen, { width: 'content', minWidth: 340, align: 'end', gap: 6, sheet: true, onDismiss: () => closeSpreads() });
-  useEffect(() => {
-    const away = (e: PointerEvent) => { if (!spreadMenu.current?.contains(e.target as Node)) closeSpreads(); };
-    document.addEventListener('pointerdown', away);
-    return () => document.removeEventListener('pointerdown', away);
-  }, []);
+  useClickAway(target => !!spreadMenu.current?.contains(target), () => closeSpreads());
   const lines = statLines(set, 100);
   // IV: 31 se non indicato; nel set restano solo quelli diversi da 31
   const changeIv = (stat: StatID, raw: string) => {
@@ -408,9 +406,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', gam
   });
   const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
     const at = phoneTabs.findIndex(tab => tab.id === phoneTab);
-    const next = e.key === 'ArrowRight' ? (at + 1) % phoneTabs.length : e.key === 'ArrowLeft' ? (at - 1 + phoneTabs.length) % phoneTabs.length
-      : e.key === 'Home' ? 0 : e.key === 'End' ? phoneTabs.length - 1 : -1;
-    if (next < 0) return;
+    const next = tabStep(e.key, at, phoneTabs.length);
+    if (next === null) return;
     e.preventDefault();
     pickTab(phoneTabs[next].id, true);
   };

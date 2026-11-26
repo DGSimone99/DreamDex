@@ -1,6 +1,7 @@
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useT } from '../i18n/react';
 import { Icon, type IconName } from './icons';
+import { tabStep } from './tabStep';
 
 export type TabId = 'pokemon' | 'analysis' | 'meta' | 'lists';
 
@@ -27,13 +28,9 @@ export function Tabs({ tabs, active, onChange, orientation = 'horizontal' }: {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const enabled = tabs.map((tab, i) => (tab.disabled ? -1 : i)).filter(i => i >= 0);
   const onKey = (e: KeyboardEvent, index: number) => {
-    const at = enabled.indexOf(index);
-    const next = e.key === 'ArrowRight' || (orientation === 'vertical' && e.key === 'ArrowDown');
-    const previous = e.key === 'ArrowLeft' || (orientation === 'vertical' && e.key === 'ArrowUp');
-    const step = next ? 1 : previous ? -1 : 0;
-    const target = step ? enabled[(at + step + enabled.length) % enabled.length]
-      : e.key === 'Home' ? enabled[0] : e.key === 'End' ? enabled[enabled.length - 1] : undefined;
-    if (target === undefined) return;
+    const step = tabStep(e.key, enabled.indexOf(index), enabled.length, { vertical: orientation === 'vertical' });
+    if (step === null) return;
+    const target = enabled[step];
     e.preventDefault();
     refs.current[target]?.focus();
     onChange(tabs[target].id as TabId);

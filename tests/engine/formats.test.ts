@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { getSpecies } from '../../src/engine/dex';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
-import { battleOf, dataSource, dexOf, formatIn, formatLabel, formatOptions, isBannedIn, isLegalIn, pokedexOf, teraAllowed, tiersOf } from '../../src/engine/formats';
+import { dataSource, dexOf, formatLabel, formatOptions, isBannedIn, isLegalIn, pokedexOf, teraAllowed, tiersOf } from '../../src/engine/formats';
 import { DEFAULT_CHOICE, rulesOf, sanitizeChoice } from '../../src/engine/formatChoice';
 import { candidatePool } from '../../src/engine/scoring';
 import { fixtureData, tusk } from '../fixtures/data';
@@ -46,8 +46,6 @@ describe('formati', () => {
     expect(teraAllowed(dbl)).toBe(true);
     expect(formatLabel(dbl)).toBe('National Dex Doubles');
     expect(dexOf('natdexdoubles')).toBe('natdex');
-    expect(battleOf('natdexdoubles')).toBe('doubles');
-    expect(battleOf('ou')).toBe('singles');
   });
 
   it('nessun divieto per tier in doppio (Dragapult, Uber in singolo, è legale)', () => {
@@ -58,9 +56,6 @@ describe('formati', () => {
     expect(tiersOf('natdex', 'doubles')).toEqual([{ formatId: 'natdexdoubles', tier: 'OU' }]);
     expect(tiersOf('gen9', 'doubles')).toEqual([]);
     expect(tiersOf('nolimits', 'doubles')).toEqual([]);
-    expect(formatIn('natdex', 'doubles', 'ou')).toBe('natdexdoubles');
-    expect(formatIn('gen9', 'doubles', 'natdexdoubles')).toBe('gen9ou');
-    expect(formatIn('natdex', 'singles', 'natdexdoubles')).toBe('ou');
   });
 
   it('il doppio è nel menu e tra i formati, e un salvataggio in doppio resta in doppio', () => {

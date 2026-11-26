@@ -1,4 +1,5 @@
 import { Fragment, useId, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import { signed } from '../../i18n';
 import type { Core } from '../../engine/cores';
 import { viaName } from '../../engine/synergy';
 import type { TeamLink } from '../../engine/teamLinks';
@@ -16,7 +17,7 @@ import { SPRITE_TIP_ROW } from '../spriteSizes';
 import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { ConditionTip, CONDITION_TYPE } from './ConditionTip';
 import { CoreSideRows, CoreTip } from './CoreTip';
-import { CoreArt, CoreTriangle, coreParts, coreTitle } from './CoreTriangle';
+import { CoreArt, CoreTriangle, coreParts, coreTitle, coreParries } from './CoreTriangle';
 import { FloatTip, goText, TipGo, useFloatAnchor } from '../FloatTip';
 import { DashCard } from './DashCard';
 import { useFit } from './useFit';
@@ -198,7 +199,6 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
   /** Un core da 3 dopo il primo: triangolo piccolo anche col team ridotto. */
   second?: boolean;
   flat?: boolean }) {
-  const t = useT();
   const lang = useLang();
   const desc = useId();
   const trioRow = view.trio && !!syn.core && flat;
@@ -223,7 +223,7 @@ function SynergyRow({ syn, view, rich, small, onClick, hover, goId, second = fal
                   {/* A capo solo fra un membro e l'altro, come nel triangolo */}
                   <span className="sum-syn-head"><em className="sum-syn-tag">{view.tag}</em><strong className="sum-syn-title">{coreParts(syn.core, lang).map((part, i) => <Fragment key={i}>{i > 0 && ' / '}<span className="sum-core-part">{part}</span></Fragment>)}</strong></span>
                   <span id={desc} className="visually-hidden">
-                    {syn.core.sides.map(side => t('sum.parryTo', { name: side.from, type: typeName(side.type, lang), to: side.to })).join(', ')}
+                    {coreParries(syn.core, lang)}
                   </span>
                 </span>
               )
@@ -255,7 +255,7 @@ function DuoCore({ core, goId, onClick, hover }: { core: Core; goId: string; onC
       {/* A capo solo fra un membro e l'altro: "/" resta in fondo alla riga (spazio fisso prima), ogni "Terra-Acciaio" intero */}
       <span className="sum-duo-title" aria-hidden="true">{coreParts(core, lang).map((part, i) => <Fragment key={i}>{i > 0 && '\u00a0/ '}<span className="sum-core-part">{part}</span></Fragment>)}</span>
       <span id={desc} className="visually-hidden">
-        {core.sides.map(side => t('sum.parryTo', { name: side.from, type: typeName(side.type, lang), to: side.to })).join(', ')}
+        {coreParries(core, lang)}
       </span>
     </button>
   );
@@ -300,9 +300,6 @@ function MoreSynergies({ items, label, taken }: { items: { syn: Synergy; view: S
   );
 }
 
-/** Altezza della riga Bonus/Malus (px, come in CSS `.sum-bm`). */
-export const BM_LINE = 28;
-const signedPts = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 /**
  * La riga Bonus/Malus in fondo al Riassunto: "Bonus/Malus +6 · 2 core +6 · Rete di sicurezza +1 · Tipi doppioni −1", le
@@ -327,17 +324,17 @@ function BonusMalusRow({ net, pieces: all, skip = [], lang, onOpen }: { net: num
   const tone = (n: number) => (n > 0 ? 'good' : n < 0 ? 'bad' : 'zero');
   return (
     <button type="button" className="sum-bm" onClick={onOpen}
-      aria-label={t('sum.bmLabel', { net: signedPts(net), list: all.map(p => `${p.name} ${signedPts(p.points)}`).join(', ') })}>
+      aria-label={t('sum.bmLabel', { net: signed(net), list: all.map(p => `${p.name} ${signed(p.points)}`).join(', ') })}>
       <span className="sum-bm-label" aria-hidden="true">{t('area.bonusMalus')}</span>
-      <em className={`sum-bm-net ${tone(net)}`} aria-hidden="true">{signedPts(net)}</em>
+      <em className={`sum-bm-net ${tone(net)}`} aria-hidden="true">{signed(net)}</em>
       <span ref={fit.ref} className="sum-bm-list" aria-hidden="true">
-        {shown.map(p => <span key={p.key} data-fit className="sum-bm-item">{p.name} <b className={tone(p.points)}>{signedPts(p.points)}</b></span>)}
+        {shown.map(p => <span key={p.key} data-fit className="sum-bm-item">{p.name} <b className={tone(p.points)}>{signed(p.points)}</b></span>)}
         {/* Con la parola ("+3 altre"), così non si legge come punti accanto ai +N delle voci; al passaggio le voci nascoste */}
         {/* Se fra le nascoste ci sono malus, il loro totale in rosso accanto: il netto si spiega anche senza passarci sopra */}
         {hidden > 0 && (
-          <span data-fit-more className="sum-bm-more more-n" {...hint(pieces.slice(shown.length).map(p => `${p.name} ${signedPts(p.points)}`).join(' · '))}>
+          <span data-fit-more className="sum-bm-more more-n" {...hint(pieces.slice(shown.length).map(p => `${p.name} ${signed(p.points)}`).join(' · '))}>
             {t('sum.bmMore', { n: hidden })}
-            {hiddenMalus < 0 && <>{' · '}<b className="bad">{signedPts(hiddenMalus)}</b></>}
+            {hiddenMalus < 0 && <>{' · '}<b className="bad">{signed(hiddenMalus)}</b></>}
           </span>
         )}
       </span>
@@ -498,8 +495,8 @@ export function SummarySection({ summary, members, grade, density, rich = false,
               <div className="sum-alerts">
                 {heavy.map(p => (
                   <button key={p.key} type="button" className="sum-alert" onClick={() => onView('bonusMalus')} {...hint(p.name)}
-                    aria-label={`${p.name} ${signedPts(p.points)}, ${goText(t, places.bonusMalus)}`}>
-                    <Icon name="warning" /><span className="sum-alert-name">{p.name}</span><b>{signedPts(p.points)}</b>
+                    aria-label={`${p.name} ${signed(p.points)}, ${goText(t, places.bonusMalus)}`}>
+                    <Icon name="warning" /><span className="sum-alert-name">{p.name}</span><b>{signed(p.points)}</b>
                   </button>
                 ))}
               </div>

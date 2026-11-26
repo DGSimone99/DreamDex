@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { coachTeam } from '../../src/engine/coach';
 import type { EngineData } from '../../src/engine/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { improveReplacements, keepersFirst, similarReplacements } from '../../src/engine/replace';
+import { improveReplacements, keepersFirst } from '../../src/engine/replace';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import type { SpeciesStats } from '../../src/engine/stats';
-import { enables, neededConditions } from '../../src/engine/synergy';
+import { neededConditions } from '../../src/engine/synergy';
 import { adviceOf } from '../helpers/coach';
 
 const entry = (usage: number, ability: string, moves: string[]): SpeciesStats => ({
@@ -60,8 +59,8 @@ describe('condizioni di cui il team ha bisogno', () => {
 });
 
 describe('sostituire un weather setter', () => {
-  it('migliora team e sostituto simile mettono in cima chi porta la stessa condizione, senza escludere gli altri', () => {
-    for (const list of [improveReplacements([ninetales, leafeon], 0, format, withSetter), similarReplacements([ninetales, leafeon], 0, format, withSetter)]) {
+  it('i sostituti mettono in cima chi porta la stessa condizione, senza escludere gli altri', () => {
+    for (const list of [improveReplacements([ninetales, leafeon], 0, format, withSetter)]) {
       expect(list[0].species).toBe('Torkoal');
       expect(list[0].keeps).toBe(true);
       expect(list.find(r => r.species === 'Garchomp')?.keeps).toBe(false);

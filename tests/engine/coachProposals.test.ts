@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CoachProblem, ProblemCategory } from '../../src/engine/coach';
 import type { CoachFix } from '../../src/engine/coachFixes';
-import { areaOfProblem, MAX_ALTERNATIVES, neutralAsAlternatives, proposalGroups, solvedKeys, type ProposalGroup } from '../../src/engine/coachProposals';
+import { MAX_ALTERNATIVES, neutralAsAlternatives, proposalGroups, solvedKeys, type ProposalGroup } from '../../src/engine/coachProposals';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { emptySet } from '../../src/engine/sets';
 
@@ -66,11 +66,6 @@ describe('proposalGroups', () => {
 
   it('solvedKeys: i problemi risolti da almeno una proposta, mosse comprese', () => {
     expect([...solvedKeys({ fixes: [swap('X', 0, 1, ['a'])], moves: [move(1, 'Tackle', 1, ['b'])] })].sort()).toEqual(['a', 'b']);
-  });
-
-  it('areaOfProblem: le aree delle testate', () => {
-    expect(['defense', 'meta', 'coverage', 'metaHit', 'roles', 'conditions', 'redundancy', 'rules'].map(c => areaOfProblem(c as ProblemCategory)))
-      .toEqual(['defense', 'defense', 'strength', 'strength', 'roles', 'bonusMalus', 'bonusMalus', 'rules']);
   });
 });
 

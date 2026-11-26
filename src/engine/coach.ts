@@ -1,7 +1,7 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
-import { teamArchetype, type Archetype, type TeamArchetype } from './archetype';
+import { teamArchetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
-import { isOneType, type FormatRules } from './formatRules';
+import { isOneType } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, withinGen } from './dex';
 import { bannedParts, formatLabel, illegalReason, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
@@ -15,7 +15,7 @@ import { keyRoles, needLabel } from './needs';
 import { LEVEL_KEYS } from './roleLevels';
 import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, ratingThreats, roleAndTypeRedundancies, weakenedMoveNotes, weatherClashes, type TeamRating } from './rating';
-import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBeneficiaries, unusedEnablers, usesCondition } from './synergy';
+import { conditionLabel, viaName, enables, teamSynergies, unmetBeneficiaries, unusedEnablers, usesCondition } from './synergy';
 import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
@@ -29,7 +29,6 @@ import { withUsableMoves } from './lockedMoves';
 import { duplicateSpecies, missingFormeItem, voteTeam } from './legalTeam';
 import { EV_TOTAL, evTotal } from './statCalc';
 
-export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
 /**
@@ -282,14 +281,6 @@ export function bannedTexts(set: TeamSet, format: Format, lang: Lang = 'it'): st
   ].filter((x): x is string => !!x);
 }
 
-/**
- * Il tipo di team che i consigli devono mantenere, o undefined se possono cambiarlo.
- * In Ubers un consiglio non cambia il tipo di team (un HO resta HO), salvo per un team da C o D da ricostruire.
- */
-export function archetypeLock(team: TeamSet[], rules: FormatRules, grade: string): Archetype | undefined {
-  return rules.keepArchetype && !['C', 'D'].includes(grade) ? teamArchetype(team, rules)?.archetype : undefined;
-}
-
 /** Giudizio breve sul team, coerente col voto; un problema di regole lo porta sempre a "da rivedere". */
 export function verdictFor(team: TeamSet[], problems: CoachProblem[], grade: string, lang: Lang): string {
   if (team.length < 6) return t(lang, 'coach.verdict.incomplete');
@@ -310,13 +301,6 @@ function groupChanges(change: Contribution, gain: boolean, lang: Lang): string[]
     change.covers.length ? t(lang, gain ? 'diff.strong' : 'diff.notStrong', { types: change.covers.map(type => typeName(type, lang)).join(', ') }) : '',
     change.resists.length ? t(lang, gain ? 'diff.resists' : 'diff.notResists', typeList(change.resists, lang)) : '',
   ].filter(Boolean);
-}
-
-/** Punti di voto che il team guadagna mettendo `set` al posto del membro `index` (negativi se ne perde). */
-export function ratingGainOf(team: TeamSet[], index: number, set: TeamSet, data: EngineData): number {
-  const before = rateTeam(team, data);
-  const after = rateTeam(team.map((member, i) => (i === index ? set : member)), data);
-  return before && after ? after.overall - before.overall : 0;
 }
 
 /** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */

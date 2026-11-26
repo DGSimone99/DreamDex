@@ -6,7 +6,7 @@ import { bestHit, setKey } from './damage';
 import { ownConditions } from './coverage';
 import { usesMeta } from './analysis';
 import { mostCommonSet, type TeamSet } from './sets';
-import { isWebImmune, outspeedShare, paradoxSpeedBoost, sameSelf, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
+import { isWebImmune, paradoxSpeedBoost, sameSelf, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
 import { ownField } from './types';
 import { getSpecies } from './dex';
 import { isTank } from './tank';
@@ -81,8 +81,6 @@ export const SPEED_FULL = 1;
  * i voti salgono solo di livello). Un membro lento conta come gli altri, tranne i tank (TANK_SPEED_WEIGHT).
  */
 export const SPEED_RANK_WEIGHTS = [1, 1, 1, 1, 1, 1];
-/** I pesi per posizione (dal più veloce al più lento), per la guida. */
-export const speedRankWeights = (): number[] => SPEED_RANK_WEIGHTS;
 
 /**
  * Quota del guadagno che entra nel voto: metà per ciò che il membro si porta da solo e dura (setup, meteo, Booster,

@@ -79,7 +79,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
     <div className="overview">
       {/* Prima com'è fatto il team e in fondo cosa sistemare; con un membro solo, in fondo, l'invito ad aggiungerne un altro
           nella stessa striscia neutra del team incompleto */}
-      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} team={team} grade={rating?.grade} weak={weak} bonusMalus={team.length >= 2 ? bonusMalus : undefined} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
+      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} grade={rating?.grade} weak={weak} bonusMalus={team.length >= 2 ? bonusMalus : undefined} onView={onView} onCollapseTeam={onCollapseTeam} teamCollapsed={teamCollapsed} />}
       {team.length >= 2 && problems && <FixRow problems={problems} advice={advice ?? null} members={team.length} onView={onView} />}
       {team.length < 2 && coaching && (
         <section className="fix-row building overview-headline" aria-label={t('overview.fix.title')}>

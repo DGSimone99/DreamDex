@@ -200,13 +200,6 @@ export function speedNeighbours<R extends { value: number }>(speed: number, riva
   };
 }
 
-/** Velocità di un Pokémon del meta col suo spread e strumento più usati (0 se non ha statistiche). */
-export function metaSpeed(data: EngineData, name: string): number {
-  const entry = data.stats?.pokemon[name];
-  if (!entry) return 0;
-  const { nature, evs } = parseSpread(top(entry.spreads));
-  return speedStat({ species: name, item: dex.items.get(top(entry.items) ?? '').name ?? '', nature, evs }).value;
-}
 
 /** Tier che contano come "il formato" per la velocità: chi ci gioca davvero (in Ubers anche gli OU). */
 const SPEED_TIERS: Partial<Record<FormatId, string[]>> = {

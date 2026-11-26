@@ -2,6 +2,7 @@ import { battleSpecies, getMove, getSpecies, isDefined } from './dex';
 import { legalAbilities, legalMoves } from './learnsets';
 import type { StatID, TeamSet } from './sets';
 import type { GameId } from './games';
+import { LATEST_GEN } from './format';
 import { effectiveness, TYPES, type TypeName } from './types';
 
 /**
@@ -51,7 +52,7 @@ function strength(move: NonNullable<ReturnType<typeof getMove>>, types: readonly
  * che colpisce più tipi possibili, una mossa di supporto; natura, EV e strumento dalle statistiche base.
  * `doubles`: la mossa di supporto si sceglie dalla lista del doppio (Protect per prima).
  */
-export function generatedSet(speciesName: string, genLimit = 9, game: GameId | null = null, doubles = false): TeamSet {
+export function generatedSet(speciesName: string, genLimit = LATEST_GEN, game: GameId | null = null, doubles = false): TeamSet {
   const species = getSpecies(speciesName);
   const empty: TeamSet = { species: speciesName, item: '', ability: '', moves: [], nature: 'Serious', evs: {} };
   if (!species) return empty;

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, it } from 'vitest';
 import { DEFAULT_CHOICE } from '../../src/engine/formatChoice';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';

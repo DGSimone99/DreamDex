@@ -361,7 +361,6 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .kot-mon .sprite { display: block; margin: -4px -2px; image-rendering: pixelated; }
 .kot-none { margin: 0; padding: var(--sp-5) var(--sp-6); color: var(--muted); }
 .kot-extra { border-top: 1px solid var(--line-soft); }
-.kot-extra-h { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) var(--sp-6) 0; font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 
 /* ===== Dettaglio dei candidati disegnato come la carta del tooltip (SuggestionDetail): la testata della carta (diagonale
    nei colori dei tipi, righe, ombra in basso) con sprite, nome, icone dei tipi e lastra dei ruoli, il voto a destra; il set
@@ -402,29 +401,13 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
    avvisi), le voci a destra; i ruoli come i riquadri della Panoramica, con la spunta o la × */
 .bring-groups { display: grid; gap: var(--sp-4); }
 .bring-group { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
-.bring-label { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 20px; font: 700 var(--fs-label)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
-.bring-label .icon { flex: none; width: 13px; height: 13px; }
-.bring-label .sym-vs { flex: none; font: 800 italic var(--fs-label)/1 var(--display); letter-spacing: 0.04em; }
-.bring-groups.gain .bring-label .icon, .bring-groups.gain .bring-label .sym-vs { color: var(--good); }
-.bring-groups.loss .bring-label .icon, .bring-groups.loss .bring-label .sym-vs { color: var(--bad); }
-.bring-group.warning .bring-label, .bring-group.warning .bring-label .icon { color: var(--warn); }
 .bring-items { list-style: none; margin: 0; padding: 2px 0 0; display: grid; gap: var(--sp-1); font-size: var(--fs-small); line-height: 1.35; }
-.bring-roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
-.bring-roles .dash-role-tag .icon { stroke-width: 2.5; }
-.bring-groups.gain .bring-roles .dash-role-tag .icon { color: var(--good); background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
-.bring-groups.loss .bring-roles .dash-role-tag .icon { color: var(--bad); background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
 .bring-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
-.bring-roles .dash-role-tag { max-width: 100%; white-space: normal; }
 /* La lastra dei ruoli in testata su una riga sola: l'elenco intero nel tooltip */
 /* L'etichetta sulla stessa linea di base della prima riga delle voci (o della scritta dei riquadri dei ruoli): le due
    scritte hanno misure diverse, quindi si allineano le basi, non i centri; i segni restano centrati sulla scritta */
 .bring-group { align-items: baseline; }
-.bring-label { min-height: 0; height: auto; align-items: baseline; line-height: 1.35; }
-.bring-label .icon, .bring-label .sym-vs { align-self: center; }
 .bring-items { padding-top: 0; }
-.bring-roles .dash-role-tag { min-height: 22px; }
-/* Nei riquadri dei ruoli la tessera del segno (spunta o ×) è alta quanto il riquadro, la scritta al centro */
-.bring-roles .dash-role-tag .icon { align-self: stretch; }
 
 /* ===== Mossa (MoveTip): le forme della scheda mossa di Pokémon Champions coi colori del sito. Testata DreamDex nel colore
    del tipo (icona, nome, la priorità come lastra inclinata); sotto, caselle separate: l'etichetta su una fascia tinta

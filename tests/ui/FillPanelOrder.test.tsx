@@ -95,7 +95,7 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={onApply} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
     const prev = () => screen.getByRole('button', { name: 'Proposte precedenti' });
     const next = () => screen.getByRole('button', { name: 'Proposte successive' });
-    const pageText = () => screen.getByRole('navigation', { name: 'Giri di proposte' }).querySelector('[aria-live]')!;
+    const pageText = () => screen.getByRole('navigation', { name: 'Giri di proposte' }).querySelector('[role="status"]')!;
     expect(prev()).toBeDisabled();
     expect(next()).toBeDisabled();
     expect(pageText()).toHaveTextContent('Pagina 1 di 1');

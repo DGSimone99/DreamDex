@@ -4,13 +4,10 @@ import type { EngineData } from '../../src/engine/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import type { SpeciesStats } from '../../src/engine/stats';
 import { fixtureData } from '../fixtures/data';
 
 const withMoves = (species: string, moves: string[]): TeamSet => ({ ...emptySet(species), moves });
-const area = (team: TeamSet[], key: string, data: EngineData = fixtureData) => rateTeam(team, data)!.areas.find(a => a.key === key)!.value!;
 const penalties = (team: TeamSet[], data: EngineData = fixtureData) => rateTeam(team, data)!.penalty.items;
-const entry = (usage: number): SpeciesStats => ({ usage, count: 100, abilities: {}, items: {}, teraTypes: {}, spreads: {}, moves: {}, teammates: {}, checks: {} });
 
 describe('copertura pesata da chi colpisce', () => {
   it('un Close Combat di Alakazam copre meno di uno di Great Tusk', () => {

@@ -69,8 +69,3 @@ export function defenderPanel(data: EngineData): TeamSet[] {
   return panel;
 }
 
-/** Quanti difensori del pannello vengono dal meta (i primi); gli altri sono i più robusti del tier. */
-export function metaDefenderCount(data: EngineData): number {
-  defenderPanel(data);
-  return metaCounts.get(`${data.formatId ?? 'ou'}|${usesMeta(data)}`) ?? 0;
-}

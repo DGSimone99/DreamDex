@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { coachTeam } from '../../src/engine/coach';
 import type { EngineData } from '../../src/engine/data';
 import { battleName } from '../../src/engine/dex';
 import { fillProposals, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { effectiveLists, EMPTY_LISTS, type EffectiveLists } from '../../src/engine/lists';
 import { rateTeam } from '../../src/engine/rating';
-import { improveReplacements, similarReplacements } from '../../src/engine/replace';
+import { improveReplacements } from '../../src/engine/replace';
 import { bannedInPool, scoreSets, suggest } from '../../src/engine/scoring';
 import { defaultSet, emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
@@ -31,10 +30,9 @@ describe('bannati dall\'utente: mai suggeriti', () => {
     expect(bannedInPool(team, DEFAULT_FORMAT, fixtureData)).toBe(0);
   });
 
-  it('sostituti: miglioramento e simili', () => {
+  it('sostituti', () => {
     const pair = [tusk, gholdengo];
     expect(names(improveReplacements(pair, 1, DEFAULT_FORMAT, data, 50, undefined, 'it'))).not.toContain(first);
-    expect(names(similarReplacements(pair, 1, DEFAULT_FORMAT, data, 50, undefined, 'it'))).not.toContain(first);
   });
 
   it('set indicati (ricerca): bannato fuori, a meno che sia ammesso', () => {

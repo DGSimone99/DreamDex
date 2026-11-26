@@ -2,7 +2,7 @@ import type { CoachAdvice, CoachProblem } from '../../engine/coach';
 import { proposalGroups, solvedKeys } from '../../engine/coachProposals';
 import { useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
-import { gainText } from '../CoachingView';
+import { gainText } from '../coaching/gainText';
 import { Icon } from '../icons';
 
 /**

@@ -126,12 +126,6 @@ describe('scambi con l\'archetipo scelto', () => {
       expect(item.teamGain!.overall).toBe(rateTeam(withCandidate(team, item.set, 1), fixtureData, 'it')!.overall);
     }
   });
-
-  it('Sostituto simile: nessuna penalità', () => {
-    const sims = pool().map(c => ({ ...c, similarity: 1 }));
-    const swaps = bestSwaps(balance, fixtureData, 'it', () => sims, { similar: true, threshold: 0, archetype: 'balance' });
-    expect(swaps.every(s => (s.teamGain.penalty ?? 0) === 0)).toBe(true);
-  });
 });
 
 describe('rifiniture del tipo scelto', () => {

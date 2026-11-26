@@ -19,6 +19,7 @@ import { DefenseTip, OffenseTip } from './CoverageTip';
 import { DashCard, DashLink } from './DashCard';
 import { ThreatTip } from './ThreatTip';
 import { useReasonText } from './threatText';
+import { tabStep } from '../tabStep';
 
 /** Prima lettera minuscola: il dettaglio segue "Terra, colpisce:". */
 const lower = (text: string) => text.charAt(0).toLocaleLowerCase() + text.slice(1);
@@ -161,9 +162,11 @@ export function CoverageSection({ coverage, threats, gentle = false, incomplete 
   const tabs = threats && !stacked && (
     <span className="dash-tabs" role="tablist" aria-label={t('dash.tabsLabel')} data-view={view}
       onKeyDown={e => {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        const views = ['types', 'meta'] as const;
+        const step = tabStep(e.key, views.indexOf(view), views.length, { homeEnd: false });
+        if (step === null) return;
         e.preventDefault();
-        const next = view === 'types' ? 'meta' : 'types';
+        const next = views[step];
         setView(next);
         (e.currentTarget.querySelector(`[data-view="${next}"]`) as HTMLElement | null)?.focus();
       }}>

@@ -6,7 +6,7 @@ import { Icon, type IconName } from './icons';
 import { KoBadge, type KoBadgeBand, type KoSide } from './KoBadge';
 import { Sprite } from './Sprite';
 import { SPRITE_TIP, SPRITE_TIP_TALL } from './spriteSizes';
-import { tileStyle, typeIconUrl } from './typeIcons';
+import { TypeTile } from './typeIcons';
 
 /**
  * La testata unica dei tooltip DreamDex (vedi DESIGN.md, "Tooltips"): righe su una sfumatura nel colore del tooltip
@@ -41,7 +41,7 @@ export function TipHead({ lead, sprite, title, sub, num, badge, qualifier, class
 
 /** L'icona quadrata di un tipo in testata (22px, `--ti-tip`). */
 export function TipTypeIcon({ type }: { type: string }) {
-  return <img className="ti-sq tip-ti" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />;
+  return <TypeTile type={type} className="tip-ti" />;
 }
 
 /** Un tondo da 22px nel colore del tooltip con un simbolo (velocità, strumento, abilità, meteo, spada, scudo...). */
@@ -113,7 +113,7 @@ export function TipType({ type }: { type: string }) {
 
 /** La tessera da 24px di un tipo nelle righe (`--ti-head`), senza nome. */
 export function TipTypeTile({ type }: { type: string }) {
-  return <img className="ti-sq tip-type-tile" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />;
+  return <TypeTile type={type} className="tip-type-tile" />;
 }
 
 /** I punti con segno ("+6", "−12") hanno il colore del segno ovunque, in testata e nelle righe: verde sopra zero, rosso sotto. */

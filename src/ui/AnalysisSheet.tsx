@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
+import { useEscape } from './useEscape';
 
 /**
  * Il foglio che sale dal basso sul telefono (Offesa, Difesa): il dettaglio di una carta o di una tessera senza lasciare la
@@ -17,14 +18,8 @@ export function AnalysisSheet({ title, sub, lead, onClose, className = '', child
   const t = useT();
   const id = useId();
   const closeButton = useRef<HTMLButtonElement>(null);
-  const close = useRef(onClose);
-  close.current = onClose;
-  useEffect(() => {
-    closeButton.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); close.current(); } };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  useEffect(() => { closeButton.current?.focus({ preventScroll: true }); }, []);
+  useEscape(onClose, { prevent: true });
   return createPortal(
     <div className="help-backdrop an-sheet-back" onClick={onClose}>
       <ModalLock />

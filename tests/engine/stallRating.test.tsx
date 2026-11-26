@@ -4,12 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { ARCHETYPE_WEIGHTS, rateTeam } from '../../src/engine/rating';
 import { teamNeeds } from '../../src/engine/needs';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
-import { ESSENTIAL_POINTS } from '../../src/engine/rolesArea';
 
-import { memberPower, teamPower } from '../../src/engine/power';
 import { isPassive } from '../../src/engine/roles';
-import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
-import { superEffectiveMove, TYPES } from '../../src/engine/types';
 
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';

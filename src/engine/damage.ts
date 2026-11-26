@@ -3,9 +3,10 @@ import { battleAbility, battleSpecies, dex, getMove, movePriority, toID } from '
 import type { TeamSet } from './sets';
 import type { Condition } from './synergy';
 import { installFastClone } from './fastCalc';
+import { LATEST_GEN } from './format';
 
-/** Tutti i formati dell'app sono di Scarlatto/Violetto: i dati di gen 9 della libreria hanno anche Mega e mosse Z. */
-const gen = Generations.get(9);
+/** Tutti i formati dell'app sono di Scarlatto/Violetto: i dati di gen 9 della libreria hanno anche Mega e mosse Z (vedi LATEST_GEN). */
+const gen = Generations.get(LATEST_GEN);
 // Ogni colpo copia attaccante, difensore e mossa: la copia veloce dà lo stesso risultato in meno tempo
 installFastClone();
 

@@ -1,25 +1,6 @@
 /* Area senza peso nel voto (Velocità nello stall): etichetta e barra attenuate */
 .rating .bars .inactive dt { color: var(--faint); }
 .rating .bars .inactive dd { opacity: 0.5; }
-.rating .bars .net-row { grid-column: 1 / -1; }
-.rating .net-bar { position: relative; height: 8px; border-radius: 2px; background: var(--line-soft); }
-.rating .net-tick { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--muted); }
-.rating .net-fill { position: absolute; top: 0; bottom: 0; }
-.rating .net-fill.pos { left: 50%; background: var(--accent); border-radius: 0 2px 2px 0; }
-.rating .net-fill.neg { right: 50%; background: var(--bad); border-radius: 2px 0 0 2px; }
-.rating .net-list { list-style: none; padding: 0; margin: var(--sp-2) 0 var(--sp-4); }
-.rating .net-list li { position: relative; padding-left: var(--sp-9); color: var(--text); }
-.rating .net-list li::before { position: absolute; left: 0; width: 10px; text-align: center; font-weight: 700; }
-.rating .net-list li.pos::before { content: '+'; color: var(--accent); }
-.rating .net-list li.neg::before { content: '−'; color: var(--bad); }
-
-.swap-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin: 0; color: var(--muted); }
-.swap-head .icon { color: var(--faint); }
-.swap-head strong { font: 700 var(--fs-title)/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); }
-.swap-head .gain { font: 700 var(--fs-body)/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
-.swap-head small { font-size: var(--fs-caption); color: var(--faint); }
-.swap-head .gain.worse { color: var(--bad); }
-.swap-head .gain.same { color: var(--muted); }
 
 .analysis table { border-collapse: collapse; width: 100%; font-size: var(--fs-small); }
 .analysis th, .analysis td { padding: var(--sp-2) 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
@@ -29,9 +10,6 @@
 .analysis tr.minor { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 
 /* Avvisi: triangolo rosso per i gravi, blu per i minori */
-.summary-info { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--sp-5); }
-.issue-counts { display: inline-flex; align-items: center; gap: var(--sp-4); }
-.issue-counts:empty { display: none; }
 .issue { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .issue .icon { width: 15px; height: 15px; }
 .issue.serious { color: var(--bad); }
@@ -43,32 +21,9 @@
 /* Elenchi dell'analisi: righe allineate, niente pallini */
 .analysis h4 { font: 600 var(--fs-caption)/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: var(--sp-7) 0 var(--sp-3); display: flex; align-items: center; gap: var(--sp-3); }
 .analysis h4 .count { font: 700 var(--fs-caption)/1 var(--display); color: var(--muted); background: var(--raised); padding: var(--sp-1) var(--sp-3); border-radius: 2px; }
-.role-rows, .type-rows { list-style: none; padding: 0; margin: 0; }
 
 .count-weak { color: var(--bad); font-weight: 600; }
 .count-resist { color: var(--good); font-weight: 600; }
-
-.role-group + .role-group { margin-top: var(--sp-9); }
-.role-group h4 { margin: 0 0 var(--sp-2); }
-.role-rows li { display: grid; grid-template-columns: 16px 150px minmax(0, 1fr); gap: var(--sp-5); align-items: center; margin: 0; padding: var(--sp-3) 0; border-bottom: 1px solid var(--line-soft); font-size: var(--fs-section); }
-.role-rows li:last-child { border-bottom: 0; }
-.role-rows .icon { color: var(--good); }
-.role-rows .role { font-weight: 600; }
-.role-rows .owners { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); color: var(--muted); font-size: var(--fs-small); }
-.role-rows .owner { padding: 1px 7px; border-radius: 2px; background: var(--raised); color: var(--text); }
-.role-rows li.bad .icon, .role-rows li.bad .owners { color: var(--bad); font-weight: 500; }
-/* Minore mancante: grigio tenue col colore del testo, non con la trasparenza (si legge ancora: 4,7:1) */
-.role-rows li.soft, .role-rows li.soft .owners, .role-rows li.soft .owner { color: var(--faint); }
-.role-rows li.soft .owner { background: color-mix(in srgb, var(--raised) 55%, transparent); }
-/* Importante mancante: un avviso tenue, né il rosso degli essenziali né il grigio dei minori */
-.role-rows li.warn .owners { color: color-mix(in srgb, var(--warn) 80%, var(--muted)); font-weight: 500; }
-
-.type-rows { display: grid; gap: var(--sp-1); }
-.type-rows li { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: var(--sp-6); align-items: center; margin: 0; padding: var(--sp-2) 0; border-bottom: 1px solid var(--line-soft); font-size: var(--fs-section); }
-.type-rows .hitter { display: inline-flex; gap: var(--sp-2); align-items: baseline; margin-right: var(--sp-7); }
-.type-rows .hitter small { display: inline; font-size: var(--fs-caption); color: var(--faint); }
-.type-rows .missing { color: var(--bad); font-weight: 500; }
-.type-rows li.bad { background: linear-gradient(90deg, var(--bad-bg), transparent 80%); }
 
 /* Schede interne di Analisi: Panoramica e le aree del voto, col "?" accanto a quella aperta */
 .analysis-tabs { position: relative; display: flex; align-items: center; margin: 0 0 var(--sp-6); border-bottom: 1px solid var(--line-soft); }
@@ -225,7 +180,6 @@
 .fix-label { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; padding: calc((16px - 1.2em) / 2 + 1px) var(--sp-4); border-radius: 3px; font-size: var(--fs-label); line-height: 1.2; font-weight: 600; text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--tone); background: var(--tone-bg); }
 .fix-label .icon { width: 13px; height: 13px; }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fix-more { flex: none; padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; color: var(--muted); background: var(--raised); }
 .fix-go { flex: none; margin-left: auto; padding-top: 0; padding-bottom: 0; line-height: 20px; }
 /* Il +N della proposta migliore, verde in Kanit corsivo */
 .fix-gain { font: 700 var(--fs-section)/1 var(--display); font-style: italic; color: var(--good); }
@@ -758,7 +712,7 @@
  * della tabella dei Ruoli e lo sprite grande dei dettagli (candidato, membro). Non nelle liste lunghe: sarebbe rumore.
  * In percentuale della casella: segue lo sprite a ogni misura.
  */
-.dash-lane-sprite .sprite, .dash-role-grid thead .sprite, .detail-sprite {
+.dash-lane-sprite .sprite, .dash-role-grid thead .sprite {
   background: radial-gradient(ellipse 46% 14% at 50% 85%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%), radial-gradient(ellipse 42% 11% at 50% 87%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
 
 /* Entrata leggera in sequenza e caselle che si sollevano: solo se il sistema non riduce le animazioni */
@@ -778,15 +732,12 @@
  */
 .coaching { container: coaching / size; display: flex; flex-direction: column; gap: var(--sp-3); height: 100%; min-height: 0; padding-bottom: 0; overflow: hidden auto; overscroll-behavior: contain; }
 .coach-sec { display: flex; align-items: center; gap: var(--sp-4); margin: 0; font: 700 var(--fs-small)/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-.coach-count { padding: 3px var(--sp-4); border-radius: 10px; font: 600 var(--fs-caption)/1 var(--ui); font-style: normal; letter-spacing: 0; color: var(--muted); background: var(--raised); }
 /* Le aree senza problemi: una riga verde sopra la lista */
 .coach-clean { flex: none; display: flex; align-items: center; gap: var(--sp-4); margin: 0; padding: var(--sp-3) var(--sp-7); font-size: var(--fs-section); color: var(--good); background: var(--panel); }
 .coach-clean .icon { width: 14px; height: 14px; }
 .coach-clean b { color: var(--text); font-weight: 600; }
-.coach-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
 .coach-list-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-6); min-height: 28px; }
 /* "Proposte, dalla più utile" come la fascia di Pokémon Champions a sinistra (titolo di un gruppo dentro il pannello) */
-.coach-list-head .coach-count { padding: 1px var(--sp-4); line-height: 14px; }
 .coach-list-head .coach-sec { position: relative; flex: 1; min-width: 0; padding: 4px 24px 4px 9px; font: 600 var(--fs-small)/1.2 var(--display); font-style: normal; text-transform: none; letter-spacing: 0.01em; color: var(--text);
   background: linear-gradient(90deg, var(--champ-band), transparent 70%); }
 .coach-list-head .coach-sec::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--control-line), transparent 75%); }

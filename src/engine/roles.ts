@@ -1,7 +1,7 @@
 import { battleAbility, battleSpecies, effectiveStats, getMove, hasPriorityAttack, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 import { isOneType, type FormatRules } from './formatRules';
-import { rolesListFor, setSubRoles, type Family, type SubRole } from './subRoles';
+import { rolesListFor, setSubRoles, type SubRole } from './subRoles';
 import { memoBySet } from './memo';
 import { memberPower } from './power';
 import { t, type Lang } from '../i18n';
@@ -50,12 +50,6 @@ export const roleLabel = (role: ShownRole | 'setup' | 'priority', lang: Lang = '
 
 /** Il ruolo spiegato in una frase semplice, per i tooltip (Sweeper Fisico: "Veloce o potenziato, travolge…"). */
 export const roleDescription = (role: ShownRole | 'setup' | 'priority', lang: Lang = 'it'): string => t(lang, `roleDesc.${role}`);
-
-/** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
-export const roleShortLabel = (role: ShownRole | 'setup', lang: Lang = 'it'): string => (isGrouped(role) ? t(lang, `need.${role}`) : t(lang, `roleShort.${role}`));
-
-/** Nome della famiglia (Attacco, Difesa, Campo, Disturbo). */
-export const familyLabel = (family: Family, lang: Lang = 'it'): string => t(lang, `family.${family}`);
 
 const WALLS: LegacyRole[] = ['physicalWall', 'specialWall'];
 

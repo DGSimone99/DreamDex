@@ -17,6 +17,7 @@ import { TipGlyph, TipHead, TipRow, TipRows, TipSec, TipType } from './TipHead';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { useMediaQuery } from './useMediaQuery';
 import { TOUCH_QUERY } from './TouchTips';
+import { useClickAway } from './useClickAway';
 
 /** La larghezza S dei tooltip (--tip-s): la scheda del consiglio è vestita da tooltip. */
 const TIP_S = 300;
@@ -42,7 +43,6 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
   empty?: ReactNode;
 }) {
   const t = useT();
-  const lang = useLang();
   const [open, setOpen] = useState<TipId | null>(null);
   // La variante scelta a mano (mossa da togliere), per consiglio; senza, la migliore
   const [picked, setPicked] = useState<Partial<Record<TipId, number>>>({});
@@ -83,16 +83,8 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
     if (focus && was) chipRefs.current.get(was)?.focus();
   };
   useAnchoredPop(anchor, pop, open !== null, { width: TIP_S, prefer: 'above', gap: 8, sheet: true, onDismiss: () => close(false) });
-  useEffect(() => {
-    if (!open) return undefined;
-    const away = (e: PointerEvent) => {
-      const target = e.target as Element;
-      if (pop.current?.contains(target) || anchor.current?.contains(target) || target.closest?.('[role="listbox"], .ftip')) return;
-      setOpen(null);
-    };
-    document.addEventListener('pointerdown', away);
-    return () => document.removeEventListener('pointerdown', away);
-  }, [open]);
+  useClickAway(target => !!(pop.current?.contains(target) || anchor.current?.contains(target) || target.closest?.('[role="listbox"], .ftip')),
+    () => setOpen(null), { active: !!open });
 
   const toggle = (id: TipId, el: HTMLElement) => {
     anchor.current = el;
@@ -136,8 +128,6 @@ export function DuelTips({ side, me, opp, quick, result, onApply, empty }: {
     </div>
   );
 }
-
-type Tr = ReturnType<typeof useT>;
 
 const rangeText = (hit: DuelHit | null) => (hit && hit.max > 0 ? `${Math.round(hit.min * 100)}–${Math.round(hit.max * 100)}%` : '0%');
 
@@ -237,15 +227,14 @@ function TipCard({ me, opp, quick, tip, base, pick, onPick, onClose, onApply }: 
           <button type="button" className="duel-tip-close" aria-label={t('duel.tipClose')} onClick={onClose}><Icon name="close" /></button>
         </span>
       </div>
-      <div className="tip-sec duel-tip-main">
+      <TipSec className="duel-tip-main">
         {compare}
         {source}
-      </div>
+      </TipSec>
       {option && option.effects.length > 0 && (
-        <div className="tip-sec duel-tip-fx">
-          <span className="tip-sec-label">{t('duel.tipMeta')}</span>
+        <TipSec className="duel-tip-fx" label={t('duel.tipMeta')}>
           {option.effects.map(fx => <EffectLine key={fx.kind} fx={fx} />)}
-        </div>
+        </TipSec>
       )}
       <div className="duel-tip-foot">
         <span className="duel-tip-grade">
@@ -274,7 +263,6 @@ const UP: MetaEffect['kind'][] = ['takeMore', 'dealMore'];
  */
 function EffectLine({ fx }: { fx: MetaEffect }) {
   const t = useT();
-  const lang = useLang();
   const tip = useFloatAnchor<string>();
   const touch = useMediaQuery(TOUCH_QUERY);
   const [listOpen, setListOpen] = useState(false);

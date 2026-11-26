@@ -1,7 +1,7 @@
-import { analyzeTeam, UNIFORM_TYPE_WEIGHTS, usesMeta, type TeamAnalysis, type ThreatRow } from './analysis';
+import { analyzeTeam, usesMeta, type TeamAnalysis, type ThreatRow } from './analysis';
 import type { EngineData } from './data';
 import { battleAbility, battleName, battleSpecies, dex, getMove, toID } from './dex';
-import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
+import { memberPower, teamPower, type MemberPower } from './power';
 import { teamOffense, type TeamOffense } from './offense';
 import { teamDefense, type TeamDefense } from './defense';
 import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
@@ -20,8 +20,8 @@ import type { TeamSet } from './sets';
 import { lockedStatusMoves, withUsableMoves } from './lockedMoves';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
-import { teamField, TYPES } from './types';
-import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, sabotagedMembers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { TYPES } from './types';
+import { conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, sabotagedMembers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 import { heldByOf, teamCores, type Core, type HeldBy } from './cores';
 import { blockedReason, voteTeam } from './legalTeam';
 import { unheldDuels, type DuelRow } from './duel';
@@ -584,8 +584,6 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // Le mosse di stato che con la Choice o l'Assault Vest non servono valgono come se non ci fossero (lockedMoves.ts)
   const team = input.map(withUsableMoves);
   const analysis = analyzeTeam(team, data, opts.archetype);
-  // I 18 tipi pesano uguale (il meta del mese non cambia le coverage); l'Offesa invece si misura contro i difensori del meta, se attivo
-  const weights = UNIFORM_TYPE_WEIGHTS;
 
   const rules = rulesOf(data);
   // Stall riconosciuto: cambia solo la forza mostrata dei membri passivi (sotto), non i pesi né i ruoli

@@ -82,9 +82,6 @@ export const EMPTY_FILTERS: CandidateFilters = {
 };
 
 /** Soglie del filtro "Uso nel meta". */
-/** Un Pokémon ha al massimo due tipi. */
-export const MAX_TYPES = 2;
-
 export const COMMON_USAGE = 0.05;
 export const NICHE_USAGE = 0.01;
 
@@ -95,11 +92,6 @@ export function activeFilterCount(f: CandidateFilters): number {
     f.resists.length > 0, f.hits.length > 0, f.mega !== 'all', f.legendary !== 'all',
     f.usage !== 'all', f.tier !== 'all', f.favoritesOnly,
   ].filter(Boolean).length;
-}
-
-/** Tipo 1 e Tipo 2 uguali vogliono dire "solo monotipo" di quel tipo. */
-export function normalizeTypes(types: TypeName[]): { types: TypeName[]; mono: boolean } {
-  return types.length === 2 && types[0] === types[1] ? { types: [types[0]], mono: true } : { types, mono: false };
 }
 
 export function isFiltering(f: CandidateFilters): boolean {
@@ -199,7 +191,3 @@ export function searchCandidates(team: TeamSet[], format: Format, data: EngineDa
   return scoreSets(team, format, data, searchPool(team, format, data, f), lang).slice(0, limit);
 }
 
-/** Applica ricerca e filtri a una lista di sostituti già calcolata. */
-export function filterList<T extends { species: string; set: TeamSet }>(list: T[], f: CandidateFilters, data: EngineData, format: Format, limit = 20): T[] {
-  return list.filter(item => matchesFilters(item, f, data, format)).slice(0, limit);
-}

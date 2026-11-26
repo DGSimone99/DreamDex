@@ -1,71 +1,14 @@
-/* Dettaglio dell'Offesa: schede a sinistra (Generale e una per sottostatistica), come il modale d'aiuto, più alto */
-.ad-dialog { width: min(1080px, 100%); height: min(860px, calc(100vh - 48px)); max-height: none; }
-.ad-head h3 { display: flex; align-items: baseline; gap: var(--sp-6); font-size: var(--fs-heading); }
-.ad-head h3 strong { font: 700 var(--fs-stat)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
-.ad-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; flex: 1; }
 /* Lo stesso margine in fondo in ogni area (Offesa, Difesa, Velocità, Ruoli, Bonus): 12px, 10px sugli schermi bassi */
 .ad-panel { padding: var(--sp-8) var(--sp-10) var(--sp-6); overflow-y: auto; }
 .ad-panel h4 { margin: 0 0 var(--sp-4); font: 700 var(--fs-title-l)/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 /* Le spiegazioni occupano tutta la larghezza del pannello: il modale è largo apposta */
 .ad-panel p { margin: 0 0 var(--sp-5); font-size: var(--fs-section); line-height: 1.55; color: var(--muted); }
-.ad-how { margin: 0 0 var(--sp-8); padding: 0 0 var(--sp-3); border-bottom: 1px solid var(--line-soft); }
-.ad-holes { color: var(--text) !important; }
-.ad-subs { display: grid; gap: var(--sp-6); margin: 0 0 var(--sp-9); }
-.ad-sub { display: grid; grid-template-columns: minmax(0, 1fr) 44px; grid-template-areas: 'name value' 'bar value' 'tip tip'; gap: var(--sp-2) var(--sp-7); }
-.ad-sub dt { grid-area: name; font-size: var(--fs-section); font-weight: 600; color: var(--text); }
-.ad-sub dd { display: contents; }
-.ad-sub meter { grid-area: bar; display: block; width: 100%; }
-.ad-sub strong { grid-area: value; align-self: center; text-align: right; font: 700 var(--fs-headline)/1 var(--display); font-variant-numeric: tabular-nums; }
-.ad-sub span { grid-area: tip; font-size: var(--fs-small); color: var(--muted); }
-.ad-t { width: 100%; border-collapse: collapse; font-size: var(--fs-section); font-variant-numeric: tabular-nums; }
-.ad-t thead th { padding: var(--sp-5) var(--sp-3) var(--sp-3); text-align: right; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
-.ad-t thead th:first-child { text-align: left; padding-left: 0; }
-.ad-t td, .ad-t th[scope='row'] { padding: 3px var(--sp-3); border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; color: var(--muted); }
-.ad-t th[scope='row'] { text-align: left; padding-left: 0; font-weight: 600; color: var(--text); }
-.ad-t .left { text-align: left; }
-.ad-t td.total { font: 700 var(--fs-heading)/1 var(--display); color: var(--text); white-space: nowrap; }
-.ad-t .ad-once { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--accent); cursor: help; }
-.ad-t .ad-gain { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--good); cursor: help; }
-/* Velocità: il guadagno di ogni condizione nella sua colonna, nel verde del setup */
-.ad-t .ad-gain-cell { color: var(--good); font-weight: 600; cursor: help; }
 /* Il controllo velocità è un plus sopra la Velocità: il numero in verde, senza barra */
-.ad-sub strong.ad-plus { grid-row: 1 / span 2; color: var(--good); }
-.ad-t td meter { display: block; width: 110px; }
 .ad-mon { display: flex; align-items: center; gap: var(--sp-4); }
-.ad-mon .sprite, .ad-matrix thead .sprite { flex: none; }
+.ad-mon .sprite { flex: none; }
 .ad-scroll { overflow-x: auto; }
-.ad-matrix thead th { text-align: center; padding: var(--sp-3) var(--sp-1); }
-.ad-matrix td { text-align: center; padding: 3px var(--sp-1); }
-.ad-k { display: inline-block; min-width: 46px; padding: var(--sp-1) var(--sp-2); border-radius: 3px; font-size: var(--fs-label); font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
-.ad-k.ohko { background: var(--accent); color: var(--field); }
-.ad-k.two { background: var(--accent-soft); color: var(--text); }
-.ad-k.three { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
-.ad-k.none { color: var(--faint); font-weight: 600; }
-/* Il setup cambia la soglia: tra parentesi il danno dopo il potenziamento, nel verde della palette */
-.ad-k.setup { box-shadow: inset 0 0 0 1px var(--good); color: var(--good); }
-.ad-k.setup.two, .ad-k.setup.ohko { color: var(--text); }
-.ad-t .ad-group th { padding: var(--sp-6) 0 var(--sp-2); text-align: left; border-bottom: 1px solid var(--line); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
-.ad-t .ad-src { font: 500 var(--fs-caption)/1 var(--ui); color: var(--faint); }
-.ad-t .gap { padding-left: var(--sp-10); }
-/* Ruoli: malus delle essenziali in rosso, zero in grigio; le mancanze sotto le sottostatistiche */
-.ad-sub strong.ad-minus, .ad-sub strong.ad-zero { grid-row: 1 / span 2; }
-.ad-minus { color: var(--bad); }
-.ad-sub strong.ad-zero { color: var(--faint); }
-.ad-failures { margin: -6px 0 var(--sp-8); padding: 0; list-style: none; display: grid; gap: var(--sp-2); font-size: var(--fs-small); color: var(--bad); }
-.ad-failures li::before { content: '−'; margin-right: var(--sp-4); }
-/* Chi porta la voce: nome e sprite, fonte tra parentesi; vanno a capo su più righe */
-.ad-t td.ad-by { white-space: normal; }
-.ad-roles td.ad-by > .ad-mon { display: inline-flex; margin: 1px var(--sp-7) 1px 0; color: var(--text); font-weight: 600; }
-.ad-roles td.ad-by .ad-src { font-weight: 500; }
-.ad-roles td.ad-reason { white-space: normal; min-width: 180px; }
-/* Gruppo di un sotto-ruolo: nome, poi livello e valore di squadra più tenui; le voci che non contano si attenuano */
-.ad-t .ad-group .ad-level { margin-left: var(--sp-3); font-weight: 500; color: var(--faint); text-transform: none; letter-spacing: 0; }
-.ad-t .ad-group .ad-level.important { color: var(--muted); }
-.ad-t tbody.ad-ignored, .ad-t tbody.ad-ignored :is(th, td, b, span) { color: var(--faint); }
-.ad-t tbody.ad-ignored img { opacity: 0.55; }
 /* Copre a metà (superefficace ma solo da 3HKO): sprite più tenue */
 @media (max-width: 560px) {
-  .ad-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
   .ad-panel { padding: var(--sp-6) var(--sp-7) var(--sp-8); }
 }
 
@@ -109,14 +52,11 @@
 .rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
 .rating .grade .grade-alert .icon { width: 18px; height: 18px; }
 .rating .grade .grade-alert .alert-pop { font: 400 var(--fs-small)/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
-.rating .rating-note { margin: -4px 0 var(--sp-5); font-size: var(--fs-small); color: var(--muted); }
 .rating .grade > strong { font: 700 var(--fs-score)/1 var(--display); color: var(--accent); }
 .rating .grade-C > strong { color: var(--warn); }
 .rating .grade-D > strong { color: var(--bad); }
 .rating .bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) 20px; margin: 0 0 var(--sp-4); }
 .rating .bars dt { font-size: var(--fs-small); color: var(--muted); margin-bottom: var(--sp-2); }
-.rating .area-link { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-bottom: 1px dotted var(--faint); border-radius: 0; }
-.rating .area-link:hover { color: var(--text); border-bottom-color: var(--accent); }
 /* Le schede raggiunte dai link non finiscono sotto la barra in alto */
 .analysis details.block { scroll-margin-top: 80px; }
 .rating .bars dd { margin: 0; }

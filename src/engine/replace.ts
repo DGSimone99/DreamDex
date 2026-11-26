@@ -1,9 +1,8 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { Archetype } from './archetype';
 import type { EngineData } from './data';
-import { battleName, battleSpecies } from './dex';
+import { battleName } from './dex';
 import type { Format } from './format';
-import { formatRules, type FormatRules } from './formatRules';
 import { detectRoles, shownRoles, type ShownRole } from './roles';
 import type { Lang } from '../i18n';
 import { scoreCandidates, scoreSets, type Suggestion } from './scoring';
@@ -28,7 +27,6 @@ export interface Diff {
 
 export interface Replacement extends Suggestion {
   diff: Diff;
-  similarity?: number;
   /** Solo se il membro porta un meteo/campo di cui altri hanno bisogno: vero se anche il sostituto lo porta. */
   keeps?: boolean;
 }
@@ -37,35 +35,6 @@ export interface Replacement extends Suggestion {
 export function keepersFirst<T extends object>(list: T[]): T[] {
   const keeps = (item: T) => 'keeps' in item && item.keeps === true;
   return [...list.filter(keeps), ...list.filter(item => !keeps(item))];
-}
-
-function jaccard(a: readonly string[], b: readonly string[]): number {
-  const left = new Set(a);
-  const right = new Set(b);
-  const union = new Set([...left, ...right]);
-  if (union.size === 0) return 0;
-  return [...left].filter(x => right.has(x)).length / union.size;
-}
-
-function cosine(a: number[], b: number[]): number {
-  const dot = a.reduce((acc, x, i) => acc + x * b[i], 0);
-  const norm = (v: number[]) => Math.sqrt(v.reduce((acc, x) => acc + x * x, 0));
-  return dot / (norm(a) * norm(b) || 1);
-}
-
-export function similarity(a: TeamSet, b: TeamSet, rules: FormatRules): number {
-  const sa = battleSpecies(a);
-  const sb = battleSpecies(b);
-  if (!sa || !sb) return 0;
-  const vector = (s: typeof sa) => [s.baseStats.hp, s.baseStats.atk, s.baseStats.def, s.baseStats.spa, s.baseStats.spd, s.baseStats.spe];
-  const speedGap = Math.abs(sa.baseStats.spe - sb.baseStats.spe);
-  const speed = speedGap <= 10 ? 1 : speedGap <= 25 ? 0.5 : 0;
-  return (
-    0.35 * jaccard(sa.types, sb.types) +
-    0.35 * jaccard(detectRoles(a, rules), detectRoles(b, rules)) +
-    0.2 * cosine(vector(sa), vector(sb)) +
-    0.1 * speed
-  );
 }
 
 function contribution(set: TeamSet, analysis: TeamAnalysis): Contribution {
@@ -114,13 +83,4 @@ function candidatesFor(team: TeamSet[], index: number, format: Format, data: Eng
 export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it', archetype?: Archetype): Replacement[] {
   const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang, archetype);
   return scored.slice(0, limit).map(s => ({ ...s, diff: diffContribution(original, s.set, analysis, rest) }));
-}
-
-export function similarReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it', archetype?: Archetype): Replacement[] {
-  const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang, archetype);
-  const rank = (r: Replacement) => 0.8 * (r.similarity ?? 0) + 0.2 * (r.score / 100);
-  return keepersFirst(scored
-    .map(s => ({ ...s, similarity: similarity(original, s.set, formatRules(format.formatId)), diff: diffContribution(original, s.set, analysis, rest) }))
-    .sort((a, b) => rank(b) - rank(a)))
-    .slice(0, limit);
 }

@@ -218,13 +218,6 @@ export function stepValue(hit: Hit | null): number {
   return hit.expected >= TWO_HIT ? STEP_2HKO : hit.expected >= THREE_HIT ? STEP_3HKO : 0;
 }
 
-/**
- * Soglia di una casella della tabella dei muri. Il valore può essere una media (Tera, Z e meteo contano a metà):
- * da 1,25 è un OHKO, da 0,75 un 2HKO, da 0,25 un 3HKO.
- */
-export function stepBucket(step: number): 'ohko' | 'two' | 'three' | 'none' {
-  return step >= 1.25 ? 'ohko' : step >= 0.75 ? 'two' : step >= 0.25 ? 'three' : 'none';
-}
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 /** Dal rapporto col riferimento al punteggio: lineare, il riferimento vale 100 (solo misura dei Ruoli). */

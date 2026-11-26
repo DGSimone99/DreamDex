@@ -253,7 +253,7 @@
   .type-slot-menu .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .type-slot.up .type-slot-menu .type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .type-slot-menu { position: fixed; left: var(--sp-6); right: var(--sp-6); top: auto; bottom: var(--sp-6); width: auto; }
-  .role-tiles button, .role-flow button, .segmented button { min-height: 40px; }
+  .role-flow button, .segmented button { min-height: 40px; }
   .filters-foot { padding-bottom: calc(var(--sp-6) + var(--safe-b)); }
   .filters-foot .primary { flex: 1; min-height: 48px; }
   .format-gens label, .format-chips label { padding-block: var(--sp-5); }
@@ -1010,10 +1010,6 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   /* Come funziona il voto: in cima il tuo team, poi la lista che apre le pagine (con Indietro) */
   .help-phone { display: block; overflow-y: auto; padding: var(--sp-5) var(--sp-6) var(--sp-8); }
   .help-phone .help-panel { padding: 0; overflow: visible; }
-  .help-phone .help-yours { padding: var(--sp-6); border-radius: 8px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
-    background: radial-gradient(120% 120% at 100% 0, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%), var(--panel); }
-  .help-phone .help-yours-k { margin: 0 0 var(--sp-2); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
-  .help-phone .help-yours h4 { margin-top: 0; }
   .help-list { display: grid; margin-top: var(--sp-6); border-radius: 6px; border: 1px solid var(--line-soft); background: var(--panel); overflow: hidden; }
   .help-list button { display: flex; align-items: center; gap: var(--sp-5); min-height: 56px; padding: var(--sp-4) var(--sp-6); justify-content: space-between; text-align: left;
     border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: none; color: var(--text); font: 600 var(--fs-body)/1.2 var(--ui); }

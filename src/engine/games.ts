@@ -15,7 +15,7 @@ type Locked = Pick<Format, 'formatId' | 'meta' | 'genLimit' | 'ignoreBans' | 'al
 
 /** Il formato che ogni gioco impone: Scarlatto e Violetto = Gen 9 senza meta (Anything Goes, senza ban per tier). */
 export const GAME_LOCK: Record<GameId, Locked> = {
-  sv: { formatId: 'gen9ag', meta: false, genLimit: 9, ignoreBans: false, allowMultipleMegas: false },
+  sv: { formatId: 'gen9ag', meta: false, genLimit: GAME_GEN.sv, ignoreBans: false, allowMultipleMegas: false },
 };
 
 /** Il formato col gioco scelto (e il suo blocco), o senza gioco (opzioni del gioco spente). */

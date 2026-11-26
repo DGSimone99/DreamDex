@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { EngineData } from '../../engine/data';
 import { getSpecies, toID } from '../../engine/dex';
 import { metaBoard, metaProfile, META_BOARD_SIZE } from '../../engine/metaBoard';
@@ -9,9 +9,9 @@ import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import { Icon } from '../icons';
 import { hint } from '../MoveTip';
-import { Sprite, typeColor } from '../Sprite';
+import { Sprite, typePair } from '../Sprite';
 import { DETAIL_SHEET, useBackClose } from '../useBackClose';
-import { useMediaQuery } from '../useMediaQuery';
+import { useMediaQuery, reducedMotion } from '../useMediaQuery';
 import { useSheet } from '../useSheet';
 import { MetaCard } from './MetaCard';
 import { MetaProfileCard } from './MetaProfileCard';
@@ -50,7 +50,7 @@ export function MetaTab({ team, data, rating = null, onCoverage, onCollapseTeam,
   const closeTimer = useRef<number | undefined>(undefined);
   const finishClose = () => {
     window.clearTimeout(closeTimer.current);
-    const still = typeof window.matchMedia !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const still = reducedMotion(true);
     if (still) { setSheetOpen(false); return; }
     setSheetClosing(true);
     closeTimer.current = window.setTimeout(() => { setSheetClosing(false); setSheetOpen(false); }, SHEET_OUT_MS);
@@ -109,7 +109,7 @@ export function MetaTab({ team, data, rating = null, onCoverage, onCollapseTeam,
                 return (
                   <button key={`${i}-${m.name}`} type="button" className={`meta-member${m.rank === null ? ' out' : ''}`} disabled={m.usage === null}
                     aria-pressed={m.usage !== null && isSelected(m.name)} onClick={() => choose(m.name)} {...hint(why)}
-                    style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+                    style={typePair(types)}>
                     <Sprite species={m.name} size={40} />
                     <span className="visually-hidden">{m.name} </span>
                     <span className="meta-member-nums">

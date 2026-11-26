@@ -3,6 +3,7 @@ import { hint } from './MoveTip';
 import type { Archetype } from '../engine/archetype';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
+import { useClickAway } from './useClickAway';
 
 /**
  * Tipo di team sopra i candidati: una casella come le altre della barra (nome piccolo e scelta) che apre una
@@ -20,12 +21,9 @@ export function TeamTypePicker({ types, value, onChange }: {
   const [up, setUp] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  useClickAway(target => !!box.current?.contains(target), () => setOpen(false), { active: open, event: 'mousedown' });
   useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    box.current?.querySelector<HTMLButtonElement>('.tt-menu [aria-selected="true"]')?.focus();
-    return () => document.removeEventListener('mousedown', onDown);
+    if (open) box.current?.querySelector<HTMLButtonElement>('.tt-menu [aria-selected="true"]')?.focus();
   }, [open]);
   const pick = (next: Archetype | null) => { onChange(next); setOpen(false); trigger.current?.focus(); };
   const name = value ? t(`archetype.${value}`) : t('suggest.anyType');

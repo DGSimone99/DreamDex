@@ -8,7 +8,7 @@ import { FloatTip, goText, HiddenText, TipGo, useFloatAnchor } from '../FloatTip
 import { KoBadge } from '../KoBadge';
 import { countClass } from '../CardsLegend';
 import { TipGlyph, TipHead, TipSec } from '../TipHead';
-import { tileStyle, TypeIcons, typeIconUrl } from '../typeIcons';
+import { TypeTile } from '../typeIcons';
 import { PokemonIcon } from '../PokemonName';
 import { pieceSize, Target } from '../offense/KoBadges';
 import { TypeStatTable, type TypeStatCol } from '../offense/TargetsTip';
@@ -182,7 +182,7 @@ export function WorstHits({ hits }: { hits: WorstHit[] }) {
         return (
           <span key={h.label} className={`mc wh-${h.band}`} style={{ '--c': h.color ?? 'var(--faint)' } as CSSProperties}
             data-nav="" role="img" {...tip.bind(h.label)} aria-label={`${name} ${h.pct === null || h.pct >= 100 ? 'OHKO' : `${h.pct}%`}`}>
-            {h.kind === 'type' ? <img className="ti-sq" style={tileStyle(h.label)} src={typeIconUrl(h.label)} alt="" draggable={false} /> : <span className="wh-mon"><PokemonIcon name={h.label} /></span>}
+            {h.kind === 'type' ? <TypeTile type={h.label} /> : <span className="wh-mon"><PokemonIcon name={h.label} /></span>}
             <span className="mc-name">{name}</span>
             <b>{h.pct === null || h.pct >= 100 ? 'OHKO' : <>{h.pct}<small>%</small></>}</b>
           </span>

@@ -69,7 +69,6 @@
 .set-editor legend .legend-flag .icon { width: 14px; height: 14px; }
 .set-editor legend:not(.visually-hidden)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4) var(--sp-7); }
-.set-editor .field-note { font-size: var(--fs-label); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .set-editor .evs { position: relative; display: grid; gap: var(--sp-5); align-self: stretch; align-content: start; }
 /*
  * Righe delle statistiche come il riepilogo di Champions: icona e nome, la freccetta della natura accanto al numero, il
@@ -88,7 +87,6 @@
 .stat-row.stat-head:hover { background: none; }
 /* L'intestazione sta sopra le righe: i fumetti di EV e IV coprono le righe sotto, non il contrario */
 .stat-row.stat-head { position: relative; z-index: 3; }
-.stat-head-value { text-align: right; }
 .stat-head-ev { grid-column: span 2; text-align: center; }
 /* Il valore e la barra: un po' d'aria fra il numero grande e l'inizio della barra */
 .stat-row:not(.stat-head) .ev-slider { margin-left: var(--sp-4); width: calc(100% - var(--sp-4)); }

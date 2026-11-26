@@ -225,7 +225,6 @@ export const doublesStyles = (team: TeamSet[]): TeamStyle[] => doublesStyleCount
 
 /** Archetipi per cui ha senso cercare un singolo Pokémon (Balance: ci rientrerebbero quasi tutti). */
 export type FitArchetype = 'stall' | 'hyperOffense' | 'bulkyOffense';
-export const FIT_ARCHETYPES: FitArchetype[] = ['stall', 'hyperOffense', 'bulkyOffense'];
 /** Offesa (percentile) da cui un membro passivo è un attaccante (Kyurem con Roost), non un muro da stall. */
 const STALL_MAX_OFFENSE = 85;
 /** Offesa minima di un attaccante veloce da Hyper Offense. */

@@ -88,6 +88,19 @@ function NameField({ label, initial, onDone, onCancel }: { label: string; initia
   );
 }
 
+/**
+ * Una voce dei menu delle liste: il nome e, dopo, la nota in corsivo (`children`). `disabled`: la voce resta (si legge
+ * perché non si può) ma il clic non fa niente.
+ */
+function MenuItem({ name, disabled, danger = false, onClick, children }: { name: string; disabled?: boolean; danger?: boolean; onClick: () => void; children?: ReactNode }) {
+  return (
+    <button type="button" role="menuitem" tabIndex={-1} className={`lists-menu-item${danger ? ' danger' : ''}`} aria-disabled={disabled}
+      onClick={() => { if (!disabled) onClick(); }}>
+      <span className="lists-menu-name">{name}</span>{children}
+    </button>
+  );
+}
+
 function Group({ label, children }: { label: string; children: ReactNode }) {
   const id = useId();
   return (
@@ -224,49 +237,38 @@ export function ListsPicker({ lists, format, context, shown, onShow, onChange }:
       {moreOpen && (
         <div ref={moreMenu} id={`${menuId}-more`} className="lists-menu more" role="menu" aria-label={tr('lists.more', { name: shownName })} onKeyDown={menuKeys}>
           {step.kind === 'actions' && <>
-            <button type="button" role="menuitem" tabIndex={-1} className="lists-menu-item" aria-disabled={!sources.length}
-              onClick={() => { if (sources.length) setStep({ kind: 'source' }); }}>
-              <span className="lists-menu-name">{tr('lists.copyFrom')}</span><em>{sources.length ? tr('lists.copyHint') : tr('lists.copyNone')}</em>
-            </button>
-            <button type="button" role="menuitem" tabIndex={-1} className="lists-menu-item" aria-disabled={shownCustom === null}
-              onClick={() => { if (shownCustom !== null) setStep({ kind: 'rename' }); }}>
-              <span className="lists-menu-name">{tr('lists.rename')}</span>{shownCustom === null && <em>{tr('lists.onlyCustom')}</em>}
-            </button>
-            <button type="button" role="menuitem" tabIndex={-1} className="lists-menu-item" aria-disabled={shownFav + shownBan === 0}
-              onClick={() => {
-                if (shownFav + shownBan === 0) return;
-                onChange(clearScope(lists, shown), { kind: 'clearList', from: shownName });
-                closeAll();
-                moreRef.current?.focus();
-              }}>
-              <span className="lists-menu-name">{tr('lists.clearAll')}</span>
-            </button>
-            <button type="button" role="menuitem" tabIndex={-1} className="lists-menu-item danger" aria-disabled={shownCustom === null}
-              onClick={() => { if (shownCustom !== null) { setConfirmDelete(true); setMoreOpen(false); } }}>
-              <span className="lists-menu-name">{tr('lists.delete')}</span>{shownCustom === null && <em>{tr('lists.onlyCustom')}</em>}
-            </button>
+            <MenuItem name={tr('lists.copyFrom')} disabled={!sources.length} onClick={() => setStep({ kind: 'source' })}>
+              <em>{sources.length ? tr('lists.copyHint') : tr('lists.copyNone')}</em>
+            </MenuItem>
+            <MenuItem name={tr('lists.rename')} disabled={shownCustom === null} onClick={() => setStep({ kind: 'rename' })}>
+              {shownCustom === null && <em>{tr('lists.onlyCustom')}</em>}
+            </MenuItem>
+            <MenuItem name={tr('lists.clearAll')} disabled={shownFav + shownBan === 0} onClick={() => {
+              onChange(clearScope(lists, shown), { kind: 'clearList', from: shownName });
+              closeAll();
+              moreRef.current?.focus();
+            }} />
+            <MenuItem name={tr('lists.delete')} danger disabled={shownCustom === null} onClick={() => { setConfirmDelete(true); setMoreOpen(false); }}>
+              {shownCustom === null && <em>{tr('lists.onlyCustom')}</em>}
+            </MenuItem>
           </>}
           {step.kind === 'source' && (
             <Group label={tr('lists.copyInto', { name: shownName })}>
               {sources.map(scope => {
                 const { fav, ban } = counts(scope);
                 return (
-                  <button key={scope} type="button" role="menuitem" tabIndex={-1} className="lists-menu-item" onClick={() => setStep({ kind: 'mode', from: scope })}>
-                    <span className="lists-menu-name">{name(scope)}</span><em aria-hidden="true">{fav} · {ban}</em>
+                  <MenuItem key={scope} name={name(scope)} onClick={() => setStep({ kind: 'mode', from: scope })}>
+                    <em aria-hidden="true">{fav} · {ban}</em>
                     <span className="visually-hidden">, {tr('lists.countsText', { fav, ban })}</span>
-                  </button>
+                  </MenuItem>
                 );
               })}
             </Group>
           )}
           {step.kind === 'mode' && (
             <Group label={tr('lists.copyFromName', { name: name(step.from) })}>
-              <button type="button" role="menuitem" tabIndex={-1} className="lists-menu-item" onClick={() => copy(step.from, 'add')}>
-                <span className="lists-menu-name">{tr('lists.copyAdd')}</span><em>{tr('lists.copyAddHint')}</em>
-              </button>
-              <button type="button" role="menuitem" tabIndex={-1} className="lists-menu-item" onClick={() => copy(step.from, 'replace')}>
-                <span className="lists-menu-name">{tr('lists.copyReplace')}</span><em>{tr('lists.copyReplaceHint')}</em>
-              </button>
+              <MenuItem name={tr('lists.copyAdd')} onClick={() => copy(step.from, 'add')}><em>{tr('lists.copyAddHint')}</em></MenuItem>
+              <MenuItem name={tr('lists.copyReplace')} onClick={() => copy(step.from, 'replace')}><em>{tr('lists.copyReplaceHint')}</em></MenuItem>
             </Group>
           )}
           {step.kind === 'rename' && shownCustom !== null && (

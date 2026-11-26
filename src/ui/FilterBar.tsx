@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, filtersFor, type CandidateFilters, type FilterRole } from '../engine/filters';
 import { DEFAULT_RULES, isOneType, type FormatRules } from '../engine/formatRules';
 import { roleDescription, roleLabel } from '../engine/roles';
@@ -13,9 +12,11 @@ import { typeTextColor } from './TypeText';
 import { typeName } from '../i18n/game';
 import { Icon } from './icons';
 import { hint } from './MoveTip';
-import { ModalLock } from './ModalLock';
 import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import { useLang, useT } from '../i18n/react';
+import { ModalShell } from './ModalShell';
+import { useEscape } from './useEscape';
+import { useClickAway } from './useClickAway';
 
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
@@ -115,12 +116,9 @@ function Slot<V extends string>({ label, value, options, disabled, onPick, colum
   const t = useT();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  useClickAway(target => !!box.current?.contains(target), () => setOpen(false), { active: open, event: 'mousedown' });
   useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    box.current?.querySelector<HTMLButtonElement>('.type-slot-menu button[aria-pressed="true"], .type-slot-menu button:not(:disabled)')?.focus();
-    return () => document.removeEventListener('mousedown', onDown);
+    if (open) box.current?.querySelector<HTMLButtonElement>('.type-slot-menu button[aria-pressed="true"], .type-slot-menu button:not(:disabled)')?.focus();
   }, [open]);
   const pick = (v: V | undefined) => { onPick(v); setOpen(false); };
   const chosen = options.find(o => o.value === value);
@@ -252,12 +250,8 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, extra, onCl
   const reset = () => onChange({ ...EMPTY_FILTERS, query: filters.query });
   const collapsible = useMediaQuery(EDITOR_TABS_QUERY);
 
-  useEffect(() => {
-    closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEffect(() => { closeRef.current?.focus(); }, [onClose]);
+  useEscape(onClose);
 
   // Il tipo del Pokémon: fino a due tipi (deve averli tutti); "Solo monotipo" toglie il Tipo 2. Svuotando il Tipo 1 il
   // Tipo 2 sale al suo posto
@@ -274,12 +268,9 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, extra, onCl
     : resultCount === 0 ? t('filters.showNone')
       : resultCount === 1 ? t('filters.showOne') : t('filters.showMany', { n: resultCount });
 
-  return createPortal(
-    <div className="help-backdrop filters-backdrop" onClick={onClose}>
-      <ModalLock />
-      <div className="help-dialog filters-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-        <header className="help-head filters-head">
-          <h3 id={titleId}>{t('filters.title')}</h3>
+  return (
+    <ModalShell className="filters-dialog" backdropClassName="filters-backdrop" headClassName="filters-head" titleId={titleId} title={t('filters.title')}
+      closeLabel={t('settings.close')} onClose={onClose} closeRef={closeRef} headExtra={<>
           <span className={`filters-head-count${count > 0 ? ' on' : ''}`}>
             {count === 0 ? t('filters.countNone') : count === 1 ? t('filters.countOne') : t('filters.countMany', { n: count })}
           </span>
@@ -293,8 +284,7 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, extra, onCl
           <button type="button" className="filters-head-reset" disabled={count === 0} onClick={reset}>
             <Icon name="undo" /> {t('filters.reset')}
           </button>
-          <button ref={closeRef} type="button" className="help-close" aria-label={t('settings.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
+      </>}>
 
         <Collapsible.Provider value={collapsible}>
         <div className="filters-body">
@@ -340,8 +330,6 @@ function FilterDialog({ filters, onChange, meta, rules, resultCount, extra, onCl
             </>
           ) : <button type="button" className="primary" onClick={onClose}>{showText}</button>}
         </footer>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

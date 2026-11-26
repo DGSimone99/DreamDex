@@ -32,6 +32,8 @@ import { HOLD_BANDS, HOLD_ORDER } from './holds';
 import { FocusNote } from '../offense/KoBadges';
 import { PokemonIcon } from '../PokemonName';
 import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
+import { AreaHero, HeroCount } from '../AreaHero';
+import { SheetRow, FlipHead } from '../analysisRows';
 
 /** Colore della riga Copertura, come nell'Offesa: rosso a 0, giallo sotto il livello retto (HELD_LEVEL), verde da lì. */
 const levelTone = (level: number) => (level === 0 ? 'bad' : level < HELD_LEVEL ? 'warn' : 'good');
@@ -164,10 +166,9 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
     return (
       <div className="def-types ct-tiles-frame">
         <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
-        <section className="og-hero" aria-label={t('detail.level')}>
-          <span className="og-plate">{t('detail.level')}</span>
-          <p className="og-hero-line"><b className={countClass(held, rows.length)}>{held}</b><small>/{rows.length}</small> {t('ddetail.tiles.held')}</p>
-        </section>
+        <AreaHero label={t('detail.level')}>
+          <HeroCount n={held} of={rows.length} tone={countClass(held, rows.length)}>{t('ddetail.tiles.held')}</HeroCount>
+        </AreaHero>
         <ul className="ct-tiles" aria-label={t('detail.coverageTypes')} aria-describedby={summaryId}>
           {rows.map((row, i) => {
             const top = best[i];
@@ -200,17 +201,13 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                 const cell = slots[slot] === null ? null : defense.typed[slots[slot]!].cells[sheetCol];
                 const tag = effLabel(multipliers.get(openRow.type as TypeName)?.[slot] ?? 1, 'defense');
                 return (
-                  <li key={`${nameOf(slot)}-${slot}`} className={`ct-sheet-row dt-sheet-row ${cell ? HOLD_BANDS[cell.band].cls : 'hold-none'}${ctx.effOnly && !tag ? ' eff-dim' : ''}`}>
-                    <PokemonIcon name={nameOf(slot)} />
-                    <span className="ct-sheet-name">{nameOf(slot)}</span>
-                    {cell
-                      ? <>
-                        <span className="dt-sheet-band">{HOLD_BANDS[cell.band].tag}</span>
-                        <EffTag label={tag} side="defense" />
-                        <span className="ct-sheet-pct">{cell.band !== 'ohko' && cell.pct >= 100 ? 99 : cell.pct}<i>%</i></span>
-                      </>
-                      : <span className="ct-sheet-none">—</span>}
-                  </li>
+                  <SheetRow key={`${nameOf(slot)}-${slot}`} className={`dt-sheet-row ${cell ? HOLD_BANDS[cell.band].cls : 'hold-none'}`} dim={ctx.effOnly && !tag} name={nameOf(slot)}>
+                    {cell ? <>
+                      <span className="dt-sheet-band">{HOLD_BANDS[cell.band].tag}</span>
+                      <EffTag label={tag} side="defense" />
+                      <span className="ct-sheet-pct">{cell.band !== 'ohko' && cell.pct >= 100 ? 99 : cell.pct}<i>%</i></span>
+                    </> : null}
+                  </SheetRow>
                 );
               })}
             </ul>
@@ -231,17 +228,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table ct-flip-table"
             aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
             onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
-            <thead>
-              <tr>
-                <th scope="col" className="def-mon-h"><span className="visually-hidden">{t('flip.type')}</span></th>
-                {team.map((set, member) => (
-                  <th key={member} scope="col" className={`ct-mon-h${focus && member === focus.slot ? ' kf-col' : ''}`} {...focusAt(member, -1)}>
-                    <span className="ct-mon-box" {...card.bind(set)}><PokemonIcon name={battleName(set)} /></span>
-                    <span className="visually-hidden">{battleName(set)}</span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
+            <FlipHead corner={t('flip.type')} team={team} nameOf={set => battleName(set)} bind={set => card.bind(set)} focusSlot={focus?.slot}
+              cellProps={member => focusAt(member, -1)} />
             <tbody>
               {rows.map((row, i) => (
                 <tr key={row.type}>

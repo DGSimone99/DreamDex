@@ -5,7 +5,6 @@ import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam, voteDiff, COVERED_LEVEL, HELD_LEVEL, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
 import { teamOffense } from '../../src/engine/offense';
 import { superEffectiveMoves, type TypeName } from '../../src/engine/types';
-import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import type { TeamGain } from '../../src/engine/teamGain';
 import { emptySet, importShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
@@ -197,10 +196,6 @@ describe('pro e contro pesati', () => {
     expect(kept.lostResists).toEqual(['Rock']);
     // Senza voto restano tutte
     expect(voteDiff(typeDiff, undefined)).toBe(typeDiff);
-  });
-  it('topReason prende il peso più alto', () => {
-    expect(topReason([{ component: 'defense', weight: 1, text: 'a' }, { component: 'offense', weight: 3, text: 'b' }] as never)?.text).toBe('b');
-    expect(topReason([])).toBeUndefined();
   });
 });
 

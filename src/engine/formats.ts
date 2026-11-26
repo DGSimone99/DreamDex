@@ -1,4 +1,4 @@
-import type { Item, Move, Species } from '@pkmn/dex';
+import type { Species } from '@pkmn/dex';
 import { gen9Tier, isSelectable, natDexTier, toID } from './dex';
 import type { Format, FormatId } from './format';
 import { t, type Lang } from '../i18n';
@@ -70,22 +70,10 @@ const entryOf = (formatId: FormatId): { dex: DexId; battle: BattleId; tier: stri
 
 /** Il Pokédex del formato. */
 export const dexOf = (formatId: FormatId): DexId => entryOf(formatId).dex;
-/** La lotta del formato (singolo o doppio). */
-export const battleOf = (formatId: FormatId): BattleId => entryOf(formatId).battle;
 
 /** I tier del Pokédex per quella lotta (vuoto se non c'è). */
 export const tiersOf = (dex: DexId, battle: BattleId = 'singles'): TierEntry[] =>
   DEX_TIERS[dex][battle];
-
-/**
- * Il formato scelto cambiando Pokédex o lotta: lo stesso tier se c'è (OU resta OU), altrimenti il primo;
- * se la lotta non ha formati in quel Pokédex (Doppio in Gen 9), il Singolo.
- */
-export function formatIn(dex: DexId, battle: BattleId, current: FormatId): FormatId | null {
-  const tiers = tiersOf(dex, battle).length ? tiersOf(dex, battle) : tiersOf(dex, 'singles');
-  const tier = entryOf(current).tier;
-  return (tiers.find(x => x.tier === tier) ?? tiers[0])?.formatId ?? null;
-}
 
 /** Cartella dei dati Smogon da usare. */
 export function dataSource(format: Format): string {
@@ -107,10 +95,6 @@ const inSV = (thing: { isNonstandard?: string | null }) => !thing.isNonstandard;
 
 /** Il Pokémon esiste nel Pokédex del formato. */
 export const speciesInPokedex = (species: Species, format: Format): boolean => pokedexOf(format) !== 'sv' || inSV(species);
-/** La mossa esiste nel Pokédex del formato. */
-export const moveInPokedex = (move: Move, format: Format): boolean => pokedexOf(format) !== 'sv' || inSV(move);
-/** Lo strumento esiste nel Pokédex del formato. */
-export const itemInPokedex = (item: Item, format: Format): boolean => pokedexOf(format) !== 'sv' || inSV(item);
 
 /** Tier del Pokémon nel formato: quello di Gen 9 per Scarlatto/Violetto, altrimenti quello National Dex. */
 export const tierIn = (species: Species, format: Format): string =>

@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { gradeFor } from '../../engine/rating';
 import { speedStat } from '../../engine/speed';
-import { Sprite, typeColor } from '../Sprite';
-import { TypeIcons } from '../typeIcons';
 import { battleSpecies, getMove } from '../../engine/dex';
 import { laneNear, speedItem, type SpeedLane } from '../../engine/overviewDashboard';
 import { speedNeighbours } from '../../engine/speed';
@@ -22,9 +20,11 @@ import { PanelSwitch } from '../effTag';
 import { offenseSlots } from '../offense/slots';
 import { linkTeamCard } from '../teamLink';
 import { TIP_NEUTRAL, TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
-import { tileStyle, typeIconUrl } from '../typeIcons';
+import { TypeTile } from '../typeIcons';
 import { SpeedMemberDialog, SpeedMemberSheet, type SpeedParts } from './SpeedMemberDialog';
 import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
+import { AreaHero } from '../AreaHero';
+import { PedanaCard } from '../PedanaCard';
 
 const points = (x: number) => Math.round(100 * x);
 
@@ -176,9 +176,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
     const grade = value === null ? null : gradeFor(value, lang);
     return (
       <div className={`sp-general og-cards-frame sp-cards-frame${room ? ' sp-room' : ''}`}>
-        <section className="og-hero sp-hero" aria-label={t('sdetail.gen.total')}>
-          <span className="og-plate">{t('sdetail.gen.total')}</span>
-          {grade && <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>}
+        <AreaHero label={t('sdetail.gen.total')} grade={grade} className="sp-hero">
           <div className={`sp-hero-bar ${tone(teamParts.total)}`}>
             <span className="sp-card-bar"><Stack {...teamParts} bare /></span>
             <span className="sp-big" aria-label={t('sdetail.cards.teamAria', { n: teamParts.total })}>{teamParts.total}<i>%</i></span>
@@ -202,7 +200,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
               </span>
             )}
           </div>
-        </section>
+        </AreaHero>
         <ul className="og-cards" aria-label={t('detail.member')}>
           {ctx.team.map((set, slot) => {
             const species = battleSpecies(set);
@@ -214,20 +212,15 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
             const cls = parts ? (wall ? 'wall' : tone(parts.total)) : '';
             const moves = m ? priorityMoves(set, ctx.team) : [];
             return (
-              <li key={`${name}-${slot}`} className={`og-card pedana-face sp-card${wall ? ' wall' : ''}`}
-                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
-                <span className="pedana-stripe" aria-hidden="true" />
-                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
-                <button ref={el => { bars.current.set(slot, el); }} type="button" className="og-card-open" disabled={!m}
-                  aria-label={t('sdetail.bar.open', { name })} onClick={() => m && parts && setOpen({ m, set, slot, parts, tone: cls })}>
-                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={set.species} item={set.item} size={80} /></span>
-                  <span className="og-card-name">{name}</span>
-                </button>
-                <span className="og-card-tag sp-card-tag">
-                  {t('sdetail.mon.speed')} {speedStat(set).value}
-                  {wall && <small>· {t('sdetail.wall')}</small>}
-                </span>
-                <TypeIcons types={types} className="og-card-types" />
+              <PedanaCard key={`${name}-${slot}`} className={`sp-card${wall ? ' wall' : ''}`} types={types} name={name} species={set.species} item={set.item}
+                openRef={el => { bars.current.set(slot, el); }} disabled={!m}
+                openLabel={t('sdetail.bar.open', { name })} onOpen={() => m && parts && setOpen({ m, set, slot, parts, tone: cls })}
+                tag={(
+                  <span className="og-card-tag sp-card-tag">
+                    {t('sdetail.mon.speed')} {speedStat(set).value}
+                    {wall && <small>· {t('sdetail.wall')}</small>}
+                  </span>
+                )}>
                 {moves.length > 0 && (
                   <span className="sp-prio sp-card-prio" tabIndex={0} aria-label={t('sdetail.prio.label', { moves: moves.map(x => gameName('move', x, lang)).join(', ') })} {...prio.bind(slot)}>
                     {t('sdetail.prio')}
@@ -239,26 +232,11 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
                     <span className={`sp-card-bar ${cls}`}><Stack {...parts} bare /></span>
                   </>
                 )}
-              </li>
+              </PedanaCard>
             );
           })}
         </ul>
-        {prio.anchor && prioOpen.length > 0 && (
-          <FloatTip rect={prio.anchor.rect} tone="var(--accent)" className="tip-w-s sp-prio-ftip">
-            <TipHead lead={<TipGlyph icon="speed" />} title={t('sdetail.prio.title')} sub={t('sdetail.prio.sub')} />
-            <TipSec>
-              <TipRows>
-                {prioOpen.map(n => {
-                  const move = getMove(n);
-                  return (
-                    <TipRow key={n} title={gameName('move', n, lang)} value={<span className="mtip-prio">{`+${Math.max(1, move?.priority ?? 1)}`}</span>}
-                      lead={move && <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />} />
-                  );
-                })}
-              </TipRows>
-            </TipSec>
-          </FloatTip>
-        )}
+        {prio.anchor && prioOpen.length > 0 && <PrioTip rect={prio.anchor.rect} moves={prioOpen} />}
         {open && <SpeedMemberSheet member={open.m} set={open.set} parts={open.parts} tone={open.tone} team={ctx.team} meta={meta} room={room} onClose={close} />}
       </div>
     );
@@ -352,23 +330,7 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
           <TipGo place={t('sdetail.bar.go')} verb="open" />
         </FloatTip>
       )}
-      {prio.anchor && prioOpen.length > 0 && (
-        <FloatTip rect={prio.anchor.rect} tone="var(--accent)" className="tip-w-s sp-prio-ftip">
-          <TipHead lead={<TipGlyph icon="speed" />} title={t('sdetail.prio.title')} sub={t('sdetail.prio.sub')} />
-          <TipSec>
-            <TipRows>
-              {prioOpen.map(name => {
-                const move = getMove(name);
-                // Scivolerba ha priorità 0 sulla carta: qui c'è perché col Campo Erboso arriva a +1
-                return (
-                  <TipRow key={name} title={gameName('move', name, lang)} value={<span className="mtip-prio">{`+${Math.max(1, move?.priority ?? 1)}`}</span>}
-                    lead={move && <img className="ti-sq" style={tileStyle(move.type)} src={typeIconUrl(move.type)} alt="" draggable={false} />} />
-                );
-              })}
-            </TipRows>
-          </TipSec>
-        </FloatTip>
-      )}
+      {prio.anchor && prioOpen.length > 0 && <PrioTip rect={prio.anchor.rect} moves={prioOpen} />}
       {open && <SpeedMemberDialog member={open.m} set={open.set} parts={open.parts} tone={open.tone} team={ctx.team} meta={meta} room={room} onClose={close} />}
     </div>
   );
@@ -381,6 +343,29 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
  * membri sta in un bottone che apre il modale; nella barra della carta del team senza il totale (`bare`: il numero grande sta
  * accanto, sp-big).
  */
+/** Il tooltip delle mosse con priorità di un membro: ognuna col suo tipo e la priorità ("+1"). */
+function PrioTip({ rect, moves }: { rect: DOMRect; moves: string[] }) {
+  const t = useT();
+  const lang = useLang();
+  return (
+    <FloatTip rect={rect} tone="var(--accent)" className="tip-w-s sp-prio-ftip">
+      <TipHead lead={<TipGlyph icon="speed" />} title={t('sdetail.prio.title')} sub={t('sdetail.prio.sub')} />
+      <TipSec>
+        <TipRows>
+          {moves.map(name => {
+            const move = getMove(name);
+            // Scivolerba ha priorità 0 sulla carta: qui c'è perché col Campo Erboso arriva a +1
+            return (
+              <TipRow key={name} title={gameName('move', name, lang)} value={<span className="mtip-prio">{`+${Math.max(1, move?.priority ?? 1)}`}</span>}
+                lead={move && <TypeTile type={move.type} />} />
+            );
+          })}
+        </TipRows>
+      </TipSec>
+    </FloatTip>
+  );
+}
+
 function Stack({ raw, own, team, total, bare = false }: Parts & { bare?: boolean }): ReactNode {
   return (
     <>

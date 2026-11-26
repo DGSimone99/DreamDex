@@ -113,7 +113,7 @@ export function keepSwaps<C extends { teamGain?: { gain: number; penalty?: numbe
  * Come cambiano i problemi del team con un cambio: risolto = la chiave sparisce; ridotto = resta ma più piccola,
  * o da grave diventa minore; nuovo = la chiave prima non c'era. Calcola i problemi di partenza una volta e li confronta con ogni team "dopo".
  */
-export function problemChanges(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang) {
+export function problemChanges(format: Format, data: EngineData, problems: CoachProblem[], lang: Lang) {
   const now = new Map<string, CoachProblem>();
   for (const p of problems) if (!now.has(p.key)) now.set(p.key, p);
   return (after: TeamSet[]) => {
@@ -141,7 +141,7 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
   const archetype: Archetype | undefined = undefined;
   const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;
   const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
-  const changes = problemChanges(team, format, data, problems, lang);
+  const changes = problemChanges(format, data, problems, lang);
 
   // Membri con un problema di regole (specie, Mega, strumento… non legali nel formato)
   const illegal = new Set(problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []));

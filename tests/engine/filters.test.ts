@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, filtersFor, hasFilterRole, isFiltering, normalizeTypes, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, filterRolesFor, filtersFor, hasFilterRole, isFiltering, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
 import { getSpecies } from '../../src/engine/dex';
 import { formatRules } from '../../src/engine/formatRules';
 import { emptySet, mostCommonSet } from '../../src/engine/sets';
@@ -73,11 +73,6 @@ describe('filtri', () => {
     expect(found).toContain('Vaporeon');
     expect(found).not.toContain('Toxapex');
     expect(found.every(name => getSpecies(name)?.types.length === 1)).toBe(true);
-  });
-
-  it('stesso tipo due volte = monotipo', () => {
-    expect(normalizeTypes(['Fire', 'Fire'])).toEqual({ types: ['Fire'], mono: true });
-    expect(normalizeTypes(['Fire', 'Water'])).toEqual({ types: ['Fire', 'Water'], mono: false });
   });
 
   it('Solo preferiti', () => {

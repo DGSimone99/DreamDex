@@ -1,10 +1,10 @@
-import { useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { type SustainParts, type TeamDefense } from '../../engine/defense';
 import { defenseShares, type DefenseShare } from '../../engine/defenseShares';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { useLang, useT } from '../../i18n/react';
 import { anyGameName } from '../../i18n/game';
-import type { Lang } from '../../i18n';
+import { signed, type Lang } from '../../i18n';
 import { familyAt, type AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
 import { TYPES } from '../../engine/types';
@@ -13,23 +13,22 @@ import { Ask, BarHead, MetaTargets, metaText, typeStatText } from '../offense/Ta
 import { DEFAULT_FORMAT } from '../../engine/format';
 import { battleName, battleSpecies } from '../../engine/dex';
 import type { TypeName } from '../../engine/types';
-import { typeColor } from '../Sprite';
+import { Sprite, typeColor } from '../Sprite';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
 import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
 import { gradeFor } from '../../engine/rating';
 import { AnalysisSheet } from '../AnalysisSheet';
-import { Sprite } from '../Sprite';
-import { TypeIcons } from '../typeIcons';
 import { CardsLegend } from '../CardsLegend';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
+import { AreaHero } from '../AreaHero';
+import { PedanaCard } from '../PedanaCard';
+import { barRow } from '../analysisRows';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 
-/** Un numero con segno: "+47", "−25", "0" (il meno tipografico). */
-export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 /**
  * Il nome di una fonte di recupero o di perdita nella lingua scelta: mosse, abilità e strumenti coi nomi ufficiali
@@ -215,12 +214,10 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     const open = sheet === null ? null : members[sheet] ?? null;
     return (
       <div className="def-general og-cards-frame">
-        <section className="og-hero" aria-label={teamName}>
-          <span className="og-plate">{teamName}</span>
-          <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>
+        <AreaHero label={teamName} grade={grade}>
           <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm /></div>
           {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm /></div>}
-        </section>
+        </AreaHero>
         <CardsLegend side="def" pieces={HOLD_LEGEND} />
         <ul className="og-cards" aria-label={t('detail.member')}>
           {members.map((m, i) => {
@@ -228,22 +225,17 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             const types = (set && battleSpecies(set)?.types) || [];
             const calm = quiet(i);
             return (
-              <li key={`${m.species}-${i}`} className={`og-card pedana-face${calm ? ' wall' : ''}`}
-                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
-                <span className="pedana-stripe" aria-hidden="true" />
-                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
-                <button type="button" className="og-card-open" aria-label={t('odetail.cards.open', { name: m.species })} onClick={() => setSheet(i)}>
-                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={set?.species ?? m.species} item={set?.item} size={80} /></span>
-                  <span className="og-card-name">{m.species}</span>
-                </button>
-                <span className={`og-card-tag${shares[i].points === 0 ? ' zero' : shares[i].points < 0 ? ' neg' : ''}`}>
-                  {share(m, i)}
-                  {calm && <small>· {t('ddetail.cards.attacker')}</small>}
-                </span>
-                <TypeIcons types={types} className="og-card-types" />
+              <PedanaCard key={`${m.species}-${i}`} className={calm ? 'wall' : undefined} types={types} name={m.species} species={set?.species ?? m.species} item={set?.item}
+                openLabel={t('odetail.cards.open', { name: m.species })} onOpen={() => setSheet(i)}
+                tag={(
+                  <span className={`og-card-tag${shares[i].points === 0 ? ' zero' : shares[i].points < 0 ? ' neg' : ''}`}>
+                    {share(m, i)}
+                    {calm && <small>· {t('ddetail.cards.attacker')}</small>}
+                  </span>
+                )}>
                 <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typesBar(i)}</div>
                 {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span>{metaBar(i)}</div>}
-              </li>
+              </PedanaCard>
             );
           })}
         </ul>
@@ -280,12 +272,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   if (narrow) {
     // Telefono e tablet piccolo, come l'Offesa: per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la
     // barra Meta larghe quanto lo schermo; in fondo il team allo stesso modo
-    const bars = (label: string, cell: ReactNode, key: string) => (
-      <tr key={key} className="og-bar-row">
-        <th scope="row" className="og-bar-label">{label}</th>
-        <td colSpan={2}>{cell}</td>
-      </tr>
-    );
     return (
       <div className={`def-frame def-general og-stack${roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">
@@ -306,15 +292,15 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                   <th scope="rowgroup" colSpan={2}><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>{quiet(i) ? <span className="role-note">· {t('ddetail.cards.attacker')}</span> : undefined}</MemberMon></th>
                   <td>{share(m, i)}</td>
                 </tr>
-                {bars(t('kob.headTypes'), <HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />, 'types')}
-                {meta && bars(t('kob.headMeta'), <HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />, 'meta')}
+                {barRow(t('kob.headTypes'), <HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />, 'types')}
+                {meta && barRow(t('kob.headMeta'), <HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />, 'meta')}
               </tbody>
             ))}
             <tbody className="og-stack-mon og-stack-team">
               <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>
               <tr className="og-mon-row"><th scope="rowgroup" colSpan={3}><span className="og-plate">{teamName}</span></th></tr>
-              {bars(t('kob.headTypes'), <HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm />, 'types')}
-              {meta && bars(t('kob.headMeta'), <HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm />, 'meta')}
+              {barRow(t('kob.headTypes'), <HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm />, 'types')}
+              {meta && barRow(t('kob.headMeta'), <HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm />, 'meta')}
             </tbody>
           </table>
         </div>

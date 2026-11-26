@@ -25,5 +25,8 @@ export const formatNumber = (lang: Lang, value: number, digits = 1): string => {
   return format.format(value);
 };
 
+/** Un numero col segno: "+3", "−2" (il meno tipografico); lo zero come `zero` ("0", o "±0" dove conta che non cambia niente). */
+export const signed = (n: number, zero = '0'): string => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : zero);
+
 export const formatPercent = (lang: Lang, fraction: number, digits = 1): string =>
   `${formatNumber(lang, fraction * 100, digits)}%`;

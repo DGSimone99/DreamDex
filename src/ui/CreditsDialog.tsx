@@ -1,9 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
-import { Icon } from './icons';
-import { ModalLock } from './ModalLock';
-import { EeveePeek } from './EeveePeek';
+import { ModalShell } from './ModalShell';
+import { useEscape } from './useEscape';
 
 /** Una fonte: nome (col link) e cosa ci dà. */
 interface Source { name: string; url: string; what: string }
@@ -16,12 +14,8 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
   const titleId = useId();
   const close = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    close.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEffect(() => { close.current?.focus(); }, [onClose]);
+  useEscape(onClose);
 
   const data: Source[] = [
     { name: 'Smogon', url: 'https://www.smogon.com/stats/', what: t('credits.smogon') },
@@ -45,17 +39,9 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
     </dl>
   );
 
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-      <ModalLock />
-      {/* Eevee sbircia da dietro la finestra, come nelle guide */}
-      <div className="help-frame with-peek">
-      <EeveePeek />
-      <div className="help-dialog credits-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-        <header className="help-head">
-          <h3 id={titleId}>{t('credits.title')}</h3>
-          <button ref={close} type="button" className="help-close" aria-label={t('settings.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
+  return (
+    // Eevee sbircia da dietro la finestra, come nelle guide
+    <ModalShell className="credits-dialog" titleId={titleId} title={t('credits.title')} closeLabel={t('settings.close')} onClose={onClose} closeRef={close} peek>
         <div className="credits-body">
           <p className="credits-lead">{t('credits.fan')}</p>
           <p className="credits-legal">{t('credits.trademark')}</p>
@@ -75,9 +61,6 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
           </div>
           <p className="note">{t('credits.thanks')}</p>
         </div>
-      </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

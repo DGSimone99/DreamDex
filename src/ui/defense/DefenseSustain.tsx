@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { signed } from '../../i18n';
 import type { TeamDefense } from '../../engine/defense';
 import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
 import { battleSpecies } from '../../engine/dex';
@@ -7,7 +8,9 @@ import { TypeIcons } from '../typeIcons';
 import { useLang, useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon, setOf } from './MemberMon';
-import { rocksHalvedText, signed, sourceName } from './DefenseGeneral';
+import { rocksHalvedText, sourceName } from './DefenseGeneral';
+import { AreaHero, HeroCount } from '../AreaHero';
+import { barRow } from '../analysisRows';
 
 const pct = (x: number) => `${Math.round(100 * x)}%`;
 /** Metà barra del netto: un netto di ±50% (SUSTAIN_FULL) arriva al bordo. */
@@ -66,11 +69,10 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
     const teamHalved = halvedTexts.length === 1 ? halvedTexts[0] : null;
     return (
       <div className="def-sus og-cards-frame sus-cards-frame">
-        <section className="og-hero" aria-label={t('ddetail.sus.team')}>
-          <span className="og-plate">{t('ddetail.sus.team')}</span>
-          <p className="og-hero-line"><b className="plain">{heal}</b><small>/{ms.length}</small> {t('ddetail.sus.healers')}</p>
+        <AreaHero label={t('ddetail.sus.team')}>
+          <HeroCount n={heal} of={ms.length} tone="plain">{t('ddetail.sus.healers')}</HeroCount>
           {hurt.length > 0 && <p className="sus-hero-rocks">{t('ddetail.sus.rocksTeam', { n: hurt.length, pct: pct(avgRocks) })}{teamHalved && <><br />{teamHalved}</>}</p>}
-        </section>
+        </AreaHero>
         <ul className="sus-cards" aria-label={t('detail.member')}>
           {ms.map((m, i) => {
             const p = m.sustainParts;
@@ -103,12 +105,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
   if (narrow) {
     // Telefono e tablet piccolo: per ogni membro il nome e il valore in alto, sotto Perde (Stealth Rock e strumenti),
     // Recupera e Netto, una riga ciascuno con l'etichetta corta a sinistra: niente da scorrere di lato
-    const line = (label: string, cell: ReactNode, key: string) => (
-      <tr key={key} className="og-bar-row sus-line">
-        <th scope="row" className="og-bar-label">{label}</th>
-        <td colSpan={2}>{cell}</td>
-      </tr>
-    );
+    const line = (label: string, cell: ReactNode, key: string) => barRow(label, cell, key, 'sus-line');
     return (
       <div className={`def-frame def-sus og-stack${ctx.roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">

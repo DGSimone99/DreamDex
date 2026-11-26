@@ -1,8 +1,8 @@
 import { Dex } from '@pkmn/dex';
 import type { Move, Species } from '@pkmn/dex';
-import type { Format } from './format';
+import { LATEST_GEN, type Format } from './format';
 
-export const dex = Dex.forGen(9);
+export const dex = Dex.forGen(LATEST_GEN);
 
 // Il voto la chiede milioni di volte sugli stessi nomi (mosse, abilità, strumenti): si ricorda il risultato
 const ids = new Map<string, string>();

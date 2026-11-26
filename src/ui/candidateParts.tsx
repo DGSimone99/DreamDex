@@ -19,10 +19,12 @@ import type { ReasonSymbol } from '../engine/explain';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 import { Icon, MegaIcon } from './icons';
-import { formatPercent, t, type Lang } from '../i18n';
+import { formatPercent, t, type Lang, signed } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { typeName } from '../i18n/game';
 import { hint } from './MoveTip';
+import { useClickAway } from './useClickAway';
+import { useEscape } from './useEscape';
 
 /**
  * Candidato in lista, col voto che darebbe al team (assente col primo Pokémon).
@@ -30,10 +32,6 @@ import { hint } from './MoveTip';
  */
 export type Item = (Suggestion | Replacement) & { teamGain?: TeamGain; replaces?: number; alternatives?: SwapOption[] };
 
-/** Sprite "Icona box": l'icona della forma da battaglia (Mega con la pietra), più grande col team nascosto. */
-export function BoxIcon({ set }: { set: TeamSet }) {
-  return <span className="box-icon"><PokemonIcon name={battleName(set)} /></span>;
-}
 
 /** I motivi sotto il nome: bonus (col "+" verde) o, senza bonus, una frase sola. */
 export interface ReasonSummary { pros: boolean; items: Bring[] }
@@ -65,8 +63,6 @@ export interface CandidateProps {
 /** Il #1 in magenta solo se migliora davvero il team (o col team vuoto): un −N o ±0 resta nei suoi colori. */
 export const isLead = (rank: number, item: Item) => rank === 1 && !(item.teamGain && item.teamGain.gain <= 0);
 
-/** +7, −3, ±0. */
-export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
 
 /** L'area del voto di cui parla una ragione, per non ripetere i guadagni del cambio. */
 const REASON_AREA: Partial<Record<string, ScoredArea>> = { defense: 'defense', coverage: 'strength', roles: 'roles' };
@@ -218,7 +214,7 @@ export function ResultCell({ item, usage, favorite = false, className = '', out,
     return cell(label(tr('suggest.usageAria', { pct: formatPercent(lang, usage) })),
       <>{heart}<strong>{formatPercent(lang, usage)}</strong><small>{tr('suggest.usageShort')}</small></>);
   }
-  const gain = signed(result.gain);
+  const gain = signed(result.gain, '±0');
   // Chi esce (Tutti) anche nell'etichetta: dentro un'immagine il testo nascosto di OutMark non si sente
   const outText = out ? ` · ${tr('suggest.outFor', { member: out })}` : '';
   return cell(label(tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain }) + outText),
@@ -492,14 +488,8 @@ export function SymbolLegend() {
   const id = useId();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const outside = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('pointerdown', outside);
-    document.addEventListener('keydown', esc);
-    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', esc); };
-  }, [open]);
+  useClickAway(target => !!box.current?.contains(target), () => setOpen(false), { active: open });
+  useEscape(() => setOpen(false), { active: open });
   const rows: { sign: ReactNode; text: string }[] = [
     { sign: <b className="lg-plus">+9</b>, text: tr('legend.gain') },
     { sign: <span className="sym-icon"><Icon name="sword" /></span>, text: tr('legend.sword') },

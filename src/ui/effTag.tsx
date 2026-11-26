@@ -70,8 +70,6 @@ export function useColumnHover() {
   };
 }
 
-/** Il nome sotto l'icona dell'intestazione: sopra le righe (assoluto), non sposta niente. Solo per gli occhi: l'intestazione ha già il suo nome. */
-export const ColName = ({ name }: { name: string }) => <span className="col-name" aria-hidden="true">{name}</span>;
 
 /**
  * L'interruttore dell'efficacia, in alto nel pannello di Coverage tipi e meta: lascia accese solo le

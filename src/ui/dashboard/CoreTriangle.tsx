@@ -1,10 +1,10 @@
 import { Fragment, useId } from 'react';
 import type { Core } from '../../engine/cores';
-import type { Lang } from '../../i18n';
+import { t, type Lang } from '../../i18n';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
-import { tileStyle, typeIconUrl } from '../typeIcons';
+import { TypeTile } from '../typeIcons';
 import { hint } from '../MoveTip';
 
 /** Vertici del triangolo nel riquadro 150×128 (come sinergie-trio, opzione A): in alto, in basso a sinistra, in basso a destra. */
@@ -31,6 +31,8 @@ const pct = (v: number, of: number) => `${(v / of) * 100}%`;
 /** Il nome di un core: per membro i suoi tipi che parano, uniti col trattino; i membri separati da " / ". */
 /** I tipi di ogni membro ("Buio-Acciaio"), uno per membro: nel titolo vanno a capo solo fra un membro e l'altro */
 export const coreParts = (core: Core, lang: Lang) => core.names.map(types => types.map(type => typeName(type, lang)).join('-'));
+/** Chi para cosa nel core: "Pelipper para Fuoco a Ferrothorn, …". */
+export const coreParries = (core: Core, lang: Lang) => core.sides.map(side => t(lang, 'sum.parryTo', { name: side.from, type: typeName(side.type, lang), to: side.to })).join(', ');
 export const coreTitle = (core: Core, lang: Lang) => coreParts(core, lang).join(' / ');
 
 /** Il solo disegno del triangolo (sprite, frecce e icone dei tipi), decorativo: lo usa anche la scheda Bonus/Malus. */
@@ -57,7 +59,7 @@ export function CoreArt({ core, sprite = 40 }: { core: Core; sprite?: number }) 
       ))}
       {core.sides.map((side, i) => (
         <span key={side.from} className="sum-tri-badge" {...hint(typeName(side.type, lang))} style={{ left: pct(edges[i].mx, W), top: pct(edges[i].my, H) }}>
-          <img className="ti-sq" style={tileStyle(side.type)} src={typeIconUrl(side.type)} alt="" draggable={false} />
+          <TypeTile type={side.type} />
         </span>
       ))}
     </span>
@@ -82,7 +84,7 @@ export function CoreTriangle({ core, size, descId }: { core: Core; size: 'normal
             const line = t('sum.parry', { name: side.from, type: typeName(side.type, lang) });
             return (
               <span key={side.from}>
-                <img className="ti-sq" style={tileStyle(side.type)} src={typeIconUrl(side.type)} alt="" draggable={false} />
+                <TypeTile type={side.type} />
                 {/* Il testo in un suo span: nella riga flex lo spazio dopo il nome resterebbe fuori */}
                 <span>{line.startsWith(side.from) ? <><b>{side.from}</b>{line.slice(side.from.length)}</> : line}</span>
               </span>
@@ -91,7 +93,7 @@ export function CoreTriangle({ core, size, descId }: { core: Core; size: 'normal
         </span>
         {descId && (
           <span id={descId} className="visually-hidden">
-            {core.sides.map(side => t('sum.parryTo', { name: side.from, type: typeName(side.type, lang), to: side.to })).join(', ')}
+            {coreParries(core, lang)}
           </span>
         )}
       </span>

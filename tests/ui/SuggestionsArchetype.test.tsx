@@ -166,7 +166,7 @@ describe('dettaglio col tipo scelto', () => {
     render(
       <LangProvider lang="it">
         <SuggestionDetail item={item} rank={1} team={team} replaceIndex={2} data={fixtureData} format={DEFAULT_FORMAT}
-          rating={before} archetype="balance" usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
+          rating={before} usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
       </LangProvider>,
     );
     expect(document.querySelector('.detail-score > span')!.textContent).toMatch(new RegExp(`${before.overall} → [SABCD] ${after.overall}$`));

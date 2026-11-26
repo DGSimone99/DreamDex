@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bestHit } from '../../src/engine/damage';
-import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, signedSustain, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, dummyAttacker, dummyStats, hazardRemover, holdBand, signedSustain, holdCredit, typedHits, memberDefense, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
@@ -9,14 +9,11 @@ import { TYPES } from '../../src/engine/types';
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
   ({ species, item, ability, moves, nature, evs });
 const noStats = { stats: null, sets: null, formatId: 'ou' as const };
-const hit = (max: number) => ({ move: 'x', expected: max, min: max, max });
-
-describe('holdStep: quanti colpi regge (dal tiro più alto)', () => {
-  it('OHKO 0, 2HKO 0,5, 3HKO 1, 4HKO o più 1,5', () => {
-    expect([hit(1.2), hit(0.6), hit(0.4), hit(0.2)].map(holdStep)).toEqual([0, 0.5, 1, 1.5]);
-    expect(holdStep(null)).toBe(1.5);
-  });
-});
+/** Recupero meno perdite per turno (in quota dei PS), dalle parti di `sustainParts`. */
+const sustainability = (set: TeamSet, holdShare: number) => {
+  const parts = sustainParts(set, holdShare);
+  return parts.recovery - parts.rocks - parts.itemLoss;
+};
 
 describe('sustainability: recupero contro perdite per turno', () => {
   it('Boots e Magic Guard azzerano Stealth Rock; Magic Guard anche Life Orb', () => {

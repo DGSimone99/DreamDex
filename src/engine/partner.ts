@@ -30,11 +30,6 @@ export function teamFieldSources(set: TeamSet, team: TeamSet[]): FieldSource[] {
   return [...out.values()].map(({ condition, species, via }) => ({ condition, species, via }));
 }
 
-/** I meteo e i campi della propria abilità: sempre attivi per il membro. */
-export function ownFieldConditions(set: TeamSet): FieldCondition[] {
-  const ability = toID(battleAbility(set));
-  return enables(set).filter(l => toID(l.via) === ability && l.condition !== 'trickroom').map(l => l.condition as FieldCondition);
-}
 
 /**
  * Le combinazioni col meteo e i campi del team (un meteo e un terreno alla volta; i propri restano sempre): per ognuna

@@ -6,7 +6,7 @@ import { importShowdown } from '../../src/engine/sets';
 import { rolesTally } from '../../src/engine/rolesArea';
 import { GradeBadge } from '../../src/ui/RatingPanel';
 import { bonusMalusTotals } from '../../src/ui/BonusMalusView';
-import { signed } from '../../src/ui/AreaDetail';
+import { signed } from '../../src/i18n';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 

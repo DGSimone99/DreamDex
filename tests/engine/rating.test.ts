@@ -1,20 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { teamPower } from '../../src/engine/power';
 import { teamNeeds } from '../../src/engine/needs';
 import { ARCHETYPE_WEIGHTS, gradeFor, memberIssues, rateTeam, typeSafety } from '../../src/engine/rating';
-import { memberPower } from '../../src/engine/power';
 import { teamOffense } from '../../src/engine/offense';
 import { teamDefense } from '../../src/engine/defense';
 import type { EngineData } from '../../src/engine/data';
 
 // Offesa: il danno vero dei set contro i difensori del formato (offense.ts)
 const offenseArea = (team: TeamSet[], data: EngineData = fixtureData) => teamOffense(team, data).value;
-import { hitQuality } from '../../src/engine/power';
-import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
-import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
 
 /** Coverage difensiva mostrata: riferimento all'80%, poi la cima più lenta. */
-import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
+import { mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
 const value = (rating: ReturnType<typeof rateTeam>, key: string) => rating!.areas.find(a => a.key === key)!.value;
@@ -82,7 +77,6 @@ describe('rateTeam', () => {
 
   it('aree calcolate sulla fixture', () => {
     // Coverage difensiva: saldo resistenze/debolezze per tipo, pesato per il meta (piena a 80%); Robustezza: media dei membri
-    const weights = UNIFORM_TYPE_WEIGHTS;
     // Difesa: robustezza e coverage difensiva di tipi e del meta (defense.ts)
     expect(value(rating, 'defense')).toBe(teamDefense([tusk, gholdengo], fixtureData).value);
     expect(rating.defense.members.map(m => m.species)).toEqual(['Great Tusk', 'Gholdengo']);

@@ -1,8 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
+import { signed } from '../i18n';
 import { battleSpecies } from '../engine/dex';
 import { STAT_IDS } from '../engine/sets';
 import { statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
+import { useClickAway } from './useClickAway';
+import { useEscape } from './useEscape';
 
 
 /** Fascia di colore come su Showdown: dal rosso dei valori bassi al turchese dei più alti. */
@@ -14,7 +17,6 @@ function band(value: number): string {
   return 'top';
 }
 
-const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
 
 /**
  * Badge "Stat" ("Stats" in inglese): passandoci sopra (o col focus) mostra le statistiche base con barre e totale.
@@ -29,21 +31,15 @@ export function StatsBadge({ species, item = '', compare, side }: { species: str
   const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const outside = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('pointerdown', outside);
-    document.addEventListener('keydown', esc);
-    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', esc); };
-  }, [open]);
+  useClickAway(target => !!ref.current?.contains(target), () => setOpen(false), { active: open });
+  useEscape(() => setOpen(false), { active: open });
   const forme = battleSpecies({ species, item });
   if (!forme) return null;
   const stats = forme.baseStats;
   const total = STAT_IDS.reduce((sum, stat) => sum + stats[stat], 0);
   const other = compare ? battleSpecies({ species: compare.species, item: compare.item ?? '' }) : null;
   const otherTotal = other ? STAT_IDS.reduce((sum, stat) => sum + other.baseStats[stat], 0) : 0;
-  const diff = (n: number) => <span className={`stats-diff${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>{signed(n)}</span>;
+  const diff = (n: number) => <span className={`stats-diff${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>{signed(n, '±0')}</span>;
   return (
     <button
       ref={ref}

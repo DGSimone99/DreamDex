@@ -2,13 +2,14 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type FocusEvent
 import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
-import { typeColor } from './Sprite';
+import { typePair } from './Sprite';
 import { useMemberTip } from './MemberCard';
 import { TypeIcons } from './typeIcons';
 import { endSetDrag, hideDragImage, startSetDrag } from './teamDrag';
 import { TOUCH_QUERY } from './TouchTips';
 import { useMediaQuery } from './useMediaQuery';
 import { CandidateMarks, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
+import { PedanaBack } from './PedanaCard';
 
 /** Quanto il mouse deve restare sulla carta prima che lo sprite esca e parta la GIF (ms): passando sopra la griglia di corsa
  *  non si accende niente e non si scarica nessuna GIF. Il CSS lo riceve da qui (--wake sulla carta) per la luce. */
@@ -65,7 +66,7 @@ export function CandidateCard(props: CandidateProps) {
   const className = ['card', isLead(rank, item) && 'first', selected && 'beam-on', flash && 'beam-flash', dragOrigin && 'drag-origin', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
-    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
+    <li className={className} style={{ ...typePair(types), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
       onPointerEnter={(e: PointerEvent<HTMLLIElement>) => { pointer.current = e.pointerType; }}
       onClickCapture={() => setFlash(true)} onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}
       // Uscendo dalla carta si chiude anche la carta del set
@@ -83,9 +84,7 @@ export function CandidateCard(props: CandidateProps) {
       onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="card-face pedana-face">
-        <span className="pedana-stripe" aria-hidden="true" />
-        <span className="pedana-beam" aria-hidden="true" />
-        <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
+        <PedanaBack beam />
         {!popped && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
         <ResultCell id={resultId} item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
         <TypeIcons types={types} className="card-types" hints />

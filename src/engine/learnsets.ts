@@ -1,7 +1,7 @@
 import type { Species } from '@pkmn/dex';
 import { battleSpecies, dex, getMove, getSpecies, toID } from './dex';
 import type { TeamSet } from './sets';
-import type { GameId } from './games';
+import { GAME_GEN, type GameId } from './games';
 
 /**
  * Valore della tabella: prima generazione in cui la mossa si impara (4 bit bassi) + 16 × maschera delle generazioni in cui
@@ -10,9 +10,6 @@ import type { GameId } from './games';
 const firstGen = (value: number) => value & 15;
 const playMask = (value: number) => value >> 4;
 const merge = (a: number | undefined, b: number) => (a === undefined ? b : Math.min(firstGen(a), firstGen(b)) + 16 * (playMask(a) | playMask(b)));
-
-/** Generazione di ogni gioco (per le mosse imparabili nel gioco). */
-const GAME_GEN: Record<GameId, number> = { sv: 9 };
 
 /** Per ogni specie: mossa → valore codificato (vedi sopra), senza ereditarietà. */
 let raw: Map<string, Map<string, number>> | null = null;
@@ -26,7 +23,6 @@ export async function initLearnsets(): Promise<void> {
   resolved.clear();
 }
 
-export const learnsetsReady = (): boolean => raw !== null;
 
 /** Mosse col valore codificato, ereditando da forma base e pre-evoluzioni. */
 function inherited(species: Species): Map<string, number> | null {

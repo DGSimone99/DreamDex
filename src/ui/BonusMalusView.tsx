@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
-import { t as translate, type Lang } from '../i18n';
+import { t as translate, type Lang, signed } from '../i18n';
 import { typeName } from '../i18n/game';
 import type { Core } from '../engine/cores';
 import type { FormatRules } from '../engine/formatRules';
@@ -11,12 +11,11 @@ import { FloatTip, HiddenText, useFloatAnchor } from './FloatTip';
 import { shortCase } from './bonusMalusShort';
 import { TipGlyph, TipHead, TipRow, TipRows, TipSec } from './TipHead';
 import { Typed } from './TypeText';
-import { tileStyle, typeIconUrl } from './typeIcons';
+import { TypeTile } from './typeIcons';
 import { useFitCount } from './useFit';
 
 type T = ReturnType<typeof useT>;
 // Lo zero senza segno, come sulla scheda e nella scheda del voto
-const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 /** Famiglia di una voce: decide l'icona dentro la medaglia (una forma sola, l'icona cambia). */
 type Family = 'types' | 'roles' | 'hazards' | 'conditions' | 'members' | 'core';
@@ -165,7 +164,7 @@ function TypeList({ types, lang }: { types: string[]; lang: Lang }) {
     <div className="kot-list">
       {types.map(type => (
         <span key={type} className="kot-type">
-          <img className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />{typeName(type, lang)}
+          <TypeTile type={type} />{typeName(type, lang)}
         </span>
       ))}
     </div>
@@ -269,7 +268,7 @@ function CoreCard({ core, open, rows, toggle, onOpen, lang, t }: {
             const line = t('catalogue.cores.parry', { name: side.from, to: side.to, type: typeName(side.type, lang) });
             return (
               <li key={side.from}>
-                <img className="ti-sq" style={tileStyle(side.type)} src={typeIconUrl(side.type)} alt="" draggable={false} />
+                <TypeTile type={side.type} />
                 <span>{line.startsWith(side.from) ? <><b>{side.from}</b>{line.slice(side.from.length)}</> : line}</span>
               </li>
             );

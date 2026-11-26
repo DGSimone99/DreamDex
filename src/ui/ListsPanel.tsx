@@ -14,13 +14,14 @@ import { TYPES } from '../engine/types';
 import { useLang, useT } from '../i18n/react';
 import { FilterBar } from './FilterBar';
 import { Icon } from './icons';
+import { Pager } from './Pager';
 import { ListsPicker, menuKeys, useFocusFirst, useMenu } from './ListsPicker';
 import { PokemonIcon } from './PokemonName';
 import { Sprite, typeColor } from './Sprite';
 import type { ListUndo } from './UndoToast';
 import { DETAIL_SHEET, useBackClose } from './useBackClose';
 import { TOUCH_QUERY } from './TouchTips';
-import { useMediaQuery } from './useMediaQuery';
+import { useMediaQuery, reducedMotion } from './useMediaQuery';
 import { useRoving } from './useRoving';
 import { useSheet } from './useSheet';
 
@@ -97,15 +98,11 @@ const firstType = (name: string) => getSpecies(name)?.types[0] ?? '';
 const dexNo = (name: string) => `#${String(getSpecies(name)?.num ?? 0).padStart(4, '0')}`;
 
 /** Pagine "‹ 1/2 ›": i pulsanti dicono quale lista sfogliano, la pagina si legge ai lettori di schermo. */
-function Pager({ page, pages, label, onPage }: { page: number; pages: number; label: string; onPage: (page: number) => void }) {
+function ListPager({ page, pages, label, onPage }: { page: number; pages: number; label: string; onPage: (page: number) => void }) {
   const tr = useT();
-  if (pages <= 1) return null;
   return (
-    <span className="lists-pager">
-      <button type="button" aria-label={tr('lists.pagePrev', { list: label })} disabled={page === 0} onClick={() => onPage(page - 1)}><Icon name="prev" /></button>
-      <span aria-label={tr('lists.pageOf', { n: page + 1, pages })}>{page + 1}/{pages}</span>
-      <button type="button" aria-label={tr('lists.pageNext', { list: label })} disabled={page >= pages - 1} onClick={() => onPage(page + 1)}><Icon name="next" /></button>
-    </span>
+    <Pager className="lists-pager" page={page} pages={pages} onPage={onPage}
+      prev={tr('lists.pagePrev', { list: label })} next={tr('lists.pageNext', { list: label })} pageText={tr('lists.pageOf', { n: page + 1, pages })} />
   );
 }
 
@@ -355,7 +352,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   const closeTimer = useRef<number | undefined>(undefined);
   const finishClose = () => {
     window.clearTimeout(closeTimer.current);
-    const still = typeof window.matchMedia !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const still = reducedMotion(true);
     if (still) { setSheet(null); return; }
     setSheetClosing(true);
     closeTimer.current = window.setTimeout(() => { setSheetClosing(false); setSheet(null); }, SHEET_OUT_MS);
@@ -477,7 +474,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
             {tr('lists.dexCount', { n: shown.length })}
             <span className="dex-key" aria-hidden="true"><Icon name="heart" /> {tr('lists.hintFav')} <Icon name="ban" /> {tr('lists.hintBan')}</span>
           </span>
-          <Pager page={dexAt} pages={dexPages} label={tr('lists.pokedex')} onPage={setDexPage} />
+          <ListPager page={dexAt} pages={dexPages} label={tr('lists.pokedex')} onPage={setDexPage} />
         </div>
         {/* Pagina su e giù (anche dai pulsanti delle carte) sfogliano il Pokédex */}
         <ol ref={gridRef} className="dex-grid" aria-label={tr('lists.pokedex')} style={measured ? { '--dex-cols': dexCols, '--dex-rows': dexRows } as CSSProperties : undefined}
@@ -534,7 +531,7 @@ function BoxHead({ kind, count, label, page, pages, onPage, note }: {
       <h3 className="lbox-plate"><Icon name={MARK[kind]} filled={kind === 'favorites'} /> {label}</h3>
       <span className="lbox-count">{count}</span>
       <small className="lbox-note">{note}</small>
-      <Pager page={page} pages={pages} label={label} onPage={onPage} />
+      <ListPager page={page} pages={pages} label={label} onPage={onPage} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import { reducedMotion } from './useMediaQuery';
 
 /** Quanto deve correre il dito in orizzontale per cambiare scheda, e la fascia ai bordi lasciata al gesto "indietro". */
 export const SWIPE_MIN = 56;
@@ -21,7 +22,6 @@ const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
  *  dito muove il cursore del testo. */
 const NO_SWIPE = 'textarea, select, [contenteditable="true"], [role="listbox"], [role="slider"], input[type="range"], [popover], .no-swipe';
 
-const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function scrollsSideways(target: Element, root: Element): boolean {
   for (let el: Element | null = target; el && el !== root; el = el.parentElement) {

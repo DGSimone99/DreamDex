@@ -13,6 +13,7 @@ import { TypeIcons } from './typeIcons';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import { Typed } from './TypeText';
 import { ThreatTip } from './dashboard/ThreatTip';
+import { useClickAway } from './useClickAway';
 
 /** I tipi colorati; `plain`: senza colore (nella pillola l'icona del tipo è già davanti). */
 export function ProblemText({ text, plain = false }: { text: string; plain?: boolean }) {
@@ -232,16 +233,9 @@ function MoreMenu({ hidden, rows, subjects, title, srText, tip, tipEl, onPick, p
   const close = (refocus: boolean) => { setOpen(false); if (refocus) button.current?.focus(); };
   useAnchoredPop(button, pop, open, { sheet: true, width: 320, align: 'end', gap: 6, onDismiss: () => setOpen(false) });
   useEffect(() => {
-    if (!open) return;
-    pop.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus({ preventScroll: true });
-    const away = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (pop.current?.contains(target) || button.current?.contains(target)) return;
-      setOpen(false);
-    };
-    document.addEventListener('pointerdown', away);
-    return () => document.removeEventListener('pointerdown', away);
+    if (open) pop.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus({ preventScroll: true });
   }, [open]);
+  useClickAway(target => !!(pop.current?.contains(target) || button.current?.contains(target)), () => setOpen(false), { active: open });
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const list = [...(pop.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ?? [])];
     const at = list.indexOf(document.activeElement as HTMLElement);

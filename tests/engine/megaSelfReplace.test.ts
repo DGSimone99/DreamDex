@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { improveReplacements, similarReplacements } from '../../src/engine/replace';
+import { improveReplacements } from '../../src/engine/replace';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, tusk } from '../fixtures/data';
 
@@ -15,7 +15,7 @@ describe('una Mega non ricompare come sostituto di sé stessa', () => {
     it(`membro "${member.species}" con la Gardevoirite`, () => {
       const team = [tusk, member];
       const pool = [set('Gardevoir', 'Gardevoirite', ['Moonblast', 'Psychic', 'Mystical Fire', 'Calm Mind']), set('Gardevoir-Mega', 'Gardevoirite', ['Moonblast'])];
-      for (const list of [improveReplacements(team, 1, DEFAULT_FORMAT, fixtureData, 20, pool), similarReplacements(team, 1, DEFAULT_FORMAT, fixtureData, 20, pool)]) {
+      for (const list of [improveReplacements(team, 1, DEFAULT_FORMAT, fixtureData, 20, pool)]) {
         expect(list.map(r => r.species)).not.toContain('Gardevoir-Mega');
       }
     });

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { cardRoles } from '../../src/engine/archetype';
 import { formatRules } from '../../src/engine/formatRules';
-import { diffContribution, similarity } from '../../src/engine/replace';
+import { diffContribution } from '../../src/engine/replace';
 import { detectRoles, roleDescription, roleLabel, shownRoles } from '../../src/engine/roles';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { rolesList, rolesListFor, setSubRoles } from '../../src/engine/subRoles';
@@ -115,16 +115,8 @@ describe('doppio: i ruoli sulla carta', () => {
   });
 });
 
-describe('doppio: somiglianza e Porta / Toglie', () => {
+describe('doppio: Porta / Toglie', () => {
   const data = { ...fixtureData, formatId: 'natdexdoubles' as const };
-
-  it('i ruoli del doppio entrano nel confronto fra due set', () => {
-    const noFakeOut = { ...incineroar, moves: ['Darkest Lariat', 'Parting Shot', 'Flare Blitz', 'Knock Off'] };
-    expect(similarity(incineroar, incineroar, doubles)).toBeCloseTo(1);
-    expect(similarity(incineroar, noFakeOut, doubles)).toBeLessThan(1);
-    // Nel singolo Fake Out non è un ruolo: i due set restano uguali
-    expect(similarity(incineroar, noFakeOut, ou)).toBeCloseTo(similarity(incineroar, incineroar, ou));
-  });
 
   it('team senza Fake Out: il candidato che lo porta lo guadagna', () => {
     const kingambit = mk('Kingambit', 'Black Glasses', 'Defiant', ['Kowtow Cleave', 'Iron Head', 'Swords Dance', 'Protect']);

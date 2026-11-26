@@ -1,5 +1,5 @@
 import { Icon } from './icons';
-import { useContext, type CSSProperties, type FocusEvent, type MouseEvent } from 'react';
+import { useContext, type FocusEvent, type MouseEvent } from 'react';
 import { cardRoles } from '../engine/archetype';
 import type { FormatRules } from '../engine/formatRules';
 import { detectRoles, roleDescription, roleLabel, shownRoles } from '../engine/roles';
@@ -10,10 +10,10 @@ import { statLines } from '../engine/statCalc';
 import { anyGameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { FloatTip, useFloatAnchor } from './FloatTip';
-import { Sprite, typeColor } from './Sprite';
+import { Sprite, typeColor, typePair } from './Sprite';
 import { MovePill } from './MovePill';
 import { NatureArrow } from './NatureArrow';
-import { tileStyle, typeIconUrl } from './typeIcons';
+import { TypeTile } from './typeIcons';
 import { hint, kitTip } from './MoveTip';
 import { ItemIcon } from './ItemIcon';
 import { FormeName } from './candidateParts';
@@ -169,12 +169,12 @@ export function MemberCard({ set, was, alerts }: { set: TeamSet; was?: TeamSet; 
   const types = (species?.types ?? []) as string[];
   return (
     <>
-      <div className="mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+      <div className="mcard-head" style={typePair(types)}>
         <span className="mcard-mon"><Sprite species={battleName(set)} size={96} /></span>
         <span className="mcard-name">
           {/* Come sulle carte della lista: Charizard + il segno della Mega, Zapdos + GALAR; il nome intero per chi legge */}
           <FormeName species={battleName(set)} /><span className="visually-hidden">{battleName(set)}</span>
-          {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} />)}
+          {types.map(type => <TypeTile key={type} type={type} />)}
         </span>
       </div>
       {!!alerts?.length && (

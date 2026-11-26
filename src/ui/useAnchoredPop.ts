@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { mediaMatches } from './useMediaQuery';
 
 /** Il browser sa mettere un elemento nello strato in cima a tutto (popover): niente z-index né contenitori che lo tagliano. */
 export const supportsPopover = typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
@@ -11,7 +12,7 @@ const GAP = 4;
 export const SHEET_QUERY = '(max-width: 599px)';
 /** Tendine e menu come fogli dal basso: telefono e tablet in verticale col dito (in orizzontale, e col mouse, restano a tendina). */
 export const PICK_SHEET_QUERY = '(max-width: 599px), (max-width: 1099px) and (orientation: portrait) and (pointer: coarse)';
-export const isSheetScreen = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(PICK_SHEET_QUERY).matches;
+export const isSheetScreen = () => mediaMatches(PICK_SHEET_QUERY);
 /** Larghezza massima di un foglio: sul tablet una colonna comoda al centro, non tutto lo schermo. */
 const SHEET_MAX_W = 600;
 

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
+import { reducedMotion } from './useMediaQuery';
 
 /** Quante finestre sono aperte ora (una può aprirsi sopra l'altra: la pagina torna attiva solo quando si chiude l'ultima). */
 let open = 0;
@@ -6,7 +7,6 @@ let open = 0;
 /** Durata della chiusura animata (blocks.css, .help-backdrop.closing): Eevee scende, poi la finestra si spegne. */
 const CLOSING_MS = 520;
 
-const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * Da mettere dentro una finestra modale (nel portal, fuori da #root):

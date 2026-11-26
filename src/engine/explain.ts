@@ -47,10 +47,6 @@ const list = (items: string[]) => items.join(', ');
 /** In italiano "ad" davanti alla A: "resiste ad Acqua", "immune ad Acciaio". */
 const euphony = (text: string, lang: Lang) => (lang === 'it' ? text.replace(/\b(immune|resiste) a (?=A)/g, '$1 ad ') : text);
 
-/** La ragione che pesa di più (il bonus principale di un candidato da aggiungere). */
-export const topReason = (reasons: Reason[]): Reason | undefined =>
-  reasons.reduce<Reason | undefined>((best, reason) => (!best || reason.weight > best.weight ? reason : best), undefined);
-
 export function explain(facts: Facts, components: Components, lang: Lang = 'it'): Reason[] {
   const reasons: Reason[] = [];
   const add = (component: ComponentKey, text: string, short = text, symbol?: ReasonSymbol) =>

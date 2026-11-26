@@ -152,7 +152,6 @@
   .def-frame .def-grid tbody .ad-mon { flex-direction: column; align-items: flex-start; gap: 0; }
   .def-frame .def-mon-line { flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); }
   .def-frame .def-mon-name { font-size: var(--fs-caption); }
-  .def-frame .def-mon-tag .def-weak { padding: 0 var(--sp-2); font-size: var(--fs-label); letter-spacing: 0; }
 
   /* ── Coaching sul telefono: la pagina scorre (niente pagine né scorrimenti dentro); bersagli da 44px ── */
   /* Una colonna sola: prima la carta della proposta aperta, sotto la classifica */
@@ -238,7 +237,6 @@
 
   /* Difesa, Generale a squadra chiusa: le due colonne in più (colpo peggiore, recupero) non ci stanno */
   .def-general.roomy .def-members tr > :nth-last-child(-n + 2) { display: none; }
-  .def-general.roomy .def-members :is(.def-col-hit, .def-col-rec) { width: 0; }
 
 }
 
@@ -496,7 +494,6 @@
    l'icona del box in testata, in fondo a ogni riga il Team Coverage. Stanno nei 390 px senza scorrere di lato. */
 .ct-flip-table { width: 100%; table-layout: fixed; }
 .ct-flip-table thead th.def-mon-h { width: 36px; padding: 0; }
-.ct-flip-table thead th.ct-level-h { width: 48px; padding: 0 0 var(--sp-2); font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); vertical-align: bottom; }
 .ct-flip-table thead th.ct-mon-h { padding: 0 0 var(--sp-2); vertical-align: bottom; }
 .ct-flip-table .ct-mon-box { display: inline-grid; place-items: center; width: 100%; height: 30px; }
 .ct-flip-table .ct-mon-box .mon-icon { image-rendering: pixelated; }

@@ -6,7 +6,7 @@ import { levelOf, LEVEL_KEYS, ROLE_LEVELS, setRolesCountMeasured } from '../../s
 import { rateTeam } from '../../src/engine/rating';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, teamRolesArea } from '../../src/engine/rolesArea';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { FAMILIES, rolesList, subRoleReasons, type SubRole } from '../../src/engine/subRoles';
+import { FAMILIES, subRoleReasons } from '../../src/engine/subRoles';
 import { fixtureData } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });

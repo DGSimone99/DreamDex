@@ -1,9 +1,8 @@
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
-import { ModalLock } from './ModalLock';
-import { EeveePeek } from './EeveePeek';
-import { Icon } from './icons';
+import { ModalShell } from './ModalShell';
+import { useEscape } from './useEscape';
+import { tabStep } from './tabStep';
 
 /**
  * La guida di un'area, a sezioni: stesso guscio del modale "Come funziona il voto" (argomenti a sinistra, testo a destra).
@@ -21,40 +20,28 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose, classN
   const t = useT();
   const id = useId();
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  const close = useRef(onClose);
-  close.current = onClose;
   const section = sections.find(s => s.key === current) ?? sections[0];
 
   useEffect(() => {
     // Il focus va alla sezione scelta solo all'apertura
     tabs.current[Math.max(0, sections.findIndex(s => s.key === current))]?.focus();
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close.current(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEscape(onClose);
 
   // Frecce su/giù tra le sezioni, come una lista di schede verticale
   const onTabKey = (e: KeyboardEvent, index: number) => {
-    const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
-    if (!step) return;
+    const next = tabStep(e.key, index, sections.length, { horizontal: false, vertical: true, homeEnd: false });
+    if (next === null) return;
     e.preventDefault();
-    const next = (index + step + sections.length) % sections.length;
     onCurrent(sections[next].key);
     tabs.current[next]?.focus();
   };
 
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-          <ModalLock />
-          {/* Eevee sbircia da dietro la finestra, come in "Come funziona il voto" */}
-          <div className="help-frame with-peek">
-          <EeveePeek />
-      <div className={`help-dialog area-guide${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
-        <header className="help-head">
-          <h2 id={`${id}-title`}>{title}</h2>
-          <button type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
+  return (
+    // Eevee sbircia da dietro la finestra, come in "Come funziona il voto"
+    <ModalShell className={`area-guide${className ? ` ${className}` : ''}`} titleId={`${id}-title`} title={title} heading="h2"
+      closeLabel={t('help.close')} onClose={onClose} peek>
         <div className="help-body">
           <nav className="help-nav" role="tablist" aria-orientation="vertical" aria-label={title}>
             {sections.map((item, i) => (
@@ -83,9 +70,6 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose, classN
               )))}
           </div>
         </div>
-      </div>
-          </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

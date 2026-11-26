@@ -1,4 +1,5 @@
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { signed } from '../i18n';
 import { useEditing } from './editing';
 import { GRADES, type TeamRating } from '../engine/rating';
 import { teamArchetype, type Archetype } from '../engine/archetype';
@@ -6,7 +7,7 @@ import type { TeamSet } from '../engine/sets';
 import { rolesTally } from '../engine/rolesArea';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
-import { type DetailArea, signed } from './AreaDetail';
+import type { DetailArea } from './AreaDetail';
 import { Icon } from './icons';
 import { useT } from '../i18n/react';
 import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
@@ -14,6 +15,7 @@ import { ANALYSIS_VIEWS } from './AnalysisTabs';
 import type { TabView } from './analysisView';
 import { EeveeMoment } from './EeveeMoment';
 import { bonusMalusTotals } from './BonusMalusView';
+import { useClickAway } from './useClickAway';
 
 const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
 
@@ -300,11 +302,7 @@ function GradePopover({ id, button, onClose, help, children }: {
   // Dentro la tendina, sul voto o nella finestra del "?" (portale nel body): non è fuori
   const inside = (node: EventTarget | null) => node instanceof Node && (!!ref.current?.contains(node) || !!button.current?.contains(node)
     || (node instanceof Element && !!node.closest('.help-backdrop')));
-  useEffect(() => {
-    const away = (e: PointerEvent) => { if (!inside(e.target)) onClose(false); };
-    document.addEventListener('pointerdown', away);
-    return () => document.removeEventListener('pointerdown', away);
-  }, [onClose]);
+  useClickAway(inside, () => onClose(false));
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     // I tasti della finestra del "?" risalgono qui dal portale: sono suoi
     if (!ref.current?.contains(e.target as Node)) return;

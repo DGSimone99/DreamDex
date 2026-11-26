@@ -4,7 +4,7 @@ import { roleLabel } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
-import { combineChances, creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
+import { combineChances, creditedValues, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
 import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, SECOND_KEYS, type Level, type LevelKey } from './roleLevels';
 import { t, type Lang } from '../i18n';
 

@@ -18,13 +18,15 @@ import type { Lang } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { FloatTip, useFloatAnchor } from './FloatTip';
 import { Icon, type IconName } from './icons';
+import { Pager } from './Pager';
 import { PokemonIcon } from './PokemonName';
-import { Sprite, typeColor } from './Sprite';
+import { Sprite, typePair } from './Sprite';
 import { EeveeMoment } from './EeveeMoment';
-import type { CSSProperties } from 'react';
 import { useMemberTip } from './MemberCard';
 import { streamFill } from './useRanking';
-import { TipGlyph, TipHead, TipSec } from './TipHead';
+import { TipGlyph, TipHead } from './TipHead';
+import { tabStep } from './tabStep';
+import { useClickAway } from './useClickAway';
 
 const ARCHETYPES: SinglesArchetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 /** Le voci dei tipi, in ordine: "Il migliore" (nessun tipo) e i cinque archetipi. */
@@ -208,18 +210,14 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   }, [available, pickState.archetype]);
 
   // Esc chiude anche col focus fuori dal pannello; clic fuori (pannello e pulsante esclusi) chiude
+  // I fogli fuori dal pannello (i dettagli di un Pokémon tenuto premuto, la loro ×) non contano come "fuori"
+  useClickAway(target => !!(target.closest?.('.tip-sheet, .tip-sheet-shade, .tip-sheet-close, .ftip, [data-sheet]')
+    || root.current?.contains(target) || target.closest?.('[data-fill-toggle]')), onClose);
   useEffect(() => {
-    const away = (e: PointerEvent) => {
-      const target = e.target as Element;
-      // I fogli fuori dal pannello (i dettagli di un Pokémon tenuto premuto, la loro ×) non contano come "fuori"
-      if (target.closest?.('.tip-sheet, .tip-sheet-shade, .tip-sheet-close, .ftip, [data-sheet]')) return;
-      if (!root.current?.contains(target) && !target.closest?.('[data-fill-toggle]')) onClose();
-    };
     const escape = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } };
-    document.addEventListener('pointerdown', away);
     // In cattura: Esc chiude il pannello e non arriva all'editor aperto sotto
     document.addEventListener('keydown', escape, true);
-    return () => { document.removeEventListener('pointerdown', away); document.removeEventListener('keydown', escape, true); };
+    return () => document.removeEventListener('keydown', escape, true);
   }, [onClose]);
   // All'apertura il focus va sul tipo scelto
   useEffect(() => { root.current?.querySelector<HTMLElement>('.fill-types [aria-checked="true"], .fill-styles [aria-checked="true"]')?.focus(); }, []);
@@ -306,10 +304,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   // Schede: frecce e Home/Fine passano dall'una all'altra
   const tabs: Tab[] = ['proposals', 'tournament'];
   const tabKeys = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const at = tabs.indexOf(tab);
-    const next = e.key === 'ArrowRight' || e.key === 'ArrowLeft' ? tabs[1 - at]
-      : e.key === 'Home' ? tabs[0] : e.key === 'End' ? tabs[1] : null;
-    if (!next) return;
+    const step = tabStep(e.key, tabs.indexOf(tab), tabs.length);
+    if (step === null) return;
+    const next = tabs[step];
     e.preventDefault();
     setTab(next);
     root.current?.querySelector<HTMLElement>(`#${CSS.escape(`${ids}-tab-${next}`)}`)?.focus();
@@ -438,7 +435,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                     return (
                       <span key={`${set.species}#${j}`} {...memberTip.bind(set, changed ? team[j] : undefined)}
                         // I colori dei tipi: sul telefono la casella di un Pokémon nuovo prende il colore del suo tipo, come le carte del team
-                        style={{ '--t1': typeColor(battleSpecies(set)?.types[0] ?? ''), '--t2': typeColor(battleSpecies(set)?.types[1] ?? battleSpecies(set)?.types[0] ?? '') } as CSSProperties}
+                        style={typePair(battleSpecies(set)?.types)}
                         data-tap-tip
                         className={`fill-mon ${mine ? 'is-mine' : 'is-new'}${changed ? ' is-changed' : ''}${favorite ? ' is-favorite' : ''}`}>
                         <span className="fill-mon-sprite">
@@ -510,18 +507,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
             <p className="fill-status" role="status" aria-live="polite">{status}</p>
             {banned > 0 && <p className="banned-note">{t(banned === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: banned })}</p>}
             {/* Giri già calcolati: ‹ 2/3 ›, come la paginazione dei candidati; le frecce non ricalcolano niente */}
-            <nav className="pager fill-pager" aria-label={t('fill.pages')}>
-              <button type="button" className="step" aria-label={t('fill.prev')} disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-                <Icon name="prev" />
-              </button>
-              <span className="pager-count" aria-live="polite" aria-atomic="true">
-                <span className="visually-hidden">{t('fill.page', { n: page + 1, total: pages.length })}</span>
-                <span aria-hidden="true">{page + 1}/{pages.length}</span>
-              </span>
-              <button type="button" className="step" aria-label={t('fill.next')} disabled={page >= pages.length - 1} onClick={() => setPage(p => p + 1)}>
-                <Icon name="next" />
-              </button>
-            </nav>
+            <Pager look="step" className="fill-pager" page={page} pages={pages.length} onPage={setPage} single
+              label={t('fill.pages')} prev={t('fill.prev')} next={t('fill.next')} pageText={t('fill.page', { n: page + 1, total: pages.length })} />
             <button type="button" className="fill-more" disabled={busy || exhausted} onClick={() => setRound(r => r + 1)}>{t('fill.more')}</button>
           </div>
         </div>

@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
 import type { FormatRules } from '../../engine/formatRules';
-import { MISSING_BELOW } from '../../engine/needs';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS } from '../../engine/rolesArea';
-import { levelFor, levelKeysFor, type Level, type LevelKey } from '../../engine/roleLevels';
+import { levelFor, levelKeysFor, type Level } from '../../engine/roleLevels';
 import { FAMILIES } from '../../engine/subRoles';
 import { useT } from '../../i18n/react';
 import { keyLabel, LevelTag } from './RoleParts';

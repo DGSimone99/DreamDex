@@ -1,9 +1,10 @@
 import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { signed } from '../../i18n';
 import type { TeamRating } from '../../engine/rating';
 import { SECOND_KEYS, type Level } from '../../engine/roleLevels';
 import { MISSING_BELOW } from '../../engine/needs';
 import { useT } from '../../i18n/react';
-import { signed, type AreaContext, type T } from '../AreaDetail';
+import type { AreaContext, T } from '../AreaDetail';
 import { Icon } from '../icons';
 import { holderReason, keyLabel, RoleMon } from './RoleParts';
 import { missingFirst, roleLines, rolePoints, rolesMalusOn, type RoleLine } from './rolesRows';

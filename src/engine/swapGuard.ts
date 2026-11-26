@@ -10,9 +10,6 @@ export interface LostRole {
   level: 'essential' | 'important';
 }
 
-/** Quanto scende in classifica un cambio per ogni voce persa (solo l'ordine: il voto mostrato resta quello vero). */
-export const ROLE_PENALTY: Record<LostRole['level'], number> = { essential: 3, important: 2 };
-
 /**
  * Voci essenziali o importanti (per il tipo di team di `before`) presenti prima del cambio e mancanti dopo:
  * contano solo le perdite nuove, non quelle che mancavano già, e riempire una voce non dà niente.
@@ -24,8 +21,6 @@ export function lostRoles(before: TeamNeeds, after: TeamNeeds): LostRole[] {
     return before.values[key] >= MISSING_BELOW && after.values[key] < MISSING_BELOW ? [{ key, level }] : [];
   });
 }
-
-export const rolePenalty = (lost: LostRole[]): number => lost.reduce((sum, role) => sum + ROLE_PENALTY[role.level], 0);
 
 /**
  * I ruoli d'aiuto che il voto non misura in nessuna area (utente, 2026-11-22): danno nel tempo, Disruptor (Taunt, Encore,

@@ -1,16 +1,15 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { speedStat, type SpeedRival } from '../../engine/speed';
 import { speedOptions, type MemberSpeed, type SpeedOption } from '../../engine/speedArea';
 import type { TeamSet } from '../../engine/sets';
 import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import { AnalysisSheet } from '../AnalysisSheet';
-import { Icon } from '../icons';
 import { ItemIcon } from '../ItemIcon';
-import { ModalLock } from '../ModalLock';
 import { PokemonIcon } from '../PokemonName';
 import { Sprite } from '../Sprite';
+import { ModalShell } from '../ModalShell';
+import { useEscape } from '../useEscape';
 
 /**
  * Una specie del gruppo nella lista: la versione normale e, se c'è, quella con la Sciarpa o la Booster. Chi usa lo
@@ -197,28 +196,15 @@ export function SpeedMemberDialog({ onClose, ...props }: Props) {
   const t = useT();
   const id = useId();
   const first = useRef<HTMLButtonElement>(null);
-  const close = useRef(onClose);
-  close.current = onClose;
   const stat = useStatLine(props.set);
-  useEffect(() => {
-    first.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close.current(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, []);
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-      <ModalLock />
-      <div className="help-dialog sp-dialog" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
-        <header className="help-head">
-          <h3 id={`${id}-title`}><span className="def-box"><PokemonIcon name={props.member.species} /></span>{t('sdetail.dlg.title', { name: props.member.species })}</h3>
-          <span className="sp-dlg-stat">{stat}</span>
-          <button ref={first} type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
+  useEffect(() => { first.current?.focus(); }, []);
+  useEscape(onClose);
+  return (
+    <ModalShell className="sp-dialog" titleId={`${id}-title`}
+      title={<><span className="def-box"><PokemonIcon name={props.member.species} /></span>{t('sdetail.dlg.title', { name: props.member.species })}</>}
+      headExtra={<span className="sp-dlg-stat">{stat}</span>} closeLabel={t('help.close')} onClose={onClose} closeRef={first}>
         <div className="sp-dialog-body"><SpeedMemberBody {...props} /></div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }
 

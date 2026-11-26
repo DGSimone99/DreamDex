@@ -1,5 +1,11 @@
 import type { GameId } from './games';
 
+/**
+ * La generazione più recente: i dati del Pokédex (dex.ts), il calcolo dei danni (damage.ts) e il limite di generazione
+ * di base. I formati delle generazioni passate dovranno sceglierla per formato, e togliere dexGen9Only in vite.config.ts.
+ */
+export const LATEST_GEN = 9;
+
 export type FormatId = 'ou' | 'ubers' | 'uu' | 'all' | 'gen9ou' | 'gen9ubers' | 'gen9uu' | 'gen9ag' | 'natdexdoubles';
 
 export interface Format {
@@ -23,6 +29,6 @@ export interface Format {
 }
 
 export const DEFAULT_FORMAT: Format = {
-  formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, meta: true,
+  formatId: 'ou', genLimit: LATEST_GEN, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, meta: true,
   game: null, allPokedex: false, legendaries: false,
 };

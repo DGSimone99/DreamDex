@@ -3,6 +3,7 @@ import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { SMALL } from './useBackClose';
+import { mediaMatches } from './useMediaQuery';
 
 /**
  * Modifica annullabile delle Liste: una raccolta svuotata o sostituita (Copia da… › Sostituisci; `from` = la raccolta),
@@ -117,7 +118,7 @@ function useDock(on: boolean) {
     const place = () => {
       const title = document.querySelector('.slot.open .editor-title')?.getBoundingClientRect();
       const actions = document.querySelector('.slot.open .editor-actions')?.getBoundingClientRect();
-      const small = typeof window.matchMedia === 'function' && window.matchMedia(SMALL).matches;
+      const small = mediaMatches(SMALL);
       const left = title ? title.right + 16 : 0;
       const right = actions ? actions.left - 16 : 0;
       if (!on || small || !title || !actions || right - left < DOCK_MIN) {

@@ -14,6 +14,8 @@ import {
   deleteMySet, mySetByName, mySetIndex, mySetsOf, overwriteMySet, renameMySet, saveMySet, setMySets, useMySets,
 } from './mySets';
 import { UndoToast, type UndoAction } from './UndoToast';
+import { tabStep } from './tabStep';
+import { useClickAway } from './useClickAway';
 
 /** "Capsula energetica · Allegra · 252 Att / 252 Vel": strumento, natura e i due EV più alti. */
 export function setSummary(set: TeamSet, lang: Lang): string {
@@ -105,12 +107,7 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onC
     setTab(presets.length === 0 && mine.length > 0 ? 'mine' : 'smogon');
     setOpen(true);
   };
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) close(false); };
-    document.addEventListener('pointerdown', away);
-    return () => document.removeEventListener('pointerdown', away);
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  useClickAway(target => !!root.current?.contains(target), () => close(false), { active: open });
   // Aperto: il fuoco va sulla scheda scelta, così frecce e Tab partono da lì
   useEffect(() => {
     if (open) root.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
@@ -158,9 +155,11 @@ export function SetMenu({ set, presets, bestIndex, onBest, onChange, onText, onC
   };
 
   const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+    const order: Tab[] = ['smogon', 'mine'];
+    const step = tabStep(e.key, order.indexOf(tab), order.length);
+    if (step === null) return;
     e.preventDefault();
-    const next: Tab = e.key === 'Home' ? 'smogon' : e.key === 'End' ? 'mine' : tab === 'smogon' ? 'mine' : 'smogon';
+    const next = order[step];
     setTab(next);
     root.current?.querySelector<HTMLElement>(`#${CSS.escape(tabId(next))}`)?.focus();
   };

@@ -48,7 +48,7 @@ describe('dashboardData', () => {
   });
 
   it('ruoli: essenziali e importanti (i minori non si mostrano), coperti con i loro membri', () => {
-    const { analysis, tile, dash } = build();
+    const { analysis, dash } = build();
     const expected = LEVEL_KEYS.filter(k => analysis.needs.levels[k] === 'essential' || analysis.needs.levels[k] === 'important');
     expect(dash.roles.chips.map(c => c.need)).toEqual(expected);
     for (const chip of dash.roles.chips) expect(chip.covered).toBe(chip.owners.length > 0);

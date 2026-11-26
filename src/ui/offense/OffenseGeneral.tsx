@@ -1,4 +1,5 @@
 import { battleSpecies } from '../../engine/dex';
+import { signed } from '../../i18n';
 import { DEFAULT_FORMAT } from '../../engine/format';
 import type { MemberOffense, MemberShare, TeamOffense } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
@@ -10,17 +11,18 @@ import { offenseSlots } from './slots';
 import { Ask, averageCols, BarHead, MetaTargets, metaText, TypeAverages, typeStatText } from './TargetsTip';
 import { MoveChips, moveShares } from './MoveChips';
 import { linkTeamCard } from '../teamLink';
-import { useEffect, useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
 import { gradeFor } from '../../engine/rating';
 import { AnalysisSheet } from '../AnalysisSheet';
-import { Sprite, typeColor } from '../Sprite';
-import { TypeIcons } from '../typeIcons';
+import { Sprite } from '../Sprite';
 import { CardsLegend } from '../CardsLegend';
 import { FloatTip, HiddenText, useFloatAnchor } from '../FloatTip';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
-import { signed } from '../defense/DefenseGeneral';
 import { useRoving } from '../useRoving';
+import { AreaHero } from '../AreaHero';
+import { PedanaCard } from '../PedanaCard';
+import { barRow } from '../analysisRows';
 
 /** I 18 tipi di un membro come bersagli: colpo semplice, dopo una danza, con Tera/Z. */
 const typeTargets = (m: MemberOffense): KoTarget[] =>
@@ -145,12 +147,10 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
     return (
       <div className="off-frame off-general og-cards-frame">
         {/* La riga del team in cima: la risposta prima dei dettagli */}
-        <section className="og-hero" aria-label={teamName}>
-          <span className="og-plate">{teamName}</span>
-          {grade && <span className={`og-hero-grade grade-${grade.grade}`} aria-hidden="true"><b>{grade.grade}</b> {grade.label}</span>}
+        <AreaHero label={teamName} grade={grade}>
           <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span><KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm /></div>
           {meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span><KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm /></div>}
-        </section>
+        </AreaHero>
         <CardsLegend pieces={[['ohko', 'OHKO'], ['two', '2HKO'], ['rest', t('odetail.cards.noKo')]]} setup={t('kob.legendSetupShort')} />
         <ul className="og-cards" aria-label={t('detail.member')}>
           {ctx.team.map((set, slot) => {
@@ -162,23 +162,18 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
             const quiet = familyAt(ctx, slot) === 'wall';
             const types = species?.types ?? [];
             return (
-              <li key={`${name}-${slot}`} className={`og-card pedana-face${quiet ? ' wall' : ''}`}
-                style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
-                <span className="pedana-stripe" aria-hidden="true" />
-                <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
-                {/* La carta si apre toccando la parte alta (sprite e nome): sotto, le barre portano alle loro schede */}
-                <button type="button" className="og-card-open" disabled={!m} aria-label={t('odetail.cards.open', { name })} onClick={() => setSheet(slot)}>
-                  <span className="og-card-sprite" aria-hidden="true"><Sprite species={set.species} item={set.item} size={80} /></span>
-                  <span className="og-card-name">{name}</span>
-                </button>
-                <span className={`og-card-tag${s && s.points === 0 ? ' zero' : ''}`}>
-                  {s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}
-                  {quiet && <small>· {t('sdetail.wall')}</small>}
-                </span>
-                <TypeIcons types={types} className="og-card-types" />
+              // La carta si apre toccando la parte alta (sprite e nome): sotto, le barre portano alle loro schede
+              <PedanaCard key={`${name}-${slot}`} className={quiet ? 'wall' : undefined} types={types} name={name} species={set.species} item={set.item}
+                disabled={!m} openLabel={t('odetail.cards.open', { name })} onOpen={() => setSheet(slot)}
+                tag={(
+                  <span className={`og-card-tag${s && s.points === 0 ? ' zero' : ''}`}>
+                    {s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}
+                    {quiet && <small>· {t('sdetail.wall')}</small>}
+                  </span>
+                )}>
                 {m && <div className="og-card-row"><span className="og-card-label">{t('kob.headTypes')}</span>{typeRow(slot, m, name)}</div>}
                 {m && meta && <div className="og-card-row"><span className="og-card-label">{t('kob.headMeta')}</span>{metaRow(slot, m, name)}</div>}
-              </li>
+              </PedanaCard>
             );
           })}
         </ul>
@@ -208,12 +203,6 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
   if (phone) {
     // Telefono: per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la barra Meta larghe quanto lo
     // schermo (una sopra l'altra, niente da scorrere di lato); in fondo il team allo stesso modo
-    const bars = (label: string, cell: ReactNode, key: string, cls = '') => (
-      <tr key={key} className={`og-bar-row${cls}`}>
-        <th scope="row" className="og-bar-label">{label}</th>
-        <td colSpan={2}>{cell}</td>
-      </tr>
-    );
     return (
       <div className={`def-frame off-frame def-general off-general og-stack${roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">
@@ -240,9 +229,9 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
                     <th scope="rowgroup" colSpan={2}><MemberMon name={name} set={set} stats="offense">{quiet ? <span className="role-note">· {t('sdetail.wall')}</span> : undefined}</MemberMon></th>
                     <td>{s ? <ShareTip who={name} share={s} meta={!!offense.coverageMeta} /> : '—'}</td>
                   </tr>
-                  {m && bars(t('kob.headTypes'), <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
+                  {m && barRow(t('kob.headTypes'), <KoBadges bands={typeBands[slot]!} who={name} mon={name} of={ofTypes} total={18} setupMove={m.setupMove} onceName={onceName(m)}
                     onPick={ctx.openFocus && (band => ctx.openFocus!('types', { kind: 'types', slot, band }))} pickPlace={t('detail.coverageTypes')} />, 'types')}
-                  {m && meta && bars(t('kob.headMeta'), <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
+                  {m && meta && barRow(t('kob.headMeta'), <KoBadges bands={metaBands[slot]!} who={name} mon={name} of={ofMeta} total={nMeta} setupMove={m.setupMove}
                     onPick={ctx.openFocus && (band => ctx.openFocus!('coverageMeta', { kind: 'meta', slot, band }))} pickPlace={t('detail.coverageMeta')} />, 'meta')}
                 </tbody>
               );
@@ -250,8 +239,8 @@ export function OffenseGeneral({ offense, meta, ctx, value = null }: { offense: 
             <tbody className="og-stack-mon og-stack-team">
               <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>
               <tr className="og-mon-row"><th scope="rowgroup" colSpan={3}><span className="og-plate">{teamName}</span></th></tr>
-              {bars(t('kob.headTypes'), <KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm />, 'types')}
-              {meta && bars(t('kob.headMeta'), <KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm />, 'meta')}
+              {barRow(t('kob.headTypes'), <KoBadges bands={koBands(teamTypes)} who={teamName} of={ofTypes} total={18} alarm />, 'types')}
+              {meta && barRow(t('kob.headMeta'), <KoBadges bands={koBands(teamMeta)} who={teamName} of={ofMeta} total={nMeta} alarm />, 'meta')}
             </tbody>
           </table>
         </div>

@@ -9,7 +9,6 @@ export const WEIGHTS = {
 } as const;
 
 export type ComponentKey = keyof typeof WEIGHTS;
-export const COMPONENT_KEYS = Object.keys(WEIGHTS) as ComponentKey[];
 
 /**
  * Pesi del punteggio che ordina i candidati (somma 1): il Coaching prova col voto vero solo i primi per membro (teamGain.ts swapsPerMember: 15, di più in doppio).

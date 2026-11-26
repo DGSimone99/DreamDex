@@ -1,4 +1,5 @@
 import type { TeamAnalysis } from './analysis';
+import { signed } from '../i18n';
 import { COVERED_LEVEL, holdSeverity, type CoachProblem } from './coach';
 import type { EngineData } from './data';
 import { ratingThreats, type TeamRating } from './rating';
@@ -19,8 +20,6 @@ export interface SummaryTile {
   items?: { text: string; points: number }[];
 }
 
-/** Come `signed` della UI: meno vero per i negativi, ±0 per zero. */
-const signedNet = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '±0');
 
 /** Stato da un valore 0–100 (stesse soglie dell'area Velocità). */
 const byValue = (v: number): TileStatus => (v >= 70 ? 'good' : v >= 50 ? 'mid' : 'bad');
@@ -90,7 +89,7 @@ export function summarizeTeam(analysis: TeamAnalysis, rating: TeamRating, proble
     ...rating.bonus.items.map(i => ({ text: i.text, points: i.points })),
     ...rating.penalty.items.map(i => ({ text: i.text, points: -i.points })),
   ].sort((a, b) => Math.abs(b.points) - Math.abs(a.points)).slice(0, 2);
-  const bonusMalus: SummaryTile = { key: 'bonusMalus', value: signedNet(net), missing: [], status: net >= 0 ? 'good' : 'bad', items };
+  const bonusMalus: SummaryTile = { key: 'bonusMalus', value: signed(net, '±0'), missing: [], status: net >= 0 ? 'good' : 'bad', items };
 
   return [defense, strength, roles, speed, meta, bonusMalus];
 }

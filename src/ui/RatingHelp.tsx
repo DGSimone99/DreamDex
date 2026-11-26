@@ -1,16 +1,16 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
 import type { FormatRules } from '../engine/formatRules';
 import { ARCHETYPE_WEIGHTS, GRADES, type AreaWeightTable } from '../engine/rating';
 import { isGroupKey, LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../engine/roleLevels';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
-import { EeveePeek } from './EeveePeek';
-import { ModalLock } from './ModalLock';
 import { Icon } from './icons';
 import { useMediaQuery } from './useMediaQuery';
 import { SHEET_QUERY } from './useAnchoredPop';
+import { ModalShell } from './ModalShell';
+import { useEscape } from './useEscape';
+import { tabStep } from './tabStep';
 
 type Topic = 'general' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
@@ -53,11 +53,9 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
   useEffect(() => {
     if (!open) return;
     if (!phone) tabs.current[topics.indexOf(topic)]?.focus();
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
     // Il focus va all'argomento solo all'apertura
   }, [open]);
+  useEscape(close, { active: open });
 
   function close() {
     setOpen(false);
@@ -65,10 +63,9 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
   }
   // Frecce su/giù tra gli argomenti, come una lista di schede verticale
   const onTabKey = (e: KeyboardEvent, index: number) => {
-    const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
-    if (!step) return;
+    const next = tabStep(e.key, index, topics.length, { horizontal: false, vertical: true, homeEnd: false });
+    if (next === null) return;
     e.preventDefault();
-    const next = (index + step + topics.length) % topics.length;
     setTopic(topics[next]);
     tabs.current[next]?.focus();
   };
@@ -80,17 +77,9 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
         <Icon name="help" />
       </button>
       {/* Nel body della pagina: sopra tutto, senza ereditare gli stili del pannello in cui sta il "?" */}
-      {open && createPortal(
-        <div className="help-backdrop" onClick={close}>
-          <ModalLock />
-          {/* Eevee sbircia da dietro la finestra: testa e coda dietro, zampe davanti (EeveePeek) */}
-          <div className="help-frame with-peek">
-          <EeveePeek />
-          <div className="help-dialog rating-help" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-            <header className="help-head">
-              <h3 id={titleId}>{t('help.title')}</h3>
-              <button type="button" className="help-close" aria-label={t('help.close')} onClick={close}><Icon name="close" /></button>
-            </header>
+      {open && (
+        // Eevee sbircia da dietro la finestra: testa e coda dietro, zampe davanti (EeveePeek)
+        <ModalShell className="rating-help" titleId={titleId} title={t('help.title')} closeLabel={t('help.close')} onClose={close} peek>
             {phone ? (
               // Una chiave per pagina: aprendone una (o tornando) si riparte dall'alto
               <div className="help-body help-phone" key={page ?? 'home'}>
@@ -146,10 +135,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
               </section>
             </div>
             )}
-          </div>
-          </div>
-        </div>,
-        document.body,
+        </ModalShell>
       )}
     </>
   );

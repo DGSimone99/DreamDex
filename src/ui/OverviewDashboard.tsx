@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { EDITOR_TABS_QUERY, useMediaQuery } from './useMediaQuery';
 import type { DashboardData } from '../engine/overviewDashboard';
 import type { TeamSummary } from '../engine/teamSummary';
-import type { TeamSet } from '../engine/sets';
 import type { AnalysisView } from './analysisView';
 import type { KoFocus } from './AreaDetail';
 import type { BonusMalusPiece } from './BonusMalusView';
@@ -44,13 +43,11 @@ export function densityFor(height: number): Density {
  * coi suoi punti); a destra la Copertura, sotto le Minacce del meta (solo col meta: senza, la Copertura prende il loro
  * posto), sotto Ruoli | Velocità.
  */
-export function OverviewDashboard({ data, summary, members, team = [], grade, weak = {}, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
+export function OverviewDashboard({ data, summary, members, grade, weak = {}, bonusMalus, onView, onCollapseTeam, teamCollapsed = false, density: forced }: {
   data: DashboardData;
   summary: TeamSummary;
   /** Quanti Pokémon ha il team: con uno solo la riga Tipo non c'è. */
   members: number;
-  /** I set del team: la carta del Pokémon nei tooltip del Riassunto. */
-  team?: TeamSet[];
   /** La lettera del voto del team (S…D): il tipo di team del Riassunto ne prende il colore. */
   grade?: string;
   /** Le aree deboli (C, D) a team completo: il loro numero nelle testate prende il colore del voto. */

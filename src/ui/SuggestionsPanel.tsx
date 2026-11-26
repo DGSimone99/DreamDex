@@ -10,11 +10,10 @@ import { rankKey } from '../engine/teamGain';
 import { MAX } from '../engine/candidateRanking';
 import { useRanking } from './useRanking';
 import { DETAIL_SHEET, useBackClose } from './useBackClose';
-import { useMediaQuery } from './useMediaQuery';
+import { useMediaQuery, reducedMotion } from './useMediaQuery';
 import { hint } from './MoveTip';
 import { useSheet } from './useSheet';
 import { battleName } from '../engine/dex';
-import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
 import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
@@ -26,6 +25,7 @@ import { TeamTypePicker } from './TeamTypePicker';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
 import { Sprite } from './Sprite';
 import { Icon } from './icons';
+import { Pager } from './Pager';
 import { EeveeMoment } from './EeveeMoment';
 import { SuggestionDetail, type DetailTab } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
@@ -341,7 +341,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const closeTimer = useRef<number | undefined>(undefined);
   const finishClose = () => {
     window.clearTimeout(closeTimer.current);
-    const still = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const still = reducedMotion();
     if (still || typeof window.matchMedia !== 'function') { setSheetOpen(false); return; }
     setSheetClosing(true);
     closeTimer.current = window.setTimeout(() => { setSheetClosing(false); setSheetOpen(false); }, SHEET_OUT_MS);
@@ -499,18 +499,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   // Paginazione nella fascia "Candidati (N)", su una riga: ‹ un trattino per pagina ›
   const pager = pages > 1 && !scrollList && (
-    <nav className="pager" aria-label={tr('suggest.pages')}>
-      <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
-        <Icon name="prev" />
-      </button>
-      {/* A vista "2/7"; detto e annunciato "Pagina 2 di 7" (l'annuncio legge il testo, non l'etichetta) */}
-      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1, total: pages })}>
-        <span aria-hidden="true">{page + 1}/{pages}</span><span className="visually-hidden">{tr('suggest.page', { n: page + 1, total: pages })}</span>
-      </span>
-      <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
-        <Icon name="next" />
-      </button>
-    </nav>
+    <Pager look="step" page={page} pages={pages} onPage={goToPage}
+      label={tr('suggest.pages')} prev={tr('suggest.prev')} next={tr('suggest.next')} pageText={tr('suggest.page', { n: page + 1, total: pages })} />
   );
 
   // Bannati nascosti: un pulsante ⊘ col numero nella fascia "Candidati (N)" (una riga sopra la lista spostava tutto);
@@ -582,7 +572,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             data={data}
             format={format}
             rating={rating}
-            archetype={deferred.archetype}
             usage={emptyTeam ? usageOf(selected.species) : null}
             banMark={<><BanMark species={selected.species} format={format} /><ExclusiveMark species={battleName(selected.set)} format={format} /></>}
             actionLabel={actionLabelOf(selected)}

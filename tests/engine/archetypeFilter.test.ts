@@ -1,10 +1,7 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { fitsArchetype, fitsTeamType } from '../../src/engine/archetype';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { activeFilterCount, EMPTY_FILTERS, searchCandidates } from '../../src/engine/filters';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { fixtureData, tusk } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });
 

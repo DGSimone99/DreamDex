@@ -4,8 +4,9 @@ import { formatPercent } from '../../i18n';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { PickButton } from '../candidateParts';
-import { Sprite, typeColor } from '../Sprite';
+import { Sprite, typePair } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
+import { PedanaBack } from '../PedanaCard';
 
 /**
  * Un Pokémon del meta come le carte dei candidati (stesse classi: carta Pedana, targhetta, icone dei tipi, nome in
@@ -21,12 +22,10 @@ export function MetaCard({ entry, max, mine, selected, onSelect }: { entry: Meta
   const [flash, setFlash] = useState(false);
   const className = ['card', 'meta-card', medal, mine && 'mine', selected && 'selected beam-on', flash && 'beam-flash'].filter(Boolean).join(' ');
   return (
-    <li className={className} style={{ '--t1': typeColor(entry.types[0] ?? ''), '--t2': typeColor(entry.types[1] ?? entry.types[0] ?? '') } as CSSProperties} onClick={() => { setFlash(true); onSelect(); }}
+    <li className={className} style={typePair(entry.types)} onClick={() => { setFlash(true); onSelect(); }}
       onAnimationEnd={e => { if (e.animationName === 'beam-flash') setFlash(false); }}>
       <div className="card-face pedana-face">
-        <span className="pedana-stripe" aria-hidden="true" />
-        <span className="pedana-beam" aria-hidden="true" />
-        <span className="pedana-stage" aria-hidden="true"><span className="pedana-disc" /></span>
+        <PedanaBack beam />
         <span className="card-sprite" aria-hidden="true"><Sprite species={entry.name} size={96} /></span>
         <span className="tag" aria-hidden="true">#{entry.rank}</span>
         <TypeIcons types={entry.types} className="card-types" hints />

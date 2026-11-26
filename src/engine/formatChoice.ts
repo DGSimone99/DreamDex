@@ -1,4 +1,4 @@
-import { DEFAULT_FORMAT, type Format, type FormatId } from './format';
+import { DEFAULT_FORMAT, LATEST_GEN, type Format, type FormatId } from './format';
 import { BATTLE_IDS, tiersOf, type BattleId } from './formats';
 import { GAME_IDS, GAME_LOCK, gameReady, type GameId } from './games';
 
@@ -71,7 +71,7 @@ function sanitizeGame(r: Record<string, unknown>): GameChoice | null {
 function sanitizeFree(r: Record<string, unknown>): FreeChoice | null {
   if (r.family !== 'free') return null;
   const n = r.genLimit;
-  const genLimit = typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 9 ? n : 9;
+  const genLimit = typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= LATEST_GEN ? n : LATEST_GEN;
   return { family: 'free', genLimit, multipleMegas: r.multipleMegas === true };
 }
 

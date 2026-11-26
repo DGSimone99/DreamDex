@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { cardsLayout, cardsReasons } from './listLayout';
-import { useMediaQuery } from './useMediaQuery';
+import { useMediaQuery, mediaMatches } from './useMediaQuery';
 
 /** Candidati per pagina senza misura (jsdom, telefono e tablet stretto): 6 (3 × 2 o 2 × 3). */
 export const PAGE = 6;
@@ -51,7 +51,7 @@ interface Measure {
   height: number;
 }
 
-const wide = () => typeof matchMedia !== 'function' || matchMedia(WIDE).matches;
+const wide = () => mediaMatches(WIDE, true);
 
 /**
  * Quanti candidati per pagina (ResizeObserver): le colonne dalla larghezza della scheda (`pickerRef`, lista + dettaglio),
@@ -98,7 +98,7 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, pickerRef: RefObj
       if (!width || !height) return;
       if (!wide()) {
         setMeasure(null);
-        if (typeof matchMedia === 'function' && matchMedia(TABLET_WIDE).matches) setCols(tabletCols(el.clientWidth));
+        if (mediaMatches(TABLET_WIDE)) setCols(tabletCols(el.clientWidth));
         return;
       }
       setMeasure(prev => (prev && prev.width === width && prev.height === height ? prev : { width, height }));

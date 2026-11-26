@@ -8,7 +8,7 @@ import { levelOf } from '../../src/engine/roleLevels';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { rateTeam } from '../../src/engine/rating';
 import { rankedChanges } from '../../src/engine/coach';
-import { HELPER_PENALTY, lostHelpers, lostResistances, lostRoles, rolePenalty, ROLE_PENALTY } from '../../src/engine/swapGuard';
+import { HELPER_PENALTY, lostHelpers, lostResistances, lostRoles } from '../../src/engine/swapGuard';
 import { netGain, rankByTeamGain } from '../../src/engine/teamGain';
 import { fixtureData } from '../fixtures/data';
 
@@ -37,7 +37,6 @@ describe('swapGuard', () => {
     expect(level).toBe('essential');
     const lost = lostRoles(needs(balance), needs(swapped));
     expect(lost).toEqual([{ key: 'hazards', level }]);
-    expect(rolePenalty(lost)).toBe(ROLE_PENALTY.essential);
   });
 
   it('nel bulky offense la stessa perdita sono gli hazard', () => {
@@ -48,11 +47,6 @@ describe('swapGuard', () => {
   it('una voce che mancava già non conta, una riempita neppure', () => {
     // Al contrario: gli hazard si riempiono, niente di perso
     expect(lostRoles(needs(swapped), needs(balance))).toEqual([]);
-  });
-
-  it('penalità: 3 per essenziale, 2 per importante', () => {
-    expect(rolePenalty([{ key: 'hazards', level: 'important' }, { key: 'specialWall', level: 'essential' }])).toBe(5);
-    expect(rolePenalty([])).toBe(0);
   });
 
   it('resistenze uniche perse: Clodsire era l\'unico immune a Elettro', () => {

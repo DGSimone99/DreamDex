@@ -14,6 +14,7 @@ import { Icon } from './icons';
 import { CoachLink } from './CoachLink';
 import { isThreat, MoreProblems, problemEntries, ProblemChip, type ProblemEntry } from './ProblemPill';
 import { useFitCount } from './useFit';
+import { tabStep } from './tabStep';
 
 /** La scelta dell'interruttore Trick Room nella sessione del browser ("0" spento); senza scelta, o senza memoria, acceso. */
 const ROOM_KEY = 'dreamdex.speedTrickRoom';
@@ -155,10 +156,9 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
 
   // Frecce destra/sinistra (con giro), Home e End fra le sottostatistiche
   const onKey = (e: KeyboardEvent, i: number) => {
-    const moves: Record<string, number> = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 };
-    if (!(e.key in moves)) return;
+    const next = tabStep(e.key, i, tabs.length);
+    if (next === null) return;
     e.preventDefault();
-    const next = (moves[e.key] + tabs.length) % tabs.length;
     setPicked(tabs[next].key);
     buttons.current[next]?.focus();
   };

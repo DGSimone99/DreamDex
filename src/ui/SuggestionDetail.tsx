@@ -1,9 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import { rankedChanges } from '../engine/coach';
 import { battleSpecies, getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
-import type { Archetype } from '../engine/archetype';
 import { areaDrops, extrasDelta, rolesDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { roleLabel } from '../engine/roles';
@@ -23,12 +22,15 @@ import { bringsOf, formeParts, kindOfArea, memberLabel, type Bring, type BringKi
 import { PokemonIcon } from './PokemonName';
 import { battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
-import { Sprite, typeColor } from './Sprite';
+import { Sprite, typePair } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { Typed } from './TypeText';
 import { MemberKit, MemberMoves, MemberRoles, StatHex } from './MemberCard';
-import { typeIconUrl, tileStyle } from './typeIcons';
+import { TypeTile } from './typeIcons';
 import type { TypeName } from '../engine/types';
+import { tabStep } from './tabStep';
+import { mediaMatches } from './useMediaQuery';
+import { useFlash } from './useFlash';
 
 
 /** L'ordine dei gruppi di Porta e Toglie, e il segno di ognuno (gli stessi delle carte della lista). */
@@ -80,9 +82,9 @@ export type DetailTab = 'brings' | 'loses' | 'set';
 /** Solo con lista e dettaglio affiancati il dettaglio ha un'altezza sua (sotto è un foglio che scorre). */
 /** Altezza dell'esagono nel corpo del dettaglio con la sua etichetta e lo spazio sopra (CSS .hex-part). */
 const HEX_PART_H = 168;
-const wideScreen = () => typeof matchMedia !== 'function' || matchMedia('(min-width: 1100px)').matches;
+const wideScreen = () => mediaMatches('(min-width: 1100px)', true);
 
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, teamCollapsed = false, sheet = false, tab: tabProp, onTab }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, usage, banMark, actionLabel, onAction, teamCollapsed = false, sheet = false, tab: tabProp, onTab }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -92,8 +94,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   format: Format;
   /** Voto del team attuale. */
   rating: TeamRating | null;
-  /** Tipo di team scelto per giudicare i cambi: prima e dopo si votano come quel tipo, come nella lista. */
-  archetype?: Archetype;
   /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
   usage: number | null;
   banMark: React.ReactNode;
@@ -111,7 +111,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const tr = useT();
   const lang = useLang();
   const set = item.set;
-  const replacing = replaceIndex !== null;
   // Il voto vero del team, come nella card del voto (il tipo scelto decide solo chi compare)
   const after = useMemo(() => rateTeam(withCandidate(team, set, replaceIndex), data, lang), [team, replaceIndex, set, data, lang]);
   // Senza altri membri non c'è un voto da confrontare
@@ -171,8 +170,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const actionsFit = useFitCount(actionsRef, 2, `${lang}|${actionLabel}`, undefined, true);
   const asideRef = useRef<HTMLElement>(null);
   // Copia set: per un attimo "Copiato" con la spunta (come la carta del team), detto anche ai lettori di schermo
-  const [copied, setCopied] = useState(false);
-  useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1500); return () => window.clearTimeout(timer); }, [copied]);
+  const [copied, setCopied] = useFlash(1500);
   useEffect(() => setCopied(false), [item.species]);
   const [tabs, setTabs] = useState(false);
   // La versione bassa e le linguette dipendono solo dal contenuto che non entra (non dall'altezza del dettaglio): quando
@@ -267,12 +265,14 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const showSet = !tabs || shownTab === 'set';
   const tabKeys: DetailTab[] = ['brings', 'set'];
 
+  // Le statistiche a esagono, col confronto con chi esce (la legenda sotto): nel riquadro delle statistiche e nelle schede
+  const hex = <><StatHex set={set} compare={out} />{out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}</>;
   return (
     <aside ref={asideRef} className={`detail${rank === 1 ? ' first' : ''}${tight ? ' compact' : ''}${tabs ? ' tabbed' : ''}`} aria-label={tr('detail.region', { species: item.species })}
       {...(sheet ? { role: 'dialog', 'aria-modal': true, tabIndex: -1 } : {})}>
       {/* Testata come la carta del tooltip: diagonale nei colori dei tipi, sprite grande, nome in corsivo con le icone dei
           tipi; a destra quanto sale il voto e, sotto, il verso di ogni area */}
-      <header className="detail-hero mcard-head" style={{ '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties}>
+      <header className="detail-hero mcard-head" style={typePair(types)}>
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
         <span className="mcard-mon detail-mon">
           <Sprite species={battleName(set)} item={set.item} size={96} />
@@ -289,12 +289,11 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               </span>
             ) : <span>{item.species}</span>}
             <span className="detail-types" aria-label={types.map(type => typeName(type as TypeName, lang)).join(', ')}>
-              {types.map(type => <img key={type} className="ti-sq" style={tileStyle(type)} src={typeIconUrl(type)} alt="" draggable={false} {...hint(typeName(type as TypeName, lang))} />)}
+              {types.map(type => <TypeTile key={type} type={type} {...hint(typeName(type as TypeName, lang))} />)}
             </span>
             {banMark}
             <StatsBadge species={item.species} item={set.item} compare={out} side={<>
-              <StatHex set={set} compare={out} />
-              {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+              {hex}
             </>} />
           </h3>
         </div>
@@ -355,9 +354,10 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               <button key={key} type="button" role="tab" id={`detail-tab-${key}`} aria-selected={shownTab === key} aria-controls="detail-tabpanel"
                 tabIndex={shownTab === key ? 0 : -1} className={shownTab === key ? 'on' : undefined} onClick={() => chooseTab(key)}
                 onKeyDown={e => {
-                  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                  const step = tabStep(e.key, tabKeys.indexOf(key), tabKeys.length, { homeEnd: false });
+                  if (step === null) return;
                   e.preventDefault();
-                  const next = tabKeys[(tabKeys.indexOf(key) + (e.key === 'ArrowRight' ? 1 : tabKeys.length - 1)) % tabKeys.length];
+                  const next = tabKeys[step];
                   chooseTab(next);
                   (e.currentTarget.parentElement?.querySelector(`#detail-tab-${next}`) as HTMLElement | null)?.focus();
                 }}>
@@ -395,8 +395,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               {hexAt === 'why' && (
                 <div className="why-part hex-part">
                   <h4>{tr('detail.statsWithSet')}</h4>
-                  <StatHex set={set} compare={out} />
-                  {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+                  {hex}
                 </div>
               )}
             </section>
@@ -414,8 +413,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               {hexAt === 'run' && (
                 <div className="hex-part">
                   <h4>{tr('detail.statsWithSet')}</h4>
-                  <StatHex set={set} compare={out} />
-                  {out && <span className="hx-legend"><i aria-hidden="true" />{tr('suggest.outShort', { member: out.species })}</span>}
+                  {hex}
                 </div>
               )}
             </section>

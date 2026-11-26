@@ -1,12 +1,11 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
-import { createPortal } from 'react-dom';
 import { rulesOf, type FormatChoice } from '../engine/formatChoice';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { shareUrl } from '../share';
 import { EeveeMoment } from './EeveeMoment';
-import { Icon } from './icons';
-import { ModalLock } from './ModalLock';
+import { ModalShell } from './ModalShell';
+import { useEscape } from './useEscape';
 
 /** Dove si aprono le segnalazioni pubbliche (il repo diventa pubblico col lancio). */
 export const ISSUES_URL = 'https://github.com/DGSimone99/DreamDex/issues/new';
@@ -37,12 +36,8 @@ export function FeedbackDialog({ team, choice, onClose, accessKey = import.meta.
   const [email, setEmail] = useState('');
   const [attach, setAttach] = useState(team.length > 0);
   const [status, setStatus] = useState<Status>('idle');
-  useEffect(() => {
-    first.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEffect(() => { first.current?.focus(); }, [onClose]);
+  useEscape(onClose);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -74,14 +69,8 @@ export function FeedbackDialog({ team, choice, onClose, accessKey = import.meta.
   };
 
   const github = <a href={ISSUES_URL} target="_blank" rel="noreferrer">{t('feedback.github')}</a>;
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-      <ModalLock />
-      <div className="help-dialog feedback-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-        <header className="help-head">
-          <h3 id={titleId}>{t('feedback.title')}</h3>
-          <button type="button" className="help-close" aria-label={t('settings.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
+  return (
+    <ModalShell className="feedback-dialog" titleId={titleId} title={t('feedback.title')} closeLabel={t('settings.close')} onClose={onClose}>
         {status === 'sent' ? (
           <div className="feedback-body feedback-done" role="status">
             <EeveeMoment pose="happy" />
@@ -130,8 +119,6 @@ export function FeedbackDialog({ team, choice, onClose, accessKey = import.meta.
             </div>
           </form>
         )}
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

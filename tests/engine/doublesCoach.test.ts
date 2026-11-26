@@ -81,7 +81,7 @@ describe('doppio: il meteo contro nel coach', () => {
 
   it('cambiare solo la mossa non risolve se il Pokémon di solito la usa; sostituire lui o chi porta il meteo sì', () => {
     const team = [pelipper, kingdra, incineroar];
-    const changes = problemChanges(team, doubles, doublesData, problems(team), 'it');
+    const changes = problemChanges(doubles, doublesData, problems(team), 'it');
     // Via Flare Blitz dal set: il malus resta (testo diverso, stesso problema)
     expect(changes([pelipper, kingdra, dryIncineroar]).solves).not.toContain(KEY);
     // Un altro al posto di Incineroar, o via la pioggia

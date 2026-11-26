@@ -6,6 +6,7 @@ import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { FEET_ROW, FEET_X, SPRITE_FEET } from './spriteFeet';
 import { typeIconUrl } from './typeIcons';
+import { reducedMotion } from './useMediaQuery';
 
 /** Colori classici dei tipi. */
 export const TYPE_COLORS: Record<TypeName, string> = {
@@ -32,6 +33,10 @@ export function inkFor(hex: string): string {
 }
 
 export const typeColor = (type: string): string => TYPE_COLORS[type as TypeName] ?? '#8890b0';
+
+/** I colori dei due tipi per lo sfondo delle carte (--t1, --t2; un tipo solo: lo stesso due volte). */
+export const typePair = (types: readonly string[] | undefined): CSSProperties =>
+  ({ '--t1': typeColor(types?.[0] ?? ''), '--t2': typeColor(types?.[1] ?? types?.[0] ?? '') } as CSSProperties);
 
 /** Il tipo come in Pokémon Champions: tessera con l'icona ufficiale nel colore del tipo, poi il nome su una lastra scura. */
 /**
@@ -70,8 +75,6 @@ function spriteId(name: string): string | null {
   return species.forme ? `${base}-${toID(species.forme)}` : base;
 }
 
-const reducedMotion = () =>
-  typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * Sprite del Pokémon (la forma Mega se tiene la sua pietra). Se manca, resta lo spazio vuoto.

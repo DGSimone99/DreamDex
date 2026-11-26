@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { useT } from '../i18n/react';
-import { Icon } from './icons';
+import { Pager } from './Pager';
 import { useMediaQuery } from './useMediaQuery';
 
 /** Pokémon del meta per pagina: le colonne della tabella (8 sul computer largo e sul telefono, dove la tabella è girata). */
@@ -32,18 +31,8 @@ export function MetaFrame<R>({ rows, summary, body, labels }: {
   const current = Math.min(page, pages - 1);
   const shown = rows.slice(current * perPage, (current + 1) * perPage);
   const pager = (
-    <nav className="cm-pages" aria-label={labels.pages}>
-      <button type="button" className="cm-step" aria-label={labels.prev} title={labels.prev} disabled={current === 0} onClick={() => setPage(current - 1)}>
-        <Icon name="prev" />
-      </button>
-      <span className="cm-at" aria-live="polite">
-        <span aria-hidden="true">{current + 1}/{pages}</span>
-        <span className="visually-hidden">{labels.page(current * perPage + 1, Math.min(rows.length, (current + 1) * perPage))}</span>
-      </span>
-      <button type="button" className="cm-step" aria-label={labels.next} title={labels.next} disabled={current === pages - 1} onClick={() => setPage(current + 1)}>
-        <Icon name="next" />
-      </button>
-    </nav>
+    <Pager page={current} pages={pages} onPage={setPage} label={labels.pages} prev={labels.prev} next={labels.next} single
+      pageText={labels.page(current * perPage + 1, Math.min(rows.length, (current + 1) * perPage))} />
   );
   return <>{body(shown, pager, <span className="cm-summary">{summary}</span>)}</>;
 }

@@ -3,7 +3,7 @@ import type { TeamSet } from '../../src/engine/sets';
 import { speedPool, speedStat } from '../../src/engine/speed';
 import { outspeedShare } from '../../src/engine/speed';
 import {
-  measuredSubRoles, measureWith, rolesList, setSubRoles, statusPool, subRoleReasons, MEASURED, type StatusRival,
+  measuredSubRoles, measureWith, rolesList, setSubRoles, statusPool, subRoleReasons, type StatusRival,
 } from '../../src/engine/subRoles';
 import { teamNeeds } from '../../src/engine/needs';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
@@ -117,7 +117,6 @@ describe('sotto-ruoli misurati', () => {
   it('RF1 specie o mosse sconosciute: valori vuoti, nessun errore', () => {
     expect(measuredSubRoles(set('Notamon', ['Toxic', 'Taunt']), [], fixtureData)).toEqual({});
     expect(() => measuredSubRoles(set('Great Tusk', ['', 'Notamove']), [], fixtureData)).not.toThrow();
-    expect(MEASURED).toContain('recovery');
   });
 });
 

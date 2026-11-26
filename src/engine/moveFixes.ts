@@ -73,7 +73,7 @@ export function keepMoveFixes<C extends { gain: number; penalty?: number }>(rank
  */
 export function moveFixes(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang): MoveFix[] {
   if (!data.stats || team.length < 2) return [];
-  const changes = problemChanges(team, format, data, problems, lang);
+  const changes = problemChanges(format, data, problems, lang);
   const pokedex = pokedexOf(format);
   const fixes: MoveFix[] = [];
   team.forEach((member, index) => {

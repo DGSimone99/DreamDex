@@ -14,7 +14,6 @@ export interface RoleHolder { species: string; slot: number; value: number; sour
 export interface RoleLine { key: LevelKey; level: Level; family: Family; value: number; missing: boolean; by: RoleHolder[]; together: boolean }
 
 export const FAMILY_ORDER: Family[] = ['attack', 'defense', 'support', 'utility'];
-export const LEVEL_ORDER: Level[] = ['essential', 'important', 'minor', 'ignored'];
 
 /** Le famiglie delle voci del doppio che non sono sotto-ruoli delle famiglie. */
 const DOUBLES_FAMILY: Partial<Record<LevelKey, Family>> = {

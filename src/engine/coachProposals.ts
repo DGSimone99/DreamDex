@@ -1,4 +1,4 @@
-import type { CoachAdvice, CoachProblem, ProblemCategory } from './coach';
+import type { CoachAdvice, CoachProblem } from './coach';
 import type { CoachFix } from './coachFixes';
 import { leads } from './coachSteps';
 import type { MoveFix } from './moveFixes';
@@ -116,17 +116,6 @@ export function solvedKeys(advice: Pick<CoachAdvice, 'fixes' | 'moves'>): Set<st
 
 /** Le aree come le mostra il Coaching nelle righe: le quattro del voto, i Ruoli e le Regole (senza valore). */
 export type ProposalArea = 'strength' | 'defense' | 'speed' | 'roles' | 'bonusMalus' | 'rules';
-
-/** L'area di un problema nelle righe: le stesse delle testate delle aree (Ruoli e Bonus divisi nei loro due nomi). */
-export function areaOfProblem(category: ProblemCategory): ProposalArea {
-  switch (category) {
-    case 'defense': case 'meta': return 'defense';
-    case 'coverage': case 'metaHit': return 'strength';
-    case 'roles': return 'roles';
-    case 'rules': return 'rules';
-    default: return 'bonusMalus';
-  }
-}
 
 /** L'ordine delle aree nelle righe e nella riga verde: Offesa, Difesa, Velocità, Ruoli, Bonus/Malus, Regole. */
 export const PROPOSAL_AREAS: ProposalArea[] = ['strength', 'defense', 'speed', 'roles', 'bonusMalus', 'rules'];

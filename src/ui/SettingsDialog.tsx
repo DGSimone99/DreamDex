@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
-import { ModalLock } from './ModalLock';
 import { PALETTES, type PaletteSetting } from './theme';
+import { ModalShell } from './ModalShell';
+import { useEscape } from './useEscape';
 
 const CHOICES: PaletteSetting[] = ['auto', ...PALETTES];
 
@@ -22,21 +22,11 @@ export function SettingsDialog({ palette, onPaletteChange, onCredits, onFeedback
   const t = useT();
   const titleId = useId();
   const first = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    first.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useEffect(() => { first.current?.focus(); }, [onClose]);
+  useEscape(onClose);
   const label = (choice: PaletteSetting) => (choice === 'auto' ? t('settings.paletteAuto') : t(`settings.palette.${choice}`));
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-          <ModalLock />
-      <div className="help-dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-        <header className="help-head">
-          <h3 id={titleId}>{t('settings.title')}</h3>
-          <button type="button" className="help-close" aria-label={t('settings.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
+  return (
+    <ModalShell className="settings-dialog" titleId={titleId} title={t('settings.title')} closeLabel={t('settings.close')} onClose={onClose}>
         <div className="settings-body">
           <fieldset className="settings-palette">
             <legend>{t('settings.palette')}</legend>
@@ -53,8 +43,6 @@ export function SettingsDialog({ palette, onPaletteChange, onCredits, onFeedback
           {onFeedback && <button type="button" className="settings-credits" onClick={onFeedback}>{t('feedback.open')}<Icon name="next" /></button>}
           {onCredits && <button type="button" className="settings-credits" onClick={onCredits}>{t('credits.openLong')}<Icon name="next" /></button>}
         </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

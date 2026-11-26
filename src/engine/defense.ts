@@ -8,16 +8,10 @@ import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
 import { bestAttackMultiplier, effectiveness, moveAttackMultiplier, TYPES } from './types';
 import type { EngineData } from './data';
-import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
+import { battleAbility, battleSpecies, getMove, toID } from './dex';
 import { REMOVAL_MOVES } from './roles';
 import type { TeamSet } from './sets';
 import { softScore } from './scale';
-
-/** Valore di un colpo standard ricevuto (dal tiro più alto): OHKO 0, 2HKO 0,5, 3HKO 1, 4HKO o più 1,5. */
-export function holdStep(hit: Hit | null): number {
-  if (!hit) return 1.5;
-  return hit.max >= 1 ? 0 : hit.max >= 0.5 ? 0.5 : hit.max >= 1 / 3 ? 1 : 1.5;
-}
 
 /** Recupero per turno delle mosse (la migliore del set). */
 const RECOVERY_MOVES: Record<string, number> = {
@@ -204,12 +198,6 @@ export function firstHitShare(set: TeamSet, team: TeamSet[] = [set]): number {
  * (543 team NatDex OU: voto −0,4 in media, al massimo −2, 12 lettere su 543, distacco torneo-medi uguale).
  */
 export const signedSustain = (net: number): number => (net >= 0 ? softScore(net / SUSTAIN_FULL) : -Math.round(100 * Math.min(1, -net / SUSTAIN_FULL)));
-
-/** Recupero meno perdite per turno (in quota dei PS); `holdShare` come in `sustainParts`. */
-export function sustainability(set: TeamSet, holdShare: number, remover: string | null = null, conditions: FieldCondition[] = []): number {
-  const parts = sustainParts(set, holdShare, remover, conditions);
-  return parts.recovery - parts.rocks - parts.itemLoss;
-}
 
 /** Mosse di potenziamento difensivo e gli aumenti che i dati non descrivono (Stockpile, Curse). */
 const DEFENSIVE_SETUP = new Set(['irondefense', 'acidarmor', 'barrier', 'cottonguard', 'cosmicpower', 'stockpile', 'defendorder', 'bulkup', 'coil', 'curse',
@@ -583,7 +571,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
     };
   });
   const weak = rows.filter(row => Math.min(row.physical, row.special) === 0).map(row => row.type);
-  const typed = known.map((set, m) => ({
+  const typed = known.map((_, m) => ({
     species: names[m],
     cells: TYPES.map((_, i) => {
       const [p, s] = [hits[m][2 * i], hits[m][2 * i + 1]];

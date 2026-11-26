@@ -8,7 +8,6 @@ import type { Core } from '../../src/engine/cores';
 import type { TeamLink } from '../../src/engine/teamLinks';
 import type { TeamSummary } from '../../src/engine/teamSummary';
 import { TYPES } from '../../src/engine/types';
-import { en } from '../../src/i18n/en';
 import { it as itText } from '../../src/i18n/it';
 import { initGameNames } from '../../src/i18n/game';
 import { LangProvider } from '../../src/i18n/react';

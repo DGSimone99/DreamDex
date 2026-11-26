@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CREDIT_FLOOR, HOLE_HIT, memberOffense, offenseCredit, OFFENSE_DEPTH, OFFENSE_SHARES, ONE_USE_SHARE, ROLES_SETUP_SHARE, rolesMemberOffense,
-  SETUP_SHARE, stepBucket, stepValue, teamOffense, type MemberOffense,
+  SETUP_SHARE, stepValue, teamOffense, type MemberOffense,
 } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
 import { coverageTargets, teamCoverage } from '../../src/engine/coverage';
@@ -27,11 +27,6 @@ describe('stepValue (misura dei Ruoli)', () => {
     expect(stepValue({ move: 'Earthquake', expected: 1.2, min: 1, max: 1 })).toBe(1.5);
     expect(stepValue({ move: 'Sheer Cold', expected: 0.3, min: 1, max: 1 })).toBe(0);
     expect(stepValue(null)).toBe(0);
-  });
-
-  it('la soglia di una casella si legge anche dai valori medi', () => {
-    expect([1.5, 1.25, 1, 0.875, 0.75, 0.625, 0.5, 0.25, 0.1, 0].map(stepBucket))
-      .toEqual(['ohko', 'ohko', 'two', 'two', 'two', 'three', 'three', 'three', 'none', 'none']);
   });
 });
 

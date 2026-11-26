@@ -26,6 +26,8 @@ import { AnalysisSheet } from '../AnalysisSheet';
 import { SheetCoachLink } from '../CoachLink';
 import { countClass } from '../CardsLegend';
 import type { CSSProperties } from 'react';
+import { AreaHero, HeroCount } from '../AreaHero';
+import { SheetRow, FlipHead } from '../analysisRows';
 
 /** Da qui il danno si scrive anche se non conta (3HKO, la soglia di Coverage meta), in una casella grigia. */
 const LOW_PCT = 34;
@@ -178,10 +180,9 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
     const openIndex = open ? TYPES.indexOf(open) : -1;
     return (
       <div className="off-frame def-types ct-tiles-frame">
-        <section className="og-hero" aria-label={t('detail.level')}>
-          <span className="og-plate">{t('detail.level')}</span>
-          <p className="og-hero-line"><b className={countClass(covered, TYPES.length)}>{covered}</b><small>/{TYPES.length}</small> {t('odetail.tiles.covered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</p>
-        </section>
+        <AreaHero label={t('detail.level')}>
+          <HeroCount n={covered} of={TYPES.length} tone={countClass(covered, TYPES.length)}>{t('odetail.tiles.covered')} · <b>{ohkos}</b> {t('odetail.tiles.ohko')}</HeroCount>
+        </AreaHero>
         <ul className="ct-tiles" aria-label={t('detail.coverageTypes')}>
           {TYPES.map((type, i) => {
             const level = byType.get(type)?.level ?? 0;
@@ -213,17 +214,13 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                 const show = h && (h.hit || h.cls === 'ok-low');
                 const dim = ctx.effOnly && !h?.tag;
                 return (
-                  <li key={`${nameOf(slot)}-${slot}`} className={`ct-sheet-row ${show ? h!.cls : 'ok-none'}${dim ? ' eff-dim' : ''}`}>
-                    <PokemonIcon name={nameOf(slot)} />
-                    <span className="ct-sheet-name">{nameOf(slot)}</span>
-                    {show
-                      ? <>
-                        <span className="ct-sheet-move">{h!.found.move ? gameName('move', h!.found.move, lang) : ''}</span>
-                        <EffTag label={h!.tag} side="offense" />
-                        <span className="ct-sheet-pct">{h!.found.pct}<i>%</i></span>
-                      </>
-                      : <span className="ct-sheet-none">—</span>}
-                  </li>
+                  <SheetRow key={`${nameOf(slot)}-${slot}`} className={show ? h!.cls : 'ok-none'} dim={dim} name={nameOf(slot)}>
+                    {show ? <>
+                      <span className="ct-sheet-move">{h!.found.move ? gameName('move', h!.found.move, lang) : ''}</span>
+                      <EffTag label={h!.tag} side="offense" />
+                      <span className="ct-sheet-pct">{h!.found.pct}<i>%</i></span>
+                    </> : null}
+                  </SheetRow>
                 );
               })}
             </ul>
@@ -244,17 +241,8 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
           // forte della riga.
           <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} aria-describedby={summaryId} className="def-grid spaced ct-table ct-flip-table"
             onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
-            <thead>
-              <tr>
-                <th scope="col" className="def-mon-h"><span className="visually-hidden">{t('flip.type')}</span></th>
-                {team.map((set, slot) => (
-                  <th key={`${nameOf(slot)}-${slot}`} scope="col" className={`ct-mon-h${focus && slot === focus.slot ? ' kf-col' : ''}`} {...focusAt(slot, -1)}>
-                    <span className="ct-mon-box" {...card.bind(set)}><PokemonIcon name={nameOf(slot)} /></span>
-                    <span className="visually-hidden">{nameOf(slot)}</span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
+            <FlipHead corner={t('flip.type')} team={team} nameOf={(_, slot) => nameOf(slot)} bind={set => card.bind(set)} focusSlot={focus?.slot}
+              cellProps={slot => focusAt(slot, -1)} />
             <tbody>
               {TYPES.map((type, i) => (
                 <tr key={type}>

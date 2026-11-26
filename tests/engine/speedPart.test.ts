@@ -5,7 +5,7 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { outspeedShare, speedPool, speedStat } from '../../src/engine/speed';
 import { getSpecies } from '../../src/engine/dex';
 import { fixtureData } from '../fixtures/data';
-import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, rivalSet, slowFactor, SPEED_FULL, SPEED_RANK_WEIGHTS, speedPart, speedRankWeights } from '../../src/engine/speedArea';
+import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, rivalSet, slowFactor, SPEED_FULL, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
 import { bestHit } from '../../src/engine/damage';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
@@ -79,7 +79,6 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
   });
 
   it('la parte Velocità: la media semplice dei membri, poi la scala lineare', () => {
-    expect(speedRankWeights()).toEqual(SPEED_RANK_WEIGHTS);
     expect(SPEED_RANK_WEIGHTS).toEqual([1, 1, 1, 1, 1, 1]);
     const team = [pex, dnite, barra, pelipper, webber, smasher];
     const members = team.map(s => memberSpeed(s, team, noMeta)!);

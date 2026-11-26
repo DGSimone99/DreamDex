@@ -153,7 +153,29 @@ async function gradeRow(page: Page, text: RegExp): Promise<boolean> {
   if (opened) await wait(200);
   if (await clickText(page, '.band button.grade-area', text)) return true;
   // Senza il riquadro del voto nella fascia (tablet verticale, telefono): la scheda dell'area nella barra dell'Analisi
-  return clickText(page, '[role="tab"]', text);
+  await tab(page, 'analysis');
+  await wait(300);
+  return clickText(page, '.analysis-tabs [role="tab"]', text);
+}
+
+/**
+ * Apre "Come funziona il voto": dal "?" del voto nella fascia; sul telefono (fascia senza "?") dal voto in fondo alla barra
+ * delle schede di Analisi, nella sua tendina. Con `topic` sceglie anche la pagina: sul computer la scheda a sinistra, sul
+ * telefono la riga della lista (la pagina generale è già quella d'apertura).
+ */
+async function ratingHelp(page: Page, topic?: RegExp): Promise<boolean | string> {
+  if (!await page.evaluate(() => { const b = document.querySelector<HTMLElement>('.band .grade-tools button.help-button'); if (!b?.getClientRects().length) return false; b.click(); return true; })) {
+    await tab(page, 'analysis');
+    await wait(300);
+    if (!await clickText(page, '.analysis-grade-toggle', /./)) return 'no help button';
+    await wait(400);
+    if (!await clickText(page, '.grade-pop .help-button', /./)) return 'no help button';
+  }
+  await wait(300);
+  if (!topic) return true;
+  if (await clickText(page, '.help-nav [role="tab"]', topic)) return true;
+  if (!await page.$('.help-phone')) return 'no help topic';
+  return /Come funziona|How it works/.test(topic.source) || await clickText(page, '.help-list button', topic) || 'no help topic';
 }
 
 async function focus(page: Page, selector: string): Promise<boolean> {
@@ -197,6 +219,10 @@ async function editorHead(page: Page): Promise<boolean> {
   return true;
 }
 const tab = (page: Page, id: string) => page.evaluate(i => { document.getElementById(`tab-${i}`)?.click(); }, id);
+/** Telefono: la scheda dell'editor (Set, Statistiche, Sfida) dove sta il controllo; sul computer non c'è e non serve. */
+async function editorTab(page: Page, text: RegExp): Promise<void> {
+  if (await clickText(page, '.slot.open .editor-tabs [role="tab"]', text)) await wait(400);
+}
 
 /** Mouse sulla carta n della lista; dopo l'animazione stampa i bordi della carta inclinata rispetto all'interno della lista. */
 async function hoverCard(page: Page, n: number): Promise<boolean | string> {
@@ -226,6 +252,7 @@ async function hoverCard(page: Page, n: number): Promise<boolean | string> {
 /** Apre la Difesa e, se serve, una sotto-scheda per nome (null = Generale); col team chiuso clicca prima il pulsante della fascia. */
 const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Partial<typeof FORMAT>; collapsed?: boolean } = {}): State => ({
   hash: opts.format ? hashWith(opts.team ?? SIX, opts.format) : hash(opts.team ?? SIX),
+  only: opts.collapsed ? 'desktop' : undefined,
   run: async p => {
     await tab(p, 'analysis');
     await wait(300);
@@ -240,6 +267,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
 });
 const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Partial<typeof FORMAT> } = {}): State => ({
   hash: opts.format ? hashWith(SIX, opts.format) : hash(SIX),
+  only: opts.collapsed ? 'desktop' : undefined,
   run: async p => {
     await tab(p, 'analysis');
     await wait(300);
@@ -252,7 +280,7 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     return true;
   },
 });
-const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^General/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^General/, types: /^(Coverage tipi|Type coverage)/, meta: /^(Coverage meta|Meta coverage)/ };
 const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(OFFENSE_SUBS).flatMap(([k, re]) => [
   [`analysis-offense-${k}`, offenseState(re)],
   [`analysis-offense-${k}-collapsed`, offenseState(re, { collapsed: true })],
@@ -268,7 +296,7 @@ const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: h
   return true;
 } });
 // Telefono: il foglio dal basso aperto toccando la carta di un membro (Generale a carte) o una tessera / una minaccia
-const sheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), run: async p => {
+const sheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), only: 'small', run: async p => {
   const ok = await offenseState(sub).run!(p);
   if (ok !== true) return ok;
   const items = await p.$$(selector);
@@ -285,7 +313,7 @@ OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/)
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
 // La pagina Coverage tipi con la freccina del Colpo aperta: le difese medie dei 18 bersagli (il modale non cambia altezza)
 // La guida dal "?" di Coverage tipi, col puntatore sul "?" dei bersagli: il tooltip con le medie dei 18 tipi
-OFFENSE_STATES['analysis-offense-guide-types-open'] = { hash: hash(SIX), run: async p => {
+OFFENSE_STATES['analysis-offense-guide-types-open'] = { hash: hash(SIX), only: 'desktop', run: async p => {
   const ok = await offenseGuide(OFFENSE_SUBS.types).run!(p);
   if (ok !== true) return ok;
   const ask = await p.$('.guide-ask');
@@ -295,14 +323,13 @@ OFFENSE_STATES['analysis-offense-guide-types-open'] = { hash: hash(SIX), run: as
   return true;
 } };
 OFFENSE_STATES['analysis-offense-guide-types-open-en'] = { ...OFFENSE_STATES['analysis-offense-guide-types-open'], lang: 'en' } as State;
-OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage tipi/);
-OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
 // Velocità: lo stesso team con Ribombee (Sticky Web e Stun Spore) al posto di Gholdengo, così il controllo del team si vede
 const SPEED_SIX = [...TEAM, member('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 })];
 // Trick Room: lo stesso team con Hatterene (Trick Room) al posto di Ribombee
 const SPEED_ROOM = [...TEAM, member('Hatterene', 'Life Orb', 'Magic Bounce', ['Trick Room', 'Psyshock', 'Dazzling Gleam', 'Mystical Fire'], 'Quiet', { hp: 252, spa: 252, def: 4 })];
 const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Partial<typeof FORMAT> } = {}): State => ({
   hash: opts.format ? hashWith(SPEED_SIX, opts.format) : hash(SPEED_SIX),
+  only: opts.collapsed ? 'desktop' : undefined,
   run: async p => {
     await tab(p, 'analysis');
     await wait(300);
@@ -342,13 +369,13 @@ const SPEED_STATES: Record<string, State> = {
   'analysis-speed-trickroom-off': { hash: hash(SPEED_ROOM), run: async p => {
     const ok = await speedState(null).run!(p);
     if (ok !== true) return ok;
-    if (!await clickText(p, '.panel-switch button[role="switch"]', /Trick Room/)) return 'no room switch';
+    if (!await clickText(p, '.panel-switch button[role="switch"]', /Trick Room|Distortozona/)) return 'no room switch';
     await wait(400);
     return true;
   } },
-  'analysis-speed-trickroom-collapsed': { hash: hash(SPEED_ROOM), run: async p => speedState(null, { collapsed: true }).run!(p) },
+  'analysis-speed-trickroom-collapsed': { hash: hash(SPEED_ROOM), only: 'desktop', run: async p => speedState(null, { collapsed: true }).run!(p) },
   // Il tooltip della barra: la scala dei vicini (Great Tusk ha la Booster: l'icona accanto al nome)
-  'analysis-speed-hover': { hash: hash(SPEED_SIX), run: async p => {
+  'analysis-speed-hover': { hash: hash(SPEED_SIX), only: 'desktop', run: async p => {
     const ok = await speedState(null).run!(p);
     if (ok !== true) return ok;
     const bar = await p.$('button.sp-bar-btn');
@@ -389,18 +416,24 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
-  // Una pillola di problema toccata nella testata (va dove parla: Coverage meta o tipi, sulle carte col foglio) e il "+N" aperto
-  'analysis-defense-chip': { hash: hash(SIX), run: async (p: Page) => {
-    const ok = await defenseState(null).run!(p);
+  // Una pillola di problema toccata nella testata (va dove parla: Coverage meta o tipi, sulle carte col foglio) e il "+N" aperto;
+  // col team dei nomi lunghi (LONG), che in Difesa ha due problemi (SIX nessuno)
+  'analysis-defense-chip': { hash: hash(LONG), run: async (p: Page) => {
+    const ok = await defenseState(null, { team: LONG }).run!(p);
     if (ok !== true) return ok;
     const chip = await p.$('.area-head .area-chip.is-link');
-    if (!chip) return 'no chip';
-    await chip.click();
+    if (chip) await chip.click();
+    else {
+      // Telefono: le pillole stanno tutte nel "+N"; la prima si sceglie dal suo menu
+      if (!await clickText(p, '.area-head .area-chips-more.is-link', /./)) return 'no chip';
+      await wait(400);
+      if (!await clickText(p, '.more-probs-menu [role="menuitem"]:not(:disabled)', /./)) return 'no chip';
+    }
     await wait(700);
     return true;
   } },
-  'analysis-defense-more': { hash: hash(SIX), run: async (p: Page) => {
-    const ok = await defenseState(null).run!(p);
+  'analysis-defense-more': { hash: hash(LONG), run: async (p: Page) => {
+    const ok = await defenseState(null, { team: LONG }).run!(p);
     if (ok !== true) return ok;
     const more = await p.$('.area-head .area-chips-more.is-link');
     if (!more) return 'no +N';
@@ -409,7 +442,7 @@ const DEFENSE_STATES: Record<string, State> = {
     return true;
   } },
   // Generale col puntatore sul "+N" di un membro (Toxapex): il tooltip coi pezzi e il recupero in parole
-  ...Object.fromEntries([['member', '.def-general tbody tr:nth-child(3) .og-share.dsh']].map(([k, sel]) => [`analysis-defense-general-share-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+  ...Object.fromEntries([['member', '.def-general tbody tr:nth-child(3) .og-share.dsh']].map(([k, sel]) => [`analysis-defense-general-share-${k}`, { hash: hash(SIX), only: 'desktop', run: async (p: Page) => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;
     const el = await p.$(sel);
@@ -419,7 +452,7 @@ const DEFENSE_STATES: Record<string, State> = {
     return true;
   } } as State])),
   // Generale: clic sul pezzo 2HKO di Toxapex in Tipi (0) e su quello OHKO in Meta (1): si apre la sottoscheda coi bersagli accesi
-  ...Object.fromEntries([[0, '.hb-2'], [1, '.hb-ohko']].map(([k, cls]) => [`analysis-defense-general-pick-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+  ...Object.fromEntries([[0, '.hb-2'], [1, '.hb-ohko']].map(([k, cls]) => [`analysis-defense-general-pick-${k}`, { hash: hash(SIX), only: 'desktop', run: async (p: Page) => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;
     const cells = await p.$$('.def-general tbody tr:nth-child(3) td');
@@ -430,7 +463,7 @@ const DEFENSE_STATES: Record<string, State> = {
     return true;
   } } as State])),
   // Generale col puntatore sul pezzo 2HKO di Toxapex in Tipi: il tooltip coi bersagli e in fondo "Clic: vai a Coverage tipi" (TipGo)
-  'analysis-defense-general-piece-hover': { hash: hash(SIX), run: async (p: Page) => {
+  'analysis-defense-general-piece-hover': { hash: hash(SIX), only: 'desktop', run: async (p: Page) => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;
     const cells = await p.$$('.def-general tbody tr:nth-child(3) td');
@@ -441,7 +474,7 @@ const DEFENSE_STATES: Record<string, State> = {
     return true;
   } } as State,
   // Generale a squadra chiusa col puntatore su una pastiglia dei colpi peggiori: Tipi (0) e Meta (1)
-  ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), run: async (p: Page) => {
+  ...Object.fromEntries([0, 1].map(k => [`analysis-defense-general-worst-${k}`, { hash: hash(SIX), only: 'desktop', run: async (p: Page) => {
     const ok = await defenseState(null, { collapsed: true }).run!(p);
     if (ok !== true) return ok;
     const pills = await p.$$('.def-general tbody tr:first-child .mcs.wh');
@@ -477,14 +510,16 @@ const DEFENSE_STATES: Record<string, State> = {
     await wait(400);
     return true;
   } },
-  /** La guida di Coverage tipi con la tabella dell'attaccante di ogni tipo aperta. */
-  'analysis-defense-guide-types-open': { hash: hash(SIX), run: async p => {
+  /** La guida di Coverage tipi col puntatore sul "?" degli attaccanti: il tooltip con l'attaccante di ogni tipo. */
+  'analysis-defense-guide-types-open': { hash: hash(SIX), only: 'desktop', run: async p => {
     const ok = await defenseState(SUBS.types).run!(p);
     if (ok !== true) return ok;
     if (!await clickText(p, 'button.area-help', /./)) return 'no guide button';
     await wait(400);
-    if (!await clickText(p, '.guide-more > summary', /./)) return 'no attackers toggle';
-    await wait(300);
+    const ask = await p.$('.help-panel .guide-ask');
+    if (!ask) return 'no attackers ?';
+    await ask.hover();
+    await wait(500);
     return true;
   } },
   'analysis-defense-guide': { hash: hash(SIX), run: async p => {
@@ -500,6 +535,7 @@ const DEFENSE_STATES: Record<string, State> = {
 const rolesState = (opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
   hash: hash(opts.team ?? SIX),
   lang: opts.lang,
+  only: opts.collapsed ? 'desktop' : undefined,
   run: async p => {
     await tab(p, 'analysis');
     await wait(300);
@@ -533,10 +569,12 @@ const ROLES_STATES: Record<string, State> = {
 };
 
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
-interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
+// only: 'desktop' = solo da 1100 px e col mouse (fascia del team comprimibile, puntatore sopra, tabelle); 'small' = solo
+// sotto i 1100 px (fogli dal basso, voto nella barra delle schede). Alle altre misure lo stato non si fa (niente skip)
+interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; only?: 'desktop' | 'small'; run?: (page: Page) => Promise<boolean | string> }
 const openFill = async (p: Page) => { await p.evaluate(() => (document.querySelector('[data-fill-toggle]') as HTMLElement | null)?.click()); await p.waitForSelector('.fill-panel', { timeout: 10000 }); };
 // Coverage tipi / meta di Offesa e Difesa con l'interruttore dell'efficacia acceso, e col puntatore su una colonna
-const effOn = (base: State, hover = false): State => ({ ...base, run: async p => {
+const effOn = (base: State, hover = false): State => ({ ...base, ...(hover ? { only: 'desktop' as const } : {}), run: async p => {
   const ok = await base.run!(p);
   if (ok !== true) return ok;
   if (!hover) {
@@ -551,7 +589,7 @@ const effOn = (base: State, hover = false): State => ({ ...base, run: async p =>
   return true;
 } });
 // Telefono e tablet, Difesa: il foglio dal basso di una carta, di una tessera o di una minaccia
-const dsheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), run: async p => {
+const dsheetState = (sub: RegExp | null, selector: string, index = 0): State => ({ hash: hash(SIX), only: 'small', run: async p => {
   const ok = await defenseState(sub).run!(p);
   if (ok !== true) return ok;
   const items = await p.$$(selector);
@@ -592,33 +630,14 @@ const STATES: Record<string, State> = {
   } },
   'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
   'pokemon-hover-last': { run: async p => hoverCard(p, 5) },
-  // Lista candidati in stile Menu (pillole), team aperto e nascosto
-  'pokemon-menu': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
-  'pokemon-menu-collapsed': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => {
-    await tab(p, 'pokemon');
-    await wait(300);
-    return clickText(p, 'button.band-toggle', /./);
-  } },
-  // Icone del box al posto degli sprite normali (Carte e Menu)
-  'pokemon-menu-hover': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => {
-    await tab(p, 'pokemon');
-    await wait(1500);
-    const row = (await p.$$('.suggestions.menu > li'))[4];
-    if (!row) return 'no row';
-    await row.hover();
-    await wait(1200);
-    return true;
-  } },
-  // Team nascosto (tessere/righe più alte) e nomi lunghi, in ogni stile e sprite
-  'pokemon-collapsed': { run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
-  // Preferiti dell'utente nella lista: il ♥ sul +N (Carte e Menu)
+  // Team nascosto (carte più alte)
+  'pokemon-collapsed': { only: 'desktop', run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
+  // Preferiti dell'utente nella lista: il ♥ sul +N
   'pokemon-fav': { storage: { 'dreamdex.lists': JSON.stringify({ universal: { favorites: FAVS, bans: [] }, byFormat: {} }) }, run: async p => { await tab(p, 'pokemon'); return true; } },
-  'pokemon-menu-fav': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.lists': JSON.stringify({ universal: { favorites: FAVS, bans: [] }, byFormat: {} }) }, run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long-en': { hash: hash(LONG), lang: 'en', run: async p => { await tab(p, 'pokemon'); return true; } },
   // Gen 9: il set del candidato ha anche la Tera (cinque dati del set nel dettaglio)
   'pokemon-gen9': { hash: hashWith(TEAM, { formatId: 'gen9ou' }), run: async p => { await tab(p, 'pokemon'); return true; } },
-  'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(400);
@@ -656,6 +675,7 @@ const STATES: Record<string, State> = {
   'editor-duel': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(500);
+    await editorTab(p, /^(Sfida|Matchup)$/);
     const input = await p.$('.slot.open .duel-species input');
     if (!input) return 'no duel';
     await input.click({ count: 3 });
@@ -676,6 +696,7 @@ const STATES: Record<string, State> = {
   'editor-duel-tip': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return false;
     await wait(500);
+    await editorTab(p, /^(Sfida|Matchup)$/);
     const input = await p.$('.slot.open .duel-species input');
     if (!input) return 'no duel';
     await input.click({ count: 3 });
@@ -737,6 +758,7 @@ const STATES: Record<string, State> = {
   'editor-ev-over': { run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
     await wait(500);
+    await editorTab(p, /^(Statistiche|Stats)$/);
     const hp = await p.$('.drawer .ev-input');
     if (!hp) return 'no ev input';
     await hp.click({ count: 3 });
@@ -747,7 +769,7 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // La riga "Più veloce del X% del meta" sotto le statistiche col mouse sopra: il tooltip di Analisi › Velocità
-  'editor-speed-tip': { run: async p => {
+  'editor-speed-tip': { only: 'desktop', run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
     await wait(500);
     const line = await p.$('.speed-line-anchor');
@@ -758,7 +780,7 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Riga delle statistiche col mouse sopra: targhetta col bordo ciano, triangolino, tacca della barra EV
-  'editor-stat-hover': { run: async p => {
+  'editor-stat-hover': { only: 'desktop', run: async p => {
     if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
     await wait(500);
     const row = (await p.$$('.stat-row:not(.stat-head)'))[1];
@@ -787,12 +809,12 @@ const STATES: Record<string, State> = {
   } },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   // Telefono: il voto in fondo alla barra delle schede, toccato: la tendina Voto delle aree
-  'analysis-phone-grade': { run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
-  'analysis-phone-grade-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
+  'analysis-phone-grade': { only: 'small', run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
+  'analysis-phone-grade-six': { hash: hash(SIX), only: 'small', run: async p => { await tab(p, 'analysis'); await wait(400); const b = await p.$('.analysis-grade-toggle'); if (!b) return 'no grade'; await b.click(); await wait(500); return (await p.evaluate(() => !!document.querySelector('.analysis-grade .grade-pop'))) || 'no pop'; } },
   'analysis-defense': { run: async p => gradeRow(p, /^Difesa/) },
   'analysis-offense': { run: async p => gradeRow(p, /^Offesa/) },
   // Carta del membro (tooltip) passando sul primo Pokémon della tabella dell'Offesa: le mosse come pillole piccole
-  'card-tip': { run: async p => {
+  'card-tip': { only: 'desktop', run: async p => {
     if (await gradeRow(p, /^Offesa/) !== true) return 'no offense';
     await wait(500);
     const mon = await p.$('.def-mon-name');
@@ -830,34 +852,13 @@ const STATES: Record<string, State> = {
   'analysis-one': { hash: hash(TEAM.slice(0, 2)), run: async p => { await tab(p, 'analysis'); return true; } },
   // Cruscotto con un membro solo: "Cosa fare" invita ad aggiungere, niente "nessun problema"
   'analysis-single': { hash: hash(TEAM.slice(0, 1)), run: async p => { await tab(p, 'analysis'); return true; } },
-  'analysis-member': { run: async p => {
-    await tab(p, 'analysis');
-    await wait(300);
-    return clickText(p, '.member-cards button.member-card', /./);
-  } },
-  'rating-help': { run: async p => clickText(p, '.band .grade-tools button.help-button', /./) },
+  'rating-help': { run: async p => ratingHelp(p) },
   // Come funziona il voto, pagina generale: la tabella dei pesi e la riga dei Ruoli sotto
-  'rating-help-general': { run: async p => {
-    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
-    await wait(300);
-    return clickText(p, '.help-nav [role="tab"]', /^(Come funziona|How it works)$/);
-  } },
-  'rating-help-general-en': { lang: 'en', run: async p => {
-    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
-    await wait(300);
-    return clickText(p, '.help-nav [role="tab"]', /^How it works$/);
-  } },
+  'rating-help-general': { run: async p => ratingHelp(p, /^(Come funziona|How it works)$/) },
+  'rating-help-general-en': { lang: 'en', run: async p => ratingHelp(p, /^How it works$/) },
   // Hyper Offense: la frase su Trick Room e le voci dei Ruoli come etichette piatte
-  'rating-help-ho': { hash: hash(SIX), run: async p => {
-    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
-    await wait(300);
-    return clickText(p, '.help-nav [role="tab"]', /^Hyper Offense/);
-  } },
-  'rating-help-balance': { hash: hash(SIX), run: async p => {
-    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
-    await wait(300);
-    return clickText(p, '.help-nav [role="tab"]', /^Balance/);
-  } },
+  'rating-help-ho': { hash: hash(SIX), run: async p => ratingHelp(p, /^Hyper Offense/) },
+  'rating-help-balance': { hash: hash(SIX), run: async p => ratingHelp(p, /^Balance/) },
   'analysis-help': { run: async p => {
     if (!await gradeRow(p, /^Difesa/)) return 'no row';
     await wait(300);
@@ -927,7 +928,7 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Coaching col team chiuso: la scheda ha più altezza (versione estesa)
-  'coaching-collapsed': { hash: hash(SIX), run: async p => {
+  'coaching-collapsed': { hash: hash(SIX), only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
@@ -963,7 +964,7 @@ const STATES: Record<string, State> = {
   } },
   // Cruscotto della Panoramica col team ridotto: più spazio, più informazione
   // Team ridotto: la tendina "Voto delle aree" aperta sotto il voto (voce 3.1)
-  'grade-pop': { hash: hash(SIX), run: async p => {
+  'grade-pop': { hash: hash(SIX), only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -981,7 +982,7 @@ const STATES: Record<string, State> = {
     console.log(`grade-pop: ${JSON.stringify(m)}`);
     return !!m;
   } },
-  'analysis-collapsed': { hash: hash(SIX), run: async p => {
+  'analysis-collapsed': { hash: hash(SIX), only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -992,15 +993,16 @@ const STATES: Record<string, State> = {
   'analysis-weathers': { hash: hash(WEATHERS), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-weathers-cores': { hash: hash(WEATHERS_CORES), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   'analysis-rain': { hash: hash(RAIN), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
-  'analysis-rain-collapsed': { hash: hash(RAIN), run: async p => {
+  'analysis-rain-collapsed': { hash: hash(RAIN), only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
     await wait(800);
     return true;
   } },
-  // Il "+N" verde delle Sinergie col puntatore sopra (team aperto: il pulsante in fondo; chiuso: accanto al titolo)
-  ...Object.fromEntries([false, true].map(collapsed => [`analysis-rain-syn-more${collapsed ? '-collapsed' : ''}`, { hash: hash(RAIN), run: async (p: Page) => {
+  // Il "+N" verde delle Sinergie col puntatore sopra (team aperto: il pulsante in fondo; chiuso: accanto al titolo); col team
+  // dei campi (FIELD): con la pioggia ora le sinergie ci stanno tutte
+  ...Object.fromEntries([false, true].map(collapsed => [`analysis-rain-syn-more${collapsed ? '-collapsed' : ''}`, { hash: hash(FIELD), only: 'desktop', run: async (p: Page) => {
     await tab(p, 'analysis');
     await wait(300);
     if (collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -1012,7 +1014,7 @@ const STATES: Record<string, State> = {
     return true;
   } } as State])),
   'analysis-rain-en': { hash: hash(RAIN), lang: 'en', run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
-  'analysis-rain-collapsed-en': { hash: hash(RAIN), lang: 'en', run: async p => {
+  'analysis-rain-collapsed-en': { hash: hash(RAIN), lang: 'en', only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -1021,7 +1023,7 @@ const STATES: Record<string, State> = {
   } },
   'analysis-lone': { hash: hash(LONE), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   // Lo stesso in inglese (etichette più lunghe nel Riassunto)
-  'analysis-collapsed-en': { hash: hash(SIX), lang: 'en', run: async p => {
+  'analysis-collapsed-en': { hash: hash(SIX), lang: 'en', only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -1029,7 +1031,7 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Team offensivo (molti ruoli minori) col team ridotto: la tabella dei Ruoli con tutti i livelli
-  'analysis-collapsed-offense': { hash: hash(LONG), run: async p => {
+  'analysis-collapsed-offense': { hash: hash(LONG), only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -1037,7 +1039,7 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Offesa › Generale col team chiuso: le pillole delle mosse sotto le barre, la prima col mouse sopra (si apre, coda in diagonale)
-  'offense-chips-hover': { hash: hash(SIX), run: async p => {
+  'offense-chips-hover': { hash: hash(SIX), only: 'desktop', run: async p => {
     if (await gradeRow(p, /^Offesa/) !== true) return 'no offense';
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -1052,14 +1054,14 @@ const STATES: Record<string, State> = {
     return true;
   } },
   // Il "?" del tipo di team aperto
-  'team-type-help': { hash: hash(SIX), run: async p => {
+  'team-type-help': { hash: hash(SIX), only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '.dash-summary .help-button', /./)) return 'no help';
     await wait(300);
     return true;
   } },
-  'team-type-help-en': { hash: hash(SIX), lang: 'en', run: async p => {
+  'team-type-help-en': { hash: hash(SIX), lang: 'en', only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '.dash-summary .help-button', /./)) return 'no help';
@@ -1079,7 +1081,8 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '#analysis-view-coaching', /./);
   } },
-  'coaching-empty': { hash: '', run: async p => {
+  // Sul telefono, a team vuoto, l'Analisi non ha schede (la pagina vuota è analysis-empty)
+  'coaching-empty': { hash: '', only: 'desktop', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     return clickText(p, '#analysis-view-coaching', /./);
@@ -1103,9 +1106,19 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
     await p.waitForSelector('.coach-diag-list:not([aria-busy])', { timeout: 20000 });
-    const n = await p.evaluate(() => document.querySelectorAll('.coach-rows .coach-item.is-move, .coach-hero.is-move').length);
-    console.log(`coaching-move-steps: ${n} proposte di mossa`);
-    return n > 0 || 'no move proposal';
+    const count = () => p.evaluate(() => document.querySelectorAll('.coach-rank.is-move, .coach-hero.is-move').length);
+    const n = await count();
+    // Se nella prima pagina non ce ne sono, le pagine dopo (come coaching-move): la foto sulla prima che ne ha
+    let page = 1;
+    for (; page <= 8 && !await count(); page++) {
+      const next = await p.$('.coach-diag .coach-pages .cm-step:last-child:not(:disabled)');
+      if (!next) break;
+      await next.click();
+      await wait(300);
+    }
+    const found = await count();
+    console.log(`coaching-move-steps: ${n} proposte di mossa nella prima pagina${n ? '' : `, ${found} a pagina ${page}`}`);
+    return found > 0 || 'no move proposal';
   } },
   // Clic su una proposta di mossa: editor del membro con la mossa nuova in anteprima
   'coaching-move': { hash: hash(MOVE), run: async p => {
@@ -1129,7 +1142,7 @@ const STATES: Record<string, State> = {
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
   // Telefono e tablet: tocca il pulsante dei Preferiti, la lista si apre nel foglio
-  'lists-sheet': { storage: { 'dreamdex.lists': JSON.stringify({ byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit', 'Gholdengo', 'Dragapult', 'Corviknight', 'Toxapex', 'Iron Valiant', 'Garchomp', 'Zamazenta', 'Landorus-Therian', 'Rotom-Wash', 'Ferrothorn', 'Heatran', 'Slowking-Galar', 'Clefable'], bans: ['Magikarp'] } } }) }, run: async p => { await tab(p, 'lists'); await wait(500); const b = await p.$('.lists-tab.favorites'); await b?.evaluate(el => (el as HTMLElement).click()); await wait(600); return !!b; } },
+  'lists-sheet': { only: 'small', storage: { 'dreamdex.lists': JSON.stringify({ byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit', 'Gholdengo', 'Dragapult', 'Corviknight', 'Toxapex', 'Iron Valiant', 'Garchomp', 'Zamazenta', 'Landorus-Therian', 'Rotom-Wash', 'Ferrothorn', 'Heatran', 'Slowking-Galar', 'Clefable'], bans: ['Magikarp'] } } }) }, run: async p => { await tab(p, 'lists'); await wait(500); const b = await p.$('.lists-tab.favorites'); await b?.evaluate(el => (el as HTMLElement).click()); await wait(600); return !!b; } },
   // Scorrendo il Pokédex i due pulsanti restano in alto
   'lists-scrolled': { storage: { 'dreamdex.lists': JSON.stringify({ byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit', 'Gholdengo'], bans: ['Magikarp'] } } }) }, run: async p => { await tab(p, 'lists'); await wait(500); await p.evaluate(() => window.scrollTo(0, 500)); await wait(300); return true; } },
   // Preferiti e bannati pieni (anche oltre una pagina): la forma su telefono e tablet
@@ -1254,7 +1267,7 @@ const STATES: Record<string, State> = {
     return true;
   } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
-  collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
+  collapsed: { hash: hash(LONG), only: 'desktop', run: async p => clickText(p, 'button.band-toggle', /./) },
   improve: { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
   'improve-open': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return clickText(p, '.target-toggle', /./); } },
   'improve-member': { hash: hash(LONG), run: async p => {
@@ -1378,9 +1391,11 @@ for (const [w, h] of sizes) {
   for (const name of chosen) {
     const state = STATES[name];
     if (!state) { console.log(`skip ${name}: unknown state`); continue; }
+    const touch = process.argv.includes('--touch');
+    if (state.only === 'desktop' ? w < 1100 || touch : state.only === 'small' ? w >= 1100 : false) continue;
     const page = await browser.newPage();
     // --touch: telefono o tablet col dito (pointer: coarse, hover: none), per le regole dei tocchi da 44
-    await page.setViewport({ width: w, height: h, ...(process.argv.includes('--touch') ? { hasTouch: true, isMobile: true } : {}) });
+    await page.setViewport({ width: w, height: h, ...(touch ? { hasTouch: true, isMobile: true } : {}) });
     const lang = state.lang ?? 'it';
     await page.evaluateOnNewDocument((l, extra) => {
       localStorage.clear();
@@ -1389,7 +1404,8 @@ for (const [w, h] of sizes) {
     }, lang, state.storage ?? {});
     await page.goto(URL + (state.hash ?? hash(TEAM)), { waitUntil: 'networkidle0', timeout: 90000 });
     await wait(1500);
-    const result = state.run ? await state.run(page) : true;
+    // Un clic che fallisce (es. elemento fuori schermo col dito) salta lo stato invece di fermare tutto
+    const result = state.run ? await state.run(page).catch((e: Error) => e.message) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
     // --wait <ms>: aspetta di più prima della foto (es. finché il Coaching ha finito di calcolare)
     await wait(Number(arg('wait') ?? 800));

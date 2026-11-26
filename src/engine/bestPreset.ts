@@ -6,6 +6,7 @@ import { isLearnable, legalAbilities, legalMoves } from './learnsets';
 import { rateTeam } from './rating';
 import { defaultSet, ownDataOnly, presetsForSet, type TeamSet } from './sets';
 import type { GameId } from './games';
+import { LATEST_GEN } from './format';
 
 /** Modifiche al massimo per membro: il set resta riconoscibile. */
 export const MAX_TUNES = 2;
@@ -29,7 +30,7 @@ export function coreMoves(set: TeamSet, data: EngineData, genLimit: number, game
 }
 
 /** Il set con le mosse quasi obbligatorie che gli mancano, ognuna al posto della mossa meno usata (o in uno slot vuoto). */
-export function withCoreMoves(set: TeamSet, data: EngineData, genLimit = 9): TeamSet {
+export function withCoreMoves(set: TeamSet, data: EngineData, genLimit = LATEST_GEN): TeamSet {
   const core = coreMoves(set, data, genLimit, data.game ?? null);
   const missing = core.filter(move => !set.moves.some(m => family(m) === family(move)));
   if (!missing.length) return set;
@@ -54,7 +55,7 @@ export function withCoreMoves(set: TeamSet, data: EngineData, genLimit = 9): Tea
  * o dell'abilità con una delle più usate, scegliendo ogni volta quella che alza di più il voto del team.
  * Solo mosse e abilità legali (tranne con Custom Skillset); senza statistiche il set resta com'è.
  */
-export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLimit = 9): TeamSet {
+export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLimit = LATEST_GEN): TeamSet {
   let current = team[index];
   if (!data.stats) return current;
   const common = commonChoices(data, current);
@@ -142,12 +143,12 @@ const referenceOnly = (data: EngineData, member: TeamSet): boolean =>
   !member.customSkillset && ownDataOnly(data, battleSpecies(member)?.name ?? member.species) && !presetsForSet(data, member).length;
 
 /** Solo quale preset dà al team il voto più alto (posizione in presetsForSet), senza completarlo né ritoccarlo: null se non ce ne sono. */
-export function bestPresetIndex(team: TeamSet[], index: number, data: EngineData, genLimit = 9): number | null {
+export function bestPresetIndex(team: TeamSet[], index: number, data: EngineData, genLimit = LATEST_GEN): number | null {
   return pickPreset(team, index, data, genLimit).index;
 }
 
 /** Il preset col voto del team più alto, poi ritoccato tra le mosse e le abilità più usate. */
-export function bestPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): BestPreset {
+export function bestPreset(team: TeamSet[], index: number, data: EngineData, genLimit = LATEST_GEN): BestPreset {
   const picked = pickPreset(team, index, data, genLimit);
   if (picked.index === null && !picked.reference) return picked;
   // Il preset scelto con le mosse quasi obbligatorie che gli mancano
@@ -165,7 +166,7 @@ export function bestPreset(team: TeamSet[], index: number, data: EngineData, gen
  * i preset contraddittori si saltano e si prova il successivo; se il completamento o il ritocco rendono il set
  * contraddittorio, si tiene il passo prima. Se nessun preset va bene, il membro resta com'è.
  */
-export function bestCoherentPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): TeamSet {
+export function bestCoherentPreset(team: TeamSet[], index: number, data: EngineData, genLimit = LATEST_GEN): TeamSet {
   const fine = (set: TeamSet) => !contradictorySet(set);
   const picked = pickPreset(team, index, data, genLimit, fine);
   if (picked.index === null && !picked.reference) return team[index];
@@ -179,7 +180,7 @@ export function bestCoherentPreset(team: TeamSet[], index: number, data: EngineD
  * Il preset migliore per ogni membro, uno dopo l'altro: ogni scelta tiene conto di quelle già fatte.
  * Un secondo giro corregge le scelte dei primi membri alla luce degli ultimi (si ferma se non cambia nulla).
  */
-export function bestPresets(team: TeamSet[], data: EngineData, genLimit = 9): TeamSet[] {
+export function bestPresets(team: TeamSet[], data: EngineData, genLimit = LATEST_GEN): TeamSet[] {
   let current = team;
   for (let round = 0; round < 2; round++) {
     let changed = false;
@@ -229,7 +230,7 @@ export function alignMoves(before: string[], after: string[]): string[] {
  * Migliora i set: i set proposti per tutto il team (bestPresets) e, per ogni membro, il suo cambio da solo.
  * I guadagni dei singoli possono non sommarsi al totale: i set lavorano insieme.
  */
-export function improveSets(team: TeamSet[], data: EngineData, genLimit = 9): SetChange[] {
+export function improveSets(team: TeamSet[], data: EngineData, genLimit = LATEST_GEN): SetChange[] {
   const after = bestPresets(team, data, genLimit);
   const base = rateTeam(team, data, 'en')?.overall ?? null;
   return team.map((before, i) => {

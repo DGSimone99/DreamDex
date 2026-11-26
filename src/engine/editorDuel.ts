@@ -222,16 +222,6 @@ export function rankMatchups(me: TeamSet, threats: TeamSet[]): { set: TeamSet; m
     .sort((x, y) => VERDICT_ORDER[x.matchup.verdict] - VERDICT_ORDER[y.matchup.verdict] || x.matchup.score - y.matchup.score);
 }
 
-/** L'avversario di partenza: fra le minacce del meta, quella che fa più male al membro. */
-export function worstThreat(me: TeamSet, threats: TeamSet[]): TeamSet | null {
-  let worst: { set: TeamSet; expected: number } | null = null;
-  for (const set of threats) {
-    const hit = bestHit(set, me, optsFor(set, me));
-    if (hit && (!worst || hit.expected > worst.expected)) worst = { set, expected: hit.expected };
-  }
-  return worst?.set ?? null;
-}
-
 /** Velocità in lotta: quella finale (Sciarpa compresa) e ×1,5 se Protosynthesis o Quark Drive la alzano con la Booster Energy. */
 export function battleSpeed(set: TeamSet): number {
   const { value } = speedStat(set);

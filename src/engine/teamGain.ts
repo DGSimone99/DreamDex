@@ -393,13 +393,12 @@ export const swapsPerMember = (rules: FormatRules): number => (isOneType(rules) 
  * Raccomandazioni libere: per ogni membro (tranne i preferiti) i migliori sostituti per punteggio, valutati col voto
  * del team. Ogni candidato compare una volta, col membro che conviene di più sostituire (`replaces`); gli altri
  * membri possibili restano in `alternatives`, dal guadagno più alto.
- * `similar`: solo sostituti di ruolo simile (somiglianza ≥ `threshold`) che alzano il voto, così il team cambia poco.
  * Niente doppioni: un candidato della stessa specie di un altro membro, o lo stesso Pokémon del membro, si salta.
- * `candidatesFor(index)`: i sostituti del membro, già ordinati (per punteggio o per somiglianza).
+ * `candidatesFor(index)`: i sostituti del membro, già ordinati per punteggio.
  */
-export function bestSwaps<T extends { species: string; set: TeamSet; score: number; similarity?: number }>(
+export function bestSwaps<T extends { species: string; set: TeamSet; score: number }>(
   team: TeamSet[], data: EngineData, lang: Lang, candidatesFor: (index: number) => T[],
-  { similar = false, threshold = 0, archetype, report }: { similar?: boolean; threshold?: number; archetype?: Archetype; report?: SwapReport } = {},
+  { archetype, report }: { archetype?: Archetype; report?: SwapReport } = {},
 ): (T & { teamGain: TeamGain; replaces: number; alternatives: SwapOption[] })[] {
   const { before, evaluate } = swapEvaluator(team, data, lang, archetype);
   if (!before || team.length < 2) return [];
@@ -425,7 +424,6 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
     const others = new Set(team.filter((_, i) => i !== index).map(base));
     const candidates = candidatesFor(index)
       .filter(c => !others.has(base(c.set)) && forme(c.set) !== forme(member))
-      .filter(c => !similar || (c.similarity ?? 0) >= threshold)
       .slice(0, swapsPerMember(rulesOf(data)));
     for (const candidate of candidates) {
       const gain = gainOf(index, candidate.set);
@@ -443,7 +441,6 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
     }
   });
   return [...best.values()]
-    .filter(swap => !similar || swap.teamGain.gain > 0)
     .map(swap => ({ ...swap, alternatives: [...swap.alternatives].sort((a, b) => b.gain - a.gain) }))
     .sort((a, b) => compareGains(a.teamGain, b.teamGain) || b.score - a.score);
 }

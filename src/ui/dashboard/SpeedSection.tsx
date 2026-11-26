@@ -1,6 +1,5 @@
 import { Fragment, type CSSProperties } from 'react';
 import type { DashboardData } from '../../engine/overviewDashboard';
-import { formatPercent } from '../../i18n';
 import { gameName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';

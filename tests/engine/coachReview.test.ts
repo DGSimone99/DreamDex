@@ -6,7 +6,6 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { scoreCandidates } from '../../src/engine/scoring';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import type { SpeciesStats } from '../../src/engine/stats';
-import { fixtureData } from '../fixtures/data';
 
 const entry = (usage: number, item: string, moves: string[], teammates: Record<string, number> = {}): SpeciesStats => ({
   usage, count: 100, abilities: {}, items: { [item]: 1 }, teraTypes: {}, spreads: {},

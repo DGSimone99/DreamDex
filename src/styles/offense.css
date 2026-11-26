@@ -12,11 +12,6 @@
 .area-legend-swatch i.ok-half, .guide-swatch.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
 .guide-swatch { display: inline-block; flex: none; margin-right: var(--sp-3); vertical-align: -1px; }
 
-
-/* "+N" dei guadagni nelle tabelle def-grid: verde il setup, blu Tera e mossa Z (come .ad-t) */
-.def-frame .ad-gain { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--good); cursor: help; }
-.def-frame .ad-once { display: inline; margin-left: var(--sp-2); font: 600 var(--fs-small)/1 var(--ui); color: var(--accent); cursor: help; }
-
 /* Wallbreaking: soglie in verde (OHKO forte, 2HKO, 3HKO giallo), diverse dai hold-* della Difesa; testo --text su fondi scuri */
 .ko-ohko { background: color-mix(in srgb, var(--good) 46%, var(--panel)); color: var(--text); }
 .ko-two { background: color-mix(in srgb, var(--good) 22%, var(--panel)); color: var(--text); }
@@ -27,13 +22,9 @@
 .def-walls .rob-cell.ko-two { border-color: color-mix(in srgb, var(--good) 55%, transparent); }
 .def-walls .rob-cell.ko-three { border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .def-walls .wall-pct { display: block; }
-.def-walls .wall-setup { display: block; margin-top: 1px; font: 600 clamp(11px, calc(var(--def-row) * 0.15), 12px)/1.05 var(--ui); white-space: nowrap; opacity: 0.9; }
 /* Righe basse (squadra aperta): il "setup N%" resta solo nel title e nel testo nascosto, come le statistiche nella Difesa */
-.def-walls:not(.roomy) .wall-setup { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.def-walls .wall-side-h { width: auto; }
 .def-walls .rob-side { white-space: nowrap; }
 .def-walls .rob-col-side { width: 84px; }
-.def-walls .wall-gain { display: inline; margin: 0 0 0 var(--sp-2); font-size: var(--fs-caption); }
 /* Segno verde nell'angolo: la casella sale di soglia col setup (il triangolo è quello di Coverage tipi, .ct-table td.has-setup) */
 .def-walls .rob-cell.has-setup { position: relative; }
 .area-legend .wall-legend-setup { display: inline-flex; align-items: center; gap: var(--sp-2); margin-left: var(--sp-2); }
@@ -89,14 +80,6 @@
 .guide-targets tbody th { font-weight: 600; color: var(--text); white-space: nowrap; }
 .guide-targets tbody th .type-icons { margin-right: var(--sp-3); vertical-align: middle; }
 .guide-targets td { min-width: 4ch; color: var(--text); }
-
-/* Generale dell'Offesa: tre barre col numero; a squadra chiusa sotto le barre i dettagli (tipi per fascia, meta, punti al team) */
-.off-general .og-detail { display: flex; flex-wrap: wrap; align-items: center; gap: 3px var(--sp-6); margin-top: var(--sp-3); font: 600 var(--fs-caption)/1.2 var(--ui); color: var(--muted); }
-.off-general .og-band { display: inline-flex; align-items: center; gap: var(--sp-2); white-space: nowrap; }
-.off-general .og-band i { width: 9px; height: 9px; border-radius: 2px; border: 1px solid var(--line); background: var(--raised); }
-.off-general .og-band i.ok-ohko { background: var(--good); border-color: var(--good); }
-.off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 35%, var(--panel)); border-color: var(--good); }
-.off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); border-color: var(--warn); }
 /* Quanto porta al team (Offesa / Difesa): solo il "+N" in azzurro (non è un voto, non ha soglie; rosso se toglie), in
    una colonna stretta uguale nelle due Generali, numero e testata allineati a destra; Tipi e Meta si dividono il resto.
    Non nella Velocità (anche lei .def-general, con la sua barra nell'ultima colonna) */

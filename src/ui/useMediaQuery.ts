@@ -9,9 +9,6 @@ export const SHORT_SCREEN = '(min-width: 1100px) and (max-height: 759px)';
 export const PHONE_QUERY = '(max-width: 599px)';
 /** Editor a schede (Set, Statistiche, Sfida) sotto la testata a riepilogo: telefono e tablet. */
 export const EDITOR_TABS_QUERY = '(max-width: 1099px)';
-/** Telefono e tablet piccolo in verticale (fino a 767 px): le tabelle dell'Analisi in colonna stretta (Generale con le
- *  barre una sopra l'altra, Coverage tipi e meta girate coi membri in colonna). */
-export const NARROW_TABLES_QUERY = '(max-width: 767px)';
 /** Telefono e tablet (fino a 1099 px): Coverage tipi e meta girate (tipi o minacce in riga, i membri in colonna). */
 export const FLIP_TABLES_QUERY = '(max-width: 1099px)';
 /** Telefono, tablet piccolo (fino a 767 px) e tablet in verticale (fino a 1024 px, es. 768×1024 e 820×1180): il team si
@@ -22,11 +19,15 @@ export const AUTO_BAND_QUERY = '(max-width: 767px), (max-width: 1024px) and (ori
  *  il team è una colonna a sinistra (come la squadra nei giochi), la sezione e l'editor a destra. */
 export const TABLET_SIDE_QUERY = '(min-width: 760px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 501px), (min-width: 900px) and (max-width: 1099px) and (pointer: fine)';
 
-const matches = (query: string) => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
+/** La finestra corrisponde ora alla media query; `fallback` se il browser non sa rispondere (jsdom, vecchi browser). */
+export const mediaMatches = (query: string, fallback = false): boolean =>
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : fallback;
+/** Chi usa il sito ha chiesto meno movimento al sistema: niente animazioni. `fallback` se il browser non lo sa dire. */
+export const reducedMotion = (fallback = false): boolean => mediaMatches('(prefers-reduced-motion: reduce)', fallback);
 
 /** Vero finché la finestra corrisponde alla media query; si aggiorna quando la finestra cambia misura. */
 export function useMediaQuery(query: string): boolean {
-  const [value, setValue] = useState(() => matches(query));
+  const [value, setValue] = useState(() => mediaMatches(query));
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const list = window.matchMedia(query);

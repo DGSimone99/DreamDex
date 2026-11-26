@@ -928,19 +928,6 @@ describe('sprite animato delle carte', () => {
     rerender(<SuggestionsPanel {...props} data={{ ...fixtureData, ignoreMeta: true }} />);
     expect(mates()).toBeNull();
   });
-
-  it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {
-    const { BoxIcon } = await import('../../src/ui/candidateParts');
-    const { Icons } = await import('@pkmn/img');
-    // jsdom scarta la posizione nel foglio delle icone: si guarda quale icona viene chiesta
-    const getPokemon = vi.spyOn(Icons, 'getPokemon');
-    try {
-      render(<BoxIcon set={{ species: 'Metagross', item: 'Metagrossite', moves: [] } as never} />);
-      expect(getPokemon.mock.calls.map(([name]) => name)).toEqual(['Metagross-Mega']);
-    } finally {
-      getPokemon.mockRestore();
-    }
-  });
 });
 
 describe('tipi del candidato per gli screen reader', () => {

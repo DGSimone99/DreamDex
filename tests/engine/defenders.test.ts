@@ -46,7 +46,6 @@ describe('defenderPanel', () => {
   it('col meta ogni difensore investe almeno 400 EV fra PS e difese: un attaccante con statistiche alte non è un difensore', () => {
     const panel = defenderPanel(fixtureData).filter(set => set.moves.length > 0);
     for (const set of panel) {
-      const rules = formatRules('ou');
       const investment = (set.evs.hp ?? 0) + (set.evs.def ?? 0) + (set.evs.spd ?? 0);
       expect(investment).toBeGreaterThanOrEqual(400);
     }

@@ -1,13 +1,11 @@
 import { useEffect, useRef } from 'react';
+import { mediaMatches } from './useMediaQuery';
 
-/** Telefono (e tablet stretto): la scheda del candidato copre la lista. */
-export const PHONE = '(max-width: 759px)';
 /** Telefono e tablet: la scheda del candidato si apre toccando la carta (a tutto schermo sul telefono, da destra sul tablet). */
 export const DETAIL_SHEET = '(max-width: 1099px)';
 /** Telefono e tablet: l'editor del membro copre tutto lo schermo. */
 export const SMALL = '(max-width: 1099px)';
 
-const matches = (query: string) => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
 
 /**
  * Una pagina a tutto schermo (scheda del candidato, editor del membro) si chiude anche col tasto o il gesto
@@ -20,7 +18,7 @@ export function useBackClose(open: boolean, close: () => void, query: string): (
   const closeRef = useRef(close);
   closeRef.current = close;
   useEffect(() => {
-    if (!open || !matches(query)) return;
+    if (!open || !mediaMatches(query)) return;
     history.pushState({ ...(history.state ?? {}), dreamdexSheet: true }, '');
     pushed.current = true;
     const onPop = () => {

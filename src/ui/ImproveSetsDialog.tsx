@@ -1,5 +1,4 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { family, type SetChange } from '../engine/bestPreset';
 import { improveSetsLater } from './useRanking';
 import type { EngineData } from '../engine/data';
@@ -10,12 +9,13 @@ import { gameName, natureName, statShort } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
-import { ModalLock } from './ModalLock';
 import { Sprite } from './Sprite';
 import { EeveeMoment } from './EeveeMoment';
 import { PokemonIcon } from './PokemonName';
 import { MoveName } from './TypeText';
 import { kitTip } from './MoveTip';
+import { ModalShell } from './ModalShell';
+import { useEscape } from './useEscape';
 
 const evsText = (set: TeamSet, lang: ReturnType<typeof useLang>) =>
   STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
@@ -77,15 +77,12 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
   const lang = useLang();
   const id = useId();
   const ok = useRef<HTMLButtonElement>(null);
-  const cancel = useRef(onCancel);
-  cancel.current = onCancel;
   const [changes, setChanges] = useState<SetChange[] | null>(null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [open, setOpen] = useState(false);
+  useEscape(onCancel);
   useEffect(() => {
     ok.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') cancel.current(); };
-    document.addEventListener('keydown', onKey);
     // Il calcolo (fino a qualche secondo la prima volta) va in sottofondo: la finestra si apre subito e resta fluida
     let live = true;
     void improveSetsLater(team, data, genLimit).then(next => {
@@ -93,7 +90,7 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
       setChanges(next);
       setPicked(new Set(next.flatMap((c, i) => (c.changed ? [i] : []))));
     });
-    return () => { live = false; document.removeEventListener('keydown', onKey); };
+    return () => { live = false; };
   }, []);
   // Dopo il calcolo il focus resta su Applica (era spento mentre calcolava)
   useEffect(() => { if (changes) ok.current?.focus(); }, [changes]);
@@ -113,15 +110,9 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
   const delta = result && result.before !== null && result.after !== null ? result.after - result.before : null;
   const apply = changes ? (picked.size === changedCount ? t('team.bestPresetsApply') : t(picked.size === 1 ? 'improve.applyOne' : 'improve.applyMany', { n: picked.size })) : t('team.bestPresetsBusy');
 
-  return createPortal(
-    <div className="help-backdrop" onClick={onCancel}>
-      <ModalLock />
-      <div className={`help-dialog improve-dialog${open ? ' open' : ''}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={`${id}-text`}
-        onClick={e => e.stopPropagation()}>
-        <header className="help-head">
-          <h3 id={`${id}-title`}>{t('team.bestPresets')}</h3>
-          <button type="button" className="help-close" aria-label={t('help.close')} onClick={onCancel}><Icon name="close" /></button>
-        </header>
+  return (
+    <ModalShell className={`improve-dialog${open ? ' open' : ''}`} titleId={`${id}-title`} describedBy={`${id}-text`} title={t('team.bestPresets')}
+      closeLabel={t('help.close')} onClose={onCancel}>
         <div className="improve-body">
           {!open && <p id={`${id}-text`} className="improve-text">{t('team.bestPresetsConfirm')}</p>}
           {/* Il risultato: voto di adesso → con i cambi scelti; si aggiorna con le caselle */}
@@ -194,8 +185,6 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
           <button type="button" className="apply primary" ref={ok} disabled={!changes || picked.size === 0}
             onClick={() => result && onApply(result.next)}>{apply}</button>
         </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

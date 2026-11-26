@@ -8,8 +8,6 @@ export interface FormatRules {
    * 0 = bastano le soglie normali. Un set difensivo usa sempre le soglie normali (Ferrothorn resta un muro).
    */
   offensiveWallBulk: number;
-  /** Il coach non propone sostituzioni che cambiano il tipo di team (salvo team da C o D). */
-  keepArchetype: boolean;
   /**
    * Formato con cui confrontare le statistiche dei membri (area Statistiche); null = tutti i Pokémon.
    * In UU i Pokémon sono più deboli di quelli di OU: confrontati con tutti, un ottimo team UU non arriverebbe mai ad S.
@@ -28,13 +26,13 @@ export interface FormatRules {
   typeRule: 'walls' | 'recoverySpeed' | 'oneType';
 }
 
-export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, keepArchetype: false, strengthPool: null, wallIndex: { physical: 100000, special: 95000 }, typeRule: 'walls' };
+export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, strengthPool: null, wallIndex: { physical: 100000, special: 95000 }, typeRule: 'walls' };
 
 /** National Dex OU: il tipo di team dal recupero e dalla velocità, coi suoi pesi. Gli altri formati per ora no (in Ubers sono tutti molto robusti: serviranno soglie loro). */
 export const NATDEX_OU_RULES: FormatRules = { ...DEFAULT_RULES, typeRule: 'recoverySpeed' };
 
 /** Ubers: Zacian-Crowned con Swords Dance non è un muro, un HO resta HO (gli hazard li chiedono i Ruoli, come altrove). */
-export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, keepArchetype: true, wallIndex: { physical: 120000, special: 115000 } };
+export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, wallIndex: { physical: 120000, special: 115000 } };
 
 /** UU: statistiche confrontate coi Pokémon legali in UU. */
 export const UU_RULES: FormatRules = { ...DEFAULT_RULES, strengthPool: 'uu' };

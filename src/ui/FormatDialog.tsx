@@ -1,18 +1,17 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import {
   FAMILIES, normalizeCompetitive, rulesOf, tiersFor,
   type CompetitiveChoice, type CompetitiveGen, type Family, type FormatChoice, type FormatMemory, type FreeChoice, type GameChoice,
 } from '../engine/formatChoice';
 import { BATTLE_IDS } from '../engine/formats';
+import { LATEST_GEN } from '../engine/format';
 import { GAME_GEN, GAME_IDS, gameReady, type GameId } from '../engine/games';
 import { useT } from '../i18n/react';
 import { getSpecies } from '../engine/dex';
 import { illegalReason } from '../engine/formats';
 import type { TeamSet } from '../engine/sets';
 import { choiceName } from './formatName';
-import { Icon } from './icons';
-import { ModalLock } from './ModalLock';
+import { ModalShell } from './ModalShell';
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
@@ -31,7 +30,7 @@ const SOURCES: { id: SourceId; file: string; ready: boolean }[] = [
 ];
 /** Le generazioni Smogon passate, dalla più recente, con la sigla che si usa su Smogon. */
 const PAST_GENS = [[8, 'SS'], [7, 'SM'], [6, 'ORAS'], [5, 'BW'], [4, 'DPP'], [3, 'ADV'], [2, 'GSC'], [1, 'RBY']] as const;
-const GEN_LIMITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const GEN_LIMITS = Array.from({ length: LATEST_GEN }, (_, i) => i + 1);
 
 /** Un'immagine; se il file non c'è, il nome scritto al suo posto. */
 function Logo({ src, alt, fallback, className }: { src: string; alt: string; fallback: ReactNode; className?: string }) {
@@ -48,6 +47,16 @@ function Toggle({ label, note, checked, onChange }: { label: string; note?: stri
       <b>{label}</b>
       {note && <small>{note}</small>}
     </label>
+  );
+}
+
+/** Un gruppo della finestra: il titolo piccolo (come nella barra) e le scelte sotto. */
+function Sec({ label, id, children }: { label: string; id?: string; children: ReactNode }) {
+  return (
+    <section className="fmt-sec">
+      <p className="rail-label" id={id}>{label}</p>
+      {children}
+    </section>
   );
 }
 
@@ -111,14 +120,8 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
     .map(set => set.species);
   const notAllowed = notAllowedNames.length;
 
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-      <ModalLock />
-      <div ref={body} className="help-dialog format-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-        <header className="help-head">
-          <h3 id={titleId}>{t('formatDialog.title')}</h3>
-          <button type="button" className="help-close" aria-label={t('settings.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
+  return (
+    <ModalShell className="format-dialog" titleId={titleId} title={t('formatDialog.title')} closeLabel={t('settings.close')} onClose={onClose} dialogRef={body}>
         <div className="fmt-families" role="radiogroup" aria-label={t('formatDialog.familyAria')}>
           {FAMILIES.map(f => {
             const off = f === 'game' && !gamesReady;
@@ -147,8 +150,7 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
                 </label>
               ))}
             </div>
-            <section className="fmt-sec">
-              <p className="rail-label" id={`${titleId}-gen`}>{t('formatDialog.gen')}</p>
+            <Sec label={t('formatDialog.gen')} id={`${titleId}-gen`}>
               <div className="fmt-gens" role="radiogroup" aria-labelledby={`${titleId}-gen`}>
                 {(['natdex', 9] as CompetitiveGen[]).map(gen => (
                   <label key={gen} className={`fmt-tile${competitive.gen === gen ? ' on' : ''}`}>
@@ -159,9 +161,8 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
                   </label>
                 ))}
               </div>
-            </section>
-            <section className="fmt-sec">
-              <p className="rail-label">{t('top.battle')}</p>
+            </Sec>
+            <Sec label={t('top.battle')}>
               <div className="format-chips" role="radiogroup" aria-label={t('top.battleAria')}>
                 {BATTLE_IDS.map(id => {
                   const none = tiersFor(competitive.gen, id).length === 0;
@@ -174,9 +175,8 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
                   );
                 })}
               </div>
-            </section>
-            <section className="fmt-sec">
-              <p className="rail-label">{t('top.tier')}</p>
+            </Sec>
+            <Sec label={t('top.tier')}>
               <div className="format-chips" role="radiogroup" aria-label={t('top.tierAria')}>
                 {tiersFor(competitive.gen, competitive.battle).map(x => (
                   <label key={x.formatId} className={x.tier === competitive.tier ? 'on' : undefined}>
@@ -186,7 +186,7 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
                   </label>
                 ))}
               </div>
-            </section>
+            </Sec>
             {/* Le generazioni Smogon passate, non ancora pronte: dopo le scelte che si usano davvero */}
             <section className="fmt-sec">
               <p className="fmt-past-label first">{t('formatDialog.pastGens')} <span className="fmt-soon">{t('top.soon')}</span></p>
@@ -200,17 +200,15 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
                 ))}
               </div>
             </section>
-            <section className="fmt-sec">
-              <p className="rail-label">{t('top.advanced')}</p>
+            <Sec label={t('top.advanced')}>
               <Toggle label={t('top.ignoreBans')} note={t('top.ignoreBansNote')} checked={competitive.ignoreBans} onChange={on => pickCompetitive({ ignoreBans: on })} />
               <Toggle label={t('top.multipleMegas')} note={t('top.multipleMegasNote')} checked={competitive.multipleMegas} onChange={on => pickCompetitive({ multipleMegas: on })} />
-            </section>
+            </Sec>
           </>}
 
           {shown === 'game' && <>
             {[...new Set([...GAME_IDS.map(id => GAME_GEN[id]), ...GAMES_SOON.map(g => g.gen)])].sort((a, b) => b - a).map(gen => (
-              <section key={gen} className="fmt-sec">
-                <p className="rail-label">{t('formatDialog.gameGen', { n: gen })}</p>
+              <Sec key={gen} label={t('formatDialog.gameGen', { n: gen })}>
                 <div className="fmt-games" role="radiogroup" aria-label={t('formatDialog.gameGen', { n: gen })}>
                   {GAME_IDS.filter(id => GAME_GEN[id] === gen).map(id => (
                     <label key={id} className={`fmt-tile fmt-game game-${id}${game.game === id ? ' on' : ''}${gameReady(id) ? '' : ' off'}`}>
@@ -235,19 +233,17 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
                     </label>
                   ))}
                 </div>
-              </section>
+              </Sec>
             ))}
-            <section className="fmt-sec">
-              <p className="rail-label">{t('rail.gameOptions')}</p>
+            <Sec label={t('rail.gameOptions')}>
               <Toggle label={t('top.allPokedex')} note={t('top.allPokedexNote')} checked={game.allPokedex} onChange={on => setGame({ ...game, allPokedex: on })} />
               <Toggle label={t('top.legendaries')} note={t('top.legendariesNote')} checked={game.legendaries} onChange={on => setGame({ ...game, legendaries: on })} />
-            </section>
+            </Sec>
           </>}
 
           {shown === 'free' && <>
             <p className="fmt-note">{t('formatDialog.freeNote')}</p>
-            <section className="fmt-sec">
-              <p className="rail-label" id={`${titleId}-limit`}>{t('formatDialog.genLimit')}</p>
+            <Sec label={t('formatDialog.genLimit')} id={`${titleId}-limit`}>
               <div className="format-gens" role="radiogroup" aria-labelledby={`${titleId}-limit`}>
                 {GEN_LIMITS.map(n => (
                   <label key={n} className={n === free.genLimit ? 'on' : n < free.genLimit ? 'in' : undefined}>
@@ -257,11 +253,10 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
                   </label>
                 ))}
               </div>
-            </section>
-            <section className="fmt-sec">
-              <p className="rail-label">{t('top.advanced')}</p>
+            </Sec>
+            <Sec label={t('top.advanced')}>
               <Toggle label={t('top.multipleMegas')} note={t('top.multipleMegasNote')} checked={free.multipleMegas} onChange={on => setFree({ ...free, multipleMegas: on })} />
-            </section>
+            </Sec>
           </>}
           <p className="note">{t('formatDialog.logosCredit')}</p>
         </div>
@@ -276,8 +271,6 @@ export function FormatDialog({ choice, memory, family, team = [], onPick, onClos
             ? <button type="button" className="fmt-main" onClick={confirm} aria-label={t('formatDialog.closeUnchanged')}>{t('formatDialog.close')}</button>
             : <button type="button" className="primary fmt-main" onClick={confirm}>{t('formatDialog.use', { format: choiceName(drafts[shown], t) })}</button>}
         </footer>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

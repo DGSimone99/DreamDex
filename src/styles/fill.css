@@ -265,7 +265,6 @@
 .field { position: relative; }
 .field-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); min-height: 18px; }
 .set-editor .field-head { white-space: nowrap; min-width: 0; }
-.set-editor .field-head .field-note { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .set-editor .field-head .move-meta { gap: var(--sp-3); }
 .move-meta { display: inline-flex; align-items: center; gap: var(--sp-5); text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: var(--fs-caption); }
 .move-stat { display: inline-flex; align-items: center; gap: 3px; min-width: 38px; font-variant-numeric: tabular-nums; }

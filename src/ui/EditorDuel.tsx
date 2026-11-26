@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { supportsPopover, useAnchoredPop } from './useAnchoredPop';
 import type { StatID } from '@pkmn/dex';
 import type { EngineData } from '../engine/data';
@@ -26,10 +26,10 @@ import { useDuelTips } from './useDuelTips';
 import { quickTips } from '../engine/duelTips';
 import { MovePill } from './MovePill';
 import { StatIcon } from './StatIcon';
-import { Sprite, typeColor } from './Sprite';
-import { typeIconUrl } from './typeIcons';
+import { Sprite, typePair } from './Sprite';
 import { takeOpponent } from './duelHandoff';
 import { hint, KitTipBody, kitTip } from './MoveTip';
+import { useClickAway } from './useClickAway';
 
 /** Un set possibile dell'avversario: il più usato nel meta, i preset Smogon, o quello di base se non c'è altro. */
 interface OppSet { key: string; label: string; set: TeamSet; usage?: boolean }
@@ -155,12 +155,7 @@ export function EditorDuel({ set, team, data, format, onApply, onOpenMember }: {
   // Scegliendo una voce di un elenco del pannello, l'elenco si chiude già alla pressione del tasto: il clic che segue
   // e il rilascio che lo precede finirebbero sul campo sotto (lo Strumento sotto il Set, che selezionerebbe il testo). Li si ferma qui.
   const pickedAt = useRef(0);
-  useEffect(() => {
-    if (!settingsOpen) return;
-    const away = (e: PointerEvent) => { if (!settingsRoot.current?.contains(e.target as Node)) setSettingsOpen(false); };
-    document.addEventListener('pointerdown', away);
-    return () => document.removeEventListener('pointerdown', away);
-  }, [settingsOpen]);
+  useClickAway(target => !!settingsRoot.current?.contains(target), () => setSettingsOpen(false), { active: settingsOpen });
 
   const threats = useMemo(() => metaThreats(data).map(threat => threat.set), [data]);
   // Le minacce del meta dalla sfida peggiore alla migliore (seguono il set mentre lo cambi)
@@ -384,7 +379,7 @@ export function EditorDuel({ set, team, data, format, onApply, onOpenMember }: {
       <legend>{t('editor.duel')}</legend>
       {/* La scheda tagliata in diagonale (come le carte di Masters): a sinistra il colore del tipo dell'avversario col nome
           grande (dove lo si cerca), Set, Impostazioni e lo sprite che sborda in basso; a destra le tre righe */}
-      <div className="duel-card" style={{ '--t1': typeColor(oppTypes[0] ?? ''), '--t2': typeColor(oppTypes[1] ?? oppTypes[0] ?? '') } as CSSProperties}>
+      <div className="duel-card" style={typePair(oppTypes)}>
         <div className="duel-art" aria-hidden="true" />
         {/* Lo sprite fuori dallo sfondo ritagliato e sopra le righe: se è largo può sbordare un po' */}
         {species && <span className="duel-stage" aria-hidden="true" {...(opp ? memberTip.bind(opp) : {})}><Sprite species={species} size={96} /></span>}

@@ -69,8 +69,6 @@ function doublesSource(set: TeamSet, role: SubRole, priority: string[]): string 
 /** Il membro ha Fake Out o una mossa di deviazione (Follow Me, Rage Powder): in doppio un supporto così non è un membro debole. */
 export const hasDoublesRole = (set: TeamSet, role: 'fakeOut' | 'redirector'): boolean => doublesSource(set, role, []) !== null;
 
-/** Sotto-ruoli misurati: famiglia Attacco, muri e Recupero. */
-export const MEASURED: SubRole[] = [...FAMILIES.attack, 'physicalWall', 'specialWall', 'recovery'];
 
 /** Valori 0-1 per sotto-ruolo; solo le voci > 0. */
 export type SubRoleValues = Partial<Record<SubRole, number>>;

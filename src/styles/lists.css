@@ -23,12 +23,11 @@
 @media (min-width: 1100px) {
   #panel-analysis.active, #panel-meta.active, #panel-lists.active { overflow: hidden; }
   /* Le aree che scorrono contengono anche i loro elementi assoluti (testi nascosti, tooltip): niente sporge fuori dalla colonna */
-  .tab-panel.active, .picker-list, .detail, .analysis-main, .analysis-detail, .meta-tab > *, .lists-dex { position: relative; }
+  .tab-panel.active, .picker-list, .detail, .meta-tab > *, .lists-dex { position: relative; }
   .tab-panel > .analysis, .tab-panel > .meta-tab { height: 100%; }
   .analysis { display: flex; flex-direction: column; }
-  .analysis-cols { flex: 1; min-height: 0; align-items: stretch; }
   .meta-tab { align-items: stretch; }
-  .analysis-main, .analysis-detail, .meta-tab > * { min-height: 0; overflow: auto; overscroll-behavior: contain; padding-right: var(--sp-2); padding-bottom: var(--sp-6); }
+  .meta-tab > * { min-height: 0; overflow: auto; overscroll-behavior: contain; padding-right: var(--sp-2); padding-bottom: var(--sp-6); }
   .lists-panel { height: 100%; }
 }
 /* Schermi bassi o stretti (portatili 1366×768, 1280×720): tutto resta in una schermata, card e strumenti più compatti */
@@ -71,9 +70,6 @@
   .detail-hero .detail-id h3 { font-size: var(--fs-title-l); }
   .detail-hero { padding-top: 3px; padding-bottom: 3px; }
   .detail:not(.detail-empty) > .detail-actions { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
-  .detail .detail-moves { gap: var(--sp-2); }
-  .detail-roles li { padding: 0 7px; }
-  .detail .detail-moves li { padding: 1px var(--sp-4); font-size: var(--fs-small); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .detail-hero .detail-score strong { font-size: var(--fs-stat); }
 }
 /* Team compresso: una barra sottile con le icone del box, il voto piccolo e la freccia per riaprirla */
@@ -444,13 +440,8 @@
 .lbox-count { font: italic 700 var(--fs-section)/1 var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
 .lbox-note { flex: 1; min-width: 0; font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lists-panel.dragging .lbox-note { color: var(--text); }
-/* Pagine "‹ 1/2 ›" come quelle di Coverage meta e del Coaching (.cm-pages): pulsanti Raised col bordo, numero in Text */
-.lists-pager { display: inline-flex; align-items: center; gap: var(--sp-2); flex: none; font: 600 var(--fs-small)/1 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
-.lists-pager > span { min-width: 4.5ch; text-align: center; }
-.lists-pager button { display: grid; place-items: center; width: 28px; height: 26px; padding: 0; color: var(--muted); background: var(--raised); border: 1px solid var(--line); border-radius: 3px; }
-.lists-pager button .icon { width: 14px; height: 14px; }
-.lists-pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
-.lists-pager button:disabled { opacity: 0.4; cursor: default; }
+/* Pagine "‹ 1/2 ›": quelle di Coverage meta e del Coaching (Pager, .cm-pages), che nella barra non si restringono */
+.lists-pager { flex: none; }
 
 .lslots-wrap { position: relative; padding: var(--sp-4); }
 .lslots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--cols, 10), minmax(0, 1fr)); gap: var(--sp-2); }
@@ -587,7 +578,7 @@
   .dex-actions { gap: var(--sp-4); }
   .dex-actions button { position: relative; width: 36px; height: 36px; }
   .dex-actions button::after { content: ''; position: absolute; inset: -4px; }
-  .lists-pager button { width: 44px; height: 44px; }
+  .lists-pager .cm-step { width: 44px; height: 44px; }
   .lists-bar .search-field input, .lists-pick, .lists-expand { height: 44px; }
   .lists-more { width: 44px; height: 44px; }
   .dex-order-pick, .dex-head .filters-trigger { height: 44px; }
@@ -743,7 +734,6 @@
 /* Il nome della mossa come nel Set: 14px (la pillola piccola lo regge) */
 .duel-label .duel-mvp { font-size: var(--fs-section); }
 .duel-label .duel-mvp { flex: 0 1 auto; min-width: 0; }
-.duel-speed-vs { font: italic 700 var(--fs-small)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .duel-none { font: 600 var(--fs-small)/1.1 var(--ui); color: var(--faint); }
 /* Gli interruttori dei potenziamenti: la casellina si spunta e la riga si ricalcola. Verde la danza, azzurro il team,
    rosso quello dell'avversario; acceso, il fondo si fa pieno del suo colore */

@@ -1,5 +1,4 @@
 import { Icons } from '@pkmn/img';
-import { Fragment } from 'react';
 import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
@@ -31,13 +30,3 @@ export function PokemonName({ name, muted = false, icon = false }: { name: strin
   );
 }
 
-/** Elenco di Pokémon: "A, B" oppure "A o B". */
-export function PokemonList({ names, separator = ', ' }: { names: string[]; separator?: string }) {
-  return (
-    <>
-      {names.map((name, i) => (
-        <Fragment key={name}>{i > 0 && separator}<PokemonName name={name} /></Fragment>
-      ))}
-    </>
-  );
-}
