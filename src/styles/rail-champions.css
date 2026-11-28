@@ -2,7 +2,7 @@
  * Barra laterale sul PC (dalle bozze, "il diario" senza il voto):
  * - il formato è una targa azzurra a tutta larghezza (shell.css);
  * - le sezioni sono righe compatte a tutta larghezza, separate da una linea: icona azzurra, nome in corsivo, a destra
- *   solo il numero che conta (5/6, problemi, preferiti·bannati); la sezione aperta è una fascia magenta
+ *   solo il numero che conta (5/6, problemi, preferiti·bannati); la sezione aperta è una fascia dell'accento 2 (--rail-on)
  *   a righine da bordo a bordo. Lo stato intero resta la descrizione della scheda per i lettori di schermo;
  * - in fondo lingua e impostazioni come i suggerimenti dei tasti del gioco.
  * Sul telefono le sezioni sono la barra in basso (phone.css): qui solo da 1100px in su.
@@ -38,24 +38,24 @@
   .rail .tabs.vertical .tab-count.serious { color: var(--bad); background: none; }
   .rail .tabs.vertical [role='tab']:hover:not([aria-selected='true'], [aria-disabled='true']) { background: color-mix(in srgb, var(--raised) 60%, transparent); }
   .rail .tabs.vertical [role='tab']:hover:not([aria-selected='true']) .tab-icon { background: none; }
-  /* La sezione aperta: fascia magenta a righine da bordo a bordo */
+  /* La sezione aperta: fascia dell'accento 2 a righine da bordo a bordo */
   .rail .tabs.vertical [role='tab'][aria-selected='true'] {
     width: 100%;
     border-bottom-color: transparent;
-    /* Magenta scuro (testo bianco almeno 4,5:1 su tutta la fascia) */
-    background: var(--stripes), linear-gradient(100deg, #d81f72, #c41767 60%, #ad115b);
+    /* La fascia scura dell'accento 2 (--rail-on, nel tema) */
+    background: var(--stripes), var(--rail-on);
     clip-path: none;
-    color: #ffe1ee;
+    color: var(--rail-on-ink);
   }
-  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-name { color: #fff; text-shadow: 0 1px 0 rgba(90, 0, 40, 0.5); }
+  .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-name { color: #fff; text-shadow: 0 1px 0 var(--rail-on-shade); }
   .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon,
   .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-count { background: none; color: #fff; }
-  /* Sulla fascia magenta il numero è bianco: il giallo o il rosso restano in un puntino accanto */
+  /* Sulla fascia della sezione aperta il numero è bianco: il giallo o il rosso restano in un puntino accanto */
   .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-count:is(.warn, .serious)::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: var(--sp-3); border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 1.5px #fff; vertical-align: 1px; }
   .rail .tabs.vertical [role='tab'][aria-selected='true'] .tab-count.serious::before { background: var(--bad); }
   .rail .tabs.vertical [role='tab'][aria-disabled='true'] { opacity: 0.5; }
   .rail .tabs.vertical [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  /* Sulla fascia magenta l'azzurro si vede poco: lì il contorno è bianco */
+  /* Sulla fascia della sezione aperta l'accento si vede poco: lì il contorno è bianco */
   .rail .tabs.vertical [role='tab'][aria-selected='true']:focus-visible { outline-color: #fff; outline-offset: -4px; }
 
   /* ── Fondo: suggerimenti dei tasti ──────────────────────────── */

@@ -23,6 +23,14 @@
   --accent-2-soft: #4a1430;
   --accent-2-wash: #3a1030;
   --on-accent-2: #22000f;
+  /* La targa del formato in cima alla barra: sfumatura dell'accento, più chiara a sinistra e più chiara ancora al
+     passaggio; il testo è --on-accent */
+  --format-plate: linear-gradient(100deg, #5fe6ff, var(--accent) 50%, #00a9d1);
+  --format-plate-hover: linear-gradient(100deg, #8af0ff, #33dcff 50%, var(--accent));
+  /* La sezione aperta nella barra: fascia scura dell'accento 2 col testo chiaro (il bianco almeno 4,5:1 su tutta la fascia) */
+  --rail-on: linear-gradient(100deg, #d81f72, #c41767 60%, #ad115b);
+  --rail-on-ink: #ffe1ee;
+  --rail-on-shade: rgba(90, 0, 40, 0.5);
   /* Trick Room (scheda Velocità): il viola della stanza, lo stesso in ogni palette (è il viola di Scarlatto/Violetto);
      --room-ink su --panel 7,9:1 */
   --room: #a35cff;
@@ -141,4 +149,9 @@
   --accent-2-soft: #2f1d52;
   --accent-2-wash: #241640;
   --on-accent-2: #12002a;
+  --format-plate: linear-gradient(100deg, #ffa860, var(--accent) 50%, #d9600a);
+  --format-plate-hover: linear-gradient(100deg, #ffc48f, #ff9440 50%, var(--accent));
+  --rail-on: linear-gradient(100deg, #7b3fd6, #6c33c4 60%, #5c28ae);
+  --rail-on-ink: #efe3ff;
+  --rail-on-shade: rgba(40, 0, 90, 0.5);
 }
